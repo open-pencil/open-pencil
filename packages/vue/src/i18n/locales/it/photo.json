@@ -17,5 +17,8 @@
   "whitePoint": "Punto del bianco",
   "midtones": "Mezzitoni",
   "curve": "Curva",
-  "resetCurve": "Ripristina curva"
+  "resetCurve": "Ripristina curva",
+  "sharpen": "Nitidezza",
+  "noise": "Grana",
+  "vignette": "Vignettatura"
 }

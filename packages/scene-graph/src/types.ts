@@ -188,6 +188,12 @@ export interface ImageAdjustments {
   shadows?: number
   /** Hue rotation: ±1 is ±180°. */
   hue?: number
+  /** Sharpen (+) or soften (-) edges. */
+  sharpen?: number
+  /** Film grain, 0–1. */
+  noise?: number
+  /** Darken (+) or lighten (-) the corners. */
+  vignette?: number
   /** Invert every channel. */
   invert?: boolean
   /** Input levels: black and white points (0–1) and the midtone gamma (0.1–10, 1 unchanged). */
@@ -217,7 +223,10 @@ export const IMAGE_ADJUSTMENT_KEYS = [
   'tint',
   'highlights',
   'shadows',
-  'hue'
+  'hue',
+  'sharpen',
+  'noise',
+  'vignette'
 ] as const satisfies readonly (keyof ImageAdjustments)[]
 
 export interface Fill {

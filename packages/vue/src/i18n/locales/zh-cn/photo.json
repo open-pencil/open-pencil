@@ -17,5 +17,8 @@
   "whitePoint": "白场",
   "midtones": "中间调",
   "curve": "曲线",
-  "resetCurve": "重置曲线"
+  "resetCurve": "重置曲线",
+  "sharpen": "锐化",
+  "noise": "颗粒",
+  "vignette": "暗角"
 }

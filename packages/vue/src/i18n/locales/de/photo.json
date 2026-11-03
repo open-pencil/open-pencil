@@ -17,5 +17,8 @@
   "whitePoint": "Weißpunkt",
   "midtones": "Mitteltöne",
   "curve": "Gradationskurve",
-  "resetCurve": "Kurve zurücksetzen"
+  "resetCurve": "Kurve zurücksetzen",
+  "sharpen": "Schärfen",
+  "noise": "Körnung",
+  "vignette": "Vignette"
 }

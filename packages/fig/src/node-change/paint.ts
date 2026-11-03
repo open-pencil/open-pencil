@@ -159,7 +159,8 @@ const FIGMA_FILTER_FIELDS = [
   ['tint', 'tint'],
   ['highlights', 'highlights'],
   ['shadows', 'shadows'],
-  ['vibrance', 'saturation']
+  ['vibrance', 'saturation'],
+  ['vignette', 'vignette']
 ] as const satisfies readonly (readonly [
   keyof NonNullable<Paint['paintFilter']>,
   keyof ImageAdjustments

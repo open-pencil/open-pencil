@@ -155,6 +155,9 @@ const imageAdjustmentsSchema = v.record(
     highlights: adjustmentValueSchema,
     shadows: adjustmentValueSchema,
     hue: adjustmentValueSchema,
+    sharpen: adjustmentValueSchema,
+    noise: adjustmentValueSchema,
+    vignette: adjustmentValueSchema,
     invert: v.optional(v.boolean()),
     levels: v.optional(
       v.object({

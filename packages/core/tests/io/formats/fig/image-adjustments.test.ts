@@ -45,6 +45,9 @@ const ALL: ImageAdjustments = {
   highlights: -0.6,
   shadows: 0.55,
   hue: 0.5,
+  sharpen: 0.4,
+  noise: 0.2,
+  vignette: -0.3,
   invert: true,
   levels: { black: 0.1, white: 0.9, gamma: 1.4 },
   curve: [
@@ -86,8 +89,8 @@ describe('Figma paint filter mapping', () => {
     })
   })
 
-  test('Figma-only fields (detail, vignette) are ignored, not misread', () => {
-    expect(fromFigmaPaintFilter({ detail: 0.5, vignette: 0.3 })).toBeUndefined()
+  test("Figma's vignette maps to vignette; detail, which has no match, is ignored", () => {
+    expect(fromFigmaPaintFilter({ detail: 0.5, vignette: 0.3 })).toEqual({ vignette: 0.3 })
   })
 })
 

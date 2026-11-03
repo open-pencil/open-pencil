@@ -17,5 +17,8 @@
   "whitePoint": "白点",
   "midtones": "中間調",
   "curve": "トーンカーブ",
-  "resetCurve": "カーブをリセット"
+  "resetCurve": "カーブをリセット",
+  "sharpen": "シャープ",
+  "noise": "粒子",
+  "vignette": "周辺光量"
 }

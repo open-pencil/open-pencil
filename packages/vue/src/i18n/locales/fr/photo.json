@@ -17,5 +17,8 @@
   "whitePoint": "Point blanc",
   "midtones": "Tons moyens",
   "curve": "Courbe",
-  "resetCurve": "Réinitialiser la courbe"
+  "resetCurve": "Réinitialiser la courbe",
+  "sharpen": "Netteté",
+  "noise": "Grain",
+  "vignette": "Vignette"
 }

@@ -10,7 +10,7 @@ const amountSchema = v.optional(toolNumber(v.pipe(v.number(), v.minValue(-1), v.
 export const setImageAdjustments = defineTool({
   name: 'set_image_adjustments',
   description:
-    'Adjust an image fill like a photo editor, non-destructively (the image itself is kept): exposure, contrast, brightness, saturation, vibrance, temperature (warm +, cool −), tint (magenta +, green −), highlights, shadows, hue (±1 = ±180°), each −1…1 with 0 unchanged, plus invert, input levels (black/white point 0–1, gamma 0.1–10) and a tone curve (points x,y 0–1, smooth monotone; [{x:0,y:0},{x:1,y:1}] is unchanged). Omitted values keep their current setting; reset: true clears every adjustment first. Saved to .fig (Figma shows the eight it supports) and baked into SVG/PDF exports.',
+    'Adjust an image fill like a photo editor, non-destructively (the image itself is kept): exposure, contrast, brightness, saturation, vibrance, temperature (warm +, cool −), tint (magenta +, green −), highlights, shadows, hue (±1 = ±180°), sharpen (− softens), noise (film grain), vignette (+ darkens corners, − lightens), each −1…1 with 0 unchanged, plus invert, input levels (black/white point 0–1, gamma 0.1–10) and a tone curve (points x,y 0–1, smooth monotone; [{x:0,y:0},{x:1,y:1}] is unchanged). Omitted values keep their current setting; reset: true clears every adjustment first. Saved to .fig (Figma shows the eight it supports) and baked into SVG/PDF exports.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -32,6 +32,9 @@ export const setImageAdjustments = defineTool({
     highlights: amountSchema,
     shadows: amountSchema,
     hue: amountSchema,
+    sharpen: amountSchema,
+    noise: amountSchema,
+    vignette: amountSchema,
     invert: v.optional(v.boolean()),
     levels: v.optional(
       v.strictObject({

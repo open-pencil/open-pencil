@@ -96,8 +96,69 @@ describe('adjustment values', () => {
 
   test('uniforms follow the declared order and are clamped to -1…1', () => {
     const u = adjustmentUniforms({ exposure: 3, hue: -2, invert: true })
-    expect(u.slice(0, 15)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1, 1, 0])
-    expect(u).toHaveLength(15 + CURVE_SAMPLES)
+    expect(u.slice(0, 18)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 1, 0, 1, 1, 0])
+    expect(u).toHaveLength(18 + CURVE_SAMPLES + 2)
+  })
+})
+
+describe('filters', () => {
+  test('noise varies neighbouring pixels of a flat image', () => {
+    const graph = new SceneGraph()
+    const bytes = swatch(128, 128, 128)
+    const hash = computeImageHash(bytes)
+    graph.images.set(hash, bytes)
+    const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+      width: 16,
+      height: 16,
+      fills: [
+        {
+          type: 'IMAGE',
+          imageHash: hash,
+          imageScaleMode: 'FILL',
+          opacity: 1,
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          adjustments: { noise: 1 }
+        }
+      ]
+    })
+    const surface = ck.MakeSurface(1, 1)
+    if (!surface) throw new Error('no surface')
+    const png = renderNodesToImage(
+      ck,
+      new SkiaRenderer(ck, surface),
+      graph,
+      graph.getPages()[0].id,
+      [node.id],
+      { scale: 1, format: 'PNG' }
+    )
+    if (!png) throw new Error('nothing rendered')
+    const image = ck.MakeImageFromEncoded(png)
+    if (!image) throw new Error('decode failed')
+    const px = image.readPixels(0, 0, {
+      width: 16,
+      height: 1,
+      colorType: ck.ColorType.RGBA_8888,
+      alphaType: ck.AlphaType.Unpremul,
+      colorSpace: ck.ColorSpace.SRGB
+    })
+    image.delete()
+    surface.delete()
+    if (!px) throw new Error('read failed')
+    const reds = new Set<number>()
+    for (let i = 0; i < 16; i++) reds.add(px[i * 4])
+    expect(reds.size).toBeGreaterThan(4)
+  })
+
+  test('sharpen leaves a flat area unchanged', () => {
+    const [r, g, b] = render([180, 100, 60], { sharpen: 1 })
+    near(r, 180, 2)
+    near(g, 100, 2)
+    near(b, 60, 2)
+  })
+
+  test('a positive vignette leaves the centre nearly as it was', () => {
+    near(render([200, 200, 200], { vignette: 1 })[0], 200, 6)
   })
 })
 

@@ -28,12 +28,16 @@ uniform float tint;
 uniform float highlights;
 uniform float shadows;
 uniform float hue;
+uniform float sharpen;
+uniform float noise;
+uniform float vignette;
 uniform float invert;
 uniform float levelBlack;
 uniform float levelWhite;
 uniform float levelGamma;
 uniform float curveOn;
 uniform float curve[${CURVE_SAMPLES}];
+uniform float2 size;
 
 half lookup(half v) {
   float x = clamp(float(v), 0.0, 1.0) * ${CURVE_SAMPLES - 1}.0;
@@ -65,6 +69,13 @@ half4 main(float2 p) {
   half4 c = image.eval(p);
   if (c.a <= 0.0) return c;
   half3 rgb = c.rgb / c.a;
+  if (sharpen != 0.0) {
+    // Unsharp mask against the four neighbours; negative values blur toward them instead.
+    half4 n = image.eval(p + float2(1, 0)) + image.eval(p - float2(1, 0)) +
+      image.eval(p + float2(0, 1)) + image.eval(p - float2(0, 1));
+    half3 around = n.a > 0.0 ? n.rgb / n.a : rgb;
+    rgb = clamp(rgb + (rgb - around) * sharpen * 2.0, 0.0, 1.0);
+  }
   rgb *= exp2(exposure * 2.0);
   rgb += brightness * 0.25;
   rgb = (rgb - 0.5) * (1.0 + contrast) + 0.5;
@@ -82,6 +93,15 @@ half4 main(float2 p) {
   if (levelBlack != 0.0 || levelWhite != 1.0 || levelGamma != 1.0) {
     rgb = clamp((rgb - levelBlack) / max(levelWhite - levelBlack, 0.0001), 0.0, 1.0);
     rgb = pow(rgb, half3(1.0 / levelGamma));
+  }
+  if (vignette != 0.0 && size.x > 0.0 && size.y > 0.0) {
+    float2 uv = p / size - 0.5;
+    float fall = smoothstep(0.2, 0.75, length(uv) * 1.2);
+    rgb = vignette > 0.0 ? rgb * (1.0 - fall * vignette) : mix(rgb, half3(1.0), fall * -vignette);
+  }
+  if (noise > 0.0) {
+    float grain = fract(sin(dot(floor(p), float2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    rgb += grain * noise * 0.4;
   }
   if (curveOn > 0.5) rgb = half3(lookup(rgb.r), lookup(rgb.g), lookup(rgb.b));
   if (invert > 0.5) rgb = 1.0 - rgb;
@@ -175,7 +195,10 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 const clampUnit = (value: number | undefined) => Math.max(-1, Math.min(1, value ?? 0))
 
 /** The shader's uniforms, in the order they are declared. */
-export function adjustmentUniforms(adjust: ImageAdjustments): number[] {
+export function adjustmentUniforms(
+  adjust: ImageAdjustments,
+  size: { width: number; height: number } = { width: 0, height: 0 }
+): number[] {
   const levels = adjust.levels ?? { black: 0, white: 1, gamma: 1 }
   const curveOn = !isIdentityCurve(adjust.curve)
   return [
@@ -185,7 +208,9 @@ export function adjustmentUniforms(adjust: ImageAdjustments): number[] {
     clamp01(levels.white),
     Math.max(0.1, Math.min(10, levels.gamma)),
     curveOn ? 1 : 0,
-    ...(curveOn && adjust.curve ? sampleCurve(adjust.curve) : sampleCurve([]))
+    ...(curveOn && adjust.curve ? sampleCurve(adjust.curve) : sampleCurve([])),
+    size.width,
+    size.height
   ]
 }
 
@@ -193,9 +218,10 @@ export function adjustmentUniforms(adjust: ImageAdjustments): number[] {
 export function adjustedImageShader(
   effect: RuntimeEffect,
   image: Shader,
-  adjust: ImageAdjustments
+  adjust: ImageAdjustments,
+  size?: { width: number; height: number }
 ): Shader {
-  return effect.makeShaderWithChildren(adjustmentUniforms(adjust), [image])
+  return effect.makeShaderWithChildren(adjustmentUniforms(adjust, size), [image])
 }
 
 /**
@@ -222,7 +248,10 @@ export function bakeAdjustedImage(
     ck.FilterMode.Nearest,
     ck.MipmapMode.None
   )
-  const adjusted = adjustedImageShader(effect, source, adjust)
+  const adjusted = adjustedImageShader(effect, source, adjust, {
+    width: image.width(),
+    height: image.height()
+  })
   const paint = new ck.Paint()
   try {
     paint.setShader(adjusted)

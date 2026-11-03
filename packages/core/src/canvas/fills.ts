@@ -455,7 +455,8 @@ function setImageShader(
           'image adjustments'
         ),
         shader,
-        fill.adjustments
+        fill.adjustments,
+        { width: node.width, height: node.height }
       )
     : null
   try {

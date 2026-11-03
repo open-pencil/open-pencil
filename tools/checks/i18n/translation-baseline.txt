@@ -1270,3 +1270,6 @@ zh-cn:designSystem.duplicates
 zh-cn:designSystem.failed
 fr:photo.saturation
 fr:photo.vibrance
+fr:photo.noise
+fr:photo.vignette
+de:photo.vignette

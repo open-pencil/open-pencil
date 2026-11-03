@@ -17,5 +17,8 @@
   "whitePoint": "Точка белого",
   "midtones": "Средние тона",
   "curve": "Кривая",
-  "resetCurve": "Сбросить кривую"
+  "resetCurve": "Сбросить кривую",
+  "sharpen": "Резкость",
+  "noise": "Зерно",
+  "vignette": "Виньетка"
 }
