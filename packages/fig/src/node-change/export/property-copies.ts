@@ -1,4 +1,4 @@
-import { bindingVariant, variantSet } from '#fig/document/component/links'
+import { bindingVariant, instanceVariant, variantSet } from '#fig/document/component/links'
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
@@ -99,6 +99,10 @@ export function assignedPropertyGuid(
   propertyId: string,
   localIdCounter: { value: number }
 ): GUID {
-  const main = instance.componentId ? context.graph.getNode(instance.componentId) : undefined
-  return propertyGuidIn(context, main, propertyId, localIdCounter)
+  return propertyGuidIn(
+    context,
+    instanceVariant(context.graph, instance),
+    propertyId,
+    localIdCounter
+  )
 }

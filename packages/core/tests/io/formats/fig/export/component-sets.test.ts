@@ -5,12 +5,14 @@ import { deflateSync } from 'fflate'
 
 import {
   FigmaAPI,
+  type FigmaComponentNode,
   type FigmaComponentSetNode,
   type FigmaInstanceNode,
-  type FigmaRectangleNode,
+  type FigmaRectangleNode
 } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import type { GUID } from '@open-pencil/kiwi/fig'
 import {
   getCompiledSchema,
@@ -100,7 +102,9 @@ const open = (bytes: Uint8Array) =>
 function addInvalid(graph: SceneGraph): void {
   const figma = new FigmaAPI(graph)
   const set = expectDefined(
-    figma.currentPage.findOne((node) => node.type === 'COMPONENT_SET') as FigmaComponentSetNode | null,
+    figma.currentPage.findOne(
+      (node) => node.type === 'COMPONENT_SET'
+    ) as FigmaComponentSetNode | null,
     'set'
   )
   set.addComponentProperty('Invalid', 'VARIANT', 'Off')
@@ -239,14 +243,17 @@ describe("a set's properties as each variant's linked copy", () => {
   test('a set made in OpenPencil writes a copy per variant, which its layers and instances name', async () => {
     const graph = await dotSet()
 
-    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
-      .nodeChanges
+    const records = parseFigBuffer(
+      (await exportFigFile(graph)).slice().buffer as ArrayBuffer
+    ).nodeChanges
     const saved = setRecord(records)
     const property = definitionsOf(saved).find((definition) => definition.type === 'BOOL')
     const copies = variantRecords(records, saved).map((variant) => {
       const [copy] = (variant.componentPropDefs ?? []) as SavedCopy[]
       expect(guidOf(copy?.parentPropDefId)).toBe(guidOf(property?.id))
-      const dot = records.find((record) => guidOf(record.parentIndex?.guid) === guidOf(variant.guid))
+      const dot = records.find(
+        (record) => guidOf(record.parentIndex?.guid) === guidOf(variant.guid)
+      )
       expect(dot && boundGuid(dot, 'VISIBLE')).toBe(guidOf(copy?.id))
       return guidOf(copy?.id)
     })
@@ -262,11 +269,15 @@ describe("a set's properties as each variant's linked copy", () => {
     // instance keeps its value, and switching variant keeps it, as in Figma.
     const reopened = new FigmaAPI(await open(await exportFigFile(graph)))
     const readSet = expectDefined(
-      reopened.currentPage.findOne((node) => node.type === 'COMPONENT_SET') as FigmaComponentSetNode | null,
+      reopened.currentPage.findOne(
+        (node) => node.type === 'COMPONENT_SET'
+      ) as FigmaComponentSetNode | null,
       'set'
     )
     const readKey = expectDefined(
-      Object.keys(readSet.componentPropertyDefinitions).find((name) => name.startsWith('Show dot#')),
+      Object.keys(readSet.componentPropertyDefinitions).find((name) =>
+        name.startsWith('Show dot#')
+      ),
       'property key'
     )
     const readInstance = expectDefined(
@@ -312,7 +323,9 @@ describe("a set's properties as each variant's linked copy", () => {
       if (!keepArchive) releaseFigArchive(graph)
       const figma = new FigmaAPI(graph)
       const set = expectDefined(
-        figma.currentPage.findOne((node) => node.type === 'COMPONENT_SET') as FigmaComponentSetNode | null,
+        figma.currentPage.findOne(
+          (node) => node.type === 'COMPONENT_SET'
+        ) as FigmaComponentSetNode | null,
         'set'
       )
       set.addComponentProperty('Label', 'TEXT', 'Label')
@@ -332,6 +345,42 @@ describe("a set's properties as each variant's linked copy", () => {
           )
         ).toEqual([guidOf(label?.id)])
     }
+  })
+
+  // A copy of a nested instance links to the layer it was copied from, not to its variant, yet
+  // the value its owner sets names that variant's copy, as a placed instance's does.
+  test('a value set on a nested instance of a variant names that variant’s copy', async () => {
+    const graph = await dotSet()
+    const figma = new FigmaAPI(graph)
+    const large = expectDefined(
+      figma.currentPage.findOne((node) => node.name === 'Size=Large') as FigmaComponentNode | null,
+      'large'
+    )
+    const card = figma.createComponent()
+    card.name = 'Card'
+    card.x = 400
+    card.appendChild(large.createInstance())
+    const placed = card.createInstance()
+    placed.x = 600
+    const nested = expectDefined(placed.children[0], 'nested') as FigmaInstanceNode
+    const key = expectDefined(
+      Object.keys(nested.componentProperties).find((name) => name.startsWith('Show dot#')),
+      'property key'
+    )
+    nested.setProperties({ [key]: false })
+
+    const records = parseFigBuffer(
+      (await exportFigFile(graph)).slice().buffer as ArrayBuffer
+    ).nodeChanges
+    const largeCopy = savedCopies(records)[1]?.copies['Show dot']
+    const placedRecord = expectDefined(
+      records.find((record) => record.type === 'INSTANCE' && record.name === 'Card'),
+      'placed card'
+    )
+    const assigned = symbolOverridesOf(placedRecord).flatMap(
+      (override) => (override.componentPropAssignments ?? []) as { defID?: GUID }[]
+    )
+    expect(assigned.map((assignment) => guidOf(assignment.defID))).toEqual([largeCopy])
   })
 })
 

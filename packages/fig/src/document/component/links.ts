@@ -1,5 +1,6 @@
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 
 /**
  * A component set's boolean, text, instance swap, and slot properties are its own, but a .fig
@@ -31,7 +32,16 @@ export function bindingVariant(graph: SceneGraph, node: SceneNode): SceneNode | 
       : candidate.type === 'INSTANCE' || !!variantSet(graph, candidate)
   )
   if (holder?.type !== 'INSTANCE') return holder
-  const main = holder.componentId ? graph.getNode(holder.componentId) : undefined
+  return instanceVariant(graph, holder)
+}
+
+/**
+ * The variant an instance shows, if it shows one. An instance nested in another instance links
+ * to the layer it was copied from, so this follows those links to the component.
+ */
+export function instanceVariant(graph: SceneGraph, instance: SceneNode): SceneNode | undefined {
+  if (instance.type !== 'INSTANCE') return undefined
+  const main = instanceMainComponent(graph, instance)
   return main && variantSet(graph, main) ? main : undefined
 }
 
@@ -96,9 +106,8 @@ export function foldVariantPropertyCopies(
           return property ? { ...reference, propertyId: property } : reference
         })
     }
-    const main =
-      node.type === 'INSTANCE' && node.componentId ? graph.getNode(node.componentId) : undefined
-    const assigned = main && variantSet(graph, main) ? copies(main) : undefined
+    const main = instanceVariant(graph, node)
+    const assigned = main ? copies(main) : undefined
     if (assigned?.size)
       node.componentPropertyAssignments = Object.fromEntries(
         Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) => [

@@ -1,11 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import {
-  getOrCreateNodeGuid,
-  getOrCreatePropertyGuid,
-  parseGuidOrNull,
-  type SceneNodeToKiwiContext
-} from '../context'
+import { getOrCreateNodeGuid, parseGuidOrNull, type SceneNodeToKiwiContext } from '../context'
 import { assignedPropertyGuid } from '../property-copies'
 import { slotContentAssignment } from '../slots'
 
