@@ -25,6 +25,7 @@ import {
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, outlineNode } from './outline'
+import { drawTextEditOverlay } from './text-edit'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return
@@ -87,16 +88,16 @@ export function drawMarquee(r: SkiaRenderer, canvas: Canvas, marquee?: Rect | nu
 }
 
 export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
-  if (r._flashes.length === 0) return
+  if (r.feedback.flashes.length === 0) return
 
   const now = performance.now()
   const totalMs = FLASH_ATTACK_MS + FLASH_HOLD_MS + FLASH_RELEASE_MS
 
-  for (let i = r._flashes.length - 1; i >= 0; i--) {
-    const flash = r._flashes[i]
+  for (let i = r.feedback.flashes.length - 1; i >= 0; i--) {
+    const flash = r.feedback.flashes[i]
     const elapsed = now - flash.startTime
     if (elapsed > totalMs) {
-      r._flashes.splice(i, 1)
+      r.feedback.flashes.splice(i, 1)
       continue
     }
 
@@ -128,7 +129,7 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
         extraPad
       )
     ) {
-      r._flashes.splice(i, 1)
+      r.feedback.flashes.splice(i, 1)
     }
   }
 }
@@ -194,6 +195,6 @@ export function drawEditingText(
         r.renderText(canvas, placeholder, fill)
       )
     }
-    r.drawTextEditOverlay(canvas, node, editor, outset)
+    drawTextEditOverlay(r, canvas, node, editor, outset)
   })
 }

@@ -19,9 +19,6 @@ tests/engine/app/automation/mcp-runtime.test.ts
 tests/engine/app/automation/mcp-vite-plugin.test.ts
 tests/engine/app/automation/portless-route.test.ts
 tests/engine/app/cache.test.ts
-tests/engine/app/chat/history/continuation.test.ts
-tests/engine/app/chat/history/controller.test.ts
-tests/engine/app/chat/history/idb.test.ts
 tests/engine/app/chat/step-limit.test.ts
 tests/engine/app/chat/tool-access.test.ts
 tests/engine/app/chat/tool-state.test.ts
@@ -305,8 +302,6 @@ tests/engine/render/canvas/corner-smoothing.test.ts
 tests/engine/render/canvas/culling.test.ts
 tests/engine/render/canvas/derived-text.test.ts
 tests/engine/render/canvas/diamond-gradient.test.ts
-tests/engine/render/canvas/effect-raster-cache.test.ts
-tests/engine/render/canvas/effect-raster-integration.test.ts
 tests/engine/render/canvas/effects/edge-cases.test.ts
 tests/engine/render/canvas/effects/inner-shadow.test.ts
 tests/engine/render/canvas/effects/ordering.test.ts
@@ -334,8 +329,6 @@ tests/engine/render/canvas/painted-text.test.ts
 tests/engine/render/canvas/picture-invalidation.test.ts
 tests/engine/render/canvas/raster-export.test.ts
 tests/engine/render/canvas/renderer-lifecycle.test.ts
-tests/engine/render/canvas/retained-backing-pixels.test.ts
-tests/engine/render/canvas/retained-backing.test.ts
 tests/engine/render/canvas/schema-fill-fallback.test.ts
 tests/engine/render/canvas/surface-replacement.test.ts
 tests/engine/render/canvas/text/font-variations.test.ts

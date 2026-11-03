@@ -2,18 +2,24 @@ import { isEqual } from 'es-toolkit'
 
 import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@open-pencil/scene-graph'
 
-import { BOARD_PAGE_BACKGROUND } from '#core/constants'
+import { BOARD_PAGE_BACKGROUND, type InterfaceTheme } from '#core/constants'
 import { offeredTool } from '#core/editor/views'
-import { setPageBackgrounds } from '#core/figma-api/page-backgrounds'
+import { setDefaultPageBackground, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 
 import type { EditorContext } from './types'
 
-/** An empty document of this kind: a board starts on FigJam's light page. */
-export function createDocumentGraph(kind: DocumentKind): SceneGraph {
+/**
+ * An empty document of this kind: a design starts on Figma's page for the interface theme it is
+ * made in, a board on FigJam's light page.
+ */
+export function createDocumentGraph(kind: DocumentKind, theme: InterfaceTheme): SceneGraph {
   const graph = new SceneGraph()
   graph.documentKind = kind
-  if (kind === 'board') {
-    setPageBackgrounds(graph, graph.getPages()[0], [
+  const [page] = graph.getPages()
+  if (kind === 'design') {
+    setDefaultPageBackground(graph, page, theme)
+  } else {
+    setPageBackgrounds(graph, page, [
       {
         type: 'SOLID',
         color: BOARD_PAGE_BACKGROUND,
@@ -43,14 +49,23 @@ export function createDocumentSettingsActions(ctx: EditorContext) {
   }
 
   /**
-   * Announces libraries and a color space written to the graph from elsewhere, as a
+   * Announces libraries, a color space, and a kind written to the graph from elsewhere, as a
    * collaboration room writes its peers' settings, and draws the document again. It changes
-   * nothing itself, so a read-only document offers it, as it does `refreshVariables`.
+   * nothing in the document itself, so a read-only document offers it, as it does
+   * `refreshVariables`.
    */
   function refreshDocumentSettings() {
     ctx.emitEditorEvent('document:libraries-changed')
     ctx.emitEditorEvent('document:color-space-changed', ctx.graph.documentColorSpace)
+    if (ctx.state.documentKind !== ctx.graph.documentKind) showDocumentKind()
     ctx.requestRender()
+  }
+
+  /** Shows the graph's kind in the editor: its tools, and Move for a tool the kind does not offer. */
+  function showDocumentKind() {
+    ctx.state.documentKind = ctx.graph.documentKind
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
+    ctx.emitEditorEvent('document:kind-changed', ctx.graph.documentKind)
   }
 
   /**
@@ -60,10 +75,8 @@ export function createDocumentSettingsActions(ctx: EditorContext) {
   function setDocumentKind(kind: DocumentKind) {
     if (ctx.graph.documentKind === kind) return
     ctx.graph.documentKind = kind
-    ctx.state.documentKind = kind
-    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
-    ctx.emitEditorEvent('document:kind-changed', kind)
-    ctx.requestRepaint()
+    showDocumentKind()
+    ctx.requestRender()
   }
 
   return { updateEnabledLibraries, refreshDocumentSettings, setDocumentKind }

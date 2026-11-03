@@ -87,5 +87,7 @@
   "togglePreview": "プレビュー",
   "saveTo": "保存先を選んで保存…",
   "showVersionHistory": "バージョン履歴を表示",
-  "saveToVersionHistory": "バージョン履歴に保存…"
+  "saveToVersionHistory": "バージョン履歴に保存…",
+  "reportProblem": "問題を報告…",
+  "supportOpenPencil": "OpenPencil を支援…"
 }

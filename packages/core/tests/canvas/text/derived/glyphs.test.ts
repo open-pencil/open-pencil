@@ -47,11 +47,11 @@ test('decodes each saved glyph once, however often its text is recorded', async 
       recorder.finishRecordingAsPicture().delete()
     }
     record()
-    const decoded = [...renderer.derivedGlyphPathCache.values()]
+    const decoded = [...renderer.textCaches.derivedGlyphPaths.values()]
     expect(decoded).toHaveLength(2)
     record()
     // Recording the text again draws the outlines decoded the first time.
-    expect([...renderer.derivedGlyphPathCache.values()]).toEqual(decoded)
+    expect([...renderer.textCaches.derivedGlyphPaths.values()]).toEqual(decoded)
   } finally {
     recorder.delete()
     renderer.destroy()

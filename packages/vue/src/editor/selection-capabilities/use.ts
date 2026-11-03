@@ -39,6 +39,7 @@ export function useSelectionCapabilities() {
     canExportSelection: computed(() => hasSelection.value),
     canGroup: computed(() => selectedCount.value >= 2),
     canFrameSelection: computed(() => hasSelection.value),
+    canWrapInSection: useSceneComputed(() => editor.canWrapSelectionInSection()),
     canUngroup: computed(() => selection.isGroup.value),
     canCreateComponent: computed(() => hasSelection.value),
     canCreateComponentSet: selection.canCreateComponentSet,

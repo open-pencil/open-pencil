@@ -39,6 +39,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
+import { cloudErrorHandler, type CloudErrorReporter } from '#cloud/server/errors'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
@@ -87,6 +88,8 @@ export type CloudServices = {
   onDocumentRestored?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
+  /** Reports errors no route handled, when the deployment configures error tracking. */
+  reportError?: CloudErrorReporter
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -310,6 +313,7 @@ export function createCloudApp(services: CloudServices) {
     : new Hono()
 
   return new Hono<CloudEnvironment>()
+    .onError(cloudErrorHandler(services.reportError))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .use('*', async (context, next) => {

@@ -1,1 +1,0 @@
-- Switching back to a page keeps its layout and shows its design check right away when nothing on it changed, and the Lint panel builds only the rows it shows.

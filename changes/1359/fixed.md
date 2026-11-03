@@ -1,1 +1,0 @@
-- Ellipse arcs without stored outlines, such as ones set from design JSX or the plugin API, draw their cut edges back to the centre or across the ring instead of as a straight chord.

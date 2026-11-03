@@ -1,0 +1,1 @@
+- Scripts can export layers and pages with Figma's `node.exportAsync()` as PNG, JPG, SVG, or PDF, and read and set `node.exportSettings` with Figma's options, which `.fig` files keep.

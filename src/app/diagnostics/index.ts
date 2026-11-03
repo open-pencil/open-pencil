@@ -11,7 +11,7 @@ export {
   recordStorageFailure,
   storageOperationForJob
 } from './events'
-export { describeDiagnosticError, diagnosticErrorDetails } from './error'
+export { describeDiagnosticError, diagnosticErrorDetails, mayQuoteContent } from './error'
 export { summarizeDiagnosticEvent } from './summary'
 export type { DiagnosticEventSummary } from './summary'
 export { diagnostics } from './recorder'

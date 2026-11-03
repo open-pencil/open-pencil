@@ -8,6 +8,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
+- Errors no route handled, and failures of work a runtime owns, go through `reportCloudError` with the injected `CloudErrorReporter`; only runtimes create one, from the optional `[error_tracking]` table, so a deployment without it sends nothing (`src/runtime/posthog/errors.ts`, `tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
 
 ## Data and security
@@ -22,10 +23,11 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Database rows use `crypto.randomUUID()`; secrets that leave the server use `randomHex` from `@open-pencil/scene-graph/random`, are stored as SHA-256 digests (a single-use OAuth continuation keeps a JWE copy), and travel in URL fragments (`src/server/sharing/capabilities/service.ts`).
 - An admin list takes `search`, `filter`, `limit`, and `offset` through `listQuery` and answers with its rows, `total`, and per-filter `counts`; it declares its filters once as `ListFilters`, which count in one query and page with the same condition (`src/admin/list.ts`, `tests/integration/admin/lists.test.ts`).
 - Every HTTP body goes through `validatedJSON` with a contract schema, and every response the client reads is parsed with Valibot (`src/server/validation.ts`, `src/client/api.ts`).
+- Every route parameter goes through a `validatedParams` validator such as `documentParams`, and handlers read it from `context.req.valid('param')`; a malformed UUID then answers 404 instead of reaching a query (`open-pencil/no-unvalidated-route-params`, `tests/integration/server/api/uuid-parameters.test.ts`).
 - A revision's images live in `revision_image`; code that makes a revision from another copies them with `copyRevisionImages`, and a storage object a `workspace_image` holds is never unreferenced (`src/server/documents/images.ts`, `tests/integration/server/documents/images.test.ts`).
 - Add schema changes as a new numbered migration in `src/server/db/migrations/` registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth's tables have their own versioned migration (`016_auth_schema.ts`).
 - Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`open-pencil/no-cloud-raw-sql`).
-- Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`open-pencil/no-cloud-secret-in-query`, `open-pencil/no-cloud-secret-logging`, `open-pencil/no-cloud-dynamic-html`).
+- Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`open-pencil/no-secret-in-query`, `open-pencil/no-secret-logging`, `open-pencil/no-dynamic-html`).
 
 ## Collaboration relay
 

@@ -4,8 +4,8 @@ import { expect, test } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-async function setup(page: Page, renderer: 'retained' | 'tiled') {
-  await page.goto(`/?test&no-rulers&renderer=${renderer}&navigation-benchmark`)
+async function setup(page: Page) {
+  await page.goto('/?test&no-rulers&navigation-benchmark')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate(() => {
@@ -45,9 +45,7 @@ async function probeCreation(page: Page) {
     if (!store || !element) throw new Error('Editor unavailable')
     const renderer = store.canvasRenderers.find((r) => r.tracksSceneSettlement)
     if (!renderer) throw new Error('Scene renderer unavailable')
-    // The retained renderer keeps its backing through the gesture; tiles keep their coverage.
-    const tiled = renderer.tiledSceneEnabled
-    const backing = renderer.sceneBacking
+    // Tiles keep their coverage through the gesture: a preview must not leave holes.
     let committed = 0
     let pointerId: number | undefined
     const stop = store.onEditorEvent('node:updated', () => {
@@ -67,8 +65,8 @@ async function probeCreation(page: Page) {
           version: store.state.sceneVersion,
           committed,
           interactive: store.isInteractiveEditing(),
-          hasBacking: tiled ? renderer.tiledSceneCovered : backing !== null,
-          sameBacking: tiled ? renderer.tiledSceneCovered : renderer.sceneBacking === backing,
+          covered: renderer.tiledSceneCovered,
+          visibleTiles: renderer.tiledScene.visibleTilesRendered,
           batching: store.undo.isBatching
         }
       },
@@ -88,89 +86,86 @@ async function probeCreation(page: Page) {
 
 test.use({ viewport: { width: 1400, height: 1000 }, deviceScaleFactor: 2 })
 
-for (const renderer of ['retained', 'tiled'] as const) {
-  test(`${renderer}: Frame-tool creation previews without rebuilding the backing`, async ({
-    page
-  }) => {
-    const { canvas, x, y, clip } = await setup(page, renderer)
-    const before = await page.screenshot({ clip })
-    const probe = await probeCreation(page)
-    try {
+test('Frame-tool creation previews without rebuilding the tiles', async ({ page }) => {
+  const { canvas, x, y, clip } = await setup(page)
+  const before = await page.screenshot({ clip })
+  const probe = await probeCreation(page)
+  try {
+    await page.keyboard.press('f')
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    const started = await probe.evaluate((p) => p.sample())
+    expect(started.interactive).toBe(true)
+    expect(started.covered).toBe(true)
+    for (const delta of [60, 100, 140, 180, 220]) {
+      await page.mouse.move(x + delta, y + 140)
+      await canvas.waitForRender()
+      const held = await probe.evaluate((p) => p.sample())
+      expect(held.version).toBe(started.version)
+      expect(held.committed).toBe(started.committed)
+      expect(held.covered).toBe(true)
+      expect(held.visibleTiles).toBe(started.visibleTiles)
+    }
+    expect((await page.screenshot({ clip })).equals(before)).toBe(false)
+    await page.mouse.up()
+    await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+    const finished = await probe.evaluate((p) => p.sample())
+    expect(finished.interactive).toBe(false)
+    expect(finished.batching).toBe(false)
+    await page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+    expect(
+      await page.evaluate(
+        (id) => window.openPencil?.getStore?.().graph.getNode(id ?? '') === undefined,
+        started.id
+      )
+    ).toBe(true)
+    expect(await page.evaluate(() => window.openPencil?.getStore?.().undo.canUndo)).toBe(false)
+    await page.evaluate(() => window.openPencil?.getStore?.().redoAction())
+    const restored = await page.evaluate((id) => {
+      const node = window.openPencil?.getStore?.().graph.getNode(id ?? '')
+      return { width: node?.width, height: node?.height }
+    }, started.id)
+    expect(restored).toEqual({ width: finished.width, height: finished.height })
+    canvas.assertNoErrors()
+  } finally {
+    await page.mouse.up()
+    await probe.evaluate((p) => p.dispose())
+    await probe.dispose()
+  }
+})
+
+test('Escape and pointer cancellation discard creation without leaking a batch', async ({
+  page
+}) => {
+  const { canvas, x, y, clip } = await setup(page)
+  const before = await page.screenshot({ clip })
+  const probe = await probeCreation(page)
+  try {
+    for (const cancellation of ['escape', 'pointer'] as const) {
       await page.keyboard.press('f')
       await page.mouse.move(x, y)
       await page.mouse.down()
-      const started = await probe.evaluate((p) => p.sample())
-      expect(started.interactive).toBe(true)
-      expect(started.hasBacking).toBe(true)
-      for (const delta of [60, 100, 140, 180, 220]) {
-        await page.mouse.move(x + delta, y + 140)
-        await canvas.waitForRender()
-        const held = await probe.evaluate((p) => p.sample())
-        expect(held.version).toBe(started.version)
-        expect(held.committed).toBe(started.committed)
-        expect(held.sameBacking).toBe(true)
-      }
-      expect((await page.screenshot({ clip })).equals(before)).toBe(false)
+      await page.mouse.move(x + 220, y + 140)
+      const { id } = await probe.evaluate((p) => p.sample())
+      if (cancellation === 'escape') await page.keyboard.press('Escape')
+      else await probe.evaluate((p) => p.cancelPointer())
       await page.mouse.up()
       await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
-      const finished = await probe.evaluate((p) => p.sample())
-      expect(finished.interactive).toBe(false)
-      expect(finished.batching).toBe(false)
-      await page.evaluate(() => window.openPencil?.getStore?.().undoAction())
       expect(
         await page.evaluate(
-          (id) => window.openPencil?.getStore?.().graph.getNode(id ?? '') === undefined,
-          started.id
+          (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId ?? '') === undefined,
+          id
         )
       ).toBe(true)
-      expect(await page.evaluate(() => window.openPencil?.getStore?.().undo.canUndo)).toBe(false)
-      await page.evaluate(() => window.openPencil?.getStore?.().redoAction())
-      const restored = await page.evaluate((id) => {
-        const node = window.openPencil?.getStore?.().graph.getNode(id ?? '')
-        return { width: node?.width, height: node?.height }
-      }, started.id)
-      expect(restored).toEqual({ width: finished.width, height: finished.height })
-      canvas.assertNoErrors()
-    } finally {
-      await page.mouse.up()
-      await probe.evaluate((p) => p.dispose())
-      await probe.dispose()
+      const cancelled = await probe.evaluate((p) => p.sample())
+      expect(cancelled.interactive).toBe(false)
+      expect(cancelled.batching).toBe(false)
+      expect((await page.screenshot({ clip })).equals(before)).toBe(true)
     }
-  })
-
-  test(`${renderer}: Escape and pointer cancellation discard creation without leaking a batch`, async ({
-    page
-  }) => {
-    const { canvas, x, y, clip } = await setup(page, renderer)
-    const before = await page.screenshot({ clip })
-    const probe = await probeCreation(page)
-    try {
-      for (const cancellation of ['escape', 'pointer'] as const) {
-        await page.keyboard.press('f')
-        await page.mouse.move(x, y)
-        await page.mouse.down()
-        await page.mouse.move(x + 220, y + 140)
-        const { id } = await probe.evaluate((p) => p.sample())
-        if (cancellation === 'escape') await page.keyboard.press('Escape')
-        else await probe.evaluate((p) => p.cancelPointer())
-        await page.mouse.up()
-        await page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
-        expect(
-          await page.evaluate(
-            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId ?? '') === undefined,
-            id
-          )
-        ).toBe(true)
-        const cancelled = await probe.evaluate((p) => p.sample())
-        expect(cancelled.interactive).toBe(false)
-        expect(cancelled.batching).toBe(false)
-        expect((await page.screenshot({ clip })).equals(before)).toBe(true)
-      }
-      canvas.assertNoErrors()
-    } finally {
-      await page.mouse.up()
-      await probe.evaluate((p) => p.dispose())
-      await probe.dispose()
-    }
-  })
-}
+    canvas.assertNoErrors()
+  } finally {
+    await page.mouse.up()
+    await probe.evaluate((p) => p.dispose())
+    await probe.dispose()
+  }
+})

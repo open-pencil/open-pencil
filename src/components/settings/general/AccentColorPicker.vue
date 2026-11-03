@@ -82,6 +82,7 @@ function onCancel(): void {
     <Tip :label="messages.accentCustom">
       <ColorPicker
         :color="customColor"
+        :eyedropper="false"
         @update="onCustomColor"
         @open-change="onPickerOpenChange"
         @cancel="onCancel"

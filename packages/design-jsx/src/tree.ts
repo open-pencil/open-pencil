@@ -1,7 +1,8 @@
 import type { Effect, Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { ComponentProperty } from './component-properties'
+import type { ComponentProperty } from './components/properties'
+import type { LayerRef } from './refs'
 import type { DesignMode, DesignVariable } from './variables'
 
 export interface TreeNode {
@@ -19,14 +20,6 @@ function inlineFragments(children: (TreeNode | string)[]): (TreeNode | string)[]
   return children.flatMap((child) =>
     typeof child !== 'string' && child.type === FRAGMENT ? child.children : [child]
   )
-}
-
-/**
- * The text an element holds as children, such as a sticky note's body or a connector's label.
- * Elements among its children are not text and are skipped.
- */
-export function plainTextOf(tree: TreeNode): string {
-  return tree.children.filter((child): child is string => typeof child === 'string').join('')
 }
 
 export function isTreeNode(x: unknown): x is TreeNode {
@@ -277,9 +270,12 @@ export type ComponentProps = BaseProps
 export type InstanceProps = NodeProps & {
   component?: string
   componentId?: string
-  of?: string | ComponentProperty<string>
+  of?: string | LayerRef | ComponentProperty<string | LayerRef>
   /** Show the instance's own properties on instances of the component it is in, as Figma does. */
   exposed?: boolean
   /** Values by property ID or name, or an exposed nested instance's values by its name. */
-  properties?: Record<string, string | boolean | number | Record<string, string | boolean | number>>
+  properties?: Record<
+    string,
+    string | boolean | number | LayerRef | Record<string, string | boolean | number>
+  >
 }

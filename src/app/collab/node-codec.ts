@@ -2,7 +2,6 @@ import { isPlainObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
 import {
   deserializeInstanceOverrideState,
   serializeInstanceOverrideState
@@ -83,6 +82,7 @@ export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
   }
   if ('fillGeometry' in props) props.fillGeometry = normalizeGeometryPaths(props.fillGeometry)
   if ('strokeGeometry' in props) props.strokeGeometry = normalizeGeometryPaths(props.strokeGeometry)
+  if ('vectorNetwork' in props) props.vectorNetwork = normalizeRegionFills(props.vectorNetwork)
   props.textPicture = null
   return props
 }
@@ -118,16 +118,32 @@ function normalizeGeometryPaths(value: unknown): GeometryPath[] {
   const paths: GeometryPath[] = []
   for (const item of value) {
     if (!isPlainObject(item) || !(item.commandsBlob instanceof Uint8Array)) continue
-    const path: GeometryPath = {
+    paths.push({
       windingRule: item.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO',
       commandsBlob: new Uint8Array(item.commandsBlob)
-    }
-    const fills = normalizeFills(item.fills)
-    if (fills.length > 0) path.fills = copyFills(fills)
-    if (typeof item.fillStyleId === 'string') path.fillStyleId = item.fillStyleId
-    paths.push(path)
+    })
   }
   return paths
+}
+
+/**
+ * A remote network's region paints, keeping only the ones that are valid fills. Paints that are
+ * not a list are none of the region's own, so it draws the layer's rather than nothing.
+ */
+function normalizeRegionFills(value: unknown): unknown {
+  if (!isPlainObject(value) || !Array.isArray(value.regions)) return value
+  return {
+    ...value,
+    regions: value.regions.map((region: unknown) => {
+      if (!isPlainObject(region) || !('fills' in region)) return region
+      if (!Array.isArray(region.fills)) return omit(region, ['fills'])
+      return { ...region, fills: normalizeFills(region.fills) }
+    })
+  }
+}
+
+function normalizeFills(value: unknown): Fill[] {
+  return Array.isArray(value) ? value.filter((fill): fill is Fill => v.is(fillSchema, fill)) : []
 }
 
 function normalizeVector(value: unknown): Vector | null {
@@ -138,10 +154,6 @@ function normalizeVector(value: unknown): Vector | null {
 function normalizeMatrix(value: unknown): Matrix | null {
   const result = v.safeParse(matrixSchema, value)
   return result.success ? result.output : null
-}
-
-function normalizeFills(value: unknown): Fill[] {
-  return Array.isArray(value) ? value.filter((fill): fill is Fill => v.is(fillSchema, fill)) : []
 }
 
 function arrayOrEmpty(value: unknown): unknown[] {

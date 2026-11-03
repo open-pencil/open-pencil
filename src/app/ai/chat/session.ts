@@ -3,9 +3,11 @@ import type { ChatTransport, FinishReason, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
+import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { readPiAccount } from '@/app/ai/agents/pi/settings'
+import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
@@ -17,8 +19,10 @@ import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
+import { harnessSkills } from '@/app/ai/skills/harness'
 import { currentRun } from '@/app/ai/tools'
-import type { AgentTurnUsage } from '@/app/ai/transports/acp'
+import { ACPChatTransport, type AgentTurnUsage } from '@/app/ai/transports/acp'
+import { HarnessChatTransport } from '@/app/ai/transports/pi'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import { restAgents } from '@/app/automation/agents'
 import { diagnosticErrorDetails } from '@/app/diagnostics'
@@ -30,9 +34,11 @@ import {
 } from '@/app/diagnostics/events'
 import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
+import { buildPiMCPServers } from '@/app/integrations/mcp'
 import { trackUsage } from '@/app/telemetry'
 
 import { createTraceStore } from './history/idb'
+import type { AgentSessionLink } from './history/types'
 import { updateMessage } from './metadata'
 import { createRunRecorder } from './trace/recorder'
 
@@ -50,16 +56,23 @@ type ChatSessionOptions = {
 export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
-  onUsage?: (usage: AgentTurnUsage) => void
+  onUsage?: (usage: AgentTurnUsage) => void,
+  agentSession?: AgentSessionLink
 ) {
-  const agentId = providerID.replace('acp:', '') as ACPAgentID
-  const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
-  if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
+  const agentDef = acpAgentFor(providerID)
+  if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
 
-  const { ACPChatTransport } = await import('@/app/ai/transports/acp')
-  const { agentWorkspace } = await import('@/app/ai/agents/setup/native')
   // A folder of its own, not the home folder, whose project settings the agent would read.
-  return new ACPChatTransport({ agentDef, cwd: await agentWorkspace(), store, onUsage })
+  // Claude keeps its sessions per folder, so resuming one needs the same folder every time.
+  return new ACPChatTransport({
+    agentDef,
+    cwd: await agentWorkspace(),
+    store,
+    onUsage,
+    resume: agentSession?.resume ?? null,
+    onSession:
+      agentSession && ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id }))
+  })
 }
 
 /**
@@ -81,8 +94,7 @@ async function settleEndedReply(
 
 /** The agent or provider a chat runs on, as the composer names it. */
 function providerName(id: AIProviderID): string {
-  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
-  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
+  return acpAgentFor(id)?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
 }
 
 export function createChatSessionManager({
@@ -99,7 +111,7 @@ export function createChatSessionManager({
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
-  let harnessTransportInstance: { stop(): Promise<void> } | null = null
+  let harnessTransportInstance: Pick<HarnessChatTransport, 'stop' | 'compact'> | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
   let activeProviderError: unknown = null
   const runRecorder = createRunRecorder(createTraceStore())
@@ -150,13 +162,22 @@ export function createChatSessionManager({
     if (errors.length) throw new AggregateError(errors, 'Agent transport teardown failed')
   }
 
-  async function createActiveACPTransport(store: EditorStore, context: AIDiagnosticContext) {
+  /** `provider` is the one the chat chose, which a profile change while the agent starts keeps. */
+  async function createActiveACPTransport(
+    store: EditorStore,
+    context: AIDiagnosticContext,
+    provider: AIProviderID,
+    agentSession?: AgentSessionLink
+  ) {
     await destroyAgentTransports()
     await assertAgentReady('acp')
-    const provider = providerID.value
     // An agent's turn counts as one step of the model it names, or of the agent itself.
-    const transport = await createACPTransport(provider, store, ({ model, ...tokens }) =>
-      recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context)
+    const transport = await createACPTransport(
+      provider,
+      store,
+      ({ model, ...tokens }) =>
+        recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
+      agentSession
     )
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -167,13 +188,6 @@ export function createChatSessionManager({
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
     await assertAgentReady('pi')
-    const [{ HarnessChatTransport }, { buildPiMCPServers }, { readPiAccount }, { harnessSkills }] =
-      await Promise.all([
-        import('@/app/ai/transports/pi'),
-        import('@/app/integrations/mcp'),
-        import('@/app/ai/agents/pi/settings'),
-        import('@/app/ai/skills/harness')
-      ])
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
@@ -240,7 +254,8 @@ export function createChatSessionManager({
 
   async function ensureChat(
     initialMessages?: UIMessage[],
-    sessionId = crypto.randomUUID()
+    sessionId = crypto.randomUUID(),
+    agentSession?: AgentSessionLink
   ): Promise<Chat<UIMessage> | null> {
     await credentialsReady
     if (!isConfigured.value) return null
@@ -260,7 +275,12 @@ export function createChatSessionManager({
       let agentKind: 'acp' | 'harness' | null = null
       if (isACPProvider.value) {
         agentKind = 'acp'
-        transport = await createActiveACPTransport(store, diagnosticContext)
+        transport = await createActiveACPTransport(
+          store,
+          diagnosticContext,
+          chatProviderID,
+          agentSession
+        )
       } else if (isHarnessProvider.value) {
         agentKind = 'harness'
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
@@ -332,5 +352,18 @@ export function createChatSessionManager({
     markTransportDirty()
   }
 
-  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport, failure, clearFailure }
+  /** Asks the chat's agent to compact its own context; false when it has none to compact yet. */
+  async function compactAgent(instructions?: string): Promise<boolean> {
+    return (await harnessTransportInstance?.compact(instructions)) ?? false
+  }
+
+  return {
+    ensureChat,
+    resetChat,
+    markTransportDirty,
+    setOverrideTransport,
+    compactAgent,
+    failure,
+    clearFailure
+  }
 }

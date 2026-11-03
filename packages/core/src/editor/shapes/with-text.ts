@@ -12,12 +12,13 @@ import {
   type FigJamLineStyle,
   type FigJamTextSize
 } from '@open-pencil/scene-graph/figjam'
-import { shapeWithTextFrameFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { shapeWithTextKindFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
+import { textStyleChanges } from '#core/text/character-style'
 
 const FILL_OPACITY: Record<FigJamFillMode, number> = { fill: 1, transparent: 0.5, none: 0 }
 
@@ -60,10 +61,7 @@ export function createShapeWithTextActions(ctx: EditorContext, nodes: NodeAction
       'Change shape',
       changing.map((shape) => shape.id),
       (shape) => {
-        nodes.updateNode(shape.id, {
-          shapeWithTextType: kind,
-          ...shapeWithTextFrameFields(kind, shape.width, shape.height)
-        })
+        nodes.updateNode(shape.id, shapeWithTextKindFields(shape, kind))
       }
     )
   }
@@ -119,7 +117,11 @@ export function createShapeWithTextActions(ctx: EditorContext, nodes: NodeAction
     editShapes('Change shape text size', ids, (shape) => {
       const label = shapeWithTextLabel(ctx.graph, shape)
       if (label) {
-        nodes.updateNode(label.id, figJamTextSizeFields(size, figJamTypeface(label) ?? 'simple'))
+        // Characters sized on their own take the size too, as text layers do.
+        nodes.updateNode(
+          label.id,
+          textStyleChanges(label, figJamTextSizeFields(size, figJamTypeface(label) ?? 'simple'))
+        )
       }
     })
   }

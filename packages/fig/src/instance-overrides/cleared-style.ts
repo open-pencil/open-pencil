@@ -1,5 +1,7 @@
-import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
-import { isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import { isPlainObject } from 'es-toolkit'
+
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 
 import type { STYLE_REFERENCE_FIELDS } from '../document/style-dependencies'
 import { OVERRIDE_FIELDS } from './fields'
@@ -34,8 +36,11 @@ export const STYLE_GOVERNED_FIELDS = {
 
 type StyleReferenceField = keyof typeof STYLE_GOVERNED_FIELDS
 
-function isCleared(reference: StyleReference | undefined): boolean {
-  return reference?.guid !== undefined && isUnsetGuid(reference.guid)
+/** Whether a style reference is the unset GUID an instance claims to clear a style with. */
+export function isClearedStyle(reference: unknown): boolean {
+  if (!isPlainObject(reference) || !isPlainObject(reference.guid)) return false
+  const { sessionID, localID } = reference.guid
+  return sessionID === UNSET_GUID.sessionID && localID === UNSET_GUID.localID
 }
 
 /** The value the source record gives a field, or Figma's default when the record leaves it out. */
@@ -58,7 +63,7 @@ export function completeClearedStyleClaim(
   source: NodeChange | undefined
 ): void {
   for (const reference of Object.keys(STYLE_GOVERNED_FIELDS) as StyleReferenceField[]) {
-    if (!isCleared(claim[reference])) continue
+    if (!isClearedStyle(claim[reference])) continue
     const governed: readonly string[] = STYLE_GOVERNED_FIELDS[reference]
     for (const field of governed) {
       if (field in claim) continue

@@ -1,0 +1,1 @@
+- The Linux desktop app no longer exits at startup on Wayland with the NVIDIA driver when its WebKitGTK is older than 2.54.2.

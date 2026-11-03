@@ -116,7 +116,7 @@ function drawValuePill(
   y: number,
   color: Color
 ) {
-  const font = r.valueFont ?? r.labelFont
+  const font = r.chromeFonts.value ?? r.chromeFonts.label
   if (!font) return
   const glyphs = font.getGlyphIDs(text)
   const advance = cachedGlyphWidth(r, font, text)

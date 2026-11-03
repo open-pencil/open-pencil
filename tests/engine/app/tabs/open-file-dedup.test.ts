@@ -220,6 +220,7 @@ describe('openFileInNewTab deduplication', () => {
     resetRecoveryStoreForTests(createMemoryRecoveryStore())
     await getRecoveryStore().write({
       id: 'broken',
+      sessionId: 'crashed-session',
       documentName: 'Broken',
       figBytes: new Uint8Array([1])
     })

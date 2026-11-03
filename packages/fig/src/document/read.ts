@@ -23,6 +23,7 @@ import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
 import { inheritComponentPropertyDefinitions, inheritFromAncestors } from './property-inheritance'
+import { vectorStyleTable } from './style-dependencies'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
 export function createDocumentReader(source: readonly NodeChange[], pageIds?: ReadonlySet<string>) {
@@ -94,6 +95,20 @@ function assetIds(records: readonly NodeChange[]): Map<string, string> {
   return assets
 }
 
+/**
+ * Gives a record the fields of the styles it names, as do its overrides and its vector's regions,
+ * whose style table entry may name a style without its paints.
+ */
+function resolveStyleFields(
+  styles: Parameters<typeof applyStyleRefsToFields>[0],
+  node: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  applyStyleRefsToFields(styles, node, assets)
+  for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
+  for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
+}
+
 function isResource(record: NodeChange): boolean {
   return record.type === 'VARIABLE' || record.type === 'VARIABLE_SET'
 }
@@ -108,11 +123,7 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const index = createSourceIndex(records)
   inheritComponentPropertyDefinitions(records, index.sources)
   const assets = assetIds(records)
-  const resolveStyles = (node: NodeChange): void => {
-    applyStyleRefsToFields(index.sources, node, assets)
-    for (const override of symbolOverridesOf(node)) resolveStyles(override)
-  }
-  for (const node of records) resolveStyles(node)
+  for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
   return {
     records,
@@ -172,11 +183,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       )
         ancestors.push(whole(parent))
       inheritFromAncestors(record, ancestors)
-      const resolveStyles = (node: NodeChange): void => {
-        applyStyleRefsToFields(styles, node, assets)
-        for (const override of symbolOverridesOf(node)) resolveStyles(override)
-      }
-      resolveStyles(record)
+      resolveStyleFields(styles, record, assets)
       return record
     } finally {
       preparing.delete(header)

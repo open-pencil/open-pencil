@@ -87,5 +87,7 @@
   "togglePreview": "Vorschau",
   "saveTo": "Speichern in…",
   "showVersionHistory": "Versionsverlauf anzeigen",
-  "saveToVersionHistory": "Im Versionsverlauf speichern…"
+  "saveToVersionHistory": "Im Versionsverlauf speichern…",
+  "reportProblem": "Problem melden…",
+  "supportOpenPencil": "OpenPencil unterstützen…"
 }

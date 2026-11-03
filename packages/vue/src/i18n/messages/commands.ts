@@ -10,6 +10,7 @@ export const commandMessageDefaults = {
   group: 'Group',
   groupSelection: 'Group selection',
   frameSelection: 'Frame selection',
+  wrapInSection: 'Wrap in new section',
   ungroup: 'Ungroup',
   createComponent: 'Create component',
   createSlot: 'Create slot',

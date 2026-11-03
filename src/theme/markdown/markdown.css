@@ -30,7 +30,7 @@
 }
 
 [data-stream-markdown='alert'] [data-stream-markdown='link-url'] {
-  @apply bg-input p-2 text-[11px] break-all text-surface;
+  @apply bg-input p-2 text-2xs break-all text-surface;
 }
 
 /* Menus such as a table's copy formats, sized like the app's menus. The renderer sets the item
@@ -101,7 +101,7 @@
 
   [data-stream-markdown='error-component'],
   [data-stream-markdown='image-caption'] {
-    @apply text-[11px];
+    @apply text-2xs;
   }
 
   /* A task item shows its checkbox in place of the bullet. */
@@ -125,10 +125,10 @@
 
   [data-stream-markdown='th'],
   [data-stream-markdown='td'] {
-    @apply px-2 py-1 text-[11px] leading-4;
+    @apply px-2 py-1 text-2xs leading-4;
   }
 
-  @apply text-[11px] leading-4;
+  @apply text-2xs leading-4;
 
   [data-stream-markdown='blockquote'],
   [data-stream-markdown='code-block'] {
@@ -136,7 +136,7 @@
   }
 
   [data-stream-markdown='code-block-header'] {
-    @apply h-6 px-1.5 py-0 text-[9px] leading-3;
+    @apply h-6 px-1.5 py-0 text-4xs leading-3;
   }
 
   [data-stream-markdown='code-block-header'] [data-stream-markdown='actions'] {
@@ -153,15 +153,15 @@
   }
 
   [data-stream-markdown='code-line'] {
-    @apply min-h-4 text-[11px] leading-4;
+    @apply min-h-4 text-2xs leading-4;
 
     &::before {
-      @apply mr-2 text-[9px];
+      @apply mr-2 text-4xs;
     }
   }
 
   [data-stream-markdown='code-block'] [data-stream-markdown='code'] {
-    @apply p-1.5 text-[11px] leading-4;
+    @apply p-1.5 text-2xs leading-4;
   }
 
   [data-stream-markdown='heading-1'] {
@@ -176,11 +176,11 @@
   [data-stream-markdown='heading-4'],
   [data-stream-markdown='heading-5'],
   [data-stream-markdown='heading-6'] {
-    @apply mt-2 mb-1 text-[11px];
+    @apply mt-2 mb-1 text-2xs;
   }
 
   [data-stream-markdown='language-name'] {
-    @apply text-[9px] leading-3;
+    @apply text-4xs leading-3;
   }
 
   [data-stream-markdown='language-title'] {

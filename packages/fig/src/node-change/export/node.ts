@@ -3,14 +3,15 @@ import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/s
 import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
   LayoutGrid,
   SceneGraph,
-  SceneNode
+  SceneNode,
+  VariantPropSpec
 } from '@open-pencil/scene-graph'
+import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
@@ -24,7 +25,7 @@ import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
-import { snapshotInstanceGeometry } from '../instance/geometry'
+import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -40,6 +41,8 @@ import {
 } from './assignments/values'
 import {
   applyColorVariableBinding,
+  bindKiwiEffects,
+  createEffects,
   createFillPaints,
   createStrokePaints,
   getOrCreateNodeGuid,
@@ -53,6 +56,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
+import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
@@ -102,21 +106,6 @@ type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
 
 function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiBooleanOperation {
   return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
-}
-
-/** Resolve effect variable asset refs when the Kiwi effect schema requires GUID aliases. */
-export function buildAssetRefToVarGuidMap(
-  graph: SceneGraph,
-  varIdToGuid: Map<string, GUID>
-): Map<string, GUID> {
-  const map = new Map<string, GUID>()
-  for (const [varId, variable] of graph.variables) {
-    if (!variable.key) continue
-    const guid = varIdToGuid.get(varId) ?? stringToGuid(varId)
-    map.set(variable.key, guid)
-    if (variable.version) map.set(`${variable.key}@${variable.version}`, guid)
-  }
-  return map
 }
 
 function componentPropertyTypeForKiwi(type: string) {
@@ -170,17 +159,6 @@ interface FigmaPayloadVariableMap {
 
 interface FigmaPayloadVariableMapEntry {
   variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
-}
-
-interface ColorVarCarrier {
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-  }
 }
 
 function isFigmaPayloadVariableMap(value: unknown): value is FigmaPayloadVariableMap {
@@ -406,13 +384,9 @@ function applyRawFigmaNodeFields(
       })
       continue
     }
-    if (
-      key === 'effects' &&
-      node.source.id &&
-      context.assetRefToVarGuid &&
-      context.assetRefToVarGuid.size > 0
-    ) {
-      nc[key] = convertColorVarAssetRefs(materialized[key], context.assetRefToVarGuid)
+    // Imported effects keep what OpenPencil does not model, and take the node's bindings.
+    if (key === 'effects' && node.source.id && materialized.effects) {
+      nc.effects = bindKiwiEffects(context, node, materialized.effects, true)
       continue
     }
     if (key === 'derivedTextData' && node.source.id) {
@@ -427,28 +401,6 @@ function applyRawFigmaNodeFields(
     if (key in nc) continue
     nc[key] = materialized[key]
   }
-}
-
-/** Convert asset refs only for payloads whose Kiwi schema rejects asset-ref aliases. */
-function convertColorVarAssetRefs<T>(values: T, assetRefToVarGuid: Map<string, GUID>): T {
-  if (!Array.isArray(values)) return values
-  const converted = values.map((value: ColorVarCarrier) => {
-    const colorVar = value.colorVar
-    const alias = colorVar?.value?.alias
-    if (!colorVar || !alias || alias.guid || !alias.assetRef?.key) return value
-    const assetRef = alias.assetRef
-    const lookupKey = assetRef.version ? `${assetRef.key}@${assetRef.version}` : assetRef.key
-    const guid = assetRefToVarGuid.get(lookupKey) ?? assetRefToVarGuid.get(assetRef.key)
-    if (!guid) return value
-    return {
-      ...value,
-      colorVar: {
-        ...colorVar,
-        value: { ...colorVar.value, alias: { guid } }
-      }
-    }
-  })
-  return converted.some((value, index) => value !== values[index]) ? (converted as T) : values
 }
 
 function applyInstancePayload(
@@ -481,6 +433,13 @@ function applyInstancePayload(
         overridableNodeFields(context, target)
       )
     )
+    const ownPath = instanceExportAddress(
+      context.graph,
+      node,
+      node,
+      instanceGuidResolver(context, localIdCounter)
+    )
+    if (ownPath) writeOwnInstanceName(context.graph, node, ownPath, symbolOverrides)
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (!Number.isFinite(node.componentScale) || node.componentScale <= 0)
       throw new Error('Invalid instance uniform scale')
@@ -597,6 +556,44 @@ function mergeParameterBindings(nc: KiwiNodeChange): void {
   }
 }
 
+/**
+ * What makes Figma read a frame as a component set (desktop 126 reads one without the flag as a
+ * plain frame of loose components), and the order it lists each variant property's values in,
+ * which it takes from here rather than from the properties' preferred values.
+ */
+function applyStateGroup(context: SceneNodeToKiwiContext, set: SceneNode, nc: KiwiNodeChange) {
+  nc.isStateGroup = true
+  const orders = set.componentPropertyDefinitions.flatMap((definition) =>
+    definition.type === 'VARIANT'
+      ? [{ property: definition.name, values: variantOptions(context.graph, set, definition) }]
+      : []
+  )
+  if (shouldSerializeRawBackedField(set, 'stateGroupPropertyValueOrders', orders.length > 0))
+    nc.stateGroupPropertyValueOrders = orders
+}
+
+/**
+ * A variant's values as Figma saves them, by its set's variant properties: the values the
+ * variant has now, which renaming it or its set's properties changes. Specs it was read with
+ * that still say the same are kept in their order, as Figma saved them.
+ */
+function variantSpecs(context: SceneNodeToKiwiContext, node: SceneNode): VariantPropSpec[] {
+  const set = node.parentId ? context.graph.getNode(node.parentId) : undefined
+  if (node.type !== 'COMPONENT' || set?.type !== 'COMPONENT_SET') return node.variantPropSpecs
+  const current = set.componentPropertyDefinitions.flatMap((definition) =>
+    definition.type === 'VARIANT' && Object.hasOwn(node.componentPropertyValues, definition.name)
+      ? [{ propDefId: definition.id, value: node.componentPropertyValues[definition.name] }]
+      : []
+  )
+  const stored = node.variantPropSpecs
+  const unchanged =
+    stored.length === current.length &&
+    current.every((spec) =>
+      stored.some((saved) => saved.propDefId === spec.propDefId && saved.value === spec.value)
+    )
+  return unchanged ? stored : current
+}
+
 function applyParameterReferences(nc: KiwiNodeChange, refs: ExportedPropertyReference[]): void {
   if (!refs.length) return
   const existing = nc.parameterConsumptionMap as { entries?: ExportedParameterEntry[] } | undefined
@@ -701,7 +698,7 @@ function applyComponentMetadata(
     nc.componentPropAssignments = componentPropAssignments
   }
 
-  const variantPropSpecs = node.variantPropSpecs.map((spec) => ({
+  const variantPropSpecs = variantSpecs(context, node).map((spec) => ({
     propDefId: getOrCreatePropertyGuid(context, spec.propDefId, localIdCounter),
     value: spec.value
   }))
@@ -829,16 +826,7 @@ function applyNodeVisualProps(
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
   if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
+    nc.effects = createEffects(context, node)
   }
 
   if (node.type === 'TEXT') serializeText(context, node, nc)
@@ -849,9 +837,9 @@ function applyNodeVisualProps(
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
-    nc.strokeJoin = node.strokeJoin
-  }
+  // Figma writes the join on every layer, MITER too: a vector's points without a join of their own
+  // take it, and without it they have none, which Figma's own network writes reject.
+  nc.strokeJoin = node.strokeJoin
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
@@ -989,15 +977,19 @@ export function sceneNodeToKiwiWithContext(
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET')
+  if (node.type === 'COMPONENT_SET') {
     node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
+    applyStateGroup(context, node, nc)
+  }
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)

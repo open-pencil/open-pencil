@@ -7,9 +7,12 @@ import {
   type InstanceOverrideState
 } from '@open-pencil/scene-graph/instances/overrides'
 
+import { isNodeFontLoaded } from '#core/canvas/text'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { getTextMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
 import type { TextEditorState } from '#core/text/editor'
 import { hasGlyphOutlines } from '#core/text/font/glyphs'
+import { prepareTextFonts } from '#core/text/prepare'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'
 import { fitEmptyLabelToPlaceholder } from './connectors/label-edit'
@@ -122,12 +125,65 @@ export function createTextActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const { width, height } = node
-    ctx.graph.updateNode(nodeId, {
-      ...textAutoResizeChanges(node, changes),
-      ...changes,
-      ...pathTextEditChanges(node, changes)
+    measuringEditedText(nodeId, () => {
+      ctx.graph.updateNode(nodeId, {
+        ...textAutoResizeChanges(node, changes),
+        ...changes,
+        ...pathTextEditChanges(node, changes)
+      })
+      if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
     })
-    if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
+    if ('text' in changes || 'styleRuns' in changes) prepareEditedText(nodeId)
+  }
+
+  /**
+   * Runs `fn` with the text being typed measured in the fonts it is drawn with now, as its edit
+   * draws it, so its size and its glyphs agree while it waits for fonts it newly needs. Other text
+   * is measured as layout measures it.
+   */
+  function measuringEditedText(nodeId: string, fn: () => void) {
+    const renderer = ctx.getRenderer()
+    const measure = getTextMeasurer()
+    if (!renderer || !measure) return fn()
+    withTextMeasurer(
+      (node, maxWidth) =>
+        node.id === nodeId ? renderer.measureTextAsDrawn(node, maxWidth) : measure(node, maxWidth),
+      fn
+    )
+  }
+
+  /**
+   * Prepares the fonts the typed text newly needs, such as a script's fallback, through the one
+   * gate, and once they are in, redraws the edit and sizes the text in them.
+   */
+  function prepareEditedText(nodeId: string) {
+    const renderer = ctx.getRenderer()
+    const node = ctx.graph.getNode(nodeId)
+    if (!renderer?.fontsLoaded || !node || isNodeFontLoaded(renderer, node)) return
+    void sizeInPreparedFonts(nodeId, node)
+  }
+
+  async function sizeInPreparedFonts(nodeId: string, node: SceneNode) {
+    const graph = ctx.graph
+    await prepareTextFonts([node], { loadFont: ctx.loadFont })
+    // A replaced document has its own text, whatever its ids.
+    if (ctx.graph !== graph) return
+    const te = ctx.getTextEditor()
+    const current = ctx.graph.getNode(nodeId)
+    if (!current) return
+    if (te?.isActive && te.nodeId === nodeId) te.rebuildParagraph(current)
+    measuringEditedText(nodeId, () => {
+      const sized = textAutoResizeChanges(current, { text: current.text })
+      const { width, height } = current
+      ctx.graph.updateNode(nodeId, sized)
+      if (current.width !== width || current.height !== height) ctx.runLayoutForNode(nodeId)
+    })
+    ctx.requestRender()
+  }
+
+  /** A text draws from its live layout while edited, so it is drawn afresh as the edit starts and ends. */
+  function redrawText(nodeId: string) {
+    for (const renderer of ctx.getRenderers()) renderer.redrawNode(nodeId, ctx.graph)
   }
 
   function startTextEditing(nodeId: string) {
@@ -139,6 +195,7 @@ export function createTextActions(ctx: EditorContext) {
     if (!isPathTextEditable(node)) return
     activeSession = createTextEditSession(node)
     ctx.state.editingTextId = nodeId
+    redrawText(nodeId)
     restoreEmptyLabel = fitEmptyLabelToPlaceholder(ctx, node)
     if (te) {
       te.setRenderer(ctx.getRenderer())
@@ -224,11 +281,16 @@ export function createTextActions(ctx: EditorContext) {
   function commitTextEdit() {
     const te = ctx.getTextEditor()
     const restore = restoreEmptyLabel
+    const edited = ctx.state.editingTextId
     restoreEmptyLabel = null
     if (!te?.isActive) {
       ctx.state.editingTextId = null
       activeSession = null
       restore?.()
+      if (edited) {
+        redrawText(edited)
+        ctx.requestRender()
+      }
       return
     }
     const textState = te.state
@@ -237,6 +299,7 @@ export function createTextActions(ctx: EditorContext) {
     ctx.state.editingTextId = null
     activeSession = null
     restore?.()
+    if (edited) redrawText(edited)
     ctx.requestRender()
   }
 

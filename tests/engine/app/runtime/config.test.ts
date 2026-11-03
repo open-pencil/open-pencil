@@ -6,7 +6,7 @@ describe('app runtime configuration', () => {
   test('parses supported development and presentation flags once', () => {
     expect(
       parseAppRuntimeConfig(
-        '?test&navigation-benchmark&recent-files&no-chrome&no-rulers&renderer=tiled&collabTransport=test&collabRelay=ws%3A%2F%2Flocalhost%3A4000'
+        '?test&navigation-benchmark&recent-files&no-chrome&no-rulers&collabTransport=test&collabRelay=ws%3A%2F%2Flocalhost%3A4000'
       )
     ).toEqual({
       test: true,
@@ -14,21 +14,9 @@ describe('app runtime configuration', () => {
       recentFiles: true,
       showChrome: false,
       showRulers: false,
-      sceneRenderer: 'tiled',
-      sceneRendererOverride: true,
       collaborationTransport: 'test',
       collaborationRelayURL: 'ws://localhost:4000'
     })
-  })
-
-  test('uses a persisted renderer preference when no URL override is present', () => {
-    expect(parseAppRuntimeConfig('', 'tiled').sceneRenderer).toBe('tiled')
-    expect(parseAppRuntimeConfig('?renderer=unknown', 'tiled').sceneRenderer).toBe('tiled')
-  })
-
-  test('valid renderer URL overrides take precedence over preferences', () => {
-    expect(parseAppRuntimeConfig('?renderer=retained', 'tiled').sceneRenderer).toBe('retained')
-    expect(parseAppRuntimeConfig('?renderer=tiled', 'retained').sceneRenderer).toBe('tiled')
   })
 
   test('uses production-safe defaults for absent or unknown values', () => {
@@ -38,8 +26,6 @@ describe('app runtime configuration', () => {
       recentFiles: false,
       showChrome: true,
       showRulers: true,
-      sceneRenderer: 'tiled',
-      sceneRendererOverride: false,
       collaborationTransport: 'default',
       collaborationRelayURL: null
     })

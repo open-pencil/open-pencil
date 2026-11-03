@@ -141,8 +141,8 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
 export async function openFileFromPath(path: string) {
   if (!isTauri()) return
   const file = await readTauriDesignFile(path)
-  await openFileInNewTab(file, undefined, path)
-  rememberRecentFile(path)
+  const store = await openFileInNewTab(file, undefined, path)
+  rememberRecentFile(path, store.state.documentKind)
 }
 
 /**

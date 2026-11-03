@@ -160,108 +160,6 @@ const noComponentRootSiblingFolder = {
   }
 } satisfies RuleDefinition
 
-const noUselessPassThroughWrappers = {
-  meta: {
-    docs: {
-      description:
-        'Disallow functions that only return another function call with the same arguments'
-    }
-  },
-  create(context) {
-    function paramNames(params: readonly TSESTree.Parameter[]): string[] | null {
-      const names: string[] = []
-      for (const param of params ?? []) {
-        if (param.type !== 'Identifier') return null
-        names.push(param.name)
-      }
-      return names
-    }
-
-    function returnedCall(
-      body: TSESTree.BlockStatement | TSESTree.Expression
-    ): TSESTree.CallExpression | null {
-      if (!body) return null
-      if (body.type === 'CallExpression') return body
-      if (body.type !== 'BlockStatement') return null
-      const statements = body.body?.filter((statement) => statement.type !== 'EmptyStatement') ?? []
-      if (statements.length !== 1) return null
-      const statement = statements[0]
-      if (statement.type !== 'ReturnStatement') return null
-      return statement.argument?.type === 'CallExpression' ? statement.argument : null
-    }
-
-    function calleeName(callee: TSESTree.CallExpression['callee']): string | null {
-      return callee?.type === 'Identifier' ? callee.name : null
-    }
-
-    function isSameArgumentForwarding(
-      args: readonly TSESTree.CallExpressionArgument[],
-      params: readonly string[]
-    ): boolean {
-      if (args?.length !== params.length) return false
-      return args.every((arg, index) => arg.type === 'Identifier' && arg.name === params[index])
-    }
-
-    function check(
-      node: TSESTree.Node,
-      name: string,
-      params: readonly TSESTree.Parameter[],
-      body: TSESTree.BlockStatement | TSESTree.Expression
-    ) {
-      const names = paramNames(params)
-      if (!names) return
-      const call = returnedCall(body)
-      if (!call || !isSameArgumentForwarding(call.arguments, names)) return
-      const target = calleeName(call.callee)
-      if (!target || target === name) return
-      context.report({
-        node,
-        message: `Remove pass-through wrapper '${name}'. Call '${target}' directly or give the wrapper real domain logic.`
-      })
-    }
-
-    return {
-      FunctionDeclaration(node) {
-        if (!node.id?.name) return
-        check(node, node.id.name, node.params, node.body)
-      },
-      VariableDeclarator(node) {
-        if (node.id?.type !== 'Identifier') return
-        const init = node.init
-        if (
-          !init ||
-          (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')
-        )
-          return
-        check(node, node.id.name, init.params, init.body)
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noFunctionAliasImports = {
-  meta: {
-    docs: {
-      description: 'Disallow import aliases ending in Fn for facade delegation'
-    }
-  },
-  create(context) {
-    return {
-      ImportSpecifier(node) {
-        if (!node.imported || !node.local) return
-        if (node.imported.type !== 'Identifier' || node.local.type !== 'Identifier') return
-        if (node.imported.name === node.local.name) return
-        if (!node.local.name.endsWith('Fn')) return
-        context.report({
-          node,
-          message:
-            'Avoid aliasing imports as *Fn. Use a namespace import or give the exported helper a clearer domain name.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
 const noDirectOpenPencilBrowserStore = {
   meta: {
     docs: {
@@ -338,37 +236,13 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   }
 })
 
-const noSiblingDomainPrefixedFiles = createProgramFilenameRule({
-  description: 'Disallow files that repeat an existing sibling domain folder in the filename',
-  check(file) {
-    const match = file.match(/^(.*\/)([^/]+?)(?:\.test|\.spec)?\.(?:ts|tsx|vue)$/)
-    if (!match) return false
-
-    const [, dir, name] = match
-    const parts = name.split('-')
-    if (parts.length < 2) return false
-
-    const prefix = parts[0]
-    // Suffixes describe control kinds (page-list, color-input), not necessarily ownership.
-    let domain: string | null = null
-    if (existsSync(`${dir}${prefix}`)) domain = prefix
-    if (!domain) return false
-
-    const filename = file.slice(dir.length)
-    return `Move '${filename}' under the existing '${domain}/' folder instead of repeating the domain in the filename.`
-  }
-})
-
 export {
   vueComponentFilePascalCase,
   componentNamespaceCasing,
   nonComponentSourceDirectoriesKebabCase,
   noComponentRootSiblingFolder,
-  noUselessPassThroughWrappers,
-  noFunctionAliasImports,
   noDirectOpenPencilBrowserStore,
   noDirectOpenPencilWindowInternals,
   noBunGlobalsInCli,
-  noTopLevelPrefixedTestFiles,
-  noSiblingDomainPrefixedFiles
+  noTopLevelPrefixedTestFiles
 }

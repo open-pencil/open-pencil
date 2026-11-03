@@ -9,7 +9,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { buildParagraph } from '#core/canvas/text'
-import { withFigExportRuntime } from '#core/canvas/text/shape'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, fontManager } from '#core/text/font/manager'
 import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-font/resolver'

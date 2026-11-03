@@ -16,8 +16,12 @@ describe('browser locale matching', () => {
     expect(resolveBrowserLocale(['ZH-cn', 'en-US'])).toBe('zh-CN')
   })
 
-  test('does not substitute a different regional locale', () => {
+  test('reads a language in the script the locale is written in', () => {
+    expect(resolveBrowserLocale(['zh'])).toBe('zh-CN')
+    expect(resolveBrowserLocale(['zh-SG'])).toBe('zh-CN')
+    expect(resolveBrowserLocale(['zh-Hans-HK'])).toBe('zh-CN')
     expect(resolveBrowserLocale(['zh-TW', 'fr-CA'])).toBe('fr')
+    expect(resolveBrowserLocale(['zh-Hant'])).toBe('en')
   })
 
   test('falls back to English when no locale matches', () => {

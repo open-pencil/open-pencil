@@ -48,10 +48,18 @@ export interface SVGExportContext {
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
   fontAlias?: SVGFontAlias
+  /**
+   * When layers are written with their names as ids: how many have taken each name, and every id
+   * given out so far, defs included, so no two elements share one.
+   */
+  layerIds?: { names: Map<string, number>; taken: Set<string> }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  ctx.layerIds?.taken.add(id)
+  return id
 }
 
 export function formatColor(
@@ -296,6 +304,18 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   }
 
   return null
+}
+
+/** The paints SVG can draw, each with its fill attribute: a stroke goes on the last of them. */
+export function drawnFills(
+  fills: readonly Fill[],
+  node: SceneNode,
+  ctx: SVGExportContext
+): Array<{ fill: Fill; paint: string }> {
+  return fills.flatMap((fill) => {
+    const paint = resolveFill(fill, node, ctx)
+    return paint ? [{ fill, paint }] : []
+  })
 }
 
 export const SVG_STROKE_CAP: Record<string, string> = {

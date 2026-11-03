@@ -1,0 +1,3 @@
+- Dashes a script sets with `dashPattern` now draw.
+- New stars have Figma's inner radius.
+- `figma.flatten()` and boolean operations in `open-pencil eval` and headless CLI tools make real vectors and fit their bounds, instead of a placeholder box.

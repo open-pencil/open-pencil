@@ -1,0 +1,65 @@
+{
+  "name": "@open-pencil/oxlint-plugin",
+  "version": "0.17.0-beta.1",
+  "description": "OpenPencil's code conventions as Oxlint rules: validated JSON, Valibot schema placement, no broad casts, no silent catches, no secrets in logs or URLs, and more.",
+  "keywords": [
+    "lint",
+    "oxlint",
+    "oxlint-plugin"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/oxlint-plugin"
+  },
+  "files": [
+    "dist",
+    "src",
+    "recommended.json",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "imports": {
+    "#oxlint-plugin/*": "./src/*.ts",
+    "#oxlint-plugin-tests/*": "./tests/*.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./recommended": {
+      "types": "./dist/recommended.d.ts",
+      "bun": "./src/recommended.ts",
+      "import": "./dist/recommended.js",
+      "default": "./dist/recommended.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run test && bun run build",
+    "prepack": "bun run build",
+    "test": "bun test tests",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "1.57.0",
+    "es-toolkit": "^1.52.0"
+  },
+  "peerDependencies": {
+    "oxlint": ">=1.90.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -2,9 +2,12 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
+import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { fontManager } from '#core/text/font/manager'
 
@@ -15,13 +18,13 @@ import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
-import { renderShapeThroughEffectCaches } from './renderer/effect-raster-cache'
+import { drawShapeThroughNodePicture } from './renderer/node-pictures'
 import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
-import { isLayerContainer } from './shadows/silhouette'
 import {
   configureStrokePaint,
   drawDashedRRectWithSolidCorners,
+  drawRRectStrokeWithAlign,
   drawStyledRRectStroke,
   forVisibleStrokes
 } from './strokes'
@@ -153,6 +156,8 @@ function renderMaskNodeContent(
   absY: number,
   frame: Mat3 | null
 ): void {
+  // A mask whose fonts are still prepared masks nothing in yet, so what it masks stays hidden too.
+  if (fontManager.isNodeBlocked(graph, node.id)) return
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
@@ -162,7 +167,7 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = (blur?.radius ?? 0) * 2
+    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
@@ -263,7 +268,7 @@ export function renderNodeSelf(
     node.internalOnly ||
     !node.visible ||
     node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
+    fontManager.isNodeBlocked(graph, nodeId)
   ) {
     return
   }
@@ -315,8 +320,13 @@ function nodeIsolationLayerBounds(
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
  * node-edit mode, or left to a live island while the canvas previews.
  */
-function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
-  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
+  if (
+    node.internalOnly ||
+    !node.visible ||
+    node.isMask ||
+    fontManager.isNodeBlocked(graph, node.id)
+  )
     return false
   return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
 }
@@ -337,16 +347,16 @@ export function renderNode(
   frame: Mat3 | null = null
 ): void {
   const found = graph.getNode(nodeId)
-  if (!found || !drawsNode(found, overlays)) return
+  if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
 
-  r._nodeCount++
+  r.drawCounts.nodes++
 
   const absX = parentAbsX + node.x
   const absY = parentAbsY + node.y
 
   if (isCulled(r, node, absX, absY, frame, overlays.rotationPreview)) {
-    r._culledCount++
+    r.drawCounts.culled++
     return
   }
 
@@ -372,7 +382,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
     r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = layerBlur.radius * 2
+    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
     canvas.saveLayer(
       r.effectLayerPaint,
       viewportLayerBounds(r, world(), blurPadding) ??
@@ -443,9 +453,9 @@ export function renderSection(
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     configureStrokePaint(r, node, stroke, color)
 
-    if (node.independentStrokeWeights) r.drawIndividualSideStrokes(canvas, node, stroke)
+    if (node.independentStrokeWeights) drawIndividualSideStrokes(r, canvas, node, stroke)
     else if (!drawFigmaDashes(r, canvas, node, stroke)) {
-      r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
+      drawRRectStrokeWithAlign(r, canvas, rrect, node, stroke)
     }
   })
 }
@@ -501,7 +511,9 @@ export function renderShape(
     return
   }
 
-  renderShapeThroughEffectCaches(r, canvas, node, graph, effects)
+  drawShapeThroughNodePicture(r, canvas, node, (target) =>
+    r.renderShapeUncached(target, node, graph)
+  )
 }
 
 /** Draws a shape with its own effects: Figma puts inner shadows over fills and under strokes. */

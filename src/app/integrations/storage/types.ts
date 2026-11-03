@@ -1,3 +1,5 @@
+import type { DocumentKind } from '@open-pencil/scene-graph'
+
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 
 export type StorageProviderID = string
@@ -30,6 +32,8 @@ export type StorageDocumentMetadata = {
 
 export type StorageDocument = StorageDocumentMetadata & {
   id: string
+  /** A design or a board, when the provider lists it; providers that cannot say leave it out. */
+  kind?: DocumentKind
   thumbnailURL?: string | null
   metadataAuthoritative?: boolean
   /**

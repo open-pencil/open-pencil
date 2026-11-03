@@ -4,6 +4,6 @@ export default {
     root: 'flex shrink-0 items-center gap-1',
     person: 'size-2 rounded-full',
     agent: 'size-3',
-    overflow: 'text-[9px] leading-none text-muted'
+    overflow: 'text-4xs leading-none text-muted'
   }
 } as const

@@ -9,6 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
+  'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
   'getChildren',
@@ -56,7 +57,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   // Selection and hover
   'clearSelection',
   'enterContainer',
-  'exitContainer',
+  'enterContainerOf',
+  'exitContainers',
   'select',
   'selectAll',
   'selectAtPoint',

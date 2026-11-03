@@ -22,7 +22,7 @@ Vergleich der Funktionen von Figma Design mit dem aktuellen Stand von OpenPencil
 | Hilfslinien | ✅ | Aus den Linealen auf die Arbeitsfläche oder in Rahmen ziehen; auswählen, verschieben, duplizieren, löschen und rückgängig machen; in `.fig` gespeichert |
 | Befehlspalette | ✅ | <kbd>⌘</kbd><kbd>K</kbd> öffnet eine durchsuchbare Liste der Editor- und App-Aktionen |
 | Kontextmenü | ✅ | Zwischenablage, Reihenfolge, Gruppen, Komponenten, Sichtbarkeit, Sperre und Seitenwechsel |
-| Tastenkürzel | 🟡 | Werkzeuge, Bearbeitung, boolesche Operationen, Abflachen, Masken, Komponenten, Ausrichtung, Reihenfolge, Navigation und Textformatierung; kein Skalieren (<kbd>K</kbd>), Pfeil, Pipette (<kbd>I</kbd>) oder Zoomwerkzeug |
+| Tastenkürzel | 🟡 | Werkzeuge, Bearbeitung, boolesche Operationen, Abflachen, Masken, Komponenten, Ausrichtung, Reihenfolge, Navigation und Textformatierung; kein Skalieren (<kbd>K</kbd>), Pfeil oder Zoomwerkzeug |
 | Suchen und Ersetzen | 🔲 | Keine dokumentweite Textsuche |
 | Ebenenkonturen | 🔲 | Keine Drahtgitteransicht |
 | Eigene Miniatur | 🔲 | Gespeicherte Dateien zeigen ihre erste Seite, wie Figma ohne Cover-Seite; keine eigene Auswahl |
@@ -68,7 +68,7 @@ Direkte Textbearbeitung, CanvasKit Paragraph, Systemschriften, Schriftwahl, Grö
 
 ## Farben, Verläufe und Bilder
 
-Volltonfarben, lineare, radiale, Winkel- und Diamantverläufe, Bildfüllungen, Mischmodi, Auswahlfarben für Mehrfachauswahlen sowie Hex-, RGB-, HSL-, HSB- und OkHCL-Felder werden unterstützt. Teilweise umgesetzt sind Musterfüllungen (aus Figma importierte werden dargestellt, lassen sich aber nicht erstellen), das Hinzufügen von Bildern (Ablegen oder Einfügen, kein Video) und Zuschnitt (Modus Crop, keine Griffe auf der Arbeitsfläche). Bildkorrekturen und Pipette fehlen.
+Volltonfarben, lineare, radiale, Winkel- und Diamantverläufe, Bildfüllungen, Mischmodi, Auswahlfarben für Mehrfachauswahlen sowie Hex-, RGB-, HSL-, HSB- und OkHCL-Felder werden unterstützt. Teilweise umgesetzt sind Musterfüllungen (aus Figma importierte werden dargestellt, lassen sich aber nicht erstellen), das Hinzufügen von Bildern (Ablegen oder Einfügen, kein Video) und Zuschnitt (Modus Crop, keine Griffe auf der Arbeitsfläche). Bildkorrekturen fehlen.
 
 ## Effekte und Eigenschaften
 

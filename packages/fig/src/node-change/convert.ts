@@ -43,8 +43,7 @@ import {
 import {
   alignGeometryWindingRules,
   resolveGeometryPaths,
-  resolveVectorNetwork,
-  resolveVectorStyleOverrideFills
+  resolveVectorNetwork
 } from './vector/geometry'
 import { decodeVectorNetworkBlob, textPathStartSegment, type StyleOverride } from './vector/network'
 
@@ -680,7 +679,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const strokeCap = getVectorStrokeCap(nc)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
   const fillGeometry = alignGeometryWindingRules(
-    resolveGeometryPaths(nc.fillGeometry, blobs, resolveVectorStyleOverrideFills(nc)),
+    resolveGeometryPaths(nc.fillGeometry, blobs),
     vectorNetwork
   )
   return {
@@ -915,12 +914,17 @@ function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefiniti
   for (const def of defs) {
     if (!def.id || !def.name) continue
     const propType = COMPONENT_PROP_TYPE_MAP[def.type ?? ''] ?? 'VARIANT'
+    // A set saved without its values keeps their order apart, which Figma reads them in.
+    const valueOrder = nc.stateGroupPropertyValueOrders?.find(
+      (order) => order.property === def.name
+    )?.values
     const definition: ComponentPropertyDefinition = {
       id: guidToString(def.id),
       name: def.name,
       type: propType,
       defaultValue: componentPropValueToString(def.initialValue),
-      variantOptions: propType === 'VARIANT' ? def.preferredValues?.stringValues : undefined,
+      variantOptions:
+        propType === 'VARIANT' ? (def.preferredValues?.stringValues ?? valueOrder) : undefined,
       preferredValues:
         propType === 'INSTANCE_SWAP' || propType === 'SLOT'
           ? def.preferredValues?.instanceSwapValues

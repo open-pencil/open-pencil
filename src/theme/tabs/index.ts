@@ -5,7 +5,7 @@ export default {
     trigger:
       'flex shrink-0 cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-default disabled:opacity-50 data-[state=active]:bg-hover data-[state=active]:text-surface',
     // A group's name above its tabs, styled as the side list's group titles (list/side-list.ts).
-    heading: 'px-2 pt-3 pb-1 text-[11px] font-semibold text-muted select-none first:pt-1',
+    heading: 'px-2 pt-3 pb-1 text-2xs font-semibold text-muted select-none first:pt-1',
     icon: 'flex size-3.5 shrink-0 items-center justify-center',
     label: 'min-w-0',
     trailing: 'ml-auto shrink-0',

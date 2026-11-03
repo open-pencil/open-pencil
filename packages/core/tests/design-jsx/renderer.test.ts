@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderTree } from '@open-pencil/core/design-jsx'
+import { renderRoots, renderTree } from '@open-pencil/core/design-jsx'
 import type { TreeNode } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -49,5 +49,28 @@ describe('renderTree sizing', () => {
     expect(text?.width).not.toBe(100)
     expect(text?.height).toBeLessThan(100)
     expect(text?.width).toBeGreaterThan(text?.height ?? 0)
+  })
+})
+
+describe('renderRoots positions', () => {
+  test('place each root at its own entry, and leave a coordinate the entry omits', async () => {
+    const graph = new SceneGraph()
+    const frame = (name: string, x?: number): TreeNode => ({
+      type: 'frame',
+      props: { name, w: 100, h: 50, ...(x !== undefined && { x }) },
+      children: []
+    })
+    const tree: TreeNode = { type: '', props: {}, children: [frame('A'), frame('B', 300)] }
+
+    const [a, b] = await renderRoots(graph, tree, {
+      x: 500,
+      positions: [
+        { x: 10, y: 20 },
+        { y: 40 }
+      ]
+    })
+
+    expect(graph.getNode(a.id)).toMatchObject({ x: 10, y: 20 })
+    expect(graph.getNode(b.id)).toMatchObject({ x: 300, y: 40 })
   })
 })

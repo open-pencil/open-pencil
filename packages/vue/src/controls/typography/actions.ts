@@ -10,7 +10,7 @@ import type {
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
 import { faceLoadKey, faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import {
   createTextListActions,
@@ -51,17 +51,17 @@ function sharedFormatting(nodes: readonly SceneNode[]) {
   return result
 }
 
-/** The text a selected layer's typography edits: its own, or a shape with text's label. */
+/** The text a selected layer's typography edits: its own, or the text a sticky note or shape is named by. */
 function typographyTargets(editor: Editor): SceneNode[] {
   return selectedNodesAsShown(editor).flatMap((n) => {
     if (n.type === 'TEXT') return [n]
-    const label = shapeWithTextLabel(editor.graph, n)
-    return label ? [label] : []
+    const text = generatedFrameText(editor.graph, n)
+    return text ? [text] : []
   })
 }
 
 /**
- * Typography of the selected text layers and shapes' labels. With other layers selected too,
+ * Typography of the selected text layers and the text of sticky notes and shapes. With other layers selected too,
  * Figma shows the text's typography and edits only the text, so `nodes` holds just the text.
  */
 export function createTypographyState(editor: Editor) {
@@ -146,7 +146,10 @@ export function createTypographyActions({
   // A dragged field's previews belong to the step its commit records, so they are not edits of
   // their own that keep the document unsaved after that step is undone.
   const batch = useUndoBatch(editor.undo, () => editor.beginInteractiveEdit())
-  type Preview = { value: SceneNode[keyof SceneNode]; textStyleId: string | null }
+  /** A layer's own values before a preview, with the ranges a preview over the whole text clears. */
+  type Preview = Pick<SceneNode, 'textStyleId' | 'styleRuns'> & {
+    value: SceneNode[keyof SceneNode]
+  }
   let previewKey: keyof SceneNode | undefined
   const beforePreview = new Map<string, Preview>()
 
@@ -158,7 +161,8 @@ export function createTypographyActions({
   ) {
     if (targets.length === 0) return
     editor.undo.runBatch(label, () => {
-      for (const target of targets) editor.updateNodeWithUndo(target.id, changes(target), label)
+      for (const target of targets)
+        editor.updateNodeWithUndo(target.id, editor.layerChanges(target.id, changes(target)), label)
     })
   }
 
@@ -403,9 +407,13 @@ export function createTypographyActions({
       beforePreview.clear()
     }
     for (const target of nodes.value) {
-      if (!beforePreview.has(target.id))
-        beforePreview.set(target.id, { value: target[key], textStyleId: target.textStyleId })
-      editor.updateNode(target.id, { [key]: value })
+      // The panel shows a text's characters' style, so what it replaces is read from the layer.
+      const own = editor.graph.getNode(target.id) ?? target
+      if (!beforePreview.has(target.id)) {
+        const { textStyleId, styleRuns } = own
+        beforePreview.set(target.id, { value: own[key], textStyleId, styleRuns })
+      }
+      editor.updateNode(target.id, editor.layerChanges(target.id, { [key]: value }))
     }
   }
 
@@ -416,11 +424,17 @@ export function createTypographyActions({
     editor.undo.runBatch(`Change ${String(key)}`, () => {
       for (const target of targets) {
         const snapshot = snapshots.get(target.id)
+        // While text is edited, the editor records the selected characters' ranges itself.
+        const ranges =
+          snapshot && editor.state.editingTextId !== target.id
+            ? { styleRuns: snapshot.styleRuns }
+            : {}
         editor.commitNodeUpdate(
           target.id,
           {
             [key]: snapshot ? snapshot.value : previous,
-            ...(snapshot ? { textStyleId: snapshot.textStyleId } : {})
+            ...(snapshot ? { textStyleId: snapshot.textStyleId } : {}),
+            ...ranges
           },
           `Change ${String(key)}`
         )
@@ -434,8 +448,8 @@ export function createTypographyActions({
   /** Puts back what a cancelled field previewed, as `cancelAxis` does for a font axis. */
   function cancelProp(key: keyof SceneNode) {
     if (previewKey === key) {
-      for (const [id, before] of beforePreview)
-        editor.updateNode(id, { [key]: before.value, textStyleId: before.textStyleId })
+      for (const [id, { value, textStyleId, styleRuns }] of beforePreview)
+        editor.updateNode(id, { [key]: value, textStyleId, styleRuns })
     }
     previewKey = undefined
     beforePreview.clear()

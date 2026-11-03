@@ -149,11 +149,11 @@ function selectedBounds(graph: SceneGraph, selectedIds: Set<string>): Rect | nul
 }
 
 function textWidth(r: SkiaRenderer, text: string): number {
-  return r.sizeFont ? cachedGlyphWidth(r, r.sizeFont, text) : 0
+  return r.chromeFonts.size ? cachedGlyphWidth(r, r.chromeFonts.size, text) : 0
 }
 
 function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: number) {
-  const font = r.sizeFont
+  const font = r.chromeFonts.size
   if (!font) return
   const width = textWidth(r, text) + MEASUREMENT_PILL_PADDING_X * 2
   const rect = r.ck.RRectXY(

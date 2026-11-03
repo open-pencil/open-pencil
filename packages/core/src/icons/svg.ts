@@ -389,7 +389,9 @@ export function scalePathInfos(
       transformedPath = transformedPath.transform(path.transform)
     }
     if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
-    const scaledD = transformedPath.round(2).toString()
+    // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
+    // arc's own end can put it on its start, and a degenerate arc draws nothing.
+    const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
     const fill = normalizeSVGPaint(path.fill)
     const stroke = normalizeSVGPaint(path.stroke)
     return {

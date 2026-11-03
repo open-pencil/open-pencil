@@ -10,15 +10,9 @@ async function clickCanvas(page: Page, x: number, y: number) {
 }
 
 async function dblclickCanvas(page: Page, x: number, y: number) {
-  const canvas = page.getByTestId('canvas-element')
-  const box = await canvas.boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('Canvas has no bounding box')
-  await canvas.dispatchEvent('dblclick', {
-    clientX: box.x + x,
-    clientY: box.y + y,
-    bubbles: true,
-    cancelable: true
-  })
+  await page.mouse.dblclick(box.x + x, box.y + y)
 }
 
 async function setupAutoLayoutFrame(page: Page) {
@@ -81,7 +75,7 @@ async function frameGap(page: Page, frameId: string) {
 }
 
 test('double-clicking an auto-layout padding handle opens a scrub editor', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -108,7 +102,7 @@ test('double-clicking an auto-layout padding handle opens a scrub editor', async
 })
 
 test('clicking the canvas closes the auto-layout padding editor', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -127,7 +121,7 @@ test('clicking the canvas closes the auto-layout padding editor', async ({ page 
 })
 
 test('auto-layout padding editor follows canvas pan while open', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -158,7 +152,7 @@ test('auto-layout padding editor follows canvas pan while open', async ({ page }
 test('double-clicking an auto-layout gap edits it like a padding, as in Figma', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -185,7 +179,7 @@ test('double-clicking an auto-layout gap edits it like a padding, as in Figma', 
 test('selecting another layer closes the value editor and keeps the value it had', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -210,7 +204,7 @@ test('selecting another layer closes the value editor and keeps the value it had
 })
 
 test('deleting the frame closes its value editor', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()

@@ -1,18 +1,16 @@
+import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalone'
 import { uniqBy } from 'es-toolkit/array'
 
 import type {
   CharacterStyleOverride,
-  Fill,
   HyperlinkTarget,
   SceneGraph,
   SceneNode,
   TextBindableField,
   TextCase,
   TextDecoration,
-  TextDecorationStyle,
-  TextLength
+  TextDecorationStyle
 } from '@open-pencil/scene-graph'
-import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   assertProxyEditable,
@@ -29,11 +27,9 @@ import {
   type FigmaFontName,
   type FigmaFontNameInput
 } from '#core/figma-api/fonts/names'
-import {
-  readVariationSettings,
-  type FigmaVariationSettings
-} from '#core/figma-api/fonts/variations'
-import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
+import { readVariationSettings } from '#core/figma-api/fonts/variations'
+import type { FigmaPaint } from '#core/figma-api/paints'
+import { fontNameSchema } from '#core/figma-api/schema'
 import {
   getRangeIndentation,
   getRangeListOptions,
@@ -47,12 +43,12 @@ import {
   assertTextRange,
   getRangeTextStyle,
   getStyledTextSegments,
-  rangeHasUnderline,
   type FigmaDecorationColor,
   type FigmaTextLength,
   type StyledTextSegment,
   type TextSegmentField
 } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 import {
   characterStyles,
@@ -62,93 +58,18 @@ import {
 } from '#core/text/character-style'
 import { textStyleName } from '#core/text/font/names'
 
+import { rangeDecorationPatch, type DecorationField } from './decoration'
 import { hyperlinkTarget } from './hyperlink'
-import { invalid, received } from './messages'
 import { installTextReferenceMethods } from './references'
-
-const DECORATIONS = new Set<TextDecoration>(['NONE', 'UNDERLINE', 'STRIKETHROUGH'])
-const DECORATION_STYLES = new Set<TextDecorationStyle>(['SOLID', 'DOTTED', 'WAVY'])
-const LENGTH_UNITS = new Set(['PIXELS', 'PERCENT'])
-const TEXT_CASES = new Set<TextCase>(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
-/** Text cases Figma takes that OpenPencil cannot draw yet. */
-const SMALL_CAPS = new Set(['SMALL_CAPS', 'SMALL_CAPS_FORCED'])
-const PAINT_TYPES = new Set([
-  'SOLID',
-  'SHADER',
-  'GRADIENT_LINEAR',
-  'GRADIENT_RADIAL',
-  'GRADIENT_ANGULAR',
-  'GRADIENT_DIAMOND',
-  'IMAGE',
-  'VIDEO'
-])
-const SOLID_PAINT_KEYS = new Set([
-  'type',
-  'color',
-  'opacity',
-  'visible',
-  'blendMode',
-  'boundVariables'
-])
-
-function numberProblem(value: unknown, at = ''): string | null {
-  if (value === undefined) return `Required value missing${at}`
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return `Expected number, received ${received(value)}${at}`
-  }
-  return null
-}
-
-/** A length in pixels for a font size: a percent is of the size of the characters it styles. */
-type SizedLength<T> = (fontSize: number) => T
-
-function lengthFor(value: { unit: 'PIXELS' | 'PERCENT'; value: number }): TextLength {
-  return { unit: value.unit, value: value.value }
-}
-
-/** `length` in pixels at the size of the characters it styles, for fields kept in pixels. */
-function sized(length: TextLength | null): SizedLength<number | null> {
-  return (fontSize) => length && textLengthPixels(length, fontSize)
-}
-
-/** A letter spacing Figma takes: pixels or percent, never automatic. */
-function letterSpacingLength(method: string, value: unknown): TextLength {
-  const length = value as Partial<FigmaTextLength & { value: number }> | null
-  if (!length || typeof length !== 'object') {
-    throw invalid(method, `Expected object, received ${received(value)}`)
-  }
-  if (!LENGTH_UNITS.has(String(length.unit))) {
-    throw invalid(
-      method,
-      `Invalid enum value. Expected 'PIXELS' | 'PERCENT', received '${String(length.unit)}' at .unit`
-    )
-  }
-  const problem = numberProblem(length.value, ' at .value')
-  if (problem) throw invalid(method, problem)
-  return lengthFor(length as { unit: 'PIXELS' | 'PERCENT'; value: number })
-}
-
-/** A length that may also be automatic, as line heights and decoration sizes are. */
-function lengthOrAuto(method: string, value: unknown): TextLength | null {
-  const length = value as Partial<FigmaTextLength & { value: number }> | null
-  if (!length || typeof length !== 'object') {
-    throw invalid(method, `Expected object, received ${received(value)}`)
-  }
-  if (length.unit === 'AUTO') return null
-  if (!LENGTH_UNITS.has(String(length.unit))) {
-    throw invalid(
-      method,
-      `Invalid discriminator value. Expected 'PIXELS' | 'PERCENT' | 'AUTO' at .unit`
-    )
-  }
-  const problem = numberProblem(length.value, ' at .value')
-  if (problem) throw invalid(method, problem)
-  return lengthFor(length as { unit: 'PIXELS' | 'PERCENT'; value: number })
-}
-
-function stringProblem(value: unknown, at: string): string | null {
-  return typeof value === 'string' ? null : `Expected string, received ${received(value)} at ${at}`
-}
+import {
+  DECORATIONS,
+  enumValue,
+  fillsFromPaints,
+  fontSizeValue,
+  lengthOrAuto,
+  letterSpacingLength,
+  textCaseValue
+} from './values'
 
 /** The font Figma reads for the character at `index`, as a font name left out reads from. */
 /** The font of the character at `index`, and the axes it sets itself. */
@@ -176,143 +97,11 @@ export function fontNameStyle(
   method: string,
   node: SceneNode,
   start: number,
-  value: unknown
+  value: unknown,
+  property = 'value'
 ): CharacterStyleOverride {
-  if (!value || typeof value !== 'object') {
-    throw invalid(method, `Expected object, received ${received(value)}`)
-  }
-  const fontName = value as Partial<Record<keyof FigmaFontName, unknown>>
-  const problem =
-    stringProblem(fontName.family, '.family') ??
-    (fontName.style === undefined ? null : stringProblem(fontName.style, '.style')) ??
-    variationSettingsProblem(fontName.variationSettings)
-  if (problem) throw invalid(method, problem)
-  return fontNameInputStyle(
-    method,
-    {
-      family: fontName.family as string,
-      style: fontName.style as string | undefined,
-      variationSettings: fontName.variationSettings as FigmaVariationSettings | undefined
-    },
-    currentFont(node, start)
-  )
-}
-
-/** Variation settings Figma takes: numbers by axis tag. */
-function variationSettingsProblem(value: unknown): string | null {
-  if (value === undefined) return null
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return `Expected object, received ${received(value)} at .variationSettings`
-  }
-  for (const [tag, setting] of Object.entries(value)) {
-    const problem = numberProblem(setting, ` at .variationSettings.${tag}`)
-    if (problem) return problem
-  }
-  return null
-}
-
-/** A number from 0 to 1, as Figma takes colour channels and opacity. */
-function unitProblem(value: unknown, at: string): string | null {
-  const problem = numberProblem(value, ` at ${at}`)
-  if (problem) return problem
-  if ((value as number) < 0) return `Number must be greater than or equal to 0 at ${at}`
-  if ((value as number) > 1) return `Number must be less than or equal to 1 at ${at}`
-  return null
-}
-
-/** A solid paint's colour and opacity as Figma checks them; a colour's alpha may be left out. */
-function solidPaintProblem(paint: { color?: unknown; opacity?: unknown }, at: string) {
-  const { color, opacity } = paint
-  if (color === undefined) return `Required value missing at ${at}.color`
-  if (!color || typeof color !== 'object') {
-    return `Expected object, received ${received(color)} at ${at}.color`
-  }
-  const channels = color as Partial<Record<'r' | 'g' | 'b' | 'a', unknown>>
-  for (const channel of ['r', 'g', 'b', 'a'] as const) {
-    if (channel === 'a' && channels.a === undefined) continue
-    const problem = unitProblem(channels[channel], `${at}.color.${channel}`)
-    if (problem) return problem
-  }
-  return opacity === undefined ? null : unitProblem(opacity, `${at}.opacity`)
-}
-
-function paintProblem(paint: unknown, index: number): string | null {
-  if (!paint || typeof paint !== 'object') {
-    return `Expected object, received ${received(paint)} at index ${index}`
-  }
-  const { type } = paint as { type?: unknown }
-  if (!PAINT_TYPES.has(type as string)) {
-    return `Invalid discriminator value. Expected ${[...PAINT_TYPES].map((name) => `'${name}'`).join(' | ')} at [${index}].type`
-  }
-  return type === 'SOLID' ? solidPaintProblem(paint, `[${index}]`) : null
-}
-
-function fillsFromPaints(method: string, value: unknown): CharacterStyleOverride['fills'] {
-  if (!Array.isArray(value)) throw invalid(method, `Expected array, received ${received(value)}`)
-  for (const [index, paint] of value.entries()) {
-    const problem = paintProblem(paint, index)
-    if (problem) throw invalid(method, problem)
-  }
-  return parseFigmaPaints(value, method, 'value')
-}
-
-/**
- * A decoration colour Figma takes: `AUTO`, or a solid paint. A paint matching but for keys it
- * does not know reports only those; any other is reported against both choices.
- */
-function decorationColorFills(method: string, value: unknown): Fill[] {
-  const color = (value as { value?: unknown } | null)?.value
-  if (color === 'AUTO') return []
-  const issues: string[] = []
-  if (!color || typeof color !== 'object') {
-    issues.push(`Expected object, received ${received(color)} at .value`)
-  } else {
-    const paint = color as Partial<Record<'type' | 'color', unknown>>
-    if (paint.type !== 'SOLID')
-      issues.push('Invalid literal value, expected "SOLID" at .value.type')
-    if (paint.color === undefined) issues.push('Required value missing at .value.color')
-    else if (!paint.color || typeof paint.color !== 'object') {
-      issues.push(`Expected object, received ${received(paint.color)} at .value.color`)
-    }
-    const unknown = Object.keys(paint).filter((key) => !SOLID_PAINT_KEYS.has(key))
-    if (unknown.length > 0) {
-      const keys = unknown.map((key) => `'${key}'`).join(', ')
-      if (issues.length === 0) {
-        throw invalid(
-          method,
-          `Unrecognized key(s) in object: ${keys} at .value`,
-          'textDecorationColor'
-        )
-      }
-      issues.push(`Unrecognized key(s) in object: ${keys} at .value`)
-    }
-  }
-  if (issues.length === 0) {
-    // A solid paint whose channels are out of range fails on them alone.
-    const problem = solidPaintProblem(color as { color?: unknown; opacity?: unknown }, '.value')
-    if (problem) throw invalid(method, problem, 'textDecorationColor')
-    return parseFigmaPaints([color], method, 'textDecorationColor')
-  }
-  const paintIssues =
-    issues.length === 1
-      ? `  ${issues[0]}`
-      : `  Multiple issues:\n${issues.map((issue) => `    ${issue}`).join('\n')}`
-  throw invalid(
-    method,
-    `Expected one of the following, but none matched:\n${paintIssues}\n` +
-      '  Invalid literal value, expected "AUTO" at .value',
-    'textDecorationColor'
-  )
-}
-
-function enumValue<T extends string>(method: string, value: unknown, allowed: ReadonlySet<T>): T {
-  if (!(allowed as ReadonlySet<unknown>).has(value)) {
-    throw invalid(
-      method,
-      `Invalid enum value. Expected ${[...allowed].map((name) => `'${name}'`).join(' | ')}, received '${String(value)}'`
-    )
-  }
-  return value as T
+  const fontName = parseFigma(fontNameSchema, value, method, property)
+  return fontNameInputStyle(method, fontName, currentFont(node, start))
 }
 
 type RangeSetter = (
@@ -324,30 +113,17 @@ type RangeSetter = (
   graph: SceneGraph
 ) => TextStylePatch
 
-/** Decoration styles only apply to underlined text; Figma rejects a range with none. */
-function underlineStyle(
-  name: string,
-  patch: (method: string, value: unknown) => TextStylePatch
-): RangeSetter {
-  return (method, node, start, end, value) => {
-    const style = patch(method, value)
-    if (!rangeHasUnderline(node, start, end)) {
-      throw new Error(
-        `in ${method}: Cannot set text decoration ${name} on a non-underlined text range`
-      )
-    }
-    return style
-  }
+/** A `setRangeTextDecoration*` method's setter. */
+function underlineStyle(field: DecorationField): RangeSetter {
+  return (method, node, start, end, value) =>
+    rangeDecorationPatch(field, method, node, start, end, value)
 }
 
 /** Range setters by method, each returning the style it gives the range. */
 const RANGE_SETTERS: Record<string, RangeSetter> = {
-  setRangeFontSize: (method, _node, _start, _end, value) => {
-    const problem = numberProblem(value)
-    if (problem) throw invalid(method, problem)
-    if ((value as number) < 1) throw invalid(method, 'Number must be greater than or equal to 1')
-    return { fontSize: value as number }
-  },
+  setRangeFontSize: (method, _node, _start, _end, value) => ({
+    fontSize: fontSizeValue(method, value)
+  }),
   setRangeFontName: (method, node, start, _end, value) => {
     const style = fontNameStyle(method, node, start, value)
     assertFontLoaded(method, node, style)
@@ -366,39 +142,16 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
   setRangeTextDecoration: (method, _node, _start, _end, value) => ({
     textDecoration: enumValue(method, value, DECORATIONS)
   }),
-  setRangeTextDecorationStyle: underlineStyle('style', (method, value) => ({
-    textDecorationStyle: enumValue(method, value, DECORATION_STYLES)
-  })),
-  setRangeTextDecorationOffset: underlineStyle('offset', (method, value) => {
-    const length = sized(lengthOrAuto(method, value))
-    return (fontSize) => ({ textUnderlineOffset: length(fontSize) })
+  setRangeTextDecorationStyle: underlineStyle('textDecorationStyle'),
+  setRangeTextDecorationOffset: underlineStyle('textDecorationOffset'),
+  setRangeTextDecorationThickness: underlineStyle('textDecorationThickness'),
+  setRangeTextDecorationColor: underlineStyle('textDecorationColor'),
+  setRangeTextDecorationSkipInk: underlineStyle('textDecorationSkipInk'),
+  setRangeTextCase: (method, _node, _start, _end, value) => ({
+    textCase: textCaseValue(method, value, 'textCase')
   }),
-  setRangeTextDecorationThickness: underlineStyle('thickness', (method, value) => {
-    const length = sized(lengthOrAuto(method, value))
-    return (fontSize) => ({ textDecorationThickness: length(fontSize) })
-  }),
-  setRangeTextDecorationColor: underlineStyle('color', (method, value) => ({
-    textDecorationFills: decorationColorFills(method, value)
-  })),
-  setRangeTextDecorationSkipInk: underlineStyle('skip ink', (method, value) => {
-    if (typeof value !== 'boolean')
-      throw invalid(method, `Expected boolean, received ${received(value)}`)
-    return { textDecorationSkipInk: value }
-  }),
-  setRangeTextCase: (method, _node, _start, _end, value) => {
-    if (SMALL_CAPS.has(value as string)) {
-      throw new Error(`in ${method}: OpenPencil does not support the ${String(value)} text case`)
-    }
-    if (!TEXT_CASES.has(value as TextCase)) {
-      throw invalid(
-        method,
-        `Invalid enum value. Expected ${[...TEXT_CASES, ...SMALL_CAPS].map((name) => `'${name}'`).join(' | ')}, received '${String(value)}'`
-      )
-    }
-    return { textCase: value as TextCase }
-  },
   setRangeHyperlink: (method, _node, _start, _end, value, graph) => ({
-    hyperlink: hyperlinkTarget(method, value, graph)
+    hyperlink: hyperlinkTarget(method, value, graph, 'hyperlink')
   })
 }
 

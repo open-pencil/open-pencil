@@ -1,6 +1,8 @@
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import { isNodeArrayMixed } from '#vue/controls/node-props/helpers'
 import { useNodeProps } from '#vue/controls/node-props/use'
@@ -36,7 +38,20 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
     const stroked = selectedNodes.value.filter((node) => node.strokes.length > 0)
     return stroked.length > 0 ? stroked : selectedNodes.value
   })
-  const isMixed = computed(() => isNodeArrayMixed(shownNodes.value, propKey))
+  // A vector whose regions draw different fills reads mixed on its own, as in Figma.
+  const isMixed = computed(
+    () =>
+      isNodeArrayMixed(shownNodes.value, propKey) ||
+      (propKey === 'fills' &&
+        shownNodes.value.some(
+          (node) =>
+            node.type === 'VECTOR' &&
+            regionFillsDiffer(
+              node.vectorNetwork,
+              resolvedPaintBindings(editor.graph, node).fills ?? node.fills
+            )
+        ))
+  )
   const items = computed<PropertyListItemFor<K>[]>(() => {
     if (isMixed.value) return []
     const shown = shownNodes.value.at(0)
@@ -54,18 +69,20 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
     return own.length === 0 && !isMixed.value ? items.value : own
   }
 
+  /** A text's fills colour every character, as a layer's own fills do in Figma. */
   function updateArray(node: SceneNode, value: PropertyListItemFor<K>[], label: string) {
-    editor.updateNodeWithUndo(node.id, { [propKey]: value }, label)
+    editor.updateNodeWithUndo(node.id, editor.layerChanges(node.id, { [propKey]: value }), label)
   }
 
   function add(item: PropertyListItemFor<K>) {
     batch.flush()
     const nodes = targetNodes()
-    const label = isMulti.value ? `Set ${propKey}` : `Add ${propKey}`
+    const label = isMulti.value || isMixed.value ? `Set ${propKey}` : `Add ${propKey}`
     const apply = () => {
       for (const node of nodes) {
         const nextItem = structuredClone(item)
-        const next = isMulti.value ? [nextItem] : [...propArray(node), nextItem]
+        // Adding to mixed values replaces them, as Figma's "Click + to replace" does.
+        const next = isMulti.value || isMixed.value ? [nextItem] : [...propArray(node), nextItem]
         updateArray(node, next, label)
       }
     }

@@ -1,6 +1,7 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import {
   getCodeNodeSummaries,
+  getCodePreviewLinks,
   getFirstSelectedNodeId,
   getUndoLabel,
   hasNode,
@@ -102,6 +103,49 @@ test('live previews Design JSX and keeps one undo transaction', async () => {
   await waitForNode(editor.page, originalId)
   expect(await hasNode(editor.page, originalId)).toBe(true)
   expect(await hasNodeNamed(editor.page, 'Live JSX final')).toBe(false)
+})
+
+test('previews several roots in one render, each where its layer was', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const page = store.state.currentPageId
+    const size = { width: 80, height: 40 }
+    const left = store.graph.createNode('RECTANGLE', page, { x: 100, y: 80, ...size })
+    const right = store.graph.createNode('RECTANGLE', page, { x: 400, y: 80, ...size })
+    store.select([left.id, right.id])
+  })
+  await openCodePanel()
+  const code = (width: number) =>
+    [
+      '<>',
+      `  <Frame name="Start" w={${width}} h={100} />`,
+      `  <Frame name="Done" w={${width}} h={100} />`,
+      '  <Connector from="Start" to="Done" />',
+      '  <Instance name="Card copy" of={card} />',
+      '  <Component ref={card} name="Card" w={100} h={50} />',
+      '</>'
+    ].join('\n')
+  const preview = async (width: number) => {
+    await codeEditor().fill(`const card = ref()\nreturn ${code(width)}`)
+    await expect
+      .poll(async () => (await getCodePreviewLinks(editor.page, ['Start'])).layers.Start?.width)
+      .toBe(width)
+    return getCodePreviewLinks(editor.page, ['Start', 'Done', 'Card', 'Card copy'])
+  }
+
+  const first = await preview(200)
+  expect(first.layers.Start).toMatchObject({ x: 100, y: 80 })
+  expect(first.layers.Done).toMatchObject({ x: 400, y: 80 })
+  expect(first.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
+  expect(first.layers['Card copy'].componentId).toBe(first.layers.Card.id)
+
+  // The second edit updates those layers in place, so links must follow them.
+  const second = await preview(240)
+  expect(second.layers.Start).toMatchObject({ id: first.layers.Start.id, x: 100, y: 80 })
+  expect(second.layers.Done).toMatchObject({ id: first.layers.Done.id, x: 400, y: 80 })
+  expect(second.connectorEnds).toEqual([[first.layers.Start.id, first.layers.Done.id]])
+  expect(second.layers['Card copy'].componentId).toBe(second.layers.Card.id)
 })
 
 test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {

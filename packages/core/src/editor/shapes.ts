@@ -4,7 +4,7 @@ import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 import { prepareSlotEdits } from './components/slots'
 import { restoreSubtree, snapshotSubtree } from './history/subtree'
 import { adoptCoveredLayers } from './shapes/adopt'
-import { newLayerDefaults } from './shapes/defaults'
+import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen'
 import { createPencilActions } from './shapes/pencil'
@@ -44,7 +44,7 @@ export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: Updat
       throw new Error('Cannot add a layer to the locked part of an instance')
     }
     const overrides: Partial<SceneNode> = {
-      ...newLayerDefaults(type, ctx.state.theme),
+      ...newLayerDefaults(type, layerTheme(ctx.state)),
       x,
       y,
       width: w,

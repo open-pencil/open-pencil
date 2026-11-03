@@ -1,23 +1,8 @@
+import { noEditorProfileInputs, noFlatKiwiModules } from '#lint/rules/policy.ts'
 import {
-  noCloudDynamicHTMLRule,
-  noCloudSecretInQueryRule,
-  noCloudSecretLoggingRule
-} from '#lint/rules/cloud.ts'
-import {
-  noEditorProfileInputs,
-  noConditionalObjectSpreads,
-  noFlatKiwiModules,
-  noMixedCaseAcronymIdentifiers
-} from '#lint/rules/policy.ts'
-import { noHandRolledBase64Rule } from '#lint/rules/quality/base64.ts'
-import { preferEsToolkitRule } from '#lint/rules/quality/es-toolkit.ts'
-import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
-import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
-import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
-import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-classes.ts'
-import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
-import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
-import { noRawSQLRule } from '#lint/rules/sql.ts'
+  noPxTailwindValuesRule,
+  noUnknownTailwindClassesRule
+} from '#lint/rules/quality/tailwind-classes.ts'
 import { noOverlayContentFromOpenState } from '#lint/rules/vue/overlays.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
@@ -179,32 +164,6 @@ const noDirectSelectionToolStateMutation = {
   }
 } satisfies RuleDefinition
 
-const noMathRandom = {
-  meta: {
-    docs: {
-      description: 'Disallow Math.random() — use crypto.getRandomValues() instead'
-    }
-  },
-  create(context) {
-    return {
-      CallExpression(node) {
-        if (
-          node.callee?.type === 'MemberExpression' &&
-          node.callee.object?.type === 'Identifier' &&
-          node.callee.object.name === 'Math' &&
-          node.callee.property?.type === 'Identifier' &&
-          node.callee.property.name === 'random'
-        ) {
-          context.report({
-            node,
-            message: 'Use crypto.getRandomValues() instead of Math.random().'
-          })
-        }
-      }
-    }
-  }
-} satisfies RuleDefinition
-
 function isNumericLiteral(node: TSESTree.Node | undefined, value: number): boolean {
   return node?.type === 'Literal' && node.value === value
 }
@@ -325,31 +284,6 @@ const noRawConsoleFormat = {
   }
 } satisfies RuleDefinition
 
-const noSilentCatch = {
-  meta: {
-    docs: {
-      description:
-        'Disallow empty catch blocks — log a warning or re-throw instead of silently swallowing errors'
-    }
-  },
-  create(context) {
-    return {
-      CatchClause(node) {
-        const body = node.body
-        if (!body || !body.body) return
-        const stmts = body.body.filter((s) => s.type !== 'EmptyStatement')
-        if (stmts.length === 0) {
-          context.report({
-            node,
-            message:
-              'Empty catch block silently swallows errors. Add console.warn(), re-throw, or an explicit // oxlint-ignore-next-line comment.'
-          })
-        }
-      }
-    }
-  }
-} satisfies RuleDefinition
-
 const noTypeofWindowCheck = {
   meta: {
     docs: {
@@ -383,13 +317,7 @@ const noTypeofWindowCheck = {
 import {
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
-  noDeepParentRelativeImports,
-  noDeepParentRelativePaths,
-  noCoreParentRelativeImports,
   noDocumentChangeCapture,
-  noMcpParentRelativeImports,
-  noVueParentRelativeImports,
-  noCliParentRelativeImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
@@ -398,11 +326,6 @@ import {
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
-  noBroadDoubleCast,
-  noUnknownRecordDoubleCast,
-  noFunctionType,
-  noReflectDeleteGlobalThisOutsideTests,
-  noTsSuppressionComments,
   noCoreBrowserGlobals,
   noZoomInSceneDrawing,
   noDirectGraphEmitterSubscriptions,
@@ -417,26 +340,18 @@ import {
   componentNamespaceCasing,
   nonComponentSourceDirectoriesKebabCase,
   noComponentRootSiblingFolder,
-  noUselessPassThroughWrappers,
-  noFunctionAliasImports,
   noDirectOpenPencilBrowserStore,
   noDirectOpenPencilWindowInternals,
   noBunGlobalsInCli,
-  noTopLevelPrefixedTestFiles,
-  noSiblingDomainPrefixedFiles
+  noTopLevelPrefixedTestFiles
 } from '#lint/rules/structure.ts'
-import {
-  noBroadUnknownTypeAssertions,
-  noDuplicateTypeShapes,
-  noLocalJsonObjectAliases,
-  noImportTypeAnnotations
-} from '#lint/rules/typescript.ts'
+import { noLocalJsonObjectAliases } from '#lint/rules/typescript.ts'
 
+/** The rules only this repository needs; `lint/plugin.js` adds `@open-pencil/oxlint-plugin`'s. */
 const plugin = {
   meta: { name: 'open-pencil' },
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
-    'no-import-type-annotations': noImportTypeAnnotations,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
@@ -454,36 +369,22 @@ const plugin = {
     'no-browser-side-effects-in-vue': noBrowserSideEffectsInVue,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
-    'no-math-random': noMathRandom,
     'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
+    'no-px-tailwind-values': noPxTailwindValuesRule,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
-    'no-silent-catch': noSilentCatch,
     'no-typeof-window-check': noTypeofWindowCheck,
     'no-vue-self-package-imports': noVueSelfPackageImports,
     'no-cross-package-source-imports': noCrossPackageSourceImports,
-    'no-deep-parent-relative-imports': noDeepParentRelativeImports,
-    'no-deep-parent-relative-paths': noDeepParentRelativePaths,
-    'no-core-parent-relative-imports': noCoreParentRelativeImports,
     'no-document-change-capture': noDocumentChangeCapture,
-    'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
-    'no-vue-parent-relative-imports': noVueParentRelativeImports,
-    'no-cli-parent-relative-imports': noCliParentRelativeImports,
     'no-core-self-package-imports': noCoreSelfPackageImports,
     'no-inline-prompt-constants': noInlinePromptConstants,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
-    'no-broad-double-cast': noBroadDoubleCast,
-    'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
-    'no-broad-unknown-type-assertions': noBroadUnknownTypeAssertions,
     'no-local-json-object-aliases': noLocalJsonObjectAliases,
-    'no-duplicate-type-shapes': noDuplicateTypeShapes,
-    'no-ts-suppression-comments': noTsSuppressionComments,
-    'no-function-type': noFunctionType,
-    'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-zoom-in-scene-drawing': noZoomInSceneDrawing,
     'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
@@ -498,26 +399,10 @@ const plugin = {
     'component-namespace-casing': componentNamespaceCasing,
     'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
-    'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
-    'no-function-alias-imports': noFunctionAliasImports,
-    'no-mixed-case-acronym-identifiers': noMixedCaseAcronymIdentifiers,
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
-    'no-editor-profile-inputs': noEditorProfileInputs,
-    'no-conditional-object-spreads': noConditionalObjectSpreads,
-    'no-hand-rolled-base64': noHandRolledBase64Rule,
-    'no-raw-sql': noRawSQLRule,
-    'no-cloud-dynamic-html': noCloudDynamicHTMLRule,
-    'no-cloud-secret-in-query': noCloudSecretInQueryRule,
-    'no-cloud-secret-logging': noCloudSecretLoggingRule,
-    'no-unvalidated-json-parse': noUnvalidatedJSONParseRule,
-    'prefer-es-toolkit': preferEsToolkitRule,
-    'no-module-mocking': noModuleMockingRule,
-    'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
-    'no-widen-then-assert': noWidenThenAssertRule,
-    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles,
-    'valibot-schema-conventions': valibotSchemaConventionsRule
+    'no-editor-profile-inputs': noEditorProfileInputs
   } satisfies Record<string, PluginRule>
 }
 
