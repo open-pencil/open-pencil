@@ -29,14 +29,21 @@ interface FakeAgentOptions {
   answersSessions?: boolean
   /** Refuses every resume, as for a session the agent no longer has. */
   resumeFails?: boolean
+  /** True for an automation token that is never read, as with a credential prompt left open. */
+  tokenHangs?: boolean
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
-function fakeAgents({ answersSessions = true, resumeFails = false }: FakeAgentOptions = {}) {
+function fakeAgents({
+  answersSessions = true,
+  resumeFails = false,
+  tokenHangs = false
+}: FakeAgentOptions = {}) {
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
   const sessionRequested = createDeferred<undefined>()
+  const killed = createDeferred<undefined>()
   let kills = 0
   let crashLatest: (() => void) | null = null
 
@@ -88,6 +95,7 @@ function fakeAgents({ answersSessions = true, resumeFails = false }: FakeAgentOp
         kill: async () => {
           kills++
           stop.abort()
+          killed.resolve(undefined)
         }
       },
       input: toAgent.writable,
@@ -98,7 +106,7 @@ function fakeAgents({ answersSessions = true, resumeFails = false }: FakeAgentOp
   const startup: ACPStartup = {
     resolveCommand: async (agent) => agent.command,
     spawn,
-    authToken: async () => null,
+    authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async () => ({
       chat: 'chat',
       mcpServers: [],
@@ -114,6 +122,7 @@ function fakeAgents({ answersSessions = true, resumeFails = false }: FakeAgentOp
     created,
     resumed,
     sessionRequested: sessionRequested.promise,
+    killed: killed.promise,
     kills: () => kills,
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -217,5 +226,24 @@ test('stopping while the agent starts stops the agent before it gets the message
   stop.abort()
   await expect(sending).rejects.toBeInstanceOf(Error)
   expect(agents.kills()).toBeGreaterThan(0)
+  expect(agents.prompts).toEqual([])
+})
+
+test('stopping before the agent process is recorded still stops it', async () => {
+  const agents = fakeAgents()
+  const { transport: chat } = transport(agents)
+  const stop = new AbortController()
+  stop.abort()
+  await expect(send(chat, 'first', [], stop.signal)).rejects.toBeInstanceOf(Error)
+  await agents.killed
+  expect(agents.created).toEqual([])
+  expect(agents.prompts).toEqual([])
+})
+
+test('a startup step outside the agent connection is bounded by the deadline too', async () => {
+  const agents = fakeAgents({ tokenHangs: true })
+  const { transport: chat } = transport(agents, { startTimeoutMs: 20 })
+  await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
+  await agents.killed
   expect(agents.prompts).toEqual([])
 })

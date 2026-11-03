@@ -221,15 +221,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     if (!this.session) {
-      // Stop reaches an agent still starting: it stops, and the message never goes to it.
-      const stopStarting = () => void this.starting?.kill().catch(() => undefined)
-      abortSignal?.addEventListener('abort', stopStarting, { once: true })
-      let started: ACPSession
-      try {
-        started = await this.spawnAgent()
-      } finally {
-        abortSignal?.removeEventListener('abort', stopStarting)
-      }
+      const started = await this.spawnAgent(abortSignal)
       // Destroyed between startup and here: the agent is still `starting`, so stop it.
       if (this.destroying) {
         await started.child.kill().catch(() => undefined)
@@ -335,10 +327,31 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
   }
 
-  private async spawnAgent(): Promise<ACPSession> {
-    let process: ACPProcess
-    try {
-      process = await this.startup.spawn({
+  /**
+   * Starts the agent and its session. Stop ends the startup at any step, and each step must answer
+   * within the deadline; either way the agent stops and never gets the message.
+   */
+  private async spawnAgent(abortSignal?: AbortSignal): Promise<ACPSession> {
+    const stoppedByUser = new Promise<never>((_, reject) => {
+      const stop = () => reject(new Error('The reply was stopped while the agent was starting.'))
+      if (abortSignal?.aborted) stop()
+      else abortSignal?.addEventListener('abort', stop, { once: true })
+    })
+    stoppedByUser.catch(() => undefined)
+    const startTimeoutMs = this.startTimeoutMs
+    const agentName = this.agentDef.name
+    const bounded = <T>(request: Promise<T>, ...also: Promise<never>[]): Promise<T> =>
+      Promise.race([
+        request,
+        stoppedByUser,
+        ...also,
+        promiseTimeout(startTimeoutMs).then((): never => {
+          throw new Error(`${agentName} did not answer while starting.`)
+        })
+      ])
+
+    const spawning = (async () =>
+      this.startup.spawn({
         command: await this.startup.resolveCommand(this.agentDef),
         args: this.agentDef.args,
         logId: this.agentDef.id,
@@ -348,8 +361,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           this.session.dead = true
           this.session = null
         }
-      })
+      }))()
+    let process: ACPProcess
+    try {
+      process = await bounded(spawning)
     } catch (e) {
+      // A process that starts after the startup gave up must not keep running.
+      void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
       const message = e instanceof Error ? e.message : String(e)
@@ -406,19 +424,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       throw new Error('The agent stopped while it was starting.')
     })
     stopped.catch(() => undefined)
-    // An agent that runs but never answers must not keep the message waiting either.
-    const startTimeoutMs = this.startTimeoutMs
-    const untilStopped = <T>(request: Promise<T>): Promise<T> =>
-      Promise.race([
-        request,
-        stopped,
-        promiseTimeout(startTimeoutMs).then((): never => {
-          throw new Error(`${agentDef.name} did not answer while starting.`)
-        })
-      ])
+    const untilStopped = <T>(request: Promise<T>): Promise<T> => bounded(request, stopped)
     let automationAuthToken: string | null
     try {
-      automationAuthToken = await this.startup.authToken()
+      automationAuthToken = await untilStopped(this.startup.authToken())
     } catch (e) {
       await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
@@ -439,9 +448,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     // The agent must reach OpenPencil's tools before it gets a prompt.
     let tools: Awaited<ReturnType<typeof linkOwnTools>>
+    const linking = this.startup.linkTools(automationAuthToken)
     try {
-      tools = await this.startup.linkTools(automationAuthToken)
+      tools = await untilStopped(linking)
     } catch (e) {
+      // A link that opens after the startup gave up must not stay open.
+      void linking.then((late) => late.stop()).catch(() => undefined)
       // An outside MCP connection whose credential cannot be read fails here.
       await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
