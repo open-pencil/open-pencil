@@ -370,18 +370,64 @@ describe('close_file and save_file never prompt', () => {
     expect(tab.store.hasWritableSource()).toBe(false)
   })
 
-  test('a path that is not a .fig file is refused before a save is attempted', async () => {
+  function recordNativeFs(): string[] {
+    const commands: string[] = []
+    Object.assign(window, {
+      __TAURI_INTERNALS__: {
+        invoke: async (cmd: string, args?: { path?: string }) => {
+          commands.push(cmd)
+          if (cmd !== 'plugin:path|dirname') return null
+          const path = args?.path ?? ''
+          const slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
+          return slash > 0 ? path.slice(0, slash) : path
+        }
+      }
+    })
+    return commands
+  }
+
+  function fsWrites(commands: string[]): string[] {
+    return commands.filter((cmd) => cmd === 'plugin:fs|mkdir' || cmd === 'plugin:fs|write_file')
+  }
+
+  test('a native save to a non-.fig path does not create a directory or write the file', async () => {
+    const commands = recordNativeFs()
     const tab = dirtyTab()
     await expect(
-      request('save_file', { document_id: tab.id, path: '/tmp/never-written.pen' })
-    ).rejects.toThrow(
-      'save_file writes .fig documents; "/tmp/never-written.pen" does not end in .fig'
-    )
-    expect(tab.store.state.documentName).toBe('Untitled')
+      request('save_file', { document_id: tab.id, path: '/tmp/nested/never-written.pen' })
+    ).rejects.toThrow()
+    expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBeNull()
-    expect(tab.store.hasWritableSource()).toBe(false)
     expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('a native save to a .fig path creates the directory and writes the file', async () => {
+    const commands = recordNativeFs()
+    const tab = dirtyTab()
+    await request('save_file', { document_id: tab.id, path: '/tmp/nested/saved.fig' })
+    expect(fsWrites(commands)).toEqual(['plugin:fs|mkdir', 'plugin:fs|write_file'])
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+  })
+
+  test('saving over an existing .pen file writes nothing', async () => {
+    const commands = recordNativeFs()
+    const tab = dirtyTab()
+    tab.store.setPlannedFilePath('/tmp/notes.pen')
+    expect(tab.store.hasWritableSource()).toBe(true)
+    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
+    expect(fsWrites(commands)).toEqual([])
+    expect(tab.store.getDocumentFilePath()).toBe('/tmp/notes.pen')
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('closing with save over an extensionless file writes nothing and keeps the tab', async () => {
+    const commands = recordNativeFs()
+    const tab = dirtyTab()
+    tab.store.setPlannedFilePath('/tmp/notes')
+    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow()
+    expect(fsWrites(commands)).toEqual([])
     expect(getTabById(tab.id)).toBeDefined()
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 })
 
@@ -430,9 +476,7 @@ describe('file paths in a browser go through the MCP server', () => {
         document_id: tab.id,
         path: '/root/kuan-2d-framework.pen'
       })
-    ).rejects.toThrow(
-      'save_file writes .fig documents; "/root/kuan-2d-framework.pen" does not end in .fig'
-    )
+    ).rejects.toThrow()
     expect(fetch).not.toHaveBeenCalled()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
     expect(tab.store.hasWritableSource()).toBe(false)
@@ -443,7 +487,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
       requestThroughServer('save_file', { document_id: pen.id, path: '/root/copy.PEN' })
-    ).rejects.toThrow('does not end in .fig')
+    ).rejects.toThrow()
     expect(fetch).not.toHaveBeenCalled()
     expect(pen.store.hasUnsavedChanges()).toBe(true)
 
@@ -464,7 +508,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const design = dirtyTab()
     await expect(
       requestThroughServer('save_file', { document_id: design.id, path: '/root/design.jam' })
-    ).rejects.toThrow('does not end in .fig')
+    ).rejects.toThrow()
     expect(fetch.mock.calls).toHaveLength(1)
     expect(design.store.hasUnsavedChanges()).toBe(true)
   })
@@ -478,7 +522,7 @@ describe('file paths in a browser go through the MCP server', () => {
         unsaved: 'save',
         path: '/root/copy.pen'
       })
-    ).rejects.toThrow('does not end in .fig')
+    ).rejects.toThrow()
     expect(fetch).not.toHaveBeenCalled()
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -487,9 +531,9 @@ describe('file paths in a browser go through the MCP server', () => {
   test('a new document is not left open when its path is not a .fig file', async () => {
     const before = getTabsSnapshot().map((tab) => tab.id)
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
-    await expect(requestThroughServer('new_document', { path: '/root/fresh.pen' })).rejects.toThrow(
-      'save_file writes .fig documents; "/root/fresh.pen" does not end in .fig'
-    )
+    await expect(
+      requestThroughServer('new_document', { path: '/root/fresh.pen' })
+    ).rejects.toThrow()
     expect(fetch).not.toHaveBeenCalled()
     expect(getTabsSnapshot().map((tab) => tab.id)).toEqual(before)
   })

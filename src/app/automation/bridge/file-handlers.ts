@@ -26,15 +26,22 @@ export interface AutomationFiles {
 const saveArgsSchema = v.object({ path: v.optional(v.string()) })
 
 /**
- * Automation always writes a Figma archive. `open_file` reads `.fig` and `.jam` as that archive
- * and any other extension, such as `.pen`, as another format, so a mismatched path is refused
- * before a byte is written.
+ * Automation always writes a Figma archive. The destination is the path asked for, or the file
+ * the document already has. `open_file` reads `.fig` and `.jam` as that archive and any other
+ * extension, such as `.pen`, as another format, so a mismatched destination is refused before a
+ * byte is written.
  */
-function assertAutomationSaveExtension(path: string, kind: DocumentKind): void {
+function assertAutomationSaveDestination(
+  explicitPath: string | undefined,
+  sourcePath: string | null,
+  kind: DocumentKind
+): void {
+  const destination = explicitPath || sourcePath
+  if (!destination) return
   const extension = DOCUMENT_EXTENSIONS[kind]
-  if (path.toLowerCase().endsWith(`.${extension}`)) return
+  if (destination.toLowerCase().endsWith(`.${extension}`)) return
   throw new Error(
-    `save_file writes .${extension} documents; "${path}" does not end in .${extension}`
+    `save_file writes .${extension} documents; "${destination}" does not end in .${extension}`
   )
 }
 
@@ -75,7 +82,8 @@ export function createFileHandlers(files?: AutomationFiles) {
   // Automation never opens the Save dialog: nobody may be there to answer it.
   async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
     const name = store.state.documentName
-    if (path) assertAutomationSaveExtension(path, store.state.documentKind)
+    // close_file with unsaved "save" uses this too, so an existing file is checked the same way.
+    assertAutomationSaveDestination(path, store.getDocumentFilePath(), store.state.documentKind)
     if (!path && !store.hasWritableSource()) {
       throw new Error(`"${name}" has not been saved to a file yet; pass a path to save it`)
     }
