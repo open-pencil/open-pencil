@@ -35,6 +35,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Viewers may send only the channels in `VIEWER_ACTIONS`; every other channel from them is dropped, and presence is stamped from the ticket by `stampAwareness` (`tests/server/collaboration/relay/hub.test.ts`).
 - Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
 - Send frames through `relayServerMessages` and `relayClientMessages`, which split anything past `RELAY_FRAGMENT_BYTES` into fragments, and read sockets through the matching assemblers; never send an encoded frame whole (`tests/server/collaboration/relay/hub.test.ts`).
+- The relay keeps no timer while its sockets are idle, so a Durable Object can hibernate: a ticket's expiry is checked when the relay hears from or sends to the peer, a peer's state rides on its socket through `RelaySocket.remember` and comes back with `resume`, and a resumed room loads its document only when a message needs it (`tests/server/collaboration/relay/resume.test.ts`).
 
 ## AI relay
 

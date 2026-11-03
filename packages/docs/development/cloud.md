@@ -172,7 +172,11 @@ else is online. A save logs what changed since the last one as a single update, 
 typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
 the room closes, a fresh snapshot replaces it. A room reopens from its snapshot and the updates
 logged after it. Tickets are short-lived signed JWTs; the client presents a fresh one before the
-current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
+current one expires, and the relay closes a socket whose ticket lapsed or changed identity. It
+checks a ticket when it hears from the peer or sends it anything, not on a timer, so on Cloudflare
+an idle room's Durable Object hibernates while its sockets stay open: each socket keeps its peer as
+an attachment, and the object it wakes to resumes them and loads the room's document only once a
+message needs it. Presence alone wakes the object without loading the document.
 
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,
 which may not be lower. A larger frame, such as a big paste, the first editor's copy of a large
