@@ -466,6 +466,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@open-pencil/test-support": "workspace:*",
     "tsdown": "^0.22.14",
     "unplugin-raw": "^0.7.0",
     "unplugin-vue": "^7.2.0"

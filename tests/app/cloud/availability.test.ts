@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   cloudOfficialListed,
   checkCloudAvailability,
@@ -8,8 +10,6 @@ import {
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
-import { fetchStub } from '#tests/helpers/fetch'
-
 const EDITOR = 'https://app.example.com/'
 
 function officialServer(answer: () => Response) {

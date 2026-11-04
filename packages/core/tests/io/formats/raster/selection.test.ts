@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'

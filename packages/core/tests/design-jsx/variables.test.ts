@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import {
   defineMode,

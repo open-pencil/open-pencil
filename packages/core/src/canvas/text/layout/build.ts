@@ -1,6 +1,6 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
-import type { CharacterStyleOverride, StyleRun, TextLength } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   hasParagraphSpacing,
@@ -9,7 +9,6 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
-  lineHeightPixels,
   lineStepPixels,
   topLevelNumberDigits,
   type TextListItem,
@@ -70,12 +69,9 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
-  // A line height of zero lays lines out as auto; a percent one under half a pixel steps them
-  // by none, as Figma does.
-  const step = (lineHeight: TextLength | null, fontSize: number) =>
-    lineHeightPixels(lineHeight, fontSize) ? lineStepPixels(lineHeight, fontSize) : null
-  // A percent line height follows the font size of the characters it spaces.
-  const own = (fontSize = node.fontSize) => step(node.lineHeight, fontSize)
+  // A percent line height follows the font size of the characters it spaces; one of zero, or a
+  // percent one under half a pixel, steps lines by none, as Figma does.
+  const own = (fontSize = node.fontSize) => lineStepPixels(node.lineHeight, fontSize)
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
@@ -88,7 +84,9 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
     if (position < run.start) add(position + lead, run.start + lead, own())
     const runSize = run.style.fontSize ?? node.fontSize
     const lineHeight =
-      run.style.lineHeight !== undefined ? step(run.style.lineHeight, runSize) : own(runSize)
+      run.style.lineHeight !== undefined
+        ? lineStepPixels(run.style.lineHeight, runSize)
+        : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
   }

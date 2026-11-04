@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { asTextNode, createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 beforeAll(() => registerTestFont())

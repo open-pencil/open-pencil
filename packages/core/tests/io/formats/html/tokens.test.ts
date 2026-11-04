@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 import { renderNodesToHTML } from '#core/io/formats/html'
 
 describe('tokens in HTML export', () => {

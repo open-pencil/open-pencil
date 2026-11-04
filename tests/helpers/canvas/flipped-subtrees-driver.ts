@@ -1,7 +1,8 @@
 import type { Page } from '@playwright/test'
 import { fromUint8Array } from 'js-base64'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 export interface TiledSubmission {

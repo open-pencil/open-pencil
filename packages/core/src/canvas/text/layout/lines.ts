@@ -165,19 +165,28 @@ function lineBoxes(
 }
 
 /**
- * A paragraph's shaped lines by line number. Shaping leaves empty lines out, so each shaped
- * line goes to the line whose baseline is nearest its own.
+ * A paragraph's shaped lines by line number. Shaping leaves empty lines out and keeps the rest
+ * in order, so each shaped line goes to the line after the one before it, not empty, whose
+ * baseline is nearest its own; lines that share a baseline, at a line height under a pixel, go
+ * in order.
  */
 export function shapedLinesByLine(paragraph: Paragraph): Array<ShapedLine | undefined> {
   const lines = paragraph.getLineMetrics()
   const byLine: Array<ShapedLine | undefined> = Array.from({ length: lines.length })
-  for (const shaped of paragraph.getShapedLines()) {
-    let nearest = 0
-    for (const [index, line] of lines.entries()) {
-      const distance = Math.abs(line.baseline - shaped.baseline)
-      if (distance < Math.abs(lines[nearest].baseline - shaped.baseline)) nearest = index
+  const shaped = (line: LineMetrics) => line.endIndex > line.startIndex
+  let next = 0
+  for (const drawn of paragraph.getShapedLines()) {
+    let nearest = -1
+    for (let index = next; index < lines.length; index++) {
+      if (!shaped(lines[index])) continue
+      const distance = Math.abs(lines[index].baseline - drawn.baseline)
+      if (nearest === -1 || distance < Math.abs(lines[nearest].baseline - drawn.baseline)) {
+        nearest = index
+      }
     }
-    byLine[nearest] = shaped
+    if (nearest === -1) break
+    byLine[nearest] = drawn
+    next = nearest + 1
   }
   return byLine
 }
@@ -280,11 +289,7 @@ export function placeLines<Block extends LineBlock>(
   const boxes = lineBoxes(ck, blocks, metrics)
   if (!boxes) return null
   const all = boxes.flat()
-  // A paragraph steps lines by whole pixels, so lines alike at a whole-pixel height already
-  // stand where Figma puts them.
-  const height = all[0].height
   const alike = allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))
-  if (alike && allSame([height, Math.round(height)])) return null
 
   // Figma steps lines by their exact heights (Figma desktop 126).
   const first = all[0]
@@ -296,6 +301,16 @@ export function placeLines<Block extends LineBlock>(
       return metric(first.ascent + below)
     })
   )
+  // Lines alike that the paragraphs already stack so keep their placement: a paragraph steps
+  // lines by whole pixels, and at its font's own height for a line height of zero.
+  const tops = blocks.map((_, index) => baselines[index][0] - metrics[index][0].baseline)
+  const stacked = blocks.every(
+    (block, index) =>
+      allSame([tops[index] - tops[0], block.y - blocks[0].y]) &&
+      allSame(metrics[index].map((line, lineIndex) => baselines[index][lineIndex] - line.baseline))
+  )
+  if (alike && stacked) return null
+
   const placed = new Map<Block, BlockPlacement & { y: number }>()
   for (const [index, block] of blocks.entries()) {
     const lines = metrics[index]

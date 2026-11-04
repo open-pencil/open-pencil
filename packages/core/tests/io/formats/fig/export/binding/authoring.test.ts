@@ -1,8 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
+import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
 import * as v from 'valibot'
 
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'

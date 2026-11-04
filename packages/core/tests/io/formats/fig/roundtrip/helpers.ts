@@ -234,15 +234,18 @@ export const SCENE_VERIFIERS = new Map<string, Verifier>([
   ['componentPropertyAssignments', verifyComponentPropertyAssignments]
 ])
 
+interface VariableConsumptionEntry {
+  variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
+  variableField?: string
+}
+
+interface VariableConsumptionMapShape {
+  entries?: VariableConsumptionEntry[]
+}
+
 function verifyAEntries(
-  aEntries: Array<{
-    variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-    variableField?: string
-  }>,
-  bEntries: Array<{
-    variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-    variableField?: string
-  }>,
+  aEntries: VariableConsumptionEntry[],
+  bEntries: VariableConsumptionEntry[],
   ctx: VerifierContext
 ): void {
   for (const entryA of aEntries) {
@@ -280,14 +283,8 @@ function verifyAEntries(
 }
 
 function verifyBEntries(
-  aEntries: Array<{
-    variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-    variableField?: string
-  }>,
-  bEntries: Array<{
-    variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-    variableField?: string
-  }>,
+  aEntries: VariableConsumptionEntry[],
+  bEntries: VariableConsumptionEntry[],
   ctx: VerifierContext
 ): void {
   for (const entryB of bEntries) {
@@ -309,35 +306,14 @@ function verifyBEntries(
 }
 
 function verifyVariableConsumption(
-  ga:
-    | {
-        entries?: Array<{
-          variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-          variableField?: string
-        }>
-      }
-    | undefined,
-  gb:
-    | {
-        entries?: Array<{
-          variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-          variableField?: string
-        }>
-      }
-    | undefined,
+  ga: VariableConsumptionMapShape | undefined,
+  gb: VariableConsumptionMapShape | undefined,
   ctx: VerifierContext
 ): void {
   const aEntries = ga?.entries ?? []
   const bEntries = gb?.entries ?? []
   verifyAEntries(aEntries, bEntries, ctx)
   verifyBEntries(aEntries, bEntries, ctx)
-}
-
-interface VariableConsumptionMapShape {
-  entries?: Array<{
-    variableData?: { value?: { alias?: { guid?: unknown; assetRef?: unknown } } }
-    variableField?: string
-  }>
 }
 
 function verifyVarAlias(a: unknown, b: unknown): boolean {
@@ -358,6 +334,11 @@ function verifyVarAlias(a: unknown, b: unknown): boolean {
 }
 
 /** Verifier that defaults undefined values and compares strictly. */
+/** The re-exported raw value a verifier checks, and the scene node it was exported from. */
+function rawAndSceneNode(ctx: VerifierContext) {
+  return { raw: ctx.b as JSONObject | undefined, node: ctx.aNodes.get(ctx.path) }
+}
+
 function defaultEqual(defaultVal: unknown): Verifier {
   return (ctx) => {
     if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
@@ -372,8 +353,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
     'letterSpacing',
     (ctx) => {
       if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const g1raw = ctx.b as JSONObject | undefined
-      const node = ctx.aNodes.get(ctx.path)
+      const { raw: g1raw, node } = rawAndSceneNode(ctx)
       if (!node || node.fontSize == null) return true
       const expected = textLengthPixels(node.letterSpacing, node.fontSize)
       const value = g1raw?.value
@@ -395,8 +375,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
     'lineHeight',
     (ctx) => {
       if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const g1raw = ctx.b as JSONObject | undefined
-      const node = ctx.aNodes.get(ctx.path)
+      const { raw: g1raw, node } = rawAndSceneNode(ctx)
       if (!node || node.lineHeight == null) return true
       const expected = node.lineHeight
       const actual = g1raw?.value as number | undefined
@@ -440,60 +419,12 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
     }
   ],
   ['styleId', defaultEqual(0)],
-  [
-    'indentationLevel',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? 0 : ctx.a
-      const bVal = ctx.b === undefined ? 0 : ctx.b
-      return aVal === bVal
-    }
-  ],
-  [
-    'sourceDirectionality',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
-      const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
-      return aVal === bVal
-    }
-  ],
-  [
-    'listStartOffset',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? 0 : ctx.a
-      const bVal = ctx.b === undefined ? 0 : ctx.b
-      return aVal === bVal
-    }
-  ],
-  [
-    'isFirstLineOfList',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? false : ctx.a
-      const bVal = ctx.b === undefined ? false : ctx.b
-      return aVal === bVal
-    }
-  ],
-  [
-    'directionality',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
-      const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
-      return aVal === bVal
-    }
-  ],
-  [
-    'directionalityIntent',
-    (ctx) => {
-      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
-      const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
-      const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
-      return aVal === bVal
-    }
-  ],
+  ['indentationLevel', defaultEqual(0)],
+  ['sourceDirectionality', defaultEqual('AUTO')],
+  ['listStartOffset', defaultEqual(0)],
+  ['isFirstLineOfList', defaultEqual(false)],
+  ['directionality', defaultEqual('AUTO')],
+  ['directionalityIntent', defaultEqual('AUTO')],
   [
     'fontVersion',
     (ctx) => {

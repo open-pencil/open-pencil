@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import * as v from 'valibot'
 
 import type { RecordedWheelSample } from '@open-pencil/core/profiler'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
@@ -27,7 +28,10 @@ const gestureSchema = v.pipe(
 )
 const reversal = v.parse(
   gestureSchema,
-  readFileSync('tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json', 'utf8')
+  readFileSync(
+    repoPath('tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json'),
+    'utf8'
+  )
 )
 
 async function waitForTiledSettlement() {

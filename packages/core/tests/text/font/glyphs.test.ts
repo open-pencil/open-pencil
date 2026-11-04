@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
-
+import { corePackagePath } from '#core-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { fontManager } from '@open-pencil/core/text'
 
 import {

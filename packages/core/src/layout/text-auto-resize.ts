@@ -71,7 +71,8 @@ export function textAutoResizeChanges(
 
   if (mode === 'WIDTH_AND_HEIGHT' && hasTextAutoWidthChange(changes) && measured.width > 0)
     resized.width = measured.width
-  if (measured.height > 0) resized.height = measured.height
+  // A line height of zero makes text 0 px tall, as in Figma.
+  if (measured.height >= 0) resized.height = measured.height
 
   return resized
 }

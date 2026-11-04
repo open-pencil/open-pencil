@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
@@ -294,6 +294,36 @@ describe('fractional line heights', () => {
       expect(bottoms[0] + 1).toBe(Math.round(first))
       layout.delete()
     }
+  })
+
+  // Figma desktop 126 (2026-11-04), 14 px Inter: the baselines it saves and the height it gives.
+  test('set lines on top of each other at a line height of zero', () => {
+    for (const lineHeight of [pixelLength(0), percentLength(2)]) {
+      for (const text of [lines(3), 'H\n\nH', 'H']) {
+        const layout = layOut({ text, fontSize: 14, lineHeight })
+        expectBaselines(layout, text === 'H' ? [5.091] : [5.091, 5.091, 5.091])
+        expect(layout.getHeight()).toBe(0)
+        // Lines on one baseline keep their own glyphs, and an empty line has none.
+        const runs = layout.getShapedLines().map((line) => line.runs.length)
+        expect(runs).toEqual(text === 'H\n\nH' ? [1, 0, 1] : runs.map(() => 1))
+        layout.delete()
+      }
+    }
+  })
+
+  test('step lines by a line height under a pixel', () => {
+    const layout = layOut({ text: lines(3), fontSize: 14, lineHeight: pixelLength(0.3) })
+    expectBaselines(layout, [5.241, 5.541, 5.841])
+    expect(Math.ceil(layout.getHeight())).toBe(1)
+    layout.delete()
+  })
+
+  test('make a single line as tall as an exact line height in pixels', () => {
+    // Figma rounds the height up: 11.25 px is 12 px tall.
+    const layout = layOut({ text: 'H', fontSize: 9, lineHeight: pixelLength(11.25) })
+    expect(layout.getHeight()).toBe(11.25)
+    expect(Math.ceil(layout.getHeight())).toBe(12)
+    layout.delete()
   })
 
   test('step lines by no pixels at a percent line height under half a pixel', () => {

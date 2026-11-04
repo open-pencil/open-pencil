@@ -3,8 +3,7 @@ import { describe, test, expect } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 // ---------------------------------------------------------------------------
 // SceneGraph + UndoManager — integration (updateNodeWithUndo pattern)
 // ---------------------------------------------------------------------------
