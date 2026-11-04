@@ -136,8 +136,6 @@ tests/engine/geometry/clip-polygon.test.ts
 tests/engine/geometry/matrix.test.ts
 tests/engine/geometry/rotation.test.ts
 tests/engine/geometry/scene.test.ts
-tests/engine/geometry/text-visual-bounds.test.ts
-tests/engine/geometry/visual-bounds.test.ts
 tests/engine/hit-test/basic.test.ts
 tests/engine/hit-test/scope.test.ts
 tests/engine/icons/api.test.ts

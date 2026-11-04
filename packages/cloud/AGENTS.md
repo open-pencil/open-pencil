@@ -37,6 +37,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
 - Send frames through `relayServerMessages` and `relayClientMessages`, which split anything past `RELAY_FRAGMENT_BYTES` into fragments, and read sockets through the matching assemblers; never send an encoded frame whole (`tests/server/collaboration/relay/hub.test.ts`).
 - The relay keeps no timer while its sockets are idle, so a Durable Object can hibernate: a ticket's expiry is checked when the relay hears from or sends to the peer, a peer's state rides on its socket through `RelaySocket.remember` and comes back with `resume`, and a resumed room loads its document only when a message needs it (`tests/server/collaboration/relay/resume.test.ts`).
+- On Cloudflare, every socket event goes through `createRelaySockets`, which wakes the relay and resumes the socket's peer first, since a close can be the first event after hibernation; a room closing after a wake still folds its log into a snapshot (`tests/runtime/cloudflare/relay/sockets.test.ts`, `tests/server/collaboration/relay/resume.test.ts`).
 
 ## AI relay
 

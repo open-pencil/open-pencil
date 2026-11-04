@@ -165,10 +165,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   async function persist(room: Room, closing = false): Promise<boolean> {
     if (room.persistTimer) clearTimeout(room.persistTimer)
     room.persistTimer = null
-    // A room nobody needed the document of since it was resumed has nothing new to save.
-    if (!room.content) return true
+    // A room nobody needed the document of since it was resumed has nothing new to save, but
+    // a closing one loads it anyway, to fold what its earlier wakes logged into a snapshot.
+    if (!room.content && !closing) return true
     try {
-      await room.content.log.save({ closing })
+      const { log } = await contentOf(room)
+      await log.save({ closing })
       return true
     } catch (error) {
       report('Saving a collaboration room failed:', error)
