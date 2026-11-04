@@ -98,3 +98,22 @@ test('does not open a library layer, which changes in its library', () => {
   editor.enterNodeEditMode(vector.id)
   expect(editor.state.nodeEditState).toBeNull()
 })
+
+// Figma desktop 126: picking another layer in the layers panel leaves vector edit mode, keeps the
+// edit, and selects that layer.
+test('selecting another layer commits the open path and leaves edit mode', () => {
+  const editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const path = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const other = editor.graph.createNode('RECTANGLE', pageId, { x: 300, width: 50, height: 50 })
+
+  editor.enterNodeEditMode(path.id)
+  expectDefined(editor.state.nodeEditState?.vertices[0]).x -= 20
+  editor.select([path.id])
+  expect(editor.state.nodeEditState?.nodeId).toBe(path.id)
+
+  editor.select([other.id])
+  expect(editor.state.nodeEditState).toBeNull()
+  expect(editor.graph.getNode(path.id)?.width).toBe(120)
+  expect([...editor.state.selectedIds]).toEqual([other.id])
+})

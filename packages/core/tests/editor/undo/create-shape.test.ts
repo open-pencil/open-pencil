@@ -86,16 +86,19 @@ describe('pen path undo/redo', () => {
     expect(restored.fills).toEqual(drawn.fills)
   })
 
-  test('another tool keeps the path drawn so far; the hand pans while drawing', () => {
+  // Figma desktop 126: V, H, and the toolbar end a pen path and keep it; holding Space pans and
+  // the next click continues the same path.
+  test('another tool keeps the path drawn so far, and a held hand lets it continue', () => {
     const editor = createEditor()
     editor.setTool('PEN')
     editor.penAddVertex(0, 0)
     editor.penAddVertex(100, 0)
 
-    editor.setTool('HAND')
+    editor.setTool('HAND', { held: true })
+    editor.setTool('PEN', { held: true })
     expect(editor.state.penState?.vertices).toHaveLength(2)
 
-    editor.setTool('RECTANGLE')
+    editor.setTool('HAND')
     expect(editor.state.penState).toBeNull()
     const id = [...editor.state.selectedIds][0]
     const drawn = getNodeOrThrow(editor.graph, id)

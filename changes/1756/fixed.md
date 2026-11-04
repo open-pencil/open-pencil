@@ -1,0 +1,2 @@
+- Selecting another layer while a vector path is open, such as in the layers panel, leaves vector edit mode and keeps the edit, as in Figma (#1756).
+- Pressing H while drawing with the pen ends the path and keeps it, as in Figma; holding Space still pans and lets the path continue (#1756).

@@ -6,10 +6,9 @@ import {
   vectorNetworksEqual
 } from '@open-pencil/scene-graph/vector-network'
 
+import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
-
-import { getNodeEditCapability } from '#core/editor/capabilities'
 
 import { getLiveNetwork } from './network'
 import type { VectorEditActionDeps } from './types'
@@ -35,6 +34,12 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
   })
   ctx.onEditorEvent('graph:replaced', () => {
     if (ctx.state.nodeEditState) close()
+  })
+  // Figma desktop 126: selecting another layer, such as in the layers panel, leaves vector edit
+  // mode and keeps what was edited.
+  ctx.onEditorEvent('selection:changed', (selectedIds) => {
+    const es = ctx.state.nodeEditState
+    if (es && !selectedIds.includes(es.nodeId)) exitNodeEditMode(true)
   })
 
   function commitNodeEditChanges(es: NonNullable<typeof ctx.state.nodeEditState>) {

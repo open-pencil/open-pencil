@@ -84,9 +84,13 @@ export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: Updat
   const pencilActions = createPencilActions(ctx, createShape)
   const framePresetActions = createFramePresetActions(ctx, createShape)
 
-  function setTool(tool: typeof ctx.state.activeTool) {
-    // Another tool keeps the path the pen has drawn; the hand only pans while it draws.
-    if (ctx.state.penState && tool !== 'PEN' && tool !== 'HAND') penActions.penCommit(false)
+  /**
+   * Picks a tool. Another tool than the pen ends the path it is drawing and keeps what was drawn,
+   * the hand too, as in Figma desktop 126. A tool `held` only while a key is down, as Space holds
+   * the hand to pan, leaves the path to continue once it is let go.
+   */
+  function setTool(tool: typeof ctx.state.activeTool, options?: { held?: boolean }) {
+    if (ctx.state.penState && tool !== 'PEN' && !options?.held) penActions.penCommit(false)
     ctx.setActiveTool(tool)
   }
 
