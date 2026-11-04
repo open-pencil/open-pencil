@@ -352,7 +352,8 @@ export function createEditor(options?: EditorOptions) {
   const vectorEdit = createVectorEditActions(ctx, {
     updateNodeWithUndo: nodes.updateNodeWithUndo,
     select: selection.select,
-    deleteSelected: clipboard.deleteSelected
+    deleteSelected: clipboard.deleteSelected,
+    penCommit: shapes.penCommit
   })
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
@@ -408,6 +409,8 @@ export function createEditor(options?: EditorOptions) {
 
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
+    // A pen path belongs to the document it was drawn in.
+    if (state.penState) shapes.penCancel()
     undo.discardBatches()
     pendingTextLayout.clear()
     _graph = newGraph

@@ -30,6 +30,7 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
   // A path whose layer is gone, by undo, a script, or another document, has nothing to edit.
   const close = () => {
     ctx.state.nodeEditState = null
+    sessionGraph = null
     ctx.state.snapGuides = []
     ctx.requestRender()
   }
@@ -88,6 +89,9 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     const open = ctx.state.nodeEditState
     if (open?.nodeId === nodeId) return
     if (open) exitNodeEditMode(true)
+    // A pen path in progress, maybe continuing this very layer, is committed before the session
+    // takes the layer's geometry as its starting point.
+    if (ctx.state.penState) actions.penCommit(false)
 
     const world = getWorldMatrix(node, ctx.graph)
     const absNetwork = transformVectorNetwork(world, node.vectorNetwork)
@@ -126,6 +130,7 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     const node = ctx.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') {
       ctx.state.nodeEditState = null
+      sessionGraph = null
       ctx.requestRender()
       return
     }
@@ -144,6 +149,7 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     }
 
     ctx.state.nodeEditState = null
+    sessionGraph = null
   }
 
   return { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode }

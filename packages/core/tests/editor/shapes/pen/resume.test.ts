@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
@@ -167,4 +167,30 @@ test('a point the open path does not have commits nothing and keeps it open', ()
   expect(editor.state.nodeEditState?.nodeId).toBe(id)
   expect(editor.state.penState).toBeNull()
   expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
+})
+
+test('opening the path while the pen continues it keeps what the pen drew', () => {
+  const { pen, id } = setup()
+  pen.penResumeFromEndpoint(id, 3)
+  editor.penAddVertex(50, 120)
+
+  editor.enterNodeEditMode(id)
+  expect(editor.state.penState).toBeNull()
+  editor.exitNodeEditMode(false)
+
+  expect(points(editor.graph.getNode(id)?.vectorNetwork)).toEqual([...points(T), { x: 50, y: 120 }])
+})
+
+test('a pen path stays with its document when another one is opened', () => {
+  setup()
+  editor.setTool('PEN')
+  editor.penAddVertex(200, 0)
+  editor.penAddVertex(300, 0)
+
+  const next = new SceneGraph()
+  editor.replaceGraph(next)
+  editor.setTool('RECTANGLE')
+
+  expect(editor.state.penState).toBeNull()
+  expect(next.getChildren(editor.state.currentPageId)).toHaveLength(0)
 })

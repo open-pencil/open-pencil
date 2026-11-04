@@ -46,4 +46,5 @@ export interface VectorEditActionDeps {
   updateNodeWithUndo: UpdateNodeWithUndo
   select: (ids: string[]) => void
   deleteSelected: () => void
+  penCommit: (closed: boolean) => void
 }
