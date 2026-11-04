@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 
+import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 /** A scene builder: draws on a graph's page, may take more arguments, and may return what it made. */
@@ -23,15 +24,8 @@ type SceneResult<Builder> = Builder extends (...args: never[]) => infer Result
   ? Awaited<Result>
   : never
 
-/** The view to show: zoom, and where the canvas origin sits from the canvas's top-left corner. */
-export interface SceneView {
-  zoom: number
-  panX: number
-  panY: number
-}
-
-/** Shows the open page at `view`. */
-export function showView(page: Page, view: SceneView) {
+/** Shows the open page at `view`: its zoom, and where the canvas origin sits in the canvas. */
+export function showView(page: Page, view: ViewportTransform) {
   return page.evaluate((next) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
