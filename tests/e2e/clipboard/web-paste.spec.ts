@@ -48,6 +48,10 @@ function texts(layers: Layer[]): string[] {
   ])
 }
 
+/** The notices on screen, and the one offering to paste as layers, found by role, not copy. */
+const toasts = () => editor.page.locator('[data-slot="toast"]')
+const layersOffer = () => toasts().getByRole('button', { name: 'Paste as layers' })
+
 async function paste(data: Record<string, string>) {
   await editor.page.evaluate((entries) => {
     const transfer = new DataTransfer()
@@ -64,9 +68,7 @@ test('a web page pastes as text with its links, and the notice pastes it as laye
   await expect
     .poll(pageLayers)
     .toEqual([{ type: 'TEXT', text: WEB_TEXT, links: ['https://openpencil.dev'], children: [] }])
-  await expect(editor.page.getByText('Pasted as text.', { exact: true })).toBeVisible()
-
-  await editor.page.getByRole('button', { name: 'Paste as layers' }).click()
+  await layersOffer().click()
 
   await expect
     .poll(async () => texts(await pageLayers()))
@@ -96,7 +98,7 @@ test('a sentence copied from a page pastes as text without offering layers', asy
       children: []
     }
   ])
-  await expect(editor.page.getByRole('button', { name: 'Paste as layers' })).toHaveCount(0)
+  await expect(layersOffer()).toHaveCount(0)
 })
 
 function linkRuns() {
@@ -135,7 +137,7 @@ test('a laid-out copy without text pastes as layers at once', async () => {
   })
 
   await expect.poll(async () => (await pageLayers()).map((layer) => layer.type)).toEqual(['FRAME'])
-  await expect(editor.page.getByText('Pasted as text.', { exact: true })).toHaveCount(0)
+  await expect(toasts()).toHaveCount(0)
 })
 
 test('the notice keeps the text when the HTML shows nothing', async () => {
@@ -143,11 +145,11 @@ test('the notice keeps the text when the HTML shows nothing', async () => {
   await paste({ 'text/plain': hidden })
   await expect.poll(async () => (await pageLayers())[0]?.text).toBe(hidden)
 
-  await editor.page.getByRole('button', { name: 'Paste as layers' }).click()
+  await layersOffer().click()
 
-  await expect(
-    editor.page.getByText('The HTML has nothing to show as layers.', { exact: true })
-  ).toBeVisible()
+  // The notice gives way to one that only reports, and the text stays.
+  await expect(layersOffer()).toHaveCount(0)
+  await expect(toasts()).toHaveCount(1)
   expect((await pageLayers()).map((layer) => layer.text)).toEqual([hidden])
 })
 
@@ -157,7 +159,7 @@ test('plain text pastes as a text layer with nothing to offer', async () => {
   await expect
     .poll(pageLayers)
     .toEqual([{ type: 'TEXT', text: 'Just a sentence', links: [], children: [] }])
-  await expect(editor.page.getByRole('button', { name: 'Paste as layers' })).toHaveCount(0)
+  await expect(layersOffer()).toHaveCount(0)
 })
 
 test('HTML source copied as text pastes as layers from the notice', async () => {
@@ -168,7 +170,7 @@ test('HTML source copied as text pastes as layers from the notice', async () => 
   })
   await expect.poll(async () => (await pageLayers())[0]?.text).toBe(SOURCE)
 
-  await editor.page.getByRole('button', { name: 'Paste as layers' }).click()
+  await layersOffer().click()
 
   await expect.poll(async () => texts(await pageLayers())).toEqual(['Get started'])
 })
