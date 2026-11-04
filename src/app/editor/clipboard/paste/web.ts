@@ -64,41 +64,72 @@ function wordsPattern(words: string): RegExp {
   return new RegExp(words.split(' ').map(escapeRegExp).join('\\s+'), 'g')
 }
 
+/** Elements whose text the page does not show, so it is not in the copied plain text. */
+const UNSHOWN_TAGS = new Set(['head', 'noscript', 'script', 'style', 'template', 'title'])
+
+function isUnshown(element: Element): boolean {
+  if (UNSHOWN_TAGS.has(element.tagName.toLowerCase()) || element.hasAttribute('hidden')) return true
+  return element instanceof HTMLElement && element.style.display === 'none'
+}
+
+/**
+ * The page's links, each with the shown text before it: what the copied plain text holds of the
+ * page, as hidden elements and scripts leave nothing there.
+ */
+function linksWithShownText(document: Document): { anchor: Element; before: string }[] {
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) =>
+        node instanceof Element && isUnshown(node)
+          ? NodeFilter.FILTER_REJECT
+          : NodeFilter.FILTER_ACCEPT
+    }
+  )
+  const links: { anchor: Element; before: string }[] = []
+  let shown = ''
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (node instanceof Element) {
+      if (node.matches('a[href]')) links.push({ anchor: node, before: shown })
+    } else {
+      shown += node.textContent ?? ''
+    }
+  }
+  return links
+}
+
 /**
  * The copied text with the links its page had, as Figma keeps them on paste. Each `<a href>` is
- * found as the same occurrence of its words in the text as in the page, so a repeated word links
- * where the page linked it and a line break inside the link does not lose it.
+ * found as the same occurrence of its words in the text as in the shown text of the page, so a
+ * repeated word links where the page linked it and a line break inside the link does not lose
+ * it. Like Figma, only the copied plain text is pasted; a copy of HTML alone pastes no text.
  */
 export function pastedText({ html, text }: WebClipboard): {
   text: string
   links: PastedTextLink[]
 } {
-  const document = html ? parseHTML(html) : null
-  const plain = text.length > 0 ? text : (document?.body.textContent ?? '')
   const links: PastedTextLink[] = []
-  if (!document || isHTMLMarkup(text)) return { text: plain, links }
+  if (!html || text.length === 0 || isHTMLMarkup(text)) return { text, links }
   // The plain text is scanned once for each link text, however many links share it.
   const matches = new Map<string, RegExpExecArray[]>()
   const matchesOf = (words: string) => {
     let found = matches.get(words)
     if (!found) {
-      found = [...plain.matchAll(wordsPattern(words))]
+      found = [...text.matchAll(wordsPattern(words))]
       matches.set(words, found)
     }
     return found
   }
-  for (const anchor of Array.from(document.querySelectorAll('a[href]'))) {
+  for (const { anchor, before } of linksWithShownText(parseHTML(html))) {
     const words = collapseSpace(anchor.textContent)
     const url = linkURL(anchor.getAttribute('href') ?? '')
     if (!words || !url) continue
-    const before = document.createRange()
-    before.setStart(document.body, 0)
-    before.setEndBefore(anchor)
-    const occurrence = collapseSpace(before.toString()).match(wordsPattern(words))?.length ?? 0
+    const occurrence = collapseSpace(before).match(wordsPattern(words))?.length ?? 0
     const match = matchesOf(words).at(occurrence)
     if (match?.index !== undefined) links.push({ start: match.index, length: match[0].length, url })
   }
-  return { text: plain, links }
+  return { text, links }
 }
 
 /**
@@ -114,21 +145,20 @@ export function offersLayers(clipboard: WebClipboard): boolean {
 /**
  * The layers HTML makes, laid out as a browser would at the width of the frame they go into, or
  * the import viewport on the canvas. The destination is read before layout and again after it,
- * and the HTML laid out once more if it, or its width, changed meanwhile.
+ * and the HTML laid out again until neither it nor its width changed meanwhile.
  */
 async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardSnapshot | null> {
-  let snapshot: ClipboardSnapshot | null = null
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // Each further pass needs the destination to change again while the HTML is laid out.
+  for (;;) {
     const target = editor.htmlPasteTarget()
     const width = target.width ?? HTML_IMPORT_VIEWPORT.width
     const styled = await browserHTMLToDesignDocument(markup, {
       compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
     })
-    snapshot = await editor.prepareStyledHTML(styled)
+    const snapshot = await editor.prepareStyledHTML(styled)
     const now = editor.htmlPasteTarget()
-    if (now.id === target.id && now.width === target.width) break
+    if (now.id === target.id && now.width === target.width) return snapshot
   }
-  return snapshot
 }
 
 /**

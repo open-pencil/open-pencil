@@ -130,6 +130,23 @@ test('links land on the words the page linked, across line breaks', async () => 
   ])
 })
 
+test('hidden text in the page does not move a link to another occurrence', async () => {
+  await paste({
+    'text/html':
+      '<p><span style="display: none">Home </span>Home <a href="https://a.test/">Home</a></p>',
+    'text/plain': 'Home Home'
+  })
+
+  await expect.poll(linkRuns).toEqual([{ start: 5, length: 4, url: 'https://a.test/' }])
+})
+
+test('HTML without text or boxes pastes nothing, as in Figma', async () => {
+  await paste({ 'text/html': '<p>Hello</p><p>world</p>' })
+
+  await expect.poll(pageLayers).toEqual([])
+  await expect(toasts()).toHaveCount(0)
+})
+
 test('a laid-out copy without text pastes as layers at once', async () => {
   await paste({
     'text/html':
@@ -150,6 +167,8 @@ test('the notice keeps the text when the HTML shows nothing', async () => {
   // The notice gives way to one that only reports, and the text stays.
   await expect(layersOffer()).toHaveCount(0)
   await expect(toasts()).toHaveCount(1)
+  // A report, not the failure path, which shows an error.
+  await expect(toasts()).toHaveAttribute('data-tone', 'default')
   expect((await pageLayers()).map((layer) => layer.text)).toEqual([hidden])
 })
 
