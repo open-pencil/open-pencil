@@ -7,11 +7,8 @@ import type * as Y from 'yjs'
 const room = { documentId: crypto.randomUUID(), roomEpoch: 0 }
 const limits = { updates: 3, bytes: 1 << 20 }
 
-/** A room log whose document records its own updates, as the relay wires them. */
 async function openLog(store = memoryStateStore().store, logLimits = limits) {
-  const opened = await openRoomLog(store, room, logLimits)
-  opened.document.on('update', (update: Uint8Array) => opened.log.record(update))
-  return { ...opened, store }
+  return { ...(await openRoomLog(store, room, logLimits)), store }
 }
 
 function type(document: Y.Doc, text: string) {
@@ -23,12 +20,12 @@ describe('room log', () => {
     const { document, log, store } = await openLog()
     type(document, 'a')
     type(document, 'b')
-    await log.save(document)
+    await log.save()
     const saved = await store.load(room)
     expect(saved).toMatchObject({ snapshot: null, sequence: 1 })
     expect(saved.updates).toHaveLength(1)
     // Nothing new to save writes nothing.
-    await log.save(document)
+    await log.save()
     expect((await store.load(room)).sequence).toBe(1)
   })
 
@@ -36,16 +33,16 @@ describe('room log', () => {
     const { document, log, store } = await openLog()
     for (const text of ['a', 'b', 'c']) {
       type(document, text)
-      await log.save(document)
+      await log.save()
     }
     type(document, 'd')
-    await log.save(document)
+    await log.save()
     expect(await store.load(room)).toMatchObject({ updates: [], sequence: 3 })
 
     type(document, 'e')
-    await log.save(document)
+    await log.save()
     expect((await store.load(room)).updates).toHaveLength(1)
-    await log.save(document, { closing: true })
+    await log.save({ closing: true })
     const closed = await store.load(room)
     expect(closed.updates).toEqual([])
 
@@ -64,10 +61,10 @@ describe('room log', () => {
       }
     })
     type(document, 'a')
-    await expect(log.save(document)).rejects.toThrow('Database unavailable')
+    await expect(log.save()).rejects.toThrow('Database unavailable')
     refuse = false
     type(document, 'b')
-    await log.save(document)
+    await log.save()
     const saved = await memory.store.load(room)
     expect(saved.updates).toEqual([])
     expect(saved.snapshot).not.toBeNull()
@@ -91,11 +88,11 @@ describe('room log', () => {
       }
     })
     type(document, 'a')
-    await expect(log.save(document)).rejects.toThrow('Connection reset')
+    await expect(log.save()).rejects.toThrow('Connection reset')
     type(document, 'b')
-    await log.save(document)
+    await log.save()
     type(document, 'c')
-    await log.save(document)
+    await log.save()
     const saved = await memory.store.load(room)
     expect(saved.sequence).toBe(2)
     expect(saved.updates).toHaveLength(1)
@@ -121,11 +118,11 @@ describe('room log', () => {
       }
     })
     type(document, 'a')
-    const first = log.save(document)
+    const first = log.save()
     await until(() => release !== undefined)
     // An edit after the first save took its batch, saved while that one is still writing.
     type(document, 'b')
-    const second = log.save(document)
+    const second = log.save()
     await Bun.sleep(5)
     expect(sequences).toEqual([1])
     release?.()

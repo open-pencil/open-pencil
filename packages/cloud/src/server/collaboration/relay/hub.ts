@@ -149,10 +149,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     if (room.content) return Promise.resolve(room.content)
     room.loading ??= openRoomLog(options.store, room.identity, logLimits).then(
       (content) => {
-        content.document.on('update', (update: Uint8Array) => {
-          content.log.record(update)
-          schedulePersist(room)
-        })
+        content.document.on('update', () => schedulePersist(room))
         room.content = content
         return content
       },
@@ -171,7 +168,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     // A room nobody needed the document of since it was resumed has nothing new to save.
     if (!room.content) return true
     try {
-      await room.content.log.save(room.content.document, { closing })
+      await room.content.log.save({ closing })
       return true
     } catch (error) {
       report('Saving a collaboration room failed:', error)

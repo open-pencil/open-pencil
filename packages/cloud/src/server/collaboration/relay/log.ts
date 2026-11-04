@@ -6,15 +6,12 @@ import type { CollaborationRoomIdentity, CollaborationStateStore } from './persi
 export type RoomLogLimits = { updates: number; bytes: number }
 
 export type RoomLog = {
-  /** Takes an update the room's document applied, for the next save. */
-  record(update: Uint8Array): void
   /**
-   * Saves what the room took since the last save: one merged update in the log, or a snapshot in
-   * the log's place once it reaches its limits, as the room closes, or after a failed save.
-   * Saves run one at a time. Throws when the store refused it; what it held is kept for the next
-   * save.
+   * Saves what the document took since the last save: one merged update in the log, or a snapshot
+   * in the log's place once it reaches its limits, as the room closes, or after a failed save.
+   * Saves run one at a time; a refused one rejects, and the next save writes a snapshot.
    */
-  save(document: Y.Doc, options?: { closing?: boolean }): Promise<void>
+  save(options?: { closing?: boolean }): Promise<void>
 }
 
 /**
@@ -31,70 +28,47 @@ export async function openRoomLog(
   if (saved.snapshot) Y.applyUpdate(document, saved.snapshot)
   for (const update of saved.updates) Y.applyUpdate(document, update)
 
+  /** Updates since the last save, which the next one logs. */
   let pending: Uint8Array[] = []
+  document.on('update', (update: Uint8Array) => pending.push(update))
+  /** The last sequence a save may have written: an append that failed may still have landed. */
   let sequence = saved.sequence
-  let logged = {
-    count: saved.updates.length,
-    bytes: saved.updates.reduce((total, update) => total + update.byteLength, 0)
-  }
-  /**
-   * Set when a write failed: whether it landed is unknown, so the next save writes a snapshot,
-   * which holds the room whatever the store kept, rather than logging the sequence again.
-   */
+  let loggedCount = saved.updates.length
+  let loggedBytes = saved.updates.reduce((total, update) => total + update.byteLength, 0)
+  /** Set by a failed save, after which only a snapshot is sure to hold the room. */
   let compactNext = false
-  /**
-   * Set when an append failed: its row may have landed, so the snapshot covers that sequence too,
-   * and the next append takes the one after it.
-   */
-  let appendUnknown = false
   /** The save in flight; the next one waits for it, so two never claim one sequence. */
   let saving: Promise<void> = Promise.resolve()
 
-  async function saveNow(current: Y.Doc, closing: boolean) {
+  async function write(closing: boolean) {
     const compact =
       compactNext ||
-      logged.count >= limits.updates ||
-      logged.bytes >= limits.bytes ||
-      (closing && (logged.count > 0 || pending.length > 0))
-    if (pending.length === 0 && !compact) return
+      loggedCount >= limits.updates ||
+      loggedBytes >= limits.bytes ||
+      (closing && (loggedCount > 0 || pending.length > 0))
     // Updates that arrive while this save is in flight go to the next one.
     const batch = pending
     pending = []
-    try {
-      if (compact) {
-        // The snapshot holds the whole room, this batch included, through the last logged update.
-        const through = appendUnknown ? sequence + 1 : sequence
-        await store.compact(room, through, Y.encodeStateAsUpdate(current))
-        sequence = through
-        logged = { count: 0, bytes: 0 }
-        compactNext = false
-        appendUnknown = false
-      } else {
-        const update = Y.mergeUpdates(batch)
-        try {
-          await store.append(room, sequence + 1, update)
-        } catch (error) {
-          appendUnknown = true
-          throw error
-        }
-        sequence += 1
-        logged = { count: logged.count + 1, bytes: logged.bytes + update.byteLength }
-      }
-    } catch (error) {
-      pending = [...batch, ...pending]
-      compactNext = true
-      throw error
+    if (compact) {
+      await store.compact(room, sequence, Y.encodeStateAsUpdate(document))
+      loggedCount = 0
+      loggedBytes = 0
+      compactNext = false
+    } else if (batch.length > 0) {
+      const update = Y.mergeUpdates(batch)
+      sequence += 1
+      await store.append(room, sequence, update)
+      loggedCount += 1
+      loggedBytes += update.byteLength
     }
   }
 
   const log: RoomLog = {
-    record(update) {
-      pending.push(update)
-    },
-
-    save(current, { closing = false } = {}) {
-      const run = saving.then(() => saveNow(current, closing))
-      saving = run.catch(() => undefined)
+    save({ closing = false } = {}) {
+      const run = saving.then(() => write(closing))
+      saving = run.catch(() => {
+        compactNext = true
+      })
       return run
     }
   }
