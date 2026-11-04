@@ -392,6 +392,39 @@ describe("a set's properties as each variant's linked copy", () => {
     expect(assigned.map((assignment) => guidOf(assignment.defID))).toEqual([largeCopy])
   })
 
+  // A duplicate of a variant carries its original's saved copies; the original keeps their
+  // GUIDs, which its untouched layers name, and the duplicate gets copies of its own.
+  test('a duplicated variant gives its copies GUIDs of its own', async () => {
+    const bytes = await exportFigFile(await dotSet())
+    const before = savedCopies(parseFigBuffer(bytes.slice().buffer as ArrayBuffer).nodeChanges)
+    for (const keepArchive of [true, false]) {
+      const graph = await open(bytes)
+      if (!keepArchive) releaseFigArchive(graph)
+      const set = expectDefined(
+        new FigmaAPI(graph).currentPage.findOne(
+          (node) => node.type === 'COMPONENT_SET'
+        ) as FigmaComponentSetNode | null,
+        'set'
+      )
+      const large = expectDefined(
+        set.children.find((child) => child.name === 'Size=Large'),
+        'large'
+      )
+      const huge = large.clone()
+      huge.name = 'Size=Huge'
+      set.appendChild(huge)
+
+      const after = savedCopies(
+        parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer).nodeChanges
+      )
+      const copies = after.map(({ copies: own }) => own['Show dot'])
+      expect(new Set(copies).size).toBe(3)
+      // Each variant's dot binds its own variant's copy.
+      expect(after.map(({ dot }) => dot)).toEqual(copies)
+      if (keepArchive) expect(copies.slice(0, 2)).toEqual(before.map(({ copies: own }) => own['Show dot']))
+    }
+  })
+
   // A file OpenPencil wrote keeps copies under GUIDs from its own counter, which a later full
   // save must not mint again for a new property's copy.
   test('a full save mints new copies past the copies the file saved', async () => {

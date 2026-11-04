@@ -18,6 +18,8 @@ import { getOrCreatePropertyGuid, type SceneNodeToKiwiContext } from './context'
 interface SavedCopy {
   id?: GUID
   parentPropDefId?: GUID
+  /** The variant the copy was read for; a duplicate of it carries the copy too. */
+  keptBy?: string
 }
 
 /** Whether a property is one each of the set's variants copies: any but a variant property. */
@@ -41,7 +43,11 @@ function copyGuid(
   const property = guidToString(getOrCreatePropertyGuid(context, propertyId, localIdCounter))
   const saved = effectiveFigmaRawNodeFields(variant).componentPropDefs
   const kept = (Array.isArray(saved) ? (saved as SavedCopy[]) : []).find(
-    (copy) => copy.id && copy.parentPropDefId && guidToString(copy.parentPropDefId) === property
+    (copy) =>
+      copy.id &&
+      copy.parentPropDefId &&
+      copy.keptBy === variant.id &&
+      guidToString(copy.parentPropDefId) === property
   )?.id
   const guid = kept ?? { sessionID: 1, localID: localIdCounter.value++ }
   if (!kept) context.assignedGuidValues?.add(`${guid.sessionID}:${guid.localID}`)

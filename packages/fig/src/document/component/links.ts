@@ -49,12 +49,14 @@ export function instanceVariant(graph: SceneGraph, instance: SceneNode): SceneNo
  * Keeps a variant's copies as the file saved them, `{ id, parentPropDefId }`, in its raw fields,
  * which the export writes them from again (`variantPropertyCopies`): the layers and instances
  * a save leaves untouched still name these GUIDs. A document read from an archive keeps no other
- * raw fields on its layers.
+ * raw fields on its layers. Each copy records the variant it was read for (`keptBy`): a duplicate
+ * of the variant carries the same list, and only the variant the file saved writes those GUIDs.
  */
 function keepCopyGuids(variant: SceneNode, copies: ReadonlyMap<string, string>): void {
   const componentPropDefs = [...copies].map(([copy, property]) => ({
     id: stringToGuid(copy),
-    parentPropDefId: stringToGuid(property)
+    parentPropDefId: stringToGuid(property),
+    keptBy: variant.id
   }))
   variant.source = {
     ...variant.source,
