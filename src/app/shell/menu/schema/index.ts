@@ -135,6 +135,11 @@ export const APP_MENU_SCHEMA = [
         shortcut: 'MOD+SHIFT+R'
       },
       {
+        id: 'paste-as-layers',
+        feature: 'document',
+        label: 'Paste as layers'
+      },
+      {
         id: 'selection.duplicate',
         feature: 'document',
         label: 'Duplicate',

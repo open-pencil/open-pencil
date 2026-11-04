@@ -76,6 +76,7 @@ export const menuMessageDefaults = {
   pasteToReplace: 'Paste to replace',
   copyProperties: 'Copy properties',
   pasteProperties: 'Paste properties',
+  pasteAsLayers: 'Paste as layers',
   renameSelection: 'Rename selection…',
   copyPasteAs: 'Copy/Paste as',
   copyAsText: 'Copy as text',

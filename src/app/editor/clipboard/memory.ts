@@ -47,3 +47,18 @@ export function hasInMemoryClipboardHTML(): boolean {
 export function clearInMemoryClipboardHTML(): void {
   memoryClipboard = { html: '', plainText: '' }
 }
+
+let lastWebClipboard = { html: '', text: '' }
+
+/**
+ * Keeps the HTML of the last web page pasted here. The desktop clipboard plugin reads text only,
+ * so Paste as layers takes this HTML while the clipboard still holds the same text.
+ */
+export function rememberWebClipboard(html: string, text: string): void {
+  lastWebClipboard = { html, text }
+}
+
+/** The remembered web page HTML when the clipboard still holds its text; empty otherwise. */
+export function rememberedWebHTML(text: string): string {
+  return text !== '' && text === lastWebClipboard.text ? lastWebClipboard.html : ''
+}

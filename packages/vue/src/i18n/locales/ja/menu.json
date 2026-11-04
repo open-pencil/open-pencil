@@ -41,6 +41,7 @@
   "pasteToReplace": "貼り付けて置換",
   "copyProperties": "プロパティをコピー",
   "pasteProperties": "プロパティを貼り付け",
+  "pasteAsLayers": "レイヤーとして貼り付け",
   "copyPasteAs": "形式を選択してコピー/貼り付け",
   "copyAsText": "テキストとしてコピー",
   "copyAsSVG": "SVGとしてコピー",
