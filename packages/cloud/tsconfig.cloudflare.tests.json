@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.cloudflare.json",
+  "extends": "./src/runtime/cloudflare/tsconfig.json",
   "compilerOptions": {
     "types": ["@cloudflare/workers-types", "bun"],
     "paths": {
