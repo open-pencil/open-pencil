@@ -327,18 +327,13 @@ export function handlePenNodeEditDown(
       editor.nodeEditRemoveVertex(vi)
       return
     }
-    if (isEndpoint(vi, es.segments)) {
-      const nodeId = es.nodeId
-      editor.exitNodeEditMode(true)
-      editor.penResumeFromEndpoint(nodeId, vi)
-    }
+    // The pen commits the open path before it continues from the point.
+    if (isEndpoint(vi, es.segments)) editor.penResumeFromEndpoint(es.nodeId, vi)
     return
   }
 
   if (editor.nodeEditAddVertex(cx, cy)) return
-  const nodeId = es.nodeId
-  editor.exitNodeEditMode(true)
-  editor.penStartPiece(nodeId, pieceStart)
+  editor.penStartPiece(es.nodeId, pieceStart)
 }
 
 export function handleNodeEditMove(

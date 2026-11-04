@@ -113,7 +113,9 @@ describe('read-only documents', () => {
     editor.setReadOnly(true)
 
     expect(editor.state.nodeEditState).toBeNull()
-    expect(getNodeOrThrow(editor.graph, path.id).height).toBe(40)
+    const committed = getNodeOrThrow(editor.graph, path.id)
+    expect(committed.height).toBe(40)
+    expect(committed.vectorNetwork?.vertices[1]).toMatchObject({ x: 100, y: 40 })
     expect(() => editor.enterNodeEditMode(path.id)).toThrow(ReadOnlyDocumentError)
   })
 

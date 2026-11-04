@@ -62,3 +62,39 @@ test('closes the path when its layer is deleted or the document is replaced', ()
   editor.replaceGraph(next)
   expect(editor.state.nodeEditState).toBeNull()
 })
+
+test('commits the open path before opening another, and keeps it open when opened again', () => {
+  const editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const first = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const second = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+
+  editor.enterNodeEditMode(first.id)
+  const session = expectDefined(editor.state.nodeEditState)
+  expectDefined(session.vertices[0]).x -= 20
+  editor.enterNodeEditMode(first.id)
+  expect(editor.state.nodeEditState).toBe(session)
+
+  editor.enterNodeEditMode(second.id)
+  expect(editor.state.nodeEditState?.nodeId).toBe(second.id)
+  expect(editor.graph.getNode(first.id)?.width).toBe(120)
+})
+
+test('does not open a library layer, which changes in its library', () => {
+  const editor = createEditor()
+  const component = editor.graph.createNode('COMPONENT', editor.state.currentPageId, {
+    librarySource: {
+      identity: { libraryId: 'design-system', assetKey: 'icon', revisionId: 'r1' },
+      sourceNodeId: 'source',
+      readOnly: true
+    }
+  })
+  const vector = editor.graph.createNode('VECTOR', component.id, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
+
+  editor.enterNodeEditMode(vector.id)
+  expect(editor.state.nodeEditState).toBeNull()
+})

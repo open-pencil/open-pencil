@@ -57,6 +57,7 @@ import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
+import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
@@ -352,6 +353,10 @@ export function createEditor(options?: EditorOptions) {
     select: selection.select,
     deleteSelected: clipboard.deleteSelected
   })
+  const penResume = createPenResumeActions(ctx, {
+    penCommit: shapes.penCommit,
+    exitNodeEditMode: vectorEdit.exitNodeEditMode
+  })
   const readOnly = createReadOnlyActions(ctx, () => {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
@@ -492,8 +497,9 @@ export function createEditor(options?: EditorOptions) {
     // Shapes & tools
     ...shapes,
 
-    // Vector edit mode: a path edited point by point
+    // Vector edit mode: a path edited point by point, and the pen continuing a path
     ...vectorEdit,
+    ...penResume,
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,

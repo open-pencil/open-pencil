@@ -98,6 +98,12 @@ describe('pen path undo/redo', () => {
     editor.setTool('RECTANGLE')
     expect(editor.state.penState).toBeNull()
     const id = [...editor.state.selectedIds][0]
-    expect(getNodeOrThrow(editor.graph, id).vectorNetwork?.segments).toHaveLength(1)
+    const drawn = getNodeOrThrow(editor.graph, id)
+    expect(drawn.vectorNetwork?.segments).toHaveLength(1)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(id)).toBeUndefined()
+    editor.undo.redo()
+    expect(getNodeOrThrow(editor.graph, id).vectorNetwork).toEqual(drawn.vectorNetwork)
   })
 })

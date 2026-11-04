@@ -7,7 +7,6 @@ import { adoptCoveredLayers } from './shapes/adopt'
 import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen/draw'
-import { createPenResumeActions } from './shapes/pen/resume'
 import { createPencilActions } from './shapes/pencil'
 import { defaultNodeName, nextNumberedName } from './structure/rename'
 import type { EditorContext } from './types'
@@ -85,8 +84,6 @@ export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: Updat
   const pencilActions = createPencilActions(ctx, createShape)
   const framePresetActions = createFramePresetActions(ctx, createShape)
 
-  const penResumeActions = createPenResumeActions(ctx)
-
   function setTool(tool: typeof ctx.state.activeTool) {
     // Another tool keeps the path the pen has drawn; the hand only pans while it draws.
     if (ctx.state.penState && tool !== 'PEN' && tool !== 'HAND') penActions.penCommit(false)
@@ -96,7 +93,6 @@ export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: Updat
   return {
     createShape,
     ...penActions,
-    ...penResumeActions,
     ...pencilActions,
     ...framePresetActions,
     adoptCoveredLayers: (containerId: string) => adoptCoveredLayers(ctx, containerId),

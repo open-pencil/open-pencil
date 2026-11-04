@@ -9,6 +9,8 @@ import {
 import type { EditorContext } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
 
+import { getNodeEditCapability } from '#core/editor/capabilities'
+
 import { getLiveNetwork } from './network'
 import type { VectorEditActionDeps } from './types'
 
@@ -68,6 +70,12 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
     // A vector inside an instance draws its component's path, so Figma does not open it.
     if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return
+    // A library's own layers change in the library, not in a document that uses them.
+    if (!getNodeEditCapability(ctx.graph, nodeId).editable) return
+    // The path already open stays as edited; another one is committed before this one opens.
+    const open = ctx.state.nodeEditState
+    if (open?.nodeId === nodeId) return
+    if (open) exitNodeEditMode(true)
 
     const world = getWorldMatrix(node, ctx.graph)
     const absNetwork = transformVectorNetwork(world, node.vectorNetwork)

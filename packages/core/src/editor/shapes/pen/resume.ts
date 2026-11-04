@@ -7,9 +7,12 @@ import type {
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { slotScope } from '@open-pencil/scene-graph/slots'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
+import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext, EditorState, ResumedPath } from '#core/editor/types'
+import { offeredTool } from '#core/editor/views'
 
 type PenStateInit = NonNullable<EditorState['penState']>
 
@@ -102,17 +105,42 @@ export function chainEndingAt(network: VectorNetwork, end: number): PenChain {
   }
 }
 
+/** What ends the edits a resumed pen takes over from. */
+export interface PenResumeDeps {
+  penCommit: (closed: boolean) => void
+  exitNodeEditMode: (commit: boolean) => void
+}
+
 // Pen state is page-absolute; resumed geometry maps through the node's world matrix so nested,
 // rotated, and flipped vectors resume in place. The layer stays in the document while its path
 // grows, and committing updates it.
-export function createPenResumeActions(ctx: EditorContext) {
-  /** Continues `nodeId`'s path with the pen, on the chain `pick` takes from its page-space network. */
-  function resumeOn(nodeId: string, pick: (network: VectorNetwork) => PenChain) {
+export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) {
+  /** Whether the pen can continue `nodeId`'s path: an editable vector, with the pen on offer. */
+  function resumable(nodeId: string) {
+    const node = ctx.graph.getNode(nodeId)
+    if (node?.type !== 'VECTOR' || !node.vectorNetwork) return false
+    // A vector inside an instance draws its component's path, so it is not continued there.
+    if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return false
+    if (!getNodeEditCapability(ctx.graph, nodeId).editable) return false
+    return offeredTool(ctx.state, 'PEN') === 'PEN'
+  }
+
+  /**
+   * Continues `nodeId`'s path with the pen, on the chain `pick` takes from its page-space network.
+   * A path open for editing and a pen path in progress are committed first, so the pen continues
+   * the path as it stands and nothing drawn is lost.
+   */
+  function resumeOn(nodeId: string, pick: (network: VectorNetwork) => PenChain | null) {
+    if (!resumable(nodeId)) return
+    if (ctx.state.nodeEditState) deps.exitNodeEditMode(true)
+    if (ctx.state.penState) deps.penCommit(false)
+
     const node = ctx.graph.getNode(nodeId)
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
-
     const absNetwork = transformVectorNetwork(getWorldMatrix(node, ctx.graph), node.vectorNetwork)
-    ctx.state.penState = createResumedPenState(node, pick(absNetwork))
+    const chain = pick(absNetwork)
+    if (!chain) return
+    ctx.state.penState = createResumedPenState(node, chain)
     ctx.setSelectedIds(new Set())
     ctx.setActiveTool('PEN')
     ctx.requestRender()
@@ -122,8 +150,15 @@ export function createPenResumeActions(ctx: EditorContext) {
     resumeOn(nodeId, wholeChain)
   }
 
+  /** Continues the path from one of its points; a point that is not in the path does nothing. */
   function penResumeFromEndpoint(nodeId: string, endpointVertexIndex: number) {
-    resumeOn(nodeId, (network) => chainEndingAt(network, endpointVertexIndex))
+    resumeOn(nodeId, (network) =>
+      Number.isInteger(endpointVertexIndex) &&
+      endpointVertexIndex >= 0 &&
+      endpointVertexIndex < network.vertices.length
+        ? chainEndingAt(network, endpointVertexIndex)
+        : null
+    )
   }
 
   /** Starts a new piece of `nodeId`'s path at a page point, as a pen click off the path does in Figma. */

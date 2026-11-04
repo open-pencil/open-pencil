@@ -98,3 +98,61 @@ test('a new piece with one point leaves the path as it was', () => {
   expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
   expect(editor.undo.canUndo).toBe(false)
 })
+
+/** A read-only library component holding a copy of the T, as a library's own layers are. */
+function libraryVector() {
+  const component = editor.graph.createNode('COMPONENT', editor.state.currentPageId, {
+    librarySource: {
+      identity: { libraryId: 'design-system', assetKey: 'icon', revisionId: 'r1' },
+      sourceNodeId: 'source',
+      readOnly: true
+    }
+  })
+  return editor.graph.createNode('VECTOR', component.id, {
+    width: 100,
+    height: 80,
+    vectorNetwork: structuredClone(T)
+  })
+}
+
+test('commits the path open for editing before continuing it', () => {
+  const { pen, id } = setup()
+  editor.enterNodeEditMode(id)
+  const stem = expectDefined(editor.state.nodeEditState?.vertices[3])
+  stem.y = 100
+
+  pen.penResumeFromEndpoint(id, 3)
+
+  expect(editor.state.nodeEditState).toBeNull()
+  expect(points(editor.graph.getNode(id)?.vectorNetwork).at(3)).toEqual({ x: 50, y: 100 })
+  const last = expectDefined(editor.state.penState?.vertices.at(-1))
+  expect({ x: last.x, y: last.y }).toEqual({ x: 50, y: 100 })
+})
+
+test('commits a pen path in progress before continuing another', () => {
+  const { pen, id } = setup()
+  editor.setTool('PEN')
+  editor.penAddVertex(200, 0)
+  editor.penAddVertex(300, 0)
+
+  pen.penResumeOnPath(id)
+
+  expect(editor.graph.getChildren(editor.state.currentPageId)).toHaveLength(2)
+  expect(editor.state.penState?.resumingNodeId).toBe(id)
+})
+
+test('does not continue from a point the path does not have', () => {
+  const { pen, id } = setup()
+  for (const index of [-1, 4, 1.5]) pen.penResumeFromEndpoint(id, index)
+  expect(editor.state.penState).toBeNull()
+})
+
+test('does not continue a library layer or a board path', () => {
+  const { pen, id } = setup()
+  pen.penResumeOnPath(libraryVector().id)
+  expect(editor.state.penState).toBeNull()
+
+  editor.setDocumentKind('board')
+  pen.penResumeOnPath(id)
+  expect(editor.state.penState).toBeNull()
+})
