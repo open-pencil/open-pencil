@@ -371,7 +371,8 @@ function instanceCapHeight(parsed: HarfBuzzFont, instance: HarfBuzzInstance): nu
   let capHeight = capHeights.get(instance)
   if (capHeight === undefined) {
     const units = instance.font.getMetricPositionWithFallback(parsed.hb.MetricsTag.CAP_HEIGHT)
-    capHeight = units / parsed.face.upem
+    capHeight =
+      Number.isFinite(units) && units > 0 ? units / parsed.face.upem : TYPICAL_CAP_HEIGHT_EMS
     capHeights.set(instance, capHeight)
   }
   return capHeight

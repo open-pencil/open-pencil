@@ -22,6 +22,7 @@ const INTER_CAP_HEIGHT_EMS = INTER_CAP_HEIGHT_UNITS / INTER_UNITS_PER_EM
 const BADGE_FONT_SIZES = [12, 14, 16, 18, 24, 28, 32]
 const SURFACE_SIZE = 200
 const OS2_VERSION_WITHOUT_CAP_HEIGHT = 1
+const OS2_CAP_HEIGHT = 88
 const HHEA_ASCENDER = 4
 const HHEA_DESCENDER = 6
 const MVAR_RECORDS = 12
@@ -103,6 +104,12 @@ function withoutCapHeight(font: ArrayBuffer): ArrayBuffer {
   return copy
 }
 
+function withZeroCapHeight(font: ArrayBuffer): ArrayBuffer {
+  const copy = font.slice(0)
+  expectDefined(fontTableView(copy, 'OS/2'), 'OS/2 table').setInt16(OS2_CAP_HEIGHT, 0)
+  return copy
+}
+
 /** Inter's MVAR varies its x-height only: the copy varies its cap height by the same deltas. */
 function withCapHeightVariation(font: ArrayBuffer): ArrayBuffer {
   const copy = font.slice(0)
@@ -140,6 +147,9 @@ describe('cap-height leading trim', () => {
     const noCapHeight = withoutCapHeight(inter)
     provider.registerFont(noCapHeight, 'No Cap Height')
     await fontManager.markLoaded('No Cap Height', 'Regular', noCapHeight)
+    const zeroCapHeight = withZeroCapHeight(inter)
+    provider.registerFont(zeroCapHeight, 'Zero Cap Height')
+    await fontManager.markLoaded('Zero Cap Height', 'Regular', zeroCapHeight)
     const capAxis = withCapHeightVariation(inter)
     provider.registerFont(capAxis, 'Cap Axis')
     await fontManager.markLoaded('Cap Axis', 'Regular', capAxis)
@@ -285,6 +295,14 @@ describe('cap-height leading trim', () => {
     const layout = layOut({ text: 'HE', fontSize: 20, fontFamily: 'No Cap Height' })
     expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(inkRows(layout).top).toBeLessThanOrEqual(1)
+    layout.delete()
+  })
+
+  test('trims to a typical cap height a font that declares a zero one', () => {
+    const node = textNode({ text: 'HE', fontSize: 20, fontFamily: 'Zero Cap Height' })
+    const layout = layOutNode(node)
+    expect(baselines(layout)[0]).toBeCloseTo(TYPICAL_CAP_HEIGHT_EMS * 20, 2)
+    expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
     layout.delete()
   })
 
