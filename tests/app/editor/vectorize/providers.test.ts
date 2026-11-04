@@ -1,5 +1,7 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   extractVectorizedSVGURL,
   getVectorizeProvider,
@@ -7,9 +9,6 @@ import {
 } from '@/app/editor/vectorize/providers'
 import { appCredentialRefs } from '@/app/settings/credentials/persistence'
 import { credentialKey } from '@/app/settings/credentials/reference'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 describe('vectorization providers', () => {
   test('extracts supported nested SVG response URLs', () => {
     expect(extractVectorizedSVGURL({ image: { url: 'https://cdn.recraft.ai/a.svg' } })).toBe(

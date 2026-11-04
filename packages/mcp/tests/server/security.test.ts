@@ -1,0 +1,534 @@
+import { describe, expect, test } from 'bun:test'
+import { mkdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
+import * as v from 'valibot'
+
+import { toolNumber } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { startServer } from '#mcp/server'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
+import { DESKTOP_APP_ORIGINS, parseCORSOrigins, resolveCORSOrigins } from '#mcp/transport/origins'
+
+import { connectMockBrowser, readHealth, waitForBrowserRegistration } from '../helpers/server'
+
+const isUnix = process.platform !== 'win32'
+const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)
+const TEST_AUTH_TOKEN = 'test-auth-token'
+const NO_AUTH_TOKEN = null as string | null
+let testCounter = 0
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+function testSocketPath(): string | null {
+  if (!isUnix) return null
+  return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
+}
+
+describe('MCP server CORS', () => {
+  test('accepts authenticated health preflight from the configured worktree origin', async () => {
+    const origin = 'https://feature.open-pencil.localhost'
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      corsOrigin: origin,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:${httpPort}/health`, {
+        method: 'OPTIONS',
+        headers: {
+          origin,
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'authorization'
+        }
+      })
+      expect(response.status).toBe(204)
+      expect(response.headers.get('access-control-allow-origin')).toBe(origin)
+      expect(response.headers.get('access-control-allow-headers')).toContain('Authorization')
+    } finally {
+      await handle.close()
+    }
+  })
+
+  test('allows the desktop app origin when several origins are configured', async () => {
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      corsOrigin: DESKTOP_APP_ORIGINS,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const preflight = (origin: string) =>
+        fetch(`http://127.0.0.1:${httpPort}/health`, {
+          method: 'OPTIONS',
+          headers: {
+            origin,
+            'access-control-request-method': 'GET',
+            'access-control-request-headers': 'authorization'
+          }
+        })
+
+      // The app webview calls the server from its own origin with no extra setup.
+      for (const origin of DESKTOP_APP_ORIGINS) {
+        const response = await preflight(origin)
+        expect(response.headers.get('access-control-allow-origin')).toBe(origin)
+      }
+      // An unrelated site is not granted access.
+      const foreign = await preflight('https://example.com')
+      expect(foreign.headers.get('access-control-allow-origin')).toBeNull()
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
+describe('MCP CORS origin configuration', () => {
+  test('defaults to the desktop app origin when nothing is configured', () => {
+    expect(resolveCORSOrigins(undefined)).toEqual(DESKTOP_APP_ORIGINS)
+    expect(resolveCORSOrigins('   ')).toEqual(DESKTOP_APP_ORIGINS)
+    expect(resolveCORSOrigins(',')).toEqual(DESKTOP_APP_ORIGINS)
+  })
+
+  test('accepts a comma-separated override', () => {
+    expect(parseCORSOrigins('https://a.example, https://b.example')).toEqual([
+      'https://a.example',
+      'https://b.example'
+    ])
+    expect(resolveCORSOrigins('https://one.example')).toEqual(['https://one.example'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Auto-generated auth token
+// ---------------------------------------------------------------------------
+
+describe('MCP server auto-generated auth token', () => {
+  test('requires auth when authToken is omitted (auto-generated)', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      // Request without auth should be rejected
+      const response = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/event-stream',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'no-auth-test', version: '0.0.0' }
+          }
+        })
+      })
+      expect(response.status).toBe(401)
+
+      // /health should show authRequired: true
+      const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
+      const health = await readHealth(healthResp)
+      expect(health.authRequired).toBe(true)
+      expect(health.tools).toBeUndefined()
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// /rpc auth skip when authToken is null
+// ---------------------------------------------------------------------------
+
+describe('MCP server /rpc auth skip', () => {
+  test('/rpc skips auth when authToken is explicitly null', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: NO_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      // /health should show authRequired: false
+      const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
+      const health = await readHealth(healthResp)
+      expect(health.authRequired).toBe(false)
+
+      // Connect a browser
+      const graph = new SceneGraph()
+      const browser = await connectMockBrowser(httpPort, graph)
+      await waitForBrowserRegistration(httpPort)
+
+      try {
+        // /rpc should succeed without auth when browser IS connected
+        const rpcResp = await fetch(`http://127.0.0.1:${httpPort}/rpc`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ command: 'tool', args: { name: 'get_current_page' } })
+        })
+        expect(rpcResp.status).toBe(200)
+
+        // /mcp should still work (no auth required)
+        const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+          method: 'POST',
+          headers: {
+            accept: 'application/json, text/event-stream',
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2025-06-18',
+              capabilities: {},
+              clientInfo: { name: 'no-auth-rpc-test', version: '0.0.0' }
+            }
+          })
+        })
+        expect(mcpResp.status).toBe(200)
+      } finally {
+        browser.close()
+      }
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MCP numeric input coercion
+// ---------------------------------------------------------------------------
+
+describe('MCP numeric input coercion', () => {
+  const schema = v.object({ x: v.pipe(toolNumber(), v.minValue(0), v.maxValue(100)) })
+
+  test('accepts numeric strings through Standard Schema validation', async () => {
+    expect(await schema['~standard'].validate({ x: '42' })).toMatchObject({ value: { x: 42 } })
+    expect(await schema['~standard'].validate({ x: 42 })).toMatchObject({ value: { x: 42 } })
+    expect(await schema['~standard'].validate({ x: '3.14' })).toMatchObject({ value: { x: 3.14 } })
+  })
+
+  test('rejects non-numeric strings', async () => {
+    expect((await schema['~standard'].validate({ x: 'abc' })).issues).toBeDefined()
+  })
+
+  test('respects min/max after coercion', async () => {
+    expect(await schema['~standard'].validate({ x: '50' })).toMatchObject({ value: { x: 50 } })
+    expect((await schema['~standard'].validate({ x: '200' })).issues).toBeDefined()
+    expect((await schema['~standard'].validate({ x: '-1' })).issues).toBeDefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// GAP-04: wrong auth token rejected
+// ---------------------------------------------------------------------------
+
+describe('MCP auth boundary', () => {
+  test('server rejects requests with an incorrect auth token', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'correct-token',
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const r = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer wrong-token',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'mcp.ping', params: {} })
+      })
+      expect(r.status).toBe(401)
+    } finally {
+      await handle.close()
+    }
+  })
+
+  test('server rejects requests with no Authorization header when auth is enabled', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'correct-token',
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const r = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'mcp.ping', params: {} })
+      })
+      expect(r.status).toBe(401)
+    } finally {
+      await handle.close()
+    }
+  })
+
+  test('server accepts requests with authToken: null (auth disabled)', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: null,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const healthResp = await readHealth(await fetch(`http://127.0.0.1:${httpPort}/health`))
+      expect(healthResp.authRequired).toBe(false)
+
+      const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/event-stream',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'auth-disabled-test', version: '0.0.0' }
+          }
+        })
+      })
+      expect(mcpResp.status).toBe(200)
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// GAP-05: MCP session limits — MAX_MCP_SESSIONS=10
+// ---------------------------------------------------------------------------
+
+describe('MCP session limits', () => {
+  test('server returns 503 when MAX_MCP_SESSIONS is exceeded', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    const sessions: Client[] = []
+    const openSession = async () => {
+      const c = new Client({ name: 'limit-client', version: '0.0.0' })
+      const t = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${httpPort}/mcp`), {
+        requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } }
+      })
+      await c.connect(t)
+      sessions.push(c)
+      return c
+    }
+
+    try {
+      // Open MAX_MCP_SESSIONS (10) sessions successfully
+      for (let i = 0; i < 10; i++) await openSession()
+
+      // The 11th must be rejected with 503. The MCP SDK wraps non-2xx
+      // responses in StreamableHTTPError, so we assert on the error text
+      // rather than on a successful return.
+      const overflow = new Client({ name: 'overflow', version: '0.0.0' })
+      const overflowTransport = new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${httpPort}/mcp`),
+        { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
+      )
+      let caught: unknown = null
+      try {
+        await overflow.connect(overflowTransport)
+        await overflow.listTools()
+      } catch (e) {
+        caught = e
+      }
+      expect(caught).toBeInstanceOf(Error)
+      expect((caught as Error).message).toContain('Too many active MCP sessions')
+      await overflow.close().catch(() => undefined)
+    } finally {
+      for (const s of sessions) await s.close().catch(() => undefined)
+      await handle.close()
+    }
+  }, 30000)
+})
+
+// ---------------------------------------------------------------------------
+// GAP-03: PID recycling in discovery — stale PID should not be treated as live
+// ---------------------------------------------------------------------------
+
+describe('Discovery PID liveness', () => {
+  test('readDiscoveryFile does not treat a recycled PID as live', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
+
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    try {
+      const discoveryPath = await getDiscoveryPath()
+      const raw = expectDefined(
+        parseDiscoveryInfo(await Bun.file(discoveryPath).text()),
+        'discovery file'
+      )
+      expect(raw.pid).toBe(process.pid)
+    } finally {
+      await handle.close()
+    }
+
+    // After close, the discovery file should be gone — even if the PID
+    // is reused by a future process, the absence of the file is the
+    // primary signal that the server is no longer reachable.
+    const discoveryPath = await getDiscoveryPath()
+    expect(await Bun.file(discoveryPath).exists()).toBe(false)
+  })
+
+  test('readDiscoveryFile returns null for a discovery file with a dead PID', async () => {
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
+    const { readDiscoveryFile } = await import('#mcp/transport/discovery')
+    const discoveryPath = await getDiscoveryPath()
+
+    // Snapshot any existing discovery file so we can restore it after the test.
+    let originalContents: string | null = null
+    try {
+      originalContents = await Bun.file(discoveryPath).text()
+    } catch {
+      void 0 // File doesn't exist — nothing to save
+    }
+
+    // Spawn a child process, kill it, and use its PID — guaranteed dead.
+    // This avoids relying on a hardcoded magic number (like 4_194_304) that
+    // could theoretically be alive on systems with a high pid_max.
+    // Uses an inline Bun script instead of the `sleep` binary so the
+    // fixture is self-contained and portable (no external dependency).
+    const child = Bun.spawn({
+      cmd: [process.execPath, '-e', 'setTimeout(()=>{},999999)'],
+      detached: true
+    })
+    const deadPid = child.pid
+    child.kill()
+    await child.exited
+    const discoveryDir = dirname(discoveryPath)
+    await mkdir(discoveryDir, { recursive: true })
+    await Bun.write(
+      discoveryPath,
+      JSON.stringify({
+        pid: deadPid,
+        socketPath: '/tmp/nonexistent-mcp.sock',
+        httpPort: 9999,
+        authRequired: true,
+        authToken: 'dead-pid-test-token',
+        version: '0.1.0-test',
+        startedAt: new Date().toISOString()
+      })
+    )
+
+    try {
+      const result = await readDiscoveryFile()
+      expect(result).toBeNull()
+    } finally {
+      // Restore the original discovery file (or remove our seeded one)
+      if (originalContents !== null) {
+        await Bun.write(discoveryPath, originalContents)
+      } else {
+        try {
+          const { unlink } = await import('node:fs/promises')
+          await unlink(discoveryPath)
+        } catch {
+          void 0
+        }
+      }
+    }
+  })
+})

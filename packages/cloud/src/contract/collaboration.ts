@@ -40,6 +40,11 @@ export const collaborationTicketSchema = v.object({
   permission: documentPermissionSchema,
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expiresAt: v.string(),
-  serverEnforcedWrites: v.boolean()
+  serverEnforcedWrites: v.boolean(),
+  /**
+   * Whether the relay answers `RELAY_HEARTBEAT`. A relay from before it takes a ping for a
+   * malformed frame and turns the peer away, so editors ask only a relay that says it answers.
+   */
+  relayHeartbeat: v.optional(v.boolean(), false)
 })
 export type CollaborationTicket = v.InferOutput<typeof collaborationTicketSchema>

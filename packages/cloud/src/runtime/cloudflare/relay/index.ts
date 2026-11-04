@@ -1,4 +1,4 @@
-import { RELAY_DOCUMENT_PARAM } from '#cloud/contract'
+import { RELAY_DOCUMENT_PARAM, RELAY_HEARTBEAT } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
@@ -80,6 +80,14 @@ export function createCloudflareRelayObject(
     extends DurableObject<CloudflareCloudEnvironment>
     implements CollaborationRelayRPC
   {
+    constructor(ctx: DurableObjectState, env: CloudflareCloudEnvironment) {
+      super(ctx, env)
+      // Peers check the relay still hears them; the runtime answers without waking the object.
+      ctx.setWebSocketAutoResponse(
+        new WebSocketRequestResponsePair(RELAY_HEARTBEAT.ping, RELAY_HEARTBEAT.pong)
+      )
+    }
+
     readonly #sockets = createRelaySockets({
       sockets: () => this.ctx.getWebSockets(),
       createRelay: async (documentId) => {

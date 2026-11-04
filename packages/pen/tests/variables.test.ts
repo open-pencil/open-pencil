@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
-
-import { expectDefined } from './helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const BLUE = { r: 64 / 255, g: 148 / 255, b: 208 / 255, a: 1 }
 
 function parseVariableDocument(prefix: string, children: PenNode[]) {

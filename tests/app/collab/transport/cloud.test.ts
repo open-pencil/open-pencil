@@ -9,21 +9,28 @@ import {
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
   binaryType = 'blob'
   readonly sent: RelayClientFrame[] = []
+  /** Text the transport sent, which is only ever its heartbeat. */
+  readonly texts: string[] = []
+  /** Whether a relay answers the heartbeat, as a live one does. */
+  answersHeartbeat = true
   /** Socket messages sent, which outnumber frames once a frame travels in fragments. */
   messages = 0
   private readonly assembler = createRelayClientAssembler(() => Infinity)
 
-  send(data: Uint8Array) {
+  send(data: Uint8Array | string) {
+    if (typeof data === 'string') {
+      this.texts.push(data)
+      if (data === 'ping' && this.answersHeartbeat) this.receiveText('pong')
+      return
+    }
     this.messages++
     const assembled = this.assembler.push(data)
     const frame = assembled.type === 'frame' ? decodeRelayClientFrame(assembled.data) : null
@@ -39,6 +46,10 @@ class FakeSocket extends EventTarget {
     for (const data of relayServerMessages(frame)) {
       this.dispatchEvent(new MessageEvent('message', { data: data.slice().buffer }))
     }
+  }
+
+  receiveText(text: string) {
+    this.dispatchEvent(new MessageEvent('message', { data: text }))
   }
 
   /** Delivers bytes as one socket message, whatever they hold. */
@@ -62,6 +73,8 @@ function room(
     /** The document moved to another room by this ticket request. */
     movedAt?: number
     page?: EventTarget
+    /** Whether the relay answers the heartbeat, as its tickets say. */
+    heartbeat?: boolean
   } = {}
 ) {
   const sockets: FakeSocket[] = []
@@ -83,6 +96,7 @@ function room(
     },
     reconnectDelayMs: () => 0,
     page: options.page ? asDouble<Window>(options.page) : undefined,
+    heartbeat: options.heartbeat,
     onError: (_message, error) => errors.push(error),
     onRestored: () => {
       restored += 1
@@ -412,5 +426,105 @@ describe('Cloud relay transport', () => {
     page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
     await settle()
     expect(sockets).toHaveLength(1)
+  })
+
+  test('asks the relay whether it still hears this peer, and keeps a socket that answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping'])
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping', 'ping'])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      expect(sockets).toHaveLength(1)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('gives up a socket the relay stopped answering, and connects again', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      // The network went away without the socket closing: nothing answers the heartbeat.
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(40_000)
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toEqual(['server'])
+      expect(transport.signalingConnected()).toBe(false)
+      jest.advanceTimersByTime(0)
+      await settle()
+      expect(sockets).toHaveLength(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('never pings a relay whose tickets do not say it answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room()
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(60_000)
+      expect(socket.texts).toEqual([])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('waits for a slow connection instead of giving it up', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room({ heartbeat: true })
+      await settle()
+      jest.advanceTimersByTime(60_000)
+      expect(sockets).toHaveLength(1)
+      expect(sockets[0]?.readyState).toBe(WebSocket.CONNECTING)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('gives up a socket whose relay still sends but no longer hears this peer', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'ada'] })
+      // Ada's edits keep arriving, but the pings never reach the relay.
+      socket.answersHeartbeat = false
+      for (let tick = 0; tick < 4; tick++) {
+        socket.receive({ type: 'join', peerId: `peer-${tick}` })
+        jest.advanceTimersByTime(10_000)
+      }
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toContain('server')
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })

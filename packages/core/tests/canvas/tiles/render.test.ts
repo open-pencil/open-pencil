@@ -1,0 +1,556 @@
+import { beforeAll, describe, expect, test } from 'bun:test'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { SkiaRenderer } from '#core/canvas'
+import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
+import {
+  deleteRenderedTile,
+  downsampleTile,
+  renderTile,
+  TiledSceneController,
+  TileImageCache,
+  TILE_DEVICE_SIZE,
+  TileSurfacePool,
+  tileKeysForWorldBounds,
+  tileWorldBounds
+} from '#core/canvas/renderer/tiles'
+
+import { expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+let ck: Awaited<ReturnType<typeof initCanvasKit>>
+
+beforeAll(async () => {
+  ck = await initCanvasKit()
+})
+
+function color(r: number, g: number, b: number) {
+  return [{ type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }]
+}
+
+function pixels(image: ReturnType<typeof ck.MakeImageFromEncoded>, width: number, height: number) {
+  if (!image) throw new Error('Expected image')
+  return expectRgbaPixels(
+    image.readPixels(0, 0, {
+      width,
+      height,
+      colorType: ck.ColorType.RGBA_8888,
+      alphaType: ck.AlphaType.Unpremul,
+      colorSpace: ck.ColorSpace.SRGB
+    }),
+    'tile pixels'
+  )
+}
+
+function differenceRatio(a: Uint8Array, b: Uint8Array, tolerance = 8) {
+  let different = 0
+  for (let index = 0; index < a.length; index++) {
+    if (Math.abs(a[index] - b[index]) > tolerance) different++
+  }
+  return different / a.length
+}
+
+function squareCommandsBlob(): Uint8Array {
+  const blob = new Uint8Array(1 + 4 * 9 + 1)
+  const view = new DataView(blob.buffer)
+  let offset = 0
+  for (const [command, x, y] of [
+    [1, 0, 0],
+    [2, 1, 0],
+    [2, 1, 1],
+    [2, 0, 1]
+  ] as const) {
+    blob[offset] = command
+    view.setFloat32(offset + 1, x, true)
+    view.setFloat32(offset + 5, y, true)
+    offset += 9
+  }
+  blob[offset] = 0
+  return blob
+}
+
+function testImageBytes(): Uint8Array {
+  const surface = expectDefined(ck.MakeSurface(8, 8), 'test image surface')
+  const canvas = surface.getCanvas()
+  canvas.clear(ck.Color4f(0.95, 0.75, 0.1, 1))
+  const paint = new ck.Paint()
+  paint.setColor(ck.Color4f(0.1, 0.3, 0.95, 1))
+  canvas.drawRect(ck.LTRBRect(0, 0, 4, 8), paint)
+  surface.flush()
+  const image = surface.makeImageSnapshot()
+  const bytes = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'test image PNG')
+  image.delete()
+  paint.delete()
+  surface.delete()
+  return bytes
+}
+
+function createParityGraph() {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const clip = graph.createNode('FRAME', page.id, {
+    x: 40,
+    y: 30,
+    width: 260,
+    height: 180,
+    clipsContent: true,
+    cornerRadius: 20,
+    fills: color(0.95, 0.95, 0.98)
+  })
+  const frame = graph.createNode('FRAME', clip.id, { width: 360, height: 160, fills: [] })
+  for (let index = 0; index < 48; index++) {
+    graph.createNode(index % 2 === 0 ? 'RECTANGLE' : 'ELLIPSE', frame.id, {
+      x: (index % 12) * 28,
+      y: Math.floor(index / 12) * 36,
+      width: 32,
+      height: 32,
+      fills: color((index % 3) * 0.35, 0.3, 0.85 - (index % 2) * 0.3)
+    })
+  }
+  const translucent = graph.createNode('FRAME', page.id, {
+    x: 210,
+    y: 55,
+    width: 100,
+    height: 120,
+    opacity: 0.55,
+    blendMode: 'MULTIPLY',
+    fills: [],
+    effects: [
+      {
+        type: 'FOREGROUND_BLUR',
+        visible: true,
+        radius: 12,
+        spread: 0,
+        offset: { x: 0, y: 0 },
+        color: { r: 0, g: 0, b: 0, a: 1 }
+      }
+    ]
+  })
+  graph.createNode('RECTANGLE', translucent.id, {
+    x: 5,
+    y: 5,
+    width: 80,
+    height: 90,
+    fills: color(0.9, 0.2, 0.4),
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        visible: true,
+        color: { r: 0.1, g: 0.1, b: 0.2, a: 0.7 },
+        offset: { x: 18, y: 6 },
+        radius: 16,
+        spread: 3
+      }
+    ]
+  })
+  const masked = graph.createNode('FRAME', page.id, {
+    x: 105,
+    y: 150,
+    width: 130,
+    height: 80,
+    fills: []
+  })
+  graph.createNode('ELLIPSE', masked.id, {
+    x: 0,
+    y: 0,
+    width: 90,
+    height: 70,
+    isMask: true,
+    fills: color(0, 0, 0)
+  })
+  graph.createNode('RECTANGLE', masked.id, {
+    x: -15,
+    y: -5,
+    width: 150,
+    height: 90,
+    fills: color(0.1, 0.8, 0.35)
+  })
+  const imageHash = 'tile-parity-image'
+  graph.images.set(imageHash, testImageBytes())
+  graph.createNode('RECTANGLE', page.id, {
+    x: 238,
+    y: 176,
+    width: 68,
+    height: 52,
+    rotation: -7,
+    fills: [
+      {
+        type: 'IMAGE',
+        imageHash,
+        imageScaleMode: 'FILL',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true
+      }
+    ]
+  })
+  graph.createNode('TEXT', page.id, {
+    x: 245,
+    y: 15,
+    width: 64,
+    height: 34,
+    rotation: 9,
+    text: 'tile',
+    fontFamily: '__MissingFont__',
+    fontSize: 22,
+    fills: color(0.15, 0.1, 0.75),
+    derivedTextGlyphs: [
+      { commandsBlob: squareCommandsBlob(), x: 0, y: 22, fontSize: 18 },
+      { commandsBlob: squareCommandsBlob(), x: 20, y: 22, fontSize: 18 },
+      { commandsBlob: squareCommandsBlob(), x: 40, y: 22, fontSize: 18 }
+    ]
+  })
+  return { graph, page }
+}
+
+describe('tile rendering', () => {
+  test('restores pooled tile canvas transforms before the surface is reused', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    graph.createNode('RECTANGLE', page.id, {
+      x: 20,
+      y: 20,
+      width: 80,
+      height: 80,
+      fills: color(1, 0, 0)
+    })
+    const surface = expectDefined(ck.MakeSurface(320, 240), 'renderer surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    const { index } = RenderChunkIndex.build(graph, page.id)
+    const pictureCache = new RenderChunkPictureCache()
+    const surfacePool = new TileSurfacePool()
+    const key = { pageId: page.id, level: 1, x: 0, y: 0 }
+    try {
+      const first = expectDefined(
+        renderTile(renderer, graph, index, key, pictureCache, surfacePool),
+        'first tile'
+      )
+      const second = expectDefined(
+        renderTile(renderer, graph, index, key, pictureCache, surfacePool),
+        'second tile'
+      )
+      const firstPixels = pixels(first.image, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE)
+      const secondPixels = pixels(second.image, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE)
+      expect(firstPixels.every((value, index) => value === secondPixels[index])).toBe(true)
+      deleteRenderedTile(first)
+      deleteRenderedTile(second)
+    } finally {
+      surfacePool.clear()
+      pictureCache.clear()
+      index.dispose()
+      renderer.destroy()
+    }
+  })
+
+  test('cancels jobs of an earlier navigation generation and resumes rendering once idle', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    for (let index = 0; index < 48; index++) {
+      graph.createNode('RECTANGLE', page.id, {
+        x: (index % 12) * 100,
+        y: Math.floor(index / 12) * 100,
+        width: 80,
+        height: 80,
+        fills: color(0.2, 0.4, 0.8)
+      })
+    }
+    const surface = expectDefined(ck.MakeSurface(1280, 800), 'cancellation surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    // Every clock reading is 10 ms later, so each frame affords exactly one tile.
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    renderer.pageId = page.id
+    renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    renderer.viewportWidth = 1280
+    renderer.viewportHeight = 800
+    renderer.dpr = 1
+    renderer.zoom = 1
+    renderer.navigationPhase = 'idle'
+    try {
+      // A tile first records its chunk pictures, one per 10 ms frame, then renders.
+      let initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 60 && initial.metrics.interruptibleCompleted === 0; frame++) {
+        initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      expect(initial.pending).toBe(true)
+      expect(initial.metrics.interruptibleCompleted).toBe(1)
+
+      // A new gesture drops the queue; the tiles it needs are planned afresh, and at 10 ms each
+      // they exceed the moving budget, so the frame keeps its fallback instead.
+      renderer.navigationPhase = 'pan'
+      renderer.navigationGeneration = 1
+      const navigating = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      expect(navigating.metrics.cancelledJobs).toBeGreaterThan(0)
+      expect(navigating.metrics.interruptibleCompleted).toBe(0)
+      expect(navigating.metrics.skippedWithFallback).toBeGreaterThan(0)
+      expect(navigating.pending).toBe(true)
+
+      renderer.navigationPhase = 'idle'
+      let idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      for (let frame = 0; frame < 60 && idle.metrics.interruptibleCompleted === 0; frame++) {
+        idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      }
+      expect(idle.metrics.interruptibleCompleted).toBe(1)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('refreshes only tiles intersecting an updated isolated chunk', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    const changed = graph.createNode('RECTANGLE', page.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: color(1, 0, 0)
+    })
+    graph.createNode('RECTANGLE', page.id, {
+      x: 540,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: color(0, 0, 1)
+    })
+    const surface = expectDefined(ck.MakeSurface(640, 240), 'selective invalidation surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    const controller = new TiledSceneController()
+    renderer.pageId = page.id
+    renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    renderer.viewportWidth = 640
+    renderer.viewportHeight = 240
+    renderer.dpr = 1
+    renderer.zoom = 1
+    renderer.navigationPhase = 'idle'
+    try {
+      let initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 10 && initial.pending; frame++) {
+        initial = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      expect(initial.covered).toBe(true)
+
+      controller.invalidateNode(changed.id)
+      graph.updateNode(changed.id, { x: 30, fills: color(0, 1, 0) })
+      const refreshed = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+      expect(refreshed.metrics.interruptibleCompleted).toBe(1)
+      expect(refreshed.covered).toBe(true)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('live controller progressively replaces fallback pixels without changing the scene', () => {
+    const { graph, page } = createParityGraph()
+    const directSurface = expectDefined(ck.MakeSurface(320, 240), 'direct controller surface')
+    const tiledSurface = expectDefined(ck.MakeSurface(320, 240), 'tiled controller surface')
+    const direct = new SkiaRenderer(ck, directSurface)
+    const tiled = new SkiaRenderer(ck, tiledSurface)
+    const controller = new TiledSceneController()
+    const pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    for (const renderer of [direct, tiled]) {
+      renderer.pageId = page.id
+      renderer.pageColor = pageColor
+      renderer.viewportWidth = 320
+      renderer.viewportHeight = 240
+      renderer.dpr = 1
+      renderer.zoom = 1
+      renderer.navigationPhase = 'idle'
+      renderer.nodeFontReadiness = () => 'exhausted'
+    }
+
+    try {
+      direct.surface.getCanvas().clear(ck.WHITE)
+      direct.renderSceneToCanvas(direct.surface.getCanvas(), graph, page.id)
+      direct.surface.flush()
+      const directImage = direct.surface.makeImageSnapshot()
+
+      let result = { covered: false, pending: true }
+      for (let frame = 0; frame < 20 && result.pending; frame++) {
+        const canvas = tiled.surface.getCanvas()
+        canvas.clear(ck.WHITE)
+        tiled.renderSceneToCanvas(canvas, graph, page.id)
+        result = controller.renderFrame(tiled, canvas, graph, 1, 0)
+        tiled.surface.flush()
+      }
+      expect(result.covered).toBe(true)
+      expect(result.pending).toBe(false)
+
+      const tiledImage = tiled.surface.makeImageSnapshot()
+      expect(
+        differenceRatio(pixels(directImage, 320, 240), pixels(tiledImage, 320, 240))
+      ).toBeLessThan(0.01)
+      directImage.delete()
+      tiledImage.delete()
+    } finally {
+      controller.destroy()
+      direct.destroy()
+      tiled.destroy()
+    }
+  })
+
+  test('composes multiple queried tiles to match direct scene rendering', () => {
+    const { graph, page } = createParityGraph()
+
+    const directSurface = expectDefined(ck.MakeSurface(320, 240), 'direct surface')
+    const tiledSurface = expectDefined(ck.MakeSurface(320, 240), 'tiled surface')
+    const tileFactorySurface = expectDefined(ck.MakeSurface(320, 240), 'tile factory surface')
+    const direct = new SkiaRenderer(ck, directSurface)
+    const tiled = new SkiaRenderer(ck, tiledSurface)
+    const tileFactory = new SkiaRenderer(ck, tileFactorySurface)
+    direct.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    tiled.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    tileFactory.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    direct.nodeFontReadiness = () => 'exhausted'
+    tiled.nodeFontReadiness = () => 'exhausted'
+    tileFactory.nodeFontReadiness = () => 'exhausted'
+    const { index } = RenderChunkIndex.build(graph, page.id)
+    const level = 1
+    const keys = tileKeysForWorldBounds(page.id, level, {
+      minX: 0,
+      minY: 0,
+      maxX: 320,
+      maxY: 240
+    })
+    const pictureCache = new RenderChunkPictureCache()
+    const surfacePool = new TileSurfacePool()
+    try {
+      direct.surface.getCanvas().clear(ck.WHITE)
+      direct.renderSceneToCanvas(direct.surface.getCanvas(), graph, page.id)
+      direct.surface.flush()
+      const directImage = direct.surface.makeImageSnapshot()
+
+      const tiledCanvas = tiled.surface.getCanvas()
+      tiledCanvas.clear(ck.WHITE)
+      const rendered = keys.map((key) =>
+        expectDefined(
+          renderTile(tileFactory, graph, index, key, pictureCache, surfacePool),
+          'rendered tile'
+        )
+      )
+      const tilePaint = new ck.Paint()
+      tilePaint.setBlendMode(ck.BlendMode.Src)
+      for (const tile of rendered) {
+        const bounds = tileWorldBounds(tile.key)
+        tiledCanvas.drawImageRectOptions(
+          expectDefined(tile.image, 'tile image'),
+          ck.LTRBRect(0, 0, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE),
+          ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY),
+          ck.FilterMode.Nearest,
+          ck.MipmapMode.None,
+          tilePaint
+        )
+      }
+      tilePaint.delete()
+      tiled.surface.flush()
+      const tiledImage = tiled.surface.makeImageSnapshot()
+
+      expect(
+        differenceRatio(pixels(directImage, 320, 240), pixels(tiledImage, 320, 240))
+      ).toBeLessThan(0.01)
+      expect(rendered.every((tile) => tile.chunkCount <= index.size())).toBe(true)
+      expect(
+        rendered.every(
+          (tile) => expectDefined(tile.image, 'tile image').width() === TILE_DEVICE_SIZE
+        )
+      ).toBe(true)
+
+      directImage.delete()
+      tiledImage.delete()
+      for (const tile of rendered) deleteRenderedTile(tile)
+    } finally {
+      surfacePool.clear()
+      pictureCache.clear()
+      index.dispose()
+      direct.destroy()
+      tiled.destroy()
+      tileFactory.destroy()
+    }
+  })
+
+  test('a tile over nothing takes no surface and downsampling empties stays empty', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    graph.createNode('RECTANGLE', page.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: color(1, 0, 0)
+    })
+    const surface = expectDefined(ck.MakeSurface(320, 240), 'empty tile surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+    const { index } = RenderChunkIndex.build(graph, page.id)
+    const pictureCache = new RenderChunkPictureCache()
+    const surfacePool = new TileSurfacePool()
+    try {
+      const empty = expectDefined(
+        renderTile(
+          renderer,
+          graph,
+          index,
+          { pageId: page.id, level: 1, x: 5, y: 5 },
+          pictureCache,
+          surfacePool
+        ),
+        'empty tile'
+      )
+      expect(empty.image).toBeNull()
+      expect(surfacePool.size()).toBe(0)
+      const cache = new TileImageCache()
+      const cached = expectDefined(cache.install(empty, 1), 'cached empty tile')
+      const children = [cached, cached, cached, cached]
+      const parent = expectDefined(
+        downsampleTile(
+          renderer,
+          { pageId: page.id, level: 0.5, x: 2, y: 2 },
+          children,
+          surfacePool
+        ),
+        'downsampled'
+      )
+      expect(parent.image).toBeNull()
+
+      const filled = expectDefined(
+        renderTile(
+          renderer,
+          graph,
+          index,
+          { pageId: page.id, level: 1, x: 0, y: 0 },
+          pictureCache,
+          surfacePool
+        ),
+        'filled tile'
+      )
+      const filledCached = expectDefined(cache.install(filled, 1), 'cached filled tile')
+      const mixed = expectDefined(
+        downsampleTile(
+          renderer,
+          { pageId: page.id, level: 0.5, x: 0, y: 0 },
+          [filledCached, cached, cached, cached],
+          surfacePool
+        ),
+        'mixed'
+      )
+      const image = expectDefined(mixed.image, 'mixed image')
+      const px = pixels(image, TILE_DEVICE_SIZE, TILE_DEVICE_SIZE)
+      // The red square at world 20..60 lands in the top-left quadrant at half size: 10..30.
+      const at = (x: number, y: number) =>
+        Array.from(px.slice((y * TILE_DEVICE_SIZE + x) * 4, (y * TILE_DEVICE_SIZE + x) * 4 + 3))
+      expect(at(20, 20)).toEqual([255, 0, 0])
+      expect(at(100, 100)).toEqual([255, 255, 255])
+      cache.clear()
+    } finally {
+      surfacePool.clear()
+      pictureCache.clear()
+      index.dispose()
+      renderer.destroy()
+    }
+  })
+})

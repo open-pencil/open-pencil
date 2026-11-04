@@ -6,6 +6,7 @@ import { MockLanguageModelV4 } from 'ai/test'
 import { toRaw } from 'vue'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { markRunWork, runUndoEntries } from '@/app/ai/reply/run'
 import { currentRun, endRun, markRunPreview, runPageId, startRun } from '@/app/ai/tools'
@@ -16,7 +17,6 @@ import { createEditorStore } from '@/app/editor/session/create'
 import { presenceOf } from '@/app/presence/registry'
 import { appPreferences } from '@/app/settings/preferences/store'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 
 type EditorStore = ReturnType<typeof createEditorStore>

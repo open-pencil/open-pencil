@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'

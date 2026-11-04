@@ -1,5 +1,6 @@
 import {
   noDeepParentRelativeImports,
+  noCwdRelativePaths,
   noDeepParentRelativePaths,
   noFunctionAliasImports
 } from '#oxlint-plugin/rules/imports'
@@ -49,6 +50,7 @@ const plugin = definePlugin({
     'no-broad-double-cast': noBroadDoubleCast,
     'no-broad-unknown-type-assertions': noBroadUnknownTypeAssertions,
     'no-conditional-object-spreads': noConditionalObjectSpreads,
+    'no-cwd-relative-paths': noCwdRelativePaths,
     'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-deep-parent-relative-paths': noDeepParentRelativePaths,
     'no-duplicate-type-shapes': noDuplicateTypeShapes,

@@ -1,8 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { lineHeightPixels, percentLength, pixelLength } from '@open-pencil/scene-graph/text'

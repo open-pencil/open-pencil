@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { asComponentNode, createAPI } from '#core-tests/helpers/figma-api'
-
 describe('combineAsVariants', () => {
   test('wraps components into a COMPONENT_SET', () => {
     const api = createAPI()

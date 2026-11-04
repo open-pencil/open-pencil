@@ -66,7 +66,9 @@ describe('collaboration relay with issued tickets', () => {
       expect(ticket).toMatchObject({
         provider: 'relay',
         serverURL: `${relayURL}?document=${context.documentId}`,
-        serverEnforcedWrites: true
+        serverEnforcedWrites: true,
+        // Editors ping only a relay its tickets say answers; this one does.
+        relayHeartbeat: true
       })
 
       const first = context.relay()

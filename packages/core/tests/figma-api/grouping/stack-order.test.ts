@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createStackHost } from '#core-tests/helpers/figma-api'
-
-// Recorded with the same script in Figma desktop 126.
+import { createStackHost } from '#core-tests/helpers/figma-api'// Recorded with the same script in Figma desktop 126.
 
 describe('group and boolean stack order', () => {
   test('a group without an index goes on top of its parent', () => {

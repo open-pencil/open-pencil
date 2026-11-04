@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from 'node:http'
 import type { Duplex } from 'node:stream'
 
-import { RELAY_PATH } from '#cloud/contract'
+import { RELAY_HEARTBEAT, RELAY_PATH } from '#cloud/contract'
 import type { CollaborationRelay } from '#cloud/server'
 import { WebSocketServer, type RawData } from 'ws'
 
@@ -34,7 +34,13 @@ export function attachCollaborationRelay(
         send: (data) => webSocket.send(data),
         close: (code, reason) => webSocket.close(code, reason)
       })
-      webSocket.on('message', (data) => connection.receive(bytes(data)))
+      webSocket.on('message', (data, isBinary) => {
+        if (!isBinary && new TextDecoder().decode(bytes(data)) === RELAY_HEARTBEAT.ping) {
+          webSocket.send(RELAY_HEARTBEAT.pong)
+          return
+        }
+        connection.receive(bytes(data))
+      })
       webSocket.on('close', () => connection.closed())
       webSocket.on('error', () => webSocket.terminate())
     })

@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { createAPI, registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { RED, worldBox } from '#core-tests/helpers/flipped-layers'
 
 import { parseDrawIOFile } from '@open-pencil/drawio'

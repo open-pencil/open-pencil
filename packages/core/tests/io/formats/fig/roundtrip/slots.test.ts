@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { GUID } from '@open-pencil/kiwi/fig'
