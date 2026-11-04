@@ -279,6 +279,11 @@
       "import": "./dist/internal/scene-computed/index.js",
       "default": "./dist/internal/scene-computed/index.js"
     },
+    "./lifecycle/overlays": {
+      "types": "./dist/lifecycle/overlays/index.d.ts",
+      "import": "./dist/lifecycle/overlays/index.js",
+      "default": "./dist/lifecycle/overlays/index.js"
+    },
     "./lifecycle/retention": {
       "types": "./dist/lifecycle/retention/index.d.ts",
       "import": "./dist/lifecycle/retention/index.js",

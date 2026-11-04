@@ -3,6 +3,7 @@ import { createApp, nextTick } from 'vue'
 
 import { ReadOnlyDocumentError } from '@open-pencil/core'
 import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
@@ -33,7 +34,12 @@ export async function boot(): Promise<void> {
   const head = createHead()
   const app = createApp(App)
   const bootErrors = observeBootErrors(app)
-  app.use(router).use(head).use(createRetainedScopePlugin()).mount('#app')
+  app
+    .use(router)
+    .use(head)
+    .use(createRetainedScopePlugin())
+    .use(createOpenOverlaysPlugin())
+    .mount('#app')
 
   await router.isReady()
   await nextTick()
