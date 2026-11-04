@@ -78,4 +78,17 @@ describe('content bounds', () => {
       maxY: 10
     })
   })
+
+  test('leave out hidden children of visible layers', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, {
+      width: 100,
+      height: 100,
+      clipsContent: false
+    })
+    graph.createNode('RECTANGLE', frame.id, { x: 120, width: 40, height: 10, visible: false })
+
+    close(computeContentBounds(graph, [frame.id]), { minX: 0, minY: 0, maxX: 100, maxY: 100 })
+  })
 })
