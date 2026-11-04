@@ -1,4 +1,3 @@
-
 import { DEFAULT_FONT_FAMILY } from '../constants'
 import { percentLength, pixelLength } from '../text/lengths'
 import type { TextLength } from '../types'
