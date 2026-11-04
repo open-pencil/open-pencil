@@ -1,14 +1,13 @@
 import { describe, test, expect } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
-import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
+import { computeHandleVisibleVertices } from '#core/canvas/overlays'
 import { regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 const NETWORK: VectorNetwork = {
   vertices: [
     { x: 0, y: 0 },

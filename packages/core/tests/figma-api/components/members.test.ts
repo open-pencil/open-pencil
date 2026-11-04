@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
-
-// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+import { createAPI } from '#core-tests/helpers/figma-api'// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
 
 describe('component and component set members', () => {
   test('a description, on components and sets alone', () => {

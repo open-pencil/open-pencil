@@ -7,8 +7,7 @@ import {
   setInstanceOverride
 } from '@open-pencil/scene-graph/instances/overrides'
 
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }

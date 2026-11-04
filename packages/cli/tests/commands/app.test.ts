@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -6,8 +8,6 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 import * as v from 'valibot'
-
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
 setDefaultTimeout(60_000)
 
@@ -75,18 +75,7 @@ beforeEach(() => {
   responses.clear()
 })
 
-async function cli(args: string[]) {
-  const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: { ...process.env, OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath }
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: await proc.exited }
-}
+const cli = (args: string[]) => runCLI(args, { env: { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } })
 
 describe('documents CLI', () => {
   test('opens files by absolute path and reports the target document', async () => {

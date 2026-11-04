@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 describe('expanded', () => {
   test('defaults to true', () => {
     const api = createAPI()

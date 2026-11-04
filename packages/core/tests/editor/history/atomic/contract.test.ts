@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { createEditor, executeAtomicTool, type DocumentChange } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'

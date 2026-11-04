@@ -5,14 +5,15 @@ import { fontManager } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 const editor = createEditor()
 
 beforeAll(async () => {
-  const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+  const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', data)
   await fontManager.markLoaded('Inter', 'Bold', data)
-  const italic = await Bun.file('packages/core/assets/InterVariable-Italic.ttf').arrayBuffer()
+  const italic = await Bun.file(repoPath('packages/core/assets/InterVariable-Italic.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular Italic', italic)
   await fontManager.markLoaded('Inter', 'Bold Italic', italic)
 })

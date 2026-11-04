@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+import { solidFill } from '#core-tests/helpers/figma-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 

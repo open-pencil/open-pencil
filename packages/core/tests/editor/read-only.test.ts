@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor, executeAtomicTool, ReadOnlyDocumentError } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'

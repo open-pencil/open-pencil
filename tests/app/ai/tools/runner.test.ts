@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
 
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { Run } from '@/app/ai/reply/run'
 import { DEFAULT_AGENT_STEPS } from '@/app/ai/reply/step-limit'
@@ -11,9 +12,6 @@ import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 import { createDeferred } from '@/app/runtime/deferred'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 let store: EditorStore
 
 beforeEach(() => {

@@ -1,8 +1,7 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { isVariableFont, isWOFF2, sfntFont } from '@open-pencil/core/text'
 
 const font = (name: string) => Bun.file(join(FIXTURES, 'fonts', name)).arrayBuffer()

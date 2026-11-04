@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { parsePenFile } from '@open-pencil/pen'
-
-import { FIXTURES } from './helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 async function loadFixture(name: string): Promise<string> {
   return Bun.file(`${FIXTURES}/${name}`).text()
 }
