@@ -299,10 +299,13 @@ describe('fractional line heights', () => {
   // Figma desktop 126 (2026-11-04), 14 px Inter: the baselines it saves and the height it gives.
   test('set lines on top of each other at a line height of zero', () => {
     for (const lineHeight of [pixelLength(0), percentLength(2)]) {
-      for (const text of [lines(3), 'H']) {
+      for (const text of [lines(3), 'H\n\nH', 'H']) {
         const layout = layOut({ text, fontSize: 14, lineHeight })
         expectBaselines(layout, text === 'H' ? [5.091] : [5.091, 5.091, 5.091])
         expect(layout.getHeight()).toBe(0)
+        // Lines on one baseline keep their own glyphs, and an empty line has none.
+        const runs = layout.getShapedLines().map((line) => line.runs.length)
+        expect(runs).toEqual(text === 'H\n\nH' ? [1, 0, 1] : runs.map(() => 1))
         layout.delete()
       }
     }

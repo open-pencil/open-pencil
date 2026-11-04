@@ -166,21 +166,26 @@ function lineBoxes(
 
 /**
  * A paragraph's shaped lines by line number. Shaping leaves empty lines out and keeps the rest
- * in order, so each shaped line goes to the line after the one before it whose baseline is
- * nearest its own; lines that share a baseline, at a line height under a pixel, go in order.
+ * in order, so each shaped line goes to the line after the one before it, not empty, whose
+ * baseline is nearest its own; lines that share a baseline, at a line height under a pixel, go
+ * in order.
  */
 export function shapedLinesByLine(paragraph: Paragraph): Array<ShapedLine | undefined> {
   const lines = paragraph.getLineMetrics()
   const byLine: Array<ShapedLine | undefined> = Array.from({ length: lines.length })
+  const shaped = (line: LineMetrics) => line.endIndex > line.startIndex
   let next = 0
-  for (const shaped of paragraph.getShapedLines()) {
-    if (next >= lines.length) break
-    let nearest = next
-    for (let index = next + 1; index < lines.length; index++) {
-      const distance = Math.abs(lines[index].baseline - shaped.baseline)
-      if (distance < Math.abs(lines[nearest].baseline - shaped.baseline)) nearest = index
+  for (const drawn of paragraph.getShapedLines()) {
+    let nearest = -1
+    for (let index = next; index < lines.length; index++) {
+      if (!shaped(lines[index])) continue
+      const distance = Math.abs(lines[index].baseline - drawn.baseline)
+      if (nearest === -1 || distance < Math.abs(lines[nearest].baseline - drawn.baseline)) {
+        nearest = index
+      }
     }
-    byLine[nearest] = shaped
+    if (nearest === -1) break
+    byLine[nearest] = drawn
     next = nearest + 1
   }
   return byLine
