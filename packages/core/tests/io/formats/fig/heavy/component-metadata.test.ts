@@ -2,7 +2,7 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { readFixtureArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 import { heavy } from '@open-pencil/test-support/heavy'
 function importFixture(name: string) {
   const { nodeChanges, blobs, images } = parseFigBuffer(readFixtureArrayBuffer(name))

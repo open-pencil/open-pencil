@@ -4,12 +4,7 @@ import { exportHTMLBundle } from '#dom-css/export/bundle'
 import { serializeHTML } from '#dom-css/export/html'
 
 import { createCSSRuntime, createHeadlessCSSRuntime } from '@open-pencil/dom-css'
-import {
-  cardDocument,
-  DOM_CSS_COLORS,
-  simpleCardDocument,
-  TEST_COLORS
-} from '@open-pencil/test-support/dom-css'
+import { cardDocument, DOM_CSS_COLORS, simpleCardDocument } from '@open-pencil/test-support/dom-css'
 
 describe('@open-pencil/dom-css runtime', () => {
   it('serializes DesignDOM as HTML', () => {
@@ -172,8 +167,8 @@ describe('@open-pencil/dom-css runtime', () => {
     const document = await runtime.computeStyles(
       parsed,
       `
-        article { color: ${TEST_COLORS.slate900}; padding: 8px 16px; }
-        .card { width: 300px; color: ${TEST_COLORS.slate700}; }
+        article { color: ${DOM_CSS_COLORS.slate900}; padding: 8px 16px; }
+        .card { width: 300px; color: ${DOM_CSS_COLORS.slate700}; }
         article.card > header { gap: 12px; }
         .card .title { font-size: 24px; }
         #hero { width: 320px; background: white; }
@@ -184,14 +179,14 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(card?.type).toBe('element')
     if (card?.type !== 'element') return
     expect(card.computedStyle?.width).toBe('320px')
-    expect(card.computedStyle?.color).toBe(TEST_COLORS.slate700)
+    expect(card.computedStyle?.color).toBe(DOM_CSS_COLORS.slate700)
     expect(card.computedStyle?.['padding-right']).toBe('16px')
 
     const header = card.children.find((child) => child.type === 'element')
     expect(header?.type).toBe('element')
     if (header?.type !== 'element') return
     expect(header.computedStyle?.gap).toBe('12px')
-    expect(header.computedStyle?.color).toBe(TEST_COLORS.slate700)
+    expect(header.computedStyle?.color).toBe(DOM_CSS_COLORS.slate700)
   })
 })
 

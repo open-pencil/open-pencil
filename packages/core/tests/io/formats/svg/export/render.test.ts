@@ -1,18 +1,19 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportSVG, exportSVGOrThrow, makeGraph, pageId, renderNodesToSVGOrThrow } from './helpers'
+import { exportSVG, exportSVGOrThrow, renderNodesToSVGOrThrow } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
 // --- Full SVG export tests ---
 
 describe('renderNodesToSVG()', () => {
   test('returns null for empty selection', () => {
-    const graph = makeGraph()
+    const graph = makeSceneGraph('Page 1')
     expect(exportSVG(graph, [])).toBeNull()
   })
 
   test('returns null for hidden nodes', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 50,
       visible: false
@@ -21,8 +22,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('basic rectangle', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
@@ -37,16 +38,16 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('xml declaration', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 10,
       height: 10,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const withDecl = renderNodesToSVGOrThrow(graph, pageId(graph), [node.id], {
+    const withDecl = renderNodesToSVGOrThrow(graph, firstPageId(graph), [node.id], {
       xmlDeclaration: true
     })
-    const withoutDecl = renderNodesToSVGOrThrow(graph, pageId(graph), [node.id], {
+    const withoutDecl = renderNodesToSVGOrThrow(graph, firstPageId(graph), [node.id], {
       xmlDeclaration: false
     })
     expect(withDecl).toStartWith('<?xml')
@@ -54,8 +55,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('ellipse', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('ELLIPSE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('ELLIPSE', firstPageId(graph), {
       width: 80,
       height: 60,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, opacity: 1, visible: true }]
@@ -69,8 +70,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('line', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('LINE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('LINE', firstPageId(graph), {
       width: 100,
       height: 0,
       strokes: [
@@ -91,8 +92,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('star', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('STAR', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('STAR', firstPageId(graph), {
       width: 100,
       height: 100,
       pointCount: 5,
@@ -105,8 +106,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('polygon', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('POLYGON', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('POLYGON', firstPageId(graph), {
       width: 100,
       height: 100,
       pointCount: 6,
@@ -117,8 +118,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('rounded rectangle', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 200,
       height: 100,
       cornerRadius: 16,
@@ -130,8 +131,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('independent corners produce path', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 50,
       cornerRadius: 10,
@@ -148,8 +149,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('text node', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 200,
       height: 24,
       text: 'Hello World',
@@ -167,8 +168,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('rtl text node exports direction and logical anchor', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 180,
       height: 24,
       text: 'مرحبا',
@@ -184,8 +185,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('text with style runs', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 200,
       height: 24,
       text: 'Hello Bold',
@@ -203,8 +204,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('opacity', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 50,
       height: 50,
       opacity: 0.5,
@@ -215,8 +216,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('rotation', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 50,
       rotation: 45,
@@ -227,8 +228,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('stroke with dash pattern', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       strokes: [
@@ -248,8 +249,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('stroke cap and join', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       strokes: [
@@ -271,8 +272,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('frame with children', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       name: 'Card',
       width: 200,
       height: 150,
@@ -291,8 +292,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('frame with clipsContent', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 100,
       height: 100,
       clipsContent: true,
@@ -309,8 +310,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('hidden children excluded', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 100,
       height: 100
     })
@@ -333,8 +334,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('linear gradient', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [
@@ -361,8 +362,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test("linear gradient keeps Figma's transform", () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 60,
       fills: [
@@ -385,8 +386,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('radial gradient', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [
@@ -409,8 +410,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('drop shadow effect', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
@@ -433,8 +434,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('layer blur effect', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 50,
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
@@ -455,15 +456,15 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('multiple nodes', () => {
-    const graph = makeGraph()
-    const a = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const a = graph.createNode('RECTANGLE', firstPageId(graph), {
       x: 0,
       y: 0,
       width: 50,
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const b = graph.createNode('ELLIPSE', pageId(graph), {
+    const b = graph.createNode('ELLIPSE', firstPageId(graph), {
       x: 60,
       y: 0,
       width: 40,
@@ -477,8 +478,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('blend mode', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       blendMode: 'MULTIPLY',
@@ -489,8 +490,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('plus lighter blend mode', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       blendMode: 'LINEAR_DODGE',
@@ -501,8 +502,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('plus darker blend mode', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       blendMode: 'LINEAR_BURN',
@@ -513,8 +514,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('fill with opacity < 1', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 50,
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }]
@@ -524,8 +525,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('component and instance treated as containers', () => {
-    const graph = makeGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const comp = graph.createNode('COMPONENT', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
@@ -543,8 +544,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('section node', () => {
-    const graph = makeGraph()
-    const section = graph.createNode('SECTION', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const section = graph.createNode('SECTION', firstPageId(graph), {
       width: 500,
       height: 300,
       fills: [
@@ -557,8 +558,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('flip transforms', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 50,
       flipX: true,
@@ -569,8 +570,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('stroke opacity', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       strokes: [
@@ -589,8 +590,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('no fill no stroke produces no output for groups', () => {
-    const graph = makeGraph()
-    const group = graph.createNode('GROUP', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const group = graph.createNode('GROUP', firstPageId(graph), {
       width: 100,
       height: 100
     })
@@ -599,8 +600,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('group with children', () => {
-    const graph = makeGraph()
-    const group = graph.createNode('GROUP', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const group = graph.createNode('GROUP', firstPageId(graph), {
       width: 100,
       height: 100
     })
@@ -615,8 +616,8 @@ describe('renderNodesToSVG()', () => {
   })
 
   test('inner shadow effect', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],

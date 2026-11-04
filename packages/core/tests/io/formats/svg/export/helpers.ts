@@ -1,18 +1,10 @@
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-export function makeGraph() {
-  const graph = new SceneGraph()
-  graph.createNode('CANVAS', graph.rootId, { name: 'Page 1' })
-  return graph
-}
-
-export function pageId(graph: SceneGraph) {
-  return graph.getPages()[0].id
-}
+import { firstPageId } from '@open-pencil/test-support/scene'
 
 export function exportSVG(graph: SceneGraph, nodeIds: string[], xmlDecl = false): string | null {
-  return renderNodesToSVG(graph, pageId(graph), nodeIds, { xmlDeclaration: xmlDecl })
+  return renderNodesToSVG(graph, firstPageId(graph), nodeIds, { xmlDeclaration: xmlDecl })
 }
 
 export function exportSVGOrThrow(graph: SceneGraph, nodeIds: string[], xmlDecl = false): string {

@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '@open-pencil/test-support/heavy'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'

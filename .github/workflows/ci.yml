@@ -194,8 +194,8 @@ jobs:
       - name: Test repository tooling
         run: bun run test:tools
 
-      - name: Detect duplicated product code
-        run: bun run test:dupes
+      - name: Detect duplicated product code and test helpers
+        run: bun run test:dupes && bun run test:dupes:helpers
 
   storybook:
     name: Component workshop

@@ -4,7 +4,7 @@ import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 describe('Figma component property roundtrip', () => {
   beforeAll(async () => {
     await initCodec()

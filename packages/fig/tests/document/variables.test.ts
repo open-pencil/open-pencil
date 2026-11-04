@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 import { materializeDocument } from '#fig/document/materialize'
 import { materializeVariableResources } from '#fig/document/variables'
 
@@ -8,6 +7,7 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { guid } from '@open-pencil/test-support/fig/guid'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 function resources(operand: VariableDataEntry): NodeChange[] {
   return [

@@ -12,7 +12,7 @@ import {
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path'

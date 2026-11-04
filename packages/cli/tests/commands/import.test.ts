@@ -6,7 +6,7 @@ import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 import { runCLI } from '#cli-tests/helpers/run'
 
 setDefaultTimeout(60_000)

@@ -1,16 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import { parseFigBuffer } from '@open-pencil/fig'
-import {
-  convertFigmaDerivedTextGlyphs,
-  nodeChangeToProps,
-  encodeVectorNetworkBlob
-} from '@open-pencil/fig/node-change'
+import { convertFigmaDerivedTextGlyphs, nodeChangeToProps, encodeVectorNetworkBlob } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { loadFigFixture, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { loadFigFixture } from '@open-pencil/test-support/fig/fixtures'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { importClipboardNodes } from '#core/clipboard'
 import { exportFigFile } from '#core/io/formats/fig/export'

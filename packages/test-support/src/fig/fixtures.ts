@@ -7,7 +7,7 @@ import { parseFigFile, type ParseFigFileOptions } from '@open-pencil/core/io/for
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { FIXTURES } from '#test-support/paths'
+import { FIXTURES, readFixtureArrayBuffer } from '#test-support/paths'
 import { collectAllNodes } from '#test-support/fig/traversal'
 
 export const VALID_NODE_TYPES = new Set<string>([
@@ -67,25 +67,6 @@ export const nestedLayoutScaleFixtureSchema = v.object({
   edited: v.array(figNodeChangeFixtureSchema),
   blobs: v.array(v.string())
 })
-
-export function readFixtureBytes(name: string): Uint8Array {
-  return readFileSync(resolve(FIXTURES, name))
-}
-
-export function uint8ArrayToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const buffer = bytes.buffer
-  if (buffer instanceof ArrayBuffer) {
-    return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-  }
-
-  const copy = new Uint8Array(bytes.byteLength)
-  copy.set(bytes)
-  return copy.buffer
-}
-
-export function readFixtureArrayBuffer(name: string): ArrayBuffer {
-  return uint8ArrayToArrayBuffer(readFixtureBytes(name))
-}
 
 export async function parseFixture(
   name: string,

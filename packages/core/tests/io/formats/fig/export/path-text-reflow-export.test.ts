@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { parseFigBuffer } from '@open-pencil/fig'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { loadFigFixture, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
+import { loadFigFixture } from '@open-pencil/test-support/fig/fixtures'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { calibratePathTextLayout, getTextPathData, reflowPathTextGlyphs } from '#core/text/path'

@@ -2,15 +2,19 @@ import type { DesignDocument, DesignElement, DesignNode } from '@open-pencil/dom
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
-export const TEST_COLORS = {
+export const DOM_CSS_COLORS = {
   white: colorToCSS({ r: 1, g: 1, b: 1, a: 1 }),
   slate950: colorToCSS({ r: 2 / 255, g: 6 / 255, b: 23 / 255, a: 1 }),
   slate900: colorToCSS({ r: 17 / 255, g: 24 / 255, b: 39 / 255, a: 1 }),
   slate700: colorToCSS({ r: 31 / 255, g: 41 / 255, b: 55 / 255, a: 1 }),
+  slate600: colorToCSS({ r: 71 / 255, g: 85 / 255, b: 105 / 255, a: 1 }),
   slate200: colorToCSS({ r: 226 / 255, g: 232 / 255, b: 240 / 255, a: 1 }),
-  slateShadow: colorToCSS({ r: 15 / 255, g: 23 / 255, b: 42 / 255, a: 0.16 }),
+  slate300: colorToCSS({ r: 203 / 255, g: 213 / 255, b: 225 / 255, a: 1 }),
+  slate50: colorToCSS({ r: 248 / 255, g: 250 / 255, b: 252 / 255, a: 1 }),
   sky100: colorToCSS({ r: 224 / 255, g: 242 / 255, b: 254 / 255, a: 1 }),
-  sky700: colorToCSS({ r: 3 / 255, g: 105 / 255, b: 161 / 255, a: 1 })
+  sky700: colorToCSS({ r: 3 / 255, g: 105 / 255, b: 161 / 255, a: 1 }),
+  slateShadow: colorToCSS({ r: 15 / 255, g: 23 / 255, b: 42 / 255, a: 0.12 }),
+  dialogShadow: colorToCSS({ r: 15 / 255, g: 23 / 255, b: 42 / 255, a: 0.16 })
 } as const
 
 export const cardDocument: DesignDocument = {
@@ -47,11 +51,11 @@ export const cardCSS = `
     width: 320px;
     height: 180px;
     padding: 24px;
-    border: 1px solid ${TEST_COLORS.slate200};
+    border: 1px solid ${DOM_CSS_COLORS.slate200};
     border-radius: 16px;
-    background: ${TEST_COLORS.white};
-    box-shadow: 0px 16px 40px 0px ${TEST_COLORS.slateShadow};
-    color: ${TEST_COLORS.slate900};
+    background: ${DOM_CSS_COLORS.white};
+    box-shadow: 0px 16px 40px 0px ${DOM_CSS_COLORS.dialogShadow};
+    color: ${DOM_CSS_COLORS.slate900};
   }
   .title {
     font-size: 24px;
@@ -61,7 +65,7 @@ export const cardCSS = `
   .description {
     font-size: 14px;
     line-height: 20px;
-    color: ${TEST_COLORS.slate700};
+    color: ${DOM_CSS_COLORS.slate700};
   }
 `
 
@@ -82,7 +86,7 @@ export const fixtureCSS = `
     gap: 24px;
     width: 480px;
     padding: 32px;
-    background: ${TEST_COLORS.white};
+    background: ${DOM_CSS_COLORS.white};
   }
   .navbar {
     display: flex;
@@ -91,7 +95,7 @@ export const fixtureCSS = `
     width: 416px;
     height: 48px;
     padding: 0 16px;
-    border: 1px solid ${TEST_COLORS.slate200};
+    border: 1px solid ${DOM_CSS_COLORS.slate200};
     border-radius: 12px;
   }
   .brand {
@@ -105,8 +109,8 @@ export const fixtureCSS = `
     height: 24px;
     padding: 0 10px;
     border-radius: 9999px;
-    background: ${TEST_COLORS.sky100};
-    color: ${TEST_COLORS.sky700};
+    background: ${DOM_CSS_COLORS.sky100};
+    color: ${DOM_CSS_COLORS.sky700};
     font-size: 12px;
     font-weight: 600;
   }
@@ -114,9 +118,9 @@ export const fixtureCSS = `
     width: 312px;
     height: 40px;
     padding: 0 12px;
-    border: 1px solid ${TEST_COLORS.slate200};
+    border: 1px solid ${DOM_CSS_COLORS.slate200};
     border-radius: 8px;
-    color: ${TEST_COLORS.slate950};
+    color: ${DOM_CSS_COLORS.slate950};
     font-size: 14px;
   }
 `
@@ -181,20 +185,6 @@ export function findTextElement(nodes: DesignNode[]): DesignElement | undefined 
   return undefined
 }
 
-export const DOM_CSS_COLORS = {
-  white: colorToCSS({ r: 1, g: 1, b: 1, a: 1 }),
-  slate950: colorToCSS({ r: 2 / 255, g: 6 / 255, b: 23 / 255, a: 1 }),
-  slate900: colorToCSS({ r: 17 / 255, g: 24 / 255, b: 39 / 255, a: 1 }),
-  slate700: colorToCSS({ r: 31 / 255, g: 41 / 255, b: 55 / 255, a: 1 }),
-  slate600: colorToCSS({ r: 71 / 255, g: 85 / 255, b: 105 / 255, a: 1 }),
-  slate200: colorToCSS({ r: 226 / 255, g: 232 / 255, b: 240 / 255, a: 1 }),
-  slate300: colorToCSS({ r: 203 / 255, g: 213 / 255, b: 225 / 255, a: 1 }),
-  slate50: colorToCSS({ r: 248 / 255, g: 250 / 255, b: 252 / 255, a: 1 }),
-  sky100: colorToCSS({ r: 224 / 255, g: 242 / 255, b: 254 / 255, a: 1 }),
-  sky700: colorToCSS({ r: 3 / 255, g: 105 / 255, b: 161 / 255, a: 1 }),
-  slateShadow: colorToCSS({ r: 15 / 255, g: 23 / 255, b: 42 / 255, a: 0.12 }),
-  dialogShadow: colorToCSS({ r: 15 / 255, g: 23 / 255, b: 42 / 255, a: 0.16 })
-} as const
 
 export const simpleCardDocument: DesignDocument = {
   type: 'document',
