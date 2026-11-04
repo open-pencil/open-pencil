@@ -1,1 +1,0 @@
-- Joining a collaboration room on a large document is much faster and uses far less memory.

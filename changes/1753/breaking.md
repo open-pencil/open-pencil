@@ -1,1 +1,0 @@
-- `useCanvas` from `@open-pencil/vue/canvas/surface` no longer takes `onPresented`; listen for the editor's `render:presented` event with `editor.onEditorEvent('render:presented', …)`, which fires once a frame shows the whole visible scene (#1753).

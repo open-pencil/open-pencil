@@ -1,1 +1,0 @@
-- Vite apps serve CanvasKit's WebAssembly, the bundled fonts, and HarfBuzz's subsetter by adding `openPencil()` from `@open-pencil/core/node/vite`, and a host that does not serve one of them gets an error naming the file and the locator to set instead of a WebAssembly compile error (#1551).

@@ -2,6 +2,125 @@
 
 ## Unreleased
 
+## 0.17.0-beta.2 — 2026-11-04
+
+This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.2` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
+
+### Breaking changes
+
+- `sharedStylePatch` and `sharedStyleDetachPatch` move from `@open-pencil/vue/controls/shared-style` to `@open-pencil/scene-graph/shared-styles`.
+- `@open-pencil/core/vector` no longer exports `evalCubic`, and `@open-pencil/scene-graph/geometry` no longer exports `geometryCommandCoordCount`; use `cubicPoint` and `readGeometryBlob` from `@open-pencil/scene-graph/geometry` (#1685).
+- Plugin API nodes read Figma's node types: a page's `type` is `PAGE` instead of `CANVAS`, and `figma.root.type` is `DOCUMENT` instead of `FRAME`, in `node.type` and `toJSON()`. Scripts that compared against `CANVAS` should compare against `PAGE`.
+- Cloud keeps each collaboration room's snapshot in object storage beside the documents' files instead of in PostgreSQL. Upgrading starts every document's live room over from its last saved version, so edits a room held that no saved version has yet are dropped.
+- `useCanvas` from `@open-pencil/vue/canvas/surface` no longer takes `onPresented`; listen for the editor's `render:presented` event with `editor.onEditorEvent('render:presented', …)`, which fires once a frame shows the whole visible scene (#1753).
+
+### Added
+
+- The Eyedropper tool (I) and the color picker's eyedropper button pick any color shown on the canvas, with a loupe of the pixels under the pointer.
+- The desktop app can use Cursor, signed in with `cursor-agent login`, or Grok Build, signed in with `grok login`, as the design agent.
+- Choose and remember an interface size of 100%, 110%, 125%, or 150% without changing canvas zoom.
+- Home lists unsaved work kept from documents closed without saving or open when OpenPencil quit, with a preview of each, in place of the recovery prompt at start.
+- The AI chat compacts long conversations: the model summarizes what came before, automatically before the context window fills up, also between the steps of a long reply, from the new context meter in the chat header, or with `/compact`, and a request that is already too long offers Compact and retry. With Pi, `/compact` asks Pi to compact its own context, and the transcript shows where it did. Replies show the tokens they used on hover.
+- In the desktop app and for files in storage, a file reopens on the page and at the view it was left at, as in Figma (#1675).
+- Scripts create, find, apply, edit, and remove paint, text, effect, and grid styles through Figma's plugin API: `figma.createPaintStyle()` and its siblings, `getLocalPaintStylesAsync()` and its siblings, `getStyleByIdAsync()`, and `set…StyleIdAsync()` on layers. A change to a style reaches every layer and text range that uses it, and removing one leaves them its values. A style ID the document does not hold is refused, as in Figma.
+- Scripts read and set more of Figma's plugin API: `guides`, `horizontalPadding` and `verticalPadding`, `booleanOperation`, a text's underline style, `leadingTrim`, and `openTypeFeatures`, component `description`, `instances`, and `getInstancesAsync()`, a set's `defaultVariant` and `variantGroupProperties`, `removeOverrides()`, `setFillsAsync()` and `setStrokesAsync()`, `getTopLevelFrame()`, and `documentColorProfile`.
+- Scripts can export layers and pages with Figma's `node.exportAsync()` as PNG, JPG, SVG, or PDF, and read and set `node.exportSettings` with Figma's options, which `.fig` files keep.
+- New npm package `@open-pencil/oxlint-plugin`: OpenPencil's code conventions as Oxlint rules for any TypeScript project, such as validated JSON, Valibot schema placement, no broad type casts or silent catches, and no secrets in logs or URL query strings. `@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's repositories extend: the TypeScript, import, unicorn, promise, and Node rules they follow and the plugin's own, for a JSON `extends` path or `oxlint.config.ts`.
+- Official builds offer to report an unexpected error, or a problem you describe from **File → Report a Problem…**, to the OpenPencil team, optionally with recent diagnostics and the open document; nothing is sent until you choose **Send report**, and the next launch offers the error that ended a crashed session.
+- A Tab behaviour for tab triggers drawn as instances of a component, as in the shadcn/ui kit: in preview and generated Reka and Radix code, the chosen tab shows its selected variant and a tab drawn disabled cannot be chosen; design JSX writes such triggers as `Tabs.Tab` (#1710).
+- Shadow colour, blur, spread and offsets, and blur radius, bind to variables, so effects follow a variable mode: apply or create a variable from each field in the effect settings, where typing a value detaches it, and `figma.variables.setBoundVariableForEffect`, `bind_variable`, effect styles, `.fig` files and the Figma clipboard carry the bindings (#1712).
+- Form controls (text fields, textareas, number fields, switches, checkboxes, radios, and radio groups) have an invalid state: a behaviour binds it as a value or as an Invalid or Error variant beside Disabled, preview shows it, and generated Vue and React components take an `invalid` prop that sets `aria-invalid` (#1716).
+- On desktop, a Claude Code or Codex conversation reopened from chat history continues in the agent's own session, so the agent remembers what was said, instead of being read-only.
+- Vite apps serve CanvasKit's WebAssembly, the bundled fonts, and HarfBuzz's subsetter by adding `openPencil()` from `@open-pencil/core/node/vite`, and a host that does not serve one of them gets an error naming the file and the locator to set instead of a WebAssembly compile error (#1551).
+- Scripts read a layer's `fillGeometry` and `strokeGeometry` and call `outlineStroke()` as in Figma, in the apps and in `open-pencil eval`.
+- Release builds occasionally ask whether you would like to donate toward OpenPencil's development and infrastructure, and File → Support OpenPencil… and Settings → General link to the donation page.
+- Self-hosted Cloud servers can report their errors to PostHog error tracking through an optional `[error_tracking]` table in the deployment configuration; servers without it send nothing.
+- CSS, HTML and Tailwind export write a shadow or blur field bound to a variable as that variable's `var()` where the layer draws the variable's value, and design token export writes it as a reference to the variable's token, which import binds back.
+- Scripts get a layer's CSS with `getCSSAsync()`, the CSS OpenPencil's HTML export writes for it.
+- Editors made with `createEditor()` edit vector paths point by point, with their own undo, and continue paths with the pen: hosts open a path with `enterNodeEditMode()`, which `useCanvasInput` calls on double-click, and picking a tool other than the pen commits a pen path in progress (#1756).
+- Text copied from a web page or another app pastes as one text layer, as in Figma, keeping its links. **Paste as layers**, in the Edit menu and the canvas context menu, lays the copied HTML out as layers instead, and a notice offers it after pasting a card or other laid-out part of a web page, or HTML source.
+
+### Changed
+
+- `batch_update` applies all of its operations or none: a missing layer, a wrong value, or an unknown prop now fails the whole call and leaves the document unchanged, where it used to apply the rest and list errors (#1651).
+- Model settings open from the chat's model picker instead of a gear beside the message field.
+- Zoom to fit and zoom to selection fill the canvas with the layers inside the margins Figma keeps, zooming in past 100% for small layers, and zoom to fit on an empty page shows its origin at the centre at 100%; a page opens fitted to its layers on its first visit and returns to the view it was left at after (#1675).
+- The menus follow the tab in front: on Home and in a New file tab they leave out Object, Text, and Arrange and the items that need a document, and in the desktop app items that cannot act, such as Group with nothing selected, are greyed out, as in Figma.
+- Document tabs show what kind of file they hold, with the pen and sticky note Home uses for designs and boards.
+- Every setting with a default offers the same Reset to default, shown only while it differs, including the toolbar layout, tool access, chat, notifications, and online fonts.
+- The Behaviour section labels the two variant values a control draws as on and off, so a set whose values read like the value itself, such as Checked and Unchecked, is clear to set up (#1722).
+- A number field bound to a variable keeps its icon and shows its value; the variable button, now at the end of every field, names the variable on hover.
+- Recent files leave the list one at a time, from Remove from recent in each file's menu, instead of a button that cleared the whole list.
+- Imported HTML lands where a browser lays it out at 1440×900: CSS grid, floats, viewport units, media queries, and `body` styles place layers as on the page, and auto layout is kept wherever it reproduces the page.
+
+### Fixed
+
+- A component set's default variant is the one Figma picks: variants whose rows overlap read left to right, others top to bottom.
+- Component sets from files that save no variant values, such as the shadcn/ui community kits, list their values in Figma's order, and a variant property's default is the value of the set's top-left variant, as in Figma, whatever default the file records, so behaviours bind to them and scripts read them as Figma does (#1699).
+- Component sets made in OpenPencil open in Figma as component sets rather than frames of loose components, and sets whose variants were renamed or given new properties are saved without Figma reporting errors (#1699).
+- Component sets' boolean, text, instance swap, and slot properties read from a `.fig` appear once, on the set, keep an instance's value when it switches variant, and are saved so that Figma shows them on instances, including on sets made in OpenPencil (#1737).
+- Switching an instance's variant keeps its layers, their IDs and the overrides on them wherever the new variant has a layer of the same name, even one of another type, brings back the overrides of a layer the other variant lacks when the instance switches back, and undo restores the instance exactly.
+- A nested instance in a `.fig` file sizes in the variable mode its outer instance sets, also when its component is edited or it is pasted from Figma, and an override that clears a collection's mode opens, edits and saves per collection.
+- Duplicating or cloning an instance from a `.fig` file that holds two instances of the same component, such as a button with left and right icons, no longer makes the document fail to save (#1699).
+- Duplicating a frame that holds a component and its instances gives instances of the duplicated component, as in Figma (#1699).
+- A page added to a `.fig` file, such as one of the shadcn/ui kits, is saved last instead of second, and a page moved after opening is saved where it now is (#1707).
+- A library no longer reports its components as changed after a `.fig` round trip with fonts loaded.
+- Pasting a layer copied out of a component, while it is bound to one of the component's properties, pastes it unbound instead of failing.
+- Text is always laid out in its own fonts: text whose font, script fallback, or emoji font is still loading or not available is laid out again once it arrives, instead of keeping the size of another face, which left titles, sticky notes, and imported text narrower or wider than they drew.
+- Text with its leading trimmed to cap height, such as badge digits, sits where Figma puts it once its font is loaded, instead of several pixels too low.
+- Text with a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, instead of drifting a pixel every line or two.
+- The first Chinese, Japanese, or Korean text in the desktop app loads one system font per script instead of every listed one and keeps a single copy of each, using hundreds of megabytes less memory, and draws in about 70 ms instead of 2 s per render while its fonts load (#1684).
+- On Windows, page text in an installed font, such as interactive component previews on the canvas, draws in its bold, italic, and light faces instead of the regular one.
+- A text that sizes itself outside auto layout resizes when a variable bound to its size, such as its font size, changes.
+- Clicks and hover select a shape only where its fill or stroke draws, as in Figma: an unfilled line or curve is picked by its stroke, a filled ellipse or rounded rectangle by its outline, and a layer whose paints show nothing lets clicks through (#1685).
+- Escape clears the selection at any depth and Enter keeps layers without children selected, as in Figma; a click takes the empty area of a component or instance whatever its fill, while a ⌘-click passes through a frame or instance whose fill does not show (#1697).
+- Picking a layer in the layers panel leaves canvas clicks as clicking it on the canvas would, and the canvas no longer outlines the container a layer was reached through, as in Figma (#1700).
+- Selecting another layer while a vector path is open, such as in the layers panel, leaves vector edit mode and keeps the edit, as in Figma (#1756).
+- Pressing H while drawing with the pen or editing a vector path keeps the path and switches to the hand, as in Figma, instead of leaving it open under a tool that cannot edit it; holding Space still pans and lets a pen path continue (#1756).
+- Removing a fill, stroke, or effect in the properties panel keeps each remaining item's variable binding on that item, instead of moving a binding onto the wrong paint or effect.
+- An auto layout frame with nothing to hug keeps its size, as in Figma, rather than collapsing to its padding: a new frame keeps the size it was made at, and one that loses its last layer keeps the size it hugged to.
+- Spread and Compact arrange a pile of layers the same way every time, rather than differently on each run.
+- New stars have Figma's inner radius.
+- A rotated frame draws its whole fill, and exports of rotated layers are no longer cropped to a shifted box (#1767).
+- Opening a document keeps the loader up until its page is fully drawn where it opens, instead of showing the canvas while it still fills in (#1753).
+- HTML export draws linear, radial, and angular gradient fills and every stacked fill with its blend mode, writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use. Diamond gradients are still left out.
+- HTML export, Tailwind JSX, canvas islands, and `getCSSAsync()` blur layers and shadows as the canvas draws them, and text keeps its shadows; layer and background blurs were 2.3 times as strong, and text shadows were dropped. Imported CSS shadows draw as the browser draws them.
+- A text or effect style bound to a variable reads back from design tokens bound to that variable, not to one with the same path in another collection; export warns when other tools could confuse the two.
+- A Vue text field or textarea exported as code puts the attributes it is given, such as `name`, `required`, or `aria-invalid`, on its input rather than its wrapper, as the React components do (#1731).
+- In preview, a slider's range and a progress bar's indicator follow the value when they sit inside the track, as in the shadcn/ui kit's Slider (#1706).
+- A link in a text opens in a new tab in preview, instead of taking the editor away from the document (#1716).
+- Plugin API underline getters read the underlined characters' value over partly underlined text, and text, paint, and effect setters word their errors as current Figma does, listing each problem of a value with several.
+- The Plugin API's `componentPropertyReferences` reports the bindings of any layer in a component or instance, not only frames, text, components, and instances.
+- `appendChild` in scripts moves a layer that is already a child to the end, as Figma does (#1699).
+- Dashes a script sets with `dashPattern` now draw.
+- `figma.flatten()` and boolean operations in `open-pencil eval` and headless CLI tools make real vectors and fit their bounds, instead of a placeholder box.
+- `@open-pencil/core/figma-api` types resolve Figma's node, paint, and style types for packages that use them, without bringing in Figma's plugin sandbox globals.
+- MCP tools and scripts read pages that have not been opened yet, such as `get_page_tree` on a page's ID, `query_nodes` by page name, and `get_node` or `figma.getNodeByIdAsync()` on a layer's ID, instead of finding them empty, and `page.loadAsync()` and `figma.loadAllPagesAsync()` load pages as in Figma.
+- AI and MCP agents can no longer add layers inside an instance with `render`, `import_svg`, `import_mermaid`, `insert_icon`, or `insert_library_component`, which left the document unable to save as `.fig`; layers rendered into an instance's slot save too.
+- PDF export works in the installed `openpencil` CLI and MCP server, which run on Node.js, instead of failing with "Cannot read properties of undefined (reading 'jsPDF')".
+- The interface draws in Inter's own medium and semibold weights, and in Inter on Home, also on systems without Inter installed, such as most Linux desktops; once a document opened, every weight used to come from the regular face.
+- Initials on collaborator and account avatars stay readable on light colors: the avatar darkens the person's color just enough, as the follow frame already did.
+- A design or board saved to disk in the desktop app appears in recent files on Home, as a file opened from disk does.
+- Browsers set to Chinese (`zh`, `zh-SG`, `zh-Hans`) open the app in Simplified Chinese instead of English.
+- On Linux, Backspace and keys such as `[`, `]` and `N` type into comments and other text fields again instead of running menu commands, so Backspace no longer deletes the selected layer while you type.
+- The Linux desktop app no longer exits at startup on Wayland with the NVIDIA driver when its WebKitGTK is older than 2.54.2.
+- On Windows and Linux, the Software Update window no longer shows the editor menu bar (#1230).
+- Cloud answers a malformed document, workspace, version, share, invitation, or upload ID in an API request with not found instead of a server error.
+
+### Performance
+
+- Switching a variable mode or editing a variable's value lays out bound auto layouts once instead of once per bound layer: on a frame of 1,600 bound cards, from about 36 seconds to under 0.1 seconds.
+- AI and MCP agents can edit properties in documents of any size: a one-property edit copies only the layers it changes, so it takes milliseconds instead of seconds on large files and is no longer refused above 10 000 layers.
+- Switching a variant in the editor, and undoing it, is faster: only what the switch changes is recorded for undo.
+- Joining a collaboration room on a large document is much faster and uses far less memory.
+- Cloud's collaboration relay saves only what changed in a room instead of rewriting the whole room every few seconds, so editing a large document writes far less to the database.
+- Resizing the canvas, such as dragging a panel, keeps what is already drawn and renders only the newly exposed edge, instead of blanking and redrawing the whole scene (#1753).
+- On Cloudflare, Cloud's collaboration relay sleeps while a room is idle and its people stay connected, instead of running for as long as anyone has the document open.
+
+### Security
+
+- Cloud caps how many uploads, documents, collaboration tickets, and invitations one account can request per minute across all of its documents and workspaces, not only per document or workspace.
+
 ## 0.17.0-beta.1 — 2026-11-02
 
 This is a pre-release: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.1` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.

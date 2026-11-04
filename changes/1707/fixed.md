@@ -1,1 +1,0 @@
-- A page added to a `.fig` file, such as one of the shadcn/ui kits, is saved last instead of second, and a page moved after opening is saved where it now is (#1707).

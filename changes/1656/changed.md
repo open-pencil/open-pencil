@@ -1,1 +1,0 @@
-- `batch_update` applies all of its operations or none: a missing layer, a wrong value, or an unknown prop now fails the whole call and leaves the document unchanged, where it used to apply the rest and list errors (#1651).
