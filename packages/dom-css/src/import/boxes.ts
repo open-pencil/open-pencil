@@ -34,7 +34,7 @@ const NO_BOX_VALUES: Record<string, readonly string[]> = {
   'align-self': ['auto']
 }
 
-/** Lengths that take no room: every part of the value is zero. */
+/** Properties that take no room when every part of their value is zero. */
 const ZERO_LENGTH_PROPERTIES = new Set([
   'border-width',
   'border-top-width',
@@ -53,11 +53,12 @@ const ZERO_LENGTH_PROPERTIES = new Set([
   'padding-inline'
 ])
 
+/** Lengths that take no room: every part of the value is zero, in whatever unit. */
 function isZeroLength(value: string): boolean {
   return value
     .trim()
     .split(/\s+/)
-    .every((part) => /^0(px)?$/.test(part))
+    .every((part) => /^[+-]?0*\.?0+([a-z]+|%)?$/.test(part))
 }
 
 const BOX_PROPERTIES = [...Object.keys(NO_BOX_VALUES), ...ZERO_LENGTH_PROPERTIES, 'border']
@@ -94,14 +95,17 @@ export function hasBoxStyle(element: DesignElement, style: DesignStyleDeclaratio
 }
 
 /**
- * Whether any element of the document draws or sizes a box of its own, rather than only styling
- * text: what makes HTML worth laying out as layers instead of pasting as text.
+ * Whether any shown element of the document draws or sizes a box of its own, rather than only
+ * styling text: what makes HTML worth laying out as layers instead of pasting as text. A hidden
+ * element and what it holds become no layers, so they do not count.
  */
 export function laysOutBoxes(document: DesignDocument): boolean {
   const visit = (nodes: readonly DesignNode[]): boolean =>
-    nodes.some(
-      (node) =>
-        node.type === 'element' && (hasBoxStyle(node, mergedStyle(node)) || visit(node.children))
-    )
+    nodes.some((node) => {
+      if (node.type !== 'element') return false
+      const style = mergedStyle(node)
+      if (elementDisplay(node, style) === 'none') return false
+      return hasBoxStyle(node, style) || visit(node.children)
+    })
   return visit(document.children)
 }
