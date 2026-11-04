@@ -25,11 +25,10 @@ async function discover(pattern: string): Promise<string[]> {
   return Array.fromAsync(new Bun.Glob(pattern).scan({ cwd: REPO_ROOT }))
 }
 
-test('every app, engine and package-local test belongs to exactly one shard', async () => {
+test('every central and package-local test belongs to exactly one shard', async () => {
+  // All of `tests/`, not only the canonical homes, so a test placed anywhere else fails here.
   const discovered = [
-    ...(await discover('tests/app/**/*.test.{ts,tsx}')),
-    ...(await discover('tests/integration/**/*.test.{ts,tsx}')),
-    ...(await discover('tests/engine/**/*.test.{ts,tsx}')),
+    ...(await discover('tests/**/*.test.{ts,tsx}')),
     ...(await discover('packages/*/tests/**/*.test.{ts,tsx}'))
   ].filter((file) => !OWN_SUITES.some((suite) => file.startsWith(suite)))
   const paths = pathsForUnitTestGroup('all')
@@ -71,7 +70,7 @@ test('canonical destinations are registered before they hold files', async () =>
   await expect(listUnitTests('all')).resolves.toBeArray()
 })
 
-test('quick and explicit heavy tests partition the full engine suite', async () => {
+test('quick and explicit heavy tests partition the full unit suite', async () => {
   const quick = await listUnitTests('all')
   const heavy = await listHeavyUnitTests()
   const all = await listUnitTests('all', { includeHeavy: true })
@@ -82,9 +81,9 @@ test('quick and explicit heavy tests partition the full engine suite', async () 
 
 test('unit test groups cover all declared shards', () => {
   expect(unitTestGroupNames()).toContain('all')
-  expect(pathsForUnitTestGroup('dom')).toContain('tests/engine/dom-css')
+  expect(pathsForUnitTestGroup('dom')).toContain('packages/dom-css/tests')
   expect(pathsForUnitTestGroup('fig')).toContain('packages/fig/tests')
-  expect(pathsForUnitTestGroup('all')).toContain('tests/engine/io')
+  expect(pathsForUnitTestGroup('all')).toContain('tests/app')
 })
 
 test('heavy unit test matcher excludes fixture-heavy tests', () => {
@@ -99,7 +98,6 @@ test('quick unit test listing excludes heavy tests', async () => {
   const quickFiles = await listUnitTests('all')
   expect(quickFiles).toContain('packages/dom-css/tests/runtime.test.ts')
   expect(quickFiles).not.toContain('packages/core/tests/io/formats/fig/heavy/fixtures.test.ts')
-  expect(quickFiles).not.toContain('tests/engine/io/fig/roundtrip/glyph-blob.test.ts')
 })
 
 test('heavy unit test listing contains only heavy tests', async () => {

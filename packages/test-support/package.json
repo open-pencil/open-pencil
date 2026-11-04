@@ -30,15 +30,40 @@
   "imports": {
     "#test-support/*": "./src/*.ts"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@acemir/cssom": "^0.9.31",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
-    "@open-pencil/test-support": "workspace:*",
     "valibot": "^1.5.0",
     "vue": "^3.5.43"
+  },
+  "peerDependenciesMeta": {
+    "@acemir/cssom": {
+      "optional": true
+    },
+    "@open-pencil/core": {
+      "optional": true
+    },
+    "@open-pencil/dom-css": {
+      "optional": true
+    },
+    "@open-pencil/fig": {
+      "optional": true
+    },
+    "@open-pencil/kiwi": {
+      "optional": true
+    },
+    "@open-pencil/scene-graph": {
+      "optional": true
+    },
+    "valibot": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
   }
 }

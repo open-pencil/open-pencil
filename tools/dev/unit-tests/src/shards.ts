@@ -11,61 +11,30 @@ const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 /**
  * Unit test shards, keyed by owning package or application area.
  *
- * Each group lists the owner's canonical test home from
- * `packages/docs/development/testing.md` (`packages/<owner>/tests`,
- * `tests/app`, `tests/integration`) together with the `tests/engine/**`
- * directories it still owns, so a file is discovered from either place and a
- * move needs no shard change. A path that does not exist yet contributes no
- * files. A file belongs to the group with the longest path that contains it, so
- * `render` takes Core's canvas suites, which parse large fixtures, into a shard
- * of their own while `core` keeps the rest of `packages/core/tests`.
+ * Each group lists its owners' canonical test homes from
+ * `packages/docs/development/testing.md` (`packages/<owner>/tests`, `tests/app`,
+ * `tests/integration`). A path that does not exist yet contributes no files. A file belongs to
+ * the group with the longest path that contains it, so `render` takes Core's canvas suites,
+ * which parse large fixtures, into a shard of their own while `core` keeps the rest of
+ * `packages/core/tests`.
  */
 export const UNIT_TEST_GROUPS = {
-  app: [
-    'tests/app',
-    'tests/integration',
-    'tests/engine/acp',
-    'tests/engine/app',
-    'tests/engine/collab',
-    'tests/engine/tauri'
-  ],
-  cli: ['packages/cli/tests', 'tests/engine/cli'],
-  core: [
-    'packages/core/tests',
-    'tests/engine/clipboard',
-    'tests/engine/color',
-    'tests/engine/core',
-    'tests/engine/editor',
-    'packages/core/tests/icons',
-    'tests/engine/layout',
-    'packages/core/tests/lint',
-    'packages/core/tests/profiler',
-    'packages/core/tests/text',
-    'packages/core/tests/tools',
-    'packages/core/tests/vector'
-  ],
+  app: ['tests/app', 'tests/integration'],
+  cli: ['packages/cli/tests'],
+  core: ['packages/core/tests'],
   dom: [
     'packages/emit/tests',
     'packages/drawio/tests',
     'packages/mermaid/tests',
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
-    'packages/pen/tests',
-    'tests/engine/dom-css'
+    'packages/pen/tests'
   ],
-  fig: ['packages/fig/tests', 'packages/kiwi/tests', 'tests/engine/io', 'tests/engine/kiwi'],
-  mcp: ['packages/mcp/tests', 'tests/engine/mcp'],
+  fig: ['packages/fig/tests', 'packages/kiwi/tests'],
+  mcp: ['packages/mcp/tests'],
   render: ['packages/core/tests/canvas'],
-  'scene-graph': [
-    'packages/scene-graph/tests',
-    'packages/collab/tests',
-    'tests/engine/geometry',
-    'tests/engine/hit-test',
-    'tests/engine/random',
-    'tests/engine/scene-graph',
-    'tests/engine/snap'
-  ],
-  vue: ['packages/vue/tests', 'tests/engine/vue']
+  'scene-graph': ['packages/scene-graph/tests', 'packages/collab/tests'],
+  vue: ['packages/vue/tests']
 } as const
 
 export type UnitTestGroup = keyof typeof UNIT_TEST_GROUPS | 'all'

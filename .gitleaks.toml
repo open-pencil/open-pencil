@@ -53,7 +53,7 @@ regexes = ['''^[a-z-]+-secret-at-least-32-characters(-long)?$''']
 description = "Figma fixture identifiers are public test metadata"
 regexTarget = "line"
 paths = [
-  '''tests/engine/io/fig/heavy/component-metadata\.test\.ts''',
+  '''packages/core/tests/io/formats/fig/heavy/component-metadata\.test\.ts''',
   '''tests/fixtures/figma-oracles/.*\.json'''
 ]
 regexes = [
