@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, jest, test } from 'bun:test'
 
-import { reactive, ref } from 'vue'
+import { nextTick, reactive, ref } from 'vue'
 
 import { createAutosave } from '@/app/document/autosave/create'
 
@@ -13,7 +13,7 @@ function deferred() {
 }
 
 function setup(saveCurrentDocument: (version: number) => Promise<void>) {
-  const state = reactive({ autosaveEnabled: true })
+  const state = reactive({ autosaveEnabled: true, roomKeepsEdits: false })
   const version = ref(0)
   let savedVersion = 0
   let writable = true
@@ -118,5 +118,55 @@ describe('document autosave', () => {
 
     expect(started).toEqual([1, 2])
     autosave.disposeAutosave()
+  })
+
+  test('saves shortly after editing stops, or within a minute while it goes on', async () => {
+    jest.useFakeTimers()
+    try {
+      const versions: number[] = []
+      const { version, autosave } = setup(async (saved) => {
+        versions.push(saved)
+      })
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      await Promise.resolve()
+      expect(versions).toEqual([1])
+
+      // An edit every two seconds never leaves a three-second pause.
+      for (let next = 2; next <= 31; next++) {
+        version.value = next
+        await nextTick()
+        jest.advanceTimersByTime(2_000)
+        await Promise.resolve()
+      }
+      // A minute after the first unsaved edit, the 31st, made two seconds earlier, is saved.
+      expect(versions).toEqual([1, 31])
+      autosave.disposeAutosave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('saves a checkpoint a minute after the last edit while the room keeps the edits', async () => {
+    jest.useFakeTimers()
+    try {
+      const versions: number[] = []
+      const { state, version, autosave } = setup(async (saved) => {
+        versions.push(saved)
+      })
+      state.roomKeepsEdits = true
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(59_000)
+      await Promise.resolve()
+      expect(versions).toEqual([])
+      jest.advanceTimersByTime(1_000)
+      await Promise.resolve()
+      expect(versions).toEqual([1])
+      autosave.disposeAutosave()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })

@@ -24,6 +24,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     actionToast: null,
     mobileDrawerSnap: 'closed',
     autosaveEnabled: false,
+    roomKeepsEdits: false,
     cursorCanvasX: null,
     cursorCanvasY: null,
     renameSelectionOpen: false,
@@ -47,6 +48,11 @@ export type AppEditorState = EditorState & {
   actionToast: string | null
   mobileDrawerSnap: 'closed' | 'half' | 'full'
   autosaveEnabled: boolean
+  /**
+   * Set while the document's Cloud room holds this tab's edits: the relay keeps every one, so the
+   * tab saves a checkpoint now and then and closes without asking.
+   */
+  roomKeepsEdits: boolean
   cursorCanvasX: number | null
   cursorCanvasY: number | null
   renameSelectionOpen: boolean
