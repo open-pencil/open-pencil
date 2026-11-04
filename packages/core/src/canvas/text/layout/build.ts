@@ -33,7 +33,7 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { shownSourceIndices, shownText } from '#core/text/case'
+import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
 import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
@@ -382,6 +382,9 @@ function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
 }
 
 function shownToSourceIndex(node: ParagraphNode): (shownIndex: number) => number {
+  if (textCaseSegments(node).every((segment) => segment.textCase === 'ORIGINAL')) {
+    return (shownIndex) => Math.min(shownIndex, node.text.length)
+  }
   let indices: number[] | undefined
   return (shownIndex) => {
     indices ??= shownSourceIndices(node)

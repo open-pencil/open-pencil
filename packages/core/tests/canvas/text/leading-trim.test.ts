@@ -382,6 +382,20 @@ describe('cap-height leading trim', () => {
     layout.delete()
   })
 
+  test('estimates a variable font at an optical size set apart from its font size', () => {
+    const node = textNode({
+      text: '75',
+      fontSize: 20,
+      fontFamily: 'Cap Axis',
+      opticalSizeFromFontSize: false,
+      fontVariations: [{ axis: 'opsz', value: LARGEST_OPTICAL_SIZE }]
+    })
+    const layout = layOutNode(node)
+    expect(layout.getHeight()).not.toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
+    expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+    layout.delete()
+  })
+
   test('trims empty text as its first character, and estimates it the same', () => {
     const empty = textNode({ text: '', fontSize: 20 })
     const layout = layOutNode(empty)
