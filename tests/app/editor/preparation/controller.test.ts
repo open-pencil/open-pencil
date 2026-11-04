@@ -1,5 +1,7 @@
 import { describe, expect, jest, test } from 'bun:test'
 
+import { nextTick, shallowRef } from 'vue'
+
 import { createEditor } from '@open-pencil/core'
 
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
@@ -268,19 +270,12 @@ describe('editor preparation controller', () => {
   // until the tab is shown, as it does in an editor tab in the background.
   test('pauses the limit while the browser hides the page', async () => {
     jest.useFakeTimers()
-    const saved = Object.getOwnPropertyDescriptor(globalThis, 'document')
-    const page = Object.assign(new EventTarget(), {
-      visibilityState: 'visible' as DocumentVisibilityState
-    })
-    const show = (visibility: DocumentVisibilityState) => {
-      page.visibilityState = visibility
-      page.dispatchEvent(new Event('visibilitychange'))
-    }
-    Object.defineProperty(globalThis, 'document', { value: page, configurable: true })
     try {
+      const visibility = shallowRef<DocumentVisibilityState>('visible')
       const state = createInitialAppEditorState('page')
       const controller = createEditorPreparationController(state, undefined, {
-        presentationTimeoutMs: 100
+        presentationTimeoutMs: 100,
+        visibility
       })
       controller.attachCanvas()
       const handle = controller.begin({ kind: 'page-switch' })
@@ -289,19 +284,19 @@ describe('editor preparation controller', () => {
         settled = true
       })
       jest.advanceTimersByTime(50)
-      show('hidden')
+      visibility.value = 'hidden'
+      await nextTick()
       jest.advanceTimersByTime(1_000)
       await Promise.resolve()
       expect(settled).toBe(false)
 
-      show('visible')
+      visibility.value = 'visible'
+      await nextTick()
       controller.acknowledgePresentation(at(7))
       await waiting
       handle.complete()
       controller.dispose()
     } finally {
-      if (saved) Object.defineProperty(globalThis, 'document', saved)
-      else Reflect.deleteProperty(globalThis, 'document')
       jest.useRealTimers()
     }
   })

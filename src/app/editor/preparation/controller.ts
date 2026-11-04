@@ -1,4 +1,6 @@
+import { useDocumentVisibility } from '@vueuse/core'
 import { TimeoutError } from 'es-toolkit/error'
+import { watch, type Ref } from 'vue'
 
 import type { Editor, RenderVersions } from '@open-pencil/core'
 
@@ -13,6 +15,9 @@ import type {
 import type { AppEditorState } from '@/app/editor/session/types'
 
 const PRESENTATION_TIMEOUT_MS = 10_000
+
+/** Whether the browser shows the page, for every editor; a hidden tab draws no frames. */
+const documentVisibility = useDocumentVisibility()
 
 interface PresentationWaiter {
   versions: RenderVersions
@@ -33,6 +38,8 @@ export interface EditorPreparationControllerOptions {
   presentationTimeoutMs?: number
   /** The editor whose canvases report frames shown, through `render:presented`. */
   editor?: Pick<Editor, 'onEditorEvent'>
+  /** Whether the browser shows the page; the document's own by default. */
+  visibility?: Readonly<Ref<DocumentVisibilityState>>
 }
 
 export interface EditorPreparationController {
@@ -73,17 +80,15 @@ export function createEditorPreparationController(
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
-  /** Whether the browser shows the page; a hidden tab draws no frames, so presents nothing. */
-  const pageShown = () => !('document' in globalThis) || document.visibilityState !== 'hidden'
-  const timing = () => canvases > 0 && pageShown()
-  const onVisibilityChange = () => {
+  // A hidden tab draws no frames, so presents nothing: the limit runs only while it is shown.
+  const visibility = options.visibility ?? documentVisibility
+  const timing = () => canvases > 0 && visibility.value !== 'hidden'
+  const stopVisibility = watch(visibility, () => {
     for (const [id, waiter] of presentationWaiters) {
       if (timing()) startTimer(id, waiter)
       else pauseTimer(waiter)
     }
-  }
-  if (typeof document !== 'undefined')
-    document.addEventListener('visibilitychange', onVisibilityChange)
+  })
 
   function settle(id: number, outcome: Error | null) {
     const waiter = presentationWaiters.get(id)
@@ -236,8 +241,7 @@ export function createEditorPreparationController(
       for (const id of presentationWaiters.keys()) settle(id, error)
     },
     dispose() {
-      if (typeof document !== 'undefined')
-        document.removeEventListener('visibilitychange', onVisibilityChange)
+      stopVisibility()
       stopPresentations?.()
       activeCancel?.('tab-closed')
       activeAbort?.abort()
