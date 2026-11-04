@@ -1,0 +1,1 @@
+- On Cloudflare, Cloud's collaboration relay sleeps while a room is idle and its people stay connected, instead of running for as long as anyone has the document open.

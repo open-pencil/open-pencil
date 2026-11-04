@@ -1,14 +1,16 @@
-import { RELAY_DOCUMENT_PARAM } from '#cloud/contract'
+import { RELAY_CLOSE, RELAY_DOCUMENT_PARAM } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCollaborationRelay,
   createCollaborationStateStore,
   createConfiguredCloudPolicy,
+  readRelayPeerState,
   relayDocumentLookups,
   reportCloudError,
   type CollaborationRelay,
-  type RelayConnection
+  type RelayConnection,
+  type RelaySocket
 } from '#cloud/server'
 import { DurableObject } from 'cloudflare:workers'
 import type { Context } from 'hono'
@@ -19,9 +21,9 @@ import type { CloudflareCloudEnvironment, PreparedCloudflareCloud } from './envi
 /** What the Worker calls on a document's relay object. */
 export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvironment> {
   /** Ends the document's live rooms after a restore, without saving them. */
-  startOver(documentId: string): void
+  startOver(documentId: string): Promise<void>
   /** Tells the document's live rooms its version history changed. */
-  announceVersions(documentId: string): void
+  announceVersions(documentId: string): Promise<void>
 }
 
 const documentIdSchema = v.pipe(v.string(), v.uuid())
@@ -52,39 +54,32 @@ function bytes(data: unknown): Uint8Array {
   return new TextEncoder().encode(typeof data === 'string' ? data : '')
 }
 
-/** Hands a WebSocket the object accepted to the relay, as the Node runtime does with `ws`. */
-function accept(relay: CollaborationRelay): Response {
-  const { 0: client, 1: server } = new WebSocketPair()
-  // Standard sockets deliver binary messages as Blobs unless asked otherwise.
-  server.binaryType = 'arraybuffer'
-  server.accept()
-  let connection: RelayConnection | null = null
-  const closed = () => {
-    connection?.closed()
-    connection = null
-  }
+/**
+ * A hibernatable socket as the relay sees it. The peer's state rides on the socket as its
+ * attachment, so a relay woken from hibernation can resume the peer.
+ */
+function relaySocket(socket: WebSocket): RelaySocket {
   // A closing socket throws on send and close, which would stop a broadcast to the others.
-  const open = () => server.readyState === WebSocket.OPEN
-  connection = relay.connect({
+  const open = () => socket.readyState === WebSocket.OPEN
+  return {
     send(data) {
-      if (open()) server.send(data)
+      if (open()) socket.send(data)
     },
     close(code, reason) {
-      if (open()) server.close(code, reason)
+      if (open()) socket.close(code, reason)
+    },
+    remember(state) {
+      socket.serializeAttachment(state)
     }
-  })
-  server.addEventListener('message', ({ data }: { data: unknown }) =>
-    connection?.receive(bytes(data))
-  )
-  server.addEventListener('close', closed)
-  server.addEventListener('error', closed)
-  return new Response(null, { status: 101, webSocket: client })
+  }
 }
 
 /**
  * The Durable Object class holding one document's live rooms: every epoch of the document meets
- * on one relay, so a restore or a version change reaches all of them in one call. Sockets stay
- * open without hibernation, so the rooms' documents and timers live in memory as on Node.
+ * on one relay, so a restore or a version change reaches all of them in one call. Sockets are
+ * accepted for hibernation: an idle object is evicted while they stay open, each socket keeping
+ * its peer, and the relay it wakes to resumes them, loading a room's document only once a message
+ * needs it.
  */
 export function createCloudflareRelayObject(
   prepare: (env: CloudflareCloudEnvironment) => Promise<PreparedCloudflareCloud>
@@ -94,13 +89,14 @@ export function createCloudflareRelayObject(
     implements CollaborationRelayRPC
   {
     #relay: Promise<CollaborationRelay> | null = null
-    /** Set by the first socket; restores and version changes before it have no rooms to reach. */
-    #opened: CollaborationRelay | null = null
+    /** Each socket's connection to the relay, since this object last woke. */
+    readonly #connections = new Map<WebSocket, RelayConnection>()
 
+    /** The relay, created once per wake; it takes back every socket the object still holds. */
     #open(documentId: string) {
       this.#relay ??= prepare(this.env).then(({ config, reportError }) => {
         const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
-        this.#opened = createCollaborationRelay({
+        const relay = createCollaborationRelay({
           authSecret: config.authSecret,
           documentId,
           store: createCollaborationStateStore(database, createS3ObjectStore(config)),
@@ -114,7 +110,14 @@ export function createCloudflareRelayObject(
             config.deployment
           )
         })
-        return this.#opened
+        for (const socket of this.ctx.getWebSockets()) {
+          if (this.#connections.has(socket)) continue
+          const state = readRelayPeerState(socket.deserializeAttachment())
+          // A socket the relay never admitted has no peer to resume, and its ticket is long due.
+          if (state) this.#connections.set(socket, relay.resume(relaySocket(socket), state))
+          else socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket')
+        }
+        return relay
       })
       this.#relay.catch(() => {
         this.#relay = null
@@ -122,19 +125,54 @@ export function createCloudflareRelayObject(
       return this.#relay
     }
 
+    /** The relay as woken for the document a socket's peer is in, or null for a stray socket. */
+    async #relayFor(socket: WebSocket): Promise<RelayConnection | null> {
+      const known = this.#connections.get(socket)
+      if (known) return known
+      const state = readRelayPeerState(socket.deserializeAttachment())
+      if (!state) return null
+      await this.#open(state.authorization.documentId)
+      return this.#connections.get(socket) ?? null
+    }
+
     /** Accepts a socket that `routeToRelay` sent here. */
     override async fetch(request: Request): Promise<Response> {
       const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
-      return accept(await this.#open(documentId))
+      const relay = await this.#open(documentId)
+      const { 0: client, 1: server } = new WebSocketPair()
+      this.ctx.acceptWebSocket(server)
+      this.#connections.set(server, relay.connect(relaySocket(server)))
+      return new Response(null, { status: 101, webSocket: client })
     }
 
-    startOver(documentId: string) {
-      this.#opened?.startOver(documentId)
+    override async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+      const connection = await this.#relayFor(socket)
+      if (connection) connection.receive(bytes(message))
+      else socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket')
     }
 
-    announceVersions(documentId: string) {
-      this.#opened?.announceVersions(documentId)
+    override async webSocketClose(socket: WebSocket) {
+      this.#closed(socket)
+    }
+
+    override async webSocketError(socket: WebSocket) {
+      this.#closed(socket)
+    }
+
+    #closed(socket: WebSocket) {
+      this.#connections.get(socket)?.closed()
+      this.#connections.delete(socket)
+    }
+
+    async startOver(documentId: string) {
+      if (this.ctx.getWebSockets().length === 0 && !this.#relay) return
+      ;(await this.#open(documentId)).startOver(documentId)
+    }
+
+    async announceVersions(documentId: string) {
+      if (this.ctx.getWebSockets().length === 0 && !this.#relay) return
+      ;(await this.#open(documentId)).announceVersions(documentId)
     }
   }
 }

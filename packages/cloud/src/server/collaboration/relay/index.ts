@@ -14,3 +14,4 @@ export {
   type CollaborationStateStore,
   type SavedRoom
 } from './persistence'
+export { readRelayPeerState, type RelayPeerState } from './resume'
