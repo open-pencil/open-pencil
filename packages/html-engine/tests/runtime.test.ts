@@ -69,6 +69,27 @@ describe('the HTML engine runtime', () => {
     expect(span.layout?.lines).toBeUndefined()
   })
 
+  test('lays text out in a font registered under an alias by either name', async () => {
+    const engine = await loadHTMLEngine()
+    engine.resetFonts()
+    engine.addFont(
+      await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes(),
+      'Brand'
+    )
+    const runtime = createHTMLEngineRuntime({ engine: async () => engine })
+    const lines = async (family: string) => {
+      const document = await htmlToDesignDocument(
+        `<p id="p" style="font: 16px ${family}">Words</p>`,
+        { runtime, compute: { layout: true, viewport: { width: 800, height: 600 } } }
+      )
+      return elementById(document, 'p').layout?.lines?.length ?? 0
+    }
+
+    expect(await lines('Brand')).toBe(1)
+    expect(await lines("'Inter Variable'")).toBe(1)
+    engine.resetFonts()
+  })
+
   test('leaves layout out unless asked', async () => {
     const document = await htmlToDesignDocument('<div id="box"></div>', {
       runtime: createHTMLEngineRuntime()
