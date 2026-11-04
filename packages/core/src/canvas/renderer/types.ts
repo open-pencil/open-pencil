@@ -1,9 +1,9 @@
-import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
@@ -92,25 +92,7 @@ export interface RenderOverlays {
     cursorY?: number
   } | null
   pencilState?: PencilState | null
-  nodeEditState?: {
-    nodeId: string
-    vertices: VectorVertex[]
-    segments: Array<{
-      start: number
-      end: number
-      tangentStart: Vector
-      tangentEnd: Vector
-    }>
-    regions: VectorRegion[]
-    selectedVertexIndices: Set<number>
-    selectedSegmentIndices?: Set<number>
-    selectedHandles?: Set<number>
-    hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
-    /** The region under the pointer, hatched as in Figma. */
-    hoveredRegion?: number | null
-    /** Regions picked by clicking inside them, hatched while selected. */
-    selectedRegions?: Set<number>
-  } | null
+  nodeEditState?: NodeEditOverlayState | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null
   codeFocusNodeId?: string | null

@@ -95,7 +95,6 @@ tests/engine/app/storage/unique-name.test.ts
 tests/engine/app/tabs/open-file-dedup.test.ts
 tests/engine/app/tauri/http.test.ts
 tests/engine/app/usage/summarize.test.ts
-tests/engine/app/vector-edit-transforms.test.ts
 tests/engine/cli/app-client.test.ts
 tests/engine/cli/eval.test.ts
 tests/engine/cli/export/font-policy.test.ts

@@ -1,0 +1,1 @@
+- Editors made with `createEditor()` edit vector paths point by point, with their own undo, and continue paths with the pen: hosts open a path with `enterNodeEditMode()`, which `useCanvasInput` calls on double-click, and picking a tool other than the pen commits a pen path in progress (#1756).

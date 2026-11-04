@@ -1,9 +1,10 @@
-import type { Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import { vectorNetworksEqual } from '@open-pencil/scene-graph/vector-network'
 
-import type { NodeEditState, VectorEditState } from './types'
+import type { EditorContext } from '#core/editor/types'
+
+import type { NodeEditState } from './types'
 
 function snapshot(es: NodeEditState): VectorNetwork {
   return cloneVectorNetwork({ vertices: es.vertices, segments: es.segments, regions: es.regions })
@@ -26,9 +27,9 @@ function invalidateStaleFuture(es: NodeEditState, current: VectorNetwork) {
   }
 }
 
-export function createVectorEditHistoryActions(editor: Editor, state: VectorEditState) {
+export function createVectorEditHistoryActions(ctx: EditorContext) {
   function nodeEditPushHistory() {
-    const es = state.nodeEditState
+    const es = ctx.state.nodeEditState
     if (es) pushNodeEditHistory(es)
   }
 
@@ -44,11 +45,11 @@ export function createVectorEditHistoryActions(editor: Editor, state: VectorEdit
     es.selectedRegions = new Set()
     es.selectedHandles = new Set()
     es.hoveredHandleInfo = null
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   function nodeEditUndo() {
-    const es = state.nodeEditState
+    const es = ctx.state.nodeEditState
     if (!es) return
     const current = snapshot(es)
     invalidateStaleFuture(es, current)
@@ -61,7 +62,7 @@ export function createVectorEditHistoryActions(editor: Editor, state: VectorEdit
   }
 
   function nodeEditRedo() {
-    const es = state.nodeEditState
+    const es = ctx.state.nodeEditState
     if (!es) return
     const current = snapshot(es)
     invalidateStaleFuture(es, current)

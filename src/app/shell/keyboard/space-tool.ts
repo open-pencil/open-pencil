@@ -10,7 +10,7 @@ export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: Edi
 
   function restoreTool() {
     if (toolBeforeSpace === null) return
-    store.setTool(toolBeforeSpace)
+    store.setTool(toolBeforeSpace, { held: true })
     toolBeforeSpace = null
   }
 
@@ -21,7 +21,8 @@ export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: Edi
     event.preventDefault()
     if (toolBeforeSpace !== null || store.state.activeTool === 'HAND') return
     toolBeforeSpace = store.state.activeTool
-    store.setTool('HAND')
+    // Held: the pen's path continues once Space is let go, as in Figma.
+    store.setTool('HAND', { held: true })
   })
 
   useEventListener(window, 'keyup', (event: KeyboardEvent) => {

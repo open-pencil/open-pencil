@@ -7,7 +7,6 @@ import type { DocumentColorSpace } from '@open-pencil/scene-graph'
 import type { PresentationColorSpace } from '@open-pencil/vue/canvas/surface'
 
 import type { EditorPreparation, EditorPreparationHandle } from '@/app/editor/preparation/types'
-import type { NodeEditState } from '@/app/editor/vector/types'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { resolvedAppTheme } from '@/app/shell/theme'
 
@@ -27,7 +26,6 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     autosaveEnabled: false,
     cursorCanvasX: null,
     cursorCanvasY: null,
-    nodeEditState: null,
     renameSelectionOpen: false,
     variablesOpen: false,
     statusesOpen: false,
@@ -51,7 +49,6 @@ export type AppEditorState = EditorState & {
   autosaveEnabled: boolean
   cursorCanvasX: number | null
   cursorCanvasY: number | null
-  nodeEditState: NodeEditState | null
   renameSelectionOpen: boolean
   /** The variables dialog, opened from the Design panel, the View menu, or the palette. */
   variablesOpen: boolean
