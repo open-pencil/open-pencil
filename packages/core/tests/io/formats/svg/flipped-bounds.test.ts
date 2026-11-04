@@ -3,9 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { flippedCases } from '#core-tests/helpers/flipped-layers'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
+import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG } from '#core/io/formats/svg'
 
 function transformMatrix(transform: string | undefined): Mat3 {
@@ -25,7 +27,7 @@ function transformMatrix(transform: string | undefined): Mat3 {
   return matrix
 }
 
-function redRectMatrix(svg: string): Mat3 {
+function elementMatrix(svg: string, matches: (name: string, attrs: string) => boolean): Mat3 {
   const stack: Mat3[] = [Matrix.identity()]
   for (const [, closing, name, attrs, selfClosing] of svg.matchAll(/<(\/?)(\w+)([^>]*?)(\/?)>/g)) {
     if (closing) {
@@ -34,14 +36,18 @@ function redRectMatrix(svg: string): Mat3 {
     }
     const parent = expectDefined(stack.at(-1))
     const matrix = Matrix.multiply(parent, transformMatrix(attrs.match(/transform="([^"]*)"/)?.[1]))
-    if (name === 'rect' && attrs.includes('fill="#FF0000"')) {
+    if (matches(name, attrs)) {
       return matrix
     }
     if (!selfClosing) {
       stack.push(matrix)
     }
   }
-  throw new Error('No red rectangle in the SVG')
+  throw new Error('No matching element in the SVG')
+}
+
+function redRectMatrix(svg: string): Mat3 {
+  return elementMatrix(svg, (name, attrs) => name === 'rect' && attrs.includes('fill="#FF0000"'))
 }
 
 function viewBox(svg: string) {
@@ -71,4 +77,39 @@ describe('SVG export of flipped layers', () => {
       }
     })
   }
+
+  test('a rotated line turns about its start, as the canvas draws it', () => {
+    const graph = new SceneGraph()
+    const pageId = expectDefined(graph.getPages()[0]).id
+    const line = graph.createNode('LINE', pageId, {
+      x: 40,
+      y: 30,
+      width: 80,
+      height: 0,
+      rotation: 30,
+      strokes: [
+        {
+          type: 'SOLID',
+          weight: 2,
+          visible: true,
+          align: 'CENTER',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          opacity: 1
+        }
+      ]
+    })
+    const svg = expectDefined(renderNodesToSVG(graph, pageId, [line.id]))
+    const bounds = expectDefined(computeContentBounds(graph, [line.id]))
+    const expected = Matrix.multiply(
+      Matrix.translated(-bounds.minX, -bounds.minY),
+      getWorldMatrix(line, graph)
+    )
+    const actual = elementMatrix(
+      svg,
+      (name, attrs) => name === 'line' && attrs.includes('stroke="#FF0000"')
+    )
+    for (const index of [0, 1, 2, 3, 4, 5]) {
+      expect(actual[index]).toBeCloseTo(expected[index], 1)
+    }
+  })
 })

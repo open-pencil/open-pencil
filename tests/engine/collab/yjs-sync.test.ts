@@ -213,6 +213,7 @@ describe('collab yjs-sync', () => {
         expect(refs).toHaveLength(1)
         expect(peer.getPages().map((page) => page.id)).toContain(hostPage.id)
         expect(() => computeContentBounds(peer, [peerEllipse.id])).not.toThrow()
+        expect(computeContentBounds(peer, [peerEllipse.id])).not.toBeNull()
       },
       { connectImmediately: false }
     )

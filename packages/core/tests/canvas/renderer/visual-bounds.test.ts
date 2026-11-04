@@ -234,8 +234,8 @@ describe('content bounds', () => {
     const strokeGeometry = [
       {
         commandsBlob: commandsBlobFromPoints([
-          { x: -1, y: -1 },
-          { x: 101, y: 51 }
+          { x: -3, y: -3 },
+          { x: 103, y: 53 }
         ]),
         windingRule: 'NONZERO' as const
       }
@@ -248,10 +248,10 @@ describe('content bounds', () => {
       maxY: 70
     })
     expect(boundsOf({ ...at, strokes: [stroke(1, 'OUTSIDE')] }, 'FRAME')).toEqual({
-      minX: 9,
-      minY: 19,
-      maxX: 111,
-      maxY: 71
+      minX: 7,
+      minY: 17,
+      maxX: 113,
+      maxY: 73
     })
   })
 
@@ -336,6 +336,6 @@ describe('text past its box', () => {
       textDecorationThickness: 2
     })
     expect(normal.maxY).toBe(43)
-    expect(decorated.maxY).toBeGreaterThan(normal.maxY)
+    expect(decorated.maxY).toBeCloseTo(61.2, 6)
   })
 })
