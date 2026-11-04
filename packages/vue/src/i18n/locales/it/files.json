@@ -20,6 +20,7 @@
   "mermaidPasteFailed": "Impossibile leggere il diagramma Mermaid. {error}",
   "pastedAsText": "Incollato come testo.",
   "noHTMLToPasteAsLayers": "Gli appunti non contengono HTML da incollare come livelli.",
+  "htmlPasteEmpty": "L'HTML non contiene nulla da mostrare come livelli.",
   "htmlPasteFailed": "Impossibile incollare l'HTML come livelli. {error}",
   "recentFiles": "File recenti",
   "recentFilesDescription": "Continua a lavorare su un progetto o iniziane uno nuovo.",

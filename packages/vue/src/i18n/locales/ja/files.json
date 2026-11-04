@@ -20,6 +20,7 @@
   "mermaidPasteFailed": "Mermaid の図を読み込めませんでした。{error}",
   "pastedAsText": "テキストとして貼り付けました。",
   "noHTMLToPasteAsLayers": "クリップボードにレイヤーとして貼り付けられる HTML がありません。",
+  "htmlPasteEmpty": "HTML にはレイヤーとして表示できる内容がありません。",
   "htmlPasteFailed": "HTML をレイヤーとして貼り付けられませんでした。{error}",
   "recentFiles": "最近使用したファイル",
   "recentFilesDescription": "デザインの作業を続けるか、新しく始めます。",

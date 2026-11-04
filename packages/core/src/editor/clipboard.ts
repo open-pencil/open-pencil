@@ -443,8 +443,7 @@ export function createClipboardActions(ctx: EditorContext) {
   const placementActions = createClipboardPlacementActions(ctx)
   const webActions = createClipboardWebActions(ctx, {
     pushCreatedNodesUndo,
-    loadFontsForNodes: fontActions.loadFontsForNodes,
-    pasteSnapshot
+    loadFontsForNodes: fontActions.loadFontsForNodes
   })
 
   return {

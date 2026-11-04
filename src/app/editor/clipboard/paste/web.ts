@@ -1,4 +1,6 @@
-import type { Editor, PastedTextLink } from '@open-pencil/core'
+import { escapeRegExp } from 'es-toolkit'
+
+import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
 import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
@@ -53,9 +55,19 @@ export function layerMarkup({ html, text }: WebClipboard): string | null {
   return html.trim().length > 0 ? html : null
 }
 
+function collapseSpace(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/** The words, matched across any run of whitespace, as the page's text and its plain text differ. */
+function wordsPattern(words: string): RegExp {
+  return new RegExp(words.split(' ').map(escapeRegExp).join('\\s+'), 'g')
+}
+
 /**
- * The copied text with the links its page had: each `<a href>`'s words, found in the text in
- * the order the page has them, as Figma keeps them on paste.
+ * The copied text with the links its page had, as Figma keeps them on paste. Each `<a href>` is
+ * found as the same occurrence of its words in the text as in the page, so a repeated word links
+ * where the page linked it and a line break inside the link does not lose it.
  */
 export function pastedText({ html, text }: WebClipboard): {
   text: string
@@ -65,15 +77,16 @@ export function pastedText({ html, text }: WebClipboard): {
   const plain = text.length > 0 ? text : (document?.body.textContent ?? '')
   const links: PastedTextLink[] = []
   if (!document || isHTMLMarkup(text)) return { text: plain, links }
-  let from = 0
   for (const anchor of Array.from(document.querySelectorAll('a[href]'))) {
-    const words = anchor.textContent.replace(/\s+/g, ' ').trim()
+    const words = collapseSpace(anchor.textContent)
     const url = linkURL(anchor.getAttribute('href') ?? '')
     if (!words || !url) continue
-    const start = plain.indexOf(words, from)
-    if (start === -1) continue
-    links.push({ start, length: words.length, url })
-    from = start + words.length
+    const before = document.createRange()
+    before.setStart(document.body, 0)
+    before.setEndBefore(anchor)
+    const occurrence = collapseSpace(before.toString()).match(wordsPattern(words))?.length ?? 0
+    const match = [...plain.matchAll(wordsPattern(words))].at(occurrence)
+    if (match?.index !== undefined) links.push({ start: match.index, length: match[0].length, url })
   }
   return { text: plain, links }
 }
@@ -89,26 +102,50 @@ export function offersLayers(clipboard: WebClipboard): boolean {
 }
 
 /**
- * Lays HTML out as a browser would, at the width of the frame it goes into or the import
- * viewport on the canvas, and pastes the layers centred on the point.
+ * The layers HTML makes, laid out as a browser would at the width of the frame they go into, or
+ * the import viewport on the canvas. The destination is read before layout and again after it,
+ * and the HTML laid out once more if it changed meanwhile.
+ */
+async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardSnapshot | null> {
+  let snapshot: ClipboardSnapshot | null = null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const target = editor.htmlPasteTarget()
+    const width = target.width ?? HTML_IMPORT_VIEWPORT.width
+    const styled = await browserHTMLToDesignDocument(markup, {
+      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
+    })
+    snapshot = await editor.prepareStyledHTML(styled)
+    if (editor.htmlPasteTarget().id === target.id) break
+  }
+  return snapshot
+}
+
+/**
+ * Pastes HTML as layers centred on the point. The layers are built first, so `beforePaste`, which
+ * the notice uses to take its text back, runs only once there is something to paste instead.
  */
 export async function pasteHTMLAsLayers(
   editor: Editor,
   markup: string,
-  cursorPos?: Vector
+  cursorPos?: Vector,
+  beforePaste?: () => void
 ): Promise<boolean> {
-  const { x, y } = pastePoint(editor, cursorPos)
-  const width = editor.htmlPasteWidth() ?? HTML_IMPORT_VIEWPORT.width
+  const point = pastePoint(editor, cursorPos)
+  let snapshot: ClipboardSnapshot | null
   try {
-    const styled = await browserHTMLToDesignDocument(markup, {
-      compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
-    })
-    return await editor.pasteStyledHTML(styled, x, y)
+    snapshot = await prepareLayers(editor, markup)
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
     toast.error(filesMessages.get().htmlPasteFailed({ error: reason }))
     return true
   }
+  if (!snapshot) {
+    toast.info(filesMessages.get().htmlPasteEmpty)
+    return true
+  }
+  beforePaste?.()
+  await editor.pasteSnapshot(snapshot, point)
+  return true
 }
 
 /**
@@ -123,19 +160,26 @@ export async function pasteWebClipboard(
   const { text, links } = pastedText(clipboard)
   const { x, y } = pastePoint(editor, cursorPos)
   rememberWebClipboard(clipboard.html, clipboard.text)
-  const pastedId = await editor.pasteText(text, x, y, links)
   const markup = layerMarkup(clipboard)
-  if (!pastedId || !markup || !offersLayers(clipboard)) return pastedId !== null
+  const offered = markup !== null && offersLayers(clipboard)
+  // A laid-out copy without text, such as an empty card, has nothing to paste but its layers.
+  if (text.trim().length === 0) {
+    return offered && markup ? pasteHTMLAsLayers(editor, markup, { x, y }) : false
+  }
+  const pastedId = await editor.pasteText(text, x, y, links)
+  if (!pastedId || !markup || !offered) return pastedId !== null
+  // Only the paste this notice is about is taken back, while it is still the last edit.
+  const takeBackText = () => {
+    const selected = editor.state.selectedIds
+    const isLastPaste =
+      editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
+    if (isLastPaste) editor.undoAction()
+  }
   toast.info(filesMessages.get().pastedAsText, {
     label: menuMessages.get().pasteAsLayers,
     run: (toastId) => {
       toast.remove(toastId)
-      // Only the paste this notice is about is taken back, while it is still the last edit.
-      const selected = editor.state.selectedIds
-      const isLastPaste =
-        editor.undo.undoLabel === PASTE_TEXT_LABEL && selected.size === 1 && selected.has(pastedId)
-      if (isLastPaste) editor.undoAction()
-      void pasteHTMLAsLayers(editor, markup, { x, y })
+      void pasteHTMLAsLayers(editor, markup, { x, y }, takeBackText)
     }
   })
   return true

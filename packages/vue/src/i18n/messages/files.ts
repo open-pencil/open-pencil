@@ -30,6 +30,7 @@ export const filesMessageDefaults = {
   mermaidPasteFailed: params('Could not read the Mermaid diagram. {error}'),
   pastedAsText: 'Pasted as text.',
   noHTMLToPasteAsLayers: 'The clipboard has no HTML to paste as layers.',
+  htmlPasteEmpty: 'The HTML has nothing to show as layers.',
   htmlPasteFailed: params('Could not paste the HTML as layers. {error}'),
   recentFiles: 'Recent files',
   recentFilesDescription: 'Continue working on a design or start a new one.',

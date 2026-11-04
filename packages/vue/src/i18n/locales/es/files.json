@@ -20,6 +20,7 @@
   "mermaidPasteFailed": "No se ha podido leer el diagrama de Mermaid. {error}",
   "pastedAsText": "Pegado como texto.",
   "noHTMLToPasteAsLayers": "El portapapeles no contiene HTML para pegar como capas.",
+  "htmlPasteEmpty": "El HTML no contiene nada que mostrar como capas.",
   "htmlPasteFailed": "No se pudo pegar el HTML como capas. {error}",
   "recentFiles": "Archivos recientes",
   "recentFilesDescription": "Continúa trabajando en un diseño o crea uno nuevo.",

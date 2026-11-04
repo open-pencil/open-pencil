@@ -20,6 +20,7 @@
   "mermaidPasteFailed": "Не удалось прочитать диаграмму Mermaid. {error}",
   "pastedAsText": "Вставлено как текст.",
   "noHTMLToPasteAsLayers": "В буфере обмена нет HTML, который можно вставить как слои.",
+  "htmlPasteEmpty": "В HTML нет ничего, что можно показать слоями.",
   "htmlPasteFailed": "Не удалось вставить HTML как слои. {error}",
   "recentFiles": "Недавние файлы",
   "recentFilesDescription": "Продолжите работу над дизайном или начните новый.",

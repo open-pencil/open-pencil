@@ -55,6 +55,19 @@ describe('pasting text from outside', () => {
     ])
   })
 
+  test('cancels the paste when the page changes while its font loads', async () => {
+    const editor = createEditor()
+    const first = editor.state.currentPageId
+    const second = editor.addPage()
+
+    const pasting = editor.pasteText('Too late', 0, 0)
+    await editor.switchPage(second)
+
+    expect(await pasting).toBeNull()
+    expect(editor.graph.getChildren(first)).toHaveLength(0)
+    expect(editor.graph.getChildren(second)).toHaveLength(0)
+  })
+
   test('pastes nothing for blank text', async () => {
     const editor = createEditor()
     expect(await editor.pasteText(' \n ', 0, 0)).toBeNull()
@@ -73,9 +86,11 @@ describe('pasting HTML as layers', () => {
       }
     )
 
-    expect(await editor.pasteStyledHTML({ type: 'document', children: [card] }, 500, 300)).toBe(
-      true
-    )
+    const snapshot = await editor.prepareStyledHTML({ type: 'document', children: [card] })
+    expect(snapshot).not.toBeNull()
+    // Preparing adds nothing; pasting the prepared layers does.
+    expect(editor.graph.getChildren(pageId)).toHaveLength(0)
+    if (snapshot) await editor.pasteSnapshot(snapshot, { x: 500, y: 300 })
 
     const [layer] = editor.graph.getChildren(pageId)
     expect(layer).toMatchObject({ type: 'FRAME', x: 400, y: 250, width: 200, height: 100 })
@@ -84,10 +99,23 @@ describe('pasting HTML as layers', () => {
     expect(editor.graph.getChildren(pageId)).toHaveLength(0)
   })
 
+  test('prepares nothing for HTML that shows nothing', async () => {
+    const editor = createEditor()
+    const hidden: DesignElement = {
+      type: 'element',
+      tagName: 'div',
+      attrs: {},
+      children: [],
+      computedStyle: { display: 'none' },
+      layout: { box: rect(0, 0, 0, 0) }
+    }
+    expect(await editor.prepareStyledHTML({ type: 'document', children: [hidden] })).toBeNull()
+  })
+
   test('lays HTML out at the width of the frame it is pasted into', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    expect(editor.htmlPasteWidth()).toBeNull()
+    expect(editor.htmlPasteTarget()).toEqual({ id: pageId, width: null })
 
     const frame = editor.graph.createNode('FRAME', pageId, {
       width: 360,
@@ -97,6 +125,6 @@ describe('pasting HTML as layers', () => {
       paddingRight: 24
     })
     editor.select([frame.id])
-    expect(editor.htmlPasteWidth()).toBe(320)
+    expect(editor.htmlPasteTarget()).toEqual({ id: frame.id, width: 320 })
   })
 })

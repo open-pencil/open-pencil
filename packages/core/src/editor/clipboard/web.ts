@@ -1,6 +1,5 @@
 import type { DesignDocument } from '@open-pencil/dom-css'
 import type { StyleRun } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parentLocalPoint, resolvePasteTarget } from '#core/editor/clipboard/paste/target'
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
@@ -19,7 +18,6 @@ export interface PastedTextLink {
 interface WebPasteDependencies {
   pushCreatedNodesUndo: (created: string[], previousSelection: Set<string>, label?: string) => void
   loadFontsForNodes: (nodeIds: string[]) => Promise<unknown>
-  pasteSnapshot: (snapshot: ClipboardSnapshot, cursorPos?: Vector) => Promise<void>
 }
 
 function linkRuns(links: readonly PastedTextLink[]): StyleRun[] {
@@ -53,7 +51,13 @@ export function createClipboardWebActions(ctx: EditorContext, deps: WebPasteDepe
       styleRuns: linkRuns(links),
       textAutoResize: 'WIDTH_AND_HEIGHT'
     })
+    const pageId = ctx.state.currentPageId
     await deps.loadFontsForNodes([node.id])
+    // Leaving the page while the font loads cancels the paste rather than selecting off-page.
+    if (ctx.state.currentPageId !== pageId) {
+      ctx.graph.deleteNode(node.id)
+      return null
+    }
     layoutAuthoredNodes(ctx.graph, [node.id])
     const center = parentLocalPoint(ctx, parentId, cx, cy)
     node.x = center.x - node.width / 2
@@ -65,28 +69,28 @@ export function createClipboardWebActions(ctx: EditorContext, deps: WebPasteDepe
   }
 
   /**
-   * Pastes a styled, laid-out document as layers centred on the point, as one paste: the layers
-   * are built and laid out as HTML import builds them, then pasted as copied layers are.
+   * Builds a styled, laid-out document's layers as HTML import builds them, ready to paste as
+   * copied layers are; null when it shows nothing. Building first lets a caller keep what it would
+   * replace until the layers exist.
    */
-  async function pasteStyledHTML(styled: DesignDocument, cx: number, cy: number): Promise<boolean> {
+  async function prepareStyledHTML(styled: DesignDocument): Promise<ClipboardSnapshot | null> {
     const { sceneGraphFromStyledHTML } = await import('#core/io/formats/html/layers')
     const graph = await sceneGraphFromStyledHTML(styled)
     const roots = graph.getChildren(graph.getPages()[0].id)
-    if (roots.length === 0) return false
-    await deps.pasteSnapshot(captureClipboardSnapshot(graph, roots), { x: cx, y: cy })
-    return true
+    return roots.length > 0 ? captureClipboardSnapshot(graph, roots) : null
   }
 
   /**
-   * The width pasted HTML is laid out in: the content width of the frame it goes into, or null
-   * on the canvas, where the caller picks one.
+   * Where pasted HTML goes, and the width it is laid out in there: the content width of the frame
+   * it goes into, or null on the canvas, where the caller picks one.
    */
-  function htmlPasteWidth(): number | null {
-    const target = ctx.graph.getNode(resolvePasteTarget(ctx))
-    if (!target || target.type === 'CANVAS') return null
+  function htmlPasteTarget(): { id: string; width: number | null } {
+    const id = resolvePasteTarget(ctx)
+    const target = ctx.graph.getNode(id)
+    if (!target || target.type === 'CANVAS') return { id, width: null }
     const inset = target.layoutMode === 'NONE' ? 0 : target.paddingLeft + target.paddingRight
-    return Math.max(0, target.width - inset)
+    return { id, width: Math.max(0, target.width - inset) }
   }
 
-  return { pasteText, pasteStyledHTML, htmlPasteWidth }
+  return { pasteText, prepareStyledHTML, htmlPasteTarget }
 }

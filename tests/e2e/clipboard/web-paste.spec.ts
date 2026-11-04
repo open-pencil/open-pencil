@@ -99,6 +99,58 @@ test('a sentence copied from a page pastes as text without offering layers', asy
   await expect(editor.page.getByRole('button', { name: 'Paste as layers' })).toHaveCount(0)
 })
 
+function linkRuns() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.graph
+      .getChildren(store.state.currentPageId)
+      .flatMap((node) =>
+        node.styleRuns.flatMap((run) =>
+          run.style.hyperlink
+            ? [{ start: run.start, length: run.length, url: run.style.hyperlink.value }]
+            : []
+        )
+      )
+  })
+}
+
+test('links land on the words the page linked, across line breaks', async () => {
+  await paste({
+    'text/html':
+      '<p>Home <a href="https://a.test/">Home</a> and <a href="https://b.test/">an editor</a></p>',
+    'text/plain': 'Home Home and an\neditor'
+  })
+
+  await expect.poll(linkRuns).toEqual([
+    { start: 5, length: 4, url: 'https://a.test/' },
+    { start: 14, length: 9, url: 'https://b.test/' }
+  ])
+})
+
+test('a laid-out copy without text pastes as layers at once', async () => {
+  await paste({
+    'text/html':
+      '<div style="width: 120px; height: 40px; background-color: rgb(37, 99, 235)"></div>'
+  })
+
+  await expect.poll(async () => (await pageLayers()).map((layer) => layer.type)).toEqual(['FRAME'])
+  await expect(editor.page.getByText('Pasted as text.', { exact: true })).toHaveCount(0)
+})
+
+test('the notice keeps the text when the HTML shows nothing', async () => {
+  const hidden = '<div style="display: none"><b>Hidden</b></div>'
+  await paste({ 'text/plain': hidden })
+  await expect.poll(async () => (await pageLayers())[0]?.text).toBe(hidden)
+
+  await editor.page.getByRole('button', { name: 'Paste as layers' }).click()
+
+  await expect(
+    editor.page.getByText('The HTML has nothing to show as layers.', { exact: true })
+  ).toBeVisible()
+  expect((await pageLayers()).map((layer) => layer.text)).toEqual([hidden])
+})
+
 test('plain text pastes as a text layer with nothing to offer', async () => {
   await paste({ 'text/plain': 'Just a sentence' })
 

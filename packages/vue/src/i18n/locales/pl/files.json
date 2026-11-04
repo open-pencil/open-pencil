@@ -20,6 +20,7 @@
   "mermaidPasteFailed": "Nie udało się odczytać diagramu Mermaid. {error}",
   "pastedAsText": "Wklejono jako tekst.",
   "noHTMLToPasteAsLayers": "Schowek nie zawiera HTML do wklejenia jako warstwy.",
+  "htmlPasteEmpty": "HTML nie zawiera niczego, co można pokazać jako warstwy.",
   "htmlPasteFailed": "Nie udało się wkleić HTML jako warstw. {error}",
   "recentFiles": "Ostatnie pliki",
   "recentFilesDescription": "Kontynuuj pracę nad projektem lub rozpocznij nowy.",
