@@ -1,2 +1,2 @@
-- Resizing a layer inside a group or boolean operation fits the group to its children again, as moving one does, in the same undo step.
-- Rotated and flipped groups fit their children again after a layer inside them moves, resizes, or leaves, keeping their angle, where they kept their old bounds.
+- Resizing a layer inside a group or boolean operation fits the group to its children, as moving one does, in the same undo step.
+- Rotated and flipped groups fit their children after a layer inside them moves, resizes, or leaves, keeping their angle, where they kept their old bounds.
