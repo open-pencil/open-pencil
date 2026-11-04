@@ -87,6 +87,38 @@ test('syncing a component that rebinds a number keeps the value its instance ove
   expect(must(graph.getNode(instance.id), 'synced instance').opacity).toBe(0.3)
 })
 
+// Figma (desktop 126) keeps such a layer at its x and grows it, in the instance's mode and
+// after the component changes: constraints place a layer when its parent resizes, not when
+// its own bound size does.
+test('syncing keeps a right-constrained layer at its x as its bound width grows', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const collection = graph.createCollection('Size')
+  const large = must(graph.createMode(collection.id, 'L'), 'mode')
+  const width = graph.createVariable('Width', 'FLOAT', collection.id, 100)
+  width.valuesByMode[large] = 200
+  const box = graph.createNode('COMPONENT', page, { name: 'Box', width: 300, height: 40 })
+  const bar = graph.createNode('RECTANGLE', box.id, {
+    name: 'Bar',
+    x: 180,
+    width: 100,
+    height: 4,
+    horizontalConstraint: 'MAX'
+  })
+  graph.bindVariable(bar.id, 'width', width.id)
+  const placed = must(graph.createInstance(box.id, page), 'placed box')
+  setInstanceOverride(placed.instanceOverrides, placed.id, placed.id, 'variableModes')
+  graph.updateNode(placed.id, { variableModes: { [collection.id]: large } })
+  reconcileVariableBindings(graph)
+
+  graph.updateNode(box.id, { opacity: 0.9 })
+  graph.syncInstances(box.id)
+
+  const copy = must(graph.getChildren(placed.id)[0], 'bar copy')
+  expect(copy.width).toBe(200)
+  expect(copy.x).toBe(180)
+})
+
 test('syncing a component that changed its own mode resolves its copies in the new mode', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
