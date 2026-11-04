@@ -41,7 +41,12 @@ import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 import { fitShapeWithTextFrame } from './layout/shape-with-text'
-import { estimateTextSize, getTextMeasurer, measureTextForLayout } from './layout/text-measurement'
+import {
+  estimateTextSize,
+  getTextMeasurer,
+  measureAutoWidthText,
+  measureTextForLayout
+} from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
   applyLockedAspectRatio,
@@ -601,7 +606,7 @@ function configureTextLeaf(
       const cached = cache.get(cacheKey)
       if (cached) return cached
 
-      const result = measureTextForLayout(child, maxW)
+      const result = measureAutoWidthText(child, maxW)
       cache.set(cacheKey, result)
       return result
     })

@@ -9,6 +9,8 @@ import { measureTextNode } from '#core/canvas/text'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { getCanvasKit } from '#core/canvaskit'
+import { FigmaAPI } from '#core/figma-api'
+import { computeAllLayouts } from '#core/layout'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { withTextMeasurer } from '#core/layout/text-measurement'
 import { fontManager } from '#core/text/font/manager'
@@ -175,5 +177,54 @@ describe('text that sizes its own width', () => {
     )
 
     expect([oneLine.width, oneLine.height]).toEqual([fresh.width, fresh.height])
+  })
+
+  // Measured in Figma: auto-width text that reaches its max width takes all of it, wrapping or
+  // truncated, rather than the width of its longest line.
+  const FIGMA_TEXT = { text: 'The quick brown fox jumps over the lazy dog', fontSize: 12 }
+
+  function lines(node: SceneNode): number {
+    const layout = buildParagraph(renderer(), node)
+    try {
+      return layout.getLineMetrics().length
+    } finally {
+      layout.delete()
+    }
+  }
+
+  test('takes its whole max width once its text reaches it, as Figma sizes it', () => {
+    for (const [props, lineCount] of [
+      [{}, 3],
+      [{ textTruncation: 'ENDING', maxLines: 1 }, 1],
+      [{ textTruncation: 'ENDING', maxLines: 2 }, 2]
+    ] as const) {
+      const node = resized(autoWidthText({ ...FIGMA_TEXT, maxWidth: 100, ...props }))
+      expect(node.width).toBe(100)
+      expect(lines(node)).toBe(lineCount)
+    }
+  })
+
+  test('takes its whole max width in an auto layout frame that hugs it', () => {
+    const graph = new SceneGraph()
+    const frame = new FigmaAPI(graph).createFrame()
+    frame.layoutMode = 'VERTICAL'
+    frame.layoutSizingHorizontal = 'HUG'
+    frame.layoutSizingVertical = 'HUG'
+    const text = graph.createNode('TEXT', frame.id, {
+      ...FIGMA_TEXT,
+      fontFamily: 'Inter',
+      lineHeight: null,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      textTruncation: 'ENDING',
+      maxLines: 1,
+      maxWidth: 100
+    })
+    withTextMeasurer(
+      (node, maxWidth) => measureTextNode(renderer(), node, maxWidth),
+      () => computeAllLayouts(graph, graph.getPages()[0].id)
+    )
+
+    expect(graph.getNode(text.id)?.width).toBe(100)
+    expect(frame.width).toBe(100)
   })
 })

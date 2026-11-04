@@ -126,6 +126,22 @@ export function measureTextForLayout(
   return { width: node.width, height: node.height }
 }
 
+/**
+ * Auto-width text's box when it wraps at `wrapWidth`, a max width or the width layout gives it.
+ * Text that reaches the wrap width takes all of it, as Figma sizes it, rather than its longest
+ * line; shorter text keeps its own width.
+ */
+export function measureAutoWidthText(
+  node: SceneNode,
+  wrapWidth: number | undefined
+): { width: number; height: number } {
+  const measured = measureTextForLayout(node, wrapWidth)
+  if (wrapWidth === undefined) return measured
+  // Its one-line width, without the max width the paragraph would otherwise wrap it at.
+  const natural = measureTextForLayout({ ...node, maxWidth: null }).width
+  return natural > wrapWidth ? { width: wrapWidth, height: measured.height } : measured
+}
+
 const installedMeasurers: TextMeasurer[] = []
 
 /**

@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { autoWidthWrapWidth, measureTextForLayout } from './text-measurement'
+import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './text-measurement'
 
 const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
@@ -59,8 +59,10 @@ export function textAutoResizeChanges(
   if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT')
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
 
-  const maxWidth = mode === 'HEIGHT' ? next.width : autoWidthWrapWidth(next)
-  const measured = measureTextForLayout(next, maxWidth)
+  const measured =
+    mode === 'HEIGHT'
+      ? measureTextForLayout(next, next.width)
+      : measureAutoWidthText(next, autoWidthWrapWidth(next))
   const resized: TextSizeChanges = {
     derivedLayout: null,
     derivedTextGlyphs: null,
