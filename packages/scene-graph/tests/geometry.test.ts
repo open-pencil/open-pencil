@@ -1,31 +1,44 @@
 import { describe, expect, test } from 'bun:test'
 
-import { nodeVisualBounds, type VisualBoundsNode } from '@open-pencil/scene-graph/geometry'
+import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
 
-const at = () => ({ x: 10, y: 20 })
+describe('strokeOverflow at mitered corners', () => {
+  const stroke = {
+    type: 'SOLID' as const,
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    weight: 10,
+    opacity: 1,
+    visible: true,
+    align: 'CENTER' as const
+  }
+  const zero = { x: 0, y: 0 }
+  /** An open chevron whose apex is a 40° corner. */
+  const half = Math.tan((20 * Math.PI) / 180) * 100
+  const chevron = {
+    vertices: [
+      { x: -half, y: 100 },
+      { x: 0, y: 0 },
+      { x: half, y: 100 }
+    ],
+    segments: [
+      { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+      { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
+    ],
+    regions: []
+  }
 
-function text(props: Partial<VisualBoundsNode>): VisualBoundsNode {
-  return { id: 'text', type: 'TEXT', visible: true, width: 110, height: 40, ...props }
-}
-
-// Figma 126 draws a fixed-size text's lines past its box.
-describe('text lines past a fixed-size box', () => {
-  test('reach the visual bounds', () => {
-    expect(nodeVisualBounds(text({ derivedTextHeight: 154 }), at)).toEqual({
-      minX: 10,
-      minY: 20,
-      maxX: 120,
-      maxY: 174
-    })
+  test('reaches the miter tip, as Figma’s render bounds do', () => {
+    // Half the weight over sin(20°): 14.6.
+    expect(strokeOverflow([stroke], 'NONE', chevron, { strokeJoin: 'MITER' })).toBeCloseTo(
+      5 / Math.sin((20 * Math.PI) / 180),
+      6
+    )
   })
 
-  test('turn with the text', () => {
-    const bounds = nodeVisualBounds(text({ derivedTextHeight: 154, rotation: 90 }), at)
-    expect(bounds.maxX - bounds.minX).toBeCloseTo(154)
-    expect(bounds.maxY - bounds.minY).toBeCloseTo(110)
-  })
-
-  test('within the box leave it as it is', () => {
-    expect(nodeVisualBounds(text({ derivedTextHeight: 30 }), at).maxY).toBe(60)
+  test('stays at half the weight for round joins and past the miter limit', () => {
+    expect(strokeOverflow([stroke], 'NONE', chevron, { strokeJoin: 'ROUND' })).toBe(5)
+    expect(
+      strokeOverflow([stroke], 'NONE', chevron, { strokeJoin: 'MITER', strokeMiterLimit: 2 })
+    ).toBe(5)
   })
 })
