@@ -256,6 +256,17 @@ describe('cap-height leading trim', () => {
     layout.delete()
   })
 
+  test('takes the first line cap height from the characters a case shows', () => {
+    const layout = layOut({
+      text: 'ßßa\nB',
+      fontSize: 20,
+      textCase: 'UPPER',
+      styleRuns: [{ start: 4, length: 1, style: { fontSize: 60 } }]
+    })
+    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
+    layout.delete()
+  })
+
   test('takes the cap height a variable font varies by optical size at the drawn axes', () => {
     const fontSize = LARGEST_OPTICAL_SIZE
     expect(Math.abs(displayCapHeightEms - INTER_CAP_HEIGHT_EMS) * fontSize).toBeGreaterThan(0.5)

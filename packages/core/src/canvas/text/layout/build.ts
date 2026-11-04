@@ -33,7 +33,7 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { shownText } from '#core/text/case'
+import { shownSourceIndices, shownText } from '#core/text/case'
 import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
@@ -373,7 +373,20 @@ function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
   if (node.leadingTrim !== 'CAP_HEIGHT') {
     return undefined
   }
-  return (start, end) => rangeCapHeight(node, start, end)
+  const sourceIndex = shownToSourceIndex(node)
+  return (start, end) => {
+    const sourceStart = sourceIndex(start)
+    const sourceEnd = end > start ? sourceIndex(end - 1) + 1 : sourceStart
+    return rangeCapHeight(node, sourceStart, sourceEnd)
+  }
+}
+
+function shownToSourceIndex(node: ParagraphNode): (shownIndex: number) => number {
+  let indices: number[] | undefined
+  return (shownIndex) => {
+    indices ??= shownSourceIndices(node)
+    return indices[shownIndex] ?? node.text.length
+  }
 }
 
 /** How many laid-out line boxes fit the fixed height, preserving the first line. */
