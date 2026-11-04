@@ -176,6 +176,8 @@ export interface DragResize {
 export interface DragResizeSelection {
   type: 'resize-selection'
   handle: HandlePosition
+  /** The parent whose layers the box snaps to: the first selected layer's, as a move takes. */
+  parentId: string
   startX: number
   startY: number
   /** The selection's box on the canvas when the drag started. */

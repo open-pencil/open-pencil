@@ -376,7 +376,7 @@ export function useCanvasInput(
       return
     }
     if (d.type === 'resize-selection') {
-      applySelectionResize(d, cx, cy, e.shiftKey, editor)
+      applySelectionResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
       return
     }
 

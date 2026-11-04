@@ -125,6 +125,50 @@ export function applyResizeSnap(
   return applyEdgeDelta(drag.handle, rect, dx, dy)
 }
 
+/** What a multi-selection's box snaps against: its layers, and the parent whose layers it meets. */
+export interface BoxSnapTarget {
+  movingIds: Set<string>
+  parentId: string
+}
+
+/**
+ * Snaps the edges a handle moves on a multi-selection's canvas box to other layers' edges, the
+ * guides, and the grid, as a single layer's resize does; the box is already on the canvas.
+ */
+export function applyBoxResizeSnap(
+  handle: HandlePosition,
+  box: Rect,
+  target: BoxSnapTarget,
+  editor: Editor,
+  disableSnapping: boolean
+): Rect {
+  const state = optionalEditorState(editor)
+  if (disableSnapping || !state) {
+    if (state) state.snapGuides = []
+    return box
+  }
+  const targets = editor.graph
+    .getChildren(target.parentId)
+    .filter((candidate) => candidate.visible)
+    .map((candidate) => worldBoundsNode(candidate, editor))
+  const snap = resolveObjectPixelSnap(
+    target.movingIds,
+    activeEdgeBounds(handle, box),
+    targets,
+    editor,
+    explicitSnapTargets(target.parentId, editor)
+  )
+  const horizontal = movesLeft(handle) || movesRight(handle)
+  const vertical = movesTop(handle) || movesBottom(handle)
+  state.snapGuides = snap.guides.filter((guide) => (guide.axis === 'x' ? horizontal : vertical))
+  return applyEdgeDelta(
+    handle,
+    box,
+    horizontal ? snap.correction.x : 0,
+    vertical ? snap.correction.y : 0
+  )
+}
+
 /** How much a drag along one axis grows the box: by the delta at its far edge, against it at its near one. */
 function edgeGrowth(delta: number, far: boolean, near: boolean): number {
   if (far) return delta
@@ -180,7 +224,44 @@ export function proportionalResizeRect(
   editor: Editor,
   disableSnapping: boolean
 ): Rect {
-  const { handle } = drag
+  return proportionalRect(
+    drag.handle,
+    origRect,
+    dx,
+    dy,
+    aspect,
+    editor,
+    disableSnapping,
+    (edge, rect) => applyResizeSnap({ nodeId: drag.nodeId, handle: edge }, rect, editor, false)
+  )
+}
+
+/** {@link proportionalResizeRect} for a multi-selection's canvas box. */
+export function proportionalBoxResizeRect(
+  handle: HandlePosition,
+  origBox: Rect,
+  dx: number,
+  dy: number,
+  aspect: number,
+  target: BoxSnapTarget,
+  editor: Editor,
+  disableSnapping: boolean
+): Rect {
+  return proportionalRect(handle, origBox, dx, dy, aspect, editor, disableSnapping, (edge, box) =>
+    applyBoxResizeSnap(edge, box, target, editor, false)
+  )
+}
+
+function proportionalRect(
+  handle: HandlePosition,
+  origRect: Rect,
+  dx: number,
+  dy: number,
+  aspect: number,
+  editor: Editor,
+  disableSnapping: boolean,
+  snapEdge: (edge: HandlePosition, rect: Rect) => Rect
+): Rect {
   const constrained = calculateResizeRect(handle, origRect, dx, dy, aspect)
   const state = optionalEditorState(editor)
   const { width, height } = draggedSize(handle, origRect, dx, dy)
@@ -190,12 +271,7 @@ export function proportionalResizeRect(
     return constrained
   }
   const driver = proportionalResizeDriver(handle, origRect, dx, dy, aspect)
-  const snapped = applyResizeSnap(
-    { nodeId: drag.nodeId, handle: DRIVING_EDGE[handle][driver] },
-    constrained,
-    editor,
-    false
-  )
+  const snapped = snapEdge(DRIVING_EDGE[handle][driver], constrained)
   const roundsToPixels =
     state.snappingPreferences.pixelGrid && resolveEditorProfile(state).pixelGrid
   const fitted = constrainToAspectRatio(

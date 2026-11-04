@@ -20,7 +20,9 @@ import {
   scaledChanges
 } from '#vue/shared/input/resize'
 import { signedResizeRect } from '#vue/shared/input/resize/rect'
+import { applyBoxResizeSnap, proportionalBoxResizeRect } from '#vue/shared/input/resize/snap'
 import { createResizeDrag } from '#vue/shared/input/resize/start'
+import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResizeMember, DragResizeSelection, DragState } from '#vue/shared/input/types'
 
 /**
@@ -72,6 +74,7 @@ export function tryStartSelectionResize(
   return {
     type: 'resize-selection',
     handle,
+    parentId: members[0].placement.node.parentId ?? editor.state.currentPageId,
     startX: cx,
     startY: cy,
     origBounds: box,
@@ -84,24 +87,50 @@ function atLeastOne(size: number): number {
   return Math.sign(size || 1) * Math.max(Math.abs(size), 1)
 }
 
+/**
+ * The box a handle drag gives the selection, with signed sizes: dragged past the opposite edge,
+ * the box and every layer in it come out mirrored. Its moving edges snap as a layer's do unless
+ * Control turns snapping off; a mirrored box lands where the pointer puts it.
+ */
+function resizedBox(
+  d: DragResizeSelection,
+  cx: number,
+  cy: number,
+  shiftKey: boolean,
+  ctrlKey: boolean,
+  editor: Editor
+): Rect {
+  const { origBounds, handle } = d
+  const dx = cx - d.startX
+  const dy = cy - d.startY
+  const aspect =
+    shiftKey && origBounds.width > 0 && origBounds.height > 0
+      ? origBounds.width / origBounds.height
+      : null
+  const signed = signedResizeRect(handle, origBounds, dx, dy, aspect)
+  if (signed.width <= 0 || signed.height <= 0) {
+    optionalEditorState(editor)?.snapGuides.splice(0)
+    return { ...signed, width: atLeastOne(signed.width), height: atLeastOne(signed.height) }
+  }
+  const target = { movingIds: editor.state.selectedIds, parentId: d.parentId }
+  return aspect === null
+    ? applyBoxResizeSnap(handle, signed, target, editor, ctrlKey)
+    : proportionalBoxResizeRect(handle, origBounds, dx, dy, aspect, target, editor, ctrlKey)
+}
+
 /** Scales the selection's box with the pointer; Shift keeps its proportions. */
 export function applySelectionResize(
   dragState: DragResizeSelection,
   cx: number,
   cy: number,
   shiftKey: boolean,
-  editor: Editor
+  editor: Editor,
+  ctrlKey = false
 ) {
   // As in applyResize: reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
   const { origBounds } = d
-  const aspect =
-    shiftKey && origBounds.width > 0 && origBounds.height > 0
-      ? origBounds.width / origBounds.height
-      : null
-  // Signed: dragged past the opposite edge, the box and every layer in it come out mirrored.
-  const signed = signedResizeRect(d.handle, origBounds, cx - d.startX, cy - d.startY, aspect)
-  const bounds = { ...signed, width: atLeastOne(signed.width), height: atLeastOne(signed.height) }
+  const bounds = resizedBox(d, cx, cy, shiftKey, ctrlKey, editor)
   for (const { drag, placement } of d.members) {
     const node = editor.graph.getNode(drag.nodeId)
     if (!node) continue

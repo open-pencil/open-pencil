@@ -93,6 +93,21 @@ describe('resizing a multi-selection from its bounds', () => {
     expect(box(editor.graph.getNode(b))).toEqual({ x: 100, y: 100, width: 50, height: 50 })
   })
 
+  test('the moving edge snaps to another layer’s edge, and Control keeps it free', () => {
+    const { b } = setup()
+    const page = editor.state.currentPageId
+    editor.graph.createNode('RECTANGLE', page, { x: 300, y: 0, width: 50, height: 50 })
+    const drag = start(150, 75)
+    // The right edge dragged to x 297, within reach of the other layer's left edge at 300.
+    applySelectionResize(drag, 297, 75, false, editor)
+    expect(box(editor.graph.getNode(b)).x + box(editor.graph.getNode(b)).width).toBe(300)
+    expect(editor.state.snapGuides.length).toBeGreaterThan(0)
+
+    applySelectionResize(drag, 297, 75, false, editor, true)
+    expect(box(editor.graph.getNode(b)).x + box(editor.graph.getNode(b)).width).toBe(297)
+    expect(editor.state.snapGuides).toEqual([])
+  })
+
   test('a press inside the bounds, on a layer’s own corner, starts no resize', () => {
     setup()
     // The first layer's bottom-right corner lies inside the bounds, where no handle is drawn.
@@ -145,8 +160,9 @@ describe('stretching a multi-selection with a turned layer', () => {
     const { a } = turned()
     const drag = start(200, 25)
     expect(drag.handle).toBe('e')
-    // Doubling the box's width stretches the turned square's axes to (2, 1) and (−2, 1) over √2.
-    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor)
+    // Doubling the box's width stretches the turned square's axes to (2, 1) and (−2, 1) over √2;
+    // Control keeps the edge off the pixel grid.
+    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor, true)
     commitSelectionResize(drag, editor)
     const node = editor.graph.getNode(a)
     expect(node?.rotation).toBeCloseTo((Math.atan2(1, 2) * 180) / Math.PI, 6)
@@ -160,7 +176,7 @@ describe('stretching a multi-selection with a turned layer', () => {
   test('cancelling puts its angle back', () => {
     const { a } = turned()
     const drag = start(200, 25)
-    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor)
+    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor, true)
     cancelSelectionResize(drag, editor)
     expect(editor.graph.getNode(a)?.rotation).toBe(45)
     expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
