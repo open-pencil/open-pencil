@@ -1,6 +1,6 @@
 import type { EditorContext } from '#core/editor/types'
 
-import { createVectorEditHandleActions } from './handle-actions'
+import { createVectorEditHandleActions } from './handles/actions'
 import { createVectorEditHistoryActions } from './history'
 import { createVectorEditLifecycle } from './lifecycle'
 import { createVectorEditNetworkActions, getLiveNetwork, setNodeEditNetwork } from './network'

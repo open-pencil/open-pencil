@@ -1,12 +1,12 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorContext } from '#core/editor/types'
+import { pushNodeEditHistory } from '#core/editor/vector/history'
+import { getLiveNetwork } from '#core/editor/vector/network'
+import type { NodeEditState } from '#core/editor/vector/types'
 import { findAllHandles, findOppositeHandle, mirrorHandle } from '#core/vector'
 
-import { constrainContinuousTangent } from './handles'
-import { pushNodeEditHistory } from './history'
-import { getLiveNetwork } from './network'
-import type { NodeEditState } from './types'
+import { constrainContinuousTangent } from './continuous'
 
 type GetNodeEditState = () => NodeEditState | null
 

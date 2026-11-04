@@ -1,7 +1,7 @@
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { HandleInfo, NodeEditState } from './types'
+import type { HandleInfo, NodeEditState } from '#core/editor/vector/types'
 
 function handleBaseVector(tangent: Vector, neighbor: Vector, origin: Vector): Vector {
   return Math.hypot(tangent.x, tangent.y) > 1e-6
