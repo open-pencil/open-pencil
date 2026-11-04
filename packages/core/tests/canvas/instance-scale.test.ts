@@ -9,14 +9,9 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import {
-  capturedFigRecordsSchema,
-  FIXTURES,
-  nestedLayoutScaleFixtureSchema,
-  readFixture
-} from '../helpers/fig/fixtures'
-import { inheritedNestedBindingRecords } from '../helpers/fig/nested-binding'
-
+import { capturedFigRecordsSchema, nestedLayoutScaleFixtureSchema, readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { FIXTURES } from '@open-pencil/test-support/paths'
+import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
 const fixture = readFixture('nested-layout-scale.json', nestedLayoutScaleFixtureSchema)
 
 const declared = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)

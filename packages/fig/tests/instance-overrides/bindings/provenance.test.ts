@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import {
   bindSourceProperties,
   componentBindings,
@@ -15,6 +14,7 @@ import { mapInstanceSourceChildren } from '#fig/instance-overrides/source-childr
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('materialization preserves explicit equal-to-default text', () => {
   const changes: NodeChange[] = [

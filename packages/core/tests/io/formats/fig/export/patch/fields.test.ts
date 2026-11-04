@@ -1,7 +1,7 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 import { sortBy, uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 

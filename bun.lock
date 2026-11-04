@@ -669,6 +669,8 @@
         "@acemir/cssom": "^0.9.31",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/kiwi": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/test-support": "workspace:*",
         "valibot": "^1.5.0",

@@ -11,10 +11,10 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { heavy } from '@open-pencil/test-support/heavy'
 
-import { coreSourcePath, testPath } from '#tests/helpers/paths'
+import { corePackagePath } from '#core-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 setDefaultTimeout(30_000)
 
-const FIXTURES = testPath('fixtures')
 const CUSTOM_FIG_KIWI_VERSION = 77
 
 function canvasFigVersion(figData: Uint8Array): number {
@@ -36,7 +36,7 @@ function compressInWorker(message: {
   figKiwiVersion?: number
 }): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(pathToFileURL(coreSourcePath('io/formats/fig/export/worker.ts')), {
+    const worker = new Worker(pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')), {
       type: 'module'
     })
     worker.onmessage = (event: MessageEvent<Uint8Array>) => {

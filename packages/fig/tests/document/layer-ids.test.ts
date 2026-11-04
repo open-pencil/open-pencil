@@ -1,9 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
-
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 const DOCUMENT = { sessionID: 0, localID: 0 }
 

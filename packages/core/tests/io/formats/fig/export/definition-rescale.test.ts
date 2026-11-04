@@ -1,9 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-
+import { capturedFigRecordsSchema, readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'

@@ -1,7 +1,6 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'

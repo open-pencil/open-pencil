@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { corePackagePath } from '#core-tests/helpers/paths'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'

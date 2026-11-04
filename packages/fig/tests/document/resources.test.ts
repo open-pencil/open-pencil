@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument } from '#fig/document/materialize'
 import { createDocumentReader } from '#fig/document/read'
 import { createResourceResolver } from '#fig/document/resource-reference'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('copies archive images into document-owned resources', () => {
   const bytes = new Uint8Array([1, 2, 3])

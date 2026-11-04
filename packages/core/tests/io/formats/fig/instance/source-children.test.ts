@@ -1,7 +1,6 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { guid } from '#core-tests/helpers/fig/guid'
-
+import { guid } from '@open-pencil/test-support/fig/guid'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import {

@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { collectAllNodes } from '#core-tests/helpers/fig/traversal'
-
+import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'

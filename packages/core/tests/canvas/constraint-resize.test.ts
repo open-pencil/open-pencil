@@ -6,9 +6,8 @@ import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/
 import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { absoluteConstraintRecords } from '../helpers/fig/absolute-constraints'
-import { FIXTURES } from '../helpers/fig/fixtures'
-
+import { absoluteConstraintRecords } from '@open-pencil/test-support/fig/absolute-constraints'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 test('absolute resize constraints match native Figma pixels', async () => {
   const { graph, sources } = materializeDocument(absoluteConstraintRecords())
   const ck = await initCanvasKit()

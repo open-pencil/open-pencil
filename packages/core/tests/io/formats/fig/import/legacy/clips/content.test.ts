@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
 
-import { canvas, doc, node } from '../helpers'
+import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
 
 describe('fig-import: clipsContent with resizeToFit', () => {
   test('regular FRAME with frameMaskDisabled=false clips content', () => {

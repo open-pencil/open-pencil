@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs'
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 
-import { testPath } from '#tests/helpers/paths'
-const fixturePath = testPath('fixtures/gold-preview.fig')
+import { join } from 'node:path'
+
+import { FIXTURES } from '@open-pencil/test-support/paths'
+const fixturePath = join(FIXTURES, 'gold-preview.fig')
 
 test('reports FIG pages before materializing NodeChange objects', () => {
   const bytes = readFileSync(fixturePath)

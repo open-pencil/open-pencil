@@ -1,8 +1,7 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 import { createEditor } from '@open-pencil/core'
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'

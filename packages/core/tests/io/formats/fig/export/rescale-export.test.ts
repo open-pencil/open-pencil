@@ -1,8 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-
+import { capturedFigRecordsSchema, readFixture } from '@open-pencil/test-support/fig/fixtures'
 import { createEditor } from '@open-pencil/core'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'

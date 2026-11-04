@@ -4,11 +4,11 @@ import { resolve } from 'node:path'
 import * as v from 'valibot'
 
 import { parseFigFile, type ParseFigFileOptions } from '@open-pencil/core/io/formats/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { FIXTURES } from '#test-support/paths'
 import { collectAllNodes } from '#test-support/fig/traversal'
-
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',
@@ -32,12 +32,41 @@ export const VALID_NODE_TYPES = new Set<string>([
   'STICKY'
 ])
 
-const fixtureObjectSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
-
-/** Read a shared JSON fixture object. */
-export function readFixtureObject(name: string): Record<string, unknown> {
-  return v.parse(fixtureObjectSchema, readFileSync(resolve(FIXTURES, name), 'utf8'))
+/** Read a shared JSON fixture and validate it; a module import would escape the package root. */
+export function readFixture<TSchema extends v.GenericSchema>(
+  name: string,
+  schema: TSchema
+): v.InferOutput<TSchema> {
+  return v.parse(
+    v.pipe(v.string(), v.parseJson(), schema),
+    readFileSync(resolve(FIXTURES, name), 'utf8')
+  )
 }
+
+/** The Kiwi codec validates a node change; a fixture only checks that the record is an object. */
+export const figNodeChangeFixtureSchema = v.custom<NodeChange>(
+  (value) => typeof value === 'object' && value !== null
+)
+
+/** A `{ nodeChanges, blobs }` capture recorded from a live Figma document. */
+export const capturedFigRecordsSchema = v.object({
+  nodeChanges: v.array(figNodeChangeFixtureSchema),
+  blobs: v.array(v.string())
+})
+
+/** `nested-layout-scale.json`: the same document before and after a nested padding edit. */
+export const nestedLayoutScaleFixtureSchema = v.object({
+  ids: v.object({
+    page: v.string(),
+    inner: v.string(),
+    outer: v.string(),
+    nested: v.string(),
+    instance: v.string()
+  }),
+  before: v.array(figNodeChangeFixtureSchema),
+  edited: v.array(figNodeChangeFixtureSchema),
+  blobs: v.array(v.string())
+})
 
 export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))
@@ -115,4 +144,11 @@ export function readFigFixture(path: string): ArrayBuffer | null {
 export async function loadFigFixture(path: string): Promise<SceneGraph | null> {
   const ab = readFigFixture(path)
   return ab ? parseFigFile(ab) : null
+}
+
+const fixtureObjectSchema = v.record(v.string(), v.unknown())
+
+/** Read a shared JSON fixture object. */
+export function readFixtureObject(name: string): Record<string, unknown> {
+  return readFixture(name, fixtureObjectSchema)
 }

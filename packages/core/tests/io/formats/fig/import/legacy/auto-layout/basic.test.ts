@@ -4,7 +4,7 @@ import { materializeDocument } from '@open-pencil/fig'
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { canvas, doc, node } from '../helpers'
+import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
 
 describe('fig-import: auto-layout alignment', () => {
   test('keeps leading padding independent when trailing fields are omitted', () => {

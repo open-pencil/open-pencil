@@ -81,14 +81,14 @@ export const LARGE_FIXTURES = ['material3.fig', 'nuxtui.fig'] as const
  */
 export const HEAVY_UNIT_TEST_PATTERNS = [
   'packages/core/tests/clipboard/fixtures/',
-  'tests/engine/io/fig/heavy/',
+  'packages/core/tests/io/formats/fig/heavy/',
   'packages/core/tests/io/formats/fig/roundtrip/exhaustive.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/variables.test.ts',
   'packages/core/tests/io/formats/fig/import/stale-overrides.test.ts',
-  'tests/engine/io/fig/export/text.test.ts',
-  'tests/engine/io/fig/export/worker.test.ts',
-  'tests/engine/io/fig/import/group-reclassify.test.ts',
+  'packages/core/tests/io/formats/fig/export/text/basic.test.ts',
+  'packages/core/tests/io/formats/fig/export/worker.test.ts',
+  'packages/core/tests/io/formats/fig/import/group-reclassify.test.ts',
   'packages/core/tests/layout/auto-layout/text/measurement.test.ts',
   'tests/engine/render/canvas/cache.test.ts'
 ] as const

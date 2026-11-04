@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { canvas, doc, node } from '../helpers'
+import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
 
 describe('fig-import: image fills', () => {
   test('image fill with hash', () => {
