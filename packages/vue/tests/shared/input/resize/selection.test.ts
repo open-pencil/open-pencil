@@ -2,13 +2,11 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { turnPoint } from '@open-pencil/scene-graph/coordinate'
 
 import {
   applySelectionResize,
   cancelSelectionResize,
   commitSelectionResize,
-  selectionBox,
   tryStartSelectionResize
 } from '#vue/shared/input/resize/selection'
 
@@ -119,49 +117,5 @@ describe('resizing a multi-selection inside a group', () => {
     editor.undo.undo()
     expect(box(editor.graph.getNode(group.id))).toEqual({ x: 0, y: 0, width: 150, height: 150 })
     expect(box(editor.graph.getNode(b.id))).toEqual({ x: 100, y: 100, width: 50, height: 50 })
-  })
-})
-
-describe('resizing a multi-selection whose layers share an angle', () => {
-  test('its turned box resizes along its own axes and the layers keep their angle', () => {
-    editor = createEditor()
-    const page = editor.state.currentPageId
-    const a = editor.graph.createNode('RECTANGLE', page, {
-      x: 0,
-      y: 0,
-      width: 50,
-      height: 50,
-      rotation: 30
-    })
-    const b = editor.graph.createNode('RECTANGLE', page, {
-      x: 100,
-      y: 0,
-      width: 50,
-      height: 50,
-      rotation: 30
-    })
-    editor.select([a.id, b.id])
-    const frame = selectionBox(editor)
-    if (!frame) throw new Error('expected a selection box')
-    expect(frame.angle).toBeCloseTo(30, 6)
-
-    // The box's bottom-right corner, turned onto the canvas.
-    const corner = turnPoint(
-      { x: frame.box.x + frame.box.width, y: frame.box.y + frame.box.height },
-      frame.angle
-    )
-    const drag = start(corner.x, corner.y)
-    expect(drag.handle).toBe('se')
-    // 100 along the box's own x axis.
-    const along = turnPoint({ x: 100, y: 0 }, frame.angle)
-    applySelectionResize(drag, corner.x + along.x, corner.y + along.y, false, editor)
-    commitSelectionResize(drag, editor)
-
-    expect(editor.graph.getNode(a.id)?.rotation).toBeCloseTo(30, 6)
-    expect(editor.graph.getNode(b.id)?.rotation).toBeCloseTo(30, 6)
-    const after = selectionBox(editor)
-    expect(after?.angle).toBeCloseTo(30, 6)
-    expect(after?.box.width).toBeCloseTo(frame.box.width + 100, 6)
-    expect(after?.box.height).toBeCloseTo(frame.box.height, 6)
   })
 })

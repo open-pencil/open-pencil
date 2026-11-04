@@ -18,8 +18,7 @@ import {
   type TransformZone
 } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { turnPoint, type SelectionFrame } from '@open-pencil/scene-graph/coordinate'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
 import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
@@ -281,41 +280,24 @@ export function buildResizeCursor(angleDeg: number): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
 }
 
-/** A canvas point in a multi-selection's frame. */
-export function pointInFrame(cx: number, cy: number, frame: SelectionFrame): Vector {
-  return turnPoint({ x: cx, y: cy }, -frame.angle)
-}
-
 /**
  * Whether a canvas point takes the rotation of a multi-selection's box: its top handle, drawn
  * `ROTATION_HANDLE_DISTANCE` screen pixels beyond the top edge, or the zone just outside a corner.
  */
-export function hitTestFrameRotation(
-  cx: number,
-  cy: number,
-  frame: SelectionFrame,
-  zoom: number
-): boolean {
-  const { box } = frame
+export function hitTestBoxRotation(cx: number, cy: number, box: Rect, zoom: number): boolean {
   if (!hasTransformHandles(box.width * zoom, box.height * zoom)) return false
-  const point = pointInFrame(cx, cy, frame)
-  const dx = point.x - (box.x + box.width / 2)
-  const dy = point.y - (box.y - ROTATION_HANDLE_DISTANCE / zoom)
+  const dx = cx - (box.x + box.width / 2)
+  const dy = cy - (box.y - ROTATION_HANDLE_DISTANCE / zoom)
   const radius = HANDLE_HIT_RADIUS / zoom
   if (dx * dx + dy * dy <= radius * radius) return true
-  return transformZoneAt(point, box, zoom)?.kind === 'rotate'
+  return transformZoneAt({ x: cx, y: cy }, box, zoom)?.kind === 'rotate'
 }
 
 /** The rotation cursor outside a corner of a multi-selection's box, or null elsewhere. */
-export function frameRotationCursor(
-  cx: number,
-  cy: number,
-  frame: SelectionFrame,
-  zoom: number
-): string | null {
-  const zone = transformZoneAt(pointInFrame(cx, cy, frame), frame.box, zoom)
+export function boxRotationCursor(cx: number, cy: number, box: Rect, zoom: number): string | null {
+  const zone = transformZoneAt({ x: cx, y: cy }, box, zoom)
   if (zone?.kind !== 'rotate') return null
   const x = zone.corner === 'nw' || zone.corner === 'sw' ? -1 : 1
   const y = zone.corner === 'nw' || zone.corner === 'ne' ? -1 : 1
-  return buildRotationCursor((Math.atan2(y, x) * 180) / Math.PI + 135 + frame.angle)
+  return buildRotationCursor((Math.atan2(y, x) * 180) / Math.PI + 135)
 }

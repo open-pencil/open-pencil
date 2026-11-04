@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -34,27 +34,15 @@ export function frameLabelPlacement(
   anchor: Vector = { x: 0, y: 0 }
 ) {
   const world = createSceneGeometry(graph, preview).unreflectedWorldMatrix(node)
-  return readableEdgePlacement(world, node, anchor)
-}
-
-/**
- * `frameLabelPlacement` for any box drawn by `world` from its own (0,0)…(width,height), such as a
- * multi-selection's box while it turns.
- */
-export function readableEdgePlacement(
-  world: Mat3,
-  { width: boxWidth, height: boxHeight }: { width: number; height: number },
-  anchor: Vector = { x: 0, y: 0 }
-) {
   const orientation = (Math.atan2(world[3], world[0]) * 180) / Math.PI
   const turns = Math.floor((orientation + 45) / 90)
   const corner = ((turns % 4) + 4) % 4
   const origin = Matrix.mapPoint(world, {
-    x: corner >= 2 ? boxWidth : 0,
-    y: corner === 1 || corner === 2 ? boxHeight : 0
+    x: corner >= 2 ? node.width : 0,
+    y: corner === 1 || corner === 2 ? node.height : 0
   })
-  const width = corner % 2 === 0 ? boxWidth : boxHeight
-  const height = corner % 2 === 0 ? boxHeight : boxWidth
+  const width = corner % 2 === 0 ? node.width : node.height
+  const height = corner % 2 === 0 ? node.height : node.width
   const rotation = orientation - turns * 90
   const offset = Matrix.mapPoint(Matrix.rotated((rotation * Math.PI) / 180), {
     x: anchor.x * width,

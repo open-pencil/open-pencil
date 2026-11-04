@@ -64,19 +64,32 @@ describe('rotating a multi-selection', () => {
     handleSelectionRotateMove(editor, drag, 175, 75, false)
     expect(place(editor.graph.getNode(a))).toEqual({ x: 100, y: 0, rotation: 90 })
     expect(place(editor.graph.getNode(b))).toEqual({ x: 0, y: 100, rotation: 90 })
-    // The selection's box turns with its layers rather than growing around them.
-    // The selection's box turns with its layers rather than growing around them: the same box in
-    // a frame turned a quarter, its center still at (75, 75).
-    expect(editor.state.selectionRotationPreview).toEqual({
-      box: { x: 0, y: -150, width: 150, height: 150 },
-      angle: 90
-    })
 
     commitRotationDrag(editor, drag)
     expect(place(editor.graph.getNode(b))).toEqual({ x: 0, y: 100, rotation: 90 })
-    expect(editor.state.selectionRotationPreview).toBeNull()
-    // The layers now share the angle, so the selection keeps its turned box, as in Figma.
-    expect(selectionBox(editor)?.angle).toBeCloseTo(90, 6)
+  })
+
+  test('the box stays upright around the turning layers, as Figma draws it', () => {
+    setup()
+    const drag = grabHandle()
+    // An eighth turn: each square's center swings to (75, 75 ∓ 50√2) and its corners reach
+    // 25√2 beyond it on every side.
+    const radians = (-45 * Math.PI) / 180
+    handleSelectionRotateMove(
+      editor,
+      drag,
+      75 + 100 * Math.cos(radians),
+      75 + 100 * Math.sin(radians),
+      false
+    )
+    const half = 25 * Math.SQRT2
+    const reach = 50 * Math.SQRT2 + half
+    const box = selectionBox(editor)
+    if (!box) throw new Error('expected a selection box')
+    expect(box.x).toBeCloseTo(75 - half, 6)
+    expect(box.y).toBeCloseTo(75 - reach, 6)
+    expect(box.width).toBeCloseTo(2 * half, 6)
+    expect(box.height).toBeCloseTo(2 * reach, 6)
   })
 
   test('one undo puts every layer back', () => {
@@ -117,65 +130,5 @@ describe('rotating a multi-selection', () => {
   test('a press away from the handles starts no rotation', () => {
     setup()
     expect(press(75, 75).hit).toBe(false)
-  })
-})
-
-describe('a rotated multi-selection’s box', () => {
-  /** Squares at 0° and 20°, both selected: their angles differ, so the box starts upright. */
-  function mixed() {
-    editor = createEditor()
-    const page = editor.state.currentPageId
-    const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 50, height: 50 })
-    const b = editor.graph.createNode('RECTANGLE', page, {
-      x: 100,
-      y: 100,
-      width: 50,
-      height: 50,
-      rotation: 20
-    })
-    editor.select([a.id, b.id])
-    return { a: a.id, b: b.id }
-  }
-
-  function turnBy(degrees: number) {
-    const frame = selectionBox(editor)
-    if (!frame) throw new Error('expected a selection box')
-    const { box } = frame
-    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-    // Press the stalk straight above the center, then swing the pointer `degrees` around it.
-    const { drag } = press(center.x, box.y - 24)
-    if (drag?.type !== 'rotate-selection') throw new Error('expected a selection rotation')
-    const radians = ((-90 + degrees) * Math.PI) / 180
-    const reach = center.y - (box.y - 24)
-    handleSelectionRotateMove(
-      editor,
-      drag,
-      center.x + reach * Math.cos(radians),
-      center.y + reach * Math.sin(radians),
-      false
-    )
-    commitRotationDrag(editor, drag)
-  }
-
-  test('stays turned after release even when the layers’ angles differ', () => {
-    mixed()
-    expect(selectionBox(editor)?.angle).toBe(0)
-    turnBy(30)
-    expect(selectionBox(editor)?.angle).toBeCloseTo(30, 6)
-  })
-
-  test('undo straightens it with the layers', () => {
-    mixed()
-    turnBy(30)
-    editor.undo.undo()
-    expect(selectionBox(editor)?.angle).toBe(0)
-  })
-
-  test('another selection forgets it', () => {
-    const { a, b } = mixed()
-    turnBy(30)
-    editor.select([a])
-    editor.select([a, b])
-    expect(selectionBox(editor)?.angle).toBe(0)
   })
 })

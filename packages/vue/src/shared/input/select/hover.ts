@@ -4,10 +4,10 @@ import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
 import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
   axisAlignedCursorAngle,
+  boxRotationCursor,
   MOVE_CURSOR,
   buildResizeCursor,
   cornerRotationCursor,
-  frameRotationCursor,
   getHitHandleByMatrix,
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
@@ -20,8 +20,8 @@ import { scalesByHandles } from '#vue/shared/input/sticky/scale'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   if (editor.state.selectedIds.size > 1) {
-    const hit = selectionResizeHandleAt(cx, cy, editor)
-    return hit ? buildResizeCursor(axisAlignedCursorAngle(hit.handle) + hit.angle) : null
+    const handle = selectionResizeHandleAt(cx, cy, editor)
+    return handle ? buildResizeCursor(axisAlignedCursorAngle(handle)) : null
   }
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
@@ -43,8 +43,8 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
 
 function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   if (editor.state.selectedIds.size > 1) {
-    const frame = selectionBox(editor)
-    return frame ? frameRotationCursor(cx, cy, frame, editor.renderer?.zoom ?? 1) : null
+    const box = selectionBox(editor)
+    return box ? boxRotationCursor(cx, cy, box, editor.renderer?.zoom ?? 1) : null
   }
   if (editor.state.selectedIds.size !== 1) return null
 

@@ -6,7 +6,6 @@ import {
   getWorldMatrix,
   placeInResizedBounds,
   placeRotatedAbout,
-  selectionFrame,
   selectionPlacement
 } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -102,57 +101,5 @@ describe('placing a layer in a rotated selection', () => {
     expect(placed.rotation).toBeCloseTo(-30, 6)
     expect(placed.x).toBeCloseTo(0, 6)
     expect(placed.y).toBeCloseTo(0, 6)
-  })
-})
-
-describe('a multi-selection’s frame', () => {
-  function pair(rotations: [number, number], flipX = false) {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const a = graph.createNode('RECTANGLE', page.id, {
-      x: 0,
-      y: 0,
-      width: 40,
-      height: 20,
-      rotation: rotations[0]
-    })
-    const b = graph.createNode('RECTANGLE', page.id, {
-      x: 100,
-      y: 0,
-      width: 40,
-      height: 20,
-      rotation: rotations[1],
-      flipX
-    })
-    return { graph, nodes: [a, b] }
-  }
-
-  test('turns to the angle every layer shares and fits them in that frame', () => {
-    const { graph, nodes } = pair([30, 30])
-    const frame = selectionFrame(nodes, graph)
-    expect(frame.angle).toBeCloseTo(30, 6)
-    // Both layers are 40×20 along the frame's axes; their centers lie 100 apart on the canvas.
-    expect(frame.box.height).toBeCloseTo(20 + 100 * Math.sin((30 * Math.PI) / 180), 6)
-  })
-
-  test('stays upright when the layers’ angles differ or one is mirrored', () => {
-    const mixed = pair([30, 45])
-    expect(selectionFrame(mixed.nodes, mixed.graph).angle).toBe(0)
-    const mirrored = pair([30, 30], true)
-    expect(selectionFrame(mirrored.nodes, mirrored.graph).angle).toBe(0)
-  })
-
-  test('a resize in a turned frame scales a layer along the frame’s axes', () => {
-    const { graph, nodes } = pair([30, 30])
-    const frame = selectionFrame(nodes, graph)
-    const to = { ...frame.box, width: frame.box.width * 2 }
-    const rect = placeInResizedBounds(
-      selectionPlacement(nodes[0], graph),
-      frame.box,
-      to,
-      frame.angle
-    )
-    expect(rect.width).toBeCloseTo(80, 6)
-    expect(rect.height).toBeCloseTo(20, 6)
   })
 })

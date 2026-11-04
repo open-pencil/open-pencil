@@ -126,8 +126,6 @@ export function renderFromEditorState(
       snapGuides: state.snapGuides,
       guides: state.guides,
       rotationPreview: state.rotationPreview,
-      selectionRotationPreview: state.selectionRotationPreview,
-      selectionAngle: state.selectionAngle,
       dropTargetId: state.dropTargetId,
       layoutInsertIndicator: state.layoutInsertIndicator,
       penState: state.penState

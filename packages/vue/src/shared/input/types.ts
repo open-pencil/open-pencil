@@ -9,7 +9,7 @@ import type {
   TextPathData,
   VectorNetwork
 } from '@open-pencil/scene-graph'
-import type { SelectionFrame, SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
+import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -178,10 +178,8 @@ export interface DragResizeSelection {
   handle: HandlePosition
   startX: number
   startY: number
-  /** The selection's box in its frame when the drag started. */
+  /** The selection's box on the canvas when the drag started. */
   origBounds: Rect
-  /** The frame's angle from the canvas, along whose axes the selection resizes. */
-  angle: number
   members: DragResizeMember[]
 }
 
@@ -219,8 +217,6 @@ export interface DragRotateSelection {
   centerX: number
   centerY: number
   startAngle: number
-  /** The selection's frame when the rotation started. */
-  frame: SelectionFrame
   members: Array<{ nodeId: string; placement: SelectionPlacement }>
 }
 

@@ -66,10 +66,4 @@ export {
 } from './transform-zones'
 export type { CornerPosition, HandlePosition, TransformZone } from './transform-zones'
 export type { RotationHandleLayout } from './selection'
-export type {
-  RotationPreview,
-  SelectionAngle,
-  SelectionRotationPreview,
-  ViewportTransform
-} from './types'
-export { selectionKey, storedSelectionAngle } from './selection-frame'
+export type { RotationPreview, ViewportTransform } from './types'

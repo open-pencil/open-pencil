@@ -1,9 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import { selectionFrame, type SelectionFrame } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
 import {
@@ -13,10 +11,10 @@ import {
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
 } from '#core/constants'
-import { createSceneGeometry, hasTransformHandles, storedSelectionAngle } from '#core/geometry'
+import { createSceneGeometry, hasTransformHandles } from '#core/geometry'
 
 import { measureGlyphWidth } from './paragraph-cache'
-import { frameLabelPlacement, labelScreenMatrix, readableEdgePlacement } from './transform'
+import { frameLabelPlacement, labelScreenMatrix } from './transform'
 
 function accumulateSelectionBounds(
   graph: SceneGraph,
@@ -114,39 +112,6 @@ function drawMultiSelectionSize(
   drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor, textColor)
 }
 
-/**
- * A turned multi-selection's size: its frame box's own width and height, which stay put while it
- * turns, on the box's turned bottom edge, as a rotated layer's size sits on its own.
- */
-function drawTurningSelectionSize(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  nodes: SceneNode[],
-  { box: bounds, angle }: SelectionFrame,
-  sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
-): void {
-  const world = Matrix.multiply(
-    Matrix.rotated((angle * Math.PI) / 180),
-    Matrix.translated(bounds.x, bounds.y)
-  )
-  const placement = readableEdgePlacement(world, bounds, { x: 0.5, y: 1 })
-  const allComponents = nodes.every((n) => r.isInComponent(n, graph))
-  canvas.save()
-  canvas.concat(labelScreenMatrix(placement, r))
-  drawSizePill(
-    r,
-    canvas,
-    sizeFont,
-    `${Math.round(bounds.width)} × ${Math.round(bounds.height)}`,
-    0,
-    0,
-    allComponents ? r.compColor() : r.selColor(),
-    allComponents ? r.ck.WHITE : r.selForegroundColor()
-  )
-  canvas.restore()
-}
-
 export function drawSelectionLabels(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -175,12 +140,5 @@ export function drawSelectionLabels(
     return
   }
 
-  const frame =
-    activeOverlays.selectionRotationPreview ??
-    selectionFrame(nodes, graph, storedSelectionAngle(selectedIds, activeOverlays.selectionAngle))
-  if (frame.angle !== 0) {
-    drawTurningSelectionSize(r, canvas, graph, nodes, frame, sizeFont)
-    return
-  }
   drawMultiSelectionSize(r, canvas, graph, nodes, minX, minY, maxX, maxY, sizeFont)
 }

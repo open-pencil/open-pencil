@@ -13,7 +13,6 @@ import {
   hasStoredBackground,
   setDefaultPageBackground
 } from '#core/figma-api/page-backgrounds'
-import { selectionKey } from '#core/geometry'
 import { defaultIcons } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
@@ -218,10 +217,6 @@ export function createEditor(options?: EditorOptions) {
       previous.length !== selected.length ||
       previous.some((id, index) => id !== selected[index])
     ) {
-      // A rotated selection's box angle lasts only as long as that selection.
-      if (state.selectionAngle && state.selectionAngle.key !== selectionKey(ids)) {
-        state.selectionAngle = null
-      }
       emitEditorEvent('selection:changed', selected, previous)
     }
   }

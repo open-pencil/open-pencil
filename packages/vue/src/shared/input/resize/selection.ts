@@ -3,19 +3,15 @@ import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import {
-  storedSelectionAngle,
+  createSceneGeometry,
   transformZoneAt,
   type HandlePosition
 } from '@open-pencil/core/geometry'
-import {
-  placeInResizedBounds,
-  selectionFrame,
-  selectionPlacement,
-  turnPoint,
-  type SelectionFrame
-} from '@open-pencil/scene-graph/coordinate'
+import { placeInResizedBounds, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
+import { layerResizes } from '@open-pencil/scene-graph/generated'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { pointInFrame } from '#vue/shared/input/geometry'
 import {
   applyResizedRect,
   cancelResizePreview,
@@ -27,34 +23,28 @@ import { createResizeDrag } from '#vue/shared/input/resize/start'
 import type { DragResizeSelection, DragState } from '#vue/shared/input/types'
 
 /**
- * A multi-selection's box in its frame, the box the overlay draws its handles on: turned to the
- * angle a rotation left it at or its layers share, or while it turns, its turning frame. Null for
+ * A multi-selection's box on the canvas, the box the overlay draws its handles on: its layers'
+ * axis-aligned bounds, as Figma draws a multi-selection whatever its layers' angles. Null for
  * fewer than two layers.
  */
-export function selectionBox(editor: Editor): SelectionFrame | null {
+export function selectionBox(editor: Editor): Rect | null {
   if (editor.state.selectedIds.size < 2) return null
   const nodes = compact([...editor.state.selectedIds].map((id) => editor.graph.getNode(id)))
   if (nodes.length < 2) return null
-  return (
-    editor.state.selectionRotationPreview ??
-    selectionFrame(
-      nodes,
-      editor.graph,
-      storedSelectionAngle(editor.state.selectedIds, editor.state.selectionAngle)
-    )
-  )
+  const geometry = createSceneGeometry(editor.graph)
+  return computeBounds(nodes.map((node) => geometry.bounds(node)))
 }
 
-/** The multi-selection box's resize handle under a canvas point, with the box's angle. */
+/** The multi-selection box's resize handle under a canvas point. */
 export function selectionResizeHandleAt(
   cx: number,
   cy: number,
   editor: Editor
-): { handle: HandlePosition; angle: number } | null {
-  const frame = selectionBox(editor)
-  if (!frame) return null
-  const zone = transformZoneAt(pointInFrame(cx, cy, frame), frame.box, editor.renderer?.zoom ?? 1)
-  return zone?.kind === 'resize' ? { handle: zone.handle, angle: frame.angle } : null
+): HandlePosition | null {
+  const box = selectionBox(editor)
+  if (!box) return null
+  const zone = transformZoneAt({ x: cx, y: cy }, box, editor.renderer?.zoom ?? 1)
+  return zone?.kind === 'resize' ? zone.handle : null
 }
 
 /** Starts resizing a multi-selection from a handle of its box; unlocked layers take part. */
@@ -63,15 +53,16 @@ export function tryStartSelectionResize(
   cy: number,
   editor: Editor
 ): DragResizeSelection | null {
-  const frame = selectionBox(editor)
-  const hit = selectionResizeHandleAt(cx, cy, editor)
-  if (!frame || !hit) return null
+  const box = selectionBox(editor)
+  const handle = selectionResizeHandleAt(cx, cy, editor)
+  if (!box || !handle) return null
   const members = compact(
     [...editor.state.selectedIds].map((id) => {
       const node = editor.graph.getNode(id)
-      if (!node || node.locked) return undefined
+      // A sticky note only scales, from its own corners, and a connector follows its ends.
+      if (!node || node.locked || !layerResizes(node)) return undefined
       return {
-        drag: createResizeDrag(node, hit.handle, cx, cy, editor),
+        drag: createResizeDrag(node, handle, cx, cy, editor),
         placement: selectionPlacement(node, editor.graph)
       }
     })
@@ -79,16 +70,15 @@ export function tryStartSelectionResize(
   if (members.length === 0) return null
   return {
     type: 'resize-selection',
-    handle: hit.handle,
+    handle,
     startX: cx,
     startY: cy,
-    origBounds: frame.box,
-    angle: frame.angle,
+    origBounds: box,
     members
   }
 }
 
-/** Scales the selection's box along its frame with the pointer; Shift keeps its proportions. */
+/** Scales the selection's box with the pointer; Shift keeps its proportions. */
 export function applySelectionResize(
   dragState: DragResizeSelection,
   cx: number,
@@ -103,12 +93,11 @@ export function applySelectionResize(
     shiftKey && origBounds.width > 0 && origBounds.height > 0
       ? origBounds.width / origBounds.height
       : null
-  const delta = turnPoint({ x: cx - d.startX, y: cy - d.startY }, -d.angle)
-  const bounds = calculateResizeRect(d.handle, origBounds, delta.x, delta.y, aspect)
+  const bounds = calculateResizeRect(d.handle, origBounds, cx - d.startX, cy - d.startY, aspect)
   for (const { drag, placement } of d.members) {
     const node = editor.graph.getNode(drag.nodeId)
     if (!node) continue
-    const rect = placeInResizedBounds(placement, origBounds, bounds, d.angle)
+    const rect = placeInResizedBounds(placement, origBounds, bounds)
     applyResizedRect(drag, node, rect, scaledChanges(drag, node.type, rect), editor)
   }
   editor.requestRepaint()
