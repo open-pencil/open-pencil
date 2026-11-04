@@ -65,6 +65,7 @@ const TEXT_PROPERTIES = [
   'text-decoration-line',
   'text-shadow',
   'text-transform',
+  'text-wrap-mode',
   'white-space'
 ]
 

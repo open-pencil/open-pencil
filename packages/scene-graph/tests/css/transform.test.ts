@@ -40,6 +40,28 @@ describe('parseCSSTransform', () => {
     expect(parseCSSTransform('rotateX(30deg)', BOX)).toBeNull()
     expect(parseCSSTransform('translate(1em)', BOX)).toBeNull()
   })
+
+  test('reads an in-plane matrix3d, and drops depth, which moves nothing without perspective', () => {
+    close(
+      parseCSSTransform('matrix3d(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)', BOX),
+      [0, -1, 10, 1, 0, 20, 0, 0, 1]
+    )
+    close(parseCSSTransform('translate3d(10px, 20px, 30px)', BOX), [1, 0, 10, 0, 1, 20, 0, 0, 1])
+  })
+
+  test('is null for a matrix3d with perspective or a turn out of the plane', () => {
+    // perspective(400px) translateZ(100px), as a browser computes it.
+    const perspective = 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, -0.0025, 0, 0, 100, 0.75)'
+    expect(parseCSSTransform(perspective, BOX)).toBeNull()
+    const turned = 'matrix3d(1, 0, 0, 0, 0, 0.5, 0.866, 0, 0, -0.866, 0.5, 0, 0, 0, 0, 1)'
+    expect(parseCSSTransform(turned, BOX)).toBeNull()
+  })
+
+  test('is null for arguments CSS does not separate with commas', () => {
+    for (const value of ['translate(10px 20px)', 'rotate(30deg,)', 'scale(,2)', 'scale(1,,2)']) {
+      expect(parseCSSTransform(value, BOX)).toBeNull()
+    }
+  })
 })
 
 describe('parseCSSTransforms', () => {
@@ -56,6 +78,13 @@ describe('parseCSSTransforms', () => {
   test('reads a turn about the z axis, and nothing about another', () => {
     close(parseCSSTransforms({ rotate: 'z 90deg' }, BOX), [0, -1, 0, 1, 0, 0, 0, 0, 1])
     expect(parseCSSTransforms({ rotate: 'x 90deg' }, BOX)).toBeNull()
+  })
+
+  test('reads a depth in translate and scale, and nothing past it', () => {
+    close(parseCSSTransforms({ translate: '10px 20px 30px' }, BOX), [1, 0, 10, 0, 1, 20, 0, 0, 1])
+    close(parseCSSTransforms({ scale: '2 3 4' }, BOX), [2, 0, 0, 0, 3, 0, 0, 0, 1])
+    expect(parseCSSTransforms({ translate: '10px 20px 0 30px' }, BOX)).toBeNull()
+    expect(parseCSSTransforms({ scale: '1 1 1 1' }, BOX)).toBeNull()
   })
 })
 

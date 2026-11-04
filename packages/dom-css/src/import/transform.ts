@@ -35,16 +35,12 @@ export function cssTransform(style: DesignStyleDeclaration): CSSTransform | unde
     : undefined
 }
 
-function hasAutoLayout(node: SceneNode): boolean {
-  return node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID'
-}
-
 /**
  * Turns and moves a laid-out layer as its element's transform does. A layer turns and mirrors
  * about its center, so the transform's turn becomes its rotation, a mirror its flip, and how far
  * it moves its center its offset; scaling and skewing, which a layer cannot hold, are left out.
  * CSS draws a transformed element without moving the others, so a layer that moves out of auto
- * layout takes its parent's auto layout off, which keeps its siblings where they were laid out.
+ * layout or a grid takes its parent's layout off, which keeps its siblings where they were laid out.
  */
 function applyTransform(graph: SceneGraph, node: SceneNode, transform: CSSTransform): void {
   const box = { width: node.width, height: node.height }
@@ -52,7 +48,9 @@ function applyTransform(graph: SceneGraph, node: SceneNode, transform: CSSTransf
   if (!matrix) return
   const [a, c, , b, d] = matrix
   const flipped = a * d - b * c < 0
-  const rotation = (Math.atan2(b, flipped ? -a : a) * 180) / Math.PI
+  // Only a turn that keeps the box's corners square becomes a rotation; a skewed box keeps none.
+  const square = Math.abs(a * c + b * d) < EPSILON * Math.max(1, a * a + b * b, c * c + d * d)
+  const rotation = square ? (Math.atan2(b, flipped ? -a : a) * 180) / Math.PI : 0
   const origin = parseCSSTransformOrigin(transform.origin, box)
   const center = { x: box.width / 2, y: box.height / 2 }
   const aboutOrigin = Matrix.multiply(
@@ -64,10 +62,11 @@ function applyTransform(graph: SceneGraph, node: SceneNode, transform: CSSTransf
   const dx = moved.x - center.x
   const dy = moved.y - center.y
   if (Math.abs(rotation) > EPSILON) node.rotation = rotation
-  if (flipped) node.flipX = !node.flipX
+  if (square && flipped) node.flipX = !node.flipX
   if (Math.abs(dx) < EPSILON && Math.abs(dy) < EPSILON) return
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-  if (parent && hasAutoLayout(parent) && node.layoutPositioning !== 'ABSOLUTE') {
+  // Grid and auto layout alike would put the layer back in its place when they lay out again.
+  if (parent && parent.layoutMode !== 'NONE' && node.layoutPositioning !== 'ABSOLUTE') {
     parent.layoutMode = 'NONE'
   }
   node.x += dx

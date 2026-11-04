@@ -106,22 +106,61 @@ const TRANSFORM_FUNCTIONS: Partial<Record<string, TransformFunction>> = {
     arity: [16, 16],
     build: (args) => {
       const m = numbers(args)
-      return m && affine([m[0], m[1], m[4], m[5], m[12], m[13]])
+      return m && inPlane(m) ? affine([m[0], m[1], m[4], m[5], m[12], m[13]]) : null
     }
   },
   translate: { arity: [1, 2], build: (args, box) => translation(args[0], args.at(1), box) },
-  translate3d: { arity: [3, 3], build: (args, box) => translation(args[0], args[1], box) },
+  translate3d: {
+    arity: [3, 3],
+    build: (args, box) => (depth(args[2]) ? translation(args[0], args[1], box) : null)
+  },
   translatex: { arity: [1, 1], build: (args, box) => translation(args[0], undefined, box) },
   translatey: { arity: [1, 1], build: (args, box) => translation('0', args[0], box) },
   rotate: { arity: [1, 1], build: (args) => rotation(args[0]) },
   rotatez: { arity: [1, 1], build: (args) => rotation(args[0]) },
   scale: { arity: [1, 2], build: (args) => scaling(args[0], args.at(1)) },
-  scale3d: { arity: [3, 3], build: (args) => scaling(args[0], args[1]) },
+  scale3d: {
+    arity: [3, 3],
+    build: (args) => (factor(args[2]) === null ? null : scaling(args[0], args[1]))
+  },
   scalex: { arity: [1, 1], build: (args) => scaling(args[0], '1') },
   scaley: { arity: [1, 1], build: (args) => scaling('1', args[0]) },
   skew: { arity: [1, 2], build: (args) => skewing(args[0], args.at(1)) },
   skewx: { arity: [1, 1], build: (args) => skewing(args[0], undefined) },
   skewy: { arity: [1, 1], build: (args) => skewing(undefined, args[0]) }
+}
+
+/**
+ * Whether a `matrix3d`, column by column, keeps the plane where it was: no turn out of it and no
+ * perspective. Depth, which moves nothing on the plane without perspective, may change.
+ */
+function inPlane(m: number[]): boolean {
+  const outOfPlane = [m[2], m[3], m[6], m[7], m[8], m[9], m[11]]
+  return outOfPlane.every((value) => value === 0) && m[15] === 1
+}
+
+/**
+ * Whether a z offset is a length. It moves nothing on the plane without perspective, which a
+ * layer cannot hold, so it is read and dropped.
+ */
+function depth(value: string): boolean {
+  return length(value, 0) !== null
+}
+
+/**
+ * A function's arguments, which CSS separates with commas: null when one is missing, or two
+ * stand without a comma between them.
+ */
+function functionArguments(nodes: valueParser.Node[]): string[] | null {
+  const parts = nodes.filter((node) => node.type !== 'space' && node.type !== 'comment')
+  const args: string[] = []
+  for (const [index, node] of parts.entries()) {
+    const expectsArgument = index % 2 === 0
+    if (expectsArgument && node.type !== 'word') return null
+    if (!expectsArgument && (node.type !== 'div' || node.value !== ',')) return null
+    if (expectsArgument) args.push(node.value)
+  }
+  return parts.length % 2 === 1 ? args : null
 }
 
 /** One transform function as a matrix; null for one this does not know or cannot read. */
@@ -142,8 +181,8 @@ export function parseCSSTransform(value: string | undefined, box: CSSTransformBo
   for (const node of valueParser(text).nodes) {
     if (node.type === 'space' || node.type === 'comment') continue
     if (node.type !== 'function') return null
-    const args = node.nodes.filter((arg) => arg.type === 'word').map((arg) => arg.value)
-    const step = transformFunction(node.value.toLowerCase(), args, box)
+    const args = functionArguments(node.nodes)
+    const step = args && transformFunction(node.value.toLowerCase(), args, box)
     if (!step) return null
     matrix = Matrix.multiply(matrix, step)
   }
@@ -175,14 +214,16 @@ export function parseCSSTransforms(style: CSSTransformStyle, box: CSSTransformBo
   const steps = [
     property(style.translate, (parts) => {
       const [x, y, z] = [parts.at(0), parts.at(1), parts.at(2)]
-      return x === undefined || (z !== undefined && length(z, 0) !== 0)
-        ? null
-        : translation(x, y, box)
+      if (x === undefined || parts.length > 3 || (z !== undefined && !depth(z))) return null
+      return translation(x, y, box)
     }),
     property(style.rotate, rotateProperty),
     property(style.scale, (parts) => {
       const [x, y, z] = [parts.at(0), parts.at(1), parts.at(2)]
-      return x === undefined || (z !== undefined && factor(z) !== 1) ? null : scaling(x, y)
+      if (x === undefined || parts.length > 3 || (z !== undefined && factor(z) === null)) {
+        return null
+      }
+      return scaling(x, y)
     }),
     parseCSSTransform(style.transform, box)
   ]

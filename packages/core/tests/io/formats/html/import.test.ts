@@ -46,6 +46,15 @@ describe('reading HTML', () => {
     expect(inner).toMatchObject({ x: 14, y: 14 })
   })
 
+  test('a border without a style is not drawn and takes no room', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="display:inline-flex;padding:10px;border-width:4px;border-color:#000;border-style:none"><div style="width:50px;height:50px;background:#f00"></div></div>'
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+
+    expect(box).toMatchObject({ strokes: [], width: 70, height: 70 })
+  })
+
   test('a transform turns and moves the layer as it does the element', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="display:flex;gap:10px">
@@ -67,6 +76,15 @@ describe('reading HTML', () => {
     expect(mirrored).toMatchObject({ x: 220, flipX: true, rotation: 0 })
   })
 
+  test('a skew neither turns nor mirrors the layer', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="width:100px;height:50px;transform:skewY(30deg)"></div>'
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+
+    expect(box).toMatchObject({ rotation: 0, flipX: false })
+  })
+
   test('text CSS does not wrap stays on one line however narrow its box', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="width:100px;font-size:16px"><div style="white-space:nowrap">a long line of text that overflows</div></div>'
@@ -76,6 +94,16 @@ describe('reading HTML', () => {
 
     expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
     expect(text?.width).toBeGreaterThan(100)
+  })
+
+  test('text keeps to one line when its box sets text-wrap-mode: nowrap', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="width:100px;font-size:16px;text-wrap-mode:nowrap">a long line of text that overflows</div>'
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+    const text = graph.flattenTree(box.id).find(({ node }) => node.type === 'TEXT')?.node
+
+    expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
   })
 
   test('generic font families set text in real ones', async () => {

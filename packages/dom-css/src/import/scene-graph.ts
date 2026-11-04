@@ -24,6 +24,7 @@ import {
   firstStrokeColor,
   setBorderWeights,
   setNodeBox,
+  hasBorder,
   strokeWeightFromStyle
 } from './box'
 import { hasBoxStyle } from './boxes'
@@ -164,10 +165,10 @@ function applyElementStyle(
   if (fills.length > 0) node.fills = fills
   applyImageFill(graph, node, element, style)
 
-  const strokes = colorToStrokeFromCSS(
-    firstStrokeColor(style),
-    strokeWeightFromStyle(style)?.toString()
-  )
+  // A border without a style is not drawn and takes no room.
+  const strokes = hasBorder(style)
+    ? colorToStrokeFromCSS(firstStrokeColor(style), strokeWeightFromStyle(style)?.toString())
+    : []
   if (strokes.length > 0) {
     const dashPattern = dashPatternFromCSS(style, strokes[0].weight)
     if (dashPattern.length > 0) {

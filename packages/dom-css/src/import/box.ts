@@ -79,6 +79,15 @@ function borderStyleFromCSS(style: DesignStyleDeclaration): string | undefined {
   )
 }
 
+/**
+ * Whether the element has a border: it needs a style other than `none`, its CSS default, or
+ * `hidden`, whatever its width and color.
+ */
+export function hasBorder(style: DesignStyleDeclaration): boolean {
+  const borderStyle = borderStyleFromCSS(style)
+  return borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+}
+
 export function dashPatternFromCSS(style: DesignStyleDeclaration, strokeWeight: number): number[] {
   const borderStyle = borderStyleFromCSS(style)
   if (borderStyle === 'dashed') return [strokeWeight * 3, strokeWeight * 2]
@@ -157,9 +166,7 @@ export interface ContentInsets {
 }
 
 export function contentInsets(style: DesignStyleDeclaration): ContentInsets {
-  // A border takes room once it has a style other than none, its CSS default, whatever its color.
-  const borderStyle = borderStyleFromCSS(style)
-  const bordered = borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+  const bordered = hasBorder(style)
   const side = (name: keyof ContentInsets, axis: 'block' | 'inline') =>
     (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
     (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
