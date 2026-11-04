@@ -71,7 +71,7 @@ export function releaseWebGLContext(
 type PinnedStyle = Pick<CSSStyleDeclaration, 'width' | 'height' | 'marginLeft' | 'marginTop'>
 const ownStyles = new WeakMap<HTMLCanvasElement, PinnedStyle>()
 
-function restoreOwnStyle(canvas: HTMLCanvasElement) {
+function restoreOwnStyle(canvas: HTMLCanvasElement): PinnedStyle {
   let own = ownStyles.get(canvas)
   if (!own) {
     const { width, height, marginLeft, marginTop } = canvas.style
@@ -79,6 +79,7 @@ function restoreOwnStyle(canvas: HTMLCanvasElement) {
     ownStyles.set(canvas, own)
   }
   Object.assign(canvas.style, own)
+  return own
 }
 
 /**
@@ -110,9 +111,13 @@ export function sizeCanvas(
   canvas.height = Math.round(height * dpr)
   canvas.style.width = `${width}px`
   canvas.style.height = `${height}px`
+  // The margins the page resolves, such as auto for a centred canvas, plus the snap. A translate
+  // would leave the bitmap a fraction of a pixel off, which the browser smooths over.
   if (!transformed) {
-    canvas.style.marginLeft = `calc(${canvas.style.marginLeft || '0px'} + ${left - box.left}px)`
-    canvas.style.marginTop = `calc(${canvas.style.marginTop || '0px'} + ${top - box.top}px)`
+    const marginLeft = Number.parseFloat(layout.marginLeft) || 0
+    const marginTop = Number.parseFloat(layout.marginTop) || 0
+    canvas.style.marginLeft = `${marginLeft + left - box.left}px`
+    canvas.style.marginTop = `${marginTop + top - box.top}px`
   }
   if (onViewportResize) {
     onViewportResize(width, height)
