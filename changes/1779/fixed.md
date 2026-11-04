@@ -1,0 +1,2 @@
+- Frames that include their strokes in layout leave room for inside strokes, as in Figma.
+- Imported HTML draws closer to the browser: borders take room inside their boxes, generic font families such as `sans-serif`, `system-ui`, `serif`, and `monospace` use real fonts, CSS transforms turn, mirror, and move layers, and `white-space: nowrap` text stays on one line.
