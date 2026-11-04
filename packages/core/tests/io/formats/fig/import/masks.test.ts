@@ -6,6 +6,7 @@ import * as v from 'valibot'
 import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type MaskType } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 describe('Figma mask import', () => {
   test('imports schema mask fields', () => {
@@ -43,7 +44,7 @@ const maskOracleSchema = v.pipe(
 )
 
 function readOracle() {
-  return v.parse(maskOracleSchema, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
+  return v.parse(maskOracleSchema, readFileSync(repoPath('tests/fixtures/figma-oracles/masks.json'), 'utf8'))
 }
 
 /** The plugin API reports a vector mask as VECTOR. The .fig MaskType enum stores it as OUTLINE. */

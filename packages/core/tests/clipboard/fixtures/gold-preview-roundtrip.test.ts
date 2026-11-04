@@ -13,6 +13,7 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
+import { repoPath } from '@open-pencil/test-support/paths'
 heavy('gold-preview.fig clipboard roundtrip', () => {
   let graph: SceneGraph
   let pageId: string
@@ -30,7 +31,7 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
   beforeAll(
     async () => {
       await initCodec()
-      const buf = readFileSync('tests/fixtures/gold-preview.fig')
+      const buf = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
       const file = new File([buf], 'gold-preview.fig')
       graph = await readFigFile(file)
       const page = graph.getPages()[0]

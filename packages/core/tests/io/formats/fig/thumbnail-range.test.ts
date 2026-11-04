@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { zipSync } from 'fflate'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 function memoryReader(bytes: Uint8Array, ranges: Array<[number, number]>) {
   return {
@@ -17,7 +18,7 @@ function memoryReader(bytes: Uint8Array, ranges: Array<[number, number]>) {
 
 describe('fig ranged thumbnail extraction', () => {
   test('extracts thumbnail.png without reading the complete fig', async () => {
-    const bytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const bytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
     const ranges: Array<[number, number]> = []
     const thumbnail = await extractFigThumbnailFromReader(memoryReader(bytes, ranges), {
       maxTailBytes: 4 * 1024 * 1024
@@ -79,7 +80,7 @@ describe('fig ranged thumbnail extraction', () => {
   })
 
   test('rejects thumbnails above configured output limits', async () => {
-    const bytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const bytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
     const thumbnail = await extractFigThumbnailFromReader(memoryReader(bytes, []), {
       maxOutputBytes: 32
     })

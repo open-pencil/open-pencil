@@ -86,8 +86,8 @@ describe('no-deep-parent-relative-paths', () => {
   })
 })
 
-test('no-cwd-relative-script-paths flags script paths a spawn takes from the working directory', async () => {
-  const rule = 'no-cwd-relative-script-paths'
+test('no-cwd-relative-paths flags file and script paths taken from the working directory', async () => {
+  const rule = 'no-cwd-relative-paths'
   const cases = {
     'bun-spawn.ts': ["Bun.spawn([process.execPath, 'tests/helpers/fixture.ts'])", 1],
     'bun-cmd.ts': [
@@ -97,11 +97,21 @@ test('no-cwd-relative-script-paths flags script paths a spawn takes from the wor
     'node-args.ts': ["spawn('bun', ['./scripts/run.mjs'])", 1],
     'node-command.ts': ["execFileSync('scripts/build.ts')", 1],
     'bun-run.ts': ["Bun.spawn(['bun', 'run', '--silent', 'tools/dev/serve.ts'])", 1],
+    'flag-value.ts': ["Bun.spawn(['bun', '--cwd', 'dir', 'scripts/x.ts'])", 1],
+    'node-import.ts': ["spawn('node', ['--import', 'tsx/esm', 'scripts/x.ts'])", 1],
+    'bun-file.ts': ["Bun.file('packages/core/assets/Inter.ttf')", 1],
+    'read-file.ts': ["readFileSync('tests/fixtures/a.fig')", 1],
+    'fs-read.ts': ["fs.readFile('tests/fixtures/a.json', 'utf8')", 1],
     'resolved.ts': ["Bun.spawn([process.execPath, join(import.meta.dir, 'matrix.ts')])", 0],
+    'with-cwd.ts': ["Bun.spawn([process.execPath, 'tests/x.ts'], { cwd: root })", 0],
     'absolute.ts': ["Bun.spawn([process.execPath, '/tmp/script.ts'])", 0],
-    'git-pathspec.ts': ["Bun.spawn(['git', 'log', '--', 'src/app/index.ts'], { cwd: root })", 0],
+    'git-pathspec.ts': ["Bun.spawn(['git', 'log', '--', 'src/app/index.ts'])", 0],
     'script-name.ts': ["Bun.spawn([process.execPath, 'run', 'build'])", 0],
-    'not-a-spawn.ts': ["resolve('tests/helpers/fixture.ts')", 0]
+    'resolved-file.ts': ["readFileSync(repoPath('tests/fixtures/a.fig'))", 0],
+    'bare-name.ts': ["readFileSync('package.json')", 0],
+    'method.ts': ["skill.readFile('references/spacing.md')", 0],
+    'url.ts': ["Bun.file('file:///tmp/a.txt')", 0],
+    'not-a-path-call.ts': ["resolve('tests/helpers/fixture.ts')", 0]
   } as const
   const diagnostics = ruleDiagnostics(
     await lintFiles(

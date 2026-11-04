@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import { createDocumentWriter } from '@/app/document/io/write'
@@ -13,7 +15,7 @@ afterEach(async () => {
 
 describe('Tauri document IO helpers', () => {
   test('reads reload source bytes through plugin-fs', async () => {
-    const fixture = await Bun.file('tests/fixtures/circle-text.fig').arrayBuffer()
+    const fixture = await Bun.file(repoPath('tests/fixtures/circle-text.fig')).arrayBuffer()
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:fs|read_file')
       expect(args).toEqual({ path: '/tmp/document.fig', options: undefined })

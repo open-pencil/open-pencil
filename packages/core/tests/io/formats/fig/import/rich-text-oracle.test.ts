@@ -6,6 +6,7 @@ import * as v from 'valibot'
 import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 const oracleLengthSchema = v.object({ unit: v.string(), value: v.number() })
 
@@ -42,7 +43,7 @@ const richTextOracleSchema = v.pipe(
 function readOracle() {
   return v.parse(
     richTextOracleSchema,
-    readFileSync('tests/fixtures/figma-oracles/rich-text-decoration.json', 'utf8')
+    readFileSync(repoPath('tests/fixtures/figma-oracles/rich-text-decoration.json'), 'utf8')
   )
 }
 

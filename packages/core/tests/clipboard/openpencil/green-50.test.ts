@@ -2,8 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { parseOpenPencilClipboard } from '@open-pencil/core/clipboard'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
+import { repoPath } from '@open-pencil/test-support/paths'
 
-const fixture = await Bun.file('tests/fixtures/clipboard/green-50.openpencil.html').text()
+const fixture = await Bun.file(repoPath('tests/fixtures/clipboard/green-50.openpencil.html')).text()
 
 test('preserved Green/50 clipboard geometry restores typed command buffers', () => {
   const parsed = parseOpenPencilClipboard(fixture)

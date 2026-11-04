@@ -6,6 +6,7 @@ import {
   textNeededFallbackScripts
 } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -20,7 +21,7 @@ describe('font fallback coverage indexing', () => {
 
   test('detects supplementary-plane Han code points', async () => {
     const family = `SupplementaryHan_${Date.now()}`
-    const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     await fontManager.markLoaded(family, 'Regular', data)
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -34,7 +35,7 @@ describe('font fallback coverage indexing', () => {
 
   test('uses BCP-47 language hints for Han fallback selection', async () => {
     const family = `LanguageHint_${Date.now()}`
-    const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     await fontManager.markLoaded(family, 'Regular', data)
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -55,8 +56,8 @@ describe('font fallback coverage indexing', () => {
   })
 
   test('uses UTF-16 style-run indices after a surrogate pair', async () => {
-    const cjkData = await Bun.file('tests/fixtures/fonts/NotoSansSC-Regular.ttf').arrayBuffer()
-    const latinData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    const cjkData = await Bun.file(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')).arrayBuffer()
+    const latinData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     const cjkFamily = `CJKRunBase_${Date.now()}`
     const latinFamily = `CJKRunOverride_${Date.now()}`
     await fontManager.markLoaded(cjkFamily, 'Regular', cjkData)

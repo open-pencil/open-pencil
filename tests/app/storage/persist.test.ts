@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import {
   createMemoryLocalCanvasStore,
   resetLocalCanvasStoreForTests
@@ -41,7 +43,7 @@ describe('local-first storage persistence', () => {
   test('stores the embedded preview with the document', async () => {
     const store = createMemoryLocalCanvasStore()
     const enqueueCanvas = vi.fn(() => Promise.resolve())
-    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const figBytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
 
     await persistStorageCanvasLocally(
       {
@@ -69,7 +71,7 @@ describe('local-first storage persistence', () => {
         canvasId: 'canvas-downloaded',
         name: 'Downloaded design',
         updatedAt: '2026-10-19T00:00:00.000Z',
-        figBytes: new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+        figBytes: new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
       })
       const thumbnail = await store.readThumb('canvas-downloaded')
       expect(thumbnail?.subarray(0, 8)).toEqual(

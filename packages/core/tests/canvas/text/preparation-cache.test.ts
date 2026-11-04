@@ -12,6 +12,7 @@ import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { fontManager } from '#core/text/font/manager'
+import { repoPath } from '@open-pencil/test-support/paths'
 async function fixture(maxEntries = 8, maxUnits = 1000) {
   const ck = await initCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()
@@ -59,7 +60,7 @@ async function fixture(maxEntries = 8, maxUnits = 1000) {
 describe('text preparation cache', () => {
   test('does not repeatedly shape coverage when a dense scan exceeds paragraph capacity', async () => {
     const f = await fixture(8)
-    const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+    const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     f.provider.registerFont(data, 'Inter')
     await fontManager.markLoaded('Inter', 'Regular', data)
     let builds = 0

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 const oracleVectorSchema = v.object({ x: v.number(), y: v.number() })
 
@@ -72,7 +73,7 @@ const paintOracleSchema = v.pipe(
 function readOracle() {
   return v.parse(
     paintOracleSchema,
-    readFileSync('tests/fixtures/figma-oracles/pattern-noise-custom-paints.json', 'utf8')
+    readFileSync(repoPath('tests/fixtures/figma-oracles/pattern-noise-custom-paints.json'), 'utf8')
   )
 }
 

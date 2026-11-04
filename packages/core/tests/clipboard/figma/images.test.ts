@@ -5,10 +5,11 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 // Valid PNG: Figma validates the embedded bytes against the SHA-1 image reference.
 const bytes = new Uint8Array(
-  await Bun.file('tests/fixtures/vectorize/python_logo.png').arrayBuffer()
+  await Bun.file(repoPath('tests/fixtures/vectorize/python_logo.png')).arrayBuffer()
 )
 
 test('Figma clipboard embeds shared image bytes once with SHA-1 references', async () => {

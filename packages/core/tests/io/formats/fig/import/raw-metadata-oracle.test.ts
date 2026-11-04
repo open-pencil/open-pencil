@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 interface RawMetadataOracle {
   page: {
@@ -41,7 +42,7 @@ interface RawMetadataOracle {
 }
 
 function readOracle(): RawMetadataOracle {
-  return JSON.parse(readFileSync('tests/fixtures/figma-oracles/raw-metadata.json', 'utf8'))
+  return JSON.parse(readFileSync(repoPath('tests/fixtures/figma-oracles/raw-metadata.json'), 'utf8'))
 }
 
 describe('Figma raw metadata oracle', () => {

@@ -9,6 +9,7 @@ import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage } from '#core/io/formats/raster'
 import { fontManager } from '#core/text'
+import { repoPath } from '@open-pencil/test-support/paths'
 async function main() {
   const ck = await initCanvasKit()
 
@@ -70,14 +71,14 @@ async function main() {
     scale: 2,
     format: 'PNG'
   })
-  if (data) await Bun.write('scratch/text-inner-shadow-verification.png', data)
+  if (data) await Bun.write(repoPath('scratch/text-inner-shadow-verification.png'), data)
   surface.delete()
 
   if (data && data.length > 2000) {
     console.warn(`✅ Generated scratch/text-inner-shadow-verification.png (${data.length} bytes)`)
     return
   }
-  if (data) await Bun.write('scratch/failed.png', data)
+  if (data) await Bun.write(repoPath('scratch/failed.png'), data)
   // Throwing, rather than logging, is what gives the verification command a failing exit status.
   throw new Error(`Failed to generate a useful image (size: ${data?.length ?? 0} bytes)`)
 }

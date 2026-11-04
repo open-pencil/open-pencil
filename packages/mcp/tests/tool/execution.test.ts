@@ -6,6 +6,7 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 interface PageTreeResult {
   page: string
   children: PageTreeNode[]
@@ -310,7 +311,7 @@ describe('MCP tool execution', () => {
   })
 
   test('open and query .fig file', async () => {
-    const data = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
+    const data = await Bun.file(repoPath('tests/fixtures/gold-preview.fig')).arrayBuffer()
     const { api } = await setupWithFile(data)
     const pages = findTool('list_pages').execute(api, {}) as { pages: { name: string }[] }
     expect(pages.pages.length).toBeGreaterThanOrEqual(1)

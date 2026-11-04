@@ -8,6 +8,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 import { fontManager } from '#core/text'
+import { repoPath } from '@open-pencil/test-support/paths'
 async function main() {
   const ck = await initCanvasKit()
 
@@ -118,7 +119,7 @@ async function main() {
   const image = surface.makeImageSnapshot()
   const data = image.encodeToBytes(ck.ImageFormat.PNG, 100)
   if (data) {
-    await Bun.write('scratch/escher-trap-detected.png', data)
+    await Bun.write(repoPath('scratch/escher-trap-detected.png'), data)
     console.warn('Saved scratch/escher-trap-detected.png')
   }
   surface.delete()
