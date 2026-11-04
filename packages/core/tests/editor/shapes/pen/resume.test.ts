@@ -183,6 +183,9 @@ test('opening the path while the pen continues it keeps what the pen drew', () =
 
 test('a pen path stays with its document when another one is opened', () => {
   setup()
+  const previous = editor.graph
+  const pageId = editor.state.currentPageId
+  const before = previous.getChildren(pageId).length
   editor.setTool('PEN')
   editor.penAddVertex(200, 0)
   editor.penAddVertex(300, 0)
@@ -193,4 +196,5 @@ test('a pen path stays with its document when another one is opened', () => {
 
   expect(editor.state.penState).toBeNull()
   expect(next.getChildren(editor.state.currentPageId)).toHaveLength(0)
+  expect(previous.getChildren(pageId)).toHaveLength(before)
 })

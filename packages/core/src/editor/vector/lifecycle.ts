@@ -92,16 +92,19 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     // A pen path in progress, maybe continuing this very layer, is committed before the session
     // takes the layer's geometry as its starting point.
     if (ctx.state.penState) actions.penCommit(false)
+    // The layer as it stands now, with what the pen just committed.
+    const layer = ctx.graph.getNode(nodeId)
+    if (layer?.type !== 'VECTOR' || !layer.vectorNetwork) return
 
-    const world = getWorldMatrix(node, ctx.graph)
-    const absNetwork = transformVectorNetwork(world, node.vectorNetwork)
+    const world = getWorldMatrix(layer, ctx.graph)
+    const absNetwork = transformVectorNetwork(world, layer.vectorNetwork)
 
     ctx.state.snapGuides = []
     sessionGraph = ctx.graph
     ctx.state.nodeEditState = {
       nodeId,
-      origNetwork: cloneVectorNetwork(node.vectorNetwork),
-      origBounds: { x: node.x, y: node.y, width: node.width, height: node.height },
+      origNetwork: cloneVectorNetwork(layer.vectorNetwork),
+      origBounds: { x: layer.x, y: layer.y, width: layer.width, height: layer.height },
       origAbsNetwork: cloneVectorNetwork(absNetwork),
       vertices: absNetwork.vertices,
       segments: absNetwork.segments,
