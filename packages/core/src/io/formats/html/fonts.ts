@@ -1,7 +1,7 @@
 import { uniqBy } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
-import type { HTMLEngine } from '@open-pencil/html-engine'
+import type { HTMLEngine, HTMLEngineFontFace } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   CSS_GENERIC_FONT_FAMILIES,
@@ -11,6 +11,7 @@ import {
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { fontManager } from '#core/text/font/manager'
+import { faceStyleName } from '#core/text/font/names'
 import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements/collect'
 
 interface EngineFonts {
@@ -122,10 +123,12 @@ function textOf(styled: DesignDocument): string {
 async function availableFamily(
   list: string,
   characters: string,
-  available: Map<string, Promise<boolean>>
+  available: Map<string, Promise<boolean>>,
+  pageFamilies: ReadonlySet<string>
 ): Promise<string> {
   for (const candidate of parseCSSFontFamilies(list)) {
     const family = cssFontFamilyName(candidate)
+    if (pageFamilies.has(family)) return family
     let found = available.get(family)
     if (!found) {
       found = fontManager.loadFont(family, 'Regular', characters).then((face) => face !== null)
@@ -145,7 +148,10 @@ function quotedFamily(family: string): string {
  * Sets each element's computed `font-family` to the one family its text is set in, as
  * `availableFamily` picks it, so the layers built from the document name fonts that load.
  */
-export async function resolvePageFontFamilies(styled: DesignDocument): Promise<void> {
+export async function resolvePageFontFamilies(
+  styled: DesignDocument,
+  pageFamilies: ReadonlySet<string> = new Set()
+): Promise<void> {
   const elements = styledElements(styled).filter(
     (element) => element.computedStyle?.['font-family'] !== undefined
   )
@@ -158,9 +164,24 @@ export async function resolvePageFontFamilies(styled: DesignDocument): Promise<v
     if (!style || list === undefined) continue
     let family = resolved.get(list)
     if (!family) {
-      family = availableFamily(list, characters, available)
+      family = availableFamily(list, characters, available, pageFamilies)
       resolved.set(list, family)
     }
     style['font-family'] = quotedFamily(await family)
   }
+}
+
+/**
+ * Registers a font a page's `@font-face` rule loads with the font manager, under the family and
+ * the face the rule declares, so the layers draw the page's text in the font it set it in.
+ */
+export async function registerPageFontFace(face: HTMLEngineFontFace): Promise<void> {
+  const { buffer, byteOffset, byteLength } = face.bytes
+  const data = buffer.slice(byteOffset, byteOffset + byteLength)
+  if (!(data instanceof ArrayBuffer)) return
+  await fontManager.markLoaded(
+    face.family,
+    faceStyleName(face.family, face.weight, face.italic),
+    data
+  )
 }

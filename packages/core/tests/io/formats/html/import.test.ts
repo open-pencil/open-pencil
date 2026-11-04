@@ -149,6 +149,20 @@ describe('reading HTML', () => {
     expect(box).toMatchObject({ width: 120, height: 40 })
   })
 
+  test('draws text in the font its page loads with @font-face', async () => {
+    const family = 'OpenPencil Page Brand'
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<style>@font-face { font-family: '${family}'; src: url(fonts/brand.ttf) }</style>
+      <p style="font-family: '${family}', sans-serif">Brand</p>`,
+      { readAsset: async (path) => (path === 'fonts/brand.ttf' ? font : null) }
+    )
+    const text = graph.flattenTree(graph.getPages()[0].id).find(({ node }) => node.type === 'TEXT')
+
+    expect(text?.node.fontFamily).toBe(family)
+    expect(fontManager.loadedFontSource(family, 'Regular')).toBe('registered')
+  })
+
   test('text is set in the first family of its list there is a font for, as in a browser', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="font-family:'No Such Family', '${TEST_FAMILY}', sans-serif">Found</p>

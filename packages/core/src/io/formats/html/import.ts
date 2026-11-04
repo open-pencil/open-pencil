@@ -16,7 +16,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { IOFormatAdapter } from '#core/io/types'
 
-import { registerLayerFonts, resolvePageFontFamilies } from './fonts'
+import { registerLayerFonts, registerPageFontFace, resolvePageFontFamilies } from './fonts'
 import { HTML_IMPORT_VIEWPORT, sceneGraphFromStyledHTML } from './layers'
 
 export interface ReadHTMLOptions {
@@ -45,8 +45,17 @@ export interface ReadHTMLResult {
 /** The base URL a page without one gets, so its relative URLs reach `readAsset`. */
 const ASSET_BASE_URL = 'openpencil-asset:///'
 
-function resource(url: string, bytes: Uint8Array | ArrayBuffer): HTMLEngineResource {
-  return { url, bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes) }
+/** The media type a file is served as by its extension, for files read without a server. */
+function contentTypeOf(url: string): string | undefined {
+  return /\.css(?:[?#]|$)/i.test(url) ? 'text/css' : undefined
+}
+
+function resource(
+  url: string,
+  bytes: Uint8Array | ArrayBuffer,
+  contentType = contentTypeOf(url)
+): HTMLEngineResource {
+  return { url, bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), contentType }
 }
 
 /**
@@ -67,15 +76,17 @@ function pageFetch(readAsset: ReadHTMLOptions['readAsset']): HTMLEngineFetch {
     }
     const response = await fetch(url, { signal }).catch(() => null)
     if (!response?.ok) return null
-    return resource(response.url || url, await response.arrayBuffer())
+    const contentType = response.headers.get('content-type') ?? undefined
+    return resource(response.url || url, await response.arrayBuffer(), contentType)
   }
 }
 
 /**
  * HTML and CSS laid out as a browser lays them out, with the HTML engine: computed styles, media
- * queries for the viewport, and the boxes that placement keeps auto layout to. Text is set in the
- * first family of its `font-family` list that the font manager has a font for, as a browser picks
- * one, and the engine lays it out in that same font: a page whose text uses fonts the engine has
+ * queries for the viewport, and the boxes that placement keeps auto layout to. The fonts a page's
+ * `@font-face` rules load go to the font manager, and text is set in the first family of its
+ * `font-family` list there is a font for, as a browser picks one. The engine lays text out in that
+ * same font: a page whose text uses fonts the engine has
  * not yet been given is styled once to learn them and again with them. The engine needs WebAssembly and a
  * fetch of its module, so browser builds style with the browser runtime and call
  * `sceneGraphFromStyledHTML`.
@@ -85,10 +96,16 @@ export async function readHTMLDocument(
   options: ReadHTMLOptions = {}
 ): Promise<ReadHTMLResult> {
   const engine = await loadHTMLEngine()
+  // The page's own fonts, from its `@font-face` rules, which its text may name first.
+  const pageFamilies = new Set<string>()
   const runtime = createHTMLEngineRuntime({
     engine: async () => engine,
     baseURL: options.baseURL ?? (options.readAsset ? ASSET_BASE_URL : undefined),
-    fetch: pageFetch(options.readAsset)
+    fetch: pageFetch(options.readAsset),
+    onFontFace: async (face) => {
+      await registerPageFontFace(face)
+      pageFamilies.add(face.family)
+    }
   })
   const styleOptions: HTMLToDesignDocumentOptions = {
     runtime,
@@ -102,7 +119,7 @@ export async function readHTMLDocument(
           css: options.cssText
         })
       : await htmlToDesignDocument(html, { ...styleOptions, cssText: options.cssText })
-    await resolvePageFontFamilies(styled)
+    await resolvePageFontFamilies(styled, pageFamilies)
     return styled
   }
   let styled = await style()

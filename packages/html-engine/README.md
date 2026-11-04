@@ -20,7 +20,7 @@ const capture = await engine.layout(html, {
 })
 ```
 
-`createHTMLEngineRuntime()` is a `CSSRuntime` for `@open-pencil/dom-css`: it gives each element its computed style and, when asked, the box, inline fragments, and text lines a browser runtime records, so HTML imports headless as it does in a browser.
+`createHTMLEngineRuntime()` is a `CSSRuntime` for `@open-pencil/dom-css`: it gives each element its computed style and, when asked, the box, inline fragments, and text lines a browser runtime records, so HTML imports headless as it does in a browser. Its `onFontFace` option receives each font the page's `@font-face` rules load, with the family, weight, and style the rule declares, so a host can draw the page's text in it.
 
 The engine fetches nothing itself: the host answers each stylesheet, font, and image the document asks for, or declines it. Raster images are laid out at their pixel size, read from their headers. The engine has no fonts of its own, so the host registers the ones layout may use.
 
