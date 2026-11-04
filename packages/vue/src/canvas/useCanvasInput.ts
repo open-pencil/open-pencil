@@ -279,7 +279,9 @@ export function useCanvasInput(
       e.preventDefault()
       return
     }
-    editor.setSelectedGuide(null)
+    if (e.button === 0 || editor.state.activeTool !== 'COMMENT') {
+      editor.setSelectedGuide(null)
+    }
 
     const clickCount = recordClick(sx, sy, e.detail)
     if (clickCount >= 2 && takesMultiClick(e)) {

@@ -1,0 +1,1 @@
+- Middle-button dragging pans the canvas while the Comment tool is selected.

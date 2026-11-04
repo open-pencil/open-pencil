@@ -6,7 +6,6 @@ export default {
   slots: {
     // Below the toolbar and other floating UI, above the canvas.
     layer: 'pointer-events-none absolute inset-0 z-0',
-    capture: 'pointer-events-auto absolute inset-0',
     // Pins sit at their zoomed canvas positions in here; panning only moves this layer.
     pins: 'absolute top-0 left-0',
     // A 32px speech bubble whose square corner points at the commented spot, as Figma draws it;
