@@ -31,13 +31,21 @@ describe('portal access rules', () => {
 
   test('a signed-in person is never sent to another origin', () => {
     const signIn = target('/auth/sign-in', { signedOut: true }, 'https://evil.example/')
-    expect(portalDestination(signIn, account('active'))).toBe('/account')
+    expect(portalDestination(signIn, account('active'))).toBe('/')
+  })
+
+  test('the welcome page sends a signed-in person to the editor, or to their standing page', () => {
+    const welcome = target('/welcome', { signedOut: true })
+    expect(portalDestination(welcome, null)).toBe(true)
+    expect(portalDestination(welcome, account('active'))).toBe('/')
+    expect(portalDestination(welcome, account('pending'))).toBe('/account/pending')
+    expect(portalDestination(welcome, account('rejected'))).toBe('/account/closed')
   })
 
   test('account pages ask for a session and come back after it', () => {
-    expect(portalDestination(target('/cloud/device', { account: true }), null)).toEqual({
+    expect(portalDestination(target('/auth/device', { account: true }), null)).toEqual({
       name: 'sign-in',
-      query: { redirect: '/cloud/device' }
+      query: { redirect: '/auth/device' }
     })
   })
 
@@ -54,8 +62,8 @@ describe('portal access rules', () => {
     expect(portalDestination(pending, account('pending'))).toBe(true)
     expect(portalDestination(closed, account('revoked'))).toBe(true)
     expect(portalDestination(closed, account('pending'))).toBe('/account/pending')
-    expect(portalDestination(closed, account('active'))).toBe('/account')
-    expect(portalDestination(pending, account('active'))).toBe('/account')
+    expect(portalDestination(closed, account('active'))).toBe('/')
+    expect(portalDestination(pending, account('active'))).toBe('/')
     expect(portalDestination(closed, null)).toEqual({
       name: 'sign-in',
       query: { redirect: '/account/closed' }

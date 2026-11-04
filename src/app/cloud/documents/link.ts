@@ -2,30 +2,32 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
-import { cloudDocumentPath, cloudDocumentURL } from '@open-pencil/cloud/contract'
-import { cloudMessages } from '@open-pencil/vue'
+import {
+  cloudDocumentPath,
+  cloudDocumentURL,
+  parseCloudLinkPath
+} from '@open-pencil/cloud/contract'
+import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
-import { IS_BROWSER, OFFICIAL_CLOUD_URL } from '@/constants'
+import { IS_BROWSER } from '@/constants'
 
-import { cloudSignedIn, openCloudConnect } from '../connect/flow'
+import { cloudSignedIn, signInToOpen } from '../connect/flow'
 import { cloudServerHost, normalizeCloudServerURL } from '../servers/address'
-import { addCloudServer, cloudServers, findCloudServer } from '../servers/store'
-import { cloudAPIClient, cloudConnection } from '../sessions/connection'
+import { cloudServerForLink, findCloudServer, isCloudSiteServer } from '../servers/store'
+import { cloudAPIClient, recheckedCloudConnection } from '../sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 import { openVersionHistory, previewVersion, versionHistoryOf } from '../versions/history'
 import { isCloudBinding } from './status'
 
 /**
- * A document's address for its members, `/cloud/documents/:id?server=…`, with `&version=…` for
+ * A document's address for its members, `/documents/:id` on its server, with `?version=…` for
  * one of its versions. Unlike invitations and share links it carries no secret: the server
  * decides whether whoever signs in may open it.
  */
 export type CloudDocumentLink = { documentId: string; server: string; versionId: string | null }
-
-const CLOUD_DOCUMENT_PATH = /^\/cloud\/documents\/([^/]+)$/
 
 const linkSchema = v.object({
   documentId: v.string(),
@@ -38,26 +40,17 @@ const stored = IS_BROWSER
   ? useSessionStorage<string | null>('open-pencil:cloud-document-link', null)
   : ref<string | null>(null)
 
-/** The document link a web address carries, if it is one. */
+/** The document link a web address carries, if it is one; its server is the address's own. */
 export function readCloudDocumentLink(url: URL): CloudDocumentLink | null {
-  const [, id] = url.pathname.match(CLOUD_DOCUMENT_PATH) ?? []
-  const server = url.searchParams.get('server')
-  if (!id || !server) return null
-  try {
-    return {
-      documentId: decodeURIComponent(id),
-      server,
-      versionId: url.searchParams.get('version')
-    }
-  } catch {
-    // A broken escape such as `%E0` is no link; it must not stop the app from starting.
-    return null
-  }
+  const path = parseCloudLinkPath(url.pathname)
+  if (path?.kind !== 'documents') return null
+  return { documentId: path.id, server: url.origin, versionId: url.searchParams.get('version') }
 }
 
 /**
  * What the tab of `store` has at its address: its Cloud document, and the version shown in place
- * of it. Null for anything else, or while signed out of its server.
+ * of it. Null for anything else, and for a document of any server but the one serving this
+ * editor, whose address could not name it.
  */
 export function cloudDocumentAddress(
   store: EditorStore
@@ -65,21 +58,16 @@ export function cloudDocumentAddress(
   const history = versionHistoryOf(store)
   const binding = (history?.store ?? store).getStorageBinding()
   if (!binding || !isCloudBinding(binding) || !binding.profileId) return null
-  const server = findCloudServer(binding.profileId)
-  if (!server) return null
+  if (!isCloudSiteServer(binding.profileId)) return null
   const version = history?.preview?.version.id
-  return {
-    path: cloudDocumentPath(binding.documentId),
-    query: version ? { server: server.url, version } : { server: server.url }
-  }
+  return { path: cloudDocumentPath(binding.documentId), query: version ? { version } : {} }
 }
 
-/** Where links to the document in `store` go: its server, while that advertises an editor. */
+/** Where links to the Cloud document in `store` go: its server. */
 function linkTarget(store: EditorStore) {
   const binding = (versionHistoryOf(store)?.store ?? store).getStorageBinding()
   const server = binding?.profileId ? findCloudServer(binding.profileId) : null
-  const discovery = server ? cloudConnection(server.id).discovery : null
-  return binding && server && discovery?.appURL ? { binding, server, discovery } : null
+  return binding && server ? { binding, server } : null
 }
 
 /** Whether versions of the document in `store` can be linked to. */
@@ -91,8 +79,7 @@ export function canLinkToVersions(store: EditorStore): boolean {
 export function cloudVersionLinkURL(store: EditorStore, versionId: string): string | null {
   const target = linkTarget(store)
   if (!target) return null
-  const { binding, server, discovery } = target
-  return cloudDocumentURL(discovery.appURL, server.url, binding.documentId, versionId)
+  return cloudDocumentURL(target.server.url, target.binding.documentId, versionId)
 }
 
 /**
@@ -107,17 +94,19 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
     toast.error(messages.documentLinkFailed)
     return
   }
-  let server = cloudServers.value.find((candidate) => candidate.url === url) ?? null
-  if (!server && url === OFFICIAL_CLOUD_URL)
-    server = await addCloudServer({ kind: 'official', url })
+  const server = await cloudServerForLink(url)
   if (!server) {
     toast.error(messages.documentLinkUnknownServer({ host: cloudServerHost(url) }))
     return
   }
-  const connection = cloudConnection(server.id)
+  const connection = await recheckedCloudConnection(server)
+  if (connection.state === 'unreachable') {
+    toast.error(messages.errorUnreachableHeading)
+    return
+  }
   if (connection.state !== 'signed-in' || !connection.discovery) {
     stored.value = JSON.stringify(link satisfies CloudDocumentLink)
-    openCloudConnect({ serverId: server.id })
+    await signInToOpen(server.id)
     return
   }
   stored.value = null
@@ -156,13 +145,18 @@ export function forgetCloudDocumentLink(): void {
   stored.value = null
 }
 
+/** Opens the document link kept while signing in to `serverId`, if one was. */
+export async function reopenCloudDocumentLink(serverId: string): Promise<void> {
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), linkSchema), stored.value ?? '')
+  if (!parsed.success) return
+  const url = normalizeCloudServerURL(parsed.output.server)
+  if (url !== findCloudServer(serverId)?.url) return
+  await openCloudDocumentLink(parsed.output)
+}
+
 /** Picks a document link back up once signing in for it finished. */
 export function resumeCloudDocumentLink(): () => void {
   return watch(cloudSignedIn, (signedIn) => {
-    const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), linkSchema), stored.value ?? '')
-    if (!signedIn || !parsed.success) return
-    const url = normalizeCloudServerURL(parsed.output.server)
-    if (url !== findCloudServer(signedIn.serverId)?.url) return
-    void openCloudDocumentLink(parsed.output)
+    if (signedIn) void reopenCloudDocumentLink(signedIn.serverId)
   })
 }

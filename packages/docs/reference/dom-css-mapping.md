@@ -42,8 +42,8 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `font-size` | `fontSize` | Pixel/rem-ish numeric values. |
 | `font-weight` | `fontWeight` | Numeric values. |
 | `font-style: italic` | `italic` | Other styles ignored. |
-| `line-height` | `lineHeight` | Numeric computed values. |
-| `letter-spacing` | `letterSpacing` | Numeric computed values. |
+| `line-height` | `lineHeight` | Pixels stay pixels; a unitless multiple or a percent becomes a percent of the font size, which export writes back as a unitless multiple. |
+| `letter-spacing` | `letterSpacing` | Pixels stay pixels; `em` becomes a percent of the font size, which export writes back in `em`. |
 | `text-align` | horizontal text alignment | Supports center, right, justified; defaults left. |
 | `text-decoration-line` | underline / strikethrough | Decoration style/thickness are not mapped yet. |
 | `text-transform` | `textCase` | Uppercase, lowercase, and capitalize map to SceneGraph text case. |
@@ -61,8 +61,8 @@ HTML export, Tailwind HTML, and Tailwind JSX (`sceneNodesToTailwindJSX`) share o
 | grid child position | `grid-column`, `grid-row`, `*-start` | Spans are written before starts. |
 | `layoutGrow` in auto layout | `flex-grow: 1` | |
 | rotation | `transform: rotate()` | Rotates around the element center. |
-| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. |
-| layer / background blur | `filter` / `backdrop-filter: blur()` | |
+| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. A field bound to a variable is written as its `var()` where it draws the variable's value. |
+| layer / background blur | `filter` / `backdrop-filter: blur()` | A radius bound to a variable is written as its `var()` where it draws the variable's value; a negative radius keeps the literal, since CSS has no negative blur. |
 | right-to-left layout or text | `direction: rtl` | |
 | section | `<section>` | |
 | colors | hex, or `rgba()` when translucent | Hex lets Tailwind match its palette. |

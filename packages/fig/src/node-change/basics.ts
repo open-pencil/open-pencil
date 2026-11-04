@@ -1,4 +1,5 @@
-import { getNodeLocalMatrix, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { Matrix } from '@open-pencil/scene-graph/primitives'
 
 export function mapToFigmaType(type: SceneNode['type']): string {

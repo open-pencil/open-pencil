@@ -17,8 +17,8 @@ import {
   readHealth,
   readNextResponse,
   readWsJSON,
-  RegisterMessage,
-  ResponseMessage,
+  registerMessageSchema,
+  responseMessageSchema,
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
@@ -309,7 +309,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       await waitForBrowserRegistration(httpPort)
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
-      const register = await readWsJSON(clientWs, RegisterMessage)
+      const register = await readWsJSON(clientWs, registerMessageSchema)
       expect(register.type).toBe('register')
       expect(register.token).toBeNull()
 
@@ -321,7 +321,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(clientWs, ResponseMessage)
+      const response = await readNextResponse(clientWs, responseMessageSchema)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-1')
@@ -354,7 +354,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
 
-      const register = await readWsJSON(clientWs, RegisterMessage)
+      const register = await readWsJSON(clientWs, registerMessageSchema)
       expect(register.type).toBe('register')
 
       clientWs.send(
@@ -365,7 +365,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(clientWs, ResponseMessage, 15_000)
+      const response = await readNextResponse(clientWs, responseMessageSchema, 15_000)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
@@ -398,11 +398,11 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const graph = new SceneGraph()
 
-      const initialRegister = await readWsJSON(clientWs, RegisterMessage)
+      const initialRegister = await readWsJSON(clientWs, registerMessageSchema)
       expect(initialRegister.type).toBe('register')
       expect(initialRegister.token).toBeNull()
 
-      const broadcastPromise = readWsJSON(clientWs, RegisterMessage, 3_000)
+      const broadcastPromise = readWsJSON(clientWs, registerMessageSchema, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
       const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
@@ -435,7 +435,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON(ws, RegisterMessage)
+      const initReg = await readWsJSON(ws, registerMessageSchema)
       expect(initReg.type).toBe('register')
 
       const requestPromise = (async () => {
@@ -447,7 +447,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
             args: { name: 'get_current_page', args: {} }
           })
         )
-        return readNextResponse(ws, ResponseMessage, 15_000)
+        return readNextResponse(ws, responseMessageSchema, 15_000)
       })()
 
       await new Promise<void>((r) => {
@@ -522,7 +522,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON(ws, RegisterMessage)
+      const initReg = await readWsJSON(ws, registerMessageSchema)
       expect(initReg.type).toBe('register')
       expect(initReg.token).toBeNull()
 
@@ -534,7 +534,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse(ws, ResponseMessage)
+      const response = await readNextResponse(ws, responseMessageSchema)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-after-reconnect')

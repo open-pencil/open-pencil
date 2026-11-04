@@ -1,41 +1,42 @@
 import * as v from 'valibot'
 
-import type { GUID, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 
-const guid = v.looseObject({
+const guidSchema = v.looseObject({
   sessionID: v.pipe(v.number(), v.integer(), v.minValue(0)),
   localID: v.pipe(v.number(), v.integer(), v.minValue(0))
 })
-const reference = v.looseObject({
-  guid: v.optional(guid),
+const referenceSchema = v.looseObject({
+  guid: v.optional(guidSchema),
   assetRef: v.optional(v.looseObject({ key: v.string(), version: v.optional(v.string()) }))
 })
-const data: v.GenericSchema<VariableDataEntry> = v.lazy(() =>
+const dataSchema: v.GenericSchema<VariableDataEntry> = v.lazy(() =>
   v.looseObject({
     dataType: v.optional(v.string()),
     resolvedDataType: v.optional(v.string()),
     value: v.optional(
       v.looseObject({
-        alias: v.optional(reference),
+        alias: v.optional(referenceSchema),
         mapValue: v.optional(
           v.looseObject({
             values: v.optional(
               v.array(
                 v.looseObject({
                   key: v.optional(v.string()),
-                  guidKey: v.optional(guid),
-                  value: v.optional(data)
+                  guidKey: v.optional(guidSchema),
+                  value: v.optional(dataSchema)
                 })
               )
             )
           })
         ),
-        colorArrayValue: v.optional(v.looseObject({ colors: v.optional(v.array(data)) })),
+        colorArrayValue: v.optional(v.looseObject({ colors: v.optional(v.array(dataSchema)) })),
         fontStyleValue: v.optional(
           v.looseObject({
-            asString: v.optional(data),
-            asFloat: v.optional(data),
-            asVariations: v.optional(data)
+            asString: v.optional(dataSchema),
+            asFloat: v.optional(dataSchema),
+            asVariations: v.optional(dataSchema)
           })
         ),
         boolValue: v.optional(v.boolean()),
@@ -47,7 +48,7 @@ const data: v.GenericSchema<VariableDataEntry> = v.lazy(() =>
         expressionValue: v.optional(
           v.looseObject({
             expressionFunction: v.string(),
-            expressionArguments: v.optional(v.array(data))
+            expressionArguments: v.optional(v.array(dataSchema))
           })
         )
       })
@@ -90,7 +91,7 @@ export function mapUnsupportedExpressionReferences(
 
 /** Check a kept expression, which may have come back through the clipboard, before writing it. */
 export function unsupportedExpressionData(raw: unknown): VariableDataEntry {
-  const parsed = v.parse(data, structuredClone(raw))
+  const parsed = v.parse(dataSchema, structuredClone(raw))
   if (parsed.dataType !== 'EXPRESSION' || !parsed.value?.expressionValue)
     throw new Error('Invalid unsupported variable expression')
   return parsed

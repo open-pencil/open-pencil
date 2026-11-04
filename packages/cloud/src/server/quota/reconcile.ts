@@ -28,6 +28,14 @@ export function createStorageReconciliationService(database: Kysely<CloudDatabas
             .select(['storageObject.id', 'storageObject.byteSize'])
             .distinct()
             .where('document.workspaceId', '=', workspace.id)
+            // Images are the workspace's once, whichever revisions use them.
+            .union((union) =>
+              union
+                .selectFrom('storageObject')
+                .innerJoin('workspaceImage', 'workspaceImage.storageObjectId', 'storageObject.id')
+                .select(['storageObject.id', 'storageObject.byteSize'])
+                .where('workspaceImage.workspaceId', '=', workspace.id)
+            )
             .execute()
         ])
         const recordedBytes = Number(recorded?.committedBytes ?? 0)

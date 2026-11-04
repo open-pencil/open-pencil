@@ -6,7 +6,7 @@ import { compact } from 'es-toolkit'
 
 import { cloudflareClient } from './cloudflare'
 import { githubClient } from './github'
-import { lastDay, replaceDays, type SnapshotStore } from './store'
+import { lastDay, lastItemUpdate, replaceDays, saveRepoItems, type SnapshotStore } from './store'
 
 /**
  * How far back the visit history is filled: Cloudflare's Free plan keeps 31 days and answers at
@@ -15,8 +15,13 @@ import { lastDay, replaceDays, type SnapshotStore } from './store'
 const BACKFILL_DAYS = 28
 /** Days Cloudflare may still be counting; they are fetched again on the next runs. */
 const SETTLING_DAYS = 3
+/**
+ * Pages of 100 issues and pull requests one run reads at most, which keeps a run inside the
+ * Worker's subrequest limit; a bigger first sync finishes on the next runs.
+ */
+const MAX_ITEM_PAGES = 20
 
-export type SnapshotSource = 'github' | 'traffic' | 'site'
+export type SnapshotSource = 'github' | 'traffic' | 'site' | 'activity'
 
 interface Run {
   store: SnapshotStore
@@ -111,16 +116,36 @@ async function recordSite({ store, env, services, yesterday }: Run) {
   await replaceDays(store, 'siteVisits', days, visits)
 }
 
+/**
+ * Issues and pull requests updated since the last sync, the first time the whole history. Each
+ * page resumes from the newest update on the page before, so an item updated mid-sync moves to
+ * a later page instead of shifting another one past the window. Items deleted or transferred
+ * away keep their last mirrored state.
+ */
+async function recordActivity({ store, env, services }: Run) {
+  const github = githubClient(services.fetch, env.GITHUB_REPOSITORY, env.GITHUB_TOKEN)
+  let since = await lastItemUpdate(store.db)
+  for (let page = 0; page < MAX_ITEM_PAGES; page++) {
+    const { items, full } = await github.itemsUpdatedSince(since)
+    await saveRepoItems(store, items)
+    const newest = items.at(-1)?.updatedAt
+    // A full page that ends where it started would be read again forever.
+    if (!full || !newest || newest === since) return
+    since = newest
+  }
+}
+
 const SOURCES: [SnapshotSource, (run: Run) => Promise<void>][] = [
   ['github', recordGithub],
   ['traffic', recordTraffic],
-  ['site', recordSite]
+  ['site', recordSite],
+  ['activity', recordActivity]
 ]
 
 /**
  * The daily metrics snapshot, run just after midnight UTC. GitHub reports only running totals
  * and keeps traffic for 14 days, and Cloudflare keeps visits for 31, so these tables are the
- * only lasting history. Each source runs on its own: one failing still records the others, and
+ * only lasting history; issues and pull requests are mirrored whole. Each source runs on its own: one failing still records the others, and
  * its gap is filled by the next run where the API still has the days.
  */
 export async function runSnapshot(

@@ -10,8 +10,10 @@ import {
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import type { TextLayout } from '#core/canvas/text/layout'
-import { characterFamily, laidOutGlyphs } from '#core/canvas/text/placed'
+import { drawnBaseline } from '#core/canvas/text/layout/lines'
+import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
+import { characterFamily } from '#core/text/character-face'
 import {
   canDrawPlatformEmoji,
   EMOJI_METRICS_FAMILY,
@@ -42,10 +44,10 @@ function emojiImage(r: SkiaRenderer, text: string): Image | null {
   const platform = canDrawPlatformEmoji()
   // Noto draws only once its font is loaded, so a later font generation tries again.
   const key = platform ? `platform:${text}` : `noto:${r.fontGeneration}:${text}`
-  const cached = r.emojiImageCache.get(key)
+  const cached = r.textCaches.emojiImages.get(key)
   if (cached !== undefined) return cached
   const image = rasterizeEmoji(r, platform, text)
-  r.emojiImageCache.set(key, image)
+  r.textCaches.emojiImages.set(key, image)
   return image
 }
 
@@ -134,7 +136,8 @@ export function drawLaidOutEmoji(
       const image = emojiImage(r, text.slice(start, drawnUntil))
       if (!image) continue
       canvas.save()
-      canvas.translate(glyph.x, glyph.y)
+      // On the whole pixel the text around it is drawn on.
+      canvas.translate(glyph.x, drawnBaseline(glyph.y, offsetY))
       drawEmojiSquare(r, canvas, image, glyph.fontSize, paint)
       canvas.restore()
     }

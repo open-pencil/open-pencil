@@ -1,11 +1,11 @@
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   instanceSlotFrames,
   isPreferredComponent,
   nonPreferredLayers,
   ownsSlotContent,
   slotPropertyId
-} from '@open-pencil/scene-graph'
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/slots'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

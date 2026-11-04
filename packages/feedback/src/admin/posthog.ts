@@ -5,8 +5,8 @@ import * as v from 'valibot'
 
 const QUERY_TIMEOUT_MS = 20_000
 
-const UsageRow = v.tuple([v.string(), v.string(), v.number()])
-const RetentionRow = v.tuple([v.string(), v.number(), v.number()])
+const usageRowSchema = v.tuple([v.string(), v.string(), v.number()])
+const retentionRowSchema = v.tuple([v.string(), v.number(), v.number()])
 
 /**
  * The range's days as SQL date literals. Both are validated `YYYY-MM-DD` strings by the time
@@ -77,8 +77,8 @@ export async function fetchUsage(
     return parsed.output.results
   }
 
-  const usage = await query(usageQuery(range), UsageRow)
-  const retention = await query(retentionQuery(range), RetentionRow)
+  const usage = await query(usageQuery(range), usageRowSchema)
+  const retention = await query(retentionQuery(range), retentionRowSchema)
   // A kind with no events has no rows at all, so rows are picked by kind rather than looked up.
   const rowsOf = (kind: string) => usage.filter(([rowKind]) => rowKind === kind)
   const cohorts = Object.entries(groupBy(retention, ([cohort]) => cohort))

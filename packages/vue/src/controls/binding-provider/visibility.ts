@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { VISIBILITY_VARIABLE_TYPES, variableTruthy } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import { VISIBILITY_VARIABLE_TYPES, variableTruthy } from '@open-pencil/scene-graph/variables'
 
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'

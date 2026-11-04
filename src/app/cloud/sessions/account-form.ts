@@ -3,7 +3,7 @@ import { useForm } from 'vee-validate'
 import { computed, type Ref } from 'vue'
 
 import type { CloudAuthFailure } from '@open-pencil/cloud/client'
-import type { useCloudPortalMessages } from '@open-pencil/vue'
+import type { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { validateAfterFirstError } from '@/app/settings/validation/use'
 

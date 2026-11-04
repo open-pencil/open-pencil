@@ -3,14 +3,13 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
   isModeAttributeName,
-  tokenExpressionForValue,
-  type BindingScope,
   type TokenExpression,
   type Variable,
   type VariableCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { tokenExpressionForValue, type BindingScope } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
@@ -319,8 +318,12 @@ export function createVariableActions(ctx: EditorContext) {
   function removeMode(collectionId: string, modeId: string) {
     const collection = ctx.graph.variableCollections.get(collectionId)
     if (!collection || collection.modes.length <= 1) return
-    const modeIndex = collection.modes.findIndex((m) => m.modeId === modeId)
-    const modeName = collection.modes[modeIndex]?.name ?? ''
+    const removedMode = collection.modes.find((m) => m.modeId === modeId)
+    if (!removedMode) {
+      return
+    }
+    const modeIndex = collection.modes.indexOf(removedMode)
+    const savedMode = structuredClone(removedMode)
     const wasDefault = collection.defaultModeId === modeId
     const valueSnapshots = new Map<string, VariableValue>()
     for (const varId of collection.variableIds) {
@@ -337,11 +340,12 @@ export function createVariableActions(ctx: EditorContext) {
         refreshVariables(collectionScope(collectionId))
       },
       inverse: () => {
-        ctx.graph.addMode(collectionId, modeId, modeName)
+        ctx.graph.addMode(collectionId, modeId, savedMode.name)
         const col = ctx.graph.variableCollections.get(collectionId)
-        if (col && modeIndex !== -1) {
-          const mode = col.modes.pop()
-          if (mode) col.modes.splice(modeIndex, 0, mode)
+        if (col) {
+          col.modes = col.modes
+            .filter((m) => m.modeId !== modeId)
+            .toSpliced(modeIndex, 0, structuredClone(savedMode))
         }
         for (const [varId, value] of valueSnapshots) {
           const v = ctx.graph.variables.get(varId)

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
   useCloudAccountForm,
   type CloudAccountCredentials,
   type CloudAccountFormMode
 } from '@/app/cloud/sessions/account-form'
+import { portalForm } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 /**
  * The email and password form for a Cloud server, in the editor's connect dialog and, larger, on

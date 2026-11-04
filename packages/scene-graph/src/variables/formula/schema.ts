@@ -1,10 +1,9 @@
-import * as v from 'valibot'
-
 import {
   VARIABLE_FORMULA_OPERATORS,
   type VariableFormula,
   type VariableFormulaNode
-} from '@open-pencil/scene-graph/types'
+} from '#scene-graph/types'
+import * as v from 'valibot'
 
 import { variableAliasSchema } from '../schema'
 import { inferFormulaType } from './check'
@@ -13,10 +12,15 @@ import { MAX_FORMULA_DEPTH } from './tree'
 
 type NodeSchema = v.GenericSchema<unknown, VariableFormulaNode>
 
-const finiteNumber = v.pipe(v.number(), v.finite())
-const boolean = v.boolean()
-const string = v.string()
-const color = v.object({ r: finiteNumber, g: finiteNumber, b: finiteNumber, a: finiteNumber })
+const finiteNumberSchema = v.pipe(v.number(), v.finite())
+const booleanSchema = v.boolean()
+const stringSchema = v.string()
+const colorSchema = v.object({
+  r: finiteNumberSchema,
+  g: finiteNumberSchema,
+  b: finiteNumberSchema,
+  a: finiteNumberSchema
+})
 
 /**
  * A bounded recursive schema rejects excessively deep data before traversing it. Each node's
@@ -40,14 +44,14 @@ function nodeSchema(depth: number, cache: Map<number, NodeSchema>): NodeSchema {
         )
       : undefined
   const schema: NodeSchema = v.lazy((input) => {
-    if (typeof input === 'number') return finiteNumber
-    if (typeof input === 'boolean') return boolean
-    if (typeof input === 'string') return string
+    if (typeof input === 'number') return finiteNumberSchema
+    if (typeof input === 'boolean') return booleanSchema
+    if (typeof input === 'string') return stringSchema
     if (typeof input === 'object' && input !== null && 'operator' in input && operation)
       return operation
     if (typeof input === 'object' && input !== null && 'aliasId' in input)
       return variableAliasSchema
-    return color
+    return colorSchema
   })
   cache.set(depth, schema)
   return schema

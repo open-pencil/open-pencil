@@ -15,13 +15,11 @@ import {
 } from 'reka-ui'
 import { nextTick, useTemplateRef, watch } from 'vue'
 
+import type { FontFamilyOption } from '@open-pencil/core/text'
+
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
-import {
-  useFontPicker,
-  type FontAccessController,
-  type FontFamilyOption
-} from '#vue/primitives/FontPicker/useFontPicker'
+import { useFontPicker, type FontAccessController } from '#vue/primitives/FontPicker/useFontPicker'
 
 const { listFamilies, localFontAccess, ui, emptySearchText, emptyFontsText, emptyFontsHint } =
   defineProps<{

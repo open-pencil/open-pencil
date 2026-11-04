@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 const CANVAS_TEXT_INPUT = 'data-canvas-text-input'
 

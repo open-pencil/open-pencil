@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { figmaDevStatusOf, type StatusState } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
-import { useStatusMessages } from '@open-pencil/vue'
+import { figmaDevStatusOf, type StatusState } from '@open-pencil/scene-graph/statuses'
+import { useStatusMessages } from '@open-pencil/vue/i18n'
 
 import { STATUS_COLORS } from '@/app/editor/statuses/workflow'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { statusRows } from '@/theme/statuses'
+
+import { statusRows } from './ui'
 
 /** One status in the Statuses dialog: its color and name. */
 const { state, states } = defineProps<{

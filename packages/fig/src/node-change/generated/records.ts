@@ -1,4 +1,5 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 /**
  * A generated frame's record carries its sublayers as partial records, addressed by paths of one

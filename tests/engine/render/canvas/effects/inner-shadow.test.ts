@@ -33,7 +33,7 @@ describe('INNER_SHADOW bug proofs', () => {
       ]
     })
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'inner')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     // PROOF: ColorFilter.MakeBlend(black, SrcIn) on DstOut layer paint
     // forces the silhouette to solid black without mutating fillPaint.

@@ -10,7 +10,7 @@ import { diagnostics, recordChatCompleted, recordModelStepCompleted } from '@/ap
 
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'
 
-const TraceJSON = v.pipe(
+const traceSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -100,7 +100,7 @@ test('a trace keeps every message part and its conversation’s runs and events'
   await traces.store.putRun(other)
   await traces.store.putAsset(other.instructions, { kind: 'instructions', text: 'Other.' })
 
-  const trace = v.parse(TraceJSON, await chatTrace(conversation, messages, traces.store))
+  const trace = v.parse(traceSchema, await chatTrace(conversation, messages, traces.store))
 
   expect(trace.conversation).toMatchObject({ id: conversation.id, title: 'Queue screen' })
   expect(trace.conversation).not.toHaveProperty('messages')

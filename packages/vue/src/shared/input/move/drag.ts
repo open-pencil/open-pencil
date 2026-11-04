@@ -12,7 +12,7 @@ import {
 } from '#vue/shared/input/drag-threshold'
 import { findMoveDropTarget, reparentDroppedNodes } from '#vue/shared/input/drop-target'
 export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
 import { applyMoveSnap } from '#vue/shared/input/move/snap'
@@ -342,7 +342,6 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
-    if (d.selectOnClick) editor.select([d.selectOnClick])
     return
   }
 

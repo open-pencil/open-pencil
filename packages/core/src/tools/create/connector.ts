@@ -1,7 +1,9 @@
 import * as v from 'valibot'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool, nodeSummary } from '#core/tools/schema'
+import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+
+import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
 
 const MAGNETS = ['AUTO', 'TOP', 'RIGHT', 'BOTTOM', 'LEFT', 'CENTER'] as const
 const CAPS = [
@@ -48,6 +50,15 @@ export const createConnectorTool = defineTool({
     label: v.optional(v.pipe(v.string(), v.description('Text on the line'))),
     name: v.optional(v.pipe(v.string(), v.description('Layer name')))
   }),
+  fonts: (_figma, args) =>
+    args.label
+      ? [
+          {
+            family: CONNECTOR_LABEL_FONT.family,
+            style: faceLoadKey(CONNECTOR_LABEL_FONT.weight)
+          }
+        ]
+      : [],
   execute: (figma, args) => {
     const connector = figma.createConnector()
     const straight = args.line_type === 'STRAIGHT'

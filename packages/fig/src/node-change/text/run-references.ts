@@ -1,4 +1,5 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 

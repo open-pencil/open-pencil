@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { CollapsibleRoot, CollapsibleContent, CollapsibleTrigger } from 'reka-ui'
 
-import {
-  usePanelMessages,
-  type ComponentBinding,
-  type ComponentBindingGroup
-} from '@open-pencil/vue'
+import type {
+  ComponentBinding,
+  ComponentBindingGroup
+} from '@open-pencil/vue/controls/component-props'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -33,7 +33,7 @@ const panels = usePanelMessages()
           />
           <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 truncate">{{ group.name }}</span>
-          <span class="ml-auto text-[10px] text-muted">{{
+          <span class="ml-auto text-3xs text-muted">{{
             group.bindings.length === totalVariants
               ? panels.allVariants
               : panels.usedInVariants({ count: group.bindings.length, total: totalVariants })

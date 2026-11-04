@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { DesignElement } from '@open-pencil/dom-css'
 import {
+  type DesignElement,
   compileTailwindCSS,
   createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
   htmlToDesignDocument,
   htmlToSceneGraph,
-  sceneGraphToDesignDocument,
-  serializeHTML,
   tailwindHTMLToSceneGraph
 } from '@open-pencil/dom-css'
+import { sceneGraphToDesignDocument, serializeHTML } from '@open-pencil/dom-css/export'
+import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import {
   DOM_CSS_COLORS,
@@ -100,8 +100,8 @@ function expectStyleRoundTripText(graph: SceneGraph, panel: SceneNode) {
   if (heading?.type !== 'TEXT') throw new Error('Expected text node')
   expect(heading.fontSize).toBe(18)
   expect(heading.fontWeight).toBe(700)
-  expect(heading.lineHeight).toBe(24)
-  expect(heading.letterSpacing).toBe(0.2)
+  expect(heading.lineHeight).toEqual(pixelLength(24))
+  expect(heading.letterSpacing).toEqual(pixelLength(0.2))
   expect(heading.textAlignHorizontal).toBe('CENTER')
   expect(heading.opacity).toBe(0.5)
   expect(heading.effects[0]?.type).toBe('DROP_SHADOW')
@@ -227,7 +227,8 @@ describe('@open-pencil/dom-css conversion', () => {
     // A color function in the `border` shorthand, and a shadow color after its lengths.
     expect(card.strokes[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slate200))
     expect(card.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(card.effects[0]?.radius).toBe(24)
+    // A 24px CSS blur is a Gaussian of 12, which the canvas draws at 0.43 × radius.
+    expect(card.effects[0]?.radius).toBeCloseTo(12 / 0.43, 6)
     expect(card.effects[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slateShadow))
 
     const [title, description] = graph.getChildren(card.id)
@@ -493,7 +494,7 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(dialog.maxWidth).toBe(420 + 2 * 24 + 2 * 1)
     expect(dialog.itemSpacing).toBe(16)
     expect(dialog.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(dialog.effects[0]?.radius).toBe(40)
+    expect(dialog.effects[0]?.radius).toBeCloseTo(20 / 0.43, 6)
 
     const [, , inputNode, buttonNode] = graph.getChildren(dialog.id)
     const input = expectFrame(inputNode)

@@ -1,15 +1,16 @@
-import type { Canvas, Image, Paint } from 'canvaskit-wasm'
+import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { figmaBlendModeToSkia } from './blend'
+import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
-import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
   readonly bindToNodeFills?: boolean
@@ -33,10 +34,11 @@ export function paintFills(
       : r.applyFill(fill, node, graph, fillIndex)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
-    r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+    const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
+    if (blends) setPaintBlendMode(r, r.fillPaint, fill.blendMode)
     draw(fill)
-    r.fillPaint.setShader(null)
-    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    clearFillShader(r)
+    if (blends) setPaintBlendMode(r, r.fillPaint, 'NORMAL')
   }
 }
 
@@ -47,84 +49,51 @@ export function drawVectorMultiStyleFills(
   graph: SceneGraph,
   patternStack?: Set<string>
 ): boolean {
-  if (node.type !== 'VECTOR' || !node.fillGeometry.some((geometry) => geometry.fills?.length)) {
-    return false
-  }
-  const paths = r.getFillGeometry(node)
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!network || !hasRegionFills(network)) return false
+  const { regions } = network
+  const paths =
+    (fillGeometryMatchesRegions(node.fillGeometry, network) ? r.getFillGeometry(node) : null) ??
+    r.getVectorPaths(node)
   if (!paths) return false
 
-  for (let index = 0; index < node.fillGeometry.length; index++) {
-    const geometry = node.fillGeometry[index]
+  for (const [index, region] of regions.entries()) {
     const path = paths[index]
-    const usesPathFills = Boolean(geometry.fills?.length)
     paintFills(
       r,
-      usesPathFills ? (geometry.fills ?? []) : node.fills,
+      region.fills ?? node.fills,
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !usesPathFills, patternStack }
+      { bindToNodeFills: !region.fills, patternStack }
     )
   }
   return true
 }
 
-export function drawNodeFill(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
-  fill?: Fill
-): void {
-  switch (node.type) {
-    case 'VECTOR': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.fillPaint)
-      } else {
-        const vps = r.getVectorPaths(node)
-        if (vps) {
-          for (const vp of vps) canvas.drawPath(vp, r.fillPaint)
-        }
-      }
-      break
-    }
-    case 'ELLIPSE': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.fillPaint)
-      } else if (node.arcData) {
-        r.drawArc(canvas, node, r.fillPaint)
-      } else {
-        canvas.drawOval(rect, r.fillPaint)
-      }
-      break
-    }
-    case 'TEXT':
-      r.renderText(canvas, node, fill)
-      break
-    case 'LINE':
-      canvas.drawLine(0, 0, node.width, node.height, r.fillPaint)
-      break
-    case 'POLYGON':
-    case 'STAR':
-    case 'SHAPE_WITH_TEXT': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, r.fillPaint)
-      path.delete()
-      break
-    }
-    default:
-      if (nodeHasSmoothCorners(node)) {
-        const path = makeSmoothRRectPath(r, node)
-        canvas.drawPath(path, r.fillPaint)
-        path.delete()
-      } else if (hasRadius) {
-        canvas.drawRRect(r.makeRRect(node), r.fillPaint)
-      } else {
-        canvas.drawRect(rect, r.fillPaint)
-      }
+/** Clears the fill paint's shader, when it has one; a layer with plain fills makes no call. */
+export function clearFillShader(r: SkiaRenderer): void {
+  if (!r.fillPaintShaded) return
+  r.fillPaint.setShader(null)
+  r.fillPaintShaded = false
+}
+
+export function clearStrokeShader(r: SkiaRenderer): void {
+  if (!r.strokePaintShaded) return
+  r.strokePaint.setShader(null)
+  r.strokePaintShaded = false
+}
+
+/** Records that `paint`, when it is a shared one, now carries a shader. */
+function markShaded(r: SkiaRenderer, paint: Paint): void {
+  if (paint === r.fillPaint) r.fillPaintShaded = true
+  else if (paint === r.strokePaint) r.strokePaintShaded = true
+}
+
+export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
+  if (node.type === 'TEXT') r.renderText(canvas, node, fill)
+  else if (node.type !== 'LINE') {
+    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.fillPaint))
   }
 }
 
@@ -136,28 +105,27 @@ export function applyFill(
   fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
-  r.fillPaint.setShader(null)
+  clearFillShader(r)
 
   if (fill.type === 'SOLID') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    r.applyGradientFill(fill, node, graph)
-    return true
+    return applyGradientFill(r, fill, node, graph)
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
-    return r.applyImageFill(fill, node, graph)
+    return applyImageFill(r, fill, node, graph)
   }
 
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
 
   if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
+    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
 
@@ -213,8 +181,6 @@ function recordPatternSource(
   const bounds = r.ck.LTRBRect(0, 0, layout.rect.width, layout.rect.height)
   const recorder = new r.ck.PictureRecorder()
   const canvas = recorder.beginRecording(bounds)
-  const rect = r.ck.LTRBRect(0, 0, source.width, source.height)
-  const hasRadius = nodeHasSmoothCorners(source) || source.cornerRadius > 0
 
   for (const position of layout.positions) {
     canvas.save()
@@ -226,7 +192,7 @@ function recordPatternSource(
         source.fills,
         source,
         graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, rect, hasRadius, sourceFill),
+        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
     }
@@ -278,12 +244,16 @@ function applyPatternFill(
     tileRect
   )
   r.fillPaint.setShader(shader)
+  r.fillPaintShaded = true
   shader.delete()
   picture.delete()
   return true
 }
 
-/** Gradient space to the layer's pixels: Figma's transform maps the other way, so it is inverted. */
+/**
+ * Gradient space to the layer's pixels: Figma's transform maps the other way, so it is inverted.
+ * A side with no length counts as one pixel, so a straight line still carries its gradient.
+ */
 function makeGradientLocalMatrix(
   r: SkiaRenderer,
   width: number,
@@ -291,7 +261,7 @@ function makeGradientLocalMatrix(
   transform: NonNullable<Fill['gradientTransform']>
 ) {
   const t = invertGradientTransform(transform)
-  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width, height), [
+  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width || 1, height || 1), [
     t.m00,
     t.m01,
     t.m02,
@@ -307,6 +277,11 @@ function makeGradientLocalMatrix(
 /** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
 export type ResolveGradientStop = (color: Color, stopIndex: number) => Color
 
+/**
+ * Sets `paint`'s shader to `fill`'s gradient on `node` and returns whether it did. CanvasKit
+ * builds no shader when the local matrix cannot be inverted, as for a transform that holds no
+ * numbers; the paint then keeps no shader, and the caller draws nothing rather than its color.
+ */
 export function applyGradientFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -320,10 +295,10 @@ export function applyGradientFill(
       node,
       graph
     ).color
-): void {
+): boolean {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
-  if (!stops || !t) return
+  if (!stops || !t) return false
   const colors = stops.map((s, index) => {
     const c = resolveStop(s.color, index)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
@@ -334,12 +309,15 @@ export function applyGradientFill(
   const h = node.height
 
   /** The paint keeps its own reference, so the caller's handle has to go or WASM memory grows. */
-  const setShader = (shader: ReturnType<typeof makeDiamondGradient>) => {
+  const setShader = (shader: Shader | null): boolean => {
+    if (!shader) return false
     try {
       paint.setShader(shader)
+      markShaded(r, paint)
     } finally {
       shader.delete()
     }
+    return true
   }
 
   if (fill.type === 'GRADIENT_LINEAR') {
@@ -353,9 +331,9 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       makeGradientLocalMatrix(r, w, h, t)
     )
-    setShader(shader)
+    return setShader(shader)
   } else if (fill.type === 'GRADIENT_DIAMOND') {
-    setShader(makeDiamondGradient(r, colors, positions, makeGradientLocalMatrix(r, w, h, t)))
+    return setShader(makeDiamondGradient(r, colors, positions, makeGradientLocalMatrix(r, w, h, t)))
   } else if (fill.type === 'GRADIENT_RADIAL') {
     // Gradient space is centred on (0.5, 0.5) with radius 0.5; the local matrix takes it to the
     // layer's pixels.
@@ -368,7 +346,7 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       localMatrix
     )
-    setShader(shader)
+    return setShader(shader)
   } else if (fill.type === 'GRADIENT_ANGULAR') {
     const localMatrix = makeGradientLocalMatrix(r, w, h, t)
     const shader = r.ck.Shader.MakeSweepGradient(
@@ -379,8 +357,9 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       localMatrix
     )
-    setShader(shader)
+    return setShader(shader)
   }
+  return false
 }
 
 /**
@@ -466,6 +445,7 @@ function setImageShader(
         )
   try {
     paint.setShader(shader)
+    markShaded(r, paint)
   } finally {
     shader.delete()
   }
@@ -481,15 +461,20 @@ export function applyImageFill(
 ): boolean {
   const hash = fill.imageHash
   if (!hash) return false
-  const live = r.liveImages.get(hash)
+  const live = r.images.live.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
+  if (r.viewportImageRendering) {
+    r.noteImageFillUser(hash, node.id)
+    r.images.previewsDrawn = true
+  }
+  // The preview's resolution follows the detail the drawing is for: the viewport's scale, or a
+  // tile's level, whose chunk pictures record again when a finer tile needs more.
   const preview = r.viewportImageRendering
-    ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame.
-      r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
+    ? r.images.previews.get(graph, hash, previewEdge(node, r.images.detailScale))
     : undefined
   if (r.viewportImageRendering && !preview) return false
   const key = preview?.key ?? hash
-  let img = r.imageCache.get(key)
+  let img = r.images.cache.get(key)
   let temporary = false
   if (!img) {
     const data = preview?.preview.bytes ?? graph.images.get(hash)
@@ -501,7 +486,7 @@ export function applyImageFill(
     } finally {
       decoded.delete()
     }
-    temporary = !r.imageCache.set(key, img)
+    temporary = !r.images.cache.set(key, img)
   }
 
   try {
@@ -509,51 +494,4 @@ export function applyImageFill(
   } finally {
     if (temporary) img.delete()
   }
-}
-
-export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
-  const arc = node.arcData
-  if (!arc) return null
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const innerRx = rx * arc.innerRadius
-  const innerRy = ry * arc.innerRadius
-
-  const startDeg = arc.startingAngle * (180 / Math.PI)
-  const endDeg = arc.endingAngle * (180 / Math.PI)
-  const sweepDeg = endDeg - startDeg
-
-  const path = new r.ck.PathBuilder()
-  const oval = r.ck.LTRBRect(0, 0, node.width, node.height)
-
-  if (arc.innerRadius > 0) {
-    path.addArc(oval, startDeg, sweepDeg)
-    const innerOval = r.ck.LTRBRect(cx - innerRx, cy - innerRy, cx + innerRx, cy + innerRy)
-    const innerPath = new r.ck.PathBuilder()
-    innerPath.addArc(innerOval, startDeg + sweepDeg, -sweepDeg)
-    const immutableInnerPath = innerPath.detachAndDelete()
-    path.addPath(immutableInnerPath)
-    immutableInnerPath.delete()
-    path.close()
-    return path.detachAndDelete()
-  }
-
-  const isFullCircle = Math.abs(sweepDeg) >= 359.99
-  if (isFullCircle) {
-    path.addOval(oval)
-  } else {
-    path.moveTo(cx, cy)
-    path.addArc(oval, startDeg, sweepDeg)
-    path.close()
-  }
-  return path.detachAndDelete()
-}
-
-export function drawArc(r: SkiaRenderer, canvas: Canvas, node: SceneNode, paint: Paint): void {
-  const path = makeArcPath(r, node)
-  if (!path) return
-  canvas.drawPath(path, paint)
-  path.delete()
 }

@@ -209,3 +209,29 @@ test('an edited icon says so, asks before a swap discards the edit, and resets o
   await section.getByRole('button', { name: 'Detach icon' }).click()
   await expect(section).toBeHidden()
 })
+
+test('Object › Insert Icon opens the picker while its button is hidden from the toolbar', async () => {
+  const page = ctx.page
+  const customizeToolbar = async () => {
+    await page.getByTestId('toolbar').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Customize toolbar…' }).click()
+    return page.getByTestId('settings-toolbar-panel')
+  }
+  try {
+    const settings = await customizeToolbar()
+    await settings.getByRole('switch', { name: 'Show Insert icon', exact: true }).click()
+    await page.getByTestId('app-settings-done').click()
+    await expect(page.getByRole('button', { name: 'Insert icon' })).toHaveCount(0)
+
+    const menu = await openAppMenu(page, 'Object')
+    await menu.getByRole('menuitem', { name: 'Insert Icon…' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Insert icon' })
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  } finally {
+    const reset = await customizeToolbar()
+    await reset.getByRole('button', { name: 'Reset to default' }).click()
+    await page.getByTestId('app-settings-done').click()
+  }
+})

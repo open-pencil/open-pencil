@@ -19,7 +19,7 @@ async function main() {
 
   const fontPath = join(process.cwd(), 'packages/core/assets/Inter-SemiBold.ttf')
   const fontData = await readFile(fontPath)
-  fontManager.markLoaded(
+  await fontManager.markLoaded(
     'Inter',
     'SemiBold',
     fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength)

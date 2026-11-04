@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** Cloud's sign-in fields: compact in the editor's dialogs, larger on the server's own pages. */
-export const portalForm = tv({
+export default {
   slots: {
     form: 'flex flex-col gap-3',
     field: 'flex flex-col gap-1.5',
@@ -19,10 +17,10 @@ export const portalForm = tv({
   variants: {
     size: {
       md: {
-        label: 'text-[11px] text-muted',
-        hint: 'text-[11px]',
-        error: 'text-[11px]',
-        divider: 'text-[11px]'
+        label: 'text-2xs text-muted',
+        hint: 'text-2xs',
+        error: 'text-2xs',
+        divider: 'text-2xs'
       },
       lg: {
         form: 'gap-4',
@@ -36,4 +34,4 @@ export const portalForm = tv({
     }
   },
   defaultVariants: { size: 'md' }
-})
+} as const

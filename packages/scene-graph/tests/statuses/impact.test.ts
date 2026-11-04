@@ -1,18 +1,19 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
-  SceneGraph,
   statusWorkflowImpact,
   STATUS_WORKFLOW_PRESETS,
   type StatusWorkflow
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/statuses'
 
 const { review } = STATUS_WORKFLOW_PRESETS
 
 function setup(states: Record<string, string>) {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
-  for (const [name, status] of Object.entries(states)) graph.createNode('FRAME', page, { name, status })
+  for (const [name, status] of Object.entries(states))
+    graph.createNode('FRAME', page, { name, status })
   return graph
 }
 
@@ -30,9 +31,9 @@ describe('what a workflow change does to layers', () => {
 
   test('a rename of a state in use, counted per pair of names', () => {
     const graph = setup({ A: 'approved', B: 'approved', C: 'draft' })
-    expect(statusWorkflowImpact(graph, review, renamed(review, 'approved', 'Signed off'), {})).toEqual([
-      { from: 'Approved', to: 'Signed off', count: 2 }
-    ])
+    expect(
+      statusWorkflowImpact(graph, review, renamed(review, 'approved', 'Signed off'), {})
+    ).toEqual([{ from: 'Approved', to: 'Signed off', count: 2 }])
   })
 
   test('a dropped state moves its layers or clears their status', () => {

@@ -3,14 +3,10 @@ import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 
 import { tokenNumberToCSS, variableUnit } from '@open-pencil/dom-css/export'
-import {
-  formulaSymbol,
-  type Variable,
-  type VariableLiteral,
-  type VariableValue
-} from '@open-pencil/scene-graph'
+import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue'
+import { formulaSymbol } from '@open-pencil/scene-graph/variables'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   referencePillName,

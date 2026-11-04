@@ -80,13 +80,14 @@ export class WorkspaceInvitationInvalidError extends Error {
 export type WorkspaceMemberServiceOptions = {
   email?: TransactionalEmailService
   publicURL: string
-  appURL: string
 }
 
 function invitationContract(row: {
   id: string
   emailNormalized: string
   role: WorkspaceRole
+  invitedBy: string
+  inviterName: string | null
   invitedAt: Date | string
   expiresAt: Date | string
 }): WorkspaceInvitation {
@@ -94,6 +95,7 @@ function invitationContract(row: {
     id: row.id,
     email: row.emailNormalized,
     role: row.role,
+    invitedBy: { id: row.invitedBy, name: row.inviterName },
     invitedAt: dateString(row.invitedAt) ?? '',
     expiresAt: dateString(row.expiresAt) ?? ''
   }
@@ -164,7 +166,77 @@ export function createWorkspaceMemberService(
   }
 
   function acceptanceURL(invitationId: string, token: string): string {
-    return cloudInvitationURL(options.appURL, options.publicURL, invitationId, token)
+    return cloudInvitationURL(options.publicURL, invitationId, token)
+  }
+
+  /** Invites someone by email; a newer invitation to the same address replaces the older. */
+  async function invite(
+    userId: string,
+    workspaceId: string,
+    input: CreateWorkspaceInvitationInput
+  ): Promise<CreatedWorkspaceInvitation> {
+    const workspace = await requireAdmin(userId, workspaceId)
+    const existing = await memberUsers(workspaceId)
+      .select('workspaceMember.userId')
+      .where((expression) =>
+        expression(expression.fn('lower', [expression.ref('user.email')]), '=', input.email)
+      )
+      .executeTakeFirst()
+    if (existing) throw new WorkspaceAlreadyMemberError()
+    const inviter = await database
+      .selectFrom('user')
+      .select('name')
+      .where('id', '=', userId)
+      .executeTakeFirst()
+    const id = crypto.randomUUID()
+    const token = randomHex(INVITATION_SECRET_BYTES)
+    const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
+    const url = acceptanceURL(id, token)
+    const row = await database.transaction().execute(async (transaction) => {
+      await transaction
+        .updateTable('workspaceInvitation')
+        .set({ revokedAt: new Date() })
+        .where('workspaceId', '=', workspaceId)
+        .where('emailNormalized', '=', input.email)
+        .where('acceptedAt', 'is', null)
+        .where('revokedAt', 'is', null)
+        .execute()
+      const inserted = await transaction
+        .insertInto('workspaceInvitation')
+        .values({
+          id,
+          workspaceId,
+          emailNormalized: input.email,
+          role: input.role,
+          tokenHash: hashCapability(token),
+          invitedBy: userId,
+          expiresAt,
+          acceptedAt: null,
+          revokedAt: null
+        })
+        .returning(['id', 'emailNormalized', 'role', 'invitedBy', 'invitedAt', 'expiresAt'])
+        .executeTakeFirstOrThrow()
+      await options.email?.enqueue(
+        {
+          idempotencyKey: `workspace-invitation/${id}`,
+          kind: 'workspace-invitation',
+          recipientEmail: input.email,
+          payload: {
+            inviterName: inviter?.name ?? 'An OpenPencil user',
+            workspaceName: workspace.name,
+            role: input.role,
+            expiresAt: expiresAt.toISOString(),
+            acceptanceURL: url
+          }
+        },
+        transaction
+      )
+      return inserted
+    })
+    return {
+      invitation: invitationContract({ ...row, inviterName: inviter?.name ?? null }),
+      acceptanceURL: url
+    }
   }
 
   return {
@@ -186,7 +258,8 @@ export function createWorkspaceMemberService(
           'workspaceMember.role',
           'workspaceMember.createdAt',
           'user.name',
-          'user.email'
+          'user.email',
+          'user.image'
         ])
         .orderBy('workspaceMember.createdAt')
         .execute()
@@ -194,12 +267,29 @@ export function createWorkspaceMemberService(
         workspace.role === 'admin'
           ? await database
               .selectFrom('workspaceInvitation')
-              .select(['id', 'emailNormalized', 'role', 'invitedAt', 'expiresAt'])
-              .where('workspaceId', '=', workspaceId)
-              .where('acceptedAt', 'is', null)
-              .where('revokedAt', 'is', null)
-              .where('expiresAt', '>', new Date())
-              .orderBy('invitedAt')
+              .leftJoin('user', (join) =>
+                join.on((expression) =>
+                  expression(
+                    expression.cast(expression.ref('user.id'), 'text'),
+                    '=',
+                    expression.ref('workspaceInvitation.invitedBy')
+                  )
+                )
+              )
+              .select([
+                'workspaceInvitation.id',
+                'workspaceInvitation.emailNormalized',
+                'workspaceInvitation.role',
+                'workspaceInvitation.invitedAt',
+                'workspaceInvitation.expiresAt',
+                'workspaceInvitation.invitedBy',
+                'user.name as inviterName'
+              ])
+              .where('workspaceInvitation.workspaceId', '=', workspaceId)
+              .where('workspaceInvitation.acceptedAt', 'is', null)
+              .where('workspaceInvitation.revokedAt', 'is', null)
+              .where('workspaceInvitation.expiresAt', '>', new Date())
+              .orderBy('workspaceInvitation.invitedAt')
               .execute()
           : []
       return {
@@ -207,6 +297,7 @@ export function createWorkspaceMemberService(
           userId: member.userId,
           name: member.name,
           email: member.email,
+          image: member.image,
           role: member.role,
           joinedAt: dateString(member.createdAt) ?? ''
         })),
@@ -214,71 +305,28 @@ export function createWorkspaceMemberService(
       }
     },
 
-    /** Invites someone by email; a newer invitation to the same address replaces the older. */
-    async invite(
+    invite,
+
+    /** Sends a waiting invitation again with a new link; the old link stops working. */
+    async resendInvitation(
       userId: string,
       workspaceId: string,
-      input: CreateWorkspaceInvitationInput
+      invitationId: string
     ): Promise<CreatedWorkspaceInvitation> {
-      const workspace = await requireAdmin(userId, workspaceId)
-      const existing = await memberUsers(workspaceId)
-        .select('workspaceMember.userId')
-        .where((expression) =>
-          expression(expression.fn('lower', [expression.ref('user.email')]), '=', input.email)
-        )
+      await requireAdmin(userId, workspaceId)
+      const invitation = await database
+        .selectFrom('workspaceInvitation')
+        .select(['emailNormalized', 'role'])
+        .where('id', '=', invitationId)
+        .where('workspaceId', '=', workspaceId)
+        .where('acceptedAt', 'is', null)
+        .where('revokedAt', 'is', null)
         .executeTakeFirst()
-      if (existing) throw new WorkspaceAlreadyMemberError()
-      const inviter = await database
-        .selectFrom('user')
-        .select('name')
-        .where('id', '=', userId)
-        .executeTakeFirst()
-      const id = crypto.randomUUID()
-      const token = randomHex(INVITATION_SECRET_BYTES)
-      const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
-      const url = acceptanceURL(id, token)
-      const row = await database.transaction().execute(async (transaction) => {
-        await transaction
-          .updateTable('workspaceInvitation')
-          .set({ revokedAt: new Date() })
-          .where('workspaceId', '=', workspaceId)
-          .where('emailNormalized', '=', input.email)
-          .where('acceptedAt', 'is', null)
-          .where('revokedAt', 'is', null)
-          .execute()
-        const inserted = await transaction
-          .insertInto('workspaceInvitation')
-          .values({
-            id,
-            workspaceId,
-            emailNormalized: input.email,
-            role: input.role,
-            tokenHash: hashCapability(token),
-            invitedBy: userId,
-            expiresAt,
-            acceptedAt: null,
-            revokedAt: null
-          })
-          .returning(['id', 'emailNormalized', 'role', 'invitedAt', 'expiresAt'])
-          .executeTakeFirstOrThrow()
-        await options.email?.enqueue(
-          {
-            idempotencyKey: `workspace-invitation/${id}`,
-            kind: 'workspace-invitation',
-            recipientEmail: input.email,
-            payload: {
-              inviterName: inviter?.name ?? 'An OpenPencil user',
-              workspaceName: workspace.name,
-              role: input.role,
-              expiresAt: expiresAt.toISOString(),
-              acceptanceURL: url
-            }
-          },
-          transaction
-        )
-        return inserted
+      if (!invitation) throw new WorkspaceNotFoundError()
+      return invite(userId, workspaceId, {
+        email: invitation.emailNormalized,
+        role: invitation.role
       })
-      return { invitation: invitationContract(row), acceptanceURL: url }
     },
 
     async revokeInvitation(

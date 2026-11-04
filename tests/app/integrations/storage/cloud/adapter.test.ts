@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
 import { createCloudAPIClient } from '@open-pencil/cloud/client'
@@ -9,6 +10,8 @@ import { StorageRevisionConflictError } from '@/app/integrations/storage'
 import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adapter'
 
 const WORKSPACE = '0b5a4e0a-2d1c-4d6e-9f1a-6b2c3d4e5f60'
+/** A document the signed-in person may not delete. */
+const FORBIDDEN = '5f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b'
 
 async function sha256(bytes: Uint8Array): Promise<string> {
   return fromUint8Array(
@@ -18,7 +21,14 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 
 /** Just enough of a Cloud server and its object store to save and open documents. */
 function cloudServer() {
-  type Doc = { name: string; revision: string | null; version: number; checksum?: string }
+  type Image = { name: string; checksum: string }
+  type Doc = {
+    name: string
+    revision: string | null
+    version: number
+    checksum?: string
+    images?: Image[]
+  }
   const documents = new Map<string, Doc>()
   const objects = new Map<string, Uint8Array>()
   let fullReads = 0
@@ -28,7 +38,10 @@ function cloudServer() {
    * than asked and no `Content-Range` to tell, or with another range than asked.
    */
   let ranges: 'honored' | 'ignored' | 'oversized' | 'short' | 'other' = 'honored'
-  const uploads = new Map<string, { documentId: string; base: string | null }>()
+  const uploads = new Map<string, { documentId: string; base: string | null; image?: string }>()
+  /** The workspace's images by checksum, as the object key their upload put them under. */
+  const images = new Map<string, string>()
+  const imageUploads: string[] = []
   const summary = (id: string, doc: Doc) => ({
     id,
     workspaceId: WORKSPACE,
@@ -84,16 +97,77 @@ function cloudServer() {
     ],
     [
       'POST',
+      /^\/documents\/([^/]+)\/images$/,
+      ([, documentId = ''], body) => {
+        const requested = Array.isArray(body.images) ? body.images : []
+        const offers = requested.flatMap((image: { checksum: string }) => {
+          if (images.has(image.checksum)) return []
+          const uploadId = crypto.randomUUID()
+          uploads.set(uploadId, { documentId, base: null, image: image.checksum })
+          imageUploads.push(image.checksum)
+          return [
+            {
+              checksum: image.checksum,
+              uploadId,
+              upload: {
+                kind: 'single',
+                url: `https://objects.test/${uploadId}`,
+                method: 'PUT',
+                headers: {},
+                expiresAt: '2030-01-01T00:00:00.000Z'
+              }
+            }
+          ]
+        })
+        return json({ uploads: offers }, 201)
+      }
+    ],
+    [
+      'POST',
+      /^\/documents\/([^/]+)\/images\/commit$/,
+      (_match, body) => {
+        const committed = (Array.isArray(body.uploads) ? body.uploads : []) as {
+          uploadId: string
+        }[]
+        for (const { uploadId } of committed) {
+          const image = uploads.get(uploadId)?.image
+          if (image) images.set(image, uploadId)
+        }
+        return new Response(null, { status: 204 })
+      }
+    ],
+    [
+      'POST',
       /^\/uploads\/([^/]+)\/commit$/,
       ([, uploadId = ''], body) => {
         const upload = uploads.get(uploadId)
         const doc = upload ? documents.get(upload.documentId) : undefined
         if (!upload || !doc) return json({ error: { code: 'not_found' } }, 404)
+        const named = (Array.isArray(body.images) ? body.images : []) as Image[]
+        if (named.some((image) => !images.has(image.checksum))) {
+          return json({ error: { code: 'invalid_upload' } }, 422)
+        }
         if (doc.revision !== upload.base) return json({ error: { code: 'revision_conflict' } }, 409)
         const revision = crypto.randomUUID()
         objects.set(revision, objects.get(uploadId) ?? new Uint8Array())
-        Object.assign(doc, { revision, version: doc.version + 1, checksum: String(body.checksum) })
+        Object.assign(doc, {
+          ...(typeof body.name === 'string' ? { name: body.name } : {}),
+          revision,
+          version: doc.version + 1,
+          checksum: String(body.checksum),
+          images: named
+        })
         return json({ document: summary(upload.documentId, doc) })
+      }
+    ],
+    [
+      'DELETE',
+      /^\/documents\/([^/]+)$/,
+      ([, id = '']) => {
+        if (id === FORBIDDEN) return json({ error: { code: 'forbidden' } }, 403)
+        return documents.delete(id)
+          ? new Response(null, { status: 204 })
+          : json({ error: { code: 'not_found' } }, 404)
       }
     ],
     [
@@ -111,7 +185,20 @@ function cloudServer() {
             byteSize: bytes.byteLength,
             checksum: doc.checksum ?? (await sha256(bytes)),
             contentType: 'application/octet-stream',
-            download: { ...download, expiresAt: '2030-01-01T00:00:00.000Z' }
+            download: { ...download, expiresAt: '2030-01-01T00:00:00.000Z' },
+            images: (doc.images ?? []).map((image) => {
+              const key = images.get(image.checksum) ?? ''
+              return {
+                ...image,
+                byteSize: objects.get(key)?.byteLength ?? 0,
+                download: {
+                  url: `https://objects.test/${key}`,
+                  method: 'GET',
+                  headers: {},
+                  expiresAt: '2030-01-01T00:00:00.000Z'
+                }
+              }
+            })
           }
         })
       }
@@ -190,6 +277,8 @@ function cloudServer() {
     objectFetch,
     saveElsewhere,
     objects,
+    /** The checksums of every image an upload was offered for. */
+    imageUploads,
     fullReads: () => fullReads,
     cancelledReads: () => cancelledReads,
     answerRanges(answer: typeof ranges) {
@@ -211,6 +300,49 @@ function adapter(server: ReturnType<typeof cloudServer>) {
 }
 
 describe('Cloud storage adapter', () => {
+  test('deletes a document, and counts one already gone as deleted', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    await storage.putDocument(id, new TextEncoder().encode('design'), {
+      name: 'Old',
+      updatedAt: ''
+    })
+    await storage.deleteDocument(id)
+    await storage.deleteDocument(id)
+    expect(await storage.listDocuments()).toEqual([])
+  })
+
+  test('reports a deletion Cloud refuses', async () => {
+    const storage = adapter(cloudServer())
+    await expect(storage.deleteDocument(FORBIDDEN)).rejects.toMatchObject({ code: 'forbidden' })
+  })
+
+  test('saves an edited title with an existing document revision', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: 'Untitled', updatedAt: '' })
+    await storage.putDocument(id, bytes, { name: 'Checkout', updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Checkout' })
+    expect(await storage.listDocuments()).toMatchObject([{ id, name: 'Checkout' }])
+  })
+
+  test('saves a name Cloud accepts, whatever the editor calls the document', async () => {
+    const storage = adapter(cloudServer())
+    const id = crypto.randomUUID()
+    const bytes = new TextEncoder().encode('design')
+    const first = await storage.putDocument(id, bytes, { name: '   ', updatedAt: '' })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: 'Untitled' })
+    // Cloud keeps 255 UTF-16 units; the emoji's second half would be the 256th, so it goes whole.
+    const kept = 'a'.repeat(254)
+    await storage.putDocument(id, bytes, { name: `${kept}😀 tail`, updatedAt: '' }, undefined, {
+      baseRevision: first.revision
+    })
+    expect(await storage.getDocumentMetadata?.(id)).toMatchObject({ name: kept })
+  })
+
   test('creates the document on its first save and opens what it saved', async () => {
     const server = cloudServer()
     const storage = adapter(server)
@@ -224,6 +356,45 @@ describe('Cloud storage adapter', () => {
     const opened = await storage.getDocument(id)
     expect(new TextDecoder().decode(opened.bytes)).toBe('design')
     expect(opened.revision).toBe(saved.revision)
+  })
+
+  test('stores a file without its images, uploads only images it lacks, and opens it whole', async () => {
+    const server = cloudServer()
+    const storage = adapter(server)
+    const photo = crypto.getRandomValues(new Uint8Array(4096))
+    const logo = crypto.getRandomValues(new Uint8Array(512))
+    const archive = (pages: string) =>
+      zipSync({
+        'canvas.fig': strToU8(pages),
+        'meta.json': strToU8('{}'),
+        'images/a1b2': photo,
+        'images/c3d4': logo,
+        // Cloud stores apart only names it accepts; this one stays inside the file.
+        'images/old name.png': logo,
+        // Nor does an empty image, which the server refuses to store.
+        'images/e5f6': new Uint8Array()
+      })
+    const first = crypto.randomUUID()
+    const saved = await storage.putDocument(first, archive('first'), { name: 'A', updatedAt: '' })
+    const stored = saved.revision ? server.objects.get(saved.revision) : undefined
+    if (!stored) throw new Error('Expected the stored file')
+    expect(Object.keys(unzipSync(stored)).sort()).toEqual([
+      'canvas.fig',
+      'images/e5f6',
+      'images/old name.png',
+      'meta.json'
+    ])
+    expect(server.imageUploads).toHaveLength(2)
+
+    // Another document with the same images uploads neither.
+    await storage.putDocument(crypto.randomUUID(), archive('second'), { name: 'B', updatedAt: '' })
+    expect(server.imageUploads).toHaveLength(2)
+
+    const opened = unzipSync((await storage.getDocument(first)).bytes)
+    expect(strFromU8(opened['canvas.fig'] ?? new Uint8Array())).toBe('first')
+    expect(opened['images/a1b2']).toEqual(photo)
+    expect(opened['images/c3d4']).toEqual(logo)
+    expect(opened['images/old name.png']).toEqual(logo)
   })
 
   test('saves on top of the revision it was edited from', async () => {

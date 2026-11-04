@@ -25,6 +25,7 @@ export class UndoManager {
   private redoStack: UndoEntry[] = []
   private batches: UndoBatch[] = []
   private replaying = 0
+  private openEdits = 0
   private readonly settlers = new Set<() => void>()
   private readonly limit: number
   private readonly onChange: (() => void) | undefined
@@ -183,6 +184,28 @@ export class UndoManager {
 
   get isBatching(): boolean {
     return this.batches.length > 0
+  }
+
+  /**
+   * Marks an edit whose step is recorded when it ends, such as an agent's call that awaits fonts
+   * or a layout before it finishes. Returns the function that ends it; ending it twice is a no-op.
+   */
+  openEdit(): () => void {
+    this.openEdits++
+    let open = true
+    return () => {
+      if (!open) return
+      open = false
+      this.openEdits--
+    }
+  }
+
+  /**
+   * Whether a batch or an edit opened with `openEdit` will record a step for the changes made now,
+   * so they are not edits outside the history.
+   */
+  get isRecording(): boolean {
+    return this.isBatching || this.openEdits > 0
   }
 
   /** Committed history, or changes in an open batch that a settling hook commits first. */

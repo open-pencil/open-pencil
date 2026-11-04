@@ -1,6 +1,6 @@
 import type { DocumentGrant, PutDocumentGrantInput } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { Kysely } from 'kysely'
 
 import { advanceCollaborationEpoch, requireSharingAccess } from '../access'

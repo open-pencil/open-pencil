@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ConnectorEndpoint, ConnectorLineType, SceneNode, StrokeCap } from '../types'
 import { layoutConnector } from './layout'
 import { buildConnectorSublayers } from './sublayers'

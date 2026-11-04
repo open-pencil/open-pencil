@@ -1,13 +1,15 @@
 import {
-  cachedStatusWorkflow,
   OPEN_PENCIL_PLUGIN_DATA,
   readPluginData,
+  withPluginData
+} from '@open-pencil/scene-graph/plugin-data'
+import {
+  cachedStatusWorkflow,
   shownStatusState,
   statusPlacement,
-  withPluginData,
   type StatusState,
   type StatusWorkflow
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/statuses'
 
 import type { EditorContext } from './types'
 

@@ -1,6 +1,7 @@
-import { retry, Semaphore } from 'es-toolkit'
+import { limitAsync, retry } from 'es-toolkit'
 
-import type { CloudAPIClient, CloudUpload } from '@open-pencil/cloud/client'
+import type { CloudAPIClient } from '@open-pencil/cloud/client'
+import type { ObjectUploadTarget } from '@open-pencil/cloud/contract'
 
 import type { StorageTransferProgress } from '../types'
 
@@ -9,22 +10,32 @@ const PART_RETRIES = 2
 const RETRY_DELAY_MS = 200
 
 type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>
-type MultipartUpload = Extract<CloudUpload['upload'], { kind: 'multipart' }>
+type MultipartUpload = Extract<ObjectUploadTarget, { kind: 'multipart' }>
 
-export type CloudObjectUpload = {
-  cloud: Pick<CloudAPIClient, 'createUpload'>
-  documentId: string
+/** Bytes on their way to the object store, and how to report and stop the transfer. */
+export type CloudObjectTransfer = {
   bytes: Uint8Array
-  checksum: string
-  baseRevision: string | null
   objectFetch: ObjectFetch
   onProgress?: (progress: StorageTransferProgress) => void
   signal?: AbortSignal
 }
 
+export type CloudObjectUpload = CloudObjectTransfer & {
+  cloud: Pick<CloudAPIClient, 'createUpload'>
+  documentId: string
+  checksum: string
+  baseRevision: string | null
+}
+
+/** The parts a multipart upload's commit names. */
+export type CloudMultipartCommit = {
+  uploadId: string
+  parts: { partNumber: number; etag: string }[]
+}
+
 export type CloudObjectUploadResult = {
   uploadId: string
-  multipart?: { uploadId: string; parts: { partNumber: number; etag: string }[] }
+  multipart?: CloudMultipartCommit
 }
 
 /** An object-store request the presigned URL refused or the store failed. */
@@ -46,12 +57,12 @@ function body(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
     : Uint8Array.from(bytes)
 }
 
-function report(upload: CloudObjectUpload, transferredBytes: number): void {
+function report(upload: CloudObjectTransfer, transferredBytes: number): void {
   upload.onProgress?.({ transferredBytes, totalBytes: upload.bytes.byteLength })
 }
 
 async function putPart(
-  upload: CloudObjectUpload,
+  upload: CloudObjectTransfer,
   part: MultipartUpload['parts'][number],
   bytes: Uint8Array,
   signal: AbortSignal
@@ -78,36 +89,55 @@ async function putPart(
   )
 }
 
-async function putParts(upload: CloudObjectUpload, multipart: MultipartUpload) {
+async function putParts(upload: CloudObjectTransfer, multipart: MultipartUpload) {
   const controller = new AbortController()
   const stop = () => controller.abort(upload.signal?.reason)
   upload.signal?.addEventListener('abort', stop, { once: true })
-  const semaphore = new Semaphore(Math.min(MULTIPART_CONCURRENCY, multipart.parts.length))
   let transferred = 0
+  const putOne = limitAsync(async (part: MultipartUpload['parts'][number]) => {
+    try {
+      controller.signal.throwIfAborted()
+      const start = (part.partNumber - 1) * multipart.partSize
+      const bytes = upload.bytes.subarray(start, start + multipart.partSize)
+      const etag = await putPart(upload, part, bytes, controller.signal)
+      transferred += bytes.byteLength
+      report(upload, transferred)
+      return { partNumber: part.partNumber, etag }
+    } catch (error) {
+      // One failed part fails the upload; the others stop instead of finishing for nothing.
+      controller.abort(error)
+      throw error
+    }
+  }, MULTIPART_CONCURRENCY)
   try {
-    return await Promise.all(
-      multipart.parts.map(async (part) => {
-        await semaphore.acquire()
-        try {
-          controller.signal.throwIfAborted()
-          const start = (part.partNumber - 1) * multipart.partSize
-          const bytes = upload.bytes.subarray(start, start + multipart.partSize)
-          const etag = await putPart(upload, part, bytes, controller.signal)
-          transferred += bytes.byteLength
-          report(upload, transferred)
-          return { partNumber: part.partNumber, etag }
-        } catch (error) {
-          // One failed part fails the upload; the others stop instead of finishing for nothing.
-          controller.abort(error)
-          throw error
-        } finally {
-          semaphore.release()
-        }
-      })
-    )
+    return await Promise.all(multipart.parts.map(putOne))
   } finally {
     upload.signal?.removeEventListener('abort', stop)
   }
+}
+
+/**
+ * Puts bytes where the server said, in parallel parts for a multipart upload. What a commit names
+ * of a multipart upload, or nothing for a single one.
+ */
+export async function putCloudObject(
+  target: ObjectUploadTarget,
+  upload: CloudObjectTransfer
+): Promise<CloudMultipartCommit | undefined> {
+  report(upload, 0)
+  if (target.kind === 'single') {
+    const response = await upload.objectFetch(target.url, {
+      method: target.method,
+      headers: target.headers,
+      body: body(upload.bytes),
+      signal: upload.signal
+    })
+    if (!response.ok) throw new ObjectUploadError(response.status)
+    report(upload, upload.bytes.byteLength)
+    return undefined
+  }
+  const parts = await putParts(upload, target)
+  return { uploadId: target.uploadId, parts }
 }
 
 async function transfer(upload: CloudObjectUpload): Promise<CloudObjectUploadResult> {
@@ -117,20 +147,8 @@ async function transfer(upload: CloudObjectUpload): Promise<CloudObjectUploadRes
     checksum: upload.checksum,
     contentType: 'application/octet-stream'
   })
-  report(upload, 0)
-  if (pending.upload.kind === 'single') {
-    const response = await upload.objectFetch(pending.upload.url, {
-      method: pending.upload.method,
-      headers: pending.upload.headers,
-      body: body(upload.bytes),
-      signal: upload.signal
-    })
-    if (!response.ok) throw new ObjectUploadError(response.status)
-    report(upload, upload.bytes.byteLength)
-    return { uploadId: pending.id }
-  }
-  const parts = await putParts(upload, pending.upload)
-  return { uploadId: pending.id, multipart: { uploadId: pending.upload.uploadId, parts } }
+  const multipart = await putCloudObject(pending.upload, upload)
+  return multipart ? { uploadId: pending.id, multipart } : { uploadId: pending.id }
 }
 
 /**

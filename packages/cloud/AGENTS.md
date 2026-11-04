@@ -6,25 +6,51 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 - Consumers import the `contract`, `client`, `email`, `server`, and `runtime/node` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
+- The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
+- `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
+- Errors no route handled, and failures of work a runtime owns, go through `reportCloudError` with the injected `CloudErrorReporter`; only runtimes create one, from the optional `[error_tracking]` table, so a deployment without it sends nothing (`src/runtime/posthog/errors.ts`, `tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
 
 ## Data and security
 
+- Sign-ins are recorded by the `accountActivity` Better Auth plugin from the hook context's `newSession`, never by parsing tokens from responses (`src/server/auth/activity.ts`).
+- Code inside Better Auth's own callbacks must not query the database, which deadlocks its transaction on one connection (`tests/integration/server/account/routes.test.ts`).
+- Name a table for what it holds, without a `cloud_` prefix; only a name Better Auth already uses gets a qualifier, such as `api_rate_limit` (`src/server/db/migrations/025_table_names.ts`).
+- Renaming a table that shipped migrations query gives them a type under the name they ran with, so their SQL stays the same (`LegacyAuthSchemaDatabase` in `src/server/db/migrations/helpers.ts`).
+- `user.image` only ever holds an address this server serves; a picture from anywhere else is copied into `user_picture` or dropped, never linked, and a provider's picture comes from the ID token on its account row, never from the endpoint that wrote it (`src/server/pictures/provider.ts`, `tests/integration/server/pictures/provider.test.ts`).
+- Name a Better Auth endpoint by the object that declares it: a plugin's from the plugin the factory builds, a core one from `auth.api`; only the core paths options need before Better Auth is built are written out, in `CORE_AUTH_PATHS`, where the type check holds them to the library's own. Match hook paths with `isAuthEndpoint`, and put endpoints clients must not reach in `disabledPaths` (`src/server/auth/factory.ts`, `src/server/auth/endpoints.ts`).
+- A route with a rate budget of its own mounts `createRouteRateLimiter`, or `createResourceRateLimiter` for a budget per resource, whose policy also caps the actor across resources; general limiters skip what either counts through `routeHasOwnBudget`, so never exempt routes by matching their paths (`tests/integration/server/rate-limit/budgets.test.ts`).
 - Database rows use `crypto.randomUUID()`; secrets that leave the server use `randomHex` from `@open-pencil/scene-graph/random`, are stored as SHA-256 digests (a single-use OAuth continuation keeps a JWE copy), and travel in URL fragments (`src/server/sharing/capabilities/service.ts`).
+- An admin list takes `search`, `filter`, `limit`, and `offset` through `listQuery` and answers with its rows, `total`, and per-filter `counts`; it declares its filters once as `ListFilters`, which count in one query and page with the same condition (`src/admin/list.ts`, `tests/integration/admin/lists.test.ts`).
 - Every HTTP body goes through `validatedJSON` with a contract schema, and every response the client reads is parsed with Valibot (`src/server/validation.ts`, `src/client/api.ts`).
+- Every route parameter goes through a `validatedParams` validator such as `documentParams`, and handlers read it from `context.req.valid('param')`; a malformed UUID then answers 404 instead of reaching a query (`open-pencil/no-unvalidated-route-params`, `tests/integration/server/api/uuid-parameters.test.ts`).
+- A table that refers to a `storage_object` row is named in `unreferencedObject`, which decides what the object sweep may delete; a collaboration room's snapshot is such a file (`src/server/cleanup/objects.ts`, `tests/integration/server/collaboration/persistence.test.ts`).
+- A revision's images live in `revision_image`; code that makes a revision from another copies them with `copyRevisionImages`, and a storage object a `workspace_image` holds is never unreferenced (`src/server/documents/images.ts`, `tests/integration/server/documents/images.test.ts`).
 - Add schema changes as a new numbered migration in `src/server/db/migrations/` registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth's tables have their own versioned migration (`016_auth_schema.ts`).
 - Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`open-pencil/no-cloud-raw-sql`).
-- Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`open-pencil/no-cloud-secret-in-query`, `open-pencil/no-cloud-secret-logging`, `open-pencil/no-cloud-dynamic-html`).
+- Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`open-pencil/no-secret-in-query`, `open-pencil/no-secret-logging`, `open-pencil/no-dynamic-html`).
 
 ## Collaboration relay
 
 - The relay hub in `src/server/collaboration/relay/` is runtime-neutral: runtimes hand it sockets through `RelaySocket` and own listening (`src/runtime/node/relay.ts`). It joins every room as the `server` peer, so it must keep answering `sync-step1` and saving the room document.
 - Viewers may send only the channels in `VIEWER_ACTIONS`; every other channel from them is dropped, and presence is stamped from the ticket by `stampAwareness` (`tests/server/collaboration/relay/hub.test.ts`).
 - Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
+- Send frames through `relayServerMessages` and `relayClientMessages`, which split anything past `RELAY_FRAGMENT_BYTES` into fragments, and read sockets through the matching assemblers; never send an encoded frame whole (`tests/server/collaboration/relay/hub.test.ts`).
+- The relay keeps no timer while its sockets are idle, so a Durable Object can hibernate: a ticket's expiry is checked when the relay hears from or sends to the peer, a peer's state rides on its socket through `RelaySocket.remember` and comes back with `resume`, and a resumed room loads its document only when a message needs it (`tests/server/collaboration/relay/resume.test.ts`).
+- On Cloudflare, every socket event goes through `createRelaySockets`, which wakes the relay and resumes the socket's peer first, since a close can be the first event after hibernation; a room closing after a wake still folds its log into a snapshot (`tests/runtime/cloudflare/relay/sockets.test.ts`, `tests/server/collaboration/relay/resume.test.ts`).
+
+## AI relay
+
+- The reference AI service in `src/ai-relay/` is runtime-neutral like `src/server`; runtimes own listening and keys (`src/runtime/node/ai-relay/server.ts`).
+- It speaks only the contract in `src/contract/ai.ts` (`tests/contract/ai.test.ts`).
+- It trusts nothing about a request beyond a token that verifies against Cloud's keys (`tests/integration/ai-relay/app.test.ts`).
+- It forwards only the chat completion fields in `FORWARDED_FIELDS`, so routing fields cannot reach models outside the catalog (`tests/integration/ai-relay/app.test.ts`).
+- The relay's tables are `ai_relay_*` with their own migration history, so it can share Cloud's database (`src/ai-relay/db/migrate.ts`).
+- Neither the relay nor Cloud reads the other's tables (`src/ai-relay/db/schema.ts`).
 
 ## Portal
 
-- The portal's pages live in the app (`cloud.html`, `src/views/cloud/`, `src/components/cloud-portal/`); this package owns only their paths (`src/contract/portal.ts`) and serving them (`src/runtime/node/portal.ts`). Links the server sends to people point at portal paths on `publicURL`; only the editor itself is on `appURL` (`src/admin/enrollment/email.ts`).
+- The portal's pages live in the app (`cloud.html`, `src/views/cloud/`, `src/components/cloud-portal/`); this package owns only their paths (`src/contract/portal.ts`) and serving them beside the editor (`src/runtime/site/server.ts`). Links the server sends to people point at `publicURL`, its editor and portal alike (`src/contract/links.ts`, `src/admin/enrollment/email.ts`).
 
 ## Configuration
 
@@ -34,6 +60,6 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 ## Tests
 
-- Unit tests mirror `src` under `tests/{client,contract,runtime,server}`; integration tests mirror `src` under `tests/integration` and run on PGlite through `tests/helpers/database.ts`; `tests/e2e` holds Docker Compose runners that `test` never starts.
+- Unit tests mirror `src` under `tests/{ai-relay,client,contract,email,runtime,server}`; integration tests mirror `src` under `tests/integration` and run on PGlite through `tests/helpers/database.ts`; `tests/e2e` holds Docker Compose runners that `test` never starts.
 - Tests import source through `#cloud/*` and helpers through `#cloud-tests/*`, and read responses with `responseJSON` from `tests/helpers/response.ts`.
 - `bun run test:cloud` type-checks the package and runs unit and integration suites.

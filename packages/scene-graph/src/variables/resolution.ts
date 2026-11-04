@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
 import type { Variable, VariableLiteral, VariableValue } from '../types'
 import { MAX_FORMULA_DEPTH, VariableFormulaError } from './formula/tree'

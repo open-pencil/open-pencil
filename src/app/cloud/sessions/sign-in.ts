@@ -3,7 +3,7 @@ import { withoutFragment } from 'ufo'
 import { ref } from 'vue'
 
 import { cloudSignInURL, type CloudSocialProvider } from '@open-pencil/cloud/client'
-import type { CloudDiscovery } from '@open-pencil/cloud/contract'
+import { cloudServerOrigin, type CloudDiscovery } from '@open-pencil/cloud/contract'
 
 import { IS_BROWSER, IS_TAURI } from '@/constants'
 
@@ -18,8 +18,8 @@ const pendingSignIn = IS_BROWSER
  * else — the desktop app, another editor address — approves a code instead.
  */
 export function cloudSignInRoute(discovery: CloudDiscovery): 'redirect' | 'device' {
-  if (IS_TAURI || !discovery.appURL) return 'device'
-  return new URL(discovery.appURL).origin === globalThis.location.origin ? 'redirect' : 'device'
+  if (IS_TAURI) return 'device'
+  return cloudServerOrigin(discovery) === globalThis.location.origin ? 'redirect' : 'device'
 }
 
 export type CloudSignInMethod = CloudSocialProvider | 'email'
@@ -35,11 +35,23 @@ function returnURL(): string {
 export function redirectToCloudSignIn(
   serverId: string,
   discovery: CloudDiscovery,
-  method: CloudSignInMethod
+  options: {
+    /** How to sign in; the pages offer every way when none is chosen. */
+    method?: CloudSignInMethod
+    /** Leaves this page out of history, as one that showed nothing yet. */
+    replace?: boolean
+  } = {}
 ): void {
   pendingSignIn.value = serverId
-  const provider = method === 'email' ? undefined : method
-  globalThis.location.assign(cloudSignInURL(discovery, returnURL(), provider))
+  const provider = options.method === 'email' ? undefined : options.method
+  const url = cloudSignInURL(discovery, returnURL(), provider)
+  if (options.replace) globalThis.location.replace(url)
+  else globalThis.location.assign(url)
+}
+
+/** Whether this tab left, or is leaving, to sign in, and has yet to pick the server up again. */
+export function leftForCloudSignIn(): boolean {
+  return pendingSignIn.value !== null
 }
 
 /** The server this tab left to sign in to, once, after coming back. */

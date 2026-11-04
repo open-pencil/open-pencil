@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { SkiaRenderer } from '@open-pencil/core'
-import { initCanvasKit } from '@open-pencil/core/io'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 
 import { separateShadowChildren } from '#core/canvas/shadows/silhouette'
@@ -127,6 +127,9 @@ const FIGMA: Record<string, number[]> = {
     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 223, 209, 161, 104, 56,
     21, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   ],
+  "star-drop-spread": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 159, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "rounded-inner-spread": [0, 0, 0, 0, 32, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255],
+  "polygon-inner-spread": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 159, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   "separate-children-inner": [
     0, 0, 0, 0, 0, 1, 10, 43, 100, 164, 212, 237, 244, 245, 246, 247, 246, 247, 246, 247, 246,
     246, 246, 246, 246, 247, 246, 246, 247, 246, 246, 247, 246, 247, 246, 247, 246, 247, 246, 247,
@@ -371,6 +374,63 @@ describe('arcs cast from the arc, not the whole ellipse', () => {
     const beside = row(pie, square.y + 100, square.x + 162, square.x + 168)
     expect(Math.max(...above)).toBeLessThanOrEqual(2)
     expect(Math.min(...beside)).toBeGreaterThan(200)
+  })
+})
+
+// Figma 126 grows or shrinks the shadow of a box or an ellipse by its spread, and ignores the spread
+// of a star, polygon, or vector, drop or inner: their exports match the same shadow without one.
+describe('only boxes and ellipses take a spread, as in Figma', () => {
+  const sharp = { radius: 0, spread: 6 }
+
+  test('a rounded rectangle shrinks the hole of its inner shadow by the spread (red channel)', () => {
+    const values = row(
+      (graph, hostId) =>
+        graph.createNode('RECTANGLE', hostId, {
+          ...square,
+          fills: [RED],
+          cornerRadius: 40,
+          effects: [shadow('INNER_SHADOW', sharp)]
+        }),
+      100,
+      130,
+      270,
+      0
+    )
+    expectFigmaRow(values, FIGMA['rounded-inner-spread'])
+  })
+
+  test('a star casts its drop shadow without the spread', () => {
+    const values = row(
+      (graph, hostId) =>
+        graph.createNode('STAR', hostId, {
+          ...square,
+          fills: [RED],
+          pointCount: 5,
+          starInnerRadius: 0.4,
+          effects: [shadow('DROP_SHADOW', sharp)]
+        }),
+      170,
+      100,
+      330
+    )
+    expectFigmaRow(values, FIGMA['star-drop-spread'])
+  })
+
+  test('a polygon takes its inner shadow without the spread (red channel)', () => {
+    const values = row(
+      (graph, hostId) =>
+        graph.createNode('POLYGON', hostId, {
+          ...square,
+          fills: [RED],
+          pointCount: 3,
+          effects: [shadow('INNER_SHADOW', sharp)]
+        }),
+      160,
+      120,
+      280,
+      0
+    )
+    expectFigmaRow(values, FIGMA['polygon-inner-spread'])
   })
 })
 

@@ -19,9 +19,16 @@ import {
 } from '#fig/node-change/index'
 import { fillToKiwiPaint } from '#fig/node-change/paint'
 
-import { getCompiledSchema, initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, getWorldMatrix, TransformMatrix } from '@open-pencil/scene-graph'
+import {
+  getCompiledSchema,
+  initCodec,
+  type NodeChange,
+  type Paint
+} from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import TransformMatrix from '@open-pencil/scene-graph/matrix'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 describe('@open-pencil/fig NodeChange policy', () => {
   test('keeps raw LINE endpoints through reflected parents and exports authored origin pivots', () => {
@@ -99,9 +106,37 @@ describe('@open-pencil/fig NodeChange policy', () => {
     for (const [i, value] of expected.entries()) expect(actual[i]).toBeCloseTo(value)
   })
 
+  // Figma's layout size is a fixed-size text's box even when its lines draw past it.
+  test('reads how far a text’s saved lines reach', () => {
+    const line = (lineY: number) => ({
+      firstCharacter: 0,
+      endCharacter: 3,
+      position: { x: 0, y: lineY + 58 },
+      width: 100,
+      lineY,
+      lineHeight: 77,
+      lineAscent: 58
+    })
+    const props = nodeChangeToProps(
+      {
+        type: 'TEXT',
+        size: { x: 110, y: 40 },
+        textAutoResize: 'NONE',
+        derivedTextData: { layoutSize: { x: 110, y: 40 }, baselines: [line(0), line(77)] }
+      },
+      []
+    )
+
+    expect(props.derivedLayout).toEqual({ width: 110, height: 40 })
+    expect(props.derivedTextHeight).toBe(154)
+  })
+
   test('converts normalized text values', () => {
-    expect(convertLineHeight({ value: 120, units: 'PERCENT' }, 20)).toBe(24)
-    expect(convertLetterSpacing({ value: 10, units: 'PERCENT' }, 20)).toBe(2)
+    // A percent stays one, and Figma's RAW multiplier is a percent too.
+    expect(convertLineHeight({ value: 120, units: 'PERCENT' })).toEqual(percentLength(120))
+    expect(convertLineHeight({ value: 1.5, units: 'RAW' })).toEqual(percentLength(150))
+    expect(convertLineHeight({ value: 24, units: 'PIXELS' })).toEqual(pixelLength(24))
+    expect(convertLetterSpacing({ value: 10, units: 'PERCENT' })).toEqual(percentLength(10))
     expect(mapTextDecoration('UNDERLINE')).toBe('UNDERLINE')
   })
 

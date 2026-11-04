@@ -1,7 +1,7 @@
+import { tryParseColor } from '#scene-graph/color/index'
+import type { Color } from '#scene-graph/primitives'
+import type { VariableFormulaNode, VariableFormulaOperator } from '#scene-graph/types'
 import * as v from 'valibot'
-
-import type { Color, VariableFormulaNode, VariableFormulaOperator } from '@open-pencil/scene-graph'
-import { tryParseColor } from '@open-pencil/scene-graph/color'
 
 import { checkFormulaOperands } from './check'
 import {

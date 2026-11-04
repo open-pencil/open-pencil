@@ -36,7 +36,9 @@ export interface ShapeWithTextState {
   fill: string
   stroke: string
   strokeWeight: number
-  label: { text: string; fontSize: number } | null
+  /** Whether it keeps its height and truncates its label, as once its height was set. */
+  truncates: boolean
+  label: { text: string; fontSize: number; truncation: string } | null
 }
 
 /** Places shapes with text as the editor draws them, each with its label laid out inside. */
@@ -130,7 +132,10 @@ export function shapeWithTextDriver(page: () => Page) {
               fill: hex(node.fills.at(0)),
               stroke: hex(node.strokes.at(0)),
               strokeWeight: node.strokes.at(0)?.weight ?? 0,
-              label: label ? { text: label.text, fontSize: label.fontSize } : null
+              truncates: node.shapeTruncates,
+              label: label
+                ? { text: label.text, fontSize: label.fontSize, truncation: label.textTruncation }
+                : null
             }
           })
       })

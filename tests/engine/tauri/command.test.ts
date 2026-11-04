@@ -5,10 +5,11 @@ import * as v from 'valibot'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
-import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/native'
-import { HARNESS_PACKAGE } from '@/app/ai/harness/companion'
+import { signInScope } from '@/app/ai/agents/acp/auth/terminal'
+import { HARNESS_PACKAGE } from '@/app/ai/agents/pi/companion'
+import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/setup/native'
 import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
-import { resolvePlatformCommand } from '@/app/tauri/command'
+import { resolvePlatformCommand, resolveScopedCommand } from '@/app/tauri/command'
 
 import { repoPath } from '#tests/helpers/paths'
 
@@ -46,6 +47,17 @@ describe('resolvePlatformCommand', () => {
     })
   })
 
+  test('runs a program through a scope entry named apart from it', () => {
+    expect(resolveScopedCommand('agent-sign-in', 'agent', ['login'], WINDOWS_UA)).toEqual({
+      command: 'cmd-agent-sign-in',
+      args: ['/c', 'agent', 'login']
+    })
+    expect(resolveScopedCommand('agent-sign-in', 'agent', ['login'], MAC_UA)).toEqual({
+      command: 'agent-sign-in',
+      args: ['login']
+    })
+  })
+
   test('passes through when the user agent is unavailable (headless/non-browser)', () => {
     expect(resolvePlatformCommand('openpencil-mcp-http', ['--stdio'], '')).toEqual({
       command: 'openpencil-mcp-http',
@@ -54,7 +66,7 @@ describe('resolvePlatformCommand', () => {
   })
 })
 
-const ShellScope = v.object({
+const shellScopeSchema = v.object({
   permissions: v.array(
     v.union([
       v.string(),
@@ -76,7 +88,7 @@ const ShellScope = v.object({
 
 function spawnScope() {
   const text = readFileSync(repoPath('desktop/capabilities/default.json'), 'utf8')
-  const capability = v.parse(v.pipe(v.string(), v.parseJson(), ShellScope), text)
+  const capability = v.parse(v.pipe(v.string(), v.parseJson(), shellScopeSchema), text)
   const spawn = capability.permissions.find(
     (permission) => typeof permission !== 'string' && permission.identifier === 'shell:allow-spawn'
   )
@@ -109,6 +121,10 @@ describe('shell scope', () => {
     `${MCP_PACKAGE_NAME}@${rootPackage.version}`,
     `${HARNESS_PACKAGE}@${rootPackage.version}`
   ]
+  // Agents' terminal sign-ins run the agent under a scope entry of their own.
+  const signIns = ACP_AGENTS.flatMap((agent): [string, string, string[]][] =>
+    agent.signIn?.via === 'terminal' ? [[signInScope(agent), agent.command, agent.signIn.args]] : []
+  )
   const spawns: [string, string[]][] = [
     ...ACP_AGENTS.map((agent): [string, string[]] => [agent.command, agent.args]),
     ['openpencil-mcp-http', []],
@@ -132,10 +148,24 @@ describe('shell scope', () => {
     }
   }
 
+  for (const userAgent of [WINDOWS_UA, MAC_UA]) {
+    for (const [scope, program, args] of signIns) {
+      test(`allows exactly ${program} ${args.join(' ')} as ${scope} on ${userAgent === MAC_UA ? 'macOS' : 'Windows'}`, () => {
+        const resolved = resolveScopedCommand(scope, program, args, userAgent)
+        const entry = spawnScope().find((candidate) => candidate.name === resolved.command)
+        expect(entry?.cmd).toBe(userAgent === WINDOWS_UA ? 'cmd' : program)
+        expect(allowedArgs(entry?.args, resolved.args)).toEqual(resolved.args)
+      })
+    }
+  }
+
   test('allows nothing but those programs', () => {
-    const expected = [WINDOWS_UA, MAC_UA].flatMap((userAgent) =>
-      spawns.map(([name, args]) => resolvePlatformCommand(name, args, userAgent).command)
-    )
+    const expected = [WINDOWS_UA, MAC_UA].flatMap((userAgent) => [
+      ...spawns.map(([name, args]) => resolvePlatformCommand(name, args, userAgent).command),
+      ...signIns.map(
+        ([scope, program, args]) => resolveScopedCommand(scope, program, args, userAgent).command
+      )
+    ])
     expect(
       spawnScope()
         .map((entry) => entry.name)

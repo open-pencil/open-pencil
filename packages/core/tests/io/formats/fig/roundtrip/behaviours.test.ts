@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import {
   emptyBehaviour,
   guessInteractionStates,
   missingBindings,
   readBehaviour
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/behaviours'
 
 describe('.fig round trip of behaviours', () => {
   test('bindings follow the GUIDs their component properties get', async () => {
@@ -49,7 +50,7 @@ describe('.fig round trip of behaviours', () => {
       ...emptyBehaviour('textField'),
       texts: { value: { propertyId: 'value' } },
       booleans: { filled: { propertyId: 'filled', on: 'Yes', off: 'No' } },
-      states: guessInteractionStates('interaction', ['Default', 'Focus'])
+      states: guessInteractionStates('textField', 'interaction', ['Default', 'Focus'])
     })
     expect(
       missingBindings(editor.graph, set, readBehaviour(set) ?? emptyBehaviour('button'))

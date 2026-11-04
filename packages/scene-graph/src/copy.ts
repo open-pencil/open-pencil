@@ -8,6 +8,9 @@
  * no shared references between source and copy.
  */
 
+import { readGeometryBlob } from './geometry'
+import { cloneInstanceOverrideState } from './instances/overrides'
+import { createDefaultSourceMetadata } from './node-defaults'
 import type {
   ArcData,
   ComponentPropertyDefinition,
@@ -20,12 +23,10 @@ import type {
   LayoutGrid,
   SceneNode,
   Stroke,
-  StyleRun
-} from './'
-import { geometryCommandCoordCount } from './geometry'
-import { cloneInstanceOverrideState } from './instance-overrides'
-import { createDefaultSourceMetadata } from './node-defaults'
-import { cloneVectorNetwork } from './vector-network'
+  StyleRun,
+  VectorNetwork,
+  VectorRegion
+} from './types'
 
 // --- Individual copy functions ---
 
@@ -72,6 +73,8 @@ export function copyStyleRun(r: StyleRun): StyleRun {
     }
   }
   if (r.style.hyperlink) copy.style.hyperlink = { ...r.style.hyperlink }
+  if (r.style.lineHeight) copy.style.lineHeight = { ...r.style.lineHeight }
+  if (r.style.letterSpacing) copy.style.letterSpacing = { ...r.style.letterSpacing }
   if (r.style.boundVariables) copy.style.boundVariables = { ...r.style.boundVariables }
   return copy
 }
@@ -112,17 +115,32 @@ export function copyStyleRuns(runs: StyleRun[]): StyleRun[] {
   return runs.map(copyStyleRun)
 }
 
-/** Keep path-level fills across copy/scale/transform (resize snapshots). */
-function withPathPaintMeta(path: GeometryPath, commandsBlob: Uint8Array): GeometryPath {
+/** A region, with new loops when given, keeping its own paints and fill style. */
+export function copyVectorRegion(
+  region: VectorRegion,
+  loops = region.loops.map((loop) => [...loop])
+): VectorRegion {
+  const copy: VectorRegion = { windingRule: region.windingRule, loops }
+  if (region.fills) copy.fills = copyFills(region.fills)
+  if (region.fillStyleId) copy.fillStyleId = region.fillStyleId
+  return copy
+}
+
+/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
+export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
   return {
-    windingRule: path.windingRule,
-    commandsBlob,
-    ...(path.fills ? { fills: copyFills(path.fills) } : {})
+    vertices: vn.vertices.map((v) => ({ ...v })),
+    segments: vn.segments.map((s) => ({
+      ...s,
+      tangentStart: { ...s.tangentStart },
+      tangentEnd: { ...s.tangentEnd }
+    })),
+    regions: vn.regions.map((r) => copyVectorRegion(r))
   }
 }
 
 export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
-  return paths.map((p) => withPathPaintMeta(p, p.commandsBlob.slice()))
+  return paths.map((p) => ({ windingRule: p.windingRule, commandsBlob: p.commandsBlob.slice() }))
 }
 
 /**
@@ -141,21 +159,15 @@ export function transformGeometryBlob(
   ty = 0
 ): Uint8Array {
   const out = blob.slice()
-  const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
-  let offset = 0
-  while (offset < out.length) {
-    const command = out[offset++]
-    const coords = geometryCommandCoordCount(command)
-    if (coords == null) break
-    for (let i = 0; i < coords; i++) {
-      if (offset + 8 > out.length) break
-      const x = dv.getFloat32(offset, true)
-      const y = dv.getFloat32(offset + 4, true)
-      dv.setFloat32(offset, m00 * x + m01 * y + tx, true)
-      dv.setFloat32(offset + 4, m10 * x + m11 * y + ty, true)
-      offset += 8
+  const view = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  readGeometryBlob(out, (_, coords, offset) => {
+    for (let i = 0; i < coords.length; i += 2) {
+      const x = coords[i]
+      const y = coords[i + 1]
+      view.setFloat32(offset + i * 4, m00 * x + m01 * y + tx, true)
+      view.setFloat32(offset + i * 4 + 4, m10 * x + m11 * y + ty, true)
     }
-  }
+  })
   return out
 }
 
@@ -168,9 +180,10 @@ export function transformGeometryPaths(
   tx = 0,
   ty = 0
 ): GeometryPath[] {
-  return paths.map((g) =>
-    withPathPaintMeta(g, transformGeometryBlob(g.commandsBlob, m00, m01, m10, m11, tx, ty))
-  )
+  return paths.map((g) => ({
+    windingRule: g.windingRule,
+    commandsBlob: transformGeometryBlob(g.commandsBlob, m00, m01, m10, m11, tx, ty)
+  }))
 }
 
 /**
@@ -244,6 +257,14 @@ function copyArcData(a: ArcData): ArcData {
  */
 export type NodeCloneMode = 'deep' | 'fig-import'
 
+/** A text's line height and letter spacing, copied so a clone never shares them. */
+function copyTextLengths(src: SceneNode): Pick<SceneNode, 'lineHeight' | 'letterSpacing'> {
+  return {
+    lineHeight: src.lineHeight && { ...src.lineHeight },
+    letterSpacing: { ...src.letterSpacing }
+  }
+}
+
 export function cloneNodeProps(
   src: SceneNode,
   componentId: string | null,
@@ -285,6 +306,7 @@ export function cloneNodeProps(
     source: componentId === null ? structuredClone(src.source) : createDefaultSourceMetadata(),
     dashPattern: copyOpt(src.dashPattern, (a) => [...a]),
     fontVariations: copyOpt(src.fontVariations, (a) => a.map((v) => ({ ...v }))),
+    ...copyTextLengths(src),
     fontFeatures: copyOpt(src.fontFeatures, (a) => a.map((v) => ({ ...v }))),
     textParagraphs: copyOpt(src.textParagraphs, (a) => a.map((v) => ({ ...v }))),
     textDecorationFills: copyOpt(src.textDecorationFills, copyFills),
@@ -315,6 +337,9 @@ export function cloneNodeProps(
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null,
     targetAspectRatio: src.targetAspectRatio ? { ...src.targetAspectRatio } : null,
     connectorStart: src.connectorStart ? copyConnectorEndpoint(src.connectorStart) : null,
-    connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null
+    connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null,
+    connectorControlPoints: structuredClone(src.connectorControlPoints),
+    connectorCurveHandles: structuredClone(src.connectorCurveHandles),
+    connectorLabelPosition: src.connectorLabelPosition ? { ...src.connectorLabelPosition } : null
   }
 }

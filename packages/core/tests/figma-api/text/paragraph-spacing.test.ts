@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+beforeAll(() => registerTestFont())
 
 // Results recorded from the same scripts run in live Figma (2026-10-10).
 function spacedText(characters = 'A\nB\nC') {
@@ -62,7 +67,7 @@ describe('paragraph spacing ranges', () => {
   test('reject what Figma rejects, with its messages', () => {
     const { text } = spacedText()
     expect(() => text.setRangeParagraphSpacing(0, 1, -3)).toThrow(
-      'in setRangeParagraphSpacing: Property "value" failed validation: Number must be greater than or equal to 0'
+      'in setRangeParagraphSpacing: Property "value" failed validation: Too small: expected number to be >=0'
     )
     expect(() => text.setRangeParagraphIndent(0, 1, -3)).toThrow(
       'in setRangeParagraphIndent: Property "value" failed validation'
@@ -90,8 +95,6 @@ describe('paragraph spacing ranges', () => {
     expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([7, 7])
     text.setRangeParagraphSpacing(0, 1, 30)
     text.insertCharacters(1, '\nZ')
-    expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([
-      30, 30, 7
-    ])
+    expect(perParagraph(text, (s, e) => text.getRangeParagraphSpacing(s, e))).toEqual([30, 30, 7])
   })
 })

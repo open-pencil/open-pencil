@@ -9,7 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
-  'captureDocumentChange',
+  'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
   'getChildren',
@@ -26,7 +26,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getInstanceComponentPropertyDefinitions',
   'getInstanceComponentPropertyValue',
   'getLayerTree',
+  'getLiveNetwork',
   'getNode',
+  'getNodeEditState',
   'getPages',
   'getSelectedNode',
   'getSelectedNodes',
@@ -43,6 +45,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'isTopLevel',
   'pageSwitchCount',
   'previewRenameSelected',
+  // Recording only: what the edit runs is refused or allowed on its own.
+  'recordEdit',
+  'recordEditAsync',
   'resolveColorVariable',
   'resolveNumberVariable',
   'screenToCanvas',
@@ -54,7 +59,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   // Selection and hover
   'clearSelection',
   'enterContainer',
-  'exitContainer',
+  'enterContainerOf',
+  'exitContainers',
   'select',
   'selectAll',
   'selectAtPoint',
@@ -81,6 +87,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setHoveredGuide',
   'setHoveredIssueMarker',
   'setLayoutInsertIndicator',
+  'setRenamingLabel',
   'setRotationPreview',
   'setSelectedGuide',
   'setShapeHandleHover',
@@ -98,6 +105,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePage',
   'preparePageNodes',
   'loadPageNodes',
+  'pageHoldingNode',
   'revealNodes',
   'setZoomAroundPoint',
   'switchPage',
@@ -112,6 +120,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToSelection',
 
   // Preview
+  'leaveCanvasView',
   'resetPlay',
   'startPlay',
   'stopPlay',
@@ -125,7 +134,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
 
   // Ending what was in progress
   'cancelNodePreviews',
+  'exitNodeEditMode',
   'flushNudge',
+  'nodeEditCancelDrag',
   'penCancel',
   'pencilCancel',
 
@@ -136,6 +147,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'hasShaderRasterizer',
   'loadFontsForNodes',
   'onEditorEvent',
+  'refreshDocumentSettings',
   'refreshVariables',
   'releaseGraphResources',
   'removeCanvasRenderer',

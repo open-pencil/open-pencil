@@ -8,16 +8,16 @@ export {
   createFigDocumentSession,
   type DocumentAssemblyOptions
 } from './document/materialize'
+export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   compressFigDataSync,
+  figArchiveKind,
   figArchiveMetaJSON,
-  FigArchiveMetaSchema,
   parseFigBuffer,
   readFigArchiveMeta,
   renameFigArchive,
   writeFigArchive,
   type FigArchiveMeta,
-  type FigArchiveMetaJSON,
   type FigImageEntry,
   type FigParseResult,
   type WriteFigArchiveInput
@@ -25,7 +25,9 @@ export {
 export {
   figArchiveComponentUsePages,
   figArchiveRecordInfo,
+  figArchiveRecordPages,
   figComponentUsePages,
+  figRecordPages,
   patchFigArchive,
   patchFigRecords,
   type FigArchiveRecordInfo,
@@ -38,7 +40,6 @@ export {
 } from './record-patch'
 export {
   extractFigThumbnailFromReader,
-  pngSize,
   type FigRangeReader,
   type FigThumbnailLimits
 } from './thumbnail'

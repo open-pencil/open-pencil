@@ -1,5 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 
+import { gridNudge, resolveEditorProfile } from '@open-pencil/core'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import type { EditorStore } from '@/app/editor/active-store'
 import { hasOpenDismissableLayer, isEditing, originatedInOverlay } from '@/app/shell/keyboard/focus'
 import { isReservedModShortcut } from '@/app/shell/keyboard/reserved'
@@ -9,6 +12,19 @@ const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowDown: [0, 1],
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0]
+}
+
+/** The top-left corner on the canvas of the selected layers a nudge moves: the unlocked ones. */
+function selectionOrigin(store: EditorStore): Vector {
+  let x = Infinity
+  let y = Infinity
+  for (const id of store.state.selectedIds) {
+    if (store.graph.getNode(id)?.locked) continue
+    const position = store.graph.getAbsolutePosition(id)
+    x = Math.min(x, position.x)
+    y = Math.min(y, position.y)
+  }
+  return { x, y }
 }
 
 export function bindNudgeKeys(store: EditorStore) {
@@ -21,8 +37,15 @@ export function bindNudgeKeys(store: EditorStore) {
     if (!delta || store.state.selectedIds.size === 0) return
     if (hasOpenDismissableLayer() || originatedInOverlay(e)) return
 
-    const step = e.shiftKey ? 10 : 1
-    store.nudgeSelected(delta[0] * step, delta[1] * step)
+    const [x, y] = delta
+    const { snapGrid } = resolveEditorProfile(store.state)
+    if (e.shiftKey && snapGrid > 1) {
+      const nudge = gridNudge(selectionOrigin(store), { x, y }, snapGrid)
+      store.nudgeSelected(nudge.x, nudge.y)
+    } else {
+      const step = e.shiftKey ? 10 : 1
+      store.nudgeSelected(x * step, y * step)
+    }
     e.preventDefault()
   })
 }

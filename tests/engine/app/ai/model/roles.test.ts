@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { omit } from 'es-toolkit'
 
-import { reasoningCallSettings } from '@/app/ai/chat/reasoning'
 import {
   aiModelSettings,
   createAIModelRuntime,
@@ -239,16 +238,6 @@ describe('AI model profiles and role assignments', () => {
       ]
     })
     expect(parsed?.models.map((profile) => profile.thinkingLevel)).toEqual(['high', 'off'])
-  })
-
-  test('maps thinking levels to the AI SDK reasoning option', () => {
-    expect(reasoningCallSettings('anthropic', 'high')).toEqual({ reasoning: 'high' })
-    expect(reasoningCallSettings('google', 'off')).toEqual({ reasoning: 'none' })
-    expect(reasoningCallSettings('openai-compatible', 'xhigh')).toEqual({ reasoning: 'xhigh' })
-    expect(reasoningCallSettings('openrouter', 'low')).toEqual({
-      providerOptions: { openrouter: { reasoning: { effort: 'low' } } }
-    })
-    expect(reasoningCallSettings('anthropic', 'default')).toEqual({})
   })
 
   test('repairs assignments when removing a model', () => {

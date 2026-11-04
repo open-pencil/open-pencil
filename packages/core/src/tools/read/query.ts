@@ -1,7 +1,6 @@
 import * as v from 'valibot'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 import { queryByXPath } from '#core/xpath'
 
 export const queryNodes = defineTool({
@@ -25,6 +24,8 @@ Examples:
     limit: v.optional(toolNumber(v.pipe(v.number(), v.description('Max results (default: 1000)'))))
   }),
   execute: async (figma, args) => {
+    if (args.page !== undefined)
+      await figma.root.children.find((page) => page.name === args.page)?.loadAsync()
     try {
       const nodes = await queryByXPath(figma.graph, args.selector, {
         page: args.page ?? figma.currentPage.name,

@@ -1,3 +1,4 @@
+import { createAIRoutes, type AITokenService } from '#cloud/server/ai'
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
@@ -19,6 +20,7 @@ import {
   createPublicDocumentRoutes,
   createPublicSharingRoutes
 } from '#cloud/server/sharing'
+import { workspaceParams } from '#cloud/server/validation'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -33,31 +35,45 @@ export type CloudAPIServices = {
   sharing: DocumentSharingService
   resolveSession?: CloudSessionResolver
   entitlements?: EntitlementService
+  /** Signs AI service tokens; without it the deployment has no AI service. */
+  aiTokens?: AITokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
 }
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
-    .route('/', createPublicSharingRoutes(services.sharing))
-    .route('/', createPublicDocumentRoutes(services.sharing, services.documents))
+    .route('/', createPublicSharingRoutes(services.sharing, services.resolveSession))
+    .route(
+      '/',
+      createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
+    )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
     .route('/public', createPublicCloudAPIRouter(services))
-    .get('/workspaces/:workspaceId/entitlements', async (context) => {
+    .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
       if (!services.entitlements)
         return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({
         entitlements: await services.entitlements.workspace(
           context.get('actor').userId,
-          context.req.param('workspaceId')
+          context.req.valid('param').workspaceId
         )
       })
     })
     .get('/session', (context) => context.json({ user: context.get('actor') }))
+    .route(
+      '/',
+      createAIRoutes(
+        services.aiTokens,
+        services.database && services.rateLimitSecret
+          ? { database: services.database, secret: services.rateLimitSecret }
+          : undefined
+      )
+    )
     .route(
       '/',
       createCollaborationRoutes(

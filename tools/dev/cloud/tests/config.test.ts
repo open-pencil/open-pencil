@@ -26,15 +26,13 @@ describe('local Cloud development configuration', () => {
     expect(config).toMatchObject({
       deployment: 'self-hosted',
       publicURL: 'https://feature.cloud.open-pencil.localhost',
-      appURL: 'https://feature.open-pencil.localhost',
       trustedOrigins: [
         'https://feature.open-pencil.localhost',
         'https://feature.cloud.open-pencil.localhost'
       ],
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: true,
-      passkeyRPID: 'feature.cloud.open-pencil.localhost',
-      passkeyOrigin: 'https://feature.cloud.open-pencil.localhost',
+      passkeysEnabled: true,
       s3Endpoint: 'http://127.0.0.1:41000',
       emailTransport: 'smtp',
       smtpHost: '127.0.0.1',

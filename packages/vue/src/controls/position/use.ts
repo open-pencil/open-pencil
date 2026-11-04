@@ -6,7 +6,8 @@ import {
   panelRotation,
   panelRotationChange
 } from '@open-pencil/core/geometry'
-import { layerRotates, type NumericNodeProperty, type SceneNode } from '@open-pencil/scene-graph'
+import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
+import { layerRotates } from '@open-pencil/scene-graph/generated'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'

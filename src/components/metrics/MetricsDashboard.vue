@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { countBy, maxBy, meanBy, sumBy } from 'es-toolkit'
+import { tv } from 'tailwind-variants'
 import { BarList } from 'vccs'
 import { computed } from 'vue'
 
@@ -19,17 +20,21 @@ import type { MetricsRange } from '@/app/metrics/range'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import { metricsDashboard } from '@/theme/metrics/dashboard'
+import { metricsDashboardTheme } from '@/theme/metrics/dashboard'
 
 import DailyChart from './DailyChart.vue'
 import type { DailySeries } from './DailyChart.vue'
+import DailyLevelChart from './DailyLevelChart.vue'
 import MetricsCard from './MetricsCard.vue'
 import MetricsRangePicker from './MetricsRangePicker.vue'
 import MetricsTile from './MetricsTile.vue'
+import NetworksTable from './NetworksTable.vue'
 import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
-import type { DailyActiveDay, DailyTraffic, DailyVersions, DailyVisits } from './types'
+import type { DailyActiveDay, DailyPulls, DailyTraffic, DailyVersions, DailyVisits } from './types'
 import WaitlistList from './WaitlistList.vue'
+
+const metricsDashboard = tv(metricsDashboardTheme)
 
 /**
  * Day-to-day numbers in one place: anonymous daily pings and Cloudflare visits for reach,
@@ -103,6 +108,32 @@ const TRAFFIC_SERIES: DailySeries<keyof DailyTraffic & string>[] = [
   { key: 'views', name: 'Views', color: 'var(--color-chart-1)' },
   { key: 'uniqueViews', name: 'Unique visitors', color: 'var(--color-chart-3)' }
 ]
+// The community leads: outside work is what the team answers to.
+const OPEN_SERIES: DailySeries<'openCommunity' | 'openTeam'>[] = [
+  { key: 'openCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'openTeam', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const OPENED_SERIES: DailySeries<'openedCommunity' | 'openedTeam'>[] = [
+  { key: 'openedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'openedTeam', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const CLOSED_SERIES: DailySeries<'closedCommunity' | 'closedTeam'>[] = [
+  { key: 'closedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'closedTeam', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const MERGED_SERIES: DailySeries<keyof DailyPulls & string>[] = [
+  { key: 'mergedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'mergedTeam', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const activity = computed(() => snapshot.github.activity)
+/** How many are open at the end of the last finished day, and how many of them are the community's. */
+function openNow(days: { openTeam: number; openCommunity: number }[]) {
+  const last = days.at(-1)
+  return last
+    ? `${formatCount(last.openTeam + last.openCommunity)} open · ${formatCount(last.openCommunity)} from the community`
+    : undefined
+}
+
 // Older versions recede: the question is how much of the day is already on the latest.
 const versionSeries = computed<DailySeries<keyof DailyVersions & string>[]>(() => [
   { key: 'latest', name: snapshot.versions.latest ?? 'Latest', color: 'var(--color-chart-1)' },
@@ -228,22 +259,33 @@ const sharingNote = computed(() => {
               <PlatformsChart :platforms="snapshot.platforms" />
             </MetricsCard>
             <MetricsCard
-              heading="Versions"
-              note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
+              heading="Networks"
+              note="Daily pings added up by the network Cloudflare reports"
             >
-              <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
-                {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
-              </template>
-              <DailyChart
-                label="Daily pings on the latest version and on others"
-                :days="snapshot.versions.daily"
-                :series="versionSeries"
-                :today="snapshot.today"
-                :height="200"
-                stacked
+              <NetworksTable
+                v-if="snapshot.networks.top.length"
+                :networks="snapshot.networks.top"
+                :total="snapshot.networks.total"
               />
+              <p v-else :class="ui.sectionLabel()">No networks recorded in this range yet</p>
             </MetricsCard>
           </div>
+          <MetricsCard
+            heading="Versions"
+            note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
+          >
+            <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
+              {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
+            </template>
+            <DailyChart
+              label="Daily pings on the latest version and on others"
+              :days="snapshot.versions.daily"
+              :series="versionSeries"
+              :today="snapshot.today"
+              :height="200"
+              stacked
+            />
+          </MetricsCard>
           <MetricsCard heading="Website" note="Visits to openpencil.dev by page and country">
             <div :class="ui.breakdown()">
               <div>
@@ -353,6 +395,86 @@ const sharingNote = computed(() => {
               <WaitlistList :signups="snapshot.waitlist.recent" />
             </MetricsCard>
           </div>
+        </section>
+
+        <section :class="ui.section()" aria-labelledby="metrics-development">
+          <h2 id="metrics-development" :class="ui.sectionHeading()">Development</h2>
+          <div v-if="activity.issues.length" :class="ui.row()">
+            <MetricsCard
+              heading="Issues"
+              note="Open at the end of each day, and opened and closed per day. Team: the repository's members and collaborators."
+            >
+              <template v-if="openNow(activity.issues)" #aside>{{
+                openNow(activity.issues)
+              }}</template>
+              <h4 :class="ui.sectionLabel()">Open</h4>
+              <DailyLevelChart
+                label="Open issues by the community and the team"
+                :days="activity.issues"
+                :series="OPEN_SERIES"
+              />
+              <h4 :class="ui.sectionLabel()">Opened per day</h4>
+              <DailyChart
+                label="Issues opened per day by the community and the team"
+                :days="activity.issues"
+                :series="OPENED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
+              />
+              <h4 :class="ui.sectionLabel()">Closed per day</h4>
+              <DailyChart
+                label="Issues closed per day, by who opened them"
+                :days="activity.issues"
+                :series="CLOSED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
+              />
+            </MetricsCard>
+            <MetricsCard
+              heading="Pull requests"
+              note="Open at the end of each day, and opened and merged per day"
+            >
+              <template v-if="openNow(activity.pulls)" #aside>{{
+                openNow(activity.pulls)
+              }}</template>
+              <h4 :class="ui.sectionLabel()">Open</h4>
+              <DailyLevelChart
+                label="Open pull requests by the community and the team"
+                :days="activity.pulls"
+                :series="OPEN_SERIES"
+              />
+              <h4 :class="ui.sectionLabel()">Opened per day</h4>
+              <DailyChart
+                label="Pull requests opened per day by the community and the team"
+                :days="activity.pulls"
+                :series="OPENED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
+              />
+              <h4 :class="ui.sectionLabel()">Merged per day</h4>
+              <DailyChart
+                label="Pull requests merged per day from the community and the team"
+                :days="activity.pulls"
+                :series="MERGED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
+              />
+            </MetricsCard>
+          </div>
+          <MetricsCard v-else heading="Issues and pull requests">
+            <AppPlaceholder
+              size="compact"
+              :fill="false"
+              label="Not synced yet"
+              description="The nightly snapshot at 00:05 UTC mirrors the repository's issues and pull requests; their whole history shows from then on."
+            >
+              <template #icon><icon-lucide-git-pull-request class="size-4" /></template>
+            </AppPlaceholder>
+          </MetricsCard>
         </section>
       </div>
     </main>

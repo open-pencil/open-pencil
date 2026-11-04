@@ -22,7 +22,14 @@ import * as authenticationMFA from './migrations/018_authentication_mfa'
 import * as betterAuthAccountIssuer from './migrations/019_better_auth_account_issuer'
 import * as workspaceInvitations from './migrations/020_workspace_invitations'
 import * as documentVersions from './migrations/021_document_versions'
-import type { CloudDatabase } from './schema'
+import * as entitlementExternalVersion from './migrations/022_entitlement_external_version'
+import * as documentImages from './migrations/023_document_images'
+import * as accountActivity from './migrations/024_account_activity'
+import * as tableNames from './migrations/025_table_names'
+import * as userPicture from './migrations/026_user_picture'
+import * as documentKind from './migrations/027_document_kind'
+import * as collaborationUpdates from './migrations/028_collaboration_updates'
+import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
   '001_foundation': foundation,
@@ -45,7 +52,14 @@ const migrations: Record<string, Migration> = {
   '018_authentication_mfa': authenticationMFA,
   '019_better_auth_account_issuer': betterAuthAccountIssuer,
   '020_workspace_invitations': workspaceInvitations,
-  '021_document_versions': documentVersions
+  '021_document_versions': documentVersions,
+  '022_entitlement_external_version': entitlementExternalVersion,
+  '023_document_images': documentImages,
+  '024_account_activity': accountActivity,
+  '025_table_names': tableNames,
+  '026_user_picture': userPicture,
+  '027_document_kind': documentKind,
+  '028_collaboration_updates': collaborationUpdates
 }
 
 class CloudMigrationProvider implements MigrationProvider {
@@ -104,7 +118,7 @@ async function migrateAuthSchema(
   migration: CloudAuthMigration
 ): Promise<void> {
   const recorded = await database
-    .selectFrom('cloudAuthSchema')
+    .selectFrom('authSchemaVersion')
     .select('version')
     .where('id', '=', 'better-auth')
     .executeTakeFirst()
@@ -134,19 +148,13 @@ async function migrateAuthSchema(
   }
 
   await database
-    .insertInto('cloudAuthSchema')
+    .insertInto('authSchemaVersion')
     .values({ id: 'better-auth', version: migration.schemaVersion, updatedAt: new Date() })
     .execute()
 }
 
-export async function migrateCloudDatabase(
-  database: Kysely<CloudDatabase>,
-  authMigration?: CloudAuthMigration
-): Promise<void> {
-  const migrator = new Migrator({
-    db: database,
-    provider: new CloudMigrationProvider()
-  })
+/** Runs a migrator to its latest migration, failing with every error it reports. */
+export async function migrateToLatest(migrator: Migrator, failure: string): Promise<void> {
   const result = await migrator.migrateToLatest()
   const failed = result.results?.find((migration) => migration.status === 'Error')
   if (result.error || failed) {
@@ -154,8 +162,18 @@ export async function migrateCloudDatabase(
       [result.error, failed ? new Error(`Migration failed: ${failed.migrationName}`) : null].filter(
         (error): error is Error => error instanceof Error
       ),
-      'OpenPencil Cloud database migration failed'
+      failure
     )
   }
+}
+
+export async function migrateCloudDatabase(
+  database: Kysely<CloudDatabase>,
+  authMigration?: CloudAuthMigration
+): Promise<void> {
+  await migrateToLatest(
+    new Migrator({ db: database, provider: new CloudMigrationProvider() }),
+    'OpenPencil Cloud database migration failed'
+  )
   if (authMigration) await migrateAuthSchema(database, authMigration)
 }

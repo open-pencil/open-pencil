@@ -2,7 +2,7 @@
 
 import type { ExportFormatId } from './export-format'
 import type { CanvasGuide } from './guides'
-import type { InstanceOverrideState } from './instance-overrides'
+import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
 
@@ -43,6 +43,9 @@ export interface NodeChangeObserver {
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
+
+/** What a document is for, as Figma keeps design files and FigJam boards apart. */
+export type DocumentKind = 'design' | 'board'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -86,6 +89,10 @@ export interface VectorSegment {
 export interface VectorRegion {
   windingRule: WindingRule
   loops: number[][]
+  /** The region's own paints. Without them it draws the layer's fills, as in Figma. */
+  fills?: Fill[]
+  /** The shared fill style the region's paints come from. */
+  fillStyleId?: string
 }
 
 export interface VectorNetwork {
@@ -97,10 +104,6 @@ export interface VectorNetwork {
 export interface GeometryPath {
   windingRule: WindingRule
   commandsBlob: Uint8Array
-  /** Resolved paints for geometry using a format-specific style override. */
-  fills?: Fill[]
-  /** Shared fill style attached to this geometry region, when available. */
-  fillStyleId?: string
 }
 
 export type NodeType =
@@ -139,9 +142,11 @@ export type BlendMode =
   | 'NORMAL'
   | 'DARKEN'
   | 'MULTIPLY'
+  | 'LINEAR_BURN'
   | 'COLOR_BURN'
   | 'LIGHTEN'
   | 'SCREEN'
+  | 'LINEAR_DODGE'
   | 'COLOR_DODGE'
   | 'OVERLAY'
   | 'SOFT_LIGHT'
@@ -277,6 +282,26 @@ export interface ConnectorEndpoint {
 }
 
 export type ConnectorLineType = 'ELBOWED' | 'STRAIGHT' | 'CURVED'
+
+/**
+ * A segment of an elbow connector that was dragged into place: the line it runs along, through
+ * `position`, in the connector's own axes. `position` lies midway along the segment as last drawn.
+ */
+export interface ConnectorControlPoint {
+  position: Vector
+  direction: 'HORIZONTAL' | 'VERTICAL'
+}
+
+/**
+ * Where a connector's label was dragged along its line: `offset` of the way from the middle of
+ * the line towards one end, by length, on the line or to one side of it. `ABOVE` is the side to
+ * the left of the line's direction.
+ */
+export interface ConnectorLabelPosition {
+  section: 'MIDDLE_TO_START' | 'MIDDLE_TO_END'
+  offset: number
+  offAxis: 'NONE' | 'ABOVE' | 'BELOW'
+}
 export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
 export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
@@ -334,9 +359,20 @@ export type TextBindableField = (typeof TEXT_BINDABLE_FIELDS)[number]
 /** Variable IDs bound to text fields, by field. */
 export type TextBoundVariables = Partial<Record<TextBindableField, string>>
 
+/**
+ * A line height or letter spacing as Figma keeps it: pixels, or a percent of the font size that
+ * follows the size when it changes.
+ */
+export interface TextLength {
+  value: number
+  unit: 'PIXELS' | 'PERCENT'
+}
+
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
+  /** The characters' face by its font's own name for it; `null` is the face their weight picks. */
+  fontStyle?: string | null
   textDecoration?: TextDecoration
   textDecorationStyle?: TextDecorationStyle
   textDecorationThickness?: number | null
@@ -345,10 +381,13 @@ export interface CharacterStyleOverride {
   textUnderlineOffset?: number | null
   fontSize?: number
   fontFamily?: string
-  letterSpacing?: number
-  lineHeight?: number | null
+  letterSpacing?: TextLength
+  /** `null` is automatic, from the font. */
+  lineHeight?: TextLength | null
   fills?: Fill[]
   fontVariations?: FontVariation[]
+  /** Whether the characters' optical size follows their font size, in place of the text's own. */
+  opticalSizeFromFontSize?: boolean
   fontFeatures?: FontFeature[]
   textLanguage?: string | null
   textCase?: TextCase
@@ -404,9 +443,37 @@ export interface PluginDataEntry {
   value: string
 }
 
+/** A fixed width or height in pixels an export is scaled to, instead of a multiplier. */
+export interface ExportSize {
+  type: 'WIDTH' | 'HEIGHT'
+  value: number
+}
+
+/** The colour profile an export is written in; the document's own unless set. */
+export type ExportColorProfile = 'DOCUMENT' | 'SRGB' | 'DISPLAY_P3_V4'
+
+/**
+ * One export a layer keeps. The options past `scale` and `format` are Figma's and read as Figma's
+ * defaults when left out.
+ */
 export interface ExportSetting {
   scale: number
   format: ExportFormatId
+  /** Appended to the file name. */
+  suffix?: string
+  /** A size that replaces `scale`. */
+  size?: ExportSize
+  /** Only the layer, without what overlaps it (default true). */
+  contentsOnly?: boolean
+  /** The layer's box rather than everything it draws, for text (default false). */
+  useAbsoluteBounds?: boolean
+  colorProfile?: ExportColorProfile
+  /** SVG: text as outlines rather than `<text>` (default true). */
+  svgOutlineText?: boolean
+  /** SVG: every layer's name as its element's `id` (default false). */
+  svgIdAttribute?: boolean
+  /** SVG: strokes as strokes where possible rather than masked outlines (default true). */
+  svgSimplifyStroke?: boolean
 }
 
 export interface PluginRelaunchDataEntry {
@@ -617,6 +684,11 @@ export interface SceneNode {
   fontFamily: string
   fontWeight: number
   italic: boolean
+  /**
+   * The face by the name its font gives it ("Semi Bold", "Book", "Condensed Bold"), which Figma
+   * finds a font's face by; `null` is the face the weight and slant pick in the family.
+   */
+  fontStyle: string | null
   textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
   textDirection: TextDirection
   textLanguage: string | null
@@ -630,8 +702,9 @@ export interface SceneNode {
   textDecorationSkipInk: boolean
   textUnderlineOffset: number | null
   leadingTrim: LeadingTrim
-  lineHeight: number | null
-  letterSpacing: number
+  /** `null` is automatic, from the font. */
+  lineHeight: TextLength | null
+  letterSpacing: TextLength
   maxLines: number | null
   /**
    * One entry per paragraph of `text`, in order. Missing entries are plain paragraphs, so text
@@ -649,6 +722,11 @@ export interface SceneNode {
 
   styleRuns: StyleRun[]
   fontVariations: FontVariation[]
+  /**
+   * Whether a variable font's optical size follows the font size, as Figma's "Set optical size
+   * automatically" does by default; when it does not, the `opsz` in `fontVariations` applies.
+   */
+  opticalSizeFromFontSize: boolean
   fontFeatures: FontFeature[]
 
   horizontalConstraint: ConstraintType
@@ -716,6 +794,18 @@ export interface SceneNode {
   connectorLineType: ConnectorLineType
   connectorStartCap: StrokeCap
   connectorEndCap: StrokeCap
+  /**
+   * An elbow connector's segments between its first and last, in order, once one was dragged;
+   * empty while it routes itself. Kept, unused, while the line is straight or curved.
+   */
+  connectorControlPoints: ConnectorControlPoint[]
+  /**
+   * A curved connector's two cubic control points, in the connector's own axes, once its curve
+   * was dragged; null while it curves by itself. Kept, unused, while the line is not curved.
+   */
+  connectorCurveHandles: [Vector, Vector] | null
+  /** Where a connector's label was dragged to; null while it sits midway along the line. */
+  connectorLabelPosition: ConnectorLabelPosition | null
 
   isMask: boolean
   maskType: MaskType
@@ -741,8 +831,11 @@ export interface SceneNode {
   shapeWithTextType: ShapeWithTextType
   /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
   shapeUserHeight: number
-  /** The width a shape with text was given; it widens past it only for a word too wide. 0 is unset. */
-  shapeUserWidth: number
+  /**
+   * Whether a shape with text keeps its height and cuts its label off with "…" instead of growing,
+   * as FigJam does once the shape's height was set.
+   */
+  shapeTruncates: boolean
 
   componentId: string | null
   instanceOverrides: InstanceOverrideState
@@ -794,6 +887,12 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
+  /**
+   * How far a text's lines reach down from its top: measured at its width when its text or width
+   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
+   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   */
+  derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
   textPathData: TextPathData | null
   /** Node-local box that maps textPathData into the node coordinate space. */

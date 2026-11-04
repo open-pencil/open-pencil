@@ -1,19 +1,20 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
 import * as v from 'valibot'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
 /** Only the component-edit measurements this file asserts against are read from the oracle. */
-const AuthoringOracle = v.looseObject({
+const authoringOracleSchema = v.looseObject({
   componentEdit: v.looseObject({
     sourcePaddingTop: v.number(),
     paddingTop: v.number(),
@@ -21,9 +22,9 @@ const AuthoringOracle = v.looseObject({
   })
 })
 
-const oracle = readFixture('nested-binding-authoring.json', AuthoringOracle)
+const oracle = readFixture('nested-binding-authoring.json', authoringOracleSchema)
 
-const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
+const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 
 function document(inherited = false) {
   const changes = inherited ? inheritedNestedBindingRecords() : structuredClone(fixture.nodeChanges)
@@ -43,9 +44,14 @@ function document(inherited = false) {
 for (const caller of ['editor', 'api'] as const) {
   test(`${caller} authors new root and nested aliases in occurrence-owner units`, async () => {
     const { graph, root, nested } = document()
-    const writer = caller === 'editor' ? createEditor({ graph }) : new FigmaAPI(graph)
-    writer.bindVariable(nested.id, 'paddingRight', '293742:7')
-    writer.bindVariable(root.id, 'paddingRight', '293742:7')
+    const editor = caller === 'editor' ? createEditor({ graph }) : undefined
+    const openpencil = new OpenPencilAPI(new FigmaAPI(graph))
+    const bind = (id: string) =>
+      editor
+        ? editor.bindVariable(id, 'paddingRight', '293742:7')
+        : openpencil.bindVariable(id, 'paddingRight', { id: '293742:7' })
+    bind(nested.id)
+    bind(root.id)
     expect(nested.paddingRight).toBe(6)
     expect(root.paddingRight).toBe(6)
     expect(nested.width).toBe(17)

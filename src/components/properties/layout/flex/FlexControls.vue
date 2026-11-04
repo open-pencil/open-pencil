@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 
 import type { LayoutDirection } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
@@ -36,7 +37,7 @@ const alignmentCells = computed(() => {
 
 <template>
   <div class="mt-2">
-    <label class="mb-1 block text-[11px] text-muted">{{ panels.direction }}</label>
+    <label class="mb-1 block text-2xs text-muted">{{ panels.direction }}</label>
     <AppSelect
       :label="panels.direction"
       :model-value="ctx.layoutDirection"
@@ -48,7 +49,7 @@ const alignmentCells = computed(() => {
       @update:model-value="ctx.setLayoutDirection($event as LayoutDirection)"
     />
   </div>
-  <div class="mt-2 grid grid-cols-[78px_minmax(0,1fr)] items-start gap-3">
+  <div class="mt-2 grid grid-cols-[4.875rem_minmax(0,1fr)] items-start gap-3">
     <LayoutAlignmentControl
       data-test-id="layout-alignment-grid"
       :label="panels.alignment"

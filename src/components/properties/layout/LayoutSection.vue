@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { isGeneratedFrame } from '@open-pencil/scene-graph'
-import { LAYOUT_CONTAINER_TYPES, LayoutControlsRoot, useI18n } from '@open-pencil/vue'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { LAYOUT_CONTAINER_TYPES } from '@open-pencil/vue/controls/selection-layout'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { LayoutControlsRoot } from '@open-pencil/vue/primitives/LayoutControls'
 
 import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
 import FlexControls from '@/components/properties/layout/flex/FlexControls.vue'
@@ -47,7 +49,7 @@ const { panels } = useI18n()
         <LayoutFlowControl v-if="LAYOUT_CONTAINER_TYPES.has(ctx.node.type)">
           <LayoutWrapToggle v-if="ctx.isFlex" />
         </LayoutFlowControl>
-        <div v-if="ctx.node.type !== 'TEXT'" class="mt-2 mb-1 text-[11px] text-muted">
+        <div v-if="ctx.node.type !== 'TEXT'" class="mt-2 mb-1 text-2xs text-muted">
           {{ panels.dimensions }}
         </div>
         <TextResizingControl v-if="ctx.node.type === 'TEXT'" />

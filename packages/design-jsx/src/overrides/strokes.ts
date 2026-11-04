@@ -1,5 +1,5 @@
+import { designJSXProp } from '#design-jsx/definitions'
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '#design-jsx/enums'
-import { designJSXProp } from '#design-jsx/schema'
 
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'

@@ -7,6 +7,19 @@ import * as Y from 'yjs'
 export const RELAY_PATH = '/api/collaboration/relay'
 
 /**
+ * The relay URL's query parameter naming the ticket's document, so a runtime that keeps each
+ * document's room in its own place can route the socket there before the ticket arrives.
+ */
+export const RELAY_DOCUMENT_PARAM = 'document'
+
+/** The relay's public URL on the same origin as the API, unless the deployment names another. */
+export function defaultRelayURL(publicURL: string): string {
+  const url = new URL(RELAY_PATH, publicURL)
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  return url.href
+}
+
+/**
  * The room messages collaboration sends. The relay reads the document ones to keep its copy,
  * persist it, and drop writes from viewers; it forwards the rest unread.
  */
@@ -98,10 +111,30 @@ export const RELAY_CLOSE = {
 
 const CLIENT_AUTH = 0
 const CLIENT_MESSAGE = 1
+const CLIENT_FRAGMENT = 2
 const SERVER_WELCOME = 0
 const SERVER_JOIN = 1
 const SERVER_LEAVE = 2
 const SERVER_MESSAGE = 3
+const SERVER_FRAGMENT = 4
+
+/**
+ * The most one WebSocket message carries. A frame past it travels as fragments of this size that
+ * the receiver joins again, so a large paste or a room's first sync fits under any host's message
+ * cap, such as the 32 MiB of Cloudflare Workers, and the relay can turn away a viewer's or an
+ * unadmitted peer's large frame before holding it whole.
+ */
+export const RELAY_FRAGMENT_BYTES = 256 * 1024
+
+/** The smallest per-message limit a relay may set: one fragment and its few bytes of framing. */
+export const RELAY_MINIMUM_MESSAGE_BYTES = RELAY_FRAGMENT_BYTES + 16
+
+/**
+ * What the relay adds to a frame it forwards: the frame type, the sender's peer ID, and lengths.
+ * A client reads frames this much past the relay's own limit, so a forwarded edit at that limit
+ * still arrives.
+ */
+export const RELAY_FORWARDING_BYTES = 64 * 1024
 
 /** Frames a client sends: its ticket first, again to refresh it, then room messages. */
 export type RelayClientFrame =
@@ -155,6 +188,122 @@ export function encodeRelayServerFrame(frame: RelayServerFrame): Uint8Array<Arra
         encoding.writeVarUint8Array(encoder, frame.payload)
     }
   })
+}
+
+/** The frame as it goes over the socket: itself, or fragments of it when it is large. */
+function fragments(tag: number, frame: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer>[] {
+  if (frame.byteLength <= RELAY_FRAGMENT_BYTES) return [frame]
+  const parts: Uint8Array<ArrayBuffer>[] = []
+  for (let offset = 0; offset < frame.byteLength; offset += RELAY_FRAGMENT_BYTES) {
+    const end = Math.min(offset + RELAY_FRAGMENT_BYTES, frame.byteLength)
+    parts.push(
+      toSendable((encoder) => {
+        encoding.writeVarUint(encoder, tag)
+        encoding.writeVarUint(encoder, end < frame.byteLength ? 1 : 0)
+        encoding.writeVarUint8Array(encoder, frame.subarray(offset, end))
+      })
+    )
+  }
+  return parts
+}
+
+/** A client frame as the socket messages that carry it, in order. */
+export function relayClientMessages(frame: RelayClientFrame): Uint8Array<ArrayBuffer>[] {
+  return fragments(CLIENT_FRAGMENT, encodeRelayClientFrame(frame))
+}
+
+/** A server frame as the socket messages that carry it, in order. */
+export function relayServerMessages(frame: RelayServerFrame): Uint8Array<ArrayBuffer>[] {
+  return fragments(SERVER_FRAGMENT, encodeRelayServerFrame(frame))
+}
+
+/** What one socket message gave: a whole frame, part of one, or a reason to close. */
+export type RelayAssembly =
+  | { type: 'frame'; data: Uint8Array }
+  | { type: 'partial' }
+  | { type: 'too-large' }
+  | { type: 'malformed' }
+
+/**
+ * Joins one socket's fragments into the frames they carry. A socket sends a frame's fragments in
+ * a row, so a whole frame arriving between them is malformed. `limit` caps the joined frame and is
+ * read for every message, so it can follow what the sender may do.
+ */
+function createAssembler(tag: number, limit: () => number) {
+  let parts: Uint8Array[] = []
+  let size = 0
+  /** Set while the rest of a refused frame arrives, so its tail never reads as a frame of its own. */
+  let discarding = false
+  const reset = () => {
+    parts = []
+    size = 0
+  }
+  return {
+    push(data: Uint8Array): RelayAssembly {
+      let decoder: decoding.Decoder
+      let type: number
+      try {
+        decoder = decoding.createDecoder(data)
+        type = decoding.readVarUint(decoder)
+      } catch {
+        reset()
+        return { type: 'malformed' }
+      }
+      if (type !== tag) {
+        if (parts.length > 0) {
+          reset()
+          return { type: 'malformed' }
+        }
+        return { type: 'frame', data }
+      }
+      let more: number
+      let chunk: Uint8Array
+      try {
+        more = decoding.readVarUint(decoder)
+        chunk = decoding.readVarUint8Array(decoder)
+      } catch {
+        // A fragment that cannot be read is taken as unfinished: only a sound last one ends it.
+        reset()
+        discarding = true
+        return { type: 'malformed' }
+      }
+      if (decoder.pos !== data.byteLength || more > 1) {
+        reset()
+        discarding = more !== 0
+        return { type: 'malformed' }
+      }
+      if (discarding) {
+        discarding = more === 1
+        return { type: 'partial' }
+      }
+      size += chunk.byteLength
+      if (size > limit()) {
+        reset()
+        discarding = more === 1
+        return { type: 'too-large' }
+      }
+      parts.push(chunk.slice())
+      if (more === 1) return { type: 'partial' }
+      const joined = new Uint8Array(size)
+      let at = 0
+      for (const part of parts) {
+        joined.set(part, at)
+        at += part.byteLength
+      }
+      reset()
+      return { type: 'frame', data: joined }
+    }
+  }
+}
+
+/** Joins the fragments a client sends; the relay holds one per socket. */
+export function createRelayClientAssembler(limit: () => number) {
+  return createAssembler(CLIENT_FRAGMENT, limit)
+}
+
+/** Joins the fragments the relay sends; a client holds one per socket. */
+export function createRelayServerAssembler(limit: () => number) {
+  return createAssembler(SERVER_FRAGMENT, limit)
 }
 
 /**

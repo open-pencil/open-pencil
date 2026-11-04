@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'

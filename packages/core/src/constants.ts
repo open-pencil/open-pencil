@@ -4,6 +4,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SelectionTheme } from '#core/canvas/renderer/types'
 
+export * from './ai/providers'
+
 export const IS_BROWSER = typeof window !== 'undefined'
 export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
 
@@ -32,6 +34,8 @@ export const MEASUREMENT_PILL_RADIUS = 3
 export const MEASUREMENT_TEXT_BASELINE = 4
 export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
 export const SNAP_THRESHOLD_SCREEN_PX = 5
+/** The grid a board's layers land on, as FigJam's dots every 16 units. */
+export const BOARD_GRID = 16
 
 export const RULER_SIZE = 20
 export const RULER_BG_COLOR = { r: 0.14, g: 0.14, b: 0.14, a: 1 } satisfies Color
@@ -170,327 +174,21 @@ export const TEXT_SELECTION_ALPHA = 0.3
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli'
-
-export interface ACPAgentDef {
-  id: ACPAgentID
-  name: string
-  command: string
-  args: string[]
-  /** The agent's own CLI, when the ACP program is a separate adapter for it. */
-  cliCommand?: string
-  /** npm package that provides `command` when it is an adapter. */
-  adapterPackage?: string
-  /** The vendor's installation guide for the agent itself. */
-  setupURL?: string
-  installCommand?: string
-}
-
-export const ACP_AGENTS: ACPAgentDef[] = [
-  {
-    id: 'claude-code',
-    name: 'Claude Code',
-    command: 'claude-agent-acp',
-    args: [],
-    cliCommand: 'claude',
-    adapterPackage: '@agentclientprotocol/claude-agent-acp',
-    setupURL: 'https://code.claude.com/docs/en/setup',
-    installCommand: 'npm i -g @agentclientprotocol/claude-agent-acp'
-  },
-  {
-    id: 'codex',
-    name: 'Codex',
-    command: 'codex-acp',
-    args: [],
-    cliCommand: 'codex',
-    adapterPackage: '@agentclientprotocol/codex-acp',
-    setupURL: 'https://developers.openai.com/codex/cli',
-    installCommand: 'npm i -g @agentclientprotocol/codex-acp'
-  },
-  {
-    id: 'gemini-cli',
-    name: 'Gemini CLI',
-    command: 'gemini',
-    args: ['--acp'],
-    setupURL: 'https://geminicli.com/docs/get-started/installation/',
-    installCommand: 'npm i -g @google/gemini-cli'
-  }
-]
-
-export type AIProviderID =
-  | 'openrouter'
-  | 'anthropic'
-  | 'openai'
-  | 'google'
-  | 'deepseek'
-  | 'openai-compatible'
-  | 'zai'
-  | 'minimax'
-  | 'anthropic-compatible'
-  | 'harness:pi'
-  | `acp:${ACPAgentID}`
-
-export interface ModelOption {
-  id: string
-  name: string
-  tag?: string
-  capabilities?: readonly ('tools' | 'vision')[]
-  recommendedMaxOutputTokens?: number
-  releaseDate?: string
-  status?: 'active' | 'beta' | 'deprecated'
-}
-
-export interface AIProviderDef {
-  id: AIProviderID
-  name: string
-  keyPlaceholder: string
-  keyURL: string
-  models: ModelOption[]
-  defaultModel: string
-  supportsCustomBaseURL?: boolean
-  supportsCustomModel?: boolean
-}
-
-export const HARNESS_PROVIDER_ID = 'harness:pi' as const
-
-export const AI_PROVIDERS: AIProviderDef[] = [
-  {
-    id: HARNESS_PROVIDER_ID,
-    name: 'Pi',
-    keyPlaceholder: 'AI Gateway key (optional)',
-    keyURL: '',
-    defaultModel: '',
-    supportsCustomModel: true,
-    models: []
-  },
-  {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    keyPlaceholder: 'sk-or-…',
-    keyURL: 'https://openrouter.ai/keys',
-    defaultModel: 'anthropic/claude-sonnet-5.5',
-    supportsCustomModel: true,
-    models: [
-      {
-        id: 'anthropic/claude-sonnet-5.5',
-        name: 'Claude Sonnet 5.5',
-        tag: 'Best for design',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'anthropic/claude-opus-5.5',
-        name: 'Claude Opus 5.5',
-        tag: 'Deep reasoning',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'anthropic/claude-fable-5.1',
-        name: 'Claude Fable 5.1',
-        tag: 'Most capable',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'openai/gpt-6.1-sol',
-        name: 'GPT-6.1 Sol',
-        tag: 'Latest OpenAI',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'google/gemini-3.8-flash',
-        name: 'Gemini 3.8 Flash',
-        tag: 'Fast',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'z-ai/glm-5.3', name: 'GLM-5.3', capabilities: ['tools'] },
-      {
-        id: 'deepseek/deepseek-v4-pro',
-        name: 'DeepSeek V4 Pro',
-        tag: 'Reasoning',
-        capabilities: ['tools']
-      },
-      {
-        id: 'moonshotai/kimi-k3',
-        name: 'Kimi K3',
-        tag: 'Vision + code',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'qwen/qwen3.8-27b:free',
-        name: 'Qwen3.8 27B',
-        tag: 'Free',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'google/gemma-4-31b-it:free',
-        name: 'Gemma 4 31B',
-        tag: 'Free',
-        capabilities: ['tools', 'vision']
-      }
-    ]
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    keyPlaceholder: 'sk-ant-…',
-    keyURL: 'https://console.anthropic.com/settings/keys',
-    defaultModel: 'claude-sonnet-5-5',
-    models: [
-      {
-        id: 'claude-sonnet-5-5',
-        name: 'Claude Sonnet 5.5',
-        tag: 'Best for design',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'claude-opus-5-5',
-        name: 'Claude Opus 5.5',
-        tag: 'Deep reasoning',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'claude-fable-5-1',
-        name: 'Claude Fable 5.1',
-        tag: 'Most capable',
-        capabilities: ['tools', 'vision']
-      }
-    ]
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    keyPlaceholder: 'sk-…',
-    keyURL: 'https://platform.openai.com/api-keys',
-    defaultModel: 'gpt-6.1-sol',
-    models: [
-      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', tag: 'Best', capabilities: ['tools', 'vision'] },
-      {
-        id: 'gpt-6-astra',
-        name: 'GPT-6 Astra',
-        tag: 'Smartest',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
-    ]
-  },
-  {
-    id: 'google',
-    name: 'Google AI',
-    keyPlaceholder: 'AIza…',
-    keyURL: 'https://aistudio.google.com/apikey',
-    defaultModel: 'gemini-3.8-flash',
-    models: [
-      {
-        id: 'gemini-3.8-flash',
-        name: 'Gemini 3.8 Flash',
-        tag: 'Latest',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', capabilities: ['tools', 'vision'] },
-      {
-        id: 'gemini-flash-latest',
-        name: 'Gemini Flash Latest',
-        tag: 'Alias',
-        capabilities: ['tools', 'vision']
-      },
-      {
-        id: 'gemini-3.1-pro-preview',
-        name: 'Gemini 3.1 Pro',
-        tag: 'Pro',
-        capabilities: ['tools', 'vision']
-      }
-    ]
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    keyPlaceholder: 'sk-…',
-    keyURL: 'https://platform.deepseek.com/api_keys',
-    defaultModel: 'deepseek-v4-flash',
-    models: [
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', tag: 'Fast' },
-      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', tag: 'Reasoning' }
-    ]
-  },
-  {
-    id: 'zai',
-    name: 'Z.ai',
-    keyPlaceholder: 'API key',
-    keyURL: 'https://docs.z.ai/devpack/quick-start',
-    defaultModel: 'glm-5.3',
-    models: [
-      { id: 'glm-5.3', name: 'GLM-5.3', tag: 'Best' },
-      { id: 'glm-5.3-flash', name: 'GLM-5.3-Flash', tag: 'Fast' },
-      { id: 'glm-5.2', name: 'GLM-5.2' },
-      {
-        id: 'glm-5v-turbo',
-        name: 'GLM-5V-Turbo',
-        tag: 'Vision',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'glm-5.1', name: 'GLM-5.1' },
-      { id: 'glm-5', name: 'GLM-5' },
-      { id: 'glm-5-code', name: 'GLM-5-Code' },
-      { id: 'glm-4.7', name: 'GLM-4.7' },
-      { id: 'glm-4.7-flashx', name: 'GLM-4.7-FlashX' },
-      { id: 'glm-4.6', name: 'GLM-4.6' },
-      { id: 'glm-4.5', name: 'GLM-4.5' },
-      { id: 'glm-4.5-x', name: 'GLM-4.5-X' },
-      { id: 'glm-4.5-air', name: 'GLM-4.5-Air' },
-      { id: 'glm-4.5-airx', name: 'GLM-4.5-AirX' },
-      { id: 'glm-4-32b-0414-128k', name: 'GLM-4-32B-0414-128K' },
-      { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', tag: 'Free' },
-      { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', tag: 'Free' }
-    ]
-  },
-  {
-    id: 'minimax',
-    name: 'MiniMax',
-    keyPlaceholder: 'API key',
-    keyURL: 'https://platform.minimax.io/user-center/basic-information/interface-key',
-    defaultModel: 'MiniMax-M3',
-    models: [
-      { id: 'MiniMax-M3', name: 'MiniMax-M3', tag: 'Best' },
-      { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7' },
-      { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5' },
-      { id: 'MiniMax-M2.5-highspeed', name: 'MiniMax-M2.5 Highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2.1', name: 'MiniMax-M2.1' },
-      { id: 'MiniMax-M2.1-highspeed', name: 'MiniMax-M2.1 Highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2', name: 'MiniMax-M2' }
-    ]
-  },
-  {
-    id: 'openai-compatible',
-    name: 'OpenAI-compatible',
-    keyPlaceholder: 'API key',
-    keyURL: '',
-    defaultModel: '',
-    models: [],
-    supportsCustomBaseURL: true,
-    supportsCustomModel: true
-  },
-  {
-    id: 'anthropic-compatible',
-    name: 'Anthropic-compatible',
-    keyPlaceholder: 'API key',
-    keyURL: '',
-    defaultModel: '',
-    models: [],
-    supportsCustomBaseURL: true,
-    supportsCustomModel: true
-  }
-]
-
-export const DEFAULT_AI_PROVIDER: AIProviderID = 'openai-compatible'
-export const DEFAULT_AI_MODEL =
-  AI_PROVIDERS.find((provider) => provider.id === DEFAULT_AI_PROVIDER)?.defaultModel ?? ''
-
 export const AUTOMATION_HTTP_PORT = 7600
 /**
  * Request header the app's own ACP and Pi harness chats send to the MCP server, so their sessions
  * show as those agents rather than as an outside MCP client.
  */
 export const MCP_AGENT_HEADER = 'x-openpencil-agent'
+
+/** The name the app's chats give OpenPencil's MCP server in an agent's session. */
+export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
+
+/**
+ * Request header naming the app chat whose agent opens an MCP session, so the app can tell that
+ * this chat's agent reached its tools before it sends the prompt.
+ */
+export const MCP_CHAT_HEADER = 'x-openpencil-chat'
 
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
@@ -548,6 +246,14 @@ export const PAGE_DEFAULT_BACKGROUNDS: Record<InterfaceTheme, Color> = {
   dark: { r: 0x1e / 255, g: 0x1e / 255, b: 0x1e / 255, a: 1 }
 }
 
+/** A FigJam board's page, #F5F5F5 whatever the interface theme, as Figma saves it. */
+export const BOARD_PAGE_BACKGROUND = {
+  r: 245 / 255,
+  g: 245 / 255,
+  b: 245 / 255,
+  a: 1
+} satisfies Color
+
 /** A new section's fill, which Figma picks from the interface theme it was made in. */
 export const SECTION_DEFAULT_FILLS: Record<InterfaceTheme, Fill> = {
   light: { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true },
@@ -571,6 +277,9 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
 export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
+/** Figma's zoom range, 2% to 25,600%. */
+export const ZOOM_MIN = 0.02
+export const ZOOM_MAX = 256
 export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 

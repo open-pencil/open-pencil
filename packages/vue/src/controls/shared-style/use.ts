@@ -1,15 +1,15 @@
 import { computed } from 'vue'
 
+import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
 import {
   getSharedStyles,
+  sharedStyleDetachPatch,
+  sharedStylePatch,
   sharedStyleRefKey,
-  sharedStyleTypeForKind,
-  type SceneNode,
-  type SharedStyleKind
-} from '@open-pencil/scene-graph'
+  sharedStyleTypeForKind
+} from '@open-pencil/scene-graph/shared-styles'
 
 import { useNodeProps } from '#vue/controls/node-props/use'
-import { sharedStyleDetachPatch, sharedStylePatch } from '#vue/controls/shared-style/model'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 function supportsStyle(node: SceneNode, kind: SharedStyleKind): boolean {

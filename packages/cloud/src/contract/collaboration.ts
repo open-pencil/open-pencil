@@ -17,6 +17,18 @@ export const collaborationPrincipalSchema = v.variant('kind', [
 ])
 export type CollaborationPrincipal = v.InferOutput<typeof collaborationPrincipalSchema>
 
+/**
+ * Who the relay verified a peer to be, as it writes into that peer's presence under `cloud`, so
+ * other peers can trust it over what the peer says of itself.
+ */
+export const cloudPresenceSchema = v.object({
+  kind: v.picklist(['user', 'guest']),
+  id: v.string(),
+  name: v.string(),
+  permission: documentPermissionSchema
+})
+export type CloudPresence = v.InferOutput<typeof cloudPresenceSchema>
+
 export const collaborationTicketSchema = v.object({
   token: v.string(),
   provider: v.optional(v.picklist(['trystero', 'relay'])),

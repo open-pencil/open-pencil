@@ -1,6 +1,6 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 

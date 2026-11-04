@@ -1,7 +1,8 @@
-import type { SceneGraph, SceneNode } from './index'
+import type { SceneGraph } from './graph'
 import Matrix, { type Mat3 } from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
+import type { SceneNode } from './types'
 
 export function getWorldMatrix(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>): Mat3 {
   const chain: SceneNode[] = []

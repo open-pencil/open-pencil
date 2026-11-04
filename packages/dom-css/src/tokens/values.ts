@@ -1,9 +1,5 @@
-import {
-  tokenNumberInUnit,
-  type TokenUnit,
-  type Variable,
-  type VariableScope
-} from '@open-pencil/scene-graph'
+import type { TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
+import { tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
 
 import { variableNamespace } from './names'
 

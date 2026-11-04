@@ -7,10 +7,11 @@ import { nodeChangeToProps, sceneNodeToKiwi } from '#fig/node-change/index'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { shapeWithTextLabelBox } from '@open-pencil/scene-graph/shape-with-text'
+import { percentLength } from '@open-pencil/scene-graph/text'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })
@@ -86,13 +87,15 @@ describe('shapes with text', () => {
     })
     expect(shape.fills[0]?.color).toEqual(green)
     expect(shape.strokes[0]).toMatchObject({ color: darkGreen, weight: 4 })
+    // Connectors keep clear of the stroke by its weight.
+    expect(shape).toMatchObject({ strokeWeight: 4, strokeAlign: 'CENTER' })
     const label = expectDefined(shapeWithTextLabel(graph, shape))
     expect(label).toMatchObject({
       text: 'Decision',
       fontFamily: 'Inter',
       fontWeight: 500,
       fontSize: 24,
-      lineHeight: 36,
+      lineHeight: percentLength(150),
       textAutoResize: 'HEIGHT'
     })
     expect(label.fills[0]).toMatchObject({ color: black })
@@ -141,18 +144,21 @@ describe('shapes with text', () => {
     expect(shapeWithTextLabel(reread, copy)?.text).toBe('Orders')
   })
 
-  test('a shape widened for a long word reopens with the width it was given', () => {
+  test('a shape that keeps its height reopens truncating, its label without sizing fields', () => {
     const { graph } = importShape(decision)
     const page = graph.getPages()[0]
     const shape = createShapeWithText(
       graph,
       page.id,
-      { width: 180, height: 120, shapeUserWidth: 120, shapeUserHeight: 100 },
-      { text: 'Internationalisation' }
+      { width: 180, height: 120, shapeUserHeight: 120, shapeTruncates: true },
+      { text: 'A label longer than the shape', textTruncation: 'ENDING', textAutoResize: 'NONE' }
     )
     const [record] = sceneNodeToKiwi(shape, guid(1), 0, { value: 10 }, graph, [])
+    expect(record).toMatchObject({ shapeUserHeight: 120, shapeTruncates: true })
+    const label = generationOverridesOf(record).get(1)
+    expect([label?.textAutoResize, label?.textTruncation]).toEqual([undefined, undefined])
     const { shape: copy } = importShape({ ...record, guid: guid(6) })
-    expect([copy.width, copy.shapeUserWidth, copy.shapeUserHeight]).toEqual([180, 120, 100])
+    expect([copy.height, copy.shapeUserHeight, copy.shapeTruncates]).toEqual([120, 120, true])
   })
 
   test('a given height that is not a finite positive number is unset', () => {

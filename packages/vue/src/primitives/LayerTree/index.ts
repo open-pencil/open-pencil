@@ -17,3 +17,5 @@ export {
   patchLayerNode,
   visibleLayerRows
 } from '#vue/primitives/LayerTree/model'
+export { useLayerDrag } from './useLayerDrag'
+export { stickyTopLevelRow, type StickyLayerRow } from './sticky'

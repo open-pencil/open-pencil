@@ -9,14 +9,14 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import canvasPaneHeaderTheme from '@/theme/canvas-pane-header'
+import canvasPaneHeaderTheme from '@/theme/canvas/pane-header'
 
 const { paneId } = defineProps<{
   paneId: string

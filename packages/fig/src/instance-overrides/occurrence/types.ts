@@ -1,5 +1,6 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { Vector } from '@open-pencil/scene-graph'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { BoundPropertyClaim } from '../bindings/properties'
 import type { ComponentPropAssignment } from '../types'
@@ -26,6 +27,11 @@ export interface InstanceOccurrence {
   propertyClaims: InstancePropertyClaim[]
   bindingClaims: BoundPropertyClaim[]
   derivedSize?: Vector
+  /**
+   * How much larger than the component, per axis, the outlines this occurrence inherits are
+   * drawn. Saved derived outlines are already at the placed size and replace the inherited ones.
+   */
+  inheritedOutlineScale?: { fill: Vector; stroke: Vector }
   /** Cumulative scale for unresolved layout-distance variable values. */
   layoutScale?: number
   /** Per-field declaration-space multipliers, composed as owners expand. */
@@ -39,6 +45,7 @@ export interface InstanceOccurrence {
    */
   slotContentId?: string
   defaultInstanceName?: string
+  ownerAssignedProperties?: string[]
 }
 
 export interface InstancePathDiagnostic {

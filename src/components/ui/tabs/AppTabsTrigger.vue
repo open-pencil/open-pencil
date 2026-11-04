@@ -2,7 +2,7 @@
 import { TabsTrigger } from 'reka-ui'
 import { normalizeClass, type HTMLAttributes } from 'vue'
 
-import { tabs } from '@/theme/tabs/tabs'
+import { tabs } from './ui'
 
 const {
   value,

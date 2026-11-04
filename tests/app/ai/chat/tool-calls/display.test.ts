@@ -145,6 +145,22 @@ describe('tool call display', () => {
       )
     ).toEqual([[0, 2], 4])
   })
+
+  test('puts each compaction within the reply before the step it kept', () => {
+    const parts: ChatMessagePart[] = [
+      { type: 'step-start' },
+      call({ type: 'tool-render' }),
+      { type: 'step-start' },
+      call({ type: 'tool-render' }),
+      { type: 'step-start' },
+      { type: 'text', text: 'Done' }
+    ]
+    expect(
+      groupMessageParts(parts, [1, 2]).map((group) =>
+        group.kind === 'compaction' ? `compaction ${group.compaction}` : group.kind
+      )
+    ).toEqual(['tools', 'compaction 0', 'tools', 'compaction 1', 'part'])
+  })
 })
 
 describe('toolHasInput', () => {

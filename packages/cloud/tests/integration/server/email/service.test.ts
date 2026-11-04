@@ -9,7 +9,7 @@ const invitation = {
   documentName: 'Homepage',
   permission: 'view' as const,
   expiresAt: '2026-01-08T00:00:00.000Z',
-  acceptanceURL: 'https://app.example.com/cloud/invitations/id#secret-token'
+  acceptanceURL: 'https://cloud.example.com/invitations/id#secret-token'
 }
 
 describe('transactional email outbox', () => {

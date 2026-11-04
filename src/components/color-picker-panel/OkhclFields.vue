@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { fromPercent, toPercent, useI18n } from '@open-pencil/vue'
+import { fromPercent, toPercent } from '@open-pencil/vue/controls/color-model'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
@@ -83,16 +84,16 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
       @update-display="ctx.updateOkHCLChannel('a', fromPercent($event))"
     />
 
-    <div class="flex items-start justify-between gap-2 text-[10px] text-muted">
+    <div class="flex items-start justify-between gap-2 text-3xs text-muted">
       <p class="min-w-0 flex-1 leading-4 break-words">{{ ctx.panels.colorHintOkhcl }}</p>
       <span
         v-if="ctx.okhcl.previewColorSpace"
-        class="shrink-0 rounded border border-border px-1 py-0.5 text-[10px] uppercase"
+        class="shrink-0 rounded border border-border px-1 py-0.5 text-3xs uppercase"
       >
         {{ ctx.okhcl.previewColorSpace }}
       </span>
     </div>
-    <p v-if="ctx.okhcl.clipped" class="text-[10px] leading-4 text-warning">
+    <p v-if="ctx.okhcl.clipped" class="text-3xs leading-4 text-warning">
       {{ ctx.panels.colorPreviewClipped({ space: ctx.okhcl.previewColorSpace ?? 'display-p3' }) }}
     </p>
   </div>

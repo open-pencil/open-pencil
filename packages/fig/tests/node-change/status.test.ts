@@ -4,8 +4,11 @@ import type { KiwiNodeChange } from '#fig/node-change/export/context'
 import { extractNodeStatus, serializeNodeStatus } from '#fig/node-change/status'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { OPEN_PENCIL_PLUGIN_DATA, OPEN_PENCIL_PLUGIN_ID } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import {
+  OPEN_PENCIL_PLUGIN_DATA,
+  OPEN_PENCIL_PLUGIN_ID
+} from '@open-pencil/scene-graph/plugin-data'
 
 function written(status: string): NodeChange {
   let id = 0

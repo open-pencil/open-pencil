@@ -3,7 +3,9 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { collectAllNodes } from '#core-tests/helpers/fig/traversal'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 setDefaultTimeout(60_000)
 

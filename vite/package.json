@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./app-source": "./app-source.ts"
+    "./app-source": "./app-source.ts",
+    "./pwa": "./pwa.ts"
   },
   "dependencies": {
     "@open-pencil/core": "workspace:*",

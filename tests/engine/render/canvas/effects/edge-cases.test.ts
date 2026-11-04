@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { createDefaultNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { renderEffects } from '#core/canvas/shadows'
 
@@ -48,7 +48,7 @@ describe('Edge cases and bug fixes', () => {
       childIds: []
     })
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
     expect(r.getCachedDropShadow).toHaveBeenCalled()
     expect(r.paintShapeContent).toHaveBeenCalledWith(
@@ -85,7 +85,7 @@ describe('Edge cases and bug fixes', () => {
       childIds: []
     })
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
     expect(canvas.drawRect).not.toHaveBeenCalled()
     expect(canvas.drawPath).not.toHaveBeenCalled()
@@ -111,15 +111,7 @@ describe('Edge cases and bug fixes', () => {
       ]
     })
 
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node,
-      TEST_GRAPH,
-      new Float32Array([0, 0, 100, 100]),
-      false,
-      'inner'
-    )
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     // Expect LTRBRect for 'big' to encompass both the shape (0 to 100) and the offset hole (200 to 300)
     // with expand (20) padding: min(-20, -20+200) = -20, max(100+20, 100+20+200) = 320
@@ -130,42 +122,6 @@ describe('Edge cases and bug fixes', () => {
       120 // max(height + expand, height + expand + offsetY)
     )
     expect(canvas.drawPath).toHaveBeenCalled()
-  })
-
-  test('INNER_SHADOW with spread on rounded rect shrinks hole concentrically', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const node = effectNode({
-      type: 'RECTANGLE',
-      width: 100,
-      height: 100,
-      cornerRadius: 10,
-      fills: [OPAQUE_FILL],
-      effects: [
-        {
-          type: 'INNER_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 5, y: 5 },
-          radius: 10,
-          spread: 4
-        }
-      ]
-    })
-
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node,
-      TEST_GRAPH,
-      new Float32Array([0, 0, 100, 100]),
-      true,
-      'inner'
-    )
-
-    // makeRRectWithOffset should receive (node, localOffsetX, localOffsetY, spread)
-    // localOffsetX = 5, localOffsetY = 5, spread = 4
-    expect(r.makeRRectWithOffset).toHaveBeenCalledWith(node, 5, 5, 4)
   })
 
   test('drop shadow restores canvas and paint state when drawing throws', () => {
@@ -193,9 +149,9 @@ describe('Edge cases and bug fixes', () => {
       childIds: []
     })
 
-    expect(() =>
-      renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
-    ).toThrow('draw failed')
+    expect(() => renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')).toThrow(
+      'draw failed'
+    )
 
     expect(canvas.restore).toHaveBeenCalled()
     expect(r.auxFill.setMaskFilter).toHaveBeenCalledWith(null)
@@ -225,9 +181,9 @@ describe('Edge cases and bug fixes', () => {
       ]
     })
 
-    expect(() =>
-      renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'inner')
-    ).toThrow('text failed')
+    expect(() => renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')).toThrow(
+      'text failed'
+    )
 
     expect(mockCalls(canvas.restore).length).toBe(1)
     expect(r.effectLayerPaint.setColorFilter).toHaveBeenCalledWith(null)

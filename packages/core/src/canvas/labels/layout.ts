@@ -1,4 +1,5 @@
-import { readIcon, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {

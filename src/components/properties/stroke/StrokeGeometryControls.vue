@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { isStrokeCapValue, MIXED, useI18n, useStrokeControls } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import { isStrokeCapValue, useStrokeControls } from '@open-pencil/vue/controls/stroke'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'

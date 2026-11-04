@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { configurableAITools, isAIToolEnabled } from './catalog'
 
-const OverridesJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.boolean()))
+const overridesSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.boolean()))
 
 export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
   'open-pencil:ai:tool-access',
@@ -12,7 +12,7 @@ export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
   {
     serializer: {
       read: (raw) => {
-        const result = v.safeParse(OverridesJSON, raw)
+        const result = v.safeParse(overridesSchema, raw)
         return result.success ? result.output : {}
       },
       write: JSON.stringify
@@ -20,11 +20,19 @@ export const aiToolOverrides = useLocalStorage<Record<string, boolean>>(
   }
 )
 
+function disabledWith(overrides: Readonly<Record<string, boolean>>): string[] {
+  return configurableAITools
+    .filter((tool) => !isAIToolEnabled(tool.name, overrides))
+    .map((tool) => tool.name)
+}
+
+/** The AI tools that are off when nothing has been changed. */
+export function defaultDisabledAITools(): string[] {
+  return disabledWith({})
+}
+
 export const disabledAITools = computed({
-  get: () =>
-    configurableAITools
-      .filter((tool) => !isAIToolEnabled(tool.name, aiToolOverrides.value))
-      .map((tool) => tool.name),
+  get: () => disabledWith(aiToolOverrides.value),
   set: (names: string[]) => {
     const disabled = new Set(names)
     aiToolOverrides.value = Object.fromEntries(

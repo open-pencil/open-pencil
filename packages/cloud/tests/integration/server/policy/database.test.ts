@@ -22,7 +22,7 @@ describe('database entitlement source', () => {
         context.workspaceId,
         {
           documents: { maximumFileBytes: 100 },
-          sharing: { anonymousEdit: false },
+          sharing: { guestEdit: false },
           storage: {},
           collaboration: {}
         },
@@ -32,7 +32,7 @@ describe('database entitlement source', () => {
         context.workspaceId,
         {
           documents: { maximumFileBytes: 200 },
-          sharing: { anonymousEdit: true },
+          sharing: { guestEdit: true },
           storage: {},
           collaboration: {}
         },
@@ -45,7 +45,7 @@ describe('database entitlement source', () => {
       const source = new DatabaseEntitlementSource(context.runtime.database)
       const subject = { type: 'workspace' as const, id: context.workspaceId }
       expect(await source.number(subject, 'cloud.documents.maximum-file-bytes')).toBe(200)
-      expect(await source.boolean(subject, 'cloud.sharing.anonymous-edit')).toBe(true)
+      expect(await source.boolean(subject, 'cloud.sharing.guest-edit')).toBe(true)
       expect(await source.boolean(subject, 'unknown')).toBeNull()
     } finally {
       await context.runtime.close()

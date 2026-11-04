@@ -20,6 +20,17 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
+  AINotEntitledError,
+  createAIRoutes,
+  createAITokenService,
+  importAISigningKey,
+  loadAISigningKey,
+  type AIRouteEnvironment,
+  type AISigningKey,
+  type AITokenService,
+  type AITokenServiceOptions
+} from './ai'
+export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
@@ -54,11 +65,15 @@ export {
   type CloudServices
 } from './app'
 export {
+  cleanupPassOptions,
+  createCleanupServices,
   createDocumentCleanupService,
   createRevisionCompactionService,
   createUploadCleanupService,
   REVISION_COMPACTION_GRACE_MS,
+  runCleanup,
   startCleanupWorker,
+  type CleanupPassOptions,
   type CleanupResult,
   type CleanupServices,
   type CleanupWorker,
@@ -74,11 +89,15 @@ export {
   authorizeRelayTicket,
   createCollaborationRelay,
   createCollaborationStateStore,
+  relayDocumentLookups,
   stampAwareness,
   type CollaborationRelay,
   type CollaborationRelayOptions,
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
+  type SavedRoom,
+  readRelayPeerState,
+  type RelayPeerState,
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,
@@ -101,7 +120,6 @@ export {
   parseCloudServerConfig,
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
   CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
-  CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   type CloudDeploymentConfig,
   type CloudDeploymentInput,
   type CloudEnvironment,
@@ -168,6 +186,22 @@ export {
   type TransactionalEmailWorkerOptions
 } from './email'
 export {
+  CLOUD_ERROR_SOURCES,
+  cloudErrorHandler,
+  reportCloudError,
+  type CloudErrorContext,
+  type CloudErrorReporter,
+  type CloudErrorSource
+} from './errors'
+export {
+  createInternalRoutes,
+  createInternalService,
+  parseSetWorkspaceEntitlements,
+  setWorkspaceEntitlementsSchema,
+  type InternalService,
+  type SetWorkspaceEntitlementsInput
+} from './internal'
+export {
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,
@@ -197,6 +231,7 @@ export {
   createPublicSharingRoutes,
   decryptContinuationToken,
   DocumentShareInvalidError,
+  DocumentShareSignInRequiredError,
   encryptContinuationToken,
   hashCapability,
   type DocumentShareCapability,
@@ -208,6 +243,7 @@ export {
 export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
+  createConfiguredCloudPolicy,
   createWorkspaceEntitlementRepository,
   DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
@@ -221,7 +257,8 @@ export {
   type EntitlementSource,
   type EntitlementService,
   type EntitlementSubject,
-  type StaticEntitlements
+  type StaticEntitlements,
+  type StaticEntitlementsInput
 } from './policy'
 export {
   createStorageQuotaService,

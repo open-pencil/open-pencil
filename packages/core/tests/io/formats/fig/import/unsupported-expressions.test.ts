@@ -5,7 +5,8 @@ import { deflateSync } from 'fflate'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { isUnsupportedVariableValue, SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
+import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
+import { SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
 
 import { createEditor } from '#core/editor/create'
 import {

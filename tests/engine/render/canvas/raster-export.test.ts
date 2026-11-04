@@ -1,9 +1,12 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
-import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
-import { getWorldMatrix } from '@open-pencil/scene-graph'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { initCanvasKit } from '#cli/headless'
 import { NodePathCaches } from '#core/canvas/paths/cache'
@@ -47,6 +50,8 @@ describe('raster export', () => {
     graph.createNode('RECTANGLE', page.id)
     const viewport = { x: 1, y: 2, w: 3, h: 4 }
     const renderer = {
+      editingTextId: null,
+      invalidateNodePicture: mock(() => undefined),
       viewportImageRendering: true,
       worldViewport: viewport,
       nodePaths: new NodePathCaches(),
@@ -60,6 +65,30 @@ describe('raster export', () => {
     )
     expect(renderer.viewportImageRendering).toBe(true)
     expect(renderer.worldViewport).toBe(viewport)
+  })
+
+  test('draws the text being edited from its saved glyphs and drops its live picture', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('RECTANGLE', page.id)
+    const invalidated: string[] = []
+    const seen: Array<string | null> = []
+    const renderer = {
+      editingTextId: 'edited' as string | null,
+      invalidateNodePicture: mock((id: string) => {
+        invalidated.push(id)
+      }),
+      viewportImageRendering: false,
+      worldViewport: { x: 0, y: 0, w: 1, h: 1 },
+      nodePaths: new NodePathCaches(),
+      renderNode() {
+        seen.push(this.editingTextId)
+      }
+    }
+    renderSceneToCanvas(renderer, asDouble<Canvas>({}), graph, page.id)
+    expect(seen).toEqual([null])
+    expect(renderer.editingTextId).toBe('edited')
+    expect(invalidated).toEqual(['edited', 'edited'])
   })
 
   test('preserves transformed top-level nodes when preparing a page export', () => {
@@ -242,7 +271,7 @@ describe('raster export', () => {
       height: 40,
       text: 'Primitives',
       fontSize: 30,
-      lineHeight: 40,
+      lineHeight: pixelLength(40),
       fills: [
         {
           type: 'SOLID',

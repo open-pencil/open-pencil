@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useSceneComputed, useStatusMessages } from '@open-pencil/vue'
+import { useStatusMessages } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
@@ -20,7 +21,7 @@ const states = useSceneComputed(() => store.statusWorkflow().states)
         <icon-lucide-square-arrow-out-up-right class="size-3.5" />
       </IconButton>
     </template>
-    <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
+    <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-2xs text-muted">
       <li v-for="state in states" :key="state.id" class="flex items-center gap-1.5">
         <StatusDot :color="state.color" />
         {{ state.name }}

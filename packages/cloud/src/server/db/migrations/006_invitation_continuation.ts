@@ -1,4 +1,4 @@
-import type { CloudDatabase } from '#cloud/server/db/schema'
+import type { CloudDatabase } from '#cloud/server/db/tables'
 import type { Kysely } from 'kysely'
 
 export async function up(database: Kysely<CloudDatabase>): Promise<void> {

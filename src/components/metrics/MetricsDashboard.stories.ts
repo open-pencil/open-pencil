@@ -54,6 +54,130 @@ const traffic = [
   { day: '2026-10-17', views: 601, uniqueViews: 299, clones: 3884 },
   { day: '2026-10-18', views: 477, uniqueViews: 283, clones: 3807 }
 ]
+const issues = [
+  {
+    day: '2026-10-13',
+    openTeam: 23,
+    openCommunity: 42,
+    openedTeam: 7,
+    openedCommunity: 7,
+    closedTeam: 0,
+    closedCommunity: 1
+  },
+  {
+    day: '2026-10-14',
+    openTeam: 23,
+    openCommunity: 44,
+    openedTeam: 0,
+    openedCommunity: 2,
+    closedTeam: 0,
+    closedCommunity: 0
+  },
+  {
+    day: '2026-10-15',
+    openTeam: 23,
+    openCommunity: 44,
+    openedTeam: 0,
+    openedCommunity: 2,
+    closedTeam: 0,
+    closedCommunity: 2
+  },
+  {
+    day: '2026-10-16',
+    openTeam: 23,
+    openCommunity: 46,
+    openedTeam: 0,
+    openedCommunity: 2,
+    closedTeam: 0,
+    closedCommunity: 0
+  },
+  {
+    day: '2026-10-17',
+    openTeam: 24,
+    openCommunity: 49,
+    openedTeam: 1,
+    openedCommunity: 3,
+    closedTeam: 0,
+    closedCommunity: 0
+  },
+  {
+    day: '2026-10-18',
+    openTeam: 25,
+    openCommunity: 50,
+    openedTeam: 1,
+    openedCommunity: 2,
+    closedTeam: 0,
+    closedCommunity: 1
+  }
+]
+const pulls = [
+  {
+    day: '2026-10-13',
+    openTeam: 15,
+    openCommunity: 37,
+    openedTeam: 20,
+    openedCommunity: 42,
+    closedTeam: 21,
+    closedCommunity: 6,
+    mergedTeam: 21,
+    mergedCommunity: 6
+  },
+  {
+    day: '2026-10-14',
+    openTeam: 17,
+    openCommunity: 43,
+    openedTeam: 8,
+    openedCommunity: 6,
+    closedTeam: 6,
+    closedCommunity: 0,
+    mergedTeam: 6,
+    mergedCommunity: 0
+  },
+  {
+    day: '2026-10-15',
+    openTeam: 17,
+    openCommunity: 53,
+    openedTeam: 14,
+    openedCommunity: 13,
+    closedTeam: 14,
+    closedCommunity: 3,
+    mergedTeam: 13,
+    mergedCommunity: 2
+  },
+  {
+    day: '2026-10-16',
+    openTeam: 17,
+    openCommunity: 56,
+    openedTeam: 5,
+    openedCommunity: 4,
+    closedTeam: 5,
+    closedCommunity: 1,
+    mergedTeam: 4,
+    mergedCommunity: 1
+  },
+  {
+    day: '2026-10-17',
+    openTeam: 15,
+    openCommunity: 60,
+    openedTeam: 1,
+    openedCommunity: 12,
+    closedTeam: 3,
+    closedCommunity: 8,
+    mergedTeam: 2,
+    mergedCommunity: 0
+  },
+  {
+    day: '2026-10-18',
+    openTeam: 17,
+    openCommunity: 59,
+    openedTeam: 6,
+    openedCommunity: 1,
+    closedTeam: 4,
+    closedCommunity: 2,
+    mergedTeam: 4,
+    mergedCommunity: 1
+  }
+]
 const signups = [
   { domain: 'crugroup.com', signedUpAt: '2026-10-14T16:12:31Z', confirmed: true },
   { domain: 'gmail.com', signedUpAt: '2026-10-14T22:11:38Z', confirmed: true },
@@ -91,8 +215,11 @@ const isInRange = (day: string, range: MetricsRange) =>
   parseDate(day).compare(parseDate(range.start)) >= 0 &&
   parseDate(day).compare(parseDate(range.end)) <= 0
 
-/** What the feedback Worker answers for a range; `withUsage` false is PostHog not answering. */
-function scope(range: MetricsRange, withUsage: boolean): MetricsSnapshot {
+/**
+ * What the feedback Worker answers for a range; `withUsage` false is PostHog not answering,
+ * `withActivity` false is the issue mirror before its first sync.
+ */
+function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): MetricsSnapshot {
   const inRange = <T extends { day: string }>(rows: T[]) =>
     rows.filter((row) => isInRange(row.day, range))
   const recent = signups.filter((signup) =>
@@ -112,6 +239,18 @@ function scope(range: MetricsRange, withUsage: boolean): MetricsSnapshot {
       { os: 'android', desktop: 0, web: 43 },
       { os: 'ios', desktop: 0, web: 28 }
     ],
+    // Networks are illustrative, shaped like a cloud network's automated installs.
+    networks: {
+      total: 2512,
+      top: [
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 2089, web: 0 },
+        { asn: 7922, name: 'Comcast Cable Communications, LLC', desktop: 101, web: 88 },
+        { asn: 4134, name: 'Chinanet', desktop: 54, web: 61 },
+        { asn: 3320, name: 'Deutsche Telekom AG', desktop: 40, web: 33 },
+        { asn: 9299, name: 'Philippine Long Distance Telephone Company', desktop: 12, web: 9 },
+        { asn: 0, name: '', desktop: 3, web: 1 }
+      ]
+    },
     versions: { latest: '0.16.0', daily: inRange(versions) },
     releases: inRange([{ day: '2026-10-14', version: '0.16.0' }]),
     visits: inRange(visits),
@@ -149,7 +288,10 @@ function scope(range: MetricsRange, withUsage: boolean): MetricsSnapshot {
         { name: 'openpencil.dev', value: 467 },
         { name: 'Bing', value: 124 },
         { name: 'youtube.com', value: 80 }
-      ]
+      ],
+      activity: withActivity
+        ? { issues: inRange(issues), pulls: inRange(pulls) }
+        : { issues: [], pulls: [] }
     },
     waitlist: { total: 22, confirmed: 16, added: recent.length, recent: recent.toReversed() },
     usage: withUsage
@@ -188,22 +330,25 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const story = (frame: string, withUsage = true): Story => ({
+const story = (frame: string, withUsage = true, withActivity = true): Story => ({
   render: () => ({
     components: { MetricsDashboard },
     setup: () => {
       const range = ref(presetRange('7d', TODAY, EARLIEST))
-      const snapshot = computed(() => scope(range.value, withUsage))
+      const snapshot = computed(() => scope(range.value, withUsage, withActivity))
       return { range, snapshot }
     },
     template: `<div class="${frame}"><MetricsDashboard host="feedback.openpencil.dev" :snapshot="snapshot" v-model:range="range" /></div>`
   })
 })
 
-export const Overview = story('h-[3000px]')
+export const Overview = story('h-987.5')
 
 /** PostHog did not answer: retention and usage give way to a notice, the rest stays. */
-export const WithoutUsage = story('h-[2600px]', false)
+export const WithoutUsage = story('h-887.5', false)
+
+/** Before the first nightly sync, issues and pull requests give way to a notice. */
+export const BeforeIssueSync = story('h-850', true, false)
 
 /** The dashboard in a phone-width window. */
-export const Narrow = story('h-[4400px] w-[390px]')
+export const Narrow = story('h-1612.5 w-97.5')

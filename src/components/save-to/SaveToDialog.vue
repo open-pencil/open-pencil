@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { groupBy } from 'es-toolkit'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -13,9 +14,11 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { saveTo } from '@/theme/save-to'
+import saveToTheme from '@/theme/save-to'
 
 import type { SaveDestination, SaveToState } from './types'
+
+const saveTo = tv(saveToTheme)
 
 /**
  * Saving a document from this device to a Cloud workspace or the storage bucket, when there is

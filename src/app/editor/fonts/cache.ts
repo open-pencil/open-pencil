@@ -25,7 +25,7 @@ type FontCacheManifest = {
   entries: Partial<Record<string, FontCacheEntry>>
 }
 
-const CachedFontManifest = v.object({
+const cachedFontManifestSchema = v.object({
   version: v.literal(1),
   entries: v.record(
     v.string(),
@@ -71,7 +71,7 @@ function hexDigest(data: ArrayBuffer) {
 }
 
 async function readManifest(): Promise<FontCacheManifest> {
-  return (await readCacheJSON(MANIFEST_PATH, CachedFontManifest)) ?? EMPTY_MANIFEST
+  return (await readCacheJSON(MANIFEST_PATH, cachedFontManifestSchema)) ?? EMPTY_MANIFEST
 }
 
 async function writeManifest(manifest: FontCacheManifest) {

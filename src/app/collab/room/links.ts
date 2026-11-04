@@ -2,7 +2,7 @@ import * as v from 'valibot'
 
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
 
-/** Desktop events and commands for `openpencil://join?room=<id>` links (`desktop/src/lib.rs`). */
+/** Desktop events and commands for `openpencil://join?room=<id>` links (`desktop/src/launch/mod.rs`). */
 export const ROOM_LINKS_EVENT = 'open-room-links'
 const TAKE_PENDING_ROOMS = 'take_pending_rooms'
 

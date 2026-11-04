@@ -4,13 +4,24 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { isEqual } from 'es-toolkit/predicate'
 import { deflateSync } from 'fflate'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import {
+  exportFigFile,
+  parseFigFile,
+  populateAllFigPages,
+  populateFigPage
+} from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
-import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import {
+  initCodec,
+  getCompiledSchema,
+  getSchemaBytes,
+  type NodeChange
+} from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { computeImageHash, getSharedStyles, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {
@@ -364,16 +375,22 @@ describe('writing an edited document into its archive', () => {
     })
   })
 
-  test('keeps every archive record its own when new pages and variables take IDs it uses', async () => {
+  test('keeps a change to the libraries the document enables', async () => {
+    const binding = { libraryId: 'ds', revisionId: 'two', enabled: true }
+    const { patched } = await exportBothWays((graph) => {
+      graph.enabledLibraries.set('ds', binding)
+    })
+    const reopened = await open(patched)
+    expect(reopened.enabledLibraries.get('ds')).toEqual(binding)
+  })
+
+  test('keeps every archive record its own when a new variable takes an ID it uses', async () => {
     const bytes = await fixtureBytes()
     const graph = await open(bytes)
-    // New IDs that happen to equal records on a page not loaded yet, as a file saved before can
-    // hold: the records must stay theirs.
-    const unloaded = [...recordsOf(bytes)].filter(([, record]) =>
-      ['Bound', 'Branded'].includes(record.name ?? '')
-    )
-    const [pageGuid, variableGuid] = unloaded.map(([guid]) => guid)
-    graph.createNodeWithId(pageGuid, 'CANVAS', graph.rootId, { name: 'Added page' })
+    // A new ID that happens to equal a layer's record on a page not loaded yet: the record must
+    // stay the layer's.
+    const variableGuid = [...recordsOf(bytes)].find(([, record]) => record.name === 'Branded')?.[0]
+    if (!variableGuid) throw new Error('Expected the Branded layer record')
     const [collection] = graph.variableCollections.values()
     const [existing] = graph.variables.values()
     graph.addVariable({ ...structuredClone(existing), id: variableGuid, name: 'added' })
@@ -386,7 +403,22 @@ describe('writing an edited document into its archive', () => {
       expect(after.get(guid)?.name).toBe(record.name)
     }
     const added = [...after.values()].filter((record) => !before.has(guidKey(record)))
-    expect(added.map((record) => record.name).toSorted()).toEqual(['Added page', 'added'])
+    expect(added.map((record) => record.name)).toEqual(['added'])
+  })
+
+  test('writes a layer into its own record when something cleared its source id', async () => {
+    const bytes = await fixtureBytes()
+    const graph = await open(bytes)
+    // A room's copy of a layer carries no source metadata; the layer's ID still names its record.
+    const page = graph.getPages()[0]
+    for (const node of [page, ...graph.getChildren(page.id)])
+      graph.updateNode(node.id, { source: { ...structuredClone(node.source), id: '' } })
+    const patched = await exportFigFile(graph)
+    const before = recordsOf(bytes)
+    const after = recordsOf(patched)
+    expect([...after.keys()].toSorted()).toEqual([...before.keys()].toSorted())
+    for (const [guid, record] of before)
+      expect(after.get(guid)?.parentIndex).toEqual(record.parentIndex)
   })
 
   test('keeps layers on unopened pages bound to a variable whose value changes', async () => {

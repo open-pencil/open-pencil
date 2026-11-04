@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { provideEditor } from '@open-pencil/vue'
@@ -173,7 +173,7 @@ provideEditor(editor)
 
 <template>
   <div
-    class="flex h-[640px] w-[min(var(--frame-width),calc(100vw-4rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
+    class="flex h-160 w-[min(var(--frame-width),calc(100vw-4rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
     :style="{ '--frame-width': `${width}px` }"
   >
     <TokensPanel />

@@ -16,8 +16,8 @@ import { data } from '#docs-api/components/color-picker-root.data'
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Color } from '@open-pencil/scene-graph'
-import { ColorPickerRoot } from '@open-pencil/vue'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
 
 const color = ref<Color>({ r: 0.2, g: 0.5, b: 0.9, a: 1 })
 </script>

@@ -1,13 +1,15 @@
 export {
-  cloudDeploymentConfigSchema,
   parseCloudDeploymentConfig,
   parseCloudDeploymentSource,
   parseCloudDeploymentTOML,
+  type CloudEnvironment
+} from './deployment'
+export {
+  cloudDeploymentConfigSchema,
   type CloudDeploymentConfig,
   type CloudDeploymentInput,
-  type CloudEnvironment,
   type CloudSecretReference
-} from './deployment'
+} from './schema'
 export { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/contract'
 export {
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,

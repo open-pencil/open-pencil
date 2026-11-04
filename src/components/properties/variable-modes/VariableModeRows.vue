@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { MIXED, usePanelMessages, type VariableModeChoice } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -45,7 +47,7 @@ function select(choice: VariableModeChoice, value: string) {
     class="mt-1.5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
     data-variable-mode-row
   >
-    <span class="truncate text-[11px] text-muted">{{ choice.name }}</span>
+    <span class="truncate text-2xs text-muted">{{ choice.name }}</span>
     <AppSelect
       :model-value="current(choice)"
       class="w-full"

@@ -36,6 +36,8 @@ export const commonMessageDefaults = {
   noResults: 'No results',
   save: 'Save',
   done: 'Done',
+  /** The accessible name of a task list's checkbox in rendered Markdown. */
+  task: 'Task',
   back: 'Back',
   supported: 'Supported',
   unsupported: 'Not supported',

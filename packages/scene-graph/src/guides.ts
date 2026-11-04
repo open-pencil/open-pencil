@@ -1,4 +1,4 @@
-import type { SceneGraph } from './index'
+import type { SceneGraph } from './graph'
 import type { GUID } from './primitives'
 import type { SceneNode } from './types'
 
@@ -7,6 +7,11 @@ export interface CanvasGuide {
   axis: 'x' | 'y'
   position: number
   figGuid?: GUID
+}
+
+/** A new guide's id, unique across documents as a copied guide keeps its id. */
+export function newGuideId(): string {
+  return `guide:${crypto.randomUUID()}`
 }
 
 const ownersByGraph = new WeakMap<SceneGraph, Set<string>>()

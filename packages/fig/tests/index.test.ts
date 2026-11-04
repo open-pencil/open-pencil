@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 import { expectDefined } from '#fig-tests/helpers/assert'
 import {
   FIG_PACKAGE_STATUS,
+  figArchiveKind,
   figArchiveMetaJSON,
   parseFigBuffer,
   readFigArchiveMeta,
@@ -12,6 +13,7 @@ import {
   writeFigContainer
 } from '#fig/index'
 import { deflateSync } from 'fflate'
+import { toUint8Array } from 'js-base64'
 
 import {
   createNodeChangesMessage,
@@ -21,6 +23,9 @@ import {
 } from '@open-pencil/kiwi/fig/codec'
 
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+/** A 3 × 2 PNG, as a `.fig` thumbnail chunk holds one. */
+const PNG_3X2 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGP4z8AAQQxwFgBB0gX7h/C5SAAAAABJRU5ErkJggg=='
 
 function appendChunk(container: Uint8Array, chunk: Uint8Array): Uint8Array {
   const bytes = new Uint8Array(container.byteLength + 4 + chunk.byteLength)
@@ -129,6 +134,22 @@ describe('@open-pencil/fig package API', () => {
     expect(renameFigArchive(archive('{"version":1,"app":"OpenPencil"}'), 'New')).toBeNull()
   })
 
+  it('tells a board archive from a design one by its canvas header', () => {
+    const archive = (kind?: 'design' | 'board') =>
+      writeFigArchive({
+        schemaDeflated: deflateSync(getSchemaBytes()),
+        kiwiData: encodeMessage(createNodeChangesMessage(0, 0, [])),
+        thumbnailPNG: PNG_SIGNATURE,
+        metaJSON: '{}',
+        kind
+      })
+
+    expect(figArchiveKind(archive())).toBe('design')
+    expect(figArchiveKind(archive('board'))).toBe('board')
+    expect(figArchiveKind(new TextEncoder().encode('fig-jam.'))).toBe('board')
+    expect(figArchiveKind(new Uint8Array([1, 2, 3]))).toBeNull()
+  })
+
   it('parses legacy raw fig-kiwi files and preserves their thumbnail chunk', () => {
     const container = writeFigContainer(
       {
@@ -146,7 +167,7 @@ describe('@open-pencil/fig package API', () => {
       },
       { version: 1 }
     )
-    const thumbnailPNG = new Uint8Array([...PNG_SIGNATURE, 1, 2, 3])
+    const thumbnailPNG = toUint8Array(PNG_3X2)
     const bytes = appendChunk(container, thumbnailPNG)
     const parsed = parseFigBuffer(bytes.buffer as ArrayBuffer)
 

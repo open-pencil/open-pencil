@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import type { SceneNode } from '../types'
 import { scaleVariableBindingUnits } from '../variables/units'

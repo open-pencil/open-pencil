@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
+
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n, useInlineRename } from '@open-pencil/vue'
+import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 import type { FollowTarget } from '@/app/presence/types'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { avatar } from '@/theme/collaboration/avatar/person'
-import { presenceList } from '@/theme/collaboration/presence-list'
+import presenceListTheme from '@/theme/collaboration/presence-list'
 
+import { personFill } from './color'
 import { isFollowing, type PresenceAgentRow, type PresencePersonRow } from './rows'
+import { avatar } from './ui'
+
+const presenceList = tv(presenceListTheme)
 
 const { rows, following } = defineProps<{
   rows: PresencePersonRow[]
@@ -55,7 +61,7 @@ function followLabel(name: string, target: FollowTarget): string {
   <ul data-test-id="collab-presence-list" :class="ui.root()">
     <li v-for="person in rows" :key="person.clientId ?? 'self'">
       <div data-slot="person" :class="ui.person()">
-        <div :class="avatar()" :style="{ background: colorToCSS(person.color) }">
+        <div :class="avatar()" :style="{ background: personFill(person.color) }">
           {{ initials(person.name || common.you) }}
         </div>
         <span :class="ui.name()">

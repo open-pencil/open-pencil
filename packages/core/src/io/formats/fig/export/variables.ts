@@ -7,10 +7,20 @@ import {
   mapUnsupportedExpressionReferences,
   unsupportedExpressionData,
   variableAlias,
-  variableMetadataNodeChange
+  variableMetadataNodeChange,
+  safeColor
 } from '@open-pencil/fig/node-change'
-import type { GUID, NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type {
+  SceneGraph,
+  SceneNode,
+  VariableFormulaNode,
+  VariableCollectionMode,
+  VariableValue
+} from '@open-pencil/scene-graph'
+import { fractionalPosition, orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 import {
   modesDefaultFirst,
   isUnsupportedVariableValue,
@@ -18,16 +28,8 @@ import {
   formulaValueType,
   inferFormulaType,
   variableFormulaSchema,
-  variableColorExpressionSchema,
-  type SceneGraph,
-  type SceneNode,
-  type VariableFormulaNode,
-  type VariableCollectionMode,
-  type VariableValue
-} from '@open-pencil/scene-graph'
-import { fractionalPosition, orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
-
-import { safeColor } from '#core/kiwi/fig/node-change/serialize'
+  variableColorExpressionSchema
+} from '@open-pencil/scene-graph/variables'
 
 /**
  * Identity allocation shared by the two writers. The document exporter and the clipboard
@@ -41,15 +43,10 @@ export function assignVariableGuid(
   nodeSourceGuidValues: Set<string>,
   keepsGuid: (id: string) => boolean = () => true
 ): GUID {
-  if (
-    keepsGuid(id) &&
-    /^\d+:\d+$/.test(id) &&
-    !assignedGuidValues.has(id) &&
-    !nodeSourceGuidValues.has(id)
-  ) {
-    const guid = stringToGuid(id)
+  const own = keepsGuid(id) ? parseGuidOrNull(id) : null
+  if (own && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
     assignedGuidValues.add(id)
-    return guid
+    return own
   }
   const guid = { sessionID: 0, localID: localIdCounter.value++ }
   assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)

@@ -13,16 +13,15 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 import IconChevronDown from '~icons/lucide/chevron-down'
 
-import type { EditorToolDef } from '@open-pencil/core/editor'
+import type { EditorToolDef, Tool } from '@open-pencil/core'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { isToolbarToolActive } from '@open-pencil/vue/primitives/Toolbar'
 import {
-  isToolbarToolActive,
   toolbarFlyoutItemTestId,
   toolbarFlyoutTestId,
   toolbarToolTestId,
-  useI18n,
   vTestId
-} from '@open-pencil/vue'
-import type { Tool } from '@open-pencil/vue'
+} from '@open-pencil/vue/testing'
 
 import { toolTip } from '@/app/editor/toolbar/shortcuts'
 import ToolButton from '@/components/toolbar/ToolButton.vue'

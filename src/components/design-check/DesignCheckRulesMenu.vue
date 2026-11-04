@@ -14,7 +14,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import {
   setDesignCheckPreset,

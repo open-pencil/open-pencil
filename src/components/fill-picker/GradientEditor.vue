@@ -3,13 +3,13 @@ import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { useI18n } from '@open-pencil/vue/i18n'
 import {
   GradientEditorRoot,
   GradientEditorBar,
-  GradientEditorStop,
-  inputValue,
-  useI18n
-} from '@open-pencil/vue'
+  GradientEditorStop
+} from '@open-pencil/vue/primitives/GradientEditor'
+import { inputValue } from '@open-pencil/vue/shared/dom-events'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -78,7 +78,7 @@ function listStopClass(active: boolean) {
 
       <div class="mb-2">
         <div class="mb-1 flex items-center justify-between">
-          <span class="text-[11px] text-muted">{{ panels.stops }}</span>
+          <span class="text-2xs text-muted">{{ panels.stops }}</span>
           <IconButton
             :label="panels.addStop"
             data-test-id="fill-picker-add-stop"
@@ -128,7 +128,7 @@ function listStopClass(active: boolean) {
             </template>
             <template #value>
               <input
-                class="min-w-0 flex-1 border-none bg-transparent font-mono text-[11px] text-surface outline-none"
+                class="min-w-0 flex-1 border-none bg-transparent font-mono text-2xs text-surface outline-none"
                 :value="s.hex"
                 maxlength="6"
                 @change="s.actions.updateColor(inputValue($event))"
@@ -146,7 +146,11 @@ function listStopClass(active: boolean) {
         </GradientEditorStop>
       </div>
 
-      <ColorPickerPanel :color="root.activeColor" @update="root.actions.updateActiveColor" />
+      <ColorPickerPanel
+        :color="root.activeColor"
+        eyedropper
+        @update="root.actions.updateActiveColor"
+      />
     </div>
   </GradientEditorRoot>
 </template>

@@ -1,4 +1,8 @@
-export { createTransactionalEmailService, TransactionalEmailTransportError } from './service'
+export {
+  createTransactionalEmailService,
+  TransactionalEmailTransportError,
+  type TransactionalEmailTransportErrorKind
+} from './service'
 export { createInvitationOutbox } from './invitations'
 export { startTransactionalEmailWorker } from './worker'
 export { decryptTransactionalEmailPayload, encryptTransactionalEmailPayload } from './crypto'

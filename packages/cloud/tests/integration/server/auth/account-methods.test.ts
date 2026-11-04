@@ -95,7 +95,7 @@ describe('account authentication methods', () => {
       ).toBe(401)
 
       await fixture.database
-        .insertInto('cloudEnrollment')
+        .insertInto('enrollment')
         .values({
           id: crypto.randomUUID(),
           emailNormalized: 'person@example.com',

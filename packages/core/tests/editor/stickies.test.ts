@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { setTextMeasurer } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { setTextMeasurer } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
+import { lineHeightPixels, percentLength } from '@open-pencil/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 
@@ -21,7 +22,9 @@ function sublayers(editor: ReturnType<typeof setup>['editor'], sticky: SceneNode
 beforeEach(() => {
   setTextMeasurer((node, maxWidth) => ({
     width: maxWidth ?? node.width,
-    height: node.text.split('\n').length * (node.lineHeight ?? node.fontSize)
+    height:
+      node.text.split('\n').length *
+      (lineHeightPixels(node.lineHeight, node.fontSize) ?? node.fontSize)
   }))
 })
 afterEach(() => setTextMeasurer(null))
@@ -54,7 +57,10 @@ describe('sticky notes', () => {
     const { editor, pageId } = setup()
     const sticky = editor.createStickyNote(pageId, { x: 0, y: 0 })
     editor.setStickyTextSize([sticky.id], 'large')
-    expect(sublayers(editor, sticky).body).toMatchObject({ fontSize: 40, lineHeight: 60 })
+    expect(sublayers(editor, sticky).body).toMatchObject({
+      fontSize: 40,
+      lineHeight: percentLength(150)
+    })
     editor.setStickyAuthorVisible([sticky.id], false)
     expect(sublayers(editor, sticky).author.visible).toBe(false)
 
@@ -94,7 +100,10 @@ describe('sticky notes', () => {
     const sticky = editor.createStickyNote(pageId, { x: 0, y: 0 })
     editor.graph.updateNode(sublayers(editor, sticky).body.id, { fontFamily: 'Figma Hand' })
     editor.setStickyTextSize([sticky.id], 'large')
-    expect(sublayers(editor, sticky).body).toMatchObject({ fontSize: 40, letterSpacing: 0 })
+    expect(sublayers(editor, sticky).body).toMatchObject({
+      fontSize: 40,
+      letterSpacing: percentLength(0)
+    })
   })
 
   test("typing in a note's body renames a note that was never renamed", () => {
@@ -110,5 +119,21 @@ describe('sticky notes', () => {
     expect(editor.graph.getNode(sticky.id)?.name).toBe('Kept')
     editor.undo.undo()
     expect(editor.graph.getNode(sticky.id)?.autoRename).toBe(true)
+  })
+
+  test('a new colour or text size leaves the shared style it changes, and undo brings it back', () => {
+    const { editor, pageId } = setup()
+    const sticky = editor.createStickyNote(pageId, { x: 0, y: 0 })
+    const { body } = sublayers(editor, sticky)
+    editor.graph.updateNode(sticky.id, { fillStyleId: 'fill-style' })
+    editor.graph.updateNode(body.id, { textStyleId: 'text-style' })
+    editor.setStickyColor([sticky.id], STICKY_COLORS.pink)
+    editor.setStickyTextSize([sticky.id], 'large')
+    expect(editor.graph.getNode(sticky.id)?.fillStyleId).toBeNull()
+    expect(editor.graph.getNode(body.id)?.textStyleId).toBeNull()
+    editor.undo.undo()
+    editor.undo.undo()
+    expect(editor.graph.getNode(sticky.id)?.fillStyleId).toBe('fill-style')
+    expect(editor.graph.getNode(body.id)?.textStyleId).toBe('text-style')
   })
 })

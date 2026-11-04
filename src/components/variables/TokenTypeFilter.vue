@@ -10,7 +10,7 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'

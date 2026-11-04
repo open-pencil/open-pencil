@@ -1,6 +1,6 @@
-FROM oven/bun@sha256:b86c67b531d87b4db11470d9b2bd0c519b1976eee6fcd71634e73abfa6230d2e
+FROM oven/bun@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
 
-# Bun 1.3.10, pinned to the multi-platform image digest.
+# Bun 1.4.4, the packageManager version CI installs, pinned to the multi-platform image digest.
 
 ARG CA_CERTIFICATES_VERSION=20250419
 ARG GIT_VERSION=1:2.47.3-0+deb13u1
@@ -21,6 +21,7 @@ RUN apt-get update \
         /workspace/open-pencil/node_modules \
         /workspace/open-pencil/packages/scene-graph/node_modules \
         /workspace/open-pencil/packages/pen/node_modules \
+        /workspace/open-pencil/packages/collab/node_modules \
         /workspace/open-pencil/packages/kiwi/node_modules \
         /workspace/open-pencil/packages/fig/node_modules \
         /workspace/open-pencil/packages/core/node_modules \

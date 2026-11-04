@@ -5,7 +5,7 @@ import {
   selectionToJSXWithLayers,
   type DesignJSXElement
 } from '@open-pencil/design-jsx'
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import type { GeneratedCode } from '@/app/code/generated'
 import type { DesignJSXLayerLine } from '@/app/code/live-preview'

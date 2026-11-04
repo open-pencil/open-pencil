@@ -1,6 +1,7 @@
 import { computed, shallowRef, watch } from 'vue'
 
 import { generateRoomId } from '@/app/collab/awareness'
+import type { RoomImageStore } from '@/app/collab/images'
 import { isRoomId } from '@/app/collab/room/id'
 import { openRoomSession, type RoomIdentity, type RoomSession } from '@/app/collab/session'
 import type { JoinCollabRoom } from '@/app/collab/transport'
@@ -64,7 +65,8 @@ export function openDocumentRoom(
   store: EditorStore,
   roomId: string,
   transport: JoinCollabRoom,
-  identity?: RoomIdentity
+  identity?: RoomIdentity,
+  images?: RoomImageStore
 ): RoomSession {
   const existing = roomForStore(store)
   if (existing?.roomId === roomId) return existing
@@ -77,7 +79,8 @@ export function openDocumentRoom(
     joinRoom: transport,
     holdsDocument: true,
     leavable: false,
-    identity
+    identity,
+    images
   })
   addSession(session)
   return session

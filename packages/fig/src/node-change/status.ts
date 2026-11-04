@@ -1,14 +1,13 @@
 import * as v from 'valibot'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import {
   FIGMA_STATUS_STATE_IDS,
   figmaDevStatusOf,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData,
-  type FigmaDevStatus,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type FigmaDevStatus
+} from '@open-pencil/scene-graph/statuses'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import type { KiwiNodeChange } from './export/context'
@@ -16,12 +15,12 @@ import { readNodeChangePluginData } from './plugin-data'
 
 const FIGMA_SECTION_STATUS = { READY_FOR_DEV: 'BUILD', COMPLETED: 'COMPLETED' } as const
 
-const sectionStatusInfo = v.object({
+const sectionStatusInfoSchema = v.object({
   status: v.fallback(v.picklist(['NONE', 'BUILD', 'COMPLETED']), 'NONE')
 })
 
 function figmaStatus(nc: NodeChange): FigmaDevStatus | null {
-  const parsed = v.safeParse(sectionStatusInfo, nc.sectionStatusInfo)
+  const parsed = v.safeParse(sectionStatusInfoSchema, nc.sectionStatusInfo)
   const status = parsed.success ? parsed.output.status : 'NONE'
   if (status === 'BUILD') return 'READY_FOR_DEV'
   if (status === 'COMPLETED') return 'COMPLETED'

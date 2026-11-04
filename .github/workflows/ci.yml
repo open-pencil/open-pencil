@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          # A pull request's merge commit and its parents; the first parent is the base it merges into.
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -116,6 +118,9 @@ jobs:
 
       - name: Typecheck test suites
         run: bun run check:test-types
+
+      - name: Typecheck repository tools
+        run: bun run check:tools
 
       - name: Enforce architecture and type-shape boundaries
         run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
@@ -323,6 +328,11 @@ jobs:
           # Garage's S3 compatibility for the object-store checks.
           - store: Garage
             script: test:e2e:garage
+          # The Cloudflare Worker under wrangler dev, with its relay Durable Object, against
+          # PostgreSQL and SeaweedFS.
+          - store: Cloudflare Workers
+            script: test:e2e:cloudflare
+            worker: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -332,6 +342,21 @@ jobs:
 
       - name: Generate package declarations
         run: bun run build:packages
+
+      # The editor's demo document draws its shader fills at build time in a headless Chromium.
+      - name: Install Chromium for the demo document
+        if: matrix.worker
+        uses: ./.github/actions/setup-playwright
+
+      # The Worker serves the editor and the portal as static assets, and every official
+      # deployment bundles them.
+      - name: Build the Cloud site and bundle the official Workers
+        if: matrix.worker
+        run: |
+          bun run build:cloud
+          for deployment in packages/cloud/deploy/openpencil/*/; do
+            (cd "$deployment" && bunx wrangler deploy --dry-run --assets "$GITHUB_WORKSPACE/dist-cloud")
+          done
 
       - name: Run Cloud end-to-end tests against ${{ matrix.store }}
         env:

@@ -1,9 +1,11 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
+import { expectDefined, expectFills } from '#core-tests/helpers/assert'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Results recorded from the same scripts run in live Figma (2026-10-11). OpenPencil reports
 // lengths in pixels, as its node getters do, and paints in the shape `fills` returns.
@@ -14,16 +16,27 @@ function styledText(characters = 'Hello world\nSecond') {
   return { api, text }
 }
 
-const REGULAR = { family: 'Inter', style: 'Regular' }
+// Inter is variable, so its names read every axis it is drawn at.
+const REGULAR = { family: 'Inter', style: 'Regular', variationSettings: { opsz: 14, wght: 400 } }
 const BLUE: Color = { r: 0, g: 0, b: 1, a: 1 }
 const RGB_BLUE = { r: 0, g: 0, b: 1 }
-const BOLD = { family: 'Inter', style: 'Bold' }
+const BOLD = { family: 'Inter', style: 'Bold', variationSettings: { opsz: 14, wght: 700 } }
+const BOLD_NAME = { family: 'Inter', style: 'Bold' }
+
+beforeAll(async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+  await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Bold' })
+})
 
 describe('styled text segments', () => {
   test('split only where a requested field changes', () => {
     const { text } = styledText()
     text.setRangeFontSize(0, 5, 24)
-    text.setRangeFontName(6, 11, BOLD)
+    text.setRangeFontName(6, 11, BOLD_NAME)
 
     expect(text.getStyledTextSegments(['fontSize'])).toEqual([
       { characters: 'Hello', start: 0, end: 5, fontSize: 24 },
@@ -115,7 +128,7 @@ describe('styled text segments', () => {
       "in getStyledTextSegments: Invalid range. Must provide both 'start' and 'end'"
     )
     expect(() => text.getStyledTextSegments(['nope' as 'fontSize'])).toThrow(
-      `in getStyledTextSegments: Property "getStyledTextSegments" failed validation: Invalid enum value. Expected 'fontSize' | 'fontName'`
+      `in getStyledTextSegments: Property "getStyledTextSegments" failed validation: Invalid option: expected one of "fontSize"|"fontName"|`
     )
     expect(styledText('').text.getStyledTextSegments(['fontSize'])).toEqual([])
   })
@@ -125,7 +138,7 @@ describe('character style ranges', () => {
   test('read mixed on the node once ranges differ, and setting the node restyles every character', () => {
     const { api, text } = styledText()
     text.setRangeFontSize(0, 5, 24)
-    text.setRangeFontName(6, 11, BOLD)
+    text.setRangeFontName(6, 11, BOLD_NAME)
     expect<unknown>(text.fontSize).toBe(api.mixed)
     expect<unknown>(text.fontName).toBe(api.mixed)
     expect(text.getRangeFontSize(0, 8)).toBe(api.mixed)
@@ -155,19 +168,23 @@ describe('character style ranges', () => {
     expect(expectFills(text.fills)[0]).toMatchObject({ color: { r: 0, g: 0, b: 1 } })
   })
 
+  // Recorded in Figma 126: a range keeps the unit it is given, and the text reads Mixed.
   test('take letter spacing and line height in pixels or percent of the font size', () => {
     const { api, text } = styledText('Abc')
     text.fontSize = 20
     text.setRangeLetterSpacing(0, 1, { value: 10, unit: 'PERCENT' })
-    expect(text.getRangeLetterSpacing(0, 1)).toEqual({ unit: 'PIXELS', value: 2 })
+    expect(text.getRangeLetterSpacing(0, 1)).toEqual({ unit: 'PERCENT', value: 10 })
     expect<unknown>(text.letterSpacing).toBe(api.mixed)
     text.setRangeLineHeight(0, 2, { value: 150, unit: 'PERCENT' })
+    expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'PERCENT', value: 150 })
+    text.setRangeLineHeight(0, 2, { unit: 'PIXELS', value: 30 })
     expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'PIXELS', value: 30 })
+    expect<unknown>(text.lineHeight).toBe(api.mixed)
     text.setRangeLineHeight(0, 2, { unit: 'AUTO' })
     expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'AUTO' })
   })
 
-  test('resolve a percent against the size of each character it styles', () => {
+  test('keep a percent for characters of every size, as Figma does', () => {
     const { text } = styledText('Small Large')
     text.fontSize = 10
     text.setRangeFontSize(6, 11, 20)
@@ -177,20 +194,16 @@ describe('character style ranges', () => {
         .map((segment) => [segment.start, segment.end, segment.letterSpacing])
 
     text.letterSpacing = { value: 10, unit: 'PERCENT' }
-    expect(spacing()).toEqual([
-      [0, 6, { unit: 'PIXELS', value: 1 }],
-      [6, 11, { unit: 'PIXELS', value: 2 }]
-    ])
+    expect(spacing()).toEqual([[0, 11, { unit: 'PERCENT', value: 10 }]])
     text.setRangeLetterSpacing(4, 8, { value: 50, unit: 'PERCENT' })
     expect(spacing()).toEqual([
-      [0, 4, { unit: 'PIXELS', value: 1 }],
-      [4, 6, { unit: 'PIXELS', value: 5 }],
-      [6, 8, { unit: 'PIXELS', value: 10 }],
-      [8, 11, { unit: 'PIXELS', value: 2 }]
+      [0, 4, { unit: 'PERCENT', value: 10 }],
+      [4, 8, { unit: 'PERCENT', value: 50 }],
+      [8, 11, { unit: 'PERCENT', value: 10 }]
     ])
     text.lineHeight = { value: 150, unit: 'PERCENT' }
-    expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'PIXELS', value: 15 })
-    expect(text.getRangeLineHeight(6, 7)).toEqual({ unit: 'PIXELS', value: 30 })
+    expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'PERCENT', value: 150 })
+    expect(text.getRangeLineHeight(6, 7)).toEqual({ unit: 'PERCENT', value: 150 })
   })
 
   test('style decorations of underlined ranges only, keeping them when the underline returns', () => {
@@ -238,36 +251,34 @@ describe('character style ranges', () => {
     const message = (method: string, problem: string) =>
       `in ${method}: Property "value" failed validation: ${problem}`
     expect(() => text.setRangeFontSize(0, 1, 0)).toThrow(
-      message('setRangeFontSize', 'Number must be greater than or equal to 1')
+      message('setRangeFontSize', 'Too small: expected number to be >=1')
     )
     expect(() => text.setRangeFontSize(0, 1, Number.NaN)).toThrow(
-      message('setRangeFontSize', 'Expected number, received nan')
+      message('setRangeFontSize', 'Expected number, received NaN')
     )
     // The range is checked before the value.
     expect(() => text.setRangeFontSize(5, 9, 0)).toThrow(
       'in setRangeFontSize: Range outside of available characters.'
     )
-    expect(() =>
-      text.setRangeLetterSpacing(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })
-    ).toThrow(
+    expect(() => text.setRangeLetterSpacing(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })).toThrow(
       message(
         'setRangeLetterSpacing',
-        "Invalid enum value. Expected 'PIXELS' | 'PERCENT', received 'EM' at .unit"
+        'Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'
       )
     )
     expect(() => text.setRangeLineHeight(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })).toThrow(
       message(
         'setRangeLineHeight',
-        "Invalid discriminator value. Expected 'PIXELS' | 'PERCENT' | 'AUTO' at .unit"
+        'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO'
       )
     )
     expect(() =>
       text.setRangeFills(0, 1, [{ type: 'SOLID', color: { r: 2, g: 0, b: 0 } }])
-    ).toThrow(message('setRangeFills', 'Number must be less than or equal to 1 at [0].color.r'))
+    ).toThrow(message('setRangeFills', 'Too big: expected number to be <=1 at [0].color.r'))
     expect(() => text.setRangeTextDecoration(0, 1, 'OVERLINE' as 'NONE')).toThrow(
       message(
         'setRangeTextDecoration',
-        "Invalid enum value. Expected 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH', received 'OVERLINE'"
+        'Invalid option: expected one of "NONE"|"UNDERLINE"|"STRIKETHROUGH"'
       )
     )
     expect(() => text.setRangeFontName(0, 1, null as never)).toThrow(
@@ -285,12 +296,11 @@ describe('character style ranges', () => {
   test('reject paints Figma rejects, which would not survive saving', () => {
     const { text } = styledText('Abc')
     const paintTypes =
-      "'SOLID' | 'SHADER' | 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | " +
-      "'GRADIENT_DIAMOND' | 'IMAGE' | 'VIDEO'"
+      'SOLID, SHADER, GRADIENT_LINEAR, GRADIENT_RADIAL, GRADIENT_ANGULAR, GRADIENT_DIAMOND, IMAGE, VIDEO'
     const fills = (problem: string) =>
       `in setRangeFills: Property "value" failed validation: ${problem}`
     expect(() => text.setRangeFills(0, 1, [{ color: BLUE } as never])).toThrow(
-      fills(`Invalid discriminator value. Expected ${paintTypes} at [0].type`)
+      fills(`Expected [0].type to be one of the following: ${paintTypes}`)
     )
     expect(() => text.setRangeFills(0, 1, [{ type: 'SOLID' } as never])).toThrow(
       fills('Required value missing at [0].color')
@@ -303,47 +313,46 @@ describe('character style ranges', () => {
     expect(() => solid(null)).toThrow(fills('Expected object, received null at [0].color'))
     expect(() => solid({ r: 0, g: 0 })).toThrow(fills('Required value missing at [0].color.b'))
     expect(() => solid({ r: -0.1, g: 0, b: 0 })).toThrow(
-      fills('Number must be greater than or equal to 0 at [0].color.r')
+      fills('Too small: expected number to be >=0 at [0].color.r')
     )
     expect(() => solid({ r: Number.NaN, g: 0, b: 0 })).toThrow(
-      fills('Expected number, received nan at [0].color.r')
+      fills('Expected number, received NaN at [0].color.r')
     )
     expect(() => solid({ r: '1', g: 0, b: 0 })).toThrow(
       fills('Expected number, received string at [0].color.r')
     )
     expect(() => solid({ r: 0, g: 0, b: 0, a: 2 })).toThrow(
-      fills('Number must be less than or equal to 1 at [0].color.a')
+      fills('Too big: expected number to be <=1 at [0].color.a')
     )
     expect(() => solid({ r: 0, g: 0, b: 0 }, 2)).toThrow(
-      fills('Number must be less than or equal to 1 at [0].opacity')
+      fills('Too big: expected number to be <=1 at [0].opacity')
     )
     expect(() => solid({ r: 0, g: 0, b: 0, a: 0.5 })).not.toThrow()
 
     text.setRangeTextDecoration(0, 3, 'UNDERLINE')
     const color = (problem: string) =>
-      'in setRangeTextDecorationColor: Property "textDecorationColor" failed validation: ' +
-      problem
+      'in setRangeTextDecorationColor: Property "textDecorationColor" failed validation: ' + problem
     const noneMatched = (issues: string) =>
       color(
         `Expected one of the following, but none matched:\n${issues}\n` +
-          '  Invalid literal value, expected "AUTO" at .value'
+          '  Invalid input: expected "AUTO" at .value'
       )
     expect(() => text.setRangeTextDecorationColor(0, 1, { value: BLUE as never })).toThrow(
       noneMatched(
         '  Multiple issues:\n' +
-          '    Invalid literal value, expected "SOLID" at .value.type\n' +
+          '    Invalid input: expected "SOLID" at .value.type\n' +
           '    Required value missing at .value.color\n' +
-          "    Unrecognized key(s) in object: 'r', 'g', 'b', 'a' at .value"
+          '    Unrecognized keys: "r", "g", "b", "a" at .value'
       )
     )
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, { value: { type: 'NOPE', color: RGB_BLUE } as never })
-    ).toThrow(noneMatched('  Invalid literal value, expected "SOLID" at .value.type'))
+    ).toThrow(noneMatched('  Invalid input: expected "SOLID" at .value.type'))
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, {
         value: { type: 'SOLID', color: RGB_BLUE, foo: 1 } as never
       })
-    ).toThrow(color("Unrecognized key(s) in object: 'foo' at .value"))
+    ).toThrow(color('Unrecognized key: "foo" at .value'))
     expect(() =>
       text.setRangeTextDecorationColor(0, 1, { value: { type: 'SOLID', color: null } as never })
     ).toThrow(noneMatched('  Expected object, received null at .value.color'))
@@ -351,6 +360,26 @@ describe('character style ranges', () => {
       text.setRangeTextDecorationColor(0, 1, {
         value: { type: 'SOLID', color: { r: -1, g: 0, b: 0 } } as never
       })
-    ).toThrow(color('Number must be greater than or equal to 0 at .value.color.r'))
+    ).toThrow(color('Too small: expected number to be >=0 at .value.color.r'))
   })
+})
+
+// A range's own solid draws at its colour's alpha times its opacity; the layer's draws at opacity.
+test('a range reads the alpha its own fills draw at, and the layer keeps its opacity', () => {
+  const graph = new SceneGraph()
+  const text = new FigmaAPI(graph).createText()
+  text.characters = 'ab'
+  const half = { r: 1, g: 0, b: 0, a: 0.5 }
+  graph.updateNode(text.id, {
+    fills: [{ type: 'SOLID', color: half, opacity: 0.5, visible: true }],
+    styleRuns: [
+      {
+        start: 1,
+        length: 1,
+        style: { fills: [{ type: 'SOLID', color: half, opacity: 0.5, visible: true }] }
+      }
+    ]
+  })
+  expect(text.getRangeFills(0, 1)).toMatchObject([{ opacity: 0.5, color: { r: 1, g: 0, b: 0 } }])
+  expect(text.getRangeFills(1, 2)).toMatchObject([{ opacity: 0.25, color: { r: 1, g: 0, b: 0 } }])
 })

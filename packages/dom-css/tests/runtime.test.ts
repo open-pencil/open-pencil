@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
-import {
-  createCSSRuntime,
-  createHeadlessCSSRuntime,
-  exportHTMLBundle,
-  serializeHTML
-} from '../src/index'
+import { exportHTMLBundle } from '#dom-css/export/bundle'
+import { serializeHTML } from '#dom-css/export/html'
+
+import { createCSSRuntime, createHeadlessCSSRuntime } from '../src/index'
 import { cardDocument, TEST_COLORS } from './helpers'
 
 describe('@open-pencil/dom-css runtime', () => {
@@ -70,6 +68,15 @@ describe('@open-pencil/dom-css runtime', () => {
 
     expect(html).toContain('<style>')
     expect(html).not.toContain('@tailwindcss/browser@4')
+  })
+
+  it('refuses to record layout in the headless runtime', async () => {
+    const runtime = createHeadlessCSSRuntime()
+    const document = runtime.parseHTML('<div></div>')
+
+    await expect(runtime.computeStyles(document, '', { layout: true })).rejects.toThrow(
+      'cannot record layout'
+    )
   })
 
   it('uses the headless runtime outside browser contexts', () => {

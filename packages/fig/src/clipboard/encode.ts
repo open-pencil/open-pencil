@@ -3,8 +3,7 @@ import { encode, fromUint8Array } from 'js-base64'
 
 import { getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { buildFigKiwi } from '../node-change'
+import { buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 
 /** What a clipboard payload is for: layers to paste, or Copy properties' look for Paste properties. */
 export type FigmaClipboardAssetType = 'UNKNOWN' | 'STYLE_PROPERTIES'

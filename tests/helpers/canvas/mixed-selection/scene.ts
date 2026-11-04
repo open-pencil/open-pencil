@@ -1,4 +1,5 @@
-import type { Color, Fill, SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const RED = { r: 1, g: 0.3, b: 0.2, a: 1 }
 const BLUE = { r: 0.2, g: 0.4, b: 1, a: 1 }

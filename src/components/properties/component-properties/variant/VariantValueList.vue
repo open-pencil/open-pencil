@@ -2,8 +2,9 @@
 import { omit } from 'es-toolkit'
 import { ref, type ComponentPublicInstance } from 'vue'
 
-import type { VariantMutationResult } from '@open-pencil/core/editor'
-import { useFlatReorderDrag, useI18n } from '@open-pencil/vue'
+import type { VariantMutationResult } from '@open-pencil/core'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -116,7 +117,7 @@ function replace(value: string, replacement: string) {
         </IconButton>
       </div>
       <div v-if="replacing === value" class="flex flex-col gap-1 pl-5">
-        <span class="text-[11px] text-muted">{{ panels.moveVariantsTo({ value }) }}</span>
+        <span class="text-2xs text-muted">{{ panels.moveVariantsTo({ value }) }}</span>
         <AppSelect
           :label="panels.moveVariantsTo({ value })"
           :model-value="''"
@@ -125,7 +126,7 @@ function replace(value: string, replacement: string) {
           "
           @update:model-value="replace(value, $event)"
         />
-        <span v-if="conflict" role="alert" class="text-[11px] text-warning">
+        <span v-if="conflict" role="alert" class="text-2xs text-warning">
           {{ panels.duplicateVariantValues }}
         </span>
       </div>

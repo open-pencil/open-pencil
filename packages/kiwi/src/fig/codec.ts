@@ -98,8 +98,6 @@ export function peekMessageType(data: Uint8Array): number | null {
 
 // Type definitions
 
-export type { Color, GUID, Matrix, Vector } from './types'
-
 export interface ParentIndex {
   guid: GUID
   position: string
@@ -148,16 +146,7 @@ export interface Paint {
   density?: number
   noiseSize?: Vector
   customEffectId?: { guid?: GUID }
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-    dataType?: string
-    resolvedDataType?: string
-  }
+  colorVar?: VariableDataEntry
 }
 
 export interface Effect {
@@ -169,6 +158,17 @@ export interface Effect {
   spread?: number
   blendMode?: string
   showShadowBehindNode?: boolean
+  colorVar?: VariableDataEntry
+  radiusVar?: VariableDataEntry
+  spreadVar?: VariableDataEntry
+  xVar?: VariableDataEntry
+  yVar?: VariableDataEntry
+}
+
+/** A reference to a variable: by GUID in the file, or by key in a library. */
+export interface VariableAliasValue {
+  guid?: GUID
+  assetRef?: { key: string; version?: string }
 }
 
 export interface VariableAnyValue {
@@ -176,7 +176,7 @@ export interface VariableAnyValue {
   textValue?: string
   floatValue?: number
   colorValue?: Color
-  alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
+  alias?: VariableAliasValue
   symbolIdValue?: { guid?: GUID }
   // fig.kiwi PropRefValue: the component property a parameter entry points at.
   propRefValue?: { defId?: GUID }
@@ -536,5 +536,3 @@ export function createNodeChange(opts: {
 
   return change
 }
-
-export { parseVariableId } from './variable-bindings'

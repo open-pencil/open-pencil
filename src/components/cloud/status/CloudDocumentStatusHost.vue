@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
+import { isEqual } from 'es-toolkit'
 import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { useCloudMessages } from '@open-pencil/vue'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
-import { cloudRoomPermissions } from '@/app/cloud/rooms/live'
+import { cloudRoomPermissions, cloudRoomsRefused, rejoinRefusedRoom } from '@/app/cloud/rooms/live'
 import { showCloudServerOnHome } from '@/app/cloud/servers/store'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
@@ -33,6 +34,9 @@ const { state, location, meta } = useCloudDocumentStatus(() => store.getStorageB
 const ago = (iso: string | null | undefined) => (iso ? dates.relative(iso) : '')
 const savedAgo = computed(() => ago(meta.value?.lastSyncedAt) || null)
 const viewOnly = computed(() => cloudRoomPermissions.value.get(store) === 'view')
+const notLive = computed(() => cloudRoomsRefused.value.has(store))
+/** Rejoining shows the document as the server holds it, so it waits for this tab's edits. */
+const canRejoin = computed(() => state.value === 'synced' && !store.hasUnsavedChanges())
 /**
  * Saving and saved need nothing from the person, and the tab's dot already shows unsaved edits,
  * so the status shows only for what does: being offline, a failed save, a conflict, view only.
@@ -40,6 +44,7 @@ const viewOnly = computed(() => cloudRoomPermissions.value.get(store) === 'view'
 const needsAttention = computed(
   () =>
     viewOnly.value ||
+    notLive.value ||
     state.value === 'offline' ||
     state.value === 'error' ||
     state.value === 'conflict'
@@ -50,18 +55,26 @@ const choice = ref<CloudConflictChoice>('keep-both')
 const localPreview = shallowRef<Blob | null>(null)
 const localPreviewURL = useObjectUrl(localPreview)
 const cloudSavedAt = ref<string | null>(null)
+let conflictRequest = 0
 
 async function openConflict() {
   const binding = store.getStorageBinding()
   if (!binding) return
+  const request = ++conflictRequest
   choice.value = 'keep-both'
-  resolving.value = true
-  const thumb = await getLocalCanvasStore().readThumb(binding.documentId)
-  localPreview.value = thumb ? new Blob([Uint8Array.from(thumb)], { type: 'image/png' }) : null
+  const thumb = await getLocalCanvasStore()
+    .readThumb(binding.documentId)
+    .catch(() => null)
   const stored = await createStorageAdapter(binding)
     .getDocumentMetadata?.(binding.documentId)
     .catch(() => null)
+  // A later request supersedes this one, and its own reads fill and open the dialog; Save to
+  // can also move the document elsewhere meanwhile, and these reads describe the old place.
+  if (request !== conflictRequest || !isEqual(store.getStorageBinding(), binding)) return
+  localPreview.value = thumb ? new Blob([Uint8Array.from(thumb)], { type: 'image/png' }) : null
   cloudSavedAt.value = stored?.updatedAt ?? null
+  // Opened once both copies are read, so it never shows the last conflict's preview or time.
+  resolving.value = true
 }
 
 async function confirm(picked: CloudConflictChoice) {
@@ -104,7 +117,10 @@ function retry() {
       :host="location.host"
       :saved-ago="savedAgo"
       :view-only="viewOnly"
+      :not-live="notLive"
+      :can-rejoin="canRejoin"
       @resolve="openConflict"
+      @rejoin="rejoinRefusedRoom(store)"
       @share="cloudShareOpen = true"
       @retry="retry"
       @open-workspace="openWorkspace"

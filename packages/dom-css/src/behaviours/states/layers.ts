@@ -5,18 +5,16 @@ import {
 import type { DesignElement, DesignNode, DesignText } from '#dom-css/types'
 import { omit } from 'es-toolkit/object'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourOwner,
-  instanceMainComponent,
-  instanceSlotFrames,
   layerPath,
   partBinding,
-  readBehaviour,
-  readIcon,
-  slotPropertyId,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  readBehaviour
+} from '@open-pencil/scene-graph/behaviours'
+import { readIcon } from '@open-pencil/scene-graph/icons'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import type { StateElement } from './types'
 

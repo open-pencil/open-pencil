@@ -1,11 +1,12 @@
+import type { Editor } from '@open-pencil/core'
 import {
   AUTO_LAYOUT_HOVER_GAP_REGION_TOLERANCE,
   AUTO_LAYOUT_HOVER_PADDING_REGION_TOLERANCE,
   AUTO_LAYOUT_HOVER_TICK_HIT_TOLERANCE
 } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
-import { isGeneratedFrame } from '@open-pencil/scene-graph'
-import type { SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 type AutoLayoutHover = NonNullable<Editor['state']['autoLayoutHover']>
 

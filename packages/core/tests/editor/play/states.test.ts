@@ -1,13 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/core/editor'
-import {
-  emptyBehaviour,
-  findLayerByPath,
-  instanceMainComponent,
-  layerPath,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, findLayerByPath, layerPath } from '@open-pencil/scene-graph/behaviours'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {
@@ -118,7 +114,7 @@ describe('preview islands', () => {
     editor.startPlay()
     editor.resetPlay()
     editor.replaceGraph(new SceneGraph())
-    expect(editor.state.play).toEqual({ revision: 2 })
+    expect(editor.state.canvasView).toEqual({ id: 'play', revision: 2 })
   })
 
   test('a copy paints bound colors in the mode the canvas is showing, not as they were saved', () => {

@@ -22,7 +22,10 @@ function effect(type: Effect['type'], radius: number, y = 0): Effect {
 
 /**
  * Layer blur, drop and inner shadow, and background blur, each at a 16px radius, plus a drop
- * shadow, shown behind the node, under a fill at 0% opacity, which casts nothing.
+ * shadow, shown behind the node, under a fill at 0% opacity, which casts nothing; a boolean's
+ * background blur, inside its result alone; sharp inner shadows over the rounded corners of
+ * an opaque and a translucent fill, where no fill shows through the edge; and a layer blur and
+ * both shadows at a negative radius, as a variable can give one, which draws like a radius of 0.
  */
 export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void {
   const card = { y: 100, width: 120, height: 120, cornerRadius: 20 }
@@ -85,6 +88,60 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
       }
     ]
   })
+  for (const [index, color] of [
+    [0.96, 0.35, 0.35],
+    [0.08, 0.73, 0.73],
+    [0.23, 0.51, 0.96]
+  ].entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Union stripe ${index + 1}`,
+      x: 260 + index * 40,
+      y: 280,
+      width: 40,
+      height: 120,
+      fills: [solid(color[0], color[1], color[2])]
+    })
+  }
+  const union = graph.createNode('BOOLEAN_OPERATION', pageId, {
+    name: 'Union background blur',
+    x: 260,
+    y: 280,
+    width: 120,
+    height: 120,
+    booleanOperation: 'UNION',
+    fills: [solid(1, 1, 1, 0.2)],
+    effects: [effect('BACKGROUND_BLUR', 16)]
+  })
+  graph.createNode('ELLIPSE', union.id, { width: 70, height: 70 })
+  graph.createNode('ELLIPSE', union.id, { x: 50, y: 50, width: 70, height: 70 })
+  for (const [index, opacity] of [1, 0.5].entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Rounded inner shadow ${opacity * 100}%`,
+      x: 440 + index * 180,
+      ...card,
+      y: 280,
+      cornerRadius: 40,
+      fills: [solid(0.96, 0.35, 0.35, opacity)],
+      effects: [
+        {
+          ...effect('INNER_SHADOW', 0),
+          spread: 6,
+          offset: { x: 8, y: 8 },
+          color: { r: 0, g: 0, b: 0, a: 1 }
+        }
+      ]
+    })
+  }
+  for (const [index, type] of (['LAYER_BLUR', 'DROP_SHADOW', 'INNER_SHADOW'] as const).entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Negative ${type.toLowerCase().replace('_', ' ')}`,
+      x: 80 + index * 180,
+      ...card,
+      y: 460,
+      fills: [solid(0.31, 0.27, 0.9)],
+      effects: [effect(type, -6, type === 'LAYER_BLUR' ? 0 : 8)]
+    })
+  }
 }
 
 function shadow(type: 'DROP_SHADOW' | 'INNER_SHADOW', showShadowBehindNode = false): Effect {

@@ -24,6 +24,7 @@ import {
   createSlot,
   fetchIconsTool,
   getBehaviour,
+  importMermaid,
   importSVG,
   insertIcon,
   searchIconsTool,
@@ -150,6 +151,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createSlice,
   createConnectorTool,
   importSVG,
+  importMermaid,
   // Modify (advanced)
   setEffects,
   setOpacity,

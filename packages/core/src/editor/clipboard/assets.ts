@@ -1,13 +1,16 @@
 import { sumBy } from 'es-toolkit'
+import { filename } from 'pathe/utils'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import {
+  computeImageHash,
+  IMPORTABLE_RASTER_TYPES,
+  isSVGFile
+} from '@open-pencil/scene-graph/images'
 
 import { TRANSPARENT } from '#core/constants'
-import { resolvePasteTarget } from '#core/editor/clipboard/paste/target'
+import { parentLocalPoint, resolvePasteTarget } from '#core/editor/clipboard/paste/target'
 import type { EditorContext } from '#core/editor/types'
-import { computeImageHash } from '#core/figma-api'
 import {
   createSVGNodesFromImport,
   isSVGMarkup,
@@ -19,14 +22,6 @@ import { computeAllLayouts } from '#core/layout'
 
 const IMAGE_MAX_DIMENSION = 4096
 const ASSET_GAP = 20
-
-const RASTER_IMAGE_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'image/avif'
-])
 
 interface PreparedRasterAsset {
   kind: 'raster'
@@ -52,12 +47,6 @@ type PushCreatedNodesUndo = (
   previousSelection: Set<string>,
   label?: string
 ) => void
-
-function isSVGFile(file: Pick<File, 'name' | 'type'>): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
-}
 
 export function createClipboardAssetActions(
   ctx: EditorContext,
@@ -92,23 +81,16 @@ export function createClipboardAssetActions(
         ? {
             kind: 'svg',
             data,
-            name: file.name.replace(/\.svg$/i, '') || undefined,
+            name: filename(file.name) || undefined,
             width: data.width,
             height: data.height
           }
         : null
     }
-    if (!RASTER_IMAGE_TYPES.has(file.type)) return null
+    if (!IMPORTABLE_RASTER_TYPES.has(file.type)) return null
     const bytes = new Uint8Array(await file.arrayBuffer())
     const dimensions = decodeImageDimensions(bytes)
     return dimensions ? { kind: 'raster', bytes, name: file.name, ...dimensions } : null
-  }
-
-  function parentLocalPoint(parentId: string, x: number, y: number) {
-    const parent = ctx.graph.getNode(parentId)
-    if (!parent) return { x, y }
-    const inverse = Matrix.invert(getWorldMatrix(parent, ctx.graph))
-    return inverse ? Matrix.mapPoint(inverse, { x, y }) : { x, y }
   }
 
   function createRasterNode(
@@ -127,7 +109,7 @@ export function createClipboardAssetActions(
       visible: true
     }
     return ctx.graph.createNode('RECTANGLE', parentId, {
-      name: asset.name.replace(/\.[^.]+$/, ''),
+      name: filename(asset.name) ?? asset.name,
       x,
       y,
       width: asset.width,
@@ -141,7 +123,7 @@ export function createClipboardAssetActions(
 
     const previousSelection = new Set(ctx.state.selectedIds)
     const parentId = resolvePasteTarget(ctx)
-    const center = parentLocalPoint(parentId, cx, cy)
+    const center = parentLocalPoint(ctx, parentId, cx, cy)
     const totalWidth = sumBy(prepared, (asset) => asset.width) + ASSET_GAP * (prepared.length - 1)
     const maxHeight = Math.max(...prepared.map((asset) => asset.height))
     let x = center.x - totalWidth / 2
@@ -201,13 +183,34 @@ export function createClipboardAssetActions(
     return placeAssets([asset], cx, cy, 'Paste SVG')
   }
 
+  /**
+   * Paste a Mermaid flowchart as FigJam shapes, sections, and connectors, laid out and centred on
+   * the point; false when the text is not one.
+   */
+  async function pasteMermaid(text: string, cx: number, cy: number): Promise<boolean> {
+    const { detectMermaidDiagram, parseFlowchart } = await import('@open-pencil/mermaid')
+    if (!detectMermaidDiagram(text)) return false
+    const chart = parseFlowchart(text)
+    const { addFlowchart } = await import('#core/io/formats/mermaid')
+    const previousSelection = new Set(ctx.state.selectedIds)
+    const parentId = resolvePasteTarget(ctx)
+    const { ids: created } = await addFlowchart(ctx.graph, parentId, chart, {
+      center: parentLocalPoint(ctx, parentId, cx, cy)
+    })
+    if (created.length === 0) return false
+    ctx.setSelectedIds(new Set(created))
+    pushCreatedNodesUndo(created, previousSelection, 'Paste Mermaid')
+    ctx.requestRender()
+    return true
+  }
+
   function placeImageFiles(files: File[], cx: number, cy: number) {
     return placeFiles(
-      files.filter((file) => RASTER_IMAGE_TYPES.has(file.type)),
+      files.filter((file) => IMPORTABLE_RASTER_TYPES.has(file.type)),
       cx,
       cy
     )
   }
 
-  return { storeImage, placeFiles, placeImageFiles, pasteSVG }
+  return { storeImage, placeFiles, placeImageFiles, pasteSVG, pasteMermaid }
 }

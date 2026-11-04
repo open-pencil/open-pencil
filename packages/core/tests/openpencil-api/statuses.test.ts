@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
-import { SceneGraph, STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { STATUS_WORKFLOW_PRESETS, writeStatusWorkflow } from '@open-pencil/scene-graph/statuses'
 
 /** A document with the design review statuses and a Checkout section holding a Cart frame. */
 async function document() {

@@ -1,18 +1,26 @@
 import {
+  createRelayServerAssembler,
   decodeRelayServerFrame,
+  decodeRoomUpdate,
   encodeRelayClientFrame,
+  MAX_COLLAB_MESSAGE_BYTES,
+  relayClientMessages,
   type CollaborationPrincipal,
   type DocumentPermission,
   type RelayClientFrame,
   type RelayServerFrame
 } from '#cloud/contract'
-import type {
-  CollaborationRoomIdentity,
-  CollaborationStateStore,
-  RelayConnection,
-  RelaySocket
+import {
+  createCollaborationRelay,
+  type CollaborationRelay,
+  type CollaborationRelayOptions,
+  type CollaborationRoomIdentity,
+  type CollaborationStateStore,
+  type RelayConnection,
+  type RelaySocket
 } from '#cloud/server'
 import { SignJWT } from 'jose'
+import * as Y from 'yjs'
 
 export const relaySecret = 'relay-test-secret-at-least-32-characters'
 
@@ -55,7 +63,12 @@ export type TestRelayClient = {
   frames: RelayServerFrame[]
   closed: { code: number; reason: string } | null
   connection: RelayConnection
+  /** Sends the frame in one message, as a peer that never splits frames would. */
   send(frame: RelayClientFrame): void
+  /** Sends the frame as the editor does: in fragments once it is large. */
+  sendFragmented(frame: RelayClientFrame): void
+  /** How many socket messages the relay sent. */
+  received: number
   /** The peer ID from the relay's welcome. */
   peerId(): string | undefined
   messages(namespace: string): Extract<RelayServerFrame, { type: 'message' }>[]
@@ -65,8 +78,12 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
   const client: Omit<TestRelayClient, 'connection'> = {
     frames: [],
     closed: null,
+    received: 0,
     send(frame) {
       connection.receive(encodeRelayClientFrame(frame))
+    },
+    sendFragmented(frame) {
+      for (const message of relayClientMessages(frame)) connection.receive(message)
     },
     peerId() {
       const welcome = client.frames.find((frame) => frame.type === 'welcome')
@@ -78,9 +95,12 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
       )
     }
   }
+  const assembler = createRelayServerAssembler(() => MAX_COLLAB_MESSAGE_BYTES)
   const connection = connect({
     send(data) {
-      const frame = decodeRelayServerFrame(data)
+      client.received++
+      const assembled = assembler.push(data)
+      const frame = assembled.type === 'frame' ? decodeRelayServerFrame(assembled.data) : null
       if (frame) client.frames.push(frame)
     },
     close(code, reason) {
@@ -93,9 +113,12 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
 }
 
 /** Resolves once `condition` holds, yielding to pending work between checks. */
-export async function until(condition: () => boolean, attempts = 200): Promise<void> {
+export async function until(
+  condition: () => boolean | Promise<boolean>,
+  attempts = 200
+): Promise<void> {
   for (let attempt = 0; attempt < attempts; attempt++) {
-    if (condition()) return
+    if (await condition()) return
     await new Promise((resolve) => {
       setTimeout(resolve, 1)
     })
@@ -104,15 +127,94 @@ export async function until(condition: () => boolean, attempts = 200): Promise<v
 }
 
 export function memoryStateStore() {
-  const states = new Map<string, Uint8Array>()
+  /** Each room's snapshot, through which sequence it holds, and its logged updates by sequence. */
+  const states = new Map<
+    string,
+    { snapshot: Uint8Array | null; through: number; updates: Map<number, Uint8Array> }
+  >()
   const key = (room: CollaborationRoomIdentity) => `${room.documentId}:${room.roomEpoch}`
+  const saved = (room: CollaborationRoomIdentity) => {
+    const entry = states.get(key(room)) ?? { snapshot: null, through: 0, updates: new Map() }
+    states.set(key(room), entry)
+    return entry
+  }
   const store: CollaborationStateStore = {
     async load(room) {
-      return states.get(key(room)) ?? null
+      const entry = states.get(key(room))
+      if (!entry) return { snapshot: null, updates: [], sequence: 0 }
+      const sequences = [...entry.updates.keys()].filter((sequence) => sequence > entry.through)
+      sequences.sort((a, b) => a - b)
+      return {
+        snapshot: entry.snapshot,
+        updates: sequences.flatMap((sequence) => entry.updates.get(sequence) ?? []),
+        sequence: sequences.at(-1) ?? entry.through
+      }
     },
-    async store(room, state) {
-      states.set(key(room), state)
+    async append(room, sequence, update) {
+      const entry = saved(room)
+      if (entry.updates.has(sequence)) throw new Error(`Sequence ${sequence} is taken`)
+      entry.updates.set(sequence, update)
+    },
+    async compact(room, sequence, state) {
+      const entry = saved(room)
+      entry.snapshot = state
+      entry.through = sequence
+      for (const logged of entry.updates.keys()) {
+        if (logged <= sequence) entry.updates.delete(logged)
+      }
     }
   }
-  return { store, states }
+  /** Whether the store holds anything for a room. */
+  const holds = (room: CollaborationRoomIdentity) => states.has(key(room))
+  return { store, states, holds }
+}
+
+/** A relay over an in-memory store that saves at once, with whatever a test changes. */
+export function startTestRelay(options: Partial<CollaborationRelayOptions> = {}) {
+  const state = memoryStateStore()
+  const instance = createCollaborationRelay({
+    authSecret: relaySecret,
+    store: state.store,
+    maximumMessageBytes: 1_048_576,
+    maximumConnectionsPerRoom: 100,
+    persistDelayMs: 0,
+    onError: () => undefined,
+    ...options
+  })
+  return { relay: instance, ...state }
+}
+
+/** A peer in the room of `documentId`, an editor unless the ticket says otherwise. */
+export async function joinTestRelay(
+  hub: CollaborationRelay,
+  documentId: string,
+  ticket: Partial<RelayTicketOptions> = {}
+) {
+  const client = connectTestClient((socket) => hub.connect(socket))
+  client.send({
+    type: 'auth',
+    token: await relayTicket({
+      documentId,
+      permission: 'edit',
+      principal: user(crypto.randomUUID()),
+      ...ticket
+    })
+  })
+  await until(() => client.peerId() !== undefined || client.closed !== null)
+  return client
+}
+
+/** A V2 update that writes `text` into a document's `t` text. */
+export function textUpdate(text: string) {
+  const document = new Y.Doc()
+  document.getText('t').insert(0, text)
+  return Y.encodeStateAsUpdateV2(document)
+}
+
+/** The text a sync reply carries, which travels as a compressed V2 update. */
+export function textOfSyncReply(reply: Uint8Array) {
+  const document = new Y.Doc()
+  const update = decodeRoomUpdate(reply, { limit: MAX_COLLAB_MESSAGE_BYTES, compressed: true })
+  if (update) Y.applyUpdateV2(document, update)
+  return document.getText('t').toString()
 }

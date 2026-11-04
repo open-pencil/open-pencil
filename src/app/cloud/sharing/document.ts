@@ -32,8 +32,14 @@ export type CloudSharing = {
   members: CloudShareMember[]
   link: CloudShareLink
   /** What the workspace's plan allows for links. */
-  links: { allowed: boolean; edit: boolean }
+  links: CloudLinkPolicy
 }
+
+/**
+ * Whether the workspace allows links at all, and whether people who are not signed in to the
+ * server may follow view and edit links; people signed in may follow any link.
+ */
+export type CloudLinkPolicy = { allowed: boolean; guestView: boolean; guestEdit: boolean }
 
 type Target = {
   server: CloudServer
@@ -69,7 +75,7 @@ const activeShare = (shares: DocumentShare[]) => shares.find((share) => !share.r
 export async function readCloudSharing(target: Target): Promise<CloudSharing> {
   const { client, documentId } = target
   const access = await client.getDocumentAccess(documentId)
-  const closed = { allowed: false, edit: false }
+  const closed: CloudLinkPolicy = { allowed: false, guestView: false, guestEdit: false }
   if (!access.canManageSharing) {
     return { canManage: false, members: [], link: { access: 'restricted' }, links: closed }
   }
@@ -82,9 +88,8 @@ export async function readCloudSharing(target: Target): Promise<CloudSharing> {
       : Promise.resolve(null)
   ])
   const features = entitlements?.features
-  // Links open the document without an account, so they need anonymous access as well.
-  const links = features
-    ? { allowed: features.capabilityLinks && features.anonymousView, edit: features.anonymousEdit }
+  const links: CloudLinkPolicy = features
+    ? { allowed: features.links, guestView: features.guestView, guestEdit: features.guestEdit }
     : closed
   const people = await Promise.all(
     grants.map(async (grant) => {
@@ -178,5 +183,5 @@ export async function cloudLinkURL(target: Target): Promise<string | null> {
   const share = activeShare(await target.client.listDocumentShares(target.documentId))
   if (!share) return null
   const secret = await readShareSecret(target.server.id, share.id)
-  return secret ? cloudShareURL(target.discovery.appURL, target.server.url, share.id, secret) : null
+  return secret ? cloudShareURL(target.server.url, share.id, secret) : null
 }

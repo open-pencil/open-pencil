@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { setTextMeasurer } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 
@@ -17,7 +18,9 @@ function setup() {
 beforeEach(() => {
   setTextMeasurer((node, maxWidth) => ({
     width: maxWidth ?? node.width,
-    height: node.text.split('\n').length * (node.lineHeight ?? node.fontSize)
+    height:
+      node.text.split('\n').length *
+      (lineHeightPixels(node.lineHeight, node.fontSize) ?? node.fontSize)
   }))
 })
 afterEach(() => setTextMeasurer(null))
@@ -45,6 +48,19 @@ describe('shapes with text in the editor', () => {
     })
     editor.undo.undo()
     expect(editor.graph.getNode(id)?.shapeWithTextType).toBe('SQUARE')
+  })
+
+  // Measured in FigJam: 70.4 on a 176 square, 80 at 400×200, and 6 again once it is a square.
+  test('a rounded rectangle keeps its corners at 0.4 of its shorter side, as FigJam does', () => {
+    const { editor, pageId } = setup()
+    const id = editor.createShape('SHAPE_WITH_TEXT', 0, 0, 176, 176, pageId)
+    editor.changeShapesWithTextKind([id], 'ROUNDED_RECTANGLE')
+    expect(editor.graph.getNode(id)?.cornerRadius).toBeCloseTo(70.4)
+    editor.graph.updateNode(id, { width: 400, height: 200, shapeUserHeight: 200 })
+    computeAllLayouts(editor.graph, id)
+    expect(editor.graph.getNode(id)?.cornerRadius).toBeCloseTo(80)
+    editor.changeShapesWithTextKind([id], 'SQUARE')
+    expect(editor.graph.getNode(id)?.cornerRadius).toBe(6)
   })
 
   test("typing in a shape's label renames a shape that was never renamed", () => {
@@ -96,5 +112,14 @@ describe('shapes with text in the editor', () => {
     expect(editor.graph.getNode(id)?.height).toBeGreaterThan(176)
     editor.setShapesWithTextTextSize([id], 'small')
     expect(editor.graph.getNode(id)?.height).toBe(176)
+  })
+
+  test('a palette colour leaves the fill and stroke styles it replaces', () => {
+    const { editor, pageId } = setup()
+    const id = editor.createShape('SHAPE_WITH_TEXT', 0, 0, 176, 176, pageId)
+    editor.graph.updateNode(id, { fillStyleId: 'fill-style', strokeStyleId: 'stroke-style' })
+    editor.setShapesWithTextColor([id], 'violet')
+    const shape = expectDefined(editor.graph.getNode(id))
+    expect([shape.fillStyleId, shape.strokeStyleId]).toEqual([null, null])
   })
 })

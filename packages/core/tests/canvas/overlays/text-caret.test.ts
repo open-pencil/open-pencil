@@ -16,7 +16,11 @@ function textNode(fills: Fill[], runs: Array<[start: number, length: number, fil
   return createDefaultNode(() => 'caret-text', 'TEXT', {
     text: 'Text',
     fills,
-    styleRuns: runs.map(([start, length, runFills]) => ({ start, length, style: { fills: runFills } }))
+    styleRuns: runs.map(([start, length, runFills]) => ({
+      start,
+      length,
+      style: { fills: runFills }
+    }))
   })
 }
 
@@ -24,10 +28,13 @@ function textNode(fills: Fill[], runs: Array<[start: number, length: number, fil
 describe('text caret colour', () => {
   const red = solid(1, 0, 0)
   const blue = solid(0, 0, 1)
-  const runs = textNode([solid(0, 0, 0)], [
-    [0, 2, [red]],
-    [2, 2, [blue]]
-  ])
+  const runs = textNode(
+    [solid(0, 0, 0)],
+    [
+      [0, 2, [red]],
+      [2, 2, [blue]]
+    ]
+  )
 
   test("takes the fill of the character before the caret, or the first's at the start", () => {
     expect(textCaretColor(runs, 4)).toEqual(blue.color)

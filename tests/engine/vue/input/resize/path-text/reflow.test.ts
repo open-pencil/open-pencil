@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Fill,
+  type SceneNode,
+  type Stroke,
+  type VectorNetwork
+} from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -144,6 +149,7 @@ describe('group resize reflows path text instead of squashing it', () => {
     } as Editor
 
     const origChild: ResizeSnapshot = {
+      type: 'TEXT',
       x: 0,
       y: 0,
       width: 256,

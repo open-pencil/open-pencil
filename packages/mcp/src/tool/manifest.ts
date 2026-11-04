@@ -1,12 +1,7 @@
-import type { ToolDef } from '@open-pencil/core/tools'
+import type { ToolCapability, ToolDef } from '@open-pencil/core/tools'
 import { ALL_TOOLS, toolChangesDocument, isToolExposed } from '@open-pencil/core/tools'
 
-import type {
-  ToolAvailability,
-  ToolCapability,
-  ToolDescriptor,
-  ToolEffect
-} from '#mcp/tool/metadata'
+import type { ToolAvailability, ToolDescriptor, ToolEffect } from '#mcp/tool/metadata'
 
 export function coreToolEffect(def: ToolDef): ToolEffect {
   return toolChangesDocument(def) ? 'write' : 'read'

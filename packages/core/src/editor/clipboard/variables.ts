@@ -1,14 +1,10 @@
+import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import { remapStyleRunReferences, styleRunReferences } from '@open-pencil/scene-graph/text'
 import {
   isUnsupportedVariableValue,
-  remapStyleRunReferences,
   mapVariableValueReferences,
-  variableValueReferences,
-  styleRunReferences,
-  type SceneGraph,
-  type SceneNode,
-  type Variable,
-  type VariableCollection
-} from '@open-pencil/scene-graph'
+  variableValueReferences
+} from '@open-pencil/scene-graph/variables'
 
 export interface ClipboardVariables {
   activeModes: Array<[string, string]>

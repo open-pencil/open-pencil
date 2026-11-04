@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue'
 
-import type { useEditorCommands } from '@open-pencil/vue'
+import type { useEditorCommands } from '@open-pencil/vue/editor/commands'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -24,6 +24,9 @@ export type KeyboardShortcutOptions = {
   openFileDialog: () => void
   closeActiveTab: () => void
   createTab: () => void
+  /** Opens a New file tab, as Figma's ⌘T does. */
+  openNewFileTab: () => void
+  switchAdjacentTab: (step: 1 | -1) => void
 }
 
 export type KeyboardShortcutRunOptions = KeyboardShortcutOptions & {

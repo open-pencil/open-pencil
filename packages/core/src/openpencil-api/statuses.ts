@@ -1,13 +1,13 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   cachedStatusWorkflow,
   figmaDevStatusOf,
   shownStatusState,
   statusPlacement,
   type FigmaDevStatus,
-  type SceneGraph,
   type StatusPlacement
-} from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+} from '@open-pencil/scene-graph/statuses'
 
 import { nodeOf, type NodeRef } from './behaviours'
 

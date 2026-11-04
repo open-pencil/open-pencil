@@ -31,6 +31,7 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: '$mod+Alt+KeyG',
     contextTestId: 'context-frame-selection'
   },
+  'selection.wrapInSection': {},
   'selection.ungroup': { shortcut: 'MOD+SHIFT+G', keybinding: '$mod+Shift+KeyG' },
   'selection.createComponent': {
     shortcut: 'MOD+ALT+K',
@@ -89,8 +90,20 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: 'Shift+KeyV',
     contextTestId: 'context-flip-vertical'
   },
-  'selection.distributeHorizontal': {},
-  'selection.distributeVertical': {},
+  'selection.distributeHorizontal': { shortcut: 'CTRL+ALT+H', keybinding: 'Control+Alt+KeyH' },
+  'selection.distributeVertical': { shortcut: 'CTRL+ALT+V', keybinding: 'Control+Alt+KeyV' },
+  'selection.tidyUp': { shortcut: 'CTRL+ALT+T', keybinding: 'Control+Alt+KeyT' },
+  'selection.packHorizontal': {},
+  'selection.packVertical': {},
+  'selection.arrangeSpread': {},
+  'selection.arrangeCompact': {},
+  'selection.arrangePack': {},
+  'selection.arrangeFlowDown': {},
+  'selection.arrangeFlowRight': {},
+  'selection.arrangeTreeDown': {},
+  'selection.arrangeTreeRight': {},
+  'selection.arrangeRadial': {},
+  'selection.arrangeNetwork': {},
   'selection.booleanUnion': {
     shortcut: 'ALT+SHIFT+U',
     keybinding: 'Alt+Shift+KeyU',

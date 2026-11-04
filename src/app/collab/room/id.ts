@@ -13,13 +13,13 @@ export function isRoomId(value: string): boolean {
 }
 
 /**
- * The room ID in what someone pasted: a bare ID or a share link, with any query, hash, or
+ * The room ID in what someone pasted: a bare ID or a room link, with any query, hash, or
  * trailing slash. Null when it is not a room ID, so a mistyped link never joins another room.
  */
 export function parseRoomInput(text: string): string | null {
   let candidate = text.trim()
-  const shareIndex = candidate.lastIndexOf('/share/')
-  if (shareIndex !== -1) candidate = candidate.slice(shareIndex + '/share/'.length)
+  const roomIndex = candidate.lastIndexOf('/rooms/')
+  if (roomIndex !== -1) candidate = candidate.slice(roomIndex + '/rooms/'.length)
   candidate = candidate.split(/[?#]/)[0] ?? ''
   candidate = candidate.replace(/\/+$/, '')
   return isRoomId(candidate) ? candidate : null

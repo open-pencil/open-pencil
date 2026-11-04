@@ -1,4 +1,4 @@
-import { UndoManager } from '@open-pencil/scene-graph'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 /** An undo entry that records nothing, for tests that only care about the batching. */
 export const noop = (): void => undefined

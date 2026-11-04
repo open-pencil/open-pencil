@@ -1,4 +1,5 @@
-import { scaleGeometryPaths } from '../copy'
+import { cloneVectorNetwork, scaleGeometryPaths } from '../copy'
+import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
 import {
   type Effect,
@@ -10,7 +11,6 @@ import {
   type StyleRun,
   type TextParagraphStyle
 } from '../types'
-import { cloneVectorNetwork } from '../vector-network'
 
 function scaledOptional(value: number | null, scale: number): number | null {
   return value == null ? null : value * scale
@@ -53,8 +53,8 @@ function scaledStyleRuns(styleRuns: readonly StyleRun[], scale: number): StyleRu
     style: {
       ...structuredClone(run.style),
       fontSize: run.style.fontSize == null ? undefined : run.style.fontSize * scale,
-      letterSpacing: run.style.letterSpacing == null ? undefined : run.style.letterSpacing * scale,
-      lineHeight: scaledOptional(run.style.lineHeight ?? null, scale),
+      letterSpacing: run.style.letterSpacing && scaledTextLength(run.style.letterSpacing, scale),
+      lineHeight: run.style.lineHeight && scaledTextLength(run.style.lineHeight, scale),
       textDecorationThickness: scaledOptional(run.style.textDecorationThickness ?? null, scale),
       textUnderlineOffset: scaledOptional(run.style.textUnderlineOffset ?? null, scale)
     }
@@ -104,6 +104,10 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
     segment.tangentEnd.x *= scale
     segment.tangentEnd.y *= scale
   }
+  // A region's own paints scale as the layer's do.
+  for (const region of network.regions) {
+    if (region.fills) region.fills = scaledFills(region.fills, scale)
+  }
   return network
 }
 
@@ -127,8 +131,8 @@ export function scaleNodeChanges(
     bottomRightRadius: node.bottomRightRadius * scale,
     bottomLeftRadius: node.bottomLeftRadius * scale,
     fontSize: node.fontSize * scale,
-    letterSpacing: node.letterSpacing * scale,
-    lineHeight: scaledOptional(node.lineHeight, scale),
+    letterSpacing: scaledTextLength(node.letterSpacing, scale),
+    lineHeight: node.lineHeight && scaledTextLength(node.lineHeight, scale),
     textDecorationThickness: scaledOptional(node.textDecorationThickness, scale),
     textUnderlineOffset: scaledOptional(node.textUnderlineOffset, scale),
     styleRuns: scaledStyleRuns(node.styleRuns, scale),

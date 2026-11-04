@@ -104,6 +104,20 @@ describe('wheel steps', () => {
     expect(zoomScale(step(event(1000, { ctrlKey: true })))).toBeCloseTo(0.1)
   })
 
+  test('scales each zoom by the zoom speed and still limits one event to 10x', () => {
+    let speed = 0.25
+    const step = createWheelSteps('other', () => speed)
+    // A Linux Ctrl+wheel notch reports deltaY 120 and zooms 2^(-120 / 50) at full speed.
+    expect(zoomScale(step(event(120, { ctrlKey: true })))).toBeCloseTo(2 ** (-0.25 * 2.4))
+    expect(zoomScale(step(event(10, { metaKey: true })))).toBeCloseTo(Math.exp(-0.0125))
+    speed = 2
+    expect(zoomScale(step(event(-1000, { ctrlKey: true })))).toBeCloseTo(10)
+  })
+
+  test('leaves panning at the same rate whatever the zoom speed', () => {
+    expect(createWheelSteps('mac', () => 0.25)(event(4))).toEqual({ kind: 'pan', dx: 0, dy: 8 })
+  })
+
   test('moves 16 px per Windows wheel notch and speeds up when notches come within 50 ms', () => {
     const step = createWheelSteps('windows')
     expect(panY(step(notch(0)))).toBe(16)

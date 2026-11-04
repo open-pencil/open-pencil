@@ -22,8 +22,21 @@ const TABLES = [
   'repoReferrers',
   'siteVisits',
   'sitePages',
-  'siteCountries'
+  'siteCountries',
+  'repoItems'
 ] as const
+
+/** An issue or pull request as `/issues` lists it, last updated `updated`. */
+function item(number: number, updated: string, fields: Record<string, unknown> = {}) {
+  return {
+    number,
+    author_association: 'CONTRIBUTOR',
+    created_at: '2026-10-01T09:00:00Z',
+    updated_at: updated,
+    closed_at: null,
+    ...fields
+  }
+}
 
 const RELEASES = [
   {
@@ -45,12 +58,12 @@ const RELEASES = [
   }
 ]
 
-const VariablesSchema = v.object({ variables: v.record(v.string(), v.unknown()) })
+const variablesSchema = v.object({ variables: v.record(v.string(), v.unknown()) })
 
 /** The GraphQL variables a Cloudflare request carried. */
 function variablesOf(call: FetchCall): Record<string, unknown> {
   const result = v.safeParse(
-    v.pipe(v.string(), v.parseJson(), VariablesSchema),
+    v.pipe(v.string(), v.parseJson(), variablesSchema),
     String(call.init?.body)
   )
   if (!result.success) throw new Error('Not a GraphQL request')
@@ -76,6 +89,16 @@ function answerGithub() {
   )
   service.respond(`${REPO}/traffic/popular/referrers`, () =>
     Response.json([{ referrer: 'news.ycombinator.com', count: 700, uniques: 300 }])
+  )
+  service.respond(`${REPO}/issues`, () =>
+    Response.json([
+      item(1, '2026-10-02T10:00:00Z', {
+        author_association: 'MEMBER',
+        closed_at: '2026-10-02T10:00:00Z',
+        pull_request: { merged_at: '2026-10-02T10:00:00Z' }
+      }),
+      item(2, '2026-10-03T08:00:00Z')
+    ])
   )
 }
 
@@ -128,7 +151,8 @@ const rows = {
   repoReferrers: () => database().selectFrom('repoReferrers').selectAll().orderBy('day').execute(),
   siteVisits: () =>
     database().selectFrom('siteVisits').selectAll().orderBy(['day', 'host']).execute(),
-  siteCountries: () => database().selectFrom('siteCountries').selectAll().execute()
+  siteCountries: () => database().selectFrom('siteCountries').selectAll().execute(),
+  repoItems: () => database().selectFrom('repoItems').selectAll().orderBy('number').execute()
 }
 
 beforeAll(async () => {
@@ -350,5 +374,53 @@ describe('metrics snapshot', () => {
     service.respond(GRAPHQL, () => Response.json({ data: null, errors: [{ message: 'quota' }] }))
     expect(await runSnapshot(service.env, service.services)).toEqual({ failed: ['site'] })
     expect(await rows.siteVisits()).toEqual([])
+  })
+
+  test('mirrors issues and pull requests with their author and merge time', async () => {
+    expect(await runSnapshot(service.env, service.services)).toEqual({ failed: [] })
+    expect(await rows.repoItems()).toEqual([
+      {
+        number: 1,
+        kind: 'pull',
+        authorAssociation: 'MEMBER',
+        createdAt: '2026-10-01T09:00:00.000Z',
+        closedAt: '2026-10-02T10:00:00.000Z',
+        mergedAt: '2026-10-02T10:00:00.000Z',
+        updatedAt: '2026-10-02T10:00:00.000Z'
+      },
+      {
+        number: 2,
+        kind: 'issue',
+        authorAssociation: 'CONTRIBUTOR',
+        createdAt: '2026-10-01T09:00:00.000Z',
+        closedAt: null,
+        mergedAt: null,
+        updatedAt: '2026-10-03T08:00:00.000Z'
+      }
+    ])
+  })
+
+  test('pages on from the newest update, and the next run resumes there', async () => {
+    const first = Array.from({ length: 100 }, (_, index) =>
+      item(index + 1, `2026-10-05T10:${String(Math.floor(index / 2)).padStart(2, '0')}:00Z`)
+    )
+    const since = (call: FetchCall) => new URL(call.url).searchParams.get('since')
+    service.respond(`${REPO}/issues`, (call) => {
+      if (since(call) === null) return Response.json(first)
+      // The page boundary comes back again, now closed.
+      if (since(call) === '2026-10-05T10:49:00.000Z')
+        return Response.json([
+          item(100, '2026-10-05T11:00:00Z', { closed_at: '2026-10-05T11:00:00Z' })
+        ])
+      return Response.json([])
+    })
+    await runSnapshot(service.env, service.services)
+    const items = await rows.repoItems()
+    expect(items).toHaveLength(100)
+    expect(items.at(-1)?.closedAt).toBe('2026-10-05T11:00:00.000Z')
+    service.fetchCalls.length = 0
+    await runSnapshot(service.env, service.services)
+    const issueCalls = service.fetchCalls.filter((call) => call.url.startsWith(`${REPO}/issues`))
+    expect(issueCalls.map(since)).toEqual(['2026-10-05T11:00:00.000Z'])
   })
 })

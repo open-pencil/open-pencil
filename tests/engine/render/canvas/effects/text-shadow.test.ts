@@ -33,9 +33,8 @@ describe('Text shadows follow the glyphs, not the bounding box (Behavioral)', ()
         }
       ]
     })
-    const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
     expect(r.getCachedDropShadow).toHaveBeenCalled()
     expect(canvas.saveLayer).toHaveBeenCalledWith(expect.anything(), expect.any(Float32Array))
@@ -63,9 +62,8 @@ describe('Text shadows follow the glyphs, not the bounding box (Behavioral)', ()
         }
       ]
     })
-    const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, false, 'inner')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     // 4-layer saveLayer stack: Master, SrcIn/Tint, Blur, DstOut/Punch
     expect(canvas.saveLayer).toHaveBeenCalledTimes(4)
@@ -103,9 +101,8 @@ describe('Text shadows follow the glyphs, not the bounding box (Behavioral)', ()
         }
       ]
     })
-    const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, false, 'inner')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
 
     const calls = mockCalls(r.effectLayerPaint.setColorFilter)
     // The final call must be null (exit guard cleans up)

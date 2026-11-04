@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { shaderOfPaint, type Fill, type SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
+import { useFillControls } from '@open-pencil/vue/controls/fill'
+import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
+import { useI18n } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
-  useColorBindingProvider,
-  useFillControls,
-  useI18n,
-  useOkHCL
-} from '@open-pencil/vue'
-import type { BindableValueActions } from '@open-pencil/vue'
+  type BindableValueActions
+} from '@open-pencil/vue/primitives/BindableValue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
@@ -129,7 +130,7 @@ function updateSolidColor(
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedFillsHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedFillsHelp }}</p>
 
       <div v-for="(fill, index) in items" :key="`${index}:${fill.visible ? 'visible' : 'hidden'}`">
         <PropertyItemRow

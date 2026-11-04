@@ -8,7 +8,7 @@ import {
   placeConnectorLabel,
   routeConnector,
   type ConnectorRouteEnd
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/connectors'
 
 const MAGNETS = [
   'NONE',
@@ -29,12 +29,12 @@ const CAPS = [
   'DIAMOND_FILLED',
   'CIRCLE_FILLED'
 ] as const
-const Pair = v.tuple([v.number(), v.number()])
-const End = v.object({
+const pairSchema = v.tuple([v.number(), v.number()])
+const endSchema = v.object({
   magnet: v.picklist(MAGNETS),
   box: v.optional(v.tuple([v.number(), v.number(), v.number(), v.number()])),
   outline: v.optional(v.number()),
-  point: v.optional(Pair)
+  point: v.optional(pairSchema)
 })
 
 /**
@@ -43,25 +43,25 @@ const End = v.object({
  * squares' own strokes (`outline`, half the stroke), free ends, and labels. Coordinates are
  * relative to the start square.
  */
-const Oracle = v.array(
+const oracleSchema = v.array(
   v.object({
     name: v.string(),
     lineType: v.picklist(['ELBOWED', 'STRAIGHT', 'CURVED']),
     weight: v.number(),
     startCap: v.picklist(CAPS),
     endCap: v.picklist(CAPS),
-    start: End,
-    end: End,
-    vertices: v.array(Pair),
-    segments: v.optional(v.array(v.tuple([v.number(), v.number(), Pair, Pair]))),
+    start: endSchema,
+    end: endSchema,
+    vertices: v.array(pairSchema),
+    segments: v.optional(v.array(v.tuple([v.number(), v.number(), pairSchema, pairSchema]))),
     label: v.optional(
-      v.object({ text: Pair, plate: v.tuple([v.number(), v.number(), v.number(), v.number()]) })
+      v.object({ text: pairSchema, plate: v.tuple([v.number(), v.number(), v.number(), v.number()]) })
     )
   })
 )
 
 const oracle = v.parse(
-  v.pipe(v.string(), v.parseJson(), Oracle),
+  v.pipe(v.string(), v.parseJson(), oracleSchema),
   readFileSync(new URL('figma-routes.json', import.meta.url), 'utf8')
 )
 

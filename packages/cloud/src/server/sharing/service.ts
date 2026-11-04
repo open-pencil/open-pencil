@@ -21,7 +21,6 @@ export type DocumentSharingServiceOptions = {
   delivery?: InvitationDelivery
   outbox?: InvitationOutbox
   publicURL?: string
-  appURL?: string
   policy?: CloudPolicy
   deploymentMode?: 'official' | 'self-hosted'
   workspaceInvitations?: WorkspaceInvitationResolver

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { BlendMode } from '@open-pencil/scene-graph'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
-import { AppearanceControlsRoot, MIXED, useI18n, useVariableModes } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { AppearanceControlsRoot } from '@open-pencil/vue/primitives/AppearanceControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import { useBlendModeGroups } from '@/components/properties/blend-mode/use'
@@ -12,10 +15,10 @@ import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import VariableBoundRow from './binding/VariableBoundRow.vue'
 import PropertyBoundField from './component-properties/PropertyBoundField.vue'
 import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
 import VariableModeRows from './variable-modes/VariableModeRows.vue'
-import VisibilityBindingRow from './visibility/VisibilityBindingRow.vue'
 import VisibilityControl from './visibility/VisibilityControl.vue'
 
 const { panels } = useI18n()
@@ -67,7 +70,12 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
         />
       </template>
       <PropertyBoundField field="VISIBLE" />
-      <VisibilityBindingRow v-if="node && !isMulti" :node-id="node.id" />
+      <VariableBoundRow
+        v-if="node && !isMulti"
+        :node-id="node.id"
+        field="VISIBLE"
+        :label="panels.layerVisibility"
+      />
 
       <PanelGrid :columns="2" distribution="wide-first">
         <PanelFieldGroup :label="panels.blendMode">

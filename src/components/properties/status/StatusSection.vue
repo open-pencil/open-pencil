@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useStatusMessages } from '@open-pencil/vue'
+import { useStatusMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
@@ -96,10 +96,10 @@ const setFor = computed(() =>
           </template>
         </AppSelect>
       </div>
-      <p v-if="setFor" class="mt-1 text-[11px] text-muted">{{ setFor }}</p>
+      <p v-if="setFor" class="mt-1 text-2xs text-muted">{{ setFor }}</p>
     </template>
 
-    <p v-else-if="hidden" class="mt-1 text-[11px] text-muted" data-test-id="status-hidden">
+    <p v-else-if="hidden" class="mt-1 text-2xs text-muted" data-test-id="status-hidden">
       {{
         messages.hiddenInside({
           state: hidden.state?.name ?? '',
@@ -107,7 +107,7 @@ const setFor = computed(() =>
         })
       }}
       <button
-        class="cursor-pointer border-none bg-transparent p-0 text-[11px] text-accent hover:underline"
+        class="cursor-pointer border-none bg-transparent p-0 text-2xs text-accent hover:underline"
         @click="remove"
       >
         {{ messages.remove }}

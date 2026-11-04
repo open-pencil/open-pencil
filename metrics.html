@@ -9,59 +9,12 @@
     <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
     <link rel="icon" type="image/png" sizes="96x96" href="/brand/favicon-96x96.png" />
     <style>
-      :root { --loader-bg: #1e1e1e; --loader-fg: 255, 255, 255; }
-      @media (prefers-color-scheme: light) {
-        :root { --loader-bg: #f3f4f6; --loader-fg: 32, 33, 36; }
-      }
-      html, body, #app { height: 100%; margin: 0; }
-      body { background: var(--loader-bg); }
-      /* The editor's splash, covering the first request until the page mounts with its numbers. */
-      #boot-splash {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--loader-bg);
-      }
-      #boot-splash img { width: 40px; height: 40px; }
-      #boot-splash .bar {
-        position: absolute;
-        bottom: 50%;
-        left: 50%;
-        transform: translate(-50%, 40px);
-        width: 100px;
-        height: 2px;
-        background: rgba(var(--loader-fg), 0.08);
-        border-radius: 1px;
-        overflow: hidden;
-      }
-      #boot-splash .bar::after {
-        content: '';
-        display: block;
-        height: 100%;
-        width: 40%;
-        background: rgba(var(--loader-fg), 0.25);
-        border-radius: 1px;
-        animation: slide 1s ease-in-out infinite;
-      }
-      @keyframes slide {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(350%); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        #boot-splash .bar::after { animation: none; }
-      }
+      html, body, #app { height: 100%; }
     </style>
   </head>
 
   <body>
-    <div id="app">
-      <div id="boot-splash" role="status" aria-label="Loading metrics">
-        <img src="/brand/app-icon.svg" width="40" height="40" alt="" />
-        <div class="bar"></div>
-      </div>
-    </div>
+    <div id="app"></div>
     <script type="module" src="/src/metrics/main.ts"></script>
   </body>
 </html>

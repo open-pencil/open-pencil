@@ -1,5 +1,5 @@
-import type { SceneNode, Vector } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ROTATION_HANDLE_DISTANCE } from '#core/constants'
 import { fitTextPathBoxToGlyphs, getTextPathData, sampleTextPath } from '#core/text/path'

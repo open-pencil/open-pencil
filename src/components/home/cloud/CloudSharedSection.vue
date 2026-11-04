@@ -3,7 +3,7 @@ import { useAsyncState, useLocalStorage } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
 import type { SharedDocument } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
@@ -58,6 +58,7 @@ const rows = computed<CloudDocumentRow[]>(() =>
   documents.value.map((document) => ({
     id: document.id,
     name: document.name,
+    kind: document.kind,
     editedAt: dates.relative(document.updatedAt),
     editedBy: document.sharedBy
       ? t.value.homeSharedBy({ name: document.sharedBy.name })
@@ -76,7 +77,8 @@ const matching = computed(() =>
 function open(row: CloudDocumentRow) {
   const document = documents.value.find((candidate) => candidate.id === row.id)
   if (!document) return
-  // A shared document stays in its owner's workspace; the direct grant is what opens it.
+  // A shared document stays in its owner's workspace; the direct grant is what opens it. Opening
+  // reports its own failure.
   void openStorageDocumentInNewTab(
     {
       id: document.id,
@@ -89,7 +91,7 @@ function open(row: CloudDocumentRow) {
       profileId: serverId,
       containerId: document.workspaceId
     }
-  )
+  ).catch(() => undefined)
 }
 </script>
 

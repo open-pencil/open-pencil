@@ -4,9 +4,9 @@ import {
   buildStyleOverrideTable,
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
-  type VectorNetwork
-} from '@open-pencil/core'
-import { textPathStartSegment } from '@open-pencil/fig/node-change'
+  textPathStartSegment
+} from '@open-pencil/fig/node-change'
+import type { VectorNetwork } from '@open-pencil/scene-graph'
 
 import {
   lineNetwork,

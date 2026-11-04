@@ -1,12 +1,14 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
+  aiTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
   createInvitationContinuationSchema,
   documentAccessSchema,
   documentDownloadSchema,
+  objectUploadSchema,
   documentGrantSchema,
   documentInvitationSchema,
   documentShareSchema,
@@ -20,13 +22,14 @@ import {
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
+  type AIToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
   type CreateInvitationContinuationInput,
   type InvitationContinuation,
-  type CommitUploadInput,
-  type CreateDocumentInput,
+  type CommitUploadRequest,
+  type CreateDocumentRequest,
   type CreateDocumentInvitationInput,
   type CreateDocumentShareInput,
   type CreateUploadInput,
@@ -55,6 +58,7 @@ import { pickBy } from 'es-toolkit/object'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import { createImageRequests } from './images'
 import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
 import { createWorkspaceRequests } from './workspaces'
 
@@ -90,29 +94,7 @@ const sharedDocumentResponseSchema = v.object({
 const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
-  upload: v.variant('kind', [
-    v.object({
-      kind: v.literal('single'),
-      url: v.pipe(v.string(), v.url()),
-      method: v.literal('PUT'),
-      headers: v.record(v.string(), v.string()),
-      expiresAt: v.string()
-    }),
-    v.object({
-      kind: v.literal('multipart'),
-      uploadId: v.string(),
-      partSize: v.pipe(v.number(), v.integer(), v.minValue(1)),
-      parts: v.array(
-        v.object({
-          partNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
-          url: v.pipe(v.string(), v.url()),
-          method: v.literal('PUT'),
-          headers: v.record(v.string(), v.string())
-        })
-      ),
-      expiresAt: v.string()
-    })
-  ])
+  upload: objectUploadSchema
 })
 
 export type CloudRequestOptions = {
@@ -155,6 +137,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
     },
+    /** A short-lived token for the deployment's AI service, on the workspace's behalf. */
+    async requestAIToken(workspaceId: string): Promise<AIToken> {
+      return parseResponse(
+        client.ai.token.$post({ json: { workspaceId } }),
+        aiTokenSchema,
+        options.onDiagnostic
+      )
+    },
     async lookupUser(
       documentId: string,
       input: LookupCloudUserInput
@@ -180,6 +170,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.user
     },
     ...createWorkspaceRequests(client, options.onDiagnostic),
+    ...createImageRequests(client, publicClient, options.onDiagnostic),
     /** Documents shared with the person directly, outside their workspaces. */
     async listSharedDocuments(): Promise<SharedDocument[]> {
       const response = await parseResponse(
@@ -201,12 +192,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     },
     async createDocument(
       workspaceId: string,
-      input: CreateDocumentInput
+      input: CreateDocumentRequest
     ): Promise<DocumentSummary> {
       const response = await parseResponse(
         client.workspaces[':workspaceId'].documents.$post({
           param: { workspaceId },
-          json: input
+          json: { ...input, kind: input.kind ?? 'design' }
         }),
         documentResponseSchema,
         options.onDiagnostic
@@ -444,11 +435,11 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
     },
-    async commitUpload(uploadId: string, input: CommitUploadInput): Promise<DocumentSummary> {
+    async commitUpload(uploadId: string, input: CommitUploadRequest): Promise<DocumentSummary> {
       const response = await parseResponse(
         client.uploads[':uploadId'].commit.$post({
           param: { uploadId },
-          json: input
+          json: { ...input, images: input.images ?? [] }
         }),
         documentResponseSchema,
         options.onDiagnostic

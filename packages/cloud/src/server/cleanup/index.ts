@@ -1,3 +1,4 @@
+export { cleanupPassOptions, createCleanupServices } from './configured'
 export {
   createDocumentCleanupService,
   type DocumentCleanupOptions,
@@ -18,7 +19,9 @@ export {
   type UploadCleanupService
 } from './uploads'
 export {
+  runCleanup,
   startCleanupWorker,
+  type CleanupPassOptions,
   type CleanupResult,
   type CleanupServices,
   type CleanupWorker,

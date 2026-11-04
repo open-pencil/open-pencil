@@ -1,7 +1,9 @@
-import { canvasLabelForeground } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
-import type { Color, SceneNode } from '@open-pencil/scene-graph'
-import type { CanvasLabelKind } from '@open-pencil/vue'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
+import { canvasLabelForeground, outlineColorInMode } from '@open-pencil/core/canvas'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { CanvasLabelKind } from '@open-pencil/vue/canvas/labels'
 
 export interface CanvasLabelPresentation {
   background: Color
@@ -22,6 +24,23 @@ export function canvasLabelPresentation(
   kind: CanvasLabelKind | undefined
 ): CanvasLabelPresentation {
   if (kind && kind !== 'section-title') return NAME_FIELD
+  // A board draws the title on the section's outline colour, as FigJam does.
+  const figJam =
+    node && resolveEditorProfile(editor.state).sectionTitles === 'outline'
+      ? figJamSectionTitleColors(node, (stroke, index) =>
+          outlineColorInMode(editor.graph, node, stroke, index)
+        )
+      : null
+  if (figJam) {
+    const outline = node?.strokes[figJam.strokeIndex]
+    const background =
+      (node &&
+        outline &&
+        editor.renderer?.resolveStrokeColor(outline, figJam.strokeIndex, node, editor.graph)) ||
+      figJam.background
+    // Opaque, as the pill it edits is.
+    return { background: { ...background, a: 1 }, foreground: figJam.lightText ? 'light' : 'dark' }
+  }
   const fill = node?.fills[0]
   const background =
     node && fill?.visible

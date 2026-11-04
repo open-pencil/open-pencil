@@ -3,23 +3,22 @@ export { tryStartResize } from '#vue/shared/input/resize/start'
 import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import { resizedPathTextGlyphs, type Editor } from '@open-pencil/core/editor'
+import { resizedPathTextGlyphs, type Editor } from '@open-pencil/core'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
+import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import {
+  cloneVectorNetwork,
+  copyDerivedGlyphs,
+  copyGeometryPaths,
+  copyStrokes
+} from '@open-pencil/scene-graph/copy'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
-  cloneVectorNetwork,
-  findInstanceAncestor,
-  recapturedAspectRatio,
-  recordInstanceOverride
-} from '@open-pencil/scene-graph'
-import type {
-  DerivedTextGlyph,
-  InstanceOverrideState,
-  SceneNode,
-  TextPathData
-} from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
+import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
@@ -30,7 +29,7 @@ import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
-import { applyResizeSnap } from '#vue/shared/input/resize/snap'
+import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
 
@@ -96,6 +95,7 @@ function keptAspectRatio(d: DragResize, shiftKey: boolean, ctrlKey: boolean): nu
 
 function resizeChanges(
   d: DragResize,
+  type: SceneNode['type'],
   cx: number,
   cy: number,
   shiftKey: boolean,
@@ -106,20 +106,18 @@ function resizeChanges(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const calculatedRect = calculateResizeRect(
-    d.handle,
-    origRect,
-    cx - d.startX,
-    cy - d.startY,
-    aspect
-  )
+  const dx = cx - d.startX
+  const dy = cy - d.startY
   const newRect =
-    aspect !== null ? calculatedRect : applyResizeSnap(d, calculatedRect, editor, ctrlKey)
+    aspect !== null
+      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
+      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
 
   const changes: Partial<SceneNode> = {
     ...newRect,
     ...scaledGeometryChanges(
       {
+        type,
         vectorNetwork: d.origVectorNetwork,
         fillGeometry: d.origFillGeometry,
         strokeGeometry: d.origStrokeGeometry,
@@ -188,14 +186,13 @@ export function applyResize(
   // structuredClone consumers (export subgraph clone, undo snapshots) with
   // DataCloneError. Unwrap once — also keeps the drag hot path off proxies.
   const d = toRaw(dragState)
-  const { changes, newRect } = resizeChanges(d, cx, cy, shiftKey, editor, ctrlKey)
-  d.appliedRect = { ...newRect }
   const node = editor.graph.getNode(d.nodeId)
-  if (node) {
-    d.origSizing ??= layerSizing(node)
-    d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
-    Object.assign(changes, d.appliedSizing)
-  }
+  if (!node) return
+  const { changes, newRect } = resizeChanges(d, node.type, cx, cy, shiftKey, editor, ctrlKey)
+  d.appliedRect = { ...newRect }
+  d.origSizing ??= layerSizing(node)
+  d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
+  Object.assign(changes, d.appliedSizing)
   markResized(d, newRect, editor)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
@@ -230,7 +227,7 @@ export function applyResize(
  * be reactivity-wrapped, and storing proxies breaks structuredClone snapshots
  * (delete/undo would throw DataCloneError).
  */
-function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
+function snapshotResizeFinal(node: SceneNode, hadStrokeGeometry: boolean): Partial<SceneNode> {
   const final: Partial<SceneNode> = {
     x: node.x,
     y: node.y,
@@ -239,11 +236,10 @@ function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
   }
   if (node.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
   if (node.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(node.fillGeometry)
-  // Path-text reflow legitimately EMPTIES strokeGeometry (textPathBox marks
-  // those nodes) — commit it so the pre-resize silhouettes don't resurrect.
-  // Everything else keeps the length guard: a spurious strokeGeometry key on
-  // plain nodes would clear their raw Figma payload on commit.
-  if (node.strokeGeometry.length > 0 || node.textPathBox) {
+  // Path-text reflow and a resize that redraws a stroke at its weight legitimately EMPTY
+  // strokeGeometry — commit it so the pre-resize outlines don't resurrect. A node that had none
+  // keeps the length guard: a spurious strokeGeometry key would clear its raw Figma payload.
+  if (node.strokeGeometry.length > 0 || node.textPathBox || hadStrokeGeometry) {
     final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   }
   if (node.derivedTextGlyphs?.length) {
@@ -400,14 +396,14 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
   if (!d.appliedRect || sameRect(d.appliedRect, d.origRect)) restoreEditedFields(d, editor)
-  const finalChanges = snapshotResizeFinal(node)
+  const finalChanges = snapshotResizeFinal(node, d.origStrokeGeometry.length > 0)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
-    for (const [childId] of d.origChildren) {
+    for (const [childId, original] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, snapshotResizeFinal(child))
+      finalChildren.set(childId, snapshotResizeFinal(child, original.strokeGeometry.length > 0))
     }
     restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,

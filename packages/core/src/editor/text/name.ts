@@ -2,7 +2,7 @@ import {
   generatedFrameKind,
   generatedFrameOwner,
   generatedFrameText
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 
 import { defaultNodeName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'

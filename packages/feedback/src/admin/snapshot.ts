@@ -1,9 +1,9 @@
 import type { DailyGrowth, MetricsQuery, MetricsSnapshot, RankedCount } from '#feedback/contract'
-import { eachDay, utcDayOf } from '#feedback/days'
+import { eachDay, utcDayOf, utcDayOfTimestamp } from '#feedback/days'
 import { createFeedbackDatabase, type FeedbackDatabase } from '#feedback/db'
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { minDate, parseDate, toZoned } from '@internationalized/date'
-import { groupBy, maxBy, sumBy } from 'es-toolkit'
+import { countBy, groupBy, maxBy, omit, partition, sumBy } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
 import { fetchUsage } from './posthog'
@@ -108,6 +108,36 @@ async function pings(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: st
   }
 }
 
+async function networks(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
+  const rows = await db
+    .selectFrom('pingNetworks')
+    .select(['asn', 'app', 'name', (eb) => eb.fn.sum<number>('count').as('pings')])
+    .where('day', '>=', range.start)
+    .where('day', '<=', range.end)
+    .groupBy(['asn', 'app', 'name'])
+    .execute()
+  const ranked = Object.values(groupBy(rows, (row) => String(row.asn)))
+    .map((network) => ({
+      asn: network[0]?.asn ?? 0,
+      // Cloudflare words an operator's name differently between requests, and sometimes leaves it
+      // out; the commonest reported one names it.
+      name:
+        maxBy(
+          Object.values(
+            groupBy(
+              network.filter((row) => row.name !== ''),
+              (row) => row.name
+            )
+          ),
+          (wording) => sumBy(wording, (row) => Number(row.pings))
+        )?.[0]?.name ?? '',
+      desktop: sumBy(network, (row) => (row.app === 'desktop' ? Number(row.pings) : 0)),
+      web: sumBy(network, (row) => (row.app === 'web' ? Number(row.pings) : 0))
+    }))
+    .toSorted((a, b) => b.desktop + b.web - (a.desktop + a.web))
+  return { total: sumBy(rows, (row) => Number(row.pings)), top: ranked.slice(0, TOP) }
+}
+
 async function site(
   db: Kysely<FeedbackDatabase>,
   env: FeedbackBindings,
@@ -149,10 +179,15 @@ async function site(
   }
 }
 
-async function github(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+async function github(
+  db: Kysely<FeedbackDatabase>,
+  range: MetricsQuery,
+  days: string[],
+  finished: string[]
+) {
   // One day earlier than the range, so its first day has something to grow from.
   const from = parseDate(range.start).subtract({ days: 1 }).toString()
-  const [stars, downloads, traffic, lastReferrerDay] = await Promise.all([
+  const [stars, downloads, traffic, lastReferrerDay, daily] = await Promise.all([
     db
       .selectFrom('githubStars')
       .selectAll()
@@ -176,7 +211,9 @@ async function github(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: s
       .selectFrom('repoReferrers')
       .select((eb) => eb.fn.max('day').as('day'))
       .where('day', '<=', range.end)
-      .executeTakeFirst()
+      .executeTakeFirst(),
+    // The mirror is synced once a day, so today's counts would still be yesterday's.
+    activity(db, range, finished)
   ])
   const referrers = lastReferrerDay?.day
     ? await db
@@ -226,7 +263,8 @@ async function github(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: s
       uniqueViews: row.uniqueViews,
       clones: row.clones
     })),
-    referrers: ranking(referrers)
+    referrers: ranking(referrers),
+    activity: daily
   }
 }
 
@@ -236,6 +274,79 @@ function timestampRange(range: MetricsQuery) {
   return {
     from: midnight(range.start),
     until: midnight(parseDate(range.end).add({ days: 1 }).toString())
+  }
+}
+
+/** The authors GitHub counts as the repository's own; everyone else is the community. */
+const TEAM_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR'])
+
+type RepoItemRow = Pick<
+  FeedbackDatabase['repoItems'],
+  'kind' | 'authorAssociation' | 'createdAt' | 'closedAt' | 'mergedAt'
+>
+
+/**
+ * Each finished day's open issues or pull requests, counted from the mirror: open before the
+ * range, plus what was opened, minus what was closed, day by day. Times are compared as the
+ * ISO strings they are stored as.
+ */
+function tally(items: RepoItemRow[], days: string[], from: string, until: string) {
+  const inRange = (moment: string | null): moment is string =>
+    moment !== null && moment >= from && moment < until
+  const perDay = (moments: (string | null)[]) =>
+    countBy(moments.filter(inRange), (moment) => utcDayOfTimestamp(moment).toString())
+  const count = (group: RepoItemRow[]) => {
+    const opened = perDay(group.map((item) => item.createdAt))
+    const closed = perDay(group.map((item) => item.closedAt))
+    const merged = perDay(group.map((item) => item.mergedAt))
+    let open = group.filter((item) => item.createdAt < from).length
+    return days.map((day) => {
+      open += (opened[day] ?? 0) - (closed[day] ?? 0)
+      return { open, opened: opened[day] ?? 0, closed: closed[day] ?? 0, merged: merged[day] ?? 0 }
+    })
+  }
+  const [team, community] = partition(items, (item) =>
+    TEAM_ASSOCIATIONS.has(item.authorAssociation)
+  )
+  const byTeam = count(team)
+  const byCommunity = count(community)
+  // Both tallies have one entry per day, in the same order.
+  return days.map((day, index) => {
+    const ours = byTeam[index]
+    const theirs = byCommunity[index]
+    return {
+      day,
+      openTeam: ours.open,
+      openCommunity: theirs.open,
+      openedTeam: ours.opened,
+      openedCommunity: theirs.opened,
+      closedTeam: ours.closed,
+      closedCommunity: theirs.closed,
+      mergedTeam: ours.merged,
+      mergedCommunity: theirs.merged
+    }
+  })
+}
+
+async function activity(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+  const { from, until } = timestampRange(range)
+  const [items, synced] = await Promise.all([
+    db
+      .selectFrom('repoItems')
+      .select(['kind', 'authorAssociation', 'createdAt', 'closedAt', 'mergedAt'])
+      .where('createdAt', '<', until)
+      .where((eb) => eb.or([eb('closedAt', 'is', null), eb('closedAt', '>=', from)]))
+      .execute(),
+    db.selectFrom('repoItems').select('number').limit(1).executeTakeFirst()
+  ])
+  if (!synced) return { issues: [], pulls: [] }
+  const [pulls, issues] = partition(items, (item) => item.kind === 'pull')
+  return {
+    // Issues are never merged.
+    issues: tally(issues, days, from, until).map((day) =>
+      omit(day, ['mergedTeam', 'mergedCommunity'])
+    ),
+    pulls: tally(pulls, days, from, until)
   }
 }
 
@@ -306,18 +417,15 @@ export async function buildSnapshot(
   const end = minDate(parseDate(query.end), today) ?? today
   const range = { start: query.start, end: end.toString() }
   const days = eachDay(parseDate(range.start), end).map(String)
+  // Visits and the issue mirror are recorded once a day has ended, so today never has any.
+  const finished = days.filter((day) => parseDate(day).compare(today) < 0)
   const db = createFeedbackDatabase(env.DB)
-  const [earliest, pinged, visited, repository, signups, usage] = await Promise.all([
+  const [earliest, pinged, byNetwork, visited, repository, signups, usage] = await Promise.all([
     firstDay(db),
     pings(db, range, days),
-    // Visits are recorded once a day has ended, so today never has any.
-    site(
-      db,
-      env,
-      range,
-      days.filter((day) => parseDate(day).compare(today) < 0)
-    ),
-    github(db, range, days),
+    networks(db, range),
+    site(db, env, range, finished),
+    github(db, range, days, finished),
     waitlist(db, range),
     fetchUsage(env, services, range).catch((error: unknown) => {
       console.warn('PostHog usage unavailable', { error: String(error) })
@@ -330,6 +438,7 @@ export async function buildSnapshot(
     earliest,
     ...range,
     ...pinged,
+    networks: byNetwork,
     ...visited,
     github: repository,
     waitlist: signups,

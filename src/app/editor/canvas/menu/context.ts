@@ -1,6 +1,8 @@
 import { computed, type Ref } from 'vue'
 
-import { formatShortcut, type Editor, type MenuEntry } from '@open-pencil/vue'
+import type { Editor } from '@open-pencil/core'
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
+import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {
@@ -53,7 +55,9 @@ function copyAction(
         actions.clipboardWrite(editor.copySelectionAsText(actions.ids()), 'text')
       )
     case 'copy-as-svg':
-      return runAsync(() => actions.clipboardWrite(editor.copySelectionAsSVG(actions.ids()), 'SVG'))
+      return runAsync(async () =>
+        actions.clipboardWrite(await editor.copySelectionAsSVG(actions.ids()), 'SVG')
+      )
     case 'copy-as-png':
       return runAsync(actions.copyAsPNG)
     case 'copy-as-jsx':

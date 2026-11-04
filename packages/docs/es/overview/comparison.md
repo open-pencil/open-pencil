@@ -181,12 +181,11 @@ Los cambios serializables encajan con la colaboración basada en servidor, pero 
 ## 10. Ventajas de Penpot
 
 1. **Colaboración mediante servidor:** cuentas, control de acceso y almacenamiento central a través de WebSockets.
-2. **Exportación PDF:** exportador independiente basado en Chromium.
-3. **Sistema de plugins:** ejecución aislada y API de plugins.
-4. **Variables de diseño:** compatibilidad integrada.
-5. **CSS Grid:** implementación propia; OpenPencil usa una variante de Yoga con Grid.
-6. **Alojamiento propio:** despliegue de una plataforma de equipo mediante Docker.
-7. **Madurez:** varios años de uso en producción.
+2. **Sistema de plugins:** ejecución aislada y API de plugins.
+3. **Variables de diseño:** compatibilidad integrada.
+4. **CSS Grid:** implementación propia; OpenPencil usa una variante de Yoga con Grid.
+5. **Alojamiento propio:** despliegue de una plataforma de equipo mediante Docker.
+6. **Madurez:** varios años de uso en producción.
 
 ## 11. Scripts y extensibilidad
 
@@ -209,4 +208,4 @@ Penpot ofrece plugins aislados, pero no una API equivalente para scripting sin i
 | Alojamiento propio | Penpot | Despliegue con Docker |
 | Madurez del ecosistema | Penpot | Años de uso en producción |
 
-OpenPencil es un editor compacto de un solo proceso con renderizador CanvasKit y compatibilidad nativa con `.fig`. Penpot es una plataforma cliente-servidor completa con Clojure, ClojureScript, Rust, bases de datos y servicios Docker. Ambos ofrecen colaboración con modelos diferentes. Penpot tiene un ecosistema de plugins y exportación PDF; OpenPencil ofrece scripting sin interfaz compatible con Figma, 90 herramientas AI/MCP, exportación SVG y una aplicación de escritorio.
+OpenPencil es un editor compacto de un solo proceso con renderizador CanvasKit y compatibilidad nativa con `.fig`. Penpot es una plataforma cliente-servidor completa con Clojure, ClojureScript, Rust, bases de datos y servicios Docker. Ambos ofrecen colaboración con modelos diferentes. Penpot tiene un ecosistema de plugins; OpenPencil ofrece scripting sin interfaz compatible con Figma, 90 herramientas AI/MCP, exportación SVG y PDF, y una aplicación de escritorio.

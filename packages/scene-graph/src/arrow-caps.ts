@@ -1,3 +1,4 @@
+import { cubicPoint } from './cubic'
 import type { Vector } from './primitives'
 import type { Stroke, StrokeCap, VectorNetwork } from './types'
 
@@ -256,11 +257,7 @@ export function trimArrowShafts(
 type Cubic = [Vector, Vector, Vector, Vector]
 
 function cubicAt([a, b, c, d]: Cubic, t: number): Vector {
-  const u = 1 - t
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y
-  }
+  return cubicPoint(a, b, c, d, t)
 }
 
 function lerp(a: Vector, b: Vector, t: number): Vector {
@@ -336,13 +333,31 @@ function trimSegmentEnd(
   }
 }
 
-/** Arrow endpoints for a LINE node, whose local geometry runs (0,0) → (width,height). */
-export function lineArrowEndpoints(width: number, height: number, cap: StrokeCap): ArrowEndpoint[] {
-  if (!isArrowCap(cap)) return []
-  if (width === 0 && height === 0) return []
-  const angle = Math.atan2(height, width)
-  return [
-    { x: 0, y: 0, angle: Math.atan2(-height, -width), cap },
-    { x: width, y: height, angle, cap }
-  ]
+/**
+ * Where Figma strokes a LINE running from its origin to (`width`, `height`): a full weight to one
+ * side, toward its local negative y, whatever the stroke's alignment. Under a cap both ends come in
+ * by half a weight, so the cap or head ends where the line does; an equilateral arrow already
+ * comes to its point at the end, so it stays there.
+ */
+export function lineStrokeEnds(
+  width: number,
+  height: number,
+  weight: number,
+  cap: StrokeCap | undefined,
+  // Flatten insets a full half weight even past the middle, reversing a short line (live-measured).
+  insetPastMiddle = false
+): { start: Vector; end: Vector } {
+  const length = Math.hypot(width, height)
+  if (length === 0) return { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } }
+  const ux = width / length
+  const uy = height / length
+  const inset =
+    cap === undefined || cap === 'NONE' || cap === 'ARROW_EQUILATERAL'
+      ? 0
+      : (insetPastMiddle ? weight : Math.min(weight, length)) / 2
+  const offset = { x: (uy * weight) / 2, y: (-ux * weight) / 2 }
+  return {
+    start: { x: ux * inset + offset.x, y: uy * inset + offset.y },
+    end: { x: width - ux * inset + offset.x, y: height - uy * inset + offset.y }
+  }
 }

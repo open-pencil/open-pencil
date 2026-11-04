@@ -1,11 +1,11 @@
-import {
-  variableValueReferences,
-  type SceneGraph,
-  type Variable,
-  type VariableCollection,
-  type VariableCollectionMode,
-  type VariableValue
+import type {
+  SceneGraph,
+  Variable,
+  VariableCollection,
+  VariableCollectionMode,
+  VariableValue
 } from '@open-pencil/scene-graph'
+import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 import { cssColor } from '../export/css'
 import { formulaToCSS } from './formula'

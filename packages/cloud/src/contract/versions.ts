@@ -33,13 +33,13 @@ export const documentVersionsSchema = v.object({
 })
 export type DocumentVersions = v.InferOutput<typeof documentVersionsSchema>
 
-const versionName = v.pipe(
+const versionNameSchema = v.pipe(
   v.string(),
   v.trim(),
   v.minLength(1),
   v.maxLength(DOCUMENT_VERSION_NAME_MAX_LENGTH)
 )
-const versionDescription = v.pipe(
+const versionDescriptionSchema = v.pipe(
   v.string(),
   v.trim(),
   v.maxLength(DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH)
@@ -47,15 +47,15 @@ const versionDescription = v.pipe(
 
 /** Names the document as it is now, like Save to version history. */
 export const saveDocumentVersionSchema = v.object({
-  name: versionName,
-  description: v.optional(versionDescription, '')
+  name: versionNameSchema,
+  description: v.optional(versionDescriptionSchema, '')
 })
 export type SaveDocumentVersionInput = v.InferOutput<typeof saveDocumentVersionSchema>
 
 /** Names a version or changes its name; a null name deletes its info and leaves a checkpoint. */
 export const updateDocumentVersionSchema = v.object({
-  name: v.nullable(versionName),
-  description: v.optional(versionDescription, '')
+  name: v.nullable(versionNameSchema),
+  description: v.optional(versionDescriptionSchema, '')
 })
 export type UpdateDocumentVersionInput = v.InferOutput<typeof updateDocumentVersionSchema>
 

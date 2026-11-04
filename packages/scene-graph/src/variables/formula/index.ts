@@ -1,4 +1,5 @@
-import type { SceneGraph, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '#scene-graph/graph'
+import type { VariableLiteral, VariableValue } from '#scene-graph/types'
 
 import { resolveVariableInModes } from '../resolution'
 import { parseFormulaSyntax, type FormulaReference } from './parse'

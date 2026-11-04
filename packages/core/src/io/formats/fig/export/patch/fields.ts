@@ -9,7 +9,8 @@ import {
 } from '@open-pencil/fig'
 import { derivedSymbolDataOf, symbolDataOf } from '@open-pencil/fig/instance-overrides'
 import type { FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -47,6 +48,9 @@ function archivedGraph(source: SceneGraph, baseline: ArchiveBaseline): SceneGrap
   )
   graph.variableCollections = new Map(structuredClone(baseline.collections.collections))
   graph.activeMode = new Map(baseline.collections.activeMode)
+  // The document record compares with the settings the archive saved, as the layers do.
+  graph.documentColorSpace = baseline.settings.colorSpace
+  graph.enabledLibraries = new Map(structuredClone(baseline.settings.libraries))
   return graph
 }
 

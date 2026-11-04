@@ -66,7 +66,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
  * builds that sync the layer tree or variables differently, or encode what they send
  * differently, never join each other's rooms; change it with either.
  */
-export const COLLAB_APP_ID = 'openpencil/5'
+export const COLLAB_APP_ID = 'openpencil/7'
 
 // 32 base36 characters provide roughly 165 bits of entropy. The room ID is a
 // bearer credential and must resist offline enumeration from public signaling topics.
@@ -82,8 +82,16 @@ export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 export const PRIVACY_URL = 'https://openpencil.dev/overview/privacy'
 /** The OpenPencil Cloud section of the website, with its waitlist form. */
 export const CLOUD_WAITLIST_URL = 'https://openpencil.dev/#cloud'
-/** The hosted OpenPencil Cloud server, offered first when connecting. */
-export const OFFICIAL_CLOUD_URL = 'https://cloud.openpencil.dev'
+/**
+ * The hosted OpenPencil Cloud server, offered first when connecting. An official deployment's own
+ * editor build names that deployment, such as staging.
+ */
+export const OFFICIAL_CLOUD_URL =
+  (typeof __OPENPENCIL_OFFICIAL_CLOUD_URL__ === 'string' && __OPENPENCIL_OFFICIAL_CLOUD_URL__) ||
+  'https://cloud.openpencil.dev'
+/** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
+export const IS_CLOUD_SITE =
+  typeof __OPENPENCIL_CLOUD_SITE__ === 'boolean' && __OPENPENCIL_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
@@ -108,7 +116,7 @@ export function releaseNotesURL(version: string): string {
 
 export function getShareURL(roomId: string): string {
   const base = IS_TAURI || !IS_BROWSER ? WEB_APP_ORIGIN : window.location.origin
-  return `${base}/share/${roomId}`
+  return `${base}/rooms/${roomId}`
 }
 
 export const PEER_COLORS: Color[] = [
@@ -152,3 +160,8 @@ export const DEFAULT_TEXT_WIDTH = 200
 export const DEFAULT_TEXT_HEIGHT = 24
 
 export const ACP_PERMISSION_TIMEOUT_MS = 60_000
+/** How long a request waits unanswered before a notification says an agent needs you. */
+export const AGENT_INPUT_NOTIFY_DELAY_MS = 6_000
+
+/** The viewport HTML is laid out in when imported: a common desktop design width. */
+export const HTML_IMPORT_VIEWPORT = { width: 1440, height: 900 } as const

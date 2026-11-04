@@ -1,7 +1,14 @@
+import { isEqual } from 'es-toolkit'
+import * as v from 'valibot'
 import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
-import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
+import {
+  cloudPresenceSchema,
+  RELAY_SERVER_PEER,
+  type CollaborationTicket
+} from '@open-pencil/cloud/contract'
 
+import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
 import type { RoomIdentity, RoomSession } from '@/app/collab/session'
 import type { JoinCollabRoom } from '@/app/collab/transport'
@@ -23,10 +30,13 @@ import { cloudConnection, cloudConnections, type CloudSessionState } from '../se
 import { cloudShareTarget } from '../sharing/document'
 import { versionsChanged } from '../versions/history'
 import { accountRoomIdentity } from './identity'
-import { shareRoomUploads, uploadStoredDocument } from './upload'
+import { cloudRoomImages } from './images'
+import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
 export const cloudRoomPermissions = shallowRef<ReadonlyMap<EditorStore, 'edit' | 'view'>>(new Map())
+/** Tabs the relay turned away for good, for the status beside the name; they do not rejoin on their own. */
+export const cloudRoomsRefused = shallowRef<ReadonlySet<EditorStore>>(new Set())
 const starting = new WeakSet<EditorStore>()
 
 function setPermission(store: EditorStore, permission: 'edit' | 'view' | null) {
@@ -48,9 +58,8 @@ export function electCloudSaver(
   const editors = [...presence]
     .filter(([clientId, state]) => {
       if (clientId === self.clientId) return self.canSave
-      const cloud = state.cloud
-      if (typeof cloud !== 'object' || cloud === null) return false
-      return Reflect.get(cloud, 'permission') === 'edit' && Reflect.get(cloud, 'kind') === 'user'
+      const cloud = v.safeParse(cloudPresenceSchema, state.cloud)
+      return cloud.success && cloud.output.permission === 'edit' && cloud.output.kind === 'user'
     })
     .map(([clientId]) => clientId)
   return editors.length ? Math.min(...editors) : null
@@ -71,8 +80,9 @@ async function catchUpWithServer(store: EditorStore): Promise<void> {
  * Keeps this tab saving only while it is the room's saver, for as long as the current effect
  * scope runs. A tab that stops drops its queued uploads, since the room holds those edits; the
  * saver overwrites a revision it conflicts with, since the room's document already has every edit
- * in it, unless that revision is a restore, which moves the room on instead. Returns whether this
- * tab saves now.
+ * in it, unless that revision is a restore, which moves the room on instead. The saver saves
+ * whatever edits the room holds unsaved, its own or anyone's, and once the server has them tells
+ * the room so. Returns whether this tab saves now.
  */
 function followSaver(
   store: EditorStore,
@@ -89,6 +99,8 @@ function followSaver(
     if (next === saving) return
     saving = next
     store.state.autosaveEnabled = next
+    // Edits an earlier saver left without uploading, or made where nobody saved, are this tab's now.
+    if (next && session.saves.unsaved()) store.markDocumentChanged()
     const id = documentId()
     if (!id) return
     if (!next) {
@@ -99,6 +111,18 @@ function followSaver(
     await catchUpWithServer(store).catch(() => undefined)
     // Only a stored document saves without asking where; the room never adds a file prompt.
     if (store.getStorageBinding() && store.hasUnsavedChanges()) await store.saveFigFile()
+  }
+
+  /** Tells the room its edits are saved once this tab's upload of all of them is on the server. */
+  async function markUploaded(id: string) {
+    const clean = () => saving === true && !store.hasUnsavedChanges()
+    if (!clean() || !session.saves.unsaved()) return
+    const counts = session.saves.counts()
+    const meta = await getLocalCanvasStore().getMeta(id)
+    // An edit that arrived meanwhile is in a later save, and so is not saved yet.
+    if (meta?.syncStatus !== 'synced' || !clean() || !isEqual(counts, session.saves.counts()))
+      return
+    session.saves.markSaved(counts)
   }
 
   async function settleConflict(id: string) {
@@ -116,12 +140,25 @@ function followSaver(
     () => store.hasUnsavedChanges(),
     (dirty) => {
       if (dirty && saving === false) store.markDocumentSaved()
+      const id = documentId()
+      if (!dirty && id) void markUploaded(id)
     }
+  )
+  // What the tab takes from the room is no edit of its own; the room says what is unsaved. It
+  // says so after the task, once a tab that seeded the room has called its document saved.
+  onScopeDispose(
+    session.saves.onChange(() =>
+      queueMicrotask(() => {
+        if (saving === true && session.saves.unsaved()) store.markDocumentChanged()
+      })
+    )
   )
   onScopeDispose(
     onStorageWorkspaceEvent((event) => {
       const id = documentId()
-      if (id && event.documentId === id) void settleConflict(id)
+      if (!id || event.documentId !== id) return
+      void settleConflict(id)
+      void markUploaded(id)
     })
   )
   return () => saving === true
@@ -149,11 +186,19 @@ export function openCloudDocumentRoom(
     uploadNow?: () => Promise<boolean>
     /** Who the tab is in the room; the device's own identity unless an account names it. */
     identity?: RoomIdentity
+    /** Where the room keeps its images: the document's workspace, so the room names them. */
+    images?: RoomImageStore
   }
 ) {
   const canEdit = options.permission === 'edit'
   const canSave = canEdit && !options.guest
-  const session = openDocumentRoom(store, options.roomId, options.transport, options.identity)
+  const session = openDocumentRoom(
+    store,
+    options.roomId,
+    options.transport,
+    options.identity,
+    options.images
+  )
   // Everything the room follows lives in one scope, so stopping it leaves nothing behind.
   const scope = effectScope(true)
   const uploads = scope.run(() => {
@@ -170,7 +215,10 @@ export function openCloudDocumentRoom(
     const stopSynced = session.onSynced((peerId) => {
       if (peerId !== RELAY_SERVER_PEER) return
       stopSynced()
-      if (canEdit && !session.roomHasDocument()) session.shareDocument()
+      if (!canEdit || session.roomHasDocument()) return
+      session.shareDocument()
+      // The tab's document is the stored revision unless it was edited first.
+      if (!store.hasUnsavedChanges()) session.saves.markSaved(session.saves.counts())
     })
     onScopeDispose(stopSynced)
     // Unsure whether the document moved on, the saver waits rather than overwrite a restore.
@@ -209,7 +257,7 @@ export function cloudRelayTransport(
   url: string,
   first: CollaborationTicket,
   next: () => Promise<CollaborationTicket>,
-  onRestored?: () => void
+  events: { onRestored?: () => void; onRefused?: () => void } = {}
 ): JoinCollabRoom {
   let unused: CollaborationTicket | null = first
   return createCloudRelayJoin({
@@ -221,7 +269,8 @@ export function cloudRelayTransport(
       if (ticket.roomId !== first.roomId) return null
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
-    onRestored
+    onRestored: events.onRestored,
+    onRefused: events.onRefused
   })
 }
 
@@ -234,6 +283,59 @@ type LiveRoom = Pick<ReturnType<typeof openCloudDocumentRoom>, 'stop' | 'upload'
 const liveRooms = new Map<EditorStore, { room: LiveRoom; stopWatching: () => void }>()
 /** The server and account each tab joined its room as, so a change of account joins again. */
 const joinedAs = new WeakMap<EditorStore, { serverId: string; accountId: string | null }>()
+
+/** Each refused tab's watch for its closing, which forgets the refusal with the tab. */
+const refusalWatches = new Map<EditorStore, () => void>()
+
+function setRefused(store: EditorStore, refused: boolean) {
+  refusalWatches.get(store)?.()
+  refusalWatches.delete(store)
+  const next = new Set(cloudRoomsRefused.value)
+  if (refused) {
+    next.add(store)
+    refusalWatches.set(
+      store,
+      watch(allTabs, () => {
+        if (!getTabForStore(store)) setRefused(store, false)
+      })
+    )
+  } else next.delete(store)
+  cloudRoomsRefused.value = next
+}
+
+/**
+ * The relay turned the tab away for good, so it leaves the room and nothing waits on it. A viewer
+ * stays read-only. An editor that can save takes its saving back: a tab that was not the room's
+ * saver had its edits counted as saved by the room, so it uploads the document as it stands, and
+ * a newer save from someone else comes back as a conflict to resolve rather than being lost.
+ */
+export function leaveRefusedRoom(
+  store: EditorStore,
+  room: { permission: 'edit' | 'view'; canSave: boolean }
+): void {
+  setRefused(store, true)
+  leaveCloudRoom(store)
+  if (room.permission === 'view') {
+    store.setReadOnly(true)
+    return
+  }
+  if (!room.canSave || !store.getStorageBinding()) return
+  store.state.autosaveEnabled = true
+  void store.saveFigFile().catch(() => undefined)
+}
+
+/**
+ * Joins a refused tab's room again, showing the document as the server holds it. A rejoin that
+ * fails, or ends without a room, leaves the tab refused, so it can try again.
+ */
+export async function rejoinRefusedRoom(store: EditorStore): Promise<void> {
+  setRefused(store, false)
+  try {
+    await restartCloudRoom(store)
+  } finally {
+    if (!roomForStore(store) && getTabForStore(store)) setRefused(store, true)
+  }
+}
 
 /** Leaves the room's saving and status behind once its tab closes. */
 export function stopWithTab(store: EditorStore, room: LiveRoom): void {
@@ -256,12 +358,30 @@ export function stopWithTab(store: EditorStore, room: LiveRoom): void {
  */
 export async function startCloudRoom(store: EditorStore): Promise<void> {
   const binding = store.getStorageBinding()
-  if (!binding || !isCloudBinding(binding) || roomForStore(store) || starting.has(store)) return
+  if (
+    !binding ||
+    !isCloudBinding(binding) ||
+    roomForStore(store) ||
+    starting.has(store) ||
+    cloudRoomsRefused.value.has(store)
+  ) {
+    return
+  }
   const target = cloudShareTarget(binding)
   if (!target?.discovery.capabilities.collaboration) return
   starting.add(store)
+  // A tab that closes while its document is on the way stops waiting for it.
+  const closed = new AbortController()
+  const stopWatching = watch(allTabs, () => {
+    if (!getTabForStore(store)) closed.abort()
+  })
   try {
-    const first = await target.client.getCollaborationTicket(binding.documentId)
+    // A new document's room opens once its first upload has created it on the server.
+    const first = await onceOnServer(
+      binding.documentId,
+      () => target.client.getCollaborationTicket(binding.documentId),
+      closed.signal
+    )
     // The document may have moved, or its tab closed, while the ticket was on its way.
     const current = store.getStorageBinding() === binding && getTabForStore(store)
     if (first.provider !== 'relay' || !first.serverURL || !current) return
@@ -275,13 +395,18 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
         ? accountRoomIdentity(() => cloudConnection(target.server.id).account ?? account)
         : undefined,
       roomId: first.roomId,
-      transport: cloudRelayTransport(first.serverURL, first, nextTicket, restart),
+      transport: cloudRelayTransport(first.serverURL, first, nextTicket, {
+        onRestored: restart,
+        onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: true })
+      }),
       permission: first.permission,
+      images: cloudRoomImages(target.client, binding.documentId, first.permission === 'edit'),
       roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
       onRestored: restart
     })
     stopWithTab(store, room)
   } finally {
+    stopWatching()
     starting.delete(store)
   }
 }

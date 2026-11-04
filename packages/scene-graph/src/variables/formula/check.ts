@@ -1,9 +1,9 @@
+import type { Color } from '#scene-graph/primitives'
 import type {
-  Color,
   VariableFormulaNode,
   VariableFormulaOperator,
   VariableLiteral
-} from '@open-pencil/scene-graph'
+} from '#scene-graph/types'
 
 import {
   formulaArity,

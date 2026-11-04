@@ -41,42 +41,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     })
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
     expect(canvas.drawRect).toHaveBeenCalled()
-  })
-
-  test('a stroke without a fill casts a ring and clips its shape out of the shadow', () => {
-    const r = createMockRenderer()
-    const canvas = createMockCanvas()
-    const node = effectNode({
-      type: 'RECTANGLE',
-      width: 100,
-      height: 100,
-      fills: [],
-      strokes: [{ ...OPAQUE_FILL, opacity: 0.5, weight: 4, align: 'CENTER' }],
-      effects: [
-        {
-          type: 'DROP_SHADOW',
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0.5 },
-          offset: { x: 0, y: 3 },
-          radius: 3,
-          spread: 0,
-          showShadowBehindNode: false
-        }
-      ]
-    })
-
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
-
-    expect(r.ltrb).toHaveBeenCalledWith(-2, -2, 102, 102)
-    expect(r.ltrb).toHaveBeenCalledWith(2, 2, 98, 98)
-    const [ring] = mockCalls(canvas.drawPath).find(([, paint]) => paint === r.auxFill) ?? []
-    if (typeof ring !== 'object' || ring === null) throw new Error('expected the ring path')
-    expect(mockCalls(Reflect.get(ring, 'setFillType'))).toContainEqual([r.ck.FillType.EvenOdd])
-    expect(canvas.clipPath).toHaveBeenCalledWith(expect.anything(), r.ck.ClipOp.Difference, true)
-    expect(canvas.drawPath).toHaveBeenCalledWith(expect.anything(), r.auxFill)
-    expect(r.paintShapeContent).not.toHaveBeenCalled()
   })
 
   test('applies effect blend modes to rendered shadow paint', () => {
@@ -102,7 +68,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       ]
     })
 
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
 
     expect(r.auxFill.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.Screen)
     expect(r.auxFill.setBlendMode).toHaveBeenLastCalledWith(r.ck.BlendMode.SrcOver)
@@ -128,15 +94,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     })
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node,
-      TEST_GRAPH,
-      new Float32Array([0, 0, 100, 100]),
-      false,
-      'inner'
-    )
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'inner')
     expect(canvas.drawPath).toHaveBeenCalled()
   })
 
@@ -180,15 +138,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       }
     })
 
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node,
-      TEST_GRAPH,
-      new Float32Array([0, 0, 20, 20]),
-      false,
-      'front'
-    )
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'front')
 
     expect(r.clipNodeShape).toHaveBeenCalled()
     expect(canvas.drawRect).toHaveBeenCalled()
@@ -233,15 +183,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       }
     })
 
-    renderEffects(
-      r,
-      asCanvas(canvas),
-      node,
-      TEST_GRAPH,
-      new Float32Array([0, 0, 1000, 1000]),
-      false,
-      'front'
-    )
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'front')
 
     expect(mockCalls(canvas.drawRect).length).toBeLessThanOrEqual(12_000)
   })
@@ -264,7 +206,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     })
-    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
     expect(r.applyClippedBlur).toHaveBeenCalled()
   })
 
@@ -285,7 +227,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       effects: []
     })
 
-    applyClippedBlur(r, asCanvas(canvas), node, rect, false, 5)
+    applyClippedBlur(r, asCanvas(canvas), node, 5)
 
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(

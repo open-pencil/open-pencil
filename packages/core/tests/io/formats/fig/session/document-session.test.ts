@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { createFigDocumentSession, materializeFigArchive } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, CommittedGraphEventError } from '@open-pencil/scene-graph'
 
 test('a mid-load creation failure leaves existing nodes and loaded pages unchanged', async () => {
@@ -18,16 +18,17 @@ test('a mid-load creation failure leaves existing nodes and loaded pages unchang
   }))
   const created: string[] = []
   session.graph.onNodeEvents({ created: (node) => created.push(node.id) })
-  const create = session.graph.createNode.bind(session.graph)
+  // Layers read from the file are created under their saved GUIDs.
+  const create = session.graph.createNodeWithId.bind(session.graph)
   let calls = 0
-  session.graph.createNode = (...args) => {
+  session.graph.createNodeWithId = (...args) => {
     if (++calls === 2) throw new Error('Injected creation failure')
     return create(...args)
   }
   try {
     expect(() => session.loadPage(session.pages[0].id)).toThrow('Injected creation failure')
   } finally {
-    session.graph.createNode = create
+    session.graph.createNodeWithId = create
   }
   expect(
     [...session.graph.getAllNodes()].map((node) => ({ id: node.id, children: [...node.childIds] }))

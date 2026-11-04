@@ -17,11 +17,11 @@ local-first and works without it.
 The Node runtime reads one deployment TOML file named by `OPENPENCIL_CLOUD_CONFIG` and resolves
 secrets from the environment. Start from
 [`deploy/openpencil-cloud.example.toml`](./deploy/openpencil-cloud.example.toml), then build and run
-the self-contained server on Node 22 or later:
+the server on Node 22 or later, installed from npm or built from a checkout:
 
 ```sh
-bun --filter @open-pencil/cloud build:standalone
-bun --filter @open-pencil/cloud start
+npx -p @open-pencil/cloud openpencil-cloud   # openpencil-ai-relay runs the AI relay
+bun --filter @open-pencil/cloud build:standalone && bun --filter @open-pencil/cloud start
 ```
 
 The server migrates the database before it accepts requests. The

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'

@@ -10,7 +10,7 @@ import {
   deleteCommentThread,
   replyToCommentThread,
   resolveCommentThread
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/comments'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { useCollabIdentity } from '@/app/collab/identity'

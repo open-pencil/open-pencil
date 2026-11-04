@@ -2,18 +2,20 @@ import { deflateSync, inflateSync } from 'fflate'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
+import type {
+  GeometryPath,
+  NodeType,
+  SceneGraph,
+  SceneNode,
+  WindingRule
+} from '@open-pencil/scene-graph'
 import {
   createInstanceOverrideState,
   deserializeInstanceOverrideState,
   serializeInstanceOverrideState,
   setInstanceOverride,
-  type InstanceOverrideState,
-  type GeometryPath,
-  type NodeType,
-  type SceneGraph,
-  type SceneNode,
-  type WindingRule
-} from '@open-pencil/scene-graph'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { ClipboardSnapshot } from '#core/editor/clipboard/copy'
@@ -61,42 +63,42 @@ interface SerializedClipboardNode {
   [key: string]: unknown
 }
 
-const finiteNumber = v.pipe(v.number(), v.finite())
-const byte = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(255))
+const finiteNumberSchema = v.pipe(v.number(), v.finite())
+const byteSchema = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(255))
 
-const SerializedGeometry = v.optional(
+const serializedGeometrySchema = v.optional(
   v.array(
     v.looseObject({
       windingRule: v.picklist(['NONZERO', 'EVENODD']),
-      commandsBlob: v.record(v.string(), byte)
+      commandsBlob: v.record(v.string(), byteSchema)
     })
   )
 )
 
-const SerializedClipboardNodeSchema: v.GenericSchema<unknown, SerializedClipboardNode> =
+const serializedClipboardNodeSchema: v.GenericSchema<unknown, SerializedClipboardNode> =
   v.looseObject({
     id: v.string(),
     type: v.custom<NodeType>(
       (value) => typeof value === 'string' && Object.hasOwn(NODE_TYPES, value)
     ),
     // Older clipboard payloads may omit a position; paste offsets from the origin then.
-    x: v.optional(finiteNumber, 0),
-    y: v.optional(finiteNumber, 0),
+    x: v.optional(finiteNumberSchema, 0),
+    y: v.optional(finiteNumberSchema, 0),
     overrides: v.optional(v.record(v.string(), v.unknown())),
     instanceOverrides: v.optional(v.unknown()),
     textPicture: v.optional(v.nullable(v.string())),
-    fillGeometry: SerializedGeometry,
-    strokeGeometry: SerializedGeometry,
-    children: v.optional(v.array(v.lazy(() => SerializedClipboardNodeSchema)))
+    fillGeometry: serializedGeometrySchema,
+    strokeGeometry: serializedGeometrySchema,
+    children: v.optional(v.array(v.lazy(() => serializedClipboardNodeSchema)))
   })
 
 /** Clipboard HTML is writable by any application, so the payload is validated before paste. */
-const OpenPencilClipboardJSON = v.pipe(
+const openPencilClipboardSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
     format: v.literal('openpencil/v1'),
-    nodes: v.array(SerializedClipboardNodeSchema),
+    nodes: v.array(serializedClipboardNodeSchema),
     images: v.optional(v.record(v.string(), v.unknown()))
   })
 )
@@ -117,7 +119,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
     } catch {
       bytes = raw
     }
-    const decoded = v.safeParse(OpenPencilClipboardJSON, new TextDecoder().decode(bytes))
+    const decoded = v.safeParse(openPencilClipboardSchema, new TextDecoder().decode(bytes))
     if (!decoded.success) {
       console.warn('Ignoring malformed OpenPencil clipboard data:', v.summarize(decoded.issues))
       return null

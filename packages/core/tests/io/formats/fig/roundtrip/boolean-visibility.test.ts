@@ -4,7 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 
 import { createEditor } from '#core/editor/create'
 import { FigmaAPI } from '#core/figma-api'
-import { exportFigFile, parseFigFile } from '#core/io'
+import { exportFigFile, parseFigFile } from '#core/io/formats/fig'
 import { populateFigPage, readerDiagnostics } from '#core/kiwi/fig/session/document-state'
 import { getComponents } from '#core/tools/read/components'
 

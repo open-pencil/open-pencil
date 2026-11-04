@@ -1,8 +1,4 @@
-import type {
-  VariableFormulaOperator,
-  VariableLiteral,
-  VariableType
-} from '@open-pencil/scene-graph'
+import type { VariableFormulaOperator, VariableLiteral, VariableType } from '#scene-graph/types'
 
 import { variableText, variableTruthy } from '../text'
 import { VariableFormulaError } from './tree'

@@ -3,18 +3,19 @@ import {
   type FigArchiveRecordInfo,
   type FigRecordPatch
 } from '@open-pencil/fig'
-import { nameImagesForFigma, type FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import {
-  computeImageHash,
-  layersUsingVariables,
-  isGeneratedFrame,
-  ownsSlotContent,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  nameImagesForFigma,
+  type FigNodeChangeExportRuntime,
+  sceneNodeToKiwi
+} from '@open-pencil/fig/node-change'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { layersUsingVariables } from '@open-pencil/scene-graph/variables'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
@@ -26,7 +27,6 @@ import {
   type KiwiNodeChange
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
 import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive/changes'
 import {
@@ -88,6 +88,21 @@ function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
   if (!checkpoint) return null
   const byGuid = figCheckpointRecords(checkpoint)
   return { byGuid, byNode: new Map([...byGuid].map(([guid, nodeId]) => [nodeId, guid])) }
+}
+
+/**
+ * A set's variants write their copies of its boolean, text, swap, and slot properties from the
+ * set's, so an edited set writes its variants too; only the fields that differ are patched.
+ */
+function addSetVariants(
+  graph: SceneGraph,
+  changes: ArchiveChangeSummary,
+  add: (id: string) => unknown
+): void {
+  for (const id of changes.touched) {
+    if (graph.getNode(id)?.type !== 'COMPONENT_SET') continue
+    for (const child of graph.getChildren(id)) if (child.type === 'COMPONENT') add(child.id)
+  }
 }
 
 /** An edited component changes every instance of it, and so every component nesting one. */
@@ -178,6 +193,7 @@ function planRecords(
     return owner
   }
   for (const id of changes.touched) add(id)
+  addSetVariants(graph, changes, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)
@@ -436,6 +452,7 @@ export async function writePatchedFigFile(
     thumbnailPNG: extras.thumbnailPNG,
     metaJSON: extras.metaJSON,
     images: extras.images.filter((image) => !archivedImages.has(image.name)),
-    compressionLevel: figCompressionLevel(source)
+    compressionLevel: figCompressionLevel(source),
+    kind: source.documentKind
   })
 }

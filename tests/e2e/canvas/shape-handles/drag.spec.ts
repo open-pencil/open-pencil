@@ -92,3 +92,52 @@ test('a star changes its point count and ratio from the handles on its points', 
   await editor.canvas.waitForRender()
   expect((await corners.points(nodeId))?.ratio).toBe(0.5)
 })
+
+/** Canvas coordinates of a point at an angle, clockwise from three o'clock, and a distance from
+ * the centre of the driver's 160 × 160 ellipse. */
+function aroundEllipse(degrees: number, distance: number) {
+  return corners.point(
+    80 + distance * Math.cos((degrees * Math.PI) / 180),
+    80 + distance * Math.sin((degrees * Math.PI) / 180)
+  )
+}
+
+// Figma desktop: a whole ellipse's one handle, 10 px inside its edge at the start, cuts out the
+// slice it is dragged across, in one undo step.
+test('dragging a whole ellipse’s handle cuts out the slice it crosses', async () => {
+  const nodeId = await corners.show({}, 'ELLIPSE')
+  const from = aroundEllipse(0, 70)
+  const to = aroundEllipse(90, 70)
+  await editor.canvas.drag(from.x, from.y, to.x, to.y)
+  await editor.canvas.waitForRender()
+  expect(await corners.arc(nodeId)).toEqual({ start: 0, end: -270, ratio: 0 })
+
+  await editor.canvas.undo()
+  expect(await corners.arc(nodeId)).toBeNull()
+  editor.canvas.assertNoErrors()
+})
+
+// Figma desktop: an arc's start handle, halfway across its edge, turns the arc and keeps its
+// sweep, Shift rounding to 15°; its ratio handle sets the hole from the distance to the centre,
+// Shift rounding to tenths.
+test('an arc turns from its start handle and opens a hole from its ratio handle', async () => {
+  const nodeId = await corners.show(
+    { arcData: { startingAngle: 0, endingAngle: Math.PI * 1.5, innerRadius: 0 } },
+    'ELLIPSE'
+  )
+  const start = aroundEllipse(0, 40)
+  const turned = aroundEllipse(50, 40)
+  await editor.page.keyboard.down('Shift')
+  await editor.canvas.drag(start.x, start.y, turned.x, turned.y)
+  await editor.page.keyboard.up('Shift')
+  await editor.canvas.waitForRender()
+  expect(await corners.arc(nodeId)).toEqual({ start: 45, end: 315, ratio: 0 })
+
+  const centre = aroundEllipse(0, 0)
+  const out = aroundEllipse(180, 43)
+  await editor.page.keyboard.down('Shift')
+  await editor.canvas.drag(centre.x, centre.y, out.x, out.y)
+  await editor.page.keyboard.up('Shift')
+  await editor.canvas.waitForRender()
+  expect(await corners.arc(nodeId)).toEqual({ start: 45, end: 315, ratio: 0.5 })
+})

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { UndoManager } from '@open-pencil/scene-graph'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 test('a change a step caused joins it, so undo and redo apply them together', () => {
   const undo = new UndoManager()

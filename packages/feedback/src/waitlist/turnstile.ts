@@ -4,7 +4,7 @@ import * as v from 'valibot'
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 const SITEVERIFY_TIMEOUT_MS = 10_000
 
-const SiteverifySchema = v.object({
+const siteverifySchema = v.object({
   success: v.boolean(),
   hostname: v.optional(v.string()),
   action: v.optional(v.string())
@@ -32,7 +32,7 @@ export async function verifyTurnstile(
   }).catch(() => null)
   if (!response?.ok) return false
   const result = v.safeParse(
-    v.pipe(v.string(), v.parseJson(), SiteverifySchema),
+    v.pipe(v.string(), v.parseJson(), siteverifySchema),
     await response.text()
   )
   return (

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
-import { hasPluginData, OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph'
+import { createEditor, type Editor } from '@open-pencil/core'
+import { hasPluginData, OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 
 let editor: Editor
 

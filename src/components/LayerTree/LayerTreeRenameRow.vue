@@ -2,7 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watch } from 'vue'
 
-import { useI18n, type LayerNode } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { nodeIcon } from '@/components/icons'
 import layerTreeTheme from '@/theme/layer-tree'

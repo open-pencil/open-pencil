@@ -1,8 +1,9 @@
-import type {
-  CollaborationPrincipal,
-  CollaborationTicket,
-  DocumentPermission,
-  ResolveDocumentShareInput
+import {
+  RELAY_DOCUMENT_PARAM,
+  type CollaborationPrincipal,
+  type CollaborationTicket,
+  type DocumentPermission,
+  type ResolveDocumentShareInput
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -13,6 +14,7 @@ import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { base64url, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
+import { withQuery } from 'ufo'
 
 const TICKET_LIFETIME_SECONDS = 5 * 60
 
@@ -38,7 +40,10 @@ export type CollaborationTicketClaims = {
   principal: CollaborationPrincipal
   permission: DocumentPermission
   roomEpoch: number
-  /** The relay that enforces writes; without one the ticket is for peer-to-peer rooms. */
+  /**
+   * The relay that enforces writes; without one the ticket is for peer-to-peer rooms. The ticket's
+   * URL names the document, so a runtime can route the socket to where the room lives.
+   */
   relayURL?: string
 }
 
@@ -72,7 +77,7 @@ export async function signCollaborationTicket({
   return {
     token,
     provider: relayURL ? ('relay' as const) : ('trystero' as const),
-    ...(relayURL ? { serverURL: relayURL } : {}),
+    ...(relayURL ? { serverURL: withQuery(relayURL, { [RELAY_DOCUMENT_PARAM]: documentId }) } : {}),
     ...claims,
     roomKey,
     expiresAt: new Date(expiresAtSeconds * 1000).toISOString()

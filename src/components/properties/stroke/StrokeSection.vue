@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { SIDE_STROKE_TYPES } from '@open-pencil/scene-graph'
-import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
+import { SIDE_STROKE_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
+import { applySolidStrokeColor, applyStrokePaint } from '@open-pencil/vue/controls/color-model'
+import { MIXED, useNodeProps } from '@open-pencil/vue/controls/node-props'
+import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
+import { useStrokeControls } from '@open-pencil/vue/controls/stroke'
+import { useI18n } from '@open-pencil/vue/i18n'
 import {
-  applySolidStrokeColor,
-  applyStrokePaint,
   BindableValueRoot,
-  MIXED,
-  useColorBindingProvider,
-  useI18n,
-  useNodeProps,
-  useOkHCL,
-  useStrokeControls
-} from '@open-pencil/vue'
-import type { BindableValueActions } from '@open-pencil/vue'
+  type BindableValueActions
+} from '@open-pencil/vue/primitives/BindableValue'
 
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -149,7 +148,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedStrokesHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedStrokesHelp }}</p>
 
       <PropertyItemRow
         v-for="(stroke, index) in items"
@@ -234,7 +233,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
       <div v-if="!isMixed && items.length > 0" class="mt-1 flex items-center gap-1.5">
         <AppSelect
           :label="panels.strokeType"
-          :ui="{ trigger: 'w-[88px] flex-none' }"
+          :ui="{ trigger: 'w-22 flex-none' }"
           :model-value="alignValue"
           :placeholder="panels.mixed"
           :options="strokeCtx.alignOptions"
@@ -261,7 +260,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
           v-if="sidesOffered"
           :label="panels.strokeSides"
           size="xs"
-          class="size-[26px] shrink-0"
+          class="size-6.5 shrink-0"
           :active="expandedSides"
           data-property="stroke-sides"
           @click="onToggleSides(selectedNodes)"

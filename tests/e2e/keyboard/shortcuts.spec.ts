@@ -5,7 +5,7 @@ import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetup()
 
-const ObservedShortcutJSON = v.pipe(
+const observedShortcutSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ defaultPrevented: v.boolean(), shiftKey: v.boolean() })
@@ -371,7 +371,7 @@ test.describe('zoom shortcuts', () => {
         if (!observed) throw new Error('Expected shortcut keydown event')
         return observed
       })
-      const event = v.parse(ObservedShortcutJSON, observed)
+      const event = v.parse(observedShortcutSchema, observed)
       return { event, zoom: await getZoom() }
     }
 

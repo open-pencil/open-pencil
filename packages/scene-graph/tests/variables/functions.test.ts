@@ -2,14 +2,8 @@ import { expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import {
-  SceneGraph,
-  formatVariableFormula,
-  formulaTokens,
-  parseVariableFormula,
-  variableFormulaSchema,
-  type VariableType
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type VariableType } from '@open-pencil/scene-graph'
+import { formatVariableFormula, formulaTokens, parseVariableFormula, variableFormulaSchema } from '@open-pencil/scene-graph/variables'
 
 /** A variable of each type to refer to, and one of `type` whose formula is parsed. */
 function setup(type: VariableType) {

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computed, ref } from 'vue'
 
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 import { buildCanvasContextMenu } from '#vue/editor/menu-model/canvas'
 import type { CanvasMenuOptions } from '#vue/editor/menu-model/canvas'
@@ -16,6 +16,7 @@ function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
     isIcon: ref(false),
     canCreateComponentSet: ref(false),
     canCreateSlot: ref(false),
+    canAutoArrange: ref(false),
     ...overrides
   } as CanvasMenuOptions['selection']
 }
@@ -28,7 +29,7 @@ function options(overrides: Partial<CanvasMenuOptions> = {}): CanvasMenuOptions 
     otherPages: [],
     moveSelectionToPage: (pageId: string) => pageId,
     selection: selection(),
-    t: { moveToPage: 'Move to page' },
+    t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' },
     ...overrides
   } as CanvasMenuOptions
 }
@@ -84,6 +85,27 @@ describe('buildCanvasContextMenu', () => {
     )
     expect(ids).toContain('selection.createSlot')
     expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('selection.createSlot')
+  })
+
+  test('offers Auto arrange for layers that can be arranged', () => {
+    const menu = buildCanvasContextMenu(
+      options({ selection: selection({ canAutoArrange: computed(() => true) }) })
+    )
+    const arrange = menu.at(-1)
+    expect(arrange && !arrange.separator ? arrange.label : undefined).toBe('Auto arrange')
+    expect(itemIds(arrange && !arrange.separator ? (arrange.sub ?? []) : [])).toEqual([
+      'selection.arrangeSpread',
+      'selection.arrangeCompact',
+      'selection.arrangePack',
+      '---',
+      'selection.arrangeFlowDown',
+      'selection.arrangeFlowRight',
+      'selection.arrangeTreeDown',
+      'selection.arrangeTreeRight',
+      'selection.arrangeRadial',
+      'selection.arrangeNetwork'
+    ])
+    expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('Auto arrange')
   })
 
   test('does not emit empty leading or repeated separators', () => {

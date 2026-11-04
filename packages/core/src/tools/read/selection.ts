@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
-import { toolNumber } from '#core/tools/input'
-import { defineTool, nodeToResult } from '#core/tools/schema'
+import { toolNumber, defineTool, nodeToResult } from '#core/tools/schema'
 
 /** How far `get_selection` describes the selection's children unless asked for more. */
 const SELECTION_DEPTH = 1

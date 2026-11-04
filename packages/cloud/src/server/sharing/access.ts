@@ -1,6 +1,6 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { resolveDocumentAccess } from '#cloud/server/documents/access'
-import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { Kysely } from 'kysely'
 
 export async function requireSharingAccess(

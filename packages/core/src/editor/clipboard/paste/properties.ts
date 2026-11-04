@@ -1,20 +1,18 @@
 import { omitBy, pick } from 'es-toolkit/object'
 
 import { materializeFigFragment } from '@open-pencil/fig'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import type { SceneGraph, SceneNode, StyleRun } from '@open-pencil/scene-graph'
 import {
   AUTO_LAYOUT_FIELDS,
   CORNER_FIELDS,
   PAINT_FIELDS,
   STROKE_FIELDS,
-  STYLE_LINK_FIELDS,
-  TEXT_STYLE_FIELDS,
-  sharedStyleRefKey,
-  type SceneGraph,
-  type SceneNode,
-  type StyleRun
-} from '@open-pencil/scene-graph'
+  TEXT_STYLE_FIELDS
+} from '@open-pencil/scene-graph/fields'
+import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
 
-import { parseFigmaClipboard, parseOpenPencilClipboard } from '#core/clipboard'
+import { parseOpenPencilClipboard } from '#core/clipboard'
 import { importClipboardDependenciesWithUndo } from '#core/editor/clipboard/dependencies'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/snapshot'
 import type { EditorContext } from '#core/editor/types'

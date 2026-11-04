@@ -7,7 +7,7 @@ import {
   type CloudFetch,
   type CloudUpload
 } from '#cloud/client'
-import { createNodeCloudDatabase, createS3ObjectStore } from '#cloud/runtime/node'
+import { createPostgresCloudDatabase, createS3ObjectStore } from '#cloud/runtime/node'
 import {
   createCloudApp,
   createBetterAuthAdapter,
@@ -76,7 +76,7 @@ function appFetch(app: CloudApp): CloudFetch {
     app.fetch(input instanceof Request ? input : new Request(input, init))
 }
 
-const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
+const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
 const objects = createS3ObjectStore(config)
 try {
   const auth = createBetterAuthAdapter(config, database)

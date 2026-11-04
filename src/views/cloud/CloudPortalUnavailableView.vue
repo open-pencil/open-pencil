@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
 import AppButton from '@/components/ui/button/AppButton.vue'

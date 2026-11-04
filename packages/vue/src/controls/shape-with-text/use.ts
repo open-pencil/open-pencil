@@ -1,21 +1,19 @@
 import { computed } from 'vue'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   figJamColorName,
   figJamFillMode,
   figJamLineStyle,
   figJamTextSize,
   figJamTypeface,
-  shapeWithTextLabel
-} from '@open-pencil/scene-graph'
-import type {
-  FigJamColorName,
-  FigJamFillMode,
-  FigJamLineStyle,
-  FigJamTextSize,
-  FigJamTypeface,
-  SceneNode
-} from '@open-pencil/scene-graph'
+  type FigJamColorName,
+  type FigJamFillMode,
+  type FigJamLineStyle,
+  type FigJamTextSize,
+  type FigJamTypeface
+} from '@open-pencil/scene-graph/figjam'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { useEditor } from '#vue/editor/context'
@@ -95,7 +93,7 @@ export function useShapeWithText() {
   }
 
   function setTypeface(value: FigJamTypeface) {
-    return editor.setGeneratedTextTypeface(ids.value, value)
+    return editor.setFigJamTypeface(ids.value, value)
   }
 
   /** Picks `value` for the shape tool and arms it, as FigJam's Shapes panel does. */

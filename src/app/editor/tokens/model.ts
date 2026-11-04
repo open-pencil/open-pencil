@@ -8,22 +8,24 @@ import {
   variableCSSNames,
   variableUnit
 } from '@open-pencil/dom-css/export'
+import type {
+  SceneGraph,
+  Variable,
+  VariableCollection,
+  VariableColorExpression,
+  VariableValue,
+  VariableFormula,
+  VariableLiteral
+} from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   tokenNumberFromUnit,
   tokenNumberInUnit,
   variableValueReferences,
-  printFormula,
-  type Color,
-  type SceneGraph,
-  type Variable,
-  type VariableCollection,
-  type VariableColorExpression,
-  type VariableFormula,
-  type VariableLiteral,
-  type VariableValue
-} from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { fuzzyFilter } from '@open-pencil/vue'
+  printFormula
+} from '@open-pencil/scene-graph/variables'
+import { fuzzyFilter } from '@open-pencil/vue/shared/search'
 
 /** One mode's value as the stylesheet writes it, with what the panel previews beside it. */
 export interface TokenModeValue {

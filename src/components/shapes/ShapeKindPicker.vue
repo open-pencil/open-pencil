@@ -6,7 +6,7 @@ import {
   isShapeWithTextType,
   type ShapeWithTextType
 } from '@open-pencil/scene-graph/shape-with-text'
-import { useCommonMessages, useShapeMessages } from '@open-pencil/vue'
+import { useCommonMessages, useShapeMessages } from '@open-pencil/vue/i18n'
 
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import AppPicker from '@/components/ui/select/AppPicker.vue'
@@ -80,7 +80,7 @@ function pick(value: string) {
       />
     </template>
     <template #footer="{ highlighted }">
-      <p class="flex h-5 items-center truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center truncate px-1 text-2xs text-muted">
         <span class="truncate" :class="highlighted && 'text-surface'">
           {{ highlighted?.label ?? label(selected ?? 'SQUARE') }}
         </span>

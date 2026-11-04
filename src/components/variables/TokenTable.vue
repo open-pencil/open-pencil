@@ -8,7 +8,8 @@ import {
   type VariableCollection,
   type VariableValue
 } from '@open-pencil/scene-graph'
-import { useFlatReorderDrag, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import {
   parseTokenValueText,

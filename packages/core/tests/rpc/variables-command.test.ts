@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { executeRPCCommand, type TokensResult, type VariablesResult } from '@open-pencil/core/rpc'
-import { parseVariableFormula, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 function graphWithTokens(): SceneGraph {
   const graph = new SceneGraph()

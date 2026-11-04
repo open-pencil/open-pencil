@@ -33,3 +33,6 @@ export const homeLocation = computed<HomeLocation>({
     stored.value = location
   }
 })
+
+/** Whether the person picked a place on Home, rather than Home showing its default. */
+export const homeLocationChosen = computed(() => v.is(homeLocationSchema, stored.value))

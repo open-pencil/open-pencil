@@ -2,9 +2,9 @@ export * from './kinds'
 export * from './geometry'
 export {
   databaseCap,
-  fitShapeWithText,
+  fitShapeWithTextHeight,
+  shapeWithTextGrows,
   shapeWithTextLabelBox,
   type LabelBox,
-  type LabelMeasure,
-  type ShapeWithTextFit
+  type LabelMeasure
 } from './fit'

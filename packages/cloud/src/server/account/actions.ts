@@ -8,7 +8,10 @@ const ACCOUNT_SECURITY_ERROR_CODES: Record<string, AccountSecurityErrorCode> = {
   PASSWORD_TOO_SHORT: 'password_too_short',
   PASSWORD_TOO_LONG: 'password_too_long',
   FAILED_TO_UNLINK_LAST_ACCOUNT: 'last_authentication_method',
-  SESSION_NOT_FRESH: 'session_not_fresh'
+  SESSION_NOT_FRESH: 'session_not_fresh',
+  CHANGE_EMAIL_DISABLED: 'email_change_unavailable',
+  CURRENT_SESSION: 'current_session',
+  EMAIL_UNCHANGED: 'email_unchanged'
 }
 
 async function accountAction<Value>(operation: () => Promise<Value>, context: Context) {

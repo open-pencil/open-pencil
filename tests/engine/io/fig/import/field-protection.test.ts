@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
-import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill, type Stroke } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

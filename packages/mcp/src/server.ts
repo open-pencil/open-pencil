@@ -1,29 +1,26 @@
 import { randomBytes } from 'node:crypto'
 import type { Server as HttpServer } from 'node:http'
+import { resolve } from 'node:path'
 
 import type { McpServer } from '@modelcontextprotocol/server'
-import { Hono } from 'hono'
+import { Hono, type Context, type Next } from 'hono'
 import { cors } from 'hono/cors'
 import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
 
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
-import { createMCPSessionManager } from '#mcp/server/sessions'
+import { registerFileRoutes } from '#mcp/server/files'
+import { createMCPSessionManager, sessionOpener } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 import { applyToolPolicy } from '#mcp/tool/policy'
-import {
-  MCP_AGENT_KINDS,
-  registerTools,
-  type MCPAgentKind,
-  type MCPAgentSession
-} from '#mcp/tool/registration'
+import { registerTools, type MCPAgentSession } from '#mcp/tool/registration'
 import { scopeRPC, type MCPToolScope } from '#mcp/tool/scope'
 
 import packageJSON from '../package.json' with { type: 'json' }
@@ -74,10 +71,6 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
-
-function agentKindFromHeader(value: string | undefined): MCPAgentKind {
-  return MCP_AGENT_KINDS.find((kind) => kind === value) ?? 'mcp'
-}
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -133,16 +126,19 @@ export interface ServerHandle {
   close: () => Promise<void>
 }
 
-/** Set up Hono routes: /health, /rpc, /mcp */
+/** Set up Hono routes: /health, /rpc, /files, /mcp */
 function createHonoApp(options: {
   authToken: string | null
   corsOrigin: string | readonly string[] | null
+  /** The root `/files` reads and writes inside, or null to leave the route out. */
+  fileRoot: string | null
   browserRPC: ReturnType<typeof createBrowserRPCBridge>
   mcpSessions: ReturnType<typeof createMCPSessionManager>
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
   toolDescriptors: ToolDescriptor[]
 }): Hono {
-  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolDescriptors } = options
+  const { authToken, corsOrigin, fileRoot, browserRPC, mcpSessions, sendToBrowser } = options
+  const { toolDescriptors } = options
 
   const app = new Hono()
 
@@ -166,11 +162,13 @@ function createHonoApp(options: {
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
+      // Tells the app it reports agent_session_opened, so a chat may wait for its agent.
+      agentSessionEvents: true,
       ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
   })
 
-  app.use('/rpc', async (c, next) => {
+  const requireToken = async (c: Context, next: Next) => {
     // When authToken is null (operator explicitly disabled auth), skip token check —
     // the Unix socket or localhost TCP already restricts access to local processes.
     if (authToken !== null) {
@@ -180,7 +178,14 @@ function createHonoApp(options: {
       }
     }
     return next()
-  })
+  }
+
+  app.use('/rpc', requireToken)
+
+  if (fileRoot !== null) {
+    app.use('/files/*', requireToken)
+    registerFileRoutes(app, fileRoot)
+  }
 
   // Historical note: before the isConnected() guard was removed, a disconnected
   // app returned 503 here. Now errors from sendToBrowser surface as 502. This
@@ -237,7 +242,7 @@ function createHonoApp(options: {
     }
     const transport = await mcpSessions.resolveTransport(
       undefined,
-      agentKindFromHeader(c.req.header(MCP_AGENT_HEADER))
+      sessionOpener(c.req.header(MCP_AGENT_HEADER), c.req.header(MCP_CHAT_HEADER))
     )
     if ('error' in transport) {
       if (transport.error === 'closed') {
@@ -345,6 +350,11 @@ function buildServerContext(options: ServerOptions) {
         agentSession,
         onToolSettled
       }),
+    onSessionOpened: ({ id, kind, chat }) => {
+      sendToBrowser({ command: 'agent_session_opened', args: { session: id, kind, chat } }).catch(
+        () => undefined
+      )
+    },
     onSessionClosed: (sessionId) => {
       // Best-effort: the app may be gone already, and then it shows no agents anyway.
       sendToBrowser({ command: 'agent_session_closed', args: { session: sessionId } }).catch(
@@ -364,6 +374,8 @@ function buildServerContext(options: ServerOptions) {
   const app = createHonoApp({
     authToken,
     corsOrigin,
+    // A client limited to the selection reaches no files, as the file tools are left out then.
+    fileRoot: mcpRoot !== null && toolPolicy.scope !== 'selection' ? resolve(mcpRoot) : null,
     browserRPC,
     mcpSessions,
     sendToBrowser,

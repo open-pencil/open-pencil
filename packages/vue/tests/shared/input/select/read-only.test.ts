@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
@@ -28,8 +28,7 @@ function setup() {
   })
   let under: SceneNode | null = rect
   const fns: HitTestFns = {
-    hitTestInScope: () => under,
-    isInsideContainerBounds: () => false,
+    hitTestLayer: () => under,
     hitTestFrameTitle: () => null,
     hitTestSectionTitle: () => null,
     hitTestComponentLabel: () => null

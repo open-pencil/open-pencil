@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { formatDay } from '@/app/metrics/format'
@@ -9,7 +10,9 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppRangeCalendar from '@/components/ui/date/AppRangeCalendar.vue'
 import type { DayRange } from '@/components/ui/date/range'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { metricsRangePicker } from '@/theme/metrics/dashboard'
+import { metricsRangePickerTheme } from '@/theme/metrics/dashboard'
+
+const metricsRangePicker = tv(metricsRangePickerTheme)
 
 /**
  * Which days the whole dashboard shows: presets as rows, a calendar for any other span. Days

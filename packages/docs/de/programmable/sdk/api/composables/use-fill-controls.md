@@ -10,7 +10,7 @@ description: Default value für einen neuen Fill im Properties-Panel.
 ## Verwendung
 
 ```ts
-import { useFillControls } from '@open-pencil/vue'
+import { useFillControls } from '@open-pencil/vue/controls/fill'
 
 const fills = useFillControls()
 ```

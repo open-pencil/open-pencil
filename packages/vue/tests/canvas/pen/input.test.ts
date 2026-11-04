@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'

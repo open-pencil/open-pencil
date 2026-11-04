@@ -1,13 +1,15 @@
+import type {
+  ConnectorEndpoint,
+  ConnectorLineType,
+  SceneNode,
+  StrokeCap
+} from '@open-pencil/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,
   freeEndpoint,
-  layoutConnector,
-  type ConnectorEndpoint,
-  type ConnectorLineType,
-  type SceneNode,
-  type StrokeCap
-} from '@open-pencil/scene-graph'
+  layoutConnector
+} from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {

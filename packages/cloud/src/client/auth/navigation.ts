@@ -1,16 +1,14 @@
-import type { CloudDiscovery } from '#cloud/contract'
+import { cloudServerOrigin, type CloudDiscovery } from '#cloud/contract'
 import { withoutFragment, withQuery } from 'ufo'
 
 import type { CloudSocialProvider } from './client'
 
-/** The instance owns authentication; only its configured editor may receive the return. */
+/** The instance owns authentication; only its own editor may receive the return. */
 export function cloudEditorReturnURL(discovery: CloudDiscovery, value: string): string {
-  if (!discovery.appURL) throw new Error('This instance does not advertise a public editor URL')
-  const editor = new URL(discovery.appURL)
   const destination = new URL(value)
   if (
-    !['https:', 'http:'].includes(editor.protocol) ||
-    destination.origin !== editor.origin ||
+    !['https:', 'http:'].includes(destination.protocol) ||
+    destination.origin !== cloudServerOrigin(discovery) ||
     destination.username ||
     destination.password
   ) {

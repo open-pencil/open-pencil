@@ -6,11 +6,20 @@
 import { watchCloudRooms } from '../rooms/live'
 import { startCloudSessions } from '../sessions/startup'
 
+export {
+  cloudAIAvailable,
+  cloudAIIdentity,
+  cloudAIClient,
+  cloudAIWorkspaces,
+  cloudBillingURL,
+  type CloudAIWorkspace
+} from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'
 export { isCloudBinding } from '../documents/status'
 export { openCloudShare } from '../sharing/dialog'
 export { cloudSaveDestinations, cloudUploadFailure, signInToSaveTo } from '../documents/save'
 export { useHomeCloud } from '../home'
+export { openingCloudLink } from '../sessions/startup'
 export { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 export {
   isVersionHistoryOpen,

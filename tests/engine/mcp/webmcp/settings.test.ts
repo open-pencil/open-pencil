@@ -5,7 +5,8 @@ import type { WebMCP } from 'webmcp-types'
 
 import { ALL_TOOLS, isToolExposed, type ToolDef } from '@open-pencil/core/tools'
 
-import { getWebMCPTools, resolveWebMCPMode, type WebMCPMode } from '@/app/automation/webmcp/policy'
+import { getWebMCPTools, resolveWebMCPMode } from '@/app/automation/webmcp/policy'
+import { type WebMCPMode } from '@/app/automation/webmcp/schema'
 import { createWebMCPRuntimeService } from '@/app/automation/webmcp/service'
 
 function createHost() {

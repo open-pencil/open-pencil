@@ -1,9 +1,9 @@
 import * as v from 'valibot'
-const nonempty = v.pipe(v.string(), v.nonEmpty())
+const nonemptySchema = v.pipe(v.string(), v.nonEmpty())
 
 // This repository deliberately declares literal workspace directories, not glob patterns.
-const directory = v.pipe(
-  nonempty,
+const directorySchema = v.pipe(
+  nonemptySchema,
   v.check(
     (path) =>
       !path.startsWith('/') &&
@@ -13,7 +13,7 @@ const directory = v.pipe(
 )
 
 export const workspaceSchema = v.looseObject({
-  workspaces: v.pipe(v.array(directory), v.nonEmpty())
+  workspaces: v.pipe(v.array(directorySchema), v.nonEmpty())
 })
 
 export function parseWorkspace(

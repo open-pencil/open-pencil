@@ -3,7 +3,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { parseFigFile } from '@open-pencil/core/io'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'

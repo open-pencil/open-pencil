@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit'
 import { useFilter } from 'reka-ui'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { Variable, VariableType } from '@open-pencil/scene-graph'
 
 import type {

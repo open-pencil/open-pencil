@@ -1,9 +1,11 @@
 import { isEqual, pick } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import { isGeneratedFrame, readIcon, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { LAYER_OUTLINE_FIELDS } from '#vue/primitives/LayerTree/context'
 import type {
@@ -68,6 +70,14 @@ export interface LayerTreeModel {
   byId: Map<string, LayerNode>
 }
 
+/**
+ * Whether a layer's rows follow its flow, as Figma lists a horizontal or vertical auto layout's
+ * children: first in the flow first. Other layers, grids included, list theirs front-most first.
+ */
+export function listsChildrenInFlow(node: Pick<SceneNode, 'layoutMode'>): boolean {
+  return node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL'
+}
+
 export function buildLayerTreeModel(graph: SceneGraph, parentId: string): LayerTreeModel {
   const byId = new Map<string, LayerNode>()
 
@@ -75,7 +85,9 @@ export function buildLayerTreeModel(graph: SceneGraph, parentId: string): LayerT
     const parent = graph.getNode(id)
     if (!parent) return []
     const children: LayerNode[] = []
-    for (const childId of parent.childIds) {
+    // `childIds` runs from back to front, which is also an auto layout's flow.
+    const rowOrder = listsChildrenInFlow(parent) ? parent.childIds : parent.childIds.toReversed()
+    for (const childId of rowOrder) {
       const sceneNode = graph.getNode(childId)
       if (!sceneNode || sceneNode.internalOnly) continue
       const node = nodeToLayerNode(sceneNode)

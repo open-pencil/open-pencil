@@ -1,22 +1,22 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
 Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
 
 ## What you need
 
 1. The [OpenPencil desktop app](/download).
-2. The agent's ACP program, installed globally (see each agent below).
+2. The agent's ACP program, installed globally (see each agent below). Claude Code's and Codex's ACP programs include the agent, so their own command-line tools are optional.
 3. OpenPencil's MCP server, installed globally. Use the version that matches your app:
 
    ```sh
    npm install -g @open-pencil/mcp
    ```
 
-4. The agent signed in to your account with its own command-line tool.
+4. The agent signed in to your account. Pi can use an AI Gateway key instead (see [Pi](#pi)).
 
-Then open **Settings → AI & agents → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Check again** looks again after you install something.
+Then open **Settings → Models → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
 
 ### Let your agent set itself up
 
@@ -28,7 +28,7 @@ If you already use one of these agents in a terminal, guided setup can do the ty
 npm install -g @agentclientprotocol/claude-agent-acp
 ```
 
-Sign in by running `claude` and using `/login`. The ACP program uses the same account as Claude Code.
+Sign in from guided setup, or by running `claude` and using `/login`. The ACP program uses the same account as Claude Code. If the browser cannot hand the sign-in back, the sign-in page shows a code to paste into guided setup.
 
 ## Codex
 
@@ -36,7 +36,9 @@ Sign in by running `claude` and using `/login`. The ACP program uses the same ac
 npm install -g @agentclientprotocol/codex-acp
 ```
 
-Sign in with `codex login`.
+Sign in with ChatGPT from guided setup, or with `codex login`; both use the same account.
+
+An older adapter from the `@zed-industries/codex-acp` package also installs a `codex-acp` program. It neither reports nor signs in to your account, so guided setup asks you to install the supported one and to remove the older one or put it later on your `PATH`.
 
 ## Gemini CLI
 
@@ -45,6 +47,28 @@ npm install -g @google/gemini-cli
 ```
 
 Gemini CLI speaks ACP itself, so there is no separate program. Run `gemini` once and choose a sign-in method.
+
+## Cursor
+
+Cursor's CLI speaks ACP itself, so there is no separate program. Install it from the [CLI installation guide](https://cursor.com/docs/cli/installation):
+
+```sh
+curl https://cursor.com/install -fsS | bash
+```
+
+On Windows, use the PowerShell command on that page. The installer adds two commands for the same program, `agent` and `cursor-agent`. OpenPencil starts `cursor-agent`, because other coding agents, such as Grok Build, install an `agent` command of their own.
+
+Run `cursor-agent login` once to sign in.
+
+## Grok Build
+
+Grok Build speaks ACP itself, so there is no separate program. Install it from the [Grok Build guide](https://docs.x.ai/build/overview):
+
+```sh
+curl -fsSL https://x.ai/cli/install.sh | bash
+```
+
+On Windows, use the PowerShell command on that page. OpenPencil starts it as `grok agent stdio`. Run `grok login` once to sign in.
 
 ## Pi
 
@@ -62,5 +86,7 @@ OpenPencil reads only Pi's `settings.json` for the default model; your credentia
 
 - **Shown as not found after installing.** Apps started from the Dock or Start menu do not see every folder your terminal adds to `PATH`. OpenPencil also looks in common global folders for npm, Bun, Volta, mise, and Homebrew; if your package manager installs elsewhere, add that folder to your login shell's `PATH` and restart OpenPencil.
 - **Shown as update needed.** The MCP server or Pi's companion does not match the app version. Press the update button, or run the command guided setup shows with the package manager that installed it, then press **Check again**. A chat that needs it says so and offers **Run guided setup**.
+- **The agent couldn't reach OpenPencil's tools.** Before sending your message, OpenPencil waits for the agent to connect to its MCP server and stops if it does not, quoting the agent's reason when it gives one. Check that the MCP server shows as installed in guided setup and is running in **Settings → MCP**. Codex skips OpenPencil's server when its own `config.toml` defines a server named `open-pencil`; remove that entry.
 - **The agent starts but cannot edit the canvas.** The MCP server is missing or not running. Install the matching `@open-pencil/mcp` version and restart OpenPencil.
-- **The agent asks you to sign in.** Sign in with the agent's own command-line tool as described above, then send your message again.
+- **Where the agent works.** Chats start the agent in a folder of its own inside OpenPencil's app data, not your home folder, so it does not pick up project settings kept there. The agent still uses its own configuration, such as the MCP servers and rules in `~/.codex` or `~/.claude`.
+- **The agent asks you to sign in.** Press **Sign in** in guided setup, or sign in with the agent's own command-line tool as described above, then send your message again.

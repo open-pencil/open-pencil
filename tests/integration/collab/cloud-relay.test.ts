@@ -1,12 +1,13 @@
 import 'fake-indexeddb/auto'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { compact } from 'es-toolkit'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { accountRoomIdentity } from '@/app/cloud/rooms/identity'
@@ -15,7 +16,10 @@ import { versionListRevision } from '@/app/cloud/versions/history'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { connectCollabRoom } from '@/app/collab/room/connection'
 import { openDocumentRoom, roomById, roomForStore } from '@/app/collab/rooms'
-import { createEditorStore } from '@/app/editor/session'
+import { createEditorStore, type EditorStore } from '@/app/editor/session'
+import { createMemoryLocalCanvasStore } from '@/app/storage/local-store'
+import { resetLocalCanvasStoreForTests } from '@/app/storage/local-store/store'
+import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 import { startTestRelay } from '#tests/helpers/collab/relay-server'
 
@@ -92,7 +96,7 @@ describe('collaboration through the Cloud relay', () => {
 
   test('viewers receive edits but their own never reach anyone', async () => {
     const relay = await startRelay()
-    const { states } = relay
+    const { rooms } = relay
     const editor = joinAs(relay, 'Editor', 'edit')
     const viewer = joinAs(relay, 'Viewer', 'view')
     await until(
@@ -106,9 +110,12 @@ describe('collaboration through the Cloud relay', () => {
     expect(editor.text()).toBe('kept')
     await editor.leave()
     await viewer.leave()
-    await until(() => states.size > 0)
+    await until(() => [...rooms.values()].some((room) => room.snapshot !== null))
     const saved = new Y.Doc()
-    Y.applyUpdate(saved, [...states.values()][0] ?? new Uint8Array())
+    for (const room of rooms.values()) {
+      if (room.snapshot) Y.applyUpdate(saved, room.snapshot)
+      for (const update of room.updates) Y.applyUpdate(saved, update)
+    }
     expect(saved.getText('t').toString()).toBe('kept')
   })
 
@@ -213,7 +220,8 @@ describe('Cloud document rooms, reopening', () => {
     const relay = await startRelay()
     const documentId = crypto.randomUUID()
     const roomId = `cloud:${documentId}:0`
-    const [grace, earlier] = await openedTwice()
+    const [grace, earlier, reopened] = await openedCopies(3)
+    if (!grace || !earlier || !reopened) throw new Error('Expected three tabs')
     const first = openCloudDocumentRoom(grace, {
       roomId,
       transport: relay.join(documentId, 'Grace', 'edit', 'user'),
@@ -234,7 +242,6 @@ describe('Cloud document rooms, reopening', () => {
     visit.stop()
     visit.session.dispose()
 
-    const [reopened] = await openedTwice()
     await until(() => reopened.state.preparation === null)
     // A page the room never had, as the file's own copy of a page can be.
     const stray = reopened.graph.addPage('Stray')
@@ -281,9 +288,15 @@ describe('Cloud document rooms, version history', () => {
     await until(() => versionListRevision(grace) > before)
 
     // Stopping the room leaves the tab as it was before it joined.
-    expect([grace.state.readOnly, cloudRoomPermissions.value.get(grace)]).toEqual([true, 'view'])
+    expect([grace.state.hostRestrictions.readOnly, cloudRoomPermissions.value.get(grace)]).toEqual([
+      true,
+      'view'
+    ])
     room.stop()
-    expect([grace.state.readOnly, cloudRoomPermissions.value.has(grace)]).toEqual([false, false])
+    expect([grace.state.hostRestrictions.readOnly, cloudRoomPermissions.value.has(grace)]).toEqual([
+      false,
+      false
+    ])
   })
 })
 
@@ -313,18 +326,70 @@ describe('Cloud document rooms, another room first', () => {
   })
 })
 
+describe('Cloud document rooms, opening', () => {
+  test('a tab whose layers the room holds as they are gets no updates and stays saved', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const roomId = `cloud:${documentId}:0`
+    const [grace, ada] = await openedTwice()
+    const first = openCloudDocumentRoom(grace, {
+      roomId,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      first.stop()
+      first.session.dispose()
+    })
+    await until(() => first.session.roomHasDocument())
+    await until(() => ada.state.preparation === null)
+    // The room replays every layer to a newcomer; layers that already read the same are no edit.
+    const updated: string[] = []
+    ada.onEditorEvent('node:updated', (id) => updated.push(id))
+    const second = openCloudDocumentRoom(ada, {
+      roomId,
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
+      permission: 'edit'
+    })
+    // The reply is applied before onSynced fires, so the check below sees the replay.
+    let synced = false
+    cleanups.push(
+      second.session.onSynced(() => {
+        synced = true
+      })
+    )
+    cleanups.push(() => {
+      second.stop()
+      second.session.dispose()
+    })
+    await until(() => synced)
+    expect(updated).toEqual([])
+    expect(ada.hasUnsavedChanges()).toBe(false)
+  })
+})
+
 /** Tabs that each opened the same stored file, which gives each its own root. */
-async function openedTwice() {
+/** Tabs that each opened the same stored file. */
+async function openedCopies(count: number) {
   await initCodec()
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   if (!page) throw new Error('Expected a page')
   graph.createNode('RECTANGLE', page.id, { name: 'Card' })
   const bytes = await exportFigFile(graph)
-  const open = async () => createEditorStore(await parseFigFile(Uint8Array.from(bytes).buffer))
-  const stores = [await open(), await open()] as const
-  for (const store of stores) cleanups.push(() => store.preparationController.dispose())
+  const stores = []
+  for (let index = 0; index < count; index++) {
+    const store = createEditorStore(await parseFigFile(Uint8Array.from(bytes).buffer))
+    cleanups.push(() => store.preparationController.dispose())
+    stores.push(store)
+  }
   return stores
+}
+
+async function openedTwice() {
+  const [first, second] = await openedCopies(2)
+  if (!first || !second) throw new Error('Expected two tabs')
+  return [first, second] as const
 }
 
 describe('Cloud document rooms', () => {
@@ -433,6 +498,12 @@ describe('Cloud document rooms, live order', () => {
       transport: relay.join(documentId, 'Ada', 'edit', 'user'),
       permission: 'edit'
     })
+    let synced = false
+    cleanups.push(
+      second.session.onSynced(() => {
+        synced = true
+      })
+    )
     cleanups.push(() => {
       second.stop()
       second.session.dispose()
@@ -444,7 +515,7 @@ describe('Cloud document rooms, live order', () => {
           node.type === 'RECTANGLE' &&
           store.graph.closest(node.id, (ancestor) => ancestor.id === store.graph.rootId)
       ).length
-    await until(() => second.session.hasDocument.value && rectangles(ada) === 1)
+    await until(() => synced && rectangles(ada) === 1)
     // Ada's updates arrive in order, so a copy pushed into the room would land before this marker.
     const adaPage = ada.graph.getPages()[0]
     if (!adaPage) throw new Error('Expected a page')
@@ -456,6 +527,40 @@ describe('Cloud document rooms, live order', () => {
 })
 
 describe('Cloud document rooms, drawing early', () => {
+  test('a shape a joining tab draws before the relay answers reaches the room', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const roomId = `cloud:${documentId}:0`
+    const [grace, ada] = await openedTwice()
+    const first = openCloudDocumentRoom(grace, {
+      roomId,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      first.stop()
+      first.session.dispose()
+    })
+    await until(() => first.session.roomHasDocument())
+    await until(() => ada.state.preparation === null)
+    const second = openCloudDocumentRoom(ada, {
+      roomId,
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      second.stop()
+      second.session.dispose()
+    })
+    // The tab shows its stored document at once, so the person may draw before the room arrives.
+    const page = ada.graph.getPages()[0]
+    if (!page) throw new Error('Expected a page')
+    ada.graph.createNode('ELLIPSE', page.id, { id: 'early:ada', name: 'Early' })
+
+    await until(() => grace.graph.getNode('early:ada') !== undefined)
+    expect(ada.graph.getNode('early:ada')?.parentId).toBe(page.id)
+  })
+
   test('a shape drawn before the relay answers is in the room once it is seeded', async () => {
     const relay = await startRelay()
     const documentId = crypto.randomUUID()
@@ -489,5 +594,109 @@ describe('Cloud document rooms, drawing early', () => {
       second.session.dispose()
     })
     await until(() => watcher.graph.getNode('early:card') !== undefined)
+  })
+})
+
+describe('Cloud document rooms, unsaved edits', () => {
+  /** Grace's tab seeds the room and leaves, after `edit`, so Ada's tab opens it alone and saves. */
+  async function reopenAfter(edit: (grace: EditorStore) => void) {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const roomId = `cloud:${documentId}:0`
+    const [grace, ada] = await openedTwice()
+    // Opening a stored document marks it saved, so the room takes it as the stored revision.
+    await until(() => grace.state.preparation === null)
+    grace.markDocumentSaved()
+    const first = openCloudDocumentRoom(grace, {
+      roomId,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    await until(() => first.session.roomHasDocument())
+    edit(grace)
+    first.stop()
+    first.session.dispose()
+
+    await until(() => ada.state.preparation === null)
+    // The file read back differs from the room's copy, as a value the round trip changes would.
+    const card = ada.graph.getPages()[0]?.childIds[0]
+    if (!card) throw new Error('Expected a layer')
+    ada.graph.updateNode(card, { name: 'Read back' })
+    ada.markDocumentSaved()
+    let synced = false
+    const second = openCloudDocumentRoom(ada, {
+      roomId,
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(
+      second.session.onSynced(() => {
+        synced = true
+      })
+    )
+    cleanups.push(() => {
+      second.stop()
+      second.session.dispose()
+    })
+    await until(() => synced && ada.state.autosaveEnabled)
+    return { ada, card, session: second.session }
+  }
+
+  test('a tab that takes in the room’s copy of its document has nothing to save', async () => {
+    const { ada, card, session } = await reopenAfter(() => undefined)
+
+    expect(ada.graph.getNode(card)?.name).toBe('Card')
+    expect(session.saves.unsaved()).toBe(false)
+    expect(ada.hasUnsavedChanges()).toBe(false)
+  })
+
+  test('the tab that saves next saves edits the room holds unsaved', async () => {
+    const { ada, session } = await reopenAfter((grace) => {
+      const page = grace.graph.getPages()[0]
+      if (!page) throw new Error('Expected a page')
+      grace.graph.createNode('ELLIPSE', page.id, { id: 'left:unsaved', name: 'Dot' })
+    })
+
+    expect(ada.graph.getNode('left:unsaved')).toBeDefined()
+    expect(session.saves.unsaved()).toBe(true)
+    expect(ada.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('the room’s edits are saved once the saver’s upload of them is on the server', async () => {
+    const { ada, session } = await reopenAfter((grace) => {
+      const page = grace.graph.getPages()[0]
+      if (!page) throw new Error('Expected a page')
+      grace.graph.createNode('ELLIPSE', page.id, { name: 'Dot' })
+    })
+    const local = createMemoryLocalCanvasStore()
+    resetLocalCanvasStoreForTests(local)
+    cleanups.push(() => resetLocalCanvasStoreForTests())
+    const binding = { providerId: 'cloud', documentId: crypto.randomUUID() } as const
+    await local.writeCanvas({
+      id: binding.documentId,
+      providerId: 'cloud',
+      name: 'Poster',
+      figBytes: new Uint8Array([1]),
+      syncStatus: 'pending'
+    })
+    const bound = spyOn(ada, 'getStorageBinding').mockReturnValue(binding)
+    cleanups.push(() => bound.mockRestore())
+    // The saver reads whether its upload is on the server; the room hears only after that.
+    let reads = 0
+    const getMeta = local.getMeta.bind(local)
+    const read = spyOn(local, 'getMeta').mockImplementation(async (id) => {
+      const meta = await getMeta(id)
+      reads++
+      return meta
+    })
+    cleanups.push(() => read.mockRestore())
+    // The tab's save landed locally, as autosave leaves it, and is still on its way.
+    ada.markDocumentSaved()
+    await until(() => reads > 0)
+    expect(session.saves.unsaved()).toBe(true)
+
+    await local.updateMeta(binding.documentId, { syncStatus: 'synced' })
+    emitStorageWorkspaceEvent({ ...binding, kind: 'changed' })
+    await until(() => !session.saves.unsaved())
   })
 })

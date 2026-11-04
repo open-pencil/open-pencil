@@ -1,4 +1,5 @@
 import type { SceneGraph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from './assert'
 
@@ -243,6 +244,13 @@ export const PROPERTY_CASES: RoundTripCase[] = [
   leafCase('mask', 'RECTANGLE', { isMask: true, maskType: 'LUMINANCE' }),
   leafCase('clipping', 'FRAME', { clipsContent: true }),
   leafCase('star geometry', 'STAR', { pointCount: 7, starInnerRadius: 0.5 }),
+  leafCase('ellipse arc with a hole', 'ELLIPSE', {
+    arcData: { startingAngle: Math.PI / 2, endingAngle: Math.PI * 2, innerRadius: 0.5 }
+  }),
+  leafCase('ellipse arc from the default start', 'ELLIPSE', {
+    arcData: { startingAngle: 0, endingAngle: Math.PI, innerRadius: 0 }
+  }),
+  leafCase('flipped and turned layer', 'RECTANGLE', { flipX: true, flipY: true, rotation: 30 }),
   leafCase('text style', 'TEXT', {
     text: 'Hello',
     fontSize: 20,
@@ -251,8 +259,8 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textAlignHorizontal: 'CENTER',
     textAlignVertical: 'BOTTOM',
     textAutoResize: 'NONE',
-    letterSpacing: 1,
-    lineHeight: 28,
+    letterSpacing: pixelLength(1),
+    lineHeight: pixelLength(28),
     textCase: 'UPPER',
     textDecoration: 'UNDERLINE'
   }),
@@ -264,6 +272,19 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textDecorationThickness: 2,
     textUnderlineOffset: 3,
     textDecorationSkipInk: false
+  }),
+  leafCase('text font settings', 'TEXT', {
+    text: 'Numbers 0123',
+    fontFeatures: [
+      { tag: 'TNUM', enabled: true },
+      { tag: 'LIGA', enabled: false }
+    ],
+    fontVariations: [
+      { axis: 'wght', value: 650 },
+      { axis: 'opsz', value: 14 }
+    ],
+    opticalSizeFromFontSize: false,
+    textLanguage: 'de'
   }),
   leafCase('text paragraph spacing', 'TEXT', {
     text: 'One\nTwo',

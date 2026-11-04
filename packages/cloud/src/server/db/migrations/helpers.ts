@@ -1,4 +1,5 @@
 import { checkColumnIn, CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
+import type { AuthSchemaVersionTable } from '#cloud/server/db/tables'
 import type { CreateTableBuilder, Kysely } from 'kysely'
 
 export async function addCheckConstraint(
@@ -69,3 +70,9 @@ export function addInvitationColumns<
     .addColumn('accepted_at', 'timestamptz')
     .addColumn('revoked_at', 'timestamptz')
 }
+
+/**
+ * The Better Auth schema record under the name it had before `025_table_names`, for the
+ * migrations that ran while it was `cloud_auth_schema`; they must keep emitting the same SQL.
+ */
+export type LegacyAuthSchemaDatabase = { cloudAuthSchema: AuthSchemaVersionTable }

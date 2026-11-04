@@ -8,7 +8,7 @@ import * as v from 'valibot'
 import { resolveDocumentAccess } from './access'
 import { documentSummary, getDocumentSummaryRow } from './summary'
 
-const UUID = v.pipe(v.string(), v.uuid())
+const uuidSchema = v.pipe(v.string(), v.uuid())
 
 export type DocumentDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
@@ -39,7 +39,16 @@ export async function listDocuments(
   if (!(await workspaceRole(database, userId, workspaceId))) return undefined
   const rows = await database
     .selectFrom('document')
-    .select(['id', 'workspaceId', 'name', 'currentRevisionId', 'version', 'createdAt', 'updatedAt'])
+    .select([
+      'id',
+      'workspaceId',
+      'name',
+      'kind',
+      'currentRevisionId',
+      'version',
+      'createdAt',
+      'updatedAt'
+    ])
     .where('workspaceId', '=', workspaceId)
     .where('deletedAt', 'is', null)
     .orderBy('updatedAt', 'desc')
@@ -60,6 +69,7 @@ export async function listSharedDocuments(
       'document.id',
       'document.workspaceId',
       'document.name',
+      'document.kind',
       'document.currentRevisionId',
       'document.version',
       'document.createdAt',
@@ -86,7 +96,7 @@ export async function listSharedDocuments(
     .orderBy('document.updatedAt', 'desc')
     .execute()
   // Grants can be made by operator tools whose IDs are not accounts, so only UUIDs are looked up.
-  const granters = uniq(rows.map((row) => row.createdBy)).filter((id) => v.is(UUID, id))
+  const granters = uniq(rows.map((row) => row.createdBy)).filter((id) => v.is(uuidSchema, id))
   const names = new Map(
     granters.length === 0
       ? []

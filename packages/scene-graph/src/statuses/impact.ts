@@ -1,6 +1,6 @@
 import { groupBy } from 'es-toolkit'
 
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { effectiveStatus } from './node'
 import type { StatusWorkflow } from './schema'
 import { findStatusState } from './workflow'

@@ -1,12 +1,12 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { visibilityDriver } from '#tests/helpers/properties/visibility-driver'
+import { boundFieldDriver } from '#tests/helpers/properties/bound-field-driver'
 
 // Figma desktop 126: right-clicking the Appearance eye binds visibility to a boolean or text
 // variable; a component layer's own button also lists its boolean properties. While a variable
 // decides visibility the eye is disabled, and detaching keeps the visibility it last gave.
 
 const editor = useEditorSetupWithClear('/?test')
-const visibility = visibilityDriver(() => editor.page)
+const visibility = boundFieldDriver(() => editor.page)
 
 function appearance() {
   return editor.page.getByRole('region', { name: 'Appearance', exact: true })
@@ -35,7 +35,7 @@ test('right-clicking the eye binds visibility to a text variable that decides it
   }
 
   await bound.getByRole('button', { name: 'Detach variable' }).click()
-  expect(await visibility.layer(scene.plain)).toEqual({
+  expect(await visibility.layer(scene.plain)).toMatchObject({
     visible: false,
     variable: undefined,
     property: undefined
@@ -45,7 +45,7 @@ test('right-clicking the eye binds visibility to a text variable that decides it
 
 test('a component layer picks a property or a variable, one at a time', async () => {
   const scene = await visibility.build()
-  await visibility.selectComponentLayer()
+  await visibility.select('componentLayer')
   const apply = appearance().getByRole('button', { name: 'Apply variable/property' })
   const picker = editor.page.getByRole('dialog', { name: 'Apply variable/property' })
 

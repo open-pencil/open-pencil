@@ -251,6 +251,8 @@ test('typed emoji take a 1 em square and draw their image', async () => {
     })
     store.requestRender()
   })
+  await editor.page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
+  // Without the settlement hook the wait above returns at once: give the render its frames.
   await editor.page.evaluate(
     () =>
       new Promise<void>((resolve) => {

@@ -5,12 +5,9 @@ import { computed } from 'vue'
 import Search from '~icons/lucide/search'
 import X from '~icons/lucide/x'
 
-import {
-  CommandPaletteRoot,
-  shortcutPlatform,
-  useCommandMessages,
-  useCommonMessages
-} from '@open-pencil/vue'
+import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { useCommandMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { CommandPaletteRoot } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { usePagePaletteGroup } from '@/app/editor/pages/palette'
 import { shortcutCode } from '@/app/shell/keyboard/layout'

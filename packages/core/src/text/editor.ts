@@ -1,14 +1,14 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { TextLayout } from '#core/canvas/text/layout'
-import { weightToStyle } from '#core/text/fonts'
+import { fontVerticalMetricsSync } from '#core/text/font/glyphs'
 import { nextGraphemeBoundary, previousGraphemeBoundary } from '#core/text/graphemes'
-import { fontVerticalMetricsSync } from '#core/text/opentype'
 import {
   pathTextCaret,
   pathTextIndexAt,
@@ -67,10 +67,7 @@ export class TextEditor {
   private pathText(): { glyphs: DerivedTextGlyph[]; metrics: PathTextLineMetrics } | null {
     const node = this.paragraphNode
     if (!node?.textPathData || !node.derivedTextGlyphs?.length) return null
-    const metrics = fontVerticalMetricsSync(
-      node.fontFamily,
-      weightToStyle(node.fontWeight, node.italic)
-    )
+    const metrics = fontVerticalMetricsSync(node.fontFamily, faceStyleKey(node))
     return metrics ? { glyphs: node.derivedTextGlyphs, metrics } : null
   }
 

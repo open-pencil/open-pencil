@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, patchFigArchive } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 test('color expressions survive fresh export, import, editing and patched export', async () => {
   await initCodec()
@@ -17,7 +19,9 @@ test('color expressions survive fresh export, import, editing and patched export
   const record = parseFigBuffer(Uint8Array.from(exported).buffer).nodeChanges.find(
     (node) => node.name === 'Derived'
   )
-  expect(record?.variableDataValues?.entries?.[0].variableData.value?.expressionValue).toMatchObject({
+  expect(
+    record?.variableDataValues?.entries?.[0].variableData.value?.expressionValue
+  ).toMatchObject({
     expressionFunction: 'COMPOSE_COLOR',
     expressionArguments: [{ dataType: 'ALIAS' }, { dataType: 'FLOAT', value: { floatValue: 20 } }]
   })

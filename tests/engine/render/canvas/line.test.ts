@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 
@@ -63,8 +65,9 @@ describe('line rendering', () => {
       const width = image.width()
       const alphaAt = (x: number, y: number) => pixels[(y * width + x) * 4 + 3]
 
-      expect(alphaAt(10, 36)).toBeGreaterThan(0)
-      expect(alphaAt(22, 36)).toBe(0)
+      // The image starts at the frame's corner: the line turns about its start, down x = 10.
+      expect(alphaAt(10, 20)).toBeGreaterThan(0)
+      expect(alphaAt(22, 20)).toBe(0)
 
       image.delete()
     } finally {

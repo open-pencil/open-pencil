@@ -7,7 +7,7 @@ import * as v from 'valibot'
  * so attachment previews and tool change images would stop every later save. Conversations
  * are stored with each Blob as its type and bytes instead, which every engine can store.
  */
-const StoredBlob = v.object({
+const storedBlobSchema = v.object({
   storedBlob: v.literal(true),
   type: v.string(),
   bytes: v.instance(ArrayBuffer)
@@ -28,7 +28,7 @@ export async function toStorableBlobs(value: unknown): Promise<unknown> {
 
 /** The inverse of `toStorableBlobs`; Blobs stored before it existed are kept as they are. */
 export function fromStorableBlobs(value: unknown): unknown {
-  if (v.is(StoredBlob, value)) return new Blob([value.bytes], { type: value.type })
+  if (v.is(storedBlobSchema, value)) return new Blob([value.bytes], { type: value.type })
   if (Array.isArray(value)) return value.map(fromStorableBlobs)
   if (!isPlainObject(value)) return value
   return Object.fromEntries(

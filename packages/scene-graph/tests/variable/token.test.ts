@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { tokenNumberFromUnit, tokenNumberInUnit } from '@open-pencil/scene-graph'
+import { tokenNumberFromUnit, tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
 
 describe('token units', () => {
   test('store rem as canvas pixels and read it back', () => {

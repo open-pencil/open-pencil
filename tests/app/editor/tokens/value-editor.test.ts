@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
 import {
   formatVariableFormula,
   parseVariableFormula,
-  SceneGraph,
-  variableFormulaReference,
-  type Variable
-} from '@open-pencil/scene-graph'
+  variableFormulaReference
+} from '@open-pencil/scene-graph/variables'
 
 import { parseTokenEditorText, tokenEditorText } from '@/app/editor/tokens/value-editor'
 

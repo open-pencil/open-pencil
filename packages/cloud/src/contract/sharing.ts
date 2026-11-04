@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { collaborationPrincipalSchema } from './collaboration'
-import { documentPermissionSchema } from './documents'
+import { documentPermissionSchema, requestImageLinksSchema } from './documents'
 import { workspaceRoleSchema } from './workspaces'
 
 export const documentShareSchema = v.object({
@@ -39,6 +39,17 @@ export const resolveDocumentShareSchema = v.object({
   guestId: v.optional(v.pipe(v.string(), v.minLength(16), v.maxLength(128)))
 })
 export type ResolveDocumentShareInput = v.InferOutput<typeof resolveDocumentShareSchema>
+
+/** A guest's request for the links of images a shared document's live room names. */
+export const requestSharedImageLinksSchema = v.object({
+  ...resolveDocumentShareSchema.entries,
+  ...requestImageLinksSchema.entries
+})
+export type RequestSharedImageLinksInput = v.InferOutput<typeof requestSharedImageLinksSchema>
+
+export function parseRequestSharedImageLinks(input: unknown): RequestSharedImageLinksInput {
+  return v.parse(requestSharedImageLinksSchema, input)
+}
 
 export const resolvedDocumentShareSchema = v.object({
   documentId: v.pipe(v.string(), v.uuid()),

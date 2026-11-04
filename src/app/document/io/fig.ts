@@ -1,5 +1,6 @@
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import { isUnsupportedVariableValue, type SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
 
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'

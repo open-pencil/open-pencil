@@ -1,22 +1,41 @@
 import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
+import { extractFigThumbnailFromReader, figArchiveKind } from '@open-pencil/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
-import {
-  cloudAPIClient,
-  cloudConnection,
-  refreshCloudConnection
-} from '@/app/cloud/sessions/connection'
+import { cloudAPIClient, recheckedCloudConnection } from '@/app/cloud/sessions/connection'
 
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
-import { cloudChecksum, downloadCloudRevision, readCloudRevisionRange } from './download'
+import { cloudChecksum, downloadCloudDocument, readCloudRevisionRange } from './download'
+import { splitCloudDocument, uploadCloudImages } from './images'
 import { uploadCloudObject } from './upload'
 
 function revisionConflict(error: unknown): boolean {
   return error instanceof CloudAPIError && error.code === 'revision_conflict'
+}
+
+/** The server refused the save as declared, as when an image it named was released meanwhile. */
+function invalidUpload(error: unknown): boolean {
+  return error instanceof CloudAPIError && error.code === 'invalid_upload'
+}
+
+/**
+ * The name as Cloud accepts it: trimmed and cut to its limit, so a long name never fails every save.
+ * The cut never splits a character in two.
+ */
+function cloudDocumentName(name: string): string {
+  const trimmed = name.trim()
+  const cut =
+    trimmed.length > CLOUD_DOCUMENT_NAME_MAX_LENGTH
+      ? trimmed
+          .slice(0, CLOUD_DOCUMENT_NAME_MAX_LENGTH)
+          .replace(/[\uD800-\uDBFF]$/, '')
+          .trimEnd()
+      : trimmed
+  return cut || 'Untitled'
 }
 
 export type CloudStorageDependencies = {
@@ -26,12 +45,11 @@ export type CloudStorageDependencies = {
   objectFetch(input: string, init: RequestInit): Promise<Response>
 }
 
-/** The API client of a signed-in server, checking once more before giving up. */
+/** The API client of a signed-in server, asking it once more before giving up. */
 async function signedInClient(serverId: string): Promise<CloudAPIClient> {
   const server = findCloudServer(serverId)
   if (!server) throw new StorageUnavailableError('This Cloud server was removed from the app')
-  let connection = cloudConnection(server.id)
-  if (connection.state !== 'signed-in') connection = await refreshCloudConnection(server)
+  const connection = await recheckedCloudConnection(server)
   if (connection.state !== 'signed-in' || !connection.discovery) {
     throw new StorageUnavailableError(`Sign in to ${cloudServerHost(server.url)} to sync`)
   }
@@ -83,6 +101,7 @@ export function createCloudStorageAdapter(
       return documents.map((document) => ({
         id: document.id,
         name: document.name,
+        kind: document.kind,
         updatedAt: document.updatedAt,
         metadataAuthoritative: true,
         revision: document.currentRevisionId
@@ -91,7 +110,7 @@ export function createCloudStorageAdapter(
 
     async getDocument(id, onProgress, signal) {
       const download = await (await client()).getDocument(id)
-      const bytes = await downloadCloudRevision(
+      const bytes = await downloadCloudDocument(
         download,
         (input, init) => dependencies.objectFetch(input, init),
         { signal, onProgress }
@@ -102,26 +121,47 @@ export function createCloudStorageAdapter(
     async putDocument(id, bytes, metadata, onProgress, options) {
       const cloud = await client()
       const baseRevision = options?.baseRevision ?? null
+      const name = cloudDocumentName(metadata.name)
+      // The file says whether it is a board, as its header does for Figma.
+      const kind = figArchiveKind(bytes) ?? 'design'
       // Without a revision this is the first save; the document may not exist on the server yet.
       if (!baseRevision && !(await listed(id))) {
-        await cloud.createDocument(workspaceId(), { id, name: metadata.name })
+        await cloud.createDocument(workspaceId(), { id, name, kind })
       }
-      const checksum = await cloudChecksum(bytes)
-      try {
+      // The workspace keeps images once; the stored file names them and uploads only those it lacks.
+      const { lean, images } = splitCloudDocument(bytes)
+      const named = await Promise.all(
+        images.map(async (image) => ({ ...image, checksum: await cloudChecksum(image.bytes) }))
+      )
+      const checksum = await cloudChecksum(lean)
+      const objectFetch = (input: string, init: RequestInit) =>
+        dependencies.objectFetch(input, init)
+      const save = async () => {
+        await uploadCloudImages({ cloud, documentId: id, images: named, objectFetch })
         const upload = await uploadCloudObject({
           cloud,
           documentId: id,
-          bytes,
+          bytes: lean,
           checksum,
           baseRevision,
-          objectFetch: (input, init) => dependencies.objectFetch(input, init),
+          objectFetch,
           onProgress
         })
         const committed = await cloud.commitUpload(upload.uploadId, {
           checksum,
-          multipart: upload.multipart
+          name,
+          kind,
+          multipart: upload.multipart,
+          images: named.map((image) => ({ name: image.name, checksum: image.checksum }))
         })
         return { revision: committed.currentRevisionId }
+      }
+      try {
+        // An image released between asking and committing is uploaded again by a second try.
+        return await save().catch((error: unknown) => {
+          if (invalidUpload(error)) return save()
+          throw error
+        })
       } catch (error) {
         if (revisionConflict(error)) {
           throw new StorageRevisionConflictError((await listed(id))?.currentRevisionId ?? null)
@@ -142,7 +182,10 @@ export function createCloudStorageAdapter(
     },
 
     async deleteDocument(id) {
-      await (await client()).deleteDocument(id)
+      // Already gone, deleted by someone else or by a try whose answer was lost, is deleted.
+      await (await client()).deleteDocument(id).catch((error: unknown) => {
+        if (!(error instanceof CloudAPIError && error.code === 'not_found')) throw error
+      })
     },
 
     async getDocumentMetadata(id) {

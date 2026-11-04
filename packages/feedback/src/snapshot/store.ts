@@ -1,4 +1,4 @@
-import type { FeedbackDatabase } from '#feedback/db'
+import { runBatch, type FeedbackDatabase } from '#feedback/db'
 import type { D1Database } from '@cloudflare/workers-types/index'
 import type { CalendarDate } from '@internationalized/date'
 import { chunk } from 'es-toolkit'
@@ -58,8 +58,44 @@ export async function replaceDays<T extends SnapshotTable>(
     for (const batch of chunk(rows, perStatement))
       statements.push(db.insertInto(table).values(batch).compile())
   }
-  if (!statements.length) return
-  await d1.batch(statements.map((query) => d1.prepare(query.sql).bind(...query.parameters)))
+  await runBatch(d1, statements)
+}
+
+/** Adds issues and pull requests, or updates the ones already mirrored, in one batch. */
+export async function saveRepoItems(
+  { db, d1 }: SnapshotStore,
+  items: Insertable<FeedbackDatabase['repoItems']>[]
+): Promise<void> {
+  if (!items.length) return
+  const perStatement = Math.floor(MAX_BOUND_VALUES / Object.keys(items[0]).length)
+  await runBatch(
+    d1,
+    chunk(items, perStatement).map((batch) =>
+      db
+        .insertInto('repoItems')
+        .values(batch)
+        .onConflict((conflict) =>
+          conflict.column('number').doUpdateSet((eb) => ({
+            kind: eb.ref('excluded.kind'),
+            authorAssociation: eb.ref('excluded.authorAssociation'),
+            createdAt: eb.ref('excluded.createdAt'),
+            closedAt: eb.ref('excluded.closedAt'),
+            mergedAt: eb.ref('excluded.mergedAt'),
+            updatedAt: eb.ref('excluded.updatedAt')
+          }))
+        )
+        .compile()
+    )
+  )
+}
+
+/** GitHub's newest update among the mirrored issues and pull requests, if any are. */
+export async function lastItemUpdate(db: Kysely<FeedbackDatabase>): Promise<string | undefined> {
+  const row = await db
+    .selectFrom('repoItems')
+    .select((eb) => eb.fn.max('updatedAt').as('updatedAt'))
+    .executeTakeFirst()
+  return row?.updatedAt ?? undefined
 }
 
 /** The newest day recorded in a table, if any. */

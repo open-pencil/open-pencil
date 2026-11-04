@@ -5,7 +5,7 @@ import {
   DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH,
   DOCUMENT_VERSION_NAME_MAX_LENGTH
 } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
 import { versionDialog, versionsChanged } from '@/app/cloud/versions/history'
@@ -17,7 +17,9 @@ import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
-import { cloudVersions } from '@/theme/cloud/versions'
+import { useHeldContent } from '@/components/ui/overlay/held'
+
+import { cloudVersions } from './ui'
 
 /**
  * Figma's Add to version history: a title and what changed, for the document as it is now, or
@@ -37,12 +39,15 @@ const open = computed({
     if (!value) versionDialog.value = null
   }
 })
-const editing = computed(() => versionDialog.value?.version ?? null)
+const shown = useHeldContent(versionDialog)
+const editing = computed(() => shown.value?.version ?? null)
 const trimmed = computed(() => name.value.trim())
 
+// Filled as it opens: clearing as it closes would empty the fields during its exit animation.
 watch(versionDialog, (dialog) => {
-  name.value = dialog?.version?.name ?? ''
-  description.value = dialog?.version?.description ?? ''
+  if (!dialog) return
+  name.value = dialog.version?.name ?? ''
+  description.value = dialog.version?.description ?? ''
   failed.value = false
 })
 

@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { isLineLike, lineWorldEnds, TRANSFORM_ZONE, type LineEnd } from '@open-pencil/core/geometry'
-import { layerRotates } from '@open-pencil/scene-graph'
+import { layerRotates } from '@open-pencil/scene-graph/generated'
 
 import type { DragState } from '#vue/shared/input/types'
 

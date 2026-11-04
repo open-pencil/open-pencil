@@ -1,5 +1,11 @@
-import { useEditorCommands } from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+import { invoke } from '@tauri-apps/api/core'
+import { computed, watch } from 'vue'
+
+import {
+  useEditorCommands,
+  type EditorCommand,
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
@@ -14,7 +20,7 @@ import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { SHELL_MENU_IDS } from '@/app/shell/menu/shell'
 import { useAppTheme } from '@/app/shell/theme'
-import { createTab, closeTab, activeTab } from '@/app/tabs'
+import { createTab, closeTab, activeTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 function commandMenuIds(entries: readonly AppMenuEntry[]): EditorCommandId[] {
@@ -29,6 +35,30 @@ const COMMAND_MENU_IDS = new Set<EditorCommandId>(
   APP_MENU_SCHEMA.flatMap((group) => commandMenuIds(group.items))
 )
 
+/**
+ * Greys out the desktop menu's command items while their command is unavailable, such as Group
+ * with nothing selected, as the browser menu does. Item ids are their command ids.
+ */
+function watchNativeMenuDisabled(commands: Record<EditorCommandId, EditorCommand>) {
+  // A joined key, so the watcher fires when the set changes rather than on every recompute.
+  const disabled = computed(() =>
+    [...COMMAND_MENU_IDS]
+      .filter((id) => !commands[id].enabled.value)
+      .sort()
+      .join('\n')
+  )
+  watch(
+    disabled,
+    (key) => {
+      const ids = key ? key.split('\n') : []
+      invoke('set_native_menu_disabled', { ids }).catch((error: unknown) => {
+        console.warn('[Menu] Failed to update the native menu', error)
+      })
+    },
+    { immediate: true }
+  )
+}
+
 export function useEditorMenu() {
   if (!isTauri()) return
 
@@ -36,14 +66,18 @@ export function useEditorMenu() {
   watchNativeMenuFeatures()
 
   const { setTheme } = useAppTheme()
-  const { runCommand } = useEditorCommands()
+  const { commands, runCommand } = useEditorCommands()
+  watchNativeMenuDisabled(commands)
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
+    'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },
+    'previous-tab': () => switchAdjacentTab(-1),
+    'next-tab': () => switchAdjacentTab(1),
     ...createSaveMenuActions(store),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
@@ -56,6 +90,9 @@ export function useEditorMenu() {
     },
     'export-pptx': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'pptx')
+    },
+    'export-drawio': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'drawio')
     },
     'export-fig': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'fig')

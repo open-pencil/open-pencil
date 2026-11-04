@@ -10,7 +10,7 @@ import type {
 import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
@@ -46,7 +46,6 @@ export type InvitationServiceOptions = {
   delivery?: InvitationDelivery
   outbox?: InvitationOutbox
   publicURL?: string
-  appURL?: string
 }
 
 export function createInvitationService(
@@ -131,7 +130,7 @@ export function createInvitationService(
       const token = randomHex(INVITATION_SECRET_BYTES)
       const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
       const deliveryContext =
-        (options.delivery || options.outbox) && options.publicURL && options.appURL
+        (options.delivery || options.outbox) && options.publicURL
           ? await Promise.all([
               database
                 .selectFrom('user')
@@ -146,8 +145,8 @@ export function createInvitationService(
             ])
           : null
       const acceptanceURL =
-        deliveryContext && options.publicURL && options.appURL
-          ? cloudInvitationURL(options.appURL, options.publicURL, id, token)
+        deliveryContext && options.publicURL
+          ? cloudInvitationURL(options.publicURL, id, token)
           : null
       const message =
         deliveryContext && acceptanceURL

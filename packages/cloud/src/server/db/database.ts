@@ -1,7 +1,7 @@
 import type { Dialect } from 'kysely'
 import { CamelCasePlugin, Kysely } from 'kysely'
 
-import type { CloudDatabase } from './schema'
+import type { CloudDatabase } from './tables'
 
 export type CloudDatabaseOptions = {
   dialect: Dialect

@@ -3,6 +3,7 @@ export { extractExportGraph, findPageId } from './subgraph'
 export {
   BUILTIN_IO_FORMATS,
   type BuiltinIOFormatId,
+  DOCUMENT_EXTENSIONS,
   figFormat,
   penFormat,
   pngFormat,
@@ -13,37 +14,6 @@ export {
   htmlFormat,
   tailwindJSXFormat
 } from './formats'
-export {
-  exportFigFile,
-  parseFigFile,
-  readFigFile,
-  type FigFileExtrasOptions,
-  type ParseFigFileOptions
-} from './formats/fig'
-export { parsePenFile, readPenFile } from '@open-pencil/pen'
-export {
-  computeContentBounds,
-  renderNodesToImage,
-  renderThumbnail,
-  initCanvasKit,
-  headlessRenderNodes,
-  headlessRenderThumbnail,
-  type RasterExportFormat,
-  type ExportFormat
-} from './formats/raster'
-export {
-  createSVGNodes,
-  createSVGNodesFromImport,
-  isSVGMarkup,
-  prepareSVGImport,
-  renderNodesToSVG,
-  geometryBlobToSVGPath,
-  nodeOutlinePath,
-  vectorNetworkToSVGPaths,
-  type OutlineNode,
-  type SVGImportData,
-  type SVGImportOptions
-} from './formats/svg'
 export { vectorElement } from './formats/html/vectors'
 export {
   renderNodesToPPTX,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import CanvasRoot from '#vue/canvas/CanvasRoot.vue'
@@ -48,6 +48,6 @@ watchEffect(() => {
 
 <template>
   <CanvasRoot :show-rulers="false">
-    <CanvasSurface class="block h-[400px] w-[600px]" />
+    <CanvasSurface class="block h-100 w-150" />
   </CanvasRoot>
 </template>

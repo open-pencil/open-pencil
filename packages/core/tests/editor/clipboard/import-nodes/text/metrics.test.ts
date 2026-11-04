@@ -3,8 +3,9 @@ import { describe, expect, it } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
 
-import { importClipboardNodes } from '@open-pencil/core'
-import type { NodeChange } from '@open-pencil/core'
+import { importClipboardNodes } from '@open-pencil/core/clipboard'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 describe('importClipboardNodes: text metrics', () => {
   it('imports fontWeight from fontName.style via styleToWeight', () => {
@@ -60,7 +61,7 @@ describe('importClipboardNodes: text metrics', () => {
     expect(getNodeOrThrow(graph, created[2]).italic).toBe(true)
   })
 
-  it('converts letterSpacing object to pixels', () => {
+  it('keeps letter spacing in its unit', () => {
     const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
@@ -106,12 +107,12 @@ describe('importClipboardNodes: text metrics', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(getNodeOrThrow(graph, created[0]).letterSpacing).toBe(2)
-    expect(getNodeOrThrow(graph, created[1]).letterSpacing).toBe(2) // 10% of 20px
-    expect(getNodeOrThrow(graph, created[2]).letterSpacing).toBe(0)
+    expect(getNodeOrThrow(graph, created[0]).letterSpacing).toEqual(pixelLength(2))
+    expect(getNodeOrThrow(graph, created[1]).letterSpacing).toEqual(percentLength(10))
+    expect(getNodeOrThrow(graph, created[2]).letterSpacing).toEqual(percentLength(0))
   })
 
-  it('converts RAW lineHeight to pixels', () => {
+  it('reads a RAW line height as the percent Figma writes it for', () => {
     const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
@@ -158,12 +159,12 @@ describe('importClipboardNodes: text metrics', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(getNodeOrThrow(graph, created[0]).lineHeight).toBe(36) // 24 * 1.5
-    expect(getNodeOrThrow(graph, created[1]).lineHeight).toBe(20)
-    expect(getNodeOrThrow(graph, created[2]).lineHeight).toBe(24) // 120% of 20
+    expect(getNodeOrThrow(graph, created[0]).lineHeight).toEqual(percentLength(150))
+    expect(getNodeOrThrow(graph, created[1]).lineHeight).toEqual(pixelLength(20))
+    expect(getNodeOrThrow(graph, created[2]).lineHeight).toEqual(percentLength(120))
   })
 
-  it('converts letterSpacing and lineHeight in style overrides', () => {
+  it('keeps letter spacing and line height units in style overrides', () => {
     const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
@@ -201,8 +202,8 @@ describe('importClipboardNodes: text metrics', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const node = getNodeOrThrow(graph, created[0])
     expect(node.styleRuns).toHaveLength(1)
-    expect(node.styleRuns[0].style.lineHeight).toBe(30) // 20 * 1.5
-    expect(node.styleRuns[0].style.letterSpacing).toBeCloseTo(-0.4) // 20 * -2/100
+    expect(node.styleRuns[0].style.lineHeight).toEqual(percentLength(150))
+    expect(node.styleRuns[0].style.letterSpacing).toEqual(percentLength(-2))
   })
 
   it('imports textAutoResize from clipboard data', () => {

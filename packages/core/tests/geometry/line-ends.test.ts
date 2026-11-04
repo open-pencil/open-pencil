@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
 import {
   aimLine,
   draggedLineEnds,
@@ -7,14 +8,9 @@ import {
   lineWorldEnds,
   type LineEnd
 } from '@open-pencil/core/geometry'
-import { createEditor } from '@open-pencil/core/editor'
-import {
-  createConnector,
-  freeEndpoint,
-  SceneGraph,
-  type SceneNode,
-  type Vector
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** An arrow as Figma's Arrow tool draws one: a flat vector along its width, aimed by rotation. */
 function arrow(graph: SceneGraph, start: Vector, end: Vector): SceneNode {
@@ -76,7 +72,10 @@ describe('dragging a line by an end', () => {
     expect(result.length).toBe(243.85)
     expect(result.rotation).toBe(7.07)
     expect(result.aimed.height).toBe(0)
-    expect(result.aimed.vectorNetwork?.vertices.map((vertex) => vertex.x)).toEqual([0, result.aimed.width])
+    expect(result.aimed.vectorNetwork?.vertices.map((vertex) => vertex.x)).toEqual([
+      0,
+      result.aimed.width
+    ])
   })
 
   test('Shift holds it to 45° steps, as far as the pointer reaches along them', () => {
@@ -135,13 +134,18 @@ describe('dragging a line by an end', () => {
 
 test('the editor aims a line from a dragged end in one undo step', () => {
   const editor = createEditor()
-  const line = editor.graph.createNode('LINE', editor.state.currentPageId, { width: 200, height: 0 })
+  const line = editor.graph.createNode('LINE', editor.state.currentPageId, {
+    width: 200,
+    height: 0
+  })
   editor.lineEndBegin(line.id, 'end', 200, 0)
   editor.lineEndDrag(200, 100)
   editor.lineEndDrag(200, 200, { shift: true })
   editor.lineEndCommit()
   const aimed = editor.graph.getNode(line.id)
-  expect(lineWorldEnds(editor.graph, aimed ?? line).map(({ x, y }) => [Math.round(x), Math.round(y)])).toEqual([
+  expect(
+    lineWorldEnds(editor.graph, aimed ?? line).map(({ x, y }) => [Math.round(x), Math.round(y)])
+  ).toEqual([
     [0, 0],
     [200, 200]
   ])
@@ -164,4 +168,3 @@ test('a connector is never aimed as a line, though its box is flat', () => {
   expect(editor.graph.getNode(connector.id)).toMatchObject({ width: 200, height: 0, rotation: 0 })
   editor.dispose()
 })
-

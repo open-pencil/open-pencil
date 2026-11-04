@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises'
 
 import type * as FigNodeChange from '@open-pencil/fig/node-change'
-import { shaderPresetKey, type Fill } from '@open-pencil/scene-graph'
+import type { Fill } from '@open-pencil/scene-graph'
+import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -279,10 +280,12 @@ test('gradients and image fill modes', async () => {
     expect(Math.min(r, g, b)).toBeLessThan(200)
   }
   await editor.canvas.waitForRender()
+  // A line is stroked to its upper side: the one turned down covers 730–733, the one turned up
+  // 747–750.
   const [cropPixel, ...linePixels] = await readScenePixels(editor.page, [
     { x: 706, y: 235 },
-    { x: 730, y: 130 },
-    { x: 750, y: 130 }
+    { x: 731, y: 130 },
+    { x: 748, y: 130 }
   ])
   expect(cropPixel.slice(0, 3)).toEqual([17, 24, 39])
   for (const [r, g, b] of linePixels) {

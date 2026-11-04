@@ -1,232 +1,16 @@
-import { cloudEditorVersionSchema } from '#cloud/contract'
-import { staticEntitlementsTOMLSchema } from '#cloud/server/policy/static'
+import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
-import { parseCloudServerConfig, type CloudServerConfig } from './schema'
+import {
+  cloudDeploymentConfigSchema,
+  parseCloudServerConfig,
+  type CloudDeploymentConfig,
+  type CloudSecretReference,
+  type CloudServerConfig
+} from './schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
-
-const DEFAULT_SECRET_NAMES = {
-  databaseURL: 'DATABASE_URL',
-  authSecret: 'BETTER_AUTH_SECRET',
-  googleClientId: 'GOOGLE_CLIENT_ID',
-  googleClientSecret: 'GOOGLE_CLIENT_SECRET',
-  applePrivateKey: 'APPLE_PRIVATE_KEY',
-  s3AccessKeyId: 'S3_ACCESS_KEY_ID',
-  s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
-  s3SessionToken: 'S3_SESSION_TOKEN',
-  smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
-  smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
-  turnstileSecretKey: 'TURNSTILE_SECRET_KEY'
-} as const
-
-const url = v.pipe(v.string(), v.url())
-const text = v.pipe(v.string(), v.trim(), v.minLength(1))
-const positiveInteger = v.pipe(v.number(), v.integer(), v.minValue(1))
-const secretReferenceSchema = v.object({ from_env: text })
-const configurableTextSchema = v.union([text, secretReferenceSchema])
-const defaultReference = (name: string) => v.optional(secretReferenceSchema, { from_env: name })
-
-const providerSchema = v.object({
-  google: v.optional(
-    v.object({
-      client_id: v.optional(configurableTextSchema, {
-        from_env: DEFAULT_SECRET_NAMES.googleClientId
-      }),
-      client_secret: defaultReference(DEFAULT_SECRET_NAMES.googleClientSecret)
-    })
-  ),
-  apple: v.optional(
-    v.object({
-      client_id: text,
-      team_id: text,
-      key_id: text,
-      private_key: defaultReference(DEFAULT_SECRET_NAMES.applePrivateKey),
-      app_bundle_identifier: v.optional(text)
-    })
-  )
-})
-
-const emailSchema = v.optional(
-  v.variant('transport', [
-    v.object({ transport: v.literal('none') }),
-    v.object({
-      transport: v.literal('smtp'),
-      from: text,
-      smtp: v.object({
-        host: text,
-        port: positiveInteger,
-        secure: v.optional(v.boolean()),
-        user: v.optional(secretReferenceSchema, {
-          from_env: DEFAULT_SECRET_NAMES.smtpUser
-        }),
-        password: v.optional(secretReferenceSchema, {
-          from_env: DEFAULT_SECRET_NAMES.smtpPassword
-        })
-      })
-    }),
-    v.object({ transport: v.literal('cloudflare'), from: text })
-  ]),
-  { transport: 'none' }
-)
-
-export const cloudDeploymentConfigSchema = v.object({
-  schema_version: v.literal(2),
-  deployment: v.object({
-    mode: v.picklist(['official', 'self-hosted']),
-    public_url: url,
-    app_url: v.optional(url),
-    indexing: v.optional(v.picklist(['allow', 'deny']), 'deny'),
-    trusted_origins: v.optional(v.array(url), []),
-    listing: v.optional(v.object({ minimum_editor_version: cloudEditorVersionSchema }))
-  }),
-  database: v.optional(v.object({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }), {
-    url: { from_env: DEFAULT_SECRET_NAMES.databaseURL }
-  }),
-  authentication: v.object({
-    secret: defaultReference(DEFAULT_SECRET_NAMES.authSecret),
-    enrollment_mode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
-    admin_notification_emails: v.optional(v.array(v.pipe(v.string(), v.email())), []),
-    admin_user_ids: v.optional(v.array(text), []),
-    email_password: v.optional(
-      v.object({
-        enabled: v.optional(v.boolean(), false),
-        sign_up: v.optional(v.boolean(), true),
-        minimum_password_length: v.optional(
-          v.pipe(v.number(), v.integer(), v.minValue(8), v.maxValue(128)),
-          8
-        ),
-        maximum_password_length: v.optional(
-          v.pipe(v.number(), v.integer(), v.minValue(15), v.maxValue(128)),
-          128
-        ),
-        verification_link_expires_minutes: v.optional(positiveInteger, 60),
-        password_reset_link_expires_minutes: v.optional(positiveInteger, 60),
-        compromised_password_check: v.optional(v.boolean(), false)
-      }),
-      {
-        enabled: false,
-        sign_up: true,
-        minimum_password_length: 8,
-        maximum_password_length: 128,
-        verification_link_expires_minutes: 60,
-        password_reset_link_expires_minutes: 60,
-        compromised_password_check: false
-      }
-    ),
-    mfa: v.optional(
-      v.object({
-        deployment_admin_required: v.optional(v.boolean(), false),
-        totp_enabled: v.optional(v.boolean(), false),
-        passkeys_enabled: v.optional(v.boolean(), false),
-        recovery_codes_enabled: v.optional(v.boolean(), false),
-        trusted_device_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14)
-      }),
-      {
-        deployment_admin_required: false,
-        totp_enabled: false,
-        passkeys_enabled: false,
-        recovery_codes_enabled: false,
-        trusted_device_days: 14
-      }
-    ),
-    passkeys: v.optional(
-      v.object({
-        rp_id: text,
-        rp_name: v.optional(text, 'OpenPencil Cloud'),
-        origin: url
-      })
-    ),
-    captcha: v.optional(
-      v.object({
-        provider: v.literal('cloudflare-turnstile'),
-        site_key: text,
-        secret_key: defaultReference(DEFAULT_SECRET_NAMES.turnstileSecretKey),
-        allowed_hostnames: v.optional(v.array(text), [])
-      })
-    ),
-    trusted_proxies: v.optional(
-      v.object({
-        headers: v.optional(v.array(text), []),
-        addresses: v.optional(v.array(text), [])
-      }),
-      { headers: [], addresses: [] }
-    ),
-    providers: v.optional(providerSchema, {})
-  }),
-  object_storage: v.object({
-    endpoint: url,
-    region: text,
-    bucket: text,
-    credentials: v.optional(
-      v.object({
-        access_key_id: defaultReference(DEFAULT_SECRET_NAMES.s3AccessKeyId),
-        secret_access_key: defaultReference(DEFAULT_SECRET_NAMES.s3SecretAccessKey),
-        session_token: v.optional(secretReferenceSchema, {
-          from_env: DEFAULT_SECRET_NAMES.s3SessionToken
-        })
-      }),
-      {
-        access_key_id: { from_env: DEFAULT_SECRET_NAMES.s3AccessKeyId },
-        secret_access_key: { from_env: DEFAULT_SECRET_NAMES.s3SecretAccessKey }
-      }
-    ),
-    force_path_style: v.optional(v.boolean(), true),
-    checksum_verification: v.optional(v.picklist(['native', 'metadata']), 'native'),
-    server_side_encryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
-    kms_key_id: v.optional(text)
-  }),
-  collaboration: v.optional(v.object({ relay_url: v.pipe(v.string(), v.url()) })),
-  email: emailSchema,
-  workers: v.optional(
-    v.object({
-      email: v.optional(
-        v.object({
-          batch_size: v.optional(positiveInteger, 50),
-          interval_ms: v.optional(positiveInteger, 30_000),
-          lease_ms: v.optional(positiveInteger, 300_000),
-          maximum_attempts: v.optional(positiveInteger, 5)
-        }),
-        { batch_size: 50, interval_ms: 30_000, lease_ms: 300_000, maximum_attempts: 5 }
-      ),
-      cleanup: v.optional(
-        v.object({
-          enabled: v.optional(v.boolean(), true),
-          batch_size: v.optional(positiveInteger, 100),
-          interval_ms: v.optional(positiveInteger, 60_000),
-          lease_ms: v.optional(positiveInteger, 300_000),
-          document_retention_days: v.optional(v.pipe(v.number(), v.minValue(0)), 30)
-        }),
-        {
-          enabled: true,
-          batch_size: 100,
-          interval_ms: 60_000,
-          lease_ms: 300_000,
-          document_retention_days: 30
-        }
-      )
-    })
-  ),
-  entitlements: v.optional(
-    v.variant('source', [
-      v.object({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
-      v.object({ source: v.literal('database') })
-    ])
-  ),
-  technical_limits: v.optional(
-    v.object({
-      maximum_upload_bytes: v.optional(positiveInteger),
-      maximum_collaboration_message_bytes: v.optional(positiveInteger),
-      maximum_connections_per_room: v.optional(positiveInteger)
-    })
-  )
-})
-
-export type CloudDeploymentConfig = v.InferOutput<typeof cloudDeploymentConfigSchema>
-/** Deployment configuration as an operator writes it, before defaults are applied. */
-export type CloudDeploymentInput = v.InferInput<typeof cloudDeploymentConfigSchema>
-export type CloudSecretReference = v.InferOutput<typeof secretReferenceSchema>
 
 export function parseCloudDeploymentSource(source: string): CloudDeploymentConfig {
   return v.parse(cloudDeploymentConfigSchema, parseTOML(source))
@@ -254,23 +38,7 @@ function optionalSecret(
 
 function staticEntitlements(config: CloudDeploymentConfig) {
   if (config.entitlements?.source !== 'static') return undefined
-  return {
-    documents: {
-      maximumFileBytes: config.entitlements.documents?.maximum_file_bytes,
-      revisionHistory: config.entitlements.documents?.revision_history
-    },
-    storage: { maximumBytes: config.entitlements.storage?.maximum_bytes },
-    sharing: {
-      capabilityLinks: config.entitlements.sharing?.capability_links,
-      anonymousView: config.entitlements.sharing?.anonymous_view,
-      anonymousEdit: config.entitlements.sharing?.anonymous_edit,
-      guestPresence: config.entitlements.sharing?.guest_presence
-    },
-    collaboration: {
-      enabled: config.entitlements.collaboration?.enabled,
-      maximumParticipants: config.entitlements.collaboration?.maximum_participants
-    }
-  }
+  return staticEntitlementsFromTOML(config.entitlements)
 }
 
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
@@ -315,17 +83,38 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: cleanup ? cleanup.document_retention_days * 86_400_000 : undefined
+    documentRetentionMs: config.documents.retention_days * 86_400_000
   }
 }
 
-function technicalLimits(config: CloudDeploymentConfig) {
-  const limits = config.technical_limits
-  if (!limits) return undefined
+function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   return {
-    maximumUploadBytes: limits.maximum_upload_bytes,
-    maximumCollaborationMessageBytes: limits.maximum_collaboration_message_bytes,
-    maximumConnectionsPerRoom: limits.maximum_connections_per_room
+    aiEndpoint: config.ai?.endpoint,
+    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
+    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
+    billingPortalURL: config.billing?.portal_url,
+    internalServiceToken: config.internal_api
+      ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined
+  }
+}
+
+function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
+  const tracking = config.error_tracking
+  if (!tracking) return undefined
+  return {
+    provider: tracking.provider,
+    host: tracking.host,
+    projectAPIKey: configuredText(environment, tracking.project_api_key)
+  }
+}
+
+/** Hard limits, whatever a plan allows; each lives in the section it limits. */
+function technicalLimits(config: CloudDeploymentConfig) {
+  return {
+    maximumUploadBytes: config.object_storage.maximum_upload_bytes,
+    maximumCollaborationMessageBytes: config.collaboration.maximum_message_bytes,
+    maximumConnectionsPerRoom: config.collaboration.maximum_connections_per_room
   }
 }
 
@@ -337,32 +126,29 @@ export function parseCloudDeploymentConfig(
   return parseCloudServerConfig({
     deployment: config.deployment.mode,
     publicURL: config.deployment.public_url,
-    appURL: config.deployment.app_url,
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
+    localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
-    enrollmentMode: config.authentication.enrollment_mode,
-    enrollmentAdminNotificationEmails: config.authentication.admin_notification_emails,
-    deploymentAdminUserIds: config.authentication.admin_user_ids,
+    enrollmentMode: config.authentication.enrollment.mode,
+    enrollmentAdminNotificationEmails: config.authentication.enrollment.notification_emails,
     emailPasswordEnabled: config.authentication.email_password.enabled,
     emailPasswordSignUpEnabled: config.authentication.email_password.sign_up,
     emailPasswordMinimumLength: config.authentication.email_password.minimum_password_length,
     emailPasswordMaximumLength: config.authentication.email_password.maximum_password_length,
     emailVerificationExpiresIn:
-      config.authentication.email_password.verification_link_expires_minutes * 60,
+      config.authentication.email_password.verification_link_lifetime_minutes * 60,
     passwordResetExpiresIn:
-      config.authentication.email_password.password_reset_link_expires_minutes * 60,
+      config.authentication.email_password.password_reset_link_lifetime_minutes * 60,
     compromisedPasswordCheck: config.authentication.email_password.compromised_password_check,
-    deploymentAdminMFARequired: config.authentication.mfa.deployment_admin_required,
-    totpEnabled: config.authentication.mfa.totp_enabled,
-    passkeysEnabled: config.authentication.mfa.passkeys_enabled,
-    recoveryCodesEnabled: config.authentication.mfa.recovery_codes_enabled,
-    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_days,
-    passkeyRPID: config.authentication.passkeys?.rp_id,
-    passkeyRPName: config.authentication.passkeys?.rp_name,
-    passkeyOrigin: config.authentication.passkeys?.origin,
+    deploymentAdminMFARequired: config.authentication.mfa.required_for_admins,
+    totpEnabled: config.authentication.mfa.totp,
+    recoveryCodesEnabled: config.authentication.mfa.recovery_codes,
+    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_lifetime_days,
+    passkeysEnabled: config.authentication.passkeys.enabled,
+    passkeyRPName: config.authentication.passkeys.rp_name,
     captchaProvider: config.authentication.captcha?.provider,
     captchaSiteKey: config.authentication.captcha?.site_key,
     captchaSecretKey: config.authentication.captcha
@@ -385,10 +171,12 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
-    relayURL: config.collaboration?.relay_url,
+    relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
+    ...serviceConfig(config, environment),
+    errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
 }

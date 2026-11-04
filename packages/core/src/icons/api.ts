@@ -2,7 +2,7 @@ import { uniq } from 'es-toolkit'
 import { createFetch } from 'ofetch'
 import * as v from 'valibot'
 
-import { CollectionListJSON, CollectionsJSON } from './schema'
+import { collectionListSchema, collectionsSchema } from './schema'
 import type { IconCollection, IconifyResponse, IconSearchResult } from './types'
 
 const ICONIFY_API = 'https://api.iconify.design'
@@ -43,7 +43,7 @@ export function createIconifyAPIClient(
 
     /** Every icon set the API serves, retired ones left out. */
     async collections(): Promise<IconCollection[]> {
-      const parsed = v.safeParse(CollectionsJSON, await text('/collections'))
+      const parsed = v.safeParse(collectionsSchema, await text('/collections'))
       if (!parsed.success) throw new Error('Iconify API returned an unexpected set list')
       return Object.entries(parsed.output)
         .filter(([, info]) => !info.hidden)
@@ -59,7 +59,7 @@ export function createIconifyAPIClient(
 
     /** Every icon in the set `prefix`, as `prefix:name`, in the set's own order. */
     async collectionIcons(prefix: string): Promise<string[]> {
-      const parsed = v.safeParse(CollectionListJSON, await text('/collection', { prefix }))
+      const parsed = v.safeParse(collectionListSchema, await text('/collection', { prefix }))
       if (!parsed.success)
         throw new Error(`Iconify API returned an unexpected list for "${prefix}"`)
       const { uncategorized = [], categories = {} } = parsed.output

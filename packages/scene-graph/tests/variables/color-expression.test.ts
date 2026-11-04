@@ -1,11 +1,10 @@
 import { expect, test } from 'bun:test'
 
+import { SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
 import {
-  SceneGraph,
   mapVariableValueReferences,
-  variablesResolvingThrough,
-  type VariableValue
-} from '@open-pencil/scene-graph'
+  variablesResolvingThrough
+} from '@open-pencil/scene-graph/variables'
 
 function setup() {
   const graph = new SceneGraph()

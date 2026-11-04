@@ -37,7 +37,9 @@ function isOnline(): boolean {
 
 function backoffMs(attempts: number): number {
   const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1))
-  const jitter = Math.floor(exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1))[0] ?? 0) / 255))
+  const jitter = Math.floor(
+    exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1)).at(0) ?? 0) / 255)
+  )
   return exp + jitter
 }
 
@@ -78,62 +80,53 @@ async function runJob(job: OutboxJob): Promise<void> {
     return
   }
 
-  if (job.type === 'putCanvas') {
-    // Superseded by a newer local revision already on disk
-    if (meta.revision > job.revision) return
-    if (!meta.hasFig) return
-    const fig = await store.readFig(job.canvasId)
-    if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    setUploadProgress(job.canvasId, 0)
-    let written: { revision: string | null }
-    try {
-      written = await adapter.putDocument(
-        job.canvasId,
-        fig,
-        {
-          name: meta.name,
-          updatedAt: meta.updatedAt
-        },
-        ({ transferredBytes, totalBytes }) => {
-          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
-        },
-        { baseRevision: meta.remoteRevision ?? null }
-      )
-    } finally {
-      setUploadProgress(job.canvasId, null)
-    }
-    // Later local edits build on what was just stored, even when they arrived mid-upload.
-    if (written.revision !== null) {
-      await store.updateMeta(job.canvasId, { remoteRevision: written.revision })
-    }
-    // Only mark synced if still on this revision and no other pending work for newer rev
-    const latest = await store.getMeta(job.canvasId)
-    if (latest && latest.revision === job.revision && !latest.tombstoned) {
-      await store.updateMeta(
-        job.canvasId,
-        {
-          syncStatus: 'synced',
-          lastSyncedAt: new Date().toISOString(),
-          lastSyncError: null,
-          conflictRevision: null
-        },
-        { expectedRevision: job.revision }
-      )
-      await evictLocalFigCache(new Set([job.canvasId]))
-      emitStorageWorkspaceEvent({
-        ...location,
-        documentId: job.canvasId,
-        kind: 'synced'
-      })
-    }
-    return
+  // Superseded by a newer local revision already on disk
+  if (meta.revision > job.revision) return
+  if (!meta.hasFig) return
+  const fig = await store.readFig(job.canvasId)
+  if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
+  setUploadProgress(job.canvasId, 0)
+  let written: { revision: string | null }
+  try {
+    written = await adapter.putDocument(
+      job.canvasId,
+      fig,
+      {
+        name: meta.name,
+        updatedAt: meta.updatedAt
+      },
+      ({ transferredBytes, totalBytes }) => {
+        if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
+      },
+      { baseRevision: meta.remoteRevision ?? null }
+    )
+  } finally {
+    setUploadProgress(job.canvasId, null)
   }
-
-  // Remaining job type: putThumb
-  if (!adapter.putThumbnail) return
-  const thumb = await store.readThumb(job.canvasId)
-  if (!thumb) return
-  await adapter.putThumbnail(job.canvasId, thumb)
+  // Later local edits build on what was just stored, even when they arrived mid-upload.
+  if (written.revision !== null) {
+    await store.updateMeta(job.canvasId, { remoteRevision: written.revision })
+  }
+  // Only mark synced if still on this revision and no other pending work for newer rev
+  const latest = await store.getMeta(job.canvasId)
+  if (latest && latest.revision === job.revision && !latest.tombstoned) {
+    await store.updateMeta(
+      job.canvasId,
+      {
+        syncStatus: 'synced',
+        lastSyncedAt: new Date().toISOString(),
+        lastSyncError: null,
+        conflictRevision: null
+      },
+      { expectedRevision: job.revision }
+    )
+    await evictLocalFigCache(new Set([job.canvasId]))
+    emitStorageWorkspaceEvent({
+      ...location,
+      documentId: job.canvasId,
+      kind: 'synced'
+    })
+  }
 }
 
 async function pumpOnce(): Promise<void> {
@@ -212,34 +205,18 @@ async function pumpOnce(): Promise<void> {
     console.warn('[Storage sync] job failed:', job.type, job.canvasId, message)
 
     if (permanent) {
-      // A failed thumbnail upload must not poison the document's sync status —
-      // only canvas/delete jobs reflect into the meta row.
-      if (job.type !== 'putThumb') {
-        await getLocalCanvasStore().updateMeta(job.canvasId, {
-          syncStatus: 'error',
-          lastSyncError: message
-        })
-        setSyncUI('error', message.slice(0, 120))
-      } else {
-        // Keep a record without touching syncStatus so the stale remote
-        // thumbnail is at least diagnosable.
-        await getLocalCanvasStore().updateMeta(job.canvasId, { lastSyncError: message })
-      }
-      if (job.type === 'putThumb') {
-        await outbox.remove(job.id)
-        const remaining = await outbox.list()
-        setPendingSyncCount(remaining.length)
-        if (remaining.length > 0) scheduleWake(1000)
-        else setSyncUI('idle')
-      } else {
-        // Never discard a document mutation. Keep it durable until the user
-        // repairs credentials/permissions and explicitly wakes synchronization.
-        await outbox.update({
-          ...job,
-          attempts,
-          nextAttemptAt: PARKED_ATTEMPT_AT
-        })
-      }
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'error',
+        lastSyncError: message
+      })
+      setSyncUI('error', message.slice(0, 120))
+      // Never discard a document mutation. Keep it durable until the user
+      // repairs credentials/permissions and explicitly wakes synchronization.
+      await outbox.update({
+        ...job,
+        attempts,
+        nextAttemptAt: PARKED_ATTEMPT_AT
+      })
       return
     }
 
@@ -249,12 +226,10 @@ async function pumpOnce(): Promise<void> {
       nextAttemptAt: Date.now() + backoffMs(attempts)
     }
     await outbox.update(updated)
-    if (job.type !== 'putThumb') {
-      await getLocalCanvasStore().updateMeta(job.canvasId, {
-        syncStatus: 'pending',
-        lastSyncError: message
-      })
-    }
+    await getLocalCanvasStore().updateMeta(job.canvasId, {
+      syncStatus: 'pending',
+      lastSyncError: message
+    })
     // Wake for the next ready job across the whole queue — not this job's
     // full backoff, which starved other jobs that were ready sooner.
     const all = await outbox.list()
@@ -316,11 +291,6 @@ export async function kickSyncEngine(): Promise<void> {
 
 export async function enqueuePutCanvas(canvasId: string, revision: number): Promise<void> {
   await getOutbox().enqueue({ canvasId, type: 'putCanvas', revision })
-  void kickSyncEngine()
-}
-
-export async function enqueuePutThumb(canvasId: string, revision: number): Promise<void> {
-  await getOutbox().enqueue({ canvasId, type: 'putThumb', revision })
   void kickSyncEngine()
 }
 

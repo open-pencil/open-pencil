@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { STATUS_NODE_TYPES } from '@open-pencil/scene-graph'
+import { STATUS_NODE_TYPES } from '@open-pencil/scene-graph/statuses'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool, toolFailure } from '#core/tools/schema'

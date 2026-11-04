@@ -52,6 +52,8 @@ const INITIAL: CloudConnection = {
 export const cloudConnections = shallowRef<Readonly<Record<string, CloudConnection>>>({})
 const discoveries = new Map<string, Promise<CloudDiscovery>>()
 const generations = new Map<string, number>()
+/** Each server's latest check while it runs. */
+const checks = new Map<string, Promise<CloudConnection>>()
 
 export function cloudConnection(serverId: string): CloudConnection {
   return cloudConnections.value[serverId] ?? INITIAL
@@ -114,7 +116,12 @@ async function signedInConnection(
       account: server.account
     }
   }
-  const account = { id: status.user.userId, name: status.user.name, email: status.user.email }
+  const account = {
+    id: status.user.userId,
+    name: status.user.name,
+    email: status.user.email,
+    image: status.user.image ?? null
+  }
   rememberCloudAccount(server.id, account)
   if (status.state !== 'active') {
     const state = status.state === 'pending' ? 'pending' : 'closed'
@@ -125,9 +132,43 @@ async function signedInConnection(
 }
 
 /** Asks the server where this app stands and publishes the answer. */
-export async function refreshCloudConnection(server: CloudServer): Promise<CloudConnection> {
+export function refreshCloudConnection(server: CloudServer): Promise<CloudConnection> {
   const generation = (generations.get(server.id) ?? 0) + 1
   generations.set(server.id, generation)
+  const check = askServer(server, generation)
+  checks.set(server.id, check)
+  void check.finally(() => {
+    if (checks.get(server.id) === check) checks.delete(server.id)
+  })
+  return check
+}
+
+/**
+ * Where this app stands with a server once the check under way, if any, finishes. Something that
+ * only needs the answer waits for that check rather than starting another, which would throw the
+ * first one's answer away and leave whoever waits on it reading `checking`.
+ */
+export function checkedCloudConnection(server: CloudServer): Promise<CloudConnection> {
+  const running = checks.get(server.id)
+  if (running) return running
+  const connection = cloudConnection(server.id)
+  return connection.state === 'checking'
+    ? refreshCloudConnection(server)
+    : Promise.resolve(connection)
+}
+
+/**
+ * Where this app stands with a server now: signed in as last checked, or else the answer of the
+ * check under way or of a new one, since a server out of reach or a session that ended may have
+ * come back since the last answer.
+ */
+export function recheckedCloudConnection(server: CloudServer): Promise<CloudConnection> {
+  const connection = cloudConnection(server.id)
+  if (connection.state === 'signed-in') return Promise.resolve(connection)
+  return checks.get(server.id) ?? refreshCloudConnection(server)
+}
+
+async function askServer(server: CloudServer, generation: number): Promise<CloudConnection> {
   const previous = cloudConnection(server.id)
   publish(server.id, { ...previous, state: 'checking', failure: null })
   let next: CloudConnection
@@ -149,6 +190,7 @@ export async function refreshCloudConnection(server: CloudServer): Promise<Cloud
 /** Drops what the app knows about a server's session, after signing out or removing it. */
 export function forgetCloudConnection(serverId: string): void {
   generations.set(serverId, (generations.get(serverId) ?? 0) + 1)
+  checks.delete(serverId)
   const { [serverId]: _removed, ...rest } = cloudConnections.value
   cloudConnections.value = rest
 }

@@ -13,7 +13,6 @@ const discovery = parseCloudDiscovery({
   deployment: 'self-hosted' as const,
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
-  appURL: 'https://app.example.com',
   authentication: {
     socialProviders: [],
     emailPassword: { signIn: true, signUp: true, minimumPasswordLength: 8 },

@@ -7,7 +7,7 @@ import {
   stageJSXPreview,
   type StagedJSXPreview
 } from '@open-pencil/core/design-jsx'
-import { computeContentBounds } from '@open-pencil/core/io'
+import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import type { JSXPreviewNode } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'

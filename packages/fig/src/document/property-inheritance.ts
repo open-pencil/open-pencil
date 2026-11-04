@@ -1,4 +1,5 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { parentIdOf } from '../instance-overrides/source-index'
@@ -28,6 +29,18 @@ export function inheritFromAncestors(node: NodeChange, ancestors: readonly NodeC
     }
     throw new Error(`Missing parent property ${id}`)
   })
+}
+
+/**
+ * A record's copies of its parent's property definitions, each by its own id to the id of the
+ * definition it copies, as a variant copies its set's boolean, text, swap, and slot properties.
+ */
+export function linkedPropertyCopies(node: NodeChange): Map<string, string> {
+  const copies = new Map<string, string>()
+  for (const definition of (node.componentPropDefs as LinkedPropertyDefinition[] | undefined) ?? [])
+    if (definition.id && definition.parentPropDefId)
+      copies.set(guidToString(definition.id), guidToString(definition.parentPropDefId))
+  return copies
 }
 
 /** Resolve definition inheritance only within the source node's ancestry. */

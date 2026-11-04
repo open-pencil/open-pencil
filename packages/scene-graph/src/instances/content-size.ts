@@ -1,10 +1,11 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '../'
 import { TEXT_METRIC_FIELDS, TEXT_SHAPING_FIELDS } from '../fields/text'
+import type { SceneGraph } from '../graph'
 import { layoutSizing } from '../layout/sizing'
 import type { Rect } from '../primitives'
 import { resizedChildRect } from '../resize'
+import type { SceneNode } from '../types'
 
 const METRIC_FIELDS: ReadonlySet<string> = new Set(TEXT_METRIC_FIELDS)
 

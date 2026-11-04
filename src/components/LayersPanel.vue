@@ -3,7 +3,8 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useI18n, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import AppMenu from '@/components/shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
@@ -74,7 +75,7 @@ const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
       <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
         <header
           data-test-id="layers-header"
-          class="shrink-0 px-3 py-2 text-[11px] font-semibold text-surface"
+          class="shrink-0 px-3 py-2 text-2xs font-semibold text-surface"
         >
           {{ panels.layers }}
         </header>

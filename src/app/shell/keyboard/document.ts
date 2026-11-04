@@ -1,6 +1,10 @@
 import { createKeybindingsHandler, type KeyBindingMap } from 'tinykeys'
 
-import { editorCommandMetadata, useEditorCommands, type EditorCommandId } from '@open-pencil/vue'
+import {
+  editorCommandMetadata,
+  useEditorCommands,
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
 
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { shortcutEvent } from '@/app/shell/keyboard/layout'

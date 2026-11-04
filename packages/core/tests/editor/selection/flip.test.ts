@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('flip', () => {
   test('flipX defaults to false', () => {
@@ -42,7 +42,7 @@ describe('flip', () => {
 describe('flip roundtrip via kiwi', () => {
   async function roundtrip(graph: SceneGraph) {
     const { initCodec } = await import('@open-pencil/kiwi/fig/codec')
-    const { parseFigFile } = await import('@open-pencil/core/kiwi')
+    const { parseFigFile } = await import('@open-pencil/core/io/formats/fig')
     const { exportFigFile } = await import('@open-pencil/core/io/formats/fig')
     await initCodec()
     const buf = await exportFigFile(graph)

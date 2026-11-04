@@ -1,35 +1,76 @@
+import { limitAsync, sumBy } from 'es-toolkit'
 import { fromUint8Array } from 'js-base64'
 
-import type { DocumentDownload } from '@open-pencil/cloud/contract'
+import type { DocumentDownload, DocumentImageLink } from '@open-pencil/cloud/contract'
 
 import type { StorageTransferProgress } from '../types'
+import { assembleCloudDocument } from './images'
 
 export async function cloudChecksum(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes))
   return fromUint8Array(new Uint8Array(digest))
 }
 
-/** A revision's bytes from the object store, checked against what the server recorded. */
-export async function downloadCloudRevision(
-  download: DocumentDownload,
-  objectFetch: (input: string, init: RequestInit) => Promise<Response>,
-  options: { signal?: AbortSignal; onProgress?: (progress: StorageTransferProgress) => void } = {}
+type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>
+const IMAGE_DOWNLOAD_CONCURRENCY = 6
+
+/** An object's bytes from the store, checked against the size and checksum the server recorded. */
+async function fetchVerified(
+  target: DocumentDownload['download'],
+  expected: { byteSize: number; checksum: string },
+  objectFetch: ObjectFetch,
+  signal?: AbortSignal
 ): Promise<Uint8Array> {
-  const response = await objectFetch(download.download.url, {
-    method: download.download.method,
-    headers: download.download.headers,
-    signal: options.signal
+  const response = await objectFetch(target.url, {
+    method: target.method,
+    headers: target.headers,
+    signal
   })
   if (!response.ok) throw new Error(`Cloud document download failed with HTTP ${response.status}`)
   const bytes = new Uint8Array(await response.arrayBuffer())
   if (
-    bytes.byteLength !== download.byteSize ||
-    (await cloudChecksum(bytes)) !== download.checksum
+    bytes.byteLength !== expected.byteSize ||
+    (await cloudChecksum(bytes)) !== expected.checksum
   ) {
     throw new Error('The downloaded Cloud document does not match what the server stored')
   }
-  options.onProgress?.({ transferredBytes: bytes.byteLength, totalBytes: download.byteSize })
   return bytes
+}
+
+/** An image a live room names, from where the server linked it, checked against its record. */
+export function downloadCloudImage(
+  link: DocumentImageLink,
+  objectFetch: ObjectFetch,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
+  return fetchVerified(link.download, link, objectFetch, signal)
+}
+
+/** A revision as the editor opens it: its stored file with every image put back under its name. */
+export async function downloadCloudDocument(
+  download: DocumentDownload,
+  objectFetch: ObjectFetch,
+  options: { signal?: AbortSignal; onProgress?: (progress: StorageTransferProgress) => void } = {}
+): Promise<Uint8Array> {
+  const totalBytes = download.byteSize + sumBy(download.images, (image) => image.byteSize)
+  let transferredBytes = 0
+  const received = (bytes: Uint8Array) => {
+    transferredBytes += bytes.byteLength
+    options.onProgress?.({ transferredBytes, totalBytes })
+    return bytes
+  }
+  const fetchImage = limitAsync(
+    async (image: DocumentDownload['images'][number]) => ({
+      name: image.name,
+      bytes: received(await fetchVerified(image.download, image, objectFetch, options.signal))
+    }),
+    IMAGE_DOWNLOAD_CONCURRENCY
+  )
+  const [lean, ...images] = await Promise.all([
+    fetchVerified(download.download, download, objectFetch, options.signal).then(received),
+    ...download.images.map(fetchImage)
+  ])
+  return assembleCloudDocument(lean, images)
 }
 
 /**

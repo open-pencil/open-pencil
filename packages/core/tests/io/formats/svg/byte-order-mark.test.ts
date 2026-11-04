@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createSVGNodes } from '@open-pencil/core/io'
+import { createSVGNodes } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 const BOM = '\uFEFF'

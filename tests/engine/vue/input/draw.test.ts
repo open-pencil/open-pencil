@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor, type Tool } from '@open-pencil/core/editor'
+import { createEditor, type Editor, type Tool } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { handleDrawMove, startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
@@ -47,6 +47,31 @@ describe('draw creation previews', () => {
       } finally {
         editor.dispose()
       }
+    }
+  })
+
+  // FigJam: a drag-drawn shape's box lands on the board's 16-unit dot grid.
+  test('rounds both corners to the 16-unit grid on a board', () => {
+    const editor = createEditor()
+    try {
+      editor.setDocumentKind('board')
+      editor.setTool('SHAPE_WITH_TEXT')
+      const state: { drag: DragState | null } = { drag: null }
+      startShapeDraw(3.3, 50.4, editor, (drag) => {
+        state.drag = drag
+      })
+      const drag = state.drag
+      if (drag?.type !== 'draw') throw new Error('Expected drawing interaction')
+      handleDrawMove(drag, 30.7, 71.8, false)
+      drag.commit()
+      expect(editor.graph.getNode(drag.nodeId)).toMatchObject({
+        x: 0,
+        y: 48,
+        width: 32,
+        height: 16
+      })
+    } finally {
+      editor.dispose()
     }
   })
 

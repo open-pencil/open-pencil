@@ -10,7 +10,6 @@ import {
   diamondCapPoints,
   equilateralArrowPoints,
   isArrowCap,
-  lineArrowEndpoints,
   triangleCapPoints,
   trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
@@ -197,31 +196,6 @@ describe('arrowLinesSegments', () => {
 
     expect(first.to.x).toBeCloseTo(187.272, 3)
     expect(Math.abs(first.to.y)).toBeCloseTo(12.728, 3)
-  })
-})
-
-describe('lineArrowEndpoints', () => {
-  test('a horizontal line gets outward endpoints at both ends', () => {
-    const endpoints = lineArrowEndpoints(100, 0, 'ARROW_EQUILATERAL')
-
-    expect(endpoints).toHaveLength(2)
-    const start = endpointAt(endpoints, 0)
-    const end = endpointAt(endpoints, 100)
-    expect(Math.abs(start.angle)).toBeCloseTo(Math.PI, 5)
-    expect(end.angle).toBeCloseTo(0, 5)
-  })
-
-  test('a diagonal line points its endpoints along the line direction', () => {
-    const endpoints = lineArrowEndpoints(30, 40, 'ARROW_LINES')
-    const end = endpointAt(endpoints, 30)
-
-    expect(end.y).toBe(40)
-    expect(end.angle).toBeCloseTo(Math.atan2(40, 30), 5)
-  })
-
-  test('returns nothing for non-arrow caps', () => {
-    expect(lineArrowEndpoints(100, 0, 'ROUND')).toHaveLength(0)
-    expect(lineArrowEndpoints(100, 0, 'NONE')).toHaveLength(0)
   })
 })
 

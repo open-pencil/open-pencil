@@ -3,13 +3,14 @@ import { describe, expect, test } from 'bun:test'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { initCanvasKit } from '#cli/headless'
 import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
 import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -60,9 +61,9 @@ async function fixture(maxEntries = 8, maxUnits = 1000) {
 describe('text preparation cache', () => {
   test('does not repeatedly shape coverage when a dense scan exceeds paragraph capacity', async () => {
     const f = await fixture(8)
-    const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     f.provider.registerFont(data, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', data)
+    await fontManager.markLoaded('Inter', 'Regular', data)
     let builds = 0
     const ck: CanvasKit = {
       ...f.ck,
@@ -246,13 +247,15 @@ describe('text preparation cache', () => {
         fontSize: 20,
         fontWeight: 700,
         italic: true,
+        fontStyle: 'Condensed Bold',
         fontFeatures: [{ tag: 'liga', enabled: false }],
         fontVariations: [{ axis: 'wght', value: 700 }],
+        opticalSizeFromFontSize: false,
         textLanguage: 'ar',
         textDirection: 'RTL',
         textCase: 'UPPER',
-        letterSpacing: 2,
-        lineHeight: 30,
+        letterSpacing: pixelLength(2),
+        lineHeight: pixelLength(30),
         textAlignHorizontal: 'CENTER',
         leadingTrim: 'CAP_HEIGHT',
         textDecoration: 'UNDERLINE',

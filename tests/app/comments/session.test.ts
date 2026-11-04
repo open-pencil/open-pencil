@@ -5,13 +5,13 @@ import { shallowRef } from 'vue'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
+import type { CommentThread } from '@open-pencil/scene-graph'
 import {
   COMMENT_SORTS,
   listCommentThreads,
   readComments,
-  writeComments,
-  type CommentThread
-} from '@open-pencil/scene-graph'
+  writeComments
+} from '@open-pencil/scene-graph/comments'
 
 import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
 import { openDocumentRoom, roomForStore, leaveRoom } from '@/app/collab/rooms'
@@ -103,7 +103,13 @@ test('comments written to the document from elsewhere show up', async () => {
 test('a pin stays where its layer was when the layer is deleted, even if it was never drawn', async () => {
   const store = openDocument()
   const pageId = store.state.currentPageId
-  const rect = store.graph.createNode('RECTANGLE', pageId, { x: 100, y: 50, width: 80, height: 40 })
+  const rect = store.graph.createNode('RECTANGLE', pageId, {
+    x: 100,
+    y: 50,
+    width: 80,
+    height: 40,
+    fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
+  })
   const pinned = comment(store, 110, 55, 'on the rectangle')
   expect(pinned.nodeId).toBe(rect.id)
 
@@ -120,7 +126,10 @@ test('going to a comment opens its page and its thread', async () => {
   const store = openDocument()
   const first = store.state.currentPageId
   const added = comment(store, 40, 40, 'on page one')
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   await store.switchPage(store.graph.addPage('Second').id)
   expect(store.state.currentPageId).not.toBe(first)
 

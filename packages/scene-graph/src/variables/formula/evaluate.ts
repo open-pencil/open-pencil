@@ -1,4 +1,4 @@
-import type { VariableFormulaNode, VariableLiteral } from '@open-pencil/scene-graph'
+import type { VariableFormulaNode, VariableLiteral } from '#scene-graph/types'
 
 import { checkFormulaOperands, formulaValueType } from './check'
 import { applyFormulaOperator, isFormulaOperator } from './signatures'

@@ -10,12 +10,15 @@ export const TEXT_METRIC_FIELDS = [
   'letterSpacing',
   'styleRuns',
   'fontVariations',
+  'opticalSizeFromFontSize',
   'fontFeatures',
   'textParagraphs',
   'listSpacing',
   'paragraphSpacing',
   'paragraphIndent',
-  'hangingList'
+  'hangingList',
+  // A cap-height trim drops the space above and below the glyphs, so the text measures shorter.
+  'leadingTrim'
 ] as const satisfies readonly (keyof SceneNode)[]
 
 export const TEXT_SHAPING_FIELDS = [
@@ -58,5 +61,6 @@ export const TEXT_STYLE_FIELDS = [
   'textCase',
   ...TEXT_DECORATION_FIELDS,
   'fontFeatures',
-  'fontVariations'
+  'fontVariations',
+  'opticalSizeFromFontSize'
 ] as const satisfies readonly (keyof SceneNode)[]

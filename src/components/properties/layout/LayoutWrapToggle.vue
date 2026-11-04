@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 

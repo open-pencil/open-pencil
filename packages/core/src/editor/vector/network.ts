@@ -1,0 +1,109 @@
+import type { VectorNetwork } from '@open-pencil/scene-graph'
+
+import type { EditorContext } from '#core/editor/types'
+import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '#core/vector'
+
+import { pushNodeEditHistory } from './history'
+import type { NodeEditState } from './types'
+
+export function setNodeEditNetwork(es: NodeEditState, network: VectorNetwork) {
+  es.vertices = network.vertices.map((v) => ({ ...v }))
+  es.segments = network.segments.map((s) => ({
+    ...s,
+    tangentStart: { ...s.tangentStart },
+    tangentEnd: { ...s.tangentEnd }
+  }))
+  es.regions = network.regions.map((r) => ({
+    windingRule: r.windingRule,
+    loops: r.loops.map((l) => [...l])
+  }))
+}
+
+export function getLiveNetwork(es: NodeEditState): VectorNetwork {
+  return {
+    vertices: es.vertices.map((v) => ({ ...v })),
+    segments: es.segments.map((s) => ({
+      ...s,
+      tangentStart: { ...s.tangentStart },
+      tangentEnd: { ...s.tangentEnd }
+    })),
+    regions: es.regions.map((r) => ({
+      windingRule: r.windingRule,
+      loops: r.loops.map((l) => [...l])
+    }))
+  }
+}
+
+export function createVectorEditNetworkActions(
+  ctx: EditorContext,
+  getNodeEditState: () => NodeEditState | null
+) {
+  const nodeEditHitThreshold = 8
+
+  function nodeEditConnectEndpoints(a: number, b: number) {
+    const es = getNodeEditState()
+    if (!es || a === b) return
+    if (a < 0 || b < 0 || a >= es.vertices.length || b >= es.vertices.length) return
+    pushNodeEditHistory(es)
+
+    const removeIndex = a
+    const keepIndex = b > a ? b - 1 : b
+    const remap = (idx: number): number => {
+      if (idx === removeIndex) return keepIndex
+      return idx > removeIndex ? idx - 1 : idx
+    }
+
+    const nextVertices = es.vertices.filter((_, idx) => idx !== removeIndex)
+    const nextSegments = es.segments
+      .map((seg) => ({
+        ...seg,
+        tangentStart: { ...seg.tangentStart },
+        tangentEnd: { ...seg.tangentEnd },
+        start: remap(seg.start),
+        end: remap(seg.end)
+      }))
+      .filter((seg) => seg.start !== seg.end)
+
+    setNodeEditNetwork(es, { vertices: nextVertices, segments: nextSegments, regions: [] })
+    es.selectedVertexIndices = new Set([keepIndex])
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
+    es.selectedHandles = new Set()
+    ctx.requestRender()
+  }
+
+  /** Splits the segment under a canvas point; false when no segment is near enough. */
+  function nodeEditAddVertex(cx: number, cy: number): boolean {
+    const es = getNodeEditState()
+    if (!es) return false
+    const live = getLiveNetwork(es)
+    const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / ctx.state.zoom)
+    if (!nearest) return false
+    pushNodeEditHistory(es)
+    const split = splitSegmentAt(live, nearest.segmentIndex, nearest.t)
+    setNodeEditNetwork(es, split.network)
+    es.selectedVertexIndices = new Set([split.newVertexIndex])
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
+    es.selectedHandles = new Set()
+    ctx.requestRender()
+    return true
+  }
+
+  function nodeEditRemoveVertex(vertexIndex: number) {
+    const es = getNodeEditState()
+    if (!es) return
+    const live = getLiveNetwork(es)
+    const next = removeVertex(live, vertexIndex)
+    if (!next) return
+    pushNodeEditHistory(es)
+    setNodeEditNetwork(es, next)
+    es.selectedVertexIndices = new Set()
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
+    es.selectedHandles = new Set()
+    ctx.requestRender()
+  }
+
+  return { nodeEditConnectEndpoints, nodeEditAddVertex, nodeEditRemoveVertex }
+}

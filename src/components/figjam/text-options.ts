@@ -4,8 +4,8 @@ import {
   isFigJamTypeface,
   type FigJamTextSize,
   type FigJamTypeface
-} from '@open-pencil/scene-graph'
-import { useFigJamMessages } from '@open-pencil/vue'
+} from '@open-pencil/scene-graph/figjam'
+import { useFigJamMessages } from '@open-pencil/vue/i18n'
 
 /** FigJam's text sizes and typefaces as select options, shared by sticky notes and shapes. */
 export function useFigJamTextOptions() {

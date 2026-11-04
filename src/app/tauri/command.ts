@@ -27,8 +27,21 @@ export function resolvePlatformCommand(
   args: string[] = [],
   userAgent: string = detectUserAgent()
 ): { command: string; args: string[] } {
+  return resolveScopedCommand(command, command, args, userAgent)
+}
+
+/**
+ * Like `resolvePlatformCommand`, for a scope entry named apart from the program it runs, such
+ * as `claude-agent-acp-sign-in`, which pins different arguments for `claude-agent-acp`.
+ */
+export function resolveScopedCommand(
+  scope: string,
+  program: string,
+  args: string[] = [],
+  userAgent: string = detectUserAgent()
+): { command: string; args: string[] } {
   if (userAgent.includes('Windows')) {
-    return { command: `cmd-${command}`, args: ['/c', command, ...args] }
+    return { command: `cmd-${scope}`, args: ['/c', program, ...args] }
   }
-  return { command, args }
+  return { command: scope, args }
 }

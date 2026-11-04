@@ -9,6 +9,7 @@ import { mapInstanceSourceChildren } from '#fig/instance-overrides/source-childr
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 test('style claims read from a file survive edits to the component, as in Figma', () => {
   const changes: NodeChange[] = [
@@ -56,7 +57,11 @@ test('style claims read from a file survive edits to the component, as in Figma'
   if (!component) throw new Error('Missing component')
   const [rect, text] = graph.getChildren(component.materialized.root.id)
   graph.updateNode(rect.id, { cornerRadius: 4, strokeWeight: 2, strokeAlign: 'OUTSIDE' })
-  graph.updateNode(text.id, { fontWeight: 300, lineHeight: 24, letterSpacing: 1 })
+  graph.updateNode(text.id, {
+    fontWeight: 300,
+    lineHeight: pixelLength(24),
+    letterSpacing: pixelLength(1)
+  })
   graph.syncInstances(component.materialized.root.id)
 
   const [copyRect, copyText] = graph.getChildren(result.root.id)
@@ -65,7 +70,11 @@ test('style claims read from a file survive edits to the component, as in Figma'
     3,
     'OUTSIDE'
   ])
-  expect([copyText.fontWeight, copyText.lineHeight, copyText.letterSpacing]).toEqual([700, 32, 1])
+  expect([copyText.fontWeight, copyText.lineHeight, copyText.letterSpacing]).toEqual([
+    700,
+    pixelLength(32),
+    pixelLength(1)
+  ])
 })
 
 test('styled ranges claimed with the characters stay when the component restyles its text', () => {

@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { useHead } from '@unhead/vue'
 import { useEventListener, whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   aiSetupDialogOpen,
@@ -14,7 +16,7 @@ import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
-import { shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
+import { openingCloudLink, shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
@@ -22,10 +24,10 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
+import { offerDonationPrompt, startDonationClock } from '@/app/donation'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { recentFilesAvailable } from '@/app/recent-files/preferences'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
@@ -33,8 +35,9 @@ import { useEditorMenu } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
 import {
   activeTab,
-  createDocumentInCurrentTab,
   createHomeTab,
+  ensureHomeTab,
+  createDocumentTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
@@ -43,7 +46,7 @@ import {
 } from '@/app/tabs'
 import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
-import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
+import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import { CloudVersionDialog } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -52,6 +55,7 @@ import FileApiBanner from '@/components/FileApiBanner.vue'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
+import LoadingScreen from '@/components/shell/LoadingScreen.vue'
 import TabBar from '@/components/TabBar.vue'
 import { IS_BROWSER } from '@/constants'
 
@@ -77,19 +81,41 @@ watch(
 )
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
-const shouldCreateHome =
-  route.path === '/' && !appRuntimeConfig.test && !route.meta.demo && recentFilesAvailable()
+// Home is pinned first everywhere but tests and the demo, and opens in front, as Figma's does:
+// it is where a design or a board is started, with or without recent files to list.
+const pinHome = !appRuntimeConfig.test && !route.meta.demo
+const showHomeFirst = route.path === '/' && pinHome
+// The view stays mounted from /demo to /, so Home is pinned once a route that has it is reached.
+watch(
+  () => !appRuntimeConfig.test && !route.meta.demo,
+  (pins) => {
+    if (pins) ensureHomeTab()
+  }
+)
+/**
+ * A Cloud link's first tab is Home, beside which the document it opens gets its own tab; Home is
+ * also where a link that fails or waits for a sign-in leaves the person, never an empty document.
+ */
+const opensCloudLink = ['documentId', 'shareId', 'invitationId'].some(
+  (param) => typeof route.params[param] === 'string'
+)
 const { collaboration } = useI18n()
 const joinRoomFromInput = useJoinRoom()
 
-/** A share link opens its room in a tab of its own, so nothing editable shows before it. */
+/**
+ * A share link opens its room in a tab of its own, so nothing editable shows before it. Home, where
+ * the app has one, is pinned first behind it.
+ */
 function openFirstTab(): Tab {
   const roomId = typeof route.params.roomId === 'string' ? route.params.roomId : null
+  if (pinHome) createHomeTab()
   if (roomId) {
     if (joinRoomFromInput(roomId) && activeTab.value) return activeTab.value
     toast.error(collaboration.value.invalidRoomLink)
+    // A link that fails leaves the person on Home, not in an empty design.
+    if (pinHome) return createHomeTab()
   }
-  return shouldCreateHome ? createHomeTab() : createTab()
+  return showHomeFirst || opensCloudLink ? createHomeTab() : createTab()
 }
 
 // Block-scoped so the view does not keep the first tab's store after that tab closes.
@@ -114,8 +140,12 @@ const welcomeShown =
     ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
-// One question per surface: a first run is asked about usage stats once the welcome closes.
+// Release builds ask for donations; development and test runs would only be interrupted.
+const asksForDonations = import.meta.env.PROD && !appRuntimeConfig.test
+// One question per launch: a first run is asked about usage stats once the welcome closes, and
+// a later launch about usage stats if still unanswered, otherwise about a donation once it is due.
 if (welcomeShown) {
+  startDonationClock()
   whenever(
     () => !aiSetupDialogOpen.value,
     async () => {
@@ -125,7 +155,16 @@ if (welcomeShown) {
     { once: true }
   )
 } else {
-  void sharingStarted.then(() => offerUsageStatsPrompt('prompt'))
+  // Asked once the window shows what it opened, not over the loading screen.
+  whenever(
+    () => !openingCloudLink.value,
+    async () => {
+      await sharingStarted
+      offerUsageStatsPrompt('prompt')
+      if (asksForDonations && !usageStatsPrompt.value) offerDonationPrompt()
+    },
+    { once: true, immediate: true }
+  )
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
@@ -176,7 +215,7 @@ function openDocumentPaths(): string[] {
  * Drops the link params through the router, not through `history` directly: the router
  * keeps its own copy of the current URL in `history.state` and re-applies it on the next
  * navigation, which would put `file` and `node` back into the entry. Route and hash are
- * preserved, so the link works on `/`, `/share/:id` and `/demo` alike.
+ * preserved, so the link works on `/`, `/rooms/:id` and `/demo` alike.
  */
 function stripWebLinkParams(): void {
   void router.replace({
@@ -193,7 +232,6 @@ async function selectNodeByName(name: string): Promise<boolean> {
 }
 
 async function openPendingAssociatedFiles(): Promise<void> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   await openPendingFiles(files, {
     openPaths: openDocumentPaths,
@@ -213,7 +251,6 @@ function drainPendingOpens(): Promise<void> {
 
 async function bindAssociatedFileOpen(): Promise<void> {
   if (!isTauri()) return
-  const { listen } = await import('@tauri-apps/api/event')
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void drainPendingOpens()
   })
@@ -270,8 +307,16 @@ onUnmounted(() => {
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />
-    <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
+    <HomeWorkspace
+      v-show="activeTab && activeTab.kind !== 'document'"
+      @new-document="createDocumentTab"
+    />
     <CloudVersionDialog />
-    <EditorWorkspace v-if="shown && shown.tab.kind !== 'home'" :key="shown.key" :tab="shown.tab" />
+    <EditorWorkspace
+      v-if="shown && shown.tab.kind === 'document'"
+      :key="shown.key"
+      :tab="shown.tab"
+    />
+    <LoadingScreen v-if="openingCloudLink" />
   </div>
 </template>

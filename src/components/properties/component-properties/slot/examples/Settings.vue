@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue'
+import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue/controls/slots'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
@@ -37,7 +37,7 @@ function setPreferred(id: string, preferred: boolean) {
 
 <template>
   <div class="flex gap-6">
-    <div class="w-[240px] overflow-hidden rounded-lg border border-border bg-panel">
+    <div class="w-60 overflow-hidden rounded-lg border border-border bg-panel">
       <PanelSection label="Slots">
         <div class="flex items-center gap-1">
           <span class="flex-1 truncate text-xs text-surface">{{ slot.name }}</span>

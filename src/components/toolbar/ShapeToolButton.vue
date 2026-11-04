@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { toolbarToolTestId, useShapeWithText, useToolMessages } from '@open-pencil/vue'
+import { useShapeWithText } from '@open-pencil/vue/controls/shape-with-text'
+import { useToolMessages } from '@open-pencil/vue/i18n'
+import { toolbarToolTestId } from '@open-pencil/vue/testing'
 
 import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import ShapeKindPicker from '@/components/shapes/ShapeKindPicker.vue'

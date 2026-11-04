@@ -4,7 +4,8 @@ import { CLOUD_FEATURE_KEYS, seedSharing, sharingWithPolicy } from '#cloud-tests
 import {
   DocumentForbiddenError,
   DocumentNotFoundError,
-  DocumentShareInvalidError
+  DocumentShareInvalidError,
+  DocumentShareSignInRequiredError
 } from '#cloud/server'
 
 describe('document sharing capabilities integration', () => {
@@ -79,32 +80,27 @@ describe('document sharing capabilities integration', () => {
     }
   })
 
-  test('enforces capability policy on share updates', async () => {
+  test('lets edit links exist whatever guests may do, and needs links for any update', async () => {
     const context = await seedSharing()
     try {
       const enabled = sharingWithPolicy(context, {
-        [CLOUD_FEATURE_KEYS.capabilityLinks]: true,
-        [CLOUD_FEATURE_KEYS.anonymousEdit]: false
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestEdit]: false
       })
       const capability = await enabled.createShare('owner', context.documentId, {
         permission: 'view'
       })
-      await expect(
-        enabled.updateShare('owner', context.documentId, capability.share.id, {
-          permission: 'edit'
-        })
-      ).rejects.toBeInstanceOf(DocumentForbiddenError)
       expect(
         await enabled.updateShare('owner', context.documentId, capability.share.id, {
-          permission: 'view'
+          permission: 'edit'
         })
-      ).toMatchObject({ permission: 'view' })
+      ).toMatchObject({ permission: 'edit' })
       for (const deploymentMode of ['official', 'self-hosted'] as const) {
         const disabled = sharingWithPolicy(
           context,
           {
-            [CLOUD_FEATURE_KEYS.capabilityLinks]: false,
-            [CLOUD_FEATURE_KEYS.anonymousEdit]: true
+            [CLOUD_FEATURE_KEYS.links]: false,
+            [CLOUD_FEATURE_KEYS.guestEdit]: true
           },
           deploymentMode
         )
@@ -113,6 +109,32 @@ describe('document sharing capabilities integration', () => {
             permission: 'view'
           })
         ).rejects.toBeInstanceOf(DocumentForbiddenError)
+      }
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('asks guests to sign in where the server turns them away, and lets members in', async () => {
+    const context = await seedSharing()
+    try {
+      const closed = sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestView]: false,
+        [CLOUD_FEATURE_KEYS.guestEdit]: false
+      })
+      for (const permission of ['view', 'edit'] as const) {
+        const capability = await closed.createShare('owner', context.documentId, { permission })
+        const input = { secret: capability.secret, guestName: 'Visitor' }
+        await expect(closed.resolveShare(capability.share.id, input)).rejects.toBeInstanceOf(
+          DocumentShareSignInRequiredError
+        )
+        const member = await closed.resolveShare(capability.share.id, input, {
+          userId: 'alice',
+          name: 'Alice',
+          email: 'alice@example.com'
+        })
+        expect(member).toMatchObject({ permission, principal: { kind: 'user', userId: 'alice' } })
       }
     } finally {
       await context.runtime.close()

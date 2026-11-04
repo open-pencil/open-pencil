@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'bun:test'
+import { describe, expect, test, beforeEach, jest } from 'bun:test'
 
 import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
 
@@ -8,7 +8,9 @@ import {
   requestPermissionFromUser,
   respondToPermission,
   rejectCurrentPermission
-} from '@/app/ai/acp/permission'
+} from '@/app/ai/agents/acp/permission'
+import { createOwnToolApproval } from '@/app/ai/agents/acp/tools'
+import { AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
 
 function makeRequest(
   options: { optionId: string; kind: string; name: string }[] = [
@@ -145,5 +147,71 @@ describe('acp-permission', () => {
     const result = await promise
     expect(selectedOptionId(result)).toBe('reject')
     expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('a request left unanswered calls onUnanswered once, and an answered one never', () => {
+    jest.useFakeTimers()
+    try {
+      let unanswered = 0
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS - 1)
+      expect(unanswered).toBe(0)
+      jest.advanceTimersByTime(1)
+      expect(unanswered).toBe(1)
+      respondToPermission('allow')
+
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      respondToPermission('allow')
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS)
+      expect(unanswered).toBe(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('permission for OpenPencil’s own tools', () => {
+  test('a call to OpenPencil’s server is allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'open-pencil', toolName: 'get_current_page', args: {} }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('Grok Build’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'use_tool',
+      rawInput: { tool_name: 'open-pencil__get_node', tool_input: { id: '1:2' } },
+      _meta: { 'x.ai/tool': { name: 'use_tool' } }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('another server’s calls and the agent’s own tools are left to the person', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'github', toolName: 'create_issue', args: {} }
+    })
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-2',
+      title: 'rm -rf build',
+      kind: 'execute',
+      rawInput: { command: 'rm -rf build' }
+    })
+    expect(approval.answer(makeRequest())).toBeNull()
+    expect(approval.answer({ ...makeRequest(), toolCall: { toolCallId: 'tc-2' } })).toBeNull()
   })
 })

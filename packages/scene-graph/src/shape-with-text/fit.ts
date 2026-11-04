@@ -12,69 +12,80 @@ export interface LabelBox {
   height: number
 }
 
-/** Fractions of the box, left/top/right/bottom, left free around the label so it stays inside the shape. */
-const LABEL_INSET: Partial<Record<ShapeWithTextType, readonly [number, number, number, number]>> = {
-  ELLIPSE: [0.15, 0.15, 0.15, 0.15],
-  SUMMING_JUNCTION: [0.15, 0.15, 0.15, 0.15],
-  OR: [0.15, 0.15, 0.15, 0.15],
-  TRIANGLE_UP: [0.25, 0.45, 0.25, 0.05],
-  TRIANGLE_DOWN: [0.25, 0.05, 0.25, 0.45],
-  TRAPEZOID: [0.2, 0, 0.2, 0],
-  ENG_QUEUE: [0.15, 0, 0.3, 0],
-  ENG_FOLDER: [0, 0.18, 0, 0],
-  PREDEFINED_PROCESS: [0.1, 0, 0.1, 0],
-  SHIELD: [0.1, 0, 0.1, 0.25],
-  DOCUMENT_SINGLE: [0, 0, 0, 0.15],
-  DOCUMENT_MULTIPLE: [0, 0.12, 0.12, 0.15],
-  MANUAL_INPUT: [0, 0.25, 0, 0],
-  HEXAGON: [0.2, 0, 0.2, 0],
-  CHEVRON: [0.25, 0, 0.25, 0],
-  PENTAGON: [0.15, 0.3, 0.15, 0],
-  OCTAGON: [0.1, 0.1, 0.1, 0.1],
-  STAR: [0.3, 0.35, 0.3, 0.25],
-  PLUS: [0.33, 0.33, 0.33, 0.33],
-  ARROW_LEFT: [0.3, 0.25, 0, 0.25],
-  ARROW_RIGHT: [0, 0.25, 0.3, 0.25],
-  SPEECH_BUBBLE: [0, 0, 0, 0.2],
-  INTERNAL_STORAGE: [0.15, 0.15, 0, 0]
+type Insets = readonly [left: number, top: number, right: number, bottom: number]
+
+/** The 16 px FigJam leaves around a label, 8 px on a shape less than 100 px on a side. */
+function labelPadding(width: number, height: number): number {
+  return Math.min(width, height) < 100 ? 8 : 16
 }
 
-/** Padding FigJam leaves around a label, 16 px, less on small shapes. */
-function labelPadding(size: number): number {
-  return Math.min(16, size * 0.1)
+/** FigJam doubles some kinds' insets on a shape 300 px wide or more. */
+function wide(width: number): boolean {
+  return width >= 300
 }
 
-/** Left, top, right and bottom insets of the label, in px, for kinds FigJam was measured on. */
-function measuredInsets(
-  type: ShapeWithTextType,
-  width: number,
-  height: number
-): readonly [number, number, number, number] | null {
-  const padX = labelPadding(width)
-  const padY = labelPadding(height)
-  switch (type) {
-    case 'SQUARE':
-    case 'ROUNDED_RECTANGLE':
-      return [padX, padY, padX, padY]
-    case 'DIAMOND': {
-      // The middle half, 4 px in from it.
-      const x = width * 0.25 + Math.min(4, width * 0.02)
-      const y = height * 0.25 + Math.min(4, height * 0.02)
-      return [x, y, x, y]
-    }
-    case 'PARALLELOGRAM_RIGHT':
-    case 'PARALLELOGRAM_LEFT': {
-      const x = Math.min(height * 0.35 + padX, width * 0.4)
-      return [x, padY, x, padY]
-    }
-    case 'ENG_DATABASE': {
-      // Below the cap and its rim, above the bottom curve.
-      const cap = databaseCap(width, height)
-      return [padX, cap * 2 + padY, padX, cap]
-    }
-    default:
-      return null
-  }
+type InsetRule = (width: number, height: number, padding: number) => Insets
+
+/** A triangle's label sits under its middle, 4 px in from its sides; returns its top and bottom. */
+function triangleInsets(width: number, height: number): readonly [apex: number, base: number] {
+  const lean = (4 * height) / width
+  return [height / 2 + lean, 8 + lean]
+}
+
+/** The rectangle inscribed in an ellipse, its width rounded to a whole pixel. */
+const ellipseInsets: InsetRule = (width, height) => {
+  const label = Math.round(width / Math.SQRT2)
+  const x = (width - label) / 2
+  const y = (height - height * Math.sqrt(1 - (label / width) ** 2)) / 2
+  return [x, y, x, y]
+}
+
+/**
+ * The px FigJam leaves free on each side of a label in each kind, measured from its saved label
+ * layouts. Insets that scale do so with the side they lie along.
+ */
+const LABEL_INSETS: Record<ShapeWithTextType, InsetRule> = {
+  SQUARE: (_w, _h, p) => [p, p, p, p],
+  ROUNDED_RECTANGLE: (w, _h, p) => {
+    const inset = wide(w) ? p * 2 : p
+    return [inset, inset, inset, inset]
+  },
+  ELLIPSE: ellipseInsets,
+  SUMMING_JUNCTION: ellipseInsets,
+  OR: ellipseInsets,
+  DIAMOND: (w, h) => [w / 4 + 4, h / 4 + 4, w / 4 + 4, h / 4 + 4],
+  TRIANGLE_UP: (w, h) => {
+    const [apex, base] = triangleInsets(w, h)
+    return [w / 4, apex, w / 4, base]
+  },
+  TRIANGLE_DOWN: (w, h) => {
+    const [apex, base] = triangleInsets(w, h)
+    return [w / 4, base, w / 4, apex]
+  },
+  PARALLELOGRAM_RIGHT: (w, _h, p) => [(13 * w) / 62 + 6, p, (13 * w) / 62 + 6, p],
+  PARALLELOGRAM_LEFT: (w, _h, p) => [(13 * w) / 62 + 6, p, (13 * w) / 62 + 6, p],
+  // Below the cap and its rim, above the bottom curve.
+  ENG_DATABASE: (w, h, p) => [p, databaseCap(w, h) * 2 + p, p, databaseCap(w, h)],
+  ENG_QUEUE: (_w, _h, p) => [24, p, 64, p],
+  ENG_FILE: (_w, _h, p) => [p, 64, p, 64],
+  ENG_FOLDER: (_w, _h, p) => [p, 60, p, p],
+  TRAPEZOID: (w, _h, p) => [(16 * w) / 121, p, (16 * w) / 121, p],
+  HEXAGON: (w, _h, p) => [(8 * w) / 121, p, (8 * w) / 121, p],
+  PREDEFINED_PROCESS: (w) => (wide(w) ? [48, 24, 48, 24] : [32, 16, 32, 16]),
+  INTERNAL_STORAGE: (w) => (wide(w) ? [40, 40, 24, 24] : [24, 24, 16, 16]),
+  SHIELD: (_w, h, p) => [p, h * 0.075, p, h * 0.1977],
+  DOCUMENT_SINGLE: (_w, _h, p) => [p, p, p, 28],
+  DOCUMENT_MULTIPLE: (_w, _h, p) => [32, p, p, 28],
+  MANUAL_INPUT: (_w, _h, p) => [p, 24, p, p],
+  CHEVRON: (_w, _h, p) => [43, p, 43, p],
+  PENTAGON: (w, h) => [w * 0.115, h * 0.27403, w * 0.115, h * 0.08454],
+  OCTAGON: (w, h) => [w * 0.11466, h * 0.1193, w * 0.11466, h * 0.1193],
+  STAR: (w, h) => [w * 0.19531, h * 0.3028, w * 0.19531, h * 0.109],
+  PLUS: (_w, h, p) => [p, (h * 5) / 18, p, (h * 5) / 18],
+  ARROW_LEFT: (_w, h, p) => [54, h * 0.25465, p, h * 0.25465],
+  ARROW_RIGHT: (_w, h, p) => [p, h * 0.25465, 54, h * 0.25465],
+  // Above the tail, an eighth of the shape and at most 32 px tall.
+  SPEECH_BUBBLE: (w, h, p) => [p, p, p, p + Math.min(32, Math.min(w, h) / 8)]
 }
 
 /** Where a shape's label sits inside its `width` × `height` box. */
@@ -83,15 +94,9 @@ export function shapeWithTextLabelBox(
   width: number,
   height: number
 ): LabelBox {
-  const measured = measuredInsets(type, width, height)
-  const [left, top, right, bottom] =
-    measured ??
-    (LABEL_INSET[type] ?? [0, 0, 0, 0]).map((free, side) => {
-      const size = side % 2 === 0 ? width : height
-      return size * free + labelPadding(size)
-    })
-  const x = Math.min(left, width / 2)
-  const y = Math.min(top, height / 2)
+  const [left, top, right, bottom] = LABEL_INSETS[type](width, height, labelPadding(width, height))
+  const x = insetWithin(left, right, width)
+  const y = insetWithin(top, bottom, height)
   return {
     x,
     y,
@@ -100,76 +105,50 @@ export function shapeWithTextLabelBox(
   }
 }
 
-/** Kinds whose label area shrinks towards their corners; they grow in both directions to stay in shape. */
-const GROWS_IN_PROPORTION = new Set<ShapeWithTextType>([
-  'ELLIPSE',
-  'DIAMOND',
-  'TRIANGLE_UP',
-  'TRIANGLE_DOWN',
-  'HEXAGON',
-  'PENTAGON',
-  'OCTAGON',
-  'STAR',
-  'PLUS',
-  'SUMMING_JUNCTION',
-  'OR'
-])
+/** The inset before a label, its share of `size` when both insets do not fit in it. */
+function insetWithin(before: number, after: number, size: number): number {
+  return before + after <= size ? before : (size * before) / (before + after)
+}
 
 /** Measures a label wrapped at `maxWidth`; its height is what the wrapped lines take. */
 export type LabelMeasure = (maxWidth: number) => { width: number; height: number }
 
-export interface ShapeWithTextFit {
-  /** The size the shape was given. */
-  width: number
-  height: number
-  /** The width of the label's longest word, which is never split. */
-  longestWord: number
-  measure: LabelMeasure
-}
-
 const LARGEST = 100_000
 
-/** The smallest `value` from `from` up for which `fits` holds, found by doubling then halving. */
-function smallestFitting(from: number, fits: (value: number) => boolean): number {
-  if (fits(from)) return from
-  let low = from
-  let high = Math.max(from * 2, from + 16)
+/** Whether a kind grows for its label; FigJam keeps summing junctions and ors round. */
+export function shapeWithTextGrows(type: ShapeWithTextType): boolean {
+  return type !== 'SUMMING_JUNCTION' && type !== 'OR'
+}
+
+/**
+ * The height a `width`-wide shape of `type` takes for its label, as FigJam fits it: the height it
+ * was given while the label fits its label box, else the smallest whole height whose label box
+ * holds the label. FigJam never widens a shape for its label; a word too long for it breaks.
+ */
+export function fitShapeWithTextHeight(
+  type: ShapeWithTextType,
+  width: number,
+  height: number,
+  measure: LabelMeasure
+): number {
+  const fits = (h: number) => {
+    const box = shapeWithTextLabelBox(type, width, h)
+    return measure(box.width).height <= box.height
+  }
+  if (width <= 0 || height <= 0 || !shapeWithTextGrows(type) || fits(height)) return height
+  let low = height
+  let high = Math.max(height * 2, height + 16)
   while (!fits(high)) {
     low = high
     high *= 2
     if (high > LARGEST) return LARGEST
   }
-  while (high - low > 0.5) {
-    const middle = (low + high) / 2
+  // The smallest whole height that fits, above a height that does not.
+  low = Math.floor(low)
+  while (high - low > 1) {
+    const middle = Math.floor((low + high) / 2)
     if (fits(middle)) high = middle
     else low = middle
   }
   return Math.ceil(high)
-}
-
-/**
- * The size a shape of `type` takes for its label, as FigJam fits it: it keeps the size it was
- * given while the label fits, never splits a word (a word too wide widens the shape just enough),
- * and otherwise grows taller. Kinds whose label area narrows at their corners, such as ellipses and
- * diamonds, grow in both directions instead, so they keep their proportions.
- */
-export function fitShapeWithText(
-  type: ShapeWithTextType,
-  { width, height, longestWord, measure }: ShapeWithTextFit
-): { width: number; height: number } {
-  const wordFits = (w: number, h: number) => shapeWithTextLabelBox(type, w, h).width >= longestWord
-  const fits = (w: number, h: number) => {
-    const box = shapeWithTextLabelBox(type, w, h)
-    return box.width >= longestWord && measure(box.width).height <= box.height
-  }
-  if (width <= 0 || height <= 0 || fits(width, height)) return { width, height }
-  if (GROWS_IN_PROPORTION.has(type)) {
-    // Searched in pixels of width, not as a scale, so it grows as little as the label needs.
-    const ratio = height / width
-    const fittedWidth = smallestFitting(width, (w) => fits(w, w * ratio) || w >= LARGEST)
-    return { width: fittedWidth, height: Math.ceil(fittedWidth * ratio) }
-  }
-  const fittedWidth = smallestFitting(width, (w) => wordFits(w, height) || w >= LARGEST)
-  const fittedHeight = smallestFitting(height, (h) => fits(fittedWidth, h) || h >= LARGEST)
-  return { width: fittedWidth, height: fittedHeight }
 }

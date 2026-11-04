@@ -1,5 +1,4 @@
-import { createEditor } from '@open-pencil/core/editor'
-import type { Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 
 export function setupEditorPage() {
   const editor = createEditor()

@@ -1,7 +1,7 @@
 import { useClipboard, useShare } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 /** How a link went out: through the system share sheet, onto the clipboard, or not at all. */
 export type SentLink = 'shared' | 'copied' | 'cancelled'

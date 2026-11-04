@@ -7,7 +7,11 @@ import { StreamLanguage } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { tags } from '@lezer/highlight'
 
-import { formulaTokens, readFormulaToken, type FormulaTokenKind } from '@open-pencil/scene-graph'
+import {
+  formulaTokens,
+  readFormulaToken,
+  type FormulaTokenKind
+} from '@open-pencil/scene-graph/variables'
 
 import { nodeText, tokenBefore, type SyntaxNode } from './syntax'
 import type { ExpressionDialect, ReferenceCompletion } from './types'

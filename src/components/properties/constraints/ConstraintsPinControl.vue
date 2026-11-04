@@ -2,13 +2,14 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { constraintPins, useI18n } from '@open-pencil/vue'
-import type {
-  ConstraintsControlActions,
-  ConstraintAxis,
-  ConstraintEdge,
-  ConstraintValue
-} from '@open-pencil/vue'
+import {
+  constraintPins,
+  type ConstraintAxis,
+  type ConstraintEdge,
+  type ConstraintValue
+} from '@open-pencil/vue/controls/constraints'
+import { useI18n } from '@open-pencil/vue/i18n'
+import type { ConstraintsControlActions } from '@open-pencil/vue/primitives/ConstraintsControl'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import constraintsTheme from '@/theme/constraints'

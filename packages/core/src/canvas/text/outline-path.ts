@@ -1,6 +1,6 @@
 import type { PathBuilder } from 'canvaskit-wasm'
 
-import type { OutlineCommand } from '#core/text/opentype'
+import type { OutlineCommand } from '#core/text/font/glyphs'
 
 /** Appends an outline command, offset by `xOffset` and `yOffset`, to a path being built. */
 export function appendOutlineCommand(

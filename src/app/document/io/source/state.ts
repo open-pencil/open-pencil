@@ -2,6 +2,7 @@ import { shallowRef } from 'vue'
 
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import { isTauri } from '@/app/tauri/env'
 
 export function createDocumentSourceState() {
   // Reactive, so the File menu follows a document saved to a file mid-session.
@@ -35,6 +36,12 @@ export function createDocumentSourceState() {
     setStorageBinding: (binding: StorageDocumentBinding | null) => {
       storageBinding.value = binding
     },
+    /**
+     * Whether saving writes in place: to storage, a file the browser granted, or a desktop file. A
+     * browser document's path is the URL it was opened from, which nothing can write to.
+     */
+    hasWritableSource: () =>
+      !!storageBinding.value || !!fileHandle.value || (!!filePath.value && isTauri()),
     getSavedVersion: () => savedVersion,
     setSavedVersion: (version: number) => {
       savedVersion = version

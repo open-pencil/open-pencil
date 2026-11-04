@@ -1,11 +1,8 @@
 import type { Fill, NodeType, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import {
-  DEFAULT_STROKE_WEIGHT,
-  figJamColor,
-  figJamPairedStroke,
-  SHAPE_WITH_TEXT_SIZE
-} from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { figJamColor, figJamPairedStroke } from '@open-pencil/scene-graph/figjam'
+import { SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-graph/generated'
 
 import {
   BLACK,
@@ -16,6 +13,14 @@ import {
   SECTION_DEFAULT_STROKE,
   type InterfaceTheme
 } from '#core/constants'
+import type { EditorState } from '#core/editor/types'
+
+/** The theme a document's new layers are painted for: a FigJam board is always light. */
+export function layerTheme(
+  state: Pick<EditorState, 'documentKind' | 'theme'>
+): InterfaceTheme | undefined {
+  return state.documentKind === 'board' ? 'light' : state.theme
+}
 
 const BLACK_FILL: Fill = { type: 'SOLID', color: BLACK, opacity: 1, visible: true }
 const BLACK_STROKE: Stroke = { ...BLACK_FILL, weight: DEFAULT_STROKE_WEIGHT, align: 'CENTER' }

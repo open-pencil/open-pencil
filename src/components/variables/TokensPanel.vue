@@ -3,17 +3,21 @@ import { useElementSize } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import type { VariableTokenFields } from '@open-pencil/core/editor'
+import type { VariableTokenFields } from '@open-pencil/core'
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import {
-  formatVariableFormula,
-  parseVariableFormula,
-  variableFormulaReference,
   isLibraryCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
-import { useI18n, useSceneComputed, useVariables } from '@open-pencil/vue'
+import {
+  formatVariableFormula,
+  parseVariableFormula,
+  variableFormulaReference
+} from '@open-pencil/scene-graph/variables'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { useVariables } from '@open-pencil/vue/variables'
 
 import {
   aliasCandidates,
@@ -32,9 +36,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import { AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
 import CollectionInspector from '@/components/variables/CollectionInspector.vue'
 import TokenAddMenu from '@/components/variables/TokenAddMenu.vue'
 import TokenBulkInspector from '@/components/variables/TokenBulkInspector.vue'

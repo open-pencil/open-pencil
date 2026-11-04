@@ -2,7 +2,8 @@
 import { computedAsync, useLocalStorage, useOnline } from '@vueuse/core'
 import { computed, shallowRef, watch } from 'vue'
 
-import { useCloudMessages, useDocumentWorkspace, useI18n } from '@open-pencil/vue'
+import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
+import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { cloudSyncState } from '@/app/cloud/documents/status'
 import { findCloudServer } from '@/app/cloud/servers/store'
@@ -21,6 +22,7 @@ import { pendingSyncCount, syncUIState, uploadProgressByCanvas } from '@/app/sto
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 
 import CloudWorkspaceView from './CloudWorkspaceView.vue'
 import type { CloudDocumentRow } from './types'
@@ -106,6 +108,7 @@ const rows = computed<CloudDocumentRow[]>(() =>
   listed.value.map((document) => ({
     id: document.id,
     name: document.name,
+    kind: document.kind,
     previewURL: files.previewURL(document.id),
     editedAt: dates.relative(document.updatedAt),
     sync: cloudSyncState(
@@ -138,9 +141,16 @@ function reviewConflicts() {
   if (conflicted) open(conflicted)
 }
 
+const deleting = shallowRef<StorageDocument | null>(null)
+function requestDelete(row: CloudDocumentRow) {
+  deleting.value = listed.value.find((candidate) => candidate.id === row.id) ?? null
+}
+
 function open(row: CloudDocumentRow) {
   const document = listed.value.find((candidate) => candidate.id === row.id)
-  if (document) void openStorageDocumentInNewTab(document, location.value)
+  if (!document) return
+  // Opening reports its own failure.
+  void openStorageDocumentInNewTab(document, location.value).catch(() => undefined)
 }
 </script>
 
@@ -153,10 +163,13 @@ function open(row: CloudDocumentRow) {
     :state="state"
     :usage="usage"
     :can-create="workspace.role !== 'viewer'"
+    :can-delete="workspace.role !== 'viewer'"
     @open="open"
+    @delete="requestDelete"
     @members="openWorkspaceMembers(serverId, workspace.id)"
     @refresh="files.refresh"
     @new-design="createStoredDocument(location)"
     @review-conflicts="reviewConflicts"
   />
+  <DocumentDeleteDialog v-model:document="deleting" :location="location" />
 </template>

@@ -1,15 +1,13 @@
 import { uniq } from 'es-toolkit'
 
-import {
-  attachedConnectors,
-  CommittedGraphEventError,
-  cycleSafeParent
-} from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
+import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { parseFigmaClipboard, parseOpenPencilClipboard } from '#core/clipboard'
+import { parseOpenPencilClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
 
@@ -32,6 +30,7 @@ import {
   createClipboardPlacementActions,
   type ClipboardPlacement
 } from './clipboard/placement'
+import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
 import type { EditorContext } from './types'
@@ -442,6 +441,10 @@ export function createClipboardActions(ctx: EditorContext) {
   const fontActions = createClipboardFontActions(ctx)
   const assetActions = createClipboardAssetActions(ctx, pushCreatedNodesUndo)
   const placementActions = createClipboardPlacementActions(ctx)
+  const webActions = createClipboardWebActions(ctx, {
+    pushCreatedNodesUndo,
+    loadFontsForNodes: fontActions.loadFontsForNodes
+  })
 
   return {
     collectSubtrees,
@@ -457,6 +460,7 @@ export function createClipboardActions(ctx: EditorContext) {
     deleteNodes,
     deleteSelected,
     ...assetActions,
+    ...webActions,
     ...exportActions
   }
 }

@@ -1,7 +1,9 @@
-import { readFile, rename, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { isAbsolute, join, posix } from 'node:path'
 
 import * as v from 'valibot'
+
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 /**
  * Records which document and page generated each file in a Storybook output folder, so a
@@ -27,18 +29,18 @@ export function isGeneratedPath(path: string): boolean {
   return OWN_FILE.test(path) || DESIGN_IMAGE.test(path) || SHARED_FILE.test(path)
 }
 
-const StoryOwnerSchema = v.object({ source: v.string(), page: v.string() })
+const storyOwnerSchema = v.object({ source: v.string(), page: v.string() })
 
-const ManifestSchema = v.object({
+const manifestSchema = v.object({
   version: v.literal(1),
   files: v.record(
     v.pipe(v.string(), v.check(isGeneratedPath, 'Expected a path the Storybook export writes.')),
-    StoryOwnerSchema
+    storyOwnerSchema
   )
 })
 
-export type StoryOwner = v.InferOutput<typeof StoryOwnerSchema>
-export type StoryManifest = v.InferOutput<typeof ManifestSchema>
+export type StoryOwner = v.InferOutput<typeof storyOwnerSchema>
+export type StoryManifest = v.InferOutput<typeof manifestSchema>
 
 export async function readManifest(outputDir: string): Promise<StoryManifest> {
   const path = join(outputDir, MANIFEST_FILE)
@@ -50,7 +52,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
       return { version: 1, files: {} }
     throw error
   }
-  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), ManifestSchema), text)
+  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), manifestSchema), text)
   if (!result.success)
     throw new Error(
       `${path} is not a valid OpenPencil stories manifest; remove it together with the stories it listed, then export again.`
@@ -58,9 +60,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
   return result.output
 }
 
-/** Written beside the stories and renamed into place, so a failed write keeps the old one. */
+/** Written all at once, so a failed write keeps the old one. */
 export async function writeManifest(outputDir: string, manifest: StoryManifest): Promise<void> {
-  const path = join(outputDir, MANIFEST_FILE)
-  await writeFile(`${path}.tmp`, `${JSON.stringify(manifest, null, 2)}\n`)
-  await rename(`${path}.tmp`, path)
+  await writeFileAtomic(join(outputDir, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`)
 }

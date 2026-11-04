@@ -1,7 +1,11 @@
 import { shallowReactive } from 'vue'
 
-import type { EditorState, EditorViewState } from '@open-pencil/core/editor'
-import { copyEditorViewState, pickEditorViewState } from '@open-pencil/core/editor'
+import {
+  type EditorState,
+  type EditorViewState,
+  copyEditorViewState,
+  pickEditorViewState
+} from '@open-pencil/core'
 
 export interface CanvasPaneState extends EditorViewState {
   id: string

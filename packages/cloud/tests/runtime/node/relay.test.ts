@@ -9,7 +9,7 @@ import {
   RELAY_PATH,
   type RelayServerFrame
 } from '#cloud/contract'
-import { attachCollaborationRelay, defaultRelayURL } from '#cloud/runtime/node'
+import { attachCollaborationRelay } from '#cloud/runtime/node'
 import { createCollaborationRelay } from '#cloud/server'
 
 const cleanups: (() => Promise<void>)[] = []
@@ -93,14 +93,5 @@ describe('Node collaboration relay listener', () => {
     client.socket.send(new Uint8Array(4_096))
     // ws refuses the frame with 1009 under Node; Bun's ws ignores maxPayload and the relay refuses it.
     expect([1009, RELAY_CLOSE.messageTooLarge]).toContain(await client.closed)
-  })
-})
-
-describe('default relay URL', () => {
-  test('uses the API origin with a WebSocket scheme', () => {
-    expect(defaultRelayURL('https://cloud.example.com')).toBe(
-      `wss://cloud.example.com${RELAY_PATH}`
-    )
-    expect(defaultRelayURL('http://localhost:8787/')).toBe(`ws://localhost:8787${RELAY_PATH}`)
   })
 })

@@ -28,11 +28,13 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
   return [
     { find: /^fs$/, replacement: emptyNodeModule },
     { find: /^path$/, replacement: emptyNodeModule },
+    { find: /^node:process$/, replacement: resolve(rootDir, 'vite/node-process.ts') },
     ...(options.cloud === false ? cloudOffAliases(rootDir) : []),
     { find: '@', replacement: resolve(rootDir, 'src') },
     { find: '#vue', replacement: resolve(rootDir, 'packages/vue/src') },
     { find: '#core', replacement: resolve(rootDir, 'packages/core/src') },
     { find: '#dom-css', replacement: resolve(rootDir, 'packages/dom-css/src') },
+    { find: '#scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
     {
       find: /^@open-pencil\/dom-css\/browser$/,
       replacement: resolve(rootDir, 'packages/dom-css/src/browser.ts')
@@ -61,15 +63,6 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       find: /^@open-pencil\/scene-graph$/,
       replacement: resolve(rootDir, 'packages/scene-graph/src/index.ts')
     },
-    // Subpaths whose names differ from their files under src/.
-    {
-      find: /^@open-pencil\/scene-graph\/text-direction$/,
-      replacement: resolve(rootDir, 'packages/scene-graph/src/text/direction.ts')
-    },
-    {
-      find: /^@open-pencil\/scene-graph\/text-picture$/,
-      replacement: resolve(rootDir, 'packages/scene-graph/src/text/picture.ts')
-    },
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
     { find: '#cloud', replacement: resolve(rootDir, 'packages/cloud/src') },
     {
@@ -88,7 +81,6 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
     },
     { find: /^@open-pencil\/pen$/, replacement: resolve(rootDir, 'packages/pen/src/index.ts') },
     { find: '@open-pencil/pen', replacement: resolve(rootDir, 'packages/pen/src') },
-    { find: /^@open-pencil\/kiwi$/, replacement: resolve(rootDir, 'packages/kiwi/src/index.ts') },
     { find: '@open-pencil/kiwi', replacement: resolve(rootDir, 'packages/kiwi/src') },
     { find: /^@open-pencil\/fig$/, replacement: resolve(rootDir, 'packages/fig/src/index.ts') },
     { find: '@open-pencil/fig', replacement: resolve(rootDir, 'packages/fig/src') },
@@ -108,10 +100,6 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       replacement: `${resolve(rootDir, 'packages/core/assets')}/`
     },
     { find: /^@open-pencil\/core$/, replacement: resolve(rootDir, 'packages/core/src/index.ts') },
-    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') },
-    {
-      find: 'opentype.js',
-      replacement: resolve(rootDir, 'node_modules/opentype.js/dist/opentype.mjs')
-    }
+    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') }
   ]
 }

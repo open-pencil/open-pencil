@@ -14,6 +14,15 @@ export interface HarnessSessionConfiguration {
   settings?: Record<string, JSONValue>
   mcpServers?: Record<string, Record<string, JSONValue>>
   instructions?: string
+  skills?: HarnessSkill[]
+}
+
+/** A skill the agent may load: its SKILL.md body and the text files beside it. */
+export interface HarnessSkill {
+  name: string
+  description: string
+  content: string
+  files?: { path: string; content: string }[]
 }
 
 export interface HarnessProviderCapability {
@@ -42,17 +51,35 @@ export type HarnessRequest =
     }
   | { id: string; method: 'session.turn'; params: HarnessTurnInput }
   | { id: string; method: 'session.cancel'; params: { sessionId: string } }
+  | { id: string; method: 'session.compact'; params: { sessionId: string; instructions?: string } }
   | { id: string; method: 'session.stop'; params: { sessionId: string } }
   | { id: string; method: 'session.destroy'; params: { sessionId: string } }
   | { id: string; method: 'service.shutdown'; params?: Record<string, never> }
+
+/** A turn's tokens; input counts cached tokens too, which the cache fields break out. */
+export interface HarnessTurnUsage {
+  inputTokens: number | null
+  outputTokens: number | null
+  cacheReadTokens: number | null
+  cacheWriteTokens: number | null
+}
 
 export type HarnessTurnEvent =
   | { type: 'text-delta'; text: string }
   | { type: 'reasoning-delta'; text: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: JSONValue }
   | { type: 'tool-result'; toolCallId: string; toolName: string; output: JSONValue }
-  | { type: 'finish'; finishReason: string }
+  | { type: 'finish'; finishReason: string; usage?: HarnessTurnUsage }
+  | HarnessCompactionEvent
   | { type: 'error'; message: string }
+
+/** The agent compacted its context, by request or because it filled; its summary stands for it. */
+export interface HarnessCompactionEvent {
+  type: 'compaction'
+  trigger: 'manual' | 'auto'
+  summary: string
+  tokensBefore: number | null
+}
 
 export type HarnessSidecarMessage =
   | { type: 'response'; id: string; result?: JSONValue; error?: string }
@@ -92,6 +119,36 @@ function parseJSONRecord(value: unknown, field: string): Record<string, JSONValu
   }
 }
 
+function parseSkillFile(value: unknown, field: string): { path: string; content: string } {
+  if (!isRecord(value) || typeof value.content !== 'string') {
+    throw new Error(`Expected skill file at ${field}`)
+  }
+  return { path: requireString(value, 'path'), content: value.content }
+}
+
+function parseSkills(value: unknown): HarnessSkill[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('Expected array at skills')
+  return value.map((skill: unknown, index) => {
+    const field = `skills[${index}]`
+    if (!isRecord(skill) || typeof skill.content !== 'string') {
+      throw new Error(`Expected skill at ${field}`)
+    }
+    const parsed: HarnessSkill = {
+      name: requireString(skill, 'name'),
+      description: requireString(skill, 'description'),
+      content: skill.content
+    }
+    if (skill.files !== undefined) {
+      if (!Array.isArray(skill.files)) throw new Error(`Expected array at ${field}.files`)
+      parsed.files = skill.files.map((file: unknown, fileIndex) =>
+        parseSkillFile(file, `${field}.files[${fileIndex}]`)
+      )
+    }
+    return parsed
+  })
+}
+
 function parseConfiguration(value: unknown): HarnessSessionConfiguration {
   if (!isRecord(value)) throw new Error('Expected Harness session configuration')
   if (!isAdapterID(value.adapter)) throw new Error('Unknown Harness adapter')
@@ -108,6 +165,8 @@ function parseConfiguration(value: unknown): HarnessSessionConfiguration {
     configuration.mcpServers = mcpServers as Record<string, Record<string, JSONValue>>
   }
   if (typeof value.instructions === 'string') configuration.instructions = value.instructions
+  const skills = parseSkills(value.skills)
+  if (skills) configuration.skills = skills
   return configuration
 }
 
@@ -140,6 +199,15 @@ export function parseHarnessRequest(line: string): HarnessRequest {
   }
   if (method === 'session.cancel' || method === 'session.stop' || method === 'session.destroy') {
     return { id, method, params: parseSessionParams(parsed.params) }
+  }
+  if (method === 'session.compact') {
+    const params = parseSessionParams(parsed.params)
+    const instructions = isRecord(parsed.params) ? parsed.params.instructions : undefined
+    if (instructions !== undefined && typeof instructions !== 'string')
+      throw new Error('Expected instructions to be a string')
+    if (instructions && instructions.length > MAX_PROMPT_LENGTH)
+      throw new Error('Harness instructions exceed the size limit')
+    return { id, method, params: instructions ? { ...params, instructions } : params }
   }
   if (method === 'session.turn') {
     if (!isRecord(parsed.params)) throw new Error('Expected request params')

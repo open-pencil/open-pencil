@@ -2,14 +2,13 @@ import { compact } from 'es-toolkit/array'
 import { omitBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import {
-  printFormula,
-  variableValueReferences,
-  type SceneGraph,
-  type Variable,
-  type VariableCollection,
-  type VariableCollectionMode
+import type {
+  SceneGraph,
+  Variable,
+  VariableCollection,
+  VariableCollectionMode
 } from '@open-pencil/scene-graph'
+import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 import { fileSegment, placeTokens, tokenPath, tokenReference, tokenTree } from './paths'
 import { styleTokens, withOriginalName, type TokenReferences } from './styles'

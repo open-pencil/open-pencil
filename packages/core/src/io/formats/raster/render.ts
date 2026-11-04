@@ -1,17 +1,17 @@
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
-import {
-  getWorldMatrix,
-  type Mat3,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
+
+import { ckImageFormat } from './pixels'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'
@@ -22,39 +22,55 @@ interface RenderOptions {
   quality?: number
   colorSpace?: RenderColorSpace
   trimTransparent?: boolean
+  /** Crop to the layers' boxes rather than to everything they draw, as Figma can for text. */
+  useAbsoluteBounds?: boolean
+}
+
+/**
+ * The most pixels a raster export holds: 8192 by 8192, 256 MB of RGBA. Larger images would
+ * exhaust the renderer's memory, so they are refused rather than attempted.
+ */
+export const MAX_RASTER_PIXELS = 8192 * 8192
+
+/** Exports up to this size are drawn at twice their size and scaled down, for smoother edges. */
+const SUPERSAMPLE = 2
+
+/** The pixel size of `bounds` exported at `scale`. */
+export function rasterSize(bounds: VisualBounds, scale: number): { width: number; height: number } {
+  return {
+    width: Math.ceil((bounds.maxX - bounds.minX) * scale),
+    height: Math.ceil((bounds.maxY - bounds.minY) * scale)
+  }
+}
+
+/** Why an image of `width` by `height` pixels is too big to export, or null when it is not. */
+export function oversizedRaster(width: number, height: number): string | null {
+  if (width * height <= MAX_RASTER_PIXELS) return null
+  return `An image can hold at most ${MAX_RASTER_PIXELS} pixels; this one would be ${width} by ${height}`
 }
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
 }
 
-function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
-  const node = graph.getNode(nodeId)
-  if (!node) return false
-  if (node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') return true
-  if (node.effects.some((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')) {
-    return true
+/**
+ * What an export of `nodeIds` covers: everything they draw, or with `useAbsoluteBounds` their
+ * boxes alone; null when nothing is visible.
+ */
+export function exportBounds(
+  graph: SceneGraph,
+  nodeIds: string[],
+  useAbsoluteBounds = false
+): VisualBounds | null {
+  if (!useAbsoluteBounds) return computeContentBounds(graph, nodeIds)
+  let bounds: VisualBounds | null = null
+  for (const id of nodeIds) {
+    const node = graph.getNode(id)
+    if (!node?.visible) continue
+    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
   }
-  return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
-}
-
-export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
-  return computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
-}
-
-function ckImageFormat(ck: CanvasKit, format: ExportFormat) {
-  switch (format) {
-    case 'JPG':
-      return ck.ImageFormat.JPEG
-    case 'WEBP':
-      return ck.ImageFormat.WEBP
-    default:
-      return ck.ImageFormat.PNG
-  }
+  return bounds
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -115,8 +131,11 @@ function renderToSurface(
   quality: number,
   setup: (canvas: Canvas) => void,
   trimTransparent = false
-): Uint8Array | null {
-  const renderScale = 2
+): Uint8Array<ArrayBuffer> | null {
+  const oversized = oversizedRaster(width, height)
+  if (oversized) throw new RangeError(oversized)
+  const renderScale =
+    width * height * SUPERSAMPLE * SUPERSAMPLE <= MAX_RASTER_PIXELS ? SUPERSAMPLE : 1
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
   const pixels = ck.Malloc(Uint8Array, renderWidth * renderHeight * 4)
@@ -190,34 +209,7 @@ function renderToSurface(
         ])
       : downsampleSurface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array | null = encoded ? new Uint8Array(encoded) : null
-
-    // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
-    // fall back to encoding the raw pixels through the browser canvas.
-    if (!resultBytes && (format === 'JPG' || format === 'WEBP')) {
-      const exportWidth = alphaBounds ? alphaBounds.maxX - alphaBounds.minX : width
-      const exportHeight = alphaBounds ? alphaBounds.maxY - alphaBounds.minY : height
-      const exportMinX = alphaBounds ? alphaBounds.minX : 0
-      const exportMinY = alphaBounds ? alphaBounds.minY : 0
-
-      const rawPixels = downsampleCanvas.readPixels(exportMinX, exportMinY, {
-        alphaType: ck.AlphaType.Unpremul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width: exportWidth,
-        height: exportHeight
-      })
-
-      if (rawPixels instanceof Uint8Array) {
-        resultBytes = renderer.encodeRasterFallback(
-          rawPixels,
-          exportWidth,
-          exportHeight,
-          format,
-          quality
-        )
-      }
-    }
+    const resultBytes = encoded ? new Uint8Array(encoded) : null
 
     image.delete()
     downsampleSurface.delete()
@@ -229,6 +221,24 @@ function renderToSurface(
   }
 }
 
+/**
+ * `nodeIds` in the order the source page paints them, bottom to top, whatever order they came in,
+ * without those a selected ancestor already paints.
+ */
+function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly string[]): string[] {
+  const selected = new Set(nodeIds)
+  const ordered: string[] = []
+  const visit = (id: string): void => {
+    if (selected.has(id)) {
+      ordered.push(id)
+      return
+    }
+    for (const childId of source.getNode(id)?.childIds ?? []) visit(childId)
+  }
+  visit(pageId)
+  return ordered
+}
+
 export function prepareSelectionRenderGraph(
   source: SceneGraph,
   renderGraph: SceneGraph,
@@ -238,7 +248,9 @@ export function prepareSelectionRenderGraph(
   const page = renderGraph.getNode(pageId)
   if (!page) return
 
-  page.childIds = nodeIds.filter((nodeId) => renderGraph.getNode(nodeId) !== undefined)
+  page.childIds = inPaintOrder(source, pageId, nodeIds).filter(
+    (nodeId) => renderGraph.getNode(nodeId) !== undefined
+  )
   for (const nodeId of page.childIds) {
     const node = renderGraph.getNode(nodeId)
     const sourceNode = source.getNode(nodeId)
@@ -278,39 +290,32 @@ export function renderNodesToImage(
   pageId: string,
   nodeIds: string[],
   options: RenderOptions
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
 
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = exportBounds(graph, nodeIds, options.useAbsoluteBounds)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  const pixelW = Math.ceil(contentW * options.scale)
-  const pixelH = Math.ceil(contentH * options.scale)
+  const { width: pixelW, height: pixelH } = rasterSize(bounds, options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
+  // Figma exports a layer by itself, without the page behind it, even when it blends.
   const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
   if (!extracted.pageId) return null
-
-  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
-    ? graph
-    : extracted.graph
-  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
-  if (renderGraph !== graph) {
-    prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
-  }
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    renderGraph,
-    renderPageId,
+    extracted.graph,
+    extracted.pageId,
     pixelW,
     pixelH,
     options.format,
@@ -333,12 +338,20 @@ export interface ThumbnailFrame {
   height: number
 }
 
-/** The page region a thumbnail fitted into `width` by `height` pixels shows, and its size. */
+/**
+ * How a thumbnail frames its page's content, always whole: `contain` is as large as the content
+ * fits in `width` by `height`, and `letterbox` is exactly that size with the content centred on
+ * the page colour, as Figma's file browser shows a file in its card.
+ */
+export type ThumbnailFit = 'contain' | 'letterbox'
+
+/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  fit: ThumbnailFit = 'contain'
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
@@ -351,6 +364,24 @@ export function thumbnailFrame(
   if (contentW <= 0 || contentH <= 0) return null
 
   const scale = Math.min(width / contentW, height / contentH)
+  if (fit === 'letterbox') {
+    const centerX = (bounds.minX + bounds.maxX) / 2
+    const centerY = (bounds.minY + bounds.maxY) / 2
+    const halfW = width / scale / 2
+    const halfH = height / scale / 2
+    return {
+      bounds: {
+        minX: centerX - halfW,
+        minY: centerY - halfH,
+        maxX: centerX + halfW,
+        maxY: centerY + halfH
+      },
+      scale,
+      width,
+      height
+    }
+  }
+
   return {
     bounds,
     scale,
@@ -365,9 +396,10 @@ export function renderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
-): Uint8Array | null {
-  const frame = thumbnailFrame(graph, pageId, width, height)
+  height: number,
+  fit: ThumbnailFit = 'contain'
+): Uint8Array<ArrayBuffer> | null {
+  const frame = thumbnailFrame(graph, pageId, width, height, fit)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.
@@ -388,7 +420,7 @@ export function drawRegionToImage(
   pageId: string,
   bounds: VisualBounds,
   scale: number
-): Uint8Array | null {
+): Uint8Array<ArrayBuffer> | null {
   const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
   const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
   if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null

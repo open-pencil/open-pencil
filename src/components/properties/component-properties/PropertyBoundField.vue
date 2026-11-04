@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { usePanelMessages } from '@open-pencil/vue'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import BoundFieldRow from '@/components/properties/binding/BoundFieldRow.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

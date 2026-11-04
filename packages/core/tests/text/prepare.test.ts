@@ -5,7 +5,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { NOTO_COLOR_EMOJI_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 import { prepareGraphFonts } from '#core/text/prepare'
 
 function graphWithText(text: string) {
@@ -25,10 +25,10 @@ describe('emoji font preparation', () => {
 
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   afterEach(() => {
@@ -38,13 +38,15 @@ describe('emoji font preparation', () => {
 
   function recordNotoRequests() {
     const load = fontManager.loadRemoteFont.bind(fontManager)
-    spy = spyOn(fontManager, 'loadRemoteFont').mockImplementation(async (family, style, characters) => {
-      if (family === NOTO_COLOR_EMOJI_FAMILY) {
-        requested.push(characters ?? '')
-        return null
+    spy = spyOn(fontManager, 'loadRemoteFont').mockImplementation(
+      async (family, style, characters) => {
+        if (family === NOTO_COLOR_EMOJI_FAMILY) {
+          requested.push(characters ?? '')
+          return null
+        }
+        return load(family, style, characters)
       }
-      return load(family, style, characters)
-    })
+    )
   }
 
   test('fetches nothing for symbols the text font has', async () => {

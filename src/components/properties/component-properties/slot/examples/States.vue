@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue'
+import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue/controls/slots'
 
 import ComponentPropertyTextField from '@/components/properties/component-properties/ComponentPropertyTextField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -30,7 +30,7 @@ const record = (entry: string) => {
 
 <template>
   <div class="flex gap-6">
-    <div class="w-[240px] overflow-hidden rounded-lg border border-border bg-panel">
+    <div class="w-60 overflow-hidden rounded-lg border border-border bg-panel">
       <PanelSection label="Component properties" :ui="{ title: 'text-component' }">
         <div class="flex flex-col gap-1.5">
           <PanelFieldGroup label="Title">
@@ -79,7 +79,7 @@ const record = (entry: string) => {
         </div>
       </PanelSection>
     </div>
-    <ol aria-label="Events" class="w-48 text-[11px] text-muted">
+    <ol aria-label="Events" class="w-48 text-2xs text-muted">
       <li v-for="(entry, index) in log" :key="index">{{ entry }}</li>
     </ol>
   </div>

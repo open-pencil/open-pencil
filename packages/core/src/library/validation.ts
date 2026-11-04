@@ -1,5 +1,5 @@
 import { contentHash } from './hash'
-import { serializeLibraryRevision } from './serialization'
+import { encodeStoredLibraryRevision } from './serialization'
 import { describeSnapshotAssets } from './snapshot'
 import type { ComponentLibraryRevision } from './types'
 
@@ -26,8 +26,7 @@ function integrityError(message: string): never {
 }
 
 function serializedRevisionBytes(revision: ComponentLibraryRevision): number {
-  const serialized = serializeLibraryRevision(revision)
-  return new TextEncoder().encode(JSON.stringify(serialized)).byteLength
+  return new TextEncoder().encode(JSON.stringify(encodeStoredLibraryRevision(revision))).byteLength
 }
 
 export async function validateLibraryRevision(revision: ComponentLibraryRevision): Promise<void> {

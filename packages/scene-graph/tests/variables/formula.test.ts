@@ -2,8 +2,8 @@ import { expect, test, spyOn } from 'bun:test'
 
 import * as v from 'valibot'
 
+import { SceneGraph, type VariableFormulaNode, type VariableValue } from '@open-pencil/scene-graph'
 import {
-  SceneGraph,
   parseVariableFormula,
   formatVariableFormula,
   variableValueReferences,
@@ -11,10 +11,8 @@ import {
   variableFormulaSchema,
   collectionsBoundIn,
   formulaTokens,
-  type VariableFormulaNode,
-  type VariableValue
-} from '@open-pencil/scene-graph'
-import { createBatchVariableResolver } from '@open-pencil/scene-graph/variables'
+  createBatchVariableResolver
+} from '@open-pencil/scene-graph/variables'
 
 function setup(type: 'FLOAT' | 'BOOLEAN' = 'FLOAT') {
   const graph = new SceneGraph()
@@ -328,8 +326,7 @@ test('collection discovery follows formulas and composed color operands transiti
 })
 
 test('the tokenizer reads half-typed formulas without failing, as an editor needs', () => {
-  const kinds = (source: string) =>
-    formulaTokens(source).map(({ kind, text }) => `${kind}:${text}`)
+  const kinds = (source: string) => formulaTokens(source).map(({ kind, text }) => `${kind}:${text}`)
   expect(kinds('{space/md} * 2 - base')).toEqual([
     'reference:{space/md}',
     'operator:*',

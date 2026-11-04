@@ -17,7 +17,8 @@ import {
 import { useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { vTestId, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -36,11 +37,12 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { CloudDocumentStatusHost } from '@/components/cloud/integration'
-import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -64,7 +66,9 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 // A narrow panel clips the menubar; fade the clipped side and offer a chevron so it reads as scrollable.
 const menubar = useTemplateRef<HTMLElement>('menubar')
-const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar)
+const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar, {
+  smooth: animationsEnabled
+})
 </script>
 
 <template>
@@ -119,7 +123,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
           <MenubarMenu v-for="menu in topMenus" :key="menu.label">
             <MenubarTrigger
               v-test-id="`menubar-${menu.label.toLowerCase()}`"
-              class="flex cursor-pointer items-center rounded px-2 py-1 text-[11px] text-surface/80 transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
+              class="flex cursor-pointer items-center rounded px-2 py-1 text-2xs text-surface/80 transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
             >
               {{ menu.label }}
             </MenubarTrigger>

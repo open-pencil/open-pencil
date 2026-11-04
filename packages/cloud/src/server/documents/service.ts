@@ -1,9 +1,12 @@
 import type {
+  CommitImageUploadsInput,
   CommitUploadInput,
   CreateDocumentInput,
   CreateUploadInput,
   DocumentDownload,
   DocumentSummary,
+  ImageUploadOffer,
+  RequestImageUploadsInput,
   SharedDocument
 } from '#cloud/contract'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
@@ -14,6 +17,19 @@ import {
   resolveDocumentAccess
 } from '#cloud/server/documents/access'
 import {
+  DocumentConflictError,
+  DocumentForbiddenError,
+  DocumentNotFoundError,
+  UploadInvalidError
+} from '#cloud/server/documents/errors'
+import {
+  createDocumentImages,
+  currentImageUsage,
+  documentImageLinks,
+  revisionImageDownloads
+} from '#cloud/server/documents/images'
+import { writableDocument } from '#cloud/server/documents/limits'
+import {
   findDocument,
   insertDocument,
   listDocuments,
@@ -23,28 +39,17 @@ import {
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import { announceVersions, recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
-import type { ObjectStore } from '#cloud/server/objects'
-import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
+import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
+import { isUndefined, limitAsync, omitBy, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const UPLOAD_LIFETIME_MS = 15 * 60 * 1000
+/** How many of a save's images are checked and landed at once. */
+const IMAGE_COMMIT_CONCURRENCY = 8
 const WRITABLE_ROLES = new Set(['admin', 'editor'])
-
-export class DocumentNotFoundError extends Error {
-  override readonly name = 'DocumentNotFoundError'
-}
-export class DocumentForbiddenError extends Error {
-  override readonly name = 'DocumentForbiddenError'
-}
-export class DocumentConflictError extends Error {
-  override readonly name = 'DocumentConflictError'
-}
-export class UploadInvalidError extends Error {
-  override readonly name = 'UploadInvalidError'
-}
 
 export type DocumentServiceOptions = {
   policy?: CloudPolicy
@@ -72,6 +77,7 @@ export function createDocumentService(
 ) {
   const cleanup = createUploadCleanupService(database, objects)
   const quota = createStorageQuotaService(database)
+  const images = createDocumentImages(database, objects, quota)
 
   /**
    * Makes a committed upload the document's current revision, unless it already was, and records
@@ -85,14 +91,25 @@ export function createDocumentService(
       upload,
       stored,
       revisionId,
-      storageObjectId
+      storageObjectId,
+      images: revisionImages,
+      name,
+      kind
     }: {
       userId: string
       uploadId: string
-      upload: { documentId: string; baseRevisionId: string | null; objectKey: string }
+      upload: {
+        documentId: string
+        workspaceId: string
+        baseRevisionId: string | null
+        objectKey: string
+      }
       stored: { checksum: string; byteSize: number; contentType: string }
       revisionId: string
       storageObjectId: string
+      images: CommitUploadInput['images']
+      name: CommitUploadInput['name']
+      kind: CommitUploadInput['kind']
     }
   ): Promise<boolean> {
     const lockedUpload = await transaction
@@ -132,9 +149,17 @@ export function createDocumentService(
         createdBy: userId
       })
       .execute()
+    const attached = await images.attachInTransaction(transaction, {
+      workspaceId: upload.workspaceId,
+      revisionId,
+      images: revisionImages
+    })
+    if (!attached) throw new UploadInvalidError()
     await transaction
       .updateTable('document')
       .set({
+        // A revision may also retitle its document, or say the file it holds is a board.
+        ...omitBy({ name, kind }, isUndefined),
         currentRevisionId: revisionId,
         version: (expression) => expression('version', '+', 1)
       })
@@ -156,6 +181,14 @@ export function createDocumentService(
     return checkpointed
   }
 
+  /** Links for images a live room names, by checksum. */
+  async function imageLinksOf(documentId: string, checksums: string[]) {
+    const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+    return {
+      images: await documentImageLinks(database, objects, { documentId, checksums, expiresAt })
+    }
+  }
+
   async function createDownload(documentId: string): Promise<DocumentDownload> {
     const row = await getDocumentSummaryRow(database, documentId)
     if (!row?.currentRevisionId) throw new DocumentNotFoundError()
@@ -174,17 +207,140 @@ export function createDocumentService(
       .where('documentRevision.documentId', '=', documentId)
       .executeTakeFirst()
     if (!revision) throw new DocumentNotFoundError()
+    const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
     return {
       document,
       revisionId: revision.revisionId,
       byteSize: Number(revision.byteSize),
       checksum: revision.checksum,
       contentType: revision.contentType,
-      download: await objects.createDownload({
-        key: revision.objectKey,
-        expiresAt: new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
-      })
+      download: await objects.createDownload({ key: revision.objectKey, expiresAt }),
+      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt)
     }
+  }
+
+  /** What committing an upload reads of it and its document. */
+  function selectUploads() {
+    return database
+      .selectFrom('upload')
+      .innerJoin('document', 'document.id', 'upload.documentId')
+      .select([
+        'upload.id',
+        'upload.documentId',
+        'upload.kind',
+        'document.workspaceId',
+        'upload.baseRevisionId',
+        'upload.objectKey',
+        'upload.checksum',
+        'upload.byteSize',
+        'upload.contentType',
+        'upload.multipartUploadId',
+        'upload.status',
+        'upload.expiresAt'
+      ])
+  }
+  type UploadRow = Awaited<ReturnType<ReturnType<typeof selectUploads>['executeTakeFirstOrThrow']>>
+
+  /**
+   * Claims a pending upload, completes it when it came in parts, checks the store holds the file
+   * it declared, and lands it with `land`. An upload that fails goes back to pending, so its
+   * commit can be tried again.
+   */
+  async function finalizeUpload<T>(
+    upload: UploadRow,
+    multipart: CommitUploadInput['multipart'],
+    land: (stored: StoredObject) => Promise<T>
+  ): Promise<T> {
+    if (upload.status !== 'pending' || new Date(upload.expiresAt).getTime() <= Date.now()) {
+      throw new UploadInvalidError()
+    }
+    const claimed = await database
+      .updateTable('upload')
+      .set({ status: 'finalizing', finalizationStartedAt: new Date() })
+      .where('id', '=', upload.id)
+      .where('status', '=', 'pending')
+      .returning('id')
+      .executeTakeFirst()
+    if (!claimed) throw new UploadInvalidError()
+    try {
+      if (multipart) {
+        if (
+          !objects.capabilities.multipartUpload ||
+          multipart.uploadId !== upload.multipartUploadId
+        ) {
+          throw new UploadInvalidError()
+        }
+        await objects.completeUpload({
+          key: upload.objectKey,
+          uploadId: multipart.uploadId,
+          parts: multipart.parts
+        })
+      }
+      const stored = await objects.head(upload.objectKey)
+      if (!stored || !matchesUpload(stored, upload)) throw new UploadInvalidError()
+      return await land(stored)
+    } catch (error) {
+      await database
+        .updateTable('upload')
+        .set({ status: 'pending', finalizationStartedAt: null })
+        .where('id', '=', upload.id)
+        .where('status', '=', 'finalizing')
+        .execute()
+      throw error
+    }
+  }
+
+  function landImage(upload: UploadRow, stored: StoredObject): Promise<void> {
+    return database.transaction().execute((transaction) =>
+      images.landInTransaction(transaction, {
+        uploadId: upload.id,
+        workspaceId: upload.workspaceId,
+        objectKey: upload.objectKey,
+        stored
+      })
+    )
+  }
+
+  async function commitUpload(
+    userId: string,
+    uploadId: string,
+    input: CommitUploadInput
+  ): Promise<DocumentSummary> {
+    const upload = await selectUploads()
+      .where('upload.id', '=', uploadId)
+      .where('upload.createdBy', '=', userId)
+      .executeTakeFirst()
+    if (!upload) throw new DocumentNotFoundError()
+    const access = await resolveDocumentAccess(database, userId, upload.documentId)
+    if (!access) throw new DocumentNotFoundError()
+    if (!canEditDocument(access)) throw new DocumentForbiddenError()
+    if (input.checksum !== upload.checksum) throw new UploadInvalidError()
+    if (upload.status !== 'committed') {
+      const checkpointed =
+        upload.kind === 'image'
+          ? await finalizeUpload(upload, input.multipart, (stored) =>
+              landImage(upload, stored).then(() => false)
+            )
+          : await finalizeUpload(upload, input.multipart, (stored) =>
+              database.transaction().execute((transaction) =>
+                landRevision(transaction, {
+                  userId,
+                  uploadId,
+                  upload,
+                  stored,
+                  revisionId: crypto.randomUUID(),
+                  storageObjectId: crypto.randomUUID(),
+                  images: input.images,
+                  name: input.name,
+                  kind: input.kind
+                })
+              )
+            )
+      if (checkpointed) announceVersions(options.onVersionsChanged, upload.documentId)
+    }
+    const document = await findDocument(database, userId, upload.documentId)
+    if (!document) throw new DocumentNotFoundError()
+    return document
   }
 
   return {
@@ -223,9 +379,10 @@ export function createDocumentService(
         .where('document.workspaceId', '=', workspaceId)
         .where('document.deletedAt', 'is', null)
         .executeTakeFirstOrThrow()
+      const shared = await currentImageUsage(database, workspaceId)
       return {
-        bytesUsed: Number(result.bytesUsed),
-        objectCount: Number(result.objectCount),
+        bytesUsed: Number(result.bytesUsed) + shared.bytesUsed,
+        objectCount: Number(result.objectCount) + shared.objectCount,
         documentCount: Number(result.documentCount)
       }
     },
@@ -238,6 +395,18 @@ export function createDocumentService(
 
     async downloadShared(documentId: string): Promise<DocumentDownload> {
       return createDownload(documentId)
+    },
+
+    /** Links for images a live room names, for someone who may view the document. */
+    async imageLinks(userId: string, documentId: string, checksums: string[]) {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      return imageLinksOf(documentId, checksums)
+    },
+
+    /** Links for images a live room names, for a guest a share already let in. */
+    imageLinksShared(documentId: string, checksums: string[]) {
+      return imageLinksOf(documentId, checksums)
     },
 
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
@@ -273,6 +442,7 @@ export function createDocumentService(
         id: documentId,
         workspaceId,
         name: input.name,
+        kind: input.kind,
         createdBy: userId
       })
       const document = await findDocument(database, userId, documentId)
@@ -285,37 +455,14 @@ export function createDocumentService(
       documentId: string,
       input: CreateUploadInput
     ): Promise<CreateDocumentUploadResult> {
-      const access = await resolveDocumentAccess(database, userId, documentId)
-      if (!access) throw new DocumentNotFoundError()
-      if (!canEditDocument(access)) throw new DocumentForbiddenError()
-      const document = await findDocument(database, userId, documentId)
-      if (!document) throw new DocumentNotFoundError()
+      const { document, maximumFileBytes, maximumStorageBytes } = await writableDocument(
+        database,
+        options,
+        userId,
+        documentId
+      )
       if (document.currentRevisionId !== input.baseRevisionId) throw new DocumentConflictError()
-      const policyContext = {
-        targetingKey: document.workspaceId,
-        actorId: userId,
-        workspaceId: document.workspaceId,
-        documentId,
-        deploymentMode: 'self-hosted' as const
-      }
-      const technicalMaximum = options.technicalMaximumUploadBytes ?? Number.MAX_SAFE_INTEGER
-      const entitlementMaximum = options.policy
-        ? await options.policy.number(
-            CLOUD_FEATURE_KEYS.maximumFileBytes,
-            technicalMaximum,
-            policyContext
-          )
-        : technicalMaximum
-      if (input.byteSize > Math.min(technicalMaximum, entitlementMaximum)) {
-        throw new UploadInvalidError()
-      }
-      const maximumStorageBytes = options.policy
-        ? await options.policy.number(
-            'cloud.storage.maximum-bytes',
-            Number.MAX_SAFE_INTEGER,
-            policyContext
-          )
-        : Number.MAX_SAFE_INTEGER
+      if (input.byteSize > maximumFileBytes) throw new UploadInvalidError()
       const uploadId = crypto.randomUUID()
       const objectKey = `documents/${document.workspaceId}/${documentId}/uploads/${uploadId}.fig`
       const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS)
@@ -342,7 +489,7 @@ export function createDocumentService(
           uploadId,
           bytes: input.byteSize,
           expiresAt,
-          maximumBytes: maximumStorageBytes === Number.MAX_SAFE_INTEGER ? null : maximumStorageBytes
+          maximumBytes: maximumStorageBytes
         })
       })
       let objectUpload
@@ -373,92 +520,76 @@ export function createDocumentService(
       return { id: uploadId, upload: objectUpload }
     },
 
-    async commitUpload(
+    /** Uploads for the images a save of the document will name that its workspace lacks. */
+    async requestImageUploads(
       userId: string,
-      uploadId: string,
-      input: CommitUploadInput
-    ): Promise<DocumentSummary> {
-      const upload = await database
-        .selectFrom('upload')
-        .innerJoin('document', 'document.id', 'upload.documentId')
-        .select([
-          'upload.documentId',
-          'upload.baseRevisionId',
-          'upload.objectKey',
-          'upload.checksum',
-          'upload.byteSize',
-          'upload.contentType',
-          'upload.multipartUploadId',
-          'upload.status',
-          'upload.expiresAt'
-        ])
-        .where('upload.id', '=', uploadId)
-        .where('upload.createdBy', '=', userId)
-        .executeTakeFirst()
-      if (!upload) throw new DocumentNotFoundError()
-      const access = await resolveDocumentAccess(database, userId, upload.documentId)
-      if (!access) throw new DocumentNotFoundError()
-      if (!canEditDocument(access)) throw new DocumentForbiddenError()
-      if (input.checksum !== upload.checksum) throw new UploadInvalidError()
-      if (upload.status === 'committed') {
-        const document = await findDocument(database, userId, upload.documentId)
-        if (!document) throw new DocumentNotFoundError()
-        return document
-      }
-      if (upload.status !== 'pending' || new Date(upload.expiresAt).getTime() <= Date.now()) {
+      documentId: string,
+      input: RequestImageUploadsInput
+    ): Promise<{ uploads: ImageUploadOffer[] }> {
+      const { document, maximumFileBytes, maximumStorageBytes } = await writableDocument(
+        database,
+        options,
+        userId,
+        documentId
+      )
+      if (input.images.some((image) => image.byteSize > maximumFileBytes)) {
         throw new UploadInvalidError()
       }
-      const claimed = await database
-        .updateTable('upload')
-        .set({ status: 'finalizing', finalizationStartedAt: new Date() })
-        .where('id', '=', uploadId)
-        .where('status', '=', 'pending')
-        .returning('id')
-        .executeTakeFirst()
-      if (!claimed) throw new UploadInvalidError()
-      let checkpointed = false
-      try {
-        if (input.multipart) {
-          if (
-            !objects.capabilities.multipartUpload ||
-            input.multipart.uploadId !== upload.multipartUploadId
-          ) {
-            throw new UploadInvalidError()
-          }
-          await objects.completeUpload({
-            key: upload.objectKey,
-            uploadId: input.multipart.uploadId,
-            parts: input.multipart.parts
-          })
-        }
-        const stored = await objects.head(upload.objectKey)
-        if (!stored || !matchesUpload(stored, upload)) throw new UploadInvalidError()
-
-        const revisionId = crypto.randomUUID()
-        const storageObjectId = crypto.randomUUID()
-        checkpointed = await database.transaction().execute((transaction) =>
-          landRevision(transaction, {
-            userId,
-            uploadId,
-            upload,
-            stored,
-            revisionId,
-            storageObjectId
-          })
-        )
-      } catch (error) {
-        await database
-          .updateTable('upload')
-          .set({ status: 'pending', finalizationStartedAt: null })
-          .where('id', '=', uploadId)
-          .where('status', '=', 'finalizing')
-          .execute()
-        throw error
+      return {
+        uploads: await images.requestUploads({
+          userId,
+          documentId,
+          workspaceId: document.workspaceId,
+          images: input.images,
+          expiresAt: new Date(Date.now() + UPLOAD_LIFETIME_MS),
+          maximumBytes: maximumStorageBytes
+        })
       }
-      if (checkpointed) announceVersions(options.onVersionsChanged, upload.documentId)
-      const document = await findDocument(database, userId, upload.documentId)
-      if (!document) throw new DocumentNotFoundError()
-      return document
+    },
+    commitUpload,
+
+    /**
+     * Commits the image uploads a save asked for in one request, however many there are: each
+     * must be an image upload this person made for the document.
+     */
+    async commitImageUploads(
+      userId: string,
+      documentId: string,
+      uploads: CommitImageUploadsInput['uploads']
+    ): Promise<void> {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      if (!canEditDocument(access)) throw new DocumentForbiddenError()
+      const ids = uniq(uploads.map((upload) => upload.uploadId))
+      const rows = new Map(
+        (
+          await selectUploads()
+            .where('upload.id', 'in', ids)
+            .where('upload.documentId', '=', documentId)
+            .where('upload.createdBy', '=', userId)
+            .execute()
+        ).map((row) => [row.id, row])
+      )
+      if (rows.size !== ids.length || [...rows.values()].some((row) => row.kind !== 'image')) {
+        throw new UploadInvalidError()
+      }
+      for (const commit of uploads) {
+        if (rows.get(commit.uploadId)?.checksum !== commit.checksum) throw new UploadInvalidError()
+      }
+      // Each image is its own object, so a few are checked and landed at once, each once however
+      // often the request names it.
+      const land = limitAsync(
+        (upload: UploadRow, multipart: CommitUploadInput['multipart']) =>
+          finalizeUpload(upload, multipart, (stored) => landImage(upload, stored)),
+        IMAGE_COMMIT_CONCURRENCY
+      )
+      await Promise.all(
+        uniqBy(uploads, (commit) => commit.uploadId).map(async (commit) => {
+          const upload = rows.get(commit.uploadId)
+          if (!upload) throw new UploadInvalidError()
+          if (upload.status !== 'committed') await land(upload, commit.multipart)
+        })
+      )
     }
   }
 }

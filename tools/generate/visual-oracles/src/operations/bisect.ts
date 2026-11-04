@@ -6,7 +6,8 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { headlessRenderNodes, initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
@@ -250,7 +251,7 @@ async function diffImages(expectedPath: string, actualPath: string): Promise<Dif
     const actualPixels = actual.readPixels(0, 0, imageInfo)
     if (!expectedPixels || !actualPixels) throw new Error('Failed to read image pixels')
     if (!(expectedPixels instanceof Uint8Array) || !(actualPixels instanceof Uint8Array)) {
-      throw new Error('Expected 8-bit RGBA image pixels')
+      throw new TypeError('Expected 8-bit RGBA image pixels')
     }
 
     let sum = 0

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -76,7 +76,14 @@ describe('pencil parent', () => {
   test('checks a rotated frame by its own box, not the box around it', () => {
     const page = setup()
     const band = frame(page, { x: 200, y: 100, width: 300, height: 40, rotation: 45 })
-    expect(stroke(inLayer(band, wave(20, 20, 260).map((p) => ({ x: p.x, y: 20 }))))).toBe(band.id)
+    expect(
+      stroke(
+        inLayer(
+          band,
+          wave(20, 20, 260).map((p) => ({ x: p.x, y: 20 }))
+        )
+      )
+    ).toBe(band.id)
     // Leaves the band sideways while staying inside its axis-aligned bounds.
     expect(
       stroke(

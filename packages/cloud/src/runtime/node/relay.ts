@@ -52,10 +52,3 @@ export function attachCollaborationRelay(
     }
   }
 }
-
-/** The relay's public URL on the same origin as the API, unless the deployment names another. */
-export function defaultRelayURL(publicURL: string): string {
-  const url = new URL(RELAY_PATH, publicURL)
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  return url.href
-}

@@ -14,7 +14,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -23,7 +23,9 @@ import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
-import { chatHistoryTheme } from '@/theme/chat/history'
+import historyTheme from '@/theme/chat/history'
+
+const chatHistoryTheme = tv(historyTheme)
 
 const {
   conversations,
@@ -106,10 +108,11 @@ function closeMenu(event: Event) {
   <div :class="styles.root()">
     <div :class="styles.header()">
       <PopoverRoot v-model:open="open">
-        <PopoverTrigger :class="styles.trigger()" :disabled="disabled" :aria-label="ai.chatHistory">
-          <span :class="styles.title()">{{ selected?.title || ai.newChat }}</span>
-          <icon-lucide-chevron-down :class="styles.icon()" />
-        </PopoverTrigger>
+        <Tip :label="ai.chatHistory">
+          <PopoverTrigger :class="triggerClass" :disabled="disabled" :aria-label="ai.chatHistory">
+            <icon-lucide-panel-left :class="styles.icon()" />
+          </PopoverTrigger>
+        </Tip>
         <PopoverPortal>
           <PopoverContent
             align="start"
@@ -162,6 +165,9 @@ function closeMenu(event: Event) {
           </PopoverContent>
         </PopoverPortal>
       </PopoverRoot>
+      <span :class="styles.heading()" data-test-id="chat-title">{{
+        selected?.title || ai.newChat
+      }}</span>
       <slot name="actions" />
       <IconButton :label="ai.newChat" :disabled="disabled" size="sm" @click="emit('create')"
         ><icon-lucide-plus :class="styles.icon()"

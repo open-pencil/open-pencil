@@ -99,7 +99,13 @@ function services() {
       async head() {
         return null
       },
-      delete: noOperation
+      delete: noOperation,
+      async write() {
+        throw new Error('not used')
+      },
+      async read() {
+        return null
+      }
     }
   }
 }
@@ -131,7 +137,7 @@ describe('createCloudApp', () => {
       })
       expect(
         await runtime.database
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
       ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
@@ -245,7 +251,9 @@ describe('createCloudApp', () => {
         '/api/admin/audit?limit=many',
         '/api/admin/email?limit=-1',
         '/api/admin/users?offset=1.5',
-        '/api/admin/enrollments?status=sideways'
+        '/api/admin/users?offset=99999999999999999999',
+        '/api/admin/enrollments?filter=sideways',
+        '/api/admin/email?filter=bounced'
       ]) {
         const response = await adminApp.request(path)
         expect(response.status).toBe(400)
@@ -322,7 +330,7 @@ describe('createCloudApp', () => {
       expect(authCalls).toBe(8)
       expect(
         await runtime.database
-          .selectFrom('cloudRateLimit')
+          .selectFrom('apiRateLimit')
           .select(({ fn }) => fn.countAll<number>().as('count'))
           .executeTakeFirstOrThrow()
       ).toEqual({ count: 0 })
@@ -368,7 +376,7 @@ describe('createCloudApp', () => {
       deployment: 'self-hosted',
       apiURL: 'https://pencil.example.com/api',
       authURL: 'https://pencil.example.com/api/auth',
-      appURL: 'https://pencil.example.com',
+      localEditor: true,
       authentication: {
         socialProviders: ['google'],
         enterpriseSSO: false,

@@ -17,14 +17,39 @@ export function createAdminOperationsService(
 
   return {
     async summary() {
-      const [pendingEnrollment, pendingEmail, failedEmail] = await Promise.all([
+      const [
+        pendingEnrollment,
+        pendingEmail,
+        failedEmail,
+        accounts,
+        workspaces,
+        documents,
+        stored
+      ] = await Promise.all([
         database
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .select(({ fn }) => fn.countAll<number>().as('count'))
           .where('status', '=', 'pending')
           .executeTakeFirstOrThrow(),
         emailCount('pending'),
-        emailCount('failed')
+        emailCount('failed'),
+        database
+          .selectFrom('user')
+          .select(({ fn }) => fn.countAll<number>().as('count'))
+          .executeTakeFirstOrThrow(),
+        database
+          .selectFrom('workspace')
+          .select(({ fn }) => fn.countAll<number>().as('count'))
+          .executeTakeFirstOrThrow(),
+        database
+          .selectFrom('document')
+          .select(({ fn }) => fn.countAll<number>().as('count'))
+          .where('deletedAt', 'is', null)
+          .executeTakeFirstOrThrow(),
+        database
+          .selectFrom('workspaceStorageUsage')
+          .select(({ fn }) => fn.sum<number | null>('committedBytes').as('bytes'))
+          .executeTakeFirstOrThrow()
       ])
       return {
         deployment: config.deployment,
@@ -32,7 +57,11 @@ export function createAdminOperationsService(
         emailTransport: config.emailTransport,
         pendingEnrollment: Number(pendingEnrollment.count),
         pendingEmail,
-        failedEmail
+        failedEmail,
+        accounts: Number(accounts.count),
+        workspaces: Number(workspaces.count),
+        documents: Number(documents.count),
+        storedBytes: Number(stored.bytes ?? 0)
       }
     }
   }

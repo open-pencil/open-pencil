@@ -146,6 +146,7 @@ export const cloudMessageDefaults = {
   shareRestricted: 'Only people with access',
   shareAnyoneWithLink: 'Anyone with the link',
   shareLinkDetail: 'Anyone who has the link can open this file without signing in.',
+  shareLinkSignInDetail: 'Anyone who has the link can open this file after signing in here.',
   shareRestrictedDetail: 'Only the people and workspace above can open this file.',
   shareRestrictedNoLinksDetail:
     'Only the people and workspace above can open this file. Links are turned off for this workspace.',
@@ -182,6 +183,10 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  statusNotLive: 'Not editing live',
+  statusNotLiveDetail:
+    'The server ended this tab’s live session, so edits no longer pass between it and others. Rejoin to see the latest version.',
+  statusRejoin: 'Rejoin',
   statusSavedTo: params('Saved to {workspace}'),
   statusSavedAgo: params('Saved {time}'),
   statusUpToDate: 'Up to date',
@@ -221,6 +226,22 @@ export const cloudMessageDefaults = {
   removeMember: params('Remove {name}'),
   pendingInvitations: 'Waiting to join',
   revokeInvitation: 'Withdraw',
+  membersSections: 'Workspace',
+  membersTab: 'Members',
+  invitedTab: 'Invited',
+  settingsTab: 'Settings',
+  searchMembers: 'Search members…',
+  noMembersMatch: 'No one matches that search.',
+  memberJoined: params('Joined {date}'),
+  invitationSent: params('Invited {date}'),
+  invitationSentBy: params('Invited {date} by {name}'),
+  resendInvitation: 'Resend',
+  invitationResent: 'Sent again',
+  noInvitations: 'No one is waiting to join',
+  noInvitationsDescription: 'People you invite appear here until they accept.',
+  roleAdminDescription: 'Invites people, changes roles, and renames or deletes the workspace',
+  roleEditorDescription: 'Creates and edits the workspace’s documents',
+  roleViewerDescription: 'Opens the workspace’s documents without changing them',
   leaveWorkspace: 'Leave workspace',
   leaveWorkspaceHeading: params('Leave {workspace}?'),
   leaveWorkspaceDescription:

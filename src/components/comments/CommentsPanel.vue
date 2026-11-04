@@ -16,8 +16,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph'
-import { useCommentMessages } from '@open-pencil/vue'
+import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph/comments'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -28,10 +28,10 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments as commentsTheme } from '@/theme/comments'
 
 import CommentActionsMenu from './CommentActionsMenu.vue'
 import CommentListItem from './CommentListItem.vue'
+import { comments as commentsTheme } from './ui'
 
 /** The comments list that takes over the right sidebar while the Comment tool is active. */
 const store = useEditorStore()

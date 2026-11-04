@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue'
+import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
-import type { WebMCPMode } from '@/app/automation/webmcp/policy'
+import type { WebMCPMode } from '@/app/automation/webmcp/schema'
 import type { WebMCPRuntimeState } from '@/app/automation/webmcp/service'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -31,13 +31,13 @@ const descriptions = computed(() => ({
 const tone = computed(
   () =>
     (
-      ({
+      {
         off: 'info',
         starting: 'info',
         ready: 'success',
         unsupported: 'warning',
         error: 'error'
-      }) as const
+      } as const
     )[state.status]
 )
 const detail = computed(() => {
@@ -48,13 +48,13 @@ const detail = computed(() => {
 const statusTone = computed(
   () =>
     (
-      ({
+      {
         off: 'neutral',
         starting: 'pending',
         ready: 'success',
         unsupported: 'neutral',
         error: 'neutral'
-      }) as const
+      } as const
     )[state.status]
 )
 /** Unsupported or failed WebMCP is a problem to fix, not a status to read. */

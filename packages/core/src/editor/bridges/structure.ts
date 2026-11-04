@@ -10,6 +10,9 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     wrapInAutoLayout: () => structure.wrapInAutoLayout(selection.getSelectedNodes()),
     groupSelected: () => structure.groupSelected(selection.getSelectedNodes()),
     frameSelection: () => structure.frameSelection(selection.getSelectedNodes()),
+    /** Wraps the selection in a new section with room around it, as FigJam's toolbar does. */
+    wrapSelectionInSection: () => structure.wrapInSection(selection.getSelectedNodes()),
+    canWrapSelectionInSection: () => structure.canWrapInSection(selection.getSelectedNodes()),
     booleanOperationSelected: (operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE') =>
       structure.booleanOperationSelected(selection.getSelectedNodes(), operation),
     flattenSelected: () => structure.flattenSelected(selection.getSelectedNodes()),

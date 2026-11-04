@@ -8,7 +8,7 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -17,10 +17,10 @@ import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { designCheck } from '@/theme/design-check'
 
 import IssueRow from './IssueRow.vue'
 import type { IssueGroupView, IssueRowView } from './types'
+import { designCheck } from './ui'
 
 const { group } = defineProps<{ group: IssueGroupView }>()
 const open = defineModel<boolean>('open', { default: true })

@@ -17,10 +17,10 @@ import {
   editorCommandMetadata,
   formatShortcut,
   useEditorCommands,
-  useI18n,
-  useRetainedPopup
-} from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -70,7 +70,7 @@ const itemCls = menuItem({ justify: 'between' })
               <component :is="operation.icon" class="size-3.5 shrink-0 text-muted" />
               <span>{{ getCommand(operation.id).label }}</span>
             </div>
-            <span class="ml-6 text-[11px] text-muted">{{
+            <span class="ml-6 text-2xs text-muted">{{
               formatShortcut(editorCommandMetadata(operation.id).shortcut)
             }}</span>
           </DropdownMenuItem>

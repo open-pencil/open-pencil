@@ -14,7 +14,7 @@ function pageId(graph: SceneGraph): string {
 }
 
 describe('font lifecycle', () => {
-  test('advances generation only for provider epochs and unique registrations', () => {
+  test('advances generation only for provider epochs and unique registrations', async () => {
     const manager = new FontManager()
     const registrations: string[] = []
     const provider = {
@@ -27,9 +27,9 @@ describe('font lifecycle', () => {
     expect(manager.generation()).toBe(0)
     manager.attachProvider({} as CanvasKit, provider)
     const providerGeneration = manager.generation()
-    manager.markLoaded('Generation Test', 'Regular', data)
+    await manager.markLoaded('Generation Test', 'Regular', data)
     const registrationGeneration = manager.generation()
-    manager.markLoaded('Generation Test', 'Regular', data)
+    await manager.markLoaded('Generation Test', 'Regular', data)
 
     expect(providerGeneration).toBeGreaterThan(0)
     expect(registrationGeneration).toBeGreaterThan(providerGeneration)
@@ -37,33 +37,47 @@ describe('font lifecycle', () => {
     expect(registrations).toEqual(['Generation Test'])
   })
 
-  test('keeps cumulative subset registrations under the source family', () => {
+  test('draws a style from the cumulative subset that replaced its file', async () => {
     const manager = new FontManager()
-    const registrations: string[] = []
+    const registrations: Array<{ data: ArrayBuffer; family: string }> = []
     const provider = {
-      registerFont(_data: ArrayBuffer, family: string) {
-        registrations.push(family)
+      registerFont(data: ArrayBuffer, family: string) {
+        registrations.push({ data, family })
       }
     } as TypefaceFontProvider
 
     manager.attachProvider({} as CanvasKit, provider)
-    manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(8))
+    await manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(8))
     const firstGeneration = manager.generation()
-    manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(12))
+    const replacement = new ArrayBuffer(12)
+    await manager.markLoaded('Subset Font', 'Regular', replacement)
 
-    expect(manager.renderFamily('Subset Font', 'Regular')).toBe('Subset Font')
+    // CanvasKit draws from the first file registered under a name, which is the replaced one,
+    // and picks between files under one name by the weight each declares, so the name the
+    // style draws under holds the replacement alone.
+    const drawn = manager.renderFamily('Subset Font', 'Regular')
+    expect(drawn).not.toBe('Subset Font')
     expect(manager.generation()).toBeGreaterThan(firstGeneration)
-    expect(registrations).toEqual(['Subset Font', 'Subset Font'])
+    expect(registrations.filter(({ family }) => family === drawn).map(({ data }) => data)).toEqual([
+      replacement
+    ])
   })
 
   test('tracks nodes gated by pre-render font resolution', () => {
     const manager = new FontManager()
-    manager.blockNodesUntilFontsResolve(['first', 'second'])
-    expect(manager.isNodeBlocked('first')).toBe(true)
-    expect(manager.isNodeBlocked('second')).toBe(true)
-    manager.unblockNodes(['first'])
-    expect(manager.isNodeBlocked('first')).toBe(false)
-    expect(manager.isNodeBlocked('second')).toBe(true)
+    const graph = new SceneGraph()
+    const other = new SceneGraph()
+    manager.blockNodesUntilFontsResolve(graph, ['first', 'second'])
+    manager.blockNodesUntilFontsResolve(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(true)
+    expect(manager.isNodeBlocked(other, 'first')).toBe(false)
+    manager.unblockNodes(other, ['first'])
+    manager.unblockNodes(graph, ['first', 'second'])
+    expect(manager.isNodeBlocked(graph, 'first')).toBe(false)
+    // Another preparation still holds it.
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(true)
+    manager.unblockNodes(graph, ['second'])
+    expect(manager.isNodeBlocked(graph, 'second')).toBe(false)
   })
 
   test('rejects a text picture observed before the font generation changed', () => {
@@ -79,7 +93,9 @@ describe('font lifecycle', () => {
     })
     const renderer = {
       fontGeneration: 1,
-      textPictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      textFonts: {
+        pictureGenerations: new Map<string, { data: Uint8Array; generation: number }>()
+      }
     }
 
     expect(isTextPictureCurrent(renderer, node)).toBe(true)
@@ -87,12 +103,12 @@ describe('font lifecycle', () => {
     expect(isTextPictureCurrent(renderer, node)).toBe(false)
   })
 
-  test('keeps text visible when an unavailable italic face can use a loaded family face', () => {
+  test('keeps text visible when an unavailable italic face can use a loaded family face', async () => {
     const family = 'Missing Italic Regression'
     const demand = fontFaceDemand(family, 'Regular Italic', 'Hello')
     fontResolver.reset(demand)
     fontResolver.exhaust(demand)
-    fontManager.markLoaded(family, 'Regular', new ArrayBuffer(12))
+    await fontManager.markLoaded(family, 'Regular', new ArrayBuffer(12))
 
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -114,14 +130,14 @@ describe('font lifecycle', () => {
     const manager = new FontManager()
 
     const [first, second] = await Promise.all([
-      manager.fetchBundledFont('/Inter-Regular.ttf'),
-      manager.fetchBundledFont('/Inter-Regular.ttf')
+      manager.fetchBundledFont('/InterVariable.ttf'),
+      manager.fetchBundledFont('/InterVariable.ttf')
     ])
     expect(first).not.toBeNull()
     expect(second).toBe(first)
 
     // A settled request is not kept, so a later load (or a retry after a failure) reads again.
-    const later = await manager.fetchBundledFont('/Inter-Regular.ttf')
+    const later = await manager.fetchBundledFont('/InterVariable.ttf')
     expect(later).not.toBe(first)
     expect(later?.byteLength).toBe(first?.byteLength)
   })

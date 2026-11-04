@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts, SceneGraph, setTextMeasurer } from '@open-pencil/core'
+import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 function importedText(graph: SceneGraph, text: string, width: number, height: number, id: string) {
   const page = graph.getPages()[0]

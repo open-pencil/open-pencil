@@ -1,4 +1,6 @@
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import type { InstanceAssignmentDiagnostic } from './occurrence/types'
 import { symbolOverridesOf, type ComponentPropAssignment } from './types'
@@ -40,6 +42,21 @@ export interface PropertyLayer {
 export interface AssignmentGroup {
   readonly assignments: readonly ComponentPropAssignment[]
   readonly rank: number
+}
+
+/**
+ * The properties outer owners assign an instance, which `keeps` filters as the instance's own
+ * assignment list is filtered, so a dropped assignment is not recorded as an owner's either.
+ */
+export function ownerAssignedProperties(
+  groups: readonly AssignmentGroup[],
+  keeps: (assignment: ComponentPropAssignment) => boolean
+): string[] {
+  return groups
+    .slice(1)
+    .flatMap((group) => group.assignments)
+    .filter(keeps)
+    .flatMap((assignment) => (assignment.defID ? [guidToString(assignment.defID)] : []))
 }
 
 /** Split an owner's saved overrides into structural layers and property claims. */

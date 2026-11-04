@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { NodeType, SceneNode } from '../types'
 
 /** Layers Figma lets carry a status, `DevStatusMixin` in the Plugin API. */

@@ -1,10 +1,9 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   DEFAULT_FIG_COMPRESSION,
-  OPEN_PENCIL_PLUGIN_DATA,
-  readPluginData,
-  type FigCompression,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+  type FigCompression
+} from '@open-pencil/scene-graph/fig-compression'
+import { OPEN_PENCIL_PLUGIN_DATA, readPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 /**
  * The zstd level each preset writes at. Reading costs the same at every level; writing does

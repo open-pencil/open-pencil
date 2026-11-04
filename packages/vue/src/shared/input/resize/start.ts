@@ -1,5 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { enforcedAspectRatio, layerResizes } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import { layerResizes } from '@open-pencil/scene-graph/generated'
+import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
 import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'

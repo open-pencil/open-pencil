@@ -14,7 +14,7 @@ let provider: TypefaceFontProvider
 beforeAll(async () => {
   ck = await initCanvasKit()
   provider = ck.TypefaceFontProvider.Make()
-  provider.registerFont(readFileSync(repoPath('packages/core/assets/Inter-Regular.ttf')), 'Inter')
+  provider.registerFont(readFileSync(repoPath('packages/core/assets/InterVariable.ttf')), 'Inter')
   provider.registerFont(readFileSync(repoPath('packages/core/assets/Inter-SemiBold.ttf')), 'Inter')
 })
 afterAll(() => provider.delete())

@@ -11,7 +11,7 @@ const context = {
 describe('Cloud OpenFeature policy', () => {
   test('evaluates typed safe defaults through OpenFeature', async () => {
     const policy = await createDefaultCloudPolicy()
-    expect(await policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, context)).toBe(true)
+    expect(await policy.boolean(CLOUD_FEATURE_KEYS.links, false, context)).toBe(true)
     expect(await policy.boolean(CLOUD_FEATURE_KEYS.serverEnforcedWrites, true, context)).toBe(false)
     expect(await policy.number(CLOUD_FEATURE_KEYS.maximumFileBytes, 1, context)).toBe(
       1024 * 1024 * 1024

@@ -1,10 +1,6 @@
-import {
-  formatVariableFormula,
-  type SceneGraph,
-  type Variable,
-  type VariableType
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, Variable, VariableType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { formatVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import { exportTokenStylesheet, type TokenExport } from '#core/tools/codegen/tokens'
 

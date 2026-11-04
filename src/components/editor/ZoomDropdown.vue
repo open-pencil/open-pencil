@@ -9,7 +9,8 @@ import {
 } from 'reka-ui'
 import { nextTick, ref, watch } from 'vue'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import {
@@ -106,7 +107,7 @@ watch(open, (v) => {
     <DropdownMenuTrigger as-child>
       <button
         data-test-id="zoom-dropdown-trigger"
-        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover"
+        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted hover:bg-hover"
       >
         {{ zoomPercent() }}%
       </button>

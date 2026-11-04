@@ -3,7 +3,7 @@ import type {
   VariableFormulaNode,
   VariableFormulaOperation,
   VariableLiteral
-} from '@open-pencil/scene-graph'
+} from '#scene-graph/types'
 
 export const MAX_FORMULA_DEPTH = 64
 export const MAX_FORMULA_LENGTH = 4096

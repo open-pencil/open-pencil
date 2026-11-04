@@ -2,9 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { electCloudSaver } from '@/app/cloud/rooms/live'
 
-const editor = { cloud: { kind: 'user', permission: 'edit' } }
-const viewer = { cloud: { kind: 'user', permission: 'view' } }
-const guest = { cloud: { kind: 'guest', permission: 'edit' } }
+// What the relay writes into presence (`stampAwareness`).
+const editor = { cloud: { kind: 'user', id: 'u1', name: 'Ann', permission: 'edit' } }
+const viewer = { cloud: { kind: 'user', id: 'u2', name: 'Ben', permission: 'view' } }
+const guest = { cloud: { kind: 'guest', id: 'g1', name: 'Guest', permission: 'edit' } }
 
 describe('the room saver', () => {
   test('is the editor with the lowest presence client, this tab included', () => {

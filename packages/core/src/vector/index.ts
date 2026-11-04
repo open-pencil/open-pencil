@@ -17,12 +17,8 @@ export {
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
-export {
-  buildStyleOverrideTable,
-  decodeVectorNetworkBlob,
-  encodeVectorNetworkBlob
-} from '@open-pencil/fig/node-change'
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import { GeometryCommand, readGeometryBlob } from '@open-pencil/scene-graph/geometry'
 
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
@@ -75,12 +71,6 @@ export function vectorNetworkToPath(
   return [path.detachAndDelete()]
 }
 
-const CMD_CLOSE = 0
-const CMD_MOVE_TO = 1
-const CMD_LINE_TO = 2
-const CMD_QUAD_TO = 3
-const CMD_CUBIC_TO = 4
-
 export function geometryBlobToPath(
   ck: CanvasKit,
   blob: Uint8Array,
@@ -88,55 +78,25 @@ export function geometryBlobToPath(
 ): Path {
   const path = new ck.PathBuilder()
   if (!(blob.buffer instanceof ArrayBuffer)) return path.detachAndDelete()
-  const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-  let o = 0
-
-  while (o < blob.length) {
-    const cmd = blob[o++]
-    switch (cmd) {
-      case CMD_CLOSE:
-        path.close()
-        break
-      case CMD_MOVE_TO: {
-        const x = dv.getFloat32(o, true)
-        const y = dv.getFloat32(o + 4, true)
-        o += 8
-        path.moveTo(x, y)
-        break
-      }
-      case CMD_LINE_TO: {
-        const x = dv.getFloat32(o, true)
-        const y = dv.getFloat32(o + 4, true)
-        o += 8
-        path.lineTo(x, y)
-        break
-      }
-      case CMD_QUAD_TO: {
-        const x1 = dv.getFloat32(o, true)
-        const y1 = dv.getFloat32(o + 4, true)
-        const x = dv.getFloat32(o + 8, true)
-        const y = dv.getFloat32(o + 12, true)
-        o += 16
-        path.quadTo(x1, y1, x, y)
-        break
-      }
-      case CMD_CUBIC_TO: {
-        const x1 = dv.getFloat32(o, true)
-        const y1 = dv.getFloat32(o + 4, true)
-        const x2 = dv.getFloat32(o + 8, true)
-        const y2 = dv.getFloat32(o + 12, true)
-        const x = dv.getFloat32(o + 16, true)
-        const y = dv.getFloat32(o + 20, true)
-        o += 24
-        path.cubicTo(x1, y1, x2, y2, x, y)
-        break
-      }
-      default:
-        return path.detachAndDelete()
-    }
-  }
-
+  readGeometryBlob(blob, (command, c) => {
+    if (command === GeometryCommand.CLOSE) path.close()
+    else if (command === GeometryCommand.MOVE) path.moveTo(c[0], c[1])
+    else if (command === GeometryCommand.LINE) path.lineTo(c[0], c[1])
+    else if (command === GeometryCommand.QUAD) path.quadTo(c[0], c[1], c[2], c[3])
+    else path.cubicTo(c[0], c[1], c[2], c[3], c[4], c[5])
+  })
   const result = path.detachAndDelete()
   result.setFillType(fillType(ck, windingRule))
   return result
 }
+export {
+  cubicExtrema,
+  isLineSegment,
+  nearestPointOnCubic,
+  segmentToAbsolute,
+  splitCubicAt,
+  type CubicPoints,
+  type NearestResult,
+  type NetworkNearestResult
+} from './curve-math'
+export { extractSubNetwork, findConnectedComponents } from './connectivity'

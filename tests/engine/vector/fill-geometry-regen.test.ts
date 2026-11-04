@@ -46,25 +46,12 @@ function decode(blob: Uint8Array): string[] {
   return out
 }
 
-const ENTRY: GeometryPath = {
-  windingRule: 'NONZERO',
-  commandsBlob: new Uint8Array([9, 9, 9]),
-  fills: [
-    {
-      type: 'SOLID',
-      color: { r: 1, g: 0, b: 0, a: 1 },
-      opacity: 1,
-      visible: true,
-      blendMode: 'NORMAL'
-    }
-  ]
-}
+const ENTRY: GeometryPath = { windingRule: 'NONZERO', commandsBlob: new Uint8Array([9, 9, 9]) }
 
 describe('regenerateFillGeometry', () => {
-  test('rebuilds region blobs positionally, preserving fills', () => {
+  test('rebuilds one outline per region, in region order', () => {
     const network = square()
     const [g] = regenerateFillGeometry(network, [ENTRY])
-    expect(g.fills).toEqual(ENTRY.fills)
     expect(g.windingRule).toBe('EVENODD') // taken from the region
     expect(decode(g.commandsBlob)).toEqual(['M 0,0', 'L 10,0', 'L 10,10', 'L 0,10', 'L 0,0', 'Z'])
   })
@@ -83,18 +70,10 @@ describe('regenerateFillGeometry', () => {
     expect(decode(g.commandsBlob)[1]).toBe('C 10,0')
   })
 
-  test('region/entry count mismatch rebuilds without stale styles', () => {
-    const network = square()
-    // Two style entries but only one region — mapping is unknown, so rebuild
-    // one path per region and drop the mismatched style metadata.
-    const out = regenerateFillGeometry(network, [ENTRY, { ...ENTRY }])
+  test('rebuilds one outline per region however many entries it had', () => {
+    const out = regenerateFillGeometry(square(), [ENTRY, { ...ENTRY }])
     expect(out).toHaveLength(1)
-    const path = out[0]
-    expect(path).toBeDefined()
-    if (!path) return
-    expect(path.fills).toBeUndefined()
-    expect(path.commandsBlob).not.toBe(ENTRY.commandsBlob)
-    expect(decode(path.commandsBlob)).toEqual([
+    expect(decode(out[0].commandsBlob)).toEqual([
       'M 0,0',
       'L 10,0',
       'L 10,10',

@@ -11,12 +11,9 @@ import {
   initCodec,
   type NodeChange
 } from '@open-pencil/kiwi/fig/codec'
-import {
-  reconcileVariableBindings,
-  rescaleNodeTree,
-  type SceneNode,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import bindingFixture from '#tests/fixtures/nested-binding-ownership-records.json' with { type: 'json' }
@@ -254,7 +251,18 @@ test('a bound root swap renders its replacement paint rather than its old cache'
       size: { x: 40, y: 40 },
       fillPaints: paint(1, 0),
       symbolData: { symbolID: guid(2) },
-      componentPropRefs: [{ defID: guid(90), componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+      parameterConsumptionMap: {
+        entries: [
+          {
+            variableField: 'OVERRIDDEN_SYMBOL_ID',
+            variableData: {
+              value: { propRefValue: { defId: guid(90) } },
+              dataType: 'PROP_REF',
+              resolvedDataType: 'SYMBOL_ID'
+            }
+          }
+        ]
+      }
     },
     {
       guid: guid(6),

@@ -1,18 +1,20 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 import { invert } from 'es-toolkit/object'
 
-import type { VariableConsumptionEntry, GUID } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import {
-  isNumericVariableBindingField,
-  type SceneNode,
-  type SceneGraph,
-  type TextBindableField,
-  type TextBoundVariables
+import type {
+  SceneNode,
+  SceneGraph,
+  TextBindableField,
+  TextBoundVariables
 } from '@open-pencil/scene-graph'
+import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { cloneRecord } from '../clone'
 import { linearVariableExpression } from './expression'
+import { mergeVariableModeMaps } from './maps'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   cornerRadius: 'CORNER_RADIUS',
@@ -106,6 +108,13 @@ export function mergeVariableConsumptionMaps(
   }
   // VariableDataMap carries nothing but its entries, so the merged list is the whole map.
   return { parameterConsumptionMap: { entries } }
+}
+
+export function claimedVariableMaps(
+  layer: VariableConsumptionSource,
+  claim: VariableConsumptionSource
+): Record<string, unknown> {
+  return { ...mergeVariableConsumptionMaps(layer, claim), ...mergeVariableModeMaps(layer, claim) }
 }
 
 export function variableBindingEntry(
@@ -345,5 +354,7 @@ export function resolvedNumericBindingUpdate(
 ): Partial<SceneNode> | undefined {
   if (field === 'opacity')
     return { opacity: Math.max(0, Math.min(1, value * OPACITY_UNIT_PER_PERCENT)) }
-  return isNumericVariableBindingField(field) ? { [field]: value } : undefined
+  return isNumericVariableBindingField(field)
+    ? { [field]: boundNumberValue(field, value) }
+    : undefined
 }

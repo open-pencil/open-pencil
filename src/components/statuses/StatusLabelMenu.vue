@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
-import { useStatusMessages } from '@open-pencil/vue'
+import { useStatusMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'

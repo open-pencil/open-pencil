@@ -1,4 +1,5 @@
-import { createComponentPropertyId, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { assertNodeEditable } from '#core/editor/capabilities'

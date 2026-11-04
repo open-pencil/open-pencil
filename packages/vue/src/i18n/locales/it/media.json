@@ -1,11 +1,17 @@
 {
   "vectorization": "Vettorializzazione immagini",
-  "vectorizationDescription": "Invia i livelli immagine a Recraft o fal.ai e restituisce vettori modificabili. Potrebbero essere applicati costi.",
+  "vectorizationDescription": "Invia i livelli immagine a Recraft, fal.ai o QuiverAI e restituisce vettori modificabili. Potrebbero essere applicati costi.",
   "vectorizeProvider": "Servizio di vettorializzazione",
   "pexelsAPIKey": "Chiave API Pexels",
   "unsplashAccessKey": "Chiave di accesso Unsplash",
   "stockPhotoToolOptional": "Facoltativo — abilita lo strumento foto stock",
   "pexelsAlternativeOptional": "Facoltativo — fonte alternativa di foto stock",
   "getPexelsAPIKey": "Ottieni una chiave API Pexels gratuita →",
-  "getUnsplashAccessKey": "Ottieni una chiave di accesso Unsplash gratuita →"
+  "getUnsplashAccessKey": "Ottieni una chiave di accesso Unsplash gratuita →",
+  "photoKeyWorks": "{service} ha accettato questa chiave.",
+  "photoKeyRejected": "{service} ha rifiutato questa chiave. Controlla di averla copiata per intero.",
+  "unsplashKeyRejected": "Unsplash ha rifiutato questa chiave. Incolla l’Access Key della tua app, non la Secret key.",
+  "photoKeyRateLimited": "Questa chiave ha esaurito le richieste a {service} per quest’ora. Riprova più tardi.",
+  "photoKeyUnreachable": "Impossibile raggiungere {service}. Controlla la connessione di rete.",
+  "photoKeyCheckFailed": "{service} non ha risposto al test. Riprova più tardi."
 }

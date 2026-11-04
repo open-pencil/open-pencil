@@ -1,5 +1,6 @@
 //! Byte-level knowledge of OpenType font files, independent of how fonts are discovered.
 
+use read_fonts::FontRef;
 use std::io::{Read, Seek, SeekFrom};
 
 const TTC_TAG: &[u8; 4] = b"ttcf";
@@ -13,41 +14,27 @@ fn read_array<const N: usize>(reader: &mut impl Read) -> Option<[u8; N]> {
     Some(bytes)
 }
 
-fn read_u16(data: &[u8], offset: usize) -> Option<u16> {
-    Some(u16::from_be_bytes(
-        data.get(offset..offset + 2)?.try_into().ok()?,
-    ))
-}
-
-fn read_u32(data: &[u8], offset: usize) -> Option<u32> {
-    Some(u32::from_be_bytes(
-        data.get(offset..offset + 4)?.try_into().ok()?,
-    ))
-}
-
 /// Returns font data whose first table directory is face `index`, which renderers that read only
 /// the first face of a collection (CanvasKit) accept. Table offsets in a collection are absolute,
 /// so the tables themselves stay where they are.
 pub fn standalone_face(data: &[u8], index: u32) -> Option<Vec<u8>> {
-    if data.get(0..4)? != TTC_TAG {
-        return (index == 0).then(|| data.to_vec());
+    let face = FontRef::from_index(data, index).ok()?;
+    if face.ttc_index().is_none() {
+        return Some(data.to_vec());
     }
-    let count = read_u32(data, 8)?;
-    if index >= count {
-        return None;
-    }
-    let face = read_u32(data, OFFSET_TABLE_SIZE + 4 * index as usize)? as usize;
-    let num_tables = read_u16(data, face + 4)? as usize;
-    let directory = OFFSET_TABLE_SIZE + num_tables * TABLE_RECORD_SIZE;
+    let directory = face.table_directory();
+    let size = OFFSET_TABLE_SIZE + directory.num_tables() as usize * TABLE_RECORD_SIZE;
     let mut standalone = data.to_vec();
     standalone
-        .get_mut(..directory)?
-        .copy_from_slice(data.get(face..face + directory)?);
+        .get_mut(..size)?
+        .copy_from_slice(directory.offset_data().as_bytes().get(..size)?);
     Some(standalone)
 }
 
 /// Returns whether every face in a font file stores outlines only in a table the renderer cannot
-/// draw, such as Apple's `hvgl` (PingFang on macOS 15 and later). Reads only the table directories.
+/// draw, such as Apple's `hvgl` (PingFang on macOS 15 and later). Reads only the table directories
+/// from the stream, as it runs on every failed load of such a family: read-fonts would need the
+/// whole file, tens of megabytes for PingFang, in memory.
 pub fn has_only_unsupported_outlines(reader: &mut (impl Read + Seek)) -> Option<bool> {
     let header: [u8; 12] = read_array(reader)?;
     let face_offsets = if &header[0..4] == TTC_TAG {

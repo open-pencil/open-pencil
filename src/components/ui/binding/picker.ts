@@ -1,5 +1,5 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { BindingState } from '@open-pencil/vue'
+import type { BindingState } from '@open-pencil/vue/controls/binding-provider'
 
 import type { BindingFieldUI } from './ui'
 

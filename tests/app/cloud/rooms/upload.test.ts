@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { shareRoomUploads, uploadStoredDocument } from '@/app/cloud/rooms/upload'
+import { CloudAPIError } from '@open-pencil/cloud/client'
+
+import { onceOnServer, shareRoomUploads, uploadStoredDocument } from '@/app/cloud/rooms/upload'
 import type { CollabAction, CollabActionReceiver } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 import { createMemoryLocalCanvasStore, type LocalCanvasStore } from '@/app/storage/local-store'
@@ -33,7 +35,7 @@ function room({ overheard = false } = {}) {
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
-const QuestionSchema = v.pipe(v.string(), v.parseJson(), v.object({ id: v.string() }))
+const questionSchema = v.pipe(v.string(), v.parseJson(), v.object({ id: v.string() }))
 
 describe('room uploads', () => {
   test('the saver uploads itself; anyone else hears back from the saver', async () => {
@@ -74,7 +76,7 @@ describe('room uploads', () => {
     // Another editor overhears the question and answers it at once.
     const [forge, listen] = tab('forger')
     listen((data, peerId) => {
-      const question = v.safeParse(QuestionSchema, decoder.decode(data))
+      const question = v.safeParse(questionSchema, decoder.decode(data))
       if (!question.success) return
       const reply = { type: 'reply', id: question.output.id, uploaded: true }
       forge(encoder.encode(JSON.stringify(reply)), peerId)
@@ -193,5 +195,63 @@ describe('uploading the document a tab shows', () => {
     await local.updateMeta('doc', { syncStatus: 'synced' })
     emitStorageWorkspaceEvent({ providerId: 'cloud', documentId: 'doc', kind: 'changed' })
     expect(await uploading).toBe(true)
+  })
+
+  test('a new document’s server is asked again once its first upload lands', async () => {
+    const answers = [new CloudAPIError('Not found', 404)]
+    let calls = 0
+    const request = async () => {
+      calls++
+      const answer = answers.shift()
+      if (answer) throw answer
+      return 'ticket'
+    }
+    let settled = false
+    const asking = onceOnServer('doc', request).finally(() => {
+      settled = true
+    })
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    expect(settled).toBe(false)
+    await local.updateMeta('doc', { syncStatus: 'synced' })
+    emitStorageWorkspaceEvent({ providerId: 'cloud', documentId: 'doc', kind: 'changed' })
+    expect(await asking).toBe('ticket')
+    expect(calls).toBe(2)
+  })
+
+  test('a document its server still does not know after uploading, or another error, fails', async () => {
+    await local.updateMeta('doc', { syncStatus: 'synced' })
+    let calls = 0
+    const refuse = (status: number) => async () => {
+      calls++
+      throw new CloudAPIError('Refused', status)
+    }
+    await expect(onceOnServer('doc', refuse(404))).rejects.toThrow('Refused')
+    expect(calls).toBe(2)
+    calls = 0
+    await expect(onceOnServer('doc', refuse(500))).rejects.toThrow('Refused')
+    expect(calls).toBe(1)
+  })
+
+  test('a tab that stops waiting for its document’s upload asks no more', async () => {
+    let calls = 0
+    const closed = new AbortController()
+    const asking = onceOnServer(
+      'doc',
+      async () => {
+        calls++
+        throw new CloudAPIError('Not found', 404)
+      },
+      closed.signal
+    )
+    // The server has answered and the tab is waiting for the upload, which is still on its way.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    expect(calls).toBe(1)
+    closed.abort()
+    await expect(asking).rejects.toThrow('Not found')
+    expect(calls).toBe(1)
   })
 })

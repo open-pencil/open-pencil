@@ -1,8 +1,11 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { Fill, NodeType, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
@@ -27,15 +30,6 @@ const SILHOUETTE_PAINT: Fill = {
   visible: true
 }
 
-const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
-  'FRAME',
-  'GROUP',
-  'SECTION',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
 /**
  * Figma casts a full-strength shadow from any paint above 0% opacity and none from a paint at
  * 0% or a gradient whose stops are all transparent, so such a paint counts as no paint at all.
@@ -46,15 +40,8 @@ export function paintCastsShadow(paint: Fill): boolean {
 }
 
 /** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
-export function isLayerContainer(node: SceneNode): boolean {
-  return LAYER_CONTAINER_TYPES.has(node.type)
-}
-
 export function fillsCastShadow(node: SceneNode): boolean {
-  return (
-    node.fills.some(paintCastsShadow) ||
-    node.fillGeometry.some((geometry) => geometry.fills?.some(paintCastsShadow) ?? false)
-  )
+  return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
@@ -95,14 +82,17 @@ function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | nul
     ...node,
     fills,
     strokes,
-    fillGeometry: node.fillGeometry.map((geometry) =>
-      geometry.fills
-        ? {
-            ...geometry,
-            fills: coversArea || geometry.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
-          }
-        : geometry
-    ),
+    vectorNetwork: node.vectorNetwork && {
+      ...node.vectorNetwork,
+      regions: node.vectorNetwork.regions.map((region) =>
+        region.fills
+          ? {
+              ...region,
+              fills: coversArea || region.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
+            }
+          : region
+      )
+    },
     effects: [],
     boundVariables: {}
   }
@@ -142,12 +132,7 @@ function drawChildSilhouettes(
   canvas.save()
   try {
     if (clipsChildren(node)) {
-      r.clipNodeShape(
-        canvas,
-        node,
-        r.ck.LTRBRect(0, 0, node.width, node.height),
-        nodeHasRadius(node)
-      )
+      r.clipNodeShape(canvas, node)
     }
     renderMaskedChildIds(
       r,
@@ -174,7 +159,13 @@ export function strokeOutset(stroke: Stroke): number {
 function strokeOverflow(node: SceneNode): number {
   let overflow = 0
   for (const stroke of node.strokes) {
-    if (paintCastsShadow(stroke)) overflow = Math.max(overflow, strokeOutset(stroke))
+    if (!paintCastsShadow(stroke)) continue
+    // A line's stroke lies wholly to one side of it, whatever its alignment, with its heads.
+    const reach =
+      node.type === 'LINE'
+        ? strokeReach([stroke], node.strokeCap, null, node)
+        : strokeOutset(stroke)
+    overflow = Math.max(overflow, reach)
   }
   return overflow
 }

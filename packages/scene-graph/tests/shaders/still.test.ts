@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { shaderFrameEncoding, shaderFramePixels } from '@open-pencil/scene-graph'
+import { shaderFrameEncoding, shaderFramePixels } from '@open-pencil/scene-graph/shaders'
 
 /** RGBA pixels with every alpha set to `alpha`. */
 function pixels(count: number, alpha: number): Uint8ClampedArray {

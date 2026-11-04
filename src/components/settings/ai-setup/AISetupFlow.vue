@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
@@ -19,6 +19,7 @@ import AISetupAccess from './AISetupAccess.vue'
 import AISetupConnection from './AISetupConnection.vue'
 import AISetupReview from './AISetupReview.vue'
 import AISetupRoles from './AISetupRoles.vue'
+import AISetupSkills from './AISetupSkills.vue'
 
 const {
   entry,
@@ -34,8 +35,19 @@ const { ai, common } = useI18n()
 const styles = tv(theme)()
 
 const onboarding = useAIOnboarding({ agentsAvailable })
-const { answers, step, recommended, plan, roles, gaps, hasDesign, busy, saveResult, canContinue } =
-  onboarding
+const {
+  answers,
+  step,
+  recommended,
+  plan,
+  roles,
+  gaps,
+  hasDesign,
+  busy,
+  saveResult,
+  canContinue,
+  detections
+} = onboarding
 const { isRecommended } = roles
 const phase = ref<'welcome' | 'wizard' | 'saved'>(entry === 'welcome' ? 'welcome' : 'wizard')
 
@@ -87,8 +99,12 @@ function back(): void {
   else emit('close')
 }
 
+const skills = useTemplateRef<{ apply: () => void }>('skills')
+
 async function finish(): Promise<void> {
-  if ((await onboarding.apply()) === 'saved') phase.value = 'saved'
+  if ((await onboarding.apply()) !== 'saved') return
+  skills.value?.apply()
+  phase.value = 'saved'
 }
 </script>
 
@@ -140,7 +156,11 @@ async function finish(): Promise<void> {
 
       <template v-else-if="step === 'access'">
         <p :class="styles.help()">{{ ai.aiSetupAccessDescription }}</p>
-        <AISetupAccess v-model="answers.access" :agents-available="agentsAvailable" />
+        <AISetupAccess
+          v-model="answers.access"
+          :agents-available="agentsAvailable"
+          :detections="detections"
+        />
       </template>
 
       <template v-else-if="step === 'connect'">
@@ -195,6 +215,9 @@ async function finish(): Promise<void> {
           @check-agent="onboarding.refreshAgents()"
           @install-agent="onboarding.installAgent(providerID)"
           @install-bridge="onboarding.setupCanvasBridge()"
+          @sign-in-agent="onboarding.signInAgent(providerID)"
+          @cancel-agent-sign-in="onboarding.cancelAgentSignIn(providerID)"
+          @submit-agent-sign-in-code="onboarding.submitAgentSignInCode(providerID, $event)"
         />
       </template>
 
@@ -207,6 +230,7 @@ async function finish(): Promise<void> {
           @choose="roles.choose"
           @use-recommended="roles.useRecommended"
         />
+        <AISetupSkills v-if="agentsAvailable" ref="skills" />
         <SettingsSaveFeedback
           :result="saveResult"
           :error="saveResult === 'saved' ? null : saveResult"

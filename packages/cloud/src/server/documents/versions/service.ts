@@ -9,8 +9,9 @@ import type {
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
+import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
+import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
-import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
@@ -236,6 +237,7 @@ export function createDocumentVersionService(
       const { document, start } = await openHistory(userId, documentId, false)
       const version = await findVersion(documentId, versionId, start)
       const stored = await storedRevision(database, version.revisionId)
+      const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
       return {
         document: {
           document: documentSummary(document),
@@ -243,10 +245,8 @@ export function createDocumentVersionService(
           byteSize: Number(stored.byteSize),
           checksum: stored.checksum,
           contentType: stored.contentType,
-          download: await objects.createDownload({
-            key: stored.objectKey,
-            expiresAt: new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
-          })
+          download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
+          images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
         },
         version: versionOf(version, document.currentRevisionId)
       }
@@ -299,6 +299,7 @@ export function createDocumentVersionService(
             createdBy: userId
           })
           .execute()
+        await copyRevisionImages(transaction, version.revisionId, revisionId)
         await transaction
           .updateTable('document')
           .set({
@@ -307,6 +308,15 @@ export function createDocumentVersionService(
             collaborationEpoch: (expression) => expression('collaborationEpoch', '+', 1)
           })
           .where('id', '=', documentId)
+          .execute()
+        // The rooms of the replaced state never open again, so what the relay saved of them goes.
+        await transaction
+          .deleteFrom('documentRoomUpdate')
+          .where('documentId', '=', documentId)
+          .execute()
+        await transaction
+          .deleteFrom('documentRoomSnapshot')
+          .where('documentId', '=', documentId)
           .execute()
         // A moment after the state it replaces, so the history lists it first.
         await keepRevision(transaction, {
@@ -360,6 +370,7 @@ export function createDocumentVersionService(
           id: copyId,
           workspaceId: document.workspaceId,
           name: input.name,
+          kind: document.kind,
           createdBy: userId
         })
         await transaction
@@ -372,6 +383,7 @@ export function createDocumentVersionService(
             createdBy: userId
           })
           .execute()
+        await copyRevisionImages(transaction, version.revisionId, revisionId)
         await transaction
           .updateTable('document')
           .set({ currentRevisionId: revisionId, version: 1 })

@@ -1,8 +1,8 @@
-import type { ClipboardPayload, CopyOptions } from '@open-pencil/core/editor'
+import type { ClipboardPayload, CopyOptions } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
-export type { ClipboardPayload } from '@open-pencil/core/editor'
+export type { ClipboardPayload } from '@open-pencil/core'
 
 export interface SystemClipboard {
   copy(store: EditorStore, options?: CopyOptions): Promise<boolean>

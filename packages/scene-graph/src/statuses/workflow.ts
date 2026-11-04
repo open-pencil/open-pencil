@@ -1,5 +1,5 @@
 import { parseColor } from '../color'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { SceneNode } from '../types'

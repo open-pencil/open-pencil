@@ -76,7 +76,7 @@ async function directReference(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/?test&no-rulers&renderer=tiled&navigation-benchmark')
+  await page.goto('/?test&no-rulers&navigation-benchmark')
   await new CanvasHelper(page).waitForInit()
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

@@ -12,7 +12,8 @@
         "title": "OpenPencil Native Test",
         "width": 1280,
         "height": 800,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "create": false
       }
     ]
   },

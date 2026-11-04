@@ -2,13 +2,12 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
-import {
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData,
-  type FigCompression
-} from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
+import type { FigCompression } from '@open-pencil/scene-graph/fig-compression'
 
 import { figCompressionOf } from '#core/io/formats/fig/compression'
 import { hasPendingReaderPages } from '#core/kiwi/fig/session/document-state'

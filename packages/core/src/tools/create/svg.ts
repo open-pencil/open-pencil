@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { createSVGNodesFromImport, prepareSVGImport, svgImportFonts } from '#core/io/formats/svg'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const importSVG = defineTool({
   name: 'import_svg',
@@ -43,9 +43,11 @@ export const importSVG = defineTool({
         figma.loadFontAsync({ family, style })
       )
     )
+    const parentId = args.parent_id ?? figma.currentPage.id
+    if (data) prepareSlotInsertion(figma.graph, parentId, 'import_svg')
     const frame =
       data &&
-      createSVGNodesFromImport(figma.graph, args.parent_id ?? figma.currentPage.id, data, {
+      createSVGNodesFromImport(figma.graph, parentId, data, {
         name: args.name,
         x: args.x,
         y: args.y

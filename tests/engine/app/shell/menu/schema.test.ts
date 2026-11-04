@@ -49,8 +49,10 @@ describe('APP_MENU_SCHEMA', () => {
     ).filter((entry) => !('type' in entry) && entry.handler === 'shell')
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
-      'browse-files',
       'open-tour',
+      'diagnostics',
+      'report-problem',
+      'support-openpencil',
       'settings',
       'view-design-issues',
       'theme-light',
@@ -62,13 +64,15 @@ describe('APP_MENU_SCHEMA', () => {
     ])
   })
 
-  test('browses and saves to places from one File menu item each', () => {
+  // As in Figma, files are browsed on Home and in a New tab, so the File menu creates and saves.
+  test('starts documents and saves to places from the File menu', () => {
     const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
     const ids = (fileMenu ? actionItems(fileMenu.items) : []).map((entry) =>
       'type' in entry ? '' : entry.id
     )
 
-    expect(ids).toContain('browse-files')
+    expect(ids.slice(0, 3)).toEqual(['new', 'new-tab', 'open'])
+    expect(ids).not.toContain('browse-files')
     expect(ids).toContain('save-to')
     expect(ids).not.toContain('save-to-cloud')
   })
@@ -80,6 +84,35 @@ describe('APP_MENU_SCHEMA', () => {
     expect(entries).toContainEqual(
       expect.objectContaining({ id: 'open-recent', label: 'Open Recent', target: 'native' })
     )
+  })
+
+  // Home and a New file tab hold no document: the menus keep what starts, opens, and switches
+  // documents, and the app's own settings, and leave out what edits or shows one.
+  test('shows only document-free menus and items while no document is in front', () => {
+    const shownIds = (items: readonly AppMenuEntry[]) =>
+      items.flatMap((entry) =>
+        entry.type === 'separator' || entry.feature === 'document' ? [] : [entry.id]
+      )
+    const shown = new Map(
+      APP_MENU_SCHEMA.filter((group) => group.feature !== 'document').map((group) => [
+        group.label,
+        shownIds(group.items)
+      ])
+    )
+
+    expect([...shown.keys()]).toEqual(['File', 'Edit', 'View'])
+    expect(shown.get('File')).toEqual(expect.arrayContaining(['new', 'open', 'settings']))
+    expect(shown.get('Edit')).toEqual(expect.arrayContaining(['copy', 'cut', 'paste']))
+    const shownAnywhere = [...shown.values()].flat()
+    for (const id of [
+      'save',
+      'export-selection',
+      'edit.undo',
+      'selection.selectAll',
+      'view.zoomFit'
+    ]) {
+      expect(shownAnywhere).not.toContain(id)
+    }
   })
 
   test('keeps move-to-page destination selection in the browser menu', () => {

@@ -1,40 +1,48 @@
+import type {
+  BaseNode,
+  BooleanOperationNode,
+  ChildrenMixin,
+  ComponentNode,
+  ComponentSetNode,
+  GroupNode,
+  Image,
+  PageNode,
+  SceneNode,
+  UtilAPI,
+  VectorNode
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
-import {
-  createConnector,
-  freeEndpoint,
-  updateTokenExpression,
-  type GroupFitOptions,
-  type SceneGraph,
-  type SceneNode as CoreSceneNode,
-  type NodeType,
-  type Variable,
-  type VariableCollection,
-  type VariableType,
-  type VariableValue
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pencil/scene-graph'
+import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
-import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import {
+  invalidateBooleanAncestors,
+  rendererInvalidationForChanges
+} from '#core/editor/graph-events'
+import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
-import { iconify, type IconProvider } from '#core/icons'
+import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { reconcileVariableLayouts } from '#core/layout/variables'
-import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
-import { combineComponentsAsVariants, componentFromNode, exposeInstanceSwap } from './components'
+import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
+import { loadFigmaFont } from './fonts/load'
+import type { FigmaFontNameInput } from './fonts/names'
+import { variationAxisTags } from './fonts/variations'
+import * as images from './images'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -56,21 +64,50 @@ import { startPendingLayout } from './pending-layout'
 import {
   FigmaNodeProxy,
   INTERNAL_ID,
+  loadPage,
   MIXED,
+  pageOfNode,
+  setPageHost,
   type FigmaFont,
-  type FigmaFontName,
   type NodeProxyHost
 } from './proxy'
 import { newShapeWithText } from './shape-with-text'
+import { FigmaStyleMethods } from './styles/api'
 import type { ExportImageOptions } from './types'
+import { figmaUtil } from './util'
+import { FigmaVariablesAPI } from './variables'
+import { combineComponentsAsVariants } from './variants'
 
 const noop = () => undefined
+
+/** What a host passes to `FigmaAPI` beyond the document. */
+export interface FigmaAPIOptions {
+  /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
+  fetch?: images.ImageFetch
+  /**
+   * Loads a page's layers, for a host that loads pages as they are visited, as the editor does a
+   * file it opens: `page.loadAsync`, `figma.loadAllPagesAsync`, and `setCurrentPageAsync` call
+   * it, as they load pages in Figma's dynamic-page mode. Without one every page is in memory.
+   */
+  loadPage?: (pageId: string) => Promise<void>
+  /** The page holding a layer not loaded yet, which `getNodeByIdAsync` loads to find it. */
+  pageOfNode?: (nodeId: string) => Promise<string | null>
+}
 
 export { FigmaNodeProxy } from './proxy'
 export { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 export { flushPendingLayout } from './pending-layout'
 export type { FigmaEffect } from './effects'
 export type { ExportImageOptions } from './types'
+export { MAX_IMAGE_FETCH_BYTES, type ImageFetch } from './images'
+export {
+  FigmaVariable,
+  FigmaVariableCollection,
+  FigmaVariablesAPI,
+  type FigmaComposedColor,
+  type FigmaVariableAlias,
+  type FigmaVariableValue
+} from './variables'
 export type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -91,32 +128,83 @@ export type {
   FigmaVectorNode
 } from './node-types'
 export type { FigmaFont, FigmaFontName } from './proxy'
-
-export { computeImageHash }
+export type { FigmaFontNameInput } from './fonts/names'
+export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
-export class FigmaAPI implements NodeProxyHost {
+export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   readonly graph: SceneGraph
   private _currentPageId: string
+  /** Counts page switches, so a switch whose page loads after a later one does not undo it. */
+  #pageSwitch = 0
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
+  private _nodeTypes = new Map<string, string | undefined>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
+  private _unbindRendererEvents: (() => void) | null = null
   /** The interface theme new sections take their fill from, as in Figma. */
   theme: InterfaceTheme = 'light'
 
   readonly mixed = MIXED
+  /** Figma's color and Markdown helpers, as `figma.util`. */
+  readonly util: UtilAPI = figmaUtil
+  /** The document's variables and collections, as Figma's `figma.variables`. */
+  readonly variables: FigmaVariablesAPI
 
-  constructor(graph: SceneGraph) {
+  /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
+  readonly #fetch: images.ImageFetch
+
+  constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
+    super()
     this.graph = graph
+    this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
+    if (options.loadPage)
+      setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
+    this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
+  get renderer(): SkiaRenderer | null {
+    return this._renderer
+  }
+
+  /**
+   * The renderer that measures for the API: geometry, boolean results, and flattened vectors. It
+   * keeps paths between readings, so the API tells it when a layer's shape changes or a change
+   * lands inside a boolean operation, as the editor does for its renderers.
+   */
   setRenderer(renderer: SkiaRenderer | null): void {
+    this._unbindRendererEvents?.()
+    this._unbindRendererEvents = null
     this._renderer = renderer
+    if (!renderer) return
+    const graph = this.graph
+    const invalidate = (id: string | null | undefined) =>
+      invalidateBooleanAncestors(graph, [renderer], id)
+    // A layer's own paths are kept too, so an edit to its shape drops them, as the editor's do.
+    const changed = (id: string, changes: Partial<CoreSceneNode>) => {
+      invalidate(id)
+      const { geometryCache } = rendererInvalidationForChanges(changes, { preview: false })
+      if (geometryCache) renderer.invalidateVectorPath(id)
+    }
+    this._unbindRendererEvents = graph.onNodeEvents({
+      created: (node) => invalidate(node.parentId),
+      updated: (id, changes) => changed(id, changes),
+      previewUpdated: (id, changes) => changed(id, changes),
+      deleted: (_id, parentId) => invalidate(parentId),
+      reparented: (id, oldParentId) => {
+        invalidate(oldParentId)
+        invalidate(graph.getNode(id)?.parentId)
+      },
+      reordered: (_id, parentId, _index, previousParentId) => {
+        invalidate(parentId)
+        invalidate(previousParentId)
+      }
+    })
   }
 
   get groupFitOptions(): GroupFitOptions {
@@ -128,10 +216,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   wrapNode(id: string): FigmaNodeProxy {
+    const type = this.graph.getNode(id)?.type
     let proxy = this._nodeCache.get(id)
-    if (!proxy) {
+    // A node that changed type, such as a detached instance, gets the members of its new type.
+    if (!proxy || this._nodeTypes.get(id) !== type) {
       proxy = new FigmaNodeProxy(id, this.graph, this)
       this._nodeCache.set(id, proxy)
+      this._nodeTypes.set(id, type)
     }
     return proxy
   }
@@ -162,6 +253,7 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   set currentPage(page: FigmaNodeProxy) {
+    this.#pageSwitch++
     this._currentPageId = page[INTERNAL_ID]
   }
 
@@ -171,15 +263,46 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   /** The async lookup that Figma requires in dynamic-page mode; same result as getNodeById. */
+  /** As in Figma's dynamic-page mode, a layer on a page not loaded yet loads that page. */
   async getNodeByIdAsync(id: string): Promise<FigmaNodeProxy | null> {
+    const node = this.getNodeById(id)
+    if (node) return node
+    const pageId = await pageOfNode(this, id)
+    if (!pageId) return null
+    await loadPage(this, pageId)
     return this.getNodeById(id)
+  }
+
+  /**
+   * The page switch Figma requires in dynamic-page mode, which sets `currentPage`. As in Figma, a
+   * missing node throws at once and a node that is no page rejects.
+   */
+  setCurrentPageAsync(page: FigmaNodeProxy): Promise<void>
+  setCurrentPageAsync(page: PageNode): Promise<void>
+  // Scripts are not type-checked, so the call checks for a missing node as Figma does.
+  setCurrentPageAsync(page: PageNode | FigmaNodeProxy | null | undefined): Promise<void> {
+    if (page == null) throw new Error(`in setCurrentPageAsync: Expected node, got ${String(page)}`)
+    if (this._rawNode(page).type !== 'CANVAS') {
+      return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
+    }
+    const pageId = this._nodeId(page)
+    const pageSwitch = ++this.#pageSwitch
+    return loadPage(this, pageId).then(() => {
+      if (pageSwitch !== this.#pageSwitch) return undefined
+      if (this.graph.getNode(pageId)?.type !== 'CANVAS')
+        throw new Error('in setCurrentPageAsync: The page was removed while it loaded')
+      this._currentPageId = pageId
+      return undefined
+    })
   }
 
   // --- Node Creation ---
 
   /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const defaults = newLayerDefaults(type, this.theme)
+    // A board's new sections are light under any interface theme, as the editor makes them.
+    const theme = layerTheme({ documentKind: this.graph.documentKind, theme: this.theme })
+    const defaults = newLayerDefaults(type, theme)
     // Figma's plugin API makes a line with no height, a 496 px section, and a hugging frame.
     if (type === 'LINE') defaults.height = 0
     if (type === 'SECTION') Object.assign(defaults, { width: 496, height: 496 })
@@ -333,74 +456,6 @@ export class FigmaAPI implements NodeProxyHost {
     return this.wrapNode(componentSet.id) as FigmaComponentSetNode
   }
 
-  exposeInstanceSwap(
-    slots: ReadonlyArray<FigmaNodeProxy>,
-    candidates: ReadonlyArray<FigmaNodeProxy>,
-    propertyName = 'Instance'
-  ): FigmaNodeProxy {
-    const host = exposeInstanceSwap(this.graph, slots, candidates, propertyName)
-    return this.wrapNode(host.id)
-  }
-
-  getVariableById(id: string): Variable | null {
-    return this.graph.variables.get(id) ?? null
-  }
-
-  getLocalVariables(type?: string): Variable[] {
-    const vars = [...this.graph.variables.values()]
-    if (type) return vars.filter((v) => v.type === type)
-    return vars
-  }
-
-  getLocalVariableCollections(): VariableCollection[] {
-    return [...this.graph.variableCollections.values()]
-  }
-
-  getVariableCollectionById(id: string): VariableCollection | null {
-    return this.graph.variableCollections.get(id) ?? null
-  }
-
-  // --- Variable/Collection CRUD ---
-
-  createVariable(
-    name: string,
-    type: VariableType,
-    collectionId: string,
-    value?: VariableValue
-  ): Variable {
-    return this.graph.createVariable(name, type, collectionId, value)
-  }
-
-  setVariableValue(variableId: string, modeId: string, value: VariableValue): void {
-    const variable = this.graph.variables.get(variableId)
-    if (!variable) throw new Error(`Variable "${variableId}" not found`)
-    variable.valuesByMode[modeId] = structuredClone(value)
-    updateTokenExpression(variable, modeId, value)
-    reconcileVariableLayouts(this.graph, { variables: [variableId] })
-  }
-
-  deleteVariable(id: string): void {
-    this.graph.removeVariable(id)
-  }
-
-  createVariableCollection(name: string): VariableCollection {
-    return this.graph.createCollection(name)
-  }
-
-  deleteVariableCollection(id: string): void {
-    this.graph.removeCollection(id)
-  }
-
-  bindVariable(nodeId: string, field: string, variableId: string): void {
-    this.graph.bindVariable(nodeId, field, variableId)
-    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
-  }
-
-  unbindVariable(nodeId: string, field: string): void {
-    this.graph.unbindVariable(nodeId, field)
-    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
-  }
-
   // --- Boolean Operations ---
 
   private _booleanOperation(
@@ -424,52 +479,75 @@ export class FigmaAPI implements NodeProxyHost {
     return this.wrapNode(group.id) as FigmaBooleanOperationNode
   }
 
-  private _nodesById(nodeIds: string[]) {
-    return nodeIds.map((id) => {
-      const node = this.getNodeById(id)
-      if (!node) throw new Error(`Node ${id} not found`)
-      return node
-    })
-  }
-
-  booleanOperation(
-    operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE',
-    nodeIds: string[]
-  ): FigmaBooleanOperationNode {
-    const first = this.graph.getNode(nodeIds[0])
-    const parent = this.wrapNode(first?.parentId ?? this._currentPageId)
-    return this._booleanOperation(operation, this._nodesById(nodeIds), parent)
-  }
-
+  union(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent: FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode
   union(
     nodes: ReadonlyArray<BaseNode>,
     parent: BaseNode & ChildrenMixin,
     index?: number
-  ): BooleanOperationNode {
+  ): BooleanOperationNode
+  union(
+    nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
+    parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode {
     return this._booleanOperation('UNION', nodes, parent, index)
   }
 
   subtract(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent: FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode
+  subtract(
     nodes: ReadonlyArray<BaseNode>,
     parent: BaseNode & ChildrenMixin,
     index?: number
-  ): BooleanOperationNode {
+  ): BooleanOperationNode
+  subtract(
+    nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
+    parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode {
     return this._booleanOperation('SUBTRACT', nodes, parent, index)
   }
 
   intersect(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent: FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode
+  intersect(
     nodes: ReadonlyArray<BaseNode>,
     parent: BaseNode & ChildrenMixin,
     index?: number
-  ): BooleanOperationNode {
+  ): BooleanOperationNode
+  intersect(
+    nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
+    parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode {
     return this._booleanOperation('INTERSECT', nodes, parent, index)
   }
 
   exclude(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent: FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode
+  exclude(
     nodes: ReadonlyArray<BaseNode>,
     parent: BaseNode & ChildrenMixin,
     index?: number
-  ): BooleanOperationNode {
+  ): BooleanOperationNode
+  exclude(
+    nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
+    parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
+    index?: number
+  ): FigmaBooleanOperationNode {
     return this._booleanOperation('EXCLUDE', nodes, parent, index)
   }
 
@@ -499,17 +577,11 @@ export class FigmaAPI implements NodeProxyHost {
       sourceNodes.push(raw)
     }
     const vector = flattenSceneNodes(this.graph, this._renderer, sourceNodes, parentId)
-    if (index != null) this.graph.reorderChild(vector.id, parentId, index)
+    if (index != null) this.graph.insertChildAt(vector.id, parentId, index)
     for (const node of nodes) {
       this.graph.deleteNode(this._nodeId(node))
     }
     return this.wrapNode(vector.id) as FigmaVectorNode
-  }
-
-  flattenNode(nodeIds: string[]): FigmaVectorNode {
-    const first = this.graph.getNode(nodeIds[0])
-    const parent = this.wrapNode(first?.parentId ?? this._currentPageId)
-    return this.flatten(this._nodesById(nodeIds), parent)
   }
 
   // --- Viewport ---
@@ -543,30 +615,45 @@ export class FigmaAPI implements NodeProxyHost {
     this._viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
   }
 
-  createImage(data: Uint8Array): { hash: string } {
-    const hash = computeImageHash(data)
-    this.graph.images.set(hash, data)
-    return { hash }
+  createImage(data: Uint8Array): Image {
+    return images.createImage(this.graph, data)
+  }
+
+  getImageByHash(hash: string): Image | null {
+    return images.imageByHash(this.graph, hash)
+  }
+
+  /** Fetches the image at `src` through the host's `fetch` and stores it as `createImage` does. */
+  createImageAsync(src: string): Promise<Image> {
+    return images.fetchImage(this.graph, src, this.#fetch)
   }
 
   // --- Stubs ---
 
+  /** Loads the font so text measures and draws with it from then on; rejects as Figma does. */
+  async loadFontAsync(fontName: FigmaFontNameInput): Promise<void> {
+    await loadFigmaFont(fontName)
+  }
+
   /**
-   * Loads the font so text measures and draws with it from then on. Hosts with their own font
-   * sources replace this; a font that cannot load is skipped, where Figma would reject.
+   * The axis tags a variable family takes in `variationSettings`, or `null` for a static family.
+   * Figma answers for any family it lists; OpenPencil reads the axes from a file the family has
+   * loaded, so a family has to be loaded first.
    */
-  async loadFontAsync(fontName: FigmaFontName): Promise<void> {
-    await fontManager.loadFont(fontName.family, fontName.style).catch(() => null)
+  getFontFamilyVariationAxes(family: string): string[] | null {
+    const variation = fontManager.familyVariation(family)
+    if (variation === undefined) {
+      throw new Error(
+        `in getFontFamilyVariationAxes: Font family "${family}" is not available. Load it with figma.loadFontAsync({ family: "${family}" }) first.`
+      )
+    }
+    return variation ? variationAxisTags(variation.axes) : null
   }
 
   async listAvailableFontsAsync(): Promise<FigmaFont[]> {
     // Default: pure browser / test contexts have no enumeration surface.
     // Desktop hosts override this to return system + bundled fonts.
     return []
-  }
-
-  getFontStatus(): DocumentFontStatus {
-    return documentFontStatus(this.graph, this.currentPageId)
   }
 
   base64Encode(data: Uint8Array): string {
@@ -583,6 +670,19 @@ export class FigmaAPI implements NodeProxyHost {
     return { cancel: noop }
   }
 
+  /**
+   * A script is one call rather than a plugin with a lifetime, so nothing closes; the message is
+   * shown as Figma shows it, through `notify`.
+   */
+  closePlugin(message?: string): void {
+    if (message) this.notify(message)
+  }
+
+  /** Loads every page's layers, one page after another, as Figma does in dynamic-page mode. */
+  async loadAllPagesAsync(): Promise<void> {
+    for (const page of this.graph.getPages()) await loadPage(this, page.id)
+  }
+
   commitUndo(): void {
     return undefined
   }
@@ -593,7 +693,7 @@ export class FigmaAPI implements NodeProxyHost {
 
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
   /** Where icon tools search and fetch icons; hosts may pass a self-hosted or bundled set. */
-  icons: IconProvider = iconify
+  icons: IconProvider = defaultIcons
   rasterCodec?: RasterCodec
   /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
   changeBaseline?: (pageId: string) => SceneGraph | null

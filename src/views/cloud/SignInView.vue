@@ -24,8 +24,10 @@ const emailPassword = computed(() => {
   return { signUp: credentials.signUp, minimumPasswordLength: credentials.minimumPasswordLength }
 })
 const returnsTo = computed(() => {
-  if (redirect.value.startsWith('/cloud/device')) return 'desktop'
-  if (redirect.value.startsWith('/auth/return')) return 'editor'
+  if (redirect.value.startsWith('/auth/device')) return 'desktop'
+  // The editor sent the person here, or a document's link did.
+  if (redirect.value.startsWith('/auth/return') || redirect.value.startsWith('/documents/'))
+    return 'editor'
   return null
 })
 const error = ref<string | null>(callback(route.query))

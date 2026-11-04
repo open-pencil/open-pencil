@@ -14,7 +14,6 @@ import * as v from 'valibot'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: 'https://cloud.example.com',
-  appURL: 'https://app.example.com',
   trustedOrigins: ['https://app.example.com'],
   databaseURL: 'postgresql://test:test@localhost/test',
   authSecret: 'integration-test-secret-at-least-32-characters',
@@ -96,8 +95,8 @@ describe('workspace members', () => {
       )
       expect(invited.invitation).toMatchObject({ email: 'bob@example.com', role: 'editor' })
       const link = new URL(invited.acceptanceURL)
-      expect(link.origin).toBe('https://app.example.com')
-      expect(link.pathname).toBe(`/cloud/invitations/${invited.invitation.id}`)
+      expect(link.origin).toBe('https://cloud.example.com')
+      expect(link.pathname).toBe(`/invitations/${invited.invitation.id}`)
       const token = link.hash.slice(1)
 
       const listed = await responseJSON(
@@ -210,6 +209,70 @@ describe('workspace members', () => {
         membersSchema
       )
       expect(listed.invitations).toEqual([])
+    } finally {
+      await runtime.close()
+    }
+  })
+  test('resends a waiting invitation under a new link and names who sent it', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const created = await responseJSON(
+        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const workspaceId = created.workspace.id
+      const first = await responseJSON(
+        await as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
+          method: 'POST',
+          json: { email: 'bob@example.com', role: 'viewer' }
+        }),
+        createdSchema
+      )
+      const resent = await responseJSON(
+        await as(people.alice)(
+          `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
+          { method: 'POST' }
+        ),
+        createdSchema
+      )
+      expect(resent.invitation).toMatchObject({ email: 'bob@example.com', role: 'viewer' })
+      expect(resent.invitation.id).not.toBe(first.invitation.id)
+      const listed = await responseJSON(
+        await as(people.alice)(`/api/workspaces/${workspaceId}/members`),
+        v.object({
+          invitations: v.array(
+            v.object({
+              id: v.string(),
+              invitedBy: v.object({ id: v.string(), name: v.nullable(v.string()) })
+            })
+          )
+        })
+      )
+      expect(listed.invitations).toEqual([
+        { id: resent.invitation.id, invitedBy: { id: people.alice.userId, name: 'Alice' } }
+      ])
+
+      const stale = await as(people.bob)(`/api/invitations/${first.invitation.id}/accept`, {
+        method: 'POST',
+        json: { token: new URL(first.acceptanceURL).hash.slice(1) }
+      })
+      expect(stale.status).toBe(404)
+      const accepted = await as(people.bob)(`/api/invitations/${resent.invitation.id}/accept`, {
+        method: 'POST',
+        json: { token: new URL(resent.acceptanceURL).hash.slice(1) }
+      })
+      expect(accepted.status).toBe(200)
+
+      const gone = await as(people.alice)(
+        `/api/workspaces/${workspaceId}/invitations/${resent.invitation.id}/resend`,
+        { method: 'POST' }
+      )
+      expect(gone.status).toBe(404)
+      const notAdmin = await as(people.bob)(
+        `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
+        { method: 'POST' }
+      )
+      expect(notAdmin.status).toBe(403)
     } finally {
       await runtime.close()
     }

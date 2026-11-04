@@ -7,7 +7,7 @@ const CODE_RABBIT_AUTHORS = new Set(['coderabbitai[bot]', 'coderabbitai'])
 const REVIEW_GUIDANCE_PREFIXES = ['pr hygiene', 'pr readability', 'pr description']
 
 // Webhook payloads send `null` for absent fields, such as the body of a review left without one.
-const GitHubEventJSON = v.pipe(
+const gitHubEventSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -21,7 +21,7 @@ const GitHubEventJSON = v.pipe(
   })
 )
 
-export type GitHubEvent = v.InferOutput<typeof GitHubEventJSON>
+export type GitHubEvent = v.InferOutput<typeof gitHubEventSchema>
 
 export interface PullRequestSummary {
   state: string
@@ -30,7 +30,7 @@ export interface PullRequestSummary {
   user: { login: string }
 }
 
-const PullRequestSummarySchema: v.GenericSchema<unknown, PullRequestSummary> = v.object({
+const pullRequestSummarySchema: v.GenericSchema<unknown, PullRequestSummary> = v.object({
   state: v.string(),
   author_association: v.string(),
   title: v.string(),
@@ -178,7 +178,7 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
   const env = requiredEnvironment(options.env ?? process.env)
   const log = options.log ?? ((message: string) => process.stdout.write(`${message}\n`))
   const fetchImpl = options.fetchImpl ?? fetch
-  const event = v.parse(GitHubEventJSON, await readFile(env.eventPath, 'utf8'))
+  const event = v.parse(gitHubEventSchema, await readFile(env.eventPath, 'utf8'))
   const sender = event.sender?.login ?? ''
 
   if (!CODE_RABBIT_AUTHORS.has(sender)) {
@@ -205,7 +205,7 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
     env.token,
     `/repos/${env.owner}/${env.repo}/pulls/${context.issueNumber}`,
     fetchImpl,
-    PullRequestSummarySchema
+    pullRequestSummarySchema
   )
   if (!pr) throw new Error(`PR #${context.issueNumber} returned no data`)
 

@@ -1,14 +1,12 @@
 import { uniq } from 'es-toolkit'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { connectorsAffectedBy, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import {
   collectSceneMutation,
-  connectorsAffectedBy,
-  layoutConnector,
   mutationLayoutScopeIds,
-  type SceneGraph,
-  type SceneNode,
   type SceneMutationImpact
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/mutation-impact'
 
 import { computeAllLayouts, computeLayout } from '#core/layout'
 

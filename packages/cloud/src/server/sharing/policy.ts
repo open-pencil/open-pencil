@@ -1,6 +1,5 @@
-import type { DocumentPermission } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentForbiddenError } from '#cloud/server/documents/service'
+import { DocumentForbiddenError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS, type CloudPolicy, type CloudPolicyContext } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 
@@ -12,7 +11,6 @@ export type SharingPolicyOptions = {
 export type CapabilityLinkPolicyInput = {
   actorId: string
   documentId: string
-  permission: DocumentPermission
 }
 
 export function createSharingPolicy(
@@ -33,13 +31,9 @@ export function createSharingPolicy(
       documentId: input.documentId,
       deploymentMode: options.deploymentMode ?? 'self-hosted'
     }
-    if (!(await options.policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, context))) {
-      throw new DocumentForbiddenError()
-    }
-    if (
-      input.permission === 'edit' &&
-      !(await options.policy.boolean(CLOUD_FEATURE_KEYS.anonymousEdit, false, context))
-    ) {
+    // Whether guests may follow the link is checked when they do, so edit links still work for
+    // people signed in to the server.
+    if (!(await options.policy.boolean(CLOUD_FEATURE_KEYS.links, false, context))) {
       throw new DocumentForbiddenError()
     }
   }

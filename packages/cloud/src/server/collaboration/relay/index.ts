@@ -1,5 +1,6 @@
 export { authorizeRelayTicket, type RelayAuthorization } from './authorize'
 export { stampAwareness, type StampedAwareness, type VerifiedPresence } from './awareness'
+export { relayDocumentLookups } from './documents'
 export {
   createCollaborationRelay,
   type CollaborationRelay,
@@ -10,5 +11,7 @@ export {
 export {
   createCollaborationStateStore,
   type CollaborationRoomIdentity,
-  type CollaborationStateStore
+  type CollaborationStateStore,
+  type SavedRoom
 } from './persistence'
+export { readRelayPeerState, type RelayPeerState } from './resume'

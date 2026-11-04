@@ -17,12 +17,13 @@ const router = createRouter({
       }
     },
     { path: '/demo', component: WorkspaceView, meta: { demo: true } },
-    { path: '/share/:roomId', component: WorkspaceView },
+    // A peer-to-peer room, joined by its ID.
+    { path: '/rooms/:roomId', component: WorkspaceView },
     // Cloud invitations and links; the app takes their secret out of the address on start.
-    { path: '/cloud/invitations/:invitationId', component: WorkspaceView },
-    { path: '/cloud/share/:shareId', component: WorkspaceView },
+    { path: '/invitations/:invitationId', component: WorkspaceView },
+    { path: '/share/:shareId', component: WorkspaceView },
     // A Cloud document, or one of its versions, for whoever signs in with access to it.
-    { path: '/cloud/documents/:documentId', component: WorkspaceView }
+    { path: '/documents/:documentId', component: WorkspaceView }
   ]
 })
 

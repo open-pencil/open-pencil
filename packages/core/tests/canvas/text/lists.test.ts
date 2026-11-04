@@ -6,10 +6,10 @@ import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
 
 import { buildParagraph } from '#core/canvas/text/layout/build'
-import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
-import { fontManager } from '#core/text/fonts'
-import { glyphAdvanceSync } from '#core/text/opentype'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
+import { glyphAdvanceSync } from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/font/manager'
 
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })
 const ol = (indentation = 1): TextParagraphStyle => ({ listType: 'ORDERED', indentation })
@@ -45,10 +45,10 @@ function lineStarts(shaped: ShapedText): number[] {
 describe('text lists', () => {
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   test('indents items one and a half ems per level and centres bullets in the indent', async () => {
@@ -101,7 +101,10 @@ describe('text lists', () => {
   })
 
   test('spaces list items by list spacing and other paragraphs by paragraph spacing', async () => {
-    const base = await shape({ text: 'p1\np2\nl1\nl2\np3', textParagraphs: [plain, plain, ul(), ul()] })
+    const base = await shape({
+      text: 'p1\np2\nl1\nl2\np3',
+      textParagraphs: [plain, plain, ul(), ul()]
+    })
     const spaced = await shape({
       text: 'p1\np2\nl1\nl2\np3',
       textParagraphs: [plain, plain, ul(), ul()],
@@ -109,7 +112,9 @@ describe('text lists', () => {
       paragraphSpacing: 7
     })
     const gaps = (shaped: ShapedText) =>
-      shaped.baselines.slice(1).map((line, index) => line.position.y - shaped.baselines[index].position.y)
+      shaped.baselines
+        .slice(1)
+        .map((line, index) => line.position.y - shaped.baselines[index].position.y)
     expect(gaps(spaced).map((gap, index) => gap - gaps(base)[index])).toEqual([7, 7, 10, 7])
   })
 
@@ -127,7 +132,7 @@ describe('text lists', () => {
     expect(starts.at(-1)).toBe(24)
   })
 
-  test('spaces each paragraph by its own spacing, falling back to the text\'s', async () => {
+  test("spaces each paragraph by its own spacing, falling back to the text's", async () => {
     const text = 'P1\nP2\nI1\nI2\nP3\nP4'
     const gaps = (shaped: ShapedText) =>
       shaped.baselines.slice(1).map((line, index) => {
@@ -150,7 +155,8 @@ describe('text lists', () => {
     )
     // Live Figma (2026-10-10): the space after a paragraph is its own; list spacing applies
     // only between two items, and a plain paragraph's list spacing does nothing.
-    expect(spaced.map((gap, index) => gap - flat[index])).toEqual([10, 25, 4, 40, 10])
+    const added = spaced.map((gap, index) => Math.round((gap - flat[index]) * 1000) / 1000)
+    expect(added).toEqual([10, 25, 4, 40, 10])
   })
 
   test('indents the first line of each paragraph by its own indent', async () => {

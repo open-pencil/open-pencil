@@ -8,7 +8,7 @@ import {
 import { withTimeout } from 'es-toolkit/promise'
 
 import { createPendingRequests } from '#mcp/server/pending-requests'
-import type { MCPAgentKind, MCPAgentSession, MCPToolSettled } from '#mcp/tool/registration'
+import { MCP_AGENT_KINDS, type MCPAgentSession, type MCPToolSettled } from '#mcp/tool/registration'
 
 export type MCPTransport = {
   handleRequest: (request: Request) => Promise<Response>
@@ -22,7 +22,11 @@ type MCPSession = {
   lastSeen: number
   activeRequests: number
   initialized: boolean
+  agent: MCPAgentSession
 }
+
+/** Who opens a session, as its first request's headers say. */
+export type MCPSessionOpener = Omit<MCPAgentSession, 'id'>
 
 type MCPSessionManagerOptions = {
   serverVersion: string
@@ -31,6 +35,8 @@ type MCPSessionManagerOptions = {
     session: MCPAgentSession,
     onToolSettled: MCPToolSettled
   ) => void
+  /** Told when a client's initialize succeeds, so an app chat knows its agent reached the tools. */
+  onSessionOpened?: (session: MCPAgentSession) => void
   /** Told when a session ends, so the app stops showing its agent. */
   onSessionClosed?: (sessionId: string) => void
   /** Idle lifetime in ms; 0 disables expiration. Defaults to 15 minutes. */
@@ -38,6 +44,19 @@ type MCPSessionManagerOptions = {
 }
 
 const MAX_MCP_SESSIONS = 10
+/** App chat ids are random hex; anything else is ignored rather than forwarded. */
+const CHAT_ID = /^[0-9a-f]{16,64}$/
+
+/** The opener a session's first request names through the app's agent and chat headers. */
+export function sessionOpener(
+  kind: string | undefined,
+  chat: string | undefined
+): MCPSessionOpener {
+  return {
+    kind: MCP_AGENT_KINDS.find((candidate) => candidate === kind) ?? 'mcp',
+    ...(chat && CHAT_ID.test(chat) ? { chat } : {})
+  }
+}
 const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * 60_000
 const MAX_SWEEP_INTERVAL_MS = 60_000
 // The MCP SDK's close() does not enforce a timeout internally.
@@ -78,6 +97,7 @@ async function isInitializeResult(response: Response, id: string): Promise<boole
 export function createMCPSessionManager({
   serverVersion,
   registerTools,
+  onSessionOpened,
   onSessionClosed,
   sessionIdleTimeoutMs = MCP_SESSION_IDLE_TIMEOUT_MS
 }: MCPSessionManagerOptions) {
@@ -94,6 +114,15 @@ export function createMCPSessionManager({
     const task = closeSession(session).finally(() => closing.delete(id))
     closing.set(id, task)
     return task
+  }
+
+  function notifyOpened(agent: MCPAgentSession) {
+    try {
+      onSessionOpened?.(agent)
+    } catch (e) {
+      // Application notification must not fail the client's initialize.
+      process.stderr.write(`  MCP session: open notification warning (${describeError(e)})\n`)
+    }
   }
 
   function notifyToolsChanged() {
@@ -125,13 +154,14 @@ export function createMCPSessionManager({
   const creating = new Map<string, Promise<MCPTransport>>()
   let closed = false
 
-  async function createSession(id: string, kind: MCPAgentKind): Promise<MCPTransport> {
+  async function createSession(id: string, opener: MCPSessionOpener): Promise<MCPTransport> {
     if (closed) throw new Error('Session manager is closed')
     const inFlight = creating.get(id)
     if (inFlight) return inFlight
 
     const promise = (async () => {
       const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+      const agent: MCPAgentSession = { id, ...opener }
 
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: () => id,
@@ -142,7 +172,7 @@ export function createMCPSessionManager({
       // InitializeRequest is processed later by handleRequest; connect() alone
       // does not establish a valid MCP session.
       try {
-        registerTools(server, { id, kind }, requests.releaseCancelled)
+        registerTools(server, agent, requests.releaseCancelled)
         await server.connect(transport)
       } catch (e) {
         await closeSession({ transport, server })
@@ -162,6 +192,7 @@ export function createMCPSessionManager({
         lastSeen: Date.now(),
         activeRequests: 0,
         initialized: false,
+        agent,
         transport: {
           close: () => transport.close(),
           handleRequest: (request) => handleSessionRequest(id, session, request)
@@ -203,6 +234,7 @@ export function createMCPSessionManager({
       if (!session.initialized) {
         session.initialized = await isInitializeResult(response, id)
         if (!session.initialized) await deleteSession(id)
+        else notifyOpened(session.agent)
       }
       return response
     } catch (error) {
@@ -216,7 +248,7 @@ export function createMCPSessionManager({
 
   function resolveTransport(
     sessionId: string | undefined,
-    kind: MCPAgentKind = 'mcp'
+    opener: MCPSessionOpener = { kind: 'mcp' }
   ): Promise<MCPTransport | { error: 'too_many' | 'closed' }> {
     if (closed) return Promise.resolve({ error: 'closed' })
     cleanupExpired()
@@ -237,7 +269,7 @@ export function createMCPSessionManager({
     if (sessions.size + creating.size + closing.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
-    return createSession(sessionId ?? randomUUID(), kind).catch((e) => {
+    return createSession(sessionId ?? randomUUID(), opener).catch((e) => {
       // If the manager was closed during session creation, return the structured
       // error instead of letting the throw escape as a route-level 500.
       if (closed) return { error: 'closed' as const }

@@ -16,35 +16,28 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     deployment: {
       mode: 'self-hosted',
       public_url: endpoints.cloudURL,
-      app_url: endpoints.editorURL,
       indexing: 'deny',
       trusted_origins: [endpoints.editorURL, endpoints.cloudURL]
     },
     database: {},
     authentication: {
-      enrollment_mode: 'open',
-      admin_notification_emails: [],
+      enrollment: { mode: 'open', notification_emails: [] },
       email_password: {
         enabled: true,
         sign_up: true,
         minimum_password_length: 8,
         maximum_password_length: 128,
-        verification_link_expires_minutes: 60,
-        password_reset_link_expires_minutes: 60,
+        verification_link_lifetime_minutes: 60,
+        password_reset_link_lifetime_minutes: 60,
         compromised_password_check: false
       },
       mfa: {
-        deployment_admin_required: false,
-        totp_enabled: true,
-        passkeys_enabled: true,
-        recovery_codes_enabled: true,
-        trusted_device_days: 14
+        required_for_admins: false,
+        totp: true,
+        recovery_codes: true,
+        trusted_device_lifetime_days: 14
       },
-      passkeys: {
-        rp_id: new URL(endpoints.cloudURL).hostname,
-        rp_name: 'OpenPencil Cloud',
-        origin: endpoints.cloudURL
-      },
+      passkeys: { enabled: true, rp_name: 'OpenPencil Cloud' },
       trusted_proxies: { headers: [], addresses: [] }
     },
     object_storage: {
@@ -52,8 +45,11 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       region: 'us-east-1',
       bucket: 'openpencil',
       force_path_style: true,
-      checksum_verification: 'metadata'
+      checksum_verification: 'metadata',
+      maximum_upload_bytes: 1_073_741_824
     },
+    collaboration: { maximum_message_bytes: 1_048_576, maximum_connections_per_room: 1000 },
+    documents: { retention_days: 30 },
     email: {
       transport: 'smtp',
       from: 'OpenPencil Cloud <cloud@openpencil.localhost>',
@@ -65,8 +61,7 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
         enabled: true,
         batch_size: 100,
         interval_ms: 60_000,
-        lease_ms: 300_000,
-        document_retention_days: 30
+        lease_ms: 300_000
       }
     },
     entitlements: {
@@ -74,17 +69,12 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       documents: { maximum_file_bytes: 1_073_741_824, revision_history: true },
       storage: { maximum_bytes: 1_099_511_627_776 },
       sharing: {
-        capability_links: true,
-        anonymous_view: true,
-        anonymous_edit: true,
+        links: true,
+        guest_view: true,
+        guest_edit: true,
         guest_presence: true
       },
       collaboration: { enabled: true, maximum_participants: 100 }
-    },
-    technical_limits: {
-      maximum_upload_bytes: 1_073_741_824,
-      maximum_collaboration_message_bytes: 1_048_576,
-      maximum_connections_per_room: 1000
     }
   }
 }

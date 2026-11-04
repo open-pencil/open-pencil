@@ -6,7 +6,7 @@ import { measurePhase } from '#package-quality/timing'
 
 import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
 
-test('public imports retain separate bounded Node and Bun invocations and the stdio exclusion', async () => {
+test('public imports retain separate bounded Node and Bun invocations and their exclusions', async () => {
   const requests: CommandRequest[] = []
   const release = Promise.withResolvers<undefined>()
   const verification = verifyPublicImports(
@@ -20,6 +20,11 @@ test('public imports retain separate bounded Node and Bun invocations and the st
         name: '@open-pencil/mcp',
         version: '1.0.0',
         exports: { '.': './index.js', './stdio': './stdio.js' }
+      },
+      {
+        name: '@open-pencil/core',
+        version: '1.0.0',
+        exports: { './runtime-assets/install': './dist/runtime-assets/install.js' }
       }
     ],
     '/fixture',

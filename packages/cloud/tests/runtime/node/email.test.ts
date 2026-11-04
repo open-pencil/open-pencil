@@ -8,8 +8,7 @@ const payload = {
   documentName: 'Homepage',
   permission: 'edit' as const,
   expiresAt: '2026-01-08T00:00:00.000Z',
-  acceptanceURL:
-    'https://app.example.com/cloud/invitations/invitation-id?server=https%3A%2F%2Fcloud.example.com#secret-token'
+  acceptanceURL: 'https://cloud.example.com/invitations/invitation-id#secret-token'
 }
 
 describe('transactional email delivery', () => {

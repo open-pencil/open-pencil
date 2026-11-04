@@ -1,4 +1,4 @@
-import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue'
+import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue/editor/commands'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
@@ -40,6 +40,7 @@ export function shortcutTokenToTinykeys(shortcut: string | undefined): string | 
   return shortcut
     ? normalizeShortcutToken(shortcut)
         .replaceAll('MOD', '$mod')
+        .replaceAll('CTRL', 'Control')
         .replaceAll('SHIFT', 'Shift')
         .replaceAll('ALT', 'Alt')
         .replace(/(^|\+)([A-Z])$/, '$1Key$2')
@@ -50,6 +51,7 @@ export function shortcutTokenToAccelerator(shortcut: string | undefined): string
   return shortcut
     ? normalizeShortcutToken(shortcut)
         .replaceAll('MOD', 'CmdOrCtrl')
+        .replaceAll('CTRL', 'Ctrl')
         .replaceAll('SHIFT', 'Shift')
         .replaceAll('ALT', 'Alt')
     : undefined

@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -43,6 +45,6 @@ test('a mode’s CSS expression outlives a script formula and records a script n
   const figma = new FigmaAPI(graph)
   await compileScript(`openpencil.setVariableFormula('Tokens', 'gap', '{base} * 4')`)(figma)
   expect(gap.expressions).toEqual({ [mode]: { css: '1rem' }, large: { css: '2rem', resolved: 32 } })
-  figma.setVariableValue(gap.id, 'large', 40)
+  expectDefined(figma.variables.getVariableById(gap.id)).setValueForMode('large', 40)
   expect(gap.expressions).toEqual({ [mode]: { css: '1rem' }, large: { css: '2rem', resolved: 40 } })
 })

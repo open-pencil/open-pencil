@@ -1,4 +1,5 @@
-import { hasBehaviour, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { hasBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 function containsControl(graph: SceneGraph, node: SceneNode): boolean {
   if (hasBehaviour(graph, node)) return true

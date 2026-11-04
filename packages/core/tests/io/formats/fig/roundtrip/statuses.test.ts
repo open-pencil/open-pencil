@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import {
   readStatusWorkflow,
   STATUS_WORKFLOW_PRESETS,
   writeStatusWorkflow
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/statuses'
 
 describe('.fig round trip of statuses', () => {
   test('keeps the workflow and every status, Figma-shown or not', async () => {
@@ -14,7 +15,10 @@ describe('.fig round trip of statuses', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     writeStatusWorkflow(editor.graph, STATUS_WORKFLOW_PRESETS.review)
-    const section = editor.graph.createNode('SECTION', pageId, { name: 'Checkout', status: 'approved' })
+    const section = editor.graph.createNode('SECTION', pageId, {
+      name: 'Checkout',
+      status: 'approved'
+    })
     editor.graph.createNode('FRAME', section.id, { name: 'Cart', status: 'ready-for-dev' })
 
     const reopened = await parseFigFile((await exportFigFile(editor.graph)).slice().buffer)

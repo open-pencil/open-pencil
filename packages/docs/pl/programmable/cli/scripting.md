@@ -84,7 +84,7 @@ API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i format
 
 ### Komponenty i zmienne
 
-Nazwy metod, takie jak `component.createInstance()`, `figma.getLocalVariables()` i `figma.bindVariable()`, pozostają zgodne z Figma Plugin API.
+Nazwy metod, takie jak `component.createInstance()`, `figma.variables.getLocalVariables()` i `node.setBoundVariable()`, pozostają zgodne z Figma Plugin API. Tak jak panel warstwy zmienne wiąże się z polami przez `openpencil.bindVariable(node, field, variable)` i `openpencil.unbindVariable(node, field)`. Kierunek automatycznego układu i tekstu (`AUTO`, `LTR`, `RTL`) ustawiają `openpencil.setLayoutDirection(node, direction)` i `openpencil.setTextDirection(node, direction)`, kolor w OkHCL `openpencil.setFillOkHCL(node, color)` i `setStrokeOkHCL`, a `openpencil.exposeInstanceSwap` i `openpencil.getFontStatus()` udostępniają zamianę instancji i stan czcionek.
 
 ### Właściwości
 
@@ -101,13 +101,13 @@ Najczęściej używane właściwości można odczytywać i zapisywać przez poś
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` niczego nie wykonuje, ponieważ OpenPencil nie blokuje zmiany tekstu do czasu załadowania czcionki przez wtyczkę
+- `figma.loadFontAsync(fontName)` wczytuje czcionkę; jak w Figmie, zmiana tekstu, jego rozmiaru lub czcionki wymaga wcześniejszego wczytania używanych czcionek
 - `figma.listAvailableFontsAsync()` zwraca dostępne czcionki systemowe
 - `figma.notify(message)` zapisuje ostrzeżenie w trybie bez interfejsu
 - `figma.viewport`
 
 ## Brak pełnej zgodności z Figmą
 
-Nie są jeszcze dostępne między innymi `node.exportAsync()`, `node.setBoundVariable()`, `figma.combineAsVariants()` i API stylów Figmy.
+Nie są jeszcze dostępne między innymi zmienne z bibliotek.
 
 Zamiast nich używaj poleceń eksportu CLI, narzędzi głównego pakietu albo bezpośrednich funkcji pomocniczych SceneGraph.

@@ -10,13 +10,11 @@ import {
 } from '#core/io/formats/design-tokens/apply'
 import type { TokenImportPlan } from '#core/io/formats/design-tokens/plan'
 
-import type { createNodeActions } from './nodes'
+import type { NodeActions } from './nodes'
 import type { EditorContext } from './types'
 import type { createVariableActions } from './variables'
 
 type VariableActions = ReturnType<typeof createVariableActions>
-type NodeActions = ReturnType<typeof createNodeActions>
-
 export function createDesignTokenActions(
   ctx: EditorContext,
   variables: VariableActions,
@@ -72,7 +70,8 @@ export function createDesignTokenActions(
     setTokenFields: (variableId, fields) => variables.updateVariableToken(variableId, fields),
     addStyle,
     updateNode: (nodeId, changes) => nodes.updateNodeWithUndo(nodeId, changes, 'Update style'),
-    bindVariable: (nodeId, field, variableId) => nodes.bindVariable(nodeId, field, variableId)
+    bindVariable: (nodeId, field, variableId) => nodes.bindVariable(nodeId, field, variableId),
+    unbindVariable: (nodeId, field) => nodes.unbindVariable(nodeId, field)
   }
 
   /** Applies an import plan as one undo step; nothing is deleted. */

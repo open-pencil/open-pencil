@@ -41,7 +41,7 @@ description: Создание панелей свойств с помощью co
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@open-pencil/vue/controls/position'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -60,11 +60,9 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import {
-  PropertyListRoot,
-  useEditorPropertyList,
-  useFillControls
-} from '@open-pencil/vue'
+import { PropertyListRoot } from '@open-pencil/vue/primitives/PropertyList'
+import { useEditorPropertyList } from '@open-pencil/vue/controls/property-list'
+import { useFillControls } from '@open-pencil/vue/controls/fill'
 
 const fillControls = useFillControls()
 const fills = useEditorPropertyList('fills')

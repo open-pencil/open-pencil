@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { GridTrackSizing } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import type { GridTrackProp } from '@/components/properties/layout/types'
@@ -23,7 +24,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
   <template v-for="trackProp in trackProps" :key="trackProp">
     <div class="mt-2">
       <div class="mb-1 flex items-center justify-between">
-        <label class="text-[11px] text-muted">
+        <label class="text-2xs text-muted">
           {{ trackProp === 'gridTemplateColumns' ? panels.columns : panels.rows }}
         </label>
         <IconButton

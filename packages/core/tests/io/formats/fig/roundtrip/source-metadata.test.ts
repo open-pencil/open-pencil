@@ -1,9 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
-import { guidToString } from '@open-pencil/fig/node-change'
-import type { Vector } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** The codec types only the fields it writes; raw passthrough metadata is read through these. */
 interface RawLayoutGrid {
@@ -173,6 +175,50 @@ describe('fig roundtrip source metadata', () => {
     if (exportedRect?.fills[0]?.type === 'SOLID') {
       expect(exportedRect.fills[0].color).toEqual({ r: 0, g: 1, b: 0, a: 1 })
     }
+  })
+
+  test('exports current child coordinates after reparenting imported nodes', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const child = graph.createNode('RECTANGLE', page.id, {
+      name: 'Reparented imported rect',
+      x: 31,
+      y: 282,
+      width: 40,
+      height: 40
+    })
+    child.source.format = 'fig'
+    child.source.id = '4:508'
+    child.source.fig.rawTransform = {
+      m00: 1,
+      m01: 0,
+      m02: 31,
+      m10: 0,
+      m11: 1,
+      m12: 282
+    }
+
+    const group = graph.createNode('GROUP', page.id, {
+      name: 'New group',
+      x: 20,
+      y: 200,
+      width: 100,
+      height: 100
+    })
+    graph.reparentNode(child.id, group.id)
+
+    expect(child.x).toBe(11)
+    expect(child.y).toBe(82)
+    expect(child.source.editedFields).toEqual(['x', 'y'])
+
+    const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer)
+    const exportedChild = [...reopened.getAllNodes()].find((node) => node.name === child.name)
+
+    expect(exportedChild?.parentId).toBe(
+      [...reopened.getAllNodes()].find((node) => node.name === group.name)?.id
+    )
+    expect(exportedChild?.x).toBe(11)
+    expect(exportedChild?.y).toBe(82)
   })
 
   test('does not restore cleared imported size constraints from raw metadata', async () => {
@@ -498,7 +544,7 @@ describe('fig roundtrip source metadata', () => {
     const reopened = await parseFigFile(saved.slice().buffer)
     const page = reopened.getPages()[0]
     const inserted = reopened.createNode('RECTANGLE', page.id, { name: 'Inserted' })
-    reopened.reorderChild(inserted.id, page.id, 0)
+    reopened.insertChildAt(inserted.id, page.id, 0)
     const resaved = await exportFigFile(reopened)
 
     const cardGuid = savedGuidOf(saved, 'Card')
@@ -516,7 +562,7 @@ describe('fig roundtrip source metadata', () => {
     const cardGuid = savedGuidOf(await exportFigFile(graph), 'Card')
 
     const inserted = graph.createNode('RECTANGLE', page.id, { name: 'Inserted' })
-    graph.reorderChild(inserted.id, page.id, 0)
+    graph.insertChildAt(inserted.id, page.id, 0)
     const resaved = await exportFigFile(graph)
 
     expect(cardGuid).toBeDefined()

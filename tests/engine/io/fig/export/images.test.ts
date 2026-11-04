@@ -2,9 +2,12 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
-import { exportFigFile, FigmaAPI, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { storeImageBytes } from '#tests/helpers/scene'
 
 describe('fig export/import with images', () => {
   beforeAll(async () => {
@@ -14,10 +17,9 @@ describe('fig export/import with images', () => {
   test('exported zip contains images entries', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    const figma = new FigmaAPI(graph)
 
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01, 0x02, 0x03])
-    const { hash } = figma.createImage(bytes)
+    const hash = storeImageBytes(graph, bytes)
 
     graph.createNode('RECTANGLE', page.id, {
       name: 'ImageNode',
@@ -60,12 +62,11 @@ describe('fig export/import with images', () => {
   test('round-trip preserves images', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    const figma = new FigmaAPI(graph)
 
     const bytes1 = new Uint8Array([11, 22, 33, 44, 55])
     const bytes2 = new Uint8Array([66, 77, 88, 99])
-    const { hash: hash1 } = figma.createImage(bytes1)
-    const { hash: hash2 } = figma.createImage(bytes2)
+    const hash1 = storeImageBytes(graph, bytes1)
+    const hash2 = storeImageBytes(graph, bytes2)
 
     graph.createNode('RECTANGLE', page.id, {
       name: 'Img1',

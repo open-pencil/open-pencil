@@ -2,15 +2,17 @@ import { mapKeys } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type {
+  PluginDataEntry,
+  Variable,
+  VariableCollection,
+  VariableValue
+} from '@open-pencil/scene-graph'
 import {
   OPEN_PENCIL_PLUGIN_DATA,
   pluginDataEntry,
-  withoutPluginData,
-  type PluginDataEntry,
-  type Variable,
-  type VariableCollection,
-  type VariableValue
-} from '@open-pencil/scene-graph'
+  withoutPluginData
+} from '@open-pencil/scene-graph/plugin-data'
 
 import { readNodeChangePluginData } from '../plugin-data'
 

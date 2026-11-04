@@ -29,17 +29,6 @@ describe('Cloud server configuration', () => {
     ).toThrow('requires TOTP or passkeys')
   })
 
-  test('requires passkey identity to match the Cloud origin', () => {
-    expect(() =>
-      parseCloudServerConfig({
-        ...baseConfig,
-        passkeysEnabled: true,
-        passkeyRPID: 'other.example.com',
-        passkeyOrigin: 'https://other.example.com'
-      })
-    ).toThrow('Passkey origin must match')
-  })
-
   test('requires email delivery when enabling email and password', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, emailPasswordEnabled: true })).toThrow(
       'requires transactional email delivery'
@@ -121,6 +110,22 @@ describe('Cloud server configuration', () => {
     expect(() => parseCloudServerConfig({ ...r2, s3ChecksumVerification: 'native' })).toThrow(
       'Cloudflare R2 checksum verification must use metadata'
     )
+  })
+
+  test('requires HTTPS for the official AI service endpoint, whatever the scheme case', () => {
+    const official = {
+      ...baseConfig,
+      deployment: 'official',
+      aiSigningKey: 'signing-key-pem'
+    }
+    for (const aiEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, aiEndpoint })).toThrow(
+        'Official AI service endpoint must use HTTPS'
+      )
+    }
+    expect(
+      parseCloudServerConfig({ ...official, aiEndpoint: 'HTTPS://ai.example.com' }).aiEndpoint
+    ).toBe('HTTPS://ai.example.com')
   })
 
   test('rejects short auth secrets', () => {

@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { buildFigmaClipboardHTML, FigmaAPI } from '@open-pencil/core'
+import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -47,5 +48,5 @@ test('Figma clipboard embeds shared image bytes once with SHA-1 references', asy
     expect(parsed.blobs[paint.image?.dataBlob ?? -1]).toEqual(bytes)
   }
   expect(nodes[0].fills[0].imageHash).toBe(hash)
-  expect(graph.images.get(hash)).toBe(bytes)
+  expect(graph.images.get(hash)).toEqual(bytes)
 })

@@ -1,9 +1,8 @@
 import {
   DEFAULT_FIG_COMPRESSION,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData,
   type FigCompression
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/fig-compression'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 import { figCompressionOf } from '#core/io/formats/fig/compression'
 

@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import { PEN_CLOSE_THRESHOLD } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPenDrag, handlePenDragMove } from '#vue/canvas/pen/drag'

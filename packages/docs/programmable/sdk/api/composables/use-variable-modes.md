@@ -10,7 +10,7 @@ description: Read and set the variable modes the selection or the current page s
 ## Usage
 
 ```ts
-import { useVariableModes } from '@open-pencil/vue'
+import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
 
 const { choices, applied, setMode } = useVariableModes()
 ```

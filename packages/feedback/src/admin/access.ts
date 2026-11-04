@@ -8,7 +8,7 @@ const CERTS_TIMEOUT_MS = 10_000
 // a short cache never misses a rotation for long.
 const CERTS_TTL_MS = 10 * 60 * 1000
 
-const CertsSchema = v.object({
+const certsSchema = v.object({
   keys: v.array(v.looseObject({ kty: v.string(), kid: v.optional(v.string()) }))
 })
 
@@ -28,7 +28,7 @@ export function requireAccess(services: FeedbackServices) {
     })
     if (!response.ok) throw new Error(`Access certificates answered ${response.status}`)
     const parsed = v.safeParse(
-      v.pipe(v.string(), v.parseJson(), CertsSchema),
+      v.pipe(v.string(), v.parseJson(), certsSchema),
       await response.text()
     )
     if (!parsed.success) throw new Error('Access certificates have an unexpected shape')

@@ -3,23 +3,22 @@ import {
   encodeFigmaClipboard,
   type FigmaClipboardAssetType
 } from '@open-pencil/fig/clipboard'
-import { randomInt } from '@open-pencil/scene-graph/random'
-export {
-  parseFigmaClipboard,
-  figmaNodesBounds,
-  type FigmaClipboardAssetType
-} from '@open-pencil/fig/clipboard'
-import { placeSlotContent, type FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
-  derivedAssetKey,
-  derivedAssetVersion,
-  ownsSlotContent,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  figmaLineHeight,
+  placeSlotContent,
+  relinkConnectorEnds,
+  type FigNodeChangeExportRuntime,
+  sceneNodeToKiwi,
+  makeDocumentNodeChange,
+  makeCanvasNodeChange
+} from '@open-pencil/fig/node-change'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import { initCodec, type NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { derivedAssetKey, derivedAssetVersion } from '@open-pencil/scene-graph/asset-keys'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { randomInt } from '@open-pencil/scene-graph/random'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 import {
   collectComponentPropertyIds,
@@ -32,14 +31,9 @@ import {
   assignVariableGuids
 } from '#core/io/formats/fig/export/variables'
 
-import { withFigExportRuntime } from './canvas/text/shape'
 import { prepareClipboardImport } from './clipboard/fig-import'
-import {
-  sceneNodeToKiwi,
-  makeDocumentNodeChange,
-  makeCanvasNodeChange,
-  buildFontDigestMap
-} from './kiwi/fig/node-change/serialize'
+import { withFigExportRuntime } from './io/formats/fig/export/runtime'
+import { buildFontDigestMap } from './kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from './kiwi/fig/parse/transfer'
 
 export async function prefetchFigmaSchema(): Promise<void> {
@@ -117,6 +111,29 @@ export function buildFigmaClipboardHTML(
   )
 }
 
+/**
+ * A layer written twice, on the page and in a set brought as a dependency, keeps its page GUID
+ * as the override key of its copy in the set, as Figma keys it (desktop 126), so paths written
+ * against the page's GUID still find it.
+ */
+function keyRenumberedCopies(
+  nodeChanges: KiwiNodeChange[],
+  nodeIdToGuid: ReadonlyMap<string, GUID>,
+  dependencyGuids: ReadonlyMap<string, GUID>
+): void {
+  const renumbered = new Map<string, GUID>()
+  for (const [id, guid] of dependencyGuids) {
+    const original = nodeIdToGuid.get(id)
+    if (original && (original.sessionID !== guid.sessionID || original.localID !== guid.localID))
+      renumbered.set(`${guid.sessionID}:${guid.localID}`, original)
+  }
+  for (const change of nodeChanges) {
+    const original =
+      change.guid && renumbered.get(`${change.guid.sessionID}:${change.guid.localID}`)
+    if (original && !change.overrideKey) change.overrideKey = original
+  }
+}
+
 async function writeFigmaClipboardHTML(
   nodes: SceneNode[],
   graph: SceneGraph,
@@ -147,6 +164,8 @@ async function writeFigmaClipboardHTML(
   }
 
   const nodeIdToGuid = new Map<string, GUID>()
+  // One for every layer written, so an instance names the copy its variant's record defines.
+  const propertyCopyGuids = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
   const blobs: Uint8Array[] = []
   const variableIds = new Map<string, GUID>()
@@ -176,6 +195,7 @@ async function writeFigmaClipboardHTML(
         assignedGuidValues,
         modeIdToGuid: modeIds,
         slotContentRecords,
+        propertyCopyGuids,
         runtime
       })
     )
@@ -188,17 +208,21 @@ async function writeFigmaClipboardHTML(
     for (const child of graph.getChildren(node.id)) mark(child)
   }
   for (const node of nodes) mark(node)
+  // An instance of a variant brings the variant's whole set, which defines the properties the
+  // variant's copies link to, with every variant beneath it, as Figma copies one (desktop 126).
+  const dependencyOf = (component: SceneNode): SceneNode => {
+    const parent = component.parentId ? graph.getNode(component.parentId) : undefined
+    return component.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET' ? parent : component
+  }
   const visitDependencies = (node: SceneNode): void => {
-    if (
-      node.type === 'INSTANCE' &&
-      node.componentId &&
-      !selected.has(node.componentId) &&
-      !dependencies.has(node.componentId)
-    ) {
+    if (node.type === 'INSTANCE' && node.componentId) {
       const component = graph.getNode(node.componentId)
       if (!component) throw new Error(`Missing clipboard component ${node.componentId}`)
-      dependencies.set(component.id, component)
-      visitDependencies(component)
+      const dependency = dependencyOf(component)
+      if (!selected.has(dependency.id) && !dependencies.has(dependency.id)) {
+        dependencies.set(dependency.id, dependency)
+        visitDependencies(dependency)
+      }
     }
     for (const child of graph.getChildren(node.id)) visitDependencies(child)
   }
@@ -215,20 +239,25 @@ async function writeFigmaClipboardHTML(
       ...makeCanvasNodeChange(dependencyCanvas, docGuid, '"', 'Clipboard dependencies'),
       internalOnly: true
     })
+  // A set brought for an instance writes every variant beneath it, a copied one too, which
+  // takes new GUIDs there as Figma gives it (desktop 126), since the page already has its own.
+  const dependencyGuids = new Map([...nodeIdToGuid].filter(([id]) => !selected.has(id)))
   for (const component of dependencies.values()) {
     collectTextNodes(component)
     nodeChanges.push(
       ...sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
-        nodeIdToGuid,
+        nodeIdToGuid: dependencyGuids,
         fontDigestMap,
         varIdToGuid: variableIds,
         assignedGuidValues,
         modeIdToGuid: modeIds,
         slotContentRecords,
+        propertyCopyGuids,
         runtime
       })
     )
   }
+  keyRenumberedCopies(nodeChanges, nodeIdToGuid, dependencyGuids)
   appendVariableNodeChanges(graph, nodeChanges, dependencyCanvas, variableIds, modeIds)
   // Slot content is collected while instances serialize; it follows the canvas's other records.
   const written = nodeChanges.filter(
@@ -238,11 +267,15 @@ async function writeFigmaClipboardHTML(
   ).length
   placeSlotContent(slotContentRecords, dependencyCanvas, written, fractionalPosition)
   nodeChanges.push(...slotContentRecords)
+  // A connector copied before a layer its end joins is joined to it now that both have GUIDs.
+  relinkConnectorEnds(nodeChanges, graph, nodeIdToGuid)
+  // A connector in a dependency joins the copies written beside it there, not the page's.
+  relinkConnectorEnds(nodeChanges, graph, dependencyGuids)
   // Pair each text record with the node it was written from; instance content and slot
   // content are not emitted in traversal order.
   const textById = new Map(exportedTextNodes.map((node) => [node.id, node]))
   const sourceByGuid = new Map<string, SceneNode>()
-  for (const [id, guid] of nodeIdToGuid) {
+  for (const [id, guid] of [...nodeIdToGuid, ...dependencyGuids]) {
     const node = textById.get(id)
     if (node) sourceByGuid.set(`${guid.sessionID}:${guid.localID}`, node)
   }
@@ -250,10 +283,7 @@ async function writeFigmaClipboardHTML(
     if (change.type !== 'TEXT' || !change.guid) continue
     const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
     if (!source) continue
-    change.lineHeight = {
-      value: source.lineHeight ?? 100,
-      units: source.lineHeight ? 'PIXELS' : 'PERCENT'
-    }
+    change.lineHeight = figmaLineHeight(source.lineHeight)
   }
   embedClipboardImages(nodeChanges, blobs, graph.images)
   return encodeFigmaClipboard(nodeChanges, blobs, randomInt(), assetType)

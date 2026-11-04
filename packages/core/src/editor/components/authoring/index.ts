@@ -1,13 +1,13 @@
 import { isEqual } from 'es-toolkit'
 
+import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 import {
   createComponentPropertyId,
   exposableInstances,
   instanceExposureIssue,
   removeComponentProperty,
   resolveComponentPropertyValue
-} from '@open-pencil/scene-graph'
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/components'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { reorderPropertyDefinitions } from '#core/editor/components/variants/definitions'

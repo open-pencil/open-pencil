@@ -6,7 +6,8 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isCloudBinding, openCloudShare } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
@@ -17,6 +18,7 @@ import type { FollowTarget } from '@/app/presence/types'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
+import { createTab } from '@/app/tabs'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { toolIcons } from '@/components/icons'
 import { presenceRows } from '@/components/presence/rows'
@@ -62,7 +64,7 @@ function createMobileHudContext() {
     {
       icon: IconFilePlus,
       label: 'New',
-      action: () => void import('@/app/tabs').then((m) => m.createTab())
+      action: () => createTab()
     },
     { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
     { icon: IconSave, label: 'Save', action: () => void store.saveFigFile() },

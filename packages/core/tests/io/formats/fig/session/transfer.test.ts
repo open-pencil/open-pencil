@@ -1,8 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 
-import { createConnector, freeEndpoint, SceneGraph } from '@open-pencil/scene-graph'
+import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 
 test('a graph sent from the reader keeps its connectors indexed for routing', () => {
   const graph = new SceneGraph()

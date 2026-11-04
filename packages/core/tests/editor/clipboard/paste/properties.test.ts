@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
+import { createEditor, type Editor } from '@open-pencil/core'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 
 import { withResolvableLinks } from '#core/editor/clipboard/paste/properties'
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 const LINK = { type: 'URL', value: 'https://example.com/' } as const
 const RED = colorToFill('#ff0000')

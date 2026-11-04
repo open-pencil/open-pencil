@@ -25,6 +25,7 @@ const values = {
   customModelID: '',
   baseURL: '',
   credential: false,
+  cloudWorkspace: '',
   tools: true
 }
 
@@ -61,4 +62,13 @@ test('Pi may leave the model empty to use the default model set in Pi', () => {
   expect(errors({ providerKind: 'harness', intent: 'test' }, { ...values, modelID: '' })).toEqual(
     {}
   )
+})
+
+test('OpenPencil Cloud needs a workspace and a model, but no key', () => {
+  const cloud = { providerKind: 'cloud' as const, intent: 'test' as const }
+  expect(errors(cloud, { ...values, modelID: '', cloudWorkspace: '' })).toEqual({
+    modelID: ['Required'],
+    cloudWorkspace: ['Required']
+  })
+  expect(errors(cloud, { ...values, cloudWorkspace: 'workspace' })).toEqual({})
 })

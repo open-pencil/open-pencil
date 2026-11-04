@@ -15,10 +15,12 @@ test('failed page mutation restores changed existing instance indexes and object
   const state: AssemblyState = {
     graph,
     nextImportedId: 10,
+    recordIds: new Set(),
     sources: new Map([['instance', instance.id]]),
     components: new Map(),
     componentIds: new Map(),
-    savedSizeNodes: new Set()
+    savedSizeNodes: new Set(),
+    propertyCopies: () => new Map()
   }
   let events = 0
   graph.onNodeEvents({

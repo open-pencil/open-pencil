@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { applyComponentPropertyValue, SceneGraph } from '@open-pencil/scene-graph'
+import { applyComponentPropertyValue } from '@open-pencil/scene-graph/components'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 function graphWithAssignedLabel() {
   const graph = new SceneGraph()

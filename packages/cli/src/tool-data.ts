@@ -9,11 +9,25 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'
-import { loadDocument, measureTextHeadlessly, populateWholeDocument } from '#cli/headless'
+import {
+  editDocument,
+  loadDocument,
+  measureDocumentText,
+  measureTextHeadlessly,
+  populateWholeDocument
+} from '#cli/headless'
 
-/** A Figma API over a headless document, with CanvasKit raster export and pixel decoding. */
+/**
+ * A Figma API over a headless document, with CanvasKit raster export and pixel decoding, and
+ * the renderer that measures text measuring geometry, booleans, and flatten too.
+ */
 export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> {
   const figma = new FigmaAPI(graph)
+  const renderer = await measureTextHeadlessly()
+  // The process's one renderer keeps paths by layer id, which another document's layers share.
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  figma.setRenderer(renderer)
   figma.exportImage = (nodeIds, options) =>
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
   figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())
@@ -38,7 +52,8 @@ export async function runToolData(
   if (!tool) throw new Error(`Unknown tool: ${name}`)
   const graph = await loadDocument(requireFile(file))
   populateWholeDocument(graph)
-  await measureTextHeadlessly()
+  await measureDocumentText(graph)
   const figma = await createHeadlessFigma(graph)
-  return { result: await tool.execute(figma, args), graph }
+  await tool.loadFonts(figma, args)
+  return { result: await editDocument(graph, () => tool.execute(figma, args)), graph }
 }

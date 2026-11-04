@@ -7,6 +7,8 @@ import {
   accordionComponent,
   buttonSet,
   collapsibleSet,
+  componentSet,
+  invalidCheckboxSet,
   labelledButtonSet,
   numberFieldComponent,
   plainBadgeSet,
@@ -18,6 +20,7 @@ import {
   settingsSectionSet,
   switchSet,
   tabsComponent,
+  tabsOfTabSets,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
@@ -27,6 +30,8 @@ import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
+
+import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
@@ -128,6 +133,20 @@ describe('generated Vue components', () => {
     const second = await render(component, { value: 'password' })
     expect(second).toContain('Password settings')
     expect(second).not.toContain('Account settings')
+  })
+
+  test('tabs drawn as Tab instances take the selected look when active and keep a disabled tab disabled', async () => {
+    const { files, component } = await generate(tabsOfTabSets())
+    const html = await render(component)
+    const trigger = (name: string) =>
+      new RegExp(`<button class="settings__${name}"[^>]*>`).exec(html)?.[0] ?? ''
+    expect(trigger('account')).toContain('data-state="active"')
+    expect(trigger('billing')).toContain('data-disabled')
+    expect(trigger('password')).not.toContain('data-disabled')
+    const css = cssRules(String(files.find((file) => file.path === 'Settings.vue')?.content))
+    expect(css.get('.settings .settings__password[data-state="active"]')).toEqual(
+      css.get('.settings .settings__account[data-state="active"]')
+    )
   })
 
   test('a radio group writes an item component and chooses among its labelled items', async () => {
@@ -353,9 +372,107 @@ describe('generated Vue form controls', () => {
     expect(placeholder?.color).toBe('#9CA3B0')
   })
 
+  // As the React field spreads its props on the input and gives its root the caller's className.
+  test("a field's input takes the caller's attributes, and its root the caller's class", async () => {
+    for (const fixture of [textFieldSet(), textFieldSet({ invalid: true }), textareaComponent()]) {
+      const { component } = await generate(fixture)
+      const html = await render(component, {
+        name: 'email',
+        required: true,
+        placeholder: 'you@example.com',
+        'aria-invalid': 'true',
+        class: 'wide'
+      })
+      const root = /^<div[^>]*>/.exec(html)?.[0] ?? ''
+      const input = /<(?:input|textarea)[^>]*>/.exec(html)?.[0] ?? ''
+      expect(root).toContain('wide')
+      expect(root).not.toContain('name=')
+      expect(root).not.toContain('aria-invalid')
+      expect(input).toContain('name="email"')
+      expect(input).toContain('required')
+      expect(input).toContain('aria-invalid="true"')
+      expect(input).not.toContain('wide')
+      if (fixture.set.name === 'Email') expect(input).toContain('placeholder="you@example.com"')
+    }
+  })
+
+  test('a field with no text bound yet draws no input, and its root takes the attributes', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      emptyBehaviour('textarea'),
+      (graph, variant) => {
+        graph.createNode('TEXT', variant, { name: 'Hint', text: 'Tell us more' })
+      }
+    )
+    const { files, component } = await generate(fixture)
+    expect(fileText(files, 'Message.vue')).not.toContain('inheritAttrs')
+    const html = await render(component, { 'data-testid': 'message', class: 'wide' })
+    expect(html).toMatch(/^<div[^>]*data-testid="message"/)
+    expect(html).toMatch(/^<div[^>]*class="[^"]*wide/)
+  })
+
+  test('a field whose input sits in a slot keeps its attributes on the root', async () => {
+    const fixture = componentSet(
+      'Message',
+      { Size: ['Default'] },
+      { ...emptyBehaviour('textarea'), texts: { value: { propertyId: 'message' } } },
+      (graph, variant) => {
+        const body = graph.createNode('FRAME', variant, {
+          name: 'Body',
+          width: 200,
+          height: 60,
+          componentPropertyReferences: [{ propertyId: 'body', field: 'SLOT_CONTENT' }]
+        })
+        graph.createNode('TEXT', body.id, {
+          name: 'Value',
+          text: 'Tell us more',
+          componentPropertyReferences: [{ propertyId: 'message', field: 'TEXT' }]
+        })
+      }
+    )
+    fixture.graph.updateNode(fixture.set.id, {
+      componentPropertyDefinitions: [
+        ...fixture.set.componentPropertyDefinitions,
+        { id: 'message', name: 'Message', type: 'TEXT', defaultValue: 'Tell us more' },
+        { id: 'body', name: 'Body', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const { files, component } = await generate(fixture)
+    const source = fileText(files, 'Message.vue')
+    // The slot's own content replaces the input, so the attributes stay where Vue puts them.
+    expect(source).toContain('<slot name="body">')
+    expect(source).not.toContain('inheritAttrs')
+    expect(await render(component, { 'data-testid': 'message' })).toMatch(
+      /^<div[^>]*data-testid="message"/
+    )
+  })
+
   test('a textarea starts with its words', async () => {
     const { component } = await generate(textareaComponent())
     expect(await render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
+  })
+
+  test('an invalid checkbox is marked for assistive technology and its styles', async () => {
+    const { component, stories } = await generate(invalidCheckboxSet())
+    const valid = await render(component)
+    expect(valid).not.toContain('aria-invalid')
+    expect(valid).not.toContain('data-invalid')
+    const invalid = await render(component, { invalid: true })
+    expect(invalid).toMatch(/<button[^>]*aria-invalid="true"[^>]*role="checkbox"/)
+    expect(invalid).toContain('data-invalid="true"')
+    expect(Object.keys(stories)).toContain('Invalid')
+  })
+
+  test("an invalid field marks its input, and its root for the field's styles", async () => {
+    const { component } = await generate(textFieldSet({ invalid: true }))
+    const html = await render(component, { invalid: true })
+    expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
+    expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
+    expect(html.match(/aria-invalid/g)).toHaveLength(1)
+    // An `aria-invalid` the caller sets reaches the input too, not just the root it falls to.
+    const passed = await render(component, { 'aria-invalid': 'true' })
+    expect(passed).toMatch(/<input[^>]*aria-invalid="true"/)
   })
 })
 

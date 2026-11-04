@@ -34,26 +34,26 @@ const BREAKDOWN_QUERY = `query ($zone: String!, $day: Date!, $host: String!, $pa
   } }
 }`
 
-const Visits = v.object({ visits: v.number() })
+const visitsSchema = v.object({ visits: v.number() })
 const answer = <T extends v.GenericSchema>(zone: T) =>
   v.object({
     data: v.nullable(v.object({ viewer: v.object({ zones: v.array(zone) }) })),
     errors: v.nullish(v.array(v.object({ message: v.string() })))
   })
-const VisitsZone = v.object({
+const visitsZoneSchema = v.object({
   httpRequestsAdaptiveGroups: v.array(
     v.object({
-      sum: Visits,
+      sum: visitsSchema,
       dimensions: v.object({ date: v.string(), clientRequestHTTPHost: v.string() })
     })
   )
 })
-const BreakdownZone = v.object({
+const breakdownZoneSchema = v.object({
   pages: v.array(
-    v.object({ sum: Visits, dimensions: v.object({ clientRequestPath: v.string() }) })
+    v.object({ sum: visitsSchema, dimensions: v.object({ clientRequestPath: v.string() }) })
   ),
   countries: v.array(
-    v.object({ sum: Visits, dimensions: v.object({ clientCountryName: v.string() }) })
+    v.object({ sum: visitsSchema, dimensions: v.object({ clientCountryName: v.string() }) })
   )
 })
 
@@ -84,7 +84,7 @@ export function cloudflareClient(fetcher: FeedbackServices['fetch'], zone: strin
   return {
     /** Visits per day and hostname from `start` to `end`, both included. */
     async visits(start: CalendarDate, end: CalendarDate, hosts: string[]) {
-      const zoneData = await query(VisitsZone, VISITS_QUERY, {
+      const zoneData = await query(visitsZoneSchema, VISITS_QUERY, {
         start: start.toString(),
         end: end.toString(),
         hosts
@@ -100,7 +100,7 @@ export function cloudflareClient(fetcher: FeedbackServices['fetch'], zone: strin
     /** One day of a host's most visited pages and its visits by country. */
     async breakdown(date: CalendarDate, host: string) {
       const day = date.toString()
-      const zoneData = await query(BreakdownZone, BREAKDOWN_QUERY, {
+      const zoneData = await query(breakdownZoneSchema, BREAKDOWN_QUERY, {
         day,
         host,
         pages: TOP_PAGES,

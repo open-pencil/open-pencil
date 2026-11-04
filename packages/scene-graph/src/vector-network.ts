@@ -1,8 +1,17 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
+import type { VectorPathWindingRule } from './parse-path'
 import type { Vector } from './primitives'
-import type { VectorNetwork, VectorSegment } from './types'
+import type {
+  Fill,
+  GeometryPath,
+  SceneNode,
+  VectorNetwork,
+  VectorSegment,
+  VectorVertex
+} from './types'
 
 /** Concatenate vector networks while preserving independent geometry. */
 export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
@@ -30,7 +39,7 @@ export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorN
         for (const segmentIndex of loop) shifted.push(segmentIndex + segmentOffset)
         loops.push(shifted)
       }
-      regions.push({ windingRule: region.windingRule, loops })
+      regions.push(copyVectorRegion(region, loops))
     }
     vertexOffset += network.vertices.length
     segmentOffset += network.segments.length
@@ -60,11 +69,64 @@ export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwor
       tangentStart: mapVector(s.tangentStart),
       tangentEnd: mapVector(s.tangentEnd)
     })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
+    regions: vn.regions.map((r) => copyVectorRegion(r))
   }
+}
+
+/** Whether any region has paints of its own, which it draws instead of the layer's fills. */
+export function hasRegionFills(network: VectorNetwork | null): boolean {
+  return network?.regions.some((region) => region.fills !== undefined) ?? false
+}
+
+/**
+ * Whether fill geometry is the regions' outlines, one each, as a file or an edit writes it. A
+ * pasted vector has none, and an import skips empty outlines; their regions draw traced.
+ */
+export function fillGeometryMatchesRegions(
+  fillGeometry: readonly GeometryPath[],
+  network: VectorNetwork
+): boolean {
+  return fillGeometry.length === network.regions.length
+}
+
+/**
+ * Whether a vector's regions draw different fills, each its own or else the layer's, which Figma
+ * reads as mixed (live-verified: regions with equal fills of their own read the layer's).
+ */
+export function regionFillsDiffer(
+  network: VectorNetwork | null,
+  layerFills: readonly Fill[]
+): boolean {
+  const [first, ...rest] = (network?.regions ?? []).map((region) => region.fills ?? layerFills)
+  return rest.some((fills) => !isEqual(fills, first))
+}
+
+/** The network with every region drawing the layer's fills. */
+function withoutRegionFills(network: VectorNetwork): VectorNetwork {
+  const copy = cloneVectorNetwork(network)
+  return {
+    ...copy,
+    regions: copy.regions.map(({ windingRule, loops }) => ({ windingRule, loops }))
+  }
+}
+
+/**
+ * What else an edit that sets a vector's fills changes: every region draws them, its own paints
+ * and style dropped, as setting fills does in Figma (live-verified). Edit entry points apply it.
+ */
+export function regionFillChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Pick<Partial<SceneNode>, 'vectorNetwork'> {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  if (!('fills' in changes) || 'vectorNetwork' in changes || !network) return {}
+  const ownFills = network.regions.some((region) => region.fills || region.fillStyleId)
+  return ownFills ? { vectorNetwork: withoutRegionFills(network) } : {}
+}
+
+/** The paints regions carry of their own. */
+export function regionFills(network: VectorNetwork | null): Fill[] {
+  return network?.regions.flatMap((region) => region.fills ?? []) ?? []
 }
 
 /** Structural equality of two VectorNetworks (order-sensitive, exact values). */
@@ -74,22 +136,6 @@ export function vectorNetworksEqual(a: VectorNetwork, b: VectorNetwork): boolean
     isEqual(a.segments, b.segments) &&
     isEqual(a.regions, b.regions)
   )
-}
-
-/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
-export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  return {
-    vertices: vn.vertices.map((v) => ({ ...v })),
-    segments: vn.segments.map((s) => ({
-      ...s,
-      tangentStart: { ...s.tangentStart },
-      tangentEnd: { ...s.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
-  }
 }
 
 /**
@@ -290,4 +336,199 @@ export function normalizeVectorNetwork(vn: NormalizableVectorNetwork): VectorNet
     })),
     regions: vn.regions ?? []
   }
+}
+
+function coordinate(value: number, decimals: number | null): number {
+  if (decimals === null) return value
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
+function segmentToSVG(
+  seg: VectorSegment,
+  vertices: VectorVertex[],
+  forward: boolean,
+  decimals: number | null
+): string {
+  const start = forward ? vertices[seg.start] : vertices[seg.end]
+  const end = forward ? vertices[seg.end] : vertices[seg.start]
+  const ts = forward ? seg.tangentStart : { x: -seg.tangentEnd.x, y: -seg.tangentEnd.y }
+  const te = forward ? seg.tangentEnd : { x: -seg.tangentStart.x, y: -seg.tangentStart.y }
+
+  const isStraight =
+    Math.abs(ts.x) < 0.001 &&
+    Math.abs(ts.y) < 0.001 &&
+    Math.abs(te.x) < 0.001 &&
+    Math.abs(te.y) < 0.001
+
+  if (isStraight) {
+    return `L${coordinate(end.x, decimals)} ${coordinate(end.y, decimals)}`
+  }
+
+  const cp1x = coordinate(start.x + ts.x, decimals)
+  const cp1y = coordinate(start.y + ts.y, decimals)
+  const cp2x = coordinate(end.x + te.x, decimals)
+  const cp2y = coordinate(end.y + te.y, decimals)
+  return `C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${coordinate(end.x, decimals)} ${coordinate(end.y, decimals)}`
+}
+
+function traceOrderedSegments(
+  segmentIndices: readonly number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  decimals: number | null
+): string {
+  if (segmentIndices.length === 0) return ''
+  const first = segments[segmentIndices[0]]
+  const second = segmentIndices.length > 1 ? segments[segmentIndices[1]] : null
+  // Start at the first segment endpoint that does not connect to the second segment.
+  const secondConnectsStart = second?.start === first.start || second?.end === first.start
+  const secondConnectsEnd = second?.start === first.end || second?.end === first.end
+  const firstForward = !second || secondConnectsEnd || !secondConnectsStart
+  const startIndex = firstForward ? first.start : first.end
+  let currentIndex = startIndex
+  const parts = [
+    `M${coordinate(vertices[startIndex].x, decimals)} ${coordinate(vertices[startIndex].y, decimals)}`
+  ]
+
+  for (const segmentIndex of segmentIndices) {
+    const segment = segments[segmentIndex]
+    const isConnected = segment.start === currentIndex || segment.end === currentIndex
+    const forward = segment.start === currentIndex || !isConnected
+    if (!isConnected) {
+      const segmentStart = forward ? segment.start : segment.end
+      parts.push(
+        `M${coordinate(vertices[segmentStart].x, decimals)} ${coordinate(vertices[segmentStart].y, decimals)}`
+      )
+    }
+    parts.push(segmentToSVG(segment, vertices, forward, decimals))
+    currentIndex = forward ? segment.end : segment.start
+  }
+  if (parts.length === segmentIndices.length + 1 && currentIndex === startIndex) parts.push('Z')
+  return parts.join('')
+}
+
+type SegmentAdjacency = ReadonlyMap<number, readonly number[]>
+
+function buildSegmentAdjacency(segments: VectorSegment[]): SegmentAdjacency {
+  const adjacency = new Map<number, number[]>()
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index]
+    for (const vertexIndex of [segment.start, segment.end]) {
+      const incidentSegments = adjacency.get(vertexIndex)
+      if (incidentSegments) incidentSegments.push(index)
+      else adjacency.set(vertexIndex, [index])
+    }
+  }
+  return adjacency
+}
+
+function findConnectedSegment(
+  remaining: ReadonlySet<number>,
+  adjacency: SegmentAdjacency,
+  vertexIndex: number
+): number | undefined {
+  return adjacency.get(vertexIndex)?.find((index) => remaining.has(index))
+}
+
+function extendSegmentChain(
+  chain: number[],
+  startVertex: number,
+  remaining: Set<number>,
+  segments: VectorSegment[],
+  adjacency: SegmentAdjacency
+): void {
+  let currentIndex = startVertex
+  let nextIndex = findConnectedSegment(remaining, adjacency, currentIndex)
+  while (nextIndex !== undefined) {
+    chain.push(nextIndex)
+    remaining.delete(nextIndex)
+    const segment = segments[nextIndex]
+    currentIndex = segment.start === currentIndex ? segment.end : segment.start
+    nextIndex = findConnectedSegment(remaining, adjacency, currentIndex)
+  }
+}
+
+function unfilledSegmentsToPath(network: VectorNetwork, decimals: number | null): string {
+  const { vertices, segments } = network
+  const remaining = new Set(segments.map((_, index) => index))
+  const adjacency = buildSegmentAdjacency(segments)
+  const parts: string[] = []
+
+  while (remaining.size > 0) {
+    const firstIndex = remaining.values().next().value
+    if (firstIndex === undefined) break
+    remaining.delete(firstIndex)
+    const first = segments[firstIndex]
+
+    const backward: number[] = []
+    extendSegmentChain(backward, first.start, remaining, segments, adjacency)
+    backward.reverse()
+
+    const forward: number[] = []
+    extendSegmentChain(forward, first.end, remaining, segments, adjacency)
+
+    parts.push(
+      traceOrderedSegments([...backward, firstIndex, ...forward], segments, vertices, decimals)
+    )
+  }
+
+  return parts.join('')
+}
+
+export function vectorNetworkToSVGPaths(
+  network: VectorNetwork,
+  decimals: number | null = 2
+): string[] {
+  const { vertices, regions } = network
+
+  if (regions.length === 0) {
+    const path = unfilledSegmentsToPath(network, decimals)
+    return path ? [path] : []
+  }
+  const paths = regionSVGPaths(network, decimals)
+  // Segments no region encloses, such as an icon's open strokes beside its filled shapes,
+  // draw as open paths after the regions.
+  const open = looseSegments(network)
+  const loose =
+    open.length > 0 && unfilledSegmentsToPath({ vertices, segments: open, regions: [] }, decimals)
+  return loose ? [...paths, loose] : paths
+}
+
+/** Each region of a vector network as path data, its loops traced in turn. */
+export function regionSVGPaths(network: VectorNetwork, decimals: number | null = 2): string[] {
+  const { vertices, segments, regions } = network
+  return regions.map((region) =>
+    region.loops.map((loop) => traceOrderedSegments(loop, segments, vertices, decimals)).join('')
+  )
+}
+
+/** The segments of a vector network that no region encloses. */
+export function looseSegments({ segments, regions }: VectorNetwork): VectorNetwork['segments'] {
+  const enclosed = new Set(regions.flatMap((region) => region.loops.flat()))
+  return segments.filter((_, index) => !enclosed.has(index))
+}
+
+/** A path of a vector network as Figma's `vectorPaths` gives it. */
+export interface VectorPath {
+  windingRule: VectorPathWindingRule
+  data: string
+}
+
+/**
+ * A vector network as Figma's `vectorPaths`: each region as a path with its winding rule, then
+ * the segments no region encloses as one open path, at full precision.
+ */
+export function vectorNetworkPaths(network: VectorNetwork): VectorPath[] {
+  if (network.segments.length === 0) return []
+  const paths: VectorPath[] = regionSVGPaths(network, null).flatMap((data, index) =>
+    data ? [{ windingRule: network.regions[index].windingRule, data }] : []
+  )
+  const open = looseSegments(network)
+  if (open.length === 0) return paths
+  const data = vectorNetworkToSVGPaths(
+    { vertices: network.vertices, segments: open, regions: [] },
+    null
+  ).join('')
+  return data ? [...paths, { windingRule: 'NONE', data }] : paths
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Color } from '@open-pencil/scene-graph'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** A status's color, as the canvas label, panels and menus mark it. */
 const { color } = defineProps<{ color: Color | undefined }>()

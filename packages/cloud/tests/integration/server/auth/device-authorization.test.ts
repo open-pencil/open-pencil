@@ -11,11 +11,10 @@ import { signOutFromCloud } from '#cloud/client'
 import { parseCloudDiscovery } from '#cloud/contract'
 import * as v from 'valibot'
 
-test('email-only desktop authorization stays on its issuing instance with a separate editor', async () => {
+test('email-only desktop authorization stays on its issuing instance', async () => {
   const fixture = await createAccountAuthenticationFixture({
     config: {
       ...accountAuthenticationConfig,
-      appURL: 'https://editor.example.com',
       trustedOrigins: ['https://editor.example.com']
     }
   })
@@ -37,7 +36,7 @@ test('email-only desktop authorization stays on its issuing instance with a sepa
         verification_uri_complete: v.string()
       })
     )
-    expect(authorization.verification_uri).toBe('https://cloud.example.com/cloud/device')
+    expect(authorization.verification_uri).toBe('https://cloud.example.com/auth/device')
     expect(new URL(authorization.verification_uri_complete).origin).toBe(
       'https://cloud.example.com'
     )

@@ -2,9 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { reactive } from 'vue'
 
-import { createShapeWithText, SceneGraph, withIcon } from '@open-pencil/scene-graph'
+import { createShapeWithText } from '@open-pencil/scene-graph/generated'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { withIcon } from '@open-pencil/scene-graph/icons'
 import { colorToFill } from '@open-pencil/scene-graph/color'
-import { buildLayerTreeModel, patchLayerNode } from '@open-pencil/vue'
+import { buildLayerTreeModel, patchLayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { dropIndex } from '#vue/primitives/LayerTree/model'
 
@@ -95,6 +97,29 @@ describe('layer tree model', () => {
     graph.updateNode(rect.id, { cornerRadius: 8 })
     expect(patchLayerNode(reactive(rectRow), rect)).toBe(true)
     expect(rectRow.outline?.cornerRadius).toBe(8)
+  })
+})
+
+describe('layer row order', () => {
+  test('lists an auto layout in flow order and other layers front-most first, as Figma does', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const rowsOf = (layoutMode: 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'GRID') => {
+      const frame = graph.createNode('FRAME', pageId, { layoutMode })
+      const ids = ['a', 'b', 'c'].map(
+        (name) => graph.createNode('RECTANGLE', frame.id, { name }).id
+      )
+      const rows = buildLayerTreeModel(graph, pageId).byId.get(frame.id)?.children ?? []
+      return { ids, rows: rows.map((row) => row.id) }
+    }
+    for (const mode of ['HORIZONTAL', 'VERTICAL'] as const) {
+      const { ids, rows } = rowsOf(mode)
+      expect(rows).toEqual(ids)
+    }
+    for (const mode of ['NONE', 'GRID'] as const) {
+      const { ids, rows } = rowsOf(mode)
+      expect(rows).toEqual(ids.toReversed())
+    }
   })
 })
 

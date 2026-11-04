@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import {
   findStatusState,
-  OPEN_PENCIL_PLUGIN_DATA,
   readStatusWorkflow,
-  SceneGraph,
   STATUS_WORKFLOW_PRESETS,
-  withPluginData,
   writeStatusWorkflow
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/statuses'
 
 describe('status workflow', () => {
   test("a document without one has Figma's Ready for dev and Completed", () => {

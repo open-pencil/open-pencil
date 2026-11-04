@@ -8,7 +8,7 @@ import {
   statusPlacement,
   STATUS_NODE_TYPES,
   type FigmaDevStatus
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/statuses'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
@@ -16,7 +16,7 @@ import { graph, raw, updateNode } from './accessor-utils'
 /** Figma's `DevStatus`; a description is not kept, as comments hold what people say about it. */
 export type FigmaDevStatusValue = { type: FigmaDevStatus; description?: string } | null
 
-const devStatusInput = v.nullable(
+const devStatusInputSchema = v.nullable(
   v.object({ type: v.picklist(FIGMA_DEV_STATUSES), description: v.optional(v.string()) })
 )
 
@@ -47,7 +47,7 @@ export function installDevStatusAccessors(prototype: object, internals: NodeProx
       set(this: ProxyThis, value: unknown) {
         const node = raw(this, internals)
         if (!STATUS_NODE_TYPES.has(node.type)) return
-        const parsed = v.safeParse(devStatusInput, value)
+        const parsed = v.safeParse(devStatusInputSchema, value)
         if (!parsed.success) throw new Error('in set_devStatus: Expected a DevStatus or null')
         if (parsed.output === null) {
           updateNode(this, internals, { status: null })

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
-import type { StatusWorkflowPreset } from '@open-pencil/scene-graph'
-import { useCommonMessages, useFlatReorderDrag, useStatusMessages } from '@open-pencil/vue'
+import type { StatusWorkflowPreset } from '@open-pencil/scene-graph/statuses'
+import { useCommonMessages, useStatusMessages } from '@open-pencil/vue/i18n'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useStatusWorkflowDraft } from '@/app/editor/statuses/workflow'
@@ -16,7 +17,8 @@ import AppDialog from '@/components/ui/dialog/AppDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { statusRows } from '@/theme/statuses'
+
+import { statusRows } from './ui'
 
 /**
  * The document's statuses: their order, colors, names, categories, and what editing does to each.
@@ -44,9 +46,14 @@ const open = computed({
   }
 })
 
+/** Discarded edits are dropped as the dialog next opens, so its closing animation keeps them. */
+let discarded = false
+
 // A draft opens on the document's statuses as they are now, unless it holds edits not applied.
 watch(open, (value) => {
-  if (value && !dirty.value) editor.reset()
+  if (!value || (dirty.value && !discarded)) return
+  discarded = false
+  editor.reset()
 })
 
 /** The preset menu's value while the statuses match no preset. */
@@ -116,7 +123,7 @@ function choosePreset(value: string) {
 }
 
 function discard() {
-  editor.reset()
+  discarded = true
   store.state.statusesOpen = false
 }
 </script>
@@ -170,7 +177,7 @@ function discard() {
       <div
         v-for="state in removed"
         :key="state.id"
-        :class="[rows.row(), 'text-[11px] text-muted']"
+        :class="[rows.row(), 'text-2xs text-muted']"
         data-test-id="status-removed-row"
         :data-state-id="state.id"
       >
@@ -230,6 +237,7 @@ function discard() {
         :model-value="preset ?? CUSTOM"
         :options="presetOptions"
         :label="messages.preset"
+        size="sm"
         :ui="{ trigger: 'w-40' }"
         class="mr-auto"
         @update:model-value="choosePreset(String($event))"

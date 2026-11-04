@@ -1,16 +1,14 @@
-import { tv } from 'tailwind-variants'
-
 /**
  * A month of days for picking a span: the ends are solid, the days between a tint, and the
  * span under the pointer previews in the same tint before the second click.
  */
-export const rangeCalendar = tv({
+export default {
   slots: {
     root: 'flex flex-col gap-2 text-xs',
     header: 'flex items-center justify-between gap-2',
     heading: 'text-xs font-semibold',
     grid: 'w-full border-collapse select-none',
-    headCell: 'h-7 w-8 text-center text-[10px] font-medium text-muted',
+    headCell: 'h-7 w-8 text-center text-3xs font-medium text-muted',
     cell: 'p-0 text-center',
     day: [
       'mx-auto flex size-8 cursor-pointer items-center justify-center rounded-md tabular-nums outline-none',
@@ -26,4 +24,4 @@ export const rangeCalendar = tv({
       'data-[disabled]:cursor-default data-[disabled]:text-muted/40 data-[disabled]:hover:bg-transparent'
     ]
   }
-})
+} as const

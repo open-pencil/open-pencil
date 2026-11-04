@@ -1,11 +1,13 @@
-import type { EditorState } from '@open-pencil/core/editor'
-import { filesMessages } from '@open-pencil/vue'
+import type { EditorState } from '@open-pencil/core'
+import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
-import { documentNameFromFigPath } from '@/app/document/io/names'
+import { isFileWriteRefused } from '@/app/document/io/capability'
+import { documentFileName, documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
+import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
@@ -32,6 +34,7 @@ export function createSaveActions({
   setDownloadName,
   getStorageBinding,
   setStorageBinding,
+  hasWritableSource,
   setSourceIdentity,
   setSavedVersion,
   setLastWriteTime,
@@ -59,7 +62,7 @@ export function createSaveActions({
     const fileHandle = getFileHandle()
     const storageBinding = getStorageBinding()
     const downloadName = getDownloadName()
-    if (storageBinding || filePath || fileHandle) {
+    if (hasWritableSource()) {
       const { data, version } = await buildVersionedFigFile()
       const wrote = await writeFile(data, version)
       if (wrote && !storageBinding) setSourceIdentity({ handle: fileHandle, path: filePath })
@@ -78,33 +81,53 @@ export function createSaveActions({
     const { data, version } = await buildVersionedFigFile()
 
     if (IS_TAURI) {
-      const path = await chooseTauriFigSavePath()
+      const path = await chooseTauriFigSavePath(state.documentKind)
       if (!path) return false
       setStorageBinding(null)
       setFilePath(path)
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
       const wrote = await writeFile(data, version)
-      if (wrote) setSourceIdentity({ handle: null, path })
+      if (wrote) {
+        setSourceIdentity({ handle: null, path })
+        // A file saved to disk is listed on Home like one opened from there.
+        rememberRecentFile(path, state.documentKind)
+      }
       startWatchingFile()
       return wrote
     }
 
     // The picker helper returns null when the browser has no File System Access API.
-    const handle = await chooseBrowserFigSaveHandle()
+    const handle = await chooseBrowserFigSaveHandle(state.documentKind)
     if (handle) {
       setStorageBinding(null)
       setFileHandle(handle)
       setFilePath(null)
       state.documentName = documentNameFromFigPath(handle.name)
-      const wrote = await writeFile(data, version)
-      if (wrote) setSourceIdentity({ handle, path: null })
-      startWatchingFile()
-      return wrote
+      try {
+        const wrote = await writeFile(data, version)
+        if (wrote) setSourceIdentity({ handle, path: null })
+        startWatchingFile()
+        return wrote
+      } catch (error) {
+        if (!isFileWriteRefused(error)) throw error
+        // The browser gave out the file but will not write to it: download it under that name,
+        // and forget the file, so the tab is not taken for it.
+        setFileHandle(null)
+        setSourceIdentity({ handle: null, path: null })
+        return downloadAs(handle.name, data, version)
+      }
     }
 
-    const filename = prompt(filesMessages.get().saveAsPrompt, getDownloadName() ?? 'Untitled.fig')
+    const filename = prompt(
+      filesMessages.get().saveAsPrompt,
+      getDownloadName() ?? documentFileName('Untitled', state.documentKind)
+    )
     if (!filename) return false
+    return downloadAs(filename, data, version)
+  }
+
+  async function downloadAs(filename: string, data: Uint8Array, version: number) {
     setStorageBinding(null)
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)

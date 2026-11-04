@@ -11,10 +11,6 @@ export function documentMetaKey(documentId: string): string {
   return `${STORAGE_DOCUMENTS_PREFIX}${documentId}.meta.json`
 }
 
-export function documentThumbnailKey(documentId: string): string {
-  return `${STORAGE_DOCUMENTS_PREFIX}${documentId}.thumb.jpg`
-}
-
 export function documentIdFromFigKey(key: string): string | null {
   if (!key.startsWith(STORAGE_DOCUMENTS_PREFIX) || !key.endsWith('.fig')) return null
   const id = key.slice(STORAGE_DOCUMENTS_PREFIX.length, -'.fig'.length)

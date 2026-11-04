@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { portalForm } from '@/components/cloud-portal/ui'
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { portalForm } from '@/theme/cloud-portal/form'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 import type { PortalSignInMethod } from '../types'

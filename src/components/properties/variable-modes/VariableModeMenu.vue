@@ -15,7 +15,9 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { MIXED, usePanelMessages, type VariableModeChoice } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'

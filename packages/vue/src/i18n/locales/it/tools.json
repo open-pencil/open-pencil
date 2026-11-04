@@ -14,5 +14,7 @@
   "shape": "Forma",
   "connector": "Connettore",
   "hand": "Mano",
-  "comment": "Commento"
+  "comment": "Commento",
+  "eyedropper": "Contagocce",
+  "eyedropperSample": "Preleva un colore dalla tela"
 }

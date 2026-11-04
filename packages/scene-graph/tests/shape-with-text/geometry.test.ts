@@ -1,11 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Vector } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
-import {
-  SHAPE_WITH_TEXT_TYPES,
-  shapeWithTextGeometry
-} from '@open-pencil/scene-graph/shape-with-text'
+import { SHAPE_WITH_TEXT_TYPES, shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 function points(commands: PolygonOutlineCommand[]): Vector[] {
   return commands.flatMap((command) => {

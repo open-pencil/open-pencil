@@ -1,16 +1,27 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { setInstanceOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { Effect as KiwiEffect, NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { assignmentOverrideField } from '@open-pencil/scene-graph/components'
+import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
+import {
+  bindingOverrideField,
+  setInstanceOverride,
+  variableModeOverrideField
+} from '@open-pencil/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { nodeChangeToProps } from '../node-change'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
+import { EFFECT_VARIABLE_FIELDS } from '../node-change/variable/effects'
+import { variableModeLayer } from '../node-change/variable/maps'
 import {
   recordVariableBindingClaims,
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
+import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
@@ -75,6 +86,25 @@ export interface MaterializedInstance {
  * Component IDs must refer to existing COMPONENT nodes in the destination graph.
  * Occurrence provenance stays in the returned map, not in fabricated FIG metadata.
  */
+/** Outlines inherited from a component are drawn at its size; scale them to the instance's. */
+function scaleInheritedOutlines(
+  converted: ReturnType<typeof nodeChangeToProps>,
+  occurrence: InstanceOccurrence
+): void {
+  const scale = occurrence.inheritedOutlineScale
+  if (!scale) return
+  if (converted.fillGeometry) {
+    converted.fillGeometry = scaleGeometryPaths(converted.fillGeometry, scale.fill.x, scale.fill.y)
+  }
+  if (converted.strokeGeometry) {
+    converted.strokeGeometry = scaleGeometryPaths(
+      converted.strokeGeometry,
+      scale.stroke.x,
+      scale.stroke.y
+    )
+  }
+}
+
 /** What an occurrence tree needs beyond the graph it is written into. */
 export interface MaterializeInstanceOptions {
   blobs?: Uint8Array[]
@@ -82,6 +112,11 @@ export interface MaterializeInstanceOptions {
   sourceChildren?: ReadonlyMap<InstanceOccurrence, string>
   /** Nodes to update in place rather than create, keyed by occurrence. */
   existingNodes?: ReadonlyMap<InstanceOccurrence, SceneNode>
+  /**
+   * The id to create a layer under that is a record of its own, not a copy inside an instance:
+   * its saved GUID, so it keeps one id across loads. Undefined creates it under a fresh id.
+   */
+  recordId?: (occurrence: InstanceOccurrence) => string | undefined
 }
 
 /** A document or a variable is a resource record, never a node in an expansion. */
@@ -100,12 +135,13 @@ export function materializeInstance(
   components: ReadonlyMap<string, string>,
   options: MaterializeInstanceOptions = {}
 ): MaterializedInstance {
-  const { blobs = [], sourceChildren = new Map(), existingNodes = new Map() } = options
+  const { blobs = [], sourceChildren = new Map(), existingNodes = new Map(), recordId } = options
   if (!graph.getNode(parentId)) throw new Error('Missing materialization parent')
   const prepared = new Map<InstanceOccurrence, ReturnType<typeof nodeChangeToProps>>()
   const validate = (current: InstanceOccurrence): void => {
     if (prepared.has(current)) throw new Error('Repeated or cyclic instance occurrence')
     const converted = nodeChangeToProps(current.properties, blobs, 'occurrence')
+    scaleInheritedOutlines(converted, current)
     if (converted.nodeType === 'TEXT' && current.derivedSize) {
       converted.derivedLayout = { width: current.derivedSize.x, height: current.derivedSize.y }
     }
@@ -144,6 +180,19 @@ export function materializeInstance(
       }
     }
   }
+  /** A record of its own takes its saved GUID, and a copy inside an instance a fresh id. */
+  const createLayer = (
+    current: InstanceOccurrence,
+    nodeType: SceneNode['type'],
+    parent: string,
+    props: Partial<SceneNode>,
+    owner: SceneNode | undefined
+  ): SceneNode => {
+    const id = owner ? undefined : recordId?.(current)
+    return id
+      ? graph.createNodeWithId(id, nodeType, parent, props)
+      : graph.createNode(nodeType, parent, props)
+  }
   const create = (current: InstanceOccurrence, parent: string, owner?: SceneNode): SceneNode => {
     const converted = prepared.get(current)
     if (!converted) throw new Error('Missing prepared occurrence')
@@ -169,13 +218,14 @@ export function materializeInstance(
     if (existing && existing.parentId !== parent) {
       throw new Error(`Preallocated occurrence has wrong parent ${current.sourceId}`)
     }
-    const node = existing ?? graph.createNode(nodeType, parent, propsWithIdentity)
+    const node = existing ?? createLayer(current, nodeType, parent, propsWithIdentity, owner)
     if (existing) graph.updateNode(existing.id, propsWithIdentity)
     const sharedSource = graph.getNode(sourceChildren.get(current) ?? '')
     if (sharedSource) shareUnchanged(node, sharedSource)
     nodes.set(current, node)
     if (existing && current !== occurrence && node.type === 'COMPONENT') return node
     applyBindingClaims(current, node, owner)
+    recordOwnerAssignments(owner, node, current)
     const sourceChildId = sourceChildren.get(current)
     if (owner && current.mainComponentId !== null && sourceChildId) {
       setInstanceOverride(
@@ -207,11 +257,34 @@ export function materializeInstance(
   return { root, nodes }
 }
 
+function recordOwnerAssignments(
+  owner: SceneNode | undefined,
+  node: SceneNode,
+  { ownerAssignedProperties = [] }: InstanceOccurrence
+): void {
+  if (!owner) {
+    return
+  }
+  for (const propertyId of ownerAssignedProperties) {
+    if (Object.hasOwn(node.componentPropertyAssignments, propertyId)) {
+      setInstanceOverride(
+        owner.instanceOverrides,
+        owner.id,
+        node.id,
+        assignmentOverrideField(propertyId),
+        node.componentPropertyAssignments[propertyId]
+      )
+    }
+  }
+}
+
 /** Whether a raw claim actually carries the scene value its kind maps to. */
 function claimApplies(field: OverrideField, value: unknown, target: SceneNode): boolean {
   if (field.kind === 'text')
     return typeof value === 'object' && value !== null && 'characters' in value
-  if (field.kind === 'text-style') return Boolean(target.textStyleId)
+  // A text style claim names the style the layer took, or clears the component's; one that
+  // resolved to neither, such as a library style missing here, is not claimed.
+  if (field.kind === 'text-style') return Boolean(target.textStyleId) || isClearedStyle(value)
   return true
 }
 
@@ -230,7 +303,7 @@ function recordPaintBindingClaims(
   for (const [index, paint] of paints.entries()) {
     const alias = (paint as Paint).colorVar?.value?.alias
     if (!alias) continue
-    const field = `boundVariables/${scene}/${index}/color`
+    const field = bindingOverrideField(`${scene}/${index}/color`)
     setInstanceOverride(
       owner.instanceOverrides,
       owner.id,
@@ -239,6 +312,37 @@ function recordPaintBindingClaims(
       target.boundVariables[`${scene}/${index}/color`] ?? null
     )
     declared = true
+  }
+  if (declared) setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
+}
+
+function recordVariableModeClaims(owner: SceneNode, target: SceneNode, claim: NodeChange): void {
+  if (!claim.variableModeBySetMap) {
+    return
+  }
+  for (const collection of variableModeLayer(claim).keys()) {
+    const field = variableModeOverrideField(collection)
+    setInstanceOverride(owner.instanceOverrides, owner.id, target.id, field)
+  }
+}
+
+/** A claimed effect carries its properties' aliases, so its bindings are part of the claim too. */
+function recordEffectBindingClaims(owner: SceneNode, target: SceneNode, effects: unknown): void {
+  if (!Array.isArray(effects)) return
+  let declared = false
+  for (const [index, effect] of (effects as KiwiEffect[]).entries()) {
+    for (const property of EFFECT_BINDING_PROPERTIES) {
+      if (!effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias) continue
+      const path = effectBindingField(index, property)
+      setInstanceOverride(
+        owner.instanceOverrides,
+        owner.id,
+        target.id,
+        bindingOverrideField(path),
+        target.boundVariables[path] ?? null
+      )
+      declared = true
+    }
   }
   if (declared) setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
 }
@@ -266,8 +370,10 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
         }
         if (field.kind === 'paint')
           recordPaintBindingClaims(owner, target, field.scene[0], claim.properties[raw])
+        if (raw === 'effects') recordEffectBindingClaims(owner, target, claim.properties[raw])
       }
-      recordVariableBindingClaims(owner, target, claim.properties as NodeChange)
+      recordVariableBindingClaims(owner, target, claim.properties)
+      recordVariableModeClaims(owner, target, claim.properties)
     }
   }
 }

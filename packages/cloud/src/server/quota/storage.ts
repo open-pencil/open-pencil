@@ -108,6 +108,16 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
       .execute()
   }
 
+  async function release(executor: StorageDatabase, uploadId: string): Promise<void> {
+    await executor
+      .updateTable('uploadStorageReservation')
+      .set({ releasedAt: new Date() })
+      .where('uploadId', '=', uploadId)
+      .where('committedAt', 'is', null)
+      .where('releasedAt', 'is', null)
+      .execute()
+  }
+
   return {
     snapshot: (workspaceId: string) => snapshot(database, workspaceId),
 
@@ -143,13 +153,11 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
     },
 
     async release(uploadId: string): Promise<void> {
-      await database
-        .updateTable('uploadStorageReservation')
-        .set({ releasedAt: new Date() })
-        .where('uploadId', '=', uploadId)
-        .where('committedAt', 'is', null)
-        .where('releasedAt', 'is', null)
-        .execute()
+      await release(database, uploadId)
+    },
+
+    releaseInTransaction(transaction: Transaction<CloudDatabase>, uploadId: string): Promise<void> {
+      return release(transaction, uploadId)
     }
   }
 }

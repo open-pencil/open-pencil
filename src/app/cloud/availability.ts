@@ -2,7 +2,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { APP_VERSION } from '@/app/runtime/version'
-import { IS_BROWSER, OFFICIAL_CLOUD_URL } from '@/constants'
+import { IS_BROWSER, IS_CLOUD_SITE, OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { discoverCloudServer } from './sessions/connection'
 
@@ -36,12 +36,14 @@ export function isVersionAtLeast(version: string, minimum: string): boolean {
 }
 
 /**
- * Whether the official server is open to this editor, or being previewed here; until then
- * Settings offers its waitlist.
+ * Whether the official server is open to this editor, being previewed here, or serving this
+ * editor itself; until then Settings offers its waitlist.
  */
 export const cloudOfficialListed = computed(
   () =>
-    preview.value || (listedFrom.value !== null && isVersionAtLeast(APP_VERSION, listedFrom.value))
+    IS_CLOUD_SITE ||
+    preview.value ||
+    (listedFrom.value !== null && isVersionAtLeast(APP_VERSION, listedFrom.value))
 )
 
 /** Reads the preview switch from the address and asks the official server whether it is listed. */

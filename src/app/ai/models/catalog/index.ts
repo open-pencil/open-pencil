@@ -4,7 +4,9 @@ import * as v from 'valibot'
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
-import { readCacheJSON, writeCacheJSON } from '@/app/cache'
+import { cachedRemoteJSON } from '@/app/cache/remote'
+
+import { listChatGPTModels } from './chatgpt'
 
 const MODELS_DEV_URL = 'https://models.dev/api.json'
 const MODELS_DEV_CACHE_KEY = 'models-dev/catalog'
@@ -28,7 +30,7 @@ type ModelsDevModel = {
   status?: unknown
   release_date?: unknown
   modalities?: { output?: unknown }
-  limit?: { output?: unknown }
+  limit?: { output?: unknown; context?: unknown }
 }
 
 type ModelsDevProvider = {
@@ -37,7 +39,7 @@ type ModelsDevProvider = {
 
 type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
-const ModelsDevCatalogSchema = v.record(
+const modelsDevCatalogSchema = v.record(
   v.string(),
   v.object({
     models: v.optional(
@@ -45,14 +47,14 @@ const ModelsDevCatalogSchema = v.record(
         v.string(),
         v.looseObject({
           modalities: v.optional(v.looseObject({ output: v.optional(v.unknown()) })),
-          limit: v.optional(v.looseObject({ output: v.optional(v.unknown()) }))
+          limit: v.optional(
+            v.looseObject({ output: v.optional(v.unknown()), context: v.optional(v.unknown()) })
+          )
         })
       )
     )
   })
 ) satisfies v.GenericSchema<unknown, ModelsDevCatalog>
-
-let catalogPromise: Promise<ModelsDevCatalog | null> | null = null
 
 function normalizedStatus(status: unknown): ModelOption['status'] {
   if (status === 'beta' || status === 'deprecated') return status
@@ -73,53 +75,25 @@ function normalizeModel(id: string, model: ModelsDevModel): ModelOption {
   if (typeof output === 'number' && Number.isFinite(output)) {
     normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, output))
   }
+  const context = model.limit?.context
+  if (typeof context === 'number' && Number.isFinite(context) && context > 0) {
+    normalized.contextWindow = context
+  }
   if (typeof model.release_date === 'string') normalized.releaseDate = model.release_date
   return normalized
 }
 
-async function loadCatalog(
-  fetcher: typeof fetch,
-  options: { useCache: boolean }
-): Promise<ModelsDevCatalog | null> {
-  if (options.useCache) {
-    const cached = await readCacheJSON(
-      MODELS_DEV_CACHE_KEY,
-      ModelsDevCatalogSchema,
-      MODELS_DEV_CACHE_TTL_MS
-    )
-    if (cached) return cached
-  }
-  try {
+const modelsDevCatalog = cachedRemoteJSON({
+  key: MODELS_DEV_CACHE_KEY,
+  schema: modelsDevCatalogSchema,
+  maxAgeMs: MODELS_DEV_CACHE_TTL_MS,
+  load: async (fetcher) => {
     const response = await fetcher(MODELS_DEV_URL)
     if (!response.ok) throw new Error(`models.dev catalog request failed: ${response.status}`)
     // Validated like the cached copy, so a bad entry falls back instead of crashing the list.
-    const catalog = v.parse(
-      v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema),
-      await response.text()
-    )
-    if (options.useCache) await writeCacheJSON(MODELS_DEV_CACHE_KEY, catalog)
-    return catalog
-  } catch {
-    return null
+    return v.parse(v.pipe(v.string(), v.parseJson(), modelsDevCatalogSchema), await response.text())
   }
-}
-
-async function resolvedCatalog(fetcher?: typeof fetch): Promise<ModelsDevCatalog | null> {
-  const nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined
-  const resolvedFetcher = fetcher ?? nativeFetch
-  if (!resolvedFetcher) return null
-  const useCache = resolvedFetcher === nativeFetch
-  if (!useCache) return loadCatalog(resolvedFetcher, { useCache: false })
-  const pending = (catalogPromise ??= loadCatalog(resolvedFetcher, { useCache: true }))
-  try {
-    const catalog = await pending
-    if (!catalog && catalogPromise === pending) catalogPromise = null
-    return catalog
-  } catch {
-    if (catalogPromise === pending) catalogPromise = null
-    return null
-  }
-}
+})
 
 function modelIDCandidates(providerKey: string, modelID: string): string[] {
   const unprefixed = modelID.startsWith(`${providerKey}/`)
@@ -150,7 +124,8 @@ function mergeCuratedModels(curated: ModelOption[], catalog: ModelOption[]): Mod
     ...model,
     capabilities: catalogById.get(model.id)?.capabilities ?? model.capabilities,
     recommendedMaxOutputTokens:
-      catalogById.get(model.id)?.recommendedMaxOutputTokens ?? model.recommendedMaxOutputTokens
+      catalogById.get(model.id)?.recommendedMaxOutputTokens ?? model.recommendedMaxOutputTokens,
+    contextWindow: catalogById.get(model.id)?.contextWindow ?? model.contextWindow
   }))
   const curatedIds = new Set(curated.map((model) => model.id))
   const remaining = catalog
@@ -159,14 +134,27 @@ function mergeCuratedModels(curated: ModelOption[], catalog: ModelOption[]): Mod
   return [...recommended, ...remaining]
 }
 
+/** The account's own list in its order; recommended models keep their names and tags. */
+function withCuratedNames(curated: ModelOption[], listed: ModelOption[]): ModelOption[] {
+  const curatedById = new Map(curated.map((model) => [model.id, model]))
+  return listed.map((model) => {
+    const known = curatedById.get(model.id)
+    return known ? { ...model, name: known.name, tag: known.tag } : model
+  })
+}
+
 export async function listCatalogModels(
   providerID: AIProviderID,
   fetcher?: typeof fetch
 ): Promise<ModelOption[]> {
   const curated = curatedProviderModels(providerID)
+  if (providerID === 'chatgpt') {
+    const listed = await listChatGPTModels()
+    return listed ? withCuratedNames(curated, listed) : curated
+  }
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length) return curated
-  const catalog = await resolvedCatalog(fetcher)
+  const catalog = await modelsDevCatalog.get(fetcher)
   if (!catalog) return curated
 
   const models = providerKeys.flatMap((providerKey) =>
@@ -184,7 +172,7 @@ export async function resolveModelsDevModel(
 ): Promise<ModelOption | null> {
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length || !modelID) return null
-  const catalog = await resolvedCatalog(fetcher)
+  const catalog = await modelsDevCatalog.get(fetcher)
   if (!catalog) return null
 
   for (const providerKey of providerKeys) {
@@ -198,5 +186,5 @@ export async function resolveModelsDevModel(
 }
 
 export function resetModelsDevCatalogForTests(): void {
-  catalogPromise = null
+  modelsDevCatalog.reset()
 }

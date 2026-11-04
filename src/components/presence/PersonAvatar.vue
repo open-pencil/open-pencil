@@ -3,13 +3,13 @@ import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
-import { avatar } from '@/theme/collaboration/avatar/person'
-import { avatarStack } from '@/theme/collaboration/avatar/stack'
 
+import { personFill } from './color'
 import type { PresenceVoice } from './rows'
+import { avatar, avatarStack } from './ui'
 
 /** A person's initials on their color, with how many agents they run and how they are in the call. */
 const {
@@ -24,7 +24,7 @@ const {
   name: string
   color: Color
   agentCount?: number
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   following?: boolean
   interactive?: boolean
   voice?: PresenceVoice
@@ -42,7 +42,7 @@ const voiceState = computed(() => {
   <span :class="ui.person()" :data-voice="voiceState === 'none' ? undefined : voiceState">
     <span
       :class="avatar({ size, bordered: true, following, interactive, voice: voiceState })"
-      :style="{ background: colorToCSS(color) }"
+      :style="{ background: personFill(color) }"
     >
       {{ initials(name) }}
     </span>

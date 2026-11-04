@@ -3,7 +3,7 @@ import { shallowReactive, shallowRef } from 'vue'
 import type { DocumentVersion } from '@open-pencil/cloud/contract'
 
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-import { downloadCloudRevision } from '@/app/integrations/storage/cloud/download'
+import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { readFigBytes } from '@/app/tabs'
 
@@ -101,7 +101,7 @@ export function openVersionHistory(store: EditorStore): void {
   if (histories.value.has(store)) return
   update(store, {
     store,
-    wasReadOnly: store.state.readOnly,
+    wasReadOnly: store.state.hostRestrictions.readOnly,
     preview: null,
     opening: null,
     failed: false
@@ -149,7 +149,7 @@ export async function previewVersion(store: EditorStore, version: DocumentVersio
       target.documentId,
       version.id
     )
-    const bytes = await downloadCloudRevision(download, storageFetch, { signal: load.signal })
+    const bytes = await downloadCloudDocument(download, storageFetch, { signal: load.signal })
     const name = document.state.documentName
     preview = createEditorStore(await readFigBytes(bytes, name, load.signal))
     preview.state.documentName = name

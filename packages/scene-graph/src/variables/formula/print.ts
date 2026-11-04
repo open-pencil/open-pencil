@@ -1,9 +1,9 @@
+import { colorToHex8 } from '#scene-graph/color/index'
 import type {
   VariableFormulaNode,
   VariableFormulaOperation,
   VariableFormulaOperator
-} from '@open-pencil/scene-graph'
-import { colorToHex8 } from '@open-pencil/scene-graph/color'
+} from '#scene-graph/types'
 
 import { inferFormulaType } from './check'
 import {

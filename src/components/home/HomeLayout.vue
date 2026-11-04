@@ -11,7 +11,7 @@
       <slot name="sidebar" />
     </div>
     <main class="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
-      <div class="mx-auto flex w-full max-w-6xl flex-col px-4 py-4 sm:px-6 sm:py-5">
+      <div class="flex w-full flex-col px-4 py-4 sm:px-6 sm:py-5">
         <div v-if="$slots.locations" class="mb-3 md:hidden"><slot name="locations" /></div>
         <slot />
       </div>

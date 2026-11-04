@@ -22,7 +22,7 @@ export interface ShaderEffect {
   props: ShaderPropControl[]
 }
 
-const label = v.optional(v.string())
+const labelSchema = v.optional(v.string())
 const uiTypes = (...types: string[]) =>
   v.union([
     v.picklist(types),
@@ -32,37 +32,40 @@ const uiTypes = (...types: string[]) =>
     )
   ])
 
-const rangeUI = v.object({
+const rangeUISchema = v.object({
   type: uiTypes('range'),
   min: v.number(),
   max: v.number(),
   step: v.optional(v.number()),
-  label,
+  label: labelSchema,
   group: v.optional(v.string())
 })
-const selectUI = v.object({
+const selectUISchema = v.object({
   type: uiTypes('select'),
   options: v.array(v.object({ label: v.string(), value: v.union([v.string(), v.number()]) })),
-  label,
+  label: labelSchema,
   group: v.optional(v.string())
 })
-const plainUI = v.object({
+const plainUISchema = v.object({
   type: uiTypes('color', 'checkbox', 'position', 'origin', 'text'),
-  label,
+  label: labelSchema,
   group: v.optional(v.string())
 })
-const propMetadata = v.object({ ui: v.optional(v.unknown()), default: v.optional(v.unknown()) })
+const propMetadataSchema = v.object({
+  ui: v.optional(v.unknown()),
+  default: v.optional(v.unknown())
+})
 
 /** Words a camel-cased prop name is made of, for a prop without a label. */
 const words = (key: string) =>
   key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase())
 
 function control(key: string, metadata: unknown): ShaderPropControl | null {
-  const parsed = v.safeParse(propMetadata, metadata)
+  const parsed = v.safeParse(propMetadataSchema, metadata)
   if (!parsed.success) return null
   const { ui } = parsed.output
   const base = { key, default: parsed.output.default }
-  const range = v.safeParse(rangeUI, ui)
+  const range = v.safeParse(rangeUISchema, ui)
   if (range.success) {
     const { min, max, step = (max - min) / 100 } = range.output
     return {
@@ -75,7 +78,7 @@ function control(key: string, metadata: unknown): ShaderPropControl | null {
       step
     }
   }
-  const select = v.safeParse(selectUI, ui)
+  const select = v.safeParse(selectUISchema, ui)
   if (select.success) {
     const { options } = select.output
     return {
@@ -86,7 +89,7 @@ function control(key: string, metadata: unknown): ShaderPropControl | null {
       options
     }
   }
-  const plain = v.safeParse(plainUI, ui)
+  const plain = v.safeParse(plainUISchema, ui)
   if (plain.success) {
     const [type] = [plain.output.type].flat()
     const kind =
@@ -101,7 +104,7 @@ function control(key: string, metadata: unknown): ShaderPropControl | null {
   return { ...base, label: words(key), group: '', kind: 'other' }
 }
 
-const registryEntry = v.object({
+const registryEntrySchema = v.object({
   name: v.string(),
   category: v.string(),
   description: v.optional(v.string()),
@@ -125,7 +128,7 @@ let catalog: Promise<ShaderEffect[]> | null = null
 export function loadShaderCatalog(): Promise<ShaderEffect[]> {
   catalog ??= import('shaders/registry').then(({ getAllShaders }) =>
     getAllShaders().flatMap((entry) => {
-      const parsed = v.safeParse(registryEntry, entry)
+      const parsed = v.safeParse(registryEntrySchema, entry)
       if (!parsed.success) return []
       const {
         name,

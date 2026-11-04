@@ -9,20 +9,20 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 
 ## Setup
 
-The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → AI & agents → Run guided setup**. To configure models by hand:
+The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, Cursor, Grok Build, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
 
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
-2. Click the settings icon
+2. Open the model picker under the message field and choose **Manage models and roles…**
 3. Add a model and configure its provider, model ID, credentials, and capabilities
 4. Save the model and assign it to **Design agent**
 
 You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts and can pin the current canvas selection as explicit node context. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 
-In **Settings → AI & agents → Chat**, set **Maximum steps per message** to a whole number from 1 to 1,000. The default is 50. Press Enter or leave the field to save a valid value; invalid drafts do not replace the saved preference. Higher limits allow longer tool-driven tasks but can increase latency and provider cost.
+In **Settings → Models → Chat**, set **Maximum steps per message** to a whole number from 1 to 1,000. The default is 50. Press Enter or leave the field to save a valid value; invalid drafts do not replace the saved preference. Higher limits allow longer tool-driven tasks but can increase latency and provider cost.
 
 The built-in AI captures this limit when each message starts. Stopping, remaining-step warnings, and the **Continue** action use that same budget. Changing it does not interrupt an ongoing request; the next message or continuation uses the new limit. A step is one model iteration and can include multiple tool calls. ACP and Pi agents manage their own limits.
 
@@ -36,6 +36,20 @@ The **Local MCP** segment has independent settings for clients connected to Open
 
 Tool toggles control which tools are offered, not which operations scripts may perform. An enabled `eval` or other script-capable tool can perform design operations whose dedicated tools are disabled; these switches are not a sandbox.
 
+## Skills
+
+Skills are folders with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format: instructions for a kind of work, with optional reference files. The built-in AI sees each enabled skill's name and description and loads its instructions when a request matches. It can read the skill's files, but scripts in a skill do not run.
+
+Open **Settings → Skills** to see where skills come from:
+
+- **Uploaded**: upload a ZIP of a skill's folder or a single `SKILL.md`. Uploads stay in OpenPencil and work in the browser too.
+- **Next to this document** (desktop): `.agents/skills` and `.claude/skills` folders from the open document's folder up to its repository. They stay off until you choose **Trust folder**, because a skill gives the AI instructions it follows.
+- **Shared agent skills** and **Claude Code skills** (desktop): `~/.agents/skills` and `~/.claude/skills`, where other coding agents install skills. Most of those are coding workflows, so these folders start off; the review step of the AI setup lists their skills for you to pick the ones that help with design.
+
+Uploads are on as soon as you add them, and any folder or skill can be switched on or off. The page lists them as Tool access lists tools: each source is a group with its own switch, and each skill has a switch beside it. Open a skill to read its instructions, see its files, or check warnings about how it departs from the specification. When two skills share a name, the first in that order is used.
+
+To run a skill yourself, type `/` at the start of a message and pick it, which starts the message with `/skill:name`. Pi gets the enabled skills as its own. ACP agents such as Claude Code and Codex load their own skills.
+
 ## Saved Conversations
 
 Use **Conversation history** to return to a saved chat, start a **New chat**, or rename or delete a conversation. History and attachment previews are stored locally; **All chats** lets you browse transcripts from other documents.
@@ -46,18 +60,22 @@ In the Chat settings beside the model overview, choose whether reasoning is **Co
 
 ## Supported Providers
 
-| Provider                 | Models                                          | Setup                                                                                                       |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **OpenRouter**           | Claude, GPT, Gemini, DeepSeek, Qwen, and others | API key from [openrouter.ai](https://openrouter.ai)                                                         |
-| **Anthropic**            | Claude Sonnet 4.6, Claude Opus 4.6              | API key from [console.anthropic.com](https://console.anthropic.com)                                         |
-| **OpenAI**               | GPT-5.3 Codex, GPT-4.1, o3, o4-mini             | API key from [platform.openai.com](https://platform.openai.com)                                             |
-| **Google AI**            | Gemini 3.1 Pro, Gemini 3 Flash                  | API key from [aistudio.google.dev](https://aistudio.google.dev)                                             |
-| **Z.ai**                 | GLM-5.1, GLM-5, GLM-4.7, GLM-4.5 family         | API key from [docs.z.ai](https://docs.z.ai/devpack/quick-start)                                             |
-| **MiniMax**              | MiniMax M3, M2.7, M2.7-highspeed, M2.5, M2.1    | API key from [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
-| **OpenAI-compatible**    | Any endpoint with OpenAI API format             | Custom base URL + key. Supports Completions and Responses API toggle.                                       |
-| **Anthropic-compatible** | Any endpoint with Anthropic API format          | Custom base URL + key                                                                                       |
+| Provider                 | Models                                                                 | Setup                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **OpenRouter**           | Claude, GPT, Gemini, DeepSeek, Qwen, and others                        | API key from [openrouter.ai](https://openrouter.ai)                                                         |
+| **Anthropic**            | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | API key from [console.anthropic.com](https://console.anthropic.com)                                         |
+| **OpenAI**               | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna                                   | API key from [platform.openai.com](https://platform.openai.com)                                             |
+| **ChatGPT**              | The models your ChatGPT plan offers in Codex, listed live              | Desktop app: **Sign in with ChatGPT**. Replies count toward the plan's usage limits.                        |
+| **Google AI**            | Gemini 3.8 Flash, Gemini 4 Argon                                       | API key from [aistudio.google.dev](https://aistudio.google.dev)                                             |
+| **DeepSeek**             | DeepSeek Flash, DeepSeek V4 Pro                                        | API key from [platform.deepseek.com](https://platform.deepseek.com/api_keys)                                |
+| **Z.ai**                 | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo                   | API key from [docs.z.ai](https://docs.z.ai/devpack/quick-start)                                             |
+| **MiniMax**              | MiniMax-M3.1-Flash, MiniMax-M3                                         | API key from [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **OpenAI-compatible**    | Any endpoint with OpenAI API format                                    | Custom base URL + key. Supports Completions and Responses API toggle.                                       |
+| **Anthropic-compatible** | Any endpoint with Anthropic API format                                 | Custom base URL + key                                                                                       |
 
-No backend, no subscription — your key talks directly to the provider. Browser requests are subject to each provider's CORS policy, and model deployments vary in how reliably they stream tool calls. See [BYOK provider and model compatibility](./byok-provider-compatibility) for measured results and reproduction steps.
+No backend — your key or sign-in talks directly to the provider. Browser requests are subject to each provider's CORS policy, and model deployments vary in how reliably they stream tool calls. See [BYOK provider and model compatibility](./byok-provider-compatibility) for measured results and reproduction steps.
+
+**ChatGPT** uses your ChatGPT plan instead of an API key, through the same backend and sign-in as OpenAI's Codex CLI. Signing in opens the browser and returns to the desktop app on `localhost:1455`, the only address OpenAI accepts for it, so close a running `codex login` first. The sign-in is stored like a key and refreshes itself; the model list comes from your account. The browser app does not offer it.
 
 ## External MCP connections
 
@@ -84,13 +102,25 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 
 The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_visual`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
 
+## Context and compaction
+
+A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, when the conversation compacts, and the Cloud credits left. When the window is nearly full, a bar over the message field offers to compact.
+
+Compacting asks the conversation's model for a summary, which then stands for everything before it: later requests send the summary and what followed, while the transcript keeps every message, with a divider where the summary opens. **Compact automatically** in **Settings → Chat**, on by default, compacts before a message would leave too little room for the reply, and between the steps of a long reply whose tool calls fill the window, where the divider then appears inside the reply. `/compact` compacts at once, and instructions after it say what the summary should keep. A compaction that fails changes nothing and offers Retry; a request that is already too long for the model offers **Compact and retry**. Pi keeps its own context: `/compact` asks Pi to compact it, and a divider appears once Pi confirms. Pi reports no summary of it, so the divider has none to open. When Pi compacts on its own during a reply, the divider appears inside the reply with Pi's summary. ACP agents compact their own context too, and an ACP agent's own `/compact` reaches it as written.
+
+Hover a reply to see the tokens it used; **Settings → Chat → Token usage** shows them always or never.
+
+## Messages while the assistant works
+
+You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the built-in AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit. ACP agents and Pi take a waiting message once their turn ends.
+
 ## Stopping a reply
 
-**Stop** ends a reply at once. A tool call already running finishes, and its edit counts as part of the reply; calls still waiting for their turn change nothing. The reply is marked *Stopped*, its reasoning and any unfinished calls stop showing as running, and your next message tells the assistant whether those calls changed the document.
+**Stop** ends a reply at once. A tool call already running finishes, and its edit counts as part of the reply; calls still waiting for their turn change nothing. The reply is marked _Stopped_, its reasoning and any unfinished calls stop showing as running, and your next message tells the assistant whether those calls changed the document.
 
 ## Undoing the assistant's edits
 
-Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call *Undone* in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked *Changes reverted*. Redo removes the marks. The marks are saved with the conversation.
+Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call _Undone_ in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked _Changes reverted_. Redo removes the marks. The marks are saved with the conversation.
 
 **Revert changes** on a reply undoes its edits while nothing has been edited since, and **Restore changes** brings undone edits back while Redo still can. **Regenerate** and editing your last message undo the replaced reply's edits first when they can.
 
@@ -99,6 +129,10 @@ Your next message tells the assistant which of its edits you undid or redid, so 
 ## Following the assistant
 
 With **Follow agents** on, the crosshair button at the top of the AI panel, your view follows the assistant while it works, including to another page when it edits layers there. Following ends when the reply finishes, is stopped, or fails. Clicking, scrolling, zooming, switching pages, or Escape stops following yourself.
+
+## Notifications
+
+When an agent asks for permission and you have not answered for a few seconds, OpenPencil sends a system notification, so you can work in another app while it runs. **Settings → Notifications** also turns on notifications when a reply finishes or fails. They are sent only while OpenPencil is in the background or shows another document, and clicking one opens that document's chat. In the browser, click **Allow notifications** there first; the desktop app follows your system's notification settings.
 
 ## Example Prompts
 

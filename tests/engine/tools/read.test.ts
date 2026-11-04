@@ -1,9 +1,14 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { DEFAULT_FONT_FAMILY, FigmaAPI, fontManager } from '@open-pencil/core'
+import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { registerTestFont } from '#tests/helpers/fonts/bundled'
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
+
+beforeAll(() => registerTestFont())
 
 /** The `list_pages` tool answers with the document's pages. */
 interface ListPagesResult extends ToolResult {
@@ -156,10 +161,11 @@ describe('query_nodes', () => {
 
 describe('get_font_status', () => {
   test('returns font fidelity diagnostics for agents', () => {
-    const { figma } = setupToolTest()
+    const { figma, graph } = setupToolTest()
     const text = figma.createText()
     text.name = 'Missing label'
-    text.fontName = { family: 'Unavailable Sans', style: 'Regular' }
+    // A document can name a font this machine lacks; a script cannot set one it did not load.
+    graph.updateNode(text.id, { fontFamily: 'Unavailable Sans' })
 
     const tool = getTool('get_font_status')
     const result = tool.execute(figma, {}) as {
@@ -191,14 +197,14 @@ describe('get_font_status', () => {
 })
 
 describe('get_node', () => {
-  test('returns node details', () => {
+  test('returns node details', async () => {
     const { figma } = setupToolTest()
     const rect = figma.createRectangle()
     rect.name = 'Test Rect'
     rect.resize(100, 50)
 
     const tool = getTool('get_node')
-    const result = tool.execute(figma, { id: rect.id }) as ToolResult
+    const result = (await tool.execute(figma, { id: rect.id })) as ToolResult
     expect(result.name).toBe('Test Rect')
     expect(result.width).toBe(100)
     expect(result.height).toBe(50)
@@ -206,7 +212,7 @@ describe('get_node', () => {
 })
 
 describe('get_page_tree', () => {
-  test('includes the text of TEXT nodes', () => {
+  test('includes the text of TEXT nodes', async () => {
     const { figma } = setupToolTest()
     const card = figma.createFrame()
     const label = figma.createText()
@@ -214,12 +220,103 @@ describe('get_page_tree', () => {
     card.appendChild(label)
 
     const tool = getTool('get_page_tree')
-    const result = tool.execute(figma, { root_id: card.id, node_types: ['TEXT'] })
+    const result = await tool.execute(figma, { root_id: card.id, node_types: ['TEXT'] })
     expect(result).toMatchObject({
       root: card.id,
       tree: { id: card.id, children: [{ id: label.id, text: 'Saldo disponível' }] }
     })
     expect(result).not.toHaveProperty('tree.text')
+  })
+})
+
+describe('pages not yet visited', () => {
+  /** A document whose second page has no layers until the host loads it, as the editor's do. */
+  function lazyDocument() {
+    const { graph } = setupToolTest()
+    const later = graph.addPage('Later')
+    const loads: string[] = []
+    const figma = new FigmaAPI(graph, {
+      loadPage: async (id) => {
+        loads.push(id)
+        if (id === later.id && graph.getChildren(id).length === 0)
+          graph.createNode('COMPONENT', id, { name: 'Loaded button' })
+      }
+    })
+    return { figma, later, loads }
+  }
+
+  test('load before a tool reads them', async () => {
+    const tree = lazyDocument()
+    expect(
+      await getTool('get_page_tree').execute(tree.figma, { root_id: tree.later.id })
+    ).toMatchObject({ tree: { children: [{ name: 'Loaded button' }] } })
+    const query = lazyDocument()
+    expect(
+      await getTool('query_nodes').execute(query.figma, { selector: '//COMPONENT', page: 'Later' })
+    ).toMatchObject({ count: 1 })
+    const components = lazyDocument()
+    expect(await getTool('get_components').execute(components.figma, {})).toMatchObject({
+      components: [{ name: 'Loaded button', page: 'Later' }]
+    })
+  })
+
+  test('switch to the page asked for last, whichever loads last', async () => {
+    const { graph } = setupToolTest()
+    const [first] = graph.getPages()
+    const slow = graph.addPage('Slow')
+    const fast = graph.addPage('Fast')
+    const slowLoad = Promise.withResolvers<undefined>()
+    const figma = new FigmaAPI(graph, {
+      loadPage: async (id) => {
+        if (id === slow.id) await slowLoad.promise
+      }
+    })
+    const slowSwitch = figma.setCurrentPageAsync(figma.wrapNode(slow.id))
+    await figma.setCurrentPageAsync(figma.wrapNode(fast.id))
+    slowLoad.resolve(undefined)
+    await slowSwitch
+    expect(figma.currentPage.id).toBe(fast.id)
+
+    // A page set directly counts as asked for last too.
+    const pending = Promise.withResolvers<undefined>()
+    const later = new FigmaAPI(graph, { loadPage: () => pending.promise })
+    const switching = later.setCurrentPageAsync(later.wrapNode(slow.id))
+    later.currentPage = later.wrapNode(first.id)
+    pending.resolve(undefined)
+    await switching
+    expect(later.currentPage.id).toBe(first.id)
+  })
+
+  test('refuse to switch to a page removed while it loaded', async () => {
+    const { graph } = setupToolTest()
+    const doomed = graph.addPage('Doomed')
+    const figma = new FigmaAPI(graph, {
+      loadPage: async () => {
+        graph.deleteNode(doomed.id)
+      }
+    })
+    await expect(figma.setCurrentPageAsync(figma.wrapNode(doomed.id))).rejects.toThrow(
+      'removed while it loaded'
+    )
+
+    const later = graph.addPage('Later')
+    const removing = new FigmaAPI(graph, {
+      loadPage: async () => {
+        await Promise.resolve()
+        graph.deleteNode(later.id)
+      }
+    })
+    await expect(removing.setCurrentPageAsync(removing.wrapNode(later.id))).rejects.toThrow(
+      'removed while it loaded'
+    )
+  })
+
+  test('load when a script or a tool switches to them', async () => {
+    const { figma, later, loads } = lazyDocument()
+    await getTool('switch_page').execute(figma, { page: 'Later' })
+    expect(figma.currentPage.children.map((node) => node.name)).toEqual(['Loaded button'])
+    await figma.loadAllPagesAsync()
+    expect(loads).toContain(later.id)
   })
 })
 
@@ -231,18 +328,18 @@ describe('page tools', () => {
     expect(result.pages.length).toBeGreaterThanOrEqual(1)
   })
 
-  test('switch_page changes page', () => {
+  test('switch_page changes page', async () => {
     const { figma } = setupToolTest()
     const page2 = figma.createPage()
     page2.name = 'Page 2'
 
     const tool = getTool('switch_page')
-    tool.execute(figma, { page: 'Page 2' })
+    await tool.execute(figma, { page: 'Page 2' })
 
     expect(figma.currentPage.name).toBe('Page 2')
   })
 
-  test('switch_page persists across separate FigmaAPI instances (RPC simulation)', () => {
+  test('switch_page persists across separate FigmaAPI instances (RPC simulation)', async () => {
     const { graph } = setupToolTest()
     const switchPage = getTool('switch_page')
     const getCurrentPage = getTool('get_current_page')
@@ -250,19 +347,19 @@ describe('page tools', () => {
 
     let currentPageId = graph.getPages()[0].id
 
-    function rpcCall(tool: (typeof ALL_TOOLS)[number], args: Record<string, unknown>) {
+    async function rpcCall(tool: (typeof ALL_TOOLS)[number], args: Record<string, unknown>) {
       const figma = new FigmaAPI(graph)
       figma.currentPage = figma.wrapNode(currentPageId)
-      const result = tool.execute(figma, args)
+      const result = await tool.execute(figma, args)
       if (figma.currentPageId !== currentPageId) {
         currentPageId = figma.currentPageId
       }
       return result
     }
 
-    rpcCall(createPage, { name: 'Second' })
-    rpcCall(switchPage, { page: 'Second' })
-    const result = rpcCall(getCurrentPage, {}) as { id: string; name: string }
+    await rpcCall(createPage, { name: 'Second' })
+    await rpcCall(switchPage, { page: 'Second' })
+    const result = (await rpcCall(getCurrentPage, {})) as { id: string; name: string }
 
     expect(result.name).toBe('Second')
   })

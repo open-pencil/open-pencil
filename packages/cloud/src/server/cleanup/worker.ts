@@ -35,6 +35,37 @@ export type CleanupWorker = {
   stop(): Promise<void>
 }
 
+export type CleanupPassOptions = Pick<
+  CleanupWorkerOptions,
+  'batchSize' | 'documentRetentionMs' | 'leaseDurationMs'
+>
+
+/** One cleanup pass, for runtimes that schedule passes themselves. */
+export async function runCleanup(
+  cleanup: CleanupServices,
+  options: CleanupPassOptions
+): Promise<CleanupResult> {
+  const uploads = await cleanup.uploads.cleanupExpiredUploads({
+    batchSize: options.batchSize,
+    leaseDurationMs: options.leaseDurationMs
+  })
+  const documents = await cleanup.documents.cleanupDeletedDocuments({
+    batchSize: options.batchSize,
+    leaseDurationMs: options.leaseDurationMs,
+    retentionMs: options.documentRetentionMs
+  })
+  const revisions = cleanup.revisions
+    ? await cleanup.revisions.compactRevisions({
+        batchSize: options.batchSize,
+        graceMs: REVISION_COMPACTION_GRACE_MS
+      })
+    : null
+  const rateLimits = cleanup.rateLimits
+    ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
+    : 0
+  return { uploads, documents, revisions, rateLimits }
+}
+
 export function startCleanupWorker(
   cleanup: CleanupServices,
   options: CleanupWorkerOptions
@@ -43,26 +74,6 @@ export function startCleanupWorker(
     intervalMs: options.intervalMs,
     signal: options.signal,
     onError: options.onError,
-    async run() {
-      const uploads = await cleanup.uploads.cleanupExpiredUploads({
-        batchSize: options.batchSize,
-        leaseDurationMs: options.leaseDurationMs
-      })
-      const documents = await cleanup.documents.cleanupDeletedDocuments({
-        batchSize: options.batchSize,
-        leaseDurationMs: options.leaseDurationMs,
-        retentionMs: options.documentRetentionMs
-      })
-      const revisions = cleanup.revisions
-        ? await cleanup.revisions.compactRevisions({
-            batchSize: options.batchSize,
-            graceMs: REVISION_COMPACTION_GRACE_MS
-          })
-        : null
-      const rateLimits = cleanup.rateLimits
-        ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
-        : 0
-      return { uploads, documents, revisions, rateLimits }
-    }
+    run: () => runCleanup(cleanup, options)
   })
 }

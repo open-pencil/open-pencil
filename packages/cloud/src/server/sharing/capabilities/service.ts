@@ -7,7 +7,7 @@ import type {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, UpdateObject } from 'kysely'
@@ -17,7 +17,7 @@ import { randomHex } from '@open-pencil/scene-graph/random'
 import { advanceCollaborationEpoch, requireSharingAccess } from '../access'
 import { shareContract } from '../contracts'
 import { capabilityHashMatches, hashCapability } from '../crypto'
-import { DocumentShareInvalidError } from '../errors'
+import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '../errors'
 import { createSharingPolicy } from '../policy'
 
 const SHARE_SECRET_BYTES = 24
@@ -88,11 +88,7 @@ export function createCapabilityService(
       input: CreateDocumentShareInput
     ): Promise<DocumentShareCapability> {
       await requireSharingAccess(database, userId, documentId)
-      await sharingPolicy.requireCapabilityLink({
-        actorId: userId,
-        documentId,
-        permission: input.permission
-      })
+      await sharingPolicy.requireCapabilityLink({ actorId: userId, documentId })
       const id = crypto.randomUUID()
       const secret = randomHex(SHARE_SECRET_BYTES)
       const row = await database.transaction().execute(async (transaction) => {
@@ -132,14 +128,13 @@ export function createCapabilityService(
       await requireSharingAccess(database, userId, documentId)
       const current = await database
         .selectFrom('documentShare')
-        .select('permission')
+        .select('id')
         .where('id', '=', shareId)
         .where('documentId', '=', documentId)
         .where('revokedAt', 'is', null)
         .executeTakeFirst()
       if (!current) throw new DocumentNotFoundError()
-      const permission = input.permission ?? current.permission
-      await sharingPolicy.requireCapabilityLink({ actorId: userId, documentId, permission })
+      await sharingPolicy.requireCapabilityLink({ actorId: userId, documentId })
       const changes: UpdateObject<CloudDatabase, 'documentShare'> = { updatedAt: new Date() }
       if (input.permission) changes.permission = input.permission
       if (input.expiresAt !== undefined) {
@@ -230,9 +225,7 @@ export function createCapabilityService(
           .where('id', '=', row.documentId)
           .executeTakeFirstOrThrow()
         const featureKey =
-          row.permission === 'edit'
-            ? CLOUD_FEATURE_KEYS.anonymousEdit
-            : CLOUD_FEATURE_KEYS.anonymousView
+          row.permission === 'edit' ? CLOUD_FEATURE_KEYS.guestEdit : CLOUD_FEATURE_KEYS.guestView
         if (
           !(await options.policy.boolean(featureKey, false, {
             targetingKey: document.workspaceId,
@@ -241,7 +234,8 @@ export function createCapabilityService(
             deploymentMode: options.deploymentMode ?? 'self-hosted'
           }))
         ) {
-          throw new DocumentShareInvalidError()
+          // Guests are not let in here; people signed in to the server are.
+          throw new DocumentShareSignInRequiredError()
         }
       }
       await database

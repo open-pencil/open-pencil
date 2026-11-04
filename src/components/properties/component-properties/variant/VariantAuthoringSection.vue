@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 
-import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
+import { useVariantAuthoring } from '@open-pencil/vue/controls/variants'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -74,7 +75,7 @@ function commitSelectedValue(propertyId: string) {
       <p
         v-if="selectedHasConflict"
         role="alert"
-        class="rounded bg-error/10 px-2 py-1.5 text-[10px] leading-4 text-error"
+        class="rounded bg-error/10 px-2 py-1.5 text-3xs leading-4 text-error"
       >
         {{ panels.duplicateVariantValues }}. {{ panels.variantConflictHelp }}.
       </p>

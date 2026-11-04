@@ -3,8 +3,11 @@ import type { LocationQuery, RouteLocationRaw, RouteMeta } from 'vue-router'
 import { cloudRedirectPath } from '@open-pencil/cloud/client'
 import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
 
-/** Where signed-in people land when nothing else asked for them. */
-export const PORTAL_HOME = '/account'
+/** Where signed-in people land when nothing else asked for them: the editor. */
+export const PORTAL_HOME = '/'
+
+/** The signed-in person's own settings, where a page they may not open sends them. */
+export const ACCOUNT_PAGE = '/account'
 
 /** A same-origin path to continue to after a sign-in step, from a `redirect` query value. */
 export function continuationPath(value: unknown): string {
@@ -55,13 +58,15 @@ export function portalDestination(
   to: PortalRouteTarget,
   account: CloudAccountStatus | null
 ): true | RouteLocationRaw {
-  if (to.meta.signedOut && account) return continuationPath(to.query.redirect)
+  if (to.meta.signedOut && account) {
+    return standingPath(account) ?? continuationPath(to.query.redirect)
+  }
   if (!to.meta.account) return true
   if (!account) return { name: 'sign-in', query: { redirect: to.fullPath } }
   const standing = standingPath(account)
   if (standing && to.path !== standing) return standing
   // An active account has nothing waiting or declined to read about.
   if (!standing && STANDING_PAGES.has(to.path)) return PORTAL_HOME
-  if (to.meta.admin && account.user.deploymentRole !== 'admin') return PORTAL_HOME
+  if (to.meta.admin && account.user.deploymentRole !== 'admin') return ACCOUNT_PAGE
   return true
 }

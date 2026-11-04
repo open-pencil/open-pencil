@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { createFileSystemTypesCache } from '@shikijs/vitepress-twoslash/cache-fs'
 import tailwindcss from '@tailwindcss/vite'
+import ts from 'typescript'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
@@ -77,11 +78,18 @@ export default defineConfig({
           dir: resolve(configDir, 'cache/twoslash')
         }),
         twoslashOptions: {
+          // `typescript` resolves to a wrapper package without lib files, which is where
+          // Twoslash looks unless told; ask the compiler where its own libs are.
+          tsLibDirectory: dirname(ts.getDefaultLibFilePath({})),
           compilerOptions: {
             baseUrl: repoRoot,
             paths: {
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
-              '#vue/*': ['packages/vue/src/*']
+              '@open-pencil/vue/*': ['packages/vue/src/*'],
+              '#vue/*': ['packages/vue/src/*'],
+              '@open-pencil/scene-graph': ['packages/scene-graph/src/index.ts'],
+              '@open-pencil/scene-graph/*': ['packages/scene-graph/src/*'],
+              '#scene-graph/*': ['packages/scene-graph/src/*']
             }
           }
         }

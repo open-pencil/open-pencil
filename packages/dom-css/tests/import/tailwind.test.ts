@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
+import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import {
   compileTailwindCSS,
   createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
   tailwindHTMLToSceneGraph
 } from '#dom-css/index'
 

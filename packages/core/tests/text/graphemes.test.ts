@@ -6,7 +6,15 @@ describe('grapheme boundaries', () => {
   const family = '👨‍👩‍👧‍👦'
   const flag = '🇺🇸'
   const text = `a😀${family}${flag}👍🏽b`
-  const boundaries = [0, 1, 3, 3 + family.length, 3 + family.length + 4, text.length - 1, text.length]
+  const boundaries = [
+    0,
+    1,
+    3,
+    3 + family.length,
+    3 + family.length + 4,
+    text.length - 1,
+    text.length
+  ]
 
   test('step forward over each user-perceived character whole', () => {
     const steps = [0]

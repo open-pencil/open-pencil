@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, onMounted, ref, useId, useTemplateRef, type ComponentPublicInstance } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'

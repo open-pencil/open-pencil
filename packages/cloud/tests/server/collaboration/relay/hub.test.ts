@@ -3,78 +3,35 @@ import { describe, expect, test } from 'bun:test'
 import {
   connectTestClient,
   guest,
+  joinTestRelay,
   memoryStateStore,
   relaySecret,
   relayTicket,
+  startTestRelay,
+  textOfSyncReply,
+  textUpdate,
   until,
   user,
   type RelayTicketOptions
 } from '#cloud-tests/helpers/relay'
-import {
-  COLLAB_ACTIONS,
-  decodeRoomUpdate,
-  encodeSyncReply,
-  MAX_COLLAB_MESSAGE_BYTES,
-  RELAY_CLOSE,
-  RELAY_SERVER_PEER
-} from '#cloud/contract'
-import { createCollaborationRelay, type CollaborationRelayOptions } from '#cloud/server'
+import { COLLAB_ACTIONS, encodeSyncReply, RELAY_CLOSE, RELAY_SERVER_PEER } from '#cloud/contract'
+import { createCollaborationRelay, type CollaborationRelay } from '#cloud/server'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 const documentId = crypto.randomUUID()
 
-function relay(options: Partial<CollaborationRelayOptions> = {}) {
-  const state = memoryStateStore()
-  const instance = createCollaborationRelay({
-    authSecret: relaySecret,
-    store: state.store,
-    maximumMessageBytes: 1_048_576,
-    maximumConnectionsPerRoom: 100,
-    persistDelayMs: 0,
-    onError: () => undefined,
-    ...options
-  })
-  return { relay: instance, ...state }
-}
-
-async function join(
-  hub: ReturnType<typeof relay>['relay'],
-  ticket: Partial<RelayTicketOptions> = {}
-) {
-  const client = connectTestClient((socket) => hub.connect(socket))
-  client.send({
-    type: 'auth',
-    token: await relayTicket({
-      documentId,
-      permission: 'edit',
-      principal: user(crypto.randomUUID()),
-      ...ticket
-    })
-  })
-  await until(() => client.peerId() !== undefined || client.closed !== null)
-  return client
-}
-
-function edit(text: string) {
-  const document = new Y.Doc()
-  document.getText('t').insert(0, text)
-  return Y.encodeStateAsUpdateV2(document)
-}
+const relay = startTestRelay
+const join = (hub: CollaborationRelay, ticket: Partial<RelayTicketOptions> = {}) =>
+  joinTestRelay(hub, documentId, ticket)
+const edit = textUpdate
+const textOf = textOfSyncReply
 
 /** What an editor holding `text` answers a sync request from an empty peer with. */
 function syncReply(text: string) {
   const document = new Y.Doc()
   document.getText('t').insert(0, text)
   return encodeSyncReply(document, Y.encodeStateVector(new Y.Doc()))
-}
-
-/** The text a sync reply carries, which travels as a compressed V2 update. */
-function textOf(reply: Uint8Array) {
-  const document = new Y.Doc()
-  const update = decodeRoomUpdate(reply, { limit: MAX_COLLAB_MESSAGE_BYTES, compressed: true })
-  if (update) Y.applyUpdateV2(document, update)
-  return document.getText('t').toString()
 }
 
 describe('collaboration relay', () => {
@@ -399,9 +356,13 @@ describe('collaboration relay', () => {
       authSecret: relaySecret,
       store: {
         load: state.store.load,
-        async store(room, update) {
+        async append(room, sequence, update) {
           if (refuse) throw new Error('Database unavailable')
-          await state.store.store(room, update)
+          await state.store.append(room, sequence, update)
+        },
+        async compact(room, sequence, update) {
+          if (refuse) throw new Error('Database unavailable')
+          await state.store.compact(room, sequence, update)
         }
       },
       maximumMessageBytes: 1_048_576,
@@ -444,7 +405,11 @@ describe('collaboration relay', () => {
       authSecret: relaySecret,
       store: {
         load: memoryStateStore().store.load,
-        async store() {
+        async append() {
+          attempts++
+          throw new Error('Database unavailable')
+        },
+        async compact() {
           attempts++
           throw new Error('Database unavailable')
         }
@@ -519,6 +484,13 @@ describe('collaboration relay', () => {
       payload: edit('x')
     })
     expect(early.closed?.code).toBe(RELAY_CLOSE.unauthorized)
+  })
+
+  test('a relay for one document refuses tickets for another', async () => {
+    const { relay: hub } = relay({ documentId })
+    const stranger = await joinTestRelay(hub, crypto.randomUUID())
+    expect(stranger.closed?.code).toBe(RELAY_CLOSE.unauthorized)
+    expect((await join(hub)).closed).toBeNull()
   })
 
   test('keeps a peer that refreshes its ticket and closes one that changes identity', async () => {

@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { boundEndpoint, buildConnectorSublayers, freeEndpoint } from '@open-pencil/scene-graph'
+import {
+  boundEndpoint,
+  buildConnectorSublayers,
+  freeEndpoint
+} from '@open-pencil/scene-graph/connectors'
 
 import { createMoveHarness, type MoveHarness } from './harness'
 

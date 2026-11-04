@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { expectDefined, expectFills } from '#tests/helpers/assert'
 
@@ -50,14 +54,14 @@ describe('MCP tool execution', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  test('get_page_tree returns page hierarchy', () => {
+  test('get_page_tree returns page hierarchy', async () => {
     const { api } = setup()
-    const result = findTool('get_page_tree').execute(api, {}) as PageTreeResult
+    const result = (await findTool('get_page_tree').execute(api, {})) as PageTreeResult
     expect(result.page).toBe('Page 1')
     expect(result.children).toBeArray()
   })
 
-  test('get_page_tree supports depth, root_id, and node_types filters', () => {
+  test('get_page_tree supports depth, root_id, and node_types filters', async () => {
     const { api } = setup()
     const parent = findTool('create_shape').execute(api, {
       type: 'FRAME',
@@ -85,23 +89,23 @@ describe('MCP tool execution', () => {
       name: 'Other rect'
     })
 
-    const depthTree = findTool('get_page_tree').execute(api, { depth: 1 }) as PageTreeResult
+    const depthTree = (await findTool('get_page_tree').execute(api, { depth: 1 })) as PageTreeResult
     const depthParent = expectDefined(
       depthTree.children.find((node) => node.id === parent.id),
       'depth-limited parent'
     )
     expect(depthParent.children).toBeUndefined()
 
-    const subtree = findTool('get_page_tree').execute(api, { root_id: parent.id }) as {
+    const subtree = (await findTool('get_page_tree').execute(api, { root_id: parent.id })) as {
       root: string
       tree: PageTreeNode
     }
     expect(subtree.root).toBe(parent.id)
     expect(subtree.tree.children?.[0]?.id).toBe(text.id)
 
-    const filtered = findTool('get_page_tree').execute(api, {
+    const filtered = (await findTool('get_page_tree').execute(api, {
       node_types: ['TEXT']
-    }) as PageTreeResult
+    })) as PageTreeResult
     expect(filtered.children.some((node) => node.type === 'RECTANGLE')).toBe(false)
     const filteredParent = expectDefined(
       filtered.children.find((node) => node.id === parent.id),
@@ -143,9 +147,7 @@ describe('MCP tool execution', () => {
     findTool('set_fill').execute(api, { id: frame.id, color: '#ff0000' })
     const node = expectDefined(api.getNodeById(frame.id), 'filled rectangle')
     expect(node.fills).toHaveLength(1)
-    expect(expectFills(node.fills)[0].color.r).toBeCloseTo(1)
-    expect(expectFills(node.fills)[0].color.g).toBeCloseTo(0)
-    expect(expectFills(node.fills)[0].color.b).toBeCloseTo(0)
+    expect(expectFills(node.fills)[0]).toMatchObject({ color: { r: 1, g: 0, b: 0 } })
   })
 
   test('set_layout configures auto-layout', () => {
@@ -172,7 +174,7 @@ describe('MCP tool execution', () => {
     expect(node.paddingLeft).toBe(24)
   })
 
-  test('create_shape with parent_id nests correctly', () => {
+  test('create_shape with parent_id nests correctly', async () => {
     const { api } = setup()
     const parent = findTool('create_shape').execute(api, {
       type: 'FRAME',
@@ -193,7 +195,7 @@ describe('MCP tool execution', () => {
       parent_id: parent.id
     })
 
-    const tree = findTool('get_page_tree').execute(api, {}) as PageTreeResult
+    const tree = (await findTool('get_page_tree').execute(api, {})) as PageTreeResult
     const parentNode = expectDefined(
       tree.children.find((c: { id: string }) => c.id === parent.id),
       'parent tree node'
@@ -301,9 +303,11 @@ describe('MCP tool execution', () => {
     expect(result.pages[0].name).toBe('Page 1')
   })
 
-  test('error on missing node', () => {
+  test('error on missing node', async () => {
     const { api } = setup()
-    const result = findTool('get_node').execute(api, { id: 'nonexistent' }) as { error: string }
+    const result = (await findTool('get_node').execute(api, { id: 'nonexistent' })) as {
+      error: string
+    }
     expect(result.error).toContain('not found')
   })
 

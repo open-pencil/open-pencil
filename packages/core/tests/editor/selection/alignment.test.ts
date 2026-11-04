@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
-import { SceneGraph } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('single-node alignment to parent', () => {
   function setup() {

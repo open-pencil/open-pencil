@@ -1,9 +1,9 @@
 import type { NodeChange, PluginData } from '@open-pencil/kiwi/fig/codec'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import {
-  computeImageHash,
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/plugin-data'
 
 import { bytesToHex, hexToBytes } from './bytes'
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 function setup() {
   const editor = createEditor()
@@ -275,7 +275,9 @@ describe('manual component property authoring', () => {
     editor.undo.undo()
     expect(nested.isExposedInstance).toBe(false)
     await Promise.resolve()
-    const copy = defined(editor.graph.getChildren(instance.id).find((node) => node.type === 'INSTANCE'))
+    const copy = defined(
+      editor.graph.getChildren(instance.id).find((node) => node.type === 'INSTANCE')
+    )
     expect(editor.setInstanceExposed(copy.id, true)).toBe(false)
   })
 })

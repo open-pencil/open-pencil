@@ -17,7 +17,7 @@ description: Pages lesen, wechseln, erstellen, löschen und umbenennen.
 ## Verwendung
 
 ```ts
-import { usePageList } from '@open-pencil/vue'
+import { usePageList } from '@open-pencil/vue/primitives/PageList'
 
 const pageList = usePageList()
 ```

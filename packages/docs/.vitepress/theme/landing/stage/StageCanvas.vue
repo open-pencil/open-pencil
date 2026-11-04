@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
 
-import {
-  PlayIslands,
-  toolCursor,
-  useCanvas,
-  useCanvasInput,
-  useCanvasIssueMarkers,
-  useTextEdit
-} from '@open-pencil/vue'
+import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
+import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
+import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { useTextEdit } from '@open-pencil/vue/canvas/text-edit'
+import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useFollowView } from '@/app/presence/follow-view'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 
 /**
@@ -40,9 +37,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
     showRulers: false,
     shouldSuspendRender,
     onReady: store.markCanvasReady,
-    onViewportResize: (width, height) => store.setViewportSize(width, height),
-    onPresented: ({ sceneVersion }) =>
-      store.preparationController.acknowledgePresentation(sceneVersion)
+    onViewportResize: (width, height) => store.setViewportSize(width, height)
   })
 
 const { cursorOverride } = useCanvasInput(

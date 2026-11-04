@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createDocumentGraph, createEditor } from '@open-pencil/core'
+import { BOARD_PAGE_BACKGROUND } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Exact float32 backgroundColor from the reported finance FIG canvas 0:4.
 const navy: Color = {
@@ -14,6 +15,9 @@ const navy: Color = {
   a: 1
 }
 const red: Color = { r: 1, g: 0, b: 0, a: 1 }
+
+/** A colour as the plugin API reads a solid paint's: RGB, its alpha in the paint's opacity. */
+const rgb = ({ r, g, b }: Color) => ({ r, g, b })
 
 function importedGraph() {
   const graph = new SceneGraph()
@@ -46,13 +50,13 @@ describe('editor page backgrounds', () => {
       editor.state.panX = 42
       await editor.switchPage(second.id)
       editor.setPageColor(red)
-      api.currentPage.backgrounds = [
-        { type: 'SOLID', color: { ...navy, a: 0.5 }, opacity: 0.5, visible: true }
-      ]
+      // The paint's opacity wins over its colour's alpha.
+      const translucent = { type: 'SOLID' as const, color: { ...navy, a: 0.5 }, opacity: 0.5 }
+      api.currentPage.backgrounds = [translucent]
       expect(editor.state.pageColor).toEqual(red)
       await editor.switchPage(first.id)
       expect(editor.state.panX).toBe(42)
-      expect(editor.state.pageColor).toEqual({ ...navy, a: 0.25 })
+      expect(editor.state.pageColor).toEqual({ ...navy, a: 0.5 })
       api.currentPage.backgrounds = []
       expect(editor.state.pageColor).toEqual({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
       api.currentPage.backgrounds = [{ type: 'SOLID', color: red, opacity: 1, visible: false }]
@@ -69,7 +73,10 @@ describe('editor page backgrounds', () => {
     try {
       expect(graph.getPages()[0].source.fig.rawNodeFields.backgroundPaints).toBeUndefined()
       expect(editor.state.pageColor).toEqual(navy)
-      expect(new FigmaAPI(graph).currentPage.backgrounds[0]?.color).toEqual(navy)
+      expect(new FigmaAPI(graph).currentPage.backgrounds[0]).toMatchObject({
+        color: rgb(navy),
+        opacity: 1
+      })
     } finally {
       editor.dispose()
     }
@@ -83,12 +90,15 @@ describe('editor page backgrounds', () => {
       color.r = 0
       expect(editor.state.pageColor).toEqual({ ...red, a: 0.5 })
       const api = new FigmaAPI(editor.graph)
-      expect(api.currentPage.backgrounds[0]?.color).toEqual({ ...red, a: 0.5 })
+      expect(api.currentPage.backgrounds[0]).toMatchObject({ color: rgb(red), opacity: 0.5 })
       const bytes = await exportFigFile(editor.graph)
       const reloaded = await parseFigFile(bytes.buffer as ArrayBuffer)
       editor.replaceGraph(reloaded)
       expect(editor.state.pageColor).toEqual({ ...red, a: 0.5 })
-      expect(new FigmaAPI(reloaded).currentPage.backgrounds[0]?.color).toEqual({ ...red, a: 0.5 })
+      expect(new FigmaAPI(reloaded).currentPage.backgrounds[0]).toMatchObject({
+        color: rgb(red),
+        opacity: 0.5
+      })
     } finally {
       editor.dispose()
     }
@@ -129,9 +139,23 @@ describe('new page backgrounds follow the interface theme', () => {
     }
   })
 
+  test('a new design takes the theme it is made in, and a board FigJam’s page in any theme', () => {
+    // The app hands these to the editor as documents of their own, which it does not set up again.
+    const opened = (kind: 'design' | 'board', theme: 'dark' | 'light') => {
+      const graph = createDocumentGraph(kind, theme)
+      const editor = createEditor({ graph, skipInitialGraphSetup: true })
+      const color = editor.state.pageColor
+      editor.dispose()
+      return color
+    }
+    expect(opened('design', 'dark')).toEqual(dark)
+    expect(opened('design', 'light')).toEqual(light)
+    expect(opened('board', 'dark')).toEqual({ ...BOARD_PAGE_BACKGROUND, a: 1 })
+  })
+
   test('pages made by scripts', () => {
     const figma = new FigmaAPI(new SceneGraph())
     figma.theme = 'dark'
-    expect(figma.createPage().backgrounds[0]?.color).toEqual(dark)
+    expect(figma.createPage().backgrounds[0]).toMatchObject({ color: rgb(dark) })
   })
 })

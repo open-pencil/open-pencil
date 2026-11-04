@@ -9,6 +9,9 @@ import { normalizeDashPattern } from '#core/canvas/strokes'
 /** Arc points per wedge: a chord across at most this many degrees stays clear of the ring. */
 const WEDGE_STEP = 30
 
+/** The most times a dash pattern repeats along one side before it draws as a solid line. */
+const MAX_DASH_REPEATS = 10_000
+
 /** A rectangle's stroke weights, side by side: top, right, bottom, left. */
 export type SideWeights = readonly [number, number, number, number]
 
@@ -133,17 +136,32 @@ export function drawIndividualSideStrokes(
 }
 
 /**
- * Where one side's dashes fall along its length: Figma 126 stretches the pattern so the side
- * holds a whole number of periods, rounded to the nearest, with half a dash at each end.
+ * A dash pattern stretched to `length` as Figma 126 lays dashes along a side or a line: the length
+ * holds a whole number of periods, rounded to the nearest, with half a dash at each end. `offset`
+ * is how far before the start the stretched pattern begins.
  */
-export function sideDashSpans(length: number, pattern: readonly number[]): Array<[number, number]> {
+export function fittedDashPattern(
+  length: number,
+  pattern: readonly number[]
+): { intervals: number[]; offset: number } | null {
   const period = pattern.reduce((sum, size) => sum + size, 0)
-  if (period <= 0 || length <= 0) return [[0, Math.max(0, length)]]
-  const scale = length / (Math.max(1, Math.round(length / period)) * period)
+  if (!(period > 0) || !(length > 0)) return null
+  const repeats = Math.max(1, Math.round(length / period))
+  const scale = length / (repeats * period)
+  // Dashes too fine to count, or a period too small to scale, draw as a solid line.
+  if (repeats > MAX_DASH_REPEATS || !(scale > 0) || !Number.isFinite(scale)) return null
+  return { intervals: pattern.map((size) => size * scale), offset: (pattern[0] * scale) / 2 }
+}
+
+/** Where one side's dashes fall along its length, laid out by `fittedDashPattern`. */
+export function sideDashSpans(length: number, pattern: readonly number[]): Array<[number, number]> {
+  const fitted = fittedDashPattern(length, pattern)
+  if (!fitted) return [[0, Math.max(0, length)]]
+  const { intervals } = fitted
   const spans: Array<[number, number]> = []
-  let position = (-pattern[0] * scale) / 2
+  let position = -fitted.offset
   for (let index = 0; position < length; index++) {
-    const size = pattern[index % pattern.length] * scale
+    const size = intervals[index % intervals.length]
     const start = Math.max(0, position)
     const end = Math.min(length, position + size)
     if (index % 2 === 0 && end > start) spans.push([start, end])

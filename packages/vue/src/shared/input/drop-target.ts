@@ -1,6 +1,7 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { cycleSafeParent, type NodeType, type SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

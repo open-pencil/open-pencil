@@ -76,7 +76,7 @@ Opens the editor at `http://localhost:1420`.
 | ------------------------------- | --------------------------------------------------- |
 | `bun run dev` | Dev server with HMR |
 | `bun run build` | Production build |
-| `bun run check` | Lint (oxlint) + typecheck (tsgo) |
+| `bun run check` | Lint (oxlint) + typecheck (TypeScript 7) |
 | `bun run test` | E2E visual regression (Playwright) |
 | `bun run test:update` | Regenerate screenshot baselines |
 | `bun run test:unit` | Unit tests (bun:test) |

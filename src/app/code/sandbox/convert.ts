@@ -1,43 +1,23 @@
 import { mapValues } from 'es-toolkit'
+import * as v from 'valibot'
 
 import {
-  angularGradient,
-  backgroundBlur,
-  designVar,
+  defineMode,
   defineVars,
-  diamondGradient,
-  dropShadow,
-  foregroundBlur,
-  gradient,
-  innerShadow,
-  layerBlur,
-  linearGradient,
-  radialGradient,
+  designJSXHelpers,
+  isVariableInput,
   ref as layerRef,
-  solid,
+  type DesignMode,
+  type DesignVariable,
   type LayerRef,
-  type TreeNode
+  type TreeNode,
+  type VariableInput
 } from '@open-pencil/design-jsx'
 
 import type { DesignJSXHelperDescriptor } from '@/app/code/sandbox/types'
 
-const HELPERS = {
-  solid,
-  gradient,
-  linearGradient,
-  radialGradient,
-  angularGradient,
-  diamondGradient,
-  dropShadow,
-  innerShadow,
-  layerBlur,
-  backgroundBlur,
-  foregroundBlur,
-  designVar,
-  defineVars
-}
-
-type HelperName = keyof typeof HELPERS
+/** The helpers a run's descriptors call, as the string renderer gives them to JSX. */
+const HELPERS: Record<string, (...args: never[]) => unknown> = designJSXHelpers([])
 
 type PlainRecord = { [key: string]: unknown }
 
@@ -73,43 +53,102 @@ function isHelper(value: unknown): value is DesignJSXHelperDescriptor {
   )
 }
 
-/** The handle each numbered `ref()` of one evaluation stands for. */
-type RefHandles = Map<unknown, LayerRef>
+/** A collection as the sandbox's `defineVars` writes it, with the modes `defineMode` added. */
+const collectionRecordSchema = v.object({
+  collection: v.string(),
+  values: v.record(v.string(), v.unknown()),
+  options: v.object({ mode: v.optional(v.string()) }),
+  modes: v.array(v.object({ mode: v.string(), values: v.record(v.string(), v.unknown()) }))
+})
 
-function convertValue(value: unknown, refs: RefHandles): unknown {
+/** One evaluation's handles: each numbered `ref()`, and each collection's variables and modes. */
+type Collection = {
+  variables: Record<string, DesignVariable>
+  modes: Map<string, DesignMode>
+}
+type Handles = {
+  refs: Map<unknown, LayerRef>
+  records: unknown[]
+  collections: Map<number, Collection>
+}
+
+function variableValues(values: Record<string, unknown>, handles: Handles) {
+  return mapValues(values, (value, name): VariableInput => {
+    const converted = convertValue(value, handles)
+    if (!isVariableInput(converted)) throw new Error(`Variable ${name} has an unsupported value.`)
+    return converted
+  })
+}
+
+/**
+ * The collection numbered `index`, defined once per evaluation. Its modes are defined after its
+ * variables, so a mode can alias the collection's own variables.
+ */
+function collection(index: unknown, handles: Handles): Collection {
+  if (typeof index !== 'number') throw new Error('Unknown variable collection.')
+  const known = handles.collections.get(index)
+  if (known) return known
+  const parsed = v.safeParse(collectionRecordSchema, handles.records[index])
+  if (!parsed.success) throw new Error('Unknown variable collection.')
+  const record = parsed.output
+  const variables = defineVars(
+    record.collection,
+    variableValues(record.values, handles),
+    record.options
+  )
+  const defined: Collection = { variables, modes: new Map() }
+  handles.collections.set(index, defined)
+  for (const mode of record.modes) {
+    const values = variableValues(mode.values, handles)
+    defined.modes.set(mode.mode, defineMode(variables, mode.mode, values))
+  }
+  return defined
+}
+
+function convertValue(value: unknown, handles: Handles): unknown {
   if (isHelper(value)) {
     const helperName = value.__openPencilHelper
+    const [first, second] = value.args
     if (helperName === 'ref') {
-      const [number] = value.args
-      const handle = refs.get(number) ?? layerRef()
-      refs.set(number, handle)
+      const handle = handles.refs.get(first) ?? layerRef()
+      handles.refs.set(first, handle)
       return handle
     }
-    const helper = Object.hasOwn(HELPERS, helperName)
-      ? (HELPERS[helperName as HelperName] as (...args: unknown[]) => unknown)
-      : undefined
-    if (typeof helper !== 'function') {
-      throw new TypeError(`Unknown Design JSX helper "${helperName}".`)
+    if (helperName === 'variable') {
+      const variable =
+        typeof second === 'string' && Object.hasOwn(collection(first, handles).variables, second)
+          ? collection(first, handles).variables[second]
+          : undefined
+      if (!variable) throw new Error('Unknown variable.')
+      return variable
     }
-    return helper(...value.args.map((arg) => convertValue(arg, refs)))
+    if (helperName === 'mode') {
+      const mode = typeof second === 'string' && collection(first, handles).modes.get(second)
+      if (!mode) throw new Error('Unknown variable mode.')
+      return mode
+    }
+    if (!Object.hasOwn(HELPERS, helperName))
+      throw new TypeError(`Unknown Design JSX helper "${helperName}".`)
+    const helper = HELPERS[helperName] as (...args: unknown[]) => unknown
+    return helper(...value.args.map((arg) => convertValue(arg, handles)))
   }
-  if (Array.isArray(value)) return value.map((item) => convertValue(item, refs))
-  if (isRecord(value)) return mapValues(value, (entry) => convertValue(entry, refs))
+  if (Array.isArray(value)) return value.map((item) => convertValue(item, handles))
+  if (isRecord(value)) return mapValues(value, (entry) => convertValue(entry, handles))
   return value
 }
 
-function convertTree(value: unknown, refs: RefHandles, lineOffset?: number): TreeNode {
+function convertTree(value: unknown, handles: Handles, lineOffset?: number): TreeNode {
   if (!isSerializedElement(value)) {
     throw new Error('Design JSX must return an OpenPencil element.')
   }
   const children = value.children.map((child): TreeNode | string => {
     if (typeof child === 'string') return child
     if (typeof child === 'number') return String(child)
-    return convertTree(child, refs, lineOffset)
+    return convertTree(child, handles, lineOffset)
   })
   const tree: TreeNode = {
     type: value.type,
-    props: convertValue(value.props, refs) as PlainRecord,
+    props: convertValue(value.props, handles) as PlainRecord,
     children
   }
   const line = sourceLine(value.source, lineOffset)
@@ -117,8 +156,12 @@ function convertTree(value: unknown, refs: RefHandles, lineOffset?: number): Tre
   return tree
 }
 
-export function convertDesignJSXRoots(values: unknown[], lineOffset?: number): TreeNode[] {
+export function convertDesignJSXRoots(
+  values: unknown[],
+  lineOffset?: number,
+  collections: unknown[] = []
+): TreeNode[] {
   // Call validateDesignJSXOutput first; it enforces the depth bound used by this recursion.
-  const refs: RefHandles = new Map()
-  return values.map((value) => convertTree(value, refs, lineOffset))
+  const handles: Handles = { refs: new Map(), records: collections, collections: new Map() }
+  return values.map((value) => convertTree(value, handles, lineOffset))
 }

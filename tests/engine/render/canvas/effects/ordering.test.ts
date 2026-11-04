@@ -33,7 +33,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
     }
 
     const callOrder: string[] = []
-    r.renderEffects = mock((_c, _n, _g, _r, _h, pass) => {
+    r.renderEffects = mock((_c, _n, _g, pass) => {
       callOrder.push(`renderEffects:${pass}`)
     })
     r.drawNodeFill = mock(() => {
@@ -84,7 +84,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
     }
 
     const callOrder: string[] = []
-    r.renderEffects = mock((_c, _n, _g, _r, _h, pass) => {
+    r.renderEffects = mock((_c, _n, _g, pass) => {
       callOrder.push(`renderEffects:${pass}`)
     })
     r.drawStrokeWithAlign = mock(() => {

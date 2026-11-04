@@ -1,5 +1,6 @@
 // What enclosing instances assign the component properties that drive a copy's layers.
-import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '../'
+import type { SceneGraph } from '../graph'
+import type { ComponentPropertyReferenceField, SceneNode } from '../types'
 
 /** SLOT_CONTENT is absent because it drives children, which `ownsSlotContent` keeps instead. */
 const PROPERTY_REFERENCE_FIELDS: Partial<Record<ComponentPropertyReferenceField, string>> = {
