@@ -49,6 +49,7 @@ function createStyleRoundTripGraph() {
           height: '120px',
           'padding-block': '8px',
           'padding-inline': '12px',
+          'border-style': 'solid',
           'border-color': DOM_CSS_COLORS.slate200,
           'border-top-width': '0px',
           'border-right-width': '2px',
@@ -280,6 +281,7 @@ describe('@open-pencil/dom-css conversion', () => {
             'min-height': '120px',
             'max-height': '320px',
             overflow: 'hidden',
+            'border-style': 'solid',
             'border-top-color': 'rgb(229, 231, 235)',
             'border-top-width': '1px',
             'border-right-width': '2px',
@@ -299,8 +301,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(panel?.type).toBe('FRAME')
     if (panel?.type !== 'FRAME') return
-    // Without a border style, CSS's default none, the borders take no room.
-    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480, minHeight: 120, maxHeight: 320 })
+    // Content-box limits grow by the borders: 4 + 2 across, 1 + 3 down.
+    expect(panel).toMatchObject({ minWidth: 246, maxWidth: 486, minHeight: 124, maxHeight: 324 })
     expect(panel.clipsContent).toBe(true)
     expect(panel.independentStrokeWeights).toBe(true)
     expect(panel.borderTopWeight).toBe(1)
@@ -321,8 +323,9 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(roundTripPanel?.type).toBe('element')
     if (roundTripPanel?.type !== 'element') return
     expect(roundTripPanel.inlineStyle?.overflow).toBe('hidden')
+    // The same 240px content box, written as a border box.
     expect(roundTripPanel.inlineStyle).toMatchObject({
-      'min-width': '240px',
+      'min-width': '246px',
       'box-sizing': 'border-box'
     })
     expect(roundTripPanel.inlineStyle?.['border-top-width']).toBe('1px')
