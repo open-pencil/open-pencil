@@ -4,8 +4,10 @@ import type {
   CSSRuntime,
   DesignDocument,
   DesignElement,
-  DesignNode
+  DesignNode,
+  DesignViewport
 } from '../types'
+import { recordLayout } from './layout'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
@@ -72,6 +74,8 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'text-shadow',
   'text-transform',
   'top',
+  'transform',
+  'transform-origin',
   'white-space',
   'width'
 ] as const
@@ -178,6 +182,16 @@ function computedStyleToRecord(
   return entries
 }
 
+/**
+ * Waits until the document's web fonts have loaded and a frame has laid it out with them, so
+ * lines break and boxes size as the page shows them rather than in a fallback font.
+ */
+async function settle(browserDocument: Document): Promise<void> {
+  await requestFrame(browserDocument)
+  await browserDocument.fonts.ready
+  await requestFrame(browserDocument)
+}
+
 function requestFrame(browserDocument: Document): Promise<void> {
   const requestAnimationFrame = browserDocument.defaultView?.requestAnimationFrame
   if (!requestAnimationFrame) return Promise.resolve()
@@ -186,13 +200,16 @@ function requestFrame(browserDocument: Document): Promise<void> {
   })
 }
 
-function applySandboxHostStyle(element: HTMLElement): void {
+const DEFAULT_SANDBOX_WIDTH = 1000
+
+function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | undefined): void {
   element.style.cssText = [
     'position: fixed',
     'left: -100000px',
     'top: 0',
-    'width: 1000px',
-    'height: auto',
+    `width: ${viewport?.width ?? DEFAULT_SANDBOX_WIDTH}px`,
+    viewport ? `height: ${viewport.height}px` : 'height: auto',
+    'border: 0',
     'visibility: hidden',
     'pointer-events: none',
     'contain: layout style paint'
@@ -206,7 +223,7 @@ async function computeStylesInShadowRoot(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const host = browserDocument.createElement('div')
-  applySandboxHostStyle(host)
+  applySandboxHostStyle(host, options.viewport)
 
   const shadow = host.attachShadow({ mode: 'open' })
   const style = browserDocument.createElement('style')
@@ -219,8 +236,11 @@ async function computeStylesInShadowRoot(
   browserDocument.body.append(host)
 
   try {
-    await requestFrame(browserDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(browserDocument)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: content,
+      styleRoot: shadow
+    })
   } finally {
     host.remove()
   }
@@ -233,7 +253,7 @@ async function computeStylesInIframe(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const iframe = browserDocument.createElement('iframe')
-  applySandboxHostStyle(iframe)
+  applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
 
   try {
@@ -247,21 +267,33 @@ async function computeStylesInIframe(
     style.textContent = cssText
     iframeDocument.head.append(style)
 
-    const content = iframeDocument.createElement('div')
+    // The document's top-level nodes go straight into the body, so `body` rules and selectors
+    // such as `body > header` apply to them as they do on the page they came from.
+    const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
-    iframeDocument.body.append(content)
 
-    await requestFrame(iframeDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(iframeDocument)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: iframeDocument.documentElement,
+      styleRoot: iframeDocument.head
+    })
   } finally {
     iframe.remove()
   }
 }
 
+interface LayoutFrame {
+  /** The element whose top-left the recorded boxes are relative to. */
+  origin: Element
+  /** Where the stylesheet that switches transforms off goes while boxes are read. */
+  styleRoot: Node & ParentNode
+}
+
 function copyComputedStyles(
   designDocument: DesignDocument,
   content: Element,
-  options: CSSComputeOptions
+  options: CSSComputeOptions,
+  frame: LayoutFrame
 ): DesignDocument {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
@@ -277,6 +309,8 @@ function copyComputedStyles(
   for (const [designElement, domElement] of pairs) {
     designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
   }
+  // After the styles are copied: reading layout switches transforms off for a moment.
+  if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
 
   return nextDocument
 }
