@@ -2,6 +2,7 @@ import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
@@ -55,6 +56,23 @@ function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
   canvas.drawPoints(ck.PointMode.Points, points, paint)
 }
 
+/** A wavy line's stroke, as a share of its rect's height. */
+const WAVE_STROKE = 2 / 3
+
+/**
+ * Where a decoration draws ink: its rect, which a dotted line's dots and a straight line fill,
+ * and a wavy line's stroke reaching past its crests and troughs.
+ */
+export function decorationInk(rect: TextDecorationRect): VisualBounds {
+  const reach = rect.style === 'WAVY' ? (rect.height * WAVE_STROKE) / 2 : 0
+  return {
+    minX: rect.x - reach,
+    minY: rect.y - reach,
+    maxX: rect.x + rect.width + reach,
+    maxY: rect.y + rect.height + reach
+  }
+}
+
 function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
   // A cosine through the rect's middle that starts in a trough, as Figma draws it.
   const amplitude = rect.height / 2
@@ -70,7 +88,7 @@ function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
   path.lineTo(end, y + amplitude * Math.cos(((end - rect.x) / period) * Math.PI * 2))
   const wave = path.detachAndDelete()
   paint.setStyle(ck.PaintStyle.Stroke)
-  paint.setStrokeWidth((rect.height * 2) / 3)
+  paint.setStrokeWidth(rect.height * WAVE_STROKE)
   canvas.drawPath(wave, paint)
   wave.delete()
 }

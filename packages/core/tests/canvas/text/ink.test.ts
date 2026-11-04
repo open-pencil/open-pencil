@@ -163,6 +163,15 @@ describe('text ink', () => {
     expect(underlined[1]).toBeCloseTo(5.545, 1)
   })
 
+  test('takes in the stroke a wavy underline draws past its crests', () => {
+    const underline = (textDecorationStyle: 'SOLID' | 'WAVY') =>
+      rect(ink(textNode({ text: 'HH', textDecoration: 'UNDERLINE', textDecorationStyle })))
+    const [, solidTop, , solidHeight] = underline('SOLID')
+    const [, wavyTop, , wavyHeight] = underline('WAVY')
+    expect(wavyTop).toBeCloseTo(solidTop, 3)
+    expect(wavyTop + wavyHeight).toBeGreaterThan(solidTop + solidHeight)
+  })
+
   test('takes in the frame a keycap draws around its character', () => {
     const [x, y, width, height] = rect(ink(textNode({ text: '1\u20E3' })))
     const [, , digitWidth, digitHeight] = rect(ink(textNode({ text: '1' })))

@@ -3,7 +3,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
+import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
 import { emojiSquare } from '#core/canvas/text/emoji'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
@@ -14,6 +14,7 @@ import { characterFamily } from '#core/text/character-face'
 import { hasDecoration, textDecorationRects } from '#core/text/decorations'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { GlyphOutlineSource, OutlineCommand } from '#core/text/font/glyphs'
+import { nextGraphemeBoundary } from '#core/text/graphemes'
 import { COMBINING_KEYCAP, keycapFrame } from '#core/text/keycap'
 
 /** Each font's glyph outline bounds by glyph and size, `null` for a glyph that draws nothing. */
@@ -77,6 +78,8 @@ export function textInkBounds(
   const add = (bounds: VisualBounds | null) => {
     if (bounds) ink = unionVisualBounds(ink, bounds)
   }
+  // A sequence the font does not join is several glyphs; its emoji draws once, at its first.
+  let emojiUntil = 0
   for (const glyph of glyphs) {
     if (!glyph.source) return undefined
     const x = glyph.x
@@ -89,13 +92,17 @@ export function textInkBounds(
     if (text[character] === COMBINING_KEYCAP) {
       const frame = commandBounds(ck, keycapFrame(glyph.fontSize))
       if (frame) add(moved(frame, x, y))
-    } else if (characterFamily(node, text, character) === EMOJI_METRICS_FAMILY) {
+    } else if (
+      character >= emojiUntil &&
+      characterFamily(node, text, character) === EMOJI_METRICS_FAMILY
+    ) {
+      emojiUntil = nextGraphemeBoundary(text, character)
       add(moved(emojiSquare(glyph.fontSize), x, y))
     }
   }
   if (!hasDecoration(node)) return ink
   for (const rect of textDecorationRects(node, laidOutDecoratedGlyphs(glyphs))) {
-    add({ minX: rect.x, minY: rect.y, maxX: rect.x + rect.width, maxY: rect.y + rect.height })
+    add(decorationInk(rect))
   }
   return ink
 }
