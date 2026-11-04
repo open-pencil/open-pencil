@@ -269,6 +269,7 @@ export function render(
     panY: r.panY,
     zoom: r.zoom
   })
+  r.nodePaths.useGraph(graph)
   r.syncFontGeneration()
   r.flushDecodedPreviews(graph)
   r.nodePaths.releaseUncached()

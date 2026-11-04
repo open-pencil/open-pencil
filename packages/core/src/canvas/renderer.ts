@@ -536,6 +536,7 @@ export class SkiaRenderer {
   forgetNode(nodeId: string): void {
     this.textFonts.pending.delete(nodeId)
     this.textFonts.pictureGenerations.delete(nodeId)
+    this.nodePaths.invalidate(nodeId)
     this.invalidateNodePicture(nodeId)
   }
 
@@ -633,6 +634,7 @@ export class SkiaRenderer {
   }
 
   renderSceneToCanvas(canvas: Canvas, graph: SceneGraph, pageId: string): void {
+    this.nodePaths.useGraph(graph)
     RenderPipeline.renderSceneToCanvas(this, canvas, graph, pageId)
   }
 
