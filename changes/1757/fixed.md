@@ -1,1 +1,0 @@
-- Text with its leading trimmed to cap height, such as badge digits, sits where Figma puts it once its font is loaded, instead of several pixels too low.

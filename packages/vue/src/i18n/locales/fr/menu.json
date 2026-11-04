@@ -42,6 +42,7 @@
   "pasteToReplace": "Coller pour remplacer",
   "copyProperties": "Copier les propriétés",
   "pasteProperties": "Coller les propriétés",
+  "pasteAsLayers": "Coller en tant que calques",
   "copyPasteAs": "Copier/Coller en tant que",
   "copyAsText": "Copier en texte",
   "copyAsSVG": "Copier en SVG",

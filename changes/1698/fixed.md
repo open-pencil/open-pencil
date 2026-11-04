@@ -1,1 +1,0 @@
-- Text in a font that is not available is laid out again in its own font once that font arrives, instead of keeping the size of the font it was drawn in meanwhile.

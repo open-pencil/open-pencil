@@ -1,1 +1,0 @@
-- An auto layout frame with nothing to hug keeps its size, as in Figma, rather than collapsing to its padding: a new frame keeps the size it was made at, and one that loses its last layer keeps the size it hugged to.

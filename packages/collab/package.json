@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/collab",
-  "version": "0.17.0-beta.1",
+  "version": "0.17.0-beta.2",
   "private": true,
   "description": "How a collaboration room's Yjs document maps to and from an OpenPencil SceneGraph: layers, the shared layer tree, variables, and document data.",
   "license": "MIT",

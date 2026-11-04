@@ -1,1 +1,0 @@
-- Text with a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, instead of drifting a pixel every line or two.

@@ -23,8 +23,11 @@ export function validatedQuery<T>(parse: (input: unknown) => T) {
   return validator('query', (value, context: Context) => parseOrReject(parse, value, context))
 }
 
-/** A route parameter that names a row by UUID. */
-const uuidParamSchema = v.pipe(v.string(), v.uuid())
+/**
+ * A route parameter that names a row by UUID, in lowercase: the database matches any case, but an
+ * ID that also names something else, such as a document's relay, must have one spelling.
+ */
+const uuidParamSchema = v.pipe(v.string(), v.uuid(), v.toLowerCase())
 
 /**
  * Route parameters through `schema`; handlers read them from `context.req.valid('param')`. A

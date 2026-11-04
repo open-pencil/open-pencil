@@ -1,1 +1,0 @@
-- A number field bound to a variable keeps its icon and shows its value; the variable button, now at the end of every field, names the variable on hover.

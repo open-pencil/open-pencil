@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.17.0-beta.1",
+  "version": "0.17.0-beta.2",
   "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
@@ -106,7 +106,7 @@
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "entitlements": "bun src/runtime/node/entitlements/main.ts",
     "admin": "bun src/runtime/node/admin.ts",
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json"
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json && bunx tsc -p tsconfig.cloudflare.tests.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

@@ -249,12 +249,14 @@ export interface PlacedLines<Block> {
  * line is as tall as its tallest line height, and each baseline stands that far, plus the
  * paragraph's spacing, below the one before, where a paragraph would stack the lines' boxes.
  * `null` keeps the paragraphs' placement: for lines alike, where it is the same, and for
- * lines that cannot be measured or drawn apart.
+ * lines that cannot be measured or drawn apart. Baselines land on whole pixels of the box,
+ * whose top stands `firstBaseline` above the first one, the first line's ascent by default.
  */
 export function placeLines<Block extends LineBlock>(
   ck: CanvasKit,
   blocks: readonly Block[],
-  width: number
+  width: number,
+  firstBaseline?: number
 ): PlacedLines<Block> | null {
   const metrics = blocks.map((block) => block.metrics)
   // A single line has none to be spaced from.
@@ -272,12 +274,12 @@ export function placeLines<Block extends LineBlock>(
   // baseline stands the whole pixels between those below the first (Figma desktop 126).
   const first = all[0]
   const last = all[all.length - 1]
-  const start = Math.round(first.ascent)
+  const origin = firstBaseline ?? first.ascent
   let below = 0
   const baselines = blocks.map((block, index) =>
     boxes[index].map((box, line) => {
       if (index > 0 || line > 0) below += box.height + (line === 0 ? block.spaceBefore : 0)
-      return first.ascent + Math.round(first.ascent + below) - start
+      return first.ascent + Math.round(origin + below) - Math.round(origin)
     })
   )
   const placed = new Map<Block, BlockPlacement & { y: number }>()

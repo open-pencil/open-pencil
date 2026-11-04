@@ -90,8 +90,9 @@ describe('rate limit budgets', () => {
       // The headers report whichever budget has fewer requests left.
       expect(await upload('a')).toEqual({ status: 200, limit: '2', remaining: '1' })
       expect(await upload('a')).toEqual({ status: 200, limit: '2', remaining: '0' })
-      // The document's own budget is spent; a refused request does not count against the actor.
-      expect((await upload('a')).status).toBe(429)
+      // The document's own budget is spent, under any spelling of its ID; a refused request does
+      // not count against the actor.
+      expect((await upload('A')).status).toBe(429)
       expect(await upload('b')).toEqual({ status: 200, limit: '3', remaining: '0' })
       // Three uploads in all: another document does not reopen the actor's budget.
       expect((await upload('c')).status).toBe(429)
