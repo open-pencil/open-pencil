@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import {
   clearInMemoryClipboardHTML,
   rememberedWebHTML,
@@ -7,8 +9,6 @@ import {
   setInMemoryClipboardHTML
 } from '@/app/editor/clipboard/memory'
 import { readClipboardHTML, readWebClipboard } from '@/app/editor/clipboard/read'
-
-import { asDouble } from '#tests/helpers/doubles'
 
 const DESIGN = '<span data-buffer="<!--(figma)AAAA(/figma)-->"></span>'
 const LAST_COPY = '<span data-buffer="<!--(figma)BBBB(/figma)-->"></span>'

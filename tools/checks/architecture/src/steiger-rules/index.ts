@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { multiWordComponentNames, uniqueComponentNames } from './component-names.ts'
@@ -10,7 +9,6 @@ import {
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
-  collectFiles,
   collectFolders,
   createFileRule,
   createImportRule,
@@ -45,11 +43,16 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         groups.set(prefix, files)
       }
       for (const [prefix, files] of groups) {
-        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are.
-        if (files.length < 3 && !names.has(prefix)) continue
+        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
+        // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
+        const named = names.has(prefix) || names.has(`${prefix}s`)
+        if (files.length < 3 && !named) continue
         if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        const base = names.has(prefix) ? prefix : `${prefix}s`
         diagnostics.push({
-          message: `Use a ${prefix}/ domain folder instead of sibling files named ${prefix} and ${prefix}-*.`,
+          message: named
+            ? `Use a ${prefix}/ domain folder instead of ${base} beside ${prefix}-* files.`
+            : `Use a ${prefix}/ domain folder instead of sibling ${prefix}-* files.`,
           location: { path: folder.path }
         })
       }
@@ -111,12 +114,6 @@ const strictTestFilePlacement = createFileRule(
         ? null
         : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
     }
-    if (sourceRel.startsWith('tests/engine/')) {
-      if (sourceRel.endsWith('.test.ts')) return null
-      if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
-      if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
-      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
-    }
     // Canonical unit-test homes from packages/docs/development/testing.md.
     if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
       return sourceRel.endsWith('.test.ts')
@@ -124,96 +121,36 @@ const strictTestFilePlacement = createFileRule(
         : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
     }
     if (sourceRel.startsWith('tests/helpers/')) return null
-    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
+    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/figma/**, tests/app/** or tests/integration/** (*.test.ts), or tests/helpers/**; package unit tests live under packages/<owner>/tests.'
   }
 )
 
-const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
-  from: string
-  to: string
-  source: string
-}> = [
-  {
-    from: 'tests/engine/fig/',
-    to: 'tests/engine/io/fig/',
-    source: 'packages/core/src/io/formats/fig/'
-  },
-  {
-    from: 'tests/engine/svg/',
-    to: 'tests/engine/io/svg/',
-    source: 'packages/core/src/io/formats/svg/'
-  },
-  {
-    from: 'tests/engine/fonts/',
-    to: 'tests/engine/text/fonts/',
-    source: 'packages/core/src/text/font/manager.ts'
-  },
-  {
-    from: 'tests/engine/figma-api/',
-    to: 'packages/core/tests/figma-api/',
-    source: 'packages/core/src/figma-api/'
-  },
-  {
-    from: 'tests/engine/figma/',
-    to: 'packages/core/tests/figma-api/',
-    source: 'packages/core/src/figma-api/'
-  }
-]
-
-const noMisplacedEngineTestDomainPaths = createFileRule(
-  'open-pencil/no-misplaced-engine-test-domain-paths',
-  (sourceRel) => {
-    const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
-    if (redirect) {
-      return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
-    }
-    if (/^tests\/engine\/[^/]+\.test\.ts$/.test(sourceRel)) {
-      return 'Move root-level engine tests under a domain folder that mirrors the source module under test.'
-    }
-    return null
-  }
-)
-
-const noKitchenSinkEngineBasicTests: Rule = {
-  name: 'open-pencil/no-kitchen-sink-engine-basic-tests',
-  check(root) {
-    const diagnostics: Diagnostic[] = []
-    for (const file of collectFiles(root)) {
-      const sourceRel = relativePath(root.path, file)
-      if (!sourceRel.startsWith('tests/engine/') || !sourceRel.endsWith('/basic.test.ts')) continue
-
-      const content = readFileSync(file, 'utf8')
-      const lineCount = content.split('\n').length
-      const describeCount = content.match(/\bdescribe\s*\(/g)?.length ?? 0
-      if (lineCount <= 250 || describeCount < 4) continue
-
-      diagnostics.push({
-        message:
-          'Split broad engine basic.test.ts files into focused domain/module tests, or add a deliberate narrow redirect/allowlist.',
-        location: { path: file }
-      })
-    }
-    return { diagnostics }
-  }
+/** Where unit tests live (packages/docs/development/testing.md), as opposed to E2E specs. */
+function isUnitTestPath(sourceRel: string) {
+  return (
+    sourceRel.startsWith('tests/app/') ||
+    sourceRel.startsWith('tests/integration/') ||
+    /^packages\/[^/]+\/tests\//.test(sourceRel)
+  )
 }
 
-const noEngineOnlyAssertionsInE2E = createImportRule(
-  'open-pencil/no-engine-only-assertions-in-e2e',
+const noUnitAssertionsInE2E = createImportRule(
+  'open-pencil/no-unit-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
     if (!sourceRel.startsWith('tests/e2e/')) return null
-    if (specifier === 'bun:test' || resolved?.startsWith('tests/engine/')) {
-      return 'E2E tests must drive the UI and visible behavior. Put engine/internal-state assertions in tests/engine/**.'
+    if (specifier === 'bun:test' || (resolved && isUnitTestPath(resolved))) {
+      return 'E2E tests must drive the UI and visible behavior. Put internal-state assertions in unit tests: packages/<owner>/tests or tests/app/**.'
     }
     return null
   }
 )
 
-const noE2EImportsInEngineTests = createImportRule(
-  'open-pencil/no-e2e-imports-in-engine-tests',
+const noE2EImportsInUnitTests = createImportRule(
+  'open-pencil/no-e2e-imports-in-unit-tests',
   (sourceRel, _specifier, resolved) => {
-    if (!sourceRel.startsWith('tests/engine/')) return null
+    if (!isUnitTestPath(sourceRel)) return null
     if (resolved?.startsWith('tests/e2e/')) {
-      return 'Engine/unit tests must not import E2E tests or fixtures.'
+      return 'Unit tests must not import E2E tests or fixtures.'
     }
     return null
   }
@@ -527,10 +464,8 @@ export const openPencilArchitecturePlugin = {
     scriptsAreEntrypointShims,
     strictToolsLayout,
     strictTestFilePlacement,
-    noMisplacedEngineTestDomainPaths,
-    noKitchenSinkEngineBasicTests,
-    noEngineOnlyAssertionsInE2E,
-    noE2EImportsInEngineTests,
+    noUnitAssertionsInE2E,
+    noE2EImportsInUnitTests,
     noRootMarkdownClutter,
     noPrototypeOrGeneratedImports,
     noPropertyPanelImportsInCanvas,

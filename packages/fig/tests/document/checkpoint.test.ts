@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test'
 
 import { propertyBinding } from '#fig-tests/helpers/component-props'
 import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
-import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent, restoreComponentCheckpoint } from '#fig/document/component/checkpoint'
 import { interpretComponent } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
@@ -10,6 +9,7 @@ import { materializeInstance } from '#fig/instance-overrides/materialize-instanc
 import { createFigDocumentSession } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('checkpoint recovery keeps the effective fill of a swapped instance on a lazy page', async () => {
   const paint = (r: number): NonNullable<NodeChange['fillPaints']> => [

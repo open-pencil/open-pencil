@@ -140,4 +140,4 @@ selected passing properties as complete editable-document compatibility.
 - [Edited layout export](../tests/document/layout-edit-export.test.ts)
 - [Shared-style uniqueness](../tests/document/shared-style-export.test.ts)
 - [Full-document editing round trip](../tests/document/gold-edit.test.ts)
-- [Instance paint alias round trip](../../../tests/engine/io/fig/roundtrip/variables.test.ts)
+- [Instance paint alias round trip](../../core/tests/io/formats/fig/roundtrip/variables.test.ts)

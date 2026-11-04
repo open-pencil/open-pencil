@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
-import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import type { InstanceAssignmentDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('missing assignment targets require explicit partial-evaluation acknowledgement', () => {
   const changes = [

@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { nodeProxyToJSON } from '@open-pencil/core/figma-api/serialization'
+import { nodeProxyToJSON } from '#core/figma-api/serialization'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'

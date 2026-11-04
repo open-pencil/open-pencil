@@ -1,7 +1,6 @@
 import { arrowCapOverflow } from './arrow-caps'
 import type { Rect, Vector } from './primitives'
-import { textLinesOverflow } from './text/overflow'
-import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
+import type { Effect, SceneNode, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
 
 export { cubicPoint } from './cubic'
 
@@ -279,59 +278,6 @@ export function computeAbsoluteBounds(
   return boundsToRect(bounds)
 }
 
-export function computeVisualBounds(
-  nodes: Iterable<
-    {
-      id: string
-      width: number
-      height: number
-      rotation?: number
-      strokes?: Stroke[]
-      strokeCap?: StrokeCap
-      vectorNetwork?: VectorNetwork | null
-      effects?: Effect[]
-    } & StrokeShape
-  >,
-  getAbsolutePosition: (id: string) => Vector
-): Rect {
-  const bounds = createBoundsAccumulator()
-
-  for (const n of nodes) {
-    const abs = getAbsolutePosition(n.id)
-    const bbox = rotatedBBox(abs.x, abs.y, n.width, n.height, n.rotation ?? 0)
-    const stroke = strokeOverflow(n.strokes, n.strokeCap, n.vectorNetwork, n)
-    const effects = effectOverflow(n.effects)
-    includePoint(bounds, bbox.left - stroke - effects.left, bbox.top - stroke - effects.top)
-    includePoint(bounds, bbox.right + stroke + effects.right, bbox.bottom + stroke + effects.bottom)
-  }
-
-  return boundsToRect(bounds)
-}
-
-export interface VisualBoundsNode {
-  id: string
-  width: number
-  height: number
-  rotation?: number
-  flipX?: boolean
-  flipY?: boolean
-  strokes?: Stroke[]
-  strokeCap?: StrokeCap
-  vectorNetwork?: VectorNetwork | null
-  effects?: Effect[]
-  fillGeometry?: Array<{ commandsBlob: Uint8Array }>
-  strokeGeometry?: Array<{ commandsBlob: Uint8Array }>
-  childIds?: string[]
-  visible?: boolean
-  type?: string
-  clipsContent?: boolean
-  fontSize?: number
-  textDecoration?: string
-  textUnderlineOffset?: number | null
-  textDecorationThickness?: number | null
-  derivedTextHeight?: number | null
-}
-
 export function unionVisualBounds(
   a: VisualBounds | null,
   b: VisualBounds | null
@@ -407,126 +353,18 @@ export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): 
   return bounds.minX === Infinity ? null : boundsToRect(bounds)
 }
 
-function transformLocalPoint(node: VisualBoundsNode, point: Vector): Vector {
-  let x = node.flipX ? node.width - point.x : point.x
-  let y = node.flipY ? node.height - point.y : point.y
-  const rotation = node.rotation ?? 0
-  if (rotation !== 0) {
-    const rotated = rotatePoint(x, y, node.width / 2, node.height / 2, degToRad(rotation))
-    x = rotated.x
-    y = rotated.y
-  }
-  return { x, y }
-}
-
-function transformedLocalBounds(node: VisualBoundsNode, local: Rect, abs: Vector): VisualBounds {
-  const points = [
-    { x: local.x, y: local.y },
-    { x: local.x + local.width, y: local.y },
-    { x: local.x + local.width, y: local.y + local.height },
-    { x: local.x, y: local.y + local.height }
-  ].map((point) => transformLocalPoint(node, point))
-
-  return {
-    minX: abs.x + Math.min(...points.map((point) => point.x)),
-    minY: abs.y + Math.min(...points.map((point) => point.y)),
-    maxX: abs.x + Math.max(...points.map((point) => point.x)),
-    maxY: abs.y + Math.max(...points.map((point) => point.y))
-  }
-}
-
-export function nodeVisualBounds(
-  node: VisualBoundsNode,
-  getAbsolutePosition: (id: string) => Vector
-): VisualBounds {
-  const abs = getAbsolutePosition(node.id)
-  const base = computeVisualBounds([node], getAbsolutePosition)
-  let bounds: VisualBounds = {
-    minX: base.x,
-    minY: base.y,
-    maxX: base.x + base.width,
-    maxY: base.y + base.height
-  }
-
-  const hasNonInsideStroke = node.strokes?.some(
-    (stroke) => stroke.visible && stroke.align !== 'INSIDE'
-  )
-  const localGeometry = geometryBlobBounds([
-    ...(node.fillGeometry ?? []),
-    ...(hasNonInsideStroke ? (node.strokeGeometry ?? []) : [])
-  ])
-  if (localGeometry) {
-    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
-  }
-
-  const linesOverflow = textLinesOverflow(node)
-  if (linesOverflow > 0) {
-    const lines = { x: 0, y: 0, width: node.width, height: node.height + linesOverflow }
-    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, lines, abs)) ?? bounds
-  }
-
-  bounds.maxY += textDecorationOverflow(node)
-
-  return bounds
-}
-
 /** How far a text node's underline or strikethrough reaches below its box. */
-export function textDecorationOverflow(node: VisualBoundsNode): number {
-  if (node.type !== 'TEXT' || !node.textDecoration || node.textDecoration === 'NONE') return 0
-  const fontSize = node.fontSize ?? 14
+export function textDecorationOverflow(
+  node: Pick<
+    SceneNode,
+    'type' | 'fontSize' | 'textDecoration' | 'textUnderlineOffset' | 'textDecorationThickness'
+  >
+): number {
+  if (node.type !== 'TEXT' || node.textDecoration === 'NONE') {
+    return 0
+  }
+  const { fontSize } = node
   const underlineOffset = node.textUnderlineOffset ?? fontSize * 0.18
   const thickness = node.textDecorationThickness ?? Math.max(1, fontSize / 16)
   return underlineOffset + thickness + fontSize * 0.35
-}
-
-function collectDescendantVisualBounds(
-  nodeId: string,
-  getNode: (id: string) => VisualBoundsNode | undefined,
-  getAbsolutePosition: (id: string) => Vector,
-  clip: VisualBounds | null = null
-): VisualBounds | null {
-  const node = getNode(nodeId)
-  if (!node?.visible) return null
-
-  const own = nodeVisualBounds(node, getAbsolutePosition)
-  let bounds = clip ? intersectVisualBounds(own, clip) : own
-
-  const isClippableContainer =
-    node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
-  let childClip = clip
-  if (isClippableContainer && node.clipsContent) {
-    const abs = getAbsolutePosition(node.id)
-    const nodeClip = {
-      minX: abs.x,
-      minY: abs.y,
-      maxX: abs.x + node.width,
-      maxY: abs.y + node.height
-    }
-    childClip = childClip ? intersectVisualBounds(childClip, nodeClip) : nodeClip
-    if (!childClip) return bounds
-  }
-
-  for (const childId of node.childIds ?? []) {
-    bounds = unionVisualBounds(
-      bounds,
-      collectDescendantVisualBounds(childId, getNode, getAbsolutePosition, childClip)
-    )
-  }
-
-  return bounds
-}
-
-export function computeDescendantVisualBounds(
-  nodeIds: string[],
-  getNode: (id: string) => VisualBoundsNode | undefined,
-  getAbsolutePosition: (id: string) => Vector
-): VisualBounds | null {
-  let bounds: VisualBounds | null = null
-  for (const nodeId of nodeIds) {
-    bounds = unionVisualBounds(
-      bounds,
-      collectDescendantVisualBounds(nodeId, getNode, getAbsolutePosition)
-    )
-  }
-  return bounds
 }

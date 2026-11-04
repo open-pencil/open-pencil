@@ -5,8 +5,7 @@ import { pick } from 'es-toolkit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI } from '#core/figma-api'
 
 beforeAll(async () => {

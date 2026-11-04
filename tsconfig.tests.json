@@ -163,6 +163,7 @@
     "packages/design-jsx/src/global.d.ts",
     "tests/**/*.ts",
     "packages/*/tests/**/*.ts",
+    "packages/test-support/src/**/*.ts",
     "packages/*/tests/**/*.tsx",
     "tests/helpers/tauri/native-global.d.ts"
   ],

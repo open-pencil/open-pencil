@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import {

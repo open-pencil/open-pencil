@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 import { toRaw } from 'vue'
 
 import * as layoutModule from '@open-pencil/core/layout'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -13,9 +14,7 @@ import { recentFilesLimit } from '@/app/recent-files/preferences'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
-import { asDouble } from '#tests/helpers/doubles'
 import { testPath } from '#tests/helpers/paths'
-
 function setupGlobals() {
   globalThis.window = asDouble<Window & typeof globalThis>({
     innerWidth: 1024,

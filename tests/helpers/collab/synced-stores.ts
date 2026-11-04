@@ -8,11 +8,11 @@ import {
   registerYjsObservers
 } from '@open-pencil/collab'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { collabEditor, followRoomPages } from '@/app/collab/editor'
 import { createEditorStore } from '@/app/editor/session'
 
-import { getNodeOrThrow } from '#tests/helpers/assert'
 import { connectYDocs } from '#tests/helpers/yjs'
 
 /** Host and peer editor stores whose Yjs documents sync through the app's collab code. */

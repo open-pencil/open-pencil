@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'

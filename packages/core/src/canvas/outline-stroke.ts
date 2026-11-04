@@ -19,7 +19,7 @@ import {
   windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
-import { textGlyphPaths } from './text/outlines'
+import { textGlyphPaths } from './text/outlines/glyphs'
 
 /**
  * A layer Outline stroke makes in place of another: a vector, or for text a group holding one

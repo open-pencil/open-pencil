@@ -123,7 +123,7 @@ jobs:
         run: bun run check:tools
 
       - name: Enforce architecture and type-shape boundaries
-        run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
+        run: bun run check:arch && bun run test:type-shapes
 
       - name: Build the editor without Cloud
         run: bun run check:cloud-off
@@ -194,8 +194,8 @@ jobs:
       - name: Test repository tooling
         run: bun run test:tools
 
-      - name: Detect duplicated product code
-        run: bun run test:dupes
+      - name: Detect duplicated product code and test helpers
+        run: bun run test:dupes && bun run test:dupes:helpers
 
   storybook:
     name: Component workshop

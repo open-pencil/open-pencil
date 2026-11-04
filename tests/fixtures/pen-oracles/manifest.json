@@ -39,8 +39,8 @@
     {
       "node": "P Text",
       "penNodeId": "or6x9",
-      "maximumDifferentPercent": 1.02,
-      "note": "pen.dev lets fixed-size text overflow its box; OpenPencil clips it."
+      "maximumDifferentPercent": 2,
+      "note": "pen.dev lets fixed-size text overflow its box; OpenPencil clips it. pen.dev also draws 16 px Inter a pixel below the baseline Figma and OpenPencil draw on 15."
     },
     {
       "node": "P Layout",

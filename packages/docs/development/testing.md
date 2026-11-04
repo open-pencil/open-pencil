@@ -18,11 +18,9 @@ For example, `packages/core/src/canvas/text/shape.ts` maps to `packages/core/tes
 
 Core tests using SceneGraph still belong to Core. Central integration is for contracts without a single owning implementation, such as interoperability between published packages. Name that contract explicitly; do not use integration as a miscellaneous bucket.
 
-**Migration status:** much existing coverage remains under `tests/engine/**`, alongside package-local suites. The table is the agreed destination, not a claim that migration is complete. Until a domain migrates, extend its existing suite rather than create a second home. The repository-wide migration is separate from feature work.
+Discovery follows the table: `tools/dev/unit-tests/src/shards.ts` groups the canonical homes by owner, and a file belongs to the group with the longest path that contains it, so `render` runs `packages/core/tests/canvas` in its own shard. Only a new owner or a new top-level home needs a shard entry. The shard map's own test fails on any `*.test.ts` under `tests/` or `packages/*/tests` that no group owns, so a test placed outside a canonical home cannot hide from the runner.
 
-`bun run check:test-homes` keeps the debt shrinking: every test under `tests/engine` must be listed in `tools/dev/unit-tests/engine-baseline.txt`, so a new test fails the check until it lives in its owner's canonical home, and a moved file must be removed from the baseline. Scene Graph tests have migrated to `packages/scene-graph/tests`, and the editor domain to `packages/core/tests/editor` with its helpers under `packages/core/tests/helpers`; Core's `typecheck` script type-checks those tests.
-
-Discovery already covers the destinations: `tools/dev/unit-tests/src/shards.ts` groups tests by owner and lists each owner's canonical home (`packages/<owner>/tests`, `tests/app`, `tests/integration`) together with the `tests/engine` directories it still owns, so `bun run test:unit` and the CI shards run a file from either place. Moving a domain is therefore a `git mv` plus import fixes; only a new owner or a new top-level home needs a shard entry. Do not move files into a directory the shard map does not list.
+Helpers shared by more than one owner's tests live in the private `@open-pencil/test-support` package (`packages/test-support`): assertions, repository paths, fetch doubles, scene and geometry builders, `.fig` fixtures and traversal, bundled fonts. Import them by package name; never keep a second copy of a helper in another owner's `tests/helpers`. Helpers only one owner uses stay in that owner's `tests/helpers` (`#core-tests/*`, `#fig-tests/*`, `#cli-tests/*`), and helpers for app and E2E specs stay under `tests/helpers`. `bun run test:dupes:helpers` runs jscpd over all of these helpers and fails on a copied block.
 
 `test:unit:quick` runs files in Bun worker processes (`--parallel`), which is the fastest local loop. CI shards still run each group in one process; `test:unit:isolated` (`--isolate`, also run nightly) gives every file a fresh global object and is the check to run when a suite passes alone but fails in a shard. Shards share one Bun process, so module-level state (a `fake-indexeddb/auto` import, an IndexedDB connection left open by `createEditorStore()`, a patched global) leaks into later files in the same shard. A package-local run (`bun test tests` inside the package) is a fresh process and will not reproduce that leak. Close what a test opens and restore what it patches.
 
@@ -109,7 +107,7 @@ App tests start Vite from the current checkout and wait for its HTTP URL. Vite o
 
 ```sh
 OPENPENCIL_TEST_SERVER=app OPENPENCIL_TEST_PORT=1482 OPENPENCIL_TEST_MCP_PORT=7682 \
-  bunx playwright test tests/e2e/properties/effect-panel.spec.ts --project=openpencil
+  bunx playwright test tests/e2e/properties/effects/panel.spec.ts --project=openpencil
 ```
 
 Use the configured base URL and same-origin paths, never hard-coded ports in specs or adapters. For intentional debugging against a verified matching server, set `OPENPENCIL_TEST_REUSE_SERVER=1`. HTTP readiness alone does not prove checkout identity, so do not reuse servers for baseline comparisons. Portless remains the preferred interactive preview workflow, separate from managed fixed-port tests.

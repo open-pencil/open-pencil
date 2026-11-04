@@ -3,8 +3,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const STRAIGHT = { tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
 
 /** A T: a bar 0-1-2 and a stem 1-3 hanging from its middle. */

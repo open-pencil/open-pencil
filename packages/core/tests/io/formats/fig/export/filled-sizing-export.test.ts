@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { guid } from '#core-tests/helpers/fig/guid'
+import { guid } from '@open-pencil/test-support/fig/guid'
 import * as v from 'valibot'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'

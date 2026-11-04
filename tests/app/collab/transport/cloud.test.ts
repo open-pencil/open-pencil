@@ -9,11 +9,9 @@ import {
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING

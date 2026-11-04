@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
@@ -267,24 +267,62 @@ function inkBottoms(layout: TextLayout): number[] {
 describe('fractional line heights', () => {
   const lines = (count: number) => Array.from({ length: count }, () => 'H').join('\n')
 
-  test('step lines by the whole pixels between baselines an exact line height sets', () => {
-    for (const [fontSize, lineHeight, steps, height] of [
-      [23, 30.6, [0, 30, 61, 91], 123],
-      [23, 25.3, [0, 25, 51, 76], 102],
-      [17, 22.7, [0, 22, 45, 68], 91],
-      [17, 20.45, [0, 21, 41, 62], 82]
-    ] as const) {
+  // Figma saves the exact steps and draws each baseline on a whole pixel.
+  const fractional = [
+    [23, 30.6, [0, 30, 61, 91], 123],
+    [23, 25.3, [0, 25, 51, 76], 102],
+    [17, 22.7, [0, 22, 45, 68], 91],
+    [17, 20.45, [0, 21, 41, 62], 82]
+  ] as const
+
+  test('step lines by an exact line height in pixels', () => {
+    for (const [fontSize, lineHeight, , height] of fractional) {
       const layout = layOut({ text: lines(4), fontSize, lineHeight: pixelLength(lineHeight) })
-      expect(baselineSteps(layout)).toEqual([...steps])
+      const steps = [0, 1, 2, 3].map((line) => Math.round(line * lineHeight * 1000) / 1000)
+      expect(baselineSteps(layout)).toEqual(steps)
       expect(Math.ceil(layout.getHeight())).toBe(height)
       layout.delete()
     }
   })
 
-  test('draw each line on the baseline it is placed at', () => {
-    const layout = layOut({ text: lines(4), fontSize: 23, lineHeight: pixelLength(30.6) })
-    const bottoms = inkBottoms(layout)
-    expect(bottoms.map((bottom) => bottom - bottoms[0])).toEqual([0, 30, 61, 91])
+  test('draw each line on the whole pixel its baseline rounds to', () => {
+    for (const [fontSize, lineHeight, drawn] of fractional) {
+      const layout = layOut({ text: lines(4), fontSize, lineHeight: pixelLength(lineHeight) })
+      const bottoms = inkBottoms(layout)
+      expect(bottoms.map((bottom) => bottom - bottoms[0])).toEqual([...drawn])
+      const first = layout.getLineMetrics()[0].baseline
+      expect(bottoms[0] + 1).toBe(Math.round(first))
+      layout.delete()
+    }
+  })
+
+  // Figma desktop 126 (2026-11-04), 14 px Inter: the baselines it saves and the height it gives.
+  test('set lines on top of each other at a line height of zero', () => {
+    for (const lineHeight of [pixelLength(0), percentLength(2)]) {
+      for (const text of [lines(3), 'H\n\nH', 'H']) {
+        const layout = layOut({ text, fontSize: 14, lineHeight })
+        expectBaselines(layout, text === 'H' ? [5.091] : [5.091, 5.091, 5.091])
+        expect(layout.getHeight()).toBe(0)
+        // Lines on one baseline keep their own glyphs, and an empty line has none.
+        const runs = layout.getShapedLines().map((line) => line.runs.length)
+        expect(runs).toEqual(text === 'H\n\nH' ? [1, 0, 1] : runs.map(() => 1))
+        layout.delete()
+      }
+    }
+  })
+
+  test('step lines by a line height under a pixel', () => {
+    const layout = layOut({ text: lines(3), fontSize: 14, lineHeight: pixelLength(0.3) })
+    expectBaselines(layout, [5.241, 5.541, 5.841])
+    expect(Math.ceil(layout.getHeight())).toBe(1)
+    layout.delete()
+  })
+
+  test('make a single line as tall as an exact line height in pixels', () => {
+    // Figma rounds the height up: 11.25 px is 12 px tall.
+    const layout = layOut({ text: 'H', fontSize: 9, lineHeight: pixelLength(11.25) })
+    expect(layout.getHeight()).toBe(11.25)
+    expect(Math.ceil(layout.getHeight())).toBe(12)
     layout.delete()
   })
 
@@ -313,4 +351,75 @@ describe('fractional line heights', () => {
       expect(estimateTextSize(textNode({ ...props, text: 'H' })).height).toBe(height / 10)
     }
   })
+})
+
+// Figma desktop 126 (2026-11-04), Inter: the baselines it saves for a text (derivedTextData) and
+// the whole pixels it draws them on.
+describe('baselines as Figma saves and draws them', () => {
+  const cases = [
+    {
+      fontSize: 23,
+      lineHeight: null,
+      saved: [22.364, 50.364, 78.364, 106.364],
+      drawn: [22, 50, 78, 106]
+    },
+    {
+      fontSize: 23,
+      lineHeight: 30.6,
+      saved: [23.664, 54.264, 84.864, 115.464],
+      drawn: [24, 54, 85, 115]
+    },
+    {
+      fontSize: 23,
+      lineHeight: 30,
+      paragraphSpacing: 10.5,
+      saved: [23.364, 63.864, 104.364, 144.864],
+      drawn: [23, 64, 104, 145]
+    },
+    { fontSize: 16, lineHeight: 24, saved: [17.818], drawn: [18] }
+  ]
+
+  test('draws each line of mixed sizes on the whole pixel its baseline rounds to', () => {
+    // The paragraph draws a larger line's glyphs on a pixel other than its baseline rounds to.
+    for (const [text, styleRuns] of [
+      ['HH\nHHH\nHH', [run(3, 3, { fontSize: 40 })]],
+      ['H\nHH\nH', [run(2, 2, { fontSize: 31 })]]
+    ] as const) {
+      const layout = layOut({ text, styleRuns: [...styleRuns] })
+      const rounded = layout.getLineMetrics().map((line) => Math.round(line.baseline))
+      expect(inkBottoms(layout).map((bottom) => bottom + 1)).toEqual(rounded)
+      layout.delete()
+    }
+  })
+
+  test('draws a line of each size on the whole pixel Figma draws it on', () => {
+    for (const [fontSize, drawn] of [
+      [12, 12],
+      [14, 14],
+      [16, 15],
+      [18, 18],
+      [20, 19],
+      [28, 27]
+    ] as const) {
+      const layout = layOut({ text: 'H', fontSize })
+      expect(inkBottoms(layout).map((bottom) => bottom + 1)).toEqual([drawn])
+      layout.delete()
+    }
+  })
+
+  for (const { fontSize, lineHeight, paragraphSpacing = 0, saved, drawn } of cases) {
+    const name = `${fontSize} px at ${lineHeight ?? 'auto'}${paragraphSpacing ? `, ${paragraphSpacing} apart` : ''}`
+    test(`keeps exact baselines and draws them on whole pixels: ${name}`, () => {
+      const layout = layOut({
+        text: Array.from({ length: saved.length }, () => 'H').join('\n'),
+        fontSize,
+        lineHeight: lineHeight === null ? null : pixelLength(lineHeight),
+        paragraphSpacing
+      })
+      expectBaselines(layout, saved)
+      // "H" has no descender, so its ink ends on the row above its baseline.
+      expect(inkBottoms(layout).map((bottom) => bottom + 1)).toEqual(drawn)
+      layout.delete()
+    })
+  }
 })
