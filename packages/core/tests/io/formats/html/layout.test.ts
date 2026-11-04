@@ -87,4 +87,28 @@ describe('laying out HTML from its captured layout', () => {
     // It sizes to its words, so a fallback font wider than the page's does not wrap it.
     expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT' })
   })
+
+  test('moves a centered line to where its words were', async () => {
+    // Block flow keeps a line at the left edge; the page centred it.
+    const label = element(
+      { 'text-align': 'center', ...box(300, 20) },
+      { box: rect(0, 0, 300, 20), lines: [rect(130, 2, 40, 16)] },
+      [{ type: 'text', text: 'Docs' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [label] })
+    const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const text = graph.getChildren(labelLayer.id)[0]
+
+    expect(text.x).toBe(130)
+  })
+
+  test('keeps auto layout for a line that starts where its words did', async () => {
+    const label = element(box(300, 20), { box: rect(0, 0, 300, 20), lines: [rect(0, 2, 40, 16)] }, [
+      { type: 'text', text: 'Docs' }
+    ])
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [label] })
+    const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
+
+    expect(labelLayer.layoutMode).toBe('VERTICAL')
+  })
 })

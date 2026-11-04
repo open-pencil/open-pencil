@@ -104,13 +104,20 @@ function sizeMatches(node: SceneNode, captured: CapturedBox): boolean {
 }
 
 /**
- * Whether a layer sits where it was captured relative to `origin`. A single line's horizontal
- * place follows its width when it is centered or right-aligned, so only its top is compared.
+ * Whether a single line of text starts where its words did. Centered or right-aligned words
+ * move by up to the difference between the two fonts' widths, so that much is allowed.
  */
+function lineMatches(node: SceneNode, captured: CapturedBox, origin: Rect): boolean {
+  const words = offset(captured.extent ?? captured.box, origin)
+  return Math.abs(node.x - words.x) <= TOLERANCE + Math.abs(node.width - words.width)
+}
+
+/** Whether a layer sits where it was captured relative to `origin`. */
 function matches(node: SceneNode, captured: CapturedBox, origin: Rect): boolean {
   const rect = offset(captured.box, origin)
   if (!near(node.y, rect.y)) return false
-  return isSingleLine(node, captured) || (near(node.x, rect.x) && sizeMatches(node, captured))
+  if (isSingleLine(node, captured)) return lineMatches(node, captured, origin)
+  return near(node.x, rect.x) && sizeMatches(node, captured)
 }
 
 function hasAutoLayout(node: SceneNode): boolean {
