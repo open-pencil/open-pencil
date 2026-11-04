@@ -250,6 +250,44 @@ jobs:
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
+  html-engine:
+    name: HTML engine crate
+    needs: changes
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/html-engine
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      # The runner's rustup installs the toolchain packages/html-engine/rust-toolchain.toml pins.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+          key: html-engine
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.20.2,cargo-about@0.9.3
+
+      - name: Check Rust formatting and lints
+        run: bun run check:rust
+
+      - name: Check dependency licenses
+        run: bun run check:licenses
+
+      - name: Check third-party notices
+        run: bun run check:notices
+
+      - name: Build the WebAssembly module
+        run: bun run build:wasm
+
   unit-tests:
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
@@ -273,6 +311,10 @@ jobs:
 
       - name: Build shared Core test dependency
         run: bun --filter @open-pencil/core build
+
+      # Restored from the cache setup-bun keeps unless the engine's crate changed.
+      - name: Build the HTML engine's WebAssembly module
+        run: bun --filter @open-pencil/html-engine build:wasm
 
       - name: Run ${{ matrix.group }} unit tests
         run: bun tools/dev/unit-tests/src/run.ts "${{ matrix.group }}"
@@ -365,7 +407,7 @@ jobs:
 
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, feedback-tests, cloud-tests, cloud-storage]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, html-engine, unit-tests, feedback-tests, cloud-tests, cloud-storage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

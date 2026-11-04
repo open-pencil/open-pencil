@@ -59,6 +59,15 @@ runs:
       shell: bash
       run: bun install ${{ inputs.install-args }}
 
+    # The HTML engine's WebAssembly module, by the sources it builds from. Its build script skips
+    # Cargo when the module and its stamp match them, so only a change to the crate compiles Rust;
+    # the job that builds it saves it when it ends.
+    - uses: actions/cache@v6
+      with:
+        path: packages/html-engine/wasm
+        key: html-engine-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'packages/html-engine/rust-toolchain.toml', 'packages/html-engine/crate/**') }}
+        enableCrossOsArchive: true
+
     - name: Save dependency cache
       if: inputs.cache-save == 'true' && steps.dependencies.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
