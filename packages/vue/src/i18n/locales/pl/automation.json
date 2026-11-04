@@ -1,5 +1,4 @@
 {
-  "restoreToolDefaults": "Przywróć domyślne",
   "aiToolAccessDescription": "Wybierz narzędzia dla bezpośrednich połączeń z modelami AI. Agenci ACP i Pi korzystają z dostępu MCP.",
   "mcpToolAccessDescription": "Wybierz narzędzia udostępniane przez lokalny serwer połączonym agentom i klientom.",
   "aiToolsNotice": "Zmiany obowiązują od następnej wiadomości. Przełączniki nie izolują wykonania: włączone narzędzia skryptowe mogą wykonywać inne operacje projektowe.",

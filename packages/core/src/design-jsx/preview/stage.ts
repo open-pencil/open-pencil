@@ -1,4 +1,4 @@
-import type { RenderResult, TreeNode } from '@open-pencil/design-jsx'
+import type { TreeNode } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
@@ -6,7 +6,7 @@ import {
   resolveRenderPlacement,
   type RenderPlacementInput
 } from '#core/design-jsx/placement'
-import { renderTree } from '#core/design-jsx/renderer'
+import { renderRoots } from '#core/design-jsx/renderer'
 import { extractPageContext, findPageChildId } from '#core/io/subgraph'
 
 const MAX_PREVIEW_CONTEXT_NODES = 1000
@@ -56,14 +56,10 @@ export async function stageJSXPreview(
   graph.images = new Map(source.images)
   graph.variables = structuredClone(source.variables)
   graph.variableCollections = structuredClone(source.variableCollections)
-  const results: RenderResult[] = []
-  for (const root of tree.type === '' ? tree.children : [tree]) {
-    if (typeof root === 'string') continue
-    signal?.throwIfAborted()
-    results.push(await renderTree(graph, root, placement))
-  }
+  // One call, so components render before the roots that use them.
+  if (tree.type === '' && !tree.children.some((child) => typeof child !== 'string')) return null
+  const results = await renderRoots(graph, tree, placement)
   signal?.throwIfAborted()
-  if (results.length === 0) return null
   finishRenderPlacement(graph, results, placement)
   return {
     graph,

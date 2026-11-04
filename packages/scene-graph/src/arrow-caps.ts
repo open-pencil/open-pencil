@@ -1,3 +1,4 @@
+import { cubicPoint } from './cubic'
 import type { Vector } from './primitives'
 import type { Stroke, StrokeCap, VectorNetwork } from './types'
 
@@ -256,11 +257,7 @@ export function trimArrowShafts(
 type Cubic = [Vector, Vector, Vector, Vector]
 
 function cubicAt([a, b, c, d]: Cubic, t: number): Vector {
-  const u = 1 - t
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y
-  }
+  return cubicPoint(a, b, c, d, t)
 }
 
 function lerp(a: Vector, b: Vector, t: number): Vector {
@@ -346,7 +343,9 @@ export function lineStrokeEnds(
   width: number,
   height: number,
   weight: number,
-  cap: StrokeCap | undefined
+  cap: StrokeCap | undefined,
+  // Flatten insets a full half weight even past the middle, reversing a short line (live-measured).
+  insetPastMiddle = false
 ): { start: Vector; end: Vector } {
   const length = Math.hypot(width, height)
   if (length === 0) return { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } }
@@ -355,7 +354,7 @@ export function lineStrokeEnds(
   const inset =
     cap === undefined || cap === 'NONE' || cap === 'ARROW_EQUILATERAL'
       ? 0
-      : Math.min(weight, length) / 2
+      : (insetPastMiddle ? weight : Math.min(weight, length)) / 2
   const offset = { x: (uy * weight) / 2, y: (-ux * weight) / 2 }
   return {
     start: { x: ux * inset + offset.x, y: uy * inset + offset.y },

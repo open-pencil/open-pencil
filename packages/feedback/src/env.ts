@@ -1,4 +1,19 @@
-import type { D1Database, Fetcher, RateLimit, SendEmail } from '@cloudflare/workers-types/index'
+import type {
+  D1Database,
+  Fetcher,
+  R2Bucket,
+  R2PutOptions,
+  RateLimit,
+  SendEmail
+} from '@cloudflare/workers-types/index'
+
+/**
+ * The report files bucket, as the Worker uses it. `put` takes a request body as it arrives, a
+ * stream of declared length, which the Workers types spell as their own `ReadableStream`.
+ */
+export type ReportsBucket = Pick<R2Bucket, 'get' | 'head' | 'list' | 'delete'> & {
+  put(key: string, value: ReadableStream | ArrayBuffer, options?: R2PutOptions): Promise<unknown>
+}
 
 /**
  * The Worker's bindings, from `wrangler.jsonc` and its secrets. They are declared here with
@@ -14,6 +29,12 @@ export interface FeedbackBindings {
   PING_LIMITER: RateLimit
   INGEST_LIMITER: RateLimit
   WAITLIST_LIMITER: RateLimit
+  /** Counts report submissions and file uploads together. */
+  REPORT_LIMITER: RateLimit
+  /** Files people attach to error and problem reports, kept for `REPORT_FILE_RETENTION_DAYS`. */
+  REPORTS: ReportsBucket
+  /** Signs the short-lived token that lets a report's sender upload the files it declared. */
+  REPORT_UPLOAD_SECRET: string
   POSTHOG_HOST: string
   POSTHOG_KEY: string
   EMAIL_FROM: string

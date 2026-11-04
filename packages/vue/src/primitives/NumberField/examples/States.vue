@@ -20,11 +20,11 @@ const bound = ref<number | symbol>(8)
 
 <template>
   <div
-    class="w-full max-w-[520px] rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
+    class="w-full max-w-130 rounded-lg border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-5 text-[var(--vp-c-text-1)]"
   >
     <div>
       <p class="mb-1 text-xs font-semibold">Interactive anatomy</p>
-      <p class="mb-2 text-[11px] text-[var(--vp-c-text-2)]">Try +10, *2, 50%, or 12*8+4</p>
+      <p class="mb-2 text-2xs text-[var(--vp-c-text-2)]">Try +10, *2, 50%, or 12*8+4</p>
       <NumberFieldRoot
         v-slot="{ attrs, editing, actions }"
         v-model="value"
@@ -35,7 +35,7 @@ const bound = ref<number | symbol>(8)
       >
         <div
           v-bind="attrs"
-          class="flex h-[26px] w-56 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] text-xs outline-none focus-within:border-[var(--vp-c-brand-1)]"
+          class="flex h-6.5 w-56 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] text-xs outline-none focus-within:border-[var(--vp-c-brand-1)]"
           @pointerdown="!editing && actions.startScrub($event)"
         >
           <NumberFieldLeading class="px-2 text-[var(--vp-c-text-2)]">W</NumberFieldLeading>
@@ -43,12 +43,12 @@ const bound = ref<number | symbol>(8)
           <NumberFieldValue class="min-w-0 flex-1 truncate" />
           <NumberFieldUnit class="pr-1 text-[var(--vp-c-text-2)]">px</NumberFieldUnit>
           <NumberFieldTrailing
-            class="flex size-[26px] items-center justify-center text-[var(--vp-c-text-2)]"
+            class="flex size-6.5 items-center justify-center text-[var(--vp-c-text-2)]"
           >
             R
           </NumberFieldTrailing>
           <NumberFieldMenu
-            class="flex size-[26px] items-center justify-center text-[var(--vp-c-text-2)]"
+            class="flex size-6.5 items-center justify-center text-[var(--vp-c-text-2)]"
           >
             M
           </NumberFieldMenu>
@@ -58,7 +58,7 @@ const bound = ref<number | symbol>(8)
 
     <div class="mt-5 grid grid-cols-1 gap-1.5 sm:grid-cols-3">
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Mixed</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Mixed</p>
         <NumberFieldRoot
           v-slot="{ attrs, editing, actions }"
           v-model="mixed"
@@ -66,7 +66,7 @@ const bound = ref<number | symbol>(8)
         >
           <div
             v-bind="attrs"
-            class="flex h-[26px] min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs outline-none focus-within:border-[var(--vp-c-brand-1)]"
+            class="flex h-6.5 min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs outline-none focus-within:border-[var(--vp-c-brand-1)]"
             @pointerdown="!editing && actions.startScrub($event)"
           >
             <NumberFieldInput class="min-w-0 flex-1 border-0 bg-transparent outline-none" />
@@ -76,7 +76,7 @@ const bound = ref<number | symbol>(8)
       </div>
 
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Disabled</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Disabled</p>
         <NumberFieldRoot
           v-slot="{ attrs }"
           v-model="disabled"
@@ -85,7 +85,7 @@ const bound = ref<number | symbol>(8)
         >
           <div
             v-bind="attrs"
-            class="flex h-[26px] min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-text-2)] opacity-60"
+            class="flex h-6.5 min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-text-2)] opacity-60"
           >
             <NumberFieldValue />
           </div>
@@ -93,7 +93,7 @@ const bound = ref<number | symbol>(8)
       </div>
 
       <div>
-        <p class="mb-1 text-[11px] text-[var(--vp-c-text-2)]">Bound</p>
+        <p class="mb-1 text-2xs text-[var(--vp-c-text-2)]">Bound</p>
         <NumberFieldRoot
           v-slot="{ attrs, editing, actions }"
           v-model="bound"
@@ -102,7 +102,7 @@ const bound = ref<number | symbol>(8)
         >
           <div
             v-bind="attrs"
-            class="flex h-[26px] min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-brand-1)] outline-none focus-within:border-[var(--vp-c-brand-1)]"
+            class="flex h-6.5 min-w-0 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] px-2 text-xs text-[var(--vp-c-brand-1)] outline-none focus-within:border-[var(--vp-c-brand-1)]"
             @pointerdown="!editing && actions.startScrub($event)"
           >
             <NumberFieldInput class="min-w-0 flex-1 border-0 bg-transparent outline-none" />

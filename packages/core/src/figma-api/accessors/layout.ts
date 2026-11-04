@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
@@ -21,13 +23,21 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { atLeast } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** A guide in Figma's plugin shape, whether it was set that way or read from a file. */
 function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
   const visible = grid.visible ?? true
   const color = { ...(grid.color ?? { r: 1, g: 0, b: 0, a: 0.1 }) }
   if (grid.pattern === 'GRID')
-    return Object.freeze({ pattern: 'GRID', sectionSize: grid.sectionSize ?? 10, visible, color })
+    return Object.freeze({
+      pattern: 'GRID',
+      sectionSize: grid.sectionSize ?? 10,
+      visible,
+      color,
+      boundVariables: {}
+    })
   const rows = grid.pattern === 'ROWS' || (grid.pattern !== 'COLUMNS' && grid.axis === 'Y')
   const alignment = grid.alignment ?? grid.type ?? 'STRETCH'
   return Object.freeze({
@@ -39,7 +49,8 @@ function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
     ...(alignment === 'STRETCH' ? {} : { sectionSize: grid.sectionSize ?? 0 }),
     offset: grid.offset ?? 0,
     visible,
-    color
+    color,
+    boundVariables: {}
   })
 }
 
@@ -67,7 +78,7 @@ export function installLayoutNodeProxyAccessors(
         return Object.freeze(raw(this, internals).layoutGrids.map(figmaLayoutGrid))
       },
       set(this: ProxyThis, value: readonly LayoutGrid[]) {
-        if (!Array.isArray(value)) throw new TypeError('layoutGrids must be an array')
+        parseFigma(v.array(v.unknown()), value, 'set_layoutGrids', 'layoutGrids')
         // An Auto count is stored as the archive stores it, so it survives copies and saves.
         const grids = structuredClone([...value]).map((grid) =>
           isAutoGridCount(grid.count) ? { ...grid, count: AUTO_LAYOUT_GRID_COUNT } : grid
@@ -79,10 +90,13 @@ export function installLayoutNodeProxyAccessors(
     counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
     itemSpacing: simpleAccessor(internals, 'itemSpacing'),
     counterAxisSpacing: simpleAccessor(internals, 'counterAxisSpacing'),
-    paddingTop: simpleAccessor(internals, 'paddingTop'),
-    paddingRight: simpleAccessor(internals, 'paddingRight'),
-    paddingBottom: simpleAccessor(internals, 'paddingBottom'),
-    paddingLeft: simpleAccessor(internals, 'paddingLeft'),
+    paddingTop: padding(internals, 'paddingTop', ['paddingTop']),
+    paddingRight: padding(internals, 'paddingRight', ['paddingRight']),
+    paddingBottom: padding(internals, 'paddingBottom', ['paddingBottom']),
+    paddingLeft: padding(internals, 'paddingLeft', ['paddingLeft']),
+    // Figma's deprecated pairs read their first side and set both (Figma desktop 126).
+    horizontalPadding: padding(internals, 'horizontalPadding', ['paddingLeft', 'paddingRight']),
+    verticalPadding: padding(internals, 'verticalPadding', ['paddingTop', 'paddingBottom']),
     layoutWrap: mappedAccessor(internals, 'layoutWrap'),
     primaryAxisSizingMode: axisSizingModeAccessor(internals, 'primaryAxisSizing'),
     counterAxisSizingMode: axisSizingModeAccessor(internals, 'counterAxisSizing'),
@@ -214,6 +228,25 @@ function layoutSizingAccessor(
       const error = layoutSizingError(sceneGraph, node, value)
       if (error) throw new Error(`in set_${property}: ${error}`)
       updateNode(this, internals, layoutSizingUpdates(sceneGraph, node, axis, value))
+    }
+  }
+}
+
+type PaddingSide = 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
+
+/** A padding that reads its first side and sets each of `sides` to a finite number of 0 or more. */
+function padding(
+  internals: NodeProxyInternals,
+  property: string,
+  sides: readonly [PaddingSide, ...PaddingSide[]]
+): PropertyDescriptor {
+  return {
+    get(this: ProxyThis): number {
+      return raw(this, internals)[sides[0]]
+    },
+    set(this: ProxyThis, value: unknown) {
+      const amount = parseFigma(atLeast(0), value, `set_${property}`, property)
+      updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, amount])))
     }
   }
 }

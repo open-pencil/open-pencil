@@ -187,7 +187,8 @@ export function createDefaultNode(
     textTruncation: 'DISABLED',
     autoRename: true,
     pointCount: 5,
-    starInnerRadius: 0.38,
+    // Figma's: the golden-ratio star, whose inner points line up with its outer ones.
+    starInnerRadius: (3 - Math.sqrt(5)) / 2,
     shapeWithTextType: 'SQUARE',
     shapeUserHeight: 0,
     shapeTruncates: false,
@@ -246,6 +247,20 @@ export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'COMPONENT_SET',
   'INSTANCE'
 ])
+
+/** The kinds that hold layers of their own on the canvas: what a shadow or a clip encloses. */
+export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
+  return LAYER_CONTAINER_TYPES.has(node.type)
+}
 
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',

@@ -30,5 +30,12 @@
   "colorLightTeal": "浅青色",
   "colorLightBlue": "浅蓝色",
   "colorLightViolet": "浅紫色",
-  "colorLightPink": "浅粉色"
+  "colorLightPink": "浅粉色",
+  "changeColor": "更改颜色",
+  "lineStyle": "线条样式",
+  "lineShape": "线条形状",
+  "solid": "实线",
+  "thin": "细",
+  "renameSection": "重命名分区",
+  "addText": "添加文本"
 }

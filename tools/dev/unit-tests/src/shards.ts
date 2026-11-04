@@ -57,6 +57,7 @@ export const UNIT_TEST_GROUPS = {
   render: ['tests/engine/render'],
   'scene-graph': [
     'packages/scene-graph/tests',
+    'packages/collab/tests',
     'tests/engine/geometry',
     'tests/engine/hit-test',
     'tests/engine/random',

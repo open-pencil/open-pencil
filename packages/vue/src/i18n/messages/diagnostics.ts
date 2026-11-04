@@ -95,7 +95,40 @@ export const diagnosticsMessageDefaults = {
   sharingQuestionAccept: 'Share stats',
   sharingQuestionAccepted: 'Thank you. You can change this in Privacy settings.',
   sharingQuestionDeclined: 'Usage stats stay off. You can change this in Privacy settings.',
-  sharingLocalData: 'Usage and Diagnostics keep their records on this device and never send them.'
+  supportTitle: 'Support OpenPencil',
+  supportDescription:
+    'Enjoying OpenPencil? It’s free and open source, and a donation helps speed up its development and covers the servers and services it runs on.',
+  supportNotNow: 'Not now',
+  supportDonate: 'Donate',
+  sharingLocalData:
+    'Usage and Diagnostics keep their records on this device. Diagnostics leave it only in a report you choose to send.',
+  reportError: 'Report…',
+  reportErrorTitle: 'Report this error',
+  reportProblemTitle: 'Report a problem',
+  reportErrorDescription:
+    'Send this error to the OpenPencil team so it can be fixed. Nothing is sent until you choose Send report.',
+  reportProblemDescription:
+    'Tell the OpenPencil team what went wrong. Nothing is sent until you choose Send report.',
+  reportNoteError: 'What were you doing? (optional)',
+  reportNoteProblem: 'What happened?',
+  reportNotePlaceholder: 'What you did, what happened, and what you expected instead.',
+  reportEmail: 'Email (optional)',
+  reportEmailHint: 'Only if you want us to follow up.',
+  reportActivity: 'Include recent activity',
+  reportActivityDescription:
+    'The last 50 events from Diagnostics, such as errors and timings. Never chat messages or tool output.',
+  reportDocument: 'Attach this document',
+  reportDocumentDescription:
+    'Uploads the whole design as a .fig file. Only the OpenPencil team can open it, and it is deleted after 90 days.',
+  reportPreview: 'What will be sent',
+  reportSend: 'Send report',
+  reportSent: 'Report sent. Thank you.',
+  reportFailed: 'Could not send the report. Check your connection and try again.',
+  reportFilesFailed: 'The report was sent, but the document could not be uploaded.',
+  reportDocumentFailed: 'The document could not be attached. You can send the report without it.',
+  reportPanic: 'OpenPencil hit an internal error the last time it ran.',
+  reportCrashed: 'OpenPencil closed unexpectedly after an error.',
+  reportUnexpectedError: 'Something went wrong in OpenPencil.'
 } as const
 
 export const diagnosticsMessages = i18n('diagnostics', diagnosticsMessageDefaults)

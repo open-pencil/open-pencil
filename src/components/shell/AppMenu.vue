@@ -123,7 +123,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
           <MenubarMenu v-for="menu in topMenus" :key="menu.label">
             <MenubarTrigger
               v-test-id="`menubar-${menu.label.toLowerCase()}`"
-              class="flex cursor-pointer items-center rounded px-2 py-1 text-[11px] text-surface/80 transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
+              class="flex cursor-pointer items-center rounded px-2 py-1 text-2xs text-surface/80 transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
             >
               {{ menu.label }}
             </MenubarTrigger>

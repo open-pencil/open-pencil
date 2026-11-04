@@ -131,19 +131,21 @@ test('the Sticky note section recolours a note, sizes its text, and hides its au
 })
 
 // Figma keeps a note upright and gives it no strokes or effects: its shadow is part of the note.
-test("a note's panel has its fill and opacity, but no rotation, stroke, or effects", async () => {
+// A note keeps FigJam's fixed choices, which its Sticky note section offers; free-form styling
+// would make notes FigJam itself cannot make.
+test("a note's panel keeps to FigJam's choices: no free-form fill, appearance, stroke, or effects", async () => {
   await sticky.add([{ x: 300, y: 200, text: 'Upright' }])
   await clickNote(300, 200)
 
-  await expect(propertySection(editor.page, 'Fill')).toBeVisible()
-  await expect(propertySection(editor.page, 'Appearance')).toBeVisible()
+  await expect(propertySection(editor.page, 'Sticky note')).toBeVisible()
   await expect(propertyField(editor.page, 'x')).toBeVisible()
   await expect(propertyField(editor.page, 'rotation')).toHaveCount(0)
-  await expect(propertySection(editor.page, 'Stroke')).toHaveCount(0)
-  await expect(propertySection(editor.page, 'Effects')).toHaveCount(0)
+  for (const section of ['Fill', 'Appearance', 'Stroke', 'Effects']) {
+    await expect(propertySection(editor.page, section)).toHaveCount(0)
+  }
 })
 
-test('a note selected with a rectangle offers no stroke or effects either', async () => {
+test('a note selected with a rectangle offers no free-form styling either', async () => {
   await sticky.add([{ x: 150, y: 150, text: 'One' }])
   const from = sticky.point(550, 100)
   const to = sticky.point(650, 200)
@@ -154,9 +156,9 @@ test('a note selected with a rectangle offers no stroke or effects either', asyn
   await editor.page.keyboard.up('Shift')
 
   await expect(editor.page.getByTestId('design-panel-multi')).toBeVisible()
-  await expect(propertySection(editor.page, 'Fill')).toBeVisible()
-  await expect(propertySection(editor.page, 'Stroke')).toHaveCount(0)
-  await expect(propertySection(editor.page, 'Effects')).toHaveCount(0)
+  for (const section of ['Fill', 'Stroke', 'Effects']) {
+    await expect(propertySection(editor.page, section)).toHaveCount(0)
+  }
 })
 
 test('the sticky tool places notes in the colour picked last', async () => {

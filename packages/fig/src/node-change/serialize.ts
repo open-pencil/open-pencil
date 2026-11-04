@@ -1,4 +1,4 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
@@ -17,7 +17,6 @@ import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
-  buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
@@ -356,7 +355,12 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   fixFilledOwnSizing(node, nc, graph)
 }
 
-function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+function serializeGeometry(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  blobs: Uint8Array[],
+  styleReference: (id: string) => StyleReference
+): void {
   if (node.isMask) {
     nc.mask = true
     // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
@@ -365,22 +369,16 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
   }
 
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
-  const { table: styleOverrides, styleToId } = network
-    ? buildStyleOverrideTable(network)
-    : { table: [] as StyleOverride[], styleToId: undefined }
-  // A fill geometry entry with its own paints gets a style override of its own.
-  const fillStyleIds = node.fillGeometry.map((geometry) => {
-    if (!geometry.fills || geometry.fills.length === 0) return 0
-    const styleID = styleOverrides.length + 1
-    styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
-    return styleID
-  })
+  const {
+    table: styleOverrides,
+    styleToId,
+    regionStyleIds
+  } = network
+    ? buildStyleOverrideTable(network, styleReference)
+    : { table: [] as StyleOverride[], styleToId: undefined, regionStyleIds: [] }
 
   const vectorData: Record<string, unknown> = {}
   if (network) {
-    // fillGeometry[i] is region i's fill when the counts match (see regenerateFillGeometry), and
-    // Figma gives both the same style ID: its edit mode refills regions from the network alone.
-    const regionStyleIds = network.regions.length === fillStyleIds.length ? fillStyleIds : undefined
     const blobIdx = blobs.length
     blobs.push(encodeVectorNetworkBlob(network, styleToId, regionStyleIds))
     vectorData.vectorNetworkBlob = blobIdx
@@ -388,10 +386,12 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
   }
 
   if (node.fillGeometry.length > 0) {
+    // Fill geometry is the regions' outlines, one entry each, and Figma names the same style on both.
+    const regionGeometry = node.fillGeometry.length === regionStyleIds.length
     nc.fillGeometry = node.fillGeometry.map((geometry, index) => {
       const blobIdx = blobs.length
       blobs.push(geometry.commandsBlob)
-      const styleID = fillStyleIds[index]
+      const styleID = regionGeometry ? regionStyleIds[index] : 0
       return {
         windingRule: toKiwiWindingRule(geometry.windingRule),
         commandsBlob: blobIdx,
@@ -462,6 +462,8 @@ export interface SceneNodeToKiwiOptions {
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, shared by every record. */
+  propertyCopyGuids?: Map<string, GUID>
   slotContentRecords?: KiwiNodeChange[]
   /** Plugin data a node is written with instead of its own, by node ID. */
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
@@ -490,15 +492,13 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
+    propertyCopyGuids = new Map<string, GUID>(),
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,
     orderKeys,
     writeChildren
   } = options
-  // Raw paints retain library asset refs; effects use this map because their
-  // Kiwi schema accepts only GUID-backed aliases.
-  const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
@@ -509,9 +509,9 @@ export function sceneNodeToKiwi(
     glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
-    assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
+    propertyCopyGuids,
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,

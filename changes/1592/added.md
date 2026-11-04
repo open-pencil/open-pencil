@@ -1,1 +1,0 @@
-- Home deletes storage and Cloud workspace documents from an entry's ⋯ menu or its right-click menu, after a confirmation (#1533).

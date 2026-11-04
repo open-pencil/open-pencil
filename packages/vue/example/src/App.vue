@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { createEditor, type Tool } from '@open-pencil/core'
-import { OpenPencilProvider, LayerTree, NodeProperties } from '@open-pencil/vue'
-import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
-import { ToolbarRoot, ToolbarItem } from '@open-pencil/vue/primitives/Toolbar'
+import { reactive } from 'vue'
 
-const editor = createEditor()
-const pages = () => editor.graph.getPages()
-const currentPageId = () => editor.state.currentPageId
+import { createDefaultEditorState, createEditor, type Tool } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { provideEditor } from '@open-pencil/vue'
+import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+import { LayerTreeItem, LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
+import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
+import { PositionControlsRoot } from '@open-pencil/vue/primitives/PositionControls'
+import { ToolbarItem, ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
+
+const graph = new SceneGraph()
+const page = graph.getPages()[0]
+if (!page) throw new Error('Expected an initial page')
+
+// Reactive state lets the panels follow selection, tool, and page changes.
+const editor = createEditor({ graph, state: reactive(createDefaultEditorState(page.id)) })
+provideEditor(editor)
 
 editor.createShape('FRAME', 100, 100, 400, 300)
 editor.createShape('RECTANGLE', 150, 150, 120, 80)
@@ -26,105 +36,133 @@ const TOOL_LIST: Tool[] = [
   'PEN',
   'HAND'
 ]
+
+const POSITION_FIELDS = ['x', 'y', 'width', 'height'] as const
+type PositionField = (typeof POSITION_FIELDS)[number]
+const FIELD_LABELS: Record<PositionField, string> = { x: 'X', y: 'Y', width: 'W', height: 'H' }
+/** A number, or the SDK's mixed marker when the selected layers disagree. */
+type FieldValue = number | symbol
+
+interface PositionSlot {
+  xValue: FieldValue
+  yValue: FieldValue
+  wValue: FieldValue
+  hValue: FieldValue
+  actions: {
+    updateProp: (key: PositionField, value: number) => void
+    commitProp: (key: PositionField, value: number, previous: number) => void
+  }
+}
+
+/** What a field shows: its value, or nothing when the selected layers disagree. */
+function shownValue(position: PositionSlot, field: PositionField): number | '' {
+  const value = currentValue(position, field)
+  return typeof value === 'number' ? value : ''
+}
+
+function currentValue(position: PositionSlot, field: PositionField): FieldValue {
+  const values = {
+    x: position.xValue,
+    y: position.yValue,
+    width: position.wValue,
+    height: position.hValue
+  }
+  return values[field]
+}
+
+/** Applies a typed value and records it for undo, as the editor's own position fields do. */
+function setField(position: PositionSlot, field: PositionField, event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  const previous = currentValue(position, field)
+  position.actions.updateProp(field, value)
+  // A multi-selection keeps each layer's previous value itself; the fallback is unused there.
+  position.actions.commitProp(field, value, typeof previous === 'number' ? previous : value)
+}
 </script>
 
 <template>
-  <OpenPencilProvider :editor="editor">
-    <div class="layout">
-      <ToolbarRoot>
-        <div class="toolbar">
-          <ToolbarItem
-            v-for="tool in TOOL_LIST"
-            :key="tool"
-            v-slot="{ active, select }"
-            :tool="tool"
-          >
-            <button :class="{ active }" @click="select">{{ tool }}</button>
-          </ToolbarItem>
-        </div>
-      </ToolbarRoot>
+  <div class="layout">
+    <ToolbarRoot>
+      <div class="toolbar">
+        <ToolbarItem
+          v-for="tool in TOOL_LIST"
+          :key="tool"
+          v-slot="{ active, actions }"
+          :tool="tool"
+        >
+          <button :class="{ active }" @click="actions.select">{{ tool }}</button>
+        </ToolbarItem>
+      </div>
+    </ToolbarRoot>
 
-      <div class="main">
-        <div class="panel left">
+    <div class="main">
+      <div class="panel left">
+        <PageListRoot v-slot="{ pages, currentPageId, actions }">
           <div class="section">
             <h3>Pages</h3>
             <div
-              v-for="page in pages()"
-              :key="page.id"
-              :class="{ active: page.id === currentPageId() }"
+              v-for="item in pages"
+              :key="item.id"
+              :class="{ active: item.id === currentPageId }"
               class="list-item"
-              @click="editor.switchPage(page.id)"
+              @click="actions.switch(item.id)"
             >
-              {{ page.name }}
+              {{ item.name }}
             </div>
           </div>
+        </PageListRoot>
 
-          <LayerTree v-slot="{ layers, selectedIds, select }">
-            <div class="section">
-              <h3>Layers</h3>
+        <LayerTreeRoot v-slot="{ visibleRows }">
+          <div class="section">
+            <h3>Layers</h3>
+            <LayerTreeItem
+              v-for="row in visibleRows"
+              :key="row.node.id"
+              v-slot="{ node, isSelected, padLeft, actions }"
+              :node="row.node"
+              :level="row.level"
+              :has-children="row.hasChildren"
+            >
               <div
-                v-for="layer in layers"
-                :key="layer.node.id"
-                :class="{ active: selectedIds.has(layer.node.id) }"
-                :style="{ paddingLeft: layer.depth * 12 + 8 + 'px' }"
+                :class="{ active: isSelected }"
+                :style="{ paddingLeft: `calc(${padLeft} + 8px)` }"
                 class="list-item"
-                @click="select([layer.node.id])"
+                @click="actions.select($event.shiftKey)"
               >
-                {{ layer.node.name }}
+                <span v-if="row.hasChildren" class="toggle" @click.stop="actions.toggleExpand">
+                  ▸
+                </span>
+                {{ node.name }}
               </div>
-            </div>
-          </LayerTree>
-        </div>
+            </LayerTreeItem>
+          </div>
+        </LayerTreeRoot>
+      </div>
 
-        <CanvasRoot>
-          <CanvasSurface class="canvas-area" style="width: 100%; height: 100%; display: block" />
-        </CanvasRoot>
+      <CanvasRoot>
+        <CanvasSurface class="canvas-area" />
+      </CanvasRoot>
 
-        <div class="panel right">
-          <NodeProperties v-slot="{ node, update }">
-            <div v-if="node" class="section">
-              <h3>{{ node.type }}</h3>
-              <label>
-                X
-                <input
-                  type="number"
-                  :value="node.x"
-                  @change="update({ x: +($event.target as HTMLInputElement).value })"
-                />
-              </label>
-              <label>
-                Y
-                <input
-                  type="number"
-                  :value="node.y"
-                  @change="update({ y: +($event.target as HTMLInputElement).value })"
-                />
-              </label>
-              <label>
-                W
-                <input
-                  type="number"
-                  :value="node.width"
-                  @change="update({ width: +($event.target as HTMLInputElement).value })"
-                />
-              </label>
-              <label>
-                H
-                <input
-                  type="number"
-                  :value="node.height"
-                  @change="update({ height: +($event.target as HTMLInputElement).value })"
-                />
-              </label>
-            </div>
-            <div v-else class="section">
-              <p class="muted">No selection</p>
-            </div>
-          </NodeProperties>
-        </div>
+      <div class="panel right">
+        <PositionControlsRoot v-slot="position">
+          <div v-if="position.active" class="section">
+            <h3>Position</h3>
+            <label v-for="field in POSITION_FIELDS" :key="field">
+              {{ FIELD_LABELS[field] }}
+              <input
+                type="number"
+                :value="shownValue(position, field)"
+                @change="setField(position, field, $event)"
+              />
+            </label>
+          </div>
+          <div v-else class="section">
+            <p class="muted">No selection</p>
+          </div>
+        </PositionControlsRoot>
       </div>
     </div>
-  </OpenPencilProvider>
+  </div>
 </template>
 
 <style>
@@ -215,7 +253,11 @@ body {
 }
 
 .canvas-area {
+  /* Takes the space between the panels; a flex item would otherwise keep the canvas width. */
   flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: block;
 }
 
 label {

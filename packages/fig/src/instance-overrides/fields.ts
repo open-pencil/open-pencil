@@ -22,6 +22,7 @@ export interface OverrideField {
     | 'size'
     | 'layout-distance'
     | 'layout-mode'
+    | 'variable-modes'
     | 'node'
   /** A placed-space distance that an instance's uniform scale multiplies. */
   readonly length?: true
@@ -38,7 +39,7 @@ export const OVERRIDE_FIELDS = {
   opacity: { scene: ['opacity'], kind: 'scalar' },
   fontSize: { scene: ['fontSize'], kind: 'scalar', length: true },
   visible: { scene: ['visible'], kind: 'visible' },
-  variableModeBySetMap: { scene: ['variableModes'], kind: 'node', absent: { entries: [] } },
+  variableModeBySetMap: { scene: ['variableModes'], kind: 'variable-modes' },
   // Figma claims styled ranges and list lines with the characters (desktop 126).
   textData: { scene: ['text', 'styleRuns', 'textParagraphs'], kind: 'text' },
   styleIdForText: { scene: ['textStyleId'], kind: 'text-style' },

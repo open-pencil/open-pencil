@@ -7,47 +7,24 @@ import type {
 } from '#vue/shared/input/types'
 import {
   editVerticesInRect,
-  getNodeEditState,
   hitTestEditHandle,
   hitTestEditRegion,
   hitTestEditSegment,
   hitTestEditVertex,
-  isEndpoint,
-  type NodeEditState
+  isEndpoint
 } from '#vue/shared/input/vector/hit-test'
 import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
 
 export {
-  getNodeEditState,
   hitTestEditHandle,
   hitTestEditRegion,
   hitTestEditSegment,
   isEndpoint,
   NODE_HIT_THRESHOLD
 } from '#vue/shared/input/vector/hit-test'
-import type { Editor } from '@open-pencil/core'
+import type { Editor, NodeEditState } from '@open-pencil/core'
 import { regionVertexIndices, vectorHandleId } from '@open-pencil/core/vector'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-
-type NodeEditEditor = Partial<{
-  nodeEditSelectVertex: (vertexIndex: number, addToSelection: boolean) => void
-  exitNodeEditMode: (commit: boolean) => void
-  nodeEditRemoveVertex: (vertexIndex: number) => void
-  penResumeFromEndpoint: (nodeId: string, endpointVertexIndex: number) => void
-  penStartPiece: (nodeId: string, point: Vector) => void
-  nodeEditAddVertex: (cx: number, cy: number) => boolean
-  nodeEditPushHistory: () => void
-  nodeEditSetHandle: (
-    segmentIndex: number,
-    tangentField: 'tangentStart' | 'tangentEnd',
-    newTangent: Vector,
-    options?: {
-      breakMirroring?: boolean
-      continuous?: boolean
-      lockDirection?: boolean
-    }
-  ) => void
-}>
 
 export function handleNodeEditDown(
   e: MouseEvent,
@@ -56,16 +33,15 @@ export function handleNodeEditDown(
   editor: Editor,
   setDrag: (d: DragState) => void
 ) {
-  const es = getNodeEditState(editor)
+  const es = editor.getNodeEditState()
   if (!es) return
-  const nodeEditEditor = editor as Editor & NodeEditEditor
 
   const handleHit = hitTestEditHandle(editor, cx, cy)
   const ri = handleHit ? null : hitTestEditRegion(editor, cx, cy)
   if (!e.shiftKey && !pressesPickedRegion(es, ri)) es.selectedRegions = new Set()
 
   if (handleHit) {
-    pressHandle(es, handleHit, e.shiftKey, cx, cy, nodeEditEditor, setDrag)
+    pressHandle(es, handleHit, e.shiftKey, cx, cy, editor, setDrag)
     return
   }
 
@@ -75,7 +51,7 @@ export function handleNodeEditDown(
   if (ri !== null) {
     const click = pickRegion(es, ri, e.shiftKey)
     editor.requestRepaint()
-    startPointsDrag(es, regionPoints(es, ri), cx, cy, nodeEditEditor, setDrag, click)
+    startPointsDrag(es, regionPoints(es, ri), cx, cy, editor, setDrag, click)
     return
   }
 
@@ -84,8 +60,8 @@ export function handleNodeEditDown(
     if (!e.shiftKey) es.selectedHandles = new Set()
 
     if (e.metaKey || e.ctrlKey) {
-      nodeEditEditor.nodeEditSelectVertex?.(vi, false)
-      nodeEditEditor.nodeEditPushHistory?.()
+      editor.nodeEditSelectVertex(vi, false)
+      editor.nodeEditPushHistory()
       setDrag({
         type: 'bend-handle',
         vertexIndex: vi,
@@ -100,10 +76,10 @@ export function handleNodeEditDown(
     }
 
     if (!(es.selectedVertexIndices.has(vi) && !e.shiftKey)) {
-      nodeEditEditor.nodeEditSelectVertex?.(vi, e.shiftKey)
+      editor.nodeEditSelectVertex(vi, e.shiftKey)
     }
 
-    startPointsDrag(es, [vi], cx, cy, nodeEditEditor, setDrag)
+    startPointsDrag(es, [vi], cx, cy, editor, setDrag)
     return
   }
 
@@ -115,7 +91,7 @@ export function handleNodeEditDown(
     const click = selectPressedSegment(es, si, e.shiftKey)
     editor.requestRepaint()
     const { start, end } = es.segments[si]
-    startPointsDrag(es, [start, end], cx, cy, nodeEditEditor, setDrag, click)
+    startPointsDrag(es, [start, end], cx, cy, editor, setDrag, click)
     return
   }
 
@@ -134,7 +110,7 @@ export function handleNodeEditDown(
  * press without Shift picks something else, so they go.
  */
 function pressesPickedRegion(es: NodeEditState, region: number | null) {
-  return region !== null && Boolean(es.selectedRegions?.has(region))
+  return region !== null && Boolean(es.selectedRegions.has(region))
 }
 
 /** Selects a pressed tangent handle, toggling it with Shift, and starts dragging it. */
@@ -144,7 +120,7 @@ function pressHandle(
   shift: boolean,
   cx: number,
   cy: number,
-  nodeEditEditor: NodeEditEditor,
+  editor: Editor,
   setDrag: (d: DragState) => void
 ) {
   const key = vectorHandleId(handleHit.segmentIndex, handleHit.tangentField)
@@ -159,7 +135,7 @@ function pressHandle(
     es.selectedSegmentIndices = new Set()
     es.selectedHandles = new Set([key])
   }
-  nodeEditEditor.nodeEditPushHistory?.()
+  editor.nodeEditPushHistory()
   setDrag({
     type: 'edit-handle',
     segmentIndex: handleHit.segmentIndex,
@@ -210,12 +186,12 @@ function regionPoints(es: NodeEditState, regionIndex: number): number[] {
  */
 function pickRegion(es: NodeEditState, regionIndex: number, add: boolean): DragEditNode['click'] {
   es.selectedHandles = new Set()
-  if (es.selectedRegions?.has(regionIndex)) {
+  if (es.selectedRegions.has(regionIndex)) {
     return { part: 'region', index: regionIndex, deselect: add }
   }
   const points = regionPoints(es, regionIndex)
   if (add) {
-    es.selectedRegions = new Set([...(es.selectedRegions ?? new Set<number>()), regionIndex])
+    es.selectedRegions = new Set([...es.selectedRegions, regionIndex])
     es.selectedVertexIndices = new Set([...es.selectedVertexIndices, ...points])
   } else {
     es.selectedRegions = new Set([regionIndex])
@@ -234,7 +210,7 @@ function startPointsDrag(
   pressed: number[],
   cx: number,
   cy: number,
-  nodeEditEditor: NodeEditEditor,
+  editor: Editor,
   setDrag: (d: DragState) => void,
   click?: DragEditNode['click']
 ) {
@@ -246,7 +222,7 @@ function startPointsDrag(
   for (const index of [...es.selectedVertexIndices, ...segmentEnds, ...pressed]) {
     origPositions.set(index, { x: es.vertices[index].x, y: es.vertices[index].y })
   }
-  nodeEditEditor.nodeEditPushHistory?.()
+  editor.nodeEditPushHistory()
   setDrag({ type: 'edit-node', startX: cx, startY: cy, origPositions, click })
 }
 
@@ -255,7 +231,7 @@ function startPointsDrag(
  * selects only that part and a Shift-click takes it out of the selection.
  */
 export function finishPartClick(d: DragEditNode, editor: Editor) {
-  const es = getNodeEditState(editor)
+  const es = editor.getNodeEditState()
   if (!es || !d.click) return
   const moved = [...d.origPositions].some(([index, orig]) => {
     const vertex = es.vertices.at(index)
@@ -286,7 +262,7 @@ function clickRegion(es: NodeEditState, region: number, deselect: boolean) {
     es.selectedSegmentIndices = new Set()
     return
   }
-  const rest = [...(es.selectedRegions ?? [])].filter((index) => index !== region)
+  const rest = [...es.selectedRegions].filter((index) => index !== region)
   const kept = new Set(rest.flatMap((index) => regionPoints(es, index)))
   const dropped = new Set(regionPoints(es, region).filter((index) => !kept.has(index)))
   es.selectedRegions = new Set(rest)
@@ -302,7 +278,7 @@ export function handleNodeEditMarqueeMove(
   cy: number,
   editor: Editor
 ) {
-  const es = getNodeEditState(editor)
+  const es = editor.getNodeEditState()
   if (!es) return
   const marquee = {
     x: Math.min(d.startX, cx),
@@ -328,7 +304,7 @@ export function finishNodeEditMarquee(editor: Editor) {
   editor.setMarquee(null)
   const dragged =
     !!marquee && isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)
-  if (!dragged) (editor as Editor & NodeEditEditor).exitNodeEditMode?.(true)
+  if (!dragged) editor.exitNodeEditMode(true)
 }
 
 /**
@@ -342,28 +318,22 @@ export function handlePenNodeEditDown(
   editor: Editor,
   pieceStart: Vector = { x: cx, y: cy }
 ) {
-  const es = getNodeEditState(editor)
+  const es = editor.getNodeEditState()
   if (!es) return
-  const nodeEditEditor = editor as Editor & NodeEditEditor
 
   const vi = hitTestEditVertex(editor, cx, cy)
   if (vi !== null) {
     if (e.altKey) {
-      nodeEditEditor.nodeEditRemoveVertex?.(vi)
+      editor.nodeEditRemoveVertex(vi)
       return
     }
-    if (isEndpoint(vi, es.segments)) {
-      const nodeId = es.nodeId
-      nodeEditEditor.exitNodeEditMode?.(true)
-      nodeEditEditor.penResumeFromEndpoint?.(nodeId, vi)
-    }
+    // The pen commits the open path before it continues from the point.
+    if (isEndpoint(vi, es.segments)) editor.penResumeFromEndpoint(es.nodeId, vi)
     return
   }
 
-  if (nodeEditEditor.nodeEditAddVertex?.(cx, cy)) return
-  const nodeId = es.nodeId
-  nodeEditEditor.exitNodeEditMode?.(true)
-  nodeEditEditor.penStartPiece?.(nodeId, pieceStart)
+  if (editor.nodeEditAddVertex(cx, cy)) return
+  editor.penStartPiece(es.nodeId, pieceStart)
 }
 
 export function handleNodeEditMove(
@@ -376,11 +346,10 @@ export function handleNodeEditMove(
   lockDirection?: boolean,
   disableSnapping?: boolean
 ) {
-  const nodeEditEditor = editor as Editor & NodeEditEditor
   if (d.type === 'edit-node') {
     const unsnappedDx = cx - d.startX
     const unsnappedDy = cy - d.startY
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (!es) return
     let snapped = { x: unsnappedDx, y: unsnappedDy }
     if (disableSnapping) editor.setSnapGuides([])
@@ -396,7 +365,7 @@ export function handleNodeEditMove(
     editor.requestRepaint()
     return
   }
-  const es = getNodeEditState(editor)
+  const es = editor.getNodeEditState()
   if (!es) return
   const vertex = es.vertices[d.vertexIndex]
   let newTangent = { x: cx - vertex.x, y: cy - vertex.y }
@@ -411,7 +380,7 @@ export function handleNodeEditMove(
       newTangent = { x: dir.x * projectedLen, y: dir.y * projectedLen }
     }
   }
-  nodeEditEditor.nodeEditSetHandle?.(d.segmentIndex, d.tangentField, newTangent, {
+  editor.nodeEditSetHandle(d.segmentIndex, d.tangentField, newTangent, {
     breakMirroring,
     continuous,
     lockDirection

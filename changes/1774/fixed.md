@@ -1,0 +1,1 @@
+- The canvas draws sharp at any panel width, instead of slightly soft when the panels leave it a fraction of a pixel wide (#1774).

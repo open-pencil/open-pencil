@@ -1,4 +1,11 @@
-import { useEditorCommands, type EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { invoke } from '@tauri-apps/api/core'
+import { computed, watch } from 'vue'
+
+import {
+  useEditorCommands,
+  type EditorCommand,
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
@@ -28,6 +35,30 @@ const COMMAND_MENU_IDS = new Set<EditorCommandId>(
   APP_MENU_SCHEMA.flatMap((group) => commandMenuIds(group.items))
 )
 
+/**
+ * Greys out the desktop menu's command items while their command is unavailable, such as Group
+ * with nothing selected, as the browser menu does. Item ids are their command ids.
+ */
+function watchNativeMenuDisabled(commands: Record<EditorCommandId, EditorCommand>) {
+  // A joined key, so the watcher fires when the set changes rather than on every recompute.
+  const disabled = computed(() =>
+    [...COMMAND_MENU_IDS]
+      .filter((id) => !commands[id].enabled.value)
+      .sort()
+      .join('\n')
+  )
+  watch(
+    disabled,
+    (key) => {
+      const ids = key ? key.split('\n') : []
+      invoke('set_native_menu_disabled', { ids }).catch((error: unknown) => {
+        console.warn('[Menu] Failed to update the native menu', error)
+      })
+    },
+    { immediate: true }
+  )
+}
+
 export function useEditorMenu() {
   if (!isTauri()) return
 
@@ -35,7 +66,8 @@ export function useEditorMenu() {
   watchNativeMenuFeatures()
 
   const { setTheme } = useAppTheme()
-  const { runCommand } = useEditorCommands()
+  const { commands, runCommand } = useEditorCommands()
+  watchNativeMenuDisabled(commands)
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),

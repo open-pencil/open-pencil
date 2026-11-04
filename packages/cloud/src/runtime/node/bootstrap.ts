@@ -7,6 +7,14 @@ import {
 
 import { loadNodeCloudServerConfig } from './config'
 
+/** The deployment's database, migrated to this version before anything uses it. */
+export async function migratedNodeCloudDatabase(config: CloudServerConfig) {
+  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  const auth = createBetterAuthAdapter(config, database)
+  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+  return { database, auth }
+}
+
 export async function createMigratedNodeCloudDatabase(
   environment: Readonly<Record<string, string | undefined>>
 ): Promise<{
@@ -15,8 +23,5 @@ export async function createMigratedNodeCloudDatabase(
   auth: ReturnType<typeof createBetterAuthAdapter>
 }> {
   const config = await loadNodeCloudServerConfig(environment)
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
-  const auth = createBetterAuthAdapter(config, database)
-  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
-  return { config, database, auth }
+  return { config, ...(await migratedNodeCloudDatabase(config)) }
 }

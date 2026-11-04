@@ -161,6 +161,31 @@ describe('ResourceCache', () => {
     expect(cache.peek('next')).toBe(2)
   })
 
+  test('resize evicts the least recently used entries past a smaller budget and admits larger ones', () => {
+    const removed: Array<[string, CacheRemovalReason]> = []
+    const cache = new ResourceCache<string, Resource>({
+      maxWeight: 6,
+      weight: (value) => value.units,
+      dispose: (_, key, reason) => removed.push([key, reason])
+    })
+    for (const [id, key] of ['a', 'b', 'c'].entries()) cache.set(key, { id, units: 2 })
+    cache.get('a')
+    expect(cache.set('d', { id: 3, units: 8 })).toBe(false)
+    cache.resize(10)
+    expect(cache.capacity).toBe(10)
+    expect(cache.set('d', { id: 3, units: 4 })).toBe(true)
+    expect(removed).toEqual([])
+    cache.resize(4)
+    expect([...cache].map(([key]) => key)).toEqual(['d'])
+    expect(removed).toEqual([
+      ['b', 'evict'],
+      ['c', 'evict'],
+      ['a', 'evict']
+    ])
+    expect(() => cache.resize(-1)).toThrow(RangeError)
+    expect(() => cache.resize(Infinity)).toThrow(RangeError)
+  })
+
   test('validates budgets and leaves zero-capacity resources with the caller', () => {
     expect(() => new ResourceCache({})).toThrow(RangeError)
     expect(() => new ResourceCache({ maxEntries: -1 })).toThrow(RangeError)

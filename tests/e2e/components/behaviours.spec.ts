@@ -144,6 +144,226 @@ test('a switch inside a frame, named after its variant, toggles both ways in pre
   await editor.page.keyboard.press('Escape')
 })
 
+/**
+ * A slider component at 20 of 0 to 100 in steps of 10, its range a slot inside its track's
+ * slot, as Reka draws it and Figma keeps it, and an instance of it below.
+ */
+async function createSlider() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+    const slider = graph.createNode('COMPONENT', pageId, {
+      name: 'Volume',
+      x: 120,
+      y: 120,
+      width: 200,
+      height: 20,
+      componentPropertyDefinitions: ['Track', 'Range', 'Thumb'].map((name) => ({
+        id: `${name.toLowerCase()}-slot`,
+        name,
+        type: 'SLOT' as const,
+        defaultValue: ''
+      }))
+    })
+    const track = graph.createNode('FRAME', slider.id, {
+      name: 'Track',
+      componentPropertyReferences: slot('track-slot'),
+      y: 8,
+      width: 200,
+      height: 4,
+      fills: solid(0.8, 0.8, 0.85)
+    })
+    graph.createNode('FRAME', track.id, {
+      name: 'Range',
+      componentPropertyReferences: slot('range-slot'),
+      width: 40,
+      height: 4,
+      fills: solid(0.2, 0.6, 1)
+    })
+    graph.createNode('FRAME', slider.id, {
+      name: 'Thumb',
+      componentPropertyReferences: slot('thumb-slot'),
+      x: 30,
+      width: 20,
+      height: 20,
+      cornerRadius: 10,
+      fills: solid(1, 1, 1)
+    })
+    store.setBehaviour(slider.id, {
+      kind: 'slider',
+      booleans: {},
+      texts: {},
+      numbers: { value: { min: 0, max: 100, step: 10, default: 20 } },
+      parts: { track: 'track-slot', range: 'range-slot', thumb: 'thumb-slot' }
+    })
+    const instance = graph.createInstance(slider.id, pageId, { x: 120, y: 260 })
+    if (!instance) throw new Error('Instance not created')
+    return instance.id
+  })
+}
+
+// In an instance the range is part of the track's content, and preview still has Reka place it.
+test('a slider instance in preview moves the range inside its track', async () => {
+  const instanceId = await createSlider()
+  await editor.canvas.waitForRender()
+  await startPreview()
+
+  const control = island(instanceId).getByRole('slider')
+  const range = island(instanceId).locator('[data-layer$="Range"]')
+  const width = async () => (await range.boundingBox())?.width ?? 0
+  await expect(control).toHaveAttribute('aria-valuenow', '20')
+  // A range that shows, so twice its width is a real change.
+  await expect.poll(width).toBeGreaterThan(0)
+  const before = await width()
+  await control.press('ArrowRight')
+  await control.press('ArrowRight')
+  await expect(control).toHaveAttribute('aria-valuenow', '40')
+  // Twice the value, twice the range: Reka places it, the design's width no longer stands.
+  await expect.poll(width).toBeCloseTo(before * 2, 0)
+  await editor.page.keyboard.press('Escape')
+})
+
+// Tabs as the shadcn/ui kit draws them: triggers are instances of a Tab set that draws
+// Selected On and Off and a disabled look.
+test('tabs whose triggers are Tab instances show the chosen one and skip a disabled one', async () => {
+  const ids = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+    const tab = graph.createNode('COMPONENT_SET', pageId, {
+      name: 'Tab',
+      x: 120,
+      y: 60,
+      width: 300,
+      height: 40,
+      componentPropertyDefinitions: [
+        {
+          id: 'selected',
+          name: 'Selected',
+          type: 'VARIANT' as const,
+          defaultValue: 'Off',
+          variantOptions: ['Off', 'On']
+        },
+        {
+          id: 'state',
+          name: 'State',
+          type: 'VARIANT' as const,
+          defaultValue: 'Default',
+          variantOptions: ['Default', 'Disabled']
+        }
+      ]
+    })
+    const variants = new Map<string, string>()
+    for (const [index, [selected, state]] of [
+      ['Off', 'Default'],
+      ['On', 'Default'],
+      ['Off', 'Disabled']
+    ].entries()) {
+      const name = `Selected=${selected}, State=${state}`
+      const variant = graph.createNode('COMPONENT', tab.id, {
+        name,
+        x: 10 + index * 90,
+        y: 8,
+        width: 80,
+        height: 24,
+        fills: selected === 'On' ? solid(0.2, 0.4, 1) : solid(0.85, 0.85, 0.9),
+        opacity: state === 'Disabled' ? 0.5 : 1,
+        componentPropertyValues: { Selected: selected, State: state }
+      })
+      variants.set(name, variant.id)
+    }
+    store.setBehaviour(tab.id, {
+      kind: 'tab',
+      booleans: { value: { propertyId: 'selected', on: 'On', off: 'Off' } },
+      texts: {},
+      numbers: {},
+      parts: {},
+      states: { propertyId: 'state', rest: 'Default', disabled: 'Disabled' }
+    })
+    const tabs = graph.createNode('COMPONENT', pageId, {
+      name: 'Settings',
+      x: 120,
+      y: 140,
+      width: 260,
+      height: 120
+    })
+    const list = graph.createNode('FRAME', tabs.id, {
+      name: 'List',
+      componentPropertyReferences: slot('list-slot'),
+      width: 260,
+      height: 24
+    })
+    const panels = graph.createNode('FRAME', tabs.id, {
+      name: 'Panels',
+      componentPropertyReferences: slot('panels-slot'),
+      y: 30,
+      width: 260,
+      height: 80
+    })
+    for (const [index, [label, values]] of [
+      ['Account', 'Selected=On, State=Default'],
+      ['Password', 'Selected=Off, State=Default'],
+      ['Billing', 'Selected=Off, State=Disabled']
+    ].entries()) {
+      const main = variants.get(values)
+      if (!main) throw new Error(`No ${values}`)
+      graph.createInstance(main, list.id, { name: label, x: index * 86 })
+      graph.createNode('FRAME', panels.id, {
+        name: `${label} panel`,
+        width: 260,
+        height: 80,
+        visible: index === 0
+      })
+    }
+    store.setBehaviour(tabs.id, {
+      kind: 'tabs',
+      booleans: {},
+      texts: {},
+      numbers: {},
+      parts: { list: 'list-slot', panels: 'panels-slot' }
+    })
+    const instance = graph.createInstance(tabs.id, pageId, { x: 120, y: 300 })
+    if (!instance) throw new Error('Instance not created')
+    return { instanceId: instance.id }
+  })
+  await editor.canvas.waitForRender()
+  await startPreview()
+
+  const triggers = island(ids.instanceId).getByRole('tab')
+  await expect(triggers).toHaveCount(3)
+  const [account, password, billing] = [triggers.nth(0), triggers.nth(1), triggers.nth(2)]
+  const fill = (trigger: typeof account) =>
+    trigger.evaluate((element) => getComputedStyle(element).backgroundColor)
+  await expect(account).toHaveAttribute('aria-selected', 'true')
+  const selectedFill = await fill(account)
+  const restFill = await fill(password)
+  expect(selectedFill).not.toBe(restFill)
+
+  await password.click()
+  await expect(password).toHaveAttribute('aria-selected', 'true')
+  // Each Tab instance now shows its Selected variant as the choice says.
+  await expect.poll(() => fill(password)).toBe(selectedFill)
+  await expect.poll(() => fill(account)).toBe(restFill)
+
+  // Drawn disabled, Billing is a disabled trigger: clicking it changes nothing.
+  await expect(billing).toBeDisabled()
+  await billing.click({ force: true })
+  await expect(password).toHaveAttribute('aria-selected', 'true')
+  await expect(billing).toHaveAttribute('aria-selected', 'false')
+  await editor.page.keyboard.press('Escape')
+})
+
 test('preview islands move with the frames the canvas draws, not ahead of them', async () => {
   const ids = await createSwitch({ nested: true })
   await editor.canvas.waitForRender()
@@ -245,6 +465,8 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
   await expect(section.getByRole('combobox', { name: 'Hover state' })).toHaveText(/Hover/)
   await expect(section.getByRole('combobox', { name: 'Pressed state' })).toHaveText(/Pressed/)
   await expect(section.getByRole('combobox', { name: 'Disabled state' })).toHaveText(/Disabled/)
+  // Only a form control has an invalid state.
+  await expect(section.getByRole('combobox', { name: 'Invalid state' })).toHaveCount(0)
 
   await startPreview()
   // Each state shows its variant's fill: the components are filled by index, as created above.

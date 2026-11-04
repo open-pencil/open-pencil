@@ -11,6 +11,8 @@ export interface RecordEditOptions {
   label: string
   /** The page the edit is made from; it is recorded wherever in the document it lands. */
   pageId?: string
+  /** The one layer the edit writes into in place, if any; see `captureDocumentChange`. */
+  layerId?: string
   /** False for an edit that records its own steps, such as an atomic tool's. */
   push?: boolean
   /**
@@ -24,7 +26,11 @@ export interface RecordEditOptions {
 }
 
 function begin(ctx: EditorContext, options: RecordEditOptions) {
-  const finish = captureDocumentChange(ctx.graph, options.pageId ?? ctx.state.currentPageId)
+  const finish = captureDocumentChange(
+    ctx.graph,
+    options.pageId ?? ctx.state.currentPageId,
+    options.layerId
+  )
   return () => {
     const change = finish()
     // An edit that changed nothing, such as a read-only script, leaves no empty step behind.

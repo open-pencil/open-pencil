@@ -2,8 +2,15 @@ import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  adjustRunsForDelete,
+  getStyleAt,
+  insertRunsWithStyle,
+  runsAfterTyping,
+  type TextEditor,
+  type TextEditorState
+} from '@open-pencil/core/text'
+import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
 import { paragraphStylesAfterTextChange } from '@open-pencil/scene-graph/text'
 
 const CARET_BLINK_MS = 530
@@ -130,7 +137,93 @@ export function createTextCompositionHandlers({
   }
 }
 
+function deletedRange(
+  editor: TextEditor,
+  node: SceneNode,
+  forward: boolean
+): [number, number] | null {
+  const selection = editor.getSelectionRange()
+  if (selection) {
+    return selection
+  }
+  const cursor = editor.state?.cursor
+  if (cursor === undefined) {
+    return null
+  }
+  if (forward && cursor < node.text.length) {
+    return [cursor, cursor + 1]
+  }
+  if (!forward && cursor > 0) {
+    return [cursor - 1, cursor]
+  }
+  return null
+}
+
+type EmptiedTextStyle = {
+  session: TextEditorState
+  style: CharacterStyleOverride
+  stopWatchingNode: () => void
+}
+
+const MEASURED_TEXT_FIELDS: ReadonlySet<string> = new Set([
+  'x',
+  'y',
+  'width',
+  'height',
+  'derivedLayout',
+  'derivedTextGlyphs',
+  'derivedTextHeight'
+])
+
+function restylesOrRewritesText(changes: Partial<SceneNode>) {
+  return Object.keys(changes).some((field) => !MEASURED_TEXT_FIELDS.has(field))
+}
+
 export function createTextEditActions(store: Editor) {
+  let styleOfEmptiedText: EmptiedTextStyle | null = null
+  let writingTypedText = false
+
+  function forgetEmptiedTextStyle() {
+    styleOfEmptiedText?.stopWatchingNode()
+    styleOfEmptiedText = null
+  }
+
+  function rememberEmptiedTextStyle(
+    session: TextEditorState,
+    nodeId: string,
+    style: CharacterStyleOverride
+  ) {
+    forgetEmptiedTextStyle()
+    const stopWatchingNode = store.graph.onNodeEvents({
+      updated: (id, changes) => {
+        if (id === nodeId && !writingTypedText && restylesOrRewritesText(changes)) {
+          forgetEmptiedTextStyle()
+        }
+      }
+    })
+    styleOfEmptiedText = { session, style, stopWatchingNode }
+  }
+
+  function emptiedTextStyle(): CharacterStyleOverride {
+    if (!styleOfEmptiedText || styleOfEmptiedText.session !== store.textEditor?.state) {
+      return {}
+    }
+    return styleOfEmptiedText.style
+  }
+
+  function runsAfterTypingInSession(
+    runs: StyleRun[],
+    textLength: number,
+    start: number,
+    end: number,
+    typedLength: number
+  ): StyleRun[] {
+    if (textLength > 0) {
+      return runsAfterTyping(runs, textLength, start, end, typedLength)
+    }
+    return insertRunsWithStyle([], 0, typedLength, emptiedTextStyle())
+  }
+
   function getEditingNode() {
     const id = store.state.editingTextId
     if (!id) return null
@@ -152,7 +245,12 @@ export function createTextEditActions(store: Editor) {
       // A new paragraph continues the list it is typed in; a joined one keeps the first's style.
       changes.textParagraphs = paragraphStylesAfterTextChange(node.textParagraphs, node.text, text)
     }
-    store.updateTextEditNode(nodeId, changes)
+    writingTypedText = true
+    try {
+      store.updateTextEditNode(nodeId, changes)
+    } finally {
+      writingTypedText = false
+    }
     const updated = store.graph.getNode(nodeId)
     if (updated) store.textEditor?.rebuildParagraph(updated)
     store.requestRender()
@@ -161,14 +259,9 @@ export function createTextEditActions(store: Editor) {
   function insertText(text: string, node: SceneNode) {
     const editor = store.textEditor
     if (!editor) return
-    const range = editor.getSelectionRange()
-    let runs = node.styleRuns
-    if (range) {
-      runs = adjustRunsForDelete(runs, range[0], range[1] - range[0])
-      runs = adjustRunsForInsert(runs, range[0], text.length)
-    } else {
-      runs = adjustRunsForInsert(runs, editor.state?.cursor ?? 0, text.length)
-    }
+    const cursor = editor.state?.cursor ?? 0
+    const [start, end] = editor.getSelectionRange() ?? [cursor, cursor]
+    const runs = runsAfterTypingInSession(node.styleRuns, node.text.length, start, end, text.length)
     editor.insert(text, node)
     syncText(node.id, editor.state?.text ?? '', runs)
   }
@@ -216,8 +309,13 @@ export function createTextEditActions(store: Editor) {
     state.cursor = draft.start + text.length
     state.selectionAnchor = null
 
-    let runs = adjustRunsForDelete(draft.baseRuns, draft.start, draft.end - draft.start)
-    runs = adjustRunsForInsert(runs, draft.start, text.length)
+    const runs = runsAfterTypingInSession(
+      draft.baseRuns,
+      draft.baseText.length,
+      draft.start,
+      draft.end,
+      text.length
+    )
     // Each update replaces the same base, so paragraphs an earlier update joined come back.
     const paragraphs =
       draft.baseParagraphs.length > 0
@@ -249,21 +347,22 @@ export function createTextEditActions(store: Editor) {
   function deleteText(node: SceneNode, forward: boolean) {
     const editor = store.textEditor
     if (!editor) return
-    const range = editor.getSelectionRange()
-    let runs = node.styleRuns
-    if (range) {
-      runs = adjustRunsForDelete(runs, range[0], range[1] - range[0])
-    } else if (forward && editor.state && editor.state.cursor < node.text.length) {
-      runs = adjustRunsForDelete(runs, editor.state.cursor, 1)
-    } else if (!forward && editor.state && editor.state.cursor > 0) {
-      runs = adjustRunsForDelete(runs, editor.state.cursor - 1, 1)
-    }
+    const range = deletedRange(editor, node, forward)
+    const runs = range
+      ? adjustRunsForDelete(node.styleRuns, range[0], range[1] - range[0])
+      : node.styleRuns
     if (forward) {
       editor.delete(node)
     } else {
       editor.backspace(node)
     }
-    syncText(node.id, editor.state?.text ?? '', runs)
+    const session = editor.state
+    const text = session?.text ?? ''
+    const deletedStyle = range ? getStyleAt(node.styleRuns, range[0]) : null
+    syncText(node.id, text, runs)
+    if (session && deletedStyle && text.length === 0) {
+      rememberEmptiedTextStyle(session, node.id, deletedStyle)
+    }
   }
 
   return {

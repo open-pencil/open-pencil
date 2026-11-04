@@ -1,13 +1,11 @@
 export {
-  drawEnteredContainer,
   drawGroupBounds,
   drawHandle,
   drawHoverHighlight,
   drawNodeOutline,
   drawNodeSelection,
   drawParentFrameOutlines,
-  drawSelection,
-  getRotatedCorners
+  drawSelection
 } from './selection'
 export { drawAutoLayoutHover } from './auto-layout-hover'
 export {

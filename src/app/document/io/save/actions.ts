@@ -7,6 +7,7 @@ import { documentFileName, documentNameFromFigPath } from '@/app/document/io/nam
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
+import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
@@ -87,7 +88,11 @@ export function createSaveActions({
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
       const wrote = await writeFile(data, version)
-      if (wrote) setSourceIdentity({ handle: null, path })
+      if (wrote) {
+        setSourceIdentity({ handle: null, path })
+        // A file saved to disk is listed on Home like one opened from there.
+        rememberRecentFile(path, state.documentKind)
+      }
       startWatchingFile()
       return wrote
     }

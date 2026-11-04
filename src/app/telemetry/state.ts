@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
@@ -34,7 +35,6 @@ const ENVIRONMENT_CHECK_TIMEOUT_MS = 2_000
 let disabledByEnvironment: Promise<boolean> | null = null
 
 async function readDesktopEnvironment(): Promise<boolean> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const timeout = new Promise<boolean>((resolve) => {
     setTimeout(() => resolve(true), ENVIRONMENT_CHECK_TIMEOUT_MS)
   })

@@ -262,6 +262,31 @@ describe('set_font_range', () => {
     expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
   })
 
+  test('sets text from Markdown, its headings and emphasis as ranges over the text’s style', async () => {
+    const { figma, graph } = setupToolTest()
+    const created = getTool('create_shape').execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as ToolResult
+    const id = expectDefined(created.id, 'created node id')
+    expect(
+      await runTool(figma, 'set_text', { id, text: '# Title\n- **one**', markdown: true })
+    ).toEqual({ id, text: 'Title\none' })
+    const node = getNodeOrThrow(graph, id)
+    expect(node.textParagraphs).toEqual([
+      { listType: 'NONE', indentation: 0 },
+      { listType: 'UNORDERED', indentation: 1 }
+    ])
+    // The heading carries its size too, so it and the bold item are ranges of their own.
+    expect(node.styleRuns.map((run) => [run.start, run.length, run.style.fontWeight])).toEqual([
+      [0, 6, 700],
+      [6, 3, 700]
+    ])
+  })
+
   test('applies font style to text range and survives serialization', async () => {
     const { figma, graph } = setupToolTest()
     const created = getTool('create_shape').execute(figma, {

@@ -22,6 +22,7 @@ import {
   buttonSet,
   checkboxSet,
   componentSet,
+  invalidCheckboxSet,
   switchSet,
   tabsComponent,
   textFieldSet,
@@ -235,6 +236,20 @@ describe('state stylesheet', () => {
     )
   })
 
+  test('a state property that draws invalid shows it over focus, and disabled over it', async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(invalidCheckboxSet()))).css)
+    const border = (selector: string) => rules.get(selector)?.border
+    expect(border('.checkbox[data-invalid]:not([data-disabled])')).toBe('1px solid #DB2626')
+    // One value of the property shows at a time: an invalid checkbox keeps its look in focus.
+    expect(border('.checkbox:focus-visible:not([data-invalid])')).toBe('1px solid #B8C4D6')
+    expect(rules.get('.checkbox[data-disabled]')).toEqual({ opacity: '0.5' })
+  })
+
+  test('an invalid boolean is shown on its own, combined with any other state', async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(textFieldSet({ invalid: true })))).css)
+    expect(rules.get('.email[data-invalid]')?.border).toBe('1px solid #DB2626')
+  })
+
   test("shows a field's filled look while its input or textarea has words", async () => {
     const rules = cssRules((await stateStylesToCSS(styles(textFieldSet()))).css)
     const filled = [...rules].filter(([selector]) =>
@@ -317,6 +332,23 @@ describe('state Tailwind', () => {
       declaring('background-color', (selector) =>
         selector.endsWith('[data-state="checked"]:not([data-disabled]):hover')
       )
+    ).toHaveLength(1)
+  })
+
+  test('writes invalid variants that Tailwind compiles to the same selectors', async () => {
+    const document = stateStylesToTailwind(styles(invalidCheckboxSet()))
+    const [root] = elements(document.children[0] ?? { type: 'text', text: '' })
+    const classes = root?.attrs.class.split(' ') ?? []
+    const rules = compiledRules(await compileTailwindCSS(classes))
+    const borders = rules
+      .filter(([, body]) => body.startsWith('border-color:'))
+      .map(([selector]) => selector)
+    // Disabled wins over invalid, and focus leaves an invalid root as it is.
+    expect(
+      borders.filter((selector) => selector.endsWith(':not([data-disabled])[data-invalid]'))
+    ).toHaveLength(1)
+    expect(
+      borders.filter((selector) => selector.endsWith(':not([data-invalid]):focus-visible'))
     ).toHaveLength(1)
   })
 })

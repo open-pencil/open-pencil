@@ -1,3 +1,4 @@
+export { CSS_BLEND_MODE } from './blend'
 export { parseCSSGridTracks } from './grid'
 export {
   parseCSSAlignItems,

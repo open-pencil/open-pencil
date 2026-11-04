@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalone'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
 
 beforeAll(() => registerTestFont())
 
@@ -90,21 +91,19 @@ describe('text lists', () => {
       "in getRangeListOptions: Empty range selected. 'end' must be greater than 'start'"
     )
     expect(() => text.getRangeListOptions(-1, 2)).toThrow(
-      'in getRangeListOptions: Property "start" failed validation: Number must be greater than or equal to 0'
+      'in getRangeListOptions: Property "start" failed validation: Too small: expected number to be >=0'
     )
     expect(() => text.getRangeListOptions(0, 99)).toThrow(
       'in getRangeListOptions: Range outside of available characters.'
     )
     expect(() =>
       text.setRangeListOptions(0, 1, { type: 'BULLET' as TextListOptions['type'] })
-    ).toThrow("Expected 'NONE' | 'ORDERED' | 'UNORDERED', received 'BULLET' at .type")
-    expect(() => text.setRangeIndentation(6, 8, -1)).toThrow(
-      'Number must be greater than or equal to 0'
+    ).toThrow(
+      'in setRangeListOptions: Property "options" failed validation: Invalid option: expected one of "NONE"|"ORDERED"|"UNORDERED" at .type'
     )
-    expect(() => text.setRangeIndentation(3, 5, 2.5)).toThrow('Expected integer, received float')
-    expect(() => text.setRangeIndentation(0, 2, 9)).toThrow(
-      'Number must be less than or equal to 5'
-    )
+    expect(() => text.setRangeIndentation(6, 8, -1)).toThrow('Too small: expected number to be >=0')
+    expect(() => text.setRangeIndentation(3, 5, 2.5)).toThrow('Expected int, received number')
+    expect(() => text.setRangeIndentation(0, 2, 9)).toThrow('Too big: expected number to be <=5')
   })
 
   test('sets list and paragraph spacing, indent, and hanging markers', () => {
@@ -128,7 +127,7 @@ describe('text lists', () => {
     expect(() => {
       text.listSpacing = -3
     }).toThrow(
-      'in set_listSpacing: Property "listSpacing" failed validation: Number must be greater than or equal to 0'
+      'in set_listSpacing: Property "listSpacing" failed validation: Too small: expected number to be >=0'
     )
   })
 })

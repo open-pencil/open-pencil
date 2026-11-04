@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string">
 import { tv } from 'tailwind-variants'
 
+import { useCloseToolbarMenu } from '@/components/figjam/toolbar/menu'
 import theme from '@/theme/figjam/swatches'
 
 /** A swatch for one colour of a palette, as sticky notes and shapes pick theirs. */
@@ -14,14 +15,33 @@ export interface Swatch<T extends string> {
  * A palette as a row of round swatches, eleven to a line as in FigJam's colour menus, and,
  * when `none` is given, a last swatch for no colour at all.
  */
-const { label, swatches, selected, none } = defineProps<{
+const {
+  label,
+  swatches,
+  selected,
+  none,
+  keepsMenuOpen = false
+} = defineProps<{
   label: string
   swatches: Swatch<T>[]
   selected: T | null
   none?: { label: string; active: boolean }
+  /** Whether a pick leaves the toolbar menu open, as a line menu's palette does in FigJam. */
+  keepsMenuOpen?: boolean
 }>()
 const emit = defineEmits<{ select: [value: T]; none: [] }>()
 const styles = tv(theme)
+const closeMenu = useCloseToolbarMenu()
+
+function pick(value: T) {
+  emit('select', value)
+  if (!keepsMenuOpen) closeMenu()
+}
+
+function pickNone() {
+  emit('none')
+  if (!keepsMenuOpen) closeMenu()
+}
 </script>
 
 <template>
@@ -36,7 +56,7 @@ const styles = tv(theme)
       :data-swatch="swatch.value"
       :class="styles({ active: !none?.active && swatch.value === selected }).swatch()"
       :style="{ backgroundColor: swatch.hex }"
-      @click="emit('select', swatch.value)"
+      @click="pick(swatch.value)"
     />
     <button
       v-if="none"
@@ -46,7 +66,7 @@ const styles = tv(theme)
       :aria-label="none.label"
       data-swatch="none"
       :class="styles({ active: none.active }).swatch({ class: styles().none() })"
-      @click="emit('none')"
+      @click="pickNone"
     >
       <icon-lucide-ban class="size-3.5" />
     </button>

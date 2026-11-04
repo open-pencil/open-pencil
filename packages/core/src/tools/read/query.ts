@@ -24,6 +24,8 @@ Examples:
     limit: v.optional(toolNumber(v.pipe(v.number(), v.description('Max results (default: 1000)'))))
   }),
   execute: async (figma, args) => {
+    if (args.page !== undefined)
+      await figma.root.children.find((page) => page.name === args.page)?.loadAsync()
     try {
       const nodes = await queryByXPath(figma.graph, args.selector, {
         page: args.page ?? figma.currentPage.name,

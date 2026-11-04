@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+
 import {
   createIconProvider,
   createSFSymbolsProvider,
@@ -8,15 +10,10 @@ import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
-async function invoke(command: string, args?: Record<string, unknown>): Promise<string | null> {
-  const { invoke } = await import('@tauri-apps/api/core')
-  return invoke<string | null>(command, args)
-}
-
 /** SF Symbols, drawn by the desktop app, which offers them only on a Mac that can draw them. */
 const sfSymbols = createSFSymbolsProvider({
-  catalogue: () => invoke('sf_symbols_catalogue'),
-  render: (request) => invoke('sf_symbols_render', { request })
+  catalogue: () => invoke<string | null>('sf_symbols_catalogue'),
+  render: (request) => invoke<string | null>('sf_symbols_render', { request })
 })
 
 /**

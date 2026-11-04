@@ -1,3 +1,5 @@
+import { defaultWindow, useEventListener } from '@vueuse/core'
+
 import {
   createRelayServerAssembler,
   decodeRelayServerFrame,
@@ -37,6 +39,8 @@ export type CloudRelayOptions = {
    */
   onRefused?: () => void
   createSocket?: (url: string) => WebSocket
+  /** Where the page's `pagehide` and `pageshow` arrive; the window by default. */
+  page?: Window
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
   reconnectDelayMs?: (attempt: number) => number
   onError?: (message: string, error: unknown) => void
@@ -79,6 +83,11 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   let left = false
   /** Set once the relay or a ticket says the document was restored, which ends the room once. */
   let ended = false
+  /**
+   * Set while the page is hidden. A page the browser keeps for Back and Forward would otherwise
+   * keep its socket, holding its place in the room long after the person left.
+   */
+  let suspended = false
   let attempt = 0
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let ticketExpiresAt = 0
@@ -92,9 +101,11 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   }
 
   async function refresh() {
+    // A refresh outlived by its socket, which a hidden page also gives up, speaks for nobody.
+    const owner = socket
     try {
       const next = await options.ticket(roomId)
-      if (left) return
+      if (left || socket !== owner) return
       if (!next) {
         restored()
         return
@@ -104,7 +115,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     } catch (error) {
       report('Refreshing the collaboration ticket failed:', error)
       // Try again while the current ticket still holds, rather than wait for the relay to drop us.
-      if (!left && ticketExpiresAt - Date.now() > MINIMUM_REFRESH_MS) {
+      if (!left && socket === owner && ticketExpiresAt - Date.now() > MINIMUM_REFRESH_MS) {
         refreshTimer = setTimeout(() => void refresh(), MINIMUM_REFRESH_MS)
       }
     }
@@ -154,7 +165,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   }
 
   function reconnect() {
-    if (left) return
+    if (left || suspended) return
     reconnectTimer = setTimeout(() => void connect(), reconnectDelay(attempt))
     attempt += 1
   }
@@ -182,7 +193,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       reconnect()
       return
     }
-    if (left) return
+    if (left || suspended) return
     if (!ticket) {
       restored()
       return
@@ -229,6 +240,35 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     })
   }
 
+  /** Leaves the room while the page is hidden, without giving it up. */
+  function suspend() {
+    if (left || ended || suspended) return
+    suspended = true
+    clearTimeout(refreshTimer)
+    clearTimeout(reconnectTimer)
+    const current = socket
+    socket = null
+    current?.close(1000, 'The page was hidden')
+    forgetPeers()
+  }
+
+  /** Joins again once the browser shows the page it kept. */
+  function resume() {
+    if (!suspended) return
+    suspended = false
+    if (left || ended) return
+    attempt = 0
+    void connect()
+  }
+
+  const page = options.page ?? defaultWindow
+  const stopListening = [
+    useEventListener(page, 'pagehide', suspend),
+    useEventListener(page, 'pageshow', (event: PageTransitionEvent) => {
+      if (event.persisted) resume()
+    })
+  ]
+
   void connect()
 
   return {
@@ -246,6 +286,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     async leave() {
       if (left) return
       left = true
+      for (const stop of stopListening) stop()
       clearTimeout(refreshTimer)
       clearTimeout(reconnectTimer)
       actions.clear()

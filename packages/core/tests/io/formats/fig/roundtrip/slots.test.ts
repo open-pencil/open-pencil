@@ -4,7 +4,9 @@ import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
+import type { GUID } from '@open-pencil/kiwi/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
@@ -60,11 +62,45 @@ describe('slots round trip', () => {
   test('slot properties are written as SLOT definitions with their settings', () => {
     const definitions = records.flatMap((record) => (record as SlotRecord).componentPropDefs ?? [])
     const slots = definitions.filter((definition) => definition.type === 'SLOT')
-    // Card empty slot, Card default content, List, Panel, and Panel's two variants. Figma
-    // links a variant's definition to the set's through `parentPropDefId`; the exporter
-    // writes every variant definition in full, as it does for the other property types.
-    expect(slots).toHaveLength(6)
+    // Card empty slot, Card default content, List, and Panel.
+    expect(slots).toHaveLength(4)
     expect(slots.filter((definition) => definition.slotPropConfig)).toHaveLength(1)
+  })
+
+  // As Figma saves a set: each variant copies the set's slot under an id of its own, linked by
+  // `parentPropDefId`, its slot frame binds the copy, and an instance assigns its variant's copy.
+  test("each of a set's variants links its own copy of the set's slot", () => {
+    const id = (guid: unknown) => (guid ? guidToString(guid as GUID) : null)
+    const byId = new Map(records.map((record) => [id(record.guid), record]))
+    const set = records.find((record) => record.name === 'Panel' && record.isStateGroup)
+    const content = (set as SlotRecord | undefined)?.componentPropDefs?.find(
+      (definition) => definition.type === 'SLOT'
+    ) as { id?: GUID } | undefined
+    const variants = records.filter(
+      (record) => record.type === 'SYMBOL' && id(record.parentIndex?.guid) === id(set?.guid)
+    )
+    expect(variants).toHaveLength(2)
+    const copies = variants.map((variant) => {
+      const [copy] = (variant.componentPropDefs ?? []) as { id?: GUID; parentPropDefId?: GUID }[]
+      expect(id(copy?.parentPropDefId)).toBe(id(content?.id))
+      return id(copy?.id)
+    })
+    expect(new Set(copies).size).toBe(2)
+    for (const record of records) {
+      const binding = (record as SlotRecord).parameterConsumptionMap?.entries?.find(
+        (entry) => entry.variableField === 'SLOT_CONTENT_ID'
+      ) as { variableData?: { value?: { propRefValue?: { defId?: GUID } } } } | undefined
+      const variant = variants.find((item) => id(item.guid) === id(record.parentIndex?.guid))
+      if (binding && variant)
+        expect(id(binding.variableData?.value?.propRefValue?.defId)).toBe(
+          copies[variants.indexOf(variant)]
+        )
+      if (record.type !== 'INSTANCE') continue
+      const main = byId.get(id(record.symbolData?.symbolID))
+      if (!main || !variants.includes(main)) continue
+      const [assignment] = (record.componentPropAssignments ?? []) as { defID?: GUID }[]
+      expect(id(assignment?.defID)).toBe(copies[variants.indexOf(main)])
+    }
   })
 
   test('slot frames are bound through the parameter map', () => {

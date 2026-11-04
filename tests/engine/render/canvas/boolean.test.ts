@@ -17,6 +17,7 @@ async function createRenderer(): Promise<SkiaRenderer> {
   const ck = await initCanvasKit()
   const renderer = {
     ck,
+    nodePaths: new NodePathCaches(),
     makeNodeShapePath(node) {
       return makeNodeShapePath(asRenderer(this), node)
     },
@@ -31,8 +32,7 @@ async function createRenderer(): Promise<SkiaRenderer> {
     },
     getFillGeometry() {
       return null
-    },
-    nodePaths: new NodePathCaches()
+    }
   } satisfies Partial<SkiaRenderer>
   return asRenderer(renderer)
 }

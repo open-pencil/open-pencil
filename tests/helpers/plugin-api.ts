@@ -1,3 +1,5 @@
+import type { PageNode, SolidPaint } from '@figma/plugin-typings/plugin-api-standalone'
+
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -10,11 +12,14 @@ export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
 }
 
+function isPageNode(node: FigmaNodeProxy): node is FigmaNodeProxy & PageNode {
+  return node.type === 'PAGE'
+}
+
 /** Names `api.currentPage` as a page, which the boolean-operation entry points require. */
-export function asPageNode(
-  page: FigmaNodeProxy & { selection: FigmaNodeProxy[] }
-): FigmaNodeProxy & PageNode {
-  return page as FigmaNodeProxy & PageNode
+export function asPageNode(page: FigmaNodeProxy): FigmaNodeProxy & PageNode {
+  if (!isPageNode(page)) throw new Error(`Expected a page, got ${page.type}`)
+  return page
 }
 
 /** A solid paint both the scene graph and the plugin API take: it carries no transform. */

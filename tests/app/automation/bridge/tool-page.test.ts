@@ -25,11 +25,19 @@ afterEach(() => {
 })
 
 /** A `.fig` opened like the app does: only the first page has its layers. */
-async function storeWithUnshownPage(): Promise<{ store: EditorStore; pageId: string }> {
+async function storeWithUnshownPage(): Promise<{
+  store: EditorStore
+  pageId: string
+  frameId: string
+}> {
   const source = new SceneGraph()
   source.createNode('FRAME', source.getPages()[0].id, { name: 'First frame' })
   const second = source.addPage('Second')
-  source.createNode('FRAME', second.id, { name: 'Second frame', width: 70, height: 35 })
+  const frame = source.createNode('FRAME', second.id, {
+    name: 'Second frame',
+    width: 70,
+    height: 35
+  })
   const written = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', source)
   const bytes = written.data as Uint8Array
   const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
@@ -38,7 +46,7 @@ async function storeWithUnshownPage(): Promise<{ store: EditorStore; pageId: str
   const page = graph.getPages().find((p) => p.name === 'Second')
   if (!page) throw new Error('Missing second page')
   expect(graph.getChildren(page.id)).toHaveLength(0)
-  return { store, pageId: page.id }
+  return { store, pageId: page.id, frameId: frame.id }
 }
 
 function target(store: EditorStore, pageId: string): AutomationTarget {
@@ -52,6 +60,31 @@ function target(store: EditorStore, pageId: string): AutomationTarget {
 }
 
 describe('automation tools on a page that has not been shown', () => {
+  test('a layer named by its ID loads its page, as in Figma', async () => {
+    const { store, pageId, frameId } = await storeWithUnshownPage()
+    const shown = store.state.currentPageId
+
+    const response = (await handleTargetCommand(target(store, shown), 'tool', {
+      name: 'get_node',
+      args: { id: frameId, depth: 0 }
+    })) as { result: { name: string } }
+
+    expect(response.result.name).toBe('Second frame')
+    expect(store.graph.getChildren(pageId)).toHaveLength(1)
+    expect(store.state.currentPageId).toBe(shown)
+  })
+
+  test('get_page_tree rooted at a layer there loads its page', async () => {
+    const { store, frameId } = await storeWithUnshownPage()
+
+    const response = (await handleTargetCommand(target(store, store.state.currentPageId), 'tool', {
+      name: 'get_page_tree',
+      args: { root_id: frameId }
+    })) as { result: { root: string; tree: { name: string } } }
+
+    expect(response.result).toMatchObject({ root: frameId, tree: { name: 'Second frame' } })
+  })
+
   test('find_nodes sees the layers of the target page', async () => {
     const { store, pageId } = await storeWithUnshownPage()
     const shown = store.state.currentPageId

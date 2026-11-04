@@ -207,7 +207,7 @@ async function publish() {
               <icon-lucide-component v-else class="size-4" />
             </div>
             <span class="min-w-0 flex-1 truncate text-xs">{{ change.asset.name }}</span>
-            <span class="text-[10px] text-muted">{{ changeLabels[change.kind] }}</span>
+            <span class="text-3xs text-muted">{{ changeLabels[change.kind] }}</span>
           </label>
         </div>
       </div>

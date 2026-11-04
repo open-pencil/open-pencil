@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 
 import {
+  assertProxyEditable,
   nodeId,
   raw,
   strokeOwner,
@@ -10,6 +11,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import {
+  setDashPattern,
   setIndependentStrokeWeight,
   setStrokeAlign,
   setStrokeWeight
@@ -31,6 +33,7 @@ function independentWeight(internals: NodeProxyInternals, field: IndependentWeig
       return raw(this, internals)[field]
     },
     set(this: ProxyThis, value: number) {
+      assertProxyEditable(this, internals)
       setIndependentStrokeWeight(graph(this, internals), nodeId(this, internals), field, value)
     }
   }
@@ -47,6 +50,7 @@ export function installStrokeNodeProxyAccessors(
         return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).weight
       },
       set(this: ProxyThis, value: number) {
+        assertProxyEditable(strokeOwner(this, internals), internals)
         setStrokeWeight(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
@@ -55,6 +59,7 @@ export function installStrokeNodeProxyAccessors(
         return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).align
       },
       set(this: ProxyThis, value: SceneNode['strokeAlign']) {
+        assertProxyEditable(strokeOwner(this, internals), internals)
         setStrokeAlign(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
@@ -63,7 +68,8 @@ export function installStrokeNodeProxyAccessors(
         return Object.freeze([...raw(strokeOwner(this, internals), internals).dashPattern])
       },
       set(this: ProxyThis, value: readonly number[]) {
-        updateNode(strokeOwner(this, internals), internals, { dashPattern: [...value] })
+        assertProxyEditable(strokeOwner(this, internals), internals)
+        setDashPattern(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeCap: {

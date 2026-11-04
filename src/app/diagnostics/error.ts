@@ -36,7 +36,7 @@ const MAX_STACK_LENGTH = 4000
  * AI SDK and provider errors (`AI_APICallError`, `AI_InvalidPromptError`, …) and errors that
  * carry a response can quote prompts, responses, or request URLs in their message.
  */
-function mayQuoteContent(error: Error): boolean {
+export function mayQuoteContent(error: Error): boolean {
   return error.name.startsWith('AI_') || 'responseBody' in error || 'requestBodyValues' in error
 }
 

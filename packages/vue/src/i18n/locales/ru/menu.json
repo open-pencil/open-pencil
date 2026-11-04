@@ -42,6 +42,7 @@
   "pasteToReplace": "Вставить для замены",
   "copyProperties": "Копировать свойства",
   "pasteProperties": "Вставить свойства",
+  "pasteAsLayers": "Вставить как слои",
   "copyPasteAs": "Копировать/Вставить как",
   "copyAsText": "Копировать как текст",
   "copyAsSVG": "Копировать как SVG",
@@ -87,5 +88,7 @@
   "togglePreview": "Просмотр",
   "saveTo": "Сохранить в…",
   "showVersionHistory": "Показать историю версий",
-  "saveToVersionHistory": "Сохранить в историю версий…"
+  "saveToVersionHistory": "Сохранить в историю версий…",
+  "reportProblem": "Сообщить о проблеме…",
+  "supportOpenPencil": "Поддержать OpenPencil…"
 }

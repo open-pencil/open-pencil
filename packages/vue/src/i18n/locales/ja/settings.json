@@ -1,4 +1,6 @@
 {
+  "interfaceScale": "インターフェースのサイズ",
+  "interfaceScaleDescription": "キャンバスのズームを変更せずに、パネル、テキスト、コントロールのサイズを調整します。",
   "recentFiles": "最近使ったファイル",
   "recentFilesDescription": "最近使ったファイルの一覧とメニューに保持するファイル数を選択します。",
   "recentFilesLimit": "最近使ったファイルの数",
@@ -64,7 +66,6 @@
   "toolbarMoveDown": "下へ移動",
   "toolbarGroupWith": "{tool}とまとめる",
   "toolbarUngroup": "グループ解除",
-  "toolbarReset": "デフォルトに戻す",
   "resetToDefault": "デフォルトに戻す",
   "customizeToolbar": "ツールバーをカスタマイズ…",
   "discardChanges": "変更を破棄しますか？",
