@@ -69,6 +69,7 @@ export function releaseWebGLContext(
 
 /** A canvas's inline size and margins. */
 type PinnedStyle = Pick<CSSStyleDeclaration, 'width' | 'height' | 'marginLeft' | 'marginTop'>
+const PINNED_PROPERTIES = ['width', 'height', 'marginLeft', 'marginTop'] as const
 /** Per canvas: the inline style its owner set, and the style sizeCanvas last wrote over it. */
 const pinnedStyles = new WeakMap<HTMLCanvasElement, { own: PinnedStyle; written: PinnedStyle }>()
 
@@ -77,23 +78,20 @@ function inlineStyle(canvas: HTMLCanvasElement): PinnedStyle {
   return { width, height, marginLeft, marginTop }
 }
 
-function samePinnedStyle(a: PinnedStyle, b: PinnedStyle): boolean {
-  return (
-    a.width === b.width &&
-    a.height === b.height &&
-    a.marginLeft === b.marginLeft &&
-    a.marginTop === b.marginTop
-  )
-}
-
 /**
- * Puts back the inline style the canvas's owner set, so the page's own sizing is measured. A style
- * that differs from what sizeCanvas last wrote was set by the owner since, and becomes theirs.
+ * Puts back the inline style the canvas's owner set, so the page's own sizing is measured. A
+ * property that differs from what sizeCanvas last wrote was set by the owner since, and becomes
+ * theirs; the others keep the owner's earlier value.
  */
 function restoreOwnStyle(canvas: HTMLCanvasElement): void {
   const current = inlineStyle(canvas)
   const pinned = pinnedStyles.get(canvas)
-  const own = pinned && samePinnedStyle(current, pinned.written) ? pinned.own : current
+  const own = { ...current }
+  if (pinned) {
+    for (const property of PINNED_PROPERTIES) {
+      if (current[property] === pinned.written[property]) own[property] = pinned.own[property]
+    }
+  }
   pinnedStyles.set(canvas, { own, written: current })
   Object.assign(canvas.style, own)
 }
@@ -105,12 +103,14 @@ function rememberWrittenStyle(canvas: HTMLCanvasElement): void {
 }
 
 /**
- * Sizes the canvas bitmap to the box the page's CSS gives it, pinned to whole CSS pixels as Figma
- * pins its canvas. A panel sized in percent leaves the box at a fraction of a pixel, and the
- * browser shows a canvas at whole pixels, so its bitmap was stretched by one device pixel across
- * the width, softening every line. The canvas moves under a pixel to the nearest whole one;
- * pointers map from its box, so they follow. Under a transform, where no snap holds, the canvas
- * takes its layout size rounded and stays where it is.
+ * Sizes the canvas bitmap to the content box the page's CSS gives it, pinned to whole CSS pixels
+ * as Figma pins its canvas. A panel sized in percent leaves the box at a fraction of a pixel, and
+ * the browser shows a canvas at whole pixels, so its bitmap was stretched by one device pixel
+ * across the width, softening every line. The canvas moves under a pixel to the nearest whole
+ * one through its margins; pointers map from its box, so they follow. Under a transform, where no
+ * snap holds, the canvas takes its layout size rounded and stays where it is. A flex container
+ * that centres the canvas moves it by half a margin change, so there the snap can stay a quarter
+ * pixel off.
  */
 export function sizeCanvas(
   canvas: HTMLCanvasElement,
@@ -121,25 +121,44 @@ export function sizeCanvas(
   restoreOwnStyle(canvas)
   const box = canvas.getBoundingClientRect()
   const layout = getComputedStyle(canvas)
-  const layoutWidth = Number.parseFloat(layout.width) || box.width
-  const layoutHeight = Number.parseFloat(layout.height) || box.height
+  const px = (value: string) => Number.parseFloat(value) || 0
+  // Border and padding sit outside the bitmap, which fills the content box.
+  const inset = {
+    left: px(layout.borderLeftWidth) + px(layout.paddingLeft),
+    right: px(layout.borderRightWidth) + px(layout.paddingRight),
+    top: px(layout.borderTopWidth) + px(layout.paddingTop),
+    bottom: px(layout.borderBottomWidth) + px(layout.paddingBottom)
+  }
+  const borderBox = layout.boxSizing === 'border-box'
+  const outerWidth = (px(layout.width) || box.width) + (borderBox ? 0 : inset.left + inset.right)
+  const outerHeight = (px(layout.height) || box.height) + (borderBox ? 0 : inset.top + inset.bottom)
   const transformed =
-    Math.abs(layoutWidth - box.width) > 0.01 || Math.abs(layoutHeight - box.height) > 0.01
-  const left = transformed ? box.left : Math.round(box.left)
-  const top = transformed ? box.top : Math.round(box.top)
-  const width = Math.max(1, transformed ? Math.round(layoutWidth) : Math.round(box.right) - left)
-  const height = Math.max(1, transformed ? Math.round(layoutHeight) : Math.round(box.bottom) - top)
+    Math.abs(outerWidth - box.width) > 0.01 || Math.abs(outerHeight - box.height) > 0.01
+  const contentLeft = box.left + inset.left
+  const contentTop = box.top + inset.top
+  const left = transformed ? contentLeft : Math.round(contentLeft)
+  const top = transformed ? contentTop : Math.round(contentTop)
+  const width = Math.max(
+    1,
+    transformed
+      ? Math.round(outerWidth - inset.left - inset.right)
+      : Math.round(box.right - inset.right) - left
+  )
+  const height = Math.max(
+    1,
+    transformed
+      ? Math.round(outerHeight - inset.top - inset.bottom)
+      : Math.round(box.bottom - inset.bottom) - top
+  )
   canvas.width = Math.round(width * dpr)
   canvas.height = Math.round(height * dpr)
-  canvas.style.width = `${width}px`
-  canvas.style.height = `${height}px`
+  canvas.style.width = `${borderBox ? width + inset.left + inset.right : width}px`
+  canvas.style.height = `${borderBox ? height + inset.top + inset.bottom : height}px`
   // The margins the page resolves, such as auto for a centred canvas, plus the snap. A translate
   // would leave the bitmap a fraction of a pixel off, which the browser smooths over.
   if (!transformed) {
-    const marginLeft = Number.parseFloat(layout.marginLeft) || 0
-    const marginTop = Number.parseFloat(layout.marginTop) || 0
-    canvas.style.marginLeft = `${marginLeft + left - box.left}px`
-    canvas.style.marginTop = `${marginTop + top - box.top}px`
+    canvas.style.marginLeft = `${px(layout.marginLeft) + left - contentLeft}px`
+    canvas.style.marginTop = `${px(layout.marginTop) + top - contentTop}px`
   }
   rememberWrittenStyle(canvas)
   if (onViewportResize) {
