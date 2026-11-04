@@ -506,4 +506,27 @@ describe('Cloud relay transport', () => {
       jest.useRealTimers()
     }
   })
+
+  test('gives up a socket whose relay still sends but no longer hears this peer', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'ada'] })
+      // Ada's edits keep arriving, but the pings never reach the relay.
+      socket.answersHeartbeat = false
+      for (let tick = 0; tick < 4; tick++) {
+        socket.receive({ type: 'join', peerId: `peer-${tick}` })
+        jest.advanceTimersByTime(10_000)
+      }
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toContain('server')
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })

@@ -210,8 +210,9 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     const next = createSocket(options.url)
     next.binaryType = 'arraybuffer'
     socket = next
-    // Anything from the relay answers; a socket that stopped speaking for this room stops asking,
-    // and one still connecting was asked nothing, so it owes no answer yet.
+    // Only the relay's pong answers: frames it still delivers do not show it hears this peer. A
+    // socket that stopped speaking for this room stops asking, and one still connecting was asked
+    // nothing, so it owes no answer yet.
     let answered = true
     const heartbeat = useIntervalFn(
       () => {
@@ -241,9 +242,11 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     )
     next.addEventListener('message', (event: MessageEvent<ArrayBuffer | string>) => {
       if (socket !== next) return
-      answered = true
       // The relay's only text is its heartbeat answer.
-      if (typeof event.data === 'string') return
+      if (typeof event.data === 'string') {
+        if (event.data === RELAY_HEARTBEAT.pong) answered = true
+        return
+      }
       const assembled = assembler.push(new Uint8Array(event.data))
       if (assembled.type === 'frame') handleFrame(assembled.data)
       else if (assembled.type !== 'partial') {
