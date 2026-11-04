@@ -11,5 +11,6 @@ export {
 export {
   createCollaborationStateStore,
   type CollaborationRoomIdentity,
-  type CollaborationStateStore
+  type CollaborationStateStore,
+  type SavedRoom
 } from './persistence'

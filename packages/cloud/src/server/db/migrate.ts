@@ -28,6 +28,7 @@ import * as accountActivity from './migrations/024_account_activity'
 import * as tableNames from './migrations/025_table_names'
 import * as userPicture from './migrations/026_user_picture'
 import * as documentKind from './migrations/027_document_kind'
+import * as collaborationUpdates from './migrations/028_collaboration_updates'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -57,7 +58,8 @@ const migrations: Record<string, Migration> = {
   '024_account_activity': accountActivity,
   '025_table_names': tableNames,
   '026_user_picture': userPicture,
-  '027_document_kind': documentKind
+  '027_document_kind': documentKind,
+  '028_collaboration_updates': collaborationUpdates
 }
 
 class CloudMigrationProvider implements MigrationProvider {

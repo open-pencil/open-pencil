@@ -14,6 +14,7 @@ import * as Y from 'yjs'
 
 import { authorizeRelayTicket, principalKey, type RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
+import { openRoomLog, type RoomLog } from './log'
 import type { CollaborationStateStore } from './persistence'
 
 /** One client's socket, as a runtime adapter hands it to the relay. */
@@ -51,6 +52,12 @@ export type CollaborationRelayOptions = {
   currentRoomEpoch?: (documentId: string) => Promise<number | null>
   /** How long after a change the room's document is saved. */
   persistDelayMs?: number
+  /**
+   * How many logged updates, or how many of their bytes, a room saves before it writes a fresh
+   * snapshot in their place; a closing room always does.
+   */
+  compactAfterUpdates?: number
+  compactAfterBytes?: number
   /** How long a room whose last save failed waits before saving again. */
   persistRetryMs?: number
   /** How long a socket may stay open without presenting a ticket. */
@@ -75,6 +82,7 @@ type Room = {
   document: Y.Doc
   peers: Map<string, Peer>
   persistTimer: ReturnType<typeof setTimeout> | null
+  log: RoomLog
 }
 
 export type CollaborationRelay = ReturnType<typeof createCollaborationRelay>
@@ -93,6 +101,10 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   let shuttingDown = false
   const persistDelayMs = options.persistDelayMs ?? 2_000
   const persistRetryMs = options.persistRetryMs ?? 30_000
+  const logLimits = {
+    updates: options.compactAfterUpdates ?? 500,
+    bytes: options.compactAfterBytes ?? 4 * 1024 * 1024
+  }
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
   const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
 
@@ -117,15 +129,14 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       await closing.get(authorization.roomId)
       const kept = rooms.get(authorization.roomId)
       if (kept) return kept
-      const document = new Y.Doc()
-      const state = await options.store.load(identity)
-      if (state) Y.applyUpdate(document, state)
+      const { document, log } = await openRoomLog(options.store, identity, logLimits)
       const room: Room = {
         id: authorization.roomId,
         identity,
         document,
         peers: new Map(),
-        persistTimer: null
+        persistTimer: null,
+        log
       }
       document.on('update', () => schedulePersist(room))
       rooms.set(room.id, room)
@@ -139,15 +150,20 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
   }
 
-  /** Saves the room's document; false when the store refused it. */
-  async function persist(room: Room): Promise<boolean> {
+  /** Saves what changed in the room since its last save; false when the store refused it. */
+  async function persist(room: Room, closing = false): Promise<boolean> {
     if (room.persistTimer) clearTimeout(room.persistTimer)
     room.persistTimer = null
     try {
-      await options.store.store(room.identity, Y.encodeStateAsUpdate(room.document))
+      await room.log.save({ closing })
       return true
     } catch (error) {
       report('Saving a collaboration room failed:', error)
+      // The room holds edits the store doesn't have; save again without waiting for another edit.
+      // A closing room retries through `saveAndClose`.
+      if (!closing && rooms.get(room.id) === room) {
+        room.persistTimer ??= setTimeout(() => void persist(room), persistRetryMs)
+      }
       return false
     }
   }
@@ -311,7 +327,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   async function saveAndClose(room: Room) {
-    if ((await persist(room)) || shuttingDown) {
+    if ((await persist(room, true)) || shuttingDown) {
       room.document.destroy()
       return
     }

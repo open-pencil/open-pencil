@@ -96,7 +96,7 @@ describe('collaboration through the Cloud relay', () => {
 
   test('viewers receive edits but their own never reach anyone', async () => {
     const relay = await startRelay()
-    const { states } = relay
+    const { rooms } = relay
     const editor = joinAs(relay, 'Editor', 'edit')
     const viewer = joinAs(relay, 'Viewer', 'view')
     await until(
@@ -110,9 +110,12 @@ describe('collaboration through the Cloud relay', () => {
     expect(editor.text()).toBe('kept')
     await editor.leave()
     await viewer.leave()
-    await until(() => states.size > 0)
+    await until(() => [...rooms.values()].some((room) => room.snapshot !== null))
     const saved = new Y.Doc()
-    Y.applyUpdate(saved, [...states.values()][0] ?? new Uint8Array())
+    for (const room of rooms.values()) {
+      if (room.snapshot) Y.applyUpdate(saved, room.snapshot)
+      for (const update of room.updates) Y.applyUpdate(saved, update)
+    }
     expect(saved.getText('t').toString()).toBe('kept')
   })
 
