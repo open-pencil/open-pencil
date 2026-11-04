@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { measureTextNode } from '#core/canvas/text'
 import { buildParagraph } from '#core/canvas/text/layout/build'
