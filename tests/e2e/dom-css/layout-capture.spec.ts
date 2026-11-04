@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import {
   createHeadlessCSSRuntime,
   type DesignDocument,
@@ -5,14 +7,17 @@ import {
   type DesignNode
 } from '@open-pencil/dom-css'
 
-import { browserRuntimeComputeStyles } from '#tests/helpers/dom-css-browser'
+import { browserImportedLayers, browserRuntimeComputeStyles } from '#tests/helpers/dom-css-browser'
+import { testPath } from '#tests/helpers/paths'
 
 import { expect, test } from '../fixtures'
 
 const VIEWPORT = { width: 800, height: 600 }
 
 function elements(nodes: readonly DesignNode[]): DesignElement[] {
-  return nodes.flatMap((node) => (node.type === 'element' ? [node, ...elements(node.children)] : []))
+  return nodes.flatMap((node) =>
+    node.type === 'element' ? [node, ...elements(node.children)] : []
+  )
 }
 
 function byId(document: DesignDocument, id: string): DesignElement {
@@ -21,9 +26,16 @@ function byId(document: DesignDocument, id: string): DesignElement {
   return element
 }
 
-function captured(page: Parameters<typeof browserRuntimeComputeStyles>[0], html: string, css: string) {
+function captured(
+  page: Parameters<typeof browserRuntimeComputeStyles>[0],
+  html: string,
+  css: string
+) {
   const document = createHeadlessCSSRuntime().parseHTML(html)
-  return browserRuntimeComputeStyles(page, document, css, 'iframe', { layout: true, viewport: VIEWPORT })
+  return browserRuntimeComputeStyles(page, document, css, 'iframe', {
+    layout: true,
+    viewport: VIEWPORT
+  })
 }
 
 test.describe('@open-pencil/dom-css browser layout capture', () => {
@@ -96,5 +108,40 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     const computed = await browserRuntimeComputeStyles(page, document, '', 'iframe')
 
     expect(byId(computed, 'plain').layout).toBeUndefined()
+  })
+})
+
+test.describe('HTML import from the browser layout', () => {
+  const landing = readFileSync(testPath('fixtures', 'dom-css', 'landing.html'), 'utf8')
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 600, height: 800 }
+  ]) {
+    test(`puts each element's layer where the browser laid it out at ${viewport.width}px`, async ({
+      page
+    }) => {
+      const layers = await browserImportedLayers(page, landing, viewport)
+
+      expect(layers.map((layer) => layer.id)).toEqual(
+        expect.arrayContaining(['nav', 'hero', 'title', 'cta', 'art', 'cards', 'media', 'card-3'])
+      )
+      for (const { id, captured, layer } of layers) {
+        for (const key of ['x', 'y', 'width', 'height'] as const) {
+          expect(Math.abs(layer[key] - captured[key]), `${id} ${key}`).toBeLessThanOrEqual(1)
+        }
+      }
+    })
+  }
+
+  test('follows the page’s media queries at the import viewport', async ({ page }) => {
+    const wide = await browserImportedLayers(page, landing, { width: 1280, height: 800 })
+    const narrow = await browserImportedLayers(page, landing, { width: 600, height: 800 })
+    const art = (layers: typeof wide) => layers.find((layer) => layer.id === 'art')?.layer
+    const copy = (layers: typeof wide) => layers.find((layer) => layer.id === 'copy')?.layer
+
+    // Two grid columns side by side when wide; one column, art below the copy, when narrow.
+    expect(art(wide)?.y).toBe(copy(wide)?.y)
+    expect(art(narrow)?.y).toBeGreaterThan((copy(narrow)?.y ?? 0) + (copy(narrow)?.height ?? 0))
   })
 })
