@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { imageStandIn } from './images'
+import { imageStandIn, rasterImageSize } from './images'
 import { captureSchema, requestsSchema, type HTMLEngineCapture } from './schema'
 
 /**
@@ -31,15 +31,49 @@ export interface HTMLEngineResource {
   bytes: Uint8Array
 }
 
-/** Fetches a stylesheet, font, or image the document refers to; null when it cannot. */
-export type HTMLEngineFetch = (url: string) => Promise<HTMLEngineResource | null>
+/**
+ * Fetches a stylesheet, font, or image the document refers to; null when it cannot. `signal`
+ * aborts when the request runs out of time, and the layout goes on without it.
+ */
+export type HTMLEngineFetch = (
+  url: string,
+  signal: AbortSignal
+) => Promise<HTMLEngineResource | null>
 
 export interface HTMLEngineLayoutOptions {
   /** The document's URL, which relative URLs in it resolve against. */
   baseURL?: string
+  /** In whole CSS pixels. */
   viewport: { width: number; height: number }
   /** Answers the document's requests; without one, every request fails. */
   fetch?: HTMLEngineFetch
+  /** How long one request may take before the layout goes on without it. */
+  requestTimeoutMs?: number
+}
+
+/**
+ * How long a request may take by default: as long as the browser runtime waits for an image, so
+ * one request that never ends cannot hold this layout, or the ones queued behind it, forever.
+ */
+const REQUEST_TIMEOUT_MS = 10_000
+
+/** The largest viewport side the module takes, as a signed 32-bit length. */
+const MAX_VIEWPORT = 0x7fffffff
+
+function checkViewport({ width, height }: HTMLEngineLayoutOptions['viewport']): void {
+  for (const side of [width, height]) {
+    if (!Number.isInteger(side) || side <= 0 || side > MAX_VIEWPORT) {
+      throw new RangeError(`The viewport needs whole positive pixel sizes, not ${width}×${height}`)
+    }
+  }
+}
+
+/** A fetch that gives up, answering null, once `signal` aborts. */
+function withDeadline<T>(request: Promise<T>, signal: AbortSignal): Promise<T | null> {
+  const expired = new Promise<null>((resolve) => {
+    signal.addEventListener('abort', () => resolve(null), { once: true })
+  })
+  return Promise.race([request.catch(() => null), expired])
 }
 
 /** Blitz's wasm-bindgen imports, which no capture calls: they trap with their name instead. */
@@ -66,6 +100,33 @@ function engineExports(exports: WebAssembly.Exports): EngineExports {
   return {
     ...(functions as Record<(typeof EXPORTS)[number], (...args: number[]) => number>),
     memory
+  }
+}
+
+/** The URL an image element's `src` resolves to, or null when it does not parse. */
+function imageURL(src: string, baseURL: string | undefined): string | null {
+  try {
+    return new URL(src, baseURL).href
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The engine lays raster images out from SVG stand-ins and reports them as SVG; `rasters` holds
+ * what each stood-in URL really was, which the capture reports instead.
+ */
+function restoreImageKinds(
+  capture: HTMLEngineCapture,
+  rasters: ReadonlyMap<string, string>,
+  baseURL: string | undefined
+): void {
+  for (const node of capture.nodes) {
+    const src = node.attrs?.src
+    if (node.image !== 'svg' || src === undefined) continue
+    const url = imageURL(src, baseURL)
+    const kind = url === null ? undefined : rasters.get(url)
+    if (kind) node.image = kind
   }
 }
 
@@ -149,21 +210,33 @@ export class HTMLEngine {
     return parsed.output
   }
 
-  async #answer(id: number, url: string, fetch: HTMLEngineFetch | undefined): Promise<void> {
-    const resource = await fetch?.(url).catch(() => null)
+  /**
+   * Answers one request, and returns what an image really was when the engine got a stand-in
+   * for it, keyed by the URLs it was asked for and fetched from.
+   */
+  async #answer(
+    id: number,
+    url: string,
+    options: HTMLEngineLayoutOptions
+  ): Promise<[string[], string] | null> {
+    const signal = AbortSignal.timeout(options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS)
+    const resource = options.fetch ? await withDeadline(options.fetch(url, signal), signal) : null
     if (!resource) {
       this.#exports.fail(id)
-      return
+      return null
     }
-    const bytes = imageStandIn(resource.bytes) ?? resource.bytes
+    const size = rasterImageSize(resource.bytes)
+    const bytes = size ? imageStandIn(size) : resource.bytes
     this.#withText(resource.url, (urlPointer, urlLength) =>
       this.#withBytes(bytes, (pointer, length) =>
         this.#exports.provide(id, urlPointer, urlLength, pointer, length)
       )
     )
+    return size ? [[url, resource.url], `raster ${size[0]}x${size[1]}`] : null
   }
 
   async #layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineCapture> {
+    checkViewport(options.viewport)
     const { width, height } = options.viewport
     this.#withText(html, (htmlPointer, htmlLength) =>
       this.#withText(options.baseURL ?? '', (urlPointer, urlLength) =>
@@ -171,14 +244,19 @@ export class HTMLEngine {
       )
     )
     // Answers can ask for more, such as a stylesheet's fonts, so pump until nothing is waiting.
+    const rasters = new Map<string, string>()
     for (let requests = this.#pump(); requests.length > 0; requests = this.#pump()) {
-      await Promise.all(requests.map(([id, url]) => this.#answer(id, url, options.fetch)))
+      const answers = await Promise.all(requests.map(([id, url]) => this.#answer(id, url, options)))
+      for (const [urls, kind] of answers.filter((answer) => answer !== null)) {
+        for (const key of urls) rasters.set(key, kind)
+      }
     }
     const parsed = v.safeParse(
       v.pipe(v.string(), v.parseJson(), captureSchema),
       this.#output(this.#exports.capture())
     )
     if (!parsed.success) throw new Error('The HTML engine captured a document in an unknown shape')
+    restoreImageKinds(parsed.output, rasters, options.baseURL)
     return parsed.output
   }
 

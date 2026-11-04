@@ -16,6 +16,9 @@ use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
+/// Those in `default_styles` are reported only when they differ from their initial value; the
+/// rest, such as `display`, `color`, sizes, and font properties, are always reported, since
+/// their initial values depend on the element or are inherited.
 const PROPERTIES: &[&str] = &[
     "display",
     "position",
@@ -170,15 +173,19 @@ pub fn font_add(bytes: &[u8], alias: Option<&str>) -> usize {
     let decoded = blitz_dom::decode_font_bytes(bytes).into_owned();
     let blob = Blob::new(Arc::new(decoded) as _);
     FONTS.with_borrow_mut(|ctx| {
-        let over = alias.map(|family| FontInfoOverride {
-            family_name: Some(family),
-            width: None,
-            style: None,
-            weight: None,
-            axes: None,
-        });
+        // An override replaces the family name, so the alias is a second registration.
+        if let Some(family) = alias {
+            let over = FontInfoOverride {
+                family_name: Some(family),
+                width: None,
+                style: None,
+                weight: None,
+                axes: None,
+            };
+            ctx.collection.register_fonts(blob.clone(), Some(over));
+        }
         ctx.collection
-            .register_fonts(blob, over)
+            .register_fonts(blob, None)
             .iter()
             .map(|(_, faces)| faces.len())
             .sum()
@@ -277,7 +284,7 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
     let mut out = Map::new();
     for property in PROPERTIES {
         let value = doc.resolved_style_value(node.id, property);
-        // Only what differs from the initial value; the host knows the initial values.
+        // A property with a fixed initial value is left out at it; the host knows them.
         if defaults.get(*property).is_some_and(|d| *d == value) {
             continue;
         }
@@ -455,7 +462,14 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
     let attrs: Map<String, Value> = el
         .attrs()
         .iter()
-        .map(|a| (a.name.local.to_string(), a.value.clone().into()))
+        .map(|a| {
+            // `xlink:href` and `href` are different attributes, so the prefix stays in the key.
+            let key = match &a.name.prefix {
+                Some(prefix) => format!("{prefix}:{}", a.name.local),
+                None => a.name.local.to_string(),
+            };
+            (key, a.value.clone().into())
+        })
         .collect();
     if !attrs.is_empty() {
         entry.insert("attrs".into(), Value::Object(attrs));

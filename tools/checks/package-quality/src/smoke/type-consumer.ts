@@ -34,7 +34,7 @@ declare const capture: HTMLEngineCapture
 void editorFactory; void editor; void designDocument; void color; void vector; void maybeNode
 void penDocument; void figDocument; void kiwiGuid; void FIG_PACKAGE_STATUS
 void FIG_KIWI_DEFAULT_VERSION; void buildFigKiwi; void parsePenFile; void htmlToDesignDocument
-void testIdSelector; void tree; void drawioFile; void flowchart; void loadHTMLEngine; void capture
+void testIdSelector; void tree; void drawioFile; void flowchart; void loadHTMLEngine; void capture.nodes[0]?.box
 `
 
 export async function verifyTypeConsumer(root: string, consumerDirectory: string): Promise<void> {

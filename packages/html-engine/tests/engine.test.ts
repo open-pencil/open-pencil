@@ -10,6 +10,34 @@ function boxOf(capture: HTMLEngineCapture, id: string) {
   return node.box
 }
 
+/** A baseline JPEG's start: an APP1 Exif segment with `orientation`, then a frame header. */
+function jpegHeader(width: number, height: number, orientation: number): Uint8Array {
+  const bytes = new Uint8Array(2 + 36 + 19)
+  const view = new DataView(bytes.buffer)
+  bytes.set([0xff, 0xd8])
+  // APP1: marker, length 34, "Exif\0\0", then a little-endian TIFF header and one IFD entry.
+  bytes.set([0xff, 0xe1], 2)
+  view.setUint16(4, 34)
+  bytes.set(
+    [...'Exif'].map((c) => c.charCodeAt(0)),
+    6
+  )
+  bytes.set([0x49, 0x49, 0x2a, 0x00], 12)
+  view.setUint32(16, 8, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 0x0112, true)
+  view.setUint16(24, 3, true)
+  view.setUint32(26, 1, true)
+  view.setUint16(30, orientation, true)
+  // SOF0: marker, length 17, precision, height, width.
+  bytes.set([0xff, 0xc0], 38)
+  view.setUint16(40, 17)
+  bytes[42] = 8
+  view.setUint16(43, height)
+  view.setUint16(45, width)
+  return bytes
+}
+
 /** A 1×1 PNG header claiming 640×480, which is all the engine reads of it. */
 function pngHeader(width: number, height: number): Uint8Array {
   const bytes = new Uint8Array(33)
@@ -78,6 +106,41 @@ describe('the HTML engine', () => {
     ])
     expect(boxOf(capture, 'box').slice(2)).toEqual([120, 40])
     expect(boxOf(capture, 'photo').slice(2)).toEqual([640, 480])
+    // Laid out from an SVG stand-in, but reported as what the page loaded.
+    expect(capture.nodes.find((node) => node.attrs?.id === 'photo')?.image).toBe('raster 640x480')
+  })
+
+  test('goes on without a request that never settles', async () => {
+    const engine = await loadHTMLEngine()
+    let aborted = false
+    const capture = await engine.layout(
+      '<link rel="stylesheet" href="slow.css"><div id="box" style="height:10px"></div>',
+      {
+        baseURL: 'https://example.com/',
+        viewport: VIEWPORT,
+        requestTimeoutMs: 20,
+        fetch: (_url, signal) =>
+          new Promise(() => {
+            signal.addEventListener('abort', () => {
+              aborted = true
+            })
+          })
+      }
+    )
+
+    expect(aborted).toBe(true)
+    expect(boxOf(capture, 'box')[3]).toBe(10)
+  })
+
+  test('takes only whole positive viewport sizes', async () => {
+    const engine = await loadHTMLEngine()
+    for (const viewport of [
+      { width: 0, height: 600 },
+      { width: 800.5, height: 600 },
+      { width: 800, height: -1 }
+    ]) {
+      await expect(engine.layout('<div></div>', { viewport })).rejects.toThrow(RangeError)
+    }
   })
 
   test('lays out without a resource the host cannot fetch', async () => {
@@ -94,6 +157,17 @@ describe('the HTML engine', () => {
 describe('raster image sizes', () => {
   test('reads a PNG header', () => {
     expect(rasterImageSize(pngHeader(640, 480))).toEqual([640, 480])
+  })
+
+  test("swaps a JPEG's sides when its Exif orientation turns it a quarter", () => {
+    expect(rasterImageSize(jpegHeader(640, 480, 1))).toEqual([640, 480])
+    expect(rasterImageSize(jpegHeader(640, 480, 6))).toEqual([480, 640])
+    expect(rasterImageSize(jpegHeader(640, 480, 8))).toEqual([480, 640])
+  })
+
+  test('is null for an AVIF cut off inside its size box', () => {
+    const bytes = new TextEncoder().encode('\0\0\0\x18ftypavif\0\0\0\0avifmif1miafispe\0\0')
+    expect(rasterImageSize(bytes)).toBeNull()
   })
 
   test('is null for bytes that are not an image it knows', () => {

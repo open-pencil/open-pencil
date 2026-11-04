@@ -35,12 +35,17 @@ const capturedNodeSchema = v.object({
   text: v.optional(v.string()),
   /** The element's local name, or `::before` and `::after` for generated content. */
   tag: v.optional(v.string()),
+  /** Attributes by name, namespaced ones with their prefix, as `xlink:href`. */
   attrs: v.optional(v.record(v.string(), v.string())),
   /** The border box, in page pixels. */
   box: v.optional(rectSchema),
   /** What the image element holds, such as `raster 640x480` or `svg`. */
   image: v.optional(v.string()),
-  /** Computed values that differ from their initial ones. */
+  /**
+   * Computed values: those with a fixed initial value only when they differ from it, and always
+   * the ones whose initial value depends on the element or is inherited, such as `display`,
+   * `color`, sizes, and font properties.
+   */
   style: v.optional(v.record(v.string(), v.string())),
   /** An inline element's box on each line it spans, in page pixels. */
   fragments: v.optional(v.array(rectSchema)),

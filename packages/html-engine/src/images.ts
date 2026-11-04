@@ -31,13 +31,45 @@ function isStartOfFrame(marker: number): boolean {
   return marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc
 }
 
+const APP1 = 0xe1
+const ORIENTATION_TAG = 0x0112
+
+/**
+ * The Exif Orientation in an APP1 segment starting at `at`, or 1 when it has none. Orientations 5
+ * to 8 turn the image a quarter, so browsers lay it out with width and height swapped.
+ */
+function exifOrientation(bytes: Uint8Array, view: DataView, at: number, end: number): number {
+  const tiff = at + 10
+  if (tiff + 8 > end || ascii(bytes, at + 4, 6) !== 'Exif\0\0') return 1
+  const littleEndian = ascii(bytes, tiff, 2) === 'II'
+  const firstIFD = tiff + view.getUint32(tiff + 4, littleEndian)
+  if (firstIFD + 2 > end) return 1
+  const entries = view.getUint16(firstIFD, littleEndian)
+  for (let entry = 0; entry < entries; entry++) {
+    const offset = firstIFD + 2 + entry * 12
+    if (offset + 12 > end) return 1
+    if (view.getUint16(offset, littleEndian) === ORIENTATION_TAG) {
+      return view.getUint16(offset + 8, littleEndian)
+    }
+  }
+  return 1
+}
+
 function jpegSize(bytes: Uint8Array, view: DataView): Size | null {
+  let orientation = 1
   let at = 2
   while (at + 9 < bytes.length) {
     if (bytes[at] !== 0xff) return null
     const marker = bytes[at + 1]
-    if (isStartOfFrame(marker)) return [view.getUint16(at + 7), view.getUint16(at + 5)]
-    at += 2 + view.getUint16(at + 2)
+    const end = Math.min(bytes.length, at + 2 + view.getUint16(at + 2))
+    // A segment's length counts its own two bytes, so less is a broken file.
+    if (end < at + 4) return null
+    if (marker === APP1) orientation = exifOrientation(bytes, view, at, end)
+    if (isStartOfFrame(marker)) {
+      const size: Size = [view.getUint16(at + 7), view.getUint16(at + 5)]
+      return orientation >= 5 && orientation <= 8 ? [size[1], size[0]] : size
+    }
+    at = end
   }
   return null
 }
@@ -57,16 +89,14 @@ export function rasterImageSize(bytes: Uint8Array): Size | null {
   if (bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8) return jpegSize(bytes, view)
   if (bytes.length > 32 && ascii(bytes, 4, 4) === 'ftyp' && /avi[fs]/.test(ascii(bytes, 8, 4))) {
     const at = ascii(bytes, 0, Math.min(bytes.length, 4096)).indexOf('ispe')
-    if (at > 0) return [view.getUint32(at + 8), view.getUint32(at + 12)]
+    // The box name, version and flags, then two 32-bit sizes.
+    if (at > 0 && at + 16 <= bytes.length) return [view.getUint32(at + 8), view.getUint32(at + 12)]
   }
   return null
 }
 
 /** An empty SVG of the image's size, which the engine lays out as the image would be. */
-export function imageStandIn(bytes: Uint8Array): Uint8Array | null {
-  const size = rasterImageSize(bytes)
-  if (!size) return null
-  const [width, height] = size
+export function imageStandIn([width, height]: Size): Uint8Array {
   return new TextEncoder().encode(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"/>`
   )
