@@ -60,6 +60,11 @@ function layOut(props: Partial<SceneNode>): TextLayout {
   return layOutNode(textNode(props))
 }
 
+/** Figma's trimmed height: cap height to last baseline, to the nearest pixel. */
+function trimmedHeight(capHeight: number, below = 0): number {
+  return Math.round(capHeight + below)
+}
+
 function baselines(layout: TextLayout): number[] {
   return layout.getLineMetrics().map((line) => line.baseline)
 }
@@ -165,12 +170,44 @@ describe('cap-height leading trim', () => {
     provider.delete()
   })
 
+  // Heights and ink rows Figma desktop 126 gave Inter texts with a cap-height trim on 2026-11-04.
+  test('sizes and draws a trimmed text as Figma does', () => {
+    const cases: [Partial<SceneNode>, number][] = [
+      [{ text: 'H8' }, 17],
+      [{ text: 'H8', fontSize: 23 }, 17],
+      [{ text: 'H8', fontSize: 22 }, 16],
+      [{ text: 'H8', fontSize: 30 }, 22],
+      [{ text: 'H8\nH8', lineHeight: pixelLength(30) }, 47],
+      [{ text: 'H8\nH8', fontSize: 20, lineHeight: pixelLength(25.3) }, 40],
+      [{ text: 'H8\nH8', lineHeight: pixelLength(30), paragraphSpacing: 10 }, 57],
+      [{ text: 'H8', styleRuns: [{ start: 1, length: 1, style: { fontSize: 48 } }] }, 35]
+    ]
+    for (const [props, height] of cases) {
+      const layout = layOut(props)
+      expect(layout.getHeight()).toBe(height)
+      expect(estimateTextSize(textNode(props)).height).toBe(height)
+      layout.delete()
+    }
+    for (const [props, rows] of [
+      [{ text: 'H8' }, { top: 9, bottom: 26 }],
+      [
+        { text: 'H8\nH8', lineHeight: pixelLength(30) },
+        { top: 9, bottom: 56 }
+      ]
+    ] as const) {
+      const layout = layOut(props)
+      expect(inkRows(layout, 10)).toEqual(rows)
+      layout.delete()
+    }
+  })
+
   test('sets a digit of each size from its cap height down to its baseline', () => {
     for (const fontSize of BADGE_FONT_SIZES) {
       const capHeight = INTER_CAP_HEIGHT_EMS * fontSize
       const layout = layOut({ text: '75', fontSize })
-      expect(baselines(layout)[0]).toBeCloseTo(capHeight, 2)
-      expect(layout.getHeight()).toBeCloseTo(capHeight, 2)
+      // The box ends at the baseline; the rest of the cap height stands above it.
+      expect(baselines(layout)[0]).toBe(trimmedHeight(capHeight))
+      expect(layout.getHeight()).toBe(trimmedHeight(capHeight))
       expect(inkRows(layout).top).toBeLessThanOrEqual(1)
       layout.delete()
     }
@@ -180,8 +217,8 @@ describe('cap-height leading trim', () => {
     const layout = layOut({ text: '75\n50', fontSize: 20 })
     const [first, second] = baselines(layout)
     expect(baselines(layout)).toHaveLength(2)
-    expect(first).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(second - first).toBeCloseTo(22, 2)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 22))
     expect(layout.getHeight()).toBeCloseTo(second, 2)
     layout.delete()
   })
@@ -189,8 +226,8 @@ describe('cap-height leading trim', () => {
   test('steps lines by a line height in pixels', () => {
     const layout = layOut({ text: '75\n50', fontSize: 20, lineHeight: pixelLength(30) })
     const [first, second] = baselines(layout)
-    expect(first).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(second - first).toBeCloseTo(30, 2)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 30))
     expect(layout.getHeight()).toBeCloseTo(second, 2)
     layout.delete()
   })
@@ -198,8 +235,8 @@ describe('cap-height leading trim', () => {
   test('steps lines by the font line height when the line height is auto', () => {
     const layout = layOut({ text: '75\n50', fontSize: 20, lineHeight: null })
     const [first, second] = baselines(layout)
-    expect(first).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(second - first).toBeCloseTo((interAscenderEms + interDescenderEms) * 20, 0)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, second - first))
     expect(layout.getHeight()).toBeCloseTo(second, 2)
     layout.delete()
   })
@@ -207,8 +244,8 @@ describe('cap-height leading trim', () => {
   test('keeps paragraph spacing between the trimmed lines', () => {
     const layout = layOut({ text: '75\n50', fontSize: 20, paragraphSpacing: 10 })
     const [first, second] = baselines(layout)
-    expect(first).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(second - first).toBeCloseTo(32, 2)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 32))
     expect(layout.getHeight()).toBeCloseTo(second, 2)
     layout.delete()
   })
@@ -220,11 +257,12 @@ describe('cap-height leading trim', () => {
       textAutoResize: 'NONE' as const,
       textTruncation: 'ENDING' as const
     }
-    const capHeight = INTER_CAP_HEIGHT_EMS * 20
-    for (const height of [capHeight + 22, 37]) {
+    // The last baseline sits on the trimmed height, to the nearest pixel: 14.55 + 22 is 37.
+    const lastBaseline = trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 22)
+    for (const height of [lastBaseline, lastBaseline + 1]) {
       const fits = layOut({ ...truncated, height })
       expect(baselines(fits)).toHaveLength(2)
-      expect(baselines(fits)[1]).toBeCloseTo(capHeight + 22, 2)
+      expect(baselines(fits)[1]).toBe(lastBaseline)
       fits.delete()
     }
     const overflows = layOut({ ...truncated, height: 36 })
@@ -234,9 +272,10 @@ describe('cap-height leading trim', () => {
 
   test('centres and bottom-aligns the trimmed box from cap height to baseline', () => {
     const capHeight = INTER_CAP_HEIGHT_EMS * 20
+    const height = trimmedHeight(capHeight)
     for (const [textAlignVertical, top] of [
-      ['CENTER', (60 - capHeight) / 2],
-      ['BOTTOM', 60 - capHeight]
+      ['CENTER', (60 - height) / 2],
+      ['BOTTOM', 60 - height]
     ] as const) {
       const node = textNode({
         text: 'HE',
@@ -249,8 +288,8 @@ describe('cap-height leading trim', () => {
       const offset = textVerticalOffset(node, layout.getHeight())
       expect(offset).toBeCloseTo(top, 2)
       const ink = inkRows(layout, offset)
-      expect(Math.abs(ink.top - top)).toBeLessThanOrEqual(1)
-      expect(Math.abs(ink.bottom + 1 - (top + capHeight))).toBeLessThanOrEqual(1)
+      expect(Math.abs(ink.top - (top + height - capHeight))).toBeLessThanOrEqual(1)
+      expect(Math.abs(ink.bottom + 1 - (top + height))).toBeLessThanOrEqual(1)
       layout.delete()
     }
   })
@@ -261,7 +300,7 @@ describe('cap-height leading trim', () => {
       fontSize: 40,
       styleRuns: [{ start: 0, length: 1, style: { fontSize: 12 } }]
     })
-    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 40, 2)
+    expect(baselines(layout)[0]).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 40))
     expect(inkRows(layout).top).toBeLessThanOrEqual(1)
     layout.delete()
   })
@@ -273,7 +312,8 @@ describe('cap-height leading trim', () => {
       textCase: 'UPPER',
       styleRuns: [{ start: 4, length: 1, style: { fontSize: 60 } }]
     })
-    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
+    const [first, second] = baselines(layout)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, second - first))
     layout.delete()
   })
 
@@ -286,14 +326,17 @@ describe('cap-height leading trim', () => {
       fontFamily: 'Cap Axis',
       fontVariations: [{ axis: 'opsz', value: LARGEST_OPTICAL_SIZE }]
     })
-    expect(baselines(layout)[0]).toBeCloseTo(displayCapHeightEms * fontSize, 2)
-    expect(layout.getHeight()).toBeCloseTo(displayCapHeightEms * fontSize, 2)
+    expect(trimmedHeight(displayCapHeightEms * fontSize)).not.toBe(
+      trimmedHeight(INTER_CAP_HEIGHT_EMS * fontSize)
+    )
+    expect(baselines(layout)[0]).toBe(trimmedHeight(displayCapHeightEms * fontSize))
+    expect(layout.getHeight()).toBe(trimmedHeight(displayCapHeightEms * fontSize))
     layout.delete()
   })
 
   test('measures the cap height from the glyphs of a font that declares none', () => {
     const layout = layOut({ text: 'HE', fontSize: 20, fontFamily: 'No Cap Height' })
-    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
+    expect(baselines(layout)[0]).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20))
     expect(inkRows(layout).top).toBeLessThanOrEqual(1)
     layout.delete()
   })
@@ -301,7 +344,7 @@ describe('cap-height leading trim', () => {
   test('trims to a typical cap height a font that declares a zero one', () => {
     const node = textNode({ text: 'HE', fontSize: 20, fontFamily: 'Zero Cap Height' })
     const layout = layOutNode(node)
-    expect(baselines(layout)[0]).toBeCloseTo(TYPICAL_CAP_HEIGHT_EMS * 20, 2)
+    expect(baselines(layout)[0]).toBe(trimmedHeight(TYPICAL_CAP_HEIGHT_EMS * 20))
     expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
     layout.delete()
   })
@@ -402,7 +445,7 @@ describe('cap-height leading trim', () => {
     const empty = textNode({ text: '', fontSize: 20 })
     const layout = layOutNode(empty)
     const typed = layOut({ text: '7', fontSize: 20 })
-    expect(layout.getHeight()).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
+    expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20))
     expect(estimateTextSize(empty).height).toBeCloseTo(layout.getHeight(), 2)
     expect(typed.getHeight()).toBeCloseTo(layout.getHeight(), 2)
     layout.delete()

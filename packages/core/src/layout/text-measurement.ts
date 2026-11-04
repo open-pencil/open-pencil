@@ -35,7 +35,9 @@ export function estimateTextSize(
   const { lineHeight } = measured[0]
   if (node.leadingTrim === 'CAP_HEIGHT') {
     const firstLineCapHeight = rangeCapHeight(node, 0, hardLines[0].length)
-    return { width, height: firstLineCapHeight + (lines - 1) * lineHeight + paragraphSpacing }
+    // To the nearest pixel, as Figma sizes a trimmed text and live layout does.
+    const trimmed = firstLineCapHeight + (lines - 1) * lineHeight + paragraphSpacing
+    return { width, height: Math.round(trimmed) }
   }
   return { width, height: untrimmedHeight(lines, lineHeight) + paragraphSpacing }
 }
