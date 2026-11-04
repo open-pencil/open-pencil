@@ -71,6 +71,6 @@ describe('mutation layout reconciliation', () => {
 
     // Figma keeps a frame with nothing left to hug at the size it hugged to.
     expect([left.width, left.height]).toEqual([40, 20])
-    expect(right.width).toBe(40)
+    expect([right.width, right.height]).toEqual([40, 20])
   })
 })
