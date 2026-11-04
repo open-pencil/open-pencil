@@ -1,6 +1,18 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
+
+import { FIXTURES } from '#core-tests/helpers/paths'
 
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
+import { fontManager } from '@open-pencil/core/text'
+
+/** A family the tests give the font manager a font for, so which text finds a font does not depend on the machine. */
+const TEST_FAMILY = 'OpenPencil Test Sans'
+
+beforeAll(async () => {
+  const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  await fontManager.markLoaded(TEST_FAMILY, 'Regular', font)
+})
 
 // The layout from #788: a phone-sized column with a title, a card, and a button.
 const DEMO = `<div style="width:390px;height:844px;background:#0b0f1a;display:flex;flex-direction:column;padding:24px;gap:16px">
@@ -31,8 +43,9 @@ describe('reading HTML', () => {
     const cardText = node(card.childIds[0])
     expect(cardText).toMatchObject({ x: 20, y: 20 })
     expect(card.height).toBe(cardText.height + 40)
+    // Centered where the engine set the line; Core measures the same font within a pixel of it.
     const label = node(button.childIds[0])
-    expect(label.x * 2 + label.width).toBeCloseTo(390, 0)
+    expect(Math.abs(label.x * 2 + label.width - 390)).toBeLessThanOrEqual(1)
   })
 
   test('a border takes room inside the box, as in a browser', async () => {
@@ -106,16 +119,49 @@ describe('reading HTML', () => {
     expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
   })
 
-  test('generic font families set text in real ones', async () => {
+  test('applies media queries for the viewport it imports at', async () => {
     const { graph } = await readHTMLDocument(
-      '<p style="font-family:system-ui, -apple-system, sans-serif">Sans</p><p style="font-family:ui-monospace, monospace">Mono</p>'
+      `<style>@media (max-width: 700px) { nav { display: none } } nav { height: 40px }</style>
+      <nav>Menu</nav><main style="height:100px"></main>`
+    )
+    const layers = graph.getChildren(graph.getPages()[0].id)
+
+    // At 1440px the narrow-screen rule does not apply, so the nav stays.
+    expect(layers.map((layer) => layer.name)).toEqual(['nav', 'main'])
+  })
+
+  test('reads the stylesheets a page links through the host', async () => {
+    const requested: string[] = []
+    const { graph } = await readHTMLDocument(
+      '<link rel="stylesheet" href="styles/site.css"><div class="box"></div>',
+      {
+        readAsset: async (path) => {
+          requested.push(path)
+          return path === 'styles/site.css'
+            ? new TextEncoder().encode('.box { width: 120px; height: 40px }')
+            : null
+        }
+      }
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+
+    expect(requested).toEqual(['styles/site.css'])
+    expect(box).toMatchObject({ width: 120, height: 40 })
+  })
+
+  test('text is set in the first family of its list there is a font for, as in a browser', async () => {
+    const { graph } = await readHTMLDocument(
+      `<p style="font-family:'No Such Family', '${TEST_FAMILY}', sans-serif">Found</p>
+      <p style="font-family:system-ui, -apple-system, sans-serif">Generic</p>
+      <p style="font-family:'No Such Family'">Missing</p>`
     )
     const families = graph
       .flattenTree(graph.getPages()[0].id)
       .filter(({ node }) => node.type === 'TEXT')
       .map(({ node }) => node.fontFamily)
 
-    expect(families).toEqual(['Inter', 'Roboto Mono'])
+    // A generic family takes the real one it maps to, and a list with no font the default.
+    expect(families).toEqual([TEST_FAMILY, 'Inter', 'Inter'])
   })
 })
 

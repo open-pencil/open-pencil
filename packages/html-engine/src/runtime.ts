@@ -98,14 +98,20 @@ function designElements(nodes: DesignDocument['children']): DesignElement[] {
   return nodes.filter((node): node is DesignElement => node.type === 'element')
 }
 
-/** Shorthands the importer reads as a browser reports them, built from their captured longhands. */
+/** Shorthands a browser runtime reports, `overflow` and `gap`, built from their captured longhands. */
 function withShorthands(style: DesignStyleDeclaration): DesignStyleDeclaration {
-  // Captures leave initial values out, and `visible` is the initial overflow.
-  const axis = (property: string) => (Object.hasOwn(style, property) ? style[property] : 'visible')
-  if (!Object.hasOwn(style, 'overflow-x') && !Object.hasOwn(style, 'overflow-y')) return style
-  const horizontal = axis('overflow-x')
-  const vertical = axis('overflow-y')
-  return { ...style, overflow: horizontal === vertical ? horizontal : `${horizontal} ${vertical}` }
+  // Captures leave initial values out.
+  const value = (property: string, initial: string) =>
+    Object.hasOwn(style, property) ? style[property] : initial
+  const pair = (first: string, second: string) => (first === second ? first : `${first} ${second}`)
+  const shorthands: DesignStyleDeclaration = {}
+  if (Object.hasOwn(style, 'overflow-x') || Object.hasOwn(style, 'overflow-y')) {
+    shorthands.overflow = pair(value('overflow-x', 'visible'), value('overflow-y', 'visible'))
+  }
+  if (Object.hasOwn(style, 'row-gap') || Object.hasOwn(style, 'column-gap')) {
+    shorthands.gap = pair(value('row-gap', 'normal'), value('column-gap', 'normal'))
+  }
+  return { ...style, ...shorthands }
 }
 
 /** White space values that keep spaces, so a line of them takes room as a line of words does. */

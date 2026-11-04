@@ -1,5 +1,8 @@
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
-import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
+import {
+  HTML_IMPORT_VIEWPORT,
+  sceneGraphFromStyledHTML
+} from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -9,7 +12,6 @@ import type { EditorPreparationController } from '@/app/editor/preparation/contr
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
-import { HTML_IMPORT_VIEWPORT } from '@/constants'
 
 type OpenDOMDocumentState = EditorState & {
   documentName: string
