@@ -1,6 +1,7 @@
 import type { Editor } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { selectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import { layerResizes } from '@open-pencil/scene-graph/generated'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
 import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
@@ -33,7 +34,8 @@ export function createResizeDrag(
     origTextPathBox: snap.textPathBox,
     origChildren: collectResizeDescendants(editor.graph, node.id),
     lockedAspectRatio: enforcedAspectRatio(node),
-    appliedRect: { x: node.x, y: node.y, width: node.width, height: node.height }
+    appliedRect: { x: node.x, y: node.y, width: node.width, height: node.height },
+    origPlacement: selectionPlacement(node, editor.graph)
   }
 }
 

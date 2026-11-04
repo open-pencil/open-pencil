@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import { createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
@@ -212,5 +214,104 @@ describe('resizing a layer inside a group', () => {
     } finally {
       editor.dispose()
     }
+  })
+})
+
+describe('resizing a turned layer', () => {
+  /** A 100×50 layer turned 30°, with the canvas point of a spot on it and of a vector along it. */
+  function turned() {
+    const editor = createEditor()
+    const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 50,
+      rotation: 30
+    })
+    editor.select([node.id])
+    const world = getWorldMatrix(node, editor.graph)
+    const at = (x: number, y: number) => {
+      const [px, py] = Matrix.mapPoints(world, [x, y])
+      return { x: px, y: py }
+    }
+    const corners = () => {
+      const current = editor.graph.getNode(node.id)
+      if (!current) throw new Error('missing layer')
+      const points = Matrix.mapPoints(getWorldMatrix(current, editor.graph), [
+        0,
+        0,
+        0,
+        current.height
+      ])
+      return points.map((value) => Math.round(value * 1e6) / 1e6)
+    }
+    // The right edge's handle, and a press that drags it from there.
+    const handle = at(100, 25)
+    const press = (): DragResize => ({
+      ...drag(node),
+      startX: handle.x,
+      startY: handle.y
+    })
+    return { editor, node, at, corners, press }
+  }
+
+  test('its right handle stretches it along its own axis and its left edge stays put', () => {
+    const { editor, node, at, corners, press } = turned()
+    const leftEdge = corners()
+    const resize = press()
+    // 50 along the layer's own x axis, as Figma measures the drag.
+    const target = at(150, 25)
+    applyResize(resize, target.x, target.y, false, editor, true)
+    commitResizePreview(resize, editor)
+    expect(editor.graph.getNode(node.id)?.width).toBeCloseTo(150, 6)
+    expect(editor.graph.getNode(node.id)?.rotation).toBe(30)
+    expect(corners()).toEqual(leftEdge)
+    editor.dispose()
+  })
+
+  test('dragged past its left edge it comes out mirrored, and one undo puts it back', () => {
+    const { editor, node, at, corners, press } = turned()
+    const leftEdge = corners()
+    const resize = press()
+    // 50 beyond the left edge: the layer flips over it, 50 wide, its own x axis now running back
+    // from the edge it kept.
+    const target = at(-50, 25)
+    applyResize(resize, target.x, target.y, false, editor, true)
+    commitResizePreview(resize, editor)
+    const mirrored = editor.graph.getNode(node.id)
+    if (!mirrored) throw new Error('missing layer')
+    expect(mirrored.width).toBeCloseTo(50, 6)
+    expect(corners()).toEqual(leftEdge)
+    const [fx, fy] = Matrix.mapPoints(getWorldMatrix(mirrored, editor.graph), [mirrored.width, 0])
+    const far = at(-50, 0)
+    expect(fx).toBeCloseTo(far.x, 6)
+    expect(fy).toBeCloseTo(far.y, 6)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(node.id)).toMatchObject({
+      x: 100,
+      y: 100,
+      width: 100,
+      rotation: 30,
+      flipX: false,
+      flipY: false
+    })
+    editor.dispose()
+  })
+
+  test('a cancelled mirror puts its angle and flips back', () => {
+    const { editor, node, at, press } = turned()
+    const resize = press()
+    const target = at(-50, 25)
+    applyResize(resize, target.x, target.y, false, editor, true)
+    cancelResizePreview(resize, editor)
+    expect(editor.graph.getNode(node.id)).toMatchObject({
+      x: 100,
+      width: 100,
+      rotation: 30,
+      flipX: false,
+      flipY: false
+    })
+    editor.dispose()
   })
 })

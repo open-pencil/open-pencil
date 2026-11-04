@@ -8,6 +8,13 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
 import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import {
+  canvasDeltaInLayer,
+  placeInResizedFrame,
+  selectionPlacement,
+  type LayerPlacement,
+  type SelectionPlacement
+} from '@open-pencil/scene-graph/coordinate'
+import {
   cloneVectorNetwork,
   copyDerivedGlyphs,
   copyGeometryPaths,
@@ -28,7 +35,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
-import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { calculateResizeRect, signedResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
@@ -94,26 +101,69 @@ function keptAspectRatio(d: DragResize, shiftKey: boolean, ctrlKey: boolean): nu
   return shiftKey && width > 0 && height > 0 ? width / height : null
 }
 
-function resizeChanges(
+/**
+ * The layer's new box and transform for a pointer at (`cx`, `cy`). The handle works along the
+ * layer's own axes, keeping the edges it leaves where they are on the canvas, as in Figma. Dragged
+ * past the opposite edge, the layer comes out mirrored and lands where the pointer puts it;
+ * otherwise its moving edges snap.
+ */
+function resizedPlacement(
   d: DragResize,
-  type: SceneNode['type'],
+  placement: SelectionPlacement,
   cx: number,
   cy: number,
   shiftKey: boolean,
   editor: Editor,
   ctrlKey: boolean
-) {
+): LayerPlacement {
   const { origRect } = d
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const dx = cx - d.startX
-  const dy = cy - d.startY
-  const newRect =
+  const { x: dx, y: dy } = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
+  const signed = signedResizeRect(d.handle, origRect, dx, dy, aspect)
+  if (signed.width < 0 || signed.height < 0) {
+    optionalEditorState(editor)?.snapGuides.splice(0)
+    const mirrored = {
+      ...signed,
+      width: atLeastOne(signed.width),
+      height: atLeastOne(signed.height)
+    }
+    return placeInResizedFrame(placement, origRect, mirrored)
+  }
+  const rect =
     aspect !== null
       ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
       : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
-  return { changes: scaledChanges(d, type, newRect), newRect }
+  return placeInResizedFrame(placement, origRect, rect)
+}
+
+/** `size` at least a pixel long, keeping its sign. */
+function atLeastOne(size: number): number {
+  return Math.sign(size || 1) * Math.max(Math.abs(size), 1)
+}
+
+/** The angle and flips a layer had when the drag started. */
+function startingTurn(d: DragResize): Turn | undefined {
+  const node = d.origPlacement?.node
+  return node && turnOf(node)
+}
+
+type Turn = Pick<SceneNode, 'rotation' | 'flipX' | 'flipY'>
+
+function turnOf(node: Turn): Turn {
+  return { rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
+}
+
+/** The angle and flips the drag changed on the layer, from and to, or null when it kept them. */
+function turnDuring(
+  d: DragResize,
+  node: SceneNode | undefined
+): { start: Turn; turn: Turn } | null {
+  const start = startingTurn(d)
+  if (!start || !node) return null
+  const turn = turnOf(node)
+  return isEqual(start, turn) ? null : { start, turn }
 }
 
 /** The layer's box and its own geometry scaled from the drag's start to `newRect`. */
@@ -196,7 +246,17 @@ export function applyResize(
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
-  const { changes, newRect } = resizeChanges(d, node.type, cx, cy, shiftKey, editor, ctrlKey)
+  d.origPlacement ??= selectionPlacement(node, editor.graph)
+  const { rotation, flipX, flipY, ...newRect } = resizedPlacement(
+    d,
+    d.origPlacement,
+    cx,
+    cy,
+    shiftKey,
+    editor,
+    ctrlKey
+  )
+  const changes = { ...scaledChanges(d, node.type, newRect), rotation, flipX, flipY }
   applyResizedRect(d, node, newRect, changes, editor)
   editor.requestRepaint()
 }
@@ -356,6 +416,8 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
     textPathBox: d.origTextPathBox
   })
   if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+  const turn = startingTurn(d)
+  if (turn) editor.graph.updateNodePreview(d.nodeId, turn)
   editor.renderer?.invalidateVectorPath(d.nodeId)
   restoreEditedFields(d, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
@@ -386,7 +448,9 @@ export function commitResizePreview(
   // Only a layer inside a group or boolean has bounds around it to fit again.
   const parent = parentId ? editor.graph.getNode(parentId) : undefined
   const fitsGroups = fitGroups && parent !== undefined && FITTED_CONTAINER_TYPES.has(parent.type)
-  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing && !fitsGroups) {
+  // A layer dragged through itself comes out mirrored: its new angle and flips are their own step.
+  const turned = turnDuring(d, node)
+  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing && !fitsGroups && !turned) {
     commitResizeGeometry(d, editor)
     return
   }
@@ -397,6 +461,10 @@ export function commitResizePreview(
       editor.updateNodeWithUndo(d.nodeId, d.appliedSizing, 'Resize')
     }
     commitResizeGeometry(d, editor)
+    if (turned) {
+      editor.graph.updateNodePreview(d.nodeId, turned.start)
+      editor.updateNodeWithUndo(d.nodeId, turned.turn, 'Resize')
+    }
     if (recaptured.targetAspectRatio) editor.updateNodeWithUndo(d.nodeId, recaptured, 'Resize')
     if (adoptsLayers) editor.adoptCoveredLayers(d.nodeId)
     if (fitsGroups && parentId) editor.fitEnclosingGroups([parentId])

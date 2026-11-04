@@ -104,7 +104,8 @@ describe('resize snapping preferences', () => {
     applyResize(drag, 148, drag.startY, false, editor)
     commitResizePreview(drag, editor)
 
-    expect(editor.graph.getNode(nodeId)?.width).toBeCloseTo(137.75)
+    // The handle works along the layer's own axis: 37.75 across the canvas is 37.75 · cos 30° along it.
+    expect(editor.graph.getNode(nodeId)?.width).toBeCloseTo(100 + 37.75 * Math.cos(Math.PI / 6))
     expect(editor.state.snapGuides).toEqual([])
   })
 

@@ -379,6 +379,55 @@ export function placeInResizedBounds(
   return { x, y, width, height, rotation, flipX, flipY }
 }
 
+/** A canvas pointer movement along the layer's own axes, as its handles measure it. */
+export function canvasDeltaInLayer(placement: SelectionPlacement, dx: number, dy: number): Vector {
+  const [a, b, , c, d] = placement.world
+  const det = a * d - b * c
+  if (det === 0) return { x: dx, y: dy }
+  return { x: (d * dx - b * dy) / det, y: (a * dy - c * dx) / det }
+}
+
+/**
+ * Where a layer lands when one of its handles resizes it in its own frame, from `from` to `to`,
+ * both its box in its parent's axes as an upright layer would have it. `to` is signed: a handle
+ * dragged past the opposite edge gives a negative size and mirrors the layer, as Figma flips it.
+ * The edges the handle leaves stay where they are on the canvas, whatever the layer's angle.
+ */
+export function placeInResizedFrame(
+  placement: SelectionPlacement,
+  from: Rect,
+  to: Rect
+): LayerPlacement {
+  const { node, world, parentWorld } = placement
+  const width = Math.abs(to.width)
+  const height = Math.abs(to.height)
+  const mirrorX = to.width < 0
+  const mirrorY = to.height < 0
+  const turned = node.rotation !== 0 || node.flipX || node.flipY
+  if (!turned && !mirrorX && !mirrorY) {
+    return { x: to.x, y: to.y, width, height, rotation: 0, flipX: false, flipY: false }
+  }
+  const placed = Matrix.multiply(
+    Matrix.multiply(world, Matrix.translated(to.x - from.x, to.y - from.y)),
+    Matrix.scaled(mirrorX ? -1 : 1, mirrorY ? -1 : 1)
+  )
+  const local = localTransformFromWorld({ ...node, width, height }, placed, parentWorld)
+  if (!local)
+    return { ...to, width, height, rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
+  // Unmirrored, the angle and flips stay exactly as they were; only the position follows.
+  return mirrorX || mirrorY
+    ? { ...local, width, height }
+    : {
+        x: local.x,
+        y: local.y,
+        width,
+        height,
+        rotation: node.rotation,
+        flipX: node.flipX,
+        flipY: node.flipY
+      }
+}
+
 /**
  * Where a layer lands, in its parent's space, when a multi-selection turns `degrees` about a
  * canvas pivot, as Figma rotates a selection about its bounds' center: the layer's center swings

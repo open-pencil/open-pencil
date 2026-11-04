@@ -167,6 +167,8 @@ export interface DragResize {
   origSizing?: LayerSizing
   /** The sizing the latest step left, which the commit keeps. */
   appliedSizing?: LayerSizing
+  /** The layer's transform before the drag, taken on its first step: its handles work in it. */
+  origPlacement?: SelectionPlacement
 }
 
 /**
