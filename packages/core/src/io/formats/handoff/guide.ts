@@ -96,8 +96,10 @@ export function handoffGuide(spec: HandoffSpec, frames: HandoffFrameFile[]): str
        \`white-space: nowrap\`; HEIGHT wraps within the width; NONE is a fixed box. \`runs\` style
        character ranges (start, length) differently from the layer.
     9. **Images.** \`scaleMode\` FILL is \`object-fit: cover\`, FIT \`contain\`, TILE a repeated
-       background, CROP uses the paint transform. Images with \`adjustments\` already look adjusted
-       in \`code/index.html\`; in other stacks apply the adjustments or use that baked image.
+       background, CROP uses the paint transform. Images in \`assets/images/\` are the
+       originals: when a paint has \`adjustments\` (exposure, levels, curve…), the reference image
+       shows the adjusted result, so apply them (CSS filters cover brightness, contrast, saturate,
+       hue-rotate, invert) or export that image adjusted from Lawha and use it instead.
     10. **Vectors.** Use the SVG paths in \`code/index.html\` for vector layers and icons; do not
         redraw them.
     11. **Components.** Layers with the same \`component.componentId\` are one reusable component;
