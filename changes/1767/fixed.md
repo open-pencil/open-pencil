@@ -1,0 +1,1 @@
+- A rotated frame draws its whole fill, and exports of rotated layers are no longer cropped to a shifted box (#1767).
