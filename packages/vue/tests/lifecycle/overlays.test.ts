@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createApp, effectScope, ref } from 'vue'
+import { createApp, effectScope, ref, type Ref } from 'vue'
 
 import {
   createOpenOverlaysPlugin,
@@ -12,7 +12,10 @@ import {
 import { useRetainedPopup } from '#vue/lifecycle/retention'
 
 /** An app with the plugin, an overlay registered in its own scope, and the app's registry. */
-function appWithOverlay(kind: OverlayKind = 'overlay', register = useOverlayOpen) {
+function appWithOverlay(
+  kind: OverlayKind = 'overlay',
+  register: (open: Ref<boolean>, kind: OverlayKind) => void = useOverlayOpen
+) {
   const app = createApp({ render: () => null })
   app.use(createOpenOverlaysPlugin())
   const open = ref(false)
