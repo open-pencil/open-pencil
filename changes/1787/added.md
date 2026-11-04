@@ -1,0 +1,1 @@
+- SDK hosts can narrow the editor through `setHostRestrictions`: offer only some tools, and let paths change only by their handles, so points keep their places and connections. `enterNodeEditMode` keeps a path open until the host ends it and can show every point's handles (#1787).
