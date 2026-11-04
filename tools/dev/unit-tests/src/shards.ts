@@ -89,7 +89,7 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'tests/engine/io/fig/export/text.test.ts',
   'tests/engine/io/fig/export/worker.test.ts',
   'tests/engine/io/fig/import/group-reclassify.test.ts',
-  'tests/engine/layout/auto-layout/text/measurement.test.ts',
+  'packages/core/tests/layout/auto-layout/text/measurement.test.ts',
   'tests/engine/render/canvas/cache.test.ts'
 ] as const
 
