@@ -1,5 +1,6 @@
 import { expect, spyOn, test } from 'bun:test'
 
+import * as archiveModule from '#fig/archive'
 import { writeFigArchive } from '#fig/archive'
 import { createFigDocumentSession, materializeFigArchive } from '#fig/document/materialize'
 import { deflateSync } from 'fflate'
@@ -56,12 +57,22 @@ function imageCopies(slicedFrom: readonly unknown[]): number {
 }
 
 function openCountingImageCopies(open: (bytes: ArrayBuffer) => SceneGraph, bytes: ArrayBuffer) {
+  const parseFigBuffer = archiveModule.parseFigBuffer
+  const unzipped = new Map<string, Uint8Array>()
+  const parse = spyOn(archiveModule, 'parseFigBuffer').mockImplementation((...args) => {
+    const parsed = parseFigBuffer(...args)
+    for (const [hash, data] of parsed.images) {
+      unzipped.set(hash, data)
+    }
+    return parsed
+  })
   const slice = spyOn(Uint8Array.prototype, 'slice')
   try {
     const graph = open(bytes)
-    return { graph, copies: imageCopies(slice.mock.contexts) }
+    return { graph, unzipped, copies: imageCopies(slice.mock.contexts) }
   } finally {
     slice.mockRestore()
+    parse.mockRestore()
   }
 }
 
@@ -70,12 +81,14 @@ test.each([
   ['a whole-archive read', (bytes: ArrayBuffer) => materializeFigArchive(bytes).graph]
 ])('%s keeps the images it unzipped without copying them again', async (_, open) => {
   const bytes = await archiveWithImages()
-  const { graph, copies } = openCountingImageCopies(open, bytes)
+  const { graph, unzipped, copies } = openCountingImageCopies(open, bytes)
 
   expect(copies).toBe(0)
   for (const { name, data } of images) {
-    const image = graph.images.get(name.slice('images/'.length))
+    const hash = name.slice('images/'.length)
+    const image = graph.images.get(hash)
     expect(image).toEqual(data)
+    expect(image?.buffer).toBe(unzipped.get(hash)?.buffer)
     expect(image?.byteLength).toBe(image?.buffer.byteLength)
   }
 })
@@ -100,4 +113,7 @@ test.each([
 
   expect(kept).toEqual(given.get('caller'))
   expect(kept?.buffer).not.toBe(given.get('caller')?.buffer)
+  for (const { name } of images) {
+    expect(graph.images.has(name.slice('images/'.length))).toBe(false)
+  }
 })
