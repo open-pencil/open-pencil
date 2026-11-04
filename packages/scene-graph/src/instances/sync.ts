@@ -1,4 +1,6 @@
 // Child cloning and property synchronization shared by instance creation, swap, and sync.
+import { uniq } from 'es-toolkit/array'
+import { pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
@@ -7,7 +9,8 @@ import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
-import { effectBindingTarget } from '../variables/fields'
+import { resolvedNumericBindings } from '../variables/bindings'
+import { effectBindingTarget, isNumericVariableBindingField } from '../variables/fields'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -175,8 +178,11 @@ function copySyncedFields(
 export function updateSyncedProps(
   graph: SceneGraph,
   target: SceneNode,
-  updates: Partial<SceneNode>
+  updates: Partial<SceneNode>,
+  /** A field the copy keeps as its own, which the sync leaves as it is. */
+  kept: (field: string) => boolean = () => false
 ): void {
+  resolveBoundNumbersInPlace(graph, target, updates, kept)
   const changed = Object.fromEntries(
     Object.entries(updates).filter(
       ([key, value]) => !isEqual(target[key as keyof SceneNode], value)
@@ -184,6 +190,35 @@ export function updateSyncedProps(
   ) as Partial<SceneNode>
   if (changed.fills && updates.fillStyleId !== undefined) changed.fillStyleId = updates.fillStyleId
   if (Object.keys(changed).length) graph.updateNode(target.id, changed)
+}
+
+/**
+ * A bound number the sync writes takes the value it resolves to where the copy sits, not the
+ * one its component holds: an instance that sets another mode, or sits in one that does, shows
+ * that mode's value, as Figma draws it. A field the sync leaves alone, such as one an instance
+ * overrides, keeps its own value.
+ */
+function resolveBoundNumbersInPlace(
+  graph: SceneGraph,
+  target: SceneNode,
+  updates: Partial<SceneNode>,
+  kept: (field: string) => boolean
+): void {
+  const bound = updates.boundVariables ?? target.boundVariables
+  // The fields the sync writes, and the ones it binds anew, which keep an equal value only in
+  // the component's mode.
+  const rebound = updates.boundVariables
+    ? Object.keys(bound).filter((field) => bound[field] !== target.boundVariables[field])
+    : []
+  const synced = uniq([...Object.keys(updates), ...rebound]).filter(
+    (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
+  )
+  if (synced.length === 0) return
+  // The modes the copy takes in this sync decide what its bindings resolve to.
+  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
+    graph.updateNode(target.id, { variableModes: updates.variableModes })
+  const resolved = resolvedNumericBindings(graph, { ...target, ...updates })
+  Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
 }
 
 function cloneChildInCoordinates(
@@ -459,6 +494,8 @@ export function syncChildren(
 
     const protectedField = childBindingProtection(graph, instChild, overrides)
     const driven = propertyDrivenFields(graph, instChild, compChild)
+    const kept = (key: string) =>
+      driven.has(key) || isProtectedSyncField(instChild, key, protectedField)
     const componentScale =
       (compChild.componentScale * instParent.componentScale) / compParent.componentScale
     const effectiveSource = sourceWithEffectiveFill(graph, compChild, instChild)
@@ -474,11 +511,11 @@ export function syncChildren(
       compParent,
       instParent,
       factor: componentScale / compChild.componentScale,
-      skip: (key) => driven.has(key) || isProtectedSyncField(instChild, key, protectedField)
+      skip: kept
     })
     Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
     keepOwnContentSize(graph, updates, instChild, source, placement)
-    updateSyncedProps(graph, instChild, updates)
+    updateSyncedProps(graph, instChild, updates, kept)
 
     if (
       compChild.childIds.length > 0 &&

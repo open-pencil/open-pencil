@@ -195,7 +195,9 @@ function syncInstancesOf(
         }
         // An instance that hugs its layers sizes to what it shows, not to the component.
         keepOwnContentSize(graph, updates, instance, source)
-        updateSyncedProps(graph, instance, updates)
+        updateSyncedProps(graph, instance, updates, (key) =>
+          isProtectedSyncField(instance, key, protectedField)
+        )
         const context = createInstanceSyncContext(instance.id, instance.instanceOverrides)
         syncChildren(graph, component.id, instance.id, instance.instanceOverrides, context)
         removeLeftoverCopies(graph, context, removals)
