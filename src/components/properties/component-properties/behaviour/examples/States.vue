@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { interactionStatesOf } from '@open-pencil/scene-graph/behaviours'
 import type { BehaviourControl } from '@open-pencil/vue/controls/behaviour'
 
 import BehaviourSection from '../BehaviourSection.vue'
@@ -39,6 +40,7 @@ const switchComplete = ref<BehaviourControl>({
   parts: [{ id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot] }],
   states: {
     propertyId: 'interaction',
+    available: interactionStatesOf('switch'),
     values: { rest: 'Default', hover: 'Hover', pressed: 'Pressed', disabled: 'Disabled' },
     options: [stateProperty, sizeProperty, interactionProperty]
   }
@@ -61,7 +63,12 @@ const sliderIncomplete = ref<BehaviourControl>({
     { id: 'range', required: false, propertyId: null, options: [trackSlot] },
     { id: 'thumb', required: true, propertyId: null, options: [] }
   ],
-  states: { propertyId: null, values: {}, options: [interactionProperty] }
+  states: {
+    propertyId: null,
+    available: interactionStatesOf('slider'),
+    values: {},
+    options: [interactionProperty]
+  }
 })
 /** A plain rectangle made a component and given a Textarea behaviour: nothing to bind yet. */
 const textareaBare = ref<BehaviourControl>({
@@ -85,7 +92,7 @@ const textareaBare = ref<BehaviourControl>({
     }
   ],
   parts: [],
-  states: { propertyId: null, values: {}, options: [] }
+  states: { propertyId: null, available: interactionStatesOf('textarea'), values: {}, options: [] }
 })
 const log = ref<string[]>([])
 const record = (entry: string) => {

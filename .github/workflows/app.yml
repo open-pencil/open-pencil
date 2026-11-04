@@ -32,6 +32,13 @@ jobs:
           # Official releases only: lets the app send its daily ping and, with consent, usage stats.
           VITE_OPENPENCIL_FEEDBACK: "on"
 
+      - name: Upload source maps for error reports
+        env:
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: "267806"
+          POSTHOG_CLI_HOST: https://eu.posthog.com
+        run: bun tools/release/release-packages/src/sourcemaps/publish.ts
+
       - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

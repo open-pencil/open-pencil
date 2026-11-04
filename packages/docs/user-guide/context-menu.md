@@ -29,10 +29,13 @@ The **Copy/Paste as** submenu offers additional clipboard formats for the select
 | Copy | <kbd>⌘</kbd><kbd>C</kbd> | <kbd>Ctrl</kbd> + <kbd>C</kbd> |
 | Cut | <kbd>⌘</kbd><kbd>X</kbd> | <kbd>Ctrl</kbd> + <kbd>X</kbd> |
 | Paste here | <kbd>⌘</kbd><kbd>V</kbd> | <kbd>Ctrl</kbd> + <kbd>V</kbd> |
+| Paste as layers | — | — |
 | Duplicate | <kbd>⌘</kbd><kbd>D</kbd> | <kbd>Ctrl</kbd> + <kbd>D</kbd> |
 | Delete | ⌫ | <kbd>Backspace</kbd> / Delete |
 
-Clipboard actions are disabled when nothing is selected (except Paste, which is available when the clipboard has content).
+Clipboard actions are disabled when nothing is selected, except Paste, which is available when the clipboard has content, and Paste as layers, which is always available.
+
+**Paste as layers** lays HTML on the clipboard, copied from a web page or as HTML source, out as layers at the cursor, where Paste would make it one text layer. See [Pasting](./selection-and-manipulation#pasting).
 
 ## Copy and Paste Properties
 

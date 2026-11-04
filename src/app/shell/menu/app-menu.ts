@@ -25,7 +25,9 @@ import type {
 } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
+import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
+import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -110,6 +112,8 @@ export function useAppMenu() {
     open: 'open',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',
+    'report-problem': 'reportProblem',
+    'support-openpencil': 'supportOpenPencil',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -124,6 +128,7 @@ export function useAppMenu() {
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
+    'paste-as-layers': 'pasteAsLayers',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
@@ -193,6 +198,8 @@ export function useAppMenu() {
     'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
+    'report-problem': () => openReportDialog(),
+    'support-openpencil': () => donate('menu'),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

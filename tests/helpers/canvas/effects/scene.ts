@@ -23,8 +23,9 @@ function effect(type: Effect['type'], radius: number, y = 0): Effect {
 /**
  * Layer blur, drop and inner shadow, and background blur, each at a 16px radius, plus a drop
  * shadow, shown behind the node, under a fill at 0% opacity, which casts nothing; a boolean's
- * background blur, inside its result alone; and sharp inner shadows over the rounded corners of
- * an opaque and a translucent fill, where no fill shows through the edge.
+ * background blur, inside its result alone; sharp inner shadows over the rounded corners of
+ * an opaque and a translucent fill, where no fill shows through the edge; and a layer blur and
+ * both shadows at a negative radius, as a variable can give one, which draws like a radius of 0.
  */
 export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void {
   const card = { y: 100, width: 120, height: 120, cornerRadius: 20 }
@@ -129,6 +130,16 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
           color: { r: 0, g: 0, b: 0, a: 1 }
         }
       ]
+    })
+  }
+  for (const [index, type] of (['LAYER_BLUR', 'DROP_SHADOW', 'INNER_SHADOW'] as const).entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Negative ${type.toLowerCase().replace('_', ' ')}`,
+      x: 80 + index * 180,
+      ...card,
+      y: 460,
+      fills: [solid(0.31, 0.27, 0.9)],
+      effects: [effect(type, -6, type === 'LAYER_BLUR' ? 0 : 8)]
     })
   }
 }

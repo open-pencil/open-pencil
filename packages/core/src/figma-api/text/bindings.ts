@@ -1,4 +1,5 @@
 import { mapValues, omit, pick } from 'es-toolkit/object'
+import * as v from 'valibot'
 
 import {
   TEXT_BINDABLE_FIELDS,
@@ -12,7 +13,7 @@ import {
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { findSharedStyle, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
 
-import { invalidOption } from '#core/figma-api/accessors/text/messages'
+import { parseFigma } from '#core/figma-api/validation'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { styleRunsWithPatch } from '#core/text/character-style'
 import { faceForStyle } from '#core/text/font/names'
@@ -49,12 +50,7 @@ export function rangeSharedStylePatch(
 
 /** Figma's message for a text field it cannot bind. */
 export function assertTextBindableField(method: string, field: unknown): TextBindableField {
-  if (!(TEXT_BINDABLE_FIELDS as readonly unknown[]).includes(field)) {
-    throw new Error(
-      `in ${method}: Property "field" failed validation: ${invalidOption(TEXT_BINDABLE_FIELDS)}`
-    )
-  }
-  return field as TextBindableField
+  return parseFigma(v.picklist(TEXT_BINDABLE_FIELDS), field, method, 'field')
 }
 
 /** The variable a binding takes: one the document holds, of the type the field takes. */

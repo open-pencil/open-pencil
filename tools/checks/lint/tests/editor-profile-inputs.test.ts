@@ -73,13 +73,13 @@ describe('no-editor-profile-inputs', () => {
   test.each([
     'packages/core/src/editor/read-only/index.ts',
     'packages/core/src/editor/views/profile.ts',
-    'src/app/collab/yjs-sync.ts'
+    'src/app/collab/editor.ts'
   ])('accepts reading the restrictions in %s, which owns or sets them', async (path) => {
     expect(ruleDiagnostics(await lint(restriction, rules, path), rule)).toHaveLength(0)
   })
 
   test('the host still reads the view through the profile', async () => {
-    const path = 'src/app/collab/yjs-sync.ts'
+    const path = 'src/app/collab/editor.ts'
     expect(ruleDiagnostics(await lint(check, rules, path), rule)).toHaveLength(1)
   })
 

@@ -12,7 +12,7 @@ export interface RendererImages {
    * Images drawn in place of stored ones while they play, such as a shader's live frames, each
    * with the surface whose GL context holds its texture.
    */
-  readonly live: Map<string, { image: Image; surface: Surface }>
+  readonly live: Map<string, { readonly image: Image; surface: Surface }>
   /** The document and page whose images the cache and previews hold. */
   memoryGraph: SceneGraph | null
   memoryPage: string | null

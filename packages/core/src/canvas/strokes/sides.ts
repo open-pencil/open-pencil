@@ -9,6 +9,9 @@ import { normalizeDashPattern } from '#core/canvas/strokes'
 /** Arc points per wedge: a chord across at most this many degrees stays clear of the ring. */
 const WEDGE_STEP = 30
 
+/** The most times a dash pattern repeats along one side before it draws as a solid line. */
+const MAX_DASH_REPEATS = 10_000
+
 /** A rectangle's stroke weights, side by side: top, right, bottom, left. */
 export type SideWeights = readonly [number, number, number, number]
 
@@ -142,8 +145,11 @@ export function fittedDashPattern(
   pattern: readonly number[]
 ): { intervals: number[]; offset: number } | null {
   const period = pattern.reduce((sum, size) => sum + size, 0)
-  if (period <= 0 || length <= 0) return null
-  const scale = length / (Math.max(1, Math.round(length / period)) * period)
+  if (!(period > 0) || !(length > 0)) return null
+  const repeats = Math.max(1, Math.round(length / period))
+  const scale = length / (repeats * period)
+  // Dashes too fine to count, or a period too small to scale, draw as a solid line.
+  if (repeats > MAX_DASH_REPEATS || !(scale > 0) || !Number.isFinite(scale)) return null
   return { intervals: pattern.map((size) => size * scale), offset: (pattern[0] * scale) / 2 }
 }
 

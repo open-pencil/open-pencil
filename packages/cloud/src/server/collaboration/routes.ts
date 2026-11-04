@@ -3,9 +3,13 @@ import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
-import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
+import {
+  CLOUD_RATE_LIMITS,
+  routeParamResource,
+  createResourceRateLimiter
+} from '#cloud/server/rate-limit'
 import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '#cloud/server/sharing'
-import { validatedJSON } from '#cloud/server/validation'
+import { documentParams, shareParams, validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import type { Kysely } from 'kysely'
 
@@ -29,26 +33,32 @@ export function createCollaborationRoutes(
   if (rateLimit) {
     router.use(
       '/documents/:documentId/collaboration-ticket',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.collaborationTicket,
-        undefined,
-        (context) => context.req.param('documentId') ?? 'unknown-document'
+        routeParamResource('documentId')
       )
     )
   }
-  return router.post('/documents/:documentId/collaboration-ticket', async (context) => {
-    try {
-      return context.json({
-        ticket: await service.issueUserTicket(context.get('actor'), context.req.param('documentId'))
-      })
-    } catch (error) {
-      const response = notFound(context, error)
-      if (response) return response
-      throw error
+  return router.post(
+    '/documents/:documentId/collaboration-ticket',
+    documentParams,
+    async (context) => {
+      try {
+        return context.json({
+          ticket: await service.issueUserTicket(
+            context.get('actor'),
+            context.req.valid('param').documentId
+          )
+        })
+      } catch (error) {
+        const response = notFound(context, error)
+        if (response) return response
+        throw error
+      }
     }
-  })
+  )
 }
 
 export function createPublicCollaborationRoutes(
@@ -57,12 +67,13 @@ export function createPublicCollaborationRoutes(
 ) {
   return new Hono().post(
     '/shares/:shareId/collaboration-ticket',
+    shareParams,
     validatedJSON(parseResolveDocumentShare),
     async (context) => {
       try {
         return context.json({
           ticket: await service.issueShareTicket(
-            context.req.param('shareId'),
+            context.req.valid('param').shareId,
             context.req.valid('json'),
             resolveSession ? ((await resolveSession(context.req.raw)) ?? undefined) : undefined
           )

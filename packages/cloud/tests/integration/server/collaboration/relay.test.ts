@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { connectTestClient, until } from '#cloud-tests/helpers/relay'
 import {
   COLLAB_ACTIONS,
@@ -44,7 +45,7 @@ async function seed() {
     authSecret,
     relayURL
   })
-  const store = createCollaborationStateStore(runtime.database)
+  const store = createCollaborationStateStore(runtime.database, createMemoryObjectStore().store)
   const relay = () =>
     createCollaborationRelay({
       authSecret,
@@ -84,7 +85,9 @@ describe('collaboration relay with issued tickets', () => {
       await first.close()
 
       const stored = await context.store.load({ documentId: context.documentId, roomEpoch: 0 })
-      expect(stored).not.toBeNull()
+      // A closing room leaves one snapshot and no log.
+      expect(stored.snapshot).not.toBeNull()
+      expect(stored.updates).toEqual([])
 
       const second = context.relay()
       const viewerTicket = await context.tickets.issueUserTicket(

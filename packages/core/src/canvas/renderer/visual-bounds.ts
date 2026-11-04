@@ -112,3 +112,24 @@ export function subtreeVisualBounds(
   }
   return bounds
 }
+
+/**
+ * What the layers and their visible descendants draw, in page coordinates; null when none is
+ * visible. Each layer's world matrix places it, so a turned, flipped, or turned-parent layer gets
+ * the box it draws.
+ */
+export function computeContentBounds(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): VisualBounds | null {
+  let bounds: VisualBounds | null = null
+  for (const nodeId of nodeIds) {
+    const node = graph.getNode(nodeId)
+    if (!node?.visible) continue
+    bounds = unionVisualBounds(
+      bounds,
+      subtreeVisualBounds(graph, node, getWorldMatrix(node, graph))
+    )
+  }
+  return bounds
+}

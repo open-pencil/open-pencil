@@ -7,7 +7,7 @@ import type {
 } from '@figma/plugin-typings/plugin-api-standalone'
 import { clampRgb as clampRGB, converter, parse, type Color as CuloriColor } from 'culori'
 
-import { invalid, received } from './accessors/text/messages'
+import { invalid, received } from '#core/figma-api/validation'
 
 const toRGB = converter('rgb')
 

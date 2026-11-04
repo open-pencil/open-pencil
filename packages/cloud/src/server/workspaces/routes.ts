@@ -6,8 +6,18 @@ import {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { CLOUD_RATE_LIMITS, createRouteRateLimiter } from '#cloud/server/rate-limit'
-import { validatedJSON } from '#cloud/server/validation'
+import {
+  CLOUD_RATE_LIMITS,
+  createRouteRateLimiter,
+  routeParamResource,
+  createResourceRateLimiter
+} from '#cloud/server/rate-limit'
+import {
+  validatedJSON,
+  workspaceInvitationParams,
+  workspaceMemberParams,
+  workspaceParams
+} from '#cloud/server/validation'
 import {
   WorkspaceAlreadyMemberError,
   WorkspaceForbiddenError,
@@ -71,22 +81,22 @@ export function createWorkspaceRoutes(
     // Resending mails the invitation again, so it counts against the same budget as sending.
     router.use(
       '/:workspaceId/invitations/:invitationId/resend',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
-        () => false,
-        (context) => context.req.param('workspaceId') ?? 'unknown'
+        routeParamResource('workspaceId'),
+        () => false
       )
     )
     router.use(
       '/:workspaceId/invitations',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
-        (context) => context.req.method !== 'POST',
-        (context) => context.req.param('workspaceId') ?? 'unknown'
+        routeParamResource('workspaceId'),
+        (context) => context.req.method !== 'POST'
       )
     )
   }
@@ -109,88 +119,96 @@ export function createWorkspaceRoutes(
         throw error
       }
     })
-    .get('/:workspaceId', async (context) => {
+    .get('/:workspaceId', workspaceParams, async (context) => {
       const workspace = await service.get(
         context.get('actor').userId,
-        context.req.param('workspaceId')
+        context.req.valid('param').workspaceId
       )
       if (!workspace) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({ workspace })
     })
-    .patch('/:workspaceId', validatedJSON(parseUpdateWorkspace), (context) =>
+    .patch('/:workspaceId', workspaceParams, validatedJSON(parseUpdateWorkspace), (context) =>
       memberRoute(context, async () =>
         context.json({
           workspace: await members.rename(
             context.get('actor').userId,
-            context.req.param('workspaceId'),
+            context.req.valid('param').workspaceId,
             context.req.valid('json').name
           )
         })
       )
     )
-    .delete('/:workspaceId', (context) =>
+    .delete('/:workspaceId', workspaceParams, (context) =>
       memberRoute(context, async () => {
-        await members.delete(context.get('actor').userId, context.req.param('workspaceId'))
+        await members.delete(context.get('actor').userId, context.req.valid('param').workspaceId)
         return context.body(null, 204)
       })
     )
-    .get('/:workspaceId/members', (context) =>
+    .get('/:workspaceId/members', workspaceParams, (context) =>
       memberRoute(context, async () =>
         context.json(
-          await members.list(context.get('actor').userId, context.req.param('workspaceId'))
+          await members.list(context.get('actor').userId, context.req.valid('param').workspaceId)
         )
       )
     )
-    .post('/:workspaceId/invitations', validatedJSON(parseCreateWorkspaceInvitation), (context) =>
-      memberRoute(context, async () =>
-        context.json(
-          await members.invite(
-            context.get('actor').userId,
-            context.req.param('workspaceId'),
-            context.req.valid('json')
-          ),
-          201
+    .post(
+      '/:workspaceId/invitations',
+      workspaceParams,
+      validatedJSON(parseCreateWorkspaceInvitation),
+      (context) =>
+        memberRoute(context, async () =>
+          context.json(
+            await members.invite(
+              context.get('actor').userId,
+              context.req.valid('param').workspaceId,
+              context.req.valid('json')
+            ),
+            201
+          )
         )
-      )
     )
-    .post('/:workspaceId/invitations/:invitationId/resend', (context) =>
+    .post('/:workspaceId/invitations/:invitationId/resend', workspaceInvitationParams, (context) =>
       memberRoute(context, async () =>
         context.json(
           await members.resendInvitation(
             context.get('actor').userId,
-            context.req.param('workspaceId'),
-            context.req.param('invitationId')
+            context.req.valid('param').workspaceId,
+            context.req.valid('param').invitationId
           )
         )
       )
     )
-    .delete('/:workspaceId/invitations/:invitationId', (context) =>
+    .delete('/:workspaceId/invitations/:invitationId', workspaceInvitationParams, (context) =>
       memberRoute(context, async () => {
         await members.revokeInvitation(
           context.get('actor').userId,
-          context.req.param('workspaceId'),
-          context.req.param('invitationId')
+          context.req.valid('param').workspaceId,
+          context.req.valid('param').invitationId
         )
         return context.body(null, 204)
       })
     )
-    .patch('/:workspaceId/members/:userId', validatedJSON(parseUpdateWorkspaceMember), (context) =>
-      memberRoute(context, async () => {
-        await members.updateRole(
-          context.get('actor').userId,
-          context.req.param('workspaceId'),
-          context.req.param('userId'),
-          context.req.valid('json').role
-        )
-        return context.body(null, 204)
-      })
+    .patch(
+      '/:workspaceId/members/:userId',
+      workspaceMemberParams,
+      validatedJSON(parseUpdateWorkspaceMember),
+      (context) =>
+        memberRoute(context, async () => {
+          await members.updateRole(
+            context.get('actor').userId,
+            context.req.valid('param').workspaceId,
+            context.req.valid('param').userId,
+            context.req.valid('json').role
+          )
+          return context.body(null, 204)
+        })
     )
-    .delete('/:workspaceId/members/:userId', (context) =>
+    .delete('/:workspaceId/members/:userId', workspaceMemberParams, (context) =>
       memberRoute(context, async () => {
         await members.remove(
           context.get('actor').userId,
-          context.req.param('workspaceId'),
-          context.req.param('userId')
+          context.req.valid('param').workspaceId,
+          context.req.valid('param').userId
         )
         return context.body(null, 204)
       })

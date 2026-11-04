@@ -27,15 +27,6 @@ export function createMaskFilterCache(): MaskFilterCache {
   return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
 }
 
-/**
- * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
- * layer blur, both shadows, and background blur fall off as a Gaussian of 0.43 × radius; Figma's
- * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
- */
-export function blurSigma(radius: number): number {
-  return radius * 0.43
-}
-
 export function getCachedDropShadow(
   r: SkiaRenderer,
   dx: number,

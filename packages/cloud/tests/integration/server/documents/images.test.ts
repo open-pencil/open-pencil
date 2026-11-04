@@ -168,7 +168,8 @@ async function testApp() {
 
   /** Moves saves and image requests back in time, as if they were made that long ago. */
   async function age(milliseconds: number) {
-    for (const table of ['documentVersion', 'documentRevision'] as const) {
+    // Stored files are as old as the saves that wrote them.
+    for (const table of ['documentVersion', 'documentRevision', 'storageObject'] as const) {
       const rows = await runtime.database.selectFrom(table).select(['id', 'createdAt']).execute()
       for (const row of rows) {
         await runtime.database

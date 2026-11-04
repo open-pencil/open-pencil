@@ -102,7 +102,10 @@ async function withStore(
     return api
   })
   // No canvas presents frames here; treat every page switch as presented.
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   try {
     aiToolOverrides.value = { create_shape: true, switch_page: true }
     const a = store.state.currentPageId

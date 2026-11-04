@@ -1,4 +1,6 @@
 {
+  "interfaceScale": "Dimensione dell’interfaccia",
+  "interfaceScaleDescription": "Ridimensiona pannelli, testo e controlli senza modificare lo zoom della tela.",
   "recentFiles": "File recenti",
   "recentFilesDescription": "Scegli quanti file conservare nell’elenco e nel menu dei file recenti.",
   "recentFilesLimit": "Numero di file recenti",
@@ -64,7 +66,6 @@
   "toolbarMoveDown": "Sposta giù",
   "toolbarGroupWith": "Raggruppa con {tool}",
   "toolbarUngroup": "Separa",
-  "toolbarReset": "Ripristina predefiniti",
   "resetToDefault": "Ripristina predefiniti",
   "customizeToolbar": "Personalizza barra degli strumenti…",
   "discardChanges": "Scartare le modifiche?",

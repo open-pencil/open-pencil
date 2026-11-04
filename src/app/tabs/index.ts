@@ -6,6 +6,7 @@ import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
@@ -23,6 +24,7 @@ import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { loadFont } from '@/app/editor/fonts'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
@@ -326,13 +328,16 @@ async function discardFailedRecovery(store: EditorStore): Promise<void> {
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
   const imported = await readFigDocument(file, signal)
   const firstPageId = imported.getPages()[0]?.id
-  const layOut = (pageId: string) =>
+  // Each page is laid out once its text's fonts are prepared, never in a face it would lose.
+  const layOut = async (pageId: string) => {
+    await prepareGraphFonts(imported, [pageId], { loadFont, signal })
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
-  if (firstPageId) layOut(firstPageId)
+  }
+  if (firstPageId) await layOut(firstPageId)
   const thumbnailPageId = figThumbnailPageId(imported.getPages())
   if (thumbnailPageId && thumbnailPageId !== firstPageId) {
     populateFigPage(imported, thumbnailPageId)
-    layOut(thumbnailPageId)
+    await layOut(thumbnailPageId)
   }
   return imported
 }
@@ -353,15 +358,20 @@ async function showImportedGraph(
   const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
   const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
-  await store.switchPage(pageId, { preparation: load })
+  // The view is placed before the first frame counts as shown, so the loader gives way to the
+  // page drawn where it opens rather than one that then moves and fills in.
+  await store.switchPage(pageId, {
+    preparation: load,
+    beforePresentation: async () => {
+      if (remembered) {
+        await nextFrame()
+        store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+      } else {
+        await store.fitCurrentPageToViewport()
+      }
+    }
+  })
   load?.signal.throwIfAborted()
-  load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  if (remembered) {
-    await nextFrame()
-    store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
-  } else {
-    await store.fitCurrentPageToViewport()
-  }
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {

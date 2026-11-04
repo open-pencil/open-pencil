@@ -4,6 +4,7 @@ import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { createsComponentCycle, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
+import type { SkiaRenderer } from '#core/canvas'
 import { assertNodeEditable } from '#core/editor/capabilities'
 
 import { prepareFollowedFieldEdit, fitGroupsAround } from './accessor-utils'
@@ -22,7 +23,11 @@ import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import { installVectorNodeProxyAccessors } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
+import { installCSSAccessors } from './css'
 import { installDevStatusAccessors } from './dev-status'
+import { installExportAccessors } from './export/accessors'
+import type { ExportHost } from './export/render'
+import { installGeometryAccessors } from './geometry/accessors'
 import { FigmaNodeMembers } from './members'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
@@ -44,11 +49,38 @@ export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
 
-export interface NodeProxyHost {
+/** How a host loads pages as they are visited; see `FigmaAPIOptions`. */
+export interface PageHost {
+  load: (pageId: string) => Promise<void>
+  pageOfNode?: (nodeId: string) => Promise<string | null>
+}
+
+/**
+ * How each API loads a page's layers, a host's hook kept off `figma`, which has only Figma's
+ * members. Without one every page is in memory.
+ */
+const pageHosts = new WeakMap<NodeProxyHost, PageHost>()
+
+export function setPageHost(api: NodeProxyHost, host: PageHost): void {
+  pageHosts.set(api, host)
+}
+
+export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
+  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+}
+
+/** The page holding a layer not loaded yet, which loading that page brings in. */
+export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
+  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
+}
+
+export interface NodeProxyHost extends ExportHost {
   wrapNode(id: string): FigmaNodeProxy
   readonly currentPageId: string
   /** How groups and booleans refit; booleans size to their result when a renderer is attached. */
   readonly groupFitOptions: GroupFitOptions
+  /** The renderer that measures geometry, when the host has one. */
+  readonly renderer: SkiaRenderer | null
 }
 
 export { MIXED }
@@ -65,6 +97,8 @@ function assertNoComponentCycle(
 }
 
 export class FigmaNodeProxy extends FigmaNodeMembers {
+  /** Installed by `installGeometryAccessors` on the layers Figma gives it. */
+  declare outlineStroke: () => FigmaNodeProxy | null;
   [INTERNAL_ID]: string;
   [INTERNAL_GRAPH]: SceneGraph;
   [INTERNAL_API]: NodeProxyHost
@@ -82,10 +116,13 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installGuideAccessors(this, internals, type)
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
+    if (type && id !== graph.rootId) installExportAccessors(this, internals)
+    installCSSAccessors(this, internals)
+    if (type) installGeometryAccessors(this, internals, type)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
-    // alone; every page here is already loaded.
+    // alone, as the editor loads a page's layers when it is first visited.
     if (type === 'CANVAS')
-      Object.defineProperty(this, 'loadAsync', { value: () => Promise.resolve() })
+      Object.defineProperty(this, 'loadAsync', { value: () => loadPage(api, id) })
     if (id === graph.rootId)
       Object.defineProperty(this, 'documentColorProfile', {
         get: () => (graph.documentColorSpace === 'display-p3' ? 'DISPLAY_P3' : 'SRGB')
@@ -233,6 +270,10 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     )
     prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'appendChild')
     this._reparentAndFit(child[INTERNAL_ID])
+    // A child already here moves to the end, as Figma does; reparenting leaves it in place.
+    const last = this._raw().childIds.length - 1
+    if (this._raw().childIds[last] !== child[INTERNAL_ID])
+      this[INTERNAL_GRAPH].insertChildAt(child[INTERNAL_ID], this[INTERNAL_ID], last)
   }
 
   /**

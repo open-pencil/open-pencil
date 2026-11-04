@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -62,4 +62,53 @@ test('every child of a canvas is exported with its own order key', async () => {
 
   for (const [parent, positions] of byParent)
     expect([parent, new Set(positions).size]).toEqual([parent, positions.length])
+})
+
+/** The pages a saved file lists, in the order Figma sorts them: by their order keys. */
+function savedPageOrder(bytes: Uint8Array): string[] {
+  return parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
+    .nodeChanges.filter((change: NodeChange) => change.type === 'CANVAS' && !change.internalOnly)
+    .map((change) => ({
+      name: change.name ?? '',
+      position: (change.parentIndex as { position?: string } | undefined)?.position ?? ''
+    }))
+    // Keys are unique and compare by code point, as Figma sorts them.
+    .sort((a, b) => (a.position < b.position ? -1 : 1))
+    .map((page) => page.name)
+}
+
+// The shadcn/ui kit numbers its pages `!`, `~#`, `~#7`…; a page added after them was saved as
+// `{`, which sorts before every `~` key, so Figma listed it second.
+test('a page added or moved among Figma-numbered pages keeps its place', async () => {
+  await initCodec()
+  const graph = new SceneGraph()
+  const [cover] = graph.getPages()
+  graph.updateNode(cover.id, { name: 'Cover', source: { ...cover.source, orderKey: '!' } })
+  for (const [name, orderKey] of [
+    ['Accordion', '~#'],
+    ['Alert', '~#7'],
+    ['Trace', '~NO']
+  ]) {
+    const page = graph.addPage(name)
+    graph.updateNode(page.id, { source: { ...page.source, orderKey } })
+  }
+  graph.addPage('Added')
+  expect(savedPageOrder(await exportFigFile(graph))).toEqual([
+    'Cover',
+    'Accordion',
+    'Alert',
+    'Trace',
+    'Added'
+  ])
+
+  // Moved in OpenPencil, a page is saved where it now is, not where its old key put it.
+  const trace = graph.getPages().find((page) => page.name === 'Trace')
+  graph.insertChildAt(trace?.id ?? '', graph.rootId, 1)
+  expect(savedPageOrder(await exportFigFile(graph))).toEqual([
+    'Cover',
+    'Trace',
+    'Accordion',
+    'Alert',
+    'Added'
+  ])
 })

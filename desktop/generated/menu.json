@@ -30,6 +30,16 @@
         "label": "Diagnostics…"
       },
       {
+        "id": "report-problem",
+        "label": "Report a Problem…",
+        "feature": "reports"
+      },
+      {
+        "id": "support-openpencil",
+        "label": "Support OpenPencil…",
+        "feature": "donation"
+      },
+      {
         "type": "separator"
       },
       {
@@ -163,6 +173,11 @@
         "id": "paste-to-replace",
         "label": "Paste to replace",
         "accelerator": "CmdOrCtrl+Shift+R",
+        "feature": "document"
+      },
+      {
+        "id": "paste-as-layers",
+        "label": "Paste as layers",
         "feature": "document"
       },
       {

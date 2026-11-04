@@ -263,10 +263,8 @@ function aabbFromCorners(corners: Vector[]): VisualBounds {
 }
 
 /**
- * Compute a node's visual bounds in canvas space using the world matrix,
- * correctly handling nested ancestor rotations. This replaces the previous
- * `nodeVisualBounds` call which used `rotatedBBox` with the node's LOCAL
- * rotation and the rotated origin — wrong when ancestors are rotated.
+ * Compute a node's visual bounds in canvas space through its world matrix,
+ * so rotated and flipped ancestors count.
  *
  * Includes stroke overflow (uniform), effect overflow (directional),
  * fill/stroke geometry (transformed through the world matrix), and

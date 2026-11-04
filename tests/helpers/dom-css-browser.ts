@@ -2,8 +2,9 @@ import process from 'node:process'
 
 import { test, type Page } from '@playwright/test'
 
-import type { DesignDocument } from '@open-pencil/dom-css'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { CSSComputeOptions, DesignDocument, DesignNode } from '@open-pencil/dom-css'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const BROWSER_RUNTIME_MODULE = `/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
 const DOM_CSS_BROWSER_MODULE = '/@id/@open-pencil/dom-css/browser'
@@ -95,21 +96,23 @@ export async function browserRuntimeComputeStyles(
   page: Page,
   document: DesignDocument,
   cssText: string,
-  sandbox: 'shadow-root' | 'iframe' = 'iframe'
+  sandbox: 'shadow-root' | 'iframe' = 'iframe',
+  compute: CSSComputeOptions = {}
 ) {
   await ensureAppPage(page)
 
   return page.evaluate(
-    async ({ designDocument, css, modulePath, sandboxMode }) => {
+    async ({ designDocument, css, modulePath, sandboxMode, computeOptions }) => {
       const { createBrowserCSSRuntime } = await import(modulePath)
       const runtime = createBrowserCSSRuntime({ document: window.document, sandbox: sandboxMode })
-      return runtime.computeStyles(designDocument, css)
+      return runtime.computeStyles(designDocument, css, computeOptions)
     },
     {
       designDocument: document,
       css: cssText,
       modulePath: BROWSER_RUNTIME_MODULE,
-      sandboxMode: sandbox
+      sandboxMode: sandbox,
+      computeOptions: compute
     }
   )
 }
@@ -221,4 +224,57 @@ export async function computedStyleProperties(
       styleProperties.map((property) => [property, computed.getPropertyValue(property)])
     )
   }, properties)
+}
+
+const CORE_HTML_LAYERS_MODULE = '/@id/@open-pencil/core/io/formats/html/layers'
+
+/**
+ * Imports HTML as the app does: styled and laid out by the browser, then built into layers by
+ * Core. Returns each element with an id, its captured box, and the box of the layer named for it.
+ */
+export interface ImportedLayer {
+  id: string
+  captured: Rect
+  layer: Rect
+}
+
+export async function browserImportedLayers(
+  page: Page,
+  html: string,
+  viewport: { width: number; height: number }
+): Promise<ImportedLayer[]> {
+  await ensureAppPage(page)
+  return page.evaluate(
+    async ({ source, size, domModule, layersModule }) => {
+      const { browserHTMLToDesignDocument } = await import(domModule)
+      const { sceneGraphFromStyledHTML } = await import(layersModule)
+      const styled: DesignDocument = await browserHTMLToDesignDocument(source, {
+        compute: { layout: true, viewport: size }
+      })
+      const graph: SceneGraph = await sceneGraphFromStyledHTML(styled)
+      const captured = new Map<string, Rect>()
+      const walk = (nodes: DesignNode[]) => {
+        for (const node of nodes) {
+          if (node.type !== 'element') continue
+          if (node.attrs.id && node.layout) captured.set(node.attrs.id, node.layout.box)
+          walk(node.children)
+        }
+      }
+      walk(styled.children)
+      const pageId = graph.getPages()[0].id
+      return graph.flattenTree(pageId).flatMap(({ node }) => {
+        const box = captured.get(node.name)
+        if (!box) return []
+        const position = graph.getAbsolutePosition(node.id)
+        const layer = { x: position.x, y: position.y, width: node.width, height: node.height }
+        return [{ id: node.name, captured: box, layer }]
+      })
+    },
+    {
+      source: html,
+      size: viewport,
+      domModule: DOM_CSS_BROWSER_MODULE,
+      layersModule: CORE_HTML_LAYERS_MODULE
+    }
+  )
 }

@@ -42,6 +42,7 @@
   "pasteToReplace": "Wklej, aby zastąpić",
   "copyProperties": "Kopiuj właściwości",
   "pasteProperties": "Wklej właściwości",
+  "pasteAsLayers": "Wklej jako warstwy",
   "copyPasteAs": "Kopiuj/Wklej jako",
   "copyAsText": "Kopiuj jako tekst",
   "copyAsSVG": "Kopiuj jako SVG",
@@ -87,5 +88,7 @@
   "togglePreview": "Podgląd",
   "saveTo": "Zapisz w…",
   "showVersionHistory": "Pokaż historię wersji",
-  "saveToVersionHistory": "Zapisz w historii wersji…"
+  "saveToVersionHistory": "Zapisz w historii wersji…",
+  "reportProblem": "Zgłoś problem…",
+  "supportOpenPencil": "Wesprzyj OpenPencil…"
 }

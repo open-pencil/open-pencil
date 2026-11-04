@@ -24,14 +24,18 @@ import {
   type EditorPreparationEventName,
   type EditorPreparationEvents
 } from '@/app/editor/preparation/events'
-import { pageProgressUnit, type EditorPreparationHandle } from '@/app/editor/preparation/types'
+import { pageProgressUnit } from '@/app/editor/preparation/types'
 import {
   createEditorComputedRefs,
   createEditorStoreModules,
   defineEditorStoreAccessors
 } from '@/app/editor/session/modules'
 import { scopedStoreFactory } from '@/app/editor/session/scope'
-import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
+import {
+  createInitialAppEditorState,
+  type AppEditorState,
+  type AppSwitchPageOptions
+} from '@/app/editor/session/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
@@ -133,7 +137,9 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     })
     preparationLifecycle.delete(failure.id)
   })
-  const preparationController = createEditorPreparationController(state, preparationEvents)
+  const preparationController = createEditorPreparationController(state, preparationEvents, {
+    editor
+  })
   const modules = createEditorStoreModules(editor, state, io, viewportSize, preparationController)
 
   // ─── Public API ───────────────────────────────────────────────
@@ -141,17 +147,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
 
   const panes = createCanvasPaneRegistry(state)
 
-  async function switchPage(
-    pageId: string,
-    options: {
-      preparation?: EditorPreparationHandle
-      onProgress?: Parameters<typeof editor.switchPage>[1] extends infer Options
-        ? Options extends { onProgress?: infer Progress }
-          ? Progress
-          : never
-        : never
-    } = {}
-  ) {
+  async function switchPage(pageId: string, options: AppSwitchPageOptions = {}) {
     const page = editor.graph.getNode(pageId)
     const preparation =
       options.preparation ??
@@ -177,7 +173,9 @@ function buildEditorStore(initialGraph?: SceneGraph) {
       if (prepared) {
         editor.commitPageSwitch(prepared)
         preparation.update({ phase: 'preparing-render', detail: page?.name ?? null })
-        await preparationController.waitForPresentation(preparation.id, editor.state.sceneVersion)
+        await options.beforePresentation?.()
+        preparation.signal.throwIfAborted()
+        await preparationController.waitForPresentation(preparation.id, editor.state)
         preparation.signal.throwIfAborted()
       }
       succeeded = true

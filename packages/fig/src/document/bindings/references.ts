@@ -1,5 +1,6 @@
 import { symbolOverridesOf, type SymbolOverride } from '#fig/instance-overrides/types'
 import { variableConsumptionEntries } from '#fig/node-change/variable/bindings'
+import { effectVariableAliases } from '#fig/node-change/variable/effects'
 import { visitVariableReferences } from '#fig/node-change/variable/expression'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
@@ -60,6 +61,9 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
         ['strokePaints', node.strokePaints]
       ] as const) {
         for (const paint of paints ?? []) normalize(paint.colorVar?.value?.alias, field, path)
+      }
+      for (const effect of node.effects ?? []) {
+        for (const alias of effectVariableAliases(effect)) normalize(alias, 'effects', path)
       }
       const modeMap = node.variableModeBySetMap as
         | {

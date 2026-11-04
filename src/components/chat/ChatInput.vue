@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { acpAgentFor } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -11,8 +11,6 @@ import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
-import { openSettingsDialog } from '@/app/settings/dialog'
-import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -83,8 +81,6 @@ function restoreDraft(submission: ChatSubmission): void {
   else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
 }
 
-/** A reply is on its way, so the credit balance waits to update until it ends. */
-const replying = computed(() => status === 'streaming' || status === 'submitted')
 /** Why images dropped now would not be attached, or null when they would. */
 const dropRefusal = computed(() => {
   if (disabled) return ai.value.dropImagesAfterReply
@@ -110,8 +106,7 @@ const isAgentProvider = computed(
 )
 const agentName = computed(() => {
   if (providerID.value === 'harness:pi') return 'Pi'
-  const agentId = providerID.value.replace('acp:', '')
-  return ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
+  return acpAgentFor(providerID.value)?.name ?? providerID.value.replace('acp:', '')
 })
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
@@ -144,7 +139,6 @@ const selectedProfileName = computed(
     @stop="emit('stop')"
     @interrupt="emit('interrupt')"
     @paste="handlePaste"
-    @settings="openSettingsDialog('ai')"
   >
     <template v-if="images.length" #attachment>
       <div class="flex flex-wrap gap-1.5">
@@ -186,7 +180,6 @@ const selectedProfileName = computed(
         :label="ai.mentionSelection"
         size="sm"
         :disabled="disabled || !canMentionSelection"
-        data-slot="chat-mention-selection"
         @click="composer?.insert(selectionMentions())"
       >
         <icon-lucide-mouse-pointer-2 class="size-4" />
@@ -215,7 +208,6 @@ const selectedProfileName = computed(
             </template>
           </ChatProfileSelect>
           <ChatThinkingSelect />
-          <ChatCreditBalance :replying="replying" />
         </template>
       </div>
     </template>

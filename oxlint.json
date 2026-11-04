@@ -1,17 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "import",
-    "unicorn",
-    "vue",
-    "promise",
-    "node"
-  ],
-  "jsPlugins": [
-    "./lint/plugin.js",
-    "eslint-plugin-compat"
-  ],
+  "extends": ["./packages/oxlint-plugin/recommended.json"],
+  "plugins": ["typescript", "import", "unicorn", "vue", "promise", "node"],
+  "jsPlugins": ["./lint/plugin.js", "eslint-plugin-compat"],
   "settings": {
     "browsers": ["chrome 111", "edge 111", "firefox 128", "safari 16.4", "ios_saf 16.4"]
   },
@@ -19,29 +10,17 @@
     "browser": true,
     "es2024": true
   },
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "desktop",
+    "packages/mermaid/src/upstream",
+    "*.config.*"
+  ],
   "rules": {
-    "no-unused-vars": "warn",
-    "no-console": [
-      "warn",
-      {
-        "allow": [
-          "warn",
-          "error",
-          "debug",
-          "time",
-          "timeEnd"
-        ]
-      }
-    ],
-    "eqeqeq": [
-      "error",
-      "always",
-      {
-        "null": "ignore"
-      }
-    ],
-    "prefer-const": "error",
-    "radix": "error",
     "no-restricted-imports": [
       "error",
       {
@@ -52,74 +31,23 @@
           },
           {
             "name": "node:module",
-            "importNames": [
-              "createRequire"
-            ],
+            "importNames": ["createRequire"],
             "message": "Use ESM imports or import.meta.resolve instead of createRequire/require."
           }
         ],
         "patterns": [
           {
-            "group": [
-              "@/engine/*"
-            ],
+            "group": ["@/engine/*"],
             "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
-            "allowImportNames": [
-              "loadFont",
-              "listFamilies",
-              "listFonts",
-              "preloadFonts"
-            ]
+            "allowImportNames": ["loadFont", "listFamilies", "listFonts", "preloadFonts"]
           },
           {
-            "group": [
-              "../../packages/*",
-              "../../../packages/*"
-            ],
+            "group": ["../../packages/*", "../../../packages/*"],
             "message": "Use the workspace package name (e.g. @open-pencil/core) instead of relative paths to packages/."
           }
         ]
       }
     ],
-    "no-empty-function": "error",
-    "max-lines": [
-      "warn",
-      {
-        "max": 600
-      }
-    ],
-    "complexity": [
-      "error",
-      {
-        "max": 20
-      }
-    ],
-    "typescript/no-explicit-any": "error",
-    "typescript/no-non-null-assertion": "error",
-    "typescript/no-floating-promises": "error",
-    "typescript/no-misused-promises": "error",
-    "typescript/consistent-type-imports": "error",
-    "typescript/consistent-return": "error",
-    "typescript/no-unnecessary-condition": "error",
-    "typescript/no-unnecessary-type-assertion": "error",
-    "typescript/no-unnecessary-type-parameters": "error",
-    "typescript/no-unnecessary-boolean-literal-compare": "error",
-    "typescript/no-unnecessary-template-expression": "error",
-    "typescript/no-unnecessary-type-arguments": "error",
-    "typescript/prefer-optional-chain": "error",
-    "typescript/prefer-for-of": "error",
-    "import/no-cycle": "error",
-    "import/no-self-import": "error",
-    "import/no-duplicates": "error",
-    "import/no-mutable-exports": "error",
-    "unicorn/no-instanceof-array": "error",
-    "unicorn/no-typeof-undefined": "error",
-    "unicorn/no-nested-ternary": "error",
-    "unicorn/no-useless-fallback-in-spread": "error",
-    "unicorn/no-length-as-slice-end": "error",
-    "unicorn/no-unnecessary-await": "error",
-    "unicorn/prefer-string-starts-ends-with": "error",
-    "unicorn/consistent-existence-index-check": "error",
     "vue/no-arrow-functions-in-watch": "error",
     "vue/no-deprecated-destroyed-lifecycle": "error",
     "vue/no-export-in-script-setup": "error",
@@ -151,7 +79,6 @@
     "vue/prop-name-casing": "error",
     "vue/valid-define-options": "error",
     "vue/valid-next-tick": "error",
-    "open-pencil/no-import-type-annotations": "error",
     "open-pencil/no-inline-named-types": [
       "error",
       {
@@ -179,13 +106,11 @@
     "open-pencil/no-browser-side-effects-in-vue": "error",
     "open-pencil/no-document-query-selector-in-vue": "error",
     "open-pencil/no-direct-selection-tool-state-mutation": "error",
-    "open-pencil/no-math-random": "error",
     "open-pencil/no-hardcoded-color-constants": "error",
     "open-pencil/no-unknown-tailwind-classes": "error",
     "open-pencil/no-px-tailwind-values": "error",
     "open-pencil/no-hand-rolled-color": "error",
     "open-pencil/no-raw-console-format": "off",
-    "open-pencil/no-silent-catch": "error",
     "open-pencil/no-typeof-window-check": "error",
     "open-pencil/no-vue-self-package-imports": "error",
     "open-pencil/no-cross-package-source-imports": "error",
@@ -193,31 +118,18 @@
     "open-pencil/no-core-framework-imports": "error",
     "open-pencil/no-inline-tauri-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
-    "open-pencil/no-deep-parent-relative-imports": "error",
-    "open-pencil/no-deep-parent-relative-paths": "error",
-    "open-pencil/no-broad-double-cast": "error",
-    "open-pencil/no-unknown-record-double-cast": "error",
-    "open-pencil/no-broad-unknown-type-assertions": "error",
     "open-pencil/no-local-json-object-aliases": "error",
-    "open-pencil/no-duplicate-type-shapes": "error",
-    "open-pencil/no-ts-suppression-comments": "error",
-    "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-zoom-in-scene-drawing": "error",
     "open-pencil/no-direct-open-pencil-window-internals": "error",
     "open-pencil/no-direct-open-pencil-browser-store": "error",
-    "open-pencil/no-function-alias-imports": "error",
     "open-pencil/max-composition-root-lines": [
       "error",
       {
         "max": 260
       }
     ],
-    "open-pencil/no-core-parent-relative-imports": "error",
     "open-pencil/no-document-change-capture": "error",
-    "open-pencil/no-mcp-parent-relative-imports": "error",
-    "open-pencil/no-vue-parent-relative-imports": "error",
-    "open-pencil/no-cli-parent-relative-imports": "error",
     "open-pencil/no-core-self-package-imports": "error",
     "open-pencil/no-inline-prompt-constants": "error",
     "open-pencil/no-direct-graph-emitter-subscriptions": "error",
@@ -227,192 +139,39 @@
     "open-pencil/prefer-vueuse-timeouts": "error",
     "open-pencil/vue-component-file-pascal-case": "error",
     "open-pencil/component-namespace-casing": "error",
-    "open-pencil/no-mixed-case-acronym-identifiers": "error",
+    "open-pencil/no-mixed-case-acronym-identifiers": [
+      "error",
+      {
+        "ignoredImports": [
+          "@agentclientprotocol/sdk",
+          "@realfavicongenerator/generate-favicon",
+          "@tauri-apps/plugin-clipboard-manager",
+          "@tauri-apps/plugin-opener",
+          "@vueuse/core",
+          "culori",
+          "reka-ui"
+        ],
+        "ignoredIdentifiers": [
+          "convertToHsb",
+          "convertToHsl",
+          "convertToRgb",
+          "formatCss",
+          "formatRgb",
+          "McpServer",
+          "ndJsonStream",
+          "openUrl",
+          "useObjectUrl",
+          "useUrlSearchParams",
+          "writeHtml"
+        ]
+      }
+    ],
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",
     "open-pencil/no-bun-globals-in-cli": "error",
     "open-pencil/no-top-level-prefixed-test-files": "error",
     "open-pencil/no-editor-profile-inputs": "error",
-    "open-pencil/no-conditional-object-spreads": "error",
-    "open-pencil/no-sibling-domain-prefixed-files": "error",
-    "array-callback-return": "error",
-    "block-scoped-var": "error",
-    "default-case-last": "error",
-    "default-param-last": "error",
-    "guard-for-in": "error",
-    "no-array-constructor": "error",
-    "no-case-declarations": "error",
-    "no-caller": "error",
-    "no-constructor-return": "error",
-    "no-else-return": "error",
-    "no-empty-pattern": "error",
-    "no-eval": "error",
-    "no-extend-native": "error",
-    "no-extra-bind": "error",
-    "no-extra-label": "error",
-    "no-implied-eval": "error",
-    "no-iterator": "error",
-    "no-labels": "error",
-    "no-lone-blocks": "error",
-    "no-multi-str": "error",
-    "no-new": "error",
-    "no-new-wrappers": "error",
-    "no-object-constructor": "error",
-    "no-proto": "error",
-    "no-return-assign": "error",
-    "no-script-url": "error",
-    "no-self-compare": "error",
-    "no-sequences": "error",
-    "no-template-curly-in-string": "error",
-    "no-unmodified-loop-condition": "error",
-    "no-unneeded-ternary": "error",
-    "no-unused-expressions": "error",
-    "no-useless-assignment": "error",
-    "no-useless-call": "error",
-    "no-useless-computed-key": "error",
-    "no-useless-concat": "error",
-    "no-useless-constructor": "error",
-    "no-useless-rename": "error",
-    "no-useless-return": "error",
-    "prefer-numeric-literals": "error",
-    "prefer-object-has-own": "error",
-    "prefer-promise-reject-errors": "error",
-    "prefer-regex-literals": "error",
-    "prefer-rest-params": "error",
-    "prefer-spread": "error",
-    "symbol-description": "error",
-    "unicode-bom": "error",
-    "yoda": "error",
-    "typescript/adjacent-overload-signatures": "error",
-    "typescript/await-thenable": "error",
-    "typescript/ban-ts-comment": "error",
-    "typescript/ban-tslint-comment": "error",
-    "typescript/no-array-delete": "error",
-    "typescript/no-base-to-string": "error",
-    "typescript/no-confusing-non-null-assertion": "error",
-    "typescript/no-duplicate-enum-values": "error",
-    "typescript/no-duplicate-type-constituents": "error",
-    "typescript/no-extraneous-class": "error",
-    "typescript/no-extra-non-null-assertion": "error",
-    "typescript/no-for-in-array": "error",
-    "typescript/no-implied-eval": "error",
-    "typescript/no-invalid-void-type": "error",
-    "typescript/no-meaningless-void-operator": "error",
-    "typescript/no-misused-new": "error",
-    "typescript/no-misused-spread": "error",
-    "typescript/no-mixed-enums": "error",
-    "typescript/no-non-null-asserted-nullish-coalescing": "error",
-    "typescript/no-non-null-asserted-optional-chain": "error",
-    "typescript/no-redundant-type-constituents": "error",
-    "typescript/no-this-alias": "error",
-    "typescript/no-unnecessary-parameter-property-assignment": "error",
-    "typescript/no-unnecessary-qualifier": "error",
-    "typescript/no-unnecessary-type-constraint": "error",
-    "typescript/no-unsafe-enum-comparison": "error",
-    "typescript/no-unsafe-function-type": "error",
-    "typescript/no-unsafe-unary-minus": "error",
-    "typescript/no-useless-default-assignment": "error",
-    "typescript/no-useless-empty-export": "error",
-    "typescript/no-var-requires": "error",
-    "typescript/no-wrapper-object-types": "error",
-    "typescript/only-throw-error": "error",
-    "typescript/prefer-as-const": "error",
-    "typescript/prefer-find": "error",
-    "typescript/prefer-function-type": "error",
-    "typescript/prefer-promise-reject-errors": "error",
-    "typescript/prefer-reduce-type-parameter": "error",
-    "typescript/prefer-return-this-type": "error",
-    "typescript/prefer-ts-expect-error": "error",
-    "typescript/require-array-sort-compare": "error",
-    "typescript/triple-slash-reference": "error",
-    "import/no-absolute-path": "error",
-    "import/no-amd": "error",
-    "import/no-commonjs": "error",
-    "import/no-dynamic-require": "error",
-    "import/no-empty-named-blocks": "error",
-    "import/no-webpack-loader-syntax": "error",
-    "promise/always-return": "error",
-    "promise/catch-or-return": "error",
-    "promise/no-callback-in-promise": "error",
-    "promise/no-multiple-resolved": "error",
-    "promise/no-new-statics": "error",
-    "promise/no-promise-in-callback": "error",
-    "promise/no-return-in-finally": "error",
-    "promise/no-return-wrap": "error",
-    "promise/valid-params": "error",
-    "node/no-exports-assign": "error",
-    "node/no-new-require": "error",
-    "node/no-path-concat": "error",
-    "oxc/approx-constant": "error",
-    "oxc/missing-throw": "error",
-    "oxc/no-accumulating-spread": "error",
-    "oxc/no-async-endpoint-handlers": "error",
-    "oxc/no-map-spread": "error",
-    "oxc/number-arg-out-of-range": "error",
-    "oxc/uninvoked-array-callback": "error",
-    "unicorn/consistent-assert": "error",
-    "unicorn/consistent-date-clone": "error",
-    "unicorn/consistent-empty-array-spread": "error",
-    "unicorn/consistent-template-literal-escape": "error",
-    "unicorn/custom-error-definition": "error",
-    "unicorn/error-message": "error",
-    "unicorn/new-for-builtins": "error",
-    "unicorn/no-abusive-eslint-disable": "error",
-    "unicorn/no-accessor-recursion": "error",
-    "unicorn/no-anonymous-default-export": "error",
-    "unicorn/no-array-method-this-argument": "error",
-    "unicorn/no-await-in-promise-methods": "error",
-    "unicorn/no-console-spaces": "error",
-    "unicorn/no-document-cookie": "error",
-    "unicorn/no-empty-file": "error",
-    "unicorn/no-instanceof-builtins": "error",
-    "unicorn/no-invalid-fetch-options": "error",
-    "unicorn/no-invalid-remove-event-listener": "error",
-    "unicorn/no-magic-array-flat-depth": "error",
-    "unicorn/no-negation-in-equality-check": "error",
-    "unicorn/no-new-array": "error",
-    "unicorn/no-new-buffer": "error",
-    "unicorn/no-single-promise-in-promise-methods": "error",
-    "unicorn/no-static-only-class": "error",
-    "unicorn/no-thenable": "error",
-    "unicorn/no-this-assignment": "error",
-    "unicorn/no-unnecessary-array-flat-depth": "error",
-    "unicorn/no-unnecessary-array-splice-count": "error",
-    "unicorn/no-unnecessary-slice-end": "error",
-    "unicorn/no-unreadable-iife": "error",
-    "unicorn/no-useless-collection-argument": "error",
-    "unicorn/no-useless-error-capture-stack-trace": "error",
-    "unicorn/no-useless-iterator-to-array": "error",
-    "unicorn/no-useless-length-check": "error",
-    "unicorn/no-useless-promise-resolve-reject": "error",
-    "unicorn/no-useless-spread": "error",
-    "unicorn/no-useless-switch-case": "error",
-    "unicorn/prefer-array-find": "error",
-    "unicorn/prefer-array-flat": "error",
-    "unicorn/prefer-array-flat-map": "error",
-    "unicorn/prefer-array-index-of": "error",
-    "unicorn/prefer-array-some": "error",
-    "unicorn/prefer-blob-reading-methods": "error",
-    "unicorn/prefer-classlist-toggle": "error",
-    "unicorn/prefer-date-now": "error",
-    "unicorn/prefer-event-target": "error",
-    "unicorn/prefer-keyboard-event-key": "error",
-    "unicorn/prefer-modern-dom-apis": "error",
-    "unicorn/prefer-negative-index": "error",
-    "unicorn/prefer-native-coercion-functions": "error",
-    "unicorn/prefer-object-from-entries": "error",
-    "unicorn/prefer-optional-catch-binding": "error",
-    "unicorn/prefer-prototype-methods": "error",
-    "unicorn/prefer-regexp-test": "error",
-    "unicorn/prefer-set-size": "error",
-    "unicorn/prefer-string-slice": "error",
-    "unicorn/prefer-string-trim-start-end": "error",
-    "unicorn/prefer-structured-clone": "error",
-    "unicorn/prefer-type-error": "error",
-    "unicorn/require-array-join-separator": "error",
-    "unicorn/require-number-to-fixed-digits-argument": "error",
-    "unicorn/throw-new-error": "error",
     "vue/no-deprecated-data-object-declaration": "error",
     "vue/no-deprecated-delete-set": "error",
     "vue/no-deprecated-events-api": "error",
@@ -420,26 +179,61 @@
     "vue/no-deprecated-vue-config-keycodes": "error",
     "vue/no-this-in-before-route-enter": "error",
     "vue/return-in-computed-property": "error",
-    "unicorn/require-post-message-target-origin": "error",
-    "unicorn/prefer-set-has": "error",
-    "unicorn/prefer-modern-math-apis": "error",
-    "unicorn/prefer-node-protocol": "error",
-    "unicorn/prefer-number-properties": "error",
-    "prefer-exponentiation-operator": "error",
-    "no-promise-executor-return": "error",
-    "typescript/no-empty-object-type": "error",
-    "typescript/return-await": "error",
-    "typescript/restrict-plus-operands": "error",
-    "unicorn/prefer-includes": "error",
-    "no-loop-func": "error",
-    "typescript/no-dynamic-delete": "error",
-    "open-pencil/no-hand-rolled-base64": "error",
-    "open-pencil/prefer-es-toolkit": "error",
-    "open-pencil/no-module-mocking": "error",
-    "open-pencil/no-reduce-accumulator-copy": "error",
-    "open-pencil/no-widen-then-assert": "error"
+    "open-pencil/no-unvalidated-json-parse": "off",
+    "open-pencil/valibot-schema-conventions": "off",
+    "open-pencil/no-useless-pass-through-wrappers": "off",
+    "open-pencil/no-secret-in-query": "off",
+    "open-pencil/no-secret-logging": "off"
   },
   "overrides": [
+    {
+      "files": ["packages/core/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#core/*"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/mcp/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#mcp/*"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/vue/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#vue/*"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/cli/src/**"],
+      "rules": {
+        "open-pencil/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#cli/*"
+          }
+        ]
+      }
+    },
     {
       "files": ["packages/cloud/src/server/db/migrations/*.ts"],
       "rules": {
@@ -453,9 +247,7 @@
       }
     },
     {
-      "files": [
-        "packages/cloud/src/**/*.ts"
-      ],
+      "files": ["packages/cloud/src/**/*.ts"],
       "rules": {
         "typescript/no-unsafe-assignment": "error",
         "typescript/no-unsafe-argument": "error",
@@ -470,7 +262,13 @@
       "files": ["packages/cloud/src/server/**/*.ts"],
       "rules": {
         "open-pencil/no-raw-sql": "error",
-        "open-pencil/no-cloud-dynamic-html": "error"
+        "open-pencil/no-dynamic-html": "error"
+      }
+    },
+    {
+      "files": ["packages/cloud/src/server/**/*.ts", "packages/cloud/src/admin/**/*.ts"],
+      "rules": {
+        "open-pencil/no-unvalidated-route-params": "error"
       }
     },
     {
@@ -497,8 +295,8 @@
         "src/app/integrations/storage/cloud/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-cloud-secret-in-query": "error",
-        "open-pencil/no-cloud-secret-logging": "error"
+        "open-pencil/no-secret-in-query": "error",
+        "open-pencil/no-secret-logging": "error"
       }
     },
     {
@@ -508,7 +306,7 @@
       }
     },
     {
-      "files": ["tools/checks/lint/src/rules/quality/widen-then-assert.ts"],
+      "files": ["packages/oxlint-plugin/src/rules/quality/widen-then-assert.ts"],
       "rules": {
         "complexity": "off"
       }
@@ -516,7 +314,9 @@
     {
       "files": [
         "tools/checks/lint/src/**/*.ts",
-        "tools/checks/lint/tests/**/*.ts"
+        "tools/checks/lint/tests/**/*.ts",
+        "packages/oxlint-plugin/src/**/*.ts",
+        "packages/oxlint-plugin/tests/**/*.ts"
       ],
       "rules": {
         "open-pencil/no-generated-test-id-literals": "off",
@@ -525,10 +325,7 @@
       }
     },
     {
-      "files": [
-        "src/**/*.ts",
-        "packages/*/src/**/*.ts"
-      ],
+      "files": ["src/**/*.ts", "packages/*/src/**/*.ts"],
       "rules": {
         "open-pencil/no-useless-pass-through-wrappers": "error"
       }
@@ -542,13 +339,23 @@
     {
       "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": "error"
+        "open-pencil/valibot-schema-conventions": [
+          "error",
+          {
+            "schemaModules": ["/packages/cloud/src/contract/"]
+          }
+        ]
       }
     },
     {
       "files": ["tools/*/*/src/**/*.ts"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": ["error", { "placement": false }]
+        "open-pencil/valibot-schema-conventions": [
+          "error",
+          {
+            "placement": false
+          }
+        ]
       }
     },
     {
@@ -562,10 +369,7 @@
       }
     },
     {
-      "files": [
-        "**/kiwi/schema-runtime/**",
-        "**/kiwi/src/schema-runtime/**"
-      ],
+      "files": ["**/kiwi/schema-runtime/**", "**/kiwi/src/schema-runtime/**"],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
@@ -593,9 +397,7 @@
       }
     },
     {
-      "files": [
-        "packages/cli/src/commands/**"
-      ],
+      "files": ["packages/cli/src/commands/**"],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
       }
@@ -611,26 +413,19 @@
       }
     },
     {
-      "files": [
-        "scripts/**/*.ts",
-        "tools/**/*.ts"
-      ],
+      "files": ["scripts/**/*.ts", "tools/**/*.ts"],
       "rules": {
         "no-console": "off"
       }
     },
     {
-      "files": [
-        "packages/scene-graph/src/constants.ts"
-      ],
+      "files": ["packages/scene-graph/src/constants.ts"],
       "rules": {
         "open-pencil/no-hardcoded-color-constants": "off"
       }
     },
     {
-      "files": [
-        "packages/scene-graph/src/index.ts"
-      ],
+      "files": ["packages/scene-graph/src/index.ts"],
       "rules": {
         "open-pencil/no-direct-graph-emitter-subscriptions": "off"
       }
@@ -648,23 +443,10 @@
       }
     },
     {
-      "files": [
-        "src/app/code/sandbox/evaluate.ts",
-        "src/app/code/sandbox/frame.ts"
-      ],
+      "files": ["src/app/code/sandbox/evaluate.ts", "src/app/code/sandbox/frame.ts"],
       "rules": {
         "import/default": "off"
       }
     }
-  ],
-  "ignorePatterns": [
-    "node_modules",
-    "dist",
-    "desktop",
-    "packages/mermaid/src/upstream",
-    "*.config.*"
-  ],
-  "categories": {
-    "correctness": "error"
-  }
+  ]
 }

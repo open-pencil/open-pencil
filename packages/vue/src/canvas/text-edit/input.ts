@@ -6,7 +6,6 @@ import { generatedFrameOwner, generatedFrameText } from '@open-pencil/scene-grap
 import type { CanvasLabelKind } from '#vue/canvas/labels/edit'
 import type { DragState } from '#vue/shared/input/types'
 
-type NodeEditMethods = Partial<{ enterNodeEditMode: (nodeId: string) => void }>
 type GetCoords = (e: MouseEvent) => { cx: number; cy: number }
 type HitTest = (cx: number, cy: number, deep: boolean) => SceneNode | null
 type SetDrag = (drag: DragState) => void
@@ -166,7 +165,6 @@ export function createTextEditInput(options: TextEditInputOptions) {
    * takes a double-click.
    */
   function pressDeeper(e: MouseEvent, rapid = false) {
-    const nodeEditEditor = editor as Editor & NodeEditMethods
     if (editor.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
@@ -195,7 +193,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
 
     if (hit.type === 'VECTOR') {
-      nodeEditEditor.enterNodeEditMode?.(hit.id)
+      editor.enterNodeEditMode(hit.id)
       return
     }
 

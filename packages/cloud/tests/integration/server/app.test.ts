@@ -99,7 +99,13 @@ function services() {
       async head() {
         return null
       },
-      delete: noOperation
+      delete: noOperation,
+      async write() {
+        throw new Error('not used')
+      },
+      async read() {
+        return null
+      }
     }
   }
 }

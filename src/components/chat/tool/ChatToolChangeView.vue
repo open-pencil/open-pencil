@@ -49,7 +49,6 @@ const aspectRatio = computed(() =>
           :active="highlight"
           :aria-pressed="highlight"
           :label="ai.changeHighlight"
-          data-slot="chat-tool-change-highlight"
           @click="highlight = !highlight"
         >
           <icon-lucide-highlighter class="size-3.5" />

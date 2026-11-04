@@ -457,7 +457,13 @@ export function planTokenImport(
         planner.graph,
         bundle,
         (path) => resolveLiteral(planner, path),
-        (path) => aliasTarget(planner, 0, { kind: 'alias', path })
+        (path, target) =>
+          aliasTarget(planner, 0, {
+            kind: 'alias',
+            path,
+            collection: target?.targetVariableSetName,
+            name: target?.targetVariableName
+          })
       )
     : { styles: [], skipped: [] }
   const skipped = [...planner.skipped, ...styles.skipped]

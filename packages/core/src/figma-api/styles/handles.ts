@@ -3,14 +3,16 @@ import type {
   StyleType,
   TextStyle
 } from '@figma/plugin-typings/plugin-api-standalone'
+import * as v from 'valibot'
 
 import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import { figmaFills } from '#core/figma-api/accessors/visual'
 import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
-import { setPaintBindings } from '#core/figma-api/variables/bindings'
+import { parseFigma } from '#core/figma-api/validation'
+import { figmaBoundVariables, setPaintBindings } from '#core/figma-api/variables/bindings'
+import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
 
 import { releaseUsers, restyleUsers, styleConsumers, type LayerUpdate } from './apply'
 
@@ -54,7 +56,6 @@ export abstract class FigmaBaseStyle {
   abstract readonly type: FigmaStyleType
   readonly remote = false
   readonly documentationLinks: readonly never[] = Object.freeze([])
-  readonly boundVariables: Readonly<Record<string, never>> = Object.freeze({})
   readonly [HOST]: StyleHost
 
   constructor(host: StyleHost, id: string) {
@@ -80,16 +81,19 @@ export abstract class FigmaBaseStyle {
     restyleUsers(this[HOST].graph, this[NODE]('restyle'), this[HOST].updateLayer)
   }
 
+  /** The variables the style's values use; only an effect style lists any. */
+  get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
+    return Object.freeze({})
+  }
+
   get name(): string {
     return this[NODE]('get_name').name
   }
 
   set name(value: string) {
     const node = this[NODE]('set_name')
-    if (typeof value !== 'string') {
-      throw invalid('set_name', `Expected string, received ${received(value)}`, 'name')
-    }
-    this[HOST].graph.updateNode(node.id, { name: value })
+    const name = parseFigma(v.string(), value, 'set_name', 'name')
+    this[HOST].graph.updateNode(node.id, { name })
   }
 
   get description(): string {
@@ -161,6 +165,14 @@ export class FigmaEffectStyle extends FigmaBaseStyle {
   set effects(value: FigmaNodeProxy['effects']) {
     this[LAYER]('set_effects').effects = value
     this[RESTYLE]()
+  }
+
+  /** Every variable the style's effects use, each once, as a layer lists its own. */
+  override get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
+    const { effects } = figmaBoundVariables(this[NODE]('get_boundVariables'))
+    const bound: Record<string, readonly FigmaVariableAlias[]> = {}
+    if (Array.isArray(effects)) bound.effects = effects
+    return Object.freeze(bound)
   }
 }
 

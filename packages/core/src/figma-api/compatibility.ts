@@ -1,4 +1,5 @@
 import type {
+  BaseNodeMixin,
   BooleanOperationNode,
   ComponentNode,
   ComponentPropertyDefinitions,
@@ -6,6 +7,8 @@ import type {
   DocumentNode,
   Effect,
   EffectStyle,
+  ExportMixin,
+  GeometryMixin,
   FrameNode,
   GradientPaint,
   GridStyle,
@@ -392,6 +395,23 @@ type ShapeMembersMatch = Expect<
   >
 >
 const _shapeMembersMatch: ShapeMembersMatch = true
+
+type ExportKeys = 'exportSettings' | 'exportAsync'
+type ExportMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, ExportKeys>, Pick<ExportMixin, ExportKeys>>
+>
+const _exportMembersMatch: ExportMembersMatch = true
+
+type GeometryKeys = 'fillGeometry' | 'strokeGeometry'
+type GeometryMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, GeometryKeys>, Pick<GeometryMixin, GeometryKeys>>
+>
+const _geometryMembersMatch: GeometryMembersMatch = true
+
+type CSSMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, 'getCSSAsync'>, Pick<BaseNodeMixin, 'getCSSAsync'>>
+>
+const _cssMembersMatch: CSSMembersMatch = true
 
 // --- Styles: each style's members are Figma's, apart from consumers, which read node proxies ---
 

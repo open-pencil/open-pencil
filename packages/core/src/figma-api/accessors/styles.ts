@@ -1,4 +1,5 @@
 import { upperFirst } from 'es-toolkit/string'
+import * as v from 'valibot'
 
 import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
 import { sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
@@ -11,9 +12,9 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
-import { bindStylePaints, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
+import { bindStyleVariables, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
 import { getTextStyle } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 
 /** Layers with frames' layout guides, which a grid style gives. */
 const GRID_STYLE_TYPES = new Set<SceneNode['type']>([
@@ -35,7 +36,8 @@ function styleKinds(type: SceneNode['type'], isDocument: boolean): SharedStyleKi
 
 /**
  * Gives `target` the style, or refuses it with `refusal`. A stroke style goes to the layer that
- * draws the strokes, a connector's line, and the layer binds to the variables its paints follow.
+ * draws the strokes, a connector's line, and the layer binds to the variables its paints and
+ * effects follow.
  */
 function applyStyle(
   target: ProxyThis,
@@ -49,7 +51,7 @@ function applyStyle(
   const changes = styleChanges(scene, raw(holder, internals), kind, styleId)
   if (!changes) throw new Error(refusal)
   updateNode(holder, internals, changes)
-  bindStylePaints(scene, raw(holder, internals), kind, styleId)
+  bindStyleVariables(scene, raw(holder, internals), kind, styleId)
 }
 
 function styleMembers(internals: NodeProxyInternals, kind: SharedStyleKind, mixed: symbol) {
@@ -69,10 +71,8 @@ function styleMembers(internals: NodeProxyInternals, kind: SharedStyleKind, mixe
       },
       set(this: ProxyThis, value: unknown) {
         const method = `set_${field}`
-        if (typeof value !== 'string') {
-          throw invalid(method, `Expected string, received ${received(value)}`, field)
-        }
-        applyStyle(this, internals, kind, value, `in ${method}: ${STYLE_NOT_FOUND}`)
+        const styleId = parseFigma(v.string(), value, method, field)
+        applyStyle(this, internals, kind, styleId, `in ${method}: ${STYLE_NOT_FOUND}`)
       }
     },
     // Figma takes anything but a string without a word, and rejects a style it cannot find.
@@ -107,10 +107,8 @@ export function installStyleReferenceAccessors(
     },
     set(this: ProxyThis, value: unknown) {
       const method = 'set_backgroundStyleId'
-      if (typeof value !== 'string') {
-        throw invalid(method, `Expected string, received ${received(value)}`, 'backgroundStyleId')
-      }
-      applyStyle(this, internals, 'fill', value, `in ${method}: ${STYLE_NOT_FOUND}`)
+      const styleId = parseFigma(v.string(), value, method, 'backgroundStyleId')
+      applyStyle(this, internals, 'fill', styleId, `in ${method}: ${STYLE_NOT_FOUND}`)
     }
   })
 }

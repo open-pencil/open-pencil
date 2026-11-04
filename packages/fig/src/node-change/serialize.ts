@@ -17,7 +17,6 @@ import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
-  buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
@@ -463,6 +462,8 @@ export interface SceneNodeToKiwiOptions {
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, shared by every record. */
+  propertyCopyGuids?: Map<string, GUID>
   slotContentRecords?: KiwiNodeChange[]
   /** Plugin data a node is written with instead of its own, by node ID. */
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
@@ -491,15 +492,13 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
+    propertyCopyGuids = new Map<string, GUID>(),
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,
     orderKeys,
     writeChildren
   } = options
-  // Raw paints retain library asset refs; effects use this map because their
-  // Kiwi schema accepts only GUID-backed aliases.
-  const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
@@ -510,9 +509,9 @@ export function sceneNodeToKiwi(
     glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
-    assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
+    propertyCopyGuids,
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,

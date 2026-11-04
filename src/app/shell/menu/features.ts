@@ -2,7 +2,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { computed, watch } from 'vue'
 
 import { isCloudBinding } from '@/app/cloud/integration'
+import { DONATION_URL } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
+import { REPORTS_ENABLED } from '@/app/reports/state'
 import { showsDocument } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
@@ -16,7 +18,9 @@ const available: Record<AppMenuFeature, () => boolean> = {
   // Cloud and storage documents always save; auto-save is a choice only for a file on disk.
   'local-file': () => store.hasWritableSource() && !store.getStorageBinding(),
   // Version history lives on the Cloud server that keeps the document.
-  'cloud-document': () => isCloudBinding(store.getStorageBinding())
+  'cloud-document': () => isCloudBinding(store.getStorageBinding()),
+  reports: () => REPORTS_ENABLED,
+  donation: () => DONATION_URL !== null
 }
 
 /** Whether a menu item that waits for a feature shows; items without one always do. */

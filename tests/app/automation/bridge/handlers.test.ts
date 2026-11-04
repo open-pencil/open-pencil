@@ -44,7 +44,7 @@ async function settle<T>(pending: Promise<T>): Promise<T> {
   const idle = Symbol('idle')
   for (const tab of getTabsSnapshot()) {
     if (tab.store.state.preparation?.phase !== 'preparing-render') continue
-    tab.store.preparationController.acknowledgePresentation(tab.store.state.sceneVersion)
+    tab.store.preparationController.acknowledgePresentation(tab.store.state)
   }
   const result = await Promise.race([
     pending,

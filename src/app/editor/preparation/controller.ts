@@ -1,5 +1,7 @@
 import { TimeoutError } from 'es-toolkit/error'
 
+import type { Editor, RenderVersions } from '@open-pencil/core'
+
 import type { EditorPreparationEventEmitter } from '@/app/editor/preparation/events'
 import type {
   BeginEditorPreparation,
@@ -13,7 +15,7 @@ import type { AppEditorState } from '@/app/editor/session/types'
 const PRESENTATION_TIMEOUT_MS = 10_000
 
 interface PresentationWaiter {
-  sceneVersion: number
+  versions: RenderVersions
   resolve: () => void
   reject: (error: Error) => void
   /**
@@ -29,12 +31,19 @@ interface PresentationWaiter {
 
 export interface EditorPreparationControllerOptions {
   presentationTimeoutMs?: number
+  /** The editor whose canvases report frames shown, through `render:presented`. */
+  editor?: Pick<Editor, 'onEditorEvent'>
 }
 
 export interface EditorPreparationController {
   begin(options: BeginEditorPreparation): EditorPreparationHandle
-  acknowledgePresentation(sceneVersion: number): void
-  waitForPresentation(id: number, sceneVersion: number): Promise<void>
+  /** A frame of these versions is fully shown; `render:presented` reports it from canvases. */
+  acknowledgePresentation(versions: RenderVersions): void
+  /**
+   * Resolves once a frame at least as new as `versions` in both is fully drawn. The versions are
+   * read when called, so an editor's live state can be passed.
+   */
+  waitForPresentation(id: number, versions: RenderVersions): Promise<void>
   /**
    * A canvas started showing the document; returns its detach. A tab in the background has no
    * canvas, so its scene waits to be presented until the tab is shown, without timing out.
@@ -57,12 +66,15 @@ export function createEditorPreparationController(
   let nextId = 0
   let activeAbort: AbortController | null = null
   let activeCancel: ((reason: EditorPreparationCancelReason) => void) | null = null
-  let presentedSceneVersion = -1
+  /** The newest frame shown; its two versions came together, so one frame meets a wait. */
+  let presented: RenderVersions = { renderVersion: -1, sceneVersion: -1 }
+  const covers = (frame: RenderVersions, versions: RenderVersions) =>
+    frame.renderVersion >= versions.renderVersion && frame.sceneVersion >= versions.sceneVersion
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
   /** Whether the browser shows the page; a hidden tab draws no frames, so presents nothing. */
-  const pageShown = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'
+  const pageShown = () => !('document' in globalThis) || document.visibilityState !== 'hidden'
   const timing = () => canvases > 0 && pageShown()
   const onVisibilityChange = () => {
     for (const [id, waiter] of presentationWaiters) {
@@ -96,6 +108,18 @@ export function createEditorPreparationController(
   }
 
   const isActive = (id: number) => state.preparation?.id === id
+
+  function acknowledgePresentation(versions: RenderVersions) {
+    presented = { renderVersion: versions.renderVersion, sceneVersion: versions.sceneVersion }
+    for (const [id, waiter] of presentationWaiters) {
+      if (covers(presented, waiter.versions)) settle(id, null)
+    }
+  }
+
+  const stopPresentations = options.editor?.onEditorEvent(
+    'render:presented',
+    acknowledgePresentation
+  )
 
   return {
     begin(options) {
@@ -171,18 +195,13 @@ export function createEditorPreparationController(
         cancel
       }
     },
-    acknowledgePresentation(sceneVersion) {
-      presentedSceneVersion = Math.max(presentedSceneVersion, sceneVersion)
-      for (const [id, waiter] of presentationWaiters) {
-        if (waiter.sceneVersion <= presentedSceneVersion) settle(id, null)
-      }
-    },
-    waitForPresentation(id, sceneVersion) {
-      if (!isActive(id) || presentedSceneVersion >= sceneVersion) return Promise.resolve()
+    acknowledgePresentation,
+    waitForPresentation(id, versions) {
+      if (!isActive(id) || covers(presented, versions)) return Promise.resolve()
       settle(id, null)
       return new Promise<void>((resolve, reject) => {
         const waiter: PresentationWaiter = {
-          sceneVersion,
+          versions: { renderVersion: versions.renderVersion, sceneVersion: versions.sceneVersion },
           resolve,
           reject,
           timer: null,
@@ -219,6 +238,7 @@ export function createEditorPreparationController(
     dispose() {
       if (typeof document !== 'undefined')
         document.removeEventListener('visibilitychange', onVisibilityChange)
+      stopPresentations?.()
       activeCancel?.('tab-closed')
       activeAbort?.abort()
       activeAbort = null

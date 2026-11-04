@@ -49,6 +49,7 @@ function createStyleRoundTripGraph() {
           height: '120px',
           'padding-block': '8px',
           'padding-inline': '12px',
+          'border-style': 'solid',
           'border-color': DOM_CSS_COLORS.slate200,
           'border-top-width': '0px',
           'border-right-width': '2px',
@@ -227,7 +228,8 @@ describe('@open-pencil/dom-css conversion', () => {
     // A color function in the `border` shorthand, and a shadow color after its lengths.
     expect(card.strokes[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slate200))
     expect(card.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(card.effects[0]?.radius).toBe(24)
+    // A 24px CSS blur is a Gaussian of 12, which the canvas draws at 0.43 × radius.
+    expect(card.effects[0]?.radius).toBeCloseTo(12 / 0.43, 6)
     expect(card.effects[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slateShadow))
 
     const [title, description] = graph.getChildren(card.id)
@@ -263,6 +265,72 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(text?.inlineStyle?.['white-space']).toBe('pre-wrap')
   })
 
+  it('leaves out a border with widths but no style, as CSS draws none', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'panel' },
+          computedStyle: {
+            'min-width': '240px',
+            'max-width': '480px',
+            'border-color': 'rgb(229, 231, 235)',
+            'border-width': '4px'
+          },
+          children: []
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const panel = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+
+    expect(panel.strokes).toEqual([])
+    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480 })
+  })
+
+  it('draws a border on the sides whose style is drawn, as a browser computes them', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'row' },
+          // A browser reports every side; only the bottom has a style that draws.
+          computedStyle: {
+            'border-top-style': 'none',
+            'border-right-style': 'none',
+            'border-bottom-style': 'solid',
+            'border-left-style': 'none',
+            'border-top-color': 'rgb(0, 0, 0)',
+            'border-right-color': 'rgb(0, 0, 0)',
+            'border-bottom-color': 'rgb(255, 0, 0)',
+            'border-left-color': 'rgb(0, 0, 0)',
+            // Widths on sides that draw nothing, so only their style keeps them out.
+            'border-top-width': '3px',
+            'border-right-width': '3px',
+            'border-bottom-width': '2px',
+            'border-left-width': '3px'
+          },
+          children: []
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const row = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+
+    expect(row.strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect(row).toMatchObject({
+      independentStrokeWeights: true,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 2,
+      borderLeftWeight: 0
+    })
+  })
+
   it('maps CSS shape constraints, clipping, corners, and borders', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',
@@ -279,6 +347,7 @@ describe('@open-pencil/dom-css conversion', () => {
             'min-height': '120px',
             'max-height': '320px',
             overflow: 'hidden',
+            'border-style': 'solid',
             'border-top-color': 'rgb(229, 231, 235)',
             'border-top-width': '1px',
             'border-right-width': '2px',
@@ -298,8 +367,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(panel?.type).toBe('FRAME')
     if (panel?.type !== 'FRAME') return
-    // Without a border style, CSS's default none, the borders take no room.
-    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480, minHeight: 120, maxHeight: 320 })
+    // Content-box limits grow by the borders: 4 + 2 across, 1 + 3 down.
+    expect(panel).toMatchObject({ minWidth: 246, maxWidth: 486, minHeight: 124, maxHeight: 324 })
     expect(panel.clipsContent).toBe(true)
     expect(panel.independentStrokeWeights).toBe(true)
     expect(panel.borderTopWeight).toBe(1)
@@ -320,8 +389,9 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(roundTripPanel?.type).toBe('element')
     if (roundTripPanel?.type !== 'element') return
     expect(roundTripPanel.inlineStyle?.overflow).toBe('hidden')
+    // The same 240px content box, written as a border box.
     expect(roundTripPanel.inlineStyle).toMatchObject({
-      'min-width': '240px',
+      'min-width': '246px',
       'box-sizing': 'border-box'
     })
     expect(roundTripPanel.inlineStyle?.['border-top-width']).toBe('1px')
@@ -493,7 +563,7 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(dialog.maxWidth).toBe(420 + 2 * 24 + 2 * 1)
     expect(dialog.itemSpacing).toBe(16)
     expect(dialog.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(dialog.effects[0]?.radius).toBe(40)
+    expect(dialog.effects[0]?.radius).toBeCloseTo(20 / 0.43, 6)
 
     const [, , inputNode, buttonNode] = graph.getChildren(dialog.id)
     const input = expectFrame(inputNode)

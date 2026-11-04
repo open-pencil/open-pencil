@@ -1,19 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { textFontFeatures, textFontVariations, textHeightBehaviorValue } from '#core/canvas/text'
+import { textFontFeatures, textFontVariations } from '#core/canvas/text'
 
 describe('canvas text font variations', () => {
-  test('maps imported leading trim to CanvasKit text height behavior', () => {
-    const ck = {
-      TextHeightBehavior: {
-        DisableAll: 'disable-all'
-      }
-    }
-
-    expect(textHeightBehaviorValue(ck, 'CAP_HEIGHT')).toBe('disable-all')
-    expect(textHeightBehaviorValue(ck, 'NONE')).toBeUndefined()
-  })
-
   test('passes imported variable font axes to CanvasKit text styles', () => {
     expect(
       textFontVariations([

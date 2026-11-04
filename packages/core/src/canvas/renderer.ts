@@ -1,7 +1,8 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, noop } from 'es-toolkit'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
+import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -350,7 +351,7 @@ export class SkiaRenderer {
     let expand = 0
     for (const e of node.effects) {
       if (!e.visible) continue
-      const blur = e.radius
+      const blur = drawnBlurRadius(e.radius)
       const spread = e.spread
       const ox = Math.abs(e.offset.x)
       const oy = Math.abs(e.offset.y)
@@ -376,6 +377,20 @@ export class SkiaRenderer {
 
   async loadFonts(onFallbackFontsLoaded?: () => void): Promise<void> {
     await RendererFonts.loadFonts(this, onFallbackFontsLoaded)
+    if (this.fontsLoaded) this.resolveFontsLoaded()
+  }
+
+  private resolveFontsLoaded: () => void = noop
+  private readonly fontsLoadedPromise = new Promise<void>((resolve) => {
+    this.resolveFontsLoaded = resolve
+  })
+
+  /**
+   * Settles once the canvas has the faces it draws and creates text with, or once it is destroyed
+   * without them, so nothing waits on a canvas that is gone.
+   */
+  whenFontsLoaded(): Promise<void> {
+    return this.fontsLoaded ? Promise.resolve() : this.fontsLoadedPromise
   }
 
   syncFontGeneration(): void {
@@ -394,10 +409,21 @@ export class SkiaRenderer {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 
-  replaceSurface(surface: Surface): void {
-    this.tiledScene.destroy()
-    // Live textures belong to the old surface's context, so they go before it does.
-    releaseLiveImages(this)
+  /**
+   * Draws into `surface` from now on. A surface on the same GPU context, such as the canvas
+   * resized, keeps the rendered tiles and live textures, which belong to the context; only
+   * newly exposed tiles render. A new context starts them over.
+   */
+  replaceSurface(surface: Surface, { sameContext = false }: { sameContext?: boolean } = {}): void {
+    if (sameContext) {
+      for (const live of this.images.live.values()) {
+        if (live.surface === this.surface) live.surface = surface
+      }
+    } else {
+      this.tiledScene.destroy()
+      // Live textures belong to the old surface's context, so they go before it does.
+      releaseLiveImages(this)
+    }
     this.surface.delete()
     this.surface = surface
     this.invalidateScenePicture()
@@ -653,6 +679,10 @@ export class SkiaRenderer {
     return RenderText.measureTextNode(this, node, maxWidth)
   }
 
+  measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
+    return RenderText.measureTextAsDrawn(this, node, maxWidth)
+  }
+
   nodeFontReadiness(node: SceneNode): RenderText.NodeFontReadiness {
     if (node.type !== 'TEXT') return 'ready'
     const cached = this.textFonts.readiness.get(node.id)
@@ -872,5 +902,6 @@ export class SkiaRenderer {
 
   destroy(): void {
     destroyRenderer(this)
+    this.resolveFontsLoaded()
   }
 }

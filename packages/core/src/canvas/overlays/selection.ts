@@ -78,17 +78,6 @@ export function drawCodeFocus(
   })
 }
 
-export function drawEnteredContainer(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  enteredContainerId?: string | null,
-  preview?: RotationPreview | null
-): void {
-  const stroke = { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH }
-  outlineNode(r, canvas, graph, enteredContainerId, stroke, preview)
-}
-
 /** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,
  *  the standard rect+handles otherwise. */
 function drawSingleSelection(

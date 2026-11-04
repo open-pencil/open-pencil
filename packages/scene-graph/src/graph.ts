@@ -25,7 +25,8 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
-import { invalidateTextCaches } from './text/picture'
+import { textCacheInvalidationChanges } from './text/picture'
+import { remapCopiedReferences } from './transfer/copied'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -576,8 +577,15 @@ export class SceneGraph {
       if (node.componentId) this.unindexInstance(node.componentId, id)
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
-    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
     this.markEdited(node, Object.keys(changes))
+    // Cache resets that change the node travel with the change, under the caller's own values,
+    // so a layout put-back cannot drop their event.
+    if (node.type === 'TEXT') {
+      const resets = omitBy(textCacheInvalidationChanges(node, changes), (value, key) =>
+        Object.is(node[key], value)
+      )
+      changes = { ...resets, ...changes }
+    }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
@@ -589,6 +597,7 @@ export class SceneGraph {
     Object.assign(node, changes)
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
+    if (changes.effects) removeStaleBindings(node, 'effects', changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
     this.publishNodeUpdate(id, changes)
   }
@@ -743,6 +752,20 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const ids = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
+    // Copies point at one another, as a paste's do: an instance at a component cloned with it,
+    // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
+    remapCopiedReferences(this, ids)
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    ids: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -753,9 +776,10 @@ export class SceneGraph {
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    ids.set(src.id, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, ids)
     }
 
     return clone
