@@ -88,16 +88,14 @@ test('a sentence copied from a page pastes as text without offering layers', asy
     'text/plain': 'Open files and an editor'
   })
 
-  await expect
-    .poll(pageLayers)
-    .toEqual([
-      {
-        type: 'TEXT',
-        text: 'Open files and an editor',
-        links: ['https://openpencil.dev/'],
-        children: []
-      }
-    ])
+  await expect.poll(pageLayers).toEqual([
+    {
+      type: 'TEXT',
+      text: 'Open files and an editor',
+      links: ['https://openpencil.dev/'],
+      children: []
+    }
+  ])
   await expect(editor.page.getByRole('button', { name: 'Paste as layers' })).toHaveCount(0)
 })
 
