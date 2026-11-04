@@ -59,6 +59,25 @@ describe('open overlays', () => {
     expect(holds(overlays)).toEqual({ shortcuts: false, history: false })
   })
 
+  test('one overlay closing or going away keeps the other counting', () => {
+    const app = createApp({ render: () => null })
+    app.use(createOpenOverlaysPlugin())
+    const picker = ref(true)
+    const pickerScope = effectScope()
+    const overlays = app.runWithContext(() => {
+      pickerScope.run(() => useOverlayOpen(picker, 'picker'))
+      effectScope().run(() => useOverlayOpen(ref(true)))
+      return useOpenOverlays()
+    })
+    if (!overlays) throw new Error('No open overlays in the app')
+
+    picker.value = false
+    expect(holds(overlays)).toEqual({ shortcuts: true, history: true })
+    picker.value = true
+    pickerScope.stop()
+    expect(holds(overlays)).toEqual({ shortcuts: true, history: true })
+  })
+
   test('a retained popup counts while it is open', () => {
     const { open, overlays } = appWithOverlay('overlay', (popupOpen, kind) => {
       useRetainedPopup(popupOpen, undefined, kind)
