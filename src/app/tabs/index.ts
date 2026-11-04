@@ -7,6 +7,7 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -269,12 +270,6 @@ function removeTab(closingTab: Tab): void {
   }
 }
 
-function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
@@ -362,7 +357,7 @@ async function showImportedGraph(
   load?.signal.throwIfAborted()
   load?.update({ phase: 'preparing-render', detail: store.state.documentName })
   if (remembered) {
-    await yieldToUI()
+    await nextFrame()
     store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
   } else {
     await store.fitCurrentPageToViewport()
@@ -598,7 +593,7 @@ export async function openFileInNewTab(
       return store
     }
 
-    await yieldToUI()
+    await nextFrame()
     load.update({ phase: 'reading', detail: file.name })
     const isFig = isFigArchiveName(file.name)
     let imported: SceneGraph

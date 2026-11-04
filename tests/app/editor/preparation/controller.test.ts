@@ -191,6 +191,48 @@ describe('editor preparation controller', () => {
       jest.useRealTimers()
     }
   })
+  // A canvas in a browser tab that is hidden draws no frames: the scene waits to be presented
+  // until the tab is shown, as it does in an editor tab in the background.
+  test('pauses the limit while the browser hides the page', async () => {
+    jest.useFakeTimers()
+    const saved = Object.getOwnPropertyDescriptor(globalThis, 'document')
+    const page = Object.assign(new EventTarget(), {
+      visibilityState: 'visible' as DocumentVisibilityState
+    })
+    const show = (visibility: DocumentVisibilityState) => {
+      page.visibilityState = visibility
+      page.dispatchEvent(new Event('visibilitychange'))
+    }
+    Object.defineProperty(globalThis, 'document', { value: page, configurable: true })
+    try {
+      const state = createInitialAppEditorState('page')
+      const controller = createEditorPreparationController(state, undefined, {
+        presentationTimeoutMs: 100
+      })
+      controller.attachCanvas()
+      const handle = controller.begin({ kind: 'page-switch' })
+      let settled = false
+      const waiting = controller.waitForPresentation(handle.id, 7).finally(() => {
+        settled = true
+      })
+      jest.advanceTimersByTime(50)
+      show('hidden')
+      jest.advanceTimersByTime(1_000)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+
+      show('visible')
+      controller.acknowledgePresentation(7)
+      await waiting
+      handle.complete()
+      controller.dispose()
+    } finally {
+      if (saved) Object.defineProperty(globalThis, 'document', saved)
+      else Reflect.deleteProperty(globalThis, 'document')
+      jest.useRealTimers()
+    }
+  })
+
   test('emits exactly one terminal outcome', () => {
     const state = createInitialAppEditorState('page')
     const events = createEditorPreparationEvents()

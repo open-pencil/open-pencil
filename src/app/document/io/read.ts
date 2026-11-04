@@ -1,10 +1,10 @@
 import { filename } from 'pathe/utils'
 
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
-import { yieldToUI } from '@/app/document/io/browser'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
@@ -55,10 +55,10 @@ export function createOpenActions({
     let succeeded = false
     try {
       load.update({ phase: 'reading', detail: file.name })
-      await yieldToUI()
+      await nextFrame()
       load.update({ phase: 'decoding', detail: file.name })
       const imported = await readFigDocument(file, load.signal)
-      await yieldToUI()
+      await nextFrame()
       load.update({ phase: 'materializing', detail: file.name })
       await applyImportedDocument(editor, imported, load)
       // Into a reused tab too, the document opens with the panels its kind starts with.

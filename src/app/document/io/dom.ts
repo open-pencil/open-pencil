@@ -1,9 +1,9 @@
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
-import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
@@ -61,7 +61,7 @@ export function createDOMOpenActions({
     options: DOMTextImportOptions,
     load: ReturnType<EditorPreparationController['begin']>
   ) {
-    await yieldToUI()
+    await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
     load.update({ phase: 'decoding', detail: pageName })
     const styled = await browserHTMLToDesignDocument(html, {
@@ -70,7 +70,7 @@ export function createDOMOpenActions({
     })
     load.signal.throwIfAborted()
     const graph = sceneGraphFromStyledHTML(styled, { pageName })
-    await yieldToUI()
+    await nextFrame()
     await applyImportedDocument(editor, graph, load)
     // Into a reused tab too, the document opens with the panels its kind starts with.
     state.showUI = resolveEditorProfile(editor.state).panelsOpen

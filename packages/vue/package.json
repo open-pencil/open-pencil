@@ -394,6 +394,11 @@
       "import": "./dist/shared/font-status/index.js",
       "default": "./dist/shared/font-status/index.js"
     },
+    "./shared/frame": {
+      "types": "./dist/shared/frame.d.ts",
+      "import": "./dist/shared/frame.js",
+      "default": "./dist/shared/frame.js"
+    },
     "./shared/input": {
       "types": "./dist/shared/input/index.d.ts",
       "import": "./dist/shared/input/index.js",

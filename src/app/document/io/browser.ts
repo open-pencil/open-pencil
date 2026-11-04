@@ -1,3 +1,5 @@
+import { nextFrame } from '@open-pencil/vue/shared/frame'
+
 import type { ViewportSize } from '@/app/document/io/types'
 
 /**
@@ -77,12 +79,6 @@ export function resolveBrowserFileURL(path: string): URL {
   return url
 }
 
-export function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 type ViewportEditor = {
   zoomToFit: () => void
 }
@@ -99,7 +95,7 @@ export function createDocumentViewportActions(editor: ViewportEditor, viewportSi
   }
 
   async function fitCurrentPageToViewport() {
-    await yieldToUI()
+    await nextFrame()
     editor.zoomToFit()
   }
 

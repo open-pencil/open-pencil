@@ -16,9 +16,12 @@ interface PresentationWaiter {
   sceneVersion: number
   resolve: () => void
   reject: (error: Error) => void
-  /** Runs only while a canvas shows the document, which is the only place it is presented. */
+  /**
+   * Runs only while a canvas shows the document, which is the only place it is presented, and
+   * the browser tab is shown: a hidden tab draws nothing.
+   */
   timer: ReturnType<typeof setTimeout> | null
-  /** When the timer last started, so hiding the tab keeps the time it already had. */
+  /** When the timer last started, so pausing it keeps the time it already had. */
   startedAt: number
   /** The time left to draw the scene while shown. */
   remainingMs: number
@@ -58,6 +61,17 @@ export function createEditorPreparationController(
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
+  /** Whether the browser shows the page; a hidden tab draws no frames, so presents nothing. */
+  const pageShown = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'
+  const timing = () => canvases > 0 && pageShown()
+  const onVisibilityChange = () => {
+    for (const [id, waiter] of presentationWaiters) {
+      if (timing()) startTimer(id, waiter)
+      else pauseTimer(waiter)
+    }
+  }
+  if (typeof document !== 'undefined')
+    document.addEventListener('visibilitychange', onVisibilityChange)
 
   function settle(id: number, outcome: Error | null) {
     const waiter = presentationWaiters.get(id)
@@ -176,14 +190,14 @@ export function createEditorPreparationController(
           remainingMs: presentationTimeoutMs
         }
         presentationWaiters.set(id, waiter)
-        if (canvases > 0) startTimer(id, waiter)
+        if (timing()) startTimer(id, waiter)
         else if (canvasFailure) settle(id, canvasFailure)
       })
     },
     attachCanvas() {
       canvases += 1
       canvasFailure = null
-      for (const [id, waiter] of presentationWaiters) startTimer(id, waiter)
+      if (timing()) for (const [id, waiter] of presentationWaiters) startTimer(id, waiter)
       let attached = true
       return () => {
         if (!attached) return
@@ -203,6 +217,8 @@ export function createEditorPreparationController(
       for (const id of presentationWaiters.keys()) settle(id, error)
     },
     dispose() {
+      if (typeof document !== 'undefined')
+        document.removeEventListener('visibilitychange', onVisibilityChange)
       activeCancel?.('tab-closed')
       activeAbort?.abort()
       activeAbort = null
