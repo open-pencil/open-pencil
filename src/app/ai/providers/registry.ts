@@ -27,26 +27,20 @@ const MODEL_PROVIDER_ADAPTERS = {
       return provider(config.customModelID.trim() || config.modelID)
     }
   },
-  // WebP: https://platform.claude.com/docs/en/build-with-claude/vision#supported-formats
-  anthropic: createAnthropicCompatibleAdapter({ webpImages: true }),
-  // WebP: https://developers.openai.com/api/docs/guides/images-vision
-  openai: createOpenAICompatibleAdapter({ webpImages: true }),
+  anthropic: createAnthropicCompatibleAdapter(),
+  openai: createOpenAICompatibleAdapter(),
   chatgpt: chatGPTAdapter,
   google: {
     create(config, runtime) {
       return createGoogleGenerativeAI({ apiKey: config.apiKey, fetch: runtime.fetch })(
         config.modelID
       )
-    },
-    // https://ai.google.dev/gemini-api/docs/image-understanding
-    webpImages: true
+    }
   },
   deepseek: {
     create(config, runtime) {
       return createDeepSeek({ apiKey: config.apiKey, fetch: runtime.fetch })(config.modelID)
-    },
-    // https://api-docs.deepseek.com/guides/vision
-    webpImages: true
+    }
   },
   zai: createAnthropicCompatibleAdapter({ baseURL: 'https://api.z.ai/api/anthropic' }),
   minimax: createOpenAICompatibleAdapter({ baseURL: 'https://api.minimax.io/v1', mode: 'chat' }),
@@ -66,11 +60,6 @@ const MODEL_PROVIDER_ADAPTERS = {
 
 function isDirectProviderID(providerID: AIProviderID): providerID is DirectProviderID {
   return !providerID.startsWith('acp:') && providerID !== 'harness:pi'
-}
-
-/** Whether tool images reach the provider's models as WebP; see `ModelProviderAdapter.webpImages`. */
-export function providerTakesWebPImages(providerID: AIProviderID): boolean {
-  return isDirectProviderID(providerID) && modelProviderAdapter(providerID).webpImages === true
 }
 
 export function modelProviderAdapter(providerID: AIProviderID): ModelProviderAdapter {
