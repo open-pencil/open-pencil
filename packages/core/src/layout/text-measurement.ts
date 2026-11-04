@@ -31,8 +31,7 @@ export function estimateTextSize(
       measureTextWithFont(line, fontSize, family, style, maxWidth, explicitLineH) ??
       estimateTextLines(line, fontSize, maxWidth, explicitLineH)
   )
-  const width = measured.reduce((widest, line) => Math.max(widest, line.width), 0)
-  const { lines, paragraphSpacing } = stackParagraphs(node, measured)
+  const { width, lines, paragraphSpacing } = stackParagraphs(node, measured)
   const { lineHeight } = measured[0]
   if (node.leadingTrim === 'CAP_HEIGHT') {
     const firstLineCapHeight = rangeCapHeight(node, 0, hardLines[0].length)
@@ -50,6 +49,7 @@ function shownLineLimit(node: SceneNode): number {
 
 function stackParagraphs(node: SceneNode, paragraphs: MeasuredTextLines[]) {
   const limit = shownLineLimit(node)
+  let width = 0
   let lines = 0
   let paragraphSpacing = 0
   for (const [index, paragraph] of paragraphs.entries()) {
@@ -59,9 +59,10 @@ function stackParagraphs(node: SceneNode, paragraphs: MeasuredTextLines[]) {
     if (index > 0) {
       paragraphSpacing += paragraphSpacingAt(node, index - 1, 'paragraphSpacing')
     }
+    width = Math.max(width, paragraph.width)
     lines += Math.min(paragraph.lines, limit - lines)
   }
-  return { lines, paragraphSpacing }
+  return { width, lines, paragraphSpacing }
 }
 
 function estimateTextLines(

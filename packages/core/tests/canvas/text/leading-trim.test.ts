@@ -346,7 +346,7 @@ describe('cap-height leading trim', () => {
   test('estimates only the lines a truncated text shows', () => {
     for (const leadingTrim of ['CAP_HEIGHT', 'NONE'] as const) {
       const node = textNode({
-        text: '75\n50\n25',
+        text: '75\n50\nWWWWWWWW',
         fontSize: 20,
         paragraphSpacing: 10,
         textTruncation: 'ENDING',
@@ -354,7 +354,9 @@ describe('cap-height leading trim', () => {
         leadingTrim
       })
       const layout = layOutNode(node)
-      expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+      const estimate = estimateTextSize(node)
+      expect(estimate.height).toBeCloseTo(layout.getHeight(), 2)
+      expect(estimate.width).toBe(Math.ceil(layout.getLongestLine()))
       layout.delete()
     }
   })
