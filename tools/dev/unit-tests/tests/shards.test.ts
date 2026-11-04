@@ -5,6 +5,7 @@ import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 import {
   isHeavyUnitTest,
   LARGE_FIXTURES,
+  owningUnitTestPath,
   listHeavyUnitTests,
   listUnitTests,
   pathsForUnitTestGroup,
@@ -32,9 +33,13 @@ test('every app, engine and package-local test belongs to exactly one shard', as
     ...(await discover('packages/*/tests/**/*.test.{ts,tsx}'))
   ].filter((file) => !OWN_SUITES.some((suite) => file.startsWith(suite)))
   const paths = pathsForUnitTestGroup('all')
+  // The longest containing path owns a file; two owners of that same length would both run it.
   const invalidAssignments = discovered.flatMap((file) => {
-    const owners = paths.filter((path) => file.startsWith(`${path}/`))
-    return owners.length === 1 ? [] : [{ file, owners }]
+    const owner = owningUnitTestPath(file)
+    const ties = paths.filter(
+      (path) => path.length === owner?.length && file.startsWith(`${path}/`)
+    )
+    return owner && ties.length === 1 ? [] : [{ file, owners: ties }]
   })
 
   expect(discovered.length).toBeGreaterThan(0)
@@ -83,23 +88,23 @@ test('unit test groups cover all declared shards', () => {
 })
 
 test('heavy unit test matcher excludes fixture-heavy tests', () => {
-  expect(isHeavyUnitTest('tests/engine/io/fig/heavy/fixtures.test.ts')).toBe(true)
+  expect(isHeavyUnitTest('packages/core/tests/io/formats/fig/heavy/fixtures.test.ts')).toBe(true)
   expect(isHeavyUnitTest('packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts')).toBe(
     true
   )
-  expect(isHeavyUnitTest('tests/engine/dom-css/runtime.test.ts')).toBe(false)
+  expect(isHeavyUnitTest('packages/dom-css/tests/runtime.test.ts')).toBe(false)
 })
 
 test('quick unit test listing excludes heavy tests', async () => {
   const quickFiles = await listUnitTests('all')
-  expect(quickFiles).toContain('tests/engine/dom-css/runtime.test.ts')
-  expect(quickFiles).not.toContain('tests/engine/io/fig/heavy/fixtures.test.ts')
+  expect(quickFiles).toContain('packages/dom-css/tests/runtime.test.ts')
+  expect(quickFiles).not.toContain('packages/core/tests/io/formats/fig/heavy/fixtures.test.ts')
   expect(quickFiles).not.toContain('tests/engine/io/fig/roundtrip/glyph-blob.test.ts')
 })
 
 test('heavy unit test listing contains only heavy tests', async () => {
   const heavyFiles = await listHeavyUnitTests()
-  expect(heavyFiles).toContain('tests/engine/io/fig/heavy/fixtures.test.ts')
+  expect(heavyFiles).toContain('packages/core/tests/io/formats/fig/heavy/fixtures.test.ts')
   expect(heavyFiles.every(isHeavyUnitTest)).toBe(true)
 })
 
@@ -113,4 +118,12 @@ test('every test that reads a large fixture is heavy', async () => {
   )
   // One of these can take several gigabytes; add it to HEAVY_UNIT_TEST_PATTERNS.
   expect(readers.flat()).toEqual([])
+})
+
+test('a more specific path takes its files out of the broader group', async () => {
+  const core = await listUnitTests('core', { includeHeavy: true })
+  const render = await listUnitTests('render', { includeHeavy: true })
+  expect(render.length).toBeGreaterThan(0)
+  expect(render.every((file) => file.startsWith('packages/core/tests/canvas/'))).toBe(true)
+  expect(core.some((file) => file.startsWith('packages/core/tests/canvas/'))).toBe(false)
 })

@@ -16,8 +16,9 @@ const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
  * `tests/app`, `tests/integration`) together with the `tests/engine/**`
  * directories it still owns, so a file is discovered from either place and a
  * move needs no shard change. A path that does not exist yet contributes no
- * files. `render` is Core-owned but
- * sharded separately because canvas suites parse large fixtures.
+ * files. A file belongs to the group with the longest path that contains it, so
+ * `render` takes Core's canvas suites, which parse large fixtures, into a shard
+ * of their own while `core` keeps the rest of `packages/core/tests`.
  */
 export const UNIT_TEST_GROUPS = {
   app: [
@@ -54,7 +55,7 @@ export const UNIT_TEST_GROUPS = {
   ],
   fig: ['packages/fig/tests', 'packages/kiwi/tests', 'tests/engine/io', 'tests/engine/kiwi'],
   mcp: ['packages/mcp/tests', 'tests/engine/mcp'],
-  render: ['tests/engine/render'],
+  render: ['packages/core/tests/canvas'],
   'scene-graph': [
     'packages/scene-graph/tests',
     'packages/collab/tests',
@@ -90,7 +91,7 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'packages/core/tests/io/formats/fig/export/worker.test.ts',
   'packages/core/tests/io/formats/fig/import/group-reclassify.test.ts',
   'packages/core/tests/layout/auto-layout/text/measurement.test.ts',
-  'tests/engine/render/canvas/cache.test.ts'
+  'packages/core/tests/canvas/cache.test.ts'
 ] as const
 
 export function unitTestGroupNames(): UnitTestGroup[] {
@@ -109,16 +110,34 @@ export function isHeavyUnitTest(path: string): boolean {
   )
 }
 
+/** The shard path that owns a test file: the longest one containing it. */
+export function owningUnitTestPath(file: string): string | undefined {
+  const normalized = normalizePath(file)
+  return pathsForUnitTestGroup('all')
+    .filter((path) => normalized.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0]
+}
+
+/** A group's test files, without those a more specific path of another group owns. */
+async function listGroupTestFiles(group: UnitTestGroup): Promise<string[]> {
+  const paths = pathsForUnitTestGroup(group)
+  const files = await listTestFiles(paths)
+  return files.filter((file) => {
+    const owner = owningUnitTestPath(file)
+    return owner !== undefined && paths.includes(owner)
+  })
+}
+
 export async function listUnitTests(
   group: UnitTestGroup,
   options: { includeHeavy?: boolean } = {}
 ): Promise<string[]> {
-  const files = await listTestFiles(pathsForUnitTestGroup(group))
+  const files = await listGroupTestFiles(group)
   return options.includeHeavy ? files : files.filter((file) => !isHeavyUnitTest(file))
 }
 
 export async function listHeavyUnitTests(group: UnitTestGroup = 'all'): Promise<string[]> {
-  const files = await listTestFiles(pathsForUnitTestGroup(group))
+  const files = await listGroupTestFiles(group)
   return files.filter(isHeavyUnitTest)
 }
 

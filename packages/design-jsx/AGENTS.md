@@ -13,4 +13,4 @@ Rules:
 - An enum prop is one `jsxEnum` table in `src/enums.ts` that both reads and writes it, and an unknown value warns instead of falling back silently (`tests/enums.test.ts`).
 - JSX export (`src/export/`) collects typed props in `props.ts` and prints them with `@open-pencil/emit`'s JSX builders; never build JSX from string fragments.
 - `src/reference/authoring.md` is the source of the shared authoring reference. Run `bun run generate:authoring-reference` after changing it or the schema; never edit the generated copies.
-- Tests that need icons, layout, or the bound renderer live in `packages/core/tests/design-jsx` (existing ones still in `tests/engine/render/jsx`); tests of trees, parsing, schema, and export live in `packages/design-jsx/tests`.
+- Tests that need icons, layout, or the bound renderer live in `packages/core/tests/design-jsx`; tests of trees, parsing, schema, and export live in `packages/design-jsx/tests`.
