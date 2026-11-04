@@ -308,10 +308,11 @@ describe('@open-pencil/dom-css conversion', () => {
             'border-right-color': 'rgb(0, 0, 0)',
             'border-bottom-color': 'rgb(255, 0, 0)',
             'border-left-color': 'rgb(0, 0, 0)',
-            'border-top-width': '0px',
-            'border-right-width': '0px',
+            // Widths on sides that draw nothing, so only their style keeps them out.
+            'border-top-width': '3px',
+            'border-right-width': '3px',
             'border-bottom-width': '2px',
-            'border-left-width': '0px'
+            'border-left-width': '3px'
           },
           children: []
         }

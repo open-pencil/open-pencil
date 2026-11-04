@@ -1,5 +1,5 @@
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, pickStyle } from './css-values'
@@ -49,9 +49,24 @@ type BorderSide = 'top' | 'right' | 'bottom' | 'left'
 
 const BORDER_SIDES: readonly BorderSide[] = ['top', 'right', 'bottom', 'left']
 
-/** A side's own border style, or the shorthand's when it sets none of its own. */
+/**
+ * Which of a one- to four-value box shorthand's values each side takes, as CSS assigns them:
+ * top, right, bottom, left, with a missing value repeating the opposite side's.
+ */
+const SHORTHAND_VALUE_INDEX: Record<BorderSide, readonly number[]> = {
+  top: [0, 0, 0, 0],
+  right: [0, 1, 1, 1],
+  bottom: [0, 0, 2, 2],
+  left: [0, 1, 1, 3]
+}
+
+/** A side's own border style, or its value in the `border-style` shorthand. */
 function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | undefined {
-  return pickStyle(style, `border-${side}-style`) ?? pickStyle(style, 'border-style')
+  const own = pickStyle(style, `border-${side}-style`)
+  if (own !== undefined) return own
+  const values = splitCSSValue(pickStyle(style, 'border-style') ?? '')
+  if (values.length === 0 || values.length > 4) return undefined
+  return values[SHORTHAND_VALUE_INDEX[side][values.length - 1]]
 }
 
 /** Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`. */

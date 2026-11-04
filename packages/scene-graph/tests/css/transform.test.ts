@@ -105,6 +105,7 @@ describe('parseCSSTransformOrigin', () => {
     ['25% 100%', { x: 25, y: 50 }],
     ['left top 10px', { x: 0, y: 0 }],
     ['left top bogus', { x: 50, y: 25 }],
+    ['left top 10%', { x: 50, y: 25 }],
     ['left top 10px 20px', { x: 50, y: 25 }]
   ])('%s', (value, expected) => {
     expect(parseCSSTransformOrigin(value, BOX)).toEqual(expected)

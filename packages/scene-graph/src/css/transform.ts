@@ -140,11 +140,11 @@ function inPlane(m: number[]): boolean {
 }
 
 /**
- * Whether a z offset is a length. It moves nothing on the plane without perspective, which a
+ * Whether a z offset is a length, which a percentage never is. It moves nothing on the plane without perspective, which a
  * layer cannot hold, so it is read and dropped.
  */
 function depth(value: string): boolean {
-  return length(value, 0) !== null
+  return !value.trim().endsWith('%') && length(value, 0) !== null
 }
 
 /**
@@ -248,7 +248,7 @@ export function parseCSSTransformOrigin(value: string | undefined, box: CSSTrans
   const center = { x: box.width / 2, y: box.height / 2 }
   const tokens = splitCSSValue(value?.trim() ?? '')
   // A third value is the depth, which must be a length; anything past it is not an origin.
-  const depthOk = tokens.length < 3 || (tokens.length === 3 && length(tokens[2], 0) !== null)
+  const depthOk = tokens.length < 3 || (tokens.length === 3 && depth(tokens[2]))
   if (tokens.length === 0 || !depthOk) return center
   const parts = tokens.slice(0, 2)
   // A vertical keyword first, as in `top left`, names the y offset.
