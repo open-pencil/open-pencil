@@ -3,9 +3,16 @@ import { figmaClipboardPayload } from '@open-pencil/fig/clipboard'
 import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
 
 let memoryClipboard: ClipboardPayload = { html: '', plainText: '' }
+let lastWebClipboard = { html: '', text: '' }
+
+/** A copy made here replaces the page on the clipboard, even when its text is the same. */
+function forgetWebClipboard(): void {
+  lastWebClipboard = { html: '', text: '' }
+}
 
 export function setInMemoryClipboardPayload(payload: ClipboardPayload): void {
   memoryClipboard = payload
+  forgetWebClipboard()
 }
 
 /**
@@ -28,6 +35,7 @@ export function matchingClipboardSnapshot(html: string) {
 
 export function setInMemoryClipboardHTML(html: string, plainText = ''): void {
   memoryClipboard = { html, plainText }
+  forgetWebClipboard()
 }
 
 export function getInMemoryClipboardHTML(matchingPlainText?: string): string {
@@ -46,9 +54,8 @@ export function hasInMemoryClipboardHTML(): boolean {
 
 export function clearInMemoryClipboardHTML(): void {
   memoryClipboard = { html: '', plainText: '' }
+  forgetWebClipboard()
 }
-
-let lastWebClipboard = { html: '', text: '' }
 
 /**
  * Keeps the HTML of the last web page pasted here. The desktop clipboard plugin reads text only,
