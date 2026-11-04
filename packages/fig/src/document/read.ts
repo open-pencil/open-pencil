@@ -49,7 +49,10 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
-  'overrideKey'
+  'overrideKey',
+  // A variant's copies of its set's properties are read for every variant a page links, which
+  // would otherwise keep each variant's whole record decoded for the session.
+  'componentPropDefs'
 ] as const
 
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
@@ -321,8 +324,9 @@ function createScopedReader(
     bindingDiagnostics,
     /** A record's copies of its set's properties, each by its own id to the set property's. */
     propertyCopies(id: string): Map<string, string> {
+      // Headers carry the saved definitions, links included, so no whole record is decoded.
       const header = index.sources.get(id)
-      return header ? linkedPropertyCopies(shared.records.shared(header)) : new Map()
+      return header ? linkedPropertyCopies(header) : new Map()
     },
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
