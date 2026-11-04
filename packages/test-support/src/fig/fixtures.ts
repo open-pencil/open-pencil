@@ -1,14 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { collectAllNodes } from '#test-support/fig/traversal'
+import { FIXTURES, readFixtureArrayBuffer } from '#test-support/paths'
 import * as v from 'valibot'
 
 import { parseFigFile, type ParseFigFileOptions } from '@open-pencil/core/io/formats/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { FIXTURES, readFixtureArrayBuffer } from '#test-support/paths'
-import { collectAllNodes } from '#test-support/fig/traversal'
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',
@@ -42,31 +40,6 @@ export function readFixture<TSchema extends v.GenericSchema>(
     readFileSync(resolve(FIXTURES, name), 'utf8')
   )
 }
-
-/** The Kiwi codec validates a node change; a fixture only checks that the record is an object. */
-export const figNodeChangeFixtureSchema = v.custom<NodeChange>(
-  (value) => typeof value === 'object' && value !== null
-)
-
-/** A `{ nodeChanges, blobs }` capture recorded from a live Figma document. */
-export const capturedFigRecordsSchema = v.object({
-  nodeChanges: v.array(figNodeChangeFixtureSchema),
-  blobs: v.array(v.string())
-})
-
-/** `nested-layout-scale.json`: the same document before and after a nested padding edit. */
-export const nestedLayoutScaleFixtureSchema = v.object({
-  ids: v.object({
-    page: v.string(),
-    inner: v.string(),
-    outer: v.string(),
-    nested: v.string(),
-    instance: v.string()
-  }),
-  before: v.array(figNodeChangeFixtureSchema),
-  edited: v.array(figNodeChangeFixtureSchema),
-  blobs: v.array(v.string())
-})
 
 export async function parseFixture(
   name: string,

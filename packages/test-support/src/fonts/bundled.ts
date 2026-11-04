@@ -1,5 +1,6 @@
-import { fontManager } from '@open-pencil/core/text'
 import { expectDefined } from '#test-support/assert'
+
+import { fontManager } from '@open-pencil/core/text'
 
 /**
  * Registers the app's bundled variable Inter as `family`, upright and italic, as a host's own

@@ -1,6 +1,7 @@
+import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
+
 import type { DesignDocument, DesignElement, DesignNode } from '@open-pencil/dom-css'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
 export const DOM_CSS_COLORS = {
   white: colorToCSS({ r: 1, g: 1, b: 1, a: 1 }),
@@ -184,7 +185,6 @@ export function findTextElement(nodes: DesignNode[]): DesignElement | undefined 
   }
   return undefined
 }
-
 
 export const simpleCardDocument: DesignDocument = {
   type: 'document',

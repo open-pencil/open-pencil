@@ -19,7 +19,10 @@ export function getNodeOrThrow<T>(
 }
 
 /** The id of a node's child at `index`, failing the test when there is none. */
-export function childIdAt(node: { id: string; childIds: readonly string[] }, index: number): string {
+export function childIdAt(
+  node: { id: string; childIds: readonly string[] },
+  index: number
+): string {
   return expectDefined(node.childIds[index], `child ${index} of ${node.id}`)
 }
 

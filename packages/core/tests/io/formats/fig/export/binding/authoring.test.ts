@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { capturedFigRecordsSchema, readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
 import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
 import * as v from 'valibot'
 

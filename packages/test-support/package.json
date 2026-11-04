@@ -15,6 +15,7 @@
     "./fig/fixtures": "./src/fig/fixtures.ts",
     "./fig/guid": "./src/fig/guid.ts",
     "./fig/nested-binding": "./src/fig/nested-binding.ts",
+    "./fig/schema": "./src/fig/schema.ts",
     "./fig/traversal": "./src/fig/traversal.ts",
     "./fonts/bundled": "./src/fonts/bundled.ts",
     "./geometry": "./src/geometry.ts",
