@@ -1,1 +1,0 @@
-- A link in a text opens in a new tab in preview, instead of taking the editor away from the document (#1716).

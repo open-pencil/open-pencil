@@ -1,1 +1,0 @@
-- A nested instance in a `.fig` file sizes in the variable mode its outer instance sets, and an override that clears a collection's mode opens, edits and saves per collection.

@@ -1,1 +1,0 @@
-- A text that sizes itself outside auto layout resizes when a variable bound to its size, such as its font size, changes.

@@ -1,6 +1,6 @@
-FROM oven/bun@sha256:9114c058aeae42162ee16dd5084b95fe9473970bb6bcb5b232ab1630f0546895
+FROM oven/bun@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
 
-# Bun 1.4.2, the packageManager version CI installs, pinned to the multi-platform image digest.
+# Bun 1.4.4, the packageManager version CI installs, pinned to the multi-platform image digest.
 
 ARG CA_CERTIFICATES_VERSION=20250419
 ARG GIT_VERSION=1:2.47.3-0+deb13u1

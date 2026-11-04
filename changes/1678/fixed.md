@@ -1,4 +1,0 @@
-- A component set's default variant is the one Figma picks: variants whose rows overlap read left to right, others top to bottom.
-- Scripts refuse a style ID the document does not hold, as Figma does, instead of attaching it.
-- Plugin API underline getters read the underlined characters' value over partly underlined text, and text and paint setters word their errors as current Figma does.
-- `@open-pencil/core/figma-api` types resolve Figma's node, paint, and style types for packages that use them, without bringing in Figma's plugin sandbox globals.

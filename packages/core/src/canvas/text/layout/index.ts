@@ -194,7 +194,12 @@ export class TextLayout {
    * otherwise (`placeLines`).
    */
   private placeLines(width: number): void {
-    const placed = placeLines(this.ck, this.visibleBlocks(), width)
+    const visible = this.visibleBlocks()
+    const first = visible.at(0)
+    // A trimmed box starts at the first line's cap height, so its baselines round from there.
+    const capHeight =
+      this.capHeight && first ? this.firstLineCapHeight(first, this.capHeight) : undefined
+    const placed = placeLines(this.ck, visible, width, capHeight)
     if (!placed) return
     for (const [block, { y, ...placement }] of placed.blocks) {
       block.y = y

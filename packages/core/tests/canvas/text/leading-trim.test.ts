@@ -179,6 +179,15 @@ describe('cap-height leading trim', () => {
       [{ text: 'H8', fontSize: 30 }, 22],
       [{ text: 'H8\nH8', lineHeight: pixelLength(30) }, 47],
       [{ text: 'H8\nH8', fontSize: 20, lineHeight: pixelLength(25.3) }, 40],
+      // Lines step by 30.6 px onto whole-pixel baselines, as Figma's do.
+      ...[47, 78, 109, 139].map((height, index): [Partial<SceneNode>, number] => [
+        {
+          text: Array.from({ length: index + 2 }, () => 'H8').join('\n'),
+          fontSize: 23,
+          lineHeight: pixelLength(30.6)
+        },
+        height
+      ]),
       [{ text: 'H8\nH8', lineHeight: pixelLength(30), paragraphSpacing: 10 }, 57],
       [{ text: 'H8', styleRuns: [{ start: 1, length: 1, style: { fontSize: 48 } }] }, 35]
     ]
