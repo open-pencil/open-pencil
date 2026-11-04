@@ -1,8 +1,11 @@
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
+import { onTestFinished } from 'bun:test'
+
+import type { Canvas, CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { fontManager } from '#core/text/font/manager'
 export { asDouble }
 
 export function asCanvas(double: object): Canvas {
@@ -34,4 +37,19 @@ export function expectRgbaPixels(
     throw new TypeError(`${label} were expected to be 8-bit RGBA data`)
   }
   return pixels
+}
+
+/**
+ * A font provider attached to the shared font manager for the running test, then detached and
+ * deleted when the test ends. One left attached becomes the latest provider for `ck` and is
+ * handed to later files in the same process instead of their own.
+ */
+export function attachFontProvider(ck: CanvasKit): TypefaceFontProvider {
+  const provider = ck.TypefaceFontProvider.Make()
+  fontManager.attachProvider(ck, provider)
+  onTestFinished(() => {
+    fontManager.detachProvider(provider)
+    provider.delete()
+  })
+  return provider
 }

@@ -13,18 +13,13 @@ import { repoPath } from '@open-pencil/test-support/paths'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
-import {
-  buildParagraph,
-  isNodeFontLoaded,
-  nodeFontReadiness,
-  textVerticalOffset
-} from '#core/canvas/text'
+import { buildParagraph, isNodeFontLoaded, nodeFontReadiness, textVerticalOffset } from '#core/canvas/text'
 import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
 
-import { asDouble, expectRgbaPixels } from '#core-tests/canvas/helpers'
+import { asDouble, attachFontProvider, expectRgbaPixels } from '#core-tests/canvas/helpers'
 
 function createMockCanvas() {
   return {
@@ -424,8 +419,7 @@ describe('renderText headless visual', () => {
 
   test('observes CanvasKit notdef glyphs for unsupported CJK text', async () => {
     const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     await fontManager.markLoaded('Inter', 'Regular', interData)
@@ -454,8 +448,7 @@ describe('renderText headless visual', () => {
 
   test('requests a CJK fallback for text whose face is substituted', async () => {
     const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     await fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
@@ -506,8 +499,7 @@ describe('renderText headless visual', () => {
 
   test('renders CJK text via fallback font through paragraph shaper', async () => {
     const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     await fontManager.markLoaded('Inter', 'Regular', interData)
@@ -578,8 +570,7 @@ describe('renderText headless visual', () => {
 
   test('renders linear gradient text through the canvas scene fill path', async () => {
     const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
@@ -657,8 +648,7 @@ describe('renderText headless visual', () => {
 
   test('renders Arabic text via fallback font through paragraph shaper', async () => {
     const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
