@@ -2,12 +2,8 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
-import {
-  capHeightWithFont,
-  measureTextWithFont,
-  TYPICAL_CAP_HEIGHT_EMS,
-  type MeasuredTextLines
-} from '#core/text/font/glyphs'
+import { rangeCapHeight } from '#core/text/character-face'
+import { measureTextWithFont, type MeasuredTextLines } from '#core/text/font/glyphs'
 
 export type TextMeasurer = (
   node: SceneNode,
@@ -29,14 +25,20 @@ export function estimateTextSize(
 
   const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0
   const explicitLineH = ownLineH > 0 ? ownLineH : undefined
-  const measured =
-    measureTextWithFont(text, fontSize, family, style, maxWidth, explicitLineH) ??
-    estimateTextLines(text, fontSize, maxWidth, explicitLineH)
+  const hardLines = text.split('\n')
+  const measured = hardLines.map(
+    (line) =>
+      measureTextWithFont(line, fontSize, family, style, maxWidth, explicitLineH) ??
+      estimateTextLines(line, fontSize, maxWidth, explicitLineH)
+  )
+  const width = measured.reduce((widest, line) => Math.max(widest, line.width), 0)
+  const lines = measured.reduce((count, line) => count + line.lines, 0)
+  const { lineHeight } = measured[0]
   if (node.leadingTrim === 'CAP_HEIGHT') {
-    const capHeight = (capHeightWithFont(family, style) ?? TYPICAL_CAP_HEIGHT_EMS) * fontSize
-    return { width: measured.width, height: capHeight + (measured.lines - 1) * measured.lineHeight }
+    const firstLineCapHeight = rangeCapHeight(node, 0, hardLines[0].length)
+    return { width, height: firstLineCapHeight + (lines - 1) * lineHeight }
   }
-  return { width: measured.width, height: untrimmedHeight(measured) }
+  return { width, height: untrimmedHeight(lines, lineHeight) }
 }
 
 function estimateTextLines(
@@ -56,11 +58,11 @@ function estimateTextLines(
   return { width: singleLineWidth, lines: 1, lineHeight }
 }
 
-function untrimmedHeight(measured: MeasuredTextLines): number {
-  if (measured.lines === 1) {
-    return measured.lineHeight
+function untrimmedHeight(lines: number, lineHeight: number): number {
+  if (lines === 1) {
+    return lineHeight
   }
-  return Math.ceil(measured.lines * measured.lineHeight)
+  return Math.ceil(lines * lineHeight)
 }
 
 export function getTextMeasurer(): TextMeasurer | null {

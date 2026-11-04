@@ -302,7 +302,41 @@ describe('cap-height leading trim', () => {
     expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
     layout.delete()
     const unknown = textNode({ text: '75', fontSize: 20, fontFamily: 'Not Loaded Anywhere' })
-    expect(estimateTextSize(unknown).height).toBeCloseTo(TYPICAL_CAP_HEIGHT_EMS * 20, 2)
+    const fallback = layOutNode(unknown)
+    expect(estimateTextSize(unknown).height).toBeCloseTo(fallback.getHeight(), 2)
+    fallback.delete()
+  })
+
+  test('estimates a text of several lines as live layout lays it out', () => {
+    for (const leadingTrim of ['CAP_HEIGHT', 'NONE'] as const) {
+      const node = textNode({ text: '75\n50', fontSize: 20, leadingTrim })
+      const layout = layOutNode(node)
+      expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+      layout.delete()
+    }
+  })
+
+  test('estimates the tallest cap height of the first line', () => {
+    const node = textNode({
+      text: 'aBIG',
+      fontSize: 12,
+      styleRuns: [{ start: 1, length: 3, style: { fontSize: 40 } }]
+    })
+    const layout = layOutNode(node)
+    expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+    layout.delete()
+  })
+
+  test('estimates a variable font trimmed at its drawn optical size', () => {
+    const node = textNode({
+      text: '75',
+      fontSize: LARGEST_OPTICAL_SIZE,
+      fontFamily: 'Cap Axis',
+      fontVariations: [{ axis: 'opsz', value: LARGEST_OPTICAL_SIZE }]
+    })
+    const layout = layOutNode(node)
+    expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+    layout.delete()
   })
 
   test('trims empty text as its first character, and estimates it the same', () => {

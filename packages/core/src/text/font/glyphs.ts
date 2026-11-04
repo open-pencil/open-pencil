@@ -161,11 +161,6 @@ export function measureTextWithFont(
   return { width: Math.ceil(singleLineWidth), lines: 1, lineHeight: lineH }
 }
 
-export function capHeightWithFont(family: string, style: string): number | null {
-  const parsed = getParsedFont(family, style)
-  return parsed ? instanceCapHeight(parsed, fontInstance(parsed, [])) : null
-}
-
 /**
  * Where a font draws its underline and strikethrough, in ems: each line's top edge below the
  * baseline (negative above it) and its thickness. Figma places an underline's top half its
