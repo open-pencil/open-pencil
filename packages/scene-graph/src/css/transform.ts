@@ -2,7 +2,7 @@ import valueParser from 'postcss-value-parser'
 
 import Matrix, { type Mat3 } from '../matrix'
 import type { Vector } from '../primitives'
-import { splitCSSValue } from './values'
+import { dimension, splitCSSValue } from './values'
 
 /** The size percentages in a transform resolve against: the element's border box. */
 export interface CSSTransformBox {
@@ -27,36 +27,27 @@ const ANGLE_UNITS: Partial<Record<string, number>> = {
 
 /** An angle in radians; a bare zero counts, as CSS allows. Null for anything else. */
 function angle(value: string): number | null {
-  const parsed = valueParser.unit(value.trim())
+  const parsed = dimension(value.trim())
   if (!parsed) return null
-  const number = Number(parsed.number)
-  if (!Number.isFinite(number)) return null
-  const unit = parsed.unit.toLowerCase()
-  if (unit === '') return number === 0 ? 0 : null
-  const radians = ANGLE_UNITS[unit]
-  return radians === undefined ? null : number * radians
+  if (parsed.unit === '') return parsed.number === 0 ? 0 : null
+  const radians = ANGLE_UNITS[parsed.unit]
+  return radians === undefined ? null : parsed.number * radians
 }
 
 /** A length in pixels, a percentage of `extent`, or null for units this cannot resolve. */
 function length(value: string, extent: number): number | null {
-  const parsed = valueParser.unit(value.trim())
+  const parsed = dimension(value.trim())
   if (!parsed) return null
-  const number = Number(parsed.number)
-  if (!Number.isFinite(number)) return null
-  const unit = parsed.unit.toLowerCase()
-  if (unit === '%') return (number / 100) * extent
-  if (unit === 'px' || (unit === '' && number === 0)) return number
-  return null
+  if (parsed.unit === '%') return (parsed.number / 100) * extent
+  return parsed.unit === 'px' || (parsed.unit === '' && parsed.number === 0) ? parsed.number : null
 }
 
 /** A plain number, or a percentage as a fraction, as `scale` takes them. */
 function factor(value: string): number | null {
-  const parsed = valueParser.unit(value.trim())
+  const parsed = dimension(value.trim())
   if (!parsed) return null
-  const number = Number(parsed.number)
-  if (!Number.isFinite(number)) return null
-  if (parsed.unit === '%') return number / 100
-  return parsed.unit === '' ? number : null
+  if (parsed.unit === '%') return parsed.number / 100
+  return parsed.unit === '' ? parsed.number : null
 }
 
 function skewed(x: number, y: number): Mat3 {

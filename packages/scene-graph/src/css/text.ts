@@ -1,9 +1,8 @@
-import valueParser from 'postcss-value-parser'
 
 import { DEFAULT_FONT_FAMILY } from '../constants'
 import { percentLength, pixelLength } from '../text/lengths'
 import type { TextLength } from '../types'
-import { parseCSSNumber } from './values'
+import { dimension, parseCSSNumber } from './values'
 
 /** A CSS escape: hex digits and one optional whitespace, an escaped line break, or any one character. */
 const CSS_ESCAPE = /\\(?:([0-9a-fA-F]{1,6})(?:\r\n|[ \t\n\r\f])?|(?:\r\n|[\n\r\f])|([\s\S]))?/gu
@@ -90,14 +89,6 @@ export function resolveCSSFontFamily(value: string | undefined): string | null {
   if (!family) return null
   if (family.quoted) return family.name
   return GENERIC_FONT_FAMILIES[family.name.toLowerCase()] ?? family.name
-}
-
-/** A CSS dimension's number and lowercase unit, or null. */
-function dimension(value: string): { number: number; unit: string } | null {
-  const parsed = valueParser.unit(value)
-  if (!parsed) return null
-  const number = Number(parsed.number)
-  return Number.isFinite(number) ? { number, unit: parsed.unit.toLowerCase() } : null
 }
 
 /**
