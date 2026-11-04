@@ -1,7 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
@@ -9,6 +7,7 @@ import {
   initCanvasKit
 } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { fontManager } from '#core/text/font/manager'
 
@@ -22,7 +21,8 @@ beforeAll(async () => {
 
 type Text = ReturnType<FigmaAPI['createText']>
 
-async function exportedSize(setUp: (text: Text) => void): Promise<number[]> {
+/** The exported image's size, and how many of its pixels the text paints. */
+async function exported(setUp: (text: Text) => void): Promise<number[]> {
   const graph = new SceneGraph()
   const text = new FigmaAPI(graph).createText()
   text.fontSize = 24
@@ -35,7 +35,9 @@ async function exportedSize(setUp: (text: Text) => void): Promise<number[]> {
     createCanvasKitRasterCodec(await initCanvasKit()).decode(png),
     'image'
   )
-  return [image.width, image.height]
+  let painted = 0
+  for (let index = 3; index < image.data.length; index += 4) if (image.data[index] > 0) painted++
+  return [image.width, image.height, painted]
 }
 
 // Figma desktop 126 (2026-11-05) exports a text at its render bounds: its glyphs' ink, grown by
@@ -62,9 +64,10 @@ describe('exported text size', () => {
         [22, 26]
       ]
     ] as const) {
-      const [width, height] = await exportedSize(setUp)
+      const [width, height, painted] = await exported(setUp)
       expect(Math.abs(width - figma[0])).toBeLessThanOrEqual(1)
       expect(height).toBe(figma[1])
+      expect(painted).toBeGreaterThan(0)
     }
   })
 })

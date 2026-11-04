@@ -1,2 +1,2 @@
-- Text exports, `absoluteRenderBounds`, and the canvas take a text by the ink of its glyphs, as Figma does, so exported text is the size Figma exports it at and a text 0 px tall draws on the canvas.
+- Text exports, `absoluteRenderBounds`, and the canvas take a text by the ink of its glyphs, as Figma does, so text without a shadow or blur exports at the size Figma exports it at, and a text 0 px tall draws on the canvas.
 - Text centred or bottom-aligned in its box draws its baseline on the pixel Figma draws it on.

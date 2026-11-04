@@ -136,7 +136,7 @@ function drawKeycapFrames(
       )
       runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
       // On the whole pixel its character is drawn on.
-      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y, y), glyph.fontSize, runPaint)
+      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, runPaint)
     }
   } finally {
     runPaint.delete()

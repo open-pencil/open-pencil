@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { textVerticalOffset } from '#core/canvas/text'
 import { textInkBounds } from '#core/canvas/text/ink'
@@ -161,6 +161,15 @@ describe('text ink', () => {
     const underlined = rect(ink(textNode({ text: 'Hgy', textDecoration: 'UNDERLINE' })))
     expect(underlined[0]).toBe(0)
     expect(underlined[1]).toBeCloseTo(5.545, 1)
+  })
+
+  test('takes in the frame a keycap draws around its character', () => {
+    const [x, y, width, height] = rect(ink(textNode({ text: '1\u20E3' })))
+    const [, , digitWidth, digitHeight] = rect(ink(textNode({ text: '1' })))
+    expect(width).toBeGreaterThan(digitWidth + 4)
+    expect(height).toBeGreaterThan(digitHeight)
+    expect(x).toBeLessThan(2)
+    expect(y).toBeLessThan(5.5)
   })
 
   test('is null for text that draws nothing', () => {

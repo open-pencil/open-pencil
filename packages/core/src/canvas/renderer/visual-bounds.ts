@@ -44,6 +44,8 @@ export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBound
 function ownShape(node: SceneNode): VisualBounds {
   const ink = node.type === 'TEXT' && !node.textPathData ? measureTextInk(node) : undefined
   if (ink) return ink
+  // A text that draws no glyph, such as spaces alone, takes no room, as in Figma.
+  if (ink === null) return { minX: 0, minY: 0, maxX: 0, maxY: 0 }
   return {
     minX: 0,
     minY: 0,
