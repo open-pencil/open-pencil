@@ -8,7 +8,6 @@ import { handleNodeEditPointerUp } from '#vue/canvas/vector-input/input'
 import type { DragState } from '#vue/shared/input/types'
 import {
   finishNodeEditMarquee,
-  getNodeEditState,
   handleNodeEditDown,
   handleNodeEditMarqueeMove,
   handleNodeEditMove
@@ -24,25 +23,25 @@ const zero = { x: 0, y: 0 }
 /** An open path (0,0) → (100,0) → (100,100) in edit mode, with nothing selected. */
 function setup() {
   editor = createEditor()
+  const path = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+    width: 100,
+    height: 100,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+        { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
+      ],
+      regions: []
+    }
+  })
+  editor.enterNodeEditMode(path.id)
   exitNodeEditMode = mock()
-  Object.assign(editor, { exitNodeEditMode, nodeEditPushHistory: mock() })
-  editor.state.nodeEditState = {
-    nodeId: 'path',
-    vertices: [
-      { x: 0, y: 0 },
-      { x: 100, y: 0 },
-      { x: 100, y: 100 }
-    ],
-    segments: [
-      { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
-      { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
-    ],
-    regions: [],
-    selectedVertexIndices: new Set<number>(),
-    selectedSegmentIndices: new Set<number>(),
-    selectedHandles: new Set<number>(),
-    hoveredHandleInfo: null
-  }
+  Object.assign(editor, { exitNodeEditMode })
 }
 
 function press(cx: number, cy: number, shiftKey = false) {
@@ -54,17 +53,17 @@ function press(cx: number, cy: number, shiftKey = false) {
 }
 
 function selected() {
-  return [...(getNodeEditState(editor)?.selectedVertexIndices ?? [])].sort()
+  return [...(editor.getNodeEditState()?.selectedVertexIndices ?? [])].sort()
 }
 
 function selectedSegments() {
-  return [...(getNodeEditState(editor)?.selectedSegmentIndices ?? [])].sort()
+  return [...(editor.getNodeEditState()?.selectedSegmentIndices ?? [])].sort()
 }
 
 describe('editing a path: segments', () => {
   test('a press on a segment selects the segment, not its points, and drags its points', () => {
     setup()
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (es) es.selectedVertexIndices = new Set([2])
     const drag = press(50, 2)
     expect(selectedSegments()).toEqual([0])
@@ -108,7 +107,7 @@ describe('editing a path: marquee', () => {
 
   test('with Shift it keeps what was already selected', () => {
     setup()
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (es) {
       es.selectedVertexIndices = new Set([0])
       es.selectedSegmentIndices = new Set([0])
@@ -122,7 +121,7 @@ describe('editing a path: marquee', () => {
 
   test('without Shift it replaces the selection', () => {
     setup()
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (es) es.selectedSegmentIndices = new Set([0])
     const drag = press(80, 80)
     if (drag?.type !== 'edit-marquee') throw new Error('expected a marquee')
@@ -144,7 +143,7 @@ describe('editing a path: regions and segments', () => {
   /** The same path closed back to (0,0), filled as one region. */
   function setupFilled() {
     setup()
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (!es) throw new Error('expected edit state')
     es.segments = [...es.segments, { start: 2, end: 0, tangentStart: zero, tangentEnd: zero }]
     es.regions = [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
@@ -177,7 +176,7 @@ describe('editing a path: regions and segments', () => {
 describe('editing a path: pressing a picked region', () => {
   function setupRooms() {
     setup()
-    const es = getNodeEditState(editor)
+    const es = editor.getNodeEditState()
     if (!es) throw new Error('expected edit state')
     const line = (start: number, end: number) => ({
       start,
@@ -279,7 +278,7 @@ describe('editing a path: pressing a selected segment', () => {
     handleNodeEditMove(drag, 50, -20, editor, false, false, false, true)
     release(drag)
     expect(selectedSegments()).toEqual([0, 1])
-    expect(getNodeEditState(editor)?.vertices.map((vertex) => vertex.y)).toEqual([-20, -20, 80])
+    expect(editor.getNodeEditState()?.vertices.map((vertex) => vertex.y)).toEqual([-20, -20, 80])
   })
 
   test('a drag moves the whole selection and keeps it', () => {
@@ -291,6 +290,6 @@ describe('editing a path: pressing a selected segment', () => {
     handleNodeEditMove(drag, 50, -20, editor, false, false, false, true)
     release(drag)
     expect(selectedSegments()).toEqual([0, 1])
-    expect(getNodeEditState(editor)?.vertices.map((vertex) => vertex.y)).toEqual([-20, -20, 80])
+    expect(editor.getNodeEditState()?.vertices.map((vertex) => vertex.y)).toEqual([-20, -20, 80])
   })
 })

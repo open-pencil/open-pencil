@@ -1,17 +1,17 @@
-import type { Editor } from '@open-pencil/core'
-import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '@open-pencil/core/vector'
+import type { EditorContext } from '#core/editor/types'
+import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '#core/vector'
 
 import { pushNodeEditHistory } from './history'
 import { getLiveNetwork, setNodeEditNetwork } from './network'
-import type { VectorEditState } from './types'
+import type { VectorEditActionDeps } from './types'
 
 export function createVectorEditSelectionActions(
-  editor: Editor,
-  state: VectorEditState,
+  ctx: EditorContext,
+  actions: VectorEditActionDeps,
   exitNodeEditMode: (commit: boolean) => void
 ) {
   function getNodeEditState() {
-    return state.nodeEditState
+    return ctx.state.nodeEditState
   }
 
   function nodeEditSelectVertex(vertexIndex: number, addToSelection: boolean) {
@@ -27,7 +27,7 @@ export function createVectorEditSelectionActions(
       es.selectedSegmentIndices = new Set()
       es.selectedRegions = new Set()
     }
-    editor.requestRepaint()
+    ctx.requestRepaint()
   }
 
   function nodeEditAlignVertices(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
@@ -52,7 +52,7 @@ export function createVectorEditSelectionActions(
     for (const i of indices) {
       es.vertices[i] = { ...es.vertices[i], [prop]: target }
     }
-    editor.requestRepaint()
+    ctx.requestRepaint()
   }
 
   function nodeEditDeleteSelected() {
@@ -81,8 +81,8 @@ export function createVectorEditSelectionActions(
     if (live.vertices.length === 0) {
       const { nodeId } = es
       exitNodeEditMode(true)
-      editor.select([nodeId])
-      editor.deleteSelected()
+      actions.select([nodeId])
+      actions.deleteSelected()
       return
     }
 
@@ -91,7 +91,7 @@ export function createVectorEditSelectionActions(
     es.selectedSegmentIndices = new Set()
     es.selectedRegions = new Set()
     es.selectedHandles = new Set()
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   function nodeEditBreakAtVertex() {
@@ -106,7 +106,7 @@ export function createVectorEditSelectionActions(
     es.selectedSegmentIndices = new Set()
     es.selectedRegions = new Set()
     es.selectedVertexIndices = new Set([vertexIndex])
-    editor.requestRender()
+    ctx.requestRender()
   }
 
   return {

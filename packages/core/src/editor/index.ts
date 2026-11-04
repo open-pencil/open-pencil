@@ -40,6 +40,7 @@ export { resolvePlayState, type InstanceState } from './play/states'
 export { EDIT_VIEW, resolveEditorProfile } from './views'
 export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'
 export type { ShaderRasterizer } from './shaders/types'
+export type { NodeEditState } from './vector/types'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
 export type {
