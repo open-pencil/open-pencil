@@ -1,0 +1,1 @@
+- Regular 20px text drawn from the glyph outlines saved in a `.fig` file (when its font is not installed) has smooth edges again instead of stair-stepped ones (#1799).
