@@ -1,0 +1,1 @@
+- Text keeps the baselines Figma saves and draws each on the whole pixel Figma draws it on, so lines at a fractional line height or paragraph spacing no longer sit half a pixel off, and glyph positions saved to `.fig` match Figma's.
