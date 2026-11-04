@@ -702,6 +702,13 @@
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
     },
+    "tools/checks/bundle-budget": {
+      "name": "@open-pencil/bundle-budget-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "valibot": "^1.5.0",
+      },
+    },
     "tools/checks/cloud-off": {
       "name": "@open-pencil/cloud-off-tools",
       "dependencies": {
@@ -1714,6 +1721,8 @@
     "@open-pencil/authoring-reference-tools": ["@open-pencil/authoring-reference-tools@workspace:tools/generate/authoring-reference"],
 
     "@open-pencil/brand-tools": ["@open-pencil/brand-tools@workspace:tools/generate/brand"],
+
+    "@open-pencil/bundle-budget-tools": ["@open-pencil/bundle-budget-tools@workspace:tools/checks/bundle-budget"],
 
     "@open-pencil/ci-images-tools": ["@open-pencil/ci-images-tools@workspace:tools/ci/images"],
 

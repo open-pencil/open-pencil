@@ -97,6 +97,8 @@ export default defineConfig(async ({ command, mode }) => {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
+      // `check:bundle` reads the chunk graph from it.
+      manifest: true,
       // Official releases upload their maps to PostHog for error reports, then remove them
       // (`tools/release/release-packages/src/sourcemaps/publish.ts`); no chunk links one.
       sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
