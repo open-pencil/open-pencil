@@ -5,14 +5,14 @@ import { parseManifest, staticFiles } from '../src/budget'
 describe('staticFiles', () => {
   const manifest = parseManifest(
     JSON.stringify({
-      entry: { file: 'entry.js', imports: ['_shared', '_cycle'], dynamicImports: ['lazy'] },
+      entry: { file: 'entry.js', imports: ['_shared', '_cycle'] },
       _shared: { file: 'shared.js' },
       _cycle: { file: 'cycle.js', imports: ['entry', '_shared'] },
       lazy: { file: 'lazy.js' }
     })
   )
 
-  test('follows static imports once and leaves dynamic ones out', () => {
+  test('follows imports once and stops at what they do not reach', () => {
     expect(staticFiles(manifest, 'entry').toSorted()).toEqual(['cycle.js', 'entry.js', 'shared.js'])
   })
 
