@@ -20,5 +20,9 @@
   "resetCurve": "Restablecer curva",
   "sharpen": "Enfoque",
   "noise": "Grano",
-  "vignette": "Viñeta"
+  "vignette": "Viñeta",
+  "removeBackground": "Quitar fondo",
+  "removingBackground": "Quitando el fondo… La primera vez se descarga el modelo (unos 45 MB).",
+  "backgroundRemoved": "Fondo quitado.",
+  "removeBackgroundFailed": "No se pudo quitar el fondo: {error}"
 }

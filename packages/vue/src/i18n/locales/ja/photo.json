@@ -20,5 +20,9 @@
   "resetCurve": "カーブをリセット",
   "sharpen": "シャープ",
   "noise": "粒子",
-  "vignette": "周辺光量"
+  "vignette": "周辺光量",
+  "removeBackground": "背景を削除",
+  "removingBackground": "背景を削除しています… 初回はモデル(約45メガバイト)をダウンロードします。",
+  "backgroundRemoved": "背景を削除しました。",
+  "removeBackgroundFailed": "背景を削除できませんでした: {error}"
 }

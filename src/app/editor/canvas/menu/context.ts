@@ -3,12 +3,14 @@ import { computed, type Ref } from 'vue'
 import type { Editor } from '@lawha/core'
 import { formatShortcut } from '@lawha/vue/editor/commands'
 import type { MenuEntry } from '@lawha/vue/editor/menu-model'
+import { photoMessages } from '@lawha/vue/i18n'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {
   CANVAS_COPY_AS_ACTIONS,
   CANVAS_COPY_AS_GROUP_TEST_ID,
   CANVAS_PROPERTIES_ACTIONS,
+  CANVAS_REMOVE_BACKGROUND_TEST_ID,
   CANVAS_VECTORIZE_TEST_ID,
   type CanvasContextActionId,
   type CanvasContextActionMeta
@@ -109,6 +111,16 @@ export function useCanvasContextMenu(
   return computed<MenuEntry[]>(() => {
     const entries = withoutStaticSelectionCommands(baseEntries.value)
     if (!hasSelection.value) return entries
+    if (actions.canRemoveBackground()) {
+      entries.push(
+        { separator: true },
+        {
+          label: photoMessages.get().removeBackground,
+          testId: CANVAS_REMOVE_BACKGROUND_TEST_ID,
+          action: runAsync(actions.removeBackground)
+        }
+      )
+    }
     if (actions.canVectorizeImage()) {
       entries.push(
         { separator: true },

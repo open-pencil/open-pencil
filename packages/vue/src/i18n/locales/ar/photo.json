@@ -20,5 +20,9 @@
   "resetCurve": "إعادة المنحنى",
   "sharpen": "الحدّة",
   "noise": "الحبيبات",
-  "vignette": "التظليل الدائري"
+  "vignette": "التظليل الدائري",
+  "removeBackground": "إزالة الخلفية",
+  "removingBackground": "جارٍ إزالة الخلفية… أول مرة يتم تنزيل النموذج (حوالي 45 ميغابايت).",
+  "backgroundRemoved": "تمت إزالة الخلفية.",
+  "removeBackgroundFailed": "تعذّرت إزالة الخلفية: {error}"
 }

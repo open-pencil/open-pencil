@@ -20,5 +20,9 @@
   "resetCurve": "重置曲线",
   "sharpen": "锐化",
   "noise": "颗粒",
-  "vignette": "暗角"
+  "vignette": "暗角",
+  "removeBackground": "移除背景",
+  "removingBackground": "正在移除背景… 首次使用会下载模型(约45兆字节)。",
+  "backgroundRemoved": "背景已移除。",
+  "removeBackgroundFailed": "无法移除背景:{error}"
 }

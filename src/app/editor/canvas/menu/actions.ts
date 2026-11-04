@@ -10,6 +10,7 @@ import {
 } from '@/app/editor/clipboard/properties'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { createTextClipboard } from '@/app/editor/clipboard/text'
+import { canRemoveBackground, removeBackgroundFromSelection } from '@/app/editor/remove-background'
 import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
@@ -90,6 +91,11 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     vectorizeImage: async () => {
       const nodeId = ids()[0]
       if (nodeId) await vectorizeImageNode(store, nodeId)
-    }
+    },
+    canRemoveBackground: () => {
+      void selectedIds.value
+      return canRemoveBackground(store)
+    },
+    removeBackground: () => removeBackgroundFromSelection(store)
   }
 }

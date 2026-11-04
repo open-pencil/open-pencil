@@ -20,5 +20,9 @@
   "resetCurve": "Réinitialiser la courbe",
   "sharpen": "Netteté",
   "noise": "Grain",
-  "vignette": "Vignette"
+  "vignette": "Vignette",
+  "removeBackground": "Supprimer l’arrière-plan",
+  "removingBackground": "Suppression de l’arrière-plan… La première fois, le modèle est téléchargé (environ 45 Mo).",
+  "backgroundRemoved": "Arrière-plan supprimé.",
+  "removeBackgroundFailed": "Impossible de supprimer l’arrière-plan : {error}"
 }

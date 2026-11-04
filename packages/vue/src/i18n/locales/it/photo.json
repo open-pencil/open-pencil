@@ -20,5 +20,9 @@
   "resetCurve": "Ripristina curva",
   "sharpen": "Nitidezza",
   "noise": "Grana",
-  "vignette": "Vignettatura"
+  "vignette": "Vignettatura",
+  "removeBackground": "Rimuovi sfondo",
+  "removingBackground": "Rimozione dello sfondo… La prima volta viene scaricato il modello (circa 45 MB).",
+  "backgroundRemoved": "Sfondo rimosso.",
+  "removeBackgroundFailed": "Impossibile rimuovere lo sfondo: {error}"
 }

@@ -20,5 +20,9 @@
   "resetCurve": "Сбросить кривую",
   "sharpen": "Резкость",
   "noise": "Зерно",
-  "vignette": "Виньетка"
+  "vignette": "Виньетка",
+  "removeBackground": "Удалить фон",
+  "removingBackground": "Удаление фона… В первый раз загружается модель (около 45 МБ).",
+  "backgroundRemoved": "Фон удалён.",
+  "removeBackgroundFailed": "Не удалось удалить фон: {error}"
 }

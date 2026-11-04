@@ -20,5 +20,9 @@
   "resetCurve": "Resetuj krzywą",
   "sharpen": "Wyostrzanie",
   "noise": "Ziarno",
-  "vignette": "Winieta"
+  "vignette": "Winieta",
+  "removeBackground": "Usuń tło",
+  "removingBackground": "Usuwanie tła… Za pierwszym razem pobierany jest model (ok. 45 MB).",
+  "backgroundRemoved": "Usunięto tło.",
+  "removeBackgroundFailed": "Nie udało się usunąć tła: {error}"
 }
