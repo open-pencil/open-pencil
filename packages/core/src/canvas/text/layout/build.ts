@@ -9,7 +9,7 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
-  lineHeightPixels,
+  lineStepPixels,
   topLevelNumberDigits,
   type TextListItem,
   type TextParagraphRange
@@ -63,7 +63,7 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   // A percent line height follows the font size of the characters it spaces.
-  const own = (fontSize = node.fontSize) => lineHeightPixels(node.lineHeight, fontSize) || null
+  const own = (fontSize = node.fontSize) => lineStepPixels(node.lineHeight, fontSize) || null
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
@@ -77,7 +77,7 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
     const runSize = run.style.fontSize ?? node.fontSize
     const lineHeight =
       run.style.lineHeight !== undefined
-        ? lineHeightPixels(run.style.lineHeight, runSize) || null
+        ? lineStepPixels(run.style.lineHeight, runSize) || null
         : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
