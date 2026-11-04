@@ -119,6 +119,34 @@ describe('resuming collaboration peers', () => {
     await first.close()
   })
 
+  test('folds the log into a snapshot when the last resumed peer leaves', async () => {
+    const memory = memoryStateStore()
+    const first = hubOver(memory.store)
+    const alice = await joinRemembered(first)
+    alice.client.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.yjsUpdate,
+      target: null,
+      payload: textUpdate('logged')
+    })
+    const room = { documentId, roomEpoch: 0 }
+    await until(async () => (await memory.store.load(room)).updates.length > 0)
+    const aliceState = readRelayPeerState(alice.remembered.state)
+    if (!aliceState) throw new Error('Expected a kept peer state')
+
+    // The relay woke for the close alone: nothing loaded the room since.
+    const woken = hubOver(memory.store)
+    const resumed = connectTestClient((socket) => woken.resume(socket, aliceState))
+    resumed.connection.closed()
+    await until(async () => (await memory.store.load(room)).updates.length === 0)
+    const saved = await memory.store.load(room)
+    const document = new Y.Doc()
+    Y.applyUpdate(document, saved.snapshot ?? new Uint8Array())
+    expect(document.getText('t').toString()).toBe('logged')
+    await woken.close()
+    await first.close()
+  })
+
   test('closes a peer whose ticket lapsed when it next speaks, instead of sending it edits', async () => {
     const hub = hubOver(memoryStateStore().store)
     const lapsing = await joinRemembered(hub, 1)
