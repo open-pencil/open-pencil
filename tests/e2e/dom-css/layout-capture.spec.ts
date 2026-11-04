@@ -136,6 +136,25 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(byId(document, 'words').layout?.box.width).toBeCloseTo(loaded, 0)
   })
 
+  test('waits for images before recording layout', async ({ page }) => {
+    // Served late, so layout is read before the image arrives unless it waits for it.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="30"></svg>'
+    await page.route('https://images.test/late.svg', async (route) => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 500)
+      })
+      await route.fulfill({ contentType: 'image/svg+xml', body: svg })
+    })
+    const document = await captured(
+      page,
+      '<img id="pic" src="https://images.test/late.svg"><div id="after"></div>',
+      'body { margin: 0 } img { display: block } #after { height: 10px }'
+    )
+
+    expect(byId(document, 'pic').layout?.box).toEqual({ x: 0, y: 0, width: 50, height: 30 })
+    expect(byId(document, 'after').layout?.box.y).toBe(30)
+  })
+
   test('leaves layout out unless asked', async ({ page }) => {
     const document = createHeadlessCSSRuntime().parseHTML('<div id="plain"></div>')
     const computed = await browserRuntimeComputeStyles(page, document, '', 'iframe')

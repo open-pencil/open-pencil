@@ -183,12 +183,40 @@ function computedStyleToRecord(
 }
 
 /**
- * Waits until the document's web fonts have loaded and a frame has laid it out with them, so
- * lines break and boxes size as the page shows them rather than in a fallback font.
+ * How long layout waits for an image to load. An image without a size takes its own once loaded,
+ * moving what follows it, but a request that never ends must not hold an import forever.
  */
-async function settle(browserDocument: Document): Promise<void> {
+const IMAGE_LOAD_LIMIT_MS = 10_000
+
+/** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
+function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
+  const pending = Array.from(root.querySelectorAll('img')).filter((image) => !image.complete)
+  if (pending.length === 0) return Promise.resolve()
+  const loaded = Promise.all(
+    pending.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          image.addEventListener('load', () => resolve(), { once: true })
+          image.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  ).then(() => undefined)
+  const limit = new Promise<void>((resolve) => {
+    view.setTimeout(resolve, IMAGE_LOAD_LIMIT_MS)
+  })
+  return Promise.race([loaded, limit])
+}
+
+/**
+ * Waits until the document's web fonts and the content's images have loaded and a frame has laid
+ * it out with them, so lines break and boxes size as the page shows them, not in a fallback font
+ * or around an image that has not arrived.
+ */
+async function settle(browserDocument: Document, content: ParentNode): Promise<void> {
   await requestFrame(browserDocument)
   await browserDocument.fonts.ready
+  const view = browserDocument.defaultView
+  if (view) await imagesLoaded(content, view)
   await requestFrame(browserDocument)
 }
 
@@ -236,7 +264,7 @@ async function computeStylesInShadowRoot(
   browserDocument.body.append(host)
 
   try {
-    await settle(browserDocument)
+    await settle(browserDocument, shadow)
     return copyComputedStyles(designDocument, content, options, {
       origin: content,
       styleRoot: shadow
@@ -272,7 +300,7 @@ async function computeStylesInIframe(
     const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
 
-    await settle(iframeDocument)
+    await settle(iframeDocument, iframeDocument)
     return copyComputedStyles(designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head
