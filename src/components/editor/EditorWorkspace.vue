@@ -198,7 +198,7 @@ const { pending: roomPending } = useRoomActions()
         :default-size="rightSize"
         :min-size="sidebarMinimum"
         :max-size="sidebarMaximum"
-        class="pointer-events-auto flex flex-col"
+        class="pointer-events-auto flex flex-col bg-panel"
       >
         <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
           <CollabPanel class="min-w-0 flex-1" />
