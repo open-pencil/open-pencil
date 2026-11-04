@@ -33,6 +33,7 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import { autoWidthWrapWidth } from '#core/layout/text-measurement'
 import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
 import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
@@ -146,10 +147,28 @@ function needsParagraphLayout(node: ParagraphNode): boolean {
 
 function layoutForNode(layout: TextLayout, node: ParagraphNode): void {
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
-    layout.layout(1e6)
-    layout.layout(Math.max(node.width || 1, Math.ceil(layout.getLongestLine())))
+    layoutAutoWidth(layout, node)
   } else {
     layout.layout(resolveParagraphLayoutWidth(node))
+  }
+}
+
+function truncatesAtMaxWidth(node: ParagraphNode): boolean {
+  return node.textTruncation === 'ENDING' && autoWidthWrapWidth(node) !== undefined
+}
+
+function layoutAutoWidth(layout: TextLayout, node: ParagraphNode): void {
+  const wrapWidth = resolveParagraphLayoutWidth(node)
+  if (truncatesAtMaxWidth(node)) {
+    const measuredBoxWidth = node.width || wrapWidth
+    layout.layout(Math.min(measuredBoxWidth, wrapWidth))
+    return
+  }
+  layout.layout(wrapWidth)
+  const widestLine = Math.ceil(layout.getLongestLine())
+  const width = Math.min(wrapWidth, Math.max(node.width || 1, widestLine))
+  if (width !== wrapWidth) {
+    layout.layout(width)
   }
 }
 

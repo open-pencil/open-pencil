@@ -89,6 +89,15 @@ function untrimmedHeight(lines: number, lineHeight: number): number {
   return Math.ceil(lines * lineHeight)
 }
 
+export function autoWidthWrapWidth(
+  node: Pick<SceneNode, 'minWidth' | 'maxWidth'>
+): number | undefined {
+  if (node.maxWidth == null) {
+    return undefined
+  }
+  return Math.max(node.maxWidth, node.minWidth ?? 0)
+}
+
 export function getTextMeasurer(): TextMeasurer | null {
   return globalTextMeasurer
 }
@@ -107,12 +116,39 @@ export function measureTextForLayout(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } {
+  return measuredTextSize(node, maxWidth) ?? { width: node.width, height: node.height }
+}
+
+/** The size `measureTextForLayout` measures or estimates; null while the text's fonts are not prepared. */
+function measuredTextSize(
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } | null {
   if (!globalTextMeasurer) return estimateTextSize(node, maxWidth)
   const measured = globalTextMeasurer(node, maxWidth)
   if (measured) return measured
   // Empty text measures nothing but its line, which needs no fonts beyond the default.
   if (node.type !== 'TEXT' || !node.text) return estimateTextSize(node, maxWidth)
-  return { width: node.width, height: node.height }
+  return null
+}
+
+/**
+ * Auto-width text's box when it wraps at `wrapWidth`, a max width or the width layout gives it.
+ * Text that reaches the wrap width takes all of it, as Figma sizes it, rather than its longest
+ * line; shorter text keeps its own width.
+ */
+export function measureAutoWidthText(
+  node: SceneNode,
+  wrapWidth: number | undefined
+): { width: number; height: number } {
+  const measured = measureTextForLayout(node, wrapWidth)
+  if (wrapWidth === undefined) return measured
+  // Its one-line width, without the max width the paragraph would otherwise wrap it at; while
+  // its fonts are not prepared that is unknown, and the text keeps the size it has.
+  const natural = measuredTextSize({ ...node, maxWidth: null })
+  return natural && natural.width > wrapWidth
+    ? { width: wrapWidth, height: measured.height }
+    : measured
 }
 
 const installedMeasurers: TextMeasurer[] = []
