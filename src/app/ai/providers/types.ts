@@ -27,9 +27,4 @@ export type ModelProviderRuntime = {
 
 export interface ModelProviderAdapter {
   create(config: ModelConfig, runtime: ModelProviderRuntime): LanguageModel
-  /**
-   * The provider documents WebP image input, so tool images reach its models as WebP. Set only
-   * from the provider's own documentation; see `development/ai-chat.md`.
-   */
-  webpImages?: boolean
 }

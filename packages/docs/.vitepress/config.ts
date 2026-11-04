@@ -14,7 +14,7 @@ import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fin
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
 import { landingPreloads } from './landing-head.ts'
-import { docsLocales } from './locales.ts'
+import { docsLocales } from './locales/docs.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { findByName, PROPERTY_CASES } from '#core-tests/helpers/property-cases'
 import { pick } from 'es-toolkit'
 

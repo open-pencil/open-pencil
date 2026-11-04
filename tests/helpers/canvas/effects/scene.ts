@@ -1,11 +1,26 @@
 import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
 
-const solid = (r: number, g: number, b: number, opacity = 1) => ({
-  type: 'SOLID' as const,
-  color: { r, g, b, a: 1 },
-  opacity,
-  visible: true
-})
+import { solid } from '../paints'
+
+/** Three 40×120 stripes, red, teal, and blue, from `x`,`y`, named `<name> 1` to `<name> 3`. */
+function addStripes(graph: SceneGraph, pageId: string, name: string, x: number, y: number) {
+  const colors = [
+    [0.96, 0.35, 0.35],
+    [0.08, 0.73, 0.73],
+    [0.23, 0.51, 0.96]
+  ] as const
+  return colors.map(
+    ([r, g, b], index) =>
+      graph.createNode('RECTANGLE', pageId, {
+        name: `${name} ${index + 1}`,
+        x: x + index * 40,
+        y,
+        width: 40,
+        height: 120,
+        fills: [solid(r, g, b)]
+      }).id
+  )
+}
 
 function effect(type: Effect['type'], radius: number, y = 0): Effect {
   return {
@@ -50,20 +65,7 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
     fills: [solid(1, 1, 1)],
     effects: [effect('INNER_SHADOW', 16, 8)]
   })
-  for (const [index, color] of [
-    [0.96, 0.35, 0.35],
-    [0.08, 0.73, 0.73],
-    [0.23, 0.51, 0.96]
-  ].entries()) {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Stripe ${index + 1}`,
-      x: 620 + index * 40,
-      y: 100,
-      width: 40,
-      height: 120,
-      fills: [solid(color[0], color[1], color[2])]
-    })
-  }
+  addStripes(graph, pageId, 'Stripe', 620, 100)
   graph.createNode('RECTANGLE', pageId, {
     name: 'Background blur',
     x: 640,
@@ -88,20 +90,7 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
       }
     ]
   })
-  for (const [index, color] of [
-    [0.96, 0.35, 0.35],
-    [0.08, 0.73, 0.73],
-    [0.23, 0.51, 0.96]
-  ].entries()) {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Union stripe ${index + 1}`,
-      x: 260 + index * 40,
-      y: 280,
-      width: 40,
-      height: 120,
-      fills: [solid(color[0], color[1], color[2])]
-    })
-  }
+  addStripes(graph, pageId, 'Union stripe', 260, 280)
   const union = graph.createNode('BOOLEAN_OPERATION', pageId, {
     name: 'Union background blur',
     x: 260,

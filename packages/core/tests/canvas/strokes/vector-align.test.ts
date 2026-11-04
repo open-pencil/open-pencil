@@ -1,7 +1,6 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph, type Stroke, type VectorNetwork } from '@open-pencil/scene-graph'
 import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
 

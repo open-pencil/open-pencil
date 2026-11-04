@@ -50,7 +50,7 @@ Every call of an OpenPencil tool, from the chat, a coding agent through MCP, or 
 
 ## Images a tool returns
 
-An image a call returns, such as `export_image`'s, reaches the model as a file, and every request sends the whole conversation again. On a connection whose provider documents WebP input itself (Anthropic, OpenAI, Google Gemini, and DeepSeek: `webpImages` in `providers/registry.ts`, each beside its documentation link), a PNG goes as WebP at quality 90 (`tools/model-image.ts`), unless the WebP comes out larger, as it can for flat renders.
+An image a call returns, such as `export_image`'s, reaches the model as a file, and every request sends the whole conversation again. On a connection whose provider documents WebP input itself (Anthropic, OpenAI, Google Gemini, and DeepSeek: `WEBP_IMAGE_PROVIDERS` in `providers/tool-images.ts`, each beside its documentation link), a PNG goes as WebP at quality 90 (`tools/model-image.ts`), unless the WebP comes out larger, as it can for flat renders.
 
 - Measured at the 1280 px default edge on design renders: flat UI is 14–20 KB as PNG and barely smaller as WebP; renders with imagery are 197–289 KB as PNG and 61–86 KB as WebP, at SSIM 0.984–0.995 against the PNG, with small text as legible.
 - Only a provider's own documentation counts. An Anthropic- or OpenAI-compatible endpoint, OpenRouter, Z.ai, MiniMax, ChatGPT sign-in, and Cloud may forward to a model server that cannot decode WebP (llama.cpp's server reads images with stb_image, which has none), so they get PNG.

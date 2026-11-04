@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { createAPI } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(async () => {
   await registerTestFont('Inter')
 })

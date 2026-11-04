@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, figJamColoredLayers } from '@open-pencil/core'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { createSticky } from '@open-pencil/scene-graph/generated'

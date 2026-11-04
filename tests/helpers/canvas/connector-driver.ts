@@ -1,11 +1,19 @@
-import { expect, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 import type { ConnectorEndpoint } from '@open-pencil/scene-graph'
+import type { Size, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { toolbarToolTestId } from '#tests/helpers/test-ids'
+import { showView } from '#tests/helpers/canvas/page-scene'
 
-/** The canvas point the page's origin is shown at, at 100%. */
-const ORIGIN = 100
+import { hexColor, toolDriver } from './tool-driver'
+
+/** The fill of the boxes connectors attach to. */
+const BOX_FILL = {
+  type: 'SOLID' as const,
+  color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
+  opacity: 1,
+  visible: true
+}
 
 export interface ConnectorState {
   id: string
@@ -16,74 +24,74 @@ export interface ConnectorState {
 
 /** Connectors between layers on a page shown at 100% with its origin 100 px into the canvas. */
 export function connectorDriver(page: () => Page) {
-  return {
-    /** Setup: shows the page's origin at a known canvas point. */
-    showOrigin() {
-      return page().evaluate((origin) => {
+  /**
+   * Draws one connector per row with the connector tool, from the centre of a `size` box at
+   * `from` to the centre of one at `to`; returns the connectors' ids, row by row.
+   */
+  function connectBoxes(rows: readonly { from: Vector; to: Vector }[], size: Size) {
+    return page().evaluate(
+      ({ pairs, boxSize, fill }) => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
-        store.state.zoom = 1
-        store.state.panX = origin
-        store.state.panY = origin
-        store.requestRender()
-      }, ORIGIN)
-    },
+        const pageId = store.state.currentPageId
+        const box = (at: Vector) =>
+          store.graph.createNode('RECTANGLE', pageId, { ...at, ...boxSize, fills: [fill] })
+        const ids = pairs.map(({ from, to }) => {
+          const start = box(from)
+          const end = box(to)
+          store.setTool('CONNECTOR')
+          store.connectorBegin(start.x + boxSize.width / 2, start.y + boxSize.height / 2)
+          store.connectorRelease(end.x + boxSize.width / 2, end.y + boxSize.height / 2, true)
+          const connector = store.graph
+            .getChildren(pageId)
+            .findLast((node) => node.type === 'CONNECTOR')
+          if (!connector) throw new Error('No connector')
+          return connector.id
+        })
+        store.setTool('SELECT')
+        return ids
+      },
+      { pairs: rows, boxSize: size, fill: BOX_FILL }
+    )
+  }
 
-    /** Setup: named rectangles at page boxes; returns their ids by name. */
-    addBoxes(boxes: { name: string; x: number; y: number; width: number; height: number }[]) {
-      return page().evaluate((specs) => {
+  /** Setup: named rectangles at page boxes; returns their ids by name. */
+  function addBoxes(
+    boxes: { name: string; x: number; y: number; width: number; height: number }[]
+  ) {
+    return page().evaluate(
+      ({ specs, fill }) => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
         const ids: Record<string, string> = {}
         for (const spec of specs) {
           const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
             ...spec,
-            fills: [
-              {
-                type: 'SOLID',
-                color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
-                opacity: 1,
-                visible: true
-              }
-            ]
+            fills: [fill]
           })
           ids[spec.name] = node.id
         }
         store.clearSelection()
         store.requestRender()
         return ids
-      }, boxes)
-    },
+      },
+      { specs: boxes, fill: BOX_FILL }
+    )
+  }
 
+  const tools = toolDriver(page, 'CONNECTOR', 'Show Connector')
+  return {
+    ...tools,
+
+    addBoxes,
     /** Probe: the page's connectors, the last drawn last. */
-    connectors(): Promise<ConnectorState[]> {
-      return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        return store.graph
-          .getChildren(store.state.currentPageId)
-          .filter((node) => node.type === 'CONNECTOR')
-          .map((connector) => ({
-            id: connector.id,
-            start: connector.connectorStart,
-            end: connector.connectorEnd,
-            label: store.graph.getChildren(connector.id)[2]?.text ?? ''
-          }))
-      })
-    },
-
-    /** Probe: the active tool, the selection, the text being typed into, and the attach target. */
-    focus() {
-      return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        return {
-          tool: store.state.activeTool,
-          selected: [...store.state.selectedIds],
-          editing: store.state.editingTextId,
-          target: store.state.connectorTarget
-        }
-      })
+    async connectors(): Promise<ConnectorState[]> {
+      return (await tools.layers()).map(({ node: connector, children }) => ({
+        id: connector.id,
+        start: connector.connectorStart,
+        end: connector.connectorEnd,
+        label: children[2]?.text ?? ''
+      }))
     },
 
     /** A point on a connector's line, midway along its first piece, in page coordinates. */
@@ -106,108 +114,71 @@ export function connectorDriver(page: () => Page) {
      * Setup: four connectors at 100%, one per filled cap, the first selected, and a layer
      * outlined as an attach target, for the canvas to draw them all.
      */
-    showCapsAndHandles() {
-      return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        const page = store.state.currentPageId
-        const box = (x: number, y: number) =>
-          store.graph.createNode('RECTANGLE', page, {
-            x,
-            y,
-            width: 160,
-            height: 120,
-            fills: [
-              {
-                type: 'SOLID',
-                color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
-                opacity: 1,
-                visible: true
-              }
-            ]
+    async showCapsAndHandles() {
+      const caps = [
+        'TRIANGLE_FILLED',
+        'DIAMOND_FILLED',
+        'CIRCLE_FILLED',
+        'ARROW_EQUILATERAL'
+      ] as const
+      const connectors = await connectBoxes(
+        caps.map((_, row) => ({
+          from: { x: 40, y: 40 + row * 160 },
+          to: { x: 480, y: 100 + row * 160 }
+        })),
+        { width: 160, height: 120 }
+      )
+      const { Target: target } = await addBoxes([
+        { name: 'Target', x: 760, y: 300, width: 160, height: 120 }
+      ])
+      await page().evaluate(
+        ({ ids, capList, targetId }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          ids.forEach((id, row) => {
+            store.setConnectorCap([id], 'start', capList[row])
+            store.setConnectorCap([id], 'end', capList[row])
           })
-        const caps = [
-          'TRIANGLE_FILLED',
-          'DIAMOND_FILLED',
-          'CIRCLE_FILLED',
-          'ARROW_EQUILATERAL'
-        ] as const
-        let selected = ''
-        caps.forEach((cap, row) => {
-          const from = box(40, 40 + row * 160)
-          const to = box(480, 100 + row * 160)
-          store.setTool('CONNECTOR')
-          store.connectorBegin(from.x + 80, from.y + 60)
-          store.connectorRelease(to.x + 80, to.y + 60, true)
-          const connector = store.graph
-            .getChildren(page)
-            .findLast((node) => node.type === 'CONNECTOR')
-          if (!connector) throw new Error('No connector')
-          store.setConnectorCap([connector.id], 'start', cap)
-          store.setConnectorCap([connector.id], 'end', cap)
-          if (row === 0) selected = connector.id
-        })
-        store.setTool('SELECT')
-        store.select([selected])
-        const target = box(760, 300)
-        store.state.connectorTarget = { nodeId: target.id, magnet: 'TOP' }
-        store.state.zoom = 1
-        store.state.panX = 0
-        store.state.panY = 0
-        store.requestRender()
-      })
+          store.select([ids[0]])
+          store.state.connectorTarget = { nodeId: targetId, magnet: 'TOP' }
+        },
+        { ids: connectors, capList: caps, targetId: target }
+      )
+      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
     },
 
     /**
      * Setup: three elbowed connectors at 100%, styled as FigJam's line menu styles them: thin and
      * dashed, thick and dashed, and thick and solid, each in a palette colour.
      */
-    showLineStyles() {
-      return page().evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        const page = store.state.currentPageId
-        const box = (x: number, y: number) =>
-          store.graph.createNode('RECTANGLE', page, {
-            x,
-            y,
-            width: 120,
-            height: 80,
-            fills: [
-              {
-                type: 'SOLID',
-                color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
-                opacity: 1,
-                visible: true
-              }
-            ]
+    async showLineStyles() {
+      const styles = [
+        { color: 'violet', thick: false, dashed: true },
+        { color: 'red', thick: true, dashed: true },
+        { color: 'blue', thick: true, dashed: false }
+      ] as const
+      const connectors = await connectBoxes(
+        styles.map((_, row) => ({
+          from: { x: 40, y: 40 + row * 180 },
+          to: { x: 480, y: 120 + row * 180 }
+        })),
+        { width: 120, height: 80 }
+      )
+      await page().evaluate(
+        ({ ids, styleList }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          ids.forEach((id, row) => {
+            const style = styleList[row]
+            store.setConnectorColor([id], style.color)
+            store.setConnectorThick([id], style.thick)
+            store.setConnectorDashed([id], style.dashed)
           })
-        const styles = [
-          { color: 'violet', thick: false, dashed: true },
-          { color: 'red', thick: true, dashed: true },
-          { color: 'blue', thick: true, dashed: false }
-        ] as const
-        styles.forEach((style, row) => {
-          const from = box(40, 40 + row * 180)
-          const to = box(480, 120 + row * 180)
-          store.setTool('CONNECTOR')
-          store.connectorBegin(from.x + 60, from.y + 40)
-          store.connectorRelease(to.x + 60, to.y + 40, true)
-          const connector = store.graph
-            .getChildren(page)
-            .findLast((node) => node.type === 'CONNECTOR')
-          if (!connector) throw new Error('No connector')
-          store.setConnectorColor([connector.id], style.color)
-          store.setConnectorThick([connector.id], style.thick)
-          store.setConnectorDashed([connector.id], style.dashed)
-        })
-        store.setTool('SELECT')
-        store.clearSelection()
-        store.state.zoom = 1
-        store.state.panX = 0
-        store.state.panY = 0
-        store.requestRender()
-      })
+          store.clearSelection()
+        },
+        { ids: connectors, styleList: styles }
+      )
+      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
     },
 
     /**
@@ -215,18 +186,11 @@ export function connectorDriver(page: () => Page) {
      * of it, dropped away from its outline and centre so each end is pinned where it was dropped.
      */
     showPinnedEnds() {
-      return page().evaluate(() => {
+      return page().evaluate((fill) => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
         const page = store.state.currentPageId
-        const fills = [
-          {
-            type: 'SOLID' as const,
-            color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
-            opacity: 1,
-            visible: true
-          }
-        ]
+        const fills = [fill]
         store.graph.createNode('SECTION', page, { x: 400, y: 40, width: 360, height: 320, fills })
         const sources = [
           { box: { x: 20, y: 140, width: 160, height: 160 }, drop: { x: 440, y: 298 } },
@@ -245,7 +209,7 @@ export function connectorDriver(page: () => Page) {
         store.state.panX = 0
         store.state.panY = 0
         store.requestRender()
-      })
+      }, BOX_FILL)
     },
 
     /** Driver: selects one connector, as clicking its line would. */
@@ -273,46 +237,16 @@ export function connectorDriver(page: () => Page) {
     },
 
     /** Probe: how a connector's line is stroked: its colour as `#rrggbb`, weight and dash. */
-    lineStroke(id: string) {
-      return page().evaluate((connectorId) => {
+    async lineStroke(id: string) {
+      const stroke = await page().evaluate((connectorId) => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
         const [line] = store.graph.getChildren(connectorId)
         const stroke = line?.strokes[0]
         if (!stroke) throw new Error(`No line stroke on ${connectorId}`)
-        const hex = [stroke.color.r, stroke.color.g, stroke.color.b]
-          .map((value) =>
-            Math.round(value * 255)
-              .toString(16)
-              .padStart(2, '0')
-          )
-          .join('')
-        return { color: `#${hex}`, weight: stroke.weight, dash: stroke.dashPattern ?? [] }
+        return { color: stroke.color, weight: stroke.weight, dash: stroke.dashPattern ?? [] }
       }, id)
-    },
-
-    /** Canvas coordinates of a page point, under `showOrigin`. */
-    point(x: number, y: number) {
-      return { x: ORIGIN + x, y: ORIGIN + y }
-    },
-
-    /** Driver: shows the connector tool from Customize toolbar, where it starts hidden. */
-    async showTool() {
-      const button = page().getByTestId(toolbarToolTestId('CONNECTOR'))
-      if ((await button.count()) > 0) return
-      await page().getByTestId('toolbar').click({ button: 'right' })
-      await page().getByRole('menuitem', { name: 'Customize toolbar…' }).click()
-      await page()
-        .getByTestId('settings-toolbar-panel')
-        .getByRole('switch', { name: 'Show Connector', exact: true })
-        .click()
-      await page().getByTestId('app-settings-done').click()
-      await expect(button).toBeVisible()
-    },
-
-    /** Driver: picks the connector tool from the toolbar. */
-    async pickTool() {
-      await page().getByTestId(toolbarToolTestId('CONNECTOR')).click()
+      return { ...stroke, color: hexColor(stroke.color) }
     }
   }
 }

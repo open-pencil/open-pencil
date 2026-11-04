@@ -165,6 +165,34 @@ function followSaver(
 }
 
 /**
+ * Says the room keeps the tab's edits while the relay is in it: the relay logs each edit it
+ * forwards, so the tab saves only checkpoints and closes without asking. It is in once it answers
+ * the tab's state, which it does on every connection, and out once it leaves.
+ */
+function followRelay(store: EditorStore, session: RoomSession) {
+  const relayOnly = (handler: () => void) => (peerId: string) => {
+    if (peerId === RELAY_SERVER_PEER) handler()
+  }
+  onScopeDispose(
+    session.onSynced(
+      relayOnly(() => {
+        store.state.roomKeepsEdits = true
+      })
+    )
+  )
+  onScopeDispose(
+    session.onPeerLeave(
+      relayOnly(() => {
+        store.state.roomKeepsEdits = false
+      })
+    )
+  )
+  onScopeDispose(() => {
+    store.state.roomKeepsEdits = false
+  })
+}
+
+/**
  * Puts a stored document's tab into its room: an empty room takes this tab's document once the
  * relay has answered, one editor saves for everyone, and a viewer never saves.
  */
@@ -210,6 +238,7 @@ export function openCloudDocumentRoom(
       setPermission(store, null)
       store.setReadOnly(false)
     })
+    followRelay(store, session)
     // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
     onScopeDispose(session.onVersionsChanged(() => versionsChanged(store)))
     const stopSynced = session.onSynced((peerId) => {
@@ -270,7 +299,8 @@ export function cloudRelayTransport(
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
     onRestored: events.onRestored,
-    onRefused: events.onRefused
+    onRefused: events.onRefused,
+    heartbeat: first.relayHeartbeat
   })
 }
 

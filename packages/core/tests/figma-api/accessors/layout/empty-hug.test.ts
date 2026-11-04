@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
-
-// Figma's answers measured in Figma desktop 126 on 2026-11-03: a hugging frame with nothing in
+import { createAPI } from '#core-tests/helpers/figma-api'// Figma's answers measured in Figma desktop 126 on 2026-11-03: a hugging frame with nothing in
 // its flow keeps the size it has, whatever else changes, until it has a layer to hug again.
 
 function hugging(figma: ReturnType<typeof createAPI>, layoutMode: 'HORIZONTAL' | 'VERTICAL') {

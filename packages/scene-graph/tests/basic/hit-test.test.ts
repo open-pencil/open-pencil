@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '../helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { pageId, rect, SOLID_FILL } from './helpers'
 
 describe('hitTest', () => {

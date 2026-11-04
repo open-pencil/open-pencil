@@ -1,10 +1,9 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { parseFixture } from '#core-tests/helpers/fig/fixtures'
-import { runsHeavyTests } from '#core-tests/helpers/test-utils'
-
-import { createEditor } from '@open-pencil/core/editor'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import { runsHeavyTests } from '@open-pencil/test-support/heavy'
+import { createEditor } from '#core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'

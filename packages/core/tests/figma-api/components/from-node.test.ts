@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
+import { expectFills } from '@open-pencil/test-support/assert'
 import { createAPI, createStackHost } from '#core-tests/helpers/figma-api'
-
 import type { FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'

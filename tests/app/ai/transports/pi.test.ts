@@ -8,6 +8,7 @@ import type {
   HarnessTurnEvent,
   HarnessTurnUsage
 } from '@open-pencil/harness'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   agentCompactionMessage,
@@ -15,9 +16,6 @@ import {
   replyCompactions
 } from '@/app/ai/chat/compaction/marker'
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 test('failed session stop kills the process without deleting resume state', async () => {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
   const methods: string[] = []

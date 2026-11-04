@@ -30,6 +30,11 @@ test('asks for a folder when a file sits beside files named after it', () => {
   expect(check(['auth-failure.ts', 'auth-navigation.ts', 'auth-session.ts'])).toBe(1)
 })
 
+test('counts a plural file as the domain its singular siblings belong to', () => {
+  expect(check(['handles.ts', 'handle-actions.ts'])).toBe(1)
+  expect(check(['nodes.test.ts', 'node-preview.test.ts'])).toBe(1)
+})
+
 test('accepts names that only share a word', () => {
   expect(check(['sign-in.ts', 'sign-out.ts'])).toBe(0)
   expect(check(['email.ts', 'server.ts'])).toBe(0)

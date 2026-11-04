@@ -1,7 +1,10 @@
 import { appendFile, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 import { releaseTagSchema, releaseVersionSchema } from '#release/version'
 import * as v from 'valibot'
+
+import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 import { releaseCommands } from '../native/commands.ts'
 import { commitSchema } from '../native/context.ts'
@@ -10,11 +13,12 @@ import { assertChromiumSource } from './source.ts'
 
 // Without a tag the run only builds, for testing; with one it publishes onto that release.
 const tag = v.parse(v.optional(releaseTagSchema), process.env.RELEASE_TAG || undefined)
-const { git } = releaseCommands(process.cwd())
+const root = await resolveWorkspaceRoot(process.cwd())
+const { git } = releaseCommands(root)
 
 const config = v.parse(
   v.pipe(v.string(), v.parseJson(), v.object({ version: releaseVersionSchema })),
-  await readFile('desktop/tauri.conf.json', 'utf8')
+  await readFile(join(root, 'desktop/tauri.conf.json'), 'utf8')
 )
 const source = v.parse(commitSchema, await git('rev-parse', 'HEAD'))
 

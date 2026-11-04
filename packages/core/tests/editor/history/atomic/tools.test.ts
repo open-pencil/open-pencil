@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { node, setup, withOtherPage } from '#core-tests/helpers/atomic-tool'
-import { HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
-
+import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'

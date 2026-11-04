@@ -430,6 +430,27 @@ describe('Cloud document rooms', () => {
     expect([first.session.leavable, second.session.leavable]).toEqual([false, false])
   })
 
+  test('a tab says the room keeps its edits only while the relay is in the room', async () => {
+    const relay = await startTestRelay()
+    const documentId = crypto.randomUUID()
+    const [grace] = await openedCopies(1)
+    if (!grace) throw new Error('Expected a tab')
+    const room = openCloudDocumentRoom(grace, {
+      roomId: `cloud:${documentId}:0`,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      room.stop()
+      room.session.dispose()
+    })
+    expect(grace.state.roomKeepsEdits).toBe(false)
+    await until(() => grace.state.roomKeepsEdits)
+    // The relay goes away, and with it the log that kept the tab's edits.
+    await relay.close()
+    await until(() => !grace.state.roomKeepsEdits)
+  })
+
   test('a tab that does not save has the saver upload its latest edit', async () => {
     const relay = await startRelay()
     const documentId = crypto.randomUUID()
