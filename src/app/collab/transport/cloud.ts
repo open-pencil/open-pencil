@@ -1,4 +1,4 @@
-import { defaultWindow, useEventListener } from '@vueuse/core'
+import { defaultWindow, useEventListener, useIntervalFn } from '@vueuse/core'
 
 import {
   createRelayServerAssembler,
@@ -6,6 +6,7 @@ import {
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   RELAY_FORWARDING_BYTES,
+  RELAY_HEARTBEAT,
   relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
@@ -19,6 +20,11 @@ const RELAY_DISCOVERY_MS = 1000
 const TICKET_REFRESH_LEAD_MS = 60_000
 const MINIMUM_REFRESH_MS = 5_000
 const MAXIMUM_RECONNECT_MS = 30_000
+/**
+ * How often the transport asks the relay whether it still hears this peer. A socket can lose its
+ * way without closing; one that stays silent for an interval after being asked is given up.
+ */
+const HEARTBEAT_INTERVAL_MS = 20_000
 
 /** A collaboration ticket the relay accepts, as the Cloud API issues it. */
 export type CloudRelayTicket = { token: string; expiresAt: string }
@@ -202,6 +208,25 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     const next = createSocket(options.url)
     next.binaryType = 'arraybuffer'
     socket = next
+    // Anything from the relay answers; a socket that stopped speaking for this room stops asking.
+    let answered = true
+    const heartbeat = useIntervalFn(
+      () => {
+        if (socket !== next) {
+          heartbeat.pause()
+        } else if (!answered) {
+          heartbeat.pause()
+          giveUp(next)
+        } else {
+          answered = false
+          if (next.readyState === WebSocket.OPEN) next.send(RELAY_HEARTBEAT.ping)
+        }
+      },
+      HEARTBEAT_INTERVAL_MS,
+      { immediate: false }
+    )
+    // Started by hand: VueUse starts it on its own only where it finds a window.
+    heartbeat.resume()
     // A socket that was replaced or left behind by `leave()` no longer speaks for this room.
     next.addEventListener('open', () => {
       if (socket !== next) return
@@ -211,8 +236,11 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     const assembler = createRelayServerAssembler(
       () => MAX_COLLAB_MESSAGE_BYTES + RELAY_FORWARDING_BYTES
     )
-    next.addEventListener('message', (event: MessageEvent<ArrayBuffer>) => {
+    next.addEventListener('message', (event: MessageEvent<ArrayBuffer | string>) => {
       if (socket !== next) return
+      answered = true
+      // The relay's only text is its heartbeat answer.
+      if (typeof event.data === 'string') return
       const assembled = assembler.push(new Uint8Array(event.data))
       if (assembled.type === 'frame') handleFrame(assembled.data)
       else if (assembled.type !== 'partial') {
@@ -223,6 +251,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       }
     })
     next.addEventListener('close', (event) => {
+      heartbeat.pause()
       if (socket !== next) return
       socket = null
       clearTimeout(refreshTimer)
@@ -238,6 +267,18 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       }
       reconnect()
     })
+  }
+
+  /**
+   * Gives up a socket the relay stopped answering, which may never report closing, and connects
+   * again; the room's peers, the relay among them, have left until the new socket is welcomed.
+   */
+  function giveUp(current: WebSocket) {
+    socket = null
+    clearTimeout(refreshTimer)
+    forgetPeers()
+    current.close(1000, 'The collaboration relay stopped answering')
+    reconnect()
   }
 
   /** Leaves the room while the page is hidden, without giving it up. */

@@ -19,11 +19,20 @@ class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
   binaryType = 'blob'
   readonly sent: RelayClientFrame[] = []
+  /** Text the transport sent, which is only ever its heartbeat. */
+  readonly texts: string[] = []
+  /** Whether a relay answers the heartbeat, as a live one does. */
+  answersHeartbeat = true
   /** Socket messages sent, which outnumber frames once a frame travels in fragments. */
   messages = 0
   private readonly assembler = createRelayClientAssembler(() => Infinity)
 
-  send(data: Uint8Array) {
+  send(data: Uint8Array | string) {
+    if (typeof data === 'string') {
+      this.texts.push(data)
+      if (data === 'ping' && this.answersHeartbeat) this.receiveText('pong')
+      return
+    }
     this.messages++
     const assembled = this.assembler.push(data)
     const frame = assembled.type === 'frame' ? decodeRelayClientFrame(assembled.data) : null
@@ -39,6 +48,10 @@ class FakeSocket extends EventTarget {
     for (const data of relayServerMessages(frame)) {
       this.dispatchEvent(new MessageEvent('message', { data: data.slice().buffer }))
     }
+  }
+
+  receiveText(text: string) {
+    this.dispatchEvent(new MessageEvent('message', { data: text }))
   }
 
   /** Delivers bytes as one socket message, whatever they hold. */
@@ -412,5 +425,50 @@ describe('Cloud relay transport', () => {
     page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
     await settle()
     expect(sockets).toHaveLength(1)
+  })
+
+  test('asks the relay whether it still hears this peer, and keeps a socket that answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room()
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping'])
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping', 'ping'])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      expect(sockets).toHaveLength(1)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('gives up a socket the relay stopped answering, and connects again', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room()
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      // The network went away without the socket closing: nothing answers the heartbeat.
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(40_000)
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toEqual(['server'])
+      expect(transport.signalingConnected()).toBe(false)
+      jest.advanceTimersByTime(0)
+      await settle()
+      expect(sockets).toHaveLength(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })
