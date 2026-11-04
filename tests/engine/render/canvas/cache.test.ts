@@ -8,11 +8,10 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { initCanvasKit } from '#cli/headless'
-
-import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 import { expectRgbaPixels } from './helpers'
 

@@ -1,7 +1,8 @@
 import { describe, expect, test, mock } from 'bun:test'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { expectDefined } from '@open-pencil/test-support/assert' // Installed companions report the version of the app under test, as matching ones do.
+import { expectDefined } from '@open-pencil/test-support/assert'
+// Installed companions report the version of the app under test, as matching ones do.
 
 import {
   createAgentDiscovery,

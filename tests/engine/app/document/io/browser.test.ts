@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import { readBoundedBody } from '@/app/document/io/browser'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 const MIB = 1024 * 1024
 const originalFetch = globalThis.fetch
 

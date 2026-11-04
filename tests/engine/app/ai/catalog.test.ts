@@ -1,13 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   listCatalogModels,
   resetModelsDevCatalogForTests,
   resolveModelsDevModel
 } from '@/app/ai/models/catalog'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 function catalogResponse(body: unknown): typeof fetch {
   return fetchStub(async () => new Response(JSON.stringify(body), { status: 200 }))
 }

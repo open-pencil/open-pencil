@@ -2,13 +2,11 @@ import { afterAll, beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { parseFixture, VALID_NODE_TYPES } from '@open-pencil/test-support/fig/fixtures'
+import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
+import { heavy } from '@open-pencil/test-support/heavy'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
-
-import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig/fixtures'
-import { collectAllNodes } from '#tests/helpers/fig/traversal'
-import { heavy } from '#tests/helpers/test-utils'
-
 setDefaultTimeout(180_000)
 
 for (const { file, sourcePageId } of [

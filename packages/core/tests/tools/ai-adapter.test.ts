@@ -1,178 +1,251 @@
 import { describe, expect, test } from 'bun:test'
 
-import { toolModelMessageSchema } from 'ai'
-import * as v from 'valibot'
+import { tool } from 'ai'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import {
-  defineTool,
-  toolsToAI,
-  type AIAdapterOptions,
-  type ToolLogEntry
-} from '@open-pencil/core/tools'
+import { ALL_TOOLS, toolsToAI } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-type ToolFactory = Parameters<typeof toolsToAI>[2]['tool']
-
-// The adapter only forwards definitions to the factory; an identity factory exposes them.
-const tool = ((definition: unknown) => definition) as ToolFactory
-
-type ModelOutputTool = {
-  toModelOutput(options: { toolCallId: string; output: unknown }): Promise<unknown>
+import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
+type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
+type SDKTool = {
+  execute(args: Record<string, unknown>, call: { toolCallId: string }): Promise<unknown>
+  description: string
 }
 
-function adapt(
-  output: unknown,
-  encodeModelImage?: AIAdapterOptions['encodeModelImage']
-): ModelOutputTool {
-  const def = defineTool({
-    name: 'image_tool',
-    description: 'Returns a fixed result',
-    execution: { kind: 'sync', mutation: 'none' },
-    input: v.strictObject({}),
-    execute: () => output
-  })
-  const figma = new FigmaAPI(new SceneGraph())
-  const tools = toolsToAI([def], { getFigma: () => figma, encodeModelImage }, { tool })
-  const adapted: unknown = tools.image_tool
-  if (!hasModelOutput(adapted)) throw new Error('image_tool has no toModelOutput')
-  return adapted
+interface PageTreeToolResult {
+  page: unknown
+  children: unknown[]
 }
 
-function hasModelOutput(value: unknown): value is ModelOutputTool {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'toModelOutput' in value &&
-    typeof value.toModelOutput === 'function'
-  )
+/** Calls a tool as the AI SDK does, with the call's options. */
+function adapterTool(tools: Record<string, unknown>, name: string): AdapterTool {
+  const sdkTool = tools[name] as SDKTool
+  return {
+    description: sdkTool.description,
+    execute: (args) => sdkTool.execute(args, { toolCallId: `${name}-call` })
+  }
 }
 
-describe('AI adapter model output', () => {
-  test('sends any image result as a file with its metadata as text', async () => {
-    const output = { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 }
-    expect(await adapt(output).toModelOutput({ toolCallId: 'call', output })).toEqual({
-      type: 'content',
-      value: [
-        { type: 'text', text: '{"changedPixels":12}' },
-        { type: 'file', mediaType: 'image/png', data: { type: 'data', data: 'AAAA' } }
-      ]
-    })
-  })
+function setup() {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
 
-  test.each([
-    { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 },
-    { mimeType: 'image/png', base64: 'AAAA' },
-    { mimeType: 'application/pdf', base64: 'AAAA' }
-  ])('produces a tool message the AI SDK accepts in the next prompt (%p)', async (output) => {
-    const message = {
-      role: 'tool',
-      content: [
-        {
-          type: 'tool-result',
-          toolCallId: 'call',
-          toolName: 'image_tool',
-          output: await adapt(output).toModelOutput({ toolCallId: 'call', output })
-        }
-      ]
-    }
-    expect(toolModelMessageSchema.safeParse(message).success).toBe(true)
-  })
-
-  test('keeps non-image results as JSON', async () => {
-    const output = { mimeType: 'application/pdf', base64: 'AAAA' }
-    expect(await adapt(output).toModelOutput({ toolCallId: 'call', output })).toEqual({
-      type: 'json',
-      value: output
-    })
-  })
-
-  test('sends the image the connection encodes, once per tool call', async () => {
-    const output = { mimeType: 'image/png', base64: 'AAAA' }
-    const encoded: string[] = []
-    const adapted = adapt(output, async (image) => {
-      encoded.push(image.data)
-      return { data: 'BBBB', mediaType: 'image/webp' }
-    })
-    const file = {
-      type: 'file',
-      mediaType: 'image/webp',
-      data: { type: 'data', data: 'BBBB' }
-    }
-    expect(await adapted.toModelOutput({ toolCallId: 'call', output })).toEqual({
-      type: 'content',
-      value: [file]
-    })
-    // Every request sends the conversation again; its images are not encoded again.
-    await adapted.toModelOutput({ toolCallId: 'call', output })
-    await adapted.toModelOutput({ toolCallId: 'other', output })
-    expect(encoded).toEqual(['AAAA', 'AAAA'])
-  })
-
-  test('sends the tool image when encoding it fails', async () => {
-    const output = { mimeType: 'image/png', base64: 'AAAA' }
-    const adapted = adapt(output, () => Promise.reject(new Error('no encoder')))
-    expect(await adapted.toModelOutput({ toolCallId: 'call', output })).toEqual({
-      type: 'content',
-      value: [{ type: 'file', mediaType: 'image/png', data: { type: 'data', data: 'AAAA' } }]
-    })
-  })
-})
-
-type ExecutableTool = {
-  execute(args: Record<string, unknown>, options: { toolCallId: string }): Promise<unknown>
-}
-
-function hasExecute(value: unknown): value is ExecutableTool {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'execute' in value &&
-    typeof value.execute === 'function'
-  )
-}
-
-async function runLogged(execute: () => unknown) {
-  const def = defineTool({
-    name: 'logged_tool',
-    description: 'Runs the given body',
-    execution: { kind: 'sync', mutation: 'none' },
-    input: v.strictObject({}),
-    execute
-  })
-  const figma = new FigmaAPI(new SceneGraph())
-  const entries: ToolLogEntry[] = []
   const tools = toolsToAI(
-    [def],
-    { getFigma: () => figma, onToolLog: (entry) => entries.push(entry) },
+    ALL_TOOLS,
+    {
+      getFigma: () => figma,
+      onAfterExecute: () => undefined
+    },
     { tool }
   )
-  const adapted: unknown = tools.logged_tool
-  if (!hasExecute(adapted)) throw new Error('logged_tool has no execute')
-  const result = await adapted.execute({}, { toolCallId: 'call' })
-  return { result, entries }
+
+  return { graph, figma, tools }
 }
 
-describe('AI adapter tool log', () => {
-  test('gives the model the message and the log what was thrown', async () => {
-    const thrown = new TypeError('stops.map is not a function')
-    const { result, entries } = await runLogged(() => {
-      throw thrown
+describe('AI adapter', () => {
+  test('honors AI exclusions independently of MCP and WebMCP exposure', () => {
+    const base = ALL_TOOLS[0]
+    if (!base) throw new Error('Missing tool fixture')
+    const { figma } = setup()
+    const tools = toolsToAI(
+      [
+        { ...base, name: 'default', exposure: {} },
+        { ...base, name: 'hidden', exposure: { ai: false } },
+        { ...base, name: 'other-interface', exposure: { webmcp: false, mcp: false } }
+      ],
+      { getFigma: () => figma },
+      { tool }
+    )
+    expect(Object.keys(tools)).toEqual(['default', 'other-interface'])
+  })
+
+  test('generates tool for every definition', () => {
+    const { tools } = setup()
+    for (const def of ALL_TOOLS) {
+      expect(tools[def.name]).toBeDefined()
+    }
+    expect(Object.keys(tools).length).toBe(ALL_TOOLS.length)
+  })
+
+  test('each tool has description and execute', () => {
+    const { tools } = setup()
+    for (const aiTool of Object.values(tools)) {
+      expect(aiTool.description).toBeTruthy()
+      expect(typeof aiTool.execute).toBe('function')
+    }
+  })
+
+  test('create_shape tool works through adapter', async () => {
+    const { tools, figma } = setup()
+    const createShape = adapterTool(tools, 'create_shape')
+    const result = (await createShape.execute({
+      type: 'RECTANGLE',
+      x: 10,
+      y: 20,
+      width: 100,
+      height: 50,
+      name: 'Test Rect'
+    })) as { id: string; type: string; name: string }
+
+    expect(result.id).toBeTruthy()
+    expect(result.type).toBe('RECTANGLE')
+    expect(result.name).toBe('Test Rect')
+
+    const node = expectDefined(figma.getNodeById(result.id), 'created node')
+    expect(node.x).toBe(10)
+    expect(node.y).toBe(20)
+    expect(node.width).toBe(100)
+  })
+
+  test('set_fill tool works through adapter', async () => {
+    const { tools, figma } = setup()
+    const rect = figma.createRectangle()
+    rect.resize(100, 100)
+
+    const setFill = adapterTool(tools, 'set_fill')
+    await setFill.execute({ id: rect.id, color: '#00ff00' })
+
+    const fills = expectFills(expectDefined(figma.getNodeById(rect.id), 'filled rectangle').fills)
+    expect(fills).toEqual([expect.objectContaining({ color: { r: 0, g: 1, b: 0 } })])
+  })
+
+  test('get_page_tree tool returns structure', async () => {
+    const { tools, figma } = setup()
+    const frame = figma.createFrame()
+    frame.name = 'TestFrame'
+    frame.resize(200, 200)
+    const rect = figma.createRectangle()
+    rect.resize(50, 50)
+    frame.appendChild(rect)
+
+    const getTree = adapterTool(tools, 'get_page_tree')
+    const result = (await getTree.execute({})) as PageTreeToolResult
+    expect(result.page).toBeTruthy()
+    expect(result.children.length).toBeGreaterThan(0)
+  })
+
+  test('uses an execution wrapper when provided', async () => {
+    const calls: string[] = []
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const createShape = ALL_TOOLS.find((candidate) => candidate.name === 'create_shape')
+    if (!createShape) throw new Error('create_shape tool missing')
+    const tools = toolsToAI(
+      [createShape],
+      {
+        getFigma: () => figma,
+        executeTool: async (def, target, args) => {
+          calls.push(def.name)
+          return def.execute(target, args)
+        }
+      },
+      { tool }
+    )
+
+    await adapterTool(tools, 'create_shape').execute({ type: 'RECTANGLE' })
+
+    expect(calls).toEqual(['create_shape'])
+  })
+
+  test('onBeforeExecute and onAfterExecute are called', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const calls: string[] = []
+
+    const tools = toolsToAI(
+      ALL_TOOLS,
+      {
+        getFigma: () => figma,
+        onBeforeExecute: () => calls.push('before'),
+        onAfterExecute: () => {
+          calls.push('after')
+        }
+      },
+      { tool }
+    )
+
+    const listPages = adapterTool(tools, 'list_pages')
+    await listPages.execute({})
+
+    expect(calls).toEqual(['before', 'after'])
+  })
+
+  test('onAfterExecute called even on error', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    let afterCalled = false
+
+    const tools = toolsToAI(
+      ALL_TOOLS,
+      {
+        getFigma: () => figma,
+        onAfterExecute: () => {
+          afterCalled = true
+        }
+      },
+      { tool }
+    )
+
+    const evalTool = adapterTool(tools, 'eval')
+    try {
+      await evalTool.execute({ code: 'throw new Error("test")' })
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+    }
+
+    expect(afterCalled).toBe(true)
+  })
+
+  test('find_nodes works through adapter', async () => {
+    const { tools, figma } = setup()
+    figma.createRectangle().name = 'Button'
+    figma.createText().name = 'Label'
+    figma.createRectangle().name = 'Button Secondary'
+
+    const findNodes = adapterTool(tools, 'find_nodes')
+    const result = (await findNodes.execute({ name: 'button' })) as { count: number }
+    expect(result.count).toBe(2)
+  })
+
+  test('set_layout works through adapter', async () => {
+    const { tools, figma } = setup()
+    const frame = figma.createFrame()
+    frame.resize(300, 200)
+
+    const setLayout = adapterTool(tools, 'set_layout')
+    await setLayout.execute({
+      id: frame.id,
+      direction: 'HORIZONTAL',
+      spacing: 8,
+      padding: 16
     })
-    expect(result).toEqual({ error: 'stops.map is not a function' })
-    expect(entries).toMatchObject([{ error: 'stops.map is not a function', cause: thrown }])
+
+    const node = expectDefined(figma.getNodeById(frame.id), 'layout frame')
+    expect(node.layoutMode).toBe('HORIZONTAL')
+    expect(node.itemSpacing).toBe(8)
+    expect(node.paddingLeft).toBe(16)
   })
 
-  test('logs a returned error as a failure, like a thrown one', async () => {
-    const { entries } = await runLogged(() => ({
-      id: '999:999',
-      error: 'Node "999:999" not found'
-    }))
-    expect(entries).toMatchObject([{ error: 'Node "999:999" not found', cause: undefined }])
+  test('render JSX works through adapter', async () => {
+    const { tools } = setup()
+    const render = adapterTool(tools, 'render')
+    const result = (await render.execute({
+      jsx: '<Frame name="Card" w={200} h={100}><Text>Hello</Text></Frame>'
+    })) as { name: string; type: string }
+    expect(result.name).toBe('Card')
+    expect(result.type).toBe('FRAME')
   })
 
-  test('logs a result without an error as a success', async () => {
-    const { entries } = await runLogged(() => ({ id: '1:2', name: 'Card' }))
-    expect(entries[0]?.error).toBeUndefined()
+  test('delete + get returns error for removed node', async () => {
+    const { tools, figma } = setup()
+    const rect = figma.createRectangle()
+    const id = rect.id
+
+    const deleteTool = adapterTool(tools, 'delete_node')
+    await deleteTool.execute({ id })
+
+    const getNode = adapterTool(tools, 'get_node')
+    const result = (await getNode.execute({ id })) as { error: string }
+    expect(result.error).toContain('not found')
   })
 })

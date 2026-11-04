@@ -10,12 +10,10 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { loadFigFixture, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
 import { importClipboardNodes } from '#core/clipboard'
 import { exportFigFile } from '#core/io/formats/fig/export'
-
-import { loadFigFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
 function reparse(out: Uint8Array) {
   return parseFigBuffer(uint8ArrayToArrayBuffer(out))

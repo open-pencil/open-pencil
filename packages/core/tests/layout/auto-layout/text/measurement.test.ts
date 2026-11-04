@@ -7,8 +7,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#core-tests/helpers/layout'
-import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
-
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 heavy('text measurement', () => {
   test('derived text layout preserves imported auto-layout text bounds during measurement', () => {
     const graph = new SceneGraph()

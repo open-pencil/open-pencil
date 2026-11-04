@@ -1,9 +1,8 @@
 import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 export { asDouble }
 
 export function asCanvas(double: object): Canvas {

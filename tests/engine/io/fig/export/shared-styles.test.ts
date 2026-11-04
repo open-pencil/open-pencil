@@ -5,9 +5,7 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 function serialize(graph: SceneGraph, nodeId: string) {
   const node = graph.getNode(nodeId)
   if (!node) throw new Error('Expected scene node')

@@ -1,13 +1,11 @@
 import { expect, jest, spyOn, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { createS3StorageAdapter } from '@/app/integrations/storage/s3/adapter'
 import { readDownloadStream } from '@/app/integrations/storage/s3/client'
 import { createStorageFetch, storageFetch } from '@/app/integrations/storage/s3/fetch'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 test('mid-stream cancellation discards partial bytes and stops progress', async () => {
   const abort = new AbortController()
   const progress: number[] = []

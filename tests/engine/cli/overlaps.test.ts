@@ -5,11 +5,10 @@ import { join } from 'node:path'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { cliSourcePath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
-import { heavy } from '#tests/helpers/test-utils'
-
 requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)

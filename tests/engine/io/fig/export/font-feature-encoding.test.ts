@@ -3,9 +3,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
-
+import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 /**
  * Regression: disabled numeric and caps features (PNUM, TNUM, LNUM, ONUM, FRAC, SMCP, …) are
  * absent from the schema's `OpenTypeFeature` enum, so emitting them as raw toggled tags made

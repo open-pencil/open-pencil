@@ -5,10 +5,9 @@ import { join } from 'node:path'
 
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
-import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
 setDefaultTimeout(30_000)
 
 async function createFixture() {

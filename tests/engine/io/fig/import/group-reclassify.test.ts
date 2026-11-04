@@ -2,11 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { parseFixture } from '#tests/helpers/fig/fixtures'
-import { collectAllNodes } from '#tests/helpers/fig/traversal'
-import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
-
+import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 heavy('Figma group reclassification on import', () => {
   test('FRAME with resizeToFit imports as GROUP', () => {
     const props = nodeChangeToProps(

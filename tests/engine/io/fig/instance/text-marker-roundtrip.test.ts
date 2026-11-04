@@ -5,9 +5,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-
-import { registerTestFont } from '#tests/helpers/fonts/bundled'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 for (const text of ['User edit', '']) {

@@ -12,14 +12,12 @@ import {
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
-
-import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
 const noopCommitResize: Editor['commitResize'] = () => undefined
 const noopCommitGroupResize: Editor['commitGroupResize'] = () => undefined
 

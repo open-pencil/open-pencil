@@ -35,13 +35,13 @@ export const UNIT_TEST_GROUPS = {
     'tests/engine/color',
     'tests/engine/core',
     'tests/engine/editor',
-    'tests/engine/icons',
+    'packages/core/tests/icons',
     'tests/engine/layout',
-    'tests/engine/lint',
-    'tests/engine/profiler',
-    'tests/engine/text',
-    'tests/engine/tools',
-    'tests/engine/vector'
+    'packages/core/tests/lint',
+    'packages/core/tests/profiler',
+    'packages/core/tests/text',
+    'packages/core/tests/tools',
+    'packages/core/tests/vector'
   ],
   dom: [
     'packages/emit/tests',

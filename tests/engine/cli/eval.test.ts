@@ -3,11 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { cliSourcePath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
-import { heavy } from '#tests/helpers/test-utils'
-
 requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)

@@ -3,17 +3,15 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { computeContentBounds } from '#core/io/formats/raster'
-
-import { parseFixture, readFixtureBytes } from '#tests/helpers/fig/fixtures'
+import { parseFixture, readFixtureBytes } from '@open-pencil/test-support/fig/fixtures'
 import {
   childMatching,
   childNamed,
   collectAllNodes,
   previewChild
-} from '#tests/helpers/fig/traversal'
+} from '@open-pencil/test-support/fig/traversal'
 
+import { computeContentBounds } from '#core/io/formats/raster'
 setDefaultTimeout(60_000)
 
 describe('derived instance layout regressions', () => {

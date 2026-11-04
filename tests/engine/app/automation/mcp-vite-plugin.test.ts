@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { Readable } from 'node:stream'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   DevMCPConfigurationSyntaxError,
   DevMCPConfigurationTooLargeError,
@@ -14,9 +16,6 @@ import {
   parseDevMCPConfiguration,
   type DevMCPConfiguration
 } from '@/app/automation/mcp/dev-control'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 describe('MCP Vite development server', () => {
   test('passes an explicit empty auth token when authentication is disabled', () => {
     const env = createAutomationEnvironment({

@@ -7,9 +7,7 @@ import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
+import { parseFixture, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 function doc(): NodeChange {
   return {
     guid: { sessionID: 0, localID: 0 },

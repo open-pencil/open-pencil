@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import { browserWebFontFetch, createBrowserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 const originalFetch = globalThis.fetch
 
 afterEach(() => {

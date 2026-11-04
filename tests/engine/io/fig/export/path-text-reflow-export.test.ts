@@ -2,12 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { parseFigBuffer } from '@open-pencil/fig'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { loadFigFixture, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { calibratePathTextLayout, getTextPathData, reflowPathTextGlyphs } from '#core/text/path'
-
-import { loadFigFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
-
 const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */

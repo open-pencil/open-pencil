@@ -1,14 +1,12 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
 import { createDefaultEditorState } from '@open-pencil/core'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import * as browserIO from '@/app/document/io/browser'
 import { createSaveActions } from '@/app/document/io/save/actions'
 import * as saveTargets from '@/app/document/io/save/targets'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 function makeWritableHandle(name: string): FileSystemFileHandle {
   return asDouble<FileSystemFileHandle>({
     kind: 'file',

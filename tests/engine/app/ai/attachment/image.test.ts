@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { LanguageModel } from 'ai'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import {
   analyzeAttachedImages,
@@ -15,9 +16,6 @@ import {
 } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
 import type { EditorStore } from '@/app/editor/session/create'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 const image: PreparedImageAttachment = {
   data: new Uint8Array([4, 5, 6]),
   blob: new Blob(),

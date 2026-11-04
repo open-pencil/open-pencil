@@ -8,6 +8,7 @@ import * as v from 'valibot'
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { compactionMessage } from '@/app/ai/chat/compaction/marker'
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
@@ -24,8 +25,6 @@ import { createDeferred } from '@/app/runtime/deferred'
 import { skillFixture } from '#tests/helpers/chat/skills'
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
-import { fetchStub } from '#tests/helpers/fetch'
-
 function replyModel() {
   return new MockLanguageModelV4({
     doStream: async () => ({

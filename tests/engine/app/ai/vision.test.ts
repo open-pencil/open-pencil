@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { LanguageModel } from 'ai'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import {
   boundedImageScale,
@@ -10,9 +11,6 @@ import {
   type VisualInspectionDependencies
 } from '@/app/ai/tools/vision/inspect'
 import type { EditorStore } from '@/app/editor/session/create'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 describe('isolated visual inspection', () => {
   test('bounds renders and forwards only textual findings to the caller', async () => {
     const graph = new SceneGraph()

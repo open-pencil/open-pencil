@@ -12,12 +12,10 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { loadFigFixture, readFigFixture } from '@open-pencil/test-support/fig/fixtures'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
-
-import { loadFigFixture, readFigFixture } from '#tests/helpers/fig/fixtures'
-
 function worldCorners(graph: SceneGraph, name: string) {
   const node = [...graph.getAllNodes()].find((n) => n.name === name)
   if (!node) throw new Error(`node ${name} not found`)

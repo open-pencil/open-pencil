@@ -1,9 +1,7 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-
-import { sharedGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig/fixtures'
-
+import { sharedGoldPreviewFixture, VALID_NODE_TYPES } from '@open-pencil/test-support/fig/fixtures'
 setDefaultTimeout(60_000)
 
 let parsed: SceneGraph

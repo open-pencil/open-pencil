@@ -6,10 +6,8 @@ import { decompressFigKiwiDataAsync } from '@open-pencil/kiwi/fig/container'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { parseFixture } from '#tests/helpers/fig/fixtures'
-import { runsHeavyTests } from '#tests/helpers/test-utils'
-
+import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import { runsHeavyTests } from '@open-pencil/test-support/heavy'
 setDefaultTimeout(60_000)
 
 describe('text node export', () => {

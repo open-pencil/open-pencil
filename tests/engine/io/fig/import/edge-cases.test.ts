@@ -5,9 +5,7 @@ import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
-
+import { sharedGoldPreviewFixture } from '@open-pencil/test-support/fig/fixtures'
 setDefaultTimeout(60_000)
 
 describe('edge cases', () => {

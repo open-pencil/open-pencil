@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   getAutomationAuthToken,
   getAutomationHealthFailure,
@@ -8,7 +10,6 @@ import {
   spawnMCPIfNeeded
 } from '@/app/automation/mcp/spawn'
 
-import { fetchStub } from '#tests/helpers/fetch'
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 const DISCOVERY_PATH = '/mock/home/.openpencil/mcp.json'

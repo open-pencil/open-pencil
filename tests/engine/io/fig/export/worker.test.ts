@@ -9,10 +9,9 @@ import { parseFigFile, exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { heavy } from '@open-pencil/test-support/heavy'
 
 import { coreSourcePath, testPath } from '#tests/helpers/paths'
-import { heavy } from '#tests/helpers/test-utils'
-
 setDefaultTimeout(30_000)
 
 const FIXTURES = testPath('fixtures')

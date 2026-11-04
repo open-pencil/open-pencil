@@ -2,12 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, ref } from 'vue'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import { createModelProfileDraft } from '@/app/ai/models'
 import { resetModelsDevCatalogForTests } from '@/app/ai/models/catalog'
 import { useProfileModelSelection } from '@/app/ai/models/settings/profile-editor/selection'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 const labels = ref({
   recommendedModels: 'Recommended',
   latestModels: 'Latest',

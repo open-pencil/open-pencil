@@ -2,19 +2,31 @@
   "name": "@open-pencil/test-support",
   "version": "0.17.0-beta.1",
   "private": true,
-  "description": "Test helpers shared by more than one owner's tests: assertions and repository paths. Owner-specific helpers stay in that owner's tests/helpers.",
+  "description": "Test helpers shared by more than one owner's tests: assertions, paths, test doubles, the heavy-test switch, and .fig and font fixtures. Owner-specific helpers stay in that owner's tests/helpers.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "exports": {
     "./assert": "./src/assert.ts",
+    "./doubles": "./src/doubles.ts",
+    "./fetch": "./src/fetch.ts",
+    "./fig/fixtures": "./src/fig/fixtures.ts",
+    "./fig/traversal": "./src/fig/traversal.ts",
+    "./fonts/bundled": "./src/fonts/bundled.ts",
+    "./heavy": "./src/heavy.ts",
     "./paths": "./src/paths.ts"
-  },
-  "scripts": {
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
+  },
+  "imports": {
+    "#test-support/*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/test-support": "workspace:*",
+    "valibot": "^1.5.0"
   }
 }

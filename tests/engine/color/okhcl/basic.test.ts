@@ -13,8 +13,8 @@ import {
   rgbaToOkHCL
 } from '@open-pencil/scene-graph/color'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
-import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 import { solidFill } from '#tests/helpers/plugin-api'
 
 describe('OkHCL metadata', () => {
