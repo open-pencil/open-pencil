@@ -1,6 +1,6 @@
 # HTML engine
 
-Blitz compiled to WebAssembly with a TypeScript host. The Rust crate in `crate/` captures; `src/` loads the module, answers its requests, and validates what it returns. Depends on nothing in the workspace; Core turns captures into styled documents.
+Blitz compiled to WebAssembly with a TypeScript host. The Rust crate in `crate/` captures; `src/` loads the module, answers its requests, validates what it returns, and turns captures into styled DOM/CSS documents. Depends on dom-css for that contract and its parser, never the reverse.
 
 - The module and its host share a raw ABI: strings and bytes cross as (pointer, length) through `alloc`/`dealloc`, and results come back through one output buffer read with `output_ptr` (`src/engine.ts`).
 - Keep wasm-bindgen out: Blitz's `web-time` pulls in imports that no capture calls, and the host binds them to functions that throw with their name (`unboundImports` in `src/engine.ts`).
@@ -14,4 +14,5 @@ Blitz compiled to WebAssembly with a TypeScript host. The Rust crate in `crate/`
 - CI's `setup-bun` action caches `wasm/` by the same files, so a job compiles Rust only when they change (`.github/actions/setup-bun/action.yml`).
 - Before pushing Rust changes, run what CI runs: `bun run check:rust` (rustfmt, and clippy with warnings denied for wasm32 and the host) and `bun run check:licenses` (`cargo deny`, allowlist in `deny.toml`) (the `HTML engine crate` job in `.github/workflows/ci.yml`).
 - The release writes the module's third-party notices into `wasm/` before packing, accepting the licenses `deny.toml` allows, and refuses to pack the package without them (`tools/release/release-packages/tests/notices/artifacts.test.ts`).
+- `createHTMLEngineRuntime` is a dom-css `CSSRuntime`: it serializes the document into `<body>` with the CSS in `<head>`, pairs elements with captured ones by position, and fills `computedStyle` (non-initial values, with the shorthands the importer reads built from longhands) and, when asked, `layout` as the browser runtime records it, before transforms (`tests/runtime.test.ts`). Parsing and serializing stay dom-css's.
 - Blitz is pinned to a git commit in `crate/Cargo.toml`; fixes to Blitz, Stylo, Taffy, or Parley go upstream, not into a vendored copy here.

@@ -1,0 +1,76 @@
+import { describe, expect, test } from 'bun:test'
+
+import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
+import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
+
+function elementById(document: DesignDocument, id: string): DesignElement {
+  const walk = (nodes: DesignDocument['children']): DesignElement | undefined => {
+    for (const node of nodes) {
+      if (node.type !== 'element') continue
+      if (node.attrs.id === id) return node
+      const found = walk(node.children)
+      if (found) return found
+    }
+    return undefined
+  }
+  const element = walk(document.children)
+  if (!element) throw new Error(`No #${id}`)
+  return element
+}
+
+/** The engine with a Latin subset of Inter as its sans-serif font, so text has lines. */
+async function engineWithInter() {
+  const engine = await loadHTMLEngine()
+  engine.addFont(await Bun.file(new URL('fixtures/inter-latin.woff2', import.meta.url)).bytes())
+  engine.setGenericFamily('sans-serif', ['Inter Variable', 'Inter'])
+  return engine
+}
+
+async function styled(html: string) {
+  return htmlToDesignDocument(html, {
+    runtime: createHTMLEngineRuntime({ engine: engineWithInter }),
+    compute: { layout: true, viewport: { width: 800, height: 600 } }
+  })
+}
+
+describe('the HTML engine runtime', () => {
+  test('gives each element its computed style and its box', async () => {
+    const document = await styled(
+      `<style>.row { display: flex; gap: 10px; overflow: hidden }</style>
+      <div id="row" class="row"><div id="a" style="width:100px;height:50px"></div></div>`
+    )
+    const row = elementById(document, 'row')
+    const a = elementById(document, 'a')
+
+    expect(row.computedStyle).toMatchObject({ display: 'flex', overflow: 'hidden' })
+    // The body's default 8px margin, as a browser lays it out.
+    expect(row.layout?.box).toEqual({ x: 8, y: 8, width: 784, height: 50 })
+    expect(a.layout?.box).toEqual({ x: 8, y: 8, width: 100, height: 50 })
+  })
+
+  test('applies media queries for the viewport it lays out in', async () => {
+    const document = await styled(
+      `<style>@media (max-width: 700px) { #nav { display: none } }</style><nav id="nav">Menu</nav>`
+    )
+
+    expect(elementById(document, 'nav').computedStyle?.display).toBe('block')
+  })
+
+  test('records an inline element by its boxes on each line', async () => {
+    const document = await styled(
+      '<p id="p" style="width:60px;font:16px sans-serif"><span id="s">one two three four</span></p>'
+    )
+    const span = elementById(document, 's')
+
+    expect(span.layout?.fragments?.length).toBeGreaterThan(1)
+    expect(span.layout?.lines).toBeUndefined()
+  })
+
+  test('leaves layout out unless asked', async () => {
+    const document = await htmlToDesignDocument('<div id="box"></div>', {
+      runtime: createHTMLEngineRuntime()
+    })
+
+    expect(elementById(document, 'box').layout).toBeUndefined()
+  })
+})

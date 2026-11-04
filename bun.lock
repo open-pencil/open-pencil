@@ -567,12 +567,16 @@
       "name": "@open-pencil/html-engine",
       "version": "0.17.0-beta.2",
       "dependencies": {
+        "@open-pencil/dom-css": "workspace:*",
         "valibot": "^1.5.0",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
         "tsdown": "^0.22.14",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
+      "peerDependencies": {
+        "@open-pencil/scene-graph": "workspace:*",
       },
     },
     "packages/kiwi": {

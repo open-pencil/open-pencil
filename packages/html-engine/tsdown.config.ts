@@ -15,7 +15,7 @@ export default defineConfig({
     moduleSideEffects: false
   },
   deps: {
-    neverBundle: ['valibot', /^node:/],
+    neverBundle: [/^@open-pencil\//, 'valibot', /^node:/],
     onlyBundle: false
   },
   outputOptions: {

@@ -39,7 +39,11 @@
     "prepack": "bun run build",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
+  "peerDependencies": {
+    "@open-pencil/scene-graph": "workspace:*"
+  },
   "dependencies": {
+    "@open-pencil/dom-css": "workspace:*",
     "valibot": "^1.5.0"
   },
   "devDependencies": {
