@@ -57,7 +57,7 @@ function setupGlobals() {
 function acknowledgePendingPresentation(): void {
   for (const tab of getTabsSnapshot()) {
     if (tab.store.state.preparation?.phase !== 'preparing-render') continue
-    tab.store.preparationController.acknowledgePresentation(tab.store.state.sceneVersion)
+    tab.store.preparationController.acknowledgePresentation(tab.store.state)
   }
 }
 

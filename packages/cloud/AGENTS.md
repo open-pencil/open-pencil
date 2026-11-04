@@ -24,6 +24,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - An admin list takes `search`, `filter`, `limit`, and `offset` through `listQuery` and answers with its rows, `total`, and per-filter `counts`; it declares its filters once as `ListFilters`, which count in one query and page with the same condition (`src/admin/list.ts`, `tests/integration/admin/lists.test.ts`).
 - Every HTTP body goes through `validatedJSON` with a contract schema, and every response the client reads is parsed with Valibot (`src/server/validation.ts`, `src/client/api.ts`).
 - Every route parameter goes through a `validatedParams` validator such as `documentParams`, and handlers read it from `context.req.valid('param')`; a malformed UUID then answers 404 instead of reaching a query (`open-pencil/no-unvalidated-route-params`, `tests/integration/server/api/uuid-parameters.test.ts`).
+- A table that refers to a `storage_object` row is named in `unreferencedObject`, which decides what the object sweep may delete; a collaboration room's snapshot is such a file (`src/server/cleanup/objects.ts`, `tests/integration/server/collaboration/persistence.test.ts`).
 - A revision's images live in `revision_image`; code that makes a revision from another copies them with `copyRevisionImages`, and a storage object a `workspace_image` holds is never unreferenced (`src/server/documents/images.ts`, `tests/integration/server/documents/images.test.ts`).
 - Add schema changes as a new numbered migration in `src/server/db/migrations/` registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth's tables have their own versioned migration (`016_auth_schema.ts`).
 - Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`open-pencil/no-cloud-raw-sql`).
@@ -35,6 +36,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Viewers may send only the channels in `VIEWER_ACTIONS`; every other channel from them is dropped, and presence is stamped from the ticket by `stampAwareness` (`tests/server/collaboration/relay/hub.test.ts`).
 - Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
 - Send frames through `relayServerMessages` and `relayClientMessages`, which split anything past `RELAY_FRAGMENT_BYTES` into fragments, and read sockets through the matching assemblers; never send an encoded frame whole (`tests/server/collaboration/relay/hub.test.ts`).
+- The relay keeps no timer while its sockets are idle, so a Durable Object can hibernate: a ticket's expiry is checked when the relay hears from or sends to the peer, a peer's state rides on its socket through `RelaySocket.remember` and comes back with `resume`, and a resumed room loads its document only when a message needs it (`tests/server/collaboration/relay/resume.test.ts`).
 
 ## AI relay
 

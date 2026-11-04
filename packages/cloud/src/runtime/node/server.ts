@@ -92,7 +92,7 @@ async function startConfiguredServer(
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
-    store: createCollaborationStateStore(database),
+    store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
     onError: (message, error) =>

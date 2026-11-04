@@ -356,9 +356,13 @@ describe('collaboration relay', () => {
       authSecret: relaySecret,
       store: {
         load: state.store.load,
-        async store(room, update) {
+        async append(room, sequence, update) {
           if (refuse) throw new Error('Database unavailable')
-          await state.store.store(room, update)
+          await state.store.append(room, sequence, update)
+        },
+        async compact(room, sequence, update) {
+          if (refuse) throw new Error('Database unavailable')
+          await state.store.compact(room, sequence, update)
         }
       },
       maximumMessageBytes: 1_048_576,
@@ -401,7 +405,11 @@ describe('collaboration relay', () => {
       authSecret: relaySecret,
       store: {
         load: memoryStateStore().store.load,
-        async store() {
+        async append() {
+          attempts++
+          throw new Error('Database unavailable')
+        },
+        async compact() {
           attempts++
           throw new Error('Database unavailable')
         }

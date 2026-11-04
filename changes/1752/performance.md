@@ -1,0 +1,1 @@
+- Cloud's collaboration relay saves only what changed in a room instead of rewriting the whole room every few seconds, so editing a large document writes far less to the database.

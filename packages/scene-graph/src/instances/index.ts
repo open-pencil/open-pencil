@@ -144,7 +144,10 @@ export function swapInstanceComponent(
   const previousComponent = namedAfter(graph, instance, component)
   recordNestedSwap(graph, instance, componentId)
   const source = sourceInTargetCoordinates(component, instance.componentScale)
-  const updates: Partial<SceneNode> = { componentId, ...ownSyncedProps(graph, instance, source) }
+  const updates: Partial<SceneNode> = {
+    componentId,
+    ...ownSyncedProps(graph, instance, source).updates
+  }
 
   if (!keepName && (!previousComponent || instance.name === previousComponent.name))
     updates.name = component.name
@@ -164,22 +167,24 @@ function parkedContent(parked: ParkedSlotContent): ReadonlySet<string> {
   return new Set(parked.slots.flatMap((slot) => slot.content))
 }
 
+/** What an instance takes from its component, and which fields it keeps as its own. */
 function ownSyncedProps(
   graph: SceneGraph,
   instance: SceneNode,
   source: SceneNode
-): Partial<SceneNode> {
+): { updates: Partial<SceneNode>; kept: (field: string) => boolean } {
   const enclosing = enclosingInstanceOverrideFields(graph, instance)
   enclosing.push(new Set(instance.instanceOverrides.self.keys()))
   const protectedField = bindingProtection(enclosing)
   const updates: Partial<SceneNode> = {}
   syncBindingFields(instance, source, updates, protectedField)
+  const kept = (key: string) => isProtectedSyncField(instance, key, protectedField)
   for (const key of INSTANCE_SYNC_PROPS) {
-    if (key !== 'boundVariables' && !isProtectedSyncField(instance, key, protectedField)) {
+    if (key !== 'boundVariables' && !kept(key)) {
       copyProp(updates, source, key)
     }
   }
-  return updates
+  return { updates, kept }
 }
 
 const syncingComponentsByGraph = new WeakMap<SceneGraph, Set<string>>()
@@ -223,10 +228,10 @@ function syncInstancesOf(
     groupCopyRemovals(graph, (removals) => {
       for (const instance of instances) {
         const source = sourceInTargetCoordinates(component, instance.componentScale)
-        const updates = ownSyncedProps(graph, instance, source)
+        const { updates, kept } = ownSyncedProps(graph, instance, source)
         // An instance that hugs its layers sizes to what it shows, not to the component.
         keepOwnContentSize(graph, updates, instance, source)
-        updateSyncedProps(graph, instance, updates)
+        updateSyncedProps(graph, instance, updates, kept)
         const context = createInstanceSyncContext(instance.id, instance.instanceOverrides)
         syncChildren(graph, component.id, instance.id, instance.instanceOverrides, context)
         removeLeftoverCopies(graph, context, removals)

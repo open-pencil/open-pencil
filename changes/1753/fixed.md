@@ -1,0 +1,1 @@
+- Opening a document keeps the loader up until its page is fully drawn where it opens, instead of showing the canvas while it still fills in (#1753).

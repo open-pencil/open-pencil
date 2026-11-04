@@ -78,6 +78,7 @@ export type {
   EditorContext,
   EditorEventName,
   EditorEvents,
+  RenderVersions,
   EditorOptions,
   EditorState,
   EditorSharedState,
