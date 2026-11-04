@@ -71,7 +71,18 @@ export function materializeFigArchive(
   options: DocumentAssemblyOptions = {}
 ): AssemblyState {
   const { reader, blobs, images } = createArchiveDocumentReader(bytes, options.pageIds)
-  return materializeReader(reader, blobs, { ...options, images: options.images ?? new Map(images) })
+  return materializeReader(reader, blobs, withArchiveImages(options, images))
+}
+
+interface ReaderAssemblyOptions extends DocumentAssemblyOptions {
+  archiveImages?: ReadonlyArray<[string, Uint8Array]>
+}
+
+function withArchiveImages(
+  options: DocumentAssemblyOptions,
+  archiveImages: Array<[string, Uint8Array]>
+): ReaderAssemblyOptions {
+  return options.images ? options : { ...options, archiveImages }
 }
 
 export interface AssemblyState {
@@ -156,7 +167,7 @@ export function createFigDocumentSession(
   resume?: FigSessionResume
 ) {
   const archive = createArchiveDocumentReader(bytes, new Set())
-  const sessionOptions = { ...options, images: options.images ?? new Map(archive.images) }
+  const sessionOptions = withArchiveImages(options, archive.images)
   const state: AssemblyState = resume
     ? restoreAssemblyState(resume, archive.reader, sessionOptions)
     : materializeReader(archive.reader, archive.blobs, sessionOptions)
@@ -293,7 +304,7 @@ function documentRootId(document: NodeChange, recordIds: ReadonlySet<string>): s
 
 function createAssemblyState(
   reader: ReturnType<typeof createDocumentReader>,
-  options: DocumentAssemblyOptions
+  options: ReaderAssemblyOptions
 ): AssemblyState {
   // Layers take their records' GUIDs and the rest counter ids, the same on every run, for CLI
   // inspection, patches, and rooms. Authored entities use the production allocator even when
@@ -314,6 +325,9 @@ function createAssemblyState(
   }
   applyDocumentMetadata(graph, document)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
+  for (const [hash, bytes] of options.archiveImages ?? []) {
+    graph.images.set(hash, bytes)
+  }
   graph.applyImportedStateDuring(
     () =>
       materializeVariableResources(
@@ -381,7 +395,7 @@ interface PageLoad {
 function materializeReader(
   reader: ReturnType<typeof createDocumentReader>,
   blobs: Uint8Array[],
-  options: DocumentAssemblyOptions,
+  options: ReaderAssemblyOptions,
   previous?: AssemblyState,
   load: PageLoad = { edited: false }
 ): AssemblyState {
