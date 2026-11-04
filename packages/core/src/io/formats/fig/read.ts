@@ -46,16 +46,18 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   return reader.graph
 }
 
+/** Takes `buffer`: it moves to the worker, which reads it and keeps it as the original archive. */
 export async function parseFigFileViaWorker(
   buffer: ArrayBuffer,
-  options: ParseFigFileOptions
+  options: ParseFigFileOptions,
+  createWorker: () => Worker = createFigSessionWorker
 ): Promise<SceneGraph> {
   options.signal?.throwIfAborted()
   // The worker loads its own; this thread patches the archive on save, which reads it again.
   await loadFigDataDecompressor()
   return new Promise((resolve, reject) => {
     options.signal?.throwIfAborted()
-    const worker = createFigSessionWorker()
+    const worker = createWorker()
     const channel = new MessageChannel()
     const abort = () => {
       channel.port1.postMessage({ type: 'dispose' })
@@ -83,9 +85,10 @@ export async function parseFigFileViaWorker(
         const graph = deserializeSceneGraph(e.data.graph)
         if (options.populate === 'first-page' || options.populate === 'none') {
           cleanupAbort()
-          const { checkpoint, archiveInfo } = e.data
-          if (!checkpoint || !archiveInfo) throw new Error('Missing reader checkpoint')
-          const bytes = buffer.slice(0)
+          const { checkpoint, archiveInfo, archive: bytes } = e.data
+          if (!checkpoint || !archiveInfo || !bytes) {
+            throw new Error('Missing reader checkpoint')
+          }
           registerReaderRecovery(graph, bytes, checkpoint)
           // The worker writes the archive back; without it the main thread does, from its copy.
           const archive = workerFigArchive(channel.port1, worker, () =>
@@ -114,20 +117,48 @@ export async function parseFigFileViaWorker(
       worker.terminate()
       reject(new Error(err.message || 'Worker failed to parse .fig file'))
     }
-    const workerBuffer = buffer.slice(0)
     const request: FigSessionOpenRequest = {
       type: 'open',
-      buffer: workerBuffer,
+      buffer,
       options: { populate: options.populate },
       port: channel.port2
     }
-    worker.postMessage(request, [workerBuffer, channel.port2])
+    worker.postMessage(request, [buffer, channel.port2])
   })
 }
 
-export async function parseFigFile(
+/**
+ * Opens the file in a worker, which takes `buffer`. If the worker fails after taking it, the
+ * main thread reads the archive again with `readAgain`.
+ */
+export async function parseFigFileInWorker(
   buffer: ArrayBuffer,
-  options: ParseFigFileOptions = {}
+  options: ParseFigFileOptions,
+  readAgain: () => Promise<ArrayBuffer>,
+  createWorker: () => Worker = createFigSessionWorker
+): Promise<SceneGraph> {
+  try {
+    return await parseFigFileViaWorker(buffer, options, createWorker)
+  } catch (error) {
+    if (options.signal?.aborted || error instanceof ReaderSemanticError) {
+      throw error
+    }
+    console.warn('Worker parsing failed, falling back to main thread:', error)
+    const archive = buffer.byteLength > 0 ? buffer : await readAgain()
+    options.signal?.throwIfAborted()
+    return parseFigFileSync(archive, options)
+  }
+}
+
+interface FigFileSource {
+  buffer: ArrayBuffer
+  forWorker(): ArrayBuffer
+  readAgain(): Promise<ArrayBuffer>
+}
+
+async function parseFigSource(
+  source: FigFileSource,
+  options: ParseFigFileOptions
 ): Promise<SceneGraph> {
   options.signal?.throwIfAborted()
   // Loaded here even when a worker opens the file: recovering its pages later reads the archive
@@ -135,17 +166,20 @@ export async function parseFigFile(
   await loadFigDataDecompressor()
   options.signal?.throwIfAborted()
   if (typeof Worker !== 'undefined' && IS_BROWSER) {
-    try {
-      // The worker gets its own copy, so `buffer` is still whole for the fallback.
-      return await parseFigFileViaWorker(buffer, options)
-    } catch (error) {
-      if (options.signal?.aborted || error instanceof ReaderSemanticError) throw error
-      console.warn('Worker parsing failed, falling back to main thread:', error)
-      return parseFigFileSync(buffer, options)
-    }
+    return parseFigFileInWorker(source.forWorker(), options, () => source.readAgain())
   }
-  options.signal?.throwIfAborted()
-  return parseFigFileSync(buffer, options)
+  return parseFigFileSync(source.buffer, options)
+}
+
+/** Leaves `buffer` whole: the worker reads a copy of it. */
+export async function parseFigFile(
+  buffer: ArrayBuffer,
+  options: ParseFigFileOptions = {}
+): Promise<SceneGraph> {
+  return parseFigSource(
+    { buffer, forWorker: () => buffer.slice(0), readAgain: async () => buffer },
+    options
+  )
 }
 
 export async function readFigFile(
@@ -154,6 +188,8 @@ export async function readFigFile(
 ): Promise<SceneGraph> {
   options.signal?.throwIfAborted()
   const buffer = await file.arrayBuffer()
-  options.signal?.throwIfAborted()
-  return parseFigFile(buffer, options)
+  return parseFigSource(
+    { buffer, forWorker: () => buffer, readAgain: () => file.arrayBuffer() },
+    options
+  )
 }

@@ -12,7 +12,7 @@ import type { FigPopulationDelta } from '#core/kiwi/fig/population/delta'
 
 export interface FigSessionOpenRequest {
   type: 'open'
-  /** The file, transferred; the worker keeps its own copy as the original archive. */
+  /** The file, transferred: the worker reads it and keeps it as the original archive. */
   buffer: ArrayBuffer
   options?: Pick<ParseFigFileOptions, 'populate'>
   port: MessagePort
@@ -89,6 +89,8 @@ export type FigSessionResponse =
       checkpoint?: FigSessionCheckpoint
       /** Taken while the records are decoded, for writing the archive back later. */
       archiveInfo?: FigArchiveRecordInfo
+      /** A copy of the archive, transferred, for the main thread to recover pages from. */
+      archive?: ArrayBuffer
       error?: string
     }
   | {
