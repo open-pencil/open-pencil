@@ -445,7 +445,7 @@ describe("a set's properties as each variant's linked copy", () => {
       const graph = await open(bytes)
       if (!keepArchive) releaseFigArchive(graph)
       const set = expectDefined(
-        graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET'),
+        [...graph.getAllNodes()].find((node) => node.type === 'COMPONENT_SET'),
         'set'
       )
       const variant = expectDefined(graph.getChildren(set.id)[0], 'variant')
@@ -465,7 +465,7 @@ describe("a set's properties as each variant's linked copy", () => {
           )
         ).toEqual([guidOf(slot?.id)])
       const reread = await open(saved)
-      const readSet = reread.getAllNodes().find((node) => node.type === 'COMPONENT_SET')
+      const readSet = [...reread.getAllNodes()].find((node) => node.type === 'COMPONENT_SET')
       expect(readSet?.componentPropertyDefinitions.map((definition) => definition.name)).toContain(
         'Thumb'
       )
@@ -480,7 +480,7 @@ describe("a set's properties as each variant's linked copy", () => {
       const graph = await open(bytes)
       if (!keepArchive) releaseFigArchive(graph)
       const set = expectDefined(
-        graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET'),
+        [...graph.getAllNodes()].find((node) => node.type === 'COMPONENT_SET'),
         'set'
       )
       const variant = expectDefined(graph.getChildren(set.id)[0], 'variant')
