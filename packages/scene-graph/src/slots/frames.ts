@@ -56,6 +56,8 @@ interface ParkedSlot {
   name: string
   /** Content layer ids, in layer order. */
   content: string[]
+  ownerId: string
+  propertyId: string
 }
 
 /** Owned slot content parked under an instance while its component changes. */
@@ -112,11 +114,16 @@ export function detachOwnedSlotContent(graph: SceneGraph, instance: SceneNode): 
         continue
       const content = [...frame.childIds]
       for (const id of content) graph.insertChildAt(id, instance.id, instance.childIds.length)
-      parked.slots.push({ path, name, content })
+      parked.slots.push({ path, name, content, ownerId: owner.id, propertyId })
     }
   }
   visit(instance, [])
   return parked
+}
+
+function assignsOtherContent(owner: SceneNode, propertyId: string, slot: ParkedSlot): boolean {
+  const parkedFromHere = owner.id === slot.ownerId && propertyId === slot.propertyId
+  return !parkedFromHere && Object.hasOwn(owner.componentPropertyAssignments, propertyId)
 }
 
 /** Move parked content into the slots of the same names and paths, and reassign them. */
@@ -142,12 +149,7 @@ export function restoreOwnedSlotContent(
         return !!propertyId && slotName(graph, owner, propertyId) === slot.name
       })
     const propertyId = frame && slotPropertyId(frame)
-    if (
-      !owner ||
-      !frame ||
-      !propertyId ||
-      Object.hasOwn(owner.componentPropertyAssignments, propertyId)
-    ) {
+    if (!owner || !frame || !propertyId || assignsOtherContent(owner, propertyId, slot)) {
       for (const id of slot.content) graph.deleteNode(id)
       continue
     }
