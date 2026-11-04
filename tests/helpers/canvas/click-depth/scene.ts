@@ -1,10 +1,8 @@
-import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
+import { solid } from '../paints'
 
 /** Scenes for click-depth specs, built in the browser on the editor's graph. */
-
-function fill(r: number, g: number, b: number): Fill[] {
-  return [{ type: 'SOLID', color: { r, g, b, a: 1 }, opacity: 1, visible: true }]
-}
 
 /** A top-level card with auto layout and one without, each holding a title and a button. */
 export function createClickDepthCards(graph: SceneGraph, pageId: string) {
@@ -15,7 +13,7 @@ export function createClickDepthCards(graph: SceneGraph, pageId: string) {
       y: 100,
       width: 200,
       height: 240,
-      fills: fill(1, 1, 1),
+      fills: [solid(1, 1, 1)],
       layoutMode,
       itemSpacing: 24,
       paddingTop: 24,
@@ -29,7 +27,7 @@ export function createClickDepthCards(graph: SceneGraph, pageId: string) {
       y: 24,
       width: 152,
       height: 40,
-      fills: fill(0.85, 0.85, 0.9)
+      fills: [solid(0.85, 0.85, 0.9)]
     })
     graph.createNode('RECTANGLE', frame.id, {
       name: `${name} button`,
@@ -37,7 +35,7 @@ export function createClickDepthCards(graph: SceneGraph, pageId: string) {
       y: 88,
       width: 152,
       height: 40,
-      fills: fill(0.2, 0.4, 1)
+      fills: [solid(0.2, 0.4, 1)]
     })
     return frame.id
   }
@@ -52,7 +50,7 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
     y: 100,
     width: 300,
     height: 300,
-    fills: fill(1, 1, 1)
+    fills: [solid(1, 1, 1)]
   })
   const grid = graph.createNode('FRAME', board.id, {
     name: 'Grid',
@@ -60,7 +58,7 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
     y: 20,
     width: 260,
     height: 260,
-    fills: fill(0.95, 0.95, 0.95)
+    fills: [solid(0.95, 0.95, 0.95)]
   })
   const cell = graph.createNode('FRAME', grid.id, {
     name: 'Cell',
@@ -68,7 +66,7 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
     y: 40,
     width: 80,
     height: 80,
-    fills: fill(0.1, 0.1, 0.1)
+    fills: [solid(0.1, 0.1, 0.1)]
   })
   const label = graph.createNode('RECTANGLE', cell.id, {
     name: 'Label',
@@ -76,7 +74,7 @@ export function createNestedBoard(graph: SceneGraph, pageId: string) {
     y: 20,
     width: 40,
     height: 40,
-    fills: fill(1, 1, 1)
+    fills: [solid(1, 1, 1)]
   })
   return { grid: grid.id, cell: cell.id, label: label.id }
 }
@@ -92,7 +90,7 @@ export function createComponentChart(graph: SceneGraph, pageId: string) {
     y: 100,
     width: 340,
     height: 200,
-    fills: fill(1, 1, 1)
+    fills: [solid(1, 1, 1)]
   })
   const group = graph.createNode('GROUP', component.id, {
     name: 'Plot',
@@ -106,7 +104,7 @@ export function createComponentChart(graph: SceneGraph, pageId: string) {
     width: 300,
     height: 80,
     fills: [],
-    strokes: [{ ...fill(0, 0, 0)[0], weight: 2, align: 'CENTER' }],
+    strokes: [{ ...solid(0, 0, 0), weight: 2, align: 'CENTER' }],
     vectorNetwork: {
       vertices: [
         { x: 0, y: 80 },
@@ -131,7 +129,7 @@ export function createComponentChart(graph: SceneGraph, pageId: string) {
  * directly in the top-level frame. Both are selected and cleared, so their layer rows are open.
  */
 export function createScopeTree(graph: SceneGraph, pageId: string) {
-  const grey = fill(0.9, 0.9, 0.9)
+  const grey = [solid(0.9, 0.9, 0.9)]
   const section = graph.createNode('SECTION', pageId, {
     name: 'Section',
     width: 500,

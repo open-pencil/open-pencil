@@ -9,6 +9,7 @@
 - Address a package's source by `#<pkg>/*` and its own helpers by `#<pkg>-tests/*` (`#core-tests/*`, `#fig-tests/*`); never drill with `../../`. Registering a new alias means `imports` in the package manifest and `PACKAGE_ALIASES`/`PACKAGE_ALIAS_OWNERS` in `tools/checks/architecture/src/steiger-rules/support.ts`.
 - Reach repository files, such as `tests/fixtures`, through `repoPath`/`testPath` in `tests/helpers/paths.ts`, or a package helper's `workspaceRoot()`, which finds the root by its lockfile; never climb from `import.meta` (`open-pencil/no-deep-parent-relative-paths`).
 - Owner-local helpers and fixtures stay local; a helper more than one owner's unit tests use belongs in `@open-pencil/test-support`, never copied (`packages/test-support`). Central `tests/helpers/<domain>/` serves app, integration, and E2E specs.
+- A canvas driver builds its scene module in the page through `pageScene` and sets the view through `showView`; scenes take paints from `paints.ts`, and hidden board tools share `toolDriver` (`tests/helpers/canvas/page-scene.ts`). `bun run test:dupes:helpers` fails on a copied helper.
 - Never commit temporary, diagnostic, or profile specs; keep them in ignored `scratch/`.
 
 ## Writing specs

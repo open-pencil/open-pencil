@@ -1,24 +1,16 @@
 import type { Page } from '@playwright/test'
 
+import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 import type * as PixelGridScene from '#tests/helpers/canvas/pixel-grid/scene'
 
 /** Builds the pixel grid scene at a zoom and reads back the snapping preference. */
 export function pixelGridDriver(page: () => Page) {
+  const scenes = pageScene<typeof PixelGridScene>(page, '/tests/helpers/canvas/pixel-grid/scene.ts')
   return {
     /** The probe rectangle 40 screen pixels in from the canvas corner at `zoom`. */
-    showAtZoom(zoom: number) {
-      return page().evaluate(async (zoom) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        const fixtureURL = '/tests/helpers/canvas/pixel-grid/scene.ts'
-        const scene: typeof PixelGridScene = await import(fixtureURL)
-        scene.createPixelGridScene(store.graph, store.state.currentPageId)
-        store.state.zoom = zoom
-        store.state.panX = 40
-        store.state.panY = 40
-        store.clearSelection()
-        store.requestRender()
-      }, zoom)
+    async showAtZoom(zoom: number) {
+      await scenes.build('createPixelGridScene')
+      await showView(page(), { zoom, panX: 40, panY: 40 })
     },
 
     devicePixelRatio() {
