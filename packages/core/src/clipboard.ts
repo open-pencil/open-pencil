@@ -114,18 +114,17 @@ export function buildFigmaClipboardHTML(
 /**
  * A layer written twice, on the page and in a set brought as a dependency, keeps its page GUID
  * as the override key of its copy in the set, as Figma keys it (desktop 126), so paths written
- * against the page's GUID still find it. Layers only the dependencies wrote join the page map.
+ * against the page's GUID still find it.
  */
 function keyRenumberedCopies(
   nodeChanges: KiwiNodeChange[],
-  nodeIdToGuid: Map<string, GUID>,
+  nodeIdToGuid: ReadonlyMap<string, GUID>,
   dependencyGuids: ReadonlyMap<string, GUID>
 ): void {
   const renumbered = new Map<string, GUID>()
   for (const [id, guid] of dependencyGuids) {
     const original = nodeIdToGuid.get(id)
-    if (!original) nodeIdToGuid.set(id, guid)
-    else if (original.sessionID !== guid.sessionID || original.localID !== guid.localID)
+    if (original && (original.sessionID !== guid.sessionID || original.localID !== guid.localID))
       renumbered.set(`${guid.sessionID}:${guid.localID}`, original)
   }
   for (const change of nodeChanges) {
@@ -270,11 +269,13 @@ async function writeFigmaClipboardHTML(
   nodeChanges.push(...slotContentRecords)
   // A connector copied before a layer its end joins is joined to it now that both have GUIDs.
   relinkConnectorEnds(nodeChanges, graph, nodeIdToGuid)
+  // A connector in a dependency joins the copies written beside it there, not the page's.
+  relinkConnectorEnds(nodeChanges, graph, dependencyGuids)
   // Pair each text record with the node it was written from; instance content and slot
   // content are not emitted in traversal order.
   const textById = new Map(exportedTextNodes.map((node) => [node.id, node]))
   const sourceByGuid = new Map<string, SceneNode>()
-  for (const [id, guid] of nodeIdToGuid) {
+  for (const [id, guid] of [...nodeIdToGuid, ...dependencyGuids]) {
     const node = textById.get(id)
     if (node) sourceByGuid.set(`${guid.sessionID}:${guid.localID}`, node)
   }

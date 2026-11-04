@@ -25,6 +25,7 @@ import {
 } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { buildConnectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
@@ -574,6 +575,45 @@ describe("a set's properties as each variant's linked copy", () => {
       'Dot',
       'Mark'
     ])
+  })
+
+  test('a connector in the set an instance brings joins the layers written beside it', async () => {
+    const graph = await dotSet()
+    const nodes = [...graph.getAllNodes()]
+    const large = expectDefined(
+      nodes.find((node) => node.name === 'Size=Large'),
+      'large'
+    )
+    const mark = graph.createNode('RECTANGLE', large.id, { name: 'Mark', width: 4, height: 4 })
+    const end = (nodeId: string) => ({ nodeId, magnet: 'CENTER' as const, position: { x: 0, y: 0 } })
+    const dot = expectDefined(graph.getChildren(large.id)[0], 'dot')
+    const link = graph.createNode('CONNECTOR', large.id, {
+      name: 'Link',
+      connectorStart: end(dot.id),
+      connectorEnd: end(mark.id)
+    })
+    buildConnectorSublayers(graph, link)
+    const instance = expectDefined(
+      nodes.find((node) => node.type === 'INSTANCE'),
+      'instance'
+    )
+    graph.syncInstances(large.id)
+    const html = expectDefined(await buildFigmaClipboardHTML([mark, instance], graph), 'html')
+    const records = expectDefined(await parseFigmaClipboard(html), 'parsed').nodes
+
+    const variant = expectDefined(variantRecords(records, setRecord(records))[1], 'large copy')
+    const inVariant = records.filter(
+      (record) => guidOf(record.parentIndex?.guid) === guidOf(variant.guid)
+    )
+    const written = expectDefined(
+      inVariant.find((record) => record.type === 'CONNECTOR'),
+      'connector'
+    )
+    const markCopy = expectDefined(
+      inVariant.find((record) => record.name === 'Mark'),
+      'mark copy'
+    )
+    expect(written.connectorEnd).toMatchObject({ endpointNodeID: markCopy.guid })
   })
 
   // Figma (desktop 126) writes a variant copied alone with its set's properties as its own,
