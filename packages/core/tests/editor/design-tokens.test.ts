@@ -506,8 +506,8 @@ describe('style bindings to a path two collections share', () => {
 
     const { node, productSize } = importedHeading(files)
     expect(node?.textCase).toBe('UPPER')
-    const bound = [node?.boundVariables.fontSize, node?.boundVariables.lineHeight]
-    expect(bound.filter((id) => id === productSize)).toHaveLength(1)
+    expect(productSize).toBeDefined()
+    expect(node?.boundVariables.lineHeight).toBe(productSize)
   })
 
   test('recorded targets that are not a record leave the style’s fields', () => {
