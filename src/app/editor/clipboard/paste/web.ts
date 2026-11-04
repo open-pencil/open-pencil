@@ -77,6 +77,16 @@ export function pastedText({ html, text }: WebClipboard): {
   const plain = text.length > 0 ? text : (document?.body.textContent ?? '')
   const links: PastedTextLink[] = []
   if (!document || isHTMLMarkup(text)) return { text: plain, links }
+  // The plain text is scanned once for each link text, however many links share it.
+  const matches = new Map<string, RegExpExecArray[]>()
+  const matchesOf = (words: string) => {
+    let found = matches.get(words)
+    if (!found) {
+      found = [...plain.matchAll(wordsPattern(words))]
+      matches.set(words, found)
+    }
+    return found
+  }
   for (const anchor of Array.from(document.querySelectorAll('a[href]'))) {
     const words = collapseSpace(anchor.textContent)
     const url = linkURL(anchor.getAttribute('href') ?? '')
@@ -85,7 +95,7 @@ export function pastedText({ html, text }: WebClipboard): {
     before.setStart(document.body, 0)
     before.setEndBefore(anchor)
     const occurrence = collapseSpace(before.toString()).match(wordsPattern(words))?.length ?? 0
-    const match = [...plain.matchAll(wordsPattern(words))].at(occurrence)
+    const match = matchesOf(words).at(occurrence)
     if (match?.index !== undefined) links.push({ start: match.index, length: match[0].length, url })
   }
   return { text: plain, links }
@@ -104,7 +114,7 @@ export function offersLayers(clipboard: WebClipboard): boolean {
 /**
  * The layers HTML makes, laid out as a browser would at the width of the frame they go into, or
  * the import viewport on the canvas. The destination is read before layout and again after it,
- * and the HTML laid out once more if it changed meanwhile.
+ * and the HTML laid out once more if it, or its width, changed meanwhile.
  */
 async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardSnapshot | null> {
   let snapshot: ClipboardSnapshot | null = null
@@ -115,7 +125,8 @@ async function prepareLayers(editor: Editor, markup: string): Promise<ClipboardS
       compute: { layout: true, viewport: { width, height: HTML_IMPORT_VIEWPORT.height } }
     })
     snapshot = await editor.prepareStyledHTML(styled)
-    if (editor.htmlPasteTarget().id === target.id) break
+    const now = editor.htmlPasteTarget()
+    if (now.id === target.id && now.width === target.width) break
   }
   return snapshot
 }
