@@ -19,7 +19,8 @@ export function useCanvasResizeObserver({
     cancelAnimationFrame(resizeRaf)
   }
 
-  useResizeObserver(canvasRef, () => {
+  // The canvas holds a size pinned to whole pixels, so its container tells when the page resizes.
+  useResizeObserver([canvasRef, () => canvasRef.value?.parentElement], () => {
     const canvas = canvasRef.value
     if (!canvas || !getCanvasKitValue() || resizeRaf) return
     resizeRaf = requestAnimationFrame(() => {

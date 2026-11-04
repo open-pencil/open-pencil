@@ -73,10 +73,26 @@ export function sizeCanvas(
   onViewportResize?: (width: number, height: number) => void
 ) {
   const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
-  const width = canvas.clientWidth
-  const height = canvas.clientHeight
-  canvas.width = width * dpr
-  canvas.height = height * dpr
+  // The box the page's CSS gives the canvas, pinned to whole CSS pixels as Figma pins its canvas.
+  // A panel sized in percent leaves the box at a fraction of a pixel, and the browser shows a
+  // canvas at whole pixels, so its bitmap was stretched by one device pixel across the width,
+  // softening every line. The canvas moves under a pixel to the nearest whole one; pointers map
+  // from its box, so they follow.
+  canvas.style.width = ''
+  canvas.style.height = ''
+  canvas.style.marginLeft = ''
+  canvas.style.marginTop = ''
+  const box = canvas.getBoundingClientRect()
+  const left = Math.round(box.left)
+  const top = Math.round(box.top)
+  const width = Math.max(1, Math.round(box.right) - left)
+  const height = Math.max(1, Math.round(box.bottom) - top)
+  canvas.width = Math.round(width * dpr)
+  canvas.height = Math.round(height * dpr)
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+  canvas.style.marginLeft = `${left - box.left}px`
+  canvas.style.marginTop = `${top - box.top}px`
   if (onViewportResize) {
     onViewportResize(width, height)
   } else if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
