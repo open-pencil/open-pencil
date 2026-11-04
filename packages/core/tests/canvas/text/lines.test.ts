@@ -288,6 +288,18 @@ describe('fractional line heights', () => {
     layout.delete()
   })
 
+  test('step lines by no pixels at a percent line height under half a pixel', () => {
+    // A larger character sets its line apart from the others; Figma still makes it 1 px tall.
+    const layout = layOut({
+      text: 'H\nHH\nH',
+      fontSize: 14,
+      lineHeight: percentLength(2),
+      styleRuns: [run(3, 1, { fontSize: 30 })]
+    })
+    expect(Math.ceil(layout.getHeight())).toBe(1)
+    layout.delete()
+  })
+
   test('round a percent line height to whole pixels', () => {
     for (const [fontSize, percent, height] of [
       [13, 110, 140],
