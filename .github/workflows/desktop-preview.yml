@@ -38,7 +38,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             label: linux-x64
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +65,7 @@ jobs:
         run: |
           cat > preview-config.json <<'EOF'
           {
+            "version": "0.17.0",
             "build": {
               "beforeBuildCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run build:packages && bunx vite build"
             },
