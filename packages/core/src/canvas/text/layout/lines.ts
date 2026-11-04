@@ -255,18 +255,6 @@ function buildPieces(
   return pieces
 }
 
-/**
- * The block's lines as a paragraph each, moved by `offsets`, for lines a paragraph cannot draw
- * together; `null` when they cannot be laid out apart.
- */
-export function linePieces(
-  block: LineBlock,
-  width: number,
-  offsets: readonly number[]
-): LinePiece[] | null {
-  return buildPieces(block, width, offsets, false)
-}
-
 /** Where `placeLines` puts each block, and the text's height. */
 export interface PlacedLines<Block> {
   blocks: Map<Block, BlockPlacement & { y: number }>

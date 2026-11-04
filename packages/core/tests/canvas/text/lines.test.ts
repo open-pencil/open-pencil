@@ -349,6 +349,19 @@ describe('baselines as Figma saves and draws them', () => {
     { fontSize: 16, lineHeight: 24, saved: [17.818], drawn: [18] }
   ]
 
+  test('draws each line of mixed sizes on the whole pixel its baseline rounds to', () => {
+    // The paragraph draws a larger line's glyphs on a pixel other than its baseline rounds to.
+    for (const [text, styleRuns] of [
+      ['HH\nHHH\nHH', [run(3, 3, { fontSize: 40 })]],
+      ['H\nHH\nH', [run(2, 2, { fontSize: 31 })]]
+    ] as const) {
+      const layout = layOut({ text, styleRuns: [...styleRuns] })
+      const rounded = layout.getLineMetrics().map((line) => Math.round(line.baseline))
+      expect(inkBottoms(layout).map((bottom) => bottom + 1)).toEqual(rounded)
+      layout.delete()
+    }
+  })
+
   test('draws a line of each size on the whole pixel Figma draws it on', () => {
     for (const [fontSize, drawn] of [
       [12, 12],

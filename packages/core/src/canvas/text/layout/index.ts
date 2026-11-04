@@ -11,14 +11,11 @@ import type {
 } from 'canvaskit-wasm'
 
 import {
-  allSame,
   figmaLineBox,
-  linePieces,
   placeLines,
   shapedLinesByLine,
   wholePixelShift,
   type BlockPlacement,
-  type LinePiece,
   type TextLayoutBlockLines
 } from '#core/canvas/text/layout/lines'
 
@@ -26,8 +23,6 @@ import {
 interface BlockDrawing {
   lines: Array<number | null>
   marker: number
-  /** The block's lines one by one, when they cannot be drawn as layout placed them. */
-  pieces: LinePiece[] | null
 }
 
 /** A list item's number or bullet, laid out on its own. */
@@ -97,7 +92,6 @@ export class TextLayout {
   private readonly placements = new Map<TextLayoutBlock, BlockPlacement>()
   /** How each block is drawn, worked out on the first draw after a layout (`prepareDrawing`). */
   private drawing: Map<TextLayoutBlock, BlockDrawing> | null = null
-  private layoutWidth = 0
   /** The text's height when layout placed its lines itself. */
   private placedHeight: number | null = null
 
@@ -151,7 +145,6 @@ export class TextLayout {
     let y = 0
     let lines = 0
     this.truncated = false
-    this.layoutWidth = width
     this.clearPlacements()
     for (const [index, block] of this.blocks.entries()) {
       const remaining = this.maxLines === undefined ? Infinity : this.maxLines - lines
@@ -203,9 +196,6 @@ export class TextLayout {
       for (const piece of placement.pieces ?? []) piece.paragraph.delete()
     }
     this.placements.clear()
-    for (const drawing of this.drawing?.values() ?? []) {
-      for (const piece of drawing.pieces ?? []) piece.paragraph.delete()
-    }
     this.drawing = null
     this.placedHeight = null
     this.height = null
@@ -598,10 +588,9 @@ export class TextLayout {
   }
 
   /**
-   * Works out how each block is drawn so every baseline lands on the whole pixel its exact one
-   * rounds to: how far each line and the marker move, and the block's lines one by one when
-   * lines a paragraph or piece draws together need different moves, as a paragraph stepping
-   * lines of mixed sizes by a fraction of a pixel does.
+   * Works out how far each block's lines and marker move when drawn, so every baseline lands on
+   * the whole pixel its exact one rounds to. Lines a paragraph or piece draws together step by
+   * whole pixels both as it draws them and as they are placed, so they move as one.
    */
   private prepareDrawing(): Map<TextLayoutBlock, BlockDrawing> {
     if (this.drawing) return this.drawing
@@ -614,16 +603,7 @@ export class TextLayout {
         const top = block.y + this.lineOffset(block, index)
         return wholePixelShift(top, line.baseline, drawn.baseline)
       })
-      const placement = this.placements.get(block)
-      const starts = placement?.pieces?.map((piece) => piece.line) ?? [0]
-      const even = starts.every((from, index) =>
-        allSame(
-          lines.slice(from, starts[index + 1] ?? lines.length).filter((shift) => shift !== null)
-        )
-      )
-      const offsets = placement?.offsets ?? block.metrics.map(() => 0)
-      const pieces = even ? null : linePieces(block, this.layoutWidth, offsets)
-      drawing.set(block, { lines, marker: this.markerShift(block), pieces })
+      drawing.set(block, { lines, marker: this.markerShift(block) })
     }
     this.drawing = drawing
     return drawing
@@ -643,7 +623,7 @@ export class TextLayout {
       const drawn = drawing.get(block)
       // The shift of the first line from `line` on that draws glyphs.
       const shift = (line: number) => drawn?.lines.slice(line).find((value) => value !== null) ?? 0
-      const pieces = drawn?.pieces ?? this.placements.get(block)?.pieces
+      const pieces = this.placements.get(block)?.pieces
       if (!pieces) canvas.drawParagraph(block.paragraph, x + block.x, y + block.y + shift(0))
       for (const piece of pieces ?? []) {
         const top = y + block.y + piece.y + shift(piece.line)
