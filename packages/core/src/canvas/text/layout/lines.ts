@@ -44,12 +44,13 @@ export interface LinePiece {
 }
 
 /**
- * How far a paragraph line `top` below the box must move to draw its glyphs on the whole pixel
- * its exact `baseline` rounds to: Figma draws every baseline on a whole pixel of the box, and a
- * paragraph draws a line's glyphs on its own baseline rounded (Figma desktop 126).
+ * How far a paragraph `top` below the box must move to draw a line's glyphs, which it draws on
+ * `drawn`, on the whole pixel the line's exact `baseline` rounds to, as Figma draws every
+ * baseline (Figma desktop 126). A paragraph draws glyphs on whole pixels of its own, but not
+ * always on the one its baseline rounds to.
  */
-export function wholePixelShift(top: number, baseline: number): number {
-  return Math.round(top + baseline) - top - Math.round(baseline)
+export function wholePixelShift(top: number, baseline: number, drawn: number): number {
+  return Math.round(top + baseline) - top - drawn
 }
 
 /** Where a glyph on an exact `baseline` is drawn, for a box drawn `top` down: on a whole pixel. */
@@ -252,6 +253,18 @@ function buildPieces(
     from = to
   }
   return pieces
+}
+
+/**
+ * The block's lines as a paragraph each, moved by `offsets`, for lines a paragraph cannot draw
+ * together; `null` when they cannot be laid out apart.
+ */
+export function linePieces(
+  block: LineBlock,
+  width: number,
+  offsets: readonly number[]
+): LinePiece[] | null {
+  return buildPieces(block, width, offsets, false)
 }
 
 /** Where `placeLines` puts each block, and the text's height. */

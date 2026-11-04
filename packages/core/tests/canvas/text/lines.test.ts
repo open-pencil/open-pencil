@@ -349,6 +349,21 @@ describe('baselines as Figma saves and draws them', () => {
     { fontSize: 16, lineHeight: 24, saved: [17.818], drawn: [18] }
   ]
 
+  test('draws a line of each size on the whole pixel Figma draws it on', () => {
+    for (const [fontSize, drawn] of [
+      [12, 12],
+      [14, 14],
+      [16, 15],
+      [18, 18],
+      [20, 19],
+      [28, 27]
+    ] as const) {
+      const layout = layOut({ text: 'H', fontSize })
+      expect(inkBottoms(layout).map((bottom) => bottom + 1)).toEqual([drawn])
+      layout.delete()
+    }
+  })
+
   for (const { fontSize, lineHeight, paragraphSpacing = 0, saved, drawn } of cases) {
     const name = `${fontSize} px at ${lineHeight ?? 'auto'}${paragraphSpacing ? `, ${paragraphSpacing} apart` : ''}`
     test(`keeps exact baselines and draws them on whole pixels: ${name}`, () => {
