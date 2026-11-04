@@ -82,6 +82,21 @@ function pageFetch(readAsset: ReadHTMLOptions['readAsset']): HTMLEngineFetch {
 }
 
 /**
+ * A fetch that answers each URL it has answered before from the same response, so a page styled
+ * twice gets the same stylesheets and fonts both times, whatever the network does in between.
+ */
+function rememberingFetch(fetch: HTMLEngineFetch): HTMLEngineFetch {
+  const answered = new Map<string, HTMLEngineResource>()
+  return async (url, signal) => {
+    const known = answered.get(url)
+    if (known) return known
+    const fetched = await fetch(url, signal)
+    if (fetched) answered.set(url, fetched)
+    return fetched
+  }
+}
+
+/**
  * HTML and CSS laid out as a browser lays them out, with the HTML engine: computed styles, media
  * queries for the viewport, and the boxes that placement keeps auto layout to. The fonts a page's
  * `@font-face` rules load go to the font manager, and text is set in the first family of its
@@ -97,14 +112,14 @@ export async function readHTMLDocument(
 ): Promise<ReadHTMLResult> {
   const engine = await loadHTMLEngine()
   // The page's own fonts, from its `@font-face` rules, which its text may name first.
-  const pageFamilies = new Set<string>()
+  const pageFamilies = new Map<string, string>()
   const runtime = createHTMLEngineRuntime({
     engine: async () => engine,
     baseURL: options.baseURL ?? (options.readAsset ? ASSET_BASE_URL : undefined),
-    fetch: pageFetch(options.readAsset),
+    fetch: rememberingFetch(pageFetch(options.readAsset)),
     onFontFace: async (face) => {
       await registerPageFontFace(face)
-      pageFamilies.add(face.family)
+      pageFamilies.set(face.family.toLowerCase(), face.family)
     }
   })
   const styleOptions: HTMLToDesignDocumentOptions = {

@@ -3,9 +3,8 @@ import { join } from 'node:path'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
-
-import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
-import { fontManager } from '@open-pencil/core/text'
+import { readHTMLDocument } from '#core/io/formats/html/import'
+import { fontManager } from '#core/text/font/manager'
 
 /** A family the tests give the font manager a font for, so which text finds a font does not depend on the machine. */
 const TEST_FAMILY = 'OpenPencil Test Sans'
@@ -162,6 +161,59 @@ describe('reading HTML', () => {
 
     expect(text?.node.fontFamily).toBe(family)
     expect(fontManager.loadedFontSource(family, 'Regular')).toBe('registered')
+  })
+
+  test('takes a family for the face its text asks for, not only the regular one', async () => {
+    const bold = 'OpenPencil Bold Only'
+    await fontManager.markLoaded(
+      bold,
+      'Bold',
+      await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    )
+    const { graph } = await readHTMLDocument(
+      `<p style="font-family:'${bold}', sans-serif;font-weight:700">Bold</p>`
+    )
+    const text = graph.flattenTree(graph.getPages()[0].id).find(({ node }) => node.type === 'TEXT')
+
+    expect(text?.node.fontFamily).toBe(bold)
+  })
+
+  test('matches a page font by name without regard to case, as CSS does', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<style>@font-face { font-family: 'OpenPencil Cased'; src: url(cased.ttf) }</style>
+      <p style="font-family: 'openpencil cased', sans-serif">Cased</p>`,
+      { readAsset: async (path) => (path === 'cased.ttf' ? font : null) }
+    )
+    const text = graph.flattenTree(graph.getPages()[0].id).find(({ node }) => node.type === 'TEXT')
+
+    expect(text?.node.fontFamily).toBe('OpenPencil Cased')
+  })
+
+  test('styles a page twice from the same stylesheets', async () => {
+    // A family the engine has not been given, so the page is styled a second time with it.
+    const family = 'OpenPencil Second Pass'
+    await fontManager.markLoaded(
+      family,
+      'Regular',
+      await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    )
+    let reads = 0
+    const { graph } = await readHTMLDocument(
+      `<link rel="stylesheet" href="once.css"><div class="box"></div><p style="font-family:'${family}'">Text</p>`,
+      {
+        readAsset: async (path) => {
+          if (path !== 'once.css') return null
+          reads++
+          // A second read would lose the rule, as a network that fails the second time does.
+          return reads === 1 ? new TextEncoder().encode('.box { width: 300px; height: 10px }') : null
+        }
+      }
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+
+    expect(reads).toBe(1)
+    expect(box).toMatchObject({ width: 300, height: 10 })
   })
 
   test('text is set in the first family of its list there is a font for, as in a browser', async () => {

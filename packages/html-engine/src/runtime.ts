@@ -1,6 +1,7 @@
 import {
   createHeadlessCSSRuntime,
   parseFontFaceRules,
+  parseStylesheetImports,
   type CSSFontFaceRule,
   type CSSComputeOptions,
   type CSSRuntime,
@@ -60,20 +61,31 @@ function fontFaceFetch(
 ): HTMLEngineFetch | undefined {
   const { fetch, onFontFace } = options
   if (!fetch || !onFontFace) return fetch
-  const rules = new Map<string, CSSFontFaceRule>()
+  const rules = new Map<string, CSSFontFaceRule[]>()
+  // What CSS imports is a stylesheet whatever its name or the type it is served as.
+  const stylesheets = new Set<string>()
+  // The engine fetches a file once per rule that names it; each face is passed on once.
+  const delivered = new Set<string>()
   const learn = (css: string, base: string | undefined) => {
     for (const rule of parseFontFaceRules(css, base)) {
-      for (const source of rule.sources) if (!rules.has(source)) rules.set(source, rule)
+      for (const source of rule.sources) rules.set(source, [...(rules.get(source) ?? []), rule])
     }
+    for (const url of parseStylesheetImports(css, base)) stylesheets.add(url)
   }
   learn(cssText, options.baseURL)
   return async (url, signal) => {
     const resource = await fetch(url, signal)
     if (!resource) return null
-    if (isStylesheet(resource)) learn(new TextDecoder().decode(resource.bytes), resource.url)
-    const rule = rules.get(url) ?? rules.get(resource.url)
-    if (rule) {
-      const bytes = engine.decodeFont(resource.bytes)
+    if (isStylesheet(resource) || stylesheets.has(url) || stylesheets.has(resource.url)) {
+      learn(new TextDecoder().decode(resource.bytes), resource.url)
+    }
+    // One file can serve several rules, such as a family and an alias of it.
+    const served = rules.get(url) ?? rules.get(resource.url) ?? []
+    const bytes = served.length > 0 ? engine.decodeFont(resource.bytes) : null
+    for (const rule of served) {
+      const face = `${url}|${rule.family}|${rule.weight}|${rule.italic}`
+      if (!bytes || delivered.has(face)) continue
+      delivered.add(face)
       await onFontFace({
         family: rule.family,
         weight: rule.weight,

@@ -17,6 +17,8 @@ import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/r
 interface EngineFonts {
   /** `family|style` of every face looked for, found or not. */
   faces: Set<string>
+  /** `family|style` of the faces registered with the default family's face standing in. */
+  standIns: Set<string>
   /** The files registered for each family, which aliases of it reuse. */
   files: Map<string, Uint8Array[]>
   /** `name|index` of every file registered under a name the engine does not know as generic. */
@@ -28,7 +30,12 @@ const engineFonts = new WeakMap<HTMLEngine, EngineFonts>()
 function fontsOf(engine: HTMLEngine): EngineFonts {
   const known = engineFonts.get(engine)
   if (known) return known
-  const fonts: EngineFonts = { faces: new Set(), files: new Map(), aliases: new Set() }
+  const fonts: EngineFonts = {
+    faces: new Set(),
+    standIns: new Set(),
+    files: new Map(),
+    aliases: new Set()
+  }
   engineFonts.set(engine, fonts)
   return fonts
 }
@@ -38,11 +45,33 @@ function fontsOf(engine: HTMLEngine): EngineFonts {
  * finds it nowhere, the default family's, as a layer draws a missing font.
  */
 async function drawnFace(family: string, style: string, characters: string) {
-  return (
-    (await fontManager.loadFont(family, style, characters)) ??
+  const own = await fontManager.loadFont(family, style, characters)
+  if (own) return { face: own, standIn: false }
+  const standIn =
     (await fontManager.loadFont(DEFAULT_FONT_FAMILY, style, characters)) ??
-    fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular', characters)
-  )
+    (await fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular', characters))
+  return standIn ? { face: standIn, standIn: true } : null
+}
+
+function faceKey({ family, style }: { family: string; style: string }): string {
+  return `${family}|${style}`
+}
+
+function faceOfKey(key: string): { family: string; style: string } {
+  const at = key.lastIndexOf('|')
+  return { family: key.slice(0, at), style: key.slice(at + 1) }
+}
+
+/**
+ * Whether a face registered with a stand-in now has its own font, which the layers draw with.
+ * The engine cannot drop one face, so its fonts are then registered again from the start.
+ */
+async function standInResolved(fonts: EngineFonts, characters: string): Promise<boolean> {
+  for (const key of fonts.standIns) {
+    const { family, style } = faceOfKey(key)
+    if (await fontManager.loadFont(family, style, characters)) return true
+  }
+  return false
 }
 
 /**
@@ -71,23 +100,30 @@ function mapGenericFamilies(engine: HTMLEngine, fonts: EngineFonts): void {
 export async function registerLayerFonts(engine: HTMLEngine, graph: SceneGraph): Promise<boolean> {
   const pageIds = graph.getPages().map((page) => page.id)
   const { nodes, characters } = collectGraphFontRequirements(graph, pageIds)
-  const fonts = fontsOf(engine)
-  const faces = uniqBy(
-    nodes.flatMap(collectNodeFontFaces),
-    ({ family, style }) => `${family}|${style}`
-  ).filter(({ family, style }) => !fonts.faces.has(`${family}|${style}`))
+  let fonts = fontsOf(engine)
+  const wanted = uniqBy(nodes.flatMap(collectNodeFontFaces), faceKey)
+  let reset = false
+  if (await standInResolved(fonts, characters)) {
+    // Every face looked for so far, so earlier documents keep laying out in theirs.
+    wanted.push(...[...fonts.faces].map(faceOfKey))
+    engine.resetFonts()
+    engineFonts.delete(engine)
+    fonts = fontsOf(engine)
+    reset = true
+  }
   let added = false
-  for (const { family, style } of faces) {
-    fonts.faces.add(`${family}|${style}`)
-    const face = await drawnFace(family, style, characters)
-    if (!face) continue
-    const file = new Uint8Array(face)
-    engine.addFont(file, family)
-    fonts.files.set(family, [...(fonts.files.get(family) ?? []), file])
+  for (const face of uniqBy(wanted, faceKey).filter((face) => !fonts.faces.has(faceKey(face)))) {
+    fonts.faces.add(faceKey(face))
+    const drawn = await drawnFace(face.family, face.style, characters)
+    if (!drawn) continue
+    if (drawn.standIn) fonts.standIns.add(faceKey(face))
+    const file = new Uint8Array(drawn.face)
+    engine.addFont(file, face.family)
+    fonts.files.set(face.family, [...(fonts.files.get(face.family) ?? []), file])
     added = true
   }
   if (added) mapGenericFamilies(engine, fonts)
-  return added
+  return added || reset
 }
 
 function styledElements(styled: DesignDocument): DesignElement[] {
@@ -121,22 +157,44 @@ function textOf(styled: DesignDocument): string {
  * family when none has one. Text then names a font that loads, which the engine lays out in.
  */
 async function availableFamily(
-  list: string,
+  { list, weight, italic }: RequestedFace,
   characters: string,
   available: Map<string, Promise<boolean>>,
-  pageFamilies: ReadonlySet<string>
+  pageFamilies: PageFontFamilies
 ): Promise<string> {
   for (const candidate of parseCSSFontFamilies(list)) {
     const family = cssFontFamilyName(candidate)
-    if (pageFamilies.has(family)) return family
-    let found = available.get(family)
+    // CSS matches family names without regard to ASCII case.
+    const declared = pageFamilies.get(family.toLowerCase())
+    if (declared) return declared
+    const style = faceStyleName(family, weight, italic)
+    let found = available.get(`${family}|${style}`)
     if (!found) {
-      found = fontManager.loadFont(family, 'Regular', characters).then((face) => face !== null)
-      available.set(family, found)
+      found = fontManager.loadFont(family, style, characters).then((face) => face !== null)
+      available.set(`${family}|${style}`, found)
     }
     if (await found) return family
   }
   return DEFAULT_FONT_FAMILY
+}
+
+/** A text's `font-family` list and the face it asks for from it. */
+interface RequestedFace {
+  list: string
+  weight: number
+  italic: boolean
+}
+
+/** The families a page's `@font-face` rules declare, by their lowercase names. */
+export type PageFontFamilies = ReadonlyMap<string, string>
+
+function requestedFace(style: Record<string, string>, list: string): RequestedFace {
+  const weight = Number.parseFloat(style['font-weight'] ?? '')
+  return {
+    list,
+    weight: Number.isFinite(weight) ? weight : 400,
+    italic: /italic|oblique/i.test(style['font-style'] ?? '')
+  }
 }
 
 /** A family name as a quoted CSS string. */
@@ -150,7 +208,7 @@ function quotedFamily(family: string): string {
  */
 export async function resolvePageFontFamilies(
   styled: DesignDocument,
-  pageFamilies: ReadonlySet<string> = new Set()
+  pageFamilies: PageFontFamilies = new Map()
 ): Promise<void> {
   const elements = styledElements(styled).filter(
     (element) => element.computedStyle?.['font-family'] !== undefined
@@ -162,10 +220,12 @@ export async function resolvePageFontFamilies(
     const style = element.computedStyle
     const list = style?.['font-family']
     if (!style || list === undefined) continue
-    let family = resolved.get(list)
+    const face = requestedFace(style, list)
+    const key = `${list}|${face.weight}|${face.italic}`
+    let family = resolved.get(key)
     if (!family) {
-      family = availableFamily(list, characters, available, pageFamilies)
-      resolved.set(list, family)
+      family = availableFamily(face, characters, available, pageFamilies)
+      resolved.set(key, family)
     }
     style['font-family'] = quotedFamily(await family)
   }

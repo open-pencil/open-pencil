@@ -82,3 +82,22 @@ export function parseFontFaceRules(cssText: string, baseURL?: string): CSSFontFa
   })
   return rules
 }
+
+/** The URLs a stylesheet's `@import` rules load, resolved against `baseURL`, in order. */
+export function parseStylesheetImports(cssText: string, baseURL?: string): string[] {
+  const urls: string[] = []
+  const sheet = parse(cssText, { positions: false, onParseError: () => undefined })
+  walk(sheet, (node) => {
+    if (node.type !== 'Atrule' || node.name.toLowerCase() !== 'import' || !node.prelude) return
+    // The rule's first URL or string names the sheet; media and layer names may follow.
+    let target: string | undefined
+    walk(node.prelude, (part) => {
+      if (target === undefined && (part.type === 'Url' || part.type === 'String')) {
+        target = part.value
+      }
+    })
+    const url = target === undefined ? null : resolved(target, baseURL)
+    if (url) urls.push(url)
+  })
+  return urls
+}

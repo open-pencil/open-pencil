@@ -219,6 +219,37 @@ describe('the HTML engine runtime', () => {
     expect(faces).toEqual([{ family: 'Brand', weight: 700, italic: false, signature: '0100' }])
   })
 
+  test('passes a font to every rule that loads it, from stylesheets of any name', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const families: string[] = []
+    const runtime = createHTMLEngineRuntime({
+      engine: engineWithInter,
+      baseURL: 'https://example.com/',
+      // Served without a content type, under a name without `.css`: known as CSS because CSS imports it.
+      fetch: async (url) => {
+        if (url.endsWith('/styles')) {
+          return {
+            url,
+            bytes: new TextEncoder().encode(
+              `@font-face { font-family: Brand; src: url(brand.ttf) }
+              @font-face { font-family: 'Brand Alias'; src: url(brand.ttf) }`
+            )
+          }
+        }
+        return url.endsWith('brand.ttf') ? { url, bytes: font } : null
+      },
+      onFontFace: (face) => {
+        families.push(face.family)
+      }
+    })
+    await htmlToDesignDocument('<p style="font-family: Brand">Words</p>', {
+      runtime,
+      cssText: '@import url("styles");'
+    })
+
+    expect(families.toSorted()).toEqual(['Brand', 'Brand Alias'])
+  })
+
   test('leaves layout out unless asked', async () => {
     const document = await htmlToDesignDocument('<div id="box"></div>', {
       runtime: createHTMLEngineRuntime()

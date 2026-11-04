@@ -42,14 +42,20 @@ if (lightGroups.length === 0 && heavyFiles.length === 0) {
 }
 
 /**
- * Modules packages build from another language, which tests across the workspace load: Core reads
- * HTML with the HTML engine. Each script skips the build when its module is current, so running
- * them before every run costs little.
+ * Modules packages build from another language, with the shard groups whose tests load them:
+ * Core and its front ends read HTML with the HTML engine. Each script checks a current module
+ * without its compiler, so only a stale one needs Rust.
  */
-const MODULE_BUILDS = ['packages/html-engine/scripts/wasm.ts']
+const MODULE_BUILDS: { script: string; groups: readonly UnitTestGroup[] }[] = [
+  {
+    script: 'packages/html-engine/scripts/wasm.ts',
+    groups: ['all', 'core', 'dom', 'cli', 'mcp', 'app']
+  }
+]
 
 async function buildModules(): Promise<void> {
-  for (const build of MODULE_BUILDS) {
+  for (const { script: build, groups: needed } of MODULE_BUILDS) {
+    if (!needed.includes(group)) continue
     const child = Bun.spawn([process.execPath, build], { stdio: ['inherit', 'inherit', 'inherit'] })
     if ((await child.exited) !== 0) throw new Error(`${build} failed`)
   }

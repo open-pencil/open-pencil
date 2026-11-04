@@ -10,7 +10,11 @@ export {
   tailwindHTMLToSceneGraph
 } from './import/html'
 export { compileTailwindCSS } from './import/tailwind'
-export { parseFontFaceRules, type CSSFontFaceRule } from './import/font-faces'
+export {
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule
+} from './import/font-faces'
 export {
   jsxToDesignDocument,
   jsxToSceneGraph,
