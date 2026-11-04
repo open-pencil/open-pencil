@@ -57,6 +57,12 @@ describe('parseCSSTransform', () => {
     expect(parseCSSTransform(turned, BOX)).toBeNull()
   })
 
+  test('is null for names that are not transform functions', () => {
+    for (const value of ['constructor(1)', '__proto__(1)', 'toString(1)', 'perspective(400px)']) {
+      expect(parseCSSTransform(value, BOX)).toBeNull()
+    }
+  })
+
   test('is null for arguments CSS does not separate with commas', () => {
     for (const value of ['translate(10px 20px)', 'rotate(30deg,)', 'scale(,2)', 'scale(1,,2)']) {
       expect(parseCSSTransform(value, BOX)).toBeNull()
@@ -96,7 +102,10 @@ describe('parseCSSTransformOrigin', () => {
     ['top left', { x: 0, y: 0 }],
     ['right', { x: 100, y: 25 }],
     ['bottom', { x: 50, y: 50 }],
-    ['25% 100%', { x: 25, y: 50 }]
+    ['25% 100%', { x: 25, y: 50 }],
+    ['left top 10px', { x: 0, y: 0 }],
+    ['left top bogus', { x: 50, y: 25 }],
+    ['left top 10px 20px', { x: 50, y: 25 }]
   ])('%s', (value, expected) => {
     expect(parseCSSTransformOrigin(value, BOX)).toEqual(expected)
   })

@@ -45,13 +45,33 @@ export function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void
   if (maxHeight !== null) node.maxHeight = maxHeight
 }
 
+type BorderSide = 'top' | 'right' | 'bottom' | 'left'
+
+const BORDER_SIDES: readonly BorderSide[] = ['top', 'right', 'bottom', 'left']
+
+/** A side's own border style, or the shorthand's when it sets none of its own. */
+function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | undefined {
+  return pickStyle(style, `border-${side}-style`) ?? pickStyle(style, 'border-style')
+}
+
+/** Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`. */
+function paints(style: DesignStyleDeclaration, side: BorderSide): boolean {
+  const value = sideStyle(style, side)
+  return value !== undefined && value !== 'none' && value !== 'hidden'
+}
+
+/** The sides whose borders are drawn, in CSS order. */
+function paintedSides(style: DesignStyleDeclaration): BorderSide[] {
+  return BORDER_SIDES.filter((side) => paints(style, side))
+}
+
+/** The color of the first side whose border is drawn, or the shorthand's. */
 export function firstStrokeColor(style: DesignStyleDeclaration) {
+  const side = paintedSides(style).at(0)
   return (
+    (side && pickStyle(style, `border-${side}-color`)) ??
     pickStyle(style, 'border-color') ??
-    pickStyle(style, 'border-top-color') ??
-    pickStyle(style, 'border-right-color') ??
-    pickStyle(style, 'border-bottom-color') ??
-    pickStyle(style, 'border-left-color')
+    pickStyle(style, 'border-top-color')
   )
 }
 
@@ -69,27 +89,17 @@ export function strokeWeightFromStyle(style: DesignStyleDeclaration) {
   return Math.max(...sideWeights)
 }
 
-function borderStyleFromCSS(style: DesignStyleDeclaration): string | undefined {
-  return (
-    pickStyle(style, 'border-style') ??
-    pickStyle(style, 'border-top-style') ??
-    pickStyle(style, 'border-right-style') ??
-    pickStyle(style, 'border-bottom-style') ??
-    pickStyle(style, 'border-left-style')
-  )
-}
-
 /**
- * Whether the element has a border: it needs a style other than `none`, its CSS default, or
- * `hidden`, whatever its width and color.
+ * Whether the element has a border on any side: a side needs a style other than `none`, its CSS
+ * default, or `hidden`, whatever its width and color.
  */
 export function hasBorder(style: DesignStyleDeclaration): boolean {
-  const borderStyle = borderStyleFromCSS(style)
-  return borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+  return paintedSides(style).length > 0
 }
 
 export function dashPatternFromCSS(style: DesignStyleDeclaration, strokeWeight: number): number[] {
-  const borderStyle = borderStyleFromCSS(style)
+  const side = paintedSides(style).at(0)
+  const borderStyle = side && sideStyle(style, side)
   if (borderStyle === 'dashed') return [strokeWeight * 3, strokeWeight * 2]
   if (borderStyle === 'dotted') return [strokeWeight, strokeWeight]
   return []
@@ -100,10 +110,10 @@ export function setBorderWeights(
   style: DesignStyleDeclaration,
   stroke: Stroke
 ): void {
-  const top = firstCSSNumber(style, 'border-top-width') ?? stroke.weight
-  const right = firstCSSNumber(style, 'border-right-width') ?? stroke.weight
-  const bottom = firstCSSNumber(style, 'border-bottom-width') ?? stroke.weight
-  const left = firstCSSNumber(style, 'border-left-width') ?? stroke.weight
+  // A side whose border is not drawn has none.
+  const weight = (side: BorderSide) =>
+    paints(style, side) ? (firstCSSNumber(style, `border-${side}-width`) ?? stroke.weight) : 0
+  const [top, right, bottom, left] = BORDER_SIDES.map(weight)
   node.borderTopWeight = top
   node.borderRightWeight = right
   node.borderBottomWeight = bottom
@@ -166,10 +176,9 @@ export interface ContentInsets {
 }
 
 export function contentInsets(style: DesignStyleDeclaration): ContentInsets {
-  const bordered = hasBorder(style)
-  const side = (name: keyof ContentInsets, axis: 'block' | 'inline') =>
+  const side = (name: BorderSide, axis: 'block' | 'inline') =>
     (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
-    (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
+    (paints(style, name) ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
   return {
     top: side('top', 'block'),
     right: side('right', 'inline'),

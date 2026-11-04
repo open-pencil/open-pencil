@@ -265,6 +265,71 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(text?.inlineStyle?.['white-space']).toBe('pre-wrap')
   })
 
+  it('leaves out a border with widths but no style, as CSS draws none', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'panel' },
+          computedStyle: {
+            'min-width': '240px',
+            'max-width': '480px',
+            'border-color': 'rgb(229, 231, 235)',
+            'border-width': '4px'
+          },
+          children: []
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const panel = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+
+    expect(panel.strokes).toEqual([])
+    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480 })
+  })
+
+  it('draws a border on the sides whose style is drawn, as a browser computes them', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'row' },
+          // A browser reports every side; only the bottom has a style that draws.
+          computedStyle: {
+            'border-top-style': 'none',
+            'border-right-style': 'none',
+            'border-bottom-style': 'solid',
+            'border-left-style': 'none',
+            'border-top-color': 'rgb(0, 0, 0)',
+            'border-right-color': 'rgb(0, 0, 0)',
+            'border-bottom-color': 'rgb(255, 0, 0)',
+            'border-left-color': 'rgb(0, 0, 0)',
+            'border-top-width': '0px',
+            'border-right-width': '0px',
+            'border-bottom-width': '2px',
+            'border-left-width': '0px'
+          },
+          children: []
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const row = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+
+    expect(row.strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect(row).toMatchObject({
+      independentStrokeWeights: true,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 2,
+      borderLeftWeight: 0
+    })
+  })
+
   it('maps CSS shape constraints, clipping, corners, and borders', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',

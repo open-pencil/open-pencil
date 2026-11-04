@@ -165,7 +165,8 @@ function functionArguments(nodes: valueParser.Node[]): string[] | null {
 
 /** One transform function as a matrix; null for one this does not know or cannot read. */
 function transformFunction(name: string, args: string[], box: CSSTransformBox): Mat3 | null {
-  const fn = TRANSFORM_FUNCTIONS[name]
+  // Own names only, so `constructor` or `__proto__` reads as unknown instead of a prototype member.
+  const fn = Object.hasOwn(TRANSFORM_FUNCTIONS, name) ? TRANSFORM_FUNCTIONS[name] : undefined
   if (!fn || args.length < fn.arity[0] || args.length > fn.arity[1]) return null
   return fn.build(args, box)
 }
@@ -245,8 +246,11 @@ const ORIGIN_KEYWORDS: Partial<Record<string, { axis: 'x' | 'y' | 'either'; frac
  */
 export function parseCSSTransformOrigin(value: string | undefined, box: CSSTransformBox): Vector {
   const center = { x: box.width / 2, y: box.height / 2 }
-  const parts = splitCSSValue(value?.trim() ?? '').slice(0, 2)
-  if (parts.length === 0) return center
+  const tokens = splitCSSValue(value?.trim() ?? '')
+  // A third value is the depth, which must be a length; anything past it is not an origin.
+  const depthOk = tokens.length < 3 || (tokens.length === 3 && length(tokens[2], 0) !== null)
+  if (tokens.length === 0 || !depthOk) return center
+  const parts = tokens.slice(0, 2)
   // A vertical keyword first, as in `top left`, names the y offset.
   const [first = 'center', second = 'center'] = parts.map((part) => part.toLowerCase())
   const swapped = ORIGIN_KEYWORDS[first]?.axis === 'y' || ORIGIN_KEYWORDS[second]?.axis === 'x'
