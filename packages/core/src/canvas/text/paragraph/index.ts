@@ -5,8 +5,7 @@ import type {
   Paragraph,
   ParagraphBuilder,
   TextFontFeatures,
-  TextFontVariations,
-  TextHeightBehavior
+  TextFontVariations
 } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -90,33 +89,6 @@ export function textFontFeatures(
     name: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
   }))
-}
-
-export function textHeightBehaviorValue<T>(
-  ck: { TextHeightBehavior: { DisableAll: T } },
-  leadingTrim: SceneNode['leadingTrim']
-): T | undefined {
-  return leadingTrim === 'CAP_HEIGHT' ? ck.TextHeightBehavior.DisableAll : undefined
-}
-
-/** Which edges of the text a paragraph is: leading trim only trims the text's own edges. */
-export interface ParagraphEdges {
-  first: boolean
-  last: boolean
-}
-
-function blockHeightBehavior(
-  ck: CanvasKit,
-  leadingTrim: SceneNode['leadingTrim'],
-  edges: ParagraphEdges | undefined
-): TextHeightBehavior | undefined {
-  if (!edges) return textHeightBehaviorValue(ck, leadingTrim)
-  const { first, last } = edges
-  if (leadingTrim !== 'CAP_HEIGHT') return undefined
-  if (first && last) return ck.TextHeightBehavior.DisableAll
-  if (first) return ck.TextHeightBehavior.DisableFirstAscent
-  if (last) return ck.TextHeightBehavior.DisableLastDescent
-  return ck.TextHeightBehavior.All
 }
 
 /**
@@ -262,7 +234,6 @@ export interface ParagraphBlockOptions {
   firstLineIndent?: number
   /** Truncation for this block in place of the node's. */
   truncation?: { maxLines?: number; ellipsis?: string }
-  edges?: ParagraphEdges
 }
 
 /** Room before a paragraph's first line, as an empty placeholder on its baseline. */
@@ -331,7 +302,6 @@ export function buildSkParagraph(
   const paraStyle = new ck.ParagraphStyle({
     textAlign: getParagraphTextAlign(ck, node),
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
-    textHeightBehavior: blockHeightBehavior(ck, node.leadingTrim, block.edges),
     ...truncateOpts,
     textStyle: baseTextStyle
   })

@@ -63,6 +63,8 @@ export interface TextLayoutBlock {
   metrics: LineMetrics[]
 }
 
+export type LineCapHeight = (start: number, end: number) => number
+
 export interface TextCaretBox {
   x: number
   top: number
@@ -88,40 +90,42 @@ export class TextLayout {
     ck: CanvasKit,
     paragraph: Paragraph,
     length: number,
-    lines?: TextLayoutBlockLines
+    lines?: TextLayoutBlockLines,
+    capHeight?: LineCapHeight
   ): TextLayout {
-    return new TextLayout(ck, [
-      {
-        paragraph,
-        start: 0,
-        utf8Start: 0,
-        length,
-        lead: 0,
-        utf8Lead: 0,
-        leadWidth: 0,
-        empty: false,
-        inset: 0,
-        rtl: false,
-        spaceBefore: 0,
-        marker: null,
-        lines,
-        x: 0,
-        y: 0,
-        visible: true,
-        metrics: []
-      }
-    ])
+    const block: TextLayoutBlock = {
+      paragraph,
+      start: 0,
+      utf8Start: 0,
+      length,
+      lead: 0,
+      utf8Lead: 0,
+      leadWidth: 0,
+      empty: false,
+      inset: 0,
+      rtl: false,
+      spaceBefore: 0,
+      marker: null,
+      lines,
+      x: 0,
+      y: 0,
+      visible: true,
+      metrics: []
+    }
+    return new TextLayout(ck, [block], undefined, capHeight)
   }
 
   constructor(
     private readonly ck: CanvasKit,
     readonly blocks: TextLayoutBlock[],
     /** Lines the text may show in all, when it is truncated across blocks. */
-    private readonly maxLines?: number
+    private readonly maxLines?: number,
+    private readonly capHeight?: LineCapHeight
   ) {}
 
   /** The line cap a block's paragraph was rebuilt with, when it differs from `maxLines`. */
   private readonly caps = new Map<TextLayoutBlock, number>()
+  private readonly capHeights = new Map<string, number>()
 
   private visibleBlocks(): TextLayoutBlock[] {
     return this.blocks.filter((block) => block.visible)
@@ -149,6 +153,7 @@ export class TextLayout {
         block.paragraph.delete()
         block.paragraph = block.rebuild(remaining)
         this.caps.set(block, remaining)
+        this.capHeights.clear()
         block.paragraph.layout(Math.max(1, width - block.inset))
         block.metrics = block.paragraph.getLineMetrics()
       }
@@ -160,6 +165,7 @@ export class TextLayout {
       lines += block.metrics.length
     }
     this.placeLines(width)
+    this.trimToCapHeight()
     for (const block of this.visibleBlocks()) this.placeMarker(block)
     this.collectLines()
     this.height = this.measureHeight()
@@ -195,6 +201,52 @@ export class TextLayout {
       this.placements.set(block, placement)
     }
     this.placedHeight = placed.height
+  }
+
+  /** Trims the text from its first line's cap height to its last baseline, as Figma does. */
+  private trimToCapHeight(): void {
+    const visible = this.visibleBlocks()
+    const first = visible.at(0)
+    const last = visible.at(-1)
+    if (this.capHeight === undefined || !first || !last) {
+      return
+    }
+    const firstBaseline = this.firstBaseline(first)
+    const lastLine = last.metrics.at(-1)
+    const lastBaseline = lastLine
+      ? last.y + lastLine.baseline + this.lineOffset(last, last.metrics.length - 1)
+      : firstBaseline
+    // Figma ends the box at the last baseline and makes it the trimmed height to the nearest
+    // pixel, so the rest of the first line's cap height stands above it (Figma desktop 126).
+    const capTop = firstBaseline - this.firstLineCapHeight(first, this.capHeight)
+    const height = Math.round(lastBaseline - capTop)
+    const top = lastBaseline - height
+    for (const block of visible) {
+      block.y -= top
+    }
+    this.placedHeight = height
+  }
+
+  /** Skia lays an empty paragraph out without lines, but with a baseline. */
+  private firstBaseline(block: TextLayoutBlock): number {
+    const line = block.metrics.at(0)
+    if (!line) {
+      return block.y + block.paragraph.getAlphabeticBaseline()
+    }
+    return block.y + line.baseline + this.lineOffset(block, 0)
+  }
+
+  private firstLineCapHeight(block: TextLayoutBlock, capHeight: LineCapHeight): number {
+    const line = block.metrics.at(0)
+    const start = line ? this.toTextIndex(block, line.startIndex) : block.start
+    const end = line ? this.toTextIndex(block, line.endIndex) : block.start
+    const key = `${start}:${end}`
+    let height = this.capHeights.get(key)
+    if (height === undefined) {
+      height = capHeight(start, end)
+      this.capHeights.set(key, height)
+    }
+    return height
   }
 
   /** The block's line `index` stands this far below where its paragraph has it. */
