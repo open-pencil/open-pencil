@@ -48,8 +48,11 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         const named = names.has(prefix) || names.has(`${prefix}s`)
         if (files.length < 3 && !named) continue
         if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        const base = names.has(prefix) ? prefix : `${prefix}s`
         diagnostics.push({
-          message: `Use a ${prefix}/ domain folder instead of sibling files named ${prefix} and ${prefix}-*.`,
+          message: named
+            ? `Use a ${prefix}/ domain folder instead of ${base} beside ${prefix}-* files.`
+            : `Use a ${prefix}/ domain folder instead of sibling ${prefix}-* files.`,
           location: { path: folder.path }
         })
       }
