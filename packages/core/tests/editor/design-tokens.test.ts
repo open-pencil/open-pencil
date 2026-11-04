@@ -211,7 +211,10 @@ describe('design token import', () => {
     importInto(graph, exported(source))
 
     const [style] = getSharedStyles(graph, 'text')
-    expect(graph.getNode(style.nodeId)).toMatchObject({ textCase: 'UPPER', lineHeight: pixelLength(40) })
+    expect(graph.getNode(style.nodeId)).toMatchObject({
+      textCase: 'UPPER',
+      lineHeight: pixelLength(40)
+    })
   })
 
   test('an edited shadow takes the place of the exact one, and the blur keeps its own', () => {
@@ -330,7 +333,12 @@ describe('design token import', () => {
 
     test('binds the references a shadow edited in another tool keeps, and the blur’s own', () => {
       const source = boundShadow()
-      const soft = source.createVariable('Blur/Soft', 'FLOAT', variableNamed(source, 'Accent').collectionId, 6)
+      const soft = source.createVariable(
+        'Blur/Soft',
+        'FLOAT',
+        variableNamed(source, 'Accent').collectionId,
+        6
+      )
       const [style] = getSharedStyles(source, 'effect')
       source.bindVariable(style.nodeId, 'effects/0/radius', soft.id)
       const files = editedStyles(source, (text) =>
@@ -458,29 +466,78 @@ describe('style bindings to a path two collections share', () => {
     return { source, size }
   }
 
-  test('a malformed recorded target leaves the rest of the style’s fields', () => {
-    const { source, size } = sharedSize()
-    const heading = source.createNode('TEXT', source.getPages()[0].id, {
+  function heading(source: SceneGraph, size: string) {
+    const node = source.createNode('TEXT', source.getPages()[0].id, {
       name: 'Heading',
       fontFamily: 'Inter',
       fontSize: 20,
+      lineHeight: pixelLength(20),
       textCase: 'UPPER',
       sharedStyleType: 'TEXT',
       internalOnly: true,
-      boundVariables: { fontSize: size.id }
+      boundVariables: { fontSize: size, lineHeight: size }
     })
-    heading.source.id = 'style:heading'
+    node.source.id = 'style:heading'
+  }
+
+  function importedHeading(files: ReturnType<typeof exported>) {
+    const graph = new SceneGraph()
+    importInto(graph, files)
+    const [style] = getSharedStyles(graph, 'text')
+    const productSize = [...graph.variables.values()].find(
+      (variable) =>
+        variable.name === 'Size' &&
+        graph.variableCollections.get(variable.collectionId)?.name === 'Product'
+    )?.id
+    return { node: graph.getNode(style.nodeId), productSize }
+  }
+
+  test('a malformed recorded target leaves the rest of the style’s fields and targets', () => {
+    const { source, size } = sharedSize()
+    heading(source, size.id)
     const files = exported(source).map((file) =>
       file.path === 'styles.tokens.json'
-        ? { ...file, text: file.text.replace('"targetVariableName":"Size"', '"targetVariableName":7') }
+        ? {
+            ...file,
+            text: file.text.replace('"targetVariableName":"Size"', '"targetVariableName":7')
+          }
         : file
     )
 
-    const graph = new SceneGraph()
-    importInto(graph, files)
+    const { node, productSize } = importedHeading(files)
+    expect(node?.textCase).toBe('UPPER')
+    const bound = [node?.boundVariables.fontSize, node?.boundVariables.lineHeight]
+    expect(bound.filter((id) => id === productSize)).toHaveLength(1)
+  })
 
-    const [style] = getSharedStyles(graph, 'text')
-    expect(graph.getNode(style.nodeId)?.textCase).toBe('UPPER')
+  test('recorded targets that are not a record leave the style’s fields', () => {
+    const { source, size } = sharedSize()
+    heading(source, size.id)
+    const files = exported(source).map((file) =>
+      file.path === 'styles.tokens.json'
+        ? {
+            ...file,
+            text: file.text.replace(/"aliasData":\{(?:[^{}]|\{[^{}]*\})*\}/, '"aliasData":null')
+          }
+        : file
+    )
+    expect(files.find((file) => file.path === 'styles.tokens.json')?.text).toContain(
+      '"aliasData":null'
+    )
+
+    expect(importedHeading(files).node?.textCase).toBe('UPPER')
+  })
+
+  test('a style dropped as a duplicate warns about none of its references', () => {
+    const { source, size } = sharedSize()
+    heading(source, size.id)
+    heading(source, size.id)
+
+    expect(exportDesignTokens(source).issues).toEqual([
+      { kind: 'duplicate-path', collection: 'Styles', token: 'Heading' },
+      { kind: 'ambiguous-reference', style: 'Heading', field: 'fontSize', token: 'Size' },
+      { kind: 'ambiguous-reference', style: 'Heading', field: 'lineHeight', token: 'Size' }
+    ])
   })
 
   test('a style with no token warns about none of its references', () => {

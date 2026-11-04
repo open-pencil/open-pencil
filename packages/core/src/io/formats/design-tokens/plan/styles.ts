@@ -78,12 +78,12 @@ const ownTextSchema = v.object({
     textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
   }),
   bindings: v.optional(v.record(v.string(), v.string())),
-  aliasData: v.optional(aliasDataSchema)
+  aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
   bindings: v.optional(v.record(v.string(), v.string())),
-  aliasData: v.optional(aliasDataSchema)
+  aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
 
 /** The composite types that become styles. */

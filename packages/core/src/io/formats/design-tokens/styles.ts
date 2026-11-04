@@ -233,16 +233,18 @@ export function styleTokens(
       issues.push({ kind: 'unsupported-effect', style: node.name })
       return []
     }
-    for (const [field, variableId] of Object.entries(node.boundVariables)) {
-      const path = writesBinding(node, field) ? references.get(variableId) : undefined
-      if (path && shared.has(tokenReference(path)))
-        issues.push({ kind: 'ambiguous-reference', style: node.name, field, token: pathName(path) })
-    }
     return [{ key: { node, token }, path: tokenPath(node.name) }]
   })
   const { placed, duplicates } = placeTokens(candidates)
   for (const { node } of duplicates)
     issues.push({ kind: 'duplicate-path', collection: 'Styles', token: node.name })
+  for (const [{ node }] of placed) {
+    for (const [field, variableId] of Object.entries(node.boundVariables)) {
+      const path = writesBinding(node, field) ? references.get(variableId) : undefined
+      if (path && shared.has(tokenReference(path)))
+        issues.push({ kind: 'ambiguous-reference', style: node.name, field, token: pathName(path) })
+    }
+  }
   const tokens = [...placed].map(([{ node, token }, path]) => ({
     path,
     token: withOriginalName(token, node.name, path)
