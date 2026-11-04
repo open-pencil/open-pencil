@@ -13,9 +13,9 @@
     "skipLibCheck": true,
     "types": ["@cloudflare/workers-types"],
     "paths": {
-      "#cloud/*": ["../../*"]
+      "#cloud/*": ["./src/*"]
     }
   },
-  "include": ["./**/*.ts", "../../../deploy/**/*.ts"],
-  "exclude": ["../../../deploy/generated"]
+  "include": ["src/runtime/cloudflare/**/*.ts", "deploy/**/*.ts"],
+  "exclude": ["deploy/generated"]
 }
