@@ -61,6 +61,7 @@ function room(
     failTicket?: (attempt: number) => boolean
     /** The document moved to another room by this ticket request. */
     movedAt?: number
+    page?: EventTarget
   } = {}
 ) {
   const sockets: FakeSocket[] = []
@@ -81,6 +82,7 @@ function room(
       return asDouble<WebSocket>(socket)
     },
     reconnectDelayMs: () => 0,
+    page: options.page ? asDouble<Window>(options.page) : undefined,
     onError: (_message, error) => errors.push(error),
     onRestored: () => {
       restored += 1
@@ -327,5 +329,88 @@ describe('Cloud relay transport', () => {
     await transport.leave()
     socket?.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'ada'] })
     expect(joined).toEqual([])
+  })
+
+  test('leaves the room while the page is hidden and joins again when it is shown', async () => {
+    const page = new EventTarget()
+    const { transport, sockets, joined, left, tickets } = room({ page })
+    await settle()
+    sockets[0]?.open()
+    sockets[0]?.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'alice'] })
+
+    page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+    await settle()
+    expect(sockets[0]?.readyState).toBe(WebSocket.CLOSED)
+    expect(left).toEqual(['server', 'alice'])
+    expect(transport.signalingConnected()).toBe(false)
+    // A hidden page asks for nothing until it is shown again.
+    expect(sockets).toHaveLength(1)
+    expect(tickets()).toBe(1)
+
+    page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    await settle()
+    expect(sockets).toHaveLength(2)
+    sockets[1]?.open()
+    expect(sockets[1]?.sent).toEqual([{ type: 'auth', token: 'ticket-2' }])
+    sockets[1]?.receive({ type: 'welcome', peerId: 'me-again', peers: ['server', 'alice'] })
+    expect(joined).toEqual(['server', 'alice', 'server', 'alice'])
+    await transport.leave()
+  })
+
+  test('drops a ticket refresh that comes back while the page is hidden', async () => {
+    jest.useFakeTimers()
+    try {
+      const page = new EventTarget()
+      const { transport, sockets, tickets } = room({ page })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the page is hidden.
+      jest.advanceTimersByTime(240_000)
+      page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+      await settle()
+      expect(tickets()).toBe(2)
+      jest.advanceTimersByTime(240_000)
+      await settle()
+      expect(tickets()).toBe(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('does not retry a ticket refresh that fails while the page is hidden', async () => {
+    jest.useFakeTimers()
+    try {
+      const page = new EventTarget()
+      const { transport, sockets, tickets, errors } = room({
+        page,
+        failTicket: (attempt) => attempt === 2
+      })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the page is hidden, and then fails.
+      jest.advanceTimersByTime(240_000)
+      page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+      await settle()
+      expect(errors).toHaveLength(1)
+      jest.advanceTimersByTime(60_000)
+      await settle()
+      expect(tickets()).toBe(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('stays out of the room after it was left, whatever the page does', async () => {
+    const page = new EventTarget()
+    const { transport, sockets } = room({ page })
+    await settle()
+    sockets[0]?.open()
+    await transport.leave()
+    page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+    page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    await settle()
+    expect(sockets).toHaveLength(1)
   })
 })

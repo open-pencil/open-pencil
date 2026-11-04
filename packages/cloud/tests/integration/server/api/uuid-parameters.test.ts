@@ -3,6 +3,7 @@ import { describe, expect, spyOn, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { collaborationTicketSchema } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -44,12 +45,13 @@ async function testApp() {
     database: runtime.database,
     auth: createBetterAuthAdapter(config, runtime.database),
     objects: createMemoryObjectStore().store,
-    // Share links need the links and guest view entitlements.
+    // Share links need the links and guest view entitlements, tickets the collaboration one.
     policy: createDefaultCloudPolicy(
       new EntitlementOpenFeatureProvider(
         new StaticEntitlementSource({
           [CLOUD_FEATURE_KEYS.links]: true,
-          [CLOUD_FEATURE_KEYS.guestView]: true
+          [CLOUD_FEATURE_KEYS.guestView]: true,
+          [CLOUD_FEATURE_KEYS.collaboration]: true
         })
       )
     ),
@@ -125,6 +127,24 @@ describe('Cloud API route parameters', () => {
       expect(resolved.status).toBe(200)
       const access = await context.request('GET', `/documents/${context.documentId}/access`)
       expect(access.status).toBe(200)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('give an ID one spelling, so a document has one relay', async () => {
+    const context = await testApp()
+    try {
+      const { ticket } = await responseJSON(
+        await context.request(
+          'POST',
+          `/documents/${context.documentId.toUpperCase()}/collaboration-ticket`,
+          {}
+        ),
+        v.object({ ticket: collaborationTicketSchema })
+      )
+      expect(ticket.documentId).toBe(context.documentId)
+      expect(ticket.roomId).toContain(context.documentId)
     } finally {
       await context.runtime.close()
     }
