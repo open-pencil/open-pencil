@@ -182,6 +182,16 @@ function computedStyleToRecord(
   return entries
 }
 
+/**
+ * Waits until the document's web fonts have loaded and a frame has laid it out with them, so
+ * lines break and boxes size as the page shows them rather than in a fallback font.
+ */
+async function settle(browserDocument: Document): Promise<void> {
+  await requestFrame(browserDocument)
+  await browserDocument.fonts.ready
+  await requestFrame(browserDocument)
+}
+
 function requestFrame(browserDocument: Document): Promise<void> {
   const requestAnimationFrame = browserDocument.defaultView?.requestAnimationFrame
   if (!requestAnimationFrame) return Promise.resolve()
@@ -226,7 +236,7 @@ async function computeStylesInShadowRoot(
   browserDocument.body.append(host)
 
   try {
-    await requestFrame(browserDocument)
+    await settle(browserDocument)
     return copyComputedStyles(designDocument, content, options, {
       origin: content,
       styleRoot: shadow
@@ -262,7 +272,7 @@ async function computeStylesInIframe(
     const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
 
-    await requestFrame(iframeDocument)
+    await settle(iframeDocument)
     return copyComputedStyles(designDocument, content, options, {
       origin: iframeDocument.documentElement,
       styleRoot: iframeDocument.head

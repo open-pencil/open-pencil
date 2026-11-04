@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import process from 'node:process'
 
 import {
   createHeadlessCSSRuntime,
@@ -101,6 +102,38 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(fragments).toHaveLength(2)
     expect(fragments.map((fragment) => Math.round(fragment.y - lines[0].y))).toEqual([30, 60])
     expect(bold.layout?.lines).toBeUndefined()
+  })
+
+  test('waits for web fonts before recording layout', async ({ page }) => {
+    const origin = new URL(test.info().project.use.baseURL ?? '').origin
+    const font = `${origin}/@fs${process.cwd()}/packages/core/assets/CaveatVariable.woff2`
+    const face = `@font-face { font-family: Hand; src: url(${JSON.stringify(font)}) format('woff2') }`
+    const text = 'Handwritten words'
+    const document = await captured(
+      page,
+      `<span id="words">${text}</span>`,
+      `${face} body { margin: 0 } #words { display: inline-block; font: 40px Hand, monospace }`
+    )
+    // The same words measured once the font has certainly loaded.
+    const loaded = await page.evaluate(
+      async ({ css, words }) => {
+        const style = window.document.createElement('style')
+        style.textContent = `${css} #probe { display: inline-block; font: 40px Hand, monospace }`
+        const probe = window.document.createElement('span')
+        probe.id = 'probe'
+        probe.textContent = words
+        window.document.head.append(style)
+        window.document.body.append(probe)
+        await window.document.fonts.load('40px Hand')
+        const width = probe.getBoundingClientRect().width
+        probe.remove()
+        style.remove()
+        return width
+      },
+      { css: face, words: text }
+    )
+
+    expect(byId(document, 'words').layout?.box.width).toBeCloseTo(loaded, 0)
   })
 
   test('leaves layout out unless asked', async ({ page }) => {
