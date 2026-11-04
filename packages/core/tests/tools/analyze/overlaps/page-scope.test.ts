@@ -6,7 +6,7 @@ import {
   computeOverlaps,
   findPageId,
   type AnalyzeOverlapsResult
-} from '@open-pencil/core/tools/analyze/overlaps'
+} from '#core/tools/analyze/overlaps'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { pageId, rect } from './helpers'

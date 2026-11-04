@@ -4,7 +4,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { deflateSync } from 'fflate'
 
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '#core/editor'
 import {
   FigmaAPI,
   type FigmaComponentNode,

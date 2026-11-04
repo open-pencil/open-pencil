@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
+import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'

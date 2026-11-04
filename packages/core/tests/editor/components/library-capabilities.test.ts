@@ -6,7 +6,7 @@ import {
   ReadOnlyLibraryDefinitionError
 } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { updateNode } from '@open-pencil/core/tools/modify'
+import { updateNode } from '#core/tools/modify'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('library definition capabilities', () => {
