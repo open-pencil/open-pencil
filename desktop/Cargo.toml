@@ -70,3 +70,8 @@ webkit2gtk-sys = "2"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
+# A panic must unwind: `access_state` in `credentials.rs` recovers the lock a panic poisons, so no `panic = "abort"`.
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true
