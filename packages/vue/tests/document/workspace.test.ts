@@ -8,8 +8,7 @@ import {
   type DocumentWorkspaceSource
 } from '@open-pencil/vue/document/workspace'
 
-import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
-
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 type Deferred<Value> = {
   promise: Promise<Value>
   resolve(value: Value): void

@@ -12,8 +12,7 @@ import { createRetainedScopePlugin } from '#vue/lifecycle/retention/plugin'
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import { useFontPicker } from '#vue/primitives/FontPicker/useFontPicker'
 
-import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
-
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 async function flushRetention() {
   await nextTick()
   await nextTick()

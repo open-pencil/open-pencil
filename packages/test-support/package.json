@@ -16,7 +16,8 @@
     "./geometry": "./src/geometry.ts",
     "./heavy": "./src/heavy.ts",
     "./paths": "./src/paths.ts",
-    "./scene": "./src/scene.ts"
+    "./scene": "./src/scene.ts",
+    "./vue/renderer": "./src/vue/renderer.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
@@ -29,6 +30,7 @@
     "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/test-support": "workspace:*",
-    "valibot": "^1.5.0"
+    "valibot": "^1.5.0",
+    "vue": "^3.5.43"
   }
 }

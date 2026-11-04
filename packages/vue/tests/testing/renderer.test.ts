@@ -2,8 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createStaticVNode } from 'vue'
 
-import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
-
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 test('the host renderer mounts and removes compiled static content', () => {
   const renderer = createTestRenderer()
   const root = hostNode()
