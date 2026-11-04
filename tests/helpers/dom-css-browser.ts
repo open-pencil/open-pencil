@@ -2,7 +2,7 @@ import process from 'node:process'
 
 import { test, type Page } from '@playwright/test'
 
-import type { DesignDocument } from '@open-pencil/dom-css'
+import type { CSSComputeOptions, DesignDocument } from '@open-pencil/dom-css'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 const BROWSER_RUNTIME_MODULE = `/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
@@ -95,21 +95,23 @@ export async function browserRuntimeComputeStyles(
   page: Page,
   document: DesignDocument,
   cssText: string,
-  sandbox: 'shadow-root' | 'iframe' = 'iframe'
+  sandbox: 'shadow-root' | 'iframe' = 'iframe',
+  compute: CSSComputeOptions = {}
 ) {
   await ensureAppPage(page)
 
   return page.evaluate(
-    async ({ designDocument, css, modulePath, sandboxMode }) => {
+    async ({ designDocument, css, modulePath, sandboxMode, computeOptions }) => {
       const { createBrowserCSSRuntime } = await import(modulePath)
       const runtime = createBrowserCSSRuntime({ document: window.document, sandbox: sandboxMode })
-      return runtime.computeStyles(designDocument, css)
+      return runtime.computeStyles(designDocument, css, computeOptions)
     },
     {
       designDocument: document,
       css: cssText,
       modulePath: BROWSER_RUNTIME_MODULE,
-      sandboxMode: sandbox
+      sandboxMode: sandbox,
+      computeOptions: compute
     }
   )
 }
