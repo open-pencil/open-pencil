@@ -11,10 +11,8 @@ export function primaryAxisGap(node: SceneNode): number {
   return Math.max(0, primaryAxisSpacing(node))
 }
 
-// Yoga lays a negative gap out as none, so siblings overlap through negative leading margins.
+// Yoga lays a negative gap out as none, so siblings overlap through negative trailing margins.
+// Figma keeps the overlap inside each wrapped row too; only the space between rows stays >= 0.
 export function siblingOverlap(node: SceneNode): number {
-  if (node.layoutWrap === 'WRAP') {
-    return 0
-  }
   return Math.max(0, -primaryAxisSpacing(node))
 }

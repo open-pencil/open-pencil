@@ -196,9 +196,12 @@ function insertFlexChildren(
   graph: SceneGraph,
   direction: 'LTR' | 'RTL'
 ): void {
+  // Each in-flow child gives up the overlap after it, and the frame takes it back as trailing
+  // padding: a row then fits as many children as Figma's sum of sizes and negative gaps allows,
+  // every row starts at the frame's edge, and a hugging frame ends at its last child.
   const overlap = siblingOverlap(parent)
-  const leadingEdge = parent.layoutMode === 'HORIZONTAL' ? Edge.Start : Edge.Top
-  let followsInFlowSibling = false
+  const horizontal = parent.layoutMode === 'HORIZONTAL'
+  let hasInFlowChild = false
   for (const node of graph.getChildren(parent.id)) {
     const child = asLaidOutIn(graph, node, parent)
     const yogaChild = createYogaNode()
@@ -209,13 +212,16 @@ function insertFlexChildren(
       yogaChild.setDisplay(Display.None)
     } else {
       configureInFlowChild(yogaChild, child, parent, graph, direction)
-      if (followsInFlowSibling && overlap > 0) {
-        yogaChild.setMargin(leadingEdge, -overlap)
-      }
-      followsInFlowSibling = true
+      if (overlap > 0) yogaChild.setMargin(horizontal ? Edge.End : Edge.Bottom, -overlap)
+      hasInFlowChild = true
     }
 
     yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
+  }
+  if (overlap > 0 && hasInFlowChild) {
+    if (!horizontal) yogaParent.setPadding(Edge.Bottom, parent.paddingBottom + overlap)
+    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, parent.paddingLeft + overlap)
+    else yogaParent.setPadding(Edge.Right, parent.paddingRight + overlap)
   }
 }
 

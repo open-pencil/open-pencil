@@ -126,17 +126,28 @@ describe('negative item spacing overlaps siblings', () => {
     expect(xs(children)).toEqual([0, 80, 160])
   })
 
-  test('a wrapped row keeps its siblings and rows apart', () => {
-    const { frame, children, layout } = stack('HORIZONTAL', -6)
+  // Measured in Figma: the overlap holds inside each wrapped row, and rows never overlap.
+  test('a wrapped row overlaps within each row and keeps rows apart', () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const frame = figma.createFrame()
+    frame.layoutMode = 'HORIZONTAL'
     frame.layoutWrap = 'WRAP'
+    frame.itemSpacing = -10
     frame.counterAxisSpacing = -4
+    const children = [0, 1, 2, 3].map(() => {
+      const child = figma.createRectangle()
+      child.resize(40, 40)
+      frame.appendChild(child)
+      return child
+    })
     frame.layoutSizingHorizontal = 'FIXED'
-    frame.resize(100, 20)
+    frame.resize(100, 40)
     frame.layoutSizingVertical = 'HUG'
-    layout()
-    expect(xs(children)).toEqual([0, 40, 0])
-    expect(ys(children)).toEqual([0, 0, 20])
-    expect([frame.width, frame.height]).toEqual([100, 40])
+    computeAllLayouts(graph, graph.getPages()[0].id)
+    expect(xs(children)).toEqual([0, 30, 60, 0])
+    expect(ys(children)).toEqual([0, 0, 0, 40])
+    expect([frame.width, frame.height]).toEqual([100, 80])
   })
 
   test('positive spacing still separates siblings', () => {
