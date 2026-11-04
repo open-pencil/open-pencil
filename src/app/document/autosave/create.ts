@@ -1,4 +1,5 @@
 import { watchDebounced } from '@vueuse/core'
+import { watch } from 'vue'
 
 /** How long after the last edit a document saves. */
 const EDIT_SAVE_DELAY_MS = 3_000
@@ -70,6 +71,13 @@ export function createAutosave({
       maxWait: CHECKPOINT_INTERVAL_MS
     }
   )
+  // Edits waiting for a checkpoint are the tab's alone once the room stops keeping them.
+  const stopKept = watch(
+    () => state.roomKeepsEdits,
+    (kept) => {
+      if (!kept) void requestSave(currentVersion()).catch(reportFailure)
+    }
+  )
 
   return {
     requestSave,
@@ -77,6 +85,7 @@ export function createAutosave({
       disposed = true
       requestedVersion = null
       stop()
+      stopKept()
     }
   }
 }

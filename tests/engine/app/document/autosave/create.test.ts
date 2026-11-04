@@ -169,4 +169,27 @@ describe('document autosave', () => {
       jest.useRealTimers()
     }
   })
+
+  test('saves at once when the room stops keeping the edits', async () => {
+    jest.useFakeTimers()
+    try {
+      const versions: number[] = []
+      const { state, version, autosave } = setup(async (saved) => {
+        versions.push(saved)
+      })
+      state.roomKeepsEdits = true
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(5_000)
+      await Promise.resolve()
+      expect(versions).toEqual([])
+      state.roomKeepsEdits = false
+      await nextTick()
+      await Promise.resolve()
+      expect(versions).toEqual([1])
+      autosave.disposeAutosave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })

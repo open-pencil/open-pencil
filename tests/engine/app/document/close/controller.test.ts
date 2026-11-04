@@ -143,3 +143,24 @@ test('only edits nobody keeps hold a document open', () => {
   expect(holdsUnkeptEdits(document(true, true))).toBe(false)
   expect(holdsUnkeptEdits(document(false, false))).toBe(false)
 })
+
+test('a document whose room loses its edits while it saves asks as any other', async () => {
+  const state = { roomKeepsEdits: true }
+  let asked = 0
+  const result = await confirmDocumentClose(
+    {
+      state,
+      hasUnsavedChanges: () => true,
+      saveFigFile: async () => {
+        state.roomKeepsEdits = false
+        throw new Error('Offline')
+      }
+    },
+    async () => {
+      asked++
+      return 'cancel'
+    }
+  )
+  expect(result).toBe('cancel')
+  expect(asked).toBe(1)
+})

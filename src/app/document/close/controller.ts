@@ -20,7 +20,8 @@ export async function confirmDocumentClose(
   if (document.state.roomKeepsEdits) {
     // The room keeps the edits whatever this save does; it only brings the stored file up to date.
     await document.saveFigFile().catch(() => false)
-    return 'saved'
+    // Unless the room lost them meanwhile, when the person decides as for any other document.
+    if (!holdsUnkeptEdits(document)) return 'saved'
   }
   const choice = await choose()
   if (choice !== 'save') return choice
