@@ -19,7 +19,7 @@ import {
   withStrokeDash
 } from './strokes'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
-import { textNodeToOutlinePath } from './text/outlines'
+import { textNodeToOutlinePath } from './text/outlines/glyphs'
 
 const BOOLEAN_PATH_OP: Record<
   NonNullable<SceneNode['booleanOperation']>,

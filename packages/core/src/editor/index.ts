@@ -49,14 +49,14 @@ export type {
   SwitchPageOptions
 } from './pages'
 export type { ExposableComponentField } from './components/authoring/context'
-export type { VariableTokenFields } from './variables'
+export type { VariableTokenFields } from './variables/actions'
 export { reapplyInstanceComponentProperties } from './components/properties'
 export { createGuideActions } from './guides'
 export { createTextActions } from './text'
 export { resizedPathTextGlyphs } from './text/path-edit'
-export { opacityFromBuffer } from './nodes'
+export { opacityFromBuffer } from './nodes/actions'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
-export type { NodePreview } from './node-preview'
+export type { NodePreview } from './nodes/preview'
 export { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
 export {
   applySampledColor,

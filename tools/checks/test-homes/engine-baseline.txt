@@ -70,8 +70,6 @@ tests/engine/app/integrations/storage/registry.test.ts
 tests/engine/app/recent-files/store.test.ts
 tests/engine/app/runtime/config.test.ts
 tests/engine/app/settings/ai-tool-access.test.ts
-tests/engine/app/settings/credential-migration.test.ts
-tests/engine/app/settings/credentials.test.ts
 tests/engine/app/settings/credentials/access-check.test.ts
 tests/engine/app/settings/font.test.ts
 tests/engine/app/settings/mcp-tool-access.test.ts
@@ -195,7 +193,6 @@ tests/engine/io/fig/import/legacy/shared-styles.test.ts
 tests/engine/io/fig/import/legacy/text.test.ts
 tests/engine/io/fig/import/legacy/transforms.test.ts
 tests/engine/io/fig/import/legacy/variables.test.ts
-tests/engine/io/fig/import/mask-oracle.test.ts
 tests/engine/io/fig/import/masks.test.ts
 tests/engine/io/fig/import/paint-schema-fields.test.ts
 tests/engine/io/fig/import/pattern-paint-oracle.test.ts
@@ -357,7 +354,6 @@ tests/engine/tauri/command.test.ts
 tests/engine/tauri/document-io.test.ts
 tests/engine/tauri/fig-export.test.ts
 tests/engine/tauri/file-actions.test.ts
-tests/engine/tauri/font-cache.test.ts
 tests/engine/tauri/fonts.test.ts
 tests/engine/tauri/harness-process.test.ts
 tests/engine/tauri/http.test.ts

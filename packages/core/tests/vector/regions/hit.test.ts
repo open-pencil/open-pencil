@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
 
-import { regionAtPoint, regionHatchPeriod, regionVertexIndices } from '#core/vector/region-hit'
+import { regionAtPoint, regionHatchPeriod, regionVertexIndices } from '#core/vector/regions/hit'
 
 const zero = { x: 0, y: 0 }
 const line = (start: number, end: number): VectorSegment => ({

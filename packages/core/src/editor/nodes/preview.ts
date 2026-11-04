@@ -2,8 +2,8 @@ import { isEqual, pick, uniq } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { assertNodeEditable } from './capabilities'
-import type { EditorContext } from './types'
+import { assertNodeEditable } from '#core/editor/capabilities'
+import type { EditorContext } from '#core/editor/types'
 
 export interface NodePreview {
   readonly closed: boolean

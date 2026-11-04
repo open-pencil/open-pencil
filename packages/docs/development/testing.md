@@ -109,7 +109,7 @@ App tests start Vite from the current checkout and wait for its HTTP URL. Vite o
 
 ```sh
 OPENPENCIL_TEST_SERVER=app OPENPENCIL_TEST_PORT=1482 OPENPENCIL_TEST_MCP_PORT=7682 \
-  bunx playwright test tests/e2e/properties/effect-panel.spec.ts --project=openpencil
+  bunx playwright test tests/e2e/properties/effects/panel.spec.ts --project=openpencil
 ```
 
 Use the configured base URL and same-origin paths, never hard-coded ports in specs or adapters. For intentional debugging against a verified matching server, set `OPENPENCIL_TEST_REUSE_SERVER=1`. HTTP readiness alone does not prove checkout identity, so do not reuse servers for baseline comparisons. Portless remains the preferred interactive preview workflow, separate from managed fixed-port tests.

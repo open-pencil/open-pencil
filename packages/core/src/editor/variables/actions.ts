@@ -11,9 +11,8 @@ import {
 } from '@open-pencil/scene-graph'
 import { tokenExpressionForValue, type BindingScope } from '@open-pencil/scene-graph/variables'
 
+import type { EditorContext } from '#core/editor/types'
 import { reconcileVariableLayouts } from '#core/layout/variables'
-
-import type { EditorContext } from './types'
 
 /** What a variable means as a design token beyond its values: how CSS and code read it. */
 export type VariableTokenFields = Pick<

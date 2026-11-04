@@ -1,13 +1,13 @@
-import { sdkSidebar } from './sdk-sidebar.ts'
+import { sdkSidebar } from '#docs/sdk-sidebar.ts'
 import {
   developmentSidebar,
   guideSidebar,
   programmableSidebar,
   referenceSidebar,
   userGuideSidebar,
-} from './sidebars.ts'
+} from '#docs/sidebars.ts'
 
-import type { NavLabels, ProgrammableLabels, SidebarLabels } from './labels.ts'
+import type { NavLabels, ProgrammableLabels, SidebarLabels } from '#docs/labels.ts'
 import type { DefaultTheme } from 'vitepress'
 
 export const localeThemeConfig = (

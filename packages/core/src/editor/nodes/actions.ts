@@ -6,17 +6,20 @@ import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/o
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
+import {
+  applyBoundVisibilityEdit,
+  bindsVisibility
+} from '#core/editor/components/authoring/visibility-edit'
+import { createLayoutModeActions } from '#core/editor/layout-mode'
+import { createNudgeActions } from '#core/editor/nudge'
+import { refitContainers, refitGroupsAroundLayers } from '#core/editor/structure/group/bounds'
+import { pathTextEditChanges } from '#core/editor/text/path-edit'
+import type { EditorContext } from '#core/editor/types'
+import { createVariableBindingActions } from '#core/editor/variables/bindings'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
-import { applyBoundVisibilityEdit, bindsVisibility } from './components/authoring/visibility-edit'
-import { createLayoutModeActions } from './layout-mode'
-import { createNodePreviewActions } from './node-preview'
-import { createNudgeActions } from './nudge'
-import { refitContainers, refitGroupsAroundLayers } from './structure/group/bounds'
-import { pathTextEditChanges } from './text/path-edit'
-import type { EditorContext } from './types'
-import { createVariableBindingActions } from './variable-bindings'
+import { createNodePreviewActions } from './preview'
 
 export function opacityFromBuffer(buffer: string): number {
   if (buffer === '0') return 1

@@ -6,9 +6,8 @@ import {
   isNumericVariableBindingField
 } from '@open-pencil/scene-graph/variables'
 
+import type { EditorContext } from '#core/editor/types'
 import { reconcileVariableLayouts } from '#core/layout/variables'
-
-import type { EditorContext } from './types'
 
 export function createVariableBindingActions(ctx: EditorContext) {
   /** A binding change reaches only the layer it is on and the layers inside it. */

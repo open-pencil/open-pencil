@@ -3,14 +3,14 @@ import type { Path } from 'canvaskit-wasm'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { shapeText } from '#core/canvas/text/shape'
 import {
   getTextOutlineSupport,
   textNodeToOutlineLayout,
   type TextOutlineGlyph
 } from '#core/text/outlines'
 
-import { appendOutlineCommand } from './outline-path'
-import { shapeText } from './shape'
+import { appendOutlineCommand } from './commands'
 
 /**
  * The glyphs the canvas draws, list markers included, when every one has an outline; text set

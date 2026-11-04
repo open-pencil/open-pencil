@@ -45,8 +45,10 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         groups.set(prefix, files)
       }
       for (const [prefix, files] of groups) {
-        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are.
-        if (files.length < 3 && !names.has(prefix)) continue
+        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
+        // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
+        const named = names.has(prefix) || names.has(`${prefix}s`)
+        if (files.length < 3 && !named) continue
         if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
         diagnostics.push({
           message: `Use a ${prefix}/ domain folder instead of sibling files named ${prefix} and ${prefix}-*.`,
