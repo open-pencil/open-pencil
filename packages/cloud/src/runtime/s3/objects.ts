@@ -13,8 +13,6 @@ import {
 } from '@aws-sdk/client-s3'
 // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
-import { sha256 } from '@noble/hashes/sha2.js'
-import { fromUint8Array } from 'js-base64'
 
 const CHECKSUM_METADATA_KEY = 'openpencil-sha256'
 const READINESS_BODY = new TextEncoder().encode('openpencil-ready')
@@ -243,25 +241,18 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
       await client.send(new DeleteObjectCommand({ Bucket: config.s3Bucket, Key: key }))
     },
 
-    async write(key, bytes, contentType) {
-      const checksum = fromUint8Array(sha256(bytes))
+    async write(input) {
       await client.send(
         new PutObjectCommand({
           Bucket: config.s3Bucket,
-          Key: key,
-          Body: bytes,
-          ContentType: contentType,
-          ChecksumSHA256: nativeSHA256 ? checksum : undefined,
-          Metadata: { [CHECKSUM_METADATA_KEY]: checksum },
+          Key: input.key,
+          Body: input.bytes,
+          ContentType: input.contentType,
+          ChecksumSHA256: nativeSHA256 ? input.checksum : undefined,
+          Metadata: { [CHECKSUM_METADATA_KEY]: input.checksum },
           ...encryption(config)
         })
       )
-      return {
-        byteSize: bytes.byteLength,
-        checksum,
-        checksumVerification: nativeSHA256 ? 'native' : 'metadata',
-        contentType
-      }
     },
 
     async read(key) {

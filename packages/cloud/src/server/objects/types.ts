@@ -54,6 +54,14 @@ export type CreateObjectUploadInput = CreateObjectDownloadInput & {
   contentType: string
 }
 
+/** Bytes the server stores itself, under the checksum the caller computed and recorded. */
+export type WriteObjectInput = {
+  key: string
+  bytes: Uint8Array
+  contentType: string
+  checksum: string
+}
+
 export type CompleteObjectUploadInput = {
   key: string
   uploadId: string
@@ -79,7 +87,7 @@ export interface ObjectStore {
   head(key: string): Promise<StoredObject | null>
   delete(key: string): Promise<void>
   /** Stores bytes the server holds itself, such as a collaboration room's snapshot. */
-  write(key: string, bytes: Uint8Array, contentType: string): Promise<StoredObject>
+  write(input: WriteObjectInput): Promise<void>
   /** The bytes stored under `key`, or null when there are none. */
   read(key: string): Promise<Uint8Array | null>
 }

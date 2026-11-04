@@ -1,5 +1,7 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import type { ObjectStore } from '#cloud/server/objects'
+import { sha256 } from '@noble/hashes/sha2.js'
+import { fromUint8Array } from 'js-base64'
 import type { Kysely, Transaction } from 'kysely'
 
 export type CollaborationRoomIdentity = {
@@ -57,9 +59,9 @@ async function holdsEpoch(
 const SNAPSHOT_CONTENT_TYPE = 'application/octet-stream'
 
 /**
- * Where a room's snapshots go. Each compaction writes a new file and points the room at it in one
- * transaction; the one it replaced is no longer referenced, and the object sweep removes it as it
- * does a deleted revision's file.
+ * Where a room's snapshots go. Each compaction writes a new file and points the room at it; the one
+ * it replaced is no longer referenced, and the object sweep removes it as it does a deleted
+ * revision's file.
  */
 function snapshotKey(room: CollaborationRoomIdentity): string {
   return `collaboration/${room.documentId}/${room.roomEpoch}/${crypto.randomUUID()}.yjs`
@@ -71,20 +73,16 @@ function snapshotKey(room: CollaborationRoomIdentity): string {
  */
 export function createCollaborationStateStore(
   database: Kysely<CloudDatabase>,
-  objects: Pick<ObjectStore, 'write' | 'read' | 'delete'>
+  objects: Pick<ObjectStore, 'write' | 'read'>
 ): CollaborationStateStore {
   return {
     async load(room) {
       const snapshot = await database
-        .selectFrom('documentCollaborationState')
-        .innerJoin(
-          'storageObject',
-          'storageObject.id',
-          'documentCollaborationState.snapshotObjectId'
-        )
-        .select(['storageObject.objectKey', 'documentCollaborationState.throughSequence'])
-        .where('documentCollaborationState.documentId', '=', room.documentId)
-        .where('documentCollaborationState.roomEpoch', '=', room.roomEpoch)
+        .selectFrom('documentRoomSnapshot')
+        .innerJoin('storageObject', 'storageObject.id', 'documentRoomSnapshot.snapshotObjectId')
+        .select(['storageObject.objectKey', 'documentRoomSnapshot.throughSequence'])
+        .where('documentRoomSnapshot.documentId', '=', room.documentId)
+        .where('documentRoomSnapshot.roomEpoch', '=', room.roomEpoch)
         .executeTakeFirst()
       const state = snapshot ? await objects.read(snapshot.objectKey) : null
       if (snapshot && !state) {
@@ -92,7 +90,7 @@ export function createCollaborationStateStore(
       }
       const through = snapshot?.throughSequence ?? 0
       const updates = await database
-        .selectFrom('documentCollaborationUpdate')
+        .selectFrom('documentRoomUpdate')
         .select(['sequence', 'data'])
         .where('documentId', '=', room.documentId)
         .where('roomEpoch', '=', room.roomEpoch)
@@ -110,7 +108,7 @@ export function createCollaborationStateStore(
       await database.transaction().execute(async (transaction) => {
         if (!(await holdsEpoch(transaction, room))) return
         await transaction
-          .insertInto('documentCollaborationUpdate')
+          .insertInto('documentRoomUpdate')
           .values({
             documentId: room.documentId,
             roomEpoch: room.roomEpoch,
@@ -122,52 +120,54 @@ export function createCollaborationStateStore(
     },
 
     async compact(room, sequence, state) {
+      // The file is recorded before it is written and referenced only once the room points at it,
+      // so a compaction that fails anywhere leaves a file nothing refers to, which the object sweep
+      // removes; none is ever deleted while a room might still point at it.
+      const snapshotObjectId = crypto.randomUUID()
       const objectKey = snapshotKey(room)
-      const stored = await objects.write(objectKey, state, SNAPSHOT_CONTENT_TYPE)
-      try {
-        await database.transaction().execute(async (transaction) => {
-          // The file is recorded either way, so a snapshot of a replaced room is swept like any other.
-          const snapshotObjectId = crypto.randomUUID()
-          await transaction
-            .insertInto('storageObject')
-            .values({
-              id: snapshotObjectId,
-              objectKey,
-              checksum: stored.checksum,
-              byteSize: stored.byteSize,
-              contentType: stored.contentType
-            })
-            .execute()
-          if (!(await holdsEpoch(transaction, room))) return
-          await transaction
-            .insertInto('documentCollaborationState')
-            .values({
-              documentId: room.documentId,
-              roomEpoch: room.roomEpoch,
+      const checksum = fromUint8Array(sha256(state))
+      await database
+        .insertInto('storageObject')
+        .values({
+          id: snapshotObjectId,
+          objectKey,
+          checksum,
+          byteSize: state.byteLength,
+          contentType: SNAPSHOT_CONTENT_TYPE
+        })
+        .execute()
+      await objects.write({
+        key: objectKey,
+        bytes: state,
+        contentType: SNAPSHOT_CONTENT_TYPE,
+        checksum
+      })
+      await database.transaction().execute(async (transaction) => {
+        if (!(await holdsEpoch(transaction, room))) return
+        await transaction
+          .insertInto('documentRoomSnapshot')
+          .values({
+            documentId: room.documentId,
+            roomEpoch: room.roomEpoch,
+            snapshotObjectId,
+            throughSequence: sequence,
+            updatedAt: new Date()
+          })
+          .onConflict((conflict) =>
+            conflict.columns(['documentId', 'roomEpoch']).doUpdateSet({
               snapshotObjectId,
               throughSequence: sequence,
               updatedAt: new Date()
             })
-            .onConflict((conflict) =>
-              conflict.columns(['documentId', 'roomEpoch']).doUpdateSet({
-                snapshotObjectId,
-                throughSequence: sequence,
-                updatedAt: new Date()
-              })
-            )
-            .execute()
-          await transaction
-            .deleteFrom('documentCollaborationUpdate')
-            .where('documentId', '=', room.documentId)
-            .where('roomEpoch', '=', room.roomEpoch)
-            .where('sequence', '<=', sequence)
-            .execute()
-        })
-      } catch (error) {
-        // Nothing records the file, so nothing would ever sweep it.
-        await objects.delete(objectKey)
-        throw error
-      }
+          )
+          .execute()
+        await transaction
+          .deleteFrom('documentRoomUpdate')
+          .where('documentId', '=', room.documentId)
+          .where('roomEpoch', '=', room.roomEpoch)
+          .where('sequence', '<=', sequence)
+          .execute()
+      })
     }
   }
 }
