@@ -6,10 +6,9 @@ import { join } from 'node:path'
 import { unzipSync } from 'fflate'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
-import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 setDefaultTimeout(30_000)
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)

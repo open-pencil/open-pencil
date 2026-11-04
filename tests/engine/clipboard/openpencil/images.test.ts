@@ -10,9 +10,7 @@ import {
   setInstanceOverride
 } from '@open-pencil/scene-graph/instances/overrides'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { storeImageBytes } from '#tests/helpers/scene'
-
+import { storeImageBytes } from '@open-pencil/test-support/scene'
 describe('clipboard roundtrip with images', () => {
   function graphWithImageNode(): {
     graph: SceneGraph

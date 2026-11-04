@@ -6,8 +6,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createSceneGeometry, nodeOrientationMatrix } from '#core/geometry'
 
-import { applyFixtureTransform, nestedGeometryFixture } from '#tests/helpers/geometry'
-
+import { applyFixtureTransform, nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 for (const flipX of [false, true]) {
   for (const flipY of [false, true]) {
     test(`nested world, screen and inverse transforms agree (flipX=${flipX}, flipY=${flipY})`, () => {

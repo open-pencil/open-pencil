@@ -5,6 +5,7 @@ import type { Font } from 'canvaskit-wasm'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 
 import { hitTestComponentLabel, hitTestFrameTitle } from '#core/canvas/labels/hit-test'
 import { labelLayout } from '#core/canvas/labels/layout'
@@ -14,9 +15,6 @@ import {
   labelScreenMatrix
 } from '#core/canvas/labels/transform'
 import { createSceneGeometry } from '#core/geometry'
-
-import { nestedGeometryFixture } from '#tests/helpers/geometry'
-
 const font = {
   getGlyphIDs(text: string) {
     return Uint16Array.from([...text].map((_, i) => i))

@@ -4,9 +4,7 @@ import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 import { getNodeOrThrow, childIdAt } from '@open-pencil/test-support/assert'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 describe('text props round-trip', () => {
   it('lineHeight renders and exports', async () => {
     const g = makeSceneGraph()

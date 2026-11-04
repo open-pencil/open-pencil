@@ -4,9 +4,7 @@ import { renderTree } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { Component, Frame, Instance, Rectangle } from '@open-pencil/design-jsx'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 test('overriding one instance dimension preserves the other inherited dimension', async () => {
   const graph = makeSceneGraph()
   const component = await renderTree(graph, Component({ flex: 'col', w: 280, h: 100 }))

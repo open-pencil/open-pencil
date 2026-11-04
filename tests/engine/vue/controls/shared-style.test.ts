@@ -9,9 +9,7 @@ import {
   sharedStylePatch
 } from '@open-pencil/scene-graph/shared-styles'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 const red: Fill = {
   type: 'SOLID',
   color: { r: 1, g: 0, b: 0, a: 1 },

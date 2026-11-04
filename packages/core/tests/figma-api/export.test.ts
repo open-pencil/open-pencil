@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 import { headlessRenderNodes, MAX_RASTER_PIXELS } from '#core/io/formats/raster'
 
 // Figma's answers measured in Figma desktop 126.

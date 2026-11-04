@@ -3,9 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import { Frame, Text, Rectangle, designMode, designVar } from '@open-pencil/design-jsx'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'
-
+import { addTestColorVariable, makeSceneGraph } from '@open-pencil/test-support/scene'
 function setup() {
   const graph = makeSceneGraph()
   graph.addCollection({

@@ -5,11 +5,9 @@ import { CODEGEN_PROMPT as BARREL_CODEGEN, CODEGEN_PROMPT } from '@open-pencil/c
 import { AUTHORING_EXAMPLES, JSX_REFERENCE } from '@open-pencil/design-jsx'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
 function exampleGraph() {
   const graph = makeSceneGraph()
   graph.addCollection({

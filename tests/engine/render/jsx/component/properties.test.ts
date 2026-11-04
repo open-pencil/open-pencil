@@ -13,9 +13,7 @@ import {
   type LayerRef
 } from '@open-pencil/design-jsx'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 test('only instances take property values; layers bind fields to property()', () => {
   expectTypeOf<Parameters<typeof Frame>[0]['properties']>().toEqualTypeOf<undefined>()
   expectTypeOf<Parameters<typeof Text>[0]['properties']>().toEqualTypeOf<undefined>()

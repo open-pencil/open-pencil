@@ -6,6 +6,7 @@ import {
   rotationHandleLayout,
   selectionHandleRect
 } from '@open-pencil/core/geometry'
+import { nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 
 import {
   canvasToLocalPoint,
@@ -13,9 +14,6 @@ import {
   hitTestCornerRotationByMatrix,
   hitTestTopRotationHandleByMatrix
 } from '#vue/shared/input/geometry'
-
-import { nestedGeometryFixture } from '#tests/helpers/geometry'
-
 for (const flipX of [false, true]) {
   for (const flipY of [false, true]) {
     test(`nested handle and scope hits follow drawing (flipX=${flipX}, flipY=${flipY})`, () => {

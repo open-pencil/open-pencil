@@ -6,8 +6,7 @@ import { ALL_TOOLS, diffDocuments } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 type DiffResult = { diff?: string | null; message?: string; error?: string }

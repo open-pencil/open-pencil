@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+
 import {
   findNodesByName,
   focusNodes,
@@ -7,9 +9,6 @@ import {
   focusNodesOnTheirPage,
   type FocusStore
 } from '@/app/editor/selection/focus'
-
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 function harness() {
   const graph = makeSceneGraph()
   const pageId = firstPageId(graph)

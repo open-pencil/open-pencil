@@ -6,9 +6,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { storeImageBytes } from '#tests/helpers/scene'
-
+import { storeImageBytes } from '@open-pencil/test-support/scene'
 describe('fig export/import with images', () => {
   beforeAll(async () => {
     await initCodec()

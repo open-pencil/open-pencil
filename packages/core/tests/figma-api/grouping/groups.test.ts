@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 describe('grouping', () => {
   test('group creates GROUP with children', () => {
     const api = createAPI()

@@ -8,8 +8,7 @@ import { interpretInstance, materializeInstance } from '@open-pencil/fig/instanc
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 test('nested instances retain their outer source-child correspondence during sync', () => {

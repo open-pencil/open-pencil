@@ -13,8 +13,10 @@
     "./fig/fixtures": "./src/fig/fixtures.ts",
     "./fig/traversal": "./src/fig/traversal.ts",
     "./fonts/bundled": "./src/fonts/bundled.ts",
+    "./geometry": "./src/geometry.ts",
     "./heavy": "./src/heavy.ts",
-    "./paths": "./src/paths.ts"
+    "./paths": "./src/paths.ts",
+    "./scene": "./src/scene.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",

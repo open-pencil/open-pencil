@@ -21,9 +21,7 @@ import {
   solid
 } from '@open-pencil/design-jsx'
 import { expectDefined, getNodeOrThrow, childIdAt } from '@open-pencil/test-support/assert'
-
-import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'
-
+import { addTestColorVariable, makeSceneGraph } from '@open-pencil/test-support/scene'
 describe('renderTree', () => {
   it('renders a simple frame', async () => {
     const g = makeSceneGraph()

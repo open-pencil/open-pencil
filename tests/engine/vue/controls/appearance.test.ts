@@ -4,12 +4,10 @@ import { computed, ref } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
 
 import { createAppearanceActions, createAppearanceState } from '#vue/controls/appearance/helpers'
-
-import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 function appearanceState(node: SceneNode, multi = false) {
   const selected = ref<SceneNode | null>(node)
   const nodes = ref<SceneNode[]>([node])

@@ -4,12 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { makeSceneGraph } from '@open-pencil/test-support/scene' /** A Storybook export without font files, which come from the network these tests leave out. */
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
 import { cliSourcePath } from '#tests/helpers/paths'
-import { makeSceneGraph } from '#tests/helpers/scene'
-
-/** A Storybook export without font files, which come from the network these tests leave out. */
 const STORYBOOK_EXPORT = ['--format', 'storybook', '--fonts', 'none']
 
 /** Static stories, whose files and design images most of these tests manage. */

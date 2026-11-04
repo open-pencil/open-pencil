@@ -7,6 +7,7 @@ import {
   constrainedChildRect,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
+import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 import {
   constraintPins,
   isConstraintEligible,
@@ -15,9 +16,6 @@ import {
 
 import { applyResize } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
-
-import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 function original(node: {
   type: ResizeSnapshot['type']
   x: number

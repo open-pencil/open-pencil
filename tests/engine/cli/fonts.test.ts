@@ -7,10 +7,10 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import type { DocumentFontStatus } from '@open-pencil/core/text'
 import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
 import { requireBuiltWorkspacePackages } from '#tests/helpers/paths'
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 requireBuiltWorkspacePackages()
 setDefaultTimeout(30_000)
 

@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import {
@@ -13,9 +14,6 @@ import {
   createStrokeGeometryState,
   isStrokeCapValue
 } from '#vue/controls/stroke/helpers'
-
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 function strokedRect(overrides: Partial<SceneNode> = {}) {
   const graph = makeSceneGraph()
   const node = graph.createNode('RECTANGLE', firstPageId(graph), {

@@ -4,9 +4,7 @@ import { renderTree, renderJSX } from '@open-pencil/core/design-jsx'
 import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
 import { Frame, Rectangle } from '@open-pencil/design-jsx'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 describe('grid layout rendering', () => {
   it('creates grid frame with template columns', async () => {
     const g = makeSceneGraph()

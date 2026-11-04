@@ -2,7 +2,6 @@ import { describe, test, expect } from 'bun:test'
 
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { solidFill } from '#core-tests/helpers/figma-api'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'

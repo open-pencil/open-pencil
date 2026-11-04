@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
-
-import { makeSceneGraph } from '#tests/helpers/scene'
-
+import { makeSceneGraph } from '@open-pencil/test-support/scene'
 describe('jsx gaps', () => {
   it('mask prop sets isMask + maskType', async () => {
     const g = makeSceneGraph()

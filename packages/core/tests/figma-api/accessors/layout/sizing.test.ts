@@ -1,9 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-import { asTextNode, createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
-
-
+import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 // Expected values were observed by running the same scripts in live Figma on 2026-10-06.

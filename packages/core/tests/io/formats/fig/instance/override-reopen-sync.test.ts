@@ -14,8 +14,7 @@ import {
 } from '#core/kiwi/fig/population/delta'
 import { populateFigPage } from '#core/kiwi/fig/session/document-state'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(() => registerTestFont())
 
 function instanceNamed(graph: SceneGraph, name: string): SceneNode {

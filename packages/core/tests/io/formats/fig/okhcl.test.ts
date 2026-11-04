@@ -15,8 +15,7 @@ import {
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/fig/fixtures'
 
-import { solidFill } from '#tests/helpers/plugin-api'
-
+import { solidFill } from '#core-tests/helpers/figma-api'
 describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {
     const graph = new SceneGraph()

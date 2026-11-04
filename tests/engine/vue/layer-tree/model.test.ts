@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 import {
   buildLayerTreeModel,
   layerSelectionForTarget,
   patchLayerNode,
   visibleLayerRows
 } from '@open-pencil/vue/primitives/LayerTree'
-
-import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
-
 describe('layer tree model', () => {
   test('lists the front-most layer first, as Figma does', () => {
     const graph = makeSceneGraph()
