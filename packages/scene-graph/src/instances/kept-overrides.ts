@@ -229,12 +229,17 @@ function keptBindings(node: SceneNode, kept: readonly KeptOverrides[]) {
   return { boundVariables, scales }
 }
 
-function giveOverrides(scope: OverrideScope, copy: SceneNode, kept: readonly KeptOverrides[]) {
+function giveOverrides(scope: OverrideScope, copy: SceneNode, saved: readonly KeptOverrides[]) {
+  // What an owner no longer standing around the copy overrode is not given back at all.
+  const resolved = saved.flatMap((entry) => {
+    const owner = ownerOf(scope, entry.owner)
+    return owner ? [{ entry, owner }] : []
+  })
+  const kept = resolved.map(({ entry }) => entry)
   const node = switchAsKept(scope, copy, kept)
   const values: Partial<SceneNode> = {}
-  for (const { owner: ref, self, fields, values: shown } of kept) {
-    const owner = ownerOf(scope, ref)
-    if (!owner) continue
+  for (const { entry, owner } of resolved) {
+    const { self, fields, values: shown } = entry
     scope.willChange(owner)
     const own = self
       ? owner.instanceOverrides.self

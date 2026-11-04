@@ -351,7 +351,7 @@ function pillSet(graph: SceneGraph, pageId: string) {
 
 test('a nested instance the other variant lacks comes back switched as it was', () => {
   let square = ''
-  const { graph, at, to } = chipDrawing(
+  const { graph, chip, at, to } = chipDrawing(
     { Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }], Large: [] },
     (scene, pageId) => {
       const pills = pillSet(scene, pageId)
@@ -362,21 +362,47 @@ test('a nested instance the other variant lacks comes back switched as it was', 
   graph.swapInstanceComponent(at('Pill').id, square)
   expect(instanceMainComponent(graph, at('Pill'))?.id).toBe(square)
   to('Large')
+  expect(graph.getChildren(chip.id).some((layer) => layer.name === 'Pill')).toBe(false)
   to('Small')
   expect(instanceMainComponent(graph, at('Pill'))?.id).toBe(square)
 })
 
 test('a nested instance the other variant lacks comes back with its property values', () => {
-  const { editor, at, to } = chipDrawing(
+  const { editor, graph, chip, at, to } = chipDrawing(
     { Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }], Large: [] },
     pillSet
   )
   editor.setInstanceComponentProperty(at('Pill').id, 'pill:label', 'Mine')
   expect(at('Pill', 'Label').text).toBe('Mine')
   to('Large')
+  expect(graph.getChildren(chip.id).some((layer) => layer.name === 'Pill')).toBe(false)
   to('Small')
   expect(at('Pill').componentPropertyAssignments['pill:label']).toBe('Mine')
   expect(at('Pill', 'Label').text).toBe('Mine')
+})
+
+test('a layer in a removed nested instance takes no binding where no instance holds it', () => {
+  const { graph, chip, at, to } = chipDrawing(
+    {
+      Small: [{ name: 'Pill', type: 'INSTANCE', of: 'pill' }],
+      Large: [],
+      Huge: [{ name: 'Pill', type: 'FRAME', children: [{ name: 'Label', type: 'RECTANGLE' }] }]
+    },
+    pillSet
+  )
+  const collection = graph.createCollection('Look')
+  const faded = graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+  // The nested Pill binds its label's opacity, an override the Pill holds.
+  const pill = at('Pill')
+  const label = at('Pill', 'Label')
+  setInstanceOverride(pill.instanceOverrides, pill.id, label.id, 'boundVariables/opacity')
+  graph.bindVariable(label.id, 'opacity', faded.id)
+  // Only the nested Pill holds it, as a file saves an override on the instance that made it.
+  chip.instanceOverrides.descendants.delete(label.id)
+  to('Large')
+  to('Huge')
+  expect(at('Pill').type).toBe('FRAME')
+  expect(at('Pill', 'Label').boundVariables.opacity).toBeUndefined()
 })
 
 test('a switch lays out the auto layout around it, and undo puts the siblings back', () => {
