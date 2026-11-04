@@ -9,7 +9,7 @@ import { WebSocket } from 'ws'
 import { startServer, type ServerHandle } from '#mcp/server'
 import { getDiscoveryPath } from '#mcp/transport/paths'
 
-import { readHealth, socketRequest } from '#tests/helpers/mcp/server'
+import { readHealth, socketRequest } from '../helpers/server'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-lifecycle-${process.pid}`)

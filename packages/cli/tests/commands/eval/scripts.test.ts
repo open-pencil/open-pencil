@@ -5,27 +5,13 @@ import * as v from 'valibot'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
 import { heavy } from '@open-pencil/test-support/heavy'
 setDefaultTimeout(30_000)
 
-const CLI = CLI_ENTRY
 const FIXTURE = join(FIXTURES, 'gold-preview.fig')
 
-async function evalCode(
-  code: string
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn([process.execPath, CLI, 'eval', FIXTURE, '--code', code, '--json'], {
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  const exitCode = await proc.exited
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
-}
+const evalCode = (code: string) => runCLI(['eval', FIXTURE, '--code', code, '--json'])
 
 const recordSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 

@@ -24,7 +24,7 @@ import {
   waitForBrowserRegistration,
   type HealthResponse,
   type MockBrowser
-} from '#tests/helpers/mcp/server'
+} from '../helpers/server'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)

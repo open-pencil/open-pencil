@@ -1,10 +1,11 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 import * as v from 'valibot'
 
@@ -14,18 +15,7 @@ import { loadDocument, measureDocumentText } from '#cli/headless'
 
 setDefaultTimeout(60_000)
 
-async function cli(args: string[], stdin?: string) {
-  const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    stdin: stdin ? Buffer.from(stdin) : undefined
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: await proc.exited }
-}
+const cli = (args: string[], stdin?: string) => runCLI(args, { stdin })
 
 describe('eval CLI', () => {
   test('measures the text a script edits in the font the document sets for it', async () => {

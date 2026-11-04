@@ -8,7 +8,7 @@ import { unzipSync } from 'fflate'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
-import { runOpenPencilCLI } from '#tests/helpers/cli'
+import { runCLI } from '#cli-tests/helpers/run'
 setDefaultTimeout(30_000)
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -60,7 +60,7 @@ test('FIG export preserves the whole document by default', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'whole.fig')
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -85,7 +85,7 @@ test('PPTX export includes slides from every page by default', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'whole.pptx')
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -108,7 +108,7 @@ test('FIG export requires an explicit page for a partial archive', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'page.fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -133,7 +133,7 @@ test('export CLI writes HTML with inline styles by default', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card.html')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -155,7 +155,7 @@ test('export CLI can write HTML styles as Tailwind classes', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card-tailwind.html')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -180,7 +180,7 @@ test('export CLI writes Tailwind JSX for a page', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card.jsx')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -205,7 +205,7 @@ test('export CLI can write standalone HTML', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card-standalone.html')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -231,7 +231,7 @@ test('export CLI precompiles Tailwind CSS for standalone Tailwind HTML', async (
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card-standalone-tailwind.html')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',
@@ -259,7 +259,7 @@ test('export CLI can write external standalone HTML assets', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card-external.html')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     '--format',

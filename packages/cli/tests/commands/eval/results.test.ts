@@ -6,30 +6,15 @@ import { join } from 'node:path'
 import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { cliSourcePath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
+import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
 requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)
 
-const CLI = cliSourcePath('index.ts')
 const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
 
-async function run(
-  args: string[],
-  stdin?: string
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn([process.execPath, CLI, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    stdin: stdin ? Buffer.from(stdin) : undefined
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  const exitCode = await proc.exited
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
-}
+const run = (args: string[], stdin?: string) => runCLI(args, { stdin })
 
 heavy('eval CLI', () => {
   test('returns page name', async () => {
@@ -166,18 +151,9 @@ heavy('eval CLI', () => {
   })
 
   test('stdin reads code from pipe', async () => {
-    const proc = Bun.spawn([process.execPath, CLI, 'eval', FIXTURE, '--stdin'], {
-      stdout: 'pipe',
-      stderr: 'pipe',
-      stdin: 'pipe'
+    const { stdout, stderr, exitCode } = await runCLI(['eval', FIXTURE, '--stdin'], {
+      stdin: 'return figma.currentPage.name'
     })
-    proc.stdin.write('return figma.currentPage.name')
-    proc.stdin.end()
-    const [stdout, stderr] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text()
-    ])
-    const exitCode = await proc.exited
     if (exitCode !== 0) throw new Error(`exit ${exitCode}: ${stderr}`)
     expect(stdout.trim().length).toBeGreaterThan(0)
   })

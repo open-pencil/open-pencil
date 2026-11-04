@@ -14,11 +14,7 @@ import { startServer } from '#mcp/server'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 import { DESKTOP_APP_ORIGINS, parseCORSOrigins, resolveCORSOrigins } from '#mcp/transport/origins'
 
-import {
-  connectMockBrowser,
-  readHealth,
-  waitForBrowserRegistration
-} from '#tests/helpers/mcp/server'
+import { connectMockBrowser, readHealth, waitForBrowserRegistration } from '../helpers/server'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)

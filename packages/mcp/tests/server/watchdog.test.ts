@@ -8,7 +8,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { startServer, type ServerHandle } from '#mcp/server'
 import { getDiscoveryPath } from '#mcp/transport/paths'
 
-import { connectMockBrowser, readHealth, type HealthResponse } from '#tests/helpers/mcp/server'
+import { connectMockBrowser, readHealth, type HealthResponse } from '../helpers/server'
 
 // Issue #488: an MCP server spawned by the app but never claimed by one
 // (renderer crash, forced reload) used to squat its port forever with a

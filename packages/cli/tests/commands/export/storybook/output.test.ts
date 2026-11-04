@@ -6,8 +6,8 @@ import { join } from 'node:path'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { makeSceneGraph } from '@open-pencil/test-support/scene' /** A Storybook export without font files, which come from the network these tests leave out. */
 
-import { runOpenPencilCLI } from '#tests/helpers/cli'
-import { cliSourcePath } from '#tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
+import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 const STORYBOOK_EXPORT = ['--format', 'storybook', '--fonts', 'none']
 
 /** Static stories, whose files and design images most of these tests manage. */
@@ -38,7 +38,7 @@ test('export CLI writes Storybook stories with design images', async () => {
   const figPath = await writeComponentFixture(dir, ['Badge'])
   const output = join(dir, 'stories')
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runCLI([
     'export',
     figPath,
     ...STORYBOOK,
@@ -71,7 +71,7 @@ test('export CLI replaces stale generated stories and keeps hand-written ones', 
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
-  const setup = await runOpenPencilCLI([
+  const setup = await runCLI([
     'export',
     await writeComponentFixture(dir, ['Old']),
     ...args
@@ -79,7 +79,7 @@ test('export CLI replaces stale generated stories and keeps hand-written ones', 
   expect(setup.exitCode).toBe(0)
   await Bun.write(join(output, 'Mine.stories.ts'), 'export default {}\n')
 
-  const { exitCode } = await runOpenPencilCLI([
+  const { exitCode } = await runCLI([
     'export',
     await writeComponentFixture(dir, ['New']),
     ...args
@@ -104,7 +104,7 @@ test('export CLI re-exports generated components into the folder it wrote them t
     output
   ]
   for (const name of ['Old', 'New']) {
-    const { exitCode } = await runOpenPencilCLI([
+    const { exitCode } = await runCLI([
       'export',
       await writeComponentFixture(dir, [name]),
       ...args
@@ -123,7 +123,7 @@ test('export CLI --css tailwind styles components with utilities instead of a st
   const output = join(dir, 'stories')
   const args = [...STORYBOOK_EXPORT, '--framework', 'react', '--no-design-images']
 
-  const invalid = await runOpenPencilCLI([
+  const invalid = await runCLI([
     'export',
     figPath,
     ...args,
@@ -135,7 +135,7 @@ test('export CLI --css tailwind styles components with utilities instead of a st
   expect(invalid.exitCode).toBe(1)
   expect(invalid.stderr).toContain('Use inline or tailwind')
 
-  const { exitCode } = await runOpenPencilCLI([
+  const { exitCode } = await runCLI([
     'export',
     figPath,
     ...args,
@@ -157,7 +157,7 @@ test('export CLI keeps stories of other documents and refuses to overwrite them'
     [['Card'], 'library.fig'],
     [['Chip'], 'b.fig']
   ] as const) {
-    const setup = await runOpenPencilCLI([
+    const setup = await runCLI([
       'export',
       await writeComponentFixture(dir, [...names], file),
       ...args
@@ -168,7 +168,7 @@ test('export CLI keeps stories of other documents and refuses to overwrite them'
   expect(await Bun.file(join(output, 'Chip.stories.ts')).exists()).toBe(true)
 
   await Bun.write(join(output, 'Mine.stories.ts'), 'export default {}\n')
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     await writeComponentFixture(dir, ['Card', 'Mine']),
     ...args
@@ -193,10 +193,10 @@ test('export CLI --page replaces that page and keeps the stories of other pages'
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
   await writeDocument('Old')
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
 
   await writeDocument('New')
-  const { exitCode } = await runOpenPencilCLI(['export', figPath, '--page', 'Two', ...args])
+  const { exitCode } = await runCLI(['export', figPath, '--page', 'Two', ...args])
 
   expect(exitCode).toBe(0)
   expect(await Bun.file(join(output, 'Kept.stories.ts')).exists()).toBe(true)
@@ -213,7 +213,7 @@ test('export CLI tells apart documents that share a file name', async () => {
   ]) {
     await mkdir(join(dir, folder))
     const figPath = await writeComponentFixture(join(dir, folder), [name])
-    expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+    expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   }
 
   expect(await Bun.file(join(output, 'Card.stories.ts')).exists()).toBe(true)
@@ -233,17 +233,17 @@ test('export CLI --page refuses to renumber stories of other pages', async () =>
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
   await writeDocument('Card')
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   expect(await outputEntries(output)).toEqual(['Card.stories.ts', 'Card2.stories.ts'])
 
   // Renaming page One's Card renumbers page Two's story onto page One's Card.stories.ts.
   await writeDocument('Badge')
-  const pageExport = await runOpenPencilCLI(['export', figPath, '--page', 'Two', ...args])
+  const pageExport = await runCLI(['export', figPath, '--page', 'Two', ...args])
   expect(pageExport.exitCode).toBe(1)
   expect(pageExport.stderr).toContain('holds page One of')
   expect(await outputEntries(output)).toEqual(['Card.stories.ts', 'Card2.stories.ts'])
 
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   expect(await outputEntries(output)).toEqual(['Badge.stories.ts', 'Card.stories.ts'])
 })
 
@@ -254,7 +254,7 @@ test('export CLI refuses to overwrite a design image it did not generate', async
   await mkdir(join(output, 'Badge.design'), { recursive: true })
   await Bun.write(join(output, 'Badge.design/Default.png'), 'mine')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     ...STORYBOOK,
@@ -274,10 +274,10 @@ test('export CLI keeps files it did not generate in a design folder', async () =
   const figPath = await writeComponentFixture(dir, ['Badge'])
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--font-policy', 'allow', '--output', output]
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   await Bun.write(join(output, 'Badge.design/notes.txt'), 'mine')
 
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
 
   expect((await readdir(join(output, 'Badge.design'))).sort()).toEqual(['Default.png', 'notes.txt'])
 })
@@ -287,10 +287,10 @@ test('export CLI removes the design folder of a deleted component', async () => 
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--font-policy', 'allow', '--output', output]
   const badge = await writeComponentFixture(dir, ['Badge'])
-  expect((await runOpenPencilCLI(['export', badge, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', badge, ...args])).exitCode).toBe(0)
 
   const chip = await writeComponentFixture(dir, ['Chip'])
-  expect((await runOpenPencilCLI(['export', chip, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', chip, ...args])).exitCode).toBe(0)
 
   expect(await outputEntries(output)).toEqual(['Chip.design', 'Chip.stories.ts'])
 })
@@ -300,14 +300,14 @@ test('export CLI refuses a design folder that links outside the output', async (
   const figPath = await writeComponentFixture(dir, ['Badge'])
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--font-policy', 'allow', '--output', output]
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   const outside = join(dir, 'outside')
   await mkdir(outside)
   await Bun.write(join(outside, 'Default.png'), 'keep')
   await rm(join(output, 'Badge.design'), { recursive: true })
   await symlink(outside, join(output, 'Badge.design'))
 
-  const { stderr, exitCode } = await runOpenPencilCLI(['export', figPath, ...args])
+  const { stderr, exitCode } = await runCLI(['export', figPath, ...args])
 
   expect(exitCode).toBe(1)
   expect(stderr).toContain('Badge.design is not a folder')
@@ -322,7 +322,7 @@ test('export CLI --beside writes the stories of every matched document next to i
   await writeComponentFixture(join(dir, 'button'), ['Button'], 'button.fig')
   await writeComponentFixture(join(dir, 'forms/input'), ['Input'], 'input.fig')
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+  const { stdout, stderr, exitCode } = await runCLI([
     'export',
     join(dir, '**/*.fig'),
     ...STORYBOOK,
@@ -348,7 +348,7 @@ test('export CLI expands an extglob pattern', async () => {
   await writeComponentFixture(dir, ['Chip'], 'chip.fig')
   await writeComponentFixture(dir, ['Draft'], 'draft.fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     join(dir, '+(card|chip).fig'),
     ...STORYBOOK,
@@ -372,7 +372,7 @@ test('export CLI opens a document whose name contains glob syntax', async () => 
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
   const file = await writeComponentFixture(dir, ['Card'], 'card[1].fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     file,
     ...STORYBOOK,
@@ -395,7 +395,7 @@ test('export CLI --beside records documents that share a folder in one manifest'
   const chip = await writeComponentFixture(dir, ['Chip'], 'chip.fig')
 
   // A shell expands an unquoted glob into several arguments.
-  const { exitCode } = await runOpenPencilCLI([
+  const { exitCode } = await runCLI([
     'export',
     card,
     chip,
@@ -422,11 +422,11 @@ test('export CLI needs an output choice and one document for --page', async () =
   const pattern = join(dir, '*.fig')
   const storybook = [...STORYBOOK, '--no-design-images']
 
-  const noOutput = await runOpenPencilCLI(['export', pattern, ...storybook])
+  const noOutput = await runCLI(['export', pattern, ...storybook])
   expect(noOutput.exitCode).toBe(1)
   expect(noOutput.stderr).toContain('2 documents need --beside')
 
-  const page = await runOpenPencilCLI([
+  const page = await runCLI([
     'export',
     pattern,
     ...storybook,
@@ -437,7 +437,7 @@ test('export CLI needs an output choice and one document for --page', async () =
   expect(page.exitCode).toBe(1)
   expect(page.stderr).toContain('--page names a page of one document')
 
-  const none = await runOpenPencilCLI(['export', join(dir, '*.pen'), ...storybook, '--beside'])
+  const none = await runCLI(['export', join(dir, '*.pen'), ...storybook, '--beside'])
   expect(none.exitCode).toBe(1)
   expect(none.stderr).toContain('No documents match')
 
@@ -449,7 +449,7 @@ test('export CLI exports the other documents when one fails, then exits 1', asyn
   await writeComponentFixture(dir, ['Card'], 'a.fig')
   await writeComponentFixture(dir, [], 'b.fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     join(dir, '*.fig'),
     ...STORYBOOK,
@@ -469,7 +469,7 @@ test('export CLI --watch re-exports stories when the document changes', async ()
   const proc = Bun.spawn(
     [
       process.execPath,
-      cliSourcePath('index.ts'),
+      CLI_ENTRY,
       'export',
       figPath,
       '--format',
@@ -508,7 +508,7 @@ test('export CLI rejects Storybook export of a document without components', asy
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
   const figPath = await writeComponentFixture(dir, [])
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     ...STORYBOOK,
@@ -533,7 +533,7 @@ test('export CLI refuses a manifest that lists files outside the output', async 
     })
   )
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
+  const { stderr, exitCode } = await runCLI([
     'export',
     figPath,
     ...STORYBOOK,
@@ -552,10 +552,10 @@ test('export CLI treats stories as foreign once the manifest is gone', async () 
   const figPath = await writeComponentFixture(dir, ['Badge'])
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
-  expect((await runOpenPencilCLI(['export', figPath, ...args])).exitCode).toBe(0)
+  expect((await runCLI(['export', figPath, ...args])).exitCode).toBe(0)
   await rm(join(output, MANIFEST))
 
-  const { stderr, exitCode } = await runOpenPencilCLI(['export', figPath, ...args])
+  const { stderr, exitCode } = await runCLI(['export', figPath, ...args])
 
   expect(exitCode).toBe(1)
   expect(stderr).toContain('Badge.stories.ts was not generated by this export')

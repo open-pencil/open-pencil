@@ -9,8 +9,8 @@ import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
-import { runOpenPencilCLI } from '#tests/helpers/cli'
-import { requireBuiltWorkspacePackages } from '#tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
+import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
 requireBuiltWorkspacePackages()
 setDefaultTimeout(30_000)
 
@@ -32,7 +32,7 @@ async function createUnresolvedFontFixture(): Promise<string> {
 }
 
 test('reports bundled fonts as available', async () => {
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI(['fonts', GOLD, '--json'])
+  const { stdout, stderr, exitCode } = await runCLI(['fonts', GOLD, '--json'])
   expect(stderr).toBe('')
   expect(exitCode).toBe(0)
   const data: DocumentFontStatus = JSON.parse(stdout)
@@ -43,7 +43,7 @@ test('reports bundled fonts as available', async () => {
 heavy('fonts CLI', () => {
   test('reports unavailable fonts without network access', async () => {
     const fixture = await createUnresolvedFontFixture()
-    const { stdout, stderr, exitCode } = await runOpenPencilCLI(['fonts', fixture, '--json'])
+    const { stdout, stderr, exitCode } = await runCLI(['fonts', fixture, '--json'])
     expect(stderr).toBe('')
     expect(exitCode).toBe(0)
     const data: DocumentFontStatus = JSON.parse(stdout)
@@ -52,7 +52,7 @@ heavy('fonts CLI', () => {
     expect(data.issues.every((face) => face.status === 'unresolved')).toBe(true)
   })
   test('uses the standard human-readable formatter', async () => {
-    const { stdout, stderr, exitCode } = await runOpenPencilCLI(['fonts', GOLD])
+    const { stdout, stderr, exitCode } = await runCLI(['fonts', GOLD])
     expect(stderr).toBe('')
     expect(exitCode).toBe(0)
     expect(stdout).toContain('font faces')

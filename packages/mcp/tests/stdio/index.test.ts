@@ -12,11 +12,7 @@ import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
-import {
-  connectMockBrowser,
-  waitForBrowserRegistration,
-  type MockBrowser
-} from '#tests/helpers/mcp/server'
+import { connectMockBrowser, waitForBrowserRegistration, type MockBrowser } from '../helpers/server'
 
 const AUTH_TOKEN = 'test-stdio-token'
 const NO_DOCUMENT_AUTH_TOKEN = 'test-stdio-no-document-token'

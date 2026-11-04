@@ -8,12 +8,12 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { cliSourcePath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
+import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
 requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)
 
-const CLI = cliSourcePath('index.ts')
 const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
 
 async function makeTwoPageFixture(): Promise<string> {
@@ -33,18 +33,7 @@ async function makeTwoPageFixture(): Promise<string> {
   return file
 }
 
-async function run(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn([process.execPath, CLI, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  const exitCode = await proc.exited
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
-}
+const run = (args: string[]) => runCLI(args)
 
 heavy('analyze overlaps CLI', () => {
   test('--json returns valid overlap data', async () => {
