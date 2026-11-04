@@ -20,6 +20,8 @@ export function lawhaPwaPlugin() {
     workbox: {
       maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
       globPatterns: ['**/*.{js,css,html,wasm,png,svg,ico,ttf,webmanifest}'],
+      // The ONNX runtime behind background removal (over 20 MB) loads on first use instead.
+      globIgnores: ['**/ort-wasm*'],
       navigateFallback: '/index.html',
       navigateFallbackDenylist: NOT_EDITOR_PAGES
     },
