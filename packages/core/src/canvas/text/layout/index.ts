@@ -217,20 +217,23 @@ export class TextLayout {
 
   /**
    * Puts the first baseline where Figma does, its font centred in its line height, when lines
-   * keep the paragraph's placement, which centres it a little apart; the height stays.
+   * keep the paragraph's placement, which centres it a little apart. The height stays, but a
+   * single line is as tall as its line height, which a paragraph rounds and ignores at zero.
    */
   private alignFirstBaseline(): void {
     if (this.placedHeight !== null) return
-    const first = this.visibleBlocks().at(0)
+    const visible = this.visibleBlocks()
+    const first = visible.at(0)
     const line = first?.metrics.at(0)
     const heights = first?.lines?.heights
     if (!first || !line || !heights) return
     const box = figmaLineBox(this.ck, first.paragraph, line, heights, first.metrics)
     if (!box) return
+    const single = visible.length === 1 && first.metrics.length === 1
     const shift = box.ascent - this.firstBaseline(first)
-    if (shift === 0) return
-    this.placedHeight = this.measureHeight()
-    for (const block of this.visibleBlocks()) block.y += shift
+    if (shift === 0 && !single) return
+    this.placedHeight = single ? box.height : this.measureHeight()
+    for (const block of visible) block.y += shift
   }
 
   /** Trims the text from its first line's cap height to its last baseline, as Figma does. */

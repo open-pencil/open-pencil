@@ -23,8 +23,8 @@ export function estimateTextSize(
   const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''
 
-  const ownLineH = lineStepPixels(node.lineHeight, fontSize) ?? 0
-  const explicitLineH = ownLineH > 0 ? ownLineH : undefined
+  // A line height of zero sets lines on top of each other, as Figma does.
+  const explicitLineH = lineStepPixels(node.lineHeight, fontSize) ?? undefined
   const hardLines = text.split('\n')
   const measured = hardLines.map(
     (line) =>
@@ -84,10 +84,8 @@ function estimateTextLines(
   return { width: singleLineWidth, lines: 1, lineHeight }
 }
 
+/** Lines' height rounded up, as Figma sizes text: one line of 11.25 px is 12 px tall. */
 function untrimmedHeight(lines: number, lineHeight: number): number {
-  if (lines === 1) {
-    return lineHeight
-  }
   return Math.ceil(lines * lineHeight)
 }
 
