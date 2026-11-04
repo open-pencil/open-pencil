@@ -73,7 +73,8 @@ import type {
   EditorEvents,
   EditorOptions,
   EditorState,
-  RenderVersions
+  RenderVersions,
+  Tool
 } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
@@ -500,6 +501,16 @@ export function createEditor(options?: EditorOptions) {
     // Vector edit mode: a path edited point by point, and the pen continuing a path
     ...vectorEdit,
     ...penResume,
+    /**
+     * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as
+     * the hand with H, commits the path and leaves vector edit mode, as in Figma desktop 126; a
+     * tool held while a key is down, as Space holds the hand, leaves it open.
+     */
+    setTool: (tool: Tool, options?: { held?: boolean }) => {
+      if (!options?.held && state.nodeEditState && tool !== 'SELECT' && tool !== 'PEN')
+        vectorEdit.exitNodeEditMode(true)
+      shapes.setTool(tool, options)
+    },
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,

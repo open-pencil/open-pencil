@@ -117,3 +117,28 @@ test('selecting another layer commits the open path and leaves edit mode', () =>
   expect(editor.graph.getNode(path.id)?.width).toBe(120)
   expect([...editor.state.selectedIds]).toEqual([other.id])
 })
+
+// Figma desktop 126: H in vector edit mode commits the path and leaves edit mode for the hand;
+// holding Space pans with the path still open, and Move and the pen stay in edit mode.
+test('picking a tool that does not edit paths leaves edit mode; holding one does not', () => {
+  const editor = createEditor()
+  const path = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
+  editor.enterNodeEditMode(path.id)
+  expectDefined(editor.state.nodeEditState?.vertices[0]).x -= 20
+
+  editor.setTool('HAND', { held: true })
+  editor.setTool('SELECT', { held: true })
+  editor.setTool('PEN')
+  editor.setTool('SELECT')
+  expect(editor.state.nodeEditState?.nodeId).toBe(path.id)
+
+  editor.setTool('HAND')
+  expect(editor.state.nodeEditState).toBeNull()
+  expect(editor.state.activeTool).toBe('HAND')
+  expect(editor.graph.getNode(path.id)?.width).toBe(120)
+  expect([...editor.state.selectedIds]).toEqual([path.id])
+})
