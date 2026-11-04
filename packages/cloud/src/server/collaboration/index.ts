@@ -21,6 +21,8 @@ export {
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
   type SavedRoom,
+  readRelayPeerState,
+  type RelayPeerState,
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,

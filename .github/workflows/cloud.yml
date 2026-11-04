@@ -55,6 +55,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
         run: bun --filter @open-pencil/cloud migrate
 
       - name: Collect the Worker's secrets
@@ -64,11 +65,13 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
         run: |
           umask 077
           jq -n '{BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
             GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET, S3_ACCESS_KEY_ID: env.S3_ACCESS_KEY_ID,
-            S3_SECRET_ACCESS_KEY: env.S3_SECRET_ACCESS_KEY}' > "$RUNNER_TEMP/cloud-secrets.json"
+            S3_SECRET_ACCESS_KEY: env.S3_SECRET_ACCESS_KEY,
+            POSTHOG_PROJECT_API_KEY: env.POSTHOG_PROJECT_API_KEY}' > "$RUNNER_TEMP/cloud-secrets.json"
 
       - uses: cloudflare/wrangler-action@v4
         with:

@@ -22,7 +22,7 @@ import type { FontReadinessRenderer, TextRenderer } from './renderer'
 export { buildParagraph } from './layout/build'
 export type { TextLayout } from './layout'
 export type { ParagraphBuildOptions } from './paint'
-export { textFontFeatures, textFontVariations, textHeightBehaviorValue } from './paragraph'
+export { textFontFeatures, textFontVariations } from './paragraph'
 export { withTextParagraph } from './preparation'
 
 function demandFace(
