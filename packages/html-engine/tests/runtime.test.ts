@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#html-engine-tests/helpers/paths'
-
 import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 function elementById(document: DesignDocument, id: string): DesignElement {
   const walk = (nodes: DesignDocument['children']): DesignElement | undefined => {

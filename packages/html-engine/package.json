@@ -7,9 +7,6 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/html-engine"
   },
-  "imports": {
-    "#html-engine-tests/*": "./tests/*.ts"
-  },
   "files": [
     "dist",
     "src",
@@ -50,6 +47,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14",
     "tsdown": "^0.22.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
