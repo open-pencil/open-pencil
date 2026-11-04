@@ -90,6 +90,54 @@ describe('the HTML engine runtime', () => {
     engine.resetFonts()
   })
 
+  test('reports an inherited property a child resets to its initial value', async () => {
+    const document = await styled(
+      '<p style="text-transform:uppercase"><span id="s" style="text-transform:none">a</span></p>'
+    )
+
+    expect(elementById(document, 's').computedStyle?.['text-transform']).toBe('none')
+  })
+
+  test('pairs table rows through the tbody the parser inserts', async () => {
+    const cell = (id: string): DesignElement => ({
+      type: 'element',
+      tagName: 'td',
+      attrs: { id, style: 'width:40px;height:20px;padding:0' },
+      children: []
+    })
+    const table: DesignDocument = {
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'table',
+          attrs: { id: 't', style: 'border-spacing:0' },
+          children: [
+            { type: 'element', tagName: 'tr', attrs: { id: 'r' }, children: [cell('a'), cell('b')] }
+          ]
+        }
+      ]
+    }
+    const runtime = createHTMLEngineRuntime({ engine: engineWithInter })
+    const document = await runtime.computeStyles(table, '', {
+      layout: true,
+      viewport: { width: 800, height: 600 }
+    })
+
+    expect(elementById(document, 'r').computedStyle?.display).toBe('table-row')
+    expect(elementById(document, 'b').layout?.box.x).toBe(
+      (elementById(document, 'a').layout?.box.x ?? 0) + 40
+    )
+  })
+
+  test('counts a line of spaces where white space is kept', async () => {
+    const document = await styled(
+      '<pre id="p" style="font:16px sans-serif;margin:0">one\n   \ntwo</pre>'
+    )
+
+    expect(elementById(document, 'p').layout?.lines).toHaveLength(3)
+  })
+
   test('leaves layout out unless asked', async () => {
     const document = await htmlToDesignDocument('<div id="box"></div>', {
       runtime: createHTMLEngineRuntime()

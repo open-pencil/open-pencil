@@ -49,7 +49,17 @@ function elementChildren(capture: HTMLEngineCapture): Map<number, number[]> {
   return children
 }
 
-/** Each element of the document with the captured element it was laid out as, matched by position. */
+/**
+ * Elements the HTML parser inserts around others where the markup leaves them out, such as the
+ * `tbody` around a table's rows; a serialized document need not hold them.
+ */
+const IMPLIED_WRAPPERS = new Set(['tbody'])
+
+/**
+ * Each element of the document with the captured element it was laid out as: matched in order
+ * and by tag, looking through wrappers the parser inserted. A mismatch ends the matching among
+ * those siblings, so it never pairs an element with another's box.
+ */
 function pairElements(
   document: DesignDocument,
   capture: HTMLEngineCapture
@@ -58,9 +68,15 @@ function pairElements(
   const body = capture.nodes.findIndex((node) => node.tag === 'body')
   const pairs: [DesignElement, HTMLEngineNode][] = []
   const pair = (elements: readonly DesignElement[], parent: number) => {
-    const captured = children.get(parent) ?? []
-    for (const [index, element] of elements.entries()) {
-      const node = captured.at(index)
+    const queue = [...(children.get(parent) ?? [])]
+    for (const element of elements) {
+      let node = queue.shift()
+      while (node !== undefined && capture.nodes[node].tag !== element.tagName) {
+        const tag = capture.nodes[node].tag
+        if (tag === undefined || !IMPLIED_WRAPPERS.has(tag)) return
+        queue.unshift(...(children.get(node) ?? []))
+        node = queue.shift()
+      }
       if (node === undefined) return
       pairs.push([element, capture.nodes[node]])
       pair(designElements(element.children), node)
@@ -84,12 +100,16 @@ function withShorthands(style: DesignStyleDeclaration): DesignStyleDeclaration {
   return { ...style, overflow: horizontal === vertical ? horizontal : `${horizontal} ${vertical}` }
 }
 
+/** White space values that keep spaces, so a line of them takes room as a line of words does. */
+const PRESERVED_WHITE_SPACE = new Set(['pre', 'pre-wrap', 'break-spaces'])
+
 /**
  * A line as a browser's text rects make it: across its words, leaving out inline boxes, and
- * nothing for a line without text.
+ * nothing for a line without text. Where white space is kept, a line of spaces counts too.
  */
-function textLine(line: HTMLEngineLine): Rect | null {
-  const words = line.runs.filter((run) => 'text' in run && run.text.trim().length > 0)
+function textLine(line: HTMLEngineLine, keepsSpaces: boolean): Rect | null {
+  const texts = line.runs.filter((run) => 'text' in run && run.text.length > 0)
+  const words = keepsSpaces ? texts : texts.filter((run) => 'text' in run && run.text.trim() !== '')
   if (words.length === 0) return null
   const left = Math.min(...words.map((run) => run.x))
   const right = Math.max(...words.map((run) => run.x + run.width))
@@ -104,7 +124,11 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
     layout.fragments = fragments.map(rect)
     return layout
   }
-  const lines = (node.lines ?? []).map(textLine).filter((line) => line !== null)
+  const whiteSpace = node.style?.['white-space']
+  const keepsSpaces = whiteSpace !== undefined && PRESERVED_WHITE_SPACE.has(whiteSpace)
+  const lines = (node.lines ?? [])
+    .map((line) => textLine(line, keepsSpaces))
+    .filter((line) => line !== null)
   if (lines.length > 0) layout.lines = lines
   return layout
 }
