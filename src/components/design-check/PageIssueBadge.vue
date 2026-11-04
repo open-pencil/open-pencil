@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { compact } from 'es-toolkit/array'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import type { DesignIssueCounts } from '@/app/editor/design-check/issues'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { pageIssueBadge } from '@/theme/design-check'
+import { pageIssueBadgeTheme } from '@/theme/design-check'
+
+const pageIssueBadge = tv(pageIssueBadgeTheme)
 
 /**
  * Errors and warnings on a page, like the problem count an IDE shows next to a file. Nothing

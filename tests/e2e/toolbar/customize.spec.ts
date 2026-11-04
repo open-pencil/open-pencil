@@ -29,7 +29,8 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   const settings = page.getByTestId('settings-toolbar-panel')
   await expect(settings).toBeVisible()
 
-  await settings.getByRole('switch', { name: 'Show Pen' }).click()
+  await settings.getByRole('switch', { name: 'Show Pen', exact: true }).click()
+  await settings.getByRole('switch', { name: 'Show Pencil', exact: true }).click()
   // Dropping Comment onto Hand puts both in one menu; Text's grip moves it with the keyboard.
   await settings
     .getByRole('button', { name: 'Reorder Comment' })
@@ -40,6 +41,7 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
 
   const expectCustomized = async () => {
     await expect(page.getByTestId(toolbarToolTestId('PEN'))).toHaveCount(0)
+    await expect(page.getByTestId(toolbarToolTestId('PENCIL'))).toHaveCount(0)
     expect(await toolbarOrder(page)).toEqual(
       (['SELECT', 'FRAME', 'RECTANGLE', 'TEXT', 'HAND'] as const).map((tool) =>
         toolbarToolTestId(tool)
@@ -64,6 +66,8 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   await page.getByTestId('toolbar').click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Customize toolbar…' }).click()
   await page.getByRole('button', { name: 'Reset to default' }).click()
+  // Back at the default layout, the section has nothing left to reset.
+  await expect(page.getByRole('button', { name: 'Reset to default' })).toHaveCount(0)
   await page.getByTestId('app-settings-done').click()
   await expect(page.getByTestId(toolbarToolTestId('PEN'))).toBeVisible()
   canvas.assertNoErrors()

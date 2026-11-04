@@ -1,1 +1,0 @@
-- Shaders playing in preview go on from where they were when you zoom, instead of showing their still frame and starting over.

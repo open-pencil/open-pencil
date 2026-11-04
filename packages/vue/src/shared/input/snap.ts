@@ -1,27 +1,41 @@
+import { uniq } from 'es-toolkit'
+
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
-import { computeSnap } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import { computeSnap, type SnapGuide } from '@open-pencil/scene-graph/snap'
 
 export interface PixelSnapResult {
   delta: Vector
   guides: SnapGuide[]
 }
 
+/** Rounds to a multiple of `step`. */
+function roundTo(value: number, step: number): number {
+  return Math.round(value / step) * step
+}
+
 /**
- * Lands the bounds on whole pixels, as Figma's Snap to pixel grid does at any zoom: a move ends on
- * a whole position and a resized edge on a whole size, even from a fractional start.
+ * Lands the bounds on the snap grid, as Figma's Snap to pixel grid does at any zoom: a move ends on
+ * a whole position and a resized edge on a whole size, even from a fractional start. The grid is
+ * the editor profile's: whole pixels in a design, FigJam's 16 units on a board.
  */
-export function computePixelGridSnap(bounds: Rect): PixelSnapResult {
+export function computePixelGridSnap(bounds: Rect, step = 1): PixelSnapResult {
   return {
-    delta: { x: Math.round(bounds.x) - bounds.x, y: Math.round(bounds.y) - bounds.y },
+    delta: { x: roundTo(bounds.x, step) - bounds.x, y: roundTo(bounds.y, step) - bounds.y },
     // Pixel rounding is not alignment with another object or an explicit guide.
     guides: []
   }
+}
+
+/** How a drawn layer's corners land while Snap to pixel grid is on, on the profile's grid. */
+export function gridRounding(editor: Editor): (value: number) => number {
+  if (!editor.state.snappingPreferences.pixelGrid) return (value) => value
+  const step = resolveEditorProfile(editor.state).snapGrid
+  return (value) => roundTo(value, step)
 }
 
 export interface ExplicitSnapTarget extends SnapGuide {
@@ -130,7 +144,7 @@ export function resolveObjectPixelSnap(
     ? computeSnap(movingIds, movingBounds, targets, threshold)
     : { dx: 0, dy: 0, guides: [] }
   const pixelSnap = editor.state.snappingPreferences.pixelGrid
-    ? computePixelGridSnap(movingBounds)
+    ? computePixelGridSnap(movingBounds, resolveEditorProfile(editor.state).snapGrid)
     : { delta: { x: 0, y: 0 }, guides: [] }
   const objectX = objectSnap.guides.some((guide) => guide.axis === 'x')
   const objectY = objectSnap.guides.some((guide) => guide.axis === 'y')
@@ -186,4 +200,68 @@ export function optionalEditorState(editor: Editor): Editor['state'] | undefined
 
 export function snappingThreshold(editor: Editor): number {
   return SNAP_THRESHOLD_SCREEN_PX / Math.max(editor.state.zoom, Number.EPSILON)
+}
+
+export interface PointSnapResult {
+  point: Vector
+  guides: SnapGuide[]
+}
+
+/**
+ * Lines a point up with path vertices, as Figma's pen does: on each axis the point takes the
+ * nearest vertex coordinate within the snapping distance, and the guide runs through the point and
+ * every vertex on that line, with a cross on each. A point that lands on a vertex shows only that
+ * vertex's cross.
+ */
+export function resolveVertexSnap(
+  point: Vector,
+  vertices: readonly Vector[],
+  editor: Editor
+): PointSnapResult {
+  if (!editor.state.snappingPreferences.geometry) return { point, guides: [] }
+  const threshold = snappingThreshold(editor)
+  const x = nearestVertexCoordinate(point, vertices, 'x', threshold)
+  const y = nearestVertexCoordinate(point, vertices, 'y', threshold)
+  const snapped = { x: x ?? point.x, y: y ?? point.y }
+  if (vertices.some((vertex) => vertex.x === snapped.x && vertex.y === snapped.y)) {
+    return {
+      point: snapped,
+      guides: [
+        { axis: 'x', position: snapped.x, from: snapped.y, to: snapped.y, marks: [snapped.y] }
+      ]
+    }
+  }
+  const guides: SnapGuide[] = []
+  if (x !== null) guides.push(guideThroughVertices('x', x, snapped.y, vertices))
+  if (y !== null) guides.push(guideThroughVertices('y', y, snapped.x, vertices))
+  return { point: snapped, guides }
+}
+
+function nearestVertexCoordinate(
+  point: Vector,
+  vertices: readonly Vector[],
+  axis: 'x' | 'y',
+  threshold: number
+): number | null {
+  let nearest: number | null = null
+  for (const vertex of vertices) {
+    const distance = Math.abs(vertex[axis] - point[axis])
+    if (distance >= threshold) continue
+    if (nearest === null || distance < Math.abs(nearest - point[axis])) nearest = vertex[axis]
+  }
+  return nearest
+}
+
+function guideThroughVertices(
+  axis: 'x' | 'y',
+  position: number,
+  pointAlong: number,
+  vertices: readonly Vector[]
+): SnapGuide {
+  const across = axis === 'x' ? 'y' : 'x'
+  const marks = uniq([
+    pointAlong,
+    ...vertices.filter((vertex) => vertex[axis] === position).map((vertex) => vertex[across])
+  ])
+  return { axis, position, from: Math.min(...marks), to: Math.max(...marks), marks }
 }

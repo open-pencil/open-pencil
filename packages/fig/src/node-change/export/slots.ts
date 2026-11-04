@@ -1,12 +1,8 @@
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
-import {
-  ownsSlotContent,
-  slotPropertyId,
-  type ComponentPropertyDefinition,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -92,9 +88,7 @@ export function slotContentAssignment(
 function markSlotContent(record: KiwiNodeChange): void {
   record.isSlotContent = true
   Reflect.deleteProperty(record, 'componentPropRefs')
-  const parameters = record.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = record.parameterConsumptionMap
   const entries = parameters?.entries?.filter((entry) => entry.variableField !== 'SLOT_CONTENT_ID')
   if (entries?.length) record.parameterConsumptionMap = { entries }
   else Reflect.deleteProperty(record, 'parameterConsumptionMap')

@@ -1,0 +1,185 @@
+/*
+ * Design tokens, custom variants, and utilities shared by every surface that renders app
+ * components: the app itself and the docs site's landing page.
+ */
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:where(:root:not([data-motion='off']), :root:not([data-motion='off']) *) {
+      @slot;
+    }
+  }
+}
+
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion='off'], [data-motion='off'] *) {
+    @slot;
+  }
+}
+
+@utility scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted);
+  }
+}
+
+@theme {
+  /*
+   * Interface text below Tailwind's text-xs. Sizes are in rem, like Tailwind's own scale, so the
+   * whole interface follows the root font size. T-shirt names keep tailwind-merge reading them as
+   * font sizes rather than colors.
+   */
+  --text-2xs: 0.6875rem;
+  --text-3xs: 0.625rem;
+  --text-4xs: 0.5625rem;
+  --text-5xs: 0.5rem;
+
+  /* The theme's colors are its own: Tailwind's default palette is left out. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-panel: #2a2a2a;
+  --color-panel-secondary: #242424;
+  --color-panel-field: #383838;
+  --color-panel-field-hover: #404040;
+  --color-panel-focus: #3b82f6;
+  --color-panel-selected: #2f6fdd;
+  --color-panel-selected-muted: #353b46;
+  --color-canvas: #1e1e1e;
+  --color-border: #3a3a3a;
+  --color-hover: #353535;
+  /* The accent family; src/app/shell/accent/palette.ts derives other accents from it. */
+  --color-accent: #2563eb;
+  --color-on-accent: #ffffff;
+  --color-on-primary: #1f2328;
+  --color-surface: #f0f0f0;
+  --color-muted: #a6a6a6;
+  --color-input: #1e1e1e;
+  --color-component: #bb8cff;
+  --color-slot: #f45cc4;
+  /* The heart beside a request for donations. */
+  --color-heart: #fb7185;
+  /* A FigJam board's mark in file lists, after FigJam's own purple. */
+  --color-board: #b38cff;
+  /*
+   * Status colors: each is a text and icon color. Errors and warnings also have a tint (-bg) and a
+   * border (-border) for panels in that status, and warnings -action for buttons on the tint.
+   * Errors and successes have a solid -fill that takes white text.
+   */
+  --color-warning: #ffb314;
+  --color-warning-bg: rgb(245 158 11 / 0.1);
+  --color-warning-border: rgb(245 158 11 / 0.3);
+  --color-warning-action: #fcd34d;
+  --color-success: #4ade80;
+  --color-primary: #60a5fa;
+  --color-inverted: #1f2328;
+  --color-error: #fa8585;
+  --color-error-bg: rgb(250 133 133 / 0.1);
+  --color-error-border: rgb(250 133 133 / 0.4);
+  --color-error-fill: #dc2626;
+  --color-success-fill: #16a34a;
+  /* Transparent backgrounds and the canvas rulers, which src/app/shell/theme.ts reads. */
+  --color-checkerboard: #3a3a3a;
+  --color-checkerboard-muted: #4a4a4a;
+  --color-ruler-bg: rgb(36, 36, 36);
+  --color-ruler-tick: rgb(102, 102, 102);
+  --color-ruler-text: rgb(140, 140, 140);
+  /* Syntax colors for code editors and viewers. */
+  --color-code-keyword: #c4a7e7;
+  --color-code-tag: #82aaff;
+  --color-code-string: #a3d9a5;
+  --color-code-number: #e5bc8b;
+  --color-code-comment: #969eaa;
+
+  /* Chart series in fixed order, checked as a set for color-vision deficiency on the panel. */
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
+}
+
+html[data-theme='light'] {
+  --color-panel: #ffffff;
+  --color-panel-secondary: #f7f8fa;
+  --color-panel-field: #f0f1f3;
+  --color-panel-field-hover: #e4e7ea;
+  --color-panel-focus: #2563eb;
+  --color-panel-selected: #2563eb;
+  --color-panel-selected-muted: #e5e7eb;
+  --color-canvas: #f3f4f6;
+  --color-border: #d8dce3;
+  --color-hover: #eef1f5;
+  --color-accent: #2563eb;
+  --color-primary: #1d4ed8;
+  --color-on-primary: #ffffff;
+  --color-inverted: #ffffff;
+  --color-surface: #1f2328;
+  --color-muted: #5f6673;
+  --color-input: #ffffff;
+  --color-component: #7c3aed;
+  --color-slot: #db2777;
+  --color-heart: #e11d48;
+  --color-board: #8b5cf6;
+  --color-warning: #8f5500;
+  --color-warning-bg: rgb(245 158 11 / 0.14);
+  --color-warning-border: rgb(245 158 11 / 0.32);
+  --color-warning-action: #78350f;
+  --color-success: #15803d;
+  --color-error: #b91c1c;
+  --color-error-bg: rgb(185 28 28 / 0.08);
+  --color-error-border: rgb(185 28 28 / 0.28);
+  --color-checkerboard: #d1d5db;
+  --color-checkerboard-muted: #e5e7eb;
+  --color-ruler-bg: rgb(250, 250, 251);
+  --color-ruler-tick: rgb(163, 171, 182);
+  --color-ruler-text: rgb(90, 99, 112);
+  --color-code-keyword: #7947a7;
+  --color-code-tag: #145ca4;
+  --color-code-string: #276b3b;
+  --color-code-number: #965212;
+  --color-code-comment: #69727f;
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+}
+
+/* Points vccs charts at the theme: series colors, quiet grid and axes, panel tooltips. */
+@utility chart-theme {
+  --v-charts-series-1: var(--color-chart-1);
+  --v-charts-series-2: var(--color-chart-2);
+  --v-charts-series-3: var(--color-chart-3);
+  --v-charts-grid: var(--color-border);
+  --v-charts-axis: var(--color-border);
+  --v-charts-text: var(--color-muted);
+  --v-charts-cursor: var(--color-hover);
+  --v-charts-muted: var(--color-panel-field);
+  --v-charts-background: var(--color-panel);
+  --v-charts-inactive: var(--color-muted);
+  --v-charts-focus: var(--color-panel-focus);
+  --v-charts-tooltip-background: var(--color-panel);
+  --v-charts-tooltip-border: var(--color-border);
+  --v-charts-tooltip-foreground: var(--color-surface);
+  --v-charts-label-foreground: var(--color-surface);
+}

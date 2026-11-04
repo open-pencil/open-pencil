@@ -1,3 +1,4 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEventListener } from '@vueuse/core'
 import { onMounted, onScopeDispose } from 'vue'
 
@@ -42,7 +43,6 @@ export function useDocumentCloseProtection() {
 
   onMounted(async () => {
     if (!IS_TAURI) return
-    const { getCurrentWindow } = await import('@tauri-apps/api/window')
     if (disposed) return
     const window = getCurrentWindow()
     await window

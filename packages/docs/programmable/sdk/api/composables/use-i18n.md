@@ -8,7 +8,7 @@ description: Read localized OpenPencil UI messages and switch the active SDK loc
 `useI18n()` is a compatibility aggregate returning reactive translation groups and locale controls. New components should import only the product-domain composables they need, rather than subscribe to every catalog.
 
 ```ts twoslash
-import { useSettingsMessages, useRenameMessages } from '@open-pencil/vue'
+import { useSettingsMessages, useRenameMessages } from '@open-pencil/vue/i18n'
 
 const settings = useSettingsMessages()
 const rename = useRenameMessages()
@@ -19,7 +19,7 @@ Each domain composable returns a reactive ref. Read `.value` in script; Vue unwr
 ## Usage
 
 ```ts
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 const { menu, commands, panels, locale, availableLocales, localeLabels, setLocale } = useI18n()
 ```
@@ -36,7 +36,7 @@ The former `dialogs` group, `useDialogMessages()`, and `dialogMessages` are remo
 
 ```vue
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
 </script>

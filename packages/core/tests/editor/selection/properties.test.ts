@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-import { createRect, firstPageId } from '#core-tests/helpers/scene'
-
-import { SceneGraph } from '@open-pencil/core'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { createRect, firstPageId } from '@open-pencil/test-support/scene'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('multi-node property merging', () => {
   test('same values merge to single value', () => {

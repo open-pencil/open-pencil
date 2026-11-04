@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
-
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { createEditor, type Editor } from '@open-pencil/core'
 
 function scene() {
   const editor = createEditor()

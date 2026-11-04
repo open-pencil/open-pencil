@@ -19,7 +19,7 @@ Cada punto amplía la ruta. Una línea de vista previa conecta el último punto 
 
 ## Cerrar o terminar
 
-Haz clic en el primer punto para cerrar la ruta. Pulsa <kbd>Enter</kbd> para terminarla abierta o <kbd>Escape</kbd> para cancelar el dibujo actual.
+Haz clic en el primer punto para cerrar la ruta. Pulsa <kbd>Enter</kbd> o <kbd>Escape</kbd> para terminarla abierta.
 
 ## Continuar una ruta
 

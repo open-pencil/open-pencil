@@ -80,3 +80,105 @@ test('stroke caps joins and miter limits', async () => {
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('stroke-caps-joins-miter-limits.png')
 })
+
+test('vector path corners take the stroke join', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const zero = { x: 0, y: 0 }
+    const line = (start: number, end: number) => ({
+      start,
+      end,
+      tangentStart: zero,
+      tangentEnd: zero
+    })
+    const stroke = (join: 'MITER' | 'BEVEL' | 'ROUND') => [
+      {
+        type: 'SOLID' as const,
+        color: { r: 0.23, g: 0.51, b: 0.96, a: 1 },
+        weight: 16,
+        visible: true,
+        opacity: 1,
+        align: 'CENTER' as const,
+        join
+      }
+    ]
+    // An open zigzag, unfilled, once per join.
+    const joins = ['MITER', 'BEVEL', 'ROUND'] as const
+    for (const [index, join] of joins.entries()) {
+      store.graph.createNode('VECTOR', pageId, {
+        name: `${join} polyline join visual`,
+        x: 72 + index * 190,
+        y: 80,
+        width: 140,
+        height: 90,
+        vectorNetwork: {
+          vertices: [
+            { x: 0, y: 90 },
+            { x: 45, y: 0 },
+            { x: 90, y: 90 },
+            { x: 140, y: 20 }
+          ],
+          segments: [line(0, 1), line(1, 2), line(2, 3)],
+          regions: []
+        },
+        strokeJoin: join,
+        strokeMiterLimit: 4,
+        fills: [],
+        strokes: stroke(join)
+      })
+    }
+    // A closed loop with no region: its first corner joins like the others.
+    store.graph.createNode('VECTOR', pageId, {
+      name: 'closed loop join visual',
+      x: 120,
+      y: 230,
+      width: 120,
+      height: 100,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 120, y: 30 },
+          { x: 40, y: 100 }
+        ],
+        segments: [line(0, 1), line(1, 2), line(2, 0)],
+        regions: []
+      },
+      strokeJoin: 'MITER',
+      strokeMiterLimit: 4,
+      fills: [],
+      strokes: stroke('MITER')
+    })
+    // A loop with a tail from its first corner, stored starting from the next corner.
+    store.graph.createNode('VECTOR', pageId, {
+      name: 'loop with tail join visual',
+      x: 340,
+      y: 230,
+      width: 180,
+      height: 100,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 100 },
+          { x: 0, y: 100 },
+          { x: 180, y: 50 }
+        ],
+        segments: [line(1, 2), line(2, 3), line(3, 0), line(0, 1), line(0, 4)],
+        regions: []
+      },
+      strokeJoin: 'MITER',
+      strokeMiterLimit: 4,
+      fills: [],
+      strokes: stroke('MITER')
+    })
+
+    store.clearSelection()
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
+  expect(buffer).toMatchSnapshot('vector-path-joins.png')
+})

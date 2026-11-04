@@ -1,5 +1,8 @@
+import { isEmptyObject } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { LintFix, LintMessage } from './types'
 import { ownsComponentTree } from './utils'
@@ -40,18 +43,15 @@ export function safeFixes(messages: readonly LintMessage[]): LintFixRequest[] {
   return messages.flatMap(({ nodeId, fix }) => (fix ? [{ nodeId, fix }] : []))
 }
 
-const PAINT_PATH = /^(fills|strokes)\/(\d+)\/color$/
-
 /**
  * Binding is safe only while the paint still shows the variable's color: a paint edited since
  * the lint run would change appearance, so its fix is skipped.
  */
 function canBind(graph: SceneGraph, node: SceneNode, path: string, variableId: string): boolean {
   if (node.boundVariables[path] === variableId) return false
-  const match = PAINT_PATH.exec(path)
-  if (!match) return false
-  const index = Number(match[2])
-  const paint = match[1] === 'fills' ? node.fills.at(index) : node.strokes.at(index)
+  const target = paintBindingTarget(path)
+  if (!target) return false
+  const paint = node[target.list].at(target.index)
   const color = graph.resolveColorVariableForNode(node.id, variableId)
   if (!paint || !color || ('type' in paint && paint.type !== 'SOLID')) return false
   return colorToHex({ ...paint.color, a: 1 }) === colorToHex({ ...color, a: 1 })
@@ -104,7 +104,7 @@ export function applyLintFixes(target: LintFixTarget, requests: readonly LintFix
         const changes = Object.fromEntries(
           Object.entries(fix.changes).filter(([key, value]) => Reflect.get(node, key) !== value)
         )
-        if (Object.keys(changes).length === 0) continue
+        if (isEmptyObject(changes)) continue
         updates.set(nodeId, { ...updates.get(nodeId), ...changes })
         break
       }

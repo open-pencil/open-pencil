@@ -12,7 +12,9 @@ export function useScrollFollowing(
   let userScrolling = false
   const { arrivedState, measure } = useScroll(viewport, {
     onScroll: () => {
-      if (userScrolling) following.value = arrivedState.bottom
+      // Reaching the bottom resumes following however it happened; only the reader leaves it.
+      if (arrivedState.bottom) following.value = true
+      else if (userScrolling) following.value = false
     },
     onStop: () => {
       userScrolling = false
@@ -35,20 +37,50 @@ export function useScrollFollowing(
     scheduleFollow()
   }
 
-  function beginUserScroll() {
+  /**
+   * Only a gesture away from the bottom stops following; reaching the bottom resumes it. A
+   * gesture that cannot move the viewport changes nothing: downward at the bottom, or upward
+   * while the transcript has nothing above it. No scroll event would follow to undo it.
+   */
+  function leaveBottom() {
+    if (!viewport.value || viewport.value.scrollTop <= 0) return
     userScrolling = true
     following.value = false
   }
 
-  useEventListener(viewport, 'wheel', beginUserScroll, { passive: true })
-  useEventListener(viewport, 'touchmove', beginUserScroll, { passive: true })
+  let touchY: number | undefined
+  useEventListener(
+    viewport,
+    'wheel',
+    (event) => {
+      if (event.deltaY < 0) leaveBottom()
+    },
+    { passive: true }
+  )
+  useEventListener(viewport, 'touchstart', (event) => (touchY = event.touches.item(0)?.clientY), {
+    passive: true
+  })
+  useEventListener(
+    viewport,
+    'touchmove',
+    (event) => {
+      const y = event.touches.item(0)?.clientY
+      // A finger moving down drags the content down, scrolling toward the top.
+      if (y !== undefined && touchY !== undefined && y > touchY) leaveBottom()
+      touchY = y
+    },
+    { passive: true }
+  )
   useEventListener(viewport, 'keydown', (event) => {
-    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', 'Space'].includes(event.code))
-      beginUserScroll()
+    if (
+      ['ArrowUp', 'PageUp', 'Home'].includes(event.code) ||
+      (event.code === 'Space' && event.shiftKey)
+    )
+      leaveBottom()
   })
   // Scrollbar dragging is an explicit navigation gesture; ordinary content clicks are not.
   useEventListener(viewport, 'pointerdown', (event) => {
-    if (event.target === viewport.value) beginUserScroll()
+    if (event.target === viewport.value) leaveBottom()
   })
   useEventListener(
     content,

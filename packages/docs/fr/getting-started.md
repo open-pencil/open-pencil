@@ -8,7 +8,7 @@ Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que v
 
 ## Application de bureau
 
-Les versions prêtes à l'emploi pour macOS, Windows et Linux sont disponibles sur la [page des versions](https://github.com/open-pencil/open-pencil/releases/latest).
+Les versions prêtes à l'emploi pour macOS, Windows et Linux sont disponibles sur la [page de téléchargement](/fr/download).
 
 | Plateforme | Fichier |
 | --------------------- | -------------------- |
@@ -18,7 +18,7 @@ Les versions prêtes à l'emploi pour macOS, Windows et Linux sont disponibles s
 | Windows (ARM) | `.msi` / `.exe` |
 | Linux (x64) | `.AppImage` / `.deb` |
 
-## Configuration requise
+## Configuration requise {#system-requirements}
 
 OpenPencil affiche le rendu avec CanvasKit sur WebGL et s’appuie sur des fonctionnalités récentes de la plateforme web ; il faut donc un moteur de navigateur récent. L’application web prend en charge Chrome 111, Edge 111, Firefox 128 et Safari 16.4 ou version ultérieure ; les navigateurs basés sur Chromium, comme Brave et Opera, suivent leur version de Chrome. L’application de bureau s’affiche dans la WebView du système : le minimum dépend donc du moteur du système d’exploitation.
 
@@ -45,7 +45,7 @@ brew uninstall open-pencil/tap/open-pencil
 brew install --cask openpencil
 ```
 
-## Compiler le code source
+## Compiler le code source {#building-from-source}
 
 ### Prérequis
 
@@ -74,7 +74,7 @@ L'éditeur sera accessible à l'adresse `http://localhost:1420`.
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
 | `bun run dev` | Démarrer le serveur de développement avec HMR |
 | `bun run build` | Générer la version de production |
-| `bun run check` | Exécuter oxlint et vérifier les types avec tsgo |
+| `bun run check` | Exécuter oxlint et vérifier les types avec TypeScript 7 |
 | `bun run test` | Exécuter les tests E2E et de régression visuelle avec Playwright |
 | `bun run test:update` | Mettre à jour les captures de référence |
 | `bun run test:unit` | Exécuter les tests unitaires avec bun:test |

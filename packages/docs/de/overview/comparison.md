@@ -181,12 +181,11 @@ Serialisierbare Änderungen passen gut zu Penpots serverbasierter Zusammenarbeit
 ## 10. Stärken von Penpot
 
 1. **Serverbasierte Zusammenarbeit:** Konten, Zugriffskontrolle und zentrale Speicherung über WebSockets.
-2. **PDF export:** eigener Chromium exporter.
-3. **Plugin system:** Sandboxed execution und Plugin API.
-4. **Design tokens:** integrierte Unterstützung.
-5. **CSS Grid:** eigene Implementation; OpenPencil verwendet einen Yoga fork mit Grid.
-6. **Self-hosting:** Team platform über Docker deploybar.
-7. **Reife:** mehrjährige Verwendung in Production.
+2. **Plugin system:** Sandboxed execution und Plugin API.
+3. **Design tokens:** integrierte Unterstützung.
+4. **CSS Grid:** eigene Implementation; OpenPencil verwendet einen Yoga fork mit Grid.
+5. **Self-hosting:** Team platform über Docker deploybar.
+6. **Reife:** mehrjährige Verwendung in Production.
 
 ## 11. Scripts und Erweiterbarkeit
 
@@ -209,4 +208,4 @@ Penpot besitzt isoliert ausgeführte Plugins, aber keine vergleichbare Skript-AP
 | Selbsthosting | Penpot | Docker-Bereitstellung |
 | Ökosystemreife | Penpot | Mehrjährige Produktionserfahrung |
 
-OpenPencil ist ein kompakter Editor in einem Prozess mit CanvasKit-Renderer und nativer `.fig`-Unterstützung. Penpot ist eine vollständige Client-Server-Plattform mit Clojure, ClojureScript, Rust, Datenbanken und Docker-Diensten. Beide unterstützen Zusammenarbeit mit unterschiedlichen Modellen. Penpot bietet ein Plugin-Ökosystem und PDF-Export; OpenPencil eine Figma-kompatible API ohne Oberfläche, 90 AI/MCP-Werkzeuge, SVG-Export und eine Desktop-App.
+OpenPencil ist ein kompakter Editor in einem Prozess mit CanvasKit-Renderer und nativer `.fig`-Unterstützung. Penpot ist eine vollständige Client-Server-Plattform mit Clojure, ClojureScript, Rust, Datenbanken und Docker-Diensten. Beide unterstützen Zusammenarbeit mit unterschiedlichen Modellen. Penpot bietet ein Plugin-Ökosystem; OpenPencil eine Figma-kompatible API ohne Oberfläche, 90 AI/MCP-Werkzeuge, SVG- und PDF-Export und eine Desktop-App.

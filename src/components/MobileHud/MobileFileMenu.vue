@@ -7,17 +7,19 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useMenuMessages } from '@open-pencil/vue'
+import { useMenuMessages } from '@open-pencil/vue/i18n'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
-import { menu, useMenuUI } from '@/components/ui/menu/menu'
+import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 const menuMessages = useMenuMessages()
 const hud = useMobileHudContext()
-const menuCls = useMenuUI({
-  content: 'w-48 p-1.5',
-  item: 'w-full gap-2.5 rounded-lg border-none bg-transparent px-2.5 py-2 active:bg-hover'
+const menuCls = useMenuUI({ content: 'w-48 p-1.5' })
+const itemCls = menuItem({
+  justify: 'start',
+  class: 'w-full gap-2.5 rounded-lg border-none bg-transparent px-2.5 py-2 active:bg-hover'
 })
 </script>
 
@@ -30,15 +32,17 @@ const menuCls = useMenuUI({
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent :side-offset="8" side="bottom" align="end" :class="menuCls.content">
-        <DropdownMenuItem
-          v-for="item in hud.menuItems"
-          :key="item.label"
-          :class="menu({ justify: 'start' }).item({ class: menuCls.item })"
-          @click="item.action()"
-        >
-          <component :is="item.icon" class="size-4 text-muted" />
-          <span>{{ item.label }}</span>
-        </DropdownMenuItem>
+        <MenuScrollArea>
+          <DropdownMenuItem
+            v-for="item in hud.menuItems"
+            :key="item.label"
+            :class="itemCls"
+            @click="item.action()"
+          >
+            <component :is="item.icon" class="size-4 text-muted" />
+            <span>{{ item.label }}</span>
+          </DropdownMenuItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

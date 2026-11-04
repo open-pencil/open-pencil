@@ -1,5 +1,6 @@
 import { cloneNodeProps } from '../copy'
-import { remapInstanceOverrideState } from '../instance-overrides'
+import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
+import { referencedStyleIds } from '../shared-styles'
 import { remapStyleRunReferences, styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -11,16 +12,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
     ...(node.componentId ? [node.componentId] : []),
     ...Object.values(node.boundVariables),
     ...runs.variables,
-    ...runs.styles,
-    ...[
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId
-    ].filter((id): id is string => !!id),
-    ...node.fillGeometry.flatMap((path) => (path.fillStyleId ? [path.fillStyleId] : [])),
-    ...node.strokeGeometry.flatMap((path) => (path.fillStyleId ? [path.fillStyleId] : [])),
+    ...referencedStyleIds(node),
     ...Object.entries(node.componentPropertyAssignments).flatMap(([id, value]) => [id, value]),
     ...node.componentPropertyReferences.map((reference) => reference.propertyId),
     ...node.componentPropertyDefinitions.flatMap((definition) => [
@@ -37,7 +29,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
       typeof value === 'string' &&
       (field === 'componentId' ||
         field === 'sourceComponentId' ||
-        field.startsWith('boundVariables/'))
+        overriddenBindingField(field) !== null)
         ? [value]
         : []
     )
@@ -73,7 +65,8 @@ export function prepareNodeTransfer(
   result.componentId = source.componentId ? node(source.componentId) : null
   result.instanceOverrides = remapInstanceOverrideState(source.instanceOverrides, {
     node,
-    variable
+    variable,
+    collection: (id) => refs.collections.get(id)
   })
   result.boundVariables = Object.fromEntries(
     Object.entries(source.boundVariables).map(([field, id]) => [field, variable(id)])
@@ -101,18 +94,24 @@ export function prepareNodeTransfer(
       node: (id) => refs.nodes.get(id) ?? id
     })
   }
-  for (const paths of [result.fillGeometry, result.strokeGeometry]) {
-    for (const path of paths ?? []) if (path.fillStyleId) path.fillStyleId = style(path.fillStyleId)
+  // A connector keeps the layers it was attached to when they are left behind; the end becomes
+  // free where nothing by that ID exists, as a pasted Figma connector does.
+  for (const field of ['connectorStart', 'connectorEnd'] as const) {
+    const endpoint = result[field]
+    if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
   }
+  for (const region of result.vectorNetwork?.regions ?? [])
+    if (region.fillStyleId) region.fillStyleId = style(region.fillStyleId)
   result.componentPropertyDefinitions = source.componentPropertyDefinitions.map((definition) => ({
     ...structuredClone(definition),
     id: property(definition.id),
     defaultValue: propertyValue(definition.id, definition.defaultValue)
   }))
-  result.componentPropertyReferences = source.componentPropertyReferences.map((reference) => ({
-    ...reference,
-    propertyId: property(reference.propertyId)
-  }))
+  // A reference to a property that neither the transfer nor its destination defines names nothing.
+  result.componentPropertyReferences = source.componentPropertyReferences.flatMap((reference) => {
+    const propertyId = refs.properties.get(reference.propertyId)
+    return propertyId ? [{ ...reference, propertyId }] : []
+  })
   result.componentPropertyAssignments = values(source.componentPropertyAssignments)
   // Variant values are keyed by display names, unlike definition-ID assignments.
   result.componentPropertyValues = { ...source.componentPropertyValues }

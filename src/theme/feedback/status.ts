@@ -1,6 +1,6 @@
 const statusTheme = {
   slots: {
-    text: 'text-[10px] leading-snug',
+    text: 'text-3xs leading-snug',
     /** A state as a coloured dot and its label, as room status shows it. */
     indicator: 'inline-flex items-center gap-1.5 text-xs',
     dot: 'size-2 shrink-0 rounded-full'
@@ -14,17 +14,17 @@ const statusTheme = {
         dot: 'animate-pulse bg-muted motion-reduce:animate-none'
       },
       success: {
-        text: 'text-[var(--color-success)]',
+        text: 'text-success',
         indicator: 'text-surface',
         dot: 'bg-success'
       },
       warning: {
-        text: 'text-[var(--color-warning-text)]',
-        indicator: 'text-warning-text',
-        dot: 'bg-warning-text'
+        text: 'text-warning',
+        indicator: 'text-warning',
+        dot: 'bg-warning'
       },
       error: {
-        text: 'text-[var(--color-error)]',
+        text: 'text-error',
         indicator: 'text-error',
         dot: 'bg-error'
       }

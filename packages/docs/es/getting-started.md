@@ -8,7 +8,7 @@ Si quieres crear un producto basado en OpenPencil en lugar de limitarte a la apl
 
 ## Aplicación de escritorio
 
-Las versiones preparadas para macOS, Windows y Linux están disponibles en la [página de versiones](https://github.com/open-pencil/open-pencil/releases/latest).
+Las versiones preparadas para macOS, Windows y Linux están disponibles en la [página de descargas](/es/download).
 
 | Plataforma | Archivo |
 | --------------------- | -------------------- |
@@ -18,7 +18,7 @@ Las versiones preparadas para macOS, Windows y Linux están disponibles en la [p
 | Windows (ARM) | `.msi` / `.exe` |
 | Linux (x64) | `.AppImage` / `.deb` |
 
-## Requisitos del sistema
+## Requisitos del sistema {#system-requirements}
 
 OpenPencil dibuja con CanvasKit sobre WebGL y usa funciones recientes de la plataforma web, por lo que necesita un motor de navegador actual. La versión web admite Chrome 111, Edge 111, Firefox 128 y Safari 16.4 o posteriores; los navegadores basados en Chromium, como Brave u Opera, siguen la versión de Chrome en la que se basan. La aplicación de escritorio dibuja en el WebView del sistema, así que el mínimo depende del motor del sistema operativo:
 
@@ -45,7 +45,7 @@ brew uninstall open-pencil/tap/open-pencil
 brew install --cask openpencil
 ```
 
-## Compilación desde el código fuente
+## Compilación desde el código fuente {#building-from-source}
 
 ### Requisitos
 
@@ -74,7 +74,7 @@ El editor estará disponible en `http://localhost:1420`.
 | ------------------------------- | ------------------------------------------------------------------------------------- |
 | `bun run dev` | Inicia el servidor de desarrollo con HMR |
 | `bun run build` | Genera la versión de producción |
-| `bun run check` | Ejecuta oxlint y comprueba los tipos con tsgo |
+| `bun run check` | Ejecuta oxlint y comprueba los tipos con TypeScript 7 |
 | `bun run test` | Ejecuta las pruebas E2E y de regresión visual con Playwright |
 | `bun run test:update` | Actualiza las capturas de referencia |
 | `bun run test:unit` | Ejecuta las pruebas unitarias con bun:test |

@@ -2,7 +2,7 @@
 import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import {
   DESIGN_ISSUE_SEVERITIES,
@@ -11,7 +11,8 @@ import {
 } from '@/app/editor/design-check/issues'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { designCheck } from '@/theme/design-check'
+
+import { designCheck } from './ui'
 
 const { counts } = defineProps<{ counts: DesignIssueCounts }>()
 /** Severities whose issues are listed; toggling one hides or shows its issues. */

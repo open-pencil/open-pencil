@@ -4,8 +4,8 @@ import { create as createPRNG, oneOf, real53, type PRNG } from 'lib0/prng'
 import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import {
   expectSameLayerTree,
   settleGraphSync,
@@ -37,7 +37,7 @@ function randomEdit(random: PRNG, graph: SceneGraph, pageId: string, nextId: () 
   } else {
     const parentId = expectDefined(graph.getNode(id)?.parentId, 'parent of a layer')
     const siblings = graph.getNode(parentId)?.childIds.length ?? 1
-    graph.reorderChild(id, parentId, Math.floor(real53(random) * siblings))
+    graph.insertChildAt(id, parentId, Math.floor(real53(random) * siblings))
   }
 }
 

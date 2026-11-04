@@ -16,7 +16,7 @@ const toolbarTheme = {
       'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm outline-none select-none focus-visible:ring-1 focus-visible:ring-panel-focus disabled:pointer-events-none',
     navigationIcon: 'size-3.5',
     action:
-      'flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
+      'flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
     actionIcon: 'size-4'
   },
   variants: {
@@ -28,8 +28,8 @@ const toolbarTheme = {
     },
     mobile: {
       true: {
-        button: 'rounded-[6px] select-none',
-        flyoutTrigger: 'rounded-[6px] select-none active:bg-hover active:text-surface'
+        button: 'rounded-md select-none',
+        flyoutTrigger: 'rounded-md select-none active:bg-hover active:text-surface'
       },
       false: {
         button: 'rounded-lg',

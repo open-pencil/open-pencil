@@ -1,5 +1,6 @@
 import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
+import { isEmptyObject } from 'es-toolkit'
 import { isValid } from 'js-base64'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
@@ -123,19 +124,32 @@ export function toolSource(
 
 /** Whether a call has input worth showing: source, or at least one argument. */
 export function toolHasInput(part: ToolCallPart): boolean {
-  return toolSource(part) !== null || (isRecord(part.input) && Object.keys(part.input).length > 0)
+  return toolSource(part) !== null || (isRecord(part.input) && !isEmptyObject(part.input))
 }
 
 export type MessagePartGroup =
   | { kind: 'part'; part: ChatMessagePart; index: number }
   | { kind: 'tools'; parts: { part: ToolCallPart; index: number }[] }
+  | { kind: 'compaction'; index: number; compaction: number }
 
-/** Consecutive tool calls form one group, so a long run can collapse into a single row. */
-export function groupMessageParts(parts: readonly ChatMessagePart[]): MessagePartGroup[] {
+/**
+ * Consecutive tool calls form one group, so a long run can collapse into a single row. Each
+ * compaction within the reply, before a step in `compactedSteps`, sits between groups and names
+ * its place in that list.
+ */
+export function groupMessageParts(
+  parts: readonly ChatMessagePart[],
+  compactedSteps: readonly number[] = []
+): MessagePartGroup[] {
   const groups: MessagePartGroup[] = []
+  let step = 0
   parts.forEach((part, index) => {
     // Step boundaries are not rendered, so they must not split a run of calls.
-    if (part.type === 'step-start') return
+    if (part.type === 'step-start') {
+      const compaction = compactedSteps.indexOf(step++)
+      if (compaction !== -1) groups.push({ kind: 'compaction', index, compaction })
+      return
+    }
     if (!isToolUIPart(part)) {
       groups.push({ kind: 'part', part, index })
       return

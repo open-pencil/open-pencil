@@ -30,11 +30,22 @@ Press <kbd>Escape</kbd> to commit the current path as an open path. Open paths r
 
 Paths in OpenPencil use vector networks — a more flexible model than simple point lists that supports branching paths and complex topology. This is the same model Figma uses, so paths round-trip perfectly in .fig files.
 
+## Pencil
+
+Press <kbd>⇧</kbd><kbd>P</kbd>, or pick Pencil from the pen tool's menu in the toolbar, to draw freehand. Each stroke becomes its own vector layer, smoothed into curves you can edit like any other path, and the pencil stays active for the next stroke.
+
+- Zoom in to keep more detail: the curve follows your stroke to within a few screen pixels.
+- Hold <kbd>Shift</kbd> to draw straight, horizontally or vertically, from where you pressed it.
+- End a stroke where it started to close it into a loop.
+- A stroke goes into the frame that holds all of it, otherwise onto the page.
+- New strokes contrast with what they are drawn on. Change the stroke of the last one you drew, and the pencil keeps that style.
+
 ## Keyboard Shortcuts
 
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
 | Pen tool | <kbd>P</kbd> | <kbd>P</kbd> |
+| Pencil | <kbd>⇧</kbd><kbd>P</kbd> | <kbd>Shift</kbd>+<kbd>P</kbd> |
 | Commit open path | <kbd>Escape</kbd> | Escape |
 
 ## Tips

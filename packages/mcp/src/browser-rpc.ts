@@ -23,7 +23,7 @@ type BrowserRPCBridgeOptions = {
 type ConnectionListener = (connected: boolean) => void
 
 /** Any JSON object; the per-type schemas below run only once its `type` is known. */
-const BrowserEnvelopeJSON = v.pipe(
+const browserEnvelopeSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.custom<Record<string, unknown>>(
@@ -31,21 +31,23 @@ const BrowserEnvelopeJSON = v.pipe(
   )
 )
 
-const HandshakeMessage = v.looseObject({ token: v.optional(v.nullable(v.string())) })
+const handshakeMessageSchema = v.looseObject({ token: v.optional(v.nullable(v.string())) })
 
-const RequestMessage = v.looseObject({
+const requestMessageSchema = v.looseObject({
   type: v.literal('request'),
   id: v.pipe(v.string(), v.nonEmpty())
 })
 
-const ResponseMessage = v.looseObject({
+const responseMessageSchema = v.looseObject({
   type: v.literal('response'),
   id: v.pipe(v.string(), v.nonEmpty()),
   ok: v.optional(v.boolean()),
   error: v.optional(v.string())
 })
 
-type BrowserMessage = v.InferOutput<typeof RequestMessage> | v.InferOutput<typeof ResponseMessage>
+type BrowserMessage =
+  | v.InferOutput<typeof requestMessageSchema>
+  | v.InferOutput<typeof responseMessageSchema>
 
 function stripEnvelope(msg: BrowserMessage): Record<string, unknown> {
   const { type: _type, id: _id, ...body } = msg
@@ -222,7 +224,10 @@ export function createBrowserRPCBridge({
     })
   }
 
-  async function handleClientRequest(ws: WebSocket, msg: v.InferOutput<typeof RequestMessage>) {
+  async function handleClientRequest(
+    ws: WebSocket,
+    msg: v.InferOutput<typeof requestMessageSchema>
+  ) {
     try {
       const result = await sendRPC(stripEnvelope(msg))
       sendJSON(ws, { ...responsePayload(result), type: 'response', id: msg.id, ok: true })
@@ -262,7 +267,7 @@ export function createBrowserRPCBridge({
     broadcastRegisterPrompt()
   }
 
-  function handleBrowserResponse(msg: v.InferOutput<typeof ResponseMessage>, ws: WebSocket) {
+  function handleBrowserResponse(msg: v.InferOutput<typeof responseMessageSchema>, ws: WebSocket) {
     if (!browserRegistered || browserWs !== ws) return
     const req = pending.get(msg.id)
     if (!req) return
@@ -277,7 +282,7 @@ export function createBrowserRPCBridge({
 
   function handleMessage(data: string, ws: WebSocket) {
     if (bridgeClosed) return
-    const envelope = v.safeParse(BrowserEnvelopeJSON, data)
+    const envelope = v.safeParse(browserEnvelopeSchema, data)
     if (!envelope.success) {
       if (envelope.issues.some((issue) => issue.type === 'parse_json')) {
         console.warn('Malformed automation message:', v.summarize(envelope.issues))
@@ -295,7 +300,7 @@ export function createBrowserRPCBridge({
       // registerBrowser — when auth is disabled (authToken === null), any
       // token is accepted. A message without a token is ignored; a token of
       // any other type closes the socket.
-      const handshake = v.safeParse(HandshakeMessage, msg)
+      const handshake = v.safeParse(handshakeMessageSchema, msg)
       if (!handshake.success) {
         ws.close()
         return
@@ -319,12 +324,12 @@ export function createBrowserRPCBridge({
       ws.close()
       return
     }
-    const request = v.safeParse(RequestMessage, msg)
+    const request = v.safeParse(requestMessageSchema, msg)
     if (request.success) {
       void handleClientRequest(ws, request.output)
       return
     }
-    const response = v.safeParse(ResponseMessage, msg)
+    const response = v.safeParse(responseMessageSchema, msg)
     if (response.success) handleBrowserResponse(response.output, ws)
   }
 

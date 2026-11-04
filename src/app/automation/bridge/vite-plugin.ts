@@ -5,6 +5,7 @@ import type { IncomingMessage } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { delay } from 'es-toolkit'
 import type { Plugin } from 'vite'
 
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
@@ -121,9 +122,7 @@ export async function waitForAutomationHealth(
     }
     options.assertRunning?.()
     if (healthy) return
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, CHILD_HEALTH_DELAY_MS)
-    })
+    await delay(CHILD_HEALTH_DELAY_MS)
   }
   throw new Error(`MCP server did not become healthy at ${healthURL}`)
 }

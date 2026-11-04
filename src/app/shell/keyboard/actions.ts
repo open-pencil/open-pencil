@@ -1,9 +1,11 @@
 import type { Ref } from 'vue'
 
-import { opacityFromBuffer } from '@open-pencil/core/editor'
-import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
+import { opacityFromBuffer } from '@open-pencil/core'
+import { generatedFrameText } from '@open-pencil/scene-graph/generated'
+import type { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import type { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
-import type { PropertiesTab } from '@/app/ai/chat/use'
+import type { PropertiesTab } from '@/app/ai/chat/panel'
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -26,6 +28,7 @@ export function createKeyboardActions({
     return (
       store.state.nodeEditState &&
       (store.state.nodeEditState.selectedVertexIndices.size > 0 ||
+        store.state.nodeEditState.selectedSegmentIndices.size > 0 ||
         store.state.nodeEditState.selectedHandles.size > 0)
     )
   }
@@ -54,37 +57,48 @@ export function createKeyboardActions({
       store.enterNodeEditMode(node.id)
       return
     }
-    if (node?.type === 'TEXT') {
+    // A sticky note opens its body and a connector its label, all of it selected, keeping the
+    // note or connector selected.
+    const text = (node && generatedFrameText(store.graph, node)) ?? node
+    if (text?.type === 'TEXT') {
       requestAnimationFrame(() => {
-        store.startTextEditing(node.id)
+        store.startTextEditing(text.id)
         store.textEditor?.selectAll()
         store.requestRender()
       })
+      return
     }
+    runCommand('selection.selectChildren')
   }
 
   function escapeOrDeselect() {
-    if (store.state.play) {
-      store.stopPlay()
-      return
-    }
+    if (store.leaveCanvasView()) return
     if (store.state.rotationPreview) {
       store.setRotationPreview(null)
+      return
+    }
+    // Esc leaves the eyedropper without touching the selection or a waiting color picker.
+    if (store.state.activeTool === 'EYEDROPPER') {
+      store.setTool('SELECT')
       return
     }
     if (store.state.nodeEditState) {
       store.exitNodeEditMode(true)
       return
     }
-    if (store.state.penState) {
-      store.penCancel()
+    if (store.state.pencilState) {
+      store.pencilCancel()
       return
     }
-    if (store.state.enteredContainerId) {
-      store.exitContainer()
+    // Figma keeps the path drawn so far; a lone point has nothing to keep.
+    if (store.state.penState) {
+      if (store.state.penState.vertices.length >= 2) store.penCommit(false)
+      else store.penCancel()
       return
     }
     if (useComments().closeCard()) return
+    // Figma's Escape clears the selection at any depth; Shift+Enter is the way up a level.
+    store.exitContainers()
     store.clearSelection()
     store.setTool('SELECT')
   }

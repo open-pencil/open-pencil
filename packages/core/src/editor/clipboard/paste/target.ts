@@ -1,5 +1,8 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import { CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
@@ -68,4 +71,17 @@ export function pastedComponentIds(graph: SceneGraph, trees: readonly PastedTree
   }
   for (const tree of trees) visit(tree)
   return [...referenced].filter((id) => !copied.has(id) && graph.getNode(id)?.type === 'COMPONENT')
+}
+
+/** A canvas point in the coordinates of the layer pasted into, where its new children sit. */
+export function parentLocalPoint(
+  ctx: Pick<EditorContext, 'graph'>,
+  parentId: string,
+  x: number,
+  y: number
+): Vector {
+  const parent = ctx.graph.getNode(parentId)
+  if (!parent) return { x, y }
+  const inverse = Matrix.invert(getWorldMatrix(parent, ctx.graph))
+  return inverse ? Matrix.mapPoint(inverse, { x, y }) : { x, y }
 }

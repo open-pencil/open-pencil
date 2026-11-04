@@ -29,10 +29,26 @@ The **Copy/Paste as** submenu offers additional clipboard formats for the select
 | Copy | <kbd>⌘</kbd><kbd>C</kbd> | <kbd>Ctrl</kbd> + <kbd>C</kbd> |
 | Cut | <kbd>⌘</kbd><kbd>X</kbd> | <kbd>Ctrl</kbd> + <kbd>X</kbd> |
 | Paste here | <kbd>⌘</kbd><kbd>V</kbd> | <kbd>Ctrl</kbd> + <kbd>V</kbd> |
+| Paste as layers | — | — |
 | Duplicate | <kbd>⌘</kbd><kbd>D</kbd> | <kbd>Ctrl</kbd> + <kbd>D</kbd> |
 | Delete | ⌫ | <kbd>Backspace</kbd> / Delete |
 
-Clipboard actions are disabled when nothing is selected (except Paste, which is available when the clipboard has content).
+Clipboard actions are disabled when nothing is selected, except Paste, which is available when the clipboard has content, and Paste as layers, which is always available.
+
+**Paste as layers** lays HTML on the clipboard, copied from a web page or as HTML source, out as layers at the cursor, where Paste would make it one text layer. See [Pasting](./selection-and-manipulation#pasting).
+
+## Copy and Paste Properties
+
+| Action | Shortcut (Mac) | Shortcut (Win/Linux) |
+|--------|----------------|----------------------|
+| Copy properties | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
+| Paste properties | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>V</kbd> |
+
+Both are in the **Copy/Paste as** submenu.
+
+- **Copy properties** puts the selected layer on the system clipboard the way Figma does, marked so a plain Paste ignores it.
+- **Paste properties** applies the look of the one layer on the clipboard to every selected layer, locked ones included, in one undo step. It reads a copy made with Copy properties or ordinary Copy, here or in Figma.
+- The look is fills, strokes, effects, opacity, blend mode, corner radius, and linked styles and variables. Between frames it includes auto layout and layout grids, and between text layers the text style. Position, size, rotation, name, and content never change, and properties a text layer mixes across its characters are left alone.
 
 ## Z-Order
 

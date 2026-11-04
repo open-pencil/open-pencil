@@ -1,11 +1,6 @@
-import {
-  compileTailwindCSS,
-  designDocumentToSceneGraph,
-  jsx,
-  jsxToDesignDocument,
-  type DesignDocument
-} from '@open-pencil/dom-css'
-
+import { compileTailwindCSS, jsxToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
+import { jsx } from '@open-pencil/dom-css/browser'
+import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import {
   DOM_CSS_COLORS,
   fixtureMatrixCSS,
@@ -13,9 +8,10 @@ import {
   tailwindBadgeClasses,
   tailwindButtonClasses,
   tailwindCardClasses,
-  tailwindInputClasses,
+  tailwindTextInputClasses,
   tailwindNavClasses
-} from '#tests/helpers/dom-css'
+} from '@open-pencil/test-support/dom-css'
+
 import {
   browserRuntimeComputeStyles,
   computedStyleProperties,
@@ -171,7 +167,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
   })
 
   test('resolves Tailwind input, badge, and nav utilities in a real browser', async ({ page }) => {
-    const inputClasses = [...tailwindInputClasses]
+    const inputClasses = [...tailwindTextInputClasses]
     const badgeClasses = [...tailwindBadgeClasses]
     const navClasses = [...tailwindNavClasses]
     const css = await compileTailwindCSS([...inputClasses, ...badgeClasses, ...navClasses])

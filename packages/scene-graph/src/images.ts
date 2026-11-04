@@ -1,5 +1,8 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
+import { imageSize as readImageHeader } from 'image-size'
+
+import type { Matrix, Size } from './primitives'
 
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
@@ -12,15 +15,75 @@ export function computeImageHash(data: Uint8Array): string {
 
 export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'
 
+/** The image types documents store, by the name `image-size` gives each format. */
+const IMAGE_MIME_TYPES: Partial<Record<string, ImageMimeType>> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp'
+}
+
+/** The raster types a dropped or pasted file can be imported as an image fill from. */
+export const IMPORTABLE_RASTER_TYPES: ReadonlySet<string> = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/avif'
+])
+
+/** Whether a file is an SVG image, which some systems report without a media type. */
+export function isSVGFile(file: { name: string; type: string }): boolean {
+  return (
+    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
+  )
+}
+
+export interface ImageHeader extends Size {
+  type: ImageMimeType
+}
+
 /**
- * The media type of encoded image bytes, read from their signature, for writing them out as a
- * data URL or file. Bytes with no known signature are reported as PNG, as image fills began.
+ * The type and size of a PNG, JPEG, GIF, or WebP, read from its header by `image-size`; null for
+ * bytes it cannot read and for other formats.
+ */
+export function imageHeader(data: Uint8Array): ImageHeader | null {
+  let header: ReturnType<typeof readImageHeader>
+  try {
+    header = readImageHeader(data)
+  } catch {
+    return null
+  }
+  const type = header.type === undefined ? undefined : IMAGE_MIME_TYPES[header.type]
+  return type ? { type, width: header.width, height: header.height } : null
+}
+
+/**
+ * The media type of encoded image bytes, read from their header, for writing them out as a data
+ * URL or file. Bytes it cannot read are reported as PNG, as image fills began.
  */
 export function imageMimeType(data: Uint8Array): ImageMimeType {
-  if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return 'image/jpeg'
-  if (data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46) return 'image/gif'
-  const riff = data[0] === 0x52 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x46
-  const webp = data[8] === 0x57 && data[9] === 0x45 && data[10] === 0x42 && data[11] === 0x50
-  if (riff && webp) return 'image/webp'
-  return 'image/png'
+  return imageHeader(data)?.type ?? 'image/png'
+}
+
+/** An image's size in pixels, read from its header; null for bytes it cannot read. */
+export function imageSize(data: Uint8Array): Size | null {
+  const header = imageHeader(data)
+  return header && { width: header.width, height: header.height }
+}
+
+/**
+ * The crop that shows an image as Fill does: scaled to cover a `width` × `height` layer and
+ * centred. Figma starts a crop from it, as the image-space window a crop's transform holds.
+ */
+export function coverImageTransform(
+  width: number,
+  height: number,
+  imageWidth: number,
+  imageHeight: number
+): Matrix {
+  const scale = Math.max(width / imageWidth, height / imageHeight)
+  const m00 = width / scale / imageWidth
+  const m11 = height / scale / imageHeight
+  return { m00, m01: 0, m02: (1 - m00) / 2, m10: 0, m11, m12: (1 - m11) / 2 }
 }

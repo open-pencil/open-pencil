@@ -1,0 +1,123 @@
+import { describe, expect, test } from 'bun:test'
+
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
+const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+function setup() {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  return { graph, figma }
+}
+
+describe('set_image_fill tool', () => {
+  const tool = expectDefined(
+    ALL_TOOLS.find((t) => t.name === 'set_image_fill'),
+    'set_image_fill tool'
+  )
+
+  test('sets an IMAGE fill with correct imageHash and scaleMode', () => {
+    const { figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, {
+      type: 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100
+    }) as { id: string }
+
+    const b64 = PNG_MAGIC.toBase64()
+    const result = tool.execute(figma, { id: node.id, image_data: b64 }) as {
+      id: string
+      imageHash: string
+      scaleMode: string
+    }
+
+    expect(result.imageHash).toBeTruthy()
+    expect(result.scaleMode).toBe('FILL')
+
+    const fills = expectFills(expectDefined(figma.getNodeById(node.id), 'image-filled node').fills)
+    expect(fills).toHaveLength(1)
+    expect(fills[0]).toMatchObject({
+      type: 'IMAGE',
+      imageHash: result.imageHash,
+      scaleMode: 'FILL'
+    })
+  })
+
+  test('returns error for non-existent node', () => {
+    const { figma } = setup()
+    const result = tool.execute(figma, { id: 'nonexistent', image_data: PNG_MAGIC.toBase64() }) as {
+      error: string
+    }
+    expect(result.error).toContain('not found')
+  })
+
+  test('default scale mode is FILL', () => {
+    const { figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+      scaleMode: string
+    }
+    expect(result.scaleMode).toBe('FILL')
+  })
+
+  test('all scale modes work', () => {
+    const modes = ['FILL', 'FIT', 'CROP', 'TILE'] as const
+    for (const mode of modes) {
+      const { figma } = setup()
+      const shape = expectDefined(
+        ALL_TOOLS.find((t) => t.name === 'create_shape'),
+        'create_shape tool'
+      )
+      const node = shape.execute(figma, {
+        type: 'RECTANGLE',
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 50
+      }) as { id: string }
+
+      const result = tool.execute(figma, {
+        id: node.id,
+        image_data: PNG_MAGIC.toBase64(),
+        scale_mode: mode
+      }) as { scaleMode: string }
+      expect(result.scaleMode).toBe(mode)
+
+      const fills = expectFills(
+        expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
+      )
+      expect(fills[0]).toMatchObject({ scaleMode: mode })
+    }
+  })
+
+  test('image data is stored in graph.images', () => {
+    const { graph, figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+      imageHash: string
+    }
+    expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
+  })
+})

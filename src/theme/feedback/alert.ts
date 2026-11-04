@@ -12,7 +12,7 @@ const alertTheme = {
     tone: {
       info: { root: 'border-border bg-panel-field text-surface', icon: 'text-muted' },
       success: { root: 'border-success/30 bg-success/5 text-surface', icon: 'text-success' },
-      warning: { root: 'border-warning-border bg-warning-bg text-warning-text' },
+      warning: { root: 'border-warning-border bg-warning-bg text-warning' },
       error: { root: 'border-error-border bg-error-bg text-error' }
     }
   },

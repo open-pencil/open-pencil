@@ -1,1 +1,0 @@
-- Figma shows shader fills and images from older documents in `.fig` files OpenPencil writes: every image is stored under the SHA-1 of its bytes, the only name Figma reads, and a shader keeps its preset through `.fig` files and the Figma clipboard.

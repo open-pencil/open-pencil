@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createChecker } from 'vue-component-meta'
 import type { Loader } from 'vitepress'
+import { createChecker } from 'vue-component-meta'
 
 export interface SdkComponentPropMeta {
   name: string
@@ -59,7 +59,22 @@ function findWorkspaceRoot(start: string): string {
 }
 
 const repoRoot = findWorkspaceRoot(fileURLToPath(new URL('.', import.meta.url)))
-const checker = createChecker(resolve(repoRoot, 'packages/vue/tsconfig.json'), { schema: false })
+
+type ComponentMetaChecker = ReturnType<typeof createChecker>
+const SHARED_CHECKER: unique symbol = Symbol.for('open-pencil.docs.component-meta-checker')
+
+/**
+ * One checker for the whole docs build. VitePress evaluates each data loader's imports on their
+ * own, so a module-level checker was created once per loader: fourteen TypeScript programs over
+ * the Vue SDK at once, about 7 GB of heap. The process-wide one is created on first use.
+ */
+function sharedChecker(): ComponentMetaChecker {
+  const scope = globalThis as typeof globalThis & { [SHARED_CHECKER]?: ComponentMetaChecker }
+  scope[SHARED_CHECKER] ??= createChecker(resolve(repoRoot, 'packages/vue/tsconfig.json'), {
+    schema: false
+  })
+  return scope[SHARED_CHECKER]
+}
 
 export interface SdkComponentData {
   components: SdkComponentMeta[]
@@ -74,10 +89,19 @@ export function defineComponentMetaLoader(sources: string[]): Loader<SdkComponen
 
 export function readComponentMeta(source: string): SdkComponentMeta {
   const absoluteSource = resolve(repoRoot, source)
+  const checker = sharedChecker()
+  // The checker outlives a loader's reruns in development, so it reads the edited file again.
+  checker.updateFile(absoluteSource, readFileSync(absoluteSource, 'utf8'))
   const meta = checker.getComponentMeta(absoluteSource)
 
   return {
-    name: meta.name ?? source.split('/').at(-1)?.replace(/\.vue$/, '') ?? source,
+    name:
+      meta.name ??
+      source
+        .split('/')
+        .at(-1)
+        ?.replace(/\.vue$/, '') ??
+      source,
     source,
     props: meta.props
       .filter((prop) => !prop.global)

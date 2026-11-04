@@ -2,25 +2,26 @@ import { compact } from 'es-toolkit/array'
 import { pick } from 'es-toolkit/object'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import {
-  findInstanceAncestor,
-  type CodeSyntaxPlatform,
-  type SceneGraph,
-  type SceneNode,
-  type TokenExpression,
-  type TokenUnit,
-  type Variable,
-  type VariableCollection,
-  type VariableScope,
-  type VariableValue
+import type {
+  CodeSyntaxPlatform,
+  SceneGraph,
+  SceneNode,
+  TokenExpression,
+  TokenUnit,
+  Variable,
+  VariableCollection,
+  VariableScope,
+  VariableValue
 } from '@open-pencil/scene-graph'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { randomHex } from '@open-pencil/scene-graph/random'
+import { effectBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import type { AliasTarget, PlannedCollection, PlannedVariable, TokenImportPlan } from './plan'
-import type { PlannedStyle } from './plan-styles'
+import type { PlannedStyle } from './plan/styles'
 
 /** Token fields an import sets; `undefined` clears one. */
 export interface ImportedTokenFields {
@@ -50,6 +51,7 @@ export interface TokenImportTarget {
   addStyle(style: PlannedStyle, fields: Partial<SceneNode>): SceneNode
   updateNode(nodeId: string, changes: Partial<SceneNode>): void
   bindVariable(nodeId: string, field: string, variableId: string): void
+  unbindVariable(nodeId: string, field: string): void
 }
 
 export interface TokenImportResult {
@@ -155,7 +157,7 @@ function applyVariables(target: TokenImportTarget, plan: TokenImportPlan) {
         hiddenFromPublishing: variable.hiddenFromPublishing ?? false,
         description: variable.description ?? made.description
       }
-      if (Object.keys(expressions).length > 0) fields.expressions = expressions
+      if (!isEmptyObject(expressions)) fields.expressions = expressions
       target.setTokenFields(made.id, fields)
     })
   })
@@ -207,6 +209,12 @@ function applyStyles(
     const node = existing ?? target.addStyle(style, { ...style.fields, name: style.name })
     const own = existing && changedFields(existing, style.fields)
     if (own) target.updateNode(node.id, own)
+    // An effect field the token now writes as a literal lets its variable go.
+    if (existing && style.kind === 'EFFECT') {
+      for (const field of Object.keys(node.boundVariables))
+        if (effectBindingTarget(field) && !Object.hasOwn(style.bindings, field))
+          target.unbindVariable(node.id, field)
+    }
     for (const [field, alias] of Object.entries(style.bindings)) {
       const variableId = aliasId(alias, created)
       if (variableId && node.boundVariables[field] !== variableId)
@@ -297,7 +305,8 @@ function graphTokenImportTarget(
       return node
     },
     updateNode: (nodeId, changes) => graph.updateNode(nodeId, changes),
-    bindVariable: (nodeId, field, variableId) => graph.bindVariable(nodeId, field, variableId)
+    bindVariable: (nodeId, field, variableId) => graph.bindVariable(nodeId, field, variableId),
+    unbindVariable: (nodeId, field) => graph.unbindVariable(nodeId, field)
   }
 }
 

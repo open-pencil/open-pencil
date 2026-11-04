@@ -31,11 +31,13 @@ export function useCollab() {
     const room = activeRoom.value
     return {
       inRoom: room !== undefined,
+      canLeave: room?.leavable ?? false,
       roomId: room?.roomId ?? null,
       status: room?.status.value ?? null,
       peers: room?.peers.value ?? [],
-      localName: identity.name.value,
-      localColor: identity.color,
+      // A room may know this tab by another name, such as a Cloud account's.
+      localName: room?.identity.name.value ?? identity.name.value,
+      localColor: room?.identity.color ?? identity.color,
       hasChosenName: identity.hasChosenName.value
     }
   })
@@ -65,7 +67,7 @@ export function useCollab() {
     /** Puts the active tab's document into a room and returns the room ID. */
     shareCurrentDoc: (roomId?: string): string | null => {
       const store = activeTab.value?.store
-      if (!store || activeTab.value?.kind === 'home') return null
+      if (!store || activeTab.value?.kind !== 'document') return null
       return shareDocument(store, roomId).roomId
     },
     disconnect: () => {

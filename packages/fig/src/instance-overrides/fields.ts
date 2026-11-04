@@ -22,6 +22,7 @@ export interface OverrideField {
     | 'size'
     | 'layout-distance'
     | 'layout-mode'
+    | 'variable-modes'
     | 'node'
   /** A placed-space distance that an instance's uniform scale multiplies. */
   readonly length?: true
@@ -38,6 +39,7 @@ export const OVERRIDE_FIELDS = {
   opacity: { scene: ['opacity'], kind: 'scalar' },
   fontSize: { scene: ['fontSize'], kind: 'scalar', length: true },
   visible: { scene: ['visible'], kind: 'visible' },
+  variableModeBySetMap: { scene: ['variableModes'], kind: 'variable-modes' },
   // Figma claims styled ranges and list lines with the characters (desktop 126).
   textData: { scene: ['text', 'styleRuns', 'textParagraphs'], kind: 'text' },
   styleIdForText: { scene: ['textStyleId'], kind: 'text-style' },
@@ -104,8 +106,13 @@ export const OVERRIDE_FIELDS = {
   stackPrimaryAlignItems: { scene: ['primaryAxisAlign'], kind: 'node' },
   stackCounterAlignItems: { scene: ['counterAxisAlign'], kind: 'node' },
   stackPositioning: { scene: ['layoutPositioning'], kind: 'node' },
-  fontName: { scene: ['fontFamily', 'fontWeight', 'italic'], kind: 'node' },
+  fontName: { scene: ['fontFamily', 'fontWeight', 'italic', 'fontStyle'], kind: 'node' },
   fontVariations: { scene: ['fontVariations'], kind: 'node', absent: [] },
+  detachOpticalSizeFromFontSize: {
+    scene: ['opticalSizeFromFontSize'],
+    kind: 'node',
+    absent: false
+  },
   lineHeight: { scene: ['lineHeight'], kind: 'node', absent: { value: 100, units: 'PERCENT' } },
   letterSpacing: { scene: ['letterSpacing'], kind: 'node' },
   paragraphSpacing: { scene: ['paragraphSpacing'], kind: 'node', length: true, absent: 0 },
@@ -153,3 +160,21 @@ export const LAYOUT_DISTANCE_FIELDS: Readonly<Record<string, RawFieldOfKind<'lay
   Object.fromEntries(
     rawFieldsOfKind('layout-distance').map((raw) => [OVERRIDE_FIELDS[raw].scene[0], raw])
   )
+
+/**
+ * A component's own identity, which an instance does not take from it: Figma writes these on
+ * component records only, and on an instance only its own override key and symbol version.
+ * Measured over `gold-preview`, `material3`, `slots`, and `variable-override-precedence`:
+ * 26,211 instance records, none carrying the rest.
+ */
+export const COMPONENT_IDENTITY_FIELDS = [
+  'componentKey',
+  'sourceLibraryKey',
+  'publishID',
+  'publishedVersion',
+  'sharedSymbolVersion',
+  'isSymbolPublishable',
+  'variantPropSpecs',
+  'componentPropDefs',
+  'overrideKey'
+] as const

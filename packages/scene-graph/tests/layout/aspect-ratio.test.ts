@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   enforcedAspectRatio,
   recapturedAspectRatio,
-  SceneGraph,
   sizeKeepingAspectRatio
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/layout'
 
 describe('aspect ratio lock', () => {
   test('a locked layer keeps the ratio of its stored size', () => {

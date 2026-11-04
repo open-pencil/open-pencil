@@ -1,3 +1,4 @@
+export { CSS_BLEND_MODE } from './blend'
 export { parseCSSGridTracks } from './grid'
 export {
   parseCSSAlignItems,
@@ -6,4 +7,17 @@ export {
   parseCSSJustifyContent
 } from './layout'
 export { parseCSSShadows } from './shadows'
+export {
+  parseCSSFontFamily,
+  parseCSSLetterSpacing,
+  parseCSSLineHeight,
+  resolveCSSFontFamily
+} from './text'
+export {
+  parseCSSTransform,
+  parseCSSTransformOrigin,
+  parseCSSTransforms,
+  type CSSTransformBox,
+  type CSSTransformStyle
+} from './transform'
 export { parseCSSColor, parseCSSNumber, splitCSSValue } from './values'

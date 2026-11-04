@@ -2,9 +2,13 @@ import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
 import { watch } from 'vue'
 
-import { useAppTheme } from '../src/app/shell/theme'
+// Points Core at the engine files the openPencil() Vite plugin serves.
+import '@/app/editor/canvas/canvaskit'
+import { registerInterfaceFont } from '@/app/editor/fonts/interface'
+import { useAppTheme } from '@/app/shell/theme'
+import '@/app.css'
 
-import '../src/app.css'
+registerInterfaceFont()
 
 const preview: Preview = {
   decorators: [

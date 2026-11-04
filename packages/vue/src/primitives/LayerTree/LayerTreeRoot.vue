@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { TreeRoot } from 'reka-ui'
-import { computed, nextTick, onScopeDispose, ref } from 'vue'
+import { computed, nextTick, onScopeDispose, reactive, ref } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
-import { provideLayerTree } from '#vue/primitives/LayerTree/context'
+import { LAYER_OUTLINE_FIELDS, provideLayerTree } from '#vue/primitives/LayerTree/context'
 import type {
   LayerNode,
   LayerSelectionMode,
@@ -83,11 +83,18 @@ const PATCHABLE_NODE_KEYS = new Set<keyof SceneNode>([
   'type',
   'layoutMode',
   'visible',
-  'locked'
+  'locked',
+  'variableModes',
+  'isMask',
+  'fills',
+  'strokes',
+  ...LAYER_OUTLINE_FIELDS
 ])
 
 function patchTreeNode(id: string, changes: Partial<SceneNode>) {
-  if ('childIds' in changes || 'parentId' in changes) {
+  // A layout mode turns a layer's rows between front-most first and flow order.
+  const reordersRows = 'layoutMode' in changes && !!nodesById.get(id)?.children?.length
+  if ('childIds' in changes || 'parentId' in changes || reordersRows) {
     rebuildTree()
     return
   }
@@ -96,7 +103,9 @@ function patchTreeNode(id: string, changes: Partial<SceneNode>) {
   }
   const target = nodesById.get(id)
   const source = editor.graph.getNode(id)
-  if (target && source) patchLayerNode(target, source)
+  // The index holds the plain rows; writing through their reactive proxy updates every view of
+  // them, including values a row derives and caches, such as its variable mode tags.
+  if (target && source) patchLayerNode(reactive(target), source)
 }
 
 const rowRefs = new Map<string, HTMLElement>()
@@ -152,21 +161,6 @@ onScopeDispose(() => {
   for (const stop of unsubscribe) stop()
 })
 
-function syncCanvasScope(nodeId: string) {
-  const node = editor.graph.getNode(nodeId)
-  if (!node) return
-  let parentId = node.parentId
-  while (parentId && parentId !== editor.state.currentPageId) {
-    if (editor.graph.isContainer(parentId)) {
-      editor.enterContainer(parentId)
-      return
-    }
-    const parent = editor.graph.getNode(parentId)
-    parentId = parent?.parentId ?? null
-  }
-  editor.state.enteredContainerId = null
-}
-
 function select(id: string, selection: boolean | LayerSelectionMode) {
   const mode = typeof selection === 'boolean' ? { additive: selection, range: false } : selection
   emit('select', id, mode.additive)
@@ -187,7 +181,8 @@ function select(id: string, selection: boolean | LayerSelectionMode) {
   } finally {
     applyingSelection = false
   }
-  if (!mode.additive && !mode.range) syncCanvasScope(id)
+  // A layer picked here leaves canvas clicks as a click on it there would, as in Figma.
+  if (!mode.additive && !mode.range) editor.enterContainerOf(id)
   scrollToNode(id)
 }
 

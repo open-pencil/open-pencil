@@ -7,6 +7,7 @@ import {
   panelRotationChange
 } from '@open-pencil/core/geometry'
 import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
+import { layerRotates } from '@open-pencil/scene-graph/generated'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
@@ -23,6 +24,8 @@ export function usePosition() {
 
   const { nodes, node, active, isMulti, prop } = useNodeProps()
   const ids = computed(() => nodes.value.map((n) => n.id))
+  /** Whether the selection turns and flips; a sticky note or connector stays upright. */
+  const rotates = computed(() => nodes.value.every(layerRotates))
 
   // X, Y, and rotation read as Figma's panel shows them: the turned layer's box on the canvas and
   // its counterclockwise angle; see `panelPosition` and `panelRotation`.
@@ -121,6 +124,7 @@ export function usePosition() {
     width,
     height,
     rotation,
+    rotates,
     inAutoLayout,
     ignoresAutoLayout,
     toggleIgnoreAutoLayout,

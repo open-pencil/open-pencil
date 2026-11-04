@@ -2,6 +2,7 @@
 export {
   sceneGraphToDesignDocument,
   sceneNodeToDesignDocument,
+  sceneNodesToDesignDocument,
   type SceneGraphToDesignOptions,
   type VectorElementRenderer
 } from './projection'

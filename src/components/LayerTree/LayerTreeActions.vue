@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
-import type { LayerNode } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import Tip from '../ui/overlay/Tip.vue'
 
@@ -31,6 +31,7 @@ const { menu: t } = useI18n()
         :class="ui.action"
         @pointerdown.stop
         @click.stop="emit('toggleLock')"
+        @dblclick.stop
       >
         <icon-lucide-lock v-if="node.locked" data-slot="action-icon" :class="ui.lockIcon" />
         <icon-lucide-unlock v-else data-slot="action-icon" :class="ui.lockIcon" />
@@ -44,6 +45,7 @@ const { menu: t } = useI18n()
         :class="ui.action"
         @pointerdown.stop
         @click.stop="emit('toggleVisibility')"
+        @dblclick.stop
       >
         <icon-lucide-eye-off
           v-if="!node.visible"

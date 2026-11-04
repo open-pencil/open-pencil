@@ -1,12 +1,13 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
-import { SceneGraph, setInstanceOverride, rescaleNodeTree } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 
 test('serializes self size claims against the instance main component', async () => {
   await initCodec()

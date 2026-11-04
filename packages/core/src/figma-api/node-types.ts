@@ -1,4 +1,23 @@
-/// <reference types="@figma/plugin-typings" />
+import type {
+  BooleanOperationNode,
+  ComponentNode,
+  ComponentSetNode,
+  ConnectorNode,
+  EllipseNode,
+  FrameNode,
+  GroupNode,
+  InstanceNode,
+  LineNode,
+  PolygonNode,
+  RectangleNode,
+  SectionNode,
+  ShapeWithTextNode,
+  SlotNode,
+  StarNode,
+  StickyNode,
+  TextNode,
+  VectorNode
+} from '@figma/plugin-typings/plugin-api-standalone'
 
 import type { FigmaNodeProxy } from './proxy'
 
@@ -10,6 +29,7 @@ export type FigmaLineNode = FigmaNodeProxy & LineNode
 export type FigmaVectorNode = FigmaNodeProxy & VectorNode
 export type FigmaPolygonNode = FigmaNodeProxy & PolygonNode
 export type FigmaStarNode = FigmaNodeProxy & StarNode
+export type FigmaShapeWithTextNode = FigmaNodeProxy & ShapeWithTextNode
 export type FigmaComponentNode = FigmaNodeProxy & ComponentNode
 export type FigmaComponentSetNode = FigmaNodeProxy & ComponentSetNode
 export type FigmaInstanceNode = FigmaNodeProxy & InstanceNode
@@ -17,3 +37,5 @@ export type FigmaSlotNode = FigmaNodeProxy & SlotNode
 export type FigmaSectionNode = FigmaNodeProxy & SectionNode
 export type FigmaGroupNode = FigmaNodeProxy & GroupNode
 export type FigmaBooleanOperationNode = FigmaNodeProxy & BooleanOperationNode
+export type FigmaStickyNode = FigmaNodeProxy & StickyNode
+export type FigmaConnectorNode = FigmaNodeProxy & ConnectorNode

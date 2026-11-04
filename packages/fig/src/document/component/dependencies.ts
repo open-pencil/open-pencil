@@ -5,7 +5,8 @@ import {
   type ComponentPropAssignment
 } from '#fig/instance-overrides/types'
 
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 interface DependencyDefinition {

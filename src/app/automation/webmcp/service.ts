@@ -1,12 +1,13 @@
 import { reactive, watch, type Ref, type WatchStopHandle } from 'vue'
 import type { WebMCP } from 'webmcp-types'
 
-import { getWebMCPTools, type WebMCPMode } from './policy'
+import { getWebMCPTools } from './policy'
 import {
   registerWebMCPTools,
   type WebMCPExecutionTarget,
   type WebMCPRegistration
 } from './registration'
+import { type WebMCPMode } from './schema'
 
 export interface WebMCPRuntimeState {
   status: 'unsupported' | 'off' | 'starting' | 'ready' | 'error'

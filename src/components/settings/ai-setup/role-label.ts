@@ -1,4 +1,4 @@
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import { isOnboardingAgent, type PlannedRole } from '@/app/ai/models/settings/onboarding/plan'

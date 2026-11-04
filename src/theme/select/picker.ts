@@ -1,9 +1,9 @@
 import { motionStyles } from '../motion/styles'
 import { floatingSurface } from '../overlay'
-import { panelFieldBase } from '../panel/field'
+import { panelFieldBase } from '../panel/field/base'
 
-/** Choices per row in the grid layout; keyboard navigation moves this many for a row. */
-export const APP_PICKER_GRID_COLUMNS = 8
+/** Choices per row in the grid and gallery layouts; keyboard navigation moves this many for a row. */
+export const APP_PICKER_COLUMNS = { grid: 8, gallery: 3 } as const
 
 /** A searchable list of choices that opens beside the properties panel, as Figma's pickers do. */
 const appPickerTheme = {
@@ -15,23 +15,24 @@ const appPickerTheme = {
     ],
     // The title and close button line up with the panel's section headers and the search field.
     header: 'flex h-9 shrink-0 items-center gap-1.5 border-b border-border pr-2 pl-3',
-    title: 'min-w-0 flex-1 truncate text-[11px] font-semibold text-surface',
+    title: 'min-w-0 flex-1 truncate text-2xs font-semibold text-surface',
     search: [panelFieldBase, 'relative m-2 flex h-7 shrink-0 items-center'],
     searchIcon: 'pointer-events-none absolute left-2 size-3.5 text-muted',
     input:
       'h-full min-w-0 flex-1 bg-transparent pr-2 pl-7 text-xs text-surface outline-none placeholder:text-muted',
     list: 'flex min-h-0 flex-col gap-2 overflow-y-auto px-2 pb-2',
     group: '',
-    groupLabel: 'px-1 pb-1 text-[10px] font-medium tracking-wide text-muted uppercase',
+    groupLabel: 'px-1 pb-1 text-3xs font-medium tracking-wide text-muted uppercase',
     item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-left outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover',
     leading:
       'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary text-muted',
     text: 'min-w-0 flex-1',
     label: 'block truncate text-xs text-surface',
-    description: 'block truncate text-[10px] text-muted',
+    description: 'block truncate text-3xs text-muted',
     check: 'size-3 shrink-0 text-primary',
-    empty: 'px-1 py-2 text-[11px] text-muted',
+    empty: 'px-1 py-2 text-2xs text-muted',
     placeholder: 'block h-10 rounded bg-hover motion-safe:animate-pulse',
+    setup: 'flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3',
     footer: 'border-t border-border p-1'
   },
   variants: {
@@ -55,6 +56,19 @@ const appPickerTheme = {
         item: 'aspect-square justify-center p-0 data-[selected]:ring-1 data-[selected]:ring-primary',
         placeholder: 'aspect-square h-auto',
         leading: 'size-full border-0 bg-transparent text-surface',
+        text: 'sr-only',
+        check: 'hidden'
+      },
+      /** Larger thumbnails, three to a row, for pictures such as photos. */
+      gallery: {
+        content: 'h-[28rem] w-96',
+        list: 'flex-1',
+        empty: 'm-auto max-w-72 text-center',
+        group: 'grid grid-cols-3 gap-1',
+        groupLabel: 'col-span-full pt-1',
+        item: 'aspect-[4/3] justify-center p-0 data-[highlighted]:bg-transparent data-[highlighted]:ring-2 data-[highlighted]:ring-accent',
+        placeholder: 'aspect-[4/3] h-auto',
+        leading: 'size-full rounded border-0',
         text: 'sr-only',
         check: 'hidden'
       }

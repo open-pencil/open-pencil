@@ -1,5 +1,9 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { cycleSafeParent, type NodeType, type SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** Parents a layer stays in while dragged until it lands on another frame. */
 const ENCLOSING_TYPES = new Set<NodeType>(['GROUP', 'BOOLEAN_OPERATION'])
@@ -64,6 +68,45 @@ export function findDrawParent(cx: number, cy: number, type: NodeType, editor: E
     target = target.parentId ? (editor.graph.getNode(target.parentId) ?? null) : null
   }
   return acceptingTarget(target, editor)?.id ?? editor.state.currentPageId
+}
+
+/** Whether every canvas point lies inside the container's own box, rotated or flipped with it. */
+function holdsPoints(target: SceneNode, points: readonly Vector[], editor: Editor): boolean {
+  const toLocal = Matrix.invert(getWorldMatrix(target, editor.graph))
+  if (!toLocal) return false
+  const local = Matrix.mapPoints(
+    toLocal,
+    points.flatMap((point) => [point.x, point.y])
+  )
+  for (let i = 0; i < local.length; i += 2) {
+    const [x, y] = [local[i], local[i + 1]]
+    if (x < 0 || y < 0 || x > target.width || y > target.height) return false
+  }
+  return true
+}
+
+/**
+ * The parent a layer drawn through `points` goes into: the one it would go into from the first
+ * point, or the nearest container above that holds all of them, as Figma places a pencil stroke.
+ */
+export function findEnclosingDrawParent(
+  points: readonly Vector[],
+  type: NodeType,
+  editor: Editor
+): string {
+  const pageId = editor.state.currentPageId
+  const start = points.at(0)
+  if (!start) return pageId
+  let target = editor.graph.getNode(findDrawParent(start.x, start.y, type, editor))
+  while (target && target.type !== 'CANVAS') {
+    if (holdsPoints(target, points, editor)) return target.id
+    let parent = target.parentId ? editor.graph.getNode(target.parentId) : undefined
+    while (parent && parent.type !== 'CANVAS' && !takesDrawnLayer(parent, type)) {
+      parent = parent.parentId ? editor.graph.getNode(parent.parentId) : undefined
+    }
+    target = acceptingTarget(parent ?? null, editor) ?? undefined
+  }
+  return pageId
 }
 
 /** The frame or page that holds a layer, looking past the groups it sits in. */

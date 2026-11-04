@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
 
-import { importClipboardNodes } from '@open-pencil/core'
-import type { NodeChange } from '@open-pencil/core'
+import { importClipboardNodes } from '@open-pencil/core/clipboard'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 describe('importClipboardNodes: components', () => {
   it('maps SYMBOL type to COMPONENT with auto-layout', () => {

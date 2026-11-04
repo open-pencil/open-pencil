@@ -3,9 +3,30 @@ import { describe, expect, test } from 'bun:test'
 import { DEFAULT_APP_PREFERENCES, parseAppPreferences } from '@/app/settings/preferences/store'
 
 describe('parseAppPreferences', () => {
+  test('defaults old and invalid interface sizes without discarding other appearance choices', () => {
+    for (const interfaceScale of [undefined, null, '125', 0, 90, 120, 200, Number.NaN]) {
+      const preferences = parseAppPreferences({ appearance: { interfaceScale, animations: 'off' } })
+      expect(preferences.appearance.interfaceScale).toBe(100)
+      expect(preferences.appearance.animations).toBe('off')
+    }
+    for (const interfaceScale of [100, 110, 125, 150] as const) {
+      expect(
+        parseAppPreferences({ appearance: { interfaceScale } }).appearance.interfaceScale
+      ).toBe(interfaceScale)
+    }
+  })
+
   test('starts from the defaults when nothing usable is stored', () => {
     for (const stored of [undefined, null, 'preferences', [], {}]) {
       expect(parseAppPreferences(stored)).toEqual(DEFAULT_APP_PREFERENCES)
+    }
+  })
+
+  test('keeps a valid recent files limit and defaults missing or invalid limits to ten', () => {
+    expect(parseAppPreferences({}).files.recentLimit).toBe(10)
+    expect(parseAppPreferences({ files: { recentLimit: 25 } }).files.recentLimit).toBe(25)
+    for (const recentLimit of [undefined, null, '25', 0, -1, 2.5, 1001, Infinity, Number.NaN]) {
+      expect(parseAppPreferences({ files: { recentLimit } }).files.recentLimit).toBe(10)
     }
   })
 
@@ -23,8 +44,7 @@ describe('parseAppPreferences', () => {
     const preferences = parseAppPreferences({
       appearance: { animations: 'off' },
       chat: { reasoningDisplay: 'sometimes', changePreviewSize: 'large', maxAgentSteps: 'many' },
-      editing: { snapping: { geometry: false, objects: 'yes' } },
-      rendering: 'tiled'
+      editing: { snapping: { geometry: false, objects: 'yes' } }
     })
     expect(preferences.appearance.animations).toBe('off')
     expect(preferences.chat).toEqual({
@@ -35,7 +55,6 @@ describe('parseAppPreferences', () => {
       ...DEFAULT_APP_PREFERENCES.editing.snapping,
       geometry: false
     })
-    expect(preferences.rendering).toEqual(DEFAULT_APP_PREFERENCES.rendering)
   })
 
   test('keeps each disabled design check rule once and drops what is not a rule name', () => {
@@ -74,6 +93,13 @@ describe('parseAppPreferences', () => {
     expect(parseAppPreferences({ onboarding: { aiSetup: 'later' } }).onboarding.aiSetup).toBe(
       'pending'
     )
+  })
+
+  test('keeps a listed zoom speed and defaults any other value to 1', () => {
+    expect(parseAppPreferences({ navigation: { zoomSpeed: 0.25 } }).navigation.zoomSpeed).toBe(0.25)
+    for (const zoomSpeed of [undefined, '0.5', 0, 0.3, 5, Number.NaN]) {
+      expect(parseAppPreferences({ navigation: { zoomSpeed } }).navigation.zoomSpeed).toBe(1)
+    }
   })
 
   test('keeps comment view choices and drops an unknown sort order', () => {

@@ -1,7 +1,7 @@
 import { compact } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import {
   storedSelectionAngle,
   transformZoneAt,
@@ -106,8 +106,10 @@ export function applySelectionResize(
   const delta = turnPoint({ x: cx - d.startX, y: cy - d.startY }, -d.angle)
   const bounds = calculateResizeRect(d.handle, origBounds, delta.x, delta.y, aspect)
   for (const { drag, placement } of d.members) {
+    const node = editor.graph.getNode(drag.nodeId)
+    if (!node) continue
     const rect = placeInResizedBounds(placement, origBounds, bounds, d.angle)
-    applyResizedRect(drag, rect, scaledChanges(drag, rect), editor)
+    applyResizedRect(drag, node, rect, scaledChanges(drag, node.type, rect), editor)
   }
   editor.requestRepaint()
 }

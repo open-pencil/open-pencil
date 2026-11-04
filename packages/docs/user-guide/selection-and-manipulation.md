@@ -16,6 +16,9 @@ Select objects to move, resize, rotate, duplicate, and organize them on the canv
 - **Double-click a frame's or component's name** above it on the canvas to rename it in place
 - **Marquee drag** — drag on empty canvas to draw a selection rectangle; intersecting nodes are selected on release. Started inside a top-level frame without auto layout or a section, it selects that container's layers; from the page, a frame or section that holds layers is selected only when fully enclosed
 - <kbd>⌘</kbd><kbd>A</kbd> — select all nodes on the current page
+- <kbd>Enter</kbd> — select the children of the selected layers; on a vector it edits the path and on text it edits the text
+- <kbd>Shift</kbd> + <kbd>Enter</kbd> or <kbd>\\</kbd> — select the parent of the selected layers
+- <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd> — select the next or previous sibling, going down or up the layers panel and wrapping at the ends
 - **Click empty canvas** — deselect all
 
 ## Moving
@@ -56,6 +59,8 @@ Duplicates keep their names. Duplicating a main component this way creates an in
 ## Pasting
 
 <kbd>⌘</kbd><kbd>V</kbd> keeps the copied position. Pasted into a selected frame, nodes keep their offset from the frame they were copied from, and are centered along any axis where they don't fit; nodes that would land out of view are centered in it. Use **Paste here** in the [context menu](./context-menu) to paste at the cursor.
+
+Text copied from a web page or another app pastes as one text layer, as in Figma, and its links keep their targets. When the copy lays something out, such as a card or a toolbar copied from a web page, or is HTML source, a notice offers **Paste as layers**: the text is replaced by the HTML's layers, laid out as a browser lays them out, in one undo step. A sentence copied from a page carries only text styling, so it pastes as text without the notice. **Paste as layers** is also in the Edit menu and the context menu. It lays HTML out at the width of the frame it is pasted into, or at 1440 px on the canvas.
 
 ## Deleting
 

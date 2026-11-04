@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { provideEditor } from '@open-pencil/vue'
 
 import TokensPanel from '@/components/variables/TokensPanel.vue'
 
-/** The frame width in pixels, capped by the window; the panel lays out by this. */
-const { width = 1040 } = defineProps<{ width?: number }>()
+/**
+ * The frame width in pixels, capped by the window; the panel lays out by this. `library` makes
+ * the theme a collection copied from a library, as Figma files that use one carry it.
+ */
+const { width = 1040, library = false } = defineProps<{ width?: number; library?: boolean }>()
 
 /** Reactive state, as the app session gives it, so edits re-render the panel. */
 const graph = new SceneGraph()
@@ -38,6 +41,11 @@ function addVariable(
   })
 }
 
+/** A library variable's key, in the library story; Surface/Ink is one the file added. */
+function libraryKey(key: string): Partial<Variable> {
+  return library ? { key, version: '290407:24243' } : {}
+}
+
 graph.addCollection({
   id: 'theme',
   name: 'Theme',
@@ -47,7 +55,8 @@ graph.addCollection({
     { modeId: 'contrast', name: 'Contrast', condition: '@media (prefers-contrast: more)' }
   ],
   defaultModeId: 'light',
-  variableIds: []
+  variableIds: [],
+  ...(library && { key: '44d54909789ec00cd81859bdc9584faf9cf0de97', version: '290407:23953' })
 })
 graph.addCollection({
   id: 'primitives',
@@ -87,13 +96,24 @@ addVariable(
     dark: { aliasId: 'blue-300' },
     contrast: { aliasId: 'blue-700' }
   },
-  { scopes: ['ALL_FILLS'], description: 'Buttons, links, and focus rings.' }
+  {
+    scopes: ['ALL_FILLS'],
+    description: 'Buttons, links, and focus rings.',
+    ...libraryKey('309597cc79582813865d705981904aab5709be5e')
+  }
 )
-addVariable('theme', 'surface', 'Surface/Base', 'COLOR', {
-  light: parseColor('#FFFFFF'),
-  dark: parseColor('#111827'),
-  contrast: parseColor('#FFFFFF')
-})
+addVariable(
+  'theme',
+  'surface',
+  'Surface/Base',
+  'COLOR',
+  {
+    light: parseColor('#FFFFFF'),
+    dark: parseColor('#111827'),
+    contrast: parseColor('#FFFFFF')
+  },
+  libraryKey('e42910ebf15692f34d8cf880b1d9ccd2c591b3bd')
+)
 addVariable('theme', 'ink', 'Surface/Ink', 'COLOR', {
   light: { aliasId: 'gray-900' },
   dark: { aliasId: 'gray-50' },
@@ -153,7 +173,7 @@ provideEditor(editor)
 
 <template>
   <div
-    class="flex h-[640px] w-[min(var(--frame-width),calc(100vw-4rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
+    class="flex h-160 w-[min(var(--frame-width),calc(100vw-4rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
     :style="{ '--frame-width': `${width}px` }"
   >
     <TokensPanel />

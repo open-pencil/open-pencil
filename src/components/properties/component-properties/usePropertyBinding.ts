@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 
-import { useComponentPropertyAuthoring, usePanelMessages } from '@open-pencil/vue'
+import { useComponentPropertyAuthoring } from '@open-pencil/vue/controls/component-props'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 export type BindableField = 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP'
 
@@ -44,6 +45,8 @@ export function usePropertyBinding(field: BindableField) {
       authoring.definitions.value.filter((item) => item.type === FIELD_TYPES[field])
     ),
     fieldLabel: computed(() => fieldLabels.value[field]),
+    /** The component whose properties the layer can link to. */
+    ownerName: computed(() => context.value?.owner.name),
     create: () => {
       const node = context.value?.node
       if (node) authoring.expose(node.id, field, suggestedName())

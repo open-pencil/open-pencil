@@ -40,3 +40,31 @@ describe('merging symbol overrides', () => {
     ])
   })
 })
+
+describe('merging variable mode claims', () => {
+  const sizes = { guid: { sessionID: 1, localID: 3 } }
+  const theme = { guid: { sessionID: 1, localID: 8 } }
+  const wide = { sessionID: 1, localID: 11 }
+
+  test('two claims at one path keep the collections each of them claims', () => {
+    const overrides: KiwiSymbolOverridePayload[] = [
+      { guidPath: at(1), variableModeBySetMap: { entries: [{ variableSetID: theme }] } }
+    ]
+
+    mergeOverrides(overrides, [
+      {
+        guidPath: at(1),
+        variableModeBySetMap: { entries: [{ variableSetID: sizes, variableModeID: wide }] }
+      }
+    ])
+
+    expect(overrides).toEqual([
+      {
+        guidPath: at(1),
+        variableModeBySetMap: {
+          entries: [{ variableSetID: theme }, { variableSetID: sizes, variableModeID: wide }]
+        }
+      }
+    ])
+  })
+})

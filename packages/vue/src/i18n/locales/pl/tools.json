@@ -8,7 +8,13 @@
   "polygon": "Wielokąt",
   "star": "Gwiazda",
   "pen": "Pióro",
+  "pencil": "Ołówek",
   "text": "Tekst",
+  "sticky": "Karteczka",
+  "shape": "Kształt",
+  "connector": "Łącznik",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "eyedropper": "Zakraplacz",
+  "eyedropperSample": "Pobierz kolor z kanwy"
 }

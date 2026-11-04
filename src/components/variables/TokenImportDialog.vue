@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import type { TokenImportResult } from '@open-pencil/core/editor'
 import {
+  type TokenImportResult,
   defaultTokenImportOptions,
   planTokenImport,
   type CollectionTarget,
@@ -13,7 +13,7 @@ import {
   type TokenImportOptions
 } from '@open-pencil/core/io/formats/design-tokens'
 import { isLibraryCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -22,6 +22,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import { AppDialog } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
@@ -56,11 +57,12 @@ function isStale(choices: TokenImportOptions): boolean {
 }
 
 // The plan reads the document, so it follows every change to it, and choices that went stale
-// start over from the defaults.
+// start over from the defaults. The import itself changes the document as the dialog closes,
+// so a closed dialog keeps its choices and the plan it showed.
 watch(
   () => store.state.sceneVersion,
   () => {
-    if (bundle && options.value && isStale(options.value))
+    if (open.value && bundle && options.value && isStale(options.value))
       options.value = defaultTokenImportOptions(store.graph, bundle)
   }
 )
@@ -69,16 +71,18 @@ function currentPlan() {
   return bundle && options.value ? planTokenImport(store.graph, bundle, options.value) : null
 }
 
-const plan = computed(() => {
+const livePlan = computed(() => {
   void store.state.sceneVersion
   return currentPlan()
 })
-const existingCollections = computed(() => {
+const plan = useHeldContent(livePlan, open)
+const liveCollections = computed(() => {
   void store.state.sceneVersion
   return [...store.graph.variableCollections.values()].filter(
     (collection) => !isLibraryCollection(collection)
   )
 })
+const existingCollections = useHeldContent(liveCollections, open)
 const styleCount = computed(
   () =>
     bundle?.composites.filter((token) => token.type === 'typography' || token.type === 'shadow')

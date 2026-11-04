@@ -1,4 +1,5 @@
 import type { Variable, VariableCollection, VariableValue } from '../types'
+import { mapVariableValueReferences } from '../variables/value'
 import { requireTransferReference as mapped } from './references'
 
 export interface VariableTransferReferences {
@@ -50,12 +51,12 @@ export function prepareVariableTransfer(
   assertUniqueMappings(references.variables, 'variable')
   assertUniqueMappings(references.collections, 'collection')
   assertUniqueMappings(references.modes, 'mode')
-  const value = (input: VariableValue): VariableValue => {
-    if (typeof input === 'object' && 'aliasId' in input) {
-      return { aliasId: mapped(references.variables, input.aliasId, 'variable alias') }
-    }
-    return structuredClone(input)
-  }
+  const value = (input: VariableValue): VariableValue =>
+    mapVariableValueReferences(
+      input,
+      (id) => mapped(references.variables, id, 'variable alias'),
+      (id) => references.modes.get(id) ?? id
+    )
   return {
     collections: collections.map((collection) => ({
       ...structuredClone(collection),

@@ -9,7 +9,7 @@ description: Read and edit variant, text, boolean, and instance-swap properties 
 undo-aware value action.
 
 ```ts
-import { useComponentProperties } from '@open-pencil/vue'
+import { useComponentProperties } from '@open-pencil/vue/controls/component-props'
 
 const { active, controls, setValue } = useComponentProperties()
 

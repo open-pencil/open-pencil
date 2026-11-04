@@ -1,5 +1,6 @@
 import { useLocalStorage } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { clamp } from 'es-toolkit'
+import { computed } from 'vue'
 
 /**
  * Number of most recent events kept locally. Bounded rather than a closed set
@@ -24,7 +25,7 @@ export function resolveDiagnosticsRetention(value: unknown): DiagnosticsRetentio
     return DIAGNOSTICS_RETENTION_DEFAULT
   }
   const whole = Math.round(parsed)
-  return Math.min(Math.max(whole, DIAGNOSTICS_RETENTION_MIN), DIAGNOSTICS_RETENTION_MAX)
+  return clamp(whole, DIAGNOSTICS_RETENTION_MIN, DIAGNOSTICS_RETENTION_MAX)
 }
 
 const diagnosticsEnabled = useLocalStorage('open-pencil:diagnostics-enabled', true)
@@ -34,22 +35,12 @@ const diagnosticsRetention = useLocalStorage<DiagnosticsRetention>(
   500,
   { serializer: { read: (value) => resolveDiagnosticsRetention(value), write: String } }
 )
-const diagnosticsCount = ref(0)
-const diagnosticsSize = ref(0)
 
 export function useDiagnosticsSettings() {
   return {
     diagnosticsEnabled,
     usageEnabled,
-    diagnosticsRetention,
-    diagnosticsCount: computed(() => diagnosticsCount.value),
-    diagnosticsSize: computed(() => diagnosticsSize.value),
-    refreshDiagnosticsStats: async () => {
-      const { diagnostics } = await import('./recorder')
-      const events = await diagnostics.list()
-      diagnosticsCount.value = events.length
-      diagnosticsSize.value = JSON.stringify(events).length
-    }
+    diagnosticsRetention
   }
 }
 
@@ -63,11 +54,6 @@ export function isUsageEnabled(): boolean {
 
 export function getDiagnosticsRetention(): DiagnosticsRetention {
   return diagnosticsRetention.value
-}
-
-export async function pruneDiagnostics(retention: DiagnosticsRetention): Promise<void> {
-  const { diagnostics } = await import('./recorder')
-  await diagnostics.prune(retention)
 }
 
 export const diagnosticsRetentionOptions = computed(() => diagnosticsRetentionPresets)

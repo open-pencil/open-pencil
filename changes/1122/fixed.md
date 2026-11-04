@@ -1,1 +1,0 @@
-- `.fig` files whose text content is bound to a number or boolean variable, as Figma's UI binds one, open instead of failing with "Unsupported variable expression STRINGIFY". The text follows the variable as Figma writes it, a whole number as an integer and others with two decimals, and saving keeps the binding (#1110).

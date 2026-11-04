@@ -1,10 +1,11 @@
-import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { ShapeHandleHover, GradientEdit } from '#core/editor/types'
+import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
 import type { RotationPreview, SelectionAngle, SelectionRotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -50,8 +51,9 @@ export interface RenderOverlays {
   gradientEdit?: GradientEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
-  enteredContainerId?: string | null
   editingTextId?: string | null
+  /** The layer whose name a field over the canvas renames, whose title the canvas leaves out. */
+  renamingLabelId?: string | null
   textEditor?: TextEditor | null
   marquee?: Rect | null
   snapGuides?: SnapGuide[]
@@ -74,6 +76,8 @@ export interface RenderOverlays {
   } | null
   /** The selected shape's handles and the label of the one in use. */
   shapeHandleHover?: ShapeHandleHover | null
+  /** The layer a connector end would attach to, outlined with its magnets. */
+  connectorTarget?: ConnectorTarget | null
   penState?: {
     vertices: Vector[]
     segments: Array<{
@@ -89,20 +93,8 @@ export interface RenderOverlays {
     cursorX?: number
     cursorY?: number
   } | null
-  nodeEditState?: {
-    nodeId: string
-    vertices: VectorVertex[]
-    segments: Array<{
-      start: number
-      end: number
-      tangentStart: Vector
-      tangentEnd: Vector
-    }>
-    regions: VectorRegion[]
-    selectedVertexIndices: Set<number>
-    selectedHandles?: Set<number>
-    hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
-  } | null
+  pencilState?: PencilState | null
+  nodeEditState?: NodeEditOverlayState | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null
   codeFocusNodeId?: string | null

@@ -1,17 +1,22 @@
-import type { Editor } from '@open-pencil/core/editor'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
+import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
 
+import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
   axisAlignedCursorAngle,
+  MOVE_CURSOR,
   buildResizeCursor,
   cornerRotationCursor,
   frameRotationCursor,
   getHitHandleByMatrix,
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
+import { lineEndAt } from '#vue/shared/input/line/end'
 import { selectionBox, selectionResizeHandleAt } from '#vue/shared/input/resize/selection'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
-import { getNodeEditState } from '#vue/shared/input/vector'
+import { pressSelects } from '#vue/shared/input/select/move'
+import { scalesByHandles } from '#vue/shared/input/sticky/scale'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   if (editor.state.selectedIds.size > 1) {
@@ -20,7 +25,8 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
   }
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
-    if (!node) continue
+    // As a press does: only a layer its handles resize or scale shows a resize cursor on them.
+    if (!node || (!layerResizes(node) && !scalesByHandles(node))) continue
 
     const handleHit = getHitHandleByMatrix(
       cx,
@@ -44,7 +50,7 @@ function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): 
 
   const id = [...editor.state.selectedIds][0]
   const node = editor.graph.getNode(id)
-  if (!node) return null
+  if (!node || !layerRotates(node)) return null
 
   const corner = hitTestCornerRotationByMatrix(
     cx,
@@ -65,17 +71,20 @@ function updateHoveredNode(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep: boolean
 ) {
-  const hit = deep
-    ? fns.hitTestInScope(cx, cy, true)
-    : (hitTestLabel(cx, cy, fns) ?? fns.hitTestInScope(cx, cy, false))
-  const editNodeId = getNodeEditState(editor)?.nodeId
-  editor.setHoveredNode(
-    hit && !editor.state.selectedIds.has(hit.id) && hit.id !== editNodeId ? hit.id : null
-  )
+  // A label takes the hover before the layers under it, with or without ⌘, as it takes a press.
+  const hit = hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
+  const editNodeId = editor.getNodeEditState()?.nodeId
+  // No outline on a layer a press would not select.
+  const hovered =
+    hit &&
+    !editor.state.selectedIds.has(hit.id) &&
+    hit.id !== editNodeId &&
+    pressSelects(hit, cx, cy, editor, deep)
+  editor.setHoveredNode(hovered ? hit.id : null)
 }
 
 export function updateHoverCursor(
@@ -84,19 +93,23 @@ export function updateHoverCursor(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep = false
 ): string | null {
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     editor.setHoveredNode(null)
     return null
   }
 
-  // As a press does: resizing first, then a label, then rotation.
-  const cursor =
-    getResizeCursorForSelection(cx, cy, editor) ??
-    (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor))
+  // As a press does: a line's ends, a connector's line handles, then resizing, then a label, then
+  // rotation; a read-only document has none.
+  const cursor = !resolveEditorProfile(editor.state).edits
+    ? null
+    : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
+      connectorLineCursor(editor, cx, cy) ??
+      getResizeCursorForSelection(cx, cy, editor) ??
+      (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
   updateHoveredNode(cx, cy, editor, fns, deep)
   return cursor
 }

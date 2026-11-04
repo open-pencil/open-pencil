@@ -1,22 +1,21 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { parse as parseVueSfc } from 'vue/compiler-sfc'
-
+import { multiWordComponentNames, uniqueComponentNames } from './component-names.ts'
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
+import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
-  collectFiles,
   collectFolders,
   createFileRule,
   createImportRule,
   createTextRule,
   filePrefix,
   FILE_PREFIX_GROUP_ALLOWLIST,
+  fileStem,
   PACKAGE_ALIASES,
   PACKAGE_ALIAS_OWNERS,
   relativePath,
@@ -33,8 +32,10 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
     for (const folder of collectFolders(root)) {
       const folderRel = relativePath(root.path, folder.path)
       const groups = new Map<string, string[]>()
+      const names = new Set<string>()
       for (const child of folder.children ?? []) {
         if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        names.add(fileStem(child.path))
         const prefix = filePrefix(child.path)
         if (!prefix) continue
         const files = groups.get(prefix) ?? []
@@ -42,10 +43,16 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         groups.set(prefix, files)
       }
       for (const [prefix, files] of groups) {
-        if (files.length < 3) continue
+        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
+        // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
+        const named = names.has(prefix) || names.has(`${prefix}s`)
+        if (files.length < 3 && !named) continue
         if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        const base = names.has(prefix) ? prefix : `${prefix}s`
         diagnostics.push({
-          message: `Use a ${prefix}/ domain folder instead of ${files.length} sibling files with the ${prefix}- filename prefix.`,
+          message: named
+            ? `Use a ${prefix}/ domain folder instead of ${base} beside ${prefix}-* files.`
+            : `Use a ${prefix}/ domain folder instead of sibling ${prefix}-* files.`,
           location: { path: folder.path }
         })
       }
@@ -107,12 +114,6 @@ const strictTestFilePlacement = createFileRule(
         ? null
         : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
     }
-    if (sourceRel.startsWith('tests/engine/')) {
-      if (sourceRel.endsWith('.test.ts')) return null
-      if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
-      if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
-      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
-    }
     // Canonical unit-test homes from packages/docs/development/testing.md.
     if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
       return sourceRel.endsWith('.test.ts')
@@ -120,91 +121,36 @@ const strictTestFilePlacement = createFileRule(
         : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
     }
     if (sourceRel.startsWith('tests/helpers/')) return null
-    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
+    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/figma/**, tests/app/** or tests/integration/** (*.test.ts), or tests/helpers/**; package unit tests live under packages/<owner>/tests.'
   }
 )
 
-const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
-  from: string
-  to: string
-  source: string
-}> = [
-  {
-    from: 'tests/engine/fig/',
-    to: 'tests/engine/io/fig/',
-    source: 'packages/core/src/io/formats/fig/'
-  },
-  {
-    from: 'tests/engine/svg/',
-    to: 'tests/engine/io/svg/',
-    source: 'packages/core/src/io/formats/svg/'
-  },
-  {
-    from: 'tests/engine/fonts/',
-    to: 'tests/engine/text/fonts/',
-    source: 'packages/core/src/text/fonts.ts'
-  },
-  {
-    from: 'tests/engine/figma-api/',
-    to: 'tests/engine/figma/api/',
-    source: 'packages/core/src/figma-api/'
-  }
-]
-
-const noMisplacedEngineTestDomainPaths = createFileRule(
-  'open-pencil/no-misplaced-engine-test-domain-paths',
-  (sourceRel) => {
-    const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
-    if (redirect) {
-      return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
-    }
-    if (/^tests\/engine\/[^/]+\.test\.ts$/.test(sourceRel)) {
-      return 'Move root-level engine tests under a domain folder that mirrors the source module under test.'
-    }
-    return null
-  }
-)
-
-const noKitchenSinkEngineBasicTests: Rule = {
-  name: 'open-pencil/no-kitchen-sink-engine-basic-tests',
-  check(root) {
-    const diagnostics: Diagnostic[] = []
-    for (const file of collectFiles(root)) {
-      const sourceRel = relativePath(root.path, file)
-      if (!sourceRel.startsWith('tests/engine/') || !sourceRel.endsWith('/basic.test.ts')) continue
-
-      const content = readFileSync(file, 'utf8')
-      const lineCount = content.split('\n').length
-      const describeCount = content.match(/\bdescribe\s*\(/g)?.length ?? 0
-      if (lineCount <= 250 || describeCount < 4) continue
-
-      diagnostics.push({
-        message:
-          'Split broad engine basic.test.ts files into focused domain/module tests, or add a deliberate narrow redirect/allowlist.',
-        location: { path: file }
-      })
-    }
-    return { diagnostics }
-  }
+/** Where unit tests live (packages/docs/development/testing.md), as opposed to E2E specs. */
+function isUnitTestPath(sourceRel: string) {
+  return (
+    sourceRel.startsWith('tests/app/') ||
+    sourceRel.startsWith('tests/integration/') ||
+    /^packages\/[^/]+\/tests\//.test(sourceRel)
+  )
 }
 
-const noEngineOnlyAssertionsInE2E = createImportRule(
-  'open-pencil/no-engine-only-assertions-in-e2e',
+const noUnitAssertionsInE2E = createImportRule(
+  'open-pencil/no-unit-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
     if (!sourceRel.startsWith('tests/e2e/')) return null
-    if (specifier === 'bun:test' || resolved?.startsWith('tests/engine/')) {
-      return 'E2E tests must drive the UI and visible behavior. Put engine/internal-state assertions in tests/engine/**.'
+    if (specifier === 'bun:test' || (resolved && isUnitTestPath(resolved))) {
+      return 'E2E tests must drive the UI and visible behavior. Put internal-state assertions in unit tests: packages/<owner>/tests or tests/app/**.'
     }
     return null
   }
 )
 
-const noE2EImportsInEngineTests = createImportRule(
-  'open-pencil/no-e2e-imports-in-engine-tests',
+const noE2EImportsInUnitTests = createImportRule(
+  'open-pencil/no-e2e-imports-in-unit-tests',
   (sourceRel, _specifier, resolved) => {
-    if (!sourceRel.startsWith('tests/engine/')) return null
+    if (!isUnitTestPath(sourceRel)) return null
     if (resolved?.startsWith('tests/e2e/')) {
-      return 'Engine/unit tests must not import E2E tests or fixtures.'
+      return 'Unit tests must not import E2E tests or fixtures.'
     }
     return null
   }
@@ -333,8 +279,17 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root and router, plus the desktop Software Update window's page entry.
-const VIEW_ENTRYPOINTS = new Set(['src/App.vue', 'src/main.ts', 'src/router.ts', 'src/updater.ts'])
+// The editor's root and router, the desktop Software Update window's page entry, the Cloud
+// portal's entry and router, and the metrics dashboard's entry.
+const VIEW_ENTRYPOINTS = new Set([
+  'src/App.vue',
+  'src/main.ts',
+  'src/router.ts',
+  'src/updater.ts',
+  'src/cloud/main.ts',
+  'src/cloud/router.ts',
+  'src/metrics/main.ts'
+])
 
 const noViewsImportedOutsideEntry = createImportRule(
   'open-pencil/no-views-imported-outside-entry',
@@ -342,6 +297,45 @@ const noViewsImportedOutsideEntry = createImportRule(
     if (!resolved?.startsWith('src/views/')) return null
     if (VIEW_ENTRYPOINTS.has(sourceRel)) return null
     return 'Views are top-level composition entrypoints and must not be imported by app services or reusable components.'
+  }
+)
+
+// The Cloud portal is served by the Cloud server on its own, and the metrics dashboard by the
+// feedback Worker; both reuse the app's UI, never the editor, so their builds stay small.
+const CLOUD_PORTAL_SOURCES = [
+  'src/cloud/',
+  'src/views/cloud/',
+  'src/app/cloud-portal/',
+  'src/components/cloud-portal/',
+  'src/theme/cloud-portal/',
+  'src/metrics/',
+  'src/views/metrics/',
+  'src/app/metrics/',
+  'src/components/metrics/',
+  'src/theme/metrics/'
+]
+const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
+
+const noEditorImportsInCloudPortal = createImportRule(
+  'open-pencil/no-editor-imports-in-cloud-portal',
+  (sourceRel, specifier, resolved) => {
+    if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
+    const editorOnly =
+      specifier.startsWith('canvaskit-wasm') ||
+      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
+    if (!editorOnly) return null
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
+  }
+)
+
+// A theme is data: the component side wraps it with tv() once and derives its UI type from it.
+const noTailwindVariantsInThemes = createImportRule(
+  'open-pencil/no-tailwind-variants-in-themes',
+  (sourceRel, specifier) => {
+    if (!sourceRel.startsWith('src/theme/')) return null
+    if (specifier !== 'tailwind-variants' && !specifier.startsWith('tailwind-variants/'))
+      return null
+    return 'A theme file exports a plain slots object. Call tv() where the component uses it (src/components/ui/table/ui.ts).'
   }
 )
 
@@ -386,30 +380,6 @@ const noHardcodedMacOSShortcutGlyphs = createTextRule(
   }
 )
 
-const VUE_ATTRIBUTE_NODE = 6
-const VUE_DIRECTIVE_NODE = 7
-
-type VueTemplateNode = {
-  type?: number
-  name?: string
-  arg?: { content?: string }
-  props?: VueTemplateNode[]
-  children?: VueTemplateNode[]
-  loc?: { start?: { line?: number; column?: number } }
-}
-
-function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNode) => void) {
-  visitor(node)
-  for (const prop of node.props ?? []) walkVueTemplateAst(prop, visitor)
-  for (const child of node.children ?? []) walkVueTemplateAst(child, visitor)
-}
-
-function vuePropName(prop: VueTemplateNode) {
-  if (prop.type === VUE_ATTRIBUTE_NODE) return prop.name ?? null
-  if (prop.type === VUE_DIRECTIVE_NODE && prop.name === 'bind') return prop.arg?.content ?? null
-  return null
-}
-
 const SHARED_TEST_ID_ALLOWLIST = new Set([
   'packages/vue/src/primitives/ColorPicker/ColorPickerRoot.vue'
 ])
@@ -434,33 +404,6 @@ const noProductionTestIdsInSharedLayers = createTextRule(
         column: lines.at(-1)?.length ?? 0
       })
     }
-    return diagnostics
-  }
-)
-
-const noNativeTitleAttributesInVue = createTextRule(
-  'open-pencil/no-native-title-attributes-in-vue',
-  (sourceRel, content) => {
-    if (
-      !sourceRel.endsWith('.vue') ||
-      (!sourceRel.startsWith('src/') && !sourceRel.startsWith('packages/vue/src/'))
-    ) {
-      return []
-    }
-
-    const template = parseVueSfc(content, { filename: sourceRel }).descriptor.template?.ast
-    if (!template) return []
-
-    const diagnostics: Array<{ message: string; line?: number; column?: number }> = []
-    walkVueTemplateAst(template as VueTemplateNode, (node) => {
-      if (vuePropName(node) !== 'title') return
-      const loc = node.loc?.start
-      diagnostics.push({
-        message: 'Use Tip/Reka tooltip patterns instead of native title attributes.',
-        line: loc?.line,
-        column: loc?.column
-      })
-    })
     return diagnostics
   }
 )
@@ -521,10 +464,8 @@ export const openPencilArchitecturePlugin = {
     scriptsAreEntrypointShims,
     strictToolsLayout,
     strictTestFilePlacement,
-    noMisplacedEngineTestDomainPaths,
-    noKitchenSinkEngineBasicTests,
-    noEngineOnlyAssertionsInE2E,
-    noE2EImportsInEngineTests,
+    noUnitAssertionsInE2E,
+    noE2EImportsInUnitTests,
     noRootMarkdownClutter,
     noPrototypeOrGeneratedImports,
     noPropertyPanelImportsInCanvas,
@@ -534,6 +475,8 @@ export const openPencilArchitecturePlugin = {
     noAppImportsComponentsOrViews,
     noComponentsImportViews,
     noViewsImportedOutsideEntry,
+    noEditorImportsInCloudPortal,
+    noTailwindVariantsInThemes,
     noNonUIImportsInSharedUI,
     noAppImportsInSharedUI,
     noPropertyPanelInternalsOutsidePanel,
@@ -543,6 +486,8 @@ export const openPencilArchitecturePlugin = {
     noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
-    noUIImportsInCore
+    noUIImportsInCore,
+    uniqueComponentNames,
+    multiWordComponentNames
   ]
 }

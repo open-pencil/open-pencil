@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-import { createRect, firstPageId } from '#core-tests/helpers/scene'
-
-import { SceneGraph } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { createRect, firstPageId } from '@open-pencil/test-support/scene'
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('single-node alignment to parent', () => {
   function setup() {

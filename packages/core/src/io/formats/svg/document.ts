@@ -3,12 +3,14 @@ import { DOMParser, type Document } from '@xmldom/xmldom'
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
 function parseXML(source: string): Document | null {
+  // xmldom rejects a byte-order mark in front of the XML declaration.
+  const markup = source.startsWith('\uFEFF') ? source.slice(1) : source
   try {
     return new DOMParser({
       onError: (level, message) => {
         if (level !== 'warning') throw new Error(message)
       }
-    }).parseFromString(source, 'image/svg+xml')
+    }).parseFromString(markup, 'image/svg+xml')
   } catch {
     return null
   }

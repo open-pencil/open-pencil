@@ -5,12 +5,13 @@ import { tv } from 'tailwind-variants'
 import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import type { EditorToolDef } from '@open-pencil/core/editor'
-import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
-import type { Tool } from '@open-pencil/vue'
+import type { EditorToolDef, Tool } from '@open-pencil/core'
+import { getToolbarToolSelection, ToolbarItem } from '@open-pencil/vue/primitives/Toolbar'
+import { toolbarToolTestId } from '@open-pencil/vue/testing'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { useMotionTransitions } from '@/app/shell/motion/transitions'
+import ShapeToolButton from '@/components/toolbar/ShapeToolButton.vue'
 import ToolbarActionGroup from '@/components/toolbar/ToolbarActionGroup.vue'
 import ToolButton from '@/components/toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/toolbar/ToolFlyout.vue'
@@ -82,7 +83,7 @@ function navigationClass(disabled: boolean) {
     class="fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
     :style="{
       maxWidth: 'calc(100vw - 2rem)',
-      bottom: `calc(56px + env(safe-area-inset-bottom) + 0.75rem)`
+      bottom: `calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem)`
     }"
   >
     <motion.button
@@ -101,7 +102,7 @@ function navigationClass(disabled: boolean) {
       <motion.div
         :layout="animationsEnabled"
         data-test-id="mobile-toolbar-container"
-        class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
+        class="scrollbar-none relative flex h-11 min-w-0 items-center overflow-x-auto rounded-lg border border-border bg-panel px-2 shadow-lg [&>*]:shrink-0"
         :transition="layoutTransition"
       >
         <AnimatePresence mode="popLayout" :custom="slideDirection">
@@ -117,8 +118,10 @@ function navigationClass(disabled: boolean) {
             :transition="itemTransition"
           >
             <template v-for="tool in tools" :key="tool.key">
+              <ShapeToolButton v-if="tool.key === 'SHAPE_WITH_TEXT'" mobile :ui="ui" />
+
               <ToolFlyout
-                v-if="tool.flyout"
+                v-else-if="tool.flyout"
                 mobile
                 :tool="tool"
                 :active-tool="activeTool"

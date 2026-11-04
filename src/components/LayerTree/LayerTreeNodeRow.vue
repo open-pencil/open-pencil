@@ -2,11 +2,12 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { LayerNode } from '@open-pencil/vue'
+import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import type { LayerIssueMark as LayerIssueMarkData } from '@/app/editor/design-check/layers'
-import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import LayerIssueMark from '@/components/design-check/LayerIssueMark.vue'
+import { COMPONENT_TYPES, nodeIcon } from '@/components/icons'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import LayerTreeActions from './LayerTreeActions.vue'
@@ -35,6 +36,17 @@ const emit = defineEmits<{
 }>()
 
 const ui = useLayerTreeUI()
+const store = useEditorStore()
+/** The names of the variable modes set on the layer itself, tagged after its name as in Figma. */
+const modeNames = computed(() =>
+  (node.modeIds ?? []).flatMap((modeId) => {
+    for (const collection of store.graph.variableCollections.values()) {
+      const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
+      if (mode) return [mode.name]
+    }
+    return []
+  })
+)
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
   layerTree({
@@ -81,7 +93,17 @@ const styles = computed(() =>
     />
 
     <component :is="nodeIcon(node)" data-slot="icon" :class="styles.icon({ class: ui?.icon })" />
-    <span data-slot="label" :class="styles.label({ class: ui?.label })">{{ node.name }}</span>
+    <span data-slot="label" :class="styles.label({ class: ui?.label })">
+      <span class="min-w-0 truncate">{{ node.name }}</span>
+      <span
+        v-for="name in modeNames"
+        :key="name"
+        data-slot="variable-mode"
+        class="shrink-0 rounded-full border border-current/40 px-1.5 text-3xs leading-3.5"
+      >
+        {{ name }}
+      </span>
+    </span>
     <LayerIssueMark v-if="issue && (issue.own || !expanded)" :mark="issue" />
 
     <LayerTreeActions

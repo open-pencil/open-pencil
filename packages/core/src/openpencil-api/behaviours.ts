@@ -1,22 +1,19 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   behaviourFromSpec,
   behaviourOwner,
   behaviourToSpec,
-  createComponentPropertyId,
-  createSlotProperty,
   emptyBehaviour,
   missingBindings,
   readBehaviour,
-  slotOwner,
-  slotPropertyId,
   withBehaviour,
   type Behaviour,
   type BehaviourKind,
   type BehaviourNumberSettings,
-  type BehaviourSpec,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type BehaviourSpec
+} from '@open-pencil/scene-graph/behaviours'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+import { createSlotProperty, slotOwner, slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 /** A node as scripts pass it: a Figma API node, or its id. */
 export type NodeRef = { readonly id: string } | string

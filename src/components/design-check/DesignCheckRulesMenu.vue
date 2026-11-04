@@ -14,7 +14,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import {
   setDesignCheckPreset,
@@ -24,6 +24,7 @@ import {
 import { appPreferences, DESIGN_CHECK_PRESETS } from '@/app/settings/preferences/store'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 import { usePresetLabels } from './usePresetLabels'
 
@@ -51,37 +52,39 @@ const presetModel = computed({
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" align="end" :side-offset="4" :class="menuCls.content">
-        <DropdownMenuLabel :class="menuCls.label">{{ messages.rules }}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup v-model="presetModel">
-          <DropdownMenuRadioItem
-            v-for="preset in DESIGN_CHECK_PRESETS"
-            :key="preset"
-            :value="preset"
+        <MenuScrollArea>
+          <DropdownMenuLabel :class="menuCls.label">{{ messages.rules }}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup v-model="presetModel">
+            <DropdownMenuRadioItem
+              v-for="preset in DESIGN_CHECK_PRESETS"
+              :key="preset"
+              :value="preset"
+              :class="itemCls"
+            >
+              <DropdownMenuItemIndicator class="absolute left-2">
+                <icon-lucide-check class="size-3.5" />
+              </DropdownMenuItemIndicator>
+              {{ presetLabels[preset] }}
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <template v-if="preferences.disabledRules.length > 0">
+            <DropdownMenuSeparator :class="menuCls.separator" />
+            <DropdownMenuItem :class="itemCls" @select="turnOnDesignCheckRules">
+              {{ messages.turnOnRules({ count: preferences.disabledRules.length }) }}
+            </DropdownMenuItem>
+          </template>
+          <DropdownMenuSeparator :class="menuCls.separator" />
+          <DropdownMenuCheckboxItem
+            :model-value="preferences.showOnCanvas"
             :class="itemCls"
+            @update:model-value="setDesignIssuesOnCanvas"
           >
             <DropdownMenuItemIndicator class="absolute left-2">
               <icon-lucide-check class="size-3.5" />
             </DropdownMenuItemIndicator>
-            {{ presetLabels[preset] }}
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <template v-if="preferences.disabledRules.length > 0">
-          <DropdownMenuSeparator :class="menuCls.separator" />
-          <DropdownMenuItem :class="itemCls" @select="turnOnDesignCheckRules">
-            {{ messages.turnOnRules({ count: preferences.disabledRules.length }) }}
-          </DropdownMenuItem>
-        </template>
-        <DropdownMenuSeparator :class="menuCls.separator" />
-        <DropdownMenuCheckboxItem
-          :model-value="preferences.showOnCanvas"
-          :class="itemCls"
-          @update:model-value="setDesignIssuesOnCanvas"
-        >
-          <DropdownMenuItemIndicator class="absolute left-2">
-            <icon-lucide-check class="size-3.5" />
-          </DropdownMenuItemIndicator>
-          {{ messages.showOnCanvas }}
-        </DropdownMenuCheckboxItem>
+            {{ messages.showOnCanvas }}
+          </DropdownMenuCheckboxItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

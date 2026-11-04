@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+
 import type {
   AttributeNode,
   DirectiveNode,
@@ -14,8 +16,17 @@ export type VueTemplateNode =
   | DirectiveNode
   | SimpleExpressionNode
 
+/**
+ * The whole single-file component a rule is linting. Oxlint hands JS plugins only the `<script>`
+ * of a `.vue` file, so a component on disk is read from its file; text for a path with no file,
+ * as rule tests pass it, is the component itself.
+ */
+function vueComponentSource(source: string, filename: string): string {
+  return filename.endsWith('.vue') && existsSync(filename) ? readFileSync(filename, 'utf8') : source
+}
+
 function vueSfcDescriptor(source: string, filename: string) {
-  return parseVueSfc(source, { filename }).descriptor
+  return parseVueSfc(vueComponentSource(source, filename), { filename }).descriptor
 }
 
 function vueTemplateAst(source: string, filename: string): RootNode | null {
@@ -66,7 +77,7 @@ function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNo
   }
 }
 
-interface ExpressionAstNode {
+export interface ExpressionAstNode {
   type?: string
   callee?: ExpressionAstNode
   name?: string
@@ -147,6 +158,8 @@ function isBoundStringLiteral(node: VueTemplateNode, name: string): boolean {
 export {
   VUE_DIRECTIVE_NODE,
   VUE_ELEMENT_NODE,
+  VUE_INTERPOLATION_NODE,
+  VUE_SIMPLE_EXPRESSION_NODE,
   hasExpressionCall,
   hasUIHelperCall,
   isBoundStringLiteral,
@@ -154,7 +167,9 @@ export {
   isVueBindDirective,
   isVueSourceFile,
   sourceLineCount,
+  vueComponentSource,
   vueSfcDescriptor,
   vueTemplateAst,
+  walkExpressionAst,
   walkVueTemplateAst
 }

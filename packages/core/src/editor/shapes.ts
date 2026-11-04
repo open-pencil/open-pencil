@@ -1,13 +1,16 @@
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 
 import { prepareSlotEdits } from './components/slots'
+import { restoreSubtree, snapshotSubtree } from './history/subtree'
 import { adoptCoveredLayers } from './shapes/adopt'
-import { newLayerDefaults } from './shapes/defaults'
+import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
-import { createPenActions } from './shapes/pen'
+import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen/draw'
+import { createPencilActions } from './shapes/pencil'
 import { defaultNodeName, nextNumberedName } from './structure/rename'
 import type { EditorContext } from './types'
-export type { PenDragOptions } from './shapes/pen'
+export type { PenDragOptions } from './shapes/pen/draw'
 
 /** Layers Figma numbers when drawn, as "Rectangle 1"; others keep their type's name. */
 const NUMBERED_WHEN_DRAWN: ReadonlySet<NodeType> = new Set([
@@ -20,7 +23,7 @@ const NUMBERED_WHEN_DRAWN: ReadonlySet<NodeType> = new Set([
   'STAR'
 ])
 
-export function createShapeActions(ctx: EditorContext) {
+export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: UpdateNodeWithUndo) {
   function drawnLayerName(type: NodeType, parentId: string): string {
     const base = defaultNodeName(type)
     return NUMBERED_WHEN_DRAWN.has(type) ? nextNumberedName(ctx.graph, parentId, base) : base
@@ -41,22 +44,33 @@ export function createShapeActions(ctx: EditorContext) {
       throw new Error('Cannot add a layer to the locked part of an instance')
     }
     const overrides: Partial<SceneNode> = {
-      ...newLayerDefaults(type, ctx.state.theme),
+      ...newLayerDefaults(type, layerTheme(ctx.state)),
       x,
       y,
       width: w,
       height: h,
       name: name ?? drawnLayerName(type, pid)
     }
-    const node = ctx.graph.createNode(type, pid, overrides)
+    const node =
+      type === 'SHAPE_WITH_TEXT'
+        ? createShapeWithText(ctx.graph, pid, {
+            ...overrides,
+            shapeWithTextType: ctx.state.shapeWithTextKind
+          })
+        : ctx.graph.createNode(type, pid, overrides)
     const id = node.id
-    const snapshot = { ...node }
+    // Callers finish the layer after this returns (the pen writes its path, fills and strokes),
+    // so redo restores the layer as it was when undone, not as first created. A shape with text
+    // brings its label, so the layer is kept with its sublayers.
+    let snapshots = snapshotSubtree(ctx.graph, id)
     ctx.undo.push({
       label: `Create ${type.toLowerCase()}`,
       forward: () => {
-        ctx.graph.createNode(snapshot.type, pid, snapshot)
+        const snapshot = snapshots.get(id)
+        if (snapshot) restoreSubtree(ctx.graph, snapshot, pid, snapshots)
       },
       inverse: () => {
+        if (ctx.graph.getNode(id)) snapshots = snapshotSubtree(ctx.graph, id)
         ctx.graph.deleteNode(id)
         const next = new Set(ctx.state.selectedIds)
         next.delete(id)
@@ -66,16 +80,24 @@ export function createShapeActions(ctx: EditorContext) {
     return id
   }
 
-  const penActions = createPenActions(ctx, createShape)
+  const penActions = createPenActions(ctx, createShape, updateNodeWithUndo)
+  const pencilActions = createPencilActions(ctx, createShape)
   const framePresetActions = createFramePresetActions(ctx, createShape)
 
-  function setTool(tool: typeof ctx.state.activeTool) {
+  /**
+   * Picks a tool. Another tool than the pen ends the path it is drawing and keeps what was drawn,
+   * the hand too, as in Figma desktop 126. A tool `held` only while a key is down, as Space holds
+   * the hand to pan, leaves the path to continue once it is let go.
+   */
+  function setTool(tool: typeof ctx.state.activeTool, options?: { held?: boolean }) {
+    if (ctx.state.penState && tool !== 'PEN' && !options?.held) penActions.penCommit(false)
     ctx.setActiveTool(tool)
   }
 
   return {
     createShape,
     ...penActions,
+    ...pencilActions,
     ...framePresetActions,
     adoptCoveredLayers: (containerId: string) => adoptCoveredLayers(ctx, containerId),
     setTool

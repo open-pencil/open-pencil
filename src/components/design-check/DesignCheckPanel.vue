@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import { turnOffDesignCheckRule } from '@/app/settings/preferences/apply'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import { designCheck } from '@/theme/design-check'
 
 import DesignCheckRulesMenu from './DesignCheckRulesMenu.vue'
 import IssueGroup from './IssueGroup.vue'
 import SeverityFilters from './SeverityFilters.vue'
-import { useDesignCheckPanel, type DesignCheckScope } from './useDesignCheckPanel'
+import type { DesignCheckScope } from './types'
+import { designCheck } from './ui'
+import { useDesignCheckPanel } from './useDesignCheckPanel'
 
-const { active } = defineProps<{ active: boolean }>()
+const { active, initialScope = 'page' } = defineProps<{
+  active: boolean
+  /** The scope listed first; a host that shows one layer's problems can open on the selection. */
+  initialScope?: DesignCheckScope
+}>()
 
 const messages = useDesignCheckMessages()
 const styles = designCheck()
@@ -32,8 +37,9 @@ const {
   isGroupOpen,
   setGroupOpen,
   clearFilters,
+  showMoreRows,
   hoverRow
-} = useDesignCheckPanel({ active: () => active, list })
+} = useDesignCheckPanel({ active: () => active, list, initialScope })
 
 const scopeOptions = computed(() => [
   { value: 'page' satisfies DesignCheckScope, label: messages.value.scopePage },
@@ -96,6 +102,7 @@ const scopeModel = computed({
         @fix="(row) => row.action && check.applyFixes([row.action.request])"
         @fix-all="check.applyFixes(group.fixes)"
         @turn-off="turnOffDesignCheckRule(group.ruleId)"
+        @show-more="showMoreRows(group.ruleId)"
       />
     </div>
   </section>

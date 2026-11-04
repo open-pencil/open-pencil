@@ -81,6 +81,9 @@ export function createColorSpaceActions(ctx: EditorContext) {
     }
 
     ctx.graph.documentColorSpace = colorSpace
+    // Assigning a profile changes how every stored colour draws without touching a node, so the
+    // renderers' pictures and tiles are rebuilt rather than kept for the new generation.
+    for (const renderer of ctx.getRenderers()) renderer.invalidateAllPictures()
     ctx.emitEditorEvent('document:color-space-changed', colorSpace)
     ctx.requestRender()
   }

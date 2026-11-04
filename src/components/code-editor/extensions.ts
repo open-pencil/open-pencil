@@ -8,7 +8,8 @@ import type { EditorView } from '@codemirror/view'
 import {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_HELPERS,
-  DESIGN_JSX_PROPERTIES
+  DESIGN_JSX_PROPERTIES,
+  elementPropsByName
 } from '@open-pencil/design-jsx'
 
 const ELEMENTS = DESIGN_JSX_ELEMENTS.map(({ name }) => name)
@@ -51,6 +52,42 @@ function localComponentNames(view: EditorView): Set<string> {
   return names
 }
 
+/** A node of the parsed JSX. */
+type SyntaxNode = ReturnType<typeof syntaxTree>['topNode']
+
+/** Props the JSX runtime takes on any element rather than passing them on. */
+const RUNTIME_PROPS: ReadonlySet<string> = new Set(['key', 'ref'])
+
+const TAG_NAME_NODES: ReadonlySet<string> = new Set([
+  'JSXIdentifier',
+  'JSXBuiltin',
+  'JSXMemberExpression',
+  'JSXNamespacedName'
+])
+
+/** The name of the tag an attribute is written on, such as `Connector` or `Switch.Root`. */
+function attributeTagName(view: EditorView, attribute: SyntaxNode | null): string | null {
+  for (let child = attribute?.parent?.firstChild; child; child = child.nextSibling) {
+    if (child.name === 'JSXAttribute') return null
+    if (TAG_NAME_NODES.has(child.name)) return view.state.doc.sliceString(child.from, child.to)
+  }
+  return null
+}
+
+/**
+ * Whether the element an attribute is written on takes it, as the renderer checks it: each
+ * element its own props, and an instance or a local component whatever it is given.
+ */
+function knownAttribute(view: EditorView, name: string, attribute: SyntaxNode | null): boolean {
+  if (RUNTIME_PROPS.has(name)) return true
+  const tag = attributeTagName(view, attribute)
+  if (!tag) return PROPERTY_SET.has(name)
+  const props = elementPropsByName(tag)
+  if (props) return props.has(name)
+  // An instance's or a local component's props are its own to name.
+  return !/^[a-z]/.test(tag) || PROPERTY_SET.has(name)
+}
+
 function semanticDiagnostics(view: EditorView): Diagnostic[] {
   const diagnostics: Diagnostic[] = []
   const knownElements = new Set([...BUILTIN_ELEMENTS, ...localComponentNames(view)])
@@ -60,7 +97,7 @@ function semanticDiagnostics(view: EditorView): Diagnostic[] {
       if (node.name !== 'JSXIdentifier') return
       const parentName = node.node.parent?.name
       const name = view.state.doc.sliceString(node.from, node.to)
-      if (parentName === 'JSXAttribute' && !PROPERTY_SET.has(name)) {
+      if (parentName === 'JSXAttribute' && !knownAttribute(view, name, node.node.parent)) {
         diagnostics.push({
           from: node.from,
           to: node.to,

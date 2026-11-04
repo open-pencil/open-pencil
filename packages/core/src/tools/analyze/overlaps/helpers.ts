@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { clipPolygon } from '@open-pencil/scene-graph/clipping'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  clipPolygon,
   effectOverflow,
   geometryBlobBounds,
   intersectVisualBounds,
@@ -263,10 +263,8 @@ function aabbFromCorners(corners: Vector[]): VisualBounds {
 }
 
 /**
- * Compute a node's visual bounds in canvas space using the world matrix,
- * correctly handling nested ancestor rotations. This replaces the previous
- * `nodeVisualBounds` call which used `rotatedBBox` with the node's LOCAL
- * rotation and the rotated origin — wrong when ancestors are rotated.
+ * Compute a node's visual bounds in canvas space through its world matrix,
+ * so rotated and flipped ancestors count.
  *
  * Includes stroke overflow (uniform), effect overflow (directional),
  * fill/stroke geometry (transformed through the world matrix), and
@@ -278,7 +276,7 @@ function computeNodeVisualBounds(node: SceneNode, graph: SceneGraph): VisualBoun
   // through the world matrix. Expanding the already-rotated AABB by `stroke`
   // underestimates the stroked bounds for rotated nodes (the true stroked AABB
   // grows by `stroke * (|cos θ| + |sin θ|)`, not `stroke`).
-  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork)
+  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   const baseCorners = Matrix.mapPoints(matrix, [
     -stroke,
     -stroke,

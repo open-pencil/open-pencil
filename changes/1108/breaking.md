@@ -1,1 +1,0 @@
-- `computeImageHash` from `@open-pencil/core` and `@open-pencil/scene-graph` returns the hex SHA-1 of the bytes, the name Figma gives an image, instead of an OpenPencil-only hash of the same length. New images are stored under that name, so `.fig` files and the Figma clipboard carry it as it is; images in documents saved before keep their names.

@@ -1,7 +1,6 @@
 import { computed, ref, shallowRef, triggerRef } from 'vue'
 
-import type { EditorState } from '@open-pencil/core/editor'
-import { copyEditorViewState, pickEditorViewState } from '@open-pencil/core/editor'
+import { type EditorState, copyEditorViewState, pickEditorViewState } from '@open-pencil/core'
 
 import {
   closePaneNode,

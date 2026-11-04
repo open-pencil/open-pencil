@@ -1,17 +1,22 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
-  type InstanceOverrideState,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 
+import { isNodeFontLoaded } from '#core/canvas/text'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { getTextMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
 import type { TextEditorState } from '#core/text/editor'
-import { weightToStyle } from '#core/text/fonts'
-import { hasGlyphOutlines } from '#core/text/opentype'
+import { hasGlyphOutlines } from '#core/text/font/glyphs'
+import { prepareTextFonts } from '#core/text/prepare'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'
+import { fitEmptyLabelToPlaceholder } from './connectors/label-edit'
+import { applyGeneratedTextNameEdit } from './text/name'
 import { pathTextEditChanges } from './text/path-edit'
 import {
   createTextEditSession,
@@ -21,6 +26,7 @@ import {
   type TextEditSession
 } from './text/session'
 import type { EditorContext } from './types'
+import { createVariableBindingActions } from './variables/bindings'
 
 /**
  * Path text is edited by re-flowing glyph OUTLINES along its path. When the font
@@ -33,7 +39,7 @@ import type { EditorContext } from './types'
  */
 function isPathTextEditable(node: SceneNode): boolean {
   if (!node.textPathData) return true
-  return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+  return hasGlyphOutlines(node.fontFamily, faceStyleKey(node))
 }
 
 type PathTextEditSnapshot = Pick<
@@ -105,6 +111,9 @@ function applyTextInstanceOverride(
 
 export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
+  /** Puts back the size an empty connector label had before its placeholder sized it. */
+  let restoreEmptyLabel: (() => void) | null = null
+  const variableBindings = createVariableBindingActions(ctx)
 
   /**
    * Typing resizes auto-sized text and lays out its auto-layout ancestors as it goes, so a Hug
@@ -116,12 +125,65 @@ export function createTextActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const { width, height } = node
-    ctx.graph.updateNode(nodeId, {
-      ...textAutoResizeChanges(node, changes),
-      ...changes,
-      ...pathTextEditChanges(node, changes)
+    measuringEditedText(nodeId, () => {
+      ctx.graph.updateNode(nodeId, {
+        ...textAutoResizeChanges(node, changes),
+        ...changes,
+        ...pathTextEditChanges(node, changes)
+      })
+      if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
     })
-    if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
+    if ('text' in changes || 'styleRuns' in changes) prepareEditedText(nodeId)
+  }
+
+  /**
+   * Runs `fn` with the text being typed measured in the fonts it is drawn with now, as its edit
+   * draws it, so its size and its glyphs agree while it waits for fonts it newly needs. Other text
+   * is measured as layout measures it.
+   */
+  function measuringEditedText(nodeId: string, fn: () => void) {
+    const renderer = ctx.getRenderer()
+    const measure = getTextMeasurer()
+    if (!renderer || !measure) return fn()
+    withTextMeasurer(
+      (node, maxWidth) =>
+        node.id === nodeId ? renderer.measureTextAsDrawn(node, maxWidth) : measure(node, maxWidth),
+      fn
+    )
+  }
+
+  /**
+   * Prepares the fonts the typed text newly needs, such as a script's fallback, through the one
+   * gate, and once they are in, redraws the edit and sizes the text in them.
+   */
+  function prepareEditedText(nodeId: string) {
+    const renderer = ctx.getRenderer()
+    const node = ctx.graph.getNode(nodeId)
+    if (!renderer?.fontsLoaded || !node || isNodeFontLoaded(renderer, node)) return
+    void sizeInPreparedFonts(nodeId, node)
+  }
+
+  async function sizeInPreparedFonts(nodeId: string, node: SceneNode) {
+    const graph = ctx.graph
+    await prepareTextFonts([node], { loadFont: ctx.loadFont })
+    // A replaced document has its own text, whatever its ids.
+    if (ctx.graph !== graph) return
+    const te = ctx.getTextEditor()
+    const current = ctx.graph.getNode(nodeId)
+    if (!current) return
+    if (te?.isActive && te.nodeId === nodeId) te.rebuildParagraph(current)
+    measuringEditedText(nodeId, () => {
+      const sized = textAutoResizeChanges(current, { text: current.text })
+      const { width, height } = current
+      ctx.graph.updateNode(nodeId, sized)
+      if (current.width !== width || current.height !== height) ctx.runLayoutForNode(nodeId)
+    })
+    ctx.requestRender()
+  }
+
+  /** A text draws from its live layout while edited, so it is drawn afresh as the edit starts and ends. */
+  function redrawText(nodeId: string) {
+    for (const renderer of ctx.getRenderers()) renderer.redrawNode(nodeId, ctx.graph)
   }
 
   function startTextEditing(nodeId: string) {
@@ -133,6 +195,8 @@ export function createTextActions(ctx: EditorContext) {
     if (!isPathTextEditable(node)) return
     activeSession = createTextEditSession(node)
     ctx.state.editingTextId = nodeId
+    redrawText(nodeId)
+    restoreEmptyLabel = fitEmptyLabelToPlaceholder(ctx, node)
     if (te) {
       te.setRenderer(ctx.getRenderer())
       te.start(node)
@@ -177,7 +241,8 @@ export function createTextActions(ctx: EditorContext) {
     }
     const instanceOverridesAfter = snapshotInstanceOverrides(ctx, containingInstances)
 
-    // Text a property drives becomes the property's value too, in the same undo step.
+    // Text a property drives becomes the property's value too, and typing over text a variable
+    // decides lets go of the variable, as in Figma, both in the same undo step.
     ctx.undo.runBatch('Edit text', () => {
       ctx.undo.push({
         label: 'Edit text',
@@ -204,15 +269,28 @@ export function createTextActions(ctx: EditorContext) {
           ctx.runLayoutForNode(result.nodeId)
         }
       })
-      if (before.text !== after.text) applyBoundTextEdit(ctx, result.nodeId, after.text)
+      if (before.text !== after.text) {
+        if (node && 'text' in node.boundVariables)
+          variableBindings.unbindVariable(result.nodeId, 'text')
+        applyBoundTextEdit(ctx, result.nodeId, after.text)
+        applyGeneratedTextNameEdit(ctx, result.nodeId, after.text)
+      }
     })
   }
 
   function commitTextEdit() {
     const te = ctx.getTextEditor()
+    const restore = restoreEmptyLabel
+    const edited = ctx.state.editingTextId
+    restoreEmptyLabel = null
     if (!te?.isActive) {
       ctx.state.editingTextId = null
       activeSession = null
+      restore?.()
+      if (edited) {
+        redrawText(edited)
+        ctx.requestRender()
+      }
       return
     }
     const textState = te.state
@@ -220,6 +298,8 @@ export function createTextActions(ctx: EditorContext) {
     te.stop()
     ctx.state.editingTextId = null
     activeSession = null
+    restore?.()
+    if (edited) redrawText(edited)
     ctx.requestRender()
   }
 
@@ -238,7 +318,16 @@ export function createTextActions(ctx: EditorContext) {
     recordTextEdit(textState)
     change()
     const node = ctx.graph.getNode(textState.nodeId)
-    if (!node) return
+    if (!node) {
+      // The change took the text away, such as an undo past the step that made it: the edit
+      // ends with it, recording nothing of a node that is gone.
+      te.stop()
+      ctx.state.editingTextId = null
+      activeSession = null
+      restoreEmptyLabel = null
+      ctx.requestRender()
+      return
+    }
     activeSession = createTextEditSession(node)
     te.syncToNode(node)
     ctx.requestRender()

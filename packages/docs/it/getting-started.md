@@ -8,7 +8,7 @@ Se vuoi creare un prodotto basato su OpenPencil invece di utilizzare soltanto l'
 
 ## Applicazione desktop
 
-Le versioni pronte per macOS, Windows e Linux sono disponibili nella [pagina delle versioni](https://github.com/open-pencil/open-pencil/releases/latest).
+Le versioni pronte per macOS, Windows e Linux sono disponibili nella [pagina dei download](/it/download).
 
 | Piattaforma | File |
 | --------------------- | -------------------- |
@@ -18,7 +18,7 @@ Le versioni pronte per macOS, Windows e Linux sono disponibili nella [pagina del
 | Windows (ARM) | `.msi` / `.exe` |
 | Linux (x64) | `.AppImage` / `.deb` |
 
-## Requisiti di sistema
+## Requisiti di sistema {#system-requirements}
 
 OpenPencil esegue il rendering con CanvasKit su WebGL e usa funzionalità recenti della piattaforma web, quindi richiede un motore del browser aggiornato. L’app web supporta Chrome 111, Edge 111, Firefox 128 e Safari 16.4 o versioni successive; i browser basati su Chromium, come Brave e Opera, seguono la versione di Chrome. L’app desktop usa il WebView di sistema, quindi il requisito minimo dipende dal motore del sistema operativo:
 
@@ -45,7 +45,7 @@ brew uninstall open-pencil/tap/open-pencil
 brew install --cask openpencil
 ```
 
-## Compilazione dal codice sorgente
+## Compilazione dal codice sorgente {#building-from-source}
 
 ### Requisiti
 
@@ -74,7 +74,7 @@ L'editor sarà disponibile all'indirizzo `http://localhost:1420`.
 | ------------------------------- | ---------------------------------------------------------------------------------- |
 | `bun run dev` | Avvia il server di sviluppo con HMR |
 | `bun run build` | Genera la versione di produzione |
-| `bun run check` | Esegue oxlint e controlla i tipi con tsgo |
+| `bun run check` | Esegue oxlint e controlla i tipi con TypeScript 7 |
 | `bun run test` | Esegue i test E2E e di regressione visiva con Playwright |
 | `bun run test:update` | Aggiorna gli screenshot di riferimento |
 | `bun run test:unit` | Esegue gli unit test con bun:test |

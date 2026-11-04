@@ -11,7 +11,10 @@ import { tv } from 'tailwind-variants'
 import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
+import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { presenceByPage } from '@/app/presence/registry'
@@ -21,6 +24,7 @@ import PagePresenceHover from '@/components/presence/PagePresenceHover.vue'
 import PresenceMarkers from '@/components/presence/PresenceMarkers.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import pageListTheme from '@/theme/page-list'
 
 type PageItem = Pick<SceneNode, 'id' | 'name' | 'childIds'>
@@ -175,23 +179,25 @@ function setupPageRowRef(
             </ContextMenuTrigger>
             <ContextMenuPortal>
               <ContextMenuContent :class="menuCls.content" :side-offset="2" align="start">
-                <ContextMenuItem
-                  data-test-id="pages-context-rename"
-                  :class="menuCls.item"
-                  @select="startRename(pg, actions.rename)"
-                >
-                  <icon-lucide-pencil :class="menuCls.icon" />
-                  <span>{{ pageMessages.rename }}</span>
-                </ContextMenuItem>
-                <ContextMenuItem
-                  data-test-id="pages-context-delete"
-                  :class="menuCls.item"
-                  :disabled="pages.length <= 1"
-                  @select="actions.delete(pg.id)"
-                >
-                  <icon-lucide-trash-2 :class="menuCls.icon" />
-                  <span>{{ pageMessages.delete }}</span>
-                </ContextMenuItem>
+                <MenuScrollArea>
+                  <ContextMenuItem
+                    data-test-id="pages-context-rename"
+                    :class="menuCls.item"
+                    @select="startRename(pg, actions.rename)"
+                  >
+                    <icon-lucide-pencil :class="menuCls.icon" />
+                    <span>{{ pageMessages.rename }}</span>
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    data-test-id="pages-context-delete"
+                    :class="menuCls.item"
+                    :disabled="pages.length <= 1"
+                    @select="actions.delete(pg.id)"
+                  >
+                    <icon-lucide-trash-2 :class="menuCls.icon" />
+                    <span>{{ pageMessages.delete }}</span>
+                  </ContextMenuItem>
+                </MenuScrollArea>
               </ContextMenuContent>
             </ContextMenuPortal>
           </ContextMenuRoot>

@@ -4,6 +4,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuidePreview } from '#core/canvas/guides/types'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { ShapeHandleHover, EditorContext } from '#core/editor/types'
 
 export function createSelectionOverlayActions(ctx: EditorContext) {
@@ -83,6 +84,13 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  /** Hands a layer's name on the canvas to the field renaming it, or back to the canvas. */
+  function setRenamingLabel(id: string | null) {
+    if (ctx.state.renamingLabelId === id) return
+    ctx.state.renamingLabelId = id
+    ctx.requestRepaint()
+  }
+
   function setDropTarget(id: string | null) {
     if (ctx.state.dropTargetId === id) return
     ctx.state.dropTargetId = id
@@ -109,6 +117,12 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  function setConnectorTarget(target: ConnectorTarget | null) {
+    if (isEqual(ctx.state.connectorTarget, target)) return
+    ctx.state.connectorTarget = target
+    ctx.requestRepaint()
+  }
+
   function setShapeHandleHover(hover: ShapeHandleHover | null) {
     if (isEqual(ctx.state.shapeHandleHover, hover)) return
     ctx.state.shapeHandleHover = hover
@@ -116,6 +130,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
   }
 
   return {
+    setConnectorTarget,
     setMarquee,
     setSnapGuides,
     setGuidePreview,
@@ -130,6 +145,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setCodeFocusNode,
     setMeasurementMode,
     setDropTarget,
+    setRenamingLabel,
     setLayoutInsertIndicator,
     setAutoLayoutHover,
     setShapeHandleHover

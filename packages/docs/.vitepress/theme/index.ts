@@ -3,7 +3,6 @@ import DefaultTheme from 'vitepress/theme'
 
 import '@shikijs/vitepress-twoslash/style.css'
 
-import HomeLayout from './HomeLayout.vue'
 import SdkCard from './components/SdkCard.vue'
 import SdkCardGroup from './components/SdkCardGroup.vue'
 import SdkComponentAPI from './components/SdkComponentAPI.vue'
@@ -16,10 +15,10 @@ import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
 
 import './tailwind.css'
+import './vars.css'
 
 export default {
   extends: DefaultTheme,
-  Layout: HomeLayout,
   enhanceApp({ app }) {
     app.use(TwoslashFloatingVue)
     app.component('SdkCard', SdkCard)
@@ -32,5 +31,5 @@ export default {
     app.component('SdkPropsTable', SdkPropsTable)
     app.component('SdkRelatedLinks', SdkRelatedLinks)
     app.component('SdkSlotsTable', SdkSlotsTable)
-  },
+  }
 }

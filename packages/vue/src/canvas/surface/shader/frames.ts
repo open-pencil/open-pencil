@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 /**
  * Draws one fresh frame of a shader. The source is a WebGPU canvas that keeps the frame only

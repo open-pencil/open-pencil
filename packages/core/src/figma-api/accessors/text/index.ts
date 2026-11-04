@@ -1,6 +1,6 @@
 import type {
-  CharacterStyleOverride,
   HyperlinkTarget,
+  LeadingTrim,
   SceneNode,
   TextCase,
   TextParagraphSpacingField
@@ -13,20 +13,28 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
+import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
+import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import { atLeast } from '#core/figma-api/schema'
 import {
   getParagraphSpacing,
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
-  spacingProblem,
+  styleRunsForCharacters,
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
 import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
+import { parseFigma } from '#core/figma-api/validation'
 import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
 
+import { installTextDecorationAccessors } from './decoration'
 import { hyperlinkTarget } from './hyperlink'
+import { fontNameStyle } from './ranges'
+import { DECORATIONS, enumValue, fontSizeValue, textCaseValue } from './values'
+
+const LEADING_TRIMS = new Set<LeadingTrim>(['CAP_HEIGHT', 'NONE'])
 
 /**
  * Getter/setter pair for a spacing Figma keeps at zero or more. It reads `mixed` while paragraphs
@@ -38,10 +46,8 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
       return getParagraphSpacing(raw(this, internals), name, mixed)
     },
     set(this: ProxyThis, value: number) {
-      const invalid = spacingProblem(value)
-      if (invalid) {
-        throw new Error(`in set_${name}: Property "${name}" failed validation: ${invalid}`)
-      }
+      parseFigma(atLeast(0), value, `set_${name}`, name)
+      assertTextFontsLoaded(`set_${name}`, raw(this, internals))
       updateNode(this, internals, { [name]: value })
     }
   }
@@ -49,14 +55,15 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
 
 /**
  * Getter/setter pair for a style characters can override: it reads `mixed` while they differ,
- * and setting it gives every character the value, as Figma's node setters do.
+ * and setting it gives every character the value, as Figma's node setters do. Setting one that
+ * lays the text out again needs the text's fonts loaded, as in Figma.
  */
 function characterStyle<T>(
   internals: NodeProxyInternals,
   field: TextSegmentField,
   mixed: symbol,
   changes: (node: SceneNode, value: T) => Partial<SceneNode>,
-  sized?: (value: T) => ((fontSize: number) => CharacterStyleOverride) | undefined
+  needsFonts = true
 ) {
   return {
     get(this: ProxyThis): unknown {
@@ -64,26 +71,29 @@ function characterStyle<T>(
     },
     set(this: ProxyThis, value: T) {
       const node = raw(this, internals)
-      updateNode(this, internals, textStyleChanges(node, changes(node, value), sized?.(value)))
+      const patch = changes(node, value)
+      if (needsFonts) assertTextFontsLoaded(`set_${field}`, node)
+      updateNode(this, internals, textStyleChanges(node, patch))
     }
   }
 }
 
-/** A length given in percent of the font size, which characters of each size resolve. */
-function percentOf(value: unknown): number | null {
-  if (!value || typeof value !== 'object') return null
-  const length = value as { unit?: unknown; value?: unknown }
-  return length.unit === 'PERCENT' && typeof length.value === 'number' ? length.value / 100 : null
-}
-
-/** Getter/setter pair for a text property stored verbatim on the node. */
-function field<Field extends keyof SceneNode>(internals: NodeProxyInternals, name: Field) {
+/**
+ * Getter/setter pair for a text property stored verbatim on the node; one that lays the text out
+ * again needs its fonts loaded, as in Figma.
+ */
+function field<Field extends keyof SceneNode>(
+  internals: NodeProxyInternals,
+  name: Field,
+  needsFonts = true
+) {
   return {
     get(this: ProxyThis): SceneNode[Field] {
       return raw(this, internals)[name]
     },
     set(this: ProxyThis, value: SceneNode[Field]) {
-      updateNode(this, internals, { [name]: value } as Partial<SceneNode>)
+      if (needsFonts) assertTextFontsLoaded(`set_${name}`, raw(this, internals))
+      updateNode(this, internals, { [name]: value })
     }
   }
 }
@@ -99,26 +109,35 @@ export function installTextNodeProxyAccessors(
         return raw(this, internals).text
       },
       set(this: ProxyThis, value: string) {
+        assertTextFontsLoaded('set_characters', raw(this, internals))
         const textParagraphs = paragraphStylesForCharacters(raw(this, internals), value)
-        updateNode(this, internals, { text: value, textParagraphs })
+        const styleRuns = styleRunsForCharacters(raw(this, internals), value)
+        updateNode(this, internals, { text: value, textParagraphs, styleRuns })
       }
     },
-    fontName: characterStyle<FigmaFontName>(internals, 'fontName', mixed, (_node, value) => {
-      const { weight, italic } = styleNameToWeight(value.style)
-      return { fontFamily: value.family, fontWeight: weight, italic }
+    // The new font replaces every character's, so only it has to be loaded, as in Figma.
+    fontName: characterStyle<FigmaFontNameInput>(
+      internals,
+      'fontName',
+      mixed,
+      (node, value) => {
+        const style = fontNameStyle('set_fontName', node, 0, value, 'fontName')
+        assertFontLoaded('set_fontName', node, style)
+        return style
+      },
+      false
+    ),
+    fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, value) => ({
+      fontSize: fontSizeValue('set_fontSize', value, 'fontSize')
+    })),
+    // A weight is a face of its own, which has to be loaded as a new font does.
+    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (node, fontWeight) => {
+      const style = { fontWeight, fontStyle: null }
+      assertFontLoaded('set_fontWeight', node, style)
+      return style
     }),
-    fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, fontSize) => ({
-      fontSize
-    })),
-    textStyleId: characterStyle<string>(internals, 'textStyleId', mixed, (_node, value) => ({
-      textStyleId: value || null
-    })),
-    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (_node, fontWeight) => ({
-      fontWeight
-    })),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
-    textDirection: field(internals, 'textDirection'),
     textAutoResize: field(internals, 'textAutoResize'),
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.
@@ -126,24 +145,16 @@ export function installTextNodeProxyAccessors(
       internals,
       'letterSpacing',
       mixed,
-      (node, value) => ({ letterSpacing: letterSpacingValue(node, value) }),
-      (value) => {
-        const percent = percentOf(value)
-        return percent === null ? undefined : (fontSize) => ({ letterSpacing: percent * fontSize })
-      }
+      (_node, value) => ({ letterSpacing: letterSpacingValue(value) })
     ),
     lineHeight: characterStyle<FigmaLineHeight | number | null>(
       internals,
       'lineHeight',
       mixed,
-      (node, value) => ({ lineHeight: lineHeightValue(node, value) }),
-      (value) => {
-        const percent = percentOf(value)
-        return percent === null ? undefined : (fontSize) => ({ lineHeight: percent * fontSize })
-      }
+      (_node, value) => ({ lineHeight: lineHeightValue(value) })
     ),
-    textCase: characterStyle<TextCase>(internals, 'textCase', mixed, (_node, textCase) => ({
-      textCase
+    textCase: characterStyle<TextCase>(internals, 'textCase', mixed, (_node, value) => ({
+      textCase: textCaseValue('set_textCase', value, 'textCase')
     })),
     hyperlink: {
       get(this: ProxyThis): unknown {
@@ -151,7 +162,7 @@ export function installTextNodeProxyAccessors(
       },
       set(this: ProxyThis, value: HyperlinkTarget | null) {
         const node = raw(this, internals)
-        const hyperlink = hyperlinkTarget('set_hyperlink', value, graph(this, internals))
+        const hyperlink = hyperlinkTarget('set_hyperlink', value, graph(this, internals), 'value')
         const styleRuns = styleRunsWithPatch(node, 0, node.text.length, { hyperlink })
         updateNode(this, internals, { styleRuns })
       }
@@ -160,14 +171,37 @@ export function installTextNodeProxyAccessors(
       internals,
       'textDecoration',
       mixed,
-      (_node, textDecoration) => ({ textDecoration })
+      (_node, value) => ({
+        textDecoration: enumValue('set_textDecoration', value, DECORATIONS, 'textDecoration')
+      })
     ),
     maxLines: field(internals, 'maxLines'),
     listSpacing: spacing(internals, 'listSpacing', mixed),
     paragraphSpacing: spacing(internals, 'paragraphSpacing', mixed),
     paragraphIndent: spacing(internals, 'paragraphIndent', mixed),
     hangingList: field(internals, 'hangingList'),
+    leadingTrim: {
+      get(this: ProxyThis): LeadingTrim {
+        return raw(this, internals).leadingTrim
+      },
+      set(this: ProxyThis, value: unknown) {
+        const leadingTrim = enumValue('set_leadingTrim', value, LEADING_TRIMS, 'leadingTrim')
+        assertTextFontsLoaded('set_leadingTrim', raw(this, internals))
+        updateNode(this, internals, { leadingTrim })
+      }
+    },
+    // Figma reads the features characters set; assigning to it does nothing, as in Figma.
+    openTypeFeatures: {
+      get(this: ProxyThis): unknown {
+        const features = getTextStyle(raw(this, internals), 'openTypeFeatures', mixed)
+        return typeof features === 'symbol' ? features : Object.freeze(features)
+      },
+      set() {
+        // Figma ignores the assignment without an error.
+      }
+    },
     textTruncation: field(internals, 'textTruncation'),
-    autoRename: field(internals, 'autoRename')
+    autoRename: field(internals, 'autoRename', false)
   })
+  installTextDecorationAccessors(prototype, internals, mixed)
 }

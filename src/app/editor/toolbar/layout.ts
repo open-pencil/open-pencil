@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import { EDITOR_TOOLS, type EditorToolDef, type Tool } from '@open-pencil/core/editor'
+import { EDITOR_TOOLS, type EditorToolDef, type Tool } from '@open-pencil/core'
 
 /** Toolbar buttons that run a command instead of switching the tool. */
 export const TOOLBAR_ACTIONS = ['insert-icon'] as const
@@ -19,12 +19,18 @@ export interface ToolbarLayout {
 /** The one entry the toolbar always shows, so it is never empty. */
 export const PINNED_TOOLBAR_ENTRY: ToolbarEntry = 'SELECT'
 
+/**
+ * Tools the toolbar keeps hidden until shown from Customize toolbar, such as FigJam's sticky
+ * note, shape and connector, which Figma's own toolbar does not offer.
+ */
+const HIDDEN_BY_DEFAULT: readonly ToolbarEntry[] = ['STICKY', 'SHAPE_WITH_TEXT', 'CONNECTOR']
+
 export const DEFAULT_TOOLBAR_LAYOUT: Readonly<ToolbarLayout> = {
   groups: [
     ...EDITOR_TOOLS.map((tool) => [...(tool.flyout ?? [tool.key])]),
     ...TOOLBAR_ACTIONS.map((action) => [action])
   ],
-  hidden: []
+  hidden: [...HIDDEN_BY_DEFAULT]
 }
 
 const ENTRIES = DEFAULT_TOOLBAR_LAYOUT.groups.flat()
@@ -65,7 +71,8 @@ function placeMissing(groups: ToolbarEntry[][], entry: ToolbarEntry) {
 
 /**
  * Reads a stored layout: unknown entries and repeats are dropped, actions stand alone, empty
- * groups go, and entries it does not mention are placed as `placeMissing` describes.
+ * groups go, and entries it does not mention are placed as `placeMissing` describes, hidden when
+ * the default layout hides them.
  */
 export function normalizeToolbarLayout(
   storedGroups: readonly (readonly unknown[])[],
@@ -88,8 +95,10 @@ export function normalizeToolbarLayout(
     }
     if (group.length > 0) groups.push(group)
   }
-  for (const entry of ENTRIES) if (!placed.has(entry)) placeMissing(groups, entry)
-  const hidden = uniq(storedHidden.filter(isToolbarEntry)).filter(
+  const missing = ENTRIES.filter((entry) => !placed.has(entry))
+  for (const entry of missing) placeMissing(groups, entry)
+  const hiddenMissing = missing.filter((entry) => HIDDEN_BY_DEFAULT.includes(entry))
+  const hidden = uniq([...storedHidden.filter(isToolbarEntry), ...hiddenMissing]).filter(
     (entry) => entry !== PINNED_TOOLBAR_ENTRY
   )
   return { groups, hidden }
@@ -98,6 +107,24 @@ export function normalizeToolbarLayout(
 export type ToolbarItem =
   | { kind: 'tool'; tool: EditorToolDef }
   | { kind: 'action'; action: ToolbarAction }
+
+/**
+ * The layout narrowed to the tools the editor's profile offers: the whole layout when it names
+ * none, and otherwise every one of those tools, shown even where the layout hides them, with no
+ * actions, as a read-only document keeps Move and Hand in Figma and a board offers FigJam's tools.
+ */
+export function toolbarLayoutFor(
+  layout: ToolbarLayout,
+  tools: ReadonlySet<Tool> | null
+): ToolbarLayout {
+  if (!tools) return layout
+  return {
+    groups: layout.groups
+      .map((group) => group.filter((entry) => !isToolbarAction(entry) && tools.has(entry)))
+      .filter((group) => group.length > 0),
+    hidden: []
+  }
+}
 
 /** The toolbar's buttons and flyouts for a layout, without its hidden entries. */
 export function toolbarItems(

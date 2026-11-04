@@ -28,7 +28,7 @@ const meta = {
     components: { AppButton },
     setup: () => ({ args }),
     template: `
-      <div class="flex min-h-40 flex-wrap items-center gap-3 bg-app p-6 text-surface">
+      <div class="flex min-h-40 flex-wrap items-center gap-3 bg-canvas p-6 text-surface">
         <AppButton v-bind="args">
           <template #leading><icon-lucide-copy /></template>
           Copy diagnostics
@@ -86,7 +86,7 @@ export const Sizes: Story = {
   render: () => ({
     components: { AppButton },
     template: `
-      <div class="flex items-center gap-3 bg-app p-6 text-surface">
+      <div class="flex items-center gap-3 bg-canvas p-6 text-surface">
         <AppButton size="xs">Extra small</AppButton>
         <AppButton size="sm">Small</AppButton>
         <AppButton size="md">Medium</AppButton>

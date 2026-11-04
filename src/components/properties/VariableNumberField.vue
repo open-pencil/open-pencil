@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
 
-import { BindableValueRoot, useI18n, useNumberBindingProvider } from '@open-pencil/vue'
-import type { BindingTarget, NumberBindingPath } from '@open-pencil/vue'
+import {
+  useNumberBindingProvider,
+  type BindingTarget
+} from '@open-pencil/vue/controls/binding-provider'
+import type { NumberBindingPath } from '@open-pencil/vue/controls/number-variable-binding'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
@@ -21,7 +26,8 @@ const {
   nodeId,
   nodeIds,
   bindingPath,
-  bindingPaths
+  bindingPaths,
+  units
 } = defineProps<{
   modelValue: number | symbol
   min?: number
@@ -37,11 +43,13 @@ const {
   nodeIds?: readonly string[]
   bindingPath: NumberBindingPath
   bindingPaths?: readonly NumberBindingPath[]
+  /** Units a typed value may end with; the commit reports the one typed. */
+  units?: readonly string[]
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
-  commit: [value: number, previous: number]
+  'update:modelValue': [value: number, unit?: string]
+  commit: [value: number, previous: number, unit?: string]
   cancel: []
 }>()
 
@@ -58,11 +66,6 @@ const accessibleLabel = computed(() => {
   return typeof ariaLabel === 'string' ? ariaLabel : (label ?? bindingPath)
 })
 const bindingStyles = useBindingFieldUI()
-
-function bindingTooltip(name: string, resolvedValue: unknown) {
-  if (typeof resolvedValue !== 'number') return name
-  return `${name} · ${resolvedValue}${suffix ?? ''}`
-}
 
 defineOptions({ inheritAttrs: false })
 </script>
@@ -85,11 +88,14 @@ defineOptions({ inheritAttrs: false })
       :min="min"
       :max="max"
       :step="step"
+      :units="units"
       :ui="{ root: bindingStyles.root }"
       :data-property="bindingPath"
       :aria-label="accessibleLabel"
-      @update:model-value="emit('update:modelValue', $event)"
-      @commit="(value: number, previous: number) => emit('commit', value, previous)"
+      @update:model-value="(value: number, unit?: string) => emit('update:modelValue', value, unit)"
+      @commit="
+        (value: number, previous: number, unit?: string) => emit('commit', value, previous, unit)
+      "
       @cancel="emit('cancel')"
     >
       <template v-if="$slots.icon" #icon>
@@ -98,19 +104,20 @@ defineOptions({ inheritAttrs: false })
       <template v-if="$slots.display" #display="display">
         <slot name="display" v-bind="display" />
       </template>
-      <template v-if="binding.variable || binding.state === 'unresolved'" #bound>
+      <!-- A bound number reads like any other, its variable named by the variable button's
+           tooltip; with no value to show, an unresolved binding names its variable. -->
+      <template v-if="binding.state === 'unresolved'" #bound>
         <BindingPill
-          :unresolved="binding.state === 'unresolved'"
+          unresolved
           :label="binding.variable?.name ?? binding.bindingId ?? panels.unresolvedVariable"
-          :tooltip="
-            binding.state === 'unresolved'
-              ? panels.unresolvedVariable
-              : bindingTooltip(binding.variable?.name ?? '', binding.resolvedValue)
-          "
+          :tooltip="panels.unresolvedVariable"
         />
       </template>
       <template #suffix>
-        <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
+        <!-- A field's own control, such as Hug or a mode menu, sits beside its value; the variable
+             button ends every field, so it lines up down the panel. -->
+        <slot name="after-variable" />
+        <span class="flex items-center pr-1">
           <VariableBindingPicker
             :trigger-label="panels.applyVariable"
             :search-placeholder="common.search"
@@ -125,7 +132,6 @@ defineOptions({ inheritAttrs: false })
             :create-submit-label="panels.create"
           />
         </span>
-        <slot name="after-variable" />
       </template>
     </NumberField>
   </BindableValueRoot>

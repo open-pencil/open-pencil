@@ -2,7 +2,11 @@
 import { ref } from 'vue'
 
 import type { Variable } from '@open-pencil/scene-graph'
-import type { BindingProvider, BindingState, BindingTarget } from '@open-pencil/vue'
+import type {
+  BindingProvider,
+  BindingState,
+  BindingTarget
+} from '@open-pencil/vue/controls/binding-provider'
 
 import Field from './Field.vue'
 
@@ -125,15 +129,15 @@ const mixedTargets: BindingTarget[] = [
 </script>
 
 <template>
-  <div class="w-[320px] overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
+  <div class="w-80 overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
     <header class="border-b border-border px-3 py-2">
       <p class="text-xs font-semibold">Binding field states</p>
-      <p class="mt-1 text-[11px] text-muted">Pill at rest, resolved value while editing</p>
+      <p class="mt-1 text-2xs text-muted">Pill at rest, resolved value while editing</p>
     </header>
 
     <div class="grid grid-cols-2 gap-1.5 px-3">
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Unbound</span>
+        <span class="text-2xs text-muted">Unbound</span>
         <Field
           v-model="values.unbound"
           label="Unbound field"
@@ -142,7 +146,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Detach on edit</span>
+        <span class="text-2xs text-muted">Detach on edit</span>
         <Field
           v-model="values.detach"
           label="Detach bound field"
@@ -151,7 +155,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Read only</span>
+        <span class="text-2xs text-muted">Read only</span>
         <Field
           v-model="values.readonly"
           label="Readonly bound field"
@@ -161,7 +165,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Edit variable</span>
+        <span class="text-2xs text-muted">Edit variable</span>
         <Field
           v-model="values.editVariable"
           label="Edit variable field"
@@ -171,7 +175,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Mixed</span>
+        <span class="text-2xs text-muted">Mixed</span>
         <Field
           v-model="values.mixed"
           label="Mixed binding field"
@@ -180,7 +184,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="space-y-1">
-        <span class="text-[11px] text-muted">Disabled</span>
+        <span class="text-2xs text-muted">Disabled</span>
         <Field
           v-model="values.disabled"
           label="Disabled bound field"
@@ -190,7 +194,7 @@ const mixedTargets: BindingTarget[] = [
         />
       </label>
       <label class="col-span-2 space-y-1">
-        <span class="text-[11px] text-muted">Derived by auto layout</span>
+        <span class="text-2xs text-muted">Derived by auto layout</span>
         <Field
           v-model="values.derived"
           label="Derived bound field"

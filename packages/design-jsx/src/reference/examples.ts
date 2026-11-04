@@ -21,6 +21,21 @@ export const AUTHORING_EXAMPLES: readonly AuthoringExample[] = [
 </Frame>`
   },
   {
+    title: 'A theme with two modes',
+    jsx: dedent`const theme = defineVars('Theme', { Surface: '#FFFFFF', Ink: '#252A31', Radius: 12 }, { mode: 'Light' })
+const dark = defineMode(theme, 'Dark', { Surface: '#1A1A20', Ink: '#F5F5F7' })
+return <Frame name="Dark note" mode={dark} w={280} h="hug" flex="col" gap={8} p={16} bg={theme.Surface} rounded={theme.Radius}>
+  <Text name="Message" w="fill" size={12} color={theme.Ink}>Shown in the Dark mode of the Theme collection.</Text>
+</Frame>`
+  },
+  {
+    title: 'Component with text and visibility properties',
+    jsx: dedent`<Component name="Comment" w={280} h="hug" flex="col" gap={8} p={16} bg="#FFFFFF">
+  <Text name="Author" size={12} weight="medium" color="#252A31" text={property('Author', 'June Lee')} />
+  <Text name="Message" w="fill" size={12} color="#6B7079" text={property('Message', 'Give the date more room.')} visible={property('Show message', true)} />
+</Component>`
+  },
+  {
     title: 'Rich text with spans and lists',
     jsx: dedent`<Frame name="Release notes" w={280} h="hug" flex="col" gap={8} p={16} bg="#FFFFFF">
   <Text name="Notes" w="fill" size={12} color="#252A31" paragraphSpacing={4}>

@@ -24,6 +24,8 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
   const previewQueue: string[] = []
   const queued = new Set<string>()
   const active = new Set<string>()
+  // Previews whose document changed: shown until the new preview replaces them.
+  const stale = new Set<string>()
   const requestedConcurrency = options.previewConcurrency ?? 6
   const concurrency = Number.isFinite(requestedConcurrency)
     ? Math.max(1, Math.floor(requestedConcurrency))
@@ -32,6 +34,11 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
 
   function removeURL(id: string): void {
     previewGenerations.set(id, (previewGenerations.get(id) ?? 0) + 1)
+    dropURL(id)
+  }
+
+  function dropURL(id: string): void {
+    stale.delete(id)
     const url = previewUrls.value[id]
     if (!url) return
     URL.revokeObjectURL(url)
@@ -65,7 +72,11 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
       const bytes = await options.source.loadPreview(id)
       if (bytes?.byteLength && generation === (previewGenerations.get(id) ?? 0)) {
         clearError(id)
+        stale.delete(id)
         replaceURL(id, bytes)
+      } else if (generation === (previewGenerations.get(id) ?? 0) && stale.has(id)) {
+        // The design changed and has no preview now, so the old one would be wrong.
+        dropURL(id)
       }
     } catch (error: unknown) {
       if (!disposed && generation === (previewGenerations.get(id) ?? 0)) {
@@ -94,14 +105,14 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
       const id = previewQueue.shift()
       if (!id) break
       if (!queued.delete(id)) continue
-      if (active.has(id) || previewUrls.value[id]) continue
+      if (active.has(id) || (previewUrls.value[id] && !stale.has(id))) continue
       active.add(id)
       void runLoad(id, previewGenerations.get(id) ?? 0)
     }
   }
 
   function loadPreview(id: string): void {
-    if (previewUrls.value[id] || active.has(id) || queued.has(id)) return
+    if ((previewUrls.value[id] && !stale.has(id)) || active.has(id) || queued.has(id)) return
     clearError(id)
     queued.add(id)
     previewQueue.push(id)
@@ -119,12 +130,16 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
     ])
     for (const id of trackedIds) {
       if (previous.get(id) === current.get(id)) continue
-      removeURL(id)
-      clearError(id)
       if (!current.has(id)) {
+        removeURL(id)
+        clearError(id)
         queued.delete(id)
         continue
       }
+      // Keep the old preview on screen while the new one loads.
+      previewGenerations.set(id, (previewGenerations.get(id) ?? 0) + 1)
+      if (previewUrls.value[id]) stale.add(id)
+      clearError(id)
       if (active.has(id) || queued.has(id)) continue
       queued.add(id)
       previewQueue.push(id)
@@ -142,6 +157,7 @@ export function createDocumentPreviews<Item extends DocumentWorkspaceItem>(
     for (const id of ids) removeURL(id)
     previewQueue.length = 0
     queued.clear()
+    stale.clear()
     previewErrors.value = {}
   }
 

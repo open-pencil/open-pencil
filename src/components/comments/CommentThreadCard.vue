@@ -7,16 +7,18 @@ import {
 } from 'reka-ui'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { liveReplies, type CommentThread } from '@open-pencil/scene-graph'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue'
+import type { CommentThread } from '@open-pencil/scene-graph'
+import { liveReplies } from '@open-pencil/scene-graph/comments'
+import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments } from '@/theme/comments'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentMessage from './CommentMessage.vue'
+import { comments } from './ui'
 
 /** An open thread: the comment, its replies, and a reply box, as in Figma's comment card. */
 const { thread } = defineProps<{ thread: CommentThread }>()
@@ -65,7 +67,9 @@ defineExpose({ focus: () => composer.value?.focus() })
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
             <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
-              <slot name="menu" />
+              <MenuScrollArea>
+                <slot name="menu" />
+              </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
         </DropdownMenuRoot>

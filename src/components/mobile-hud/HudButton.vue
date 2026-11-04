@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { hudButton } from '@/theme/mobile/hud-button'
+import hudButtonTheme from '@/theme/mobile/hud-button'
+
+const hudButton = tv(hudButtonTheme)
 
 const {
   label,

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('Variables', () => {
@@ -256,6 +257,49 @@ describe('Variables', () => {
     expect(node.boundVariables['fills/0/color']).toBeUndefined()
   })
 
+  test('visibility binds a boolean or text variable and follows its truth', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Visibility')
+    const mode = collection.defaultModeId
+    const flag = graph.createVariable('flag', 'BOOLEAN', collection.id, true)
+    const state = graph.createVariable('state', 'STRING', collection.id, 'off')
+    const size = graph.createVariable('size', 'FLOAT', collection.id, 1)
+    const node = graph.createNode('RECTANGLE', graph.getPages()[0].id)
+
+    graph.bindVariable(node.id, 'visible', state.id)
+    expect(resolvedValueBindings(graph, node)).toEqual({ visible: false })
+    state.valuesByMode[mode] = 'yes'
+    expect(resolvedValueBindings(graph, node)).toEqual({})
+    graph.bindVariable(node.id, 'visible', flag.id)
+    expect(node.boundVariables.visible).toBe(flag.id)
+    expect(() => graph.bindVariable(node.id, 'visible', size.id)).toThrow(
+      'Cannot bind FLOAT variable to boolean field "visible"'
+    )
+  })
+
+  test('text content binds a text or number variable and shows a number as text', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Copy')
+    const mode = collection.defaultModeId
+    const label = graph.createVariable('label', 'STRING', collection.id, 'Buy')
+    const count = graph.createVariable('count', 'FLOAT', collection.id, 42.5)
+    const flag = graph.createVariable('flag', 'BOOLEAN', collection.id, true)
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'Hello' })
+
+    graph.bindVariable(node.id, 'text', count.id)
+    expect(resolvedValueBindings(graph, node)).toMatchObject({ text: '42.50' })
+    count.valuesByMode[mode] = 3
+    expect(resolvedValueBindings(graph, node)).toMatchObject({ text: '3' })
+    graph.bindVariable(node.id, 'text', label.id)
+    expect(resolvedValueBindings(graph, node)).toMatchObject({ text: 'Buy' })
+    expect(() => graph.bindVariable(node.id, 'text', flag.id)).toThrow(
+      'Cannot bind BOOLEAN variable to string field "text"'
+    )
+    expect(() => graph.bindVariable(node.id, 'fontFamily', count.id)).toThrow(
+      'Cannot bind FLOAT variable to string field "fontFamily"'
+    )
+  })
+
   test('removing variable cleans up bindings', () => {
     const graph = new SceneGraph()
     graph.addCollection({
@@ -316,5 +360,58 @@ describe('Variables', () => {
     })
 
     expect(graph.resolveColorVariable('v1')).toBeUndefined()
+  })
+
+  function collectionWithSortPositions(graph: SceneGraph, sortPositions: string[]): void {
+    graph.addCollection({
+      id: 'col1',
+      name: 'Theme',
+      modes: sortPositions.map((sortPosition, index) => ({
+        modeId: `m${index}`,
+        name: `Mode ${index}`,
+        sortPosition
+      })),
+      defaultModeId: 'm0',
+      variableIds: []
+    })
+  }
+
+  function listedModes(graph: SceneGraph) {
+    return graph.variableCollections.get('col1')?.modes ?? []
+  }
+
+  test('a new default mode sorts first and the others keep their positions', () => {
+    const graph = new SceneGraph()
+    collectionWithSortPositions(graph, ['a', 'b', 'c'])
+
+    graph.setDefaultMode('col1', 'm2')
+
+    const modes = listedModes(graph)
+    expect(modes.map((mode) => mode.modeId)).toEqual(['m2', 'm0', 'm1'])
+    expect(modes.slice(1).map((mode) => mode.sortPosition)).toEqual(['a', 'b'])
+    expect((modes[0].sortPosition ?? '') < 'a').toBe(true)
+  })
+
+  test('a new default mode sorts first even when no position fits below the old first', () => {
+    const graph = new SceneGraph()
+    collectionWithSortPositions(graph, ['!', '"'])
+
+    graph.setDefaultMode('col1', 'm1')
+
+    const positions = listedModes(graph).map((mode) => mode.sortPosition ?? '')
+    expect(listedModes(graph)[0].modeId).toBe('m1')
+    expect(positions).toEqual(positions.toSorted())
+    expect(new Set(positions).size).toBe(positions.length)
+  })
+
+  test('a collection without sort positions does not gain any when its default changes', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Theme')
+    graph.addMode(collection.id, 'dark', 'Dark')
+
+    graph.setDefaultMode(collection.id, 'dark')
+
+    const modes = graph.variableCollections.get(collection.id)?.modes ?? []
+    expect(modes.map((mode) => mode.sortPosition)).toEqual([undefined, undefined])
   })
 })

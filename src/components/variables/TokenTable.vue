@@ -3,8 +3,13 @@ import { ListboxContent, ListboxGroup, ListboxGroupLabel, ListboxItem, ListboxRo
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue'
 
-import type { VariableCollection, VariableValue } from '@open-pencil/scene-graph'
-import { useFlatReorderDrag, useI18n } from '@open-pencil/vue'
+import {
+  isLibraryCollection,
+  type VariableCollection,
+  type VariableValue
+} from '@open-pencil/scene-graph'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import {
   parseTokenValueText,
@@ -13,12 +18,13 @@ import {
   type TokenRow
 } from '@/app/editor/tokens/model'
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import TokenCellInput from '@/components/variables/TokenCellInput.vue'
 import TokenRowMenu from '@/components/variables/TokenRowMenu.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 import { useConditionLabels } from '@/components/variables/useConditionLabels'
-import tokensPanelTheme from '@/theme/tokens-panel'
+import tableTheme from '@/theme/variables/table'
 
 const { collection, groups, labels, modeIds, groupOptions } = defineProps<{
   collection: VariableCollection
@@ -42,7 +48,9 @@ const emit = defineEmits<{
 }>()
 
 const { variables } = useI18n()
-const ui = tv(tokensPanelTheme)()
+const ui = tv(tableTheme)()
+/** Figma does not show a variable the file adds to a library's collection; such a row says so. */
+const libraryCollection = computed(() => isLibraryCollection(collection))
 
 const modes = computed(() =>
   modeIds ? collection.modes.filter((mode) => modeIds.includes(mode.modeId)) : collection.modes
@@ -129,7 +137,7 @@ function commitName(row: TokenRow, text: string) {
 /** Numbers and text edit in place; colors, booleans and aliases open the inspector instead. */
 function editableValue(row: TokenRow, modeId: string) {
   const value = row.variable.valuesByMode[modeId]
-  const aliased = typeof value === 'object' && 'aliasId' in value
+  const aliased = typeof value === 'object' && ('aliasId' in value || 'expression' in value)
   return !aliased && (row.variable.type === 'FLOAT' || row.variable.type === 'STRING')
 }
 
@@ -179,7 +187,7 @@ function dropEdge(id: string) {
     v-model="selectedIds"
     multiple
     selection-behavior="replace"
-    :class="ui.list()"
+    :class="ui.root()"
     highlight-on-hover
     data-test-id="token-list"
     @keydown="onKeydown"
@@ -231,7 +239,7 @@ function dropEdge(id: string) {
           >
             <span :class="ui.name()" @dblclick.stop="startRename(row.variable.id)">
               <span :class="ui.nameLine()">
-                <component :is="VARIABLE_TYPE_ICONS[row.variable.type]" :class="ui.typeIcon()" />
+                <component :is="VARIABLE_TYPE_ICONS[row.variable.type]" :class="ui.icon()" />
                 <TokenCellInput
                   v-if="isEditing(row.variable.id)"
                   :value="row.label"
@@ -240,6 +248,19 @@ function dropEdge(id: string) {
                   @cancel="editing = null"
                 />
                 <span v-else class="truncate">{{ row.label }}</span>
+                <Tip
+                  v-if="libraryCollection && !row.variable.key"
+                  :label="variables.addedToLibraryCollection"
+                >
+                  <span
+                    role="img"
+                    :aria-label="variables.addedToLibraryCollection"
+                    class="flex shrink-0 text-warning"
+                    data-test-id="variable-added-to-library"
+                  >
+                    <icon-lucide-triangle-alert class="size-3" aria-hidden="true" />
+                  </span>
+                </Tip>
               </span>
               <span :class="ui.cssStacked()">--{{ row.cssName }}</span>
             </span>
@@ -268,9 +289,30 @@ function dropEdge(id: string) {
                   }"
                   :ui="{ root: 'size-3.5 shrink-0 rounded-sm' }"
                 />
-                <span v-if="value.expression" :class="ui.expression()">{{ value.expression }}</span>
-                <BindingPill v-else-if="value.alias" :label="value.alias" />
+                <template v-if="value.formula">
+                  <Tip :label="value.formula">
+                    <icon-lucide-square-function
+                      :class="ui.icon()"
+                      :aria-label="variables.formula"
+                    />
+                  </Tip>
+                  <span class="truncate">{{ value.css || '—' }}</span>
+                </template>
+                <Tip
+                  v-else-if="value.unsupported"
+                  :label="variables.unsupportedExpression({ name: value.unsupported })"
+                >
+                  <span :class="ui.aliasResult()">{{ value.unsupported }}(…)</span>
+                </Tip>
+                <template v-else-if="value.alias">
+                  <BindingPill :class="ui.aliasPill()" :label="value.alias" />
+                  <span v-if="value.result" :class="ui.aliasResult()">{{ value.result }}</span>
+                </template>
                 <span v-else class="truncate">{{ value.css }}</span>
+                <!-- CSS writes the expression instead; the canvas, and this list, show the value. -->
+                <Tip v-if="value.expression" :label="value.expression">
+                  <span :class="ui.expressionBadge()" :aria-label="variables.expression">CSS</span>
+                </Tip>
               </template>
             </span>
           </ListboxItem>

@@ -1,36 +1,4 @@
-import {
-  DEFAULT_STROKE_WEIGHT,
-  normalizeFontFamily,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData
-} from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-
-import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { computeExportTransform, mapToFigmaType } from './basics'
-import { buildNodeDerivedTextData } from './derived-text/build'
-import { fillsOwnSizingAxis } from './export/fill-sizing'
-import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
-import { applyFontFeaturesToKiwi } from './font/features'
-import { weightToFigmaStyle } from './font/style'
-import { fillToKiwiPaint, safeColor } from './paint'
-import {
-  exportedVariableConsumptionEntries,
-  mergeVariableConsumptionMaps
-} from './variable/bindings'
-import {
-  buildStyleOverrideTable,
-  encodeVectorNetworkBlob,
-  type StyleOverride
-} from './vector/network'
-
-export {
-  buildFigKiwi,
-  decompressFigKiwiDataAsync,
-  FIG_KIWI_DEFAULT_VERSION,
-  parseFigKiwiChunks
-} from '@open-pencil/kiwi/fig/container'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
@@ -38,17 +6,37 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
+import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import { effectiveFigmaRawNodeFields } from '../source-metadata'
+import { computeExportTransform, mapToFigmaType } from './basics'
+import { buildNodeDerivedTextData } from './derived-text/build'
+import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
-  buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
 } from './export/node'
+import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
+import { applyFontFeaturesToKiwi } from './font/features'
+import { figmaStyleName } from './font/style'
+import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
-import { FIGMA_AUTO_LINE_HEIGHT } from './text/values'
+import { figmaLetterSpacing, figmaLineHeight } from './text/values'
+import {
+  exportedVariableConsumptionEntries,
+  mergeVariableConsumptionMaps
+} from './variable/bindings'
 import { toKiwiWindingRule } from './vector/geometry'
+import {
+  buildStyleOverrideTable,
+  encodeVectorNetworkBlob,
+  type StyleOverride
+} from './vector/network'
 
 function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   const anyIndividual =
@@ -105,13 +93,14 @@ function serializeTextProps(
   nc.fontSize = node.fontSize
   nc.fontName = {
     family: normalizeFontFamily(node.fontFamily),
-    style: weightToFigmaStyle(node.fontWeight, node.italic),
+    style: figmaStyleName(node, {}, runtime.fontStyleName),
     postscript: ''
   }
-  nc.textData = exportTextData(node, fillToKiwiPaint)
+  nc.textData = exportTextData(node, fillToKiwiPaint, runtime.fontStyleName)
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
+  if (!node.opticalSizeFromFontSize) nc.detachOpticalSizeFromFontSize = true
   const autoResize = node.textAutoResize
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
   if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
@@ -127,7 +116,8 @@ function serializeTextProps(
   nc.fontVariantContextualLigatures = true
   applyFontFeaturesToKiwi(nc, node.fontFeatures)
   nc.fontVersion = ''
-  nc.emojiImageSet = 'APPLE'
+  // FigJam text draws Noto emoji; a file's own set is replayed from its raw fields.
+  if (!('emojiImageSet' in rawNodeFields)) nc.emojiImageSet = 'APPLE'
   if (node.textCase !== 'ORIGINAL') nc.textCase = node.textCase
   if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines
@@ -138,15 +128,13 @@ function serializeTextProps(
       blobs,
       glyphBlobMap: glyphBlobMap ?? new Map(),
       shapeText: (textNode) => runtime.shapeText(textNode),
-      textDecorations: (textNode, glyphs) => runtime.textDecorations(textNode, glyphs)
+      textDecorations: (textNode, glyphs) => runtime.textDecorations(textNode, glyphs),
+      fontStyleName: runtime.fontStyleName
     })
   }
   if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim
-  nc.lineHeight =
-    node.lineHeight === null
-      ? { ...FIGMA_AUTO_LINE_HEIGHT }
-      : { value: node.lineHeight, units: 'PIXELS' }
-  nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
+  nc.lineHeight = figmaLineHeight(node.lineHeight)
+  nc.letterSpacing = figmaLetterSpacing(node.letterSpacing)
   if (node.textDecoration !== 'NONE') {
     nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
   }
@@ -367,40 +355,47 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   fixFilledOwnSizing(node, nc, graph)
 }
 
-function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+function serializeGeometry(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  blobs: Uint8Array[],
+  styleReference: (id: string) => StyleReference
+): void {
   if (node.isMask) {
     nc.mask = true
-    nc.maskType = node.maskType
+    // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
+    nc.maskType = node.maskType === 'VECTOR' ? 'OUTLINE' : node.maskType
     if (node.maskIsOutline) nc.maskIsOutline = true
   }
 
-  let styleOverrides: StyleOverride[] = []
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  const {
+    table: styleOverrides,
+    styleToId,
+    regionStyleIds
+  } = network
+    ? buildStyleOverrideTable(network, styleReference)
+    : { table: [] as StyleOverride[], styleToId: undefined, regionStyleIds: [] }
+
   const vectorData: Record<string, unknown> = {}
-  if (node.vectorNetwork && node.type === 'VECTOR') {
-    const { table, styleToId } = buildStyleOverrideTable(node.vectorNetwork)
-    styleOverrides = table
+  if (network) {
     const blobIdx = blobs.length
-    blobs.push(encodeVectorNetworkBlob(node.vectorNetwork, styleToId))
+    blobs.push(encodeVectorNetworkBlob(network, styleToId, regionStyleIds))
     vectorData.vectorNetworkBlob = blobIdx
     vectorData.normalizedSize = { x: node.width, y: node.height }
   }
 
   if (node.fillGeometry.length > 0) {
-    nc.fillGeometry = node.fillGeometry.map((geometry) => {
+    // Fill geometry is the regions' outlines, one entry each, and Figma names the same style on both.
+    const regionGeometry = node.fillGeometry.length === regionStyleIds.length
+    nc.fillGeometry = node.fillGeometry.map((geometry, index) => {
       const blobIdx = blobs.length
       blobs.push(geometry.commandsBlob)
-      if (!geometry.fills || geometry.fills.length === 0) {
-        return {
-          windingRule: toKiwiWindingRule(geometry.windingRule),
-          commandsBlob: blobIdx
-        }
-      }
-      const styleID = styleOverrides.length + 1
-      styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
+      const styleID = regionGeometry ? regionStyleIds[index] : 0
       return {
         windingRule: toKiwiWindingRule(geometry.windingRule),
         commandsBlob: blobIdx,
-        styleID
+        ...(styleID ? { styleID } : {})
       }
     })
   }
@@ -467,6 +462,8 @@ export interface SceneNodeToKiwiOptions {
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, shared by every record. */
+  propertyCopyGuids?: Map<string, GUID>
   slotContentRecords?: KiwiNodeChange[]
   /** Plugin data a node is written with instead of its own, by node ID. */
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
@@ -495,15 +492,13 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
+    propertyCopyGuids = new Map<string, GUID>(),
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,
     orderKeys,
     writeChildren
   } = options
-  // Raw paints retain library asset refs; effects use this map because their
-  // Kiwi schema accepts only GUID-backed aliases.
-  const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
@@ -514,9 +509,9 @@ export function sceneNodeToKiwi(
     glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
-    assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
+    propertyCopyGuids,
     slotContentRecords,
     pluginDataOverrides,
     recordOwners,

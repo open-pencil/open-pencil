@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
-import { expectDefined } from '../helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 function setup() {
   const editor = createEditor()
   const pageId = editor.state.currentPageId

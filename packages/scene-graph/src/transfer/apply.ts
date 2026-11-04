@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { variableIdentityReferences } from './identity'
 import type { prepareGraphTransfer } from './plan'
 import { validateTransferReferences } from './validation'

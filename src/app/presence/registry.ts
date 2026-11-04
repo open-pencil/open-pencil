@@ -1,7 +1,7 @@
 import { shallowRef, type ShallowRef } from 'vue'
 
 import { AI_ACTIVE_COLOR } from '@open-pencil/core/constants'
-import { computeContentBounds } from '@open-pencil/core/io'
+import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { randomHex } from '@open-pencil/scene-graph/random'
 

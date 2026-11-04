@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { findByName, PROPERTY_CASES } from '#core-tests/helpers/property-cases'
 import { pick } from 'es-toolkit'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { createDefaultNode, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 function tool(name: string) {
   return expectDefined(

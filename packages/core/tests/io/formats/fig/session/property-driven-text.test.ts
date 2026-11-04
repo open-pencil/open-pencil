@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { createFigDocumentSession, materializeFigArchive } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 /**

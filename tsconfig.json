@@ -49,6 +49,12 @@
       "#feedback/*": [
         "./packages/feedback/src/*"
       ],
+      "@open-pencil/cloud/*": [
+        "./packages/cloud/src/*"
+      ],
+      "#cloud/*": [
+        "./packages/cloud/src/*"
+      ],
       "#dom-css/*": [
         "./packages/dom-css/src/*"
       ],
@@ -56,6 +62,9 @@
         "./tests/*"
       ],
       "#docs-config/*": [
+        "./packages/docs/.vitepress/*"
+      ],
+      "#docs/*": [
         "./packages/docs/.vitepress/*"
       ],
       "tinykeys": [
@@ -66,6 +75,9 @@
       ],
       "@open-pencil/vue": [
         "./packages/vue/src/index.ts"
+      ],
+      "@open-pencil/vue/*": [
+        "./packages/vue/src/*"
       ],
       "@open-pencil/core": [
         "./packages/core/src/index.ts"
@@ -93,6 +105,18 @@
       ],
       "@open-pencil/scene-graph/*": [
         "./packages/scene-graph/src/*"
+      ],
+      "#drawio/*": [
+        "./packages/drawio/src/*"
+      ],
+      "@open-pencil/drawio": [
+        "./packages/drawio/src/index.ts"
+      ],
+      "#mermaid/*": [
+        "./packages/mermaid/src/*"
+      ],
+      "@open-pencil/mermaid": [
+        "./packages/mermaid/src/index.ts"
       ],
       "#emit/*": [
         "./packages/emit/src/*"
@@ -124,7 +148,9 @@
     "packages/vue/src/global.d.ts",
     "packages/dom-css/src/cssom.d.ts",
     "packages/dom-css/src/postcss-value-parser.d.ts",
-    "packages/design-jsx/src/global.d.ts"
+    "packages/design-jsx/src/global.d.ts",
+    "packages/docs/.vitepress/theme/landing/**/*.ts",
+    "packages/docs/.vitepress/theme/landing/**/*.vue"
   ],
   "references": [
     {

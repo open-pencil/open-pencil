@@ -8,7 +8,7 @@ If you want to build on top of it instead of only using the default app, see the
 
 ## Download Desktop App
 
-Pre-built binaries for macOS, Windows, and Linux are available on the [releases page](https://github.com/open-pencil/open-pencil/releases/latest).
+Pre-built binaries for macOS, Windows, and Linux are available on the [download page](/download).
 
 | Platform | Download |
 | --------------------- | -------------------- |
@@ -76,7 +76,7 @@ Opens the editor at `http://localhost:1420`.
 | ------------------------------- | --------------------------------------------------- |
 | `bun run dev` | Dev server with HMR |
 | `bun run build` | Production build |
-| `bun run check` | Lint (oxlint) + typecheck (tsgo) |
+| `bun run check` | Lint (oxlint) + typecheck (TypeScript 7) |
 | `bun run test` | E2E visual regression (Playwright) |
 | `bun run test:update` | Regenerate screenshot baselines |
 | `bun run test:unit` | Unit tests (bun:test) |

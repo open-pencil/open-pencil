@@ -9,10 +9,11 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { usePanelMessages } from '@open-pencil/vue'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import { usePropertyBinding, type BindableField } from './usePropertyBinding'
@@ -38,23 +39,25 @@ const item = menuItem({ justify: 'start' })
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" align="end" :side-offset="4" :class="menu.content">
-        <DropdownMenuItem :class="item" @select="binding.create()">
-          <icon-lucide-plus :class="menu.icon" />
-          {{ panels.createComponentProperty }}
-        </DropdownMenuItem>
-        <template v-if="binding.compatible.value.length">
-          <DropdownMenuSeparator :class="menu.separator" />
-          <DropdownMenuLabel :class="menu.label">{{ panels.properties }}</DropdownMenuLabel>
-          <DropdownMenuItem
-            v-for="definition in binding.compatible.value"
-            :key="definition.id"
-            :class="item"
-            @select="binding.bind(definition.id)"
-          >
-            <PropertyTypeIcon :kind="definition.type" />
-            {{ definition.name }}
+        <MenuScrollArea>
+          <DropdownMenuItem :class="item" @select="binding.create()">
+            <icon-lucide-plus :class="menu.icon" />
+            {{ panels.createComponentProperty }}
           </DropdownMenuItem>
-        </template>
+          <template v-if="binding.compatible.value.length">
+            <DropdownMenuSeparator :class="menu.separator" />
+            <DropdownMenuLabel :class="menu.label">{{ panels.properties }}</DropdownMenuLabel>
+            <DropdownMenuItem
+              v-for="definition in binding.compatible.value"
+              :key="definition.id"
+              :class="item"
+              @select="binding.bind(definition.id)"
+            >
+              <PropertyTypeIcon :kind="definition.type" />
+              {{ definition.name }}
+            </DropdownMenuItem>
+          </template>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useClipboard, useDebounceFn } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import {
   computed,
@@ -12,9 +12,11 @@ import {
   watch
 } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useEditorEvent, useI18n } from '@open-pencil/vue'
+import { useEditorEvent } from '@open-pencil/vue/editor/events'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   commitDOMCodeSession,
@@ -37,21 +39,23 @@ import { codeStyling } from '@/app/code/styling'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import statusTheme from '@/theme/feedback/status'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 
-const { active = true } = defineProps<{ active?: boolean }>()
+const { active = true, initialSource = 'design-jsx' } = defineProps<{
+  active?: boolean
+  /** The code shown first; a host that showcases components can open on Vue or React. */
+  initialSource?: CodeSource
+}>()
 const store = useEditorStore()
 const editorActive = computed(() => active)
 const { code, common } = useI18n()
-const { copy, copied } = useClipboard({ copiedDuring: 2000 })
-const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
-const source = ref<CodeSource>('design-jsx')
+const source = ref<CodeSource>(initialSource)
 const draft = ref('')
 /** The person has written in the code since it was generated for the current selection. */
 const edited = ref(false)
@@ -135,6 +139,8 @@ const stylingOptions = computed(() => [
 ])
 /** Components are generated; Design JSX and HTML are edited into layers. */
 const readOnly = computed(() => source.value === 'vue' || source.value === 'react')
+/** A read-only document's code is read, never previewed or applied back. */
+const codeReadOnly = computed(() => readOnly.value || !resolveEditorProfile(store.state).edits)
 const editorLabel = computed(() => {
   if (source.value === 'html-css') return code.value.editorHTMLCSSLabel
   if (source.value === 'vue') return code.value.sourceVue
@@ -200,7 +206,7 @@ async function commitCurrentSession(): Promise<void> {
 }
 
 async function runPreview(version: number): Promise<void> {
-  if (version !== updateVersion || readOnly.value || !draft.value.trim()) return
+  if (version !== updateVersion || codeReadOnly.value || !draft.value.trim()) return
   const edits = takeCanvasEdits()
   status.value = 'updating'
   error.value = ''
@@ -394,7 +400,7 @@ watch(
         :options="sourceOptions"
         :label="code.source"
         data-test-id="code-panel-source"
-        :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
+        :ui="{ trigger: 'h-7 min-w-0 flex-1 text-2xs' }"
         @update:model-value="changeSource"
       />
       <SegmentedControl
@@ -406,19 +412,16 @@ watch(
         :ui="{ root: 'shrink-0' }"
         @update:model-value="changeStyling"
       />
-      <Tip v-if="source === 'design-jsx'" :label="code.copyJSXReference">
-        <AppButton
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          shape="square"
-          data-test-id="code-panel-copy-ref"
-          @click="copyReference(JSX_REFERENCE)"
-        >
-          <icon-lucide-check v-if="copiedReference" class="size-3 text-[var(--color-success)]" />
-          <icon-lucide-book-open v-else class="size-3" />
-        </AppButton>
-      </Tip>
+      <AppCopyButton
+        v-if="source === 'design-jsx'"
+        icon
+        :value="JSX_REFERENCE"
+        :label="code.copyJSXReference"
+        :copied-label="common.copied"
+        data-test-id="code-panel-copy-ref"
+      >
+        <template #icon><icon-lucide-book-open class="size-3" aria-hidden="true" /></template>
+      </AppCopyButton>
     </header>
 
     <AppPlaceholder
@@ -446,7 +449,7 @@ watch(
         :autofocus="composing"
         :model-value="draft"
         :language="source"
-        :read-only="readOnly"
+        :read-only="codeReadOnly"
         :label="editorLabel"
         :layer-links="codeLayers.links.value"
         :layer-issues="codeLayers.issues.value"
@@ -461,7 +464,7 @@ watch(
       v-if="error"
       role="alert"
       data-test-id="code-panel-error"
-      class="shrink-0 border-t border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-[11px] leading-snug text-[var(--color-error)]"
+      class="shrink-0 border-t border-error-border bg-error-bg px-3 py-2 text-2xs leading-snug text-error"
     >
       {{ error }}
     </div>
@@ -480,7 +483,7 @@ watch(
       </span>
       <div class="flex items-center gap-1">
         <AppButton
-          v-if="edited && !readOnly"
+          v-if="edited && !codeReadOnly"
           color="neutral"
           variant="ghost"
           size="xs"
@@ -490,17 +493,13 @@ watch(
           <icon-lucide-rotate-ccw class="size-3" />
           {{ code.reset }}
         </AppButton>
-        <AppButton
-          color="neutral"
-          variant="ghost"
+        <AppCopyButton
+          :value="draft"
+          :label="common.copy"
+          :copied-label="common.copied"
           size="xs"
           data-test-id="code-panel-copy"
-          @click="copy(draft)"
-        >
-          <icon-lucide-check v-if="copied" class="size-3 text-[var(--color-success)]" />
-          <icon-lucide-copy v-else class="size-3" />
-          {{ copied ? common.copied : common.copy }}
-        </AppButton>
+        />
       </div>
     </footer>
   </div>

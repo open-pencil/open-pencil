@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useDocumentFontStatus } from '@/app/editor/fonts/status'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -16,7 +16,7 @@ const issues = computed(() => status.value.issues)
   <div
     v-if="issues.length > 0"
     data-test-id="font-status-banner"
-    class="border-b border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-xs text-[var(--color-warning-text)]"
+    class="border-b border-warning-border bg-warning-bg text-xs text-warning"
   >
     <div class="flex items-center gap-2 px-3 py-1.5">
       <icon-lucide-triangle-alert class="size-3.5 shrink-0" />
@@ -31,7 +31,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         data-test-id="font-status-select"
-        class="shrink-0 rounded px-1.5 py-0.5 font-medium text-[var(--color-warning-action)] transition-colors hover:bg-amber-500/20"
+        class="shrink-0 rounded px-1.5 py-0.5 font-medium text-warning-action transition-colors hover:bg-warning/20"
         @click="selectAffectedNodes"
       >
         {{ fonts.selectAffectedLayers }}
@@ -39,7 +39,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         data-test-id="font-status-retry"
-        class="shrink-0 rounded px-1.5 py-0.5 font-medium text-[var(--color-warning-action)] transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+        class="shrink-0 rounded px-1.5 py-0.5 font-medium text-warning-action transition-colors hover:bg-warning/20 disabled:opacity-50"
         :disabled="retrying"
         @click="retry"
       >
@@ -48,7 +48,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         :aria-label="expanded ? fonts.collapseIssues : fonts.expandIssues"
-        class="flex size-5 shrink-0 items-center justify-center rounded hover:bg-amber-500/20"
+        class="flex size-5 shrink-0 items-center justify-center rounded hover:bg-warning/20"
         @click="expanded = !expanded"
       >
         <icon-lucide-chevron-up v-if="expanded" class="size-3.5" />
@@ -56,22 +56,22 @@ const issues = computed(() => status.value.issues)
       </button>
     </div>
 
-    <div v-if="expanded" class="grid gap-1 border-t border-[var(--color-warning-border)] px-3 py-2">
+    <div v-if="expanded" class="grid gap-1 border-t border-warning-border px-3 py-2">
       <div
         v-for="issue in issues"
-        :key="`${issue.family}:${issue.style}`"
+        :key="`${issue.family}:${issue.name}`"
         data-test-id="font-status-issue"
         class="flex min-w-0 items-center gap-2"
       >
         <span class="min-w-0 flex-1 truncate">
-          <strong>{{ issue.family }} {{ issue.style }}</strong>
+          <strong>{{ issue.family }} {{ issue.name }}</strong>
           <template v-if="issue.substituteFamily"> → {{ issue.substituteFamily }} </template>
           <template v-else>— {{ fonts.noSubstitute }}</template>
           <Tip v-if="issue.reason === 'unsupported-format'" :label="fonts.unsupportedFormat">
             <span class="ms-1 opacity-75">· {{ fonts.unsupportedFormatShort }}</span>
           </Tip>
         </span>
-        <span class="shrink-0 text-[10px] opacity-75">
+        <span class="shrink-0 text-3xs opacity-75">
           {{
             issue.nodeIds.length === 1
               ? fonts.affectedLayer

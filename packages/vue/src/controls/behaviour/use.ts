@@ -8,6 +8,7 @@ import {
   guessInteractionStates,
   guessOnOff,
   INTERACTION_STATES,
+  interactionStatesOf,
   isNumberRange,
   missingBindings,
   partBinding,
@@ -17,7 +18,7 @@ import {
   type BehaviourKind,
   type BehaviourNumberSettings,
   type InteractionState
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/behaviours'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 import { useEditor } from '#vue/editor/context'
@@ -103,6 +104,7 @@ export function useBehaviour() {
       }),
       states: {
         propertyId: current.states?.propertyId ?? null,
+        available: interactionStatesOf(current.kind),
         values: Object.fromEntries(
           INTERACTION_STATES.flatMap((state) => {
             const value = current.states?.[state]
@@ -196,7 +198,12 @@ export function useBehaviour() {
           ? behaviourProperties(editor.graph, target).find((item) => item.id === propertyId)
           : undefined
         if (!definition) delete current.states
-        else current.states = guessInteractionStates(propertyId, definition.variantOptions ?? [])
+        else
+          current.states = guessInteractionStates(
+            current.kind,
+            propertyId,
+            definition.variantOptions ?? []
+          )
         return current
       }),
     /** Choose the variant value of one interaction state; an empty value unsets it. */

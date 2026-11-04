@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
-import type { Fill, ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph'
-import {
-  applySolidFillColor,
-  DEFAULT_SHADER_PRESET,
-  FillRoot,
-  useI18n,
-  useRetainedPopup
-} from '@open-pencil/vue'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph/shaders'
+import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { pickerOutsideHandlers, type PickerKeepOpen } from '@open-pencil/vue/primitives/ColorPicker'
+import { FillRoot } from '@open-pencil/vue/primitives/Fill'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
 import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
@@ -21,6 +21,8 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import fillPickerTheme from '@/theme/fill-picker'
+
+import { useImageFill } from './useImageFill'
 
 const fillPicker = tv(fillPickerTheme)
 
@@ -33,7 +35,8 @@ const {
   okhcl = null,
   swatchBackground,
   keepOpen,
-  shader = null
+  shader = null,
+  layerSize = null
 } = defineProps<{
   fill: Fill
   /** The shader the paint draws, when it is a shader's frame; the picker then edits the shader. */
@@ -43,8 +46,15 @@ const {
   /** Names the trigger for a paint that is not a fill, such as a stroke. */
   label?: string
   /** Whether a press outside the picker should leave it open, such as on a gradient handle. */
-  keepOpen?: (event: PointerEvent) => boolean
+  keepOpen?: PickerKeepOpen
+  /** The one layer the paint is on, which an image crop starts by covering. */
+  layerSize?: { width: number; height: number } | null
 }>()
+/** An image fill's swatch shows its image, covering the swatch as Fill would. */
+const image = useImageFill(() => (fill.type === 'IMAGE' ? fill.imageHash : undefined))
+const imageBackground = computed(() =>
+  image.url.value ? `center / cover no-repeat url("${image.url.value}")` : undefined
+)
 const activeStop = defineModel<number>('activeStop')
 const emit = defineEmits<{
   update: [fill: Fill]
@@ -61,16 +71,9 @@ const cls = usePopoverUI({
 })
 const { panels } = useI18n()
 
-/** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
-function keepOpenOnPress(event: PointerDownOutsideEvent) {
-  if (keepOpen?.(event.detail.originalEvent)) event.preventDefault()
-}
-
-/** A press focuses the canvas before the press itself reaches the picker, so the press decides. */
-function keepOpenOnFocus(event: FocusOutsideEvent) {
-  if (keepOpen && event.detail.originalEvent.target instanceof HTMLCanvasElement)
-    event.preventDefault()
-}
+/** Dragging a gradient handle or sampling a color on the canvas leaves the picker open. */
+const keepPickerOpen = useEyedropperKeepOpen(() => keepOpen)
+const outside = pickerOutsideHandlers(() => keepPickerOpen)
 
 function cancelFromEscape(event: KeyboardEvent) {
   event.stopPropagation()
@@ -91,7 +94,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           <FillSwatch :fill="fill" class="size-full" v-slot="swatch">
             <span
               class="pointer-events-none absolute inset-0"
-              :style="{ background: swatchBackground ?? swatch.background }"
+              :style="{ background: swatchBackground ?? imageBackground ?? swatch.background }"
             />
           </FillSwatch>
         </button>
@@ -104,8 +107,8 @@ function cancelFromEscape(event: KeyboardEvent) {
           side="left"
           data-picker-content
           @escape-key-down="cancelFromEscape"
-          @pointer-down-outside="keepOpenOnPress"
-          @focus-outside="keepOpenOnFocus"
+          @pointer-down-outside="outside.onPointerDownOutside"
+          @focus-outside="outside.onFocusOutside"
         >
           <div class="mb-2 flex items-center gap-0.5">
             <Tip :label="panels.solid">
@@ -158,6 +161,7 @@ function cancelFromEscape(event: KeyboardEvent) {
             v-if="root.category === 'SOLID'"
             :color="root.fill.color"
             :okhcl="okhcl"
+            eyedropper
             @update="emit('update', applySolidFillColor(root.fill, $event))"
           />
 
@@ -177,6 +181,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           <ImageFillPicker
             v-else-if="root.category === 'IMAGE'"
             :fill="root.fill"
+            :layer-size="layerSize"
             @update="emit('update', $event)"
           />
         </PopoverContent>

@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getWorldMatrix, SceneGraph, TransformMatrix } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import TransformMatrix from '@open-pencil/scene-graph/matrix'
 
 function setup() {
   const graph = new SceneGraph()
@@ -105,5 +107,26 @@ describe('reparentNode keeps the node where it is drawn', () => {
     expect(node?.x).toBe(-280)
     expect(node?.y).toBe(-10)
     expect(node?.rotation).toBe(45)
+  })
+})
+
+// A save writes the fields an edit changed and keeps the rest as the file had them.
+describe('reparentNode records what it changes', () => {
+  test('marks the coordinates it moved', () => {
+    const { graph, pageId } = setup()
+    const frame = graph.createNode('FRAME', pageId, { x: 20, y: 200, width: 100, height: 100 })
+    const child = graph.createNode('RECTANGLE', pageId, { x: 31, y: 282, width: 10, height: 10 })
+    graph.reparentNode(child.id, frame.id)
+    expect(child.source.editedFields).toEqual(['x', 'y'])
+  })
+
+  test('marks nothing when the new parent sits where the old one did', () => {
+    const { graph, pageId } = setup()
+    const first = graph.createNode('FRAME', pageId, { x: 20, y: 20, width: 100, height: 100 })
+    const second = graph.createNode('FRAME', pageId, { x: 20, y: 20, width: 100, height: 100 })
+    const child = graph.createNode('RECTANGLE', first.id, { x: 5, y: 5, width: 10, height: 10 })
+    child.source.editedFields = []
+    graph.reparentNode(child.id, second.id)
+    expect(child.source.editedFields).toEqual([])
   })
 })

@@ -5,7 +5,7 @@ import {
   graphFromDocumentChange,
   isEmptyDocumentChange,
   type DocumentChange
-} from '@open-pencil/core/editor'
+} from '@open-pencil/core'
 import { diffPageLayersJSX } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 

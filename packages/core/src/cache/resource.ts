@@ -35,7 +35,7 @@ export class ResourceCache<K, V> {
   private newest = -1
   private totalWeight = 0
   private readonly maxEntries: number
-  private readonly maxWeight: number
+  private maxWeight: number
 
   constructor(private readonly options: ResourceCacheOptions<K, V>) {
     this.maxEntries = options.maxEntries ?? Infinity
@@ -54,6 +54,23 @@ export class ResourceCache<K, V> {
 
   get size(): number {
     return this.index.size
+  }
+  get capacity(): number {
+    return this.maxWeight
+  }
+
+  /** Changes the weight budget, evicting the least recently used entries past a smaller one. */
+  resize(maxWeight: number): void {
+    if (!(maxWeight === Infinity || (Number.isSafeInteger(maxWeight) && maxWeight >= 0)))
+      throw new RangeError('ResourceCache requires a finite non-negative weight budget')
+    if (this.maxEntries === Infinity && maxWeight === Infinity)
+      throw new RangeError('ResourceCache requires a finite non-negative count or weight budget')
+    this.maxWeight = Math.min(maxWeight, Number.MAX_SAFE_INTEGER)
+    const removed: Removal<K, V>[] = []
+    while (this.totalWeight > this.maxWeight) {
+      removed.push({ slot: this.remove(this.oldest), reason: 'evict' })
+    }
+    this.dispose(removed)
   }
   get weight(): number {
     return this.totalWeight
@@ -118,6 +135,14 @@ export class ResourceCache<K, V> {
     const slot = this.remove(index)
     this.options.dispose?.(slot.value, slot.key, 'delete')
     return true
+  }
+
+  /** Deletes every entry `predicate` selects, disposing each as a delete. */
+  deleteWhere(predicate: (value: V, key: K) => boolean): void {
+    const selected: number[] = []
+    for (const [key, index] of this.index)
+      if (predicate(this.slot(index).value, key)) selected.push(index)
+    this.dispose(selected.map((index) => ({ slot: this.remove(index), reason: 'delete' as const })))
   }
 
   clear(): void {

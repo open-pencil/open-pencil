@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Color, Fill } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
@@ -10,6 +12,9 @@ import PaintField from '@/components/inputs/PaintField.vue'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+
+import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
+import VariableModeRows from './variable-modes/VariableModeRows.vue'
 
 const editor = useEditorStore()
 const pageColor = computed(() => editor.state.pageColor)
@@ -20,6 +25,7 @@ const pageFill = computed<Fill>(() => ({
   visible: true
 }))
 const { panels } = useI18n()
+const variableModes = useVariableModes()
 
 function updatePageAlpha(alpha: number) {
   editor.setPageColor({ ...pageColor.value, a: alpha })
@@ -32,6 +38,9 @@ function updatePageColor(color: Color) {
 
 <template>
   <PanelSection :label="panels.page">
+    <template #actions>
+      <VariableModeMenu :choices="variableModes.choices.value" @set="variableModes.setMode" />
+    </template>
     <PaintField
       :opacity="pageColor.a"
       :opacity-label="panels.opacity"
@@ -54,5 +63,6 @@ function updatePageColor(color: Color) {
         <PaintValue :color="pageColor" :label="panels.pageBackground" @update="updatePageColor" />
       </template>
     </PaintField>
+    <VariableModeRows :choices="variableModes.applied.value" @set="variableModes.setMode" />
   </PanelSection>
 </template>

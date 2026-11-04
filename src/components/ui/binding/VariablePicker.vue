@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -34,7 +34,12 @@ const {
   ui
 } = defineProps<VariablePickerProps>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ select: [id: string]; detach: []; create: [name: string] }>()
+const emit = defineEmits<{
+  select: [id: string]
+  detach: []
+  create: [name: string]
+  closeAutoFocus: [event: Event]
+}>()
 
 const { common } = useI18n()
 const creating = ref(false)
@@ -42,6 +47,11 @@ const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
 const canCreate = computed(() => createName.value.trim().length > 0)
 const styles = computed(() => useBindingFieldUI({ state, open: open.value, disabled, derived }, ui))
+/** Hovering the variable button of a bound value names its variable. */
+const triggerTooltip = computed(() => {
+  const bound = state === 'bound' ? items.find((item) => item.id === selected) : undefined
+  return bound?.name ?? triggerLabel
+})
 const pickerItems = computed<AppPickerItem[]>(() =>
   items.map((item) => ({ value: item.id, label: item.name, group: item.collection }))
 )
@@ -87,9 +97,10 @@ defineOptions({ inheritAttrs: false })
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"
       :close-label="closeLabel ?? common.close"
-      :tooltip="triggerLabel"
+      :tooltip="triggerTooltip"
       :side="side"
       @select="emit('select', $event)"
+      @close-auto-focus="emit('closeAutoFocus', $event)"
     >
       <template #trigger>
         <BindingTrigger
@@ -115,12 +126,19 @@ defineOptions({ inheritAttrs: false })
         />
         <icon-lucide-diamond v-else class="size-3.5 text-muted" />
       </template>
-      <template #footer>
+      <template #trailing="{ item }">
+        <span
+          v-if="items.find((entry) => entry.id === item.value)?.text"
+          class="shrink-0 text-muted tabular-nums"
+        >
+          {{ items.find((entry) => entry.id === item.value)?.text }}
+        </span>
+      </template>
+      <template v-if="state !== 'unbound' || creating || createLabel" #footer>
         <AppButton
           v-if="state !== 'unbound'"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="detach"
         >
           <template #leading><icon-lucide-unlink class="size-3" /></template>
@@ -140,13 +158,7 @@ defineOptions({ inheritAttrs: false })
             :class="styles.createInput"
             data-slot="createInput"
           />
-          <AppButton
-            size="xs"
-            variant="soft"
-            :disabled="!canCreate"
-            data-slot="createSubmit"
-            type="submit"
-          >
+          <AppButton size="xs" variant="soft" :disabled="!canCreate" type="submit">
             {{ createSubmitLabel }}
           </AppButton>
         </form>
@@ -154,7 +166,6 @@ defineOptions({ inheritAttrs: false })
           v-else-if="createLabel"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="startCreate"
         >
           <template #leading><icon-lucide-plus class="size-3" /></template>

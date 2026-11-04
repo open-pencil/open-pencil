@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { getNodeEditCapability } from '@open-pencil/core/editor'
-import { readIcon } from '@open-pencil/scene-graph'
-import { useI18n, useSceneComputed, useSelectionState, useEditorCommands } from '@open-pencil/vue'
+import { getNodeEditCapability } from '@open-pencil/core'
+import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generated'
+import { readIcon } from '@open-pencil/scene-graph/icons'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { COMPONENT_TYPES, sceneNodeIcon } from '@/app/editor/icons'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
+import ConnectorSection from '@/components/figjam/connector/ConnectorSection.vue'
+import ShapeWithTextSection from '@/components/figjam/shape-with-text/ShapeWithTextSection.vue'
+import StickySection from '@/components/figjam/sticky/StickySection.vue'
+import { COMPONENT_TYPES, sceneNodeIcon } from '@/components/icons'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
@@ -24,6 +31,7 @@ import SlotAuthoringSection from './properties/component-properties/slot/SlotAut
 import { usePropertyBinding } from './properties/component-properties/usePropertyBinding'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
+import DocumentSection from './properties/DocumentSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
 import FillSection from './properties/FillSection.vue'
@@ -40,7 +48,11 @@ import PositionSection from './properties/PositionSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
+import StatusesSection from './properties/status/StatusesSection.vue'
+import StatusSection from './properties/status/StatusSection.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
+import TextContentControl from './properties/text-content/TextContentControl.vue'
+import TextContentSection from './properties/text-content/TextContentSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 
@@ -82,6 +94,11 @@ const supportsLayoutGuides = useSceneComputed(() => {
   const nodes = store.getSelectedNodes()
   return nodes.length > 0 && nodes.every((selected) => LAYOUT_GUIDE_TYPES.has(selected.type))
 })
+// Sticky notes, shapes, and connectors keep FigJam's fixed choices, which their own sections
+// offer, so a selection holding one offers no free-form appearance, type, fill, stroke, or effects.
+const freeStyle = useSceneComputed(() =>
+  store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
+)
 const { panels } = useI18n()
 </script>
 
@@ -111,16 +128,19 @@ const { panels } = useI18n()
         <SelectionActionsControl :show-boolean-operations="showBooleanOperations" />
       </template>
     </PanelHeader>
+    <StatusSection />
     <ComponentPropertiesSection />
     <PositionSection />
     <ConstraintsSection />
     <SelectionLayoutSection />
-    <AppearanceSection />
-    <TypographySection />
-    <FillSection />
-    <StrokeSection />
-    <EffectsSection />
-    <SelectionColorsSection />
+    <template v-if="freeStyle">
+      <AppearanceSection />
+      <TypographySection />
+      <FillSection />
+      <StrokeSection />
+      <EffectsSection />
+      <SelectionColorsSection />
+    </template>
     <LayoutGridSection v-if="supportsLayoutGuides" />
     <ExportSection />
   </div>
@@ -161,6 +181,7 @@ const { panels } = useI18n()
             <icon-lucide-diamond-plus class="size-3.5" />
           </IconButton>
           <PropertyBindButton v-if="node.type === 'INSTANCE'" field="INSTANCE_SWAP" />
+          <TextContentControl v-if="node.type === 'TEXT'" :node-id="node.id" :text="node.text" />
           <InstanceUpdateAction
             v-if="node.type === 'INSTANCE'"
             :node="node"
@@ -188,6 +209,8 @@ const { panels } = useI18n()
         </template>
       </PanelHeader>
 
+      <TextContentSection v-if="node.type === 'TEXT'" :node-id="node.id" />
+      <StatusSection />
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
       <VariantAuthoringSection
         v-if="
@@ -206,16 +229,25 @@ const { panels } = useI18n()
       <FramePresetSelect v-if="node.type === 'FRAME' && !readIcon(node)" />
 
       <IconSection />
-      <PositionSection />
-      <ConstraintsSection />
-      <LayoutSection />
-      <AppearanceSection />
-      <MaskSection />
-      <TypographySection v-if="node.type === 'TEXT'" />
-      <FillSection />
-      <StrokeSection />
-      <EffectsSection />
-      <SelectionColorsSection />
+      <StickySection />
+      <ShapeWithTextSection />
+      <ConnectorSection />
+      <!-- A connector is placed and shaped by its ends, and styled by its line. -->
+      <template v-if="node.type !== 'CONNECTOR'">
+        <PositionSection />
+        <ConstraintsSection />
+        <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
+        <LayoutSection v-if="layerResizes(node)" />
+      </template>
+      <template v-if="freeStyle">
+        <AppearanceSection />
+        <MaskSection />
+        <TypographySection v-if="node.type === 'TEXT'" />
+        <FillSection />
+        <StrokeSection />
+        <EffectsSection />
+        <SelectionColorsSection />
+      </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
 
       <ExportSection />
@@ -229,6 +261,8 @@ const { panels } = useI18n()
   >
     <PageSection />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
+    <StatusesSection />
+    <DocumentSection />
     <ExportSection />
   </div>
 </template>

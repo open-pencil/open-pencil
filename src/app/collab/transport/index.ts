@@ -11,4 +11,4 @@ function usesTestTransport(): boolean {
 export const joinCollabRoom: JoinCollabRoom = (roomId) =>
   usesTestTransport() ? joinTestCollabRoom(roomId) : joinTrysteroCollabRoom(roomId)
 
-export type { CollabRoomTransport, JoinCollabRoom } from './types'
+export type { CollabActionReceiver, CollabRoomTransport, JoinCollabRoom } from './types'

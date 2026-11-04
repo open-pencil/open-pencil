@@ -5,10 +5,9 @@ import * as v from 'valibot'
 import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
-import { analysisLimitInput } from './input'
+import { analysisLimitInputSchema } from './schema'
 
 export interface ColorUsageEntry {
   hex: string
@@ -38,7 +37,7 @@ export const analyzeColors = defineTool({
     'Analyze color palette usage across the current page. Shows frequency, variable bindings, and optionally clusters similar colors.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    limit: analysisLimitInput,
+    limit: analysisLimitInputSchema,
     show_similar: v.optional(
       v.pipe(v.boolean(), v.description('Include similar-color clusters for potential merging'))
     ),

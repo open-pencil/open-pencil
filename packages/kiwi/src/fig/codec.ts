@@ -6,9 +6,8 @@
  * - fzstd: Browser-compatible Zstd decompression
  */
 
-import { decompress as zstdDecompress } from 'fzstd'
-
 import { compileSchema, encodeBinarySchema } from '../schema-runtime'
+import { decompressFigKiwiData, loadFigDataDecompressor } from './container'
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
 import type { Color, GUID, Matrix, Vector } from './types'
@@ -27,6 +26,7 @@ let compiledSchema: CompiledSchema | null = null
  */
 export async function initCodec(): Promise<void> {
   if (compiledSchema) return
+  await loadFigDataDecompressor()
   compiledSchema = compileSchema(figmaSchema) as CompiledSchema
 }
 
@@ -58,7 +58,7 @@ export function compress(data: Uint8Array): Uint8Array {
  */
 export function decompress(data: Uint8Array): Uint8Array {
   if (!isZstdCompressed(data)) return data
-  return zstdDecompress(data)
+  return decompressFigKiwiData(data)
 }
 
 /**
@@ -98,8 +98,6 @@ export function peekMessageType(data: Uint8Array): number | null {
 
 // Type definitions
 
-export type { Color, GUID, Matrix, Vector } from './types'
-
 export interface ParentIndex {
   guid: GUID
   position: string
@@ -133,6 +131,8 @@ export interface Paint {
   imageThumbnail?: ImageSource
   animatedImage?: ImageSource
   imageScaleMode?: string
+  /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
+  rotation?: number
   sourceNodeId?: GUID
   scale?: number
   spacing?: number
@@ -146,16 +146,7 @@ export interface Paint {
   density?: number
   noiseSize?: Vector
   customEffectId?: { guid?: GUID }
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-    dataType?: string
-    resolvedDataType?: string
-  }
+  colorVar?: VariableDataEntry
 }
 
 export interface Effect {
@@ -167,6 +158,17 @@ export interface Effect {
   spread?: number
   blendMode?: string
   showShadowBehindNode?: boolean
+  colorVar?: VariableDataEntry
+  radiusVar?: VariableDataEntry
+  spreadVar?: VariableDataEntry
+  xVar?: VariableDataEntry
+  yVar?: VariableDataEntry
+}
+
+/** A reference to a variable: by GUID in the file, or by key in a library. */
+export interface VariableAliasValue {
+  guid?: GUID
+  assetRef?: { key: string; version?: string }
 }
 
 export interface VariableAnyValue {
@@ -174,10 +176,17 @@ export interface VariableAnyValue {
   textValue?: string
   floatValue?: number
   colorValue?: Color
-  alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
+  alias?: VariableAliasValue
   symbolIdValue?: { guid?: GUID }
   // fig.kiwi PropRefValue: the component property a parameter entry points at.
   propRefValue?: { defId?: GUID }
+  mapValue?: { values?: { key?: string; guidKey?: GUID; value?: VariableDataEntry }[] }
+  colorArrayValue?: { colors?: VariableDataEntry[] }
+  fontStyleValue?: {
+    asString?: VariableDataEntry
+    asFloat?: VariableDataEntry
+    asVariations?: VariableDataEntry
+  }
   expressionValue?: {
     expressionFunction?: string
     expressionArguments?: VariableDataEntry[]
@@ -323,6 +332,10 @@ export interface NodeChange {
       advance: number
       /** Radians along the text path; kiwi omits the field for axis-aligned text. */
       rotation?: number
+      /** An emoji's code points; Figma draws its image in place of the glyph's placeholder. */
+      emojiCodePoints?: number[]
+      /** The image set the emoji is drawn from; left out for the default, APPLE. */
+      emojiImageSet?: 'APPLE' | 'NOTO'
     }>
     /** Underlines and strikethroughs, which Figma draws saved text's decorations from. */
     decorations?: Array<{
@@ -523,5 +536,3 @@ export function createNodeChange(opts: {
 
   return change
 }
-
-export { parseVariableId } from './variable-bindings'

@@ -1,6 +1,6 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor, EditorToolDef, Tool } from '@open-pencil/core/editor'
+import type { Editor, EditorToolDef, Tool } from '@open-pencil/core'
 
 export interface ToolbarContext {
   editor: Editor

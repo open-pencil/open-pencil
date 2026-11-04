@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   componentPropertyOwners,
   findComponentPropertyTarget,
-  forEachInstanceOverride,
   removeComponentProperty,
-  resolveComponentPropertyValue,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+  resolveComponentPropertyValue
+} from '@open-pencil/scene-graph/components'
+import { forEachInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 function component(
   graph: SceneGraph,

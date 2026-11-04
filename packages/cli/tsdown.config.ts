@@ -3,6 +3,7 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   entry: {
     index: './src/index.ts',
+    'commands/index': './src/commands/index.ts',
     'library/index': './src/library/index.ts'
   },
   platform: 'node',

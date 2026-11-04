@@ -13,6 +13,15 @@ export function withIcon(node: SceneNode, icon: Icon | null): SceneNode['pluginD
   return withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.icon, icon ?? undefined)
 }
 
+/**
+ * Whether code can draw the icon from its name alone, as Iconify's components do. An icon with
+ * options was drawn from a set of our own, such as a font at its axes, so it exports as the paths
+ * it draws.
+ */
+export function isNamedIcon(icon: Icon): boolean {
+  return icon.options === undefined
+}
+
 /** The layer name an icon is placed with: its name in the set, such as `cat` for `mdi:cat`. */
 export function iconLayerName(name: string): string {
   return name.slice(name.indexOf(':') + 1)

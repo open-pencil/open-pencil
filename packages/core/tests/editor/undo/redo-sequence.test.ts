@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createHistoryFrame, setupEditorPage } from '#core-tests/helpers/editor-history'
 
 describe('undo/redo multi-step sequences', () => {

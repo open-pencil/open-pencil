@@ -14,9 +14,37 @@ bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue canvaskit-wa
 The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. Check the installed package's peer requirements when using an older release.
 
 ```ts
-import { createEditor } from '@open-pencil/core/editor'
-import { provideEditor, useCanvas } from '@open-pencil/vue'
+import { createEditor } from '@open-pencil/core'
+import { provideEditor } from '@open-pencil/vue'
+import { useCanvas } from '@open-pencil/vue/canvas/surface'
 ```
+
+## Serve the engine's files
+
+The canvas loads files at run time: CanvasKit's WebAssembly, the bundled fonts, and HarfBuzz's subsetter for PDF export. With Vite, add the `openPencil()` plugin and they are served in development and emitted with the build:
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+import { openPencil } from '@open-pencil/core/node/vite'
+
+export default defineConfig({
+  plugins: [vue(), openPencil()],
+})
+```
+
+The plugin adds `@open-pencil/core/runtime-assets/install` to `index.html`, a module that imports each file as a Vite asset and tells Core where it is. An app that loads Core behind a gate of its own, or has no `index.html`, passes `openPencil({ inject: false })` and imports that module itself before Core loads anything.
+
+With another bundler, serve these files and point Core at them before the canvas mounts:
+
+| File | Comes from | Point Core at it with |
+| --- | --- | --- |
+| `canvaskit.wasm` | `canvaskit-wasm/bin/full/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
+| Bundled fonts (`*.ttf`, `*.woff2`) | `@open-pencil/core/assets/` | `fontManager.setBundledFontLocator` from `@open-pencil/core/text` |
+| `harfbuzz-subset.wasm` | `harfbuzzjs/dist/` | `setHarfBuzzSubsetLocator` from `@open-pencil/core/text` |
+
+Without a locator, Core requests each file from the site root, such as `/canvaskit.wasm`. When a file is missing there, the error names it and the locator to set.
 
 ## Mental model
 
@@ -35,7 +63,7 @@ There are three layers:
 // @moduleResolution: bundler
 // ---cut---
 import { reactive } from 'vue'
-import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 const graph = new SceneGraph()
@@ -59,7 +87,7 @@ Icons come from Iconify by default. To serve them from elsewhere, such as a bund
 <script setup lang="ts">
 import { provideEditor } from '@open-pencil/vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 const props = defineProps<{
   editor: Editor
@@ -81,7 +109,8 @@ You can think of this as the provider layer for the editor tree. The docs prefer
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { useEditor } from '@open-pencil/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -99,7 +128,8 @@ useCanvas(canvasRef, editor)
 Once the editor is provided, child components can read selection and issue commands:
 
 ```ts
-import { useEditorCommands, useSelectionState } from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -111,7 +141,9 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor, useSelectionState } from '@open-pencil/vue'
+import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { useEditor } from '@open-pencil/vue'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

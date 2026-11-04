@@ -2,6 +2,7 @@ import { normalizedFilename } from '#lint/support/context.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
 import type { VueTemplateNode } from '#lint/support/vue.ts'
 import {
+  VUE_ELEMENT_NODE,
   VUE_DIRECTIVE_NODE,
   hasExpressionCall,
   isStaticVueAttribute,
@@ -10,6 +11,7 @@ import {
   walkVueTemplateAst
 } from '#lint/support/vue.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
+import { ElementTypes } from '@vue/compiler-core'
 
 const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 
@@ -42,10 +44,16 @@ const noRawTestIdStringProps = {
   }
 } satisfies RuleDefinition
 
+/**
+ * A dynamic test id on an HTML element goes through `v-test-id`. A component takes
+ * `:data-test-id` as an attribute, which reaches the element it forwards attributes to; the
+ * directive would tag the component's root instead.
+ */
 const noDynamicDataTestIdInVue = {
   meta: {
     docs: {
-      description: 'Disallow dynamic :data-test-id in Vue components — use v-test-id'
+      description:
+        'Disallow dynamic :data-test-id on HTML elements in Vue templates — use v-test-id'
     }
   },
   create(context) {
@@ -59,12 +67,18 @@ const noDynamicDataTestIdInVue = {
         let hasDynamicDataTestId = false
         walkVueTemplateAst(template, (templateNode) => {
           if (hasDynamicDataTestId) return
-          if (isVueBindDirective(templateNode, 'data-test-id')) hasDynamicDataTestId = true
+          if (
+            templateNode.type === VUE_ELEMENT_NODE &&
+            templateNode.tagType === ElementTypes.ELEMENT &&
+            templateNode.props.some((prop) => isVueBindDirective(prop, 'data-test-id'))
+          )
+            hasDynamicDataTestId = true
         })
         if (!hasDynamicDataTestId) return
         context.report({
           node,
-          message: 'Use v-test-id for dynamic/configurable test ids instead of :data-test-id.'
+          message:
+            'Use v-test-id for a dynamic test id on an HTML element instead of :data-test-id.'
         })
       }
     }

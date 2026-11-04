@@ -1,5 +1,5 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
+import type { DocumentKind, EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -7,6 +7,7 @@ export interface SerializedSceneGraph extends PortableSceneGraphData {
   instanceIndex: Array<[string, string[]]>
   figKiwiVersion: number | null
   figSchemaDeflated: Uint8Array | null
+  documentKind: DocumentKind
   enabledLibraries?: Array<[string, EnabledLibraryBinding]>
 }
 
@@ -22,6 +23,7 @@ export function serializeSceneGraph(graph: SceneGraph): SerializedSceneGraph {
     figKiwiVersion: graph.figKiwiVersion,
     figSchemaDeflated: graph.figSchemaDeflated,
     documentColorSpace: graph.documentColorSpace,
+    documentKind: graph.documentKind,
     enabledLibraries: [...graph.enabledLibraries]
   }
 }
@@ -68,9 +70,11 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   cloned.instanceIndex = new Map(
     [...graph.instanceIndex].map(([id, nodeIds]) => [id, new Set(nodeIds)])
   )
+  cloned.connectorIds = new Set(graph.connectorIds)
   cloned.figKiwiVersion = graph.figKiwiVersion
   cloned.figSchemaDeflated = graph.figSchemaDeflated
   cloned.documentColorSpace = graph.documentColorSpace
+  cloned.documentKind = graph.documentKind
   cloned.enabledLibraries = new Map(graph.enabledLibraries)
 
   return cloned
@@ -97,9 +101,12 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.variableCollections = new Map(data.variableCollections)
   graph.activeMode = new Map(data.activeMode)
   graph.instanceIndex = new Map(data.instanceIndex.map(([id, nodeIds]) => [id, new Set(nodeIds)]))
+  // Routing finds connectors through the index the nodes it was sent without imply.
+  for (const [id, node] of graph.nodes) if (node.type === 'CONNECTOR') graph.connectorIds.add(id)
   graph.figKiwiVersion = data.figKiwiVersion
   graph.figSchemaDeflated = data.figSchemaDeflated
   graph.documentColorSpace = data.documentColorSpace
+  graph.documentKind = data.documentKind
   graph.enabledLibraries = data.enabledLibraries ? new Map(data.enabledLibraries) : new Map()
 
   return graph

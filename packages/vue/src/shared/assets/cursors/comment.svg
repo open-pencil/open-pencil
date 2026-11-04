@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+    <feDropShadow dx="0" dy="1.25" stdDeviation="1" flood-opacity="0.5"/>
+  </filter>
+  <g filter="url(#shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(3.16 6.64) scale(0.8)">
+      <g fill="#fff" stroke="#fff" stroke-width="3.75">
+        <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719Z"/>
+      </g>
+      <g fill="#fff">
+        <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719Z"/>
+      </g>
+      <g fill="none" stroke="#000" stroke-width="1.25">
+        <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,11 +1,35 @@
+import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
+
+import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
-import type { SceneGraph } from '../index'
-import { hasInstanceOverride } from '../instances'
+import type { SceneGraph } from '../graph'
+import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
-import type { Fill, SceneNode, Stroke, StyleRun, VariableValue } from '../types'
-import type { VariableModeFallback } from '../variables'
-import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
-export { isNumericVariableBindingField } from './fields'
+import { pixelLength } from '../text/lengths'
+import type { Effect, Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
+import {
+  effectBindableProperties,
+  effectBindingTarget,
+  NUMERIC_FIELDS,
+  isNumericVariableBindingField,
+  paintBindingTarget,
+  type EffectBindingProperty
+} from './fields'
+import { variableText, variableTruthy } from './text'
+import { variableValueReferences } from './value'
+export {
+  EFFECT_BINDING_PROPERTIES,
+  effectBindableProperties,
+  effectBindingField,
+  effectBindingTarget,
+  effectBindingVariableType,
+  isNumericVariableBindingField,
+  paintBindingTarget,
+  type EffectBindingProperty,
+  TEXT_CONTENT_VARIABLE_TYPES,
+  VISIBILITY_VARIABLE_TYPES,
+  type PaintBindingList
+} from './fields'
 
 /** New declarations belong to the outermost occurrence, bounded by a component definition. */
 export function variableBindingOwner(graph: SceneGraph, node: SceneNode): SceneNode {
@@ -32,6 +56,20 @@ export function assignVariableBindingUnits(
   }
 }
 
+/** Fields a bound number sets as a length in pixels, as Figma's do, whatever unit they held. */
+const TEXT_LENGTH_FIELDS: ReadonlySet<string> = new Set(['lineHeight', 'letterSpacing'])
+
+/** Whether the instance a layer sits in, or the instance itself, overrides one of its fields. */
+function overriddenInInstance(graph: SceneGraph, nodeId: string, field: string): boolean {
+  const instance = graph.closest(nodeId, (node) => node.type === 'INSTANCE')
+  return !!instance && hasInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+}
+
+/** A bound number as the field stores it. */
+export function boundNumberValue(field: string, value: number): number | TextLength {
+  return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
+}
+
 /**
  * The values a node's numeric bindings resolve to in its mode, in scene units, for the fields
  * whose stored value differs. A width or height an instance overrides keeps its own value.
@@ -44,52 +82,20 @@ export function resolvedNumericBindings(
   const updates: Partial<SceneNode> = {}
   for (const [field, variableId] of Object.entries(node.boundVariables)) {
     if (!NUMERIC_FIELDS.has(field)) continue
-    if ((field === 'width' || field === 'height') && hasInstanceOverride(graph, node.id, field))
+    if ((field === 'width' || field === 'height') && overriddenInInstance(graph, node.id, field))
       continue
     const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
     if (value === undefined || !Number.isFinite(value)) continue
     const scale = node.variableBindingScales[field] ?? 1
     const effective = value * scale
     if (!Number.isFinite(effective)) continue
-    const next = field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
-    if (node[field as keyof SceneNode] !== next) Object.assign(updates, { [field]: next })
+    const next = boundNumberValue(
+      field,
+      field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
+    )
+    if (!isEqual(node[field as keyof SceneNode], next)) Object.assign(updates, { [field]: next })
   }
   return updates
-}
-
-/**
- * The text a variable bound to text content shows: a string as it is, and a number or boolean
- * as Figma writes it, since Figma lets either be text content.
- */
-export function variableText(value: VariableValue | undefined): string | undefined {
-  if (typeof value === 'string') return value
-  if (typeof value === 'boolean') return String(value)
-  if (typeof value === 'number' && Number.isFinite(value)) return numberText(value)
-  return undefined
-}
-
-const INT32_MIN = -2_147_483_648
-const INT32_MAX = 2_147_483_647
-
-/** How near a whole number a value must be for Figma to write it as one. */
-const WHOLE_NUMBER_TOLERANCE = 1e-6
-
-/**
- * A number as Figma desktop 126 writes it as text: one within a millionth of a whole number as
- * that integer, clamped to 32 bits, and anything else with two decimals, its sign kept and an
- * exact tie rounded to even, as C's `%.2f` does (0.125 is "0.12", 0.999 is "1.00", -0.004 is
- * "-0.00").
- */
-function numberText(value: number): string {
-  const whole = Math.round(value)
-  if (Math.abs(value - whole) < WHOLE_NUMBER_TOLERANCE)
-    return String(Math.min(INT32_MAX, Math.max(INT32_MIN, whole)) || 0)
-  const scaled = Math.abs(value) * 100
-  const floor = Math.floor(scaled)
-  const tie = scaled - floor === 0.5
-  const cents = tie ? floor + (floor % 2) : Math.round(scaled)
-  const sign = value < 0 ? '-' : ''
-  return `${sign}${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`
 }
 
 /**
@@ -107,13 +113,14 @@ export function resolvedValueBindings(
   const updates: Partial<SceneNode> = {}
   const resolve = (field: 'text' | 'visible') => {
     const variableId = node.boundVariables[field]
-    if (!variableId || hasInstanceOverride(graph, node.id, field)) return undefined
+    if (!variableId || overriddenInInstance(graph, node.id, field)) return undefined
     return graph.resolveVariableForNode(node.id, variableId, fallback)
   }
   const text = node.type === 'TEXT' ? variableText(resolve('text')) : undefined
   if (text !== undefined && text !== node.text) updates.text = text
-  const visible = resolve('visible')
-  if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
+  // Figma binds visibility to text too, and shows the layer when the text reads as true.
+  const visible = variableTruthy(resolve('visible'))
+  if (visible !== undefined && visible !== node.visible) updates.visible = visible
   return updates
 }
 
@@ -137,8 +144,10 @@ export function resolvedRunBindings(
       const variableId = bound[field]
       if (!variableId) continue
       const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
-      if (value === undefined || !Number.isFinite(value) || style[field] === value) continue
-      style = { ...style, [field]: value }
+      if (value === undefined || !Number.isFinite(value)) continue
+      const next = boundNumberValue(field, value)
+      if (isEqual(style[field], next)) continue
+      style = { ...style, [field]: next }
     }
     return style === run.style ? run : { ...run, style }
   })
@@ -173,12 +182,12 @@ export function resolvedPaintBindings(
   const changes: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
   for (const field in node.boundVariables) {
     if (!field.endsWith('/color')) continue
-    const match = /^(fills|strokes)\/(\d+)\/color$/.exec(field)
-    if (!match) continue
+    const paint = paintBindingTarget(field)
+    if (!paint) continue
     const color = graph.resolveColorVariableForNode(node.id, node.boundVariables[field], fallback)
-    const index = Number(match[2])
+    const { index } = paint
     if (!color) continue
-    if (match[1] === 'fills') {
+    if (paint.list === 'fills') {
       if (!node.fills[index]) continue
       changes.fills ??= copyFills(node.fills)
       applyBoundColor(changes.fills[index], color)
@@ -189,6 +198,56 @@ export function resolvedPaintBindings(
     }
   }
   return changes
+}
+
+/** `effect` with one bound property set to its variable's value; a colour keeps its alpha. */
+function withBoundEffectValue(
+  effect: Effect,
+  property: EffectBindingProperty,
+  value: number | Color
+): Effect {
+  if (typeof value !== 'number') return property === 'color' ? { ...effect, color: value } : effect
+  if (property === 'offsetX') return { ...effect, offset: { ...effect.offset, x: value } }
+  if (property === 'offsetY') return { ...effect, offset: { ...effect.offset, y: value } }
+  if (property === 'radius' || property === 'spread') return { ...effect, [property]: value }
+  return effect
+}
+
+/** A bound effect length in an occurrence's coordinates, which are 1:1 outside instances. */
+function scaledLength(length: number | undefined, node: SceneNode): number | undefined {
+  return length === undefined ? undefined : length * node.componentScale
+}
+
+/**
+ * The effects a node's effect bindings resolve to in its mode, when one differs from what the node
+ * holds. Lengths stay as the variables give them, negative ones included, as Figma keeps them;
+ * drawing treats a negative blur as none. In an instance they take its scale against its
+ * component, whenever they were bound, as Figma scales them; a layer scaled outside an instance
+ * goes back to the variable's own value.
+ */
+export function resolvedEffectBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  fallback: VariableModeFallback = 'active'
+): Pick<Partial<SceneNode>, 'effects'> {
+  // Most nodes bind nothing, so no copy is made until a value actually changes.
+  let effects: Effect[] | undefined
+  for (const [field, variableId] of Object.entries(node.boundVariables)) {
+    const target = effectBindingTarget(field)
+    if (!target) continue
+    const effect = (effects ?? node.effects).at(target.index)
+    if (!effect || !effectBindableProperties(effect.type).includes(target.property)) continue
+    const value =
+      target.property === 'color'
+        ? graph.resolveColorVariableForNode(node.id, variableId, fallback)
+        : scaledLength(graph.resolveNumberVariableForNode(node.id, variableId, fallback), node)
+    if (value == null || (typeof value === 'number' && !Number.isFinite(value))) continue
+    const next = withBoundEffectValue(effect, target.property, value)
+    if (isEqual(next, effect)) continue
+    effects ??= [...node.effects]
+    effects[target.index] = next
+  }
+  return effects ? { effects } : {}
 }
 
 /**
@@ -205,8 +264,8 @@ export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<strin
     grew = false
     for (const variable of graph.variables.values()) {
       if (found.has(variable.id)) continue
-      const aliases = Object.values(variable.valuesByMode).some(
-        (value) => typeof value === 'object' && 'aliasId' in value && found.has(value.aliasId)
+      const aliases = Object.values(variable.valuesByMode).some((value) =>
+        variableValueReferences(value).some((id) => found.has(id))
       )
       if (aliases) {
         found.add(variable.id)
@@ -229,31 +288,101 @@ function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneNode[] {
   return nodes
 }
 
-function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterable<SceneNode> {
-  if (!scope) return graph.getAllNodes()
-  if ('subtrees' in scope) return subtreeNodes(graph, scope.subtrees)
-  const variables = variablesResolvingThrough(graph, scope.variables)
+/**
+ * The collections whose variables the layers in these subtrees resolve: those they bind, and
+ * those the bound variables alias, so a mode set on the subtrees can change what they show.
+ */
+export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): Set<string> {
+  const pending = subtreeNodes(graph, roots).flatMap(boundVariableIds)
+  const seen = new Set<string>()
+  const collections = new Set<string>()
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    const variable = graph.variables.get(id)
+    if (!variable) continue
+    collections.add(variable.collectionId)
+    for (const value of Object.values(variable.valuesByMode))
+      pending.push(...variableValueReferences(value))
+  }
+  return collections
+}
+
+/**
+ * The layers a change to these variables reaches: those binding one of them, or a variable that
+ * aliases one, on the layer itself or on its characters.
+ */
+export function layersUsingVariables(graph: SceneGraph, ids: Iterable<string>): SceneNode[] {
+  const variables = variablesResolvingThrough(graph, ids)
   return [...graph.getAllNodes()].filter((node) =>
     boundVariableIds(node).some((id) => variables.has(id))
   )
 }
 
+function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterable<SceneNode> {
+  if (!scope) return graph.getAllNodes()
+  if ('subtrees' in scope) return subtreeNodes(graph, scope.subtrees)
+  return layersUsingVariables(graph, scope.variables)
+}
+
 /**
- * Resolve live numeric, text, and visibility bindings, numbers in scene units, without authoring
- * instance overrides. A scope limits it to the layers a change can reach, so layers whose saved
- * values differ from their bindings elsewhere in the document are left as saved.
+ * Resolve live numeric, text, visibility, and effect bindings, numbers in scene units, without
+ * authoring instance overrides. A scope limits it to the layers a change can reach, so layers whose
+ * saved values differ from their bindings elsewhere in the document are left as saved. Returns the
+ * layers whose change needs a layout pass; effects are not a layout input, so an effect-only change
+ * is written but not returned.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
-  const changed: string[] = []
+  return [...reconcileVariableBindingUpdates(graph, scope).keys()]
+}
+
+/**
+ * As `reconcileVariableBindings`, with the layout fields each relaid layer received. Effects
+ * are written too, but draw without layout, so a layer whose only change is an effect is left out.
+ */
+export function reconcileVariableBindingUpdates(
+  graph: SceneGraph,
+  scope?: BindingScope
+): Map<string, Partial<SceneNode>> {
+  const relaid = new Map<string, Partial<SceneNode>>()
   for (const node of scopedNodes(graph, scope)) {
-    const updates = {
+    const layoutUpdates = {
       ...resolvedNumericBindings(graph, node),
       ...resolvedValueBindings(graph, node),
       ...resolvedRunBindings(graph, node)
     }
-    if (Object.keys(updates).length === 0) continue
+    const updates = { ...layoutUpdates, ...resolvedEffectBindings(graph, node) }
+    if (isEmptyObject(updates)) continue
     graph.updateNode(node.id, updates)
-    changed.push(node.id)
+    if (!isEmptyObject(layoutUpdates)) relaid.set(node.id, layoutUpdates)
   }
-  return changed
+  return relaid
+}
+
+/** A layer list whose items carry their own bindings, keyed by position such as `fills/1/color`. */
+export type BoundLayerList = 'fills' | 'strokes' | 'effects'
+
+/**
+ * `boundVariables` once the `list` items are rebuilt from `sources`, where `sources[i]` is the
+ * position the new item `i` had before, or null for an added item. A binding moves with its item
+ * and goes with a removed one, as Figma keeps a binding on its paint or effect.
+ */
+export function listBindingsAfterEdit(
+  boundVariables: Readonly<Record<string, string>>,
+  list: BoundLayerList,
+  sources: readonly (number | null)[]
+): Record<string, string> {
+  const prefix = `${list}/`
+  const moved: Record<string, string> = {}
+  for (const [field, variableId] of Object.entries(boundVariables)) {
+    if (!field.startsWith(prefix)) {
+      moved[field] = variableId
+      continue
+    }
+    const [index, ...property] = field.slice(prefix.length).split('/')
+    const next = sources.indexOf(Number(index))
+    if (next !== -1 && property.length > 0)
+      moved[`${prefix}${next}/${property.join('/')}`] = variableId
+  }
+  return moved
 }

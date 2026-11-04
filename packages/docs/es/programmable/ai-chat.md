@@ -9,7 +9,7 @@ Pulsa <kbd>⌘</kbd><kbd>J</kbd> o <kbd>Ctrl</kbd><kbd>J</kbd>. El asistente pue
 
 ## Configurar modelos
 
-La primera vez que abres OpenPencil, la configuración guiada pregunta en qué debe ayudarte la IA y qué usas ya: un agente de programación como Claude Code, Codex o Gemini CLI en la aplicación de escritorio, una cuenta de API o un servidor local o de la empresa. Conecta ese acceso y lo asigna a los roles **Design agent** y **Vision**, sin tocar lo que configuraste a mano. Con OpenRouter puedes iniciar sesión en lugar de pegar una clave de API. Puedes omitirla y volver a ejecutarla desde **Ajustes → IA y agentes → Iniciar la configuración guiada**. Para configurar los modelos a mano:
+La primera vez que abres OpenPencil, la configuración guiada pregunta en qué debe ayudarte la IA y qué usas ya: un agente de programación como Claude Code, Codex, Gemini CLI, Cursor o Grok Build en la aplicación de escritorio, una cuenta de API o un servidor local o de la empresa. Conecta ese acceso y lo asigna a los roles **Design agent** y **Vision**, sin tocar lo que configuraste a mano. Con OpenRouter puedes iniciar sesión en lugar de pegar una clave de API. Puedes omitirla y volver a ejecutarla desde **Ajustes → IA y agentes → Iniciar la configuración guiada**. Para configurar los modelos a mano:
 
 1. Abre el chat.
 2. Selecciona el icono de ajustes.
@@ -32,6 +32,12 @@ El token se guarda en el almacén seguro de credenciales, no en los ajustes ordi
 ## Herramientas
 
 Las herramientas cubren lectura, creación, modificación, estructura, variables, vectores, análisis, descripción, generación de código e imágenes de stock. Cada llamada actúa sobre el editor activo y participa en su historial de deshacer cuando corresponde.
+
+## Habilidades
+
+Las habilidades son carpetas con un `SKILL.md` en el formato [Agent Skills](https://agentskills.io/specification): instrucciones para un tipo de trabajo, con archivos de referencia opcionales. La IA integrada ve el nombre y la descripción de cada habilidad activa y carga sus instrucciones cuando una solicitud coincide; los scripts de una habilidad no se ejecutan.
+
+En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como `SKILL.md`. En la app de escritorio también se leen `~/.agents/skills` y `~/.claude/skills`, y las carpetas `.agents/skills` y `.claude/skills` junto al documento abierto, que solo se usan tras **Confiar en la carpeta**. Escribe `/` al principio de un mensaje para elegir una habilidad, y `@` para mencionar una capa, una página o una habilidad. Las menciones aparecen como chips, también en las respuestas; al hacer clic se muestra la capa en el lienzo.
 
 ## Verificación visual
 

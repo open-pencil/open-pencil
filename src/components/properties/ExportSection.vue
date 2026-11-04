@@ -2,7 +2,9 @@
 import { tryOnScopeDispose, useObjectUrl } from '@vueuse/core'
 import { computed, onActivated, onDeactivated, ref, shallowRef, watch } from 'vue'
 
-import { useExport, useI18n, useRetainedActivity } from '@open-pencil/vue'
+import { useExport } from '@open-pencil/vue/document/export'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedActivity } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
@@ -125,7 +127,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
         <icon-lucide-plus class="size-3.5" />
       </IconButton>
     </template>
-    <p v-if="mixed" class="text-[11px] text-muted">
+    <p v-if="mixed" class="text-2xs text-muted">
       {{ panels.mixed }}
     </p>
 
@@ -179,7 +181,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
     <Tip v-if="activeSettings.length > 0" :label="panels.toggleExportPreview">
       <button
         data-test-id="export-preview-toggle"
-        class="mt-1 flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent px-0 py-1 text-[11px] text-muted hover:text-surface"
+        class="mt-1 flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent px-0 py-1 text-2xs text-muted hover:text-surface"
         @click="showPreview = !showPreview"
       >
         <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
@@ -193,7 +195,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
     </div>
     <div
       v-else-if="showPreview"
-      class="mt-1 rounded border border-border px-3 py-2 text-[11px] text-muted"
+      class="mt-1 rounded border border-border px-3 py-2 text-2xs text-muted"
     >
       {{ panels.exportRenderingPreview }}
     </div>

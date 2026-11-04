@@ -19,7 +19,7 @@ Chaque point prolonge le tracé. Une ligne d’aperçu relie le dernier point au
 
 ## Fermer ou terminer
 
-Cliquez sur le premier point pour fermer le tracé. Appuyez sur <kbd>Enter</kbd> pour le terminer ouvert ou sur <kbd>Escape</kbd> pour annuler le dessin actuel.
+Cliquez sur le premier point pour fermer le tracé. Appuyez sur <kbd>Enter</kbd> ou <kbd>Escape</kbd> pour le terminer ouvert.
 
 ## Continuer un tracé
 

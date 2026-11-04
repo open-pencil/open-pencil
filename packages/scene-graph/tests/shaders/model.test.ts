@@ -1,17 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA, pluginDataEntry } from '@open-pencil/scene-graph/plugin-data'
 import {
   createShaderPaint,
   isShaderFrameCurrent,
-  OPEN_PENCIL_PLUGIN_DATA,
-  pluginDataEntry,
   readShaderPaints,
-  SceneGraph,
   shaderOfPaint,
   shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/shaders'
 
 const AURORA: ShaderPreset = {
   components: [{ type: 'Aurora', props: { colorA: '#7c3aed' } }]

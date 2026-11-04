@@ -1,10 +1,22 @@
 import { watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
+
+const CANVAS_TEXT_INPUT = 'data-canvas-text-input'
+
+/**
+ * Whether `element` is the hidden textarea the canvas text editor types through. Focus can leave
+ * it for a page field while the text edit stays open, so callers ask this rather than whether a
+ * text edit is active.
+ */
+export function isCanvasTextInput(element: Element | null): boolean {
+  return element?.hasAttribute(CANVAS_TEXT_INPUT) ?? false
+}
 
 export function createHiddenTextArea() {
   const textarea = document.createElement('textarea')
+  textarea.setAttribute(CANVAS_TEXT_INPUT, '')
   textarea.setAttribute('aria-hidden', 'true')
   textarea.tabIndex = -1
   textarea.className = 'fixed left-0 top-0 h-px w-px opacity-0'

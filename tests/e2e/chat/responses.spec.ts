@@ -56,6 +56,62 @@ test('opening a tool call at the bottom keeps it in place instead of following',
   }
 })
 
+test('scrolling back to the bottom resumes following new output', async ({
+  configuredChat: chat,
+  page
+}) => {
+  await chat.submit('Paused stream')
+  await expect(chat.assistantMessage()).toContainText('Line 39')
+  const viewport = page
+    .locator('[data-reka-scroll-area-viewport]')
+    .filter({ has: chat.assistantMessage() })
+  const atBottom = () =>
+    viewport.evaluate((element) => {
+      return element.scrollTop + element.clientHeight >= element.scrollHeight - 2
+    })
+  const box = await viewport.boundingBox()
+  if (!box) throw new Error('Expected the transcript to be visible')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+
+  await page.mouse.wheel(0, -400)
+  await expect.poll(atBottom).toBe(false)
+  await page.mouse.wheel(0, 100_000)
+  await expect.poll(atBottom).toBe(true)
+  // A further tick at the bottom scrolls nothing and must not stop following.
+  await page.mouse.wheel(0, 200)
+  await page.evaluate(() => window.dispatchEvent(new Event('mock-chat-continue')))
+
+  await expect(chat.assistantMessage()).toContainText('Line 79')
+  await expect.poll(atBottom).toBe(true)
+})
+
+test('scrolling up a reply that fits does not stop following', async ({
+  configuredChat: chat,
+  page
+}) => {
+  await chat.submit('Paused short stream')
+  await expect(chat.assistantMessage()).toContainText('Line 1')
+  const viewport = page
+    .locator('[data-reka-scroll-area-viewport]')
+    .filter({ has: chat.assistantMessage() })
+  const box = await viewport.boundingBox()
+  if (!box) throw new Error('Expected the transcript to be visible')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+
+  // Nothing is above the reply yet, so the wheel cannot move the transcript.
+  await page.mouse.wheel(0, -400)
+  await page.evaluate(() => window.dispatchEvent(new Event('mock-chat-continue')))
+
+  await expect(chat.assistantMessage()).toContainText('Line 41')
+  await expect
+    .poll(() =>
+      viewport.evaluate(
+        (element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2
+      )
+    )
+    .toBe(true)
+})
+
 test('authentication errors explain the cause and link to Settings', async ({
   configuredChat: chat
 }) => {

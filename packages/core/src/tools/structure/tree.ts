@@ -1,6 +1,12 @@
 import type { FigmaNodeProxy } from '#core/figma-api'
-import { nodeTraversalInput, nodeInput } from '#core/tools/input'
-import { defineTool, getRawNodeOrError, nodeNotFound, nodeSummary } from '#core/tools/schema'
+import {
+  nodeTraversalInput,
+  nodeInputSchema,
+  defineTool,
+  getRawNodeOrError,
+  nodeNotFound,
+  nodeSummary
+} from '#core/tools/schema'
 
 export const nodeAncestors = defineTool({
   name: 'node_ancestors',
@@ -28,7 +34,7 @@ export const nodeChildren = defineTool({
   description: 'Get direct children of a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: nodeInput,
+  input: nodeInputSchema,
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
     if (!node) return nodeNotFound(id)
@@ -67,7 +73,7 @@ export const nodeBindings = defineTool({
   description: 'Get variable bindings for a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: nodeInput,
+  input: nodeInputSchema,
   execute: (figma, { id }) => {
     const result = getRawNodeOrError(figma, id)
     if ('error' in result) return result

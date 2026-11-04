@@ -1,1 +1,0 @@
-- Drop design token files, `.tokens`, `.tokens.json`, or `.resolver.json`, on the editor to import them into the document's variables, as the Variables dialog's Import button does.

@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import { instanceMainComponent } from '../instances/main-component'
 import type { SceneNode } from '../types'
 
@@ -56,6 +56,8 @@ interface ParkedSlot {
   name: string
   /** Content layer ids, in layer order. */
   content: string[]
+  ownerId: string
+  propertyId: string
 }
 
 /** Owned slot content parked under an instance while its component changes. */
@@ -111,12 +113,17 @@ export function detachOwnedSlotContent(graph: SceneGraph, instance: SceneNode): 
       if (!name || parked.slots.some((slot) => [...slot.path, slot.name].join('\u0000') === key))
         continue
       const content = [...frame.childIds]
-      for (const id of content) graph.reorderChild(id, instance.id, instance.childIds.length)
-      parked.slots.push({ path, name, content })
+      for (const id of content) graph.insertChildAt(id, instance.id, instance.childIds.length)
+      parked.slots.push({ path, name, content, ownerId: owner.id, propertyId })
     }
   }
   visit(instance, [])
   return parked
+}
+
+function assignsOtherContent(owner: SceneNode, propertyId: string, slot: ParkedSlot): boolean {
+  const parkedFromHere = owner.id === slot.ownerId && propertyId === slot.propertyId
+  return !parkedFromHere && Object.hasOwn(owner.componentPropertyAssignments, propertyId)
 }
 
 /** Move parked content into the slots of the same names and paths, and reassign them. */
@@ -142,17 +149,12 @@ export function restoreOwnedSlotContent(
         return !!propertyId && slotName(graph, owner, propertyId) === slot.name
       })
     const propertyId = frame && slotPropertyId(frame)
-    if (
-      !owner ||
-      !frame ||
-      !propertyId ||
-      Object.hasOwn(owner.componentPropertyAssignments, propertyId)
-    ) {
+    if (!owner || !frame || !propertyId || assignsOtherContent(owner, propertyId, slot)) {
       for (const id of slot.content) graph.deleteNode(id)
       continue
     }
     for (const id of Array.from(frame.childIds)) graph.deleteNode(id)
-    for (const [index, id] of slot.content.entries()) graph.reorderChild(id, frame.id, index)
+    for (const [index, id] of slot.content.entries()) graph.insertChildAt(id, frame.id, index)
     graph.updateNode(owner.id, {
       componentPropertyAssignments: { ...owner.componentPropertyAssignments, [propertyId]: '' }
     })

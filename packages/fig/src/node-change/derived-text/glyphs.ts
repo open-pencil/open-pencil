@@ -26,6 +26,22 @@ function isUnshapedOpenPencilText(derivedTextData: DerivedTextData, characters: 
  * Dropping `rotation` used to flatten path text to axis-aligned scribbles;
  * units are radians (schema `float`, DomeSticker values ≈ -1.75…-0.5).
  */
+type EmojiGlyphFields = Pick<DerivedTextGlyph, 'emojiCodePoints' | 'emojiImageSet'>
+
+/**
+ * An emoji glyph's code points and image set, copied, for a glyph read or saved; nothing for any
+ * other glyph. Figma draws an emoji glyph's placeholder square without them.
+ */
+export function emojiGlyphFields(glyph: {
+  emojiCodePoints?: readonly number[]
+  emojiImageSet?: string
+}): EmojiGlyphFields {
+  if (!glyph.emojiCodePoints?.length) return {}
+  const fields: EmojiGlyphFields = { emojiCodePoints: [...glyph.emojiCodePoints] }
+  if (glyph.emojiImageSet === 'NOTO') fields.emojiImageSet = 'NOTO'
+  return fields
+}
+
 export function convertFigmaDerivedTextGlyphs(
   derivedTextData: NodeChange['derivedTextData'],
   blobs: Uint8Array[],
@@ -50,7 +66,8 @@ export function convertFigmaDerivedTextGlyphs(
       fontSize: glyph.fontSize,
       firstCharacter: glyph.firstCharacter,
       rotation: glyph.rotation,
-      advance: Number.isFinite(advance) ? advance : undefined
+      advance: Number.isFinite(advance) ? advance : undefined,
+      ...emojiGlyphFields(glyph)
     })
   }
   return glyphs

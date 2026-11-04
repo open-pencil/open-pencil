@@ -2,10 +2,17 @@ export {
   clearStorageLocalMirror,
   enqueueDeleteCanvas,
   enqueuePutCanvas,
-  enqueuePutThumb,
   kickSyncEngine,
   resumeStorageSync
 } from './engine'
+export {
+  adoptStoredVersion,
+  dropCanvasUploads,
+  keepBothVersions,
+  replaceStoredVersion,
+  takeStoredVersion
+} from './conflicts'
+export { followUpload, type UploadOutcome } from './follow'
 export { createMemoryOutbox, getOutbox, resetOutboxForTests } from './outbox'
 export {
   persistStorageCanvasLocally,

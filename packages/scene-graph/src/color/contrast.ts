@@ -25,6 +25,34 @@ export function contrastRatio(
   )
 }
 
+/**
+ * `background` darkened just enough for light `text` to reach `ratio` on it, by scaling its
+ * channels toward black, which keeps its hue; returned as it is when the text already does.
+ * The default is white text at WCAG AA's 4.5:1 for normal text.
+ */
+export function darkenForContrast(
+  background: Color,
+  text: Pick<Color, 'r' | 'g' | 'b'> = WHITE,
+  ratio = 4.5
+): Color {
+  if (contrastRatio(background, text) >= ratio) return background
+  const scaled = (factor: number): Color => ({
+    ...background,
+    r: background.r * factor,
+    g: background.g * factor,
+    b: background.b * factor
+  })
+  // Darker always contrasts more with light text, so the smallest darkening is found by halving.
+  let enough = 0
+  let short = 1
+  for (let step = 0; step < 20; step++) {
+    const middle = (enough + short) / 2
+    if (contrastRatio(scaled(middle), text) >= ratio) enough = middle
+    else short = middle
+  }
+  return scaled(enough)
+}
+
 /** Black or white, whichever reads better on an opaque `background`. */
 export function readableForeground(background: Pick<Color, 'r' | 'g' | 'b'>): Color {
   return contrastRatio(background, BLACK) >= contrastRatio(background, WHITE) ? BLACK : WHITE

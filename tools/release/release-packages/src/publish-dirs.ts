@@ -38,6 +38,13 @@ const PACKAGE_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof PackageManifest>
 const PUBLISH_CONFIG_FIELDS = new Set(['access', 'provenance', 'registry'])
 const LICENSE_FILE = 'LICENSE'
+/** The repository's MIT text, for a package under its own license that is MIT in part. */
+const MIT_LICENSE_FILE = 'LICENSE-MIT'
+/**
+ * `MIT` or `MIT+` as a whole SPDX identifier in a license expression, in any case as SPDX allows,
+ * and not the start of another identifier such as `MIT-0`.
+ */
+const MIT_IDENTIFIER = /(?:^|[\s(])MIT\+?(?:$|[\s)])/i
 
 export function publishPackageJSON(source: PackageManifest, coreVersion: string): PackageManifest {
   if (source.publishConfig) {
@@ -126,10 +133,17 @@ export async function preparePublishDirectories(
       await cp(join(sourceDir, relativePath), destination, { dereference: false })
     }
 
-    if (!hasOwnLicense) await cp(rootLicense, join(destinationDir, LICENSE_FILE))
-
     const packageJSON = await readPackageManifest(join(sourceDir, 'package.json'))
     const publishJSON = publishPackageJSON(packageJSON, options.coreVersion)
+    if (!hasOwnLicense) await cp(rootLicense, join(destinationDir, LICENSE_FILE))
+    else if (MIT_IDENTIFIER.test(packageJSON.license ?? '') && existsSync(rootLicense)) {
+      await cp(rootLicense, join(destinationDir, MIT_LICENSE_FILE))
+      // npm packs LICENSE by itself but not LICENSE-MIT, so a `files` list has to name it.
+      if (publishJSON.files && !publishJSON.files.includes(MIT_LICENSE_FILE)) {
+        publishJSON.files = [...publishJSON.files, MIT_LICENSE_FILE]
+      }
+    }
+
     await writeFile(
       join(destinationDir, 'package.json'),
       `${JSON.stringify(publishJSON, null, 2)}\n`

@@ -1,10 +1,6 @@
-import { Frame, Instance, Text, linearGradient } from '@open-pencil/design-jsx'
-import type { TreeNode } from '@open-pencil/design-jsx'
-import {
-  createComponentPropertyId,
-  createSlotProperty,
-  updateSlotProperty
-} from '@open-pencil/scene-graph'
+import { Frame, Instance, Text, linearGradient, type TreeNode } from '@open-pencil/design-jsx'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+import { createSlotProperty, updateSlotProperty } from '@open-pencil/scene-graph/slots'
 
 import { slotRow } from '../chrome'
 import { Icon } from '../elements'
@@ -120,8 +116,8 @@ export async function createSlotsChapter(
           Instance({
             of: component.id,
             properties: {
-              [PLAYER_PROPERTIES.title.id]: title,
-              [PLAYER_PROPERTIES.artist.id]: artist
+              [PLAYER_PROPERTIES.title.name]: title,
+              [PLAYER_PROPERTIES.artist.name]: artist
             }
           }),
           { parentId: row.id }

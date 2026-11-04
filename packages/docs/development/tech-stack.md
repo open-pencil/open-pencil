@@ -20,7 +20,7 @@
 | **Testing** | Playwright + bun:test | Visual regression (E2E) + fast unit tests |
 | **Linting** | oxlint | Rust-based, orders of magnitude faster than ESLint |
 | **Formatting** | oxfmt | Rust-based formatter |
-| **Type Checking** | typescript-go (tsgo) | Native Go implementation of TypeScript type checker |
+| **Type Checking** | TypeScript 7, vue-tsc | TypeScript 7 (the native Go compiler) checks `.ts`; vue-tsc checks `.vue` on the TypeScript 6 API |
 
 ## Key Dependencies
 
@@ -34,7 +34,7 @@
   "reka-ui": "^2.10.3",
   "tailwindcss": "^4.3.3",
   "culori": "^4.0.2",
-  "fzstd": "^0.1.1",
+  "@hpcc-js/wasm-zstd": "^1.16.2",
   "fflate": "^0.8.3",
   "@trystero-p2p/mqtt": "^0.26.0",
   "yjs": "^13.6.32",

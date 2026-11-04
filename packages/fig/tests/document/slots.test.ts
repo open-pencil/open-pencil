@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { guid } from '@open-pencil/test-support/fig/guid'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 /**
  * `slots.fig` was built with Figma's plugin API (`createSlot`, `appendChild`, `resetSlot`,
@@ -65,16 +66,18 @@ describe('slot properties', () => {
     })
   })
 
-  test('variants sharing a slot each bind their own definition', () => {
+  // The file gives each variant a copy of the set's slot, linked by `parentPropDefId`; Figma's
+  // scripts see the set's property alone (desktop 126), and so does OpenPencil.
+  test("variants sharing a slot bind the set's definition", () => {
     const panel = topLevel('Panel')
     expect(panel.componentPropertyDefinitions.map(({ name, type }) => [name, type])).toEqual([
       ['Content', 'SLOT'],
       ['Size', 'VARIANT']
     ])
+    const [content] = panel.componentPropertyDefinitions
     for (const variant of graph.getChildren(panel.id)) {
-      const [definition] = variant.componentPropertyDefinitions
-      expect(definition.type).toBe('SLOT')
-      expect(slotFrame(variant).componentPropertyReferences[0].propertyId).toBe(definition.id)
+      expect(variant.componentPropertyDefinitions).toEqual([])
+      expect(slotFrame(variant).componentPropertyReferences[0].propertyId).toBe(content.id)
     }
   })
 })

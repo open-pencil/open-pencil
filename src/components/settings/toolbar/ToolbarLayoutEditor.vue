@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
-import { useFlatReorderDrag } from '@open-pencil/vue'
+import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import {
   combineToolbarEntry,
@@ -19,7 +19,7 @@ import {
   type ToolbarLayout,
   type ToolbarRow
 } from '@/app/editor/toolbar/layout'
-import { TOOL_SHORTCUT_LABELS } from '@/app/editor/toolbar/shortcuts'
+import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 import ToolbarLayoutJoint from '@/components/settings/toolbar/ToolbarLayoutJoint.vue'
 import ToolbarLayoutRow, {
   type ToolbarRowControl
@@ -34,6 +34,7 @@ import { toolbarEntryIcons, useToolbarEntryLabels } from '@/components/toolbar/l
  */
 const layout = defineModel<ToolbarLayout>({ required: true })
 const labels = useToolbarEntryLabels()
+const toolShortcuts = toolShortcutLabels()
 
 /** A row and its place in the whole list, which is also the joint above it. */
 interface PlacedRow {
@@ -130,7 +131,7 @@ function setShown(entry: ToolbarEntry, shown: boolean) {
             <ToolbarLayoutRow
               :label="labels[row.entry]"
               :icon="toolbarEntryIcons[row.entry]"
-              :shortcut="isToolbarAction(row.entry) ? '' : TOOL_SHORTCUT_LABELS[row.entry]"
+              :shortcut="isToolbarAction(row.entry) ? '' : toolShortcuts[row.entry]"
               :hidden="row.hidden"
               :pinned="row.entry === PINNED_TOOLBAR_ENTRY"
               :can-move-up="row.canMoveUp"

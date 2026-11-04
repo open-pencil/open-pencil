@@ -15,7 +15,7 @@ Dolny pasek narzędzi zawiera narzędzia do tworzenia kształtów, ramek i sekcj
 | Elipsa | <kbd>O</kbd> | Elipsa |
 | Linia | <kbd>L</kbd> | Linia |
 | Ramka | <kbd>F</kbd> | Kontener na inne obiekty |
-| Sekcja | <kbd>S</kbd> | Kontener najwyższego poziomu przejmujący przecinające się obiekty |
+| Sekcja | <kbd>Shift</kbd> + <kbd>S</kbd> | Kontener najwyższego poziomu przejmujący przecinające się obiekty |
 
 ## Dodatkowe kształty
 
@@ -74,5 +74,5 @@ Po wybraniu narzędzia Ramka panel Projekt pokazuje grupy gotowych rozmiarów dl
 | Elipsa | <kbd>O</kbd> | <kbd>O</kbd> |
 | Linia | <kbd>L</kbd> | <kbd>L</kbd> |
 | Ramka | <kbd>F</kbd> | <kbd>F</kbd> |
-| Sekcja | <kbd>S</kbd> | <kbd>S</kbd> |
+| Sekcja | <kbd>⇧</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>S</kbd> |
 | Kwadrat lub koło | <kbd>Shift</kbd> + przeciąganie | <kbd>Shift</kbd> + przeciąganie |

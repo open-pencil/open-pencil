@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, instanceSlotFrames } from '@open-pencil/scene-graph'
-import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
-import { slotInstanceOptions, slotLimits } from '@open-pencil/vue'
+import { SceneGraph, type ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import { instanceSlotFrames } from '@open-pencil/scene-graph/slots'
+import { slotInstanceOptions, slotLimits } from '@open-pencil/vue/controls/slots'
 
 function card() {
   const graph = new SceneGraph()

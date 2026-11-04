@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import {
   applyLintFixes,
   createLinter,
@@ -10,8 +10,7 @@ import {
 } from '@open-pencil/core/lint'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 const BLUE = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
 const RED = { r: 0.9, g: 0.1, b: 0.1, a: 1 }
 

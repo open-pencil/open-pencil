@@ -57,6 +57,7 @@ body:
         - SVG/PDF/raster export
         - CLI
         - MCP / automation
+        - AI assistant
         - Tauri desktop
         - Collaboration
         - Documentation
@@ -83,10 +84,18 @@ body:
       placeholder: Drag files here or paste links.
 
   - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: |
+        In the app, **Settings › Diagnostics › Save diagnostics…** saves recent technical events. It leaves out chat messages and tool payloads and scrubs keys and personal paths from error messages, but an error can still quote a name from your file, so skim it before attaching. For an AI chat problem, the conversation's **… › Save trace…** saves the whole conversation, including your prompts and tool output, so review it before attaching.
+      placeholder: Drag the saved .json files here.
+
+  - type: textarea
     id: logs
     attributes:
-      label: Console output or logs
-      description: Paste any relevant logs. This field is formatted as shell output.
+      label: Diagnostics or logs
+      description: In the app, open Settings → Diagnostics, reproduce the problem, click Copy diagnostics, and paste the result here. Keys and tokens are redacted; review it before posting. Console output works too.
       render: shell
 
   - type: checkboxes

@@ -91,7 +91,7 @@ test('Pen creates VECTOR node with 3 vertices on Enter', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('Pen Escape with 2 vertices cancels path without creating node', async () => {
+test('Pen Escape with 2 vertices keeps the open path', async () => {
   const before = (await getPageChildren(editor.page)).filter((n) => n.type === 'VECTOR').length
 
   await editor.canvas.pressKey('p')
@@ -102,8 +102,9 @@ test('Pen Escape with 2 vertices cancels path without creating node', async () =
   await editor.canvas.pressKey('Escape')
   await editor.canvas.waitForRender()
 
+  // Figma keeps the path drawn so far.
   const after = (await getPageChildren(editor.page)).filter((n) => n.type === 'VECTOR').length
-  expect(after).toBe(before)
+  expect(after).toBe(before + 1)
   editor.canvas.assertNoErrors()
 })
 

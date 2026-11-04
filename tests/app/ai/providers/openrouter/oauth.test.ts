@@ -1,23 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   exchangeOpenRouterCode,
   openRouterAuthorizationURL,
   OpenRouterKeyExchangeError,
-  OPENROUTER_KEYS_URL,
-  parseOpenRouterCallback,
-  pkceChallenge
+  OPENROUTER_KEYS_URL
 } from '@/app/ai/providers/openrouter/oauth'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 describe('OpenRouter OAuth PKCE', () => {
-  test('derives the S256 challenge from the RFC 7636 example verifier', async () => {
-    expect(await pkceChallenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk')).toBe(
-      'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
-    )
-  })
-
   test('builds the authorization URL with the challenge, state, and key label', () => {
     const url = new URL(
       openRouterAuthorizationURL(
@@ -34,15 +25,6 @@ describe('OpenRouter OAuth PKCE', () => {
       state: 's',
       key_label: 'OpenPencil'
     })
-  })
-
-  test('accepts only the callback for the current attempt', () => {
-    expect(parseOpenRouterCallback('?code=abc&state=s1', 's1')).toEqual({ ok: true, code: 'abc' })
-    expect(parseOpenRouterCallback('?code=abc&state=other', 's1')).toEqual({
-      ok: false,
-      reason: 'mismatch'
-    })
-    expect(parseOpenRouterCallback('?state=s1', 's1')).toEqual({ ok: false, reason: 'cancelled' })
   })
 
   test('exchanges the code and verifier for a key', async () => {

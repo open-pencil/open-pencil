@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 
 import * as v from 'valibot'
 
-const MetricsJSON = v.pipe(
+const metricsSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -20,7 +20,7 @@ const MetricsJSON = v.pipe(
 )
 
 // The report is written back in place, so loose objects keep fields this script does not own.
-const ReportJSON = v.pipe(
+const reportSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.looseObject({
@@ -57,8 +57,8 @@ const { values: opts } = parseArgs({
 if (!opts.name) throw new Error('--name is required')
 if (!opts.metrics) throw new Error('--metrics is required')
 
-const report = v.parse(ReportJSON, readFileSync(opts.report, 'utf8'))
-const metrics = v.parse(MetricsJSON, readFileSync(opts.metrics, 'utf8'))
+const report = v.parse(reportSchema, readFileSync(opts.report, 'utf8'))
+const metrics = v.parse(metricsSchema, readFileSync(opts.metrics, 'utf8'))
 const comparison = report.comparisons.find((item) => item.name === opts.name)
 if (!comparison) throw new Error(`No comparison named ${opts.name}`)
 

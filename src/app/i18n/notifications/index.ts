@@ -2,7 +2,7 @@ import { createI18n, params } from '@nanostores/i18n'
 import type { ComponentsJSON } from '@nanostores/i18n'
 import { useStore } from '@nanostores/vue'
 
-import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue'
+import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue/i18n'
 
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),
@@ -10,23 +10,31 @@ export const notificationMessageDefaults = {
   clipboardMissingDesignData: 'Clipboard does not contain design data.',
   clipboardAccessBlocked: 'Clipboard access is blocked in this browser context.',
   copiedAs: params('Copied as {format}.'),
+  copiedProperties: 'Copied properties.',
   tokensLeftOut: params('Left out of the stylesheet: {names}.'),
   designTokensLeftOut: params('Left out of the design tokens: {names}.'),
+  designTokensAmbiguous: params(
+    'These styles refer to a variable whose path another collection also has, so other tools may read the wrong one: {names}.'
+  ),
   designTokensImported: params('Imported {count} design tokens.'),
+  unsupportedVariableExpressions: params(
+    'OpenPencil can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
+  ),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
   xPath: 'XPath',
   xPaths: 'XPaths',
   pngClipboardUnavailable: 'PNG clipboard export is not available in this browser.',
   openFileFailed: params('Could not open “{name}”: {error}'),
+  viewDiagnostics: 'View diagnostics',
   importedDOMCSS: 'Imported DOM/CSS document.',
   importDOMCSSFailed: params('Could not import DOM/CSS: {error}'),
   openDOMCSSFailed: params('Could not open DOM/CSS file: {error}'),
-  vectorizeCredentialRequired: params('Add a {provider} API key in Settings → Media.'),
+  vectorizeCredentialRequired: params('Add a {provider} API key in Settings → Image services.'),
   vectorizeImageMissing: 'Image data is missing for this layer.',
   vectorizingImage: 'Vectorizing image…',
   imageConvertedToVectors: 'Image converted to vectors.',
-  vectorizeCredentialFailed: params('{error}. Update it in Settings → Media.'),
+  vectorizeCredentialFailed: params('{error}. Update it in Settings → Image services.'),
   vectorizeFailed: params('{provider} could not vectorize this image: {error}'),
   operationFailed: params('Operation failed: {error}'),
   storageConnected: 'Connected. Storage namespace is ready.',

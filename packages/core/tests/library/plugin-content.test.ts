@@ -1,15 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createLibraryRevision, materializeLibraryAsset } from '@open-pencil/core/library'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   emptyBehaviour,
-  OPEN_PENCIL_PLUGIN_DATA,
-  pluginDataEntry,
   readBehaviour,
-  SceneGraph,
   withBehaviour,
   type Behaviour
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/behaviours'
+import { OPEN_PENCIL_PLUGIN_DATA, pluginDataEntry } from '@open-pencil/scene-graph/plugin-data'
 
 const OTHER_PLUGIN = { pluginId: 'tokens-studio', key: 'theme', value: 'dark' }
 

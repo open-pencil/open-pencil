@@ -1,7 +1,7 @@
 import { take, uniq } from 'es-toolkit'
 import { shallowRef, type ShallowRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 /** How many pages a tab remembers, including the current one. */
 const MAX_RECENT_PAGES = 8

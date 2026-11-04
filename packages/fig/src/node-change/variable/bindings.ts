@@ -1,18 +1,20 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 import { invert } from 'es-toolkit/object'
 
-import type { VariableConsumptionEntry, GUID } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import {
-  isNumericVariableBindingField,
-  type SceneNode,
-  type SceneGraph,
-  type TextBindableField,
-  type TextBoundVariables
+import type {
+  SceneNode,
+  SceneGraph,
+  TextBindableField,
+  TextBoundVariables
 } from '@open-pencil/scene-graph'
+import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { cloneRecord } from '../clone'
 import { linearVariableExpression } from './expression'
+import { mergeVariableModeMaps } from './maps'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   cornerRadius: 'CORNER_RADIUS',
@@ -108,6 +110,13 @@ export function mergeVariableConsumptionMaps(
   return { parameterConsumptionMap: { entries } }
 }
 
+export function claimedVariableMaps(
+  layer: VariableConsumptionSource,
+  claim: VariableConsumptionSource
+): Record<string, unknown> {
+  return { ...mergeVariableConsumptionMaps(layer, claim), ...mergeVariableModeMaps(layer, claim) }
+}
+
 export function variableBindingEntry(
   field: string,
   variableId: string | undefined,
@@ -194,15 +203,19 @@ function consumptionEntry(
     resolvedDataType: variable.type,
     value: { alias: variableAlias(graph, variableId, ids) }
   }
-  // Text content takes a number or boolean as its text, which Figma writes as STRINGIFY.
-  if (variableField === 'TEXT_DATA' && variable.type !== 'STRING') {
+  // Figma's layer panel tests a variable bound to visibility with IS_TRUTHY, and writes a number
+  // or boolean bound to text content as STRINGIFY.
+  let conversion: 'IS_TRUTHY' | 'STRINGIFY' | undefined
+  if (variableField === 'VISIBLE') conversion = 'IS_TRUTHY'
+  else if (variableField === 'TEXT_DATA' && variable.type !== 'STRING') conversion = 'STRINGIFY'
+  if (conversion) {
     return {
       variableField,
       variableData: {
         dataType: 'EXPRESSION',
-        resolvedDataType: 'STRING',
+        resolvedDataType: conversion === 'IS_TRUTHY' ? 'BOOLEAN' : 'STRING',
         value: {
-          expressionValue: { expressionFunction: 'STRINGIFY', expressionArguments: [alias] }
+          expressionValue: { expressionFunction: conversion, expressionArguments: [alias] }
         }
       }
     }
@@ -341,5 +354,7 @@ export function resolvedNumericBindingUpdate(
 ): Partial<SceneNode> | undefined {
   if (field === 'opacity')
     return { opacity: Math.max(0, Math.min(1, value * OPACITY_UNIT_PER_PERCENT)) }
-  return isNumericVariableBindingField(field) ? { [field]: value } : undefined
+  return isNumericVariableBindingField(field)
+    ? { [field]: boundNumberValue(field, value) }
+    : undefined
 }

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { VariantConflict } from '@open-pencil/core/editor'
+import type { VariantConflict } from '@open-pencil/core'
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'

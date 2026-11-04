@@ -16,8 +16,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph'
-import { useCommentMessages } from '@open-pencil/vue'
+import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph/comments'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -26,11 +26,12 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import { comments as commentsTheme } from '@/theme/comments'
 
 import CommentActionsMenu from './CommentActionsMenu.vue'
 import CommentListItem from './CommentListItem.vue'
+import { comments as commentsTheme } from './ui'
 
 /** The comments list that takes over the right sidebar while the Comment tool is active. */
 const store = useEditorStore()
@@ -82,39 +83,41 @@ function setSort(value: unknown) {
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
             <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
-              <DropdownMenuRadioGroup :model-value="listSort" @update:model-value="setSort">
-                <DropdownMenuRadioItem value="newest" :class="itemCls">
+              <MenuScrollArea>
+                <DropdownMenuRadioGroup :model-value="listSort" @update:model-value="setSort">
+                  <DropdownMenuRadioItem value="newest" :class="itemCls">
+                    <DropdownMenuItemIndicator :class="ui.menuIndicator()">
+                      <icon-lucide-check class="size-3.5" />
+                    </DropdownMenuItemIndicator>
+                    {{ messages.newestFirst }}
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="oldest" :class="itemCls">
+                    <DropdownMenuItemIndicator :class="ui.menuIndicator()">
+                      <icon-lucide-check class="size-3.5" />
+                    </DropdownMenuItemIndicator>
+                    {{ messages.oldestFirst }}
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator :class="menuCls.separator" />
+                <DropdownMenuCheckboxItem v-model="listShowResolved" :class="itemCls">
                   <DropdownMenuItemIndicator :class="ui.menuIndicator()">
                     <icon-lucide-check class="size-3.5" />
                   </DropdownMenuItemIndicator>
-                  {{ messages.newestFirst }}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="oldest" :class="itemCls">
+                  {{ messages.showResolved }}
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem v-model="listOnlyMine" :class="itemCls">
                   <DropdownMenuItemIndicator :class="ui.menuIndicator()">
                     <icon-lucide-check class="size-3.5" />
                   </DropdownMenuItemIndicator>
-                  {{ messages.oldestFirst }}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator :class="menuCls.separator" />
-              <DropdownMenuCheckboxItem v-model="listShowResolved" :class="itemCls">
-                <DropdownMenuItemIndicator :class="ui.menuIndicator()">
-                  <icon-lucide-check class="size-3.5" />
-                </DropdownMenuItemIndicator>
-                {{ messages.showResolved }}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem v-model="listOnlyMine" :class="itemCls">
-                <DropdownMenuItemIndicator :class="ui.menuIndicator()">
-                  <icon-lucide-check class="size-3.5" />
-                </DropdownMenuItemIndicator>
-                {{ messages.onlyMine }}
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem v-model="listOnlyPage" :class="itemCls">
-                <DropdownMenuItemIndicator :class="ui.menuIndicator()">
-                  <icon-lucide-check class="size-3.5" />
-                </DropdownMenuItemIndicator>
-                {{ messages.onlyPage }}
-              </DropdownMenuCheckboxItem>
+                  {{ messages.onlyMine }}
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem v-model="listOnlyPage" :class="itemCls">
+                  <DropdownMenuItemIndicator :class="ui.menuIndicator()">
+                    <icon-lucide-check class="size-3.5" />
+                  </DropdownMenuItemIndicator>
+                  {{ messages.onlyPage }}
+                </DropdownMenuCheckboxItem>
+              </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
         </DropdownMenuRoot>
@@ -157,7 +160,9 @@ function setSort(value: unknown) {
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
-                    <CommentActionsMenu :thread="thread" kind="dropdown" show-go-to />
+                    <MenuScrollArea>
+                      <CommentActionsMenu :thread="thread" kind="dropdown" show-go-to />
+                    </MenuScrollArea>
                   </DropdownMenuContent>
                 </DropdownMenuPortal>
               </DropdownMenuRoot>
@@ -175,7 +180,9 @@ function setSort(value: unknown) {
         </ContextMenuTrigger>
         <ContextMenuPortal>
           <ContextMenuContent :class="menuCls.content">
-            <CommentActionsMenu :thread="thread" kind="context" show-go-to />
+            <MenuScrollArea>
+              <CommentActionsMenu :thread="thread" kind="context" show-go-to />
+            </MenuScrollArea>
           </ContextMenuContent>
         </ContextMenuPortal>
       </ContextMenuRoot>

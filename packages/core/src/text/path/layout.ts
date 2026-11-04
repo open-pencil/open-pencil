@@ -12,7 +12,7 @@ export interface PathTextLayout {
   deltas: number[]
   /** Per-glyph signed offset along the left normal (-ty, tx), px. */
   offsets: number[]
-  /** Per-glyph rotation minus the tangent-derived base rotation, radians. */
+  /** Per-glyph rotation minus its chord's rotation, radians. */
   phases: number[]
 }
 
@@ -30,6 +30,28 @@ function baseRotation(p: PathPoint, forward: boolean): number {
   const tx = forward ? p.tx : -p.tx
   const ty = forward ? p.ty : -p.ty
   return -Math.atan2(ty, tx)
+}
+
+/**
+ * A glyph's rotation as Figma sets it: along the line from where the glyph starts on the path to
+ * where it ends, so a wide glyph on a bend sits across the curve instead of along the tangent at
+ * its left edge. A glyph with no width takes the tangent.
+ */
+function chordRotation(start: PathPoint, end: PathPoint, forward: boolean): number {
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  if (Math.hypot(dx, dy) < 1e-6) return baseRotation(start, forward)
+  return -Math.atan2(dy, dx)
+}
+
+/**
+ * How far along the path, signed, glyph `index` spans: to where the next glyph starts. The last
+ * glyph is taken as wide as the one before it, and a lone glyph has no width, so it takes the
+ * tangent.
+ */
+function glyphSpan(deltas: number[], index: number): number {
+  if (index + 1 < deltas.length) return deltas[index + 1] - deltas[index]
+  return index > 0 ? deltas[index] - deltas[index - 1] : 0
 }
 
 /**
@@ -54,7 +76,6 @@ export function calibratePathTextLayout(
     const off = (g.x - p.x) * -p.ty + (g.y - p.y) * p.tx
     positions.push(p)
     offsets.push(off)
-    phases.push(normalizeAngle((g.rotation ?? 0) - baseRotation(p, data.forward)))
   }
 
   const s0 = positions[0].s
@@ -67,6 +88,13 @@ export function calibratePathTextLayout(
     }
     return d
   })
+  // Rotations are kept relative to each glyph's chord, so a resize that bends the path more or
+  // less turns the glyphs with it, as re-laying out the text does.
+  for (const [index, g] of glyphs.entries()) {
+    const p = positions[index]
+    const end = pointAtArc(path, p.s + glyphSpan(deltas, index))
+    phases.push(normalizeAngle((g.rotation ?? 0) - chordRotation(p, end, data.forward)))
+  }
   return { anchor: s0 / path.length, deltas, offsets, phases }
 }
 
@@ -80,7 +108,8 @@ export function calibratePathTextLayout(
  * at `anchor` (fraction of total length), each next glyph advances by
  * advance * fontSize (advances are in em units) along the travel direction,
  * offset along the left normal by `offset`. Used when the characters change
- * and the baked per-glyph deltas no longer apply.
+ * and the baked per-glyph deltas no longer apply. Each glyph keeps its advance
+ * in px, so the caret can stand after the last one.
  */
 export function layoutPathTextFromAdvances(
   data: TextPathData,
@@ -95,13 +124,15 @@ export function layoutPathTextFromAdvances(
   let s = anchor * path.length
   return glyphSources.map((src) => {
     const p = pointAtArc(path, s)
-    s += dir * src.advance * src.fontSize
+    const advance = src.advance * src.fontSize
+    s += dir * advance
     return {
       commandsBlob: src.commandsBlob,
       x: p.x + -p.ty * offset,
       y: p.y + p.tx * offset,
       fontSize: src.fontSize,
-      rotation: normalizeAngle(baseRotation(p, data.forward))
+      rotation: normalizeAngle(chordRotation(p, pointAtArc(path, s), data.forward)),
+      advance
     }
   })
 }
@@ -118,13 +149,14 @@ export function reflowPathTextGlyphs(
   const s0 = layout.anchor * path.length
   return glyphs.map((g, i) => {
     const p = pointAtArc(path, s0 + layout.deltas[i])
+    const end = pointAtArc(path, p.s + glyphSpan(layout.deltas, i))
     const off = layout.offsets[i]
     return {
       ...g,
       commandsBlob: new Uint8Array(g.commandsBlob),
       x: p.x + -p.ty * off,
       y: p.y + p.tx * off,
-      rotation: normalizeAngle(baseRotation(p, data.forward) + layout.phases[i]),
+      rotation: normalizeAngle(chordRotation(p, end, data.forward) + layout.phases[i]),
       // Reflow replaces geometric scaling entirely.
       scaleX: undefined,
       scaleY: undefined

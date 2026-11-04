@@ -1,7 +1,9 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { lineStepPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
 
-import { weightToStyle } from '#core/text/fonts'
-import { measureTextWithOpenType } from '#core/text/opentype'
+import { rangeCapHeight } from '#core/text/character-face'
+import { measureTextWithFont, type MeasuredTextLines } from '#core/text/font/glyphs'
 
 export type TextMeasurer = (
   node: SceneNode,
@@ -18,22 +20,73 @@ export function estimateTextSize(
 ): { width: number; height: number } {
   const fontSize = node.fontSize || 14
   const family = node.fontFamily || 'Inter'
-  const style = weightToStyle(node.fontWeight || 400, node.italic)
+  const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''
 
-  const explicitLineH = (node.lineHeight ?? 0) > 0 ? (node.lineHeight as number) : undefined
-  const measured = measureTextWithOpenType(text, fontSize, family, style, maxWidth, explicitLineH)
-  if (measured) return measured
+  // A line height of zero sets lines on top of each other, as Figma does.
+  const explicitLineH = lineStepPixels(node.lineHeight, fontSize) ?? undefined
+  const hardLines = text.split('\n')
+  const measured = hardLines.map(
+    (line) =>
+      measureTextWithFont(line, fontSize, family, style, maxWidth, explicitLineH) ??
+      estimateTextLines(line, fontSize, maxWidth, explicitLineH)
+  )
+  const { width, lines, paragraphSpacing } = stackParagraphs(node, measured)
+  const { lineHeight } = measured[0]
+  if (node.leadingTrim === 'CAP_HEIGHT') {
+    const firstLineCapHeight = rangeCapHeight(node, 0, hardLines[0].length)
+    // To the nearest pixel, as Figma sizes a trimmed text and live layout does.
+    const trimmed = firstLineCapHeight + (lines - 1) * lineHeight + paragraphSpacing
+    return { width, height: Math.round(trimmed) }
+  }
+  return { width, height: untrimmedHeight(lines, lineHeight) + paragraphSpacing }
+}
 
+function shownLineLimit(node: SceneNode): number {
+  if (node.textTruncation === 'ENDING' && node.maxLines != null && node.maxLines > 0) {
+    return node.maxLines
+  }
+  return Number.POSITIVE_INFINITY
+}
+
+function stackParagraphs(node: SceneNode, paragraphs: MeasuredTextLines[]) {
+  const limit = shownLineLimit(node)
+  let width = 0
+  let lines = 0
+  let paragraphSpacing = 0
+  for (const [index, paragraph] of paragraphs.entries()) {
+    if (lines >= limit) {
+      break
+    }
+    if (index > 0) {
+      paragraphSpacing += paragraphSpacingAt(node, index - 1, 'paragraphSpacing')
+    }
+    width = Math.max(width, paragraph.width)
+    lines += Math.min(paragraph.lines, limit - lines)
+  }
+  return { width, lines, paragraphSpacing }
+}
+
+function estimateTextLines(
+  text: string,
+  fontSize: number,
+  maxWidth: number | undefined,
+  explicitLineH: number | undefined
+): MeasuredTextLines {
   const charWidth = fontSize * GLYPH_WIDTH_FACTOR
   const singleLineWidth = Math.ceil(text.length * charWidth)
-  const lineH = (node.lineHeight ?? 0) > 0 ? (node.lineHeight as number) : Math.ceil(fontSize * 1.4)
+  const lineHeight = explicitLineH ?? Math.ceil(fontSize * 1.4)
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
-    return { width: maxWidth, height: Math.ceil(lines * lineH) }
+    return { width: maxWidth, lines, lineHeight }
   }
-  return { width: singleLineWidth, height: lineH }
+  return { width: singleLineWidth, lines: 1, lineHeight }
+}
+
+/** Lines' height rounded up, as Figma sizes text: one line of 11.25 px is 12 px tall. */
+function untrimmedHeight(lines: number, lineHeight: number): number {
+  return Math.ceil(lines * lineHeight)
 }
 
 export function getTextMeasurer(): TextMeasurer | null {
@@ -42,6 +95,24 @@ export function getTextMeasurer(): TextMeasurer | null {
 
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
+}
+
+/**
+ * The size of `node`'s text. With a measurer installed, that is its size in its own fonts; text
+ * whose fonts are not prepared keeps the size it has, never one guessed in another face, until
+ * the measurer's host prepares them and lays it out again (the editor's `createPendingTextLayout`).
+ * With none, as in a host without fonts, it is estimated.
+ */
+export function measureTextForLayout(
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } {
+  if (!globalTextMeasurer) return estimateTextSize(node, maxWidth)
+  const measured = globalTextMeasurer(node, maxWidth)
+  if (measured) return measured
+  // Empty text measures nothing but its line, which needs no fonts beyond the default.
+  if (node.type !== 'TEXT' || !node.text) return estimateTextSize(node, maxWidth)
+  return { width: node.width, height: node.height }
 }
 
 const installedMeasurers: TextMeasurer[] = []

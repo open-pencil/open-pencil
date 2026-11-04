@@ -5,13 +5,27 @@
     "**/dist/**",
     "**/node_modules/**"
   ],
-  "ignoreWorkspaces": ["packages/acp", "packages/demos"],
+  "ignoreWorkspaces": [
+    "packages/acp",
+    "packages/demos"
+  ],
   "ignoreUnresolved": [
     "~icons/*",
+    "#app-public/*",
     "/src/app/editor/fonts/index.ts",
     "/packages/core/src/text/index.ts",
     "/src/app/tabs/index.ts",
     "#core/*"
   ],
-  "ignoreBinaries": ["figma-use", "identify", "magick", "open", "osascript"]
+  "ignoreDependencies": [
+    "cloudflare",
+    "@better-auth/core"
+  ],
+  "ignoreBinaries": [
+    "figma-use",
+    "identify",
+    "magick",
+    "open",
+    "osascript"
+  ]
 }

@@ -5,7 +5,7 @@ import {
   resetSlotContent,
   slotScope,
   type SlotScope
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/slots'
 
 import type { EditorContext } from '#core/editor/types'
 
@@ -37,13 +37,13 @@ export function acceptsChildren(ctx: Pick<EditorContext, 'graph'>, parentId: str
   return slotScope(ctx.graph, parentId).kind !== 'locked'
 }
 
-/** The parent itself, or the nearest one outside the locked part of an instance. */
+/** The parent itself, or the nearest one outside the locked part of an instance or generated frame. */
 export function acceptingParent(ctx: Pick<EditorContext, 'graph'>, parentId: string): string {
   let id = parentId
   for (;;) {
     const scope = slotScope(ctx.graph, id)
-    if (scope.kind !== 'locked' || !scope.instance.parentId) return id
-    id = scope.instance.parentId
+    if (scope.kind !== 'locked' || !scope.owner.parentId) return id
+    id = scope.owner.parentId
   }
 }
 

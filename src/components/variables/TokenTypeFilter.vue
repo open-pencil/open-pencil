@@ -10,10 +10,11 @@ import {
 import { computed } from 'vue'
 
 import type { VariableType } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
 
 /** The variable types the list shows; none checked shows every type. */
@@ -48,20 +49,22 @@ function toggle(type: VariableType, on: boolean) {
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" :side-offset="4" align="end" :class="menu.content">
-        <DropdownMenuCheckboxItem
-          v-for="type in VARIABLE_TYPES"
-          :key="type"
-          :model-value="types.includes(type)"
-          :class="menu.item"
-          @select.prevent
-          @update:model-value="toggle(type, $event)"
-        >
-          <component :is="VARIABLE_TYPE_ICONS[type]" :class="menu.icon" />
-          <span class="flex-1">{{ labels[type] }}</span>
-          <DropdownMenuItemIndicator>
-            <icon-lucide-check :class="menu.icon" />
-          </DropdownMenuItemIndicator>
-        </DropdownMenuCheckboxItem>
+        <MenuScrollArea>
+          <DropdownMenuCheckboxItem
+            v-for="type in VARIABLE_TYPES"
+            :key="type"
+            :model-value="types.includes(type)"
+            :class="menu.item"
+            @select.prevent
+            @update:model-value="toggle(type, $event)"
+          >
+            <component :is="VARIABLE_TYPE_ICONS[type]" :class="menu.icon" />
+            <span class="flex-1">{{ labels[type] }}</span>
+            <DropdownMenuItemIndicator>
+              <icon-lucide-check :class="menu.icon" />
+            </DropdownMenuItemIndicator>
+          </DropdownMenuCheckboxItem>
+        </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

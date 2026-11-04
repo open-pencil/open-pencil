@@ -2,8 +2,10 @@
 import { SelectRoot, SelectSeparator, SelectTrigger } from 'reka-ui'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
-import type { SizeLimitProp } from '@open-pencil/vue'
+import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import type { SizeAxisFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
@@ -89,7 +91,7 @@ function handleSelect(value: SizeSelectValue) {
           <SelectTrigger
             data-slot="sizing-trigger"
             :aria-label="label"
-            class="flex shrink-0 cursor-pointer items-center gap-0.5 self-stretch border-none bg-transparent px-1.5 text-[10px] text-muted outline-none data-[state=open]:text-foreground"
+            class="flex shrink-0 cursor-pointer items-center gap-0.5 self-stretch border-none bg-transparent px-1.5 text-3xs text-muted outline-none data-[state=open]:text-surface"
             @pointerdown.stop
           >
             <span v-if="sizingLabel()">{{ sizingLabel() }}</span>

@@ -17,12 +17,12 @@ The Vue SDK provides headless primitives for both.
 Use `PageListRoot` or `usePageList()`.
 
 ```vue
-<PageListRoot v-slot="{ pages, currentPageId, switchPage, addPage }">
+<PageListRoot v-slot="{ pages, currentPageId, actions }">
   <div>
-    <button v-for="page in pages" :key="page.id" @click="switchPage(page.id)">
+    <button v-for="page in pages" :key="page.id" @click="actions.switch(page.id)">
       {{ page.name }}
     </button>
-    <button @click="addPage()">New page</button>
+    <button @click="actions.add()">New page</button>
   </div>
 </PageListRoot>
 ```
@@ -32,15 +32,23 @@ Use `PageListRoot` or `usePageList()`.
 Use `LayerTreeRoot` when you want SDK-managed tree structure but app-owned presentation.
 
 ```vue
-<LayerTreeRoot v-slot="{ items, selectedIds, select, toggleExpand, getKey, getChildren }">
-  <TreeView
-    :items="items"
-    :selected-ids="selectedIds"
-    :get-key="getKey"
-    :get-children="getChildren"
-    @select="select"
-    @toggle-expand="toggleExpand"
-  />
+<LayerTreeRoot v-slot="{ visibleRows }">
+  <LayerTreeItem
+    v-for="row in visibleRows"
+    :key="row.node.id"
+    v-slot="{ node, isSelected, padLeft, actions }"
+    :node="row.node"
+    :level="row.level"
+    :has-children="row.hasChildren"
+  >
+    <button
+      :data-selected="isSelected"
+      :style="{ paddingLeft: padLeft }"
+      @click="actions.select($event.shiftKey)"
+    >
+      {{ node.name }}
+    </button>
+  </LayerTreeItem>
 </LayerTreeRoot>
 ```
 

@@ -86,6 +86,11 @@ export function createPageChecks(options: PageChecksOptions) {
     store(pageId, issues)
   }
 
+  /** `pageId`'s last result, if nothing on the page changed since it was checked. */
+  function fresh(pageId: string): readonly DesignIssue[] | null {
+    return stale.has(pageId) ? null : (results.value.get(pageId) ?? null)
+  }
+
   /** A page changed: its result is out of date until it is checked again. */
   function invalidate(pageId: string | null) {
     if (!pageId) return
@@ -143,6 +148,7 @@ export function createPageChecks(options: PageChecksOptions) {
     notLoaded,
     active,
     report,
+    fresh,
     invalidate,
     invalidateAll,
     start,

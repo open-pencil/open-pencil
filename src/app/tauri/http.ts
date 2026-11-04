@@ -1,3 +1,7 @@
+import { Channel, invoke } from '@tauri-apps/api/core'
+
+import { randomHex } from '@open-pencil/scene-graph/random'
+
 import type { FetchFunction } from '@/app/http/types'
 
 export interface ProxyHttpHeader {
@@ -6,6 +10,8 @@ export interface ProxyHttpHeader {
 }
 
 export interface ProxyHttpRequest {
+  /** Chosen here so the request can be cancelled before its head arrives. */
+  id: string
   url: string
   method?: string
   headers?: ProxyHttpHeader[]
@@ -15,18 +21,43 @@ export interface ProxyHttpRequest {
   timeout_ms?: number
 }
 
-export interface ProxyHttpResponse {
+/** Status and headers; the body streams over the request's channel. */
+export interface ProxyHttpHead {
   status: number
   headers: ProxyHttpHeader[]
-  body: number[]
   url: string
 }
 
+/** `network` marks failures to reach the server or read from it. */
+export interface ProxyHttpError {
+  network: boolean
+  message: string
+}
+
+/** Body chunks arrive as raw bytes, then one of these ends the body. */
+export type ProxyHttpBodyMessage = ArrayBuffer | { done: true } | { error: ProxyHttpError }
+
 const NULL_BODY_STATUS_CODES = new Set([204, 205, 304])
 
-function responseBodyForStatus(response: ProxyHttpResponse): BodyInit | null {
-  if (NULL_BODY_STATUS_CODES.has(response.status)) return null
-  return Uint8Array.from(response.body)
+function isProxyHttpError(error: unknown): error is ProxyHttpError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'network' in error &&
+    'message' in error &&
+    typeof error.message === 'string'
+  )
+}
+
+/**
+ * Fails the way `fetch` does: a network failure is a `TypeError('fetch failed')` whose cause
+ * names it, which the AI SDK and other callers recognise and retry.
+ */
+function fetchError(error: unknown): Error {
+  if (error instanceof Error) return error
+  if (!isProxyHttpError(error)) return new TypeError('fetch failed', { cause: error })
+  if (error.network) return new TypeError('fetch failed', { cause: new Error(error.message) })
+  return new TypeError(error.message)
 }
 
 function headersToProxyHeaders(headers: Headers): ProxyHttpHeader[] {
@@ -115,7 +146,6 @@ async function executeTauriFetch(
 
   const request = new Request(input, init)
   request.signal.throwIfAborted()
-  const { invoke } = await import('@tauri-apps/api/core')
   request.signal.throwIfAborted()
 
   // Capture generated multipart headers before consuming the Request body.
@@ -127,7 +157,50 @@ async function executeTauriFetch(
     bodyData = new Uint8Array(buffer)
   }
 
+  const id = randomHex()
+  let finished = false
+  const cancel = () => {
+    if (finished) return
+    finished = true
+    request.signal.removeEventListener('abort', onAbort)
+    void invoke('cancel_http_request', { id }).catch(() => undefined)
+  }
+  const finish = () => {
+    finished = true
+    request.signal.removeEventListener('abort', onAbort)
+  }
+
+  // Set by the body stream's start(), which runs synchronously in its constructor.
+  let abortBody: ((reason: Error) => void) | undefined
+  const onBody = new Channel<ProxyHttpBodyMessage>()
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      onBody.onmessage = (message) => {
+        if (finished) return
+        if (message instanceof ArrayBuffer) {
+          controller.enqueue(new Uint8Array(message))
+        } else if ('error' in message) {
+          finish()
+          controller.error(fetchError(message.error))
+        } else {
+          finish()
+          controller.close()
+        }
+      }
+      abortBody = (reason) => {
+        cancel()
+        controller.error(reason)
+      }
+    },
+    cancel
+  })
+  function onAbort() {
+    abortBody?.(abortReason(request.signal))
+  }
+  request.signal.addEventListener('abort', onAbort, { once: true })
+
   const payload: ProxyHttpRequest = {
+    id,
     url: request.url,
     method: request.method,
     headers,
@@ -136,15 +209,26 @@ async function executeTauriFetch(
     follow_redirects: request.redirect === 'follow',
     timeout_ms: timeoutMs
   }
-  request.signal.throwIfAborted()
-  const response = await withAbortSignal(
-    invoke<ProxyHttpResponse>('proxy_http_request', { request: payload }),
-    request.signal
-  )
-  const proxiedResponse = new Response(responseBodyForStatus(response), {
-    status: response.status,
-    headers: response.headers.map(({ name, value }): [string, string] => [name, value])
+  let head: ProxyHttpHead
+  try {
+    head = await withAbortSignal(
+      invoke<ProxyHttpHead>('proxy_http_request', { request: payload, onBody }).catch(
+        (error: unknown) => {
+          throw fetchError(error)
+        }
+      ),
+      request.signal
+    )
+  } catch (error) {
+    if (request.signal.aborted) cancel()
+    else finish()
+    throw error
+  }
+
+  const proxiedResponse = new Response(NULL_BODY_STATUS_CODES.has(head.status) ? null : body, {
+    status: head.status,
+    headers: head.headers.map(({ name, value }): [string, string] => [name, value])
   })
-  Object.defineProperty(proxiedResponse, 'url', { value: response.url })
+  Object.defineProperty(proxiedResponse, 'url', { value: head.url })
   return proxiedResponse
 }

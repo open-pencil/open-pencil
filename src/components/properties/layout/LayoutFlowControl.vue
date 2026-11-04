@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import type { VNode } from 'vue'
 
 import type { LayoutMode } from '@open-pencil/scene-graph'
-import { MIXED, useI18n, useSelectionLayout } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
@@ -29,7 +31,7 @@ const mode = computed(() => {
 
 <template>
   <div>
-    <label class="mb-1 block text-[11px] text-muted">{{ panels.flow }}</label>
+    <label class="mb-1 block text-2xs text-muted">{{ panels.flow }}</label>
     <div class="flex items-center gap-1.5">
       <SegmentedControl
         :model-value="mode"

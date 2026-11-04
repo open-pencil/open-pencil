@@ -1,5 +1,6 @@
 import type { DBSchema } from 'idb'
 
+import type { RunTrace, TraceAsset, TraceStore } from '@/app/ai/chat/trace/types'
 import { APP_DATABASE_NAMES, defineAppDatabase, connectAppDatabase } from '@/app/storage/idb'
 
 import { fromStorableBlobs, toStorableBlobs } from './blobs'
@@ -12,11 +13,15 @@ interface ChatDatabase extends DBSchema {
   files: { key: string; value: FileSystemFileHandle }
   deleted: { key: string; value: true }
   selected: { key: string; value: string }
+  /** Each run a conversation sent, removed with the conversation (`@/app/ai/chat/trace`). */
+  runs: { key: [string, string]; value: RunTrace; indexes: { conversation: string } }
+  /** Instructions and tool sets runs share, under their fingerprints. */
+  traceAssets: { key: string; value: TraceAsset }
 }
 
 const definition = defineAppDatabase<ChatDatabase>({
   name: APP_DATABASE_NAMES.chats,
-  version: 3,
+  version: 4,
   callbacks: {
     upgrade(database, oldVersion) {
       if (oldVersion < 1) {
@@ -28,6 +33,12 @@ const definition = defineAppDatabase<ChatDatabase>({
       }
       if (oldVersion < 2) database.createObjectStore('deleted')
       if (oldVersion < 3) database.createObjectStore('files')
+      if (oldVersion < 4) {
+        database
+          .createObjectStore('runs', { keyPath: ['conversationId', 'runId'] })
+          .createIndex('conversation', 'conversationId')
+        database.createObjectStore('traceAssets')
+      }
     }
   }
 })
@@ -91,12 +102,17 @@ export function createConversationStore(): ConversationStore {
     },
     async remove(id) {
       const transaction = (await getDatabase()).transaction(
-        ['conversations', 'messages', 'selected', 'deleted'],
+        ['conversations', 'messages', 'selected', 'deleted', 'runs'],
         'readwrite'
       )
       await transaction.objectStore('deleted').put(true, id)
       await transaction.objectStore('conversations').delete(id)
       await transaction.objectStore('messages').delete(id)
+      let run = await transaction.objectStore('runs').index('conversation').openCursor(id)
+      while (run) {
+        await run.delete()
+        run = await run.continue()
+      }
       let cursor = await transaction.objectStore('selected').openCursor()
       while (cursor) {
         if (cursor.value === id) await cursor.delete()
@@ -156,6 +172,34 @@ export function createConversationStore(): ConversationStore {
       }
       await transaction.objectStore('selected').put(id, documentId)
       await transaction.done
+    }
+  }
+}
+
+/** Run traces live in the chat database, beside the conversations they belong to. */
+export function createTraceStore(): TraceStore {
+  const database = connectAppDatabase(definition)
+  const getDatabase = () => database.open()
+  return {
+    async putRun(run) {
+      const transaction = (await getDatabase()).transaction(['deleted', 'runs'], 'readwrite')
+      // A run still streaming when its conversation is deleted must not outlive it.
+      if (!(await transaction.objectStore('deleted').get(run.conversationId))) {
+        await transaction.objectStore('runs').put(run)
+      }
+      await transaction.done
+    },
+    async listRuns(conversationId) {
+      const runs = await (
+        await getDatabase()
+      ).getAllFromIndex('runs', 'conversation', conversationId)
+      return runs.toSorted((left, right) => left.startedAt.localeCompare(right.startedAt))
+    },
+    async putAsset(hash, asset) {
+      await (await getDatabase()).put('traceAssets', asset, hash)
+    },
+    async getAsset(hash) {
+      return (await getDatabase()).get('traceAssets', hash)
     }
   }
 }

@@ -1,1 +1,0 @@
-- Showing or hiding a layer of an instance that a boolean component property drives sets the property, as in Figma, so every layer it drives follows and Figma shows the instance as OpenPencil does. Before, only that layer changed, which Figma ignored.

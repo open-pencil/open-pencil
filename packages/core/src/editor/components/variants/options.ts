@@ -93,7 +93,7 @@ export function removeVariantValue(
   })
   if (replacement)
     for (const node of affected)
-      setVariantValues(ctx, setId, node.id, {
+      setVariantValues(ctx.graph, setId, node.id, {
         ...node.componentPropertyValues,
         [definition.name]: replacement
       })

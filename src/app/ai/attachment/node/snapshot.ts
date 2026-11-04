@@ -1,4 +1,4 @@
-import { renderNodesToImage } from '@open-pencil/core/io'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 
 import type { NodePresentation } from '@/app/ai/attachment/presentation/types'
 import type { ReferencedNode } from '@/app/ai/chat/context'
@@ -34,4 +34,15 @@ export function snapshotNode(
     nodeType: node.type,
     originalSize: { x: liveNode.width, y: liveNode.height }
   }
+}
+
+/** Previews of the layers a message mentions, leaving out any that cannot be drawn. */
+export function snapshotNodes(
+  store: EditorStore,
+  messageId: string,
+  nodes: readonly ReferencedNode[]
+): NodePresentation[] {
+  return nodes
+    .map((node) => snapshotNode(store, messageId, node))
+    .filter((attachment) => attachment !== null)
 }

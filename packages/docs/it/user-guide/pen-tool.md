@@ -17,7 +17,7 @@ Ogni punto estende il tracciato. Una linea di anteprima collega l’ultimo punto
 
 ## Chiudere o terminare
 
-Fai clic sul primo punto per chiudere il tracciato. Premi <kbd>Enter</kbd> per terminarlo aperto o <kbd>Escape</kbd> per annullare il disegno corrente.
+Fai clic sul primo punto per chiudere il tracciato. Premi <kbd>Enter</kbd> o <kbd>Escape</kbd> per terminarlo aperto.
 
 ## Continuare un tracciato
 

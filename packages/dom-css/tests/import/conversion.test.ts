@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'bun:test'
 
 import { browserHTMLToSceneGraph } from '#dom-css/browser'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneGraphToDesignDocument } from '#dom-css/export/projection'
+import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode } from '#dom-css/index'
-import {
-  createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
-  htmlToDesignDocument,
-  htmlToSceneGraph,
-  sceneGraphToDesignDocument,
-  serializeHTML
-} from '#dom-css/index'
+import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from '#dom-css/index'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
-
+import { pixelLength } from '@open-pencil/scene-graph/text'
+import {
+  DOM_CSS_COLORS,
+  cardCSS,
+  cardHTML,
+  fixtureCSS,
+  fixtureHTML
+} from '@open-pencil/test-support/dom-css'
 const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
@@ -55,14 +56,14 @@ function createStyleRoundTripGraph() {
           height: '120px',
           'padding-block': '8px',
           'padding-inline': '12px',
-          'border-color': TEST_COLORS.slate200,
+          'border-color': DOM_CSS_COLORS.slate200,
           'border-style': 'dashed',
           'border-top-width': '0px',
           'border-right-width': '2px',
           'border-bottom-width': '0px',
           'border-left-width': '4px',
           opacity: '0.75',
-          'box-shadow': `0px 8px 24px 0px ${TEST_COLORS.slateShadow}, 0 0 2px ${TEST_COLORS.slate200}`
+          'box-shadow': `0px 8px 24px 0px ${DOM_CSS_COLORS.dialogShadow}, 0 0 2px ${DOM_CSS_COLORS.slate200}`
         },
         children: [
           {
@@ -70,7 +71,7 @@ function createStyleRoundTripGraph() {
             tagName: 'h1',
             attrs: {},
             computedStyle: {
-              color: TEST_COLORS.slate950,
+              color: DOM_CSS_COLORS.slate950,
               'font-family': 'Inter, sans-serif',
               'font-size': '18px',
               'font-weight': '700',
@@ -80,7 +81,7 @@ function createStyleRoundTripGraph() {
               'text-transform': 'uppercase',
               'white-space': 'nowrap',
               opacity: '0.5',
-              'text-shadow': `0px 1px 2px 0px ${TEST_COLORS.slateShadow}`
+              'text-shadow': `0px 1px 2px 0px ${DOM_CSS_COLORS.dialogShadow}`
             },
             children: [{ type: 'text', text: 'Round trip' }]
           }
@@ -111,8 +112,8 @@ function expectStyleRoundTripText(graph: SceneGraph, panel: SceneNode) {
   const heading = expectText(graph.getChildren(panel.id)[0])
   expect(heading.fontSize).toBe(18)
   expect(heading.fontWeight).toBe(700)
-  expect(heading.lineHeight).toBe(24)
-  expect(heading.letterSpacing).toBe(0.2)
+  expect(heading.lineHeight).toEqual(pixelLength(24))
+  expect(heading.letterSpacing).toEqual(pixelLength(0.2))
   expect(heading.textAlignHorizontal).toBe('CENTER')
   expect(heading.textCase).toBe('UPPER')
   expect(heading.maxLines).toBe(1)

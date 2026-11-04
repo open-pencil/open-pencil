@@ -14,6 +14,8 @@ export type DocumentSourceAccess = {
   setDownloadName: (name: string | null) => void
   getStorageBinding: () => StorageDocumentBinding | null
   setStorageBinding: (binding: StorageDocumentBinding | null) => void
+  /** Whether saving writes in place rather than asking for a location. */
+  hasWritableSource: () => boolean
   setSourceIdentity: (identity: DocumentSourceIdentity) => void
   getSavedVersion: () => number
   setSavedVersion: (version: number) => void

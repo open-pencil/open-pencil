@@ -14,15 +14,16 @@ type CornerProps = Partial<
     | 'cornerSmoothing'
     | 'pointCount'
     | 'starInnerRadius'
+    | 'arcData'
   >
 >
 
-type CornerShape = 'RECTANGLE' | 'POLYGON' | 'STAR'
+type CornerShape = 'RECTANGLE' | 'POLYGON' | 'STAR' | 'ELLIPSE'
 
 /** Shows a selected shape at 100% with its top-left 100 px into the canvas, and reads its radii. */
 export function shapeHandlesDriver(page: () => Page) {
   return {
-    /** A 160 × 232 rectangle, or a 160 × 160 polygon or star, selected. */
+    /** A 160 × 232 rectangle, or a 160 × 160 polygon, star, or ellipse, selected. */
     show(props: CornerProps = {}, type: CornerShape = 'RECTANGLE') {
       return page().evaluate(
         ({ props, type }) => {
@@ -72,6 +73,20 @@ export function shapeHandlesDriver(page: () => Page) {
       return page().evaluate((id) => {
         const node = window.openPencil?.getStore?.().graph.getNode(id)
         return node ? { count: node.pointCount, ratio: node.starInnerRadius } : null
+      }, nodeId)
+    },
+
+    /** An ellipse's start and end in whole degrees and its inner ratio, or null for a whole one. */
+    arc(nodeId: string) {
+      return page().evaluate((id) => {
+        const arc = window.openPencil?.getStore?.().graph.getNode(id)?.arcData
+        if (!arc) return null
+        const degrees = (angle: number) => Math.round((angle * 180) / Math.PI)
+        return {
+          start: degrees(arc.startingAngle),
+          end: degrees(arc.endingAngle),
+          ratio: Math.round(arc.innerRadius * 1000) / 1000
+        }
       }, nodeId)
     }
   }

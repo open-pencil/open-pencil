@@ -20,7 +20,7 @@ const meta = {
     components: { AppPlaceholder },
     setup: () => ({ args }),
     template: `
-      <div class="flex h-72 w-full bg-app text-surface">
+      <div class="flex h-72 w-full bg-canvas text-surface">
         <AppPlaceholder v-bind="args">
           <template #icon>
             <icon-lucide-files class="size-5" />

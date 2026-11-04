@@ -1,6 +1,7 @@
 import type { Node as YogaNode } from 'yoga-layout'
 
-import { enforcedAspectRatio, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
 import { layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
@@ -53,14 +54,24 @@ function writeLayoutGeometry(
   if (graph.isApplyingDerivedLayout && !constrained) return
   if (from.width !== node.width || from.height !== node.height) {
     constrainChildren(graph, node, from, computeLayout)
+    rememberPlacedSize(node)
   }
 }
 
 /**
- * The size each Hug frame had after layout last ran on it. Keyed by the node, so a deleted
- * frame's entry goes with it and a restored one starts afresh.
+ * The size each Hug frame's constrained children were last placed for by layout. Keyed by the
+ * node, so a deleted frame's entry goes with it and a restored one starts afresh.
  */
 const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
+
+function rememberPlacedSize(frame: SceneNode): void {
+  const placed = huggedSizes.get(frame)
+  if (!placed) {
+    return
+  }
+  placed.width = frame.width
+  placed.height = frame.height
+}
 
 const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set([
   'FRAME',

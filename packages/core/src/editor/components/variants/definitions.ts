@@ -1,7 +1,11 @@
 import { omit } from 'es-toolkit/object'
 
-import type { ComponentPropertyDefinition, ComponentPropertyType } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph'
+import type {
+  ComponentPropertyDefinition,
+  ComponentPropertyType,
+  SceneGraph
+} from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
@@ -53,7 +57,7 @@ export function reorderPropertyDefinitions(
     })
   })
   for (const variant of getComponentSetVariants(ctx.graph, componentSetId))
-    updateVariantName(ctx, componentSetId, variant)
+    updateVariantName(ctx.graph, componentSetId, variant)
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, 'Reorder properties', before, after)
   return true
@@ -98,6 +102,42 @@ export function reorderVariantValues(
   return true
 }
 
+/**
+ * Appends a property to a component set; a variant axis gives every variant its value and renames
+ * them to match. The caller checks the name. Shared by the panel and the Plugin API.
+ */
+export function appendPropertyDefinition(
+  graph: SceneGraph,
+  componentSetId: string,
+  name: string,
+  type: ComponentPropertyType,
+  defaultValue: string
+): string {
+  const node = getComponentSet(graph, componentSetId)
+  if (!node) throw new Error(`No component set ${componentSetId}`)
+  const id = createComponentPropertyId()
+  const definition: ComponentPropertyDefinition = {
+    id,
+    name,
+    type,
+    defaultValue,
+    variantOptions: type === 'VARIANT' ? [defaultValue] : undefined
+  }
+  graph.updateNode(componentSetId, {
+    componentPropertyDefinitions: [...node.componentPropertyDefinitions, definition]
+  })
+  if (type === 'VARIANT') {
+    for (const variant of getComponentSetVariants(graph, componentSetId)) {
+      setVariantValues(graph, componentSetId, variant.id, {
+        ...variant.componentPropertyValues,
+        [name]: defaultValue
+      })
+    }
+    refreshVariantOptions(graph, componentSetId)
+  }
+  return id
+}
+
 export function addPropertyDefinition(
   ctx: EditorContext,
   componentSetId: string,
@@ -115,26 +155,7 @@ export function addPropertyDefinition(
 
   const before = captureVariantSnapshot(ctx, componentSetId)
   if (!before) return undefined
-  const id = createComponentPropertyId()
-  const definition: ComponentPropertyDefinition = {
-    id,
-    name: normalizedName,
-    type,
-    defaultValue,
-    variantOptions: type === 'VARIANT' ? [defaultValue] : undefined
-  }
-  ctx.graph.updateNode(componentSetId, {
-    componentPropertyDefinitions: [...node.componentPropertyDefinitions, definition]
-  })
-  if (type === 'VARIANT') {
-    for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
-      setVariantValues(ctx, componentSetId, variant.id, {
-        ...variant.componentPropertyValues,
-        [normalizedName]: defaultValue
-      })
-    }
-    refreshVariantOptions(ctx, componentSetId)
-  }
+  const id = appendPropertyDefinition(ctx.graph, componentSetId, normalizedName, type, defaultValue)
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, 'Add property', before, after)
   return id
@@ -159,17 +180,45 @@ export function removePropertyDefinition(
   if (definition.type === 'VARIANT') {
     for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
       setVariantValues(
-        ctx,
+        ctx.graph,
         componentSetId,
         variant.id,
         omit(variant.componentPropertyValues, [definition.name])
       )
     }
-    refreshVariantOptions(ctx, componentSetId)
+    refreshVariantOptions(ctx.graph, componentSetId)
   }
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, 'Remove property', before, after)
   return true
+}
+
+/**
+ * Renames a component set's property; a variant axis is renamed in every variant's name, which
+ * instances follow. The caller checks the name. Shared by the panel and the Plugin API.
+ */
+export function renameProperty(
+  graph: SceneGraph,
+  componentSetId: string,
+  propertyId: string,
+  name: string
+): void {
+  const node = getComponentSet(graph, componentSetId)
+  const definition = node?.componentPropertyDefinitions.find((item) => item.id === propertyId)
+  if (!node || !definition) throw new Error(`No property ${propertyId}`)
+  graph.updateNode(componentSetId, {
+    componentPropertyDefinitions: node.componentPropertyDefinitions.map((item) =>
+      item.id === propertyId ? { ...item, name } : item
+    )
+  })
+  if (definition.type !== 'VARIANT') return
+  for (const variant of getComponentSetVariants(graph, componentSetId)) {
+    const value = variant.componentPropertyValues[definition.name] ?? ''
+    setVariantValues(graph, componentSetId, variant.id, {
+      ...omit(variant.componentPropertyValues, [definition.name]),
+      [name]: value
+    })
+  }
 }
 
 export function renamePropertyDefinition(
@@ -193,20 +242,7 @@ export function renamePropertyDefinition(
   }
   if (definition.name === normalizedName) return true
 
-  ctx.graph.updateNode(componentSetId, {
-    componentPropertyDefinitions: node.componentPropertyDefinitions.map((item) =>
-      item.id === propertyId ? { ...item, name: normalizedName } : item
-    )
-  })
-  if (definition.type === 'VARIANT') {
-    for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
-      const value = variant.componentPropertyValues[definition.name] ?? ''
-      setVariantValues(ctx, componentSetId, variant.id, {
-        ...omit(variant.componentPropertyValues, [definition.name]),
-        [normalizedName]: value
-      })
-    }
-  }
+  renameProperty(ctx.graph, componentSetId, propertyId, normalizedName)
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, 'Rename property', before, after)
   return true
@@ -252,12 +288,12 @@ export function renameVariantValue(
   })
   for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
     if (variant.componentPropertyValues[definition.name] !== previousValue) continue
-    setVariantValues(ctx, componentSetId, variant.id, {
+    setVariantValues(ctx.graph, componentSetId, variant.id, {
       ...variant.componentPropertyValues,
       [definition.name]: normalizedValue
     })
   }
-  refreshVariantOptions(ctx, componentSetId)
+  refreshVariantOptions(ctx.graph, componentSetId)
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, 'Rename variant value', before, after)
   return true
@@ -292,11 +328,11 @@ export function setVariantPropertyValue(
     return { kind: 'conflict', componentIds: [variantId, conflicting.id] }
   }
 
-  setVariantValues(ctx, componentSetId, variantId, {
+  setVariantValues(ctx.graph, componentSetId, variantId, {
     ...variant.componentPropertyValues,
     [definition.name]: normalizedValue
   })
-  refreshVariantOptions(ctx, componentSetId)
+  refreshVariantOptions(ctx.graph, componentSetId)
   const after = captureVariantSnapshot(ctx, componentSetId)
   if (after) recordSnapshotChange(ctx, componentSetId, `Change ${definition.name}`, before, after)
   return { kind: 'changed' }

@@ -5,6 +5,8 @@ import type { ResumeStateStore } from './session-store'
 export class HarnessSessionService {
   private readonly sessions = new Map<string, BackendSession>()
   private readonly turns = new Map<string, AbortController>()
+  /** Sessions whose last turn ended because it was cancelled. */
+  private readonly cancelled = new Set<string>()
 
   constructor(
     private readonly backends: ReadonlyMap<string, HarnessBackend>,
@@ -57,7 +59,18 @@ export class HarnessSessionService {
     } finally {
       signal?.removeEventListener('abort', abort)
       if (this.turns.get(sessionId) === controller) this.turns.delete(sessionId)
+      if (controller.signal.aborted) this.cancelled.add(sessionId)
+      else this.cancelled.delete(sessionId)
     }
+  }
+
+  /** Whether the session's last turn ended because it was cancelled, not because it finished. */
+  lastTurnCancelled(sessionId: string): boolean {
+    return this.cancelled.has(sessionId)
+  }
+
+  async compactSession(sessionId: string, instructions?: string): Promise<void> {
+    await this.requireSession(sessionId).compact(instructions)
   }
 
   cancelTurn(sessionId: string): void {
@@ -70,6 +83,7 @@ export class HarnessSessionService {
     const state = await session.stop()
     await this.store.save(sessionId, state)
     this.sessions.delete(sessionId)
+    this.cancelled.delete(sessionId)
   }
 
   /**
@@ -92,6 +106,7 @@ export class HarnessSessionService {
     await session.destroy()
     await this.store.remove(sessionId)
     this.sessions.delete(sessionId)
+    this.cancelled.delete(sessionId)
   }
 
   async shutdown(): Promise<void> {

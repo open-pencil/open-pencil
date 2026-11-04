@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n, useSceneComputed } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -29,9 +30,9 @@ const { panels } = useI18n()
         <icon-lucide-square-arrow-out-up-right class="size-3.5" />
       </IconButton>
     </template>
-    <div v-if="hasVariables" class="mt-1 text-[11px] text-muted">
+    <div v-if="hasVariables" class="mt-1 text-2xs text-muted">
       {{ variableCount }} / {{ collectionCount }}
     </div>
-    <div v-else class="mt-1 text-[11px] text-muted">{{ panels.noLocalVariables }}</div>
+    <div v-else class="mt-1 text-2xs text-muted">{{ panels.noLocalVariables }}</div>
   </PanelSection>
 </template>

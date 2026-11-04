@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -125,8 +127,8 @@ function checkRoundedWithoutClip(
 function checkExcessiveNesting(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
   if (!CONTAINER_TYPES.has(node.type)) return
   let depth = 0
-  let current: SceneNode | undefined = node as SceneNode | undefined
-  while (current && CONTAINER_TYPES.has(current.type) && current.childIds.length === 1) {
+  let current = node
+  while (CONTAINER_TYPES.has(current.type) && current.childIds.length === 1) {
     const child = graph.getNode(current.childIds[0])
     if (!child || !CONTAINER_TYPES.has(child.type)) break
     if (current.fills.some((f) => f.visible) || current.cornerRadius > 0) break
@@ -382,7 +384,7 @@ function detectSpacingIssues(
     const gaps = flexChildren.map((c) => c.itemSpacing)
     if (new Set(paddings).size > 2) {
       issues.push({
-        message: `Inconsistent padding across siblings in "${node.name}" (${[...new Set(paddings)].join(', ')})`,
+        message: `Inconsistent padding across siblings in "${node.name}" (${uniq(paddings).join(', ')})`,
         suggestion: 'Use same padding for similar containers'
       })
     }

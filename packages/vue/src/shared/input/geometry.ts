@@ -1,11 +1,12 @@
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import {
   HANDLE_HIT_RADIUS,
   LAYER_HIT_PAD,
   ROTATION_HANDLE_DISTANCE
 } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import {
   createSceneGeometry,
+  isLineLike,
   selectionHandleRect,
   hasTransformHandles,
   rotationHandleLayout,
@@ -20,8 +21,12 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { turnPoint, type SelectionFrame } from '@open-pencil/scene-graph/coordinate'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import resizeCursorSVG from '#vue/shared/assets/resize-cursor.svg?raw'
-import rotateCursorSVG from '#vue/shared/assets/rotate-cursor.svg?raw'
+import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
+import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
+import rotateCursorSVG from '#vue/shared/assets/cursors/rotate.svg?raw'
+
+/** Figma's four-way cursor over a handle that moves a point, such as a line's end. */
+export const MOVE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(moveCursorSVG)}") 12 12, auto`
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
@@ -48,35 +53,31 @@ export function canvasToLocalPoint(
   return { lx: point?.x ?? cx, ly: point?.y ?? cy }
 }
 
-export function hitTestInEditorScope(
+/**
+ * The layer a press selects, or with `deep` (⌘ or Ctrl held) the deepest layer under the point.
+ * Always found from the page: the selection and the entered container open their ancestors, so
+ * an entered container never limits where a click lands, as in Figma.
+ */
+export function hitTestLayerAt(
   cx: number,
   cy: number,
   deep: boolean,
   editor: Editor
 ): SceneNode | null {
-  const scopeId = editor.state.enteredContainerId
-
   const renderer = editor.renderer
   if (!renderer) return null
   const pad = LAYER_HIT_PAD / renderer.zoom
-  if (scopeId && !editor.graph.getNode(scopeId)) editor.state.enteredContainerId = null
-  const scope = editor.state.enteredContainerId ?? editor.state.currentPageId
+  const scope = editor.state.currentPageId
+  if (editor.state.enteredContainerId && !editor.graph.getNode(editor.state.enteredContainerId)) {
+    editor.state.enteredContainerId = null
+  }
   return deep
     ? editor.graph.hitTestDeep(cx, cy, scope, pad)
-    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, pad)
-}
-
-export function isInsideEditorContainerBounds(
-  cx: number,
-  cy: number,
-  containerId: string,
-  editor: Editor,
-  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
-): boolean {
-  const container = editor.graph.getNode(containerId)
-  if (!container) return false
-  const { lx, ly } = canvasToLocal(cx, cy, containerId)
-  return lx >= 0 && lx <= container.width && ly >= 0 && ly <= container.height
+    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, {
+        pad,
+        framesOpen: resolveEditorProfile(editor.state).framesOpen,
+        enteredId: editor.state.enteredContainerId
+      })
 }
 
 export function getScreenRect(
@@ -181,7 +182,9 @@ function transformZoneOf(
   zoom: number
 ): TransformZone | null {
   const pointer = geometry.toLocal(node, { x: cx, y: cy })
-  return pointer ? transformZoneAt(pointer, selectionHandleRect(node), zoom) : null
+  const zone = pointer ? transformZoneAt(pointer, selectionHandleRect(node), zoom) : null
+  // A line is aimed by its two end handles, not resized: see `lineEndAt`.
+  return zone?.kind === 'resize' && isLineLike(node) ? null : zone
 }
 
 export function getHitHandleByMatrix(
@@ -210,7 +213,7 @@ export function hitTestTopRotationHandleByMatrix(
   preview?: RotationPreview | null
 ): boolean {
   const rect = selectionHandleRect(node)
-  if (!hasTransformHandles(rect.width * zoom, rect.height * zoom)) return false
+  if (isLineLike(node) || !hasTransformHandles(rect.width * zoom, rect.height * zoom)) return false
   const geometry = createSceneGeometry(graph, preview)
   const handle = geometry.toWorld(node, rotationHandleLayout(node, geometry, zoom).handle)
   const radius = HANDLE_HIT_RADIUS / zoom

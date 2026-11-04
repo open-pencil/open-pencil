@@ -2,11 +2,12 @@
 import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { iconNames } from '@open-pencil/scene-graph'
-import { useCommonMessages, useIconSearch, usePanelMessages } from '@open-pencil/vue'
+import { iconNames } from '@open-pencil/scene-graph/icons'
+import { useIconSearch } from '@open-pencil/vue/controls/icon'
+import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icon-picker/history'
+import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'
 import { formatNumber } from '@/app/i18n/number'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import type { AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'
@@ -173,8 +174,11 @@ function pick(name: string) {
     @select="pick"
     @load-more="loadMore"
   >
-    <template #trigger>
+    <template v-if="$slots.trigger" #trigger>
       <slot name="trigger" />
+    </template>
+    <template v-else #anchor>
+      <slot name="anchor" />
     </template>
     <template #search-trailing>
       <AppCombobox
@@ -202,7 +206,7 @@ function pick(name: string) {
       <IconPreview :svg="previews.get(entry.value)" class="size-5 text-surface" />
     </template>
     <template v-if="items.length > 0" #footer="{ highlighted }">
-      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-2xs text-muted">
         <template v-if="highlighted">
           <span class="truncate text-surface">{{ highlighted.label }}</span>
           <span class="truncate">{{ details(highlighted.value) }}</span>

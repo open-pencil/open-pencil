@@ -1,9 +1,16 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import { createLanguageModel } from '@/app/ai/chat/model'
+import type { ReasoningEffort } from '@open-pencil/core/constants'
+
+import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
+import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import type { ModelCredentialStore } from '@/app/ai/providers/types'
+import { cloudAIClient } from '@/app/cloud/integration'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import {
   initializeCredentialMigration,
@@ -15,6 +22,7 @@ export type DirectAIModelRuntime = {
   kind: 'direct'
   role: ResolvedAIModelRole
   model: LanguageModel
+  minReasoningEffort?: ReasoningEffort
 }
 
 export type ACPModelRuntime = {
@@ -64,6 +72,35 @@ export async function resolveModelConnectionAPIKey(connectionId: string): Promis
   return appCredentialServices.resolver.resolve(modelConnectionCredentialRef(connection))
 }
 
+/** The stored credential of a connection, for a model whose sign-in refreshes. */
+export function modelConnectionCredentialStore(connectionId: string): ModelCredentialStore {
+  return {
+    load: () => resolveModelConnectionAPIKey(connectionId),
+    // A refreshed sign-in is not a key change, so the open chat keeps its transport.
+    save: async (value) => {
+      const connection = modelConnection(connectionId)
+      if (!connection) return
+      await appCredentialServices.manager.set(modelConnectionCredentialRef(connection), value)
+    }
+  }
+}
+
+/** Cloud's AI service is unavailable: signed out, no service, or no workspace chosen. */
+export class CloudAIUnavailableError extends Error {
+  override readonly name = 'CloudAIUnavailableError'
+
+  constructor() {
+    super('OpenPencil Cloud AI is unavailable')
+  }
+}
+
+function openPencilLanguageModel(resolved: ResolvedAIModelRole): LanguageModel {
+  const client = cloudAIClient(resolved.connection.cloudWorkspaceId ?? '')
+  if (!client) throw new CloudAIUnavailableError()
+  const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID)
+  return createLanguageModel(config, runtime)
+}
+
 export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRuntime | null> {
   const resolved = resolveAIModelRole(role)
   if (!resolved) return null
@@ -86,18 +123,31 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
     return { kind: 'acp', role: resolved }
   }
 
+  if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
+    return { kind: 'direct', role: resolved, model: openPencilLanguageModel(resolved) }
+  }
+
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)
   if (!apiKey) throw new Error(`Credential is unavailable for the ${role} model role`)
+  const { providerID } = resolved.connection
+  const known = await resolveProviderModel(
+    providerID,
+    resolveLanguageModelID({ providerID, ...resolved.profile })
+  )
   return {
     kind: 'direct',
     role: resolved,
-    model: createLanguageModel({
-      providerID: resolved.connection.providerID,
-      apiKey,
-      modelID: resolved.profile.modelID,
-      customModelID: resolved.profile.customModelID,
-      customBaseURL: resolved.connection.customBaseURL,
-      customAPIType: resolved.connection.customAPIType
-    })
+    minReasoningEffort: known?.minReasoningEffort,
+    model: createLanguageModel(
+      {
+        providerID: resolved.connection.providerID,
+        apiKey,
+        modelID: resolved.profile.modelID,
+        customModelID: resolved.profile.customModelID,
+        customBaseURL: resolved.connection.customBaseURL,
+        customAPIType: resolved.connection.customAPIType
+      },
+      { credentials: modelConnectionCredentialStore(resolved.connection.id) }
+    )
   }
 }

@@ -1,10 +1,9 @@
 import { writeFile } from 'node:fs/promises'
 
 import { TRANSFORM_ZONE } from '@open-pencil/core/geometry'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
-
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {

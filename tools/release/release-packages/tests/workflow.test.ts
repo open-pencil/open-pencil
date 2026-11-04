@@ -30,7 +30,7 @@ async function listFiles(directory: string, base = directory): Promise<string[]>
   return nested.flat().sort()
 }
 
-const ManifestJSON = v.pipe(
+const manifestSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ name: v.string(), version: v.string() })
@@ -38,7 +38,7 @@ const ManifestJSON = v.pipe(
 
 /** Packs a prepared directory the way npm lays out a tarball, without starting npm. */
 async function packInProcess(directory: string, destination: string): Promise<string> {
-  const manifest = v.parse(ManifestJSON, await readFile(join(directory, 'package.json'), 'utf8'))
+  const manifest = v.parse(manifestSchema, await readFile(join(directory, 'package.json'), 'utf8'))
   const files = await Promise.all(
     (await listFiles(directory)).map(async (name) => ({
       name: `package/${name}`,

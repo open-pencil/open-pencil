@@ -12,7 +12,7 @@ Użyj go, jeśli nie chcesz samodzielnie składać menu z pojedynczych poleceń.
 ## Użycie
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue'
+import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
 
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```

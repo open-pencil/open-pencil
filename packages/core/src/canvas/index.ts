@@ -1,14 +1,12 @@
+export { canMakeBooleanSourceNode, canMakeBooleanSourcePath, nodeHasVisibleStroke } from './boolean'
+export { flattenNodesToVectorProps, type VectorFlattenProps } from './flatten'
 export {
-  canMakeBooleanSourceNode,
-  canMakeBooleanSourcePath,
-  hasVisibleStrokeSourceNode,
-  nodeHasVisibleStroke
-} from './boolean'
-export {
-  flattenNodesToVectorProps,
-  outlineStrokeNodesToVectorProps,
-  type VectorFlattenProps
-} from './flatten'
+  canOutlineStroke,
+  layersToOutline,
+  outlineStrokeLayer,
+  type OutlinedLayer,
+  type OutlinePiece
+} from './outline-stroke'
 export {
   distanceToGuideSegment,
   getGuideScreenSegment,
@@ -18,7 +16,7 @@ export {
 export { computeGuideRedline } from './guides/redlines'
 export { hitTestGuides, type GuideHit } from './guides/hit-test'
 export type { GuideOverlayState, GuidePreview, GuideSelection } from './guides/types'
-export { canvasLabelForeground } from './labels/color'
+export { canvasLabelForeground, outlineColorInMode } from './labels/color'
 export type { ImagePreview, ImagePreviewDecoder } from './images/previews'
 export {
   SkiaRenderer,
@@ -42,3 +40,5 @@ export type {
   DesignIssueSeverity,
   PlacedIssueMarker
 } from './issues/types'
+export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
+export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'

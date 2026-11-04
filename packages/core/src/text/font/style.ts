@@ -1,15 +1,10 @@
-import { FONT_WEIGHT_NAMES, normalizeFontFamily } from '@open-pencil/scene-graph'
-import type { FontFamilyStyle } from '@open-pencil/scene-graph'
-
-export {
+import {
   FONT_WEIGHT_NAMES,
+  namesWeight,
   normalizeFontFamily,
-  styleToVariant,
-  styleToWeight,
-  weightToStyle
-} from '@open-pencil/scene-graph'
-
-import { parseFontStyle } from '#core/text/face'
+  type FontFamilyStyle,
+  parseFontStyle
+} from '@open-pencil/scene-graph/font-style'
 
 const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
   .map(Number)
@@ -50,6 +45,8 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
       ? fonts.find((font) => font.family === candidateFamily && font.style === style)
       : undefined
     if (exact) return exact
+    // A face named apart from its weight is that face or none, never another of its weight.
+    if (style && !namesWeight(style)) continue
 
     const candidates = fonts.filter((font) => font.family === candidateFamily)
     const sameStyle = candidates.find((font) => {
@@ -73,5 +70,3 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
 
   return undefined
 }
-
-export { weightToFigmaStyle } from '@open-pencil/fig/node-change'

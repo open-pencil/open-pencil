@@ -1,1 +1,0 @@
-- Settings → Cloud storage offers the OpenPencil Cloud waitlist: the web app signs you up there, with a confirmation email, and the desktop app opens the sign-up on openpencil.dev.

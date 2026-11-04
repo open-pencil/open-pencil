@@ -2,7 +2,9 @@
 import { SelectRoot, SelectTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
@@ -35,9 +37,9 @@ function setMode(value: string) {
       <div
         v-if="auto"
         data-test-id="layout-gap-input"
-        class="flex h-[26px] items-center rounded border border-border bg-input focus-within:border-panel-focus"
+        class="flex h-6.5 items-center rounded border border-border bg-input focus-within:border-panel-focus"
       >
-        <span class="px-[5px] text-muted">
+        <span class="px-1.25 text-muted">
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </span>

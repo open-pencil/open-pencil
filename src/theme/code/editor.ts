@@ -3,22 +3,6 @@ import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
 export function codeEditorTheme(dark: boolean) {
-  const palette = dark
-    ? {
-        keyword: '#c4a7e7',
-        tag: '#82aaff',
-        string: '#a3d9a5',
-        number: '#e5bc8b',
-        comment: '#969eaa'
-      }
-    : {
-        keyword: '#7947a7',
-        tag: '#145ca4',
-        string: '#276b3b',
-        number: '#965212',
-        comment: '#69727f'
-      }
-
   return [
     EditorView.theme(
       {
@@ -91,11 +75,11 @@ export function codeEditorTheme(dark: boolean) {
     ),
     syntaxHighlighting(
       HighlightStyle.define([
-        { tag: tags.keyword, color: palette.keyword },
-        { tag: [tags.tagName, tags.typeName, tags.className], color: palette.tag },
-        { tag: [tags.string, tags.attributeValue], color: palette.string },
-        { tag: [tags.number, tags.bool, tags.null], color: palette.number },
-        { tag: tags.comment, color: palette.comment, fontStyle: 'italic' },
+        { tag: tags.keyword, color: 'var(--color-code-keyword)' },
+        { tag: [tags.tagName, tags.typeName, tags.className], color: 'var(--color-code-tag)' },
+        { tag: [tags.string, tags.attributeValue], color: 'var(--color-code-string)' },
+        { tag: [tags.number, tags.bool, tags.null], color: 'var(--color-code-number)' },
+        { tag: tags.comment, color: 'var(--color-code-comment)', fontStyle: 'italic' },
         {
           tag: [tags.attributeName, tags.propertyName, tags.variableName],
           color: 'var(--color-surface)'

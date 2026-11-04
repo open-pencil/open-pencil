@@ -2,12 +2,14 @@ import { computed, inject, provide, proxyRefs } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useColorModel, useI18n } from '@open-pencil/vue'
-import type { ColorFieldFormat, OkHCLControls } from '@open-pencil/vue'
+import { useColorModel, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 interface ColorPanelProps {
   color: Color
   okhcl?: OkHCLControls | null
+  /** Offers sampling the canvas, for pickers that edit a document's colors. */
+  eyedropper?: boolean
 }
 
 type ColorPanelEmit = (event: 'update', color: Color) => void
@@ -35,7 +37,7 @@ function createColorPickerPanelContext(props: ColorPanelProps, emit: ColorPanelE
   const isOkHCLFormat = computed(() => colorModel.format.value === 'okhcl' && okhcl.value)
 
   function setFieldFormat(value: string) {
-    colorModel.setFormat(value as ColorFieldFormat)
+    colorModel.setFormat(value)
   }
 
   return {
@@ -60,7 +62,9 @@ function createColorPickerPanelContext(props: ColorPanelProps, emit: ColorPanelE
     updateRGBChannelValue: colorModel.updateRGBChannel,
     updateHSLChannelValue: colorModel.updateHSLChannel,
     updateHSBChannelValue: colorModel.updateHSBChannel,
-    updateOkHCLChannel: colorModel.updateOkHCLChannel
+    updateOkHCLChannel: colorModel.updateOkHCLChannel,
+    updateColor: colorModel.updateColor,
+    eyedropper: computed(() => props.eyedropper ?? false)
   }
 }
 

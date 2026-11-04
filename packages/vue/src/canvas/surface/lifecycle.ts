@@ -2,8 +2,8 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
 
 import {
   supportsWideGamutPresentation,
@@ -22,6 +22,7 @@ import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
+import { editorMessages } from '#vue/i18n/messages/editor'
 
 type SurfaceManagerState = {
   renderer: SkiaRenderer | null
@@ -54,12 +55,29 @@ export function createCanvasSurfaceManager({
     glCanvas: null,
     presentation: null
   }
-  let sceneBackingRenderTimer: ReturnType<typeof setTimeout> | null = null
 
-  function clearSceneBackingRenderTimer() {
-    if (sceneBackingRenderTimer === null) return
-    clearTimeout(sceneBackingRenderTimer)
-    sceneBackingRenderTimer = null
+  // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
+  // empty connector label's while it is typed into, as the overlays draw the text being edited,
+  // in the interface language, and draws them again when the language changes.
+  const showsStickyPlaceholder = options?.layer !== 'overlays'
+  let stickyPlaceholder: string = editorMessages.get().stickyPlaceholder
+  let connectorLabelPlaceholder: string = editorMessages.get().connectorLabelPlaceholder
+  const stopPlaceholders = editorMessages.subscribe((messages) => {
+    if (
+      messages.stickyPlaceholder === stickyPlaceholder &&
+      messages.connectorLabelPlaceholder === connectorLabelPlaceholder
+    ) {
+      return
+    }
+    ;({ stickyPlaceholder, connectorLabelPlaceholder } = messages)
+    if (!state.renderer) return
+    showPlaceholders(state.renderer)
+    editor.requestRender()
+  })
+
+  function showPlaceholders(renderer: SkiaRenderer) {
+    renderer.connectorLabelPlaceholder = connectorLabelPlaceholder
+    if (showsStickyPlaceholder) renderer.stickyPlaceholder = stickyPlaceholder
   }
 
   /** Releases the Skia context and the WebGL context CanvasKit registered for this canvas. */
@@ -75,9 +93,9 @@ export function createCanvasSurfaceManager({
   function createSurface(
     canvas: HTMLCanvasElement,
     { reloadFonts = false }: { reloadFonts?: boolean } = {}
-  ) {
+  ): boolean {
     const ck = getCanvasKit()
-    if (!ck) return
+    if (!ck) return false
 
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
@@ -101,16 +119,16 @@ export function createCanvasSurfaceManager({
     const surface = result.surface
     if (!surface) {
       canvas.dataset.surfaceError = 'webgl'
-      return
+      return false
     }
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
-    state.renderer.onImagePreviewReady = () => renderLoop.markDirty()
-    state.renderer.imagePreviews.setDecoder(createImagePreviewDecoder())
+    state.renderer.images.onPreviewReady = () => renderLoop.markDirty()
+    state.renderer.images.previews.setDecoder(createImagePreviewDecoder())
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
-    state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
+    showPlaceholders(state.renderer)
     editor.setCanvasKit(ck, state.renderer)
     // The scene surface draws shader frames; an overlay surface has none to draw.
     if (options?.layer !== 'overlays' && !editor.hasShaderRasterizer())
@@ -126,11 +144,21 @@ export function createCanvasSurfaceManager({
         return undefined
       })
     }
+    return true
   }
 
-  function acknowledgePresentation() {
+  /**
+   * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
+   * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
+   * Only a canvas drawing the editor's own state reports, since the versions are the editor's:
+   * a split pane showing another view, perhaps another page, says nothing about this one.
+   */
+  function reportPresented(renderer: SkiaRenderer) {
+    const layer = options?.layer ?? 'full'
+    if (layer === 'overlays' || (layer === 'scene' && !renderer.tiledSceneCovered)) return
     const renderedState = options?.getRenderState?.() ?? editor.state
-    options?.onPresented?.({
+    if (renderedState !== editor.state) return
+    editor.reportPresented({
       renderVersion: renderedState.renderVersion,
       sceneVersion: renderedState.sceneVersion
     })
@@ -139,6 +167,11 @@ export function createCanvasSurfaceManager({
   /** UI floating over the canvas this frame, which edge-pinned overlays avoid. */
   function overlayObstacles() {
     return options?.getOverlayObstacles?.() ?? []
+  }
+
+  /** Tiles still to render, visible or in the background: the next frame continues them. */
+  function tileWorkPending(renderer: SkiaRenderer): boolean {
+    return renderer.tiledScenePending || renderer.tiledSceneBackgroundPending
   }
 
   function renderNow() {
@@ -157,14 +190,9 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
-    acknowledgePresentation()
-    clearSceneBackingRenderTimer()
-    if (options?.layer === 'scene' && state.renderer.tiledScenePending) {
+    reportPresented(state.renderer)
+    if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
-    }
-    if (options?.layer === 'scene' && state.renderer.sceneBackingNeedsCrispRender) {
-      const delay = Math.max(0, state.renderer.sceneBackingPreviewUntil - performance.now())
-      sceneBackingRenderTimer = setTimeout(() => renderLoop.markDirty(), delay)
     }
   }
 
@@ -199,8 +227,13 @@ export function createCanvasSurfaceManager({
       createSurface(canvas, { reloadFonts: true })
       return
     }
-    state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
-    state.renderer.replaceSurface(surface)
+    // Tiles keep the colours they were recorded in, so a resize that changes the presentation
+    // color space starts them over like a new context.
+    const presentation = result.presentation ?? 'srgb'
+    const sameContext =
+      result.glHandle === null && state.renderer.presentationColorSpace === presentation
+    state.renderer.presentationColorSpace = presentation
+    state.renderer.replaceSurface(surface, { sameContext })
     renderNow()
   }
 
@@ -223,9 +256,9 @@ export function createCanvasSurfaceManager({
   )
 
   function destroy() {
+    stopPlaceholders()
     stopPresentationRefresh()
     stopColorSpaceRefresh()
-    clearSceneBackingRenderTimer()
     renderLoop.pause()
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
@@ -249,7 +282,8 @@ export function useCanvasSurfaceLifecycle({
   setCanvasKit,
   getCanvasKitValue,
   lifecycle,
-  onReady
+  onReady,
+  onFailed
 }: {
   canvasRef: Ref<HTMLCanvasElement | null>
   surface: ReturnType<typeof createCanvasSurfaceManager>
@@ -257,6 +291,7 @@ export function useCanvasSurfaceLifecycle({
   getCanvasKitValue: () => CanvasKit | null
   lifecycle: { destroyed: boolean }
   onReady?: () => void
+  onFailed?: (error: unknown) => void
 }) {
   useCanvasKitLoader({
     canvasRef,
@@ -265,7 +300,8 @@ export function useCanvasSurfaceLifecycle({
     createSurface: surface.createSurface,
     loadFonts: () => surface.getRenderer()?.loadFonts(surface.renderNow),
     renderNow: surface.renderNow,
-    onReady
+    onReady,
+    onFailed
   })
 
   const { cancelResize } = useCanvasResizeObserver({

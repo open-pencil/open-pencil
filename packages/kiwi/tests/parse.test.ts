@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  deduplicateNodeChangePluginData,
-  parseFigKiwiContainer,
-  type NodeChange
-} from '../src/fig/parse'
+import { type NodeChange } from '../src/fig/codec'
+import { deduplicateNodeChangePluginData, parseFigKiwiContainer } from '../src/fig/parse'
 
 describe('Figma FIG parse helpers', () => {
   test('rejects non fig-kiwi containers', () => {

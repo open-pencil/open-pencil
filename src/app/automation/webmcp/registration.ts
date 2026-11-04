@@ -4,7 +4,8 @@ import type { WebMCP } from 'webmcp-types'
 
 import { parseToolArgs, type ToolDef } from '@open-pencil/core/tools'
 
-import { getWebMCPTools, type WebMCPMode } from './policy'
+import { getWebMCPTools } from './policy'
+import { type WebMCPMode } from './schema'
 
 const MAX_RESULT_BYTES = 256 * 1024
 

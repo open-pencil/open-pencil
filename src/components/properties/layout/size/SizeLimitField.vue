@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { SelectRoot, SelectTrigger } from 'reka-ui'
 
-import { useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import type { SizeLimitFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
@@ -42,7 +43,7 @@ function handleSelect(value: string) {
           <SelectTrigger
             data-slot="limit-trigger"
             :aria-label="item.label"
-            class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-muted outline-none data-[state=open]:text-foreground"
+            class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-muted outline-none data-[state=open]:text-surface"
             @pointerdown.stop
           >
             <icon-lucide-chevron-down class="size-3" />

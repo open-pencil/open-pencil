@@ -1,8 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
-import { createEditor } from '@open-pencil/core/editor'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { createEditor } from '@open-pencil/core'
 
 describe('create shape undo/redo', () => {
   test('batched create+resize undoes in one step', () => {
@@ -61,5 +60,52 @@ describe('create shape undo/redo', () => {
     // Redo move
     editor.undo.redo()
     expect(getNodeOrThrow(editor.graph, id).x).toBe(200)
+  })
+})
+
+describe('pen path undo/redo', () => {
+  test('redo brings back the path, fills and strokes, not an empty vector', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(100, 0)
+    editor.penAddVertex(100, 50)
+    editor.penCommit(false)
+    const id = [...editor.state.selectedIds][0]
+    const drawn = getNodeOrThrow(editor.graph, id)
+    expect(drawn.vectorNetwork?.segments).toHaveLength(2)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(id)).toBeUndefined()
+
+    editor.undo.redo()
+    const restored = getNodeOrThrow(editor.graph, id)
+    expect(restored.vectorNetwork).toEqual(drawn.vectorNetwork)
+    expect(restored.strokes).toEqual(drawn.strokes)
+    expect(restored.fills).toEqual(drawn.fills)
+  })
+
+  // Figma desktop 126: V, H, and the toolbar end a pen path and keep it; holding Space pans and
+  // the next click continues the same path.
+  test('another tool keeps the path drawn so far, and a held hand lets it continue', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(100, 0)
+
+    editor.setTool('HAND', { held: true })
+    editor.setTool('PEN', { held: true })
+    expect(editor.state.penState?.vertices).toHaveLength(2)
+
+    editor.setTool('HAND')
+    expect(editor.state.penState).toBeNull()
+    const id = [...editor.state.selectedIds][0]
+    const drawn = getNodeOrThrow(editor.graph, id)
+    expect(drawn.vectorNetwork?.segments).toHaveLength(1)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(id)).toBeUndefined()
+    editor.undo.redo()
+    expect(getNodeOrThrow(editor.graph, id).vectorNetwork).toEqual(drawn.vectorNetwork)
   })
 })

@@ -1,3 +1,5 @@
+import { exit } from '@tauri-apps/plugin-process'
+
 import { prepareForClose } from '@/app/tabs'
 
 /** Shared approval so the window close handler and the Quit item cannot prompt twice. */
@@ -36,6 +38,5 @@ export function confirmAppExit(): Promise<boolean> {
 /** Shared by the native Quit item and the platform exit request. */
 export async function requestAppExit(): Promise<void> {
   if (!(await confirmAppExit())) return
-  const { exit } = await import('@tauri-apps/plugin-process')
   await exit(0)
 }

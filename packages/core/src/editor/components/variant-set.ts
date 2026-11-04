@@ -1,9 +1,8 @@
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   createComponentPropertyId,
-  type SceneGraph,
-  type SceneNode,
-  type Stroke
-} from '@open-pencil/scene-graph'
+  moveVariantPropertiesToSet
+} from '@open-pencil/scene-graph/components'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { copyStrokes } from '@open-pencil/scene-graph/copy'
 import { deriveVariantProperties } from '@open-pencil/scene-graph/variant-properties'
@@ -58,7 +57,9 @@ export function applyVariantProperties(
   setId: string
 ): void {
   const derived = deriveVariantProperties([...components], createComponentPropertyId)
-  if (!derived) return
-  for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
-  graph.updateNode(setId, { componentPropertyDefinitions: derived.definitions })
+  if (derived) {
+    for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
+    graph.updateNode(setId, { componentPropertyDefinitions: derived.definitions })
+  }
+  moveVariantPropertiesToSet(graph, setId)
 }

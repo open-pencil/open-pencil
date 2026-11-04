@@ -1,16 +1,30 @@
-import type { Canvas, ImageFilter, MaskFilter } from 'canvaskit-wasm'
+import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
 
+import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+
+import { ResourceCache } from '#core/cache/resource'
+import { BLACK } from '#core/constants'
 
 import type { SkiaRenderer } from './renderer'
 
 /**
- * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
- * layer blur, both shadows, and background blur fall off as a Gaussian of 0.43 × radius; Figma's
- * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
+ * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
+ * every node and frame that shares them. Bounded, so a slider dragged through hundreds of values
+ * frees the ones it passed rather than keeping them for the session.
  */
-export function blurSigma(radius: number): number {
-  return radius * 0.43
+const MAX_CACHED_FILTERS = 256
+
+export type ImageFilterCache = ResourceCache<string, ImageFilter>
+export type MaskFilterCache = ResourceCache<number, MaskFilter>
+
+export function createImageFilterCache(): ImageFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
+}
+
+export function createMaskFilterCache(): MaskFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
 }
 
 export function getCachedDropShadow(
@@ -19,60 +33,67 @@ export function getCachedDropShadow(
   dy: number,
   sigma: number,
   color: Float32Array
-): ImageFilter {
+): ImageFilter | null {
   const key = `ds:${dx},${dy},${sigma},${color[0]},${color[1]},${color[2]},${color[3]}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
-    r.imageFilterCache.set(key, filter)
-  }
+  return cachedImageFilter(r, key, () =>
+    r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
+  )
+}
+
+export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `blur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
+  )
+}
+
+export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `dblur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
+  )
+}
+
+/** CanvasKit makes no filter for a blur too small to draw; a paint takes null as none. */
+export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter | null {
+  const cached = r.maskFilterCache.get(sigma)
+  if (cached) return cached
+  // Typed as always made; at runtime a sigma too small to blur makes none.
+  const filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true) as MaskFilter | null
+  if (filter) r.maskFilterCache.set(sigma, filter)
   return filter
 }
 
-export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `blur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
-    r.imageFilterCache.set(key, filter)
-  }
+function cachedImageFilter(
+  r: SkiaRenderer,
+  key: string,
+  make: () => ImageFilter | null
+): ImageFilter | null {
+  const cached = r.imageFilterCache.get(key)
+  if (cached) return cached
+  const filter = make()
+  if (filter) r.imageFilterCache.set(key, filter)
   return filter
 }
 
-export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `dblur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
-    r.imageFilterCache.set(key, filter)
-  }
-  return filter
-}
-
-export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter {
-  let filter = r.maskFilterCache.get(sigma)
-  if (!filter) {
-    filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true)
-    r.maskFilterCache.set(sigma, filter)
-  }
-  return filter
-}
-
+/**
+ * Blurs what lies behind the layer, inside its outline, or inside `shape` when the layer's outline
+ * is not its box, as with a boolean's result.
+ */
 export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
-  sigma: number
+  sigma: number,
+  shape: Path | null = null
 ): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
   // Entry guard: reset shared paint to known state
   r.effectLayerPaint.setImageFilter(null)
   r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
   canvas.save()
-  r.clipNodeShape(canvas, node, rect, hasRadius)
+  if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
+  else r.clipNodeShape(canvas, node)
   canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state
@@ -80,4 +101,78 @@ export function applyClippedBlur(
   r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   canvas.restore()
+}
+
+const MAX_RAW_NOISE_CELLS = 12_000
+
+interface RawNoiseEffect {
+  type: 'NOISE'
+  visible?: boolean
+  color?: Color
+  secondaryColor?: Color
+  opacity?: number
+  density?: number
+  noiseSize?: Vector
+  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
+}
+
+function rawNoiseEffects(node: SceneNode): RawNoiseEffect[] {
+  const source = (node as Partial<SceneNode>).source
+  const effects = source ? readEffectiveFigmaRawField(node, 'effects') : undefined
+  if (!Array.isArray(effects)) return []
+  return effects.filter(
+    (effect): effect is RawNoiseEffect =>
+      effect !== null &&
+      typeof effect === 'object' &&
+      'type' in effect &&
+      effect.type === 'NOISE' &&
+      ('visible' in effect ? effect.visible !== false : true)
+  )
+}
+
+function seededNoise(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453
+  return x - Math.floor(x)
+}
+
+function renderNoiseEffect(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  effect: RawNoiseEffect
+): void {
+  const density = Math.max(0, Math.min(1, effect.density ?? 0.3))
+  const requestedStep = Math.max(2, Math.round((effect.noiseSize?.x ?? 0.5) * 8))
+  const boundedStep = Math.ceil(Math.sqrt((node.width * node.height) / MAX_RAW_NOISE_CELLS))
+  const step = Math.max(requestedStep, boundedStep)
+  const color = effect.color ?? BLACK
+  const opacity = effect.opacity ?? color.a
+  const paint = new r.ck.Paint()
+  try {
+    paint.setAntiAlias(false)
+    canvas.save()
+    r.clipNodeShape(canvas, node)
+    for (let y = 0; y < node.height; y += step) {
+      for (let x = 0; x < node.width; x += step) {
+        const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
+        if (value > density) continue
+        const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
+        paint.setColorComponents(color.r, color.g, color.b, alpha)
+        canvas.drawRect(
+          r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
+          paint
+        )
+      }
+    }
+    canvas.restore()
+  } finally {
+    paint.delete()
+  }
+}
+
+/** Draws the raw Figma noise effects a node carries, which the scene graph does not model. */
+export function renderNoiseEffects(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+  for (const effect of rawNoiseEffects(node)) {
+    renderNoiseEffect(r, canvas, node, effect)
+  }
 }

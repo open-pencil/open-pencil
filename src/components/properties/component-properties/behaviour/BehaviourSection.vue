@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
 import type {
   BehaviourControl,
   BehaviourNumberControl,
   BehaviourPartControl,
   BehaviourValueControl
-} from '@open-pencil/vue'
+} from '@open-pencil/vue/controls/behaviour'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
@@ -124,7 +124,7 @@ const nextStep = computed(() => {
         <span class="min-w-0 flex-1 truncate font-medium">{{ kind.label }}</span>
         <span
           v-if="!behaviour.missing.length"
-          class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted"
+          class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted"
         >
           <icon-lucide-check class="size-3 text-success" />
           {{ panels.behaviourComplete }}
@@ -134,7 +134,7 @@ const nextStep = computed(() => {
       <p
         v-if="behaviour.missing.length"
         role="status"
-        class="flex items-start gap-1.5 rounded bg-issue-warning/10 px-1.5 py-1 text-[11px] leading-4 text-issue-warning"
+        class="flex items-start gap-1.5 rounded bg-warning/10 px-1.5 py-1 text-2xs leading-4 text-warning"
         data-property="behaviour-missing"
       >
         <SeverityIcon severity="warning" class="mt-0.5 shrink-0" />
@@ -163,7 +163,7 @@ const nextStep = computed(() => {
         v-if="moreRows.length || !statesFirst"
         v-model:open="moreOpen"
         :label="panels.behaviourMoreOptions"
-        :ui="{ trigger: 'text-[11px] text-muted hover:text-surface', icon: 'size-3' }"
+        :ui="{ trigger: 'text-2xs text-muted hover:text-surface', icon: 'size-3' }"
         data-property="behaviour-more"
       >
         <div class="flex flex-col gap-2 pt-2">

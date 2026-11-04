@@ -56,6 +56,7 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useSelectionLayout', slug: 'use-selection-layout', canonical: true },
   { text: 'useSelectionColors', slug: 'use-selection-colors', canonical: true },
   { text: 'useMask', slug: 'use-mask', canonical: true },
+  { text: 'useVariableModes', slug: 'use-variable-modes', canonical: true },
   { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
   { text: 'usePageList', slug: 'use-page-list' },
   { text: 'useI18n', slug: 'use-i18n' },

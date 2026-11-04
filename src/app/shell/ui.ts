@@ -1,7 +1,11 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
+
+import { ReadOnlyDocumentError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
+import { reportErrorAction } from '@/app/reports/state'
 import { isTauri } from '@/app/tauri/env'
 import type { ProgressAmount } from '@/components/ui/feedback/progress'
 import type { ToastVariant } from '@/components/ui/feedback/toast'
@@ -10,7 +14,8 @@ export type { ToastVariant } from '@/components/ui/feedback/toast'
 
 export interface ToastAction {
   label: string
-  run: () => void
+  /** Gets the toast it was clicked on, for actions that close it once their work is done. */
+  run: (toastId: number) => void
 }
 
 export interface Toast {
@@ -82,7 +87,8 @@ function trim() {
 /** Toast-driven work keeps its toast open until progress clears or the work ends. */
 export function toastDuration(entry: Toast): number {
   if (entry.progress) return 0
-  return entry.variant === 'error' ? ERROR_TOAST_DURATION : TOAST_DURATION
+  // A toast that offers an action stays long enough to reach it.
+  return entry.variant === 'error' || entry.action ? ERROR_TOAST_DURATION : TOAST_DURATION
 }
 
 function startProgress(
@@ -115,8 +121,8 @@ function startProgress(
   }
 }
 
-function info(message: string) {
-  push(message, 'default')
+function info(message: string, action?: ToastAction) {
+  push(message, 'default', action)
 }
 
 function warning(message: string) {
@@ -131,18 +137,38 @@ function remove(id: number) {
   toasts.value = toasts.value.filter((t) => t.id !== id)
 }
 
+/**
+ * Removes the toast once its action is done, unless a later message merged into it and brought
+ * an action of its own, which stays on offer.
+ */
+function removeOffer(id: number, action: ToastAction) {
+  toasts.value = toasts.value.filter((t) => t.id !== id || toRaw(t.action) !== action)
+}
+
 function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
 
+  // An edit to a read-only document does nothing, as in Figma, wherever it came from.
   useEventListener(window, 'error', (e) => {
+    if (e.error instanceof ReadOnlyDocumentError) {
+      e.preventDefault()
+      return
+    }
     recordRuntimeError(e.error ?? e.message, 'window')
-    error(e.message || 'An unexpected error occurred')
+    error(
+      e.message || 'An unexpected error occurred',
+      reportErrorAction(e.error ?? e.message, 'window')
+    )
   })
   useEventListener(window, 'unhandledrejection', (e) => {
+    if (e.reason instanceof ReadOnlyDocumentError) {
+      e.preventDefault()
+      return
+    }
     recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
-    error(msg || 'An unexpected error occurred')
+    error(msg || 'An unexpected error occurred', reportErrorAction(e.reason, 'rejection'))
   })
 }
 
@@ -152,6 +178,7 @@ export const toast = {
   error,
   startProgress,
   remove,
+  removeOffer,
   toasts,
   setupGlobalErrorHandler,
   TOAST_DURATION,
@@ -160,21 +187,11 @@ export const toast = {
 
 export async function openExternalLink(url: string) {
   if (isTauri()) {
-    const { openUrl } = await import('@tauri-apps/plugin-opener')
-    await openUrl(url)
+    // An app command, so native tests can read the address instead of opening a browser.
+    await invoke('open_external_url', { url })
   } else {
     window.open(url, '_blank')
   }
-}
-export function initials(name: string): string {
-  return (
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?'
-  )
 }
 export function decodeTauriStderr(raw: Uint8Array | number[] | string): string {
   if (typeof raw === 'string') return raw

@@ -1,5 +1,5 @@
-import type { ShaderRasterizer } from '@open-pencil/core/editor'
-import { shaderFrameEncoding } from '@open-pencil/scene-graph'
+import type { ShaderRasterizer } from '@open-pencil/core'
+import { shaderFrameEncoding } from '@open-pencil/scene-graph/shaders'
 
 /** Whether this browser can draw shaders, which need WebGPU. */
 export function canDrawShaders(): boolean {
@@ -54,6 +54,9 @@ export function createShaderRasterizer(): ShaderRasterizer | null {
         // pipelines, so the one kept is the second; reading the canvas waits for the GPU.
         await renderer.renderFrame({ deltaSeconds: 0, waitForGpu: false })
         await renderer.renderFrame({ deltaSeconds: 0, waitForGpu: false })
+        // Without a usable GPU the renderer draws nothing and says so only here; keeping that
+        // empty canvas would save a blank frame over the paint's own.
+        if (renderer.getFailureReason() !== null) return null
         const blob = await encodeFrame(canvas)
         if (isDestroyed() || !blob) return null
         const bytes = new Uint8Array(await blob.arrayBuffer())

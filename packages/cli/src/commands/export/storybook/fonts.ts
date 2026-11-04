@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 
 import { exportWebFontFaceAssets } from '@open-pencil/core/text/web-font/assets'
-import type { WebFontFaceResolver } from '@open-pencil/dom-css'
+import type { WebFontFaceResolver } from '@open-pencil/dom-css/export'
 
 import { warn } from '#cli/format'
 

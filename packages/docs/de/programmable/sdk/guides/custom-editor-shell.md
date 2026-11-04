@@ -29,15 +29,12 @@ Eine typische Oberfläche:
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
-import {
-  provideEditor,
-  CanvasRoot,
-  CanvasSurface,
-  ToolbarRoot,
-  PageListRoot,
-  LayerTreeRoot,
-} from '@open-pencil/vue'
+import { createEditor } from '@open-pencil/core'
+import { provideEditor } from '@open-pencil/vue'
+import { CanvasRoot, CanvasSurface } from '@open-pencil/vue/canvas'
+import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
+import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
+import { LayerTreeRoot } from '@open-pencil/vue/primitives/LayerTree'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)
@@ -59,13 +56,13 @@ provideEditor(editor)
     </ToolbarRoot>
 
     <aside class="border-r">
-      <PageListRoot v-slot="{ pages, currentPageId, switchPage }">
+      <PageListRoot v-slot="{ pages, currentPageId, actions }">
         <nav>
           <button
             v-for="page in pages"
             :key="page.id"
             :data-active="page.id === currentPageId"
-            @click="switchPage(page.id)"
+            @click="actions.switch(page.id)"
           >
             {{ page.name }}
           </button>

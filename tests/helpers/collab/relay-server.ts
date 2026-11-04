@@ -1,0 +1,101 @@
+import { createServer } from 'node:http'
+
+import { RELAY_PATH, type DocumentPermission } from '@open-pencil/cloud/contract'
+import { attachCollaborationRelay } from '@open-pencil/cloud/runtime/node'
+import {
+  createCollaborationRelay,
+  signCollaborationTicket,
+  type CollaborationStateStore
+} from '@open-pencil/cloud/server'
+
+import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
+
+const AUTH_SECRET = 'relay-integration-secret-at-least-32-characters'
+
+/** A Cloud relay on a loopback port, keeping room state in memory; `close` stops it. */
+export async function startTestRelay() {
+  /** Each room's snapshot and the updates logged after it, by document and epoch. */
+  const rooms = new Map<
+    string,
+    { snapshot: Uint8Array | null; updates: Uint8Array[]; sequence: number }
+  >()
+  const saved = (room: { documentId: string; roomEpoch: number }) => {
+    const key = `${room.documentId}:${room.roomEpoch}`
+    const entry = rooms.get(key) ?? { snapshot: null, updates: [], sequence: 0 }
+    rooms.set(key, entry)
+    return entry
+  }
+  const store: CollaborationStateStore = {
+    load: async (room) => {
+      const { snapshot, updates, sequence } = saved(room)
+      return { snapshot, updates: [...updates], sequence }
+    },
+    append: async (room, sequence, update) => {
+      const entry = saved(room)
+      entry.updates.push(update)
+      entry.sequence = sequence
+    },
+    compact: async (room, _sequence, state) => {
+      const entry = saved(room)
+      entry.snapshot = state
+      entry.updates = []
+    }
+  }
+  const relay = createCollaborationRelay({
+    authSecret: AUTH_SECRET,
+    store,
+    maximumMessageBytes: 1_048_576,
+    maximumConnectionsPerRoom: 10,
+    persistDelayMs: 0
+  })
+  const server = createServer()
+  const attached = attachCollaborationRelay(server, relay, 1_048_576)
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', resolve)
+  })
+  const address = server.address()
+  if (!address || typeof address === 'string') throw new Error('Expected a TCP address')
+  const url = `ws://127.0.0.1:${address.port}${RELAY_PATH}`
+  return {
+    url,
+    /** Each room the relay saved: its snapshot and the updates logged after it. */
+    rooms,
+    /** Tells a document's rooms its version history changed, as the server does. */
+    announceVersions: (documentId: string) => relay.announceVersions(documentId),
+    /** Joins a document's room with the given permission, as a guest or a signed-in user. */
+    join(
+      documentId: string,
+      name: string,
+      permission: DocumentPermission,
+      kind: 'guest' | 'user' = 'guest'
+    ) {
+      const principal =
+        kind === 'user'
+          ? {
+              kind,
+              userId: crypto.randomUUID(),
+              name,
+              email: `${name.toLowerCase().replaceAll(' ', '.')}@example.com`
+            }
+          : { kind, guestId: crypto.randomUUID(), name }
+      return createCloudRelayJoin({
+        url,
+        ticket: async () =>
+          signCollaborationTicket({
+            authSecret: AUTH_SECRET,
+            documentId,
+            principal,
+            permission,
+            roomEpoch: 0,
+            relayURL: url
+          })
+      })
+    },
+    async close() {
+      await attached.close()
+      await new Promise<void>((resolve) => {
+        server.close(() => resolve())
+      })
+    }
+  }
+}

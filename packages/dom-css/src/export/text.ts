@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { CharacterStyleOverride, HyperlinkTarget, SceneNode } from '@open-pencil/scene-graph'
 import {
   hasTextList,
   listNumberFormat,
@@ -7,15 +8,12 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
-  type CharacterStyleOverride,
-  type HyperlinkTarget,
-  type SceneNode,
   type TextListItem,
   type TextParagraphRange
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { fillToCSS } from './css'
+import { fillToCSS, letterSpacingToCSS, lineHeightToCSS } from './css'
 
 /** The character styles CSS writes, as a text layer and its runs hold them. */
 type CharacterStyle = Pick<
@@ -157,8 +155,8 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
     'font-size': px(style.fontSize),
     'font-weight': String(style.fontWeight),
     'font-style': style.italic ? 'italic' : 'normal',
-    'letter-spacing': px(style.letterSpacing),
-    'line-height': style.lineHeight === null ? 'normal' : px(style.lineHeight),
+    'letter-spacing': letterSpacingToCSS(style.letterSpacing),
+    'line-height': style.lineHeight === null ? 'normal' : lineHeightToCSS(style.lineHeight),
     'text-transform': textCaseToCSS(style.textCase) ?? 'none',
     ...(decorated ? decorationCSS(style) : {})
   }

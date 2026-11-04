@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import type { WaitlistSignup } from '#feedback/contract'
+import { createFeedbackDatabase } from '#feedback/db'
 import { runRetention } from '#feedback/retention'
 
 let service: TestService
@@ -17,11 +18,12 @@ function turnstile(result: { success: boolean; hostname?: string; action?: strin
   service.respond('https://challenges.cloudflare.com/', () => Response.json(result))
 }
 
-async function rows() {
-  const { results } = await service.db
-    .prepare('SELECT email, note, confirmed_at AS confirmedAt FROM waitlist ORDER BY id')
-    .all()
-  return results
+function rows() {
+  return createFeedbackDatabase(service.db)
+    .selectFrom('waitlist')
+    .select(['email', 'note', 'confirmedAt'])
+    .orderBy('id')
+    .execute()
 }
 
 function linkFrom(text: string | undefined, path: string): URL {
@@ -40,7 +42,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  await service.db.prepare('DELETE FROM waitlist').run()
+  await createFeedbackDatabase(service.db).deleteFrom('waitlist').execute()
   service.sentEmails.length = 0
   service.setNow(START)
   turnstile({ success: true, hostname: 'openpencil.dev', action: 'waitlist' })

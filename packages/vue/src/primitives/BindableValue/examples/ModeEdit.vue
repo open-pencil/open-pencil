@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
@@ -29,7 +29,7 @@ const targets = ref([first, first, second].map((node) => ({ nodeId: node.id, pat
 const provider = createOpenPencilBindingProvider(
   editor,
   {
-    type: 'FLOAT',
+    types: ['FLOAT'],
     resolve: (e, id, target) =>
       target
         ? e.graph.resolveNumberVariableForNode(target.nodeId, id)
@@ -70,7 +70,7 @@ function refresh(action: () => unknown) {
     :value="8"
     policy="edit-variable"
   >
-    <div class="flex flex-wrap gap-2 bg-panel p-4 text-surface">
+    <div class="flex flex-wrap gap-2 bg-[var(--vp-c-bg)] p-4 text-[var(--vp-c-text-1)]">
       <button @click="actions.beginMutation('edit')">Begin edit</button>
       <button @click="refresh(() => actions.applyValue(12))">Set 12</button>
       <button @click="changeTargets">Change selection and mode</button>

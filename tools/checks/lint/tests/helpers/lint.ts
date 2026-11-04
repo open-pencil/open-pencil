@@ -17,7 +17,7 @@ export type Diagnostic = v.InferOutput<typeof diagnosticSchema>
 
 export async function lint(
   source: string,
-  rules: Record<string, string>,
+  rules: Record<string, string | readonly unknown[]>,
   relativePath = 'fixture.ts'
 ): Promise<Diagnostic[]> {
   return lintFiles({ [relativePath]: source }, rules)
@@ -30,7 +30,7 @@ export async function lint(
  */
 export async function lintFiles(
   sources: Record<string, string>,
-  rules: Record<string, string>
+  rules: Record<string, string | readonly unknown[]>
 ): Promise<Diagnostic[]> {
   const root = await resolveWorkspaceRoot(import.meta.dir)
   const directory = await mkdtemp(join(tmpdir(), 'open-pencil-lint-'))
@@ -61,7 +61,8 @@ export async function lintFiles(
         'json',
         ...sourcePaths
       ],
-      { stdout: 'pipe', stderr: 'pipe' }
+      // From the repository root, where rules find the files they read, such as src/app.css.
+      { cwd: root, stdout: 'pipe', stderr: 'pipe' }
     )
     const [stdout, stderr, code] = await Promise.all([
       new Response(child.stdout).text(),

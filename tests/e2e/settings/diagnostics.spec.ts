@@ -1,11 +1,14 @@
+import { readFile } from 'node:fs/promises'
+
 import type { Page } from '@playwright/test'
 import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
+import { openAppMenu } from '#tests/helpers/menu'
 
 /** The JSON that Copy diagnostics puts on the clipboard, as far as these tests read it. */
-const ReportJSON = v.pipe(
+const reportSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -37,7 +40,7 @@ test('Settings exports correlated chat telemetry without conversation content', 
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()
   const text = await page.evaluate(() => navigator.clipboard.readText())
-  const { environment, events } = v.parse(ReportJSON, text)
+  const { environment, events } = v.parse(reportSchema, text)
   expect(environment).toMatchObject({ app: expect.any(String), shell: 'browser' })
   const completed = events.filter((event) => event.name === 'chat.completed')
   expect(completed).toHaveLength(2)
@@ -48,6 +51,27 @@ test('Settings exports correlated chat telemetry without conversation content', 
   expect(completed[1].runId).not.toBe(completed[0].runId)
   expect(text).not.toContain('Private conversation content')
   expect(text).not.toContain('A second request')
+})
+
+test('Settings saves the diagnostics report as a file', async ({ configuredChat: chat, page }) => {
+  // Without a save picker the browser downloads the file.
+  await page.evaluate(() => Reflect.deleteProperty(window, 'showSaveFilePicker'))
+  await chat.submit('A request to record')
+  await expect(chat.assistantMessage()).toBeVisible()
+  await openDiagnostics(page)
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Save diagnostics…', exact: true }).click()
+  ])
+
+  expect(download.suggestedFilename()).toMatch(/\.json$/)
+  const { environment, events } = v.parse(
+    reportSchema,
+    await readFile(await download.path(), 'utf8')
+  )
+  expect(environment).toMatchObject({ shell: 'browser' })
+  expect(events.map((event) => event.name)).toContain('chat.completed')
 })
 
 async function openDiagnostics(page: Page) {
@@ -134,8 +158,29 @@ test('uncaught errors are listed with their stack and can be filtered and copied
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   // The clipboard outlives the test's page, so read it only once this copy has finished.
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()
-  const report = v.parse(ReportJSON, await page.evaluate(() => navigator.clipboard.readText()))
+  const report = v.parse(reportSchema, await page.evaluate(() => navigator.clipboard.readText()))
   const runtime = report.events.find((event) => event.name === 'runtime.error')
   expect(runtime?.attributes).toMatchObject({ source: 'window', errorName: 'TypeError' })
   expect(String(runtime?.attributes.stack)).toContain('TypeError')
+})
+
+test('File › Diagnostics opens its own page, and usage history is switched on the Usage page', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const menu = await openAppMenu(page, 'File')
+  await menu.getByRole('menuitem', { name: 'Diagnostics…' }).click()
+  await expect(page.getByTestId('settings-section-diagnostics')).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
+  await expect(page.getByTestId('settings-diagnostics-panel')).toBeVisible()
+  await expect(page.getByRole('switch', { name: 'Usage history' })).toHaveCount(0)
+
+  await page.getByTestId('settings-section-usage').click()
+  const history = page
+    .getByTestId('settings-usage-panel')
+    .getByRole('switch', { name: 'Usage history' })
+  await expect(history).toHaveAttribute('data-state', 'checked')
 })

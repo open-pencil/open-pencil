@@ -7,7 +7,7 @@ import {
   publishableLibraryRoots,
   readSourceLibraryPublication
 } from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
@@ -207,11 +207,11 @@ async function publish() {
               <icon-lucide-component v-else class="size-4" />
             </div>
             <span class="min-w-0 flex-1 truncate text-xs">{{ change.asset.name }}</span>
-            <span class="text-[10px] text-muted">{{ changeLabels[change.kind] }}</span>
+            <span class="text-3xs text-muted">{{ changeLabels[change.kind] }}</span>
           </label>
         </div>
       </div>
-      <p v-if="error" role="alert" class="text-xs text-danger">{{ error }}</p>
+      <p v-if="error" role="alert" class="text-xs text-error">{{ error }}</p>
     </form>
     <AppDialogFooter>
       <AppButton size="md" @click="publishLibraryDialogOpen = false">

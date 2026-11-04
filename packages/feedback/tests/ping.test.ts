@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import type { Ping } from '#feedback/contract'
+import { createFeedbackDatabase } from '#feedback/db'
 import { omit } from 'es-toolkit'
 
 const BUILD: Ping = {
@@ -23,13 +24,12 @@ afterAll(async () => {
   await service.dispose()
 })
 
-async function counts() {
-  const { results } = await service.db
-    .prepare(
-      'SELECT day, version, platform, app, usage_stats AS usageStats, count FROM usage_pings ORDER BY version, usage_stats'
-    )
-    .all()
-  return results
+function counts() {
+  return createFeedbackDatabase(service.db)
+    .selectFrom('usagePings')
+    .select(['day', 'version', 'platform', 'app', 'usageStats', 'count'])
+    .orderBy(['version', 'usageStats'])
+    .execute()
 }
 
 describe('ping', () => {
@@ -70,6 +70,52 @@ describe('ping', () => {
       { usageStats: 'denied', count: 1 },
       { usageStats: 'granted', count: 2 }
     ])
+  })
+
+  test('counts pings per day by the network and wording Cloudflare reports, never the address', async () => {
+    const huawei = { asn: 136907, asOrganization: 'Huawei Cloud Singapore Region' }
+    await service.postJSON('/ping', BUILD, { 'CF-Connecting-IP': '203.0.113.7' }, huawei)
+    await service.postJSON('/ping', BUILD, {}, huawei)
+    await service.postJSON('/ping', BUILD, {}, { ...huawei, asOrganization: 'Huawei-Cloud-SG' })
+    await service.postJSON('/ping', { ...BUILD, app: 'web' }, {}, { asn: 9299 })
+
+    const networks = await createFeedbackDatabase(service.db)
+      .selectFrom('pingNetworks')
+      .selectAll()
+      .where('asn', '!=', 0)
+      .orderBy(['asn', 'app', 'name'])
+      .execute()
+    expect(networks).toEqual([
+      { day: '2026-10-12', asn: 9299, app: 'web', platform: 'macos', name: '', count: 1 },
+      {
+        day: '2026-10-12',
+        asn: 136907,
+        app: 'desktop',
+        platform: 'macos',
+        name: 'Huawei Cloud Singapore Region',
+        count: 2
+      },
+      {
+        day: '2026-10-12',
+        asn: 136907,
+        app: 'desktop',
+        platform: 'macos',
+        name: 'Huawei-Cloud-SG',
+        count: 1
+      }
+    ])
+    expect(JSON.stringify(networks)).not.toContain('203.0.113.7')
+  })
+
+  test('counts a ping without network details under AS 0', async () => {
+    await service.postJSON('/ping', { ...BUILD, platform: 'linux' })
+
+    const unknown = await createFeedbackDatabase(service.db)
+      .selectFrom('pingNetworks')
+      .select(['asn', 'name', 'count'])
+      .where('platform', '=', 'linux')
+      .execute()
+    expect(unknown).toEqual([{ asn: 0, name: '', count: 1 }])
   })
 
   test('refuses a ping without the usage stats answer', async () => {

@@ -15,7 +15,7 @@ La barre inférieure contient les outils de création de formes, cadres et secti
 | Ellipse | <kbd>O</kbd> | Ellipse |
 | Ligne | <kbd>L</kbd> | Ligne |
 | Cadre | <kbd>F</kbd> | Conteneur d’autres objets |
-| Section | <kbd>S</kbd> | Conteneur de premier niveau |
+| Section | <kbd>Shift</kbd> + <kbd>S</kbd> | Conteneur de premier niveau |
 
 Polygone et Étoile sont disponibles dans le menu des formes.
 

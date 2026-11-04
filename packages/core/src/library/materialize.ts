@@ -1,4 +1,7 @@
-import { cloneNodeProps, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
@@ -75,10 +78,10 @@ function markDefinitions(
   const descriptorsBySourceId = new Map(
     revision.manifest.assets.map((asset) => [asset.sourceNodeId, asset])
   )
+  remapCopiedReferences(graph, mappedIds)
   for (const [sourceId, targetId] of mappedIds) {
     const target = graph.getNode(targetId)
     if (!target) continue
-    const componentId = target.componentId ? mappedIds.get(target.componentId) : undefined
     const descriptor = descriptorsBySourceId.get(sourceId)
     const source = revision.graph.getNode(sourceId)
     const sourceAssetKey =
@@ -87,7 +90,6 @@ function markDefinitions(
         ? (source.componentKey ?? source.sourceLibraryKey ?? source.publishId)
         : null)
     graph.updateNode(targetId, {
-      componentId: componentId ?? target.componentId,
       locked: true,
       librarySource: sourceAssetKey
         ? {
@@ -108,10 +110,7 @@ function copyImages(source: SceneGraph, target: SceneGraph, mappedIds: Map<strin
   const hashes = new Set<string>()
   for (const sourceId of mappedIds.keys()) {
     const node = source.getNode(sourceId)
-    const fills = [
-      ...(node?.fills ?? []),
-      ...(node?.fillGeometry.flatMap((geometry) => geometry.fills ?? []) ?? [])
-    ]
+    const fills = [...(node?.fills ?? []), ...regionFills(node?.vectorNetwork ?? null)]
     for (const fill of fills) {
       if (fill.type === 'IMAGE' && fill.imageHash) hashes.add(fill.imageHash)
     }

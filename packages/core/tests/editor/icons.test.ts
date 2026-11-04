@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
-import { isIconModified, readIcon, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { buildIconData } from '#core/icons/svg'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
 const BODIES: Record<string, string> = {
@@ -144,7 +144,10 @@ describe('icon commands across a document change', () => {
         return provider.icons(names, size)
       }
     }
-    const editor = createEditor({ getViewportSize: () => ({ width: 1000, height: 800 }), icons: slow })
+    const editor = createEditor({
+      getViewportSize: () => ({ width: 1000, height: 800 }),
+      icons: slow
+    })
     const inserting = editor.insertIcon('test:square')
     const replacement = new SceneGraph()
     editor.replaceGraph(replacement)

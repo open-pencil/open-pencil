@@ -6,6 +6,7 @@ const SHAPING_FIELDS = [
   'fontSize',
   'fontName',
   'fontVariations',
+  'detachOpticalSizeFromFontSize',
   'letterSpacing',
   'lineHeight',
   'textCase',

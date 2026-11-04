@@ -7,6 +7,10 @@ export type FigReaderDiagnostic =
   | { kind: 'property'; diagnostic: Parameters<Handler<'onUnresolvedProperty'>>[0] }
   | { kind: 'assignment'; diagnostic: Parameters<Handler<'onUnresolvedAssignment'>>[0] }
   | { kind: 'binding'; diagnostic: Parameters<Handler<'onUnresolvedBinding'>>[0] }
+  | {
+      kind: 'variable-expression'
+      diagnostic: Parameters<Handler<'onUnsupportedVariableExpression'>>[0]
+    }
   | { kind: 'component'; diagnostic: Parameters<Handler<'onMissingComponent'>>[0] }
   | { kind: 'slot-content'; diagnostic: Parameters<Handler<'onMissingSlotContent'>>[0] }
 
@@ -43,6 +47,8 @@ export function readerSessionOptions(sink: FigReaderDiagnostic[]): DocumentAssem
     onUnresolvedProperty: (diagnostic) => report(sink, { kind: 'property', diagnostic }),
     onUnresolvedAssignment: (diagnostic) => report(sink, { kind: 'assignment', diagnostic }),
     onUnresolvedBinding: (diagnostic) => report(sink, { kind: 'binding', diagnostic }),
+    onUnsupportedVariableExpression: (diagnostic) =>
+      report(sink, { kind: 'variable-expression', diagnostic }),
     onMissingComponent: (diagnostic) => report(sink, { kind: 'component', diagnostic }),
     onMissingSlotContent: (diagnostic) => report(sink, { kind: 'slot-content', diagnostic })
   }
