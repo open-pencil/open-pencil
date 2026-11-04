@@ -296,9 +296,10 @@ export function getParentToContainerMatrix(
 export interface SelectionPlacement {
   node: SceneNode
   center: Vector
-  /** The layer's own x and y axes on the canvas, as unit vectors (rotation and flips applied). */
-  axisX: Vector
-  axisY: Vector
+  /** Draws the layer from its own (0,0)…(width,height) on the canvas. */
+  world: Mat3
+  /** Draws the layer's parent on the canvas. */
+  parentWorld: Mat3
   /** -1 when the layer is drawn mirrored, so its rotation turns the other way on the canvas. */
   direction: 1 | -1
   /** Maps canvas points into the layer's parent's space, or null when it cannot be inverted. */
@@ -310,28 +311,16 @@ export function selectionPlacement(
   graph: Pick<SceneGraph, 'getNode' | 'rootId'>
 ): SelectionPlacement {
   const world = getWorldMatrix(node, graph)
-  const [cx, cy, ox, oy, xx, xy, yx, yy] = Matrix.mapPoints(world, [
-    node.width / 2,
-    node.height / 2,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1
-  ])
-  const unit = (x: number, y: number): Vector => {
-    const length = Math.hypot(x, y) || 1
-    return { x: x / length, y: y / length }
-  }
+  const [cx, cy] = Matrix.mapPoints(world, [node.width / 2, node.height / 2])
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  const parentWorld = getParentWorldMatrix(parent, graph)
   return {
     node: { ...node },
     center: { x: cx, y: cy },
-    axisX: unit(xx - ox, xy - oy),
-    axisY: unit(yx - ox, yy - oy),
+    world,
+    parentWorld,
     direction: world[0] * world[4] - world[1] * world[3] < 0 ? -1 : 1,
-    parentInverse: Matrix.invert(getParentWorldMatrix(parent, graph))
+    parentInverse: Matrix.invert(parentWorld)
   }
 }
 
@@ -348,19 +337,46 @@ function positionCenteredAt(node: SceneNode, parentInverse: Mat3 | null, center:
   return { x: px - qx, y: py - qy }
 }
 
+/** Where a layer sits in its parent and how large it is, with its angle and flips. */
+export type LayerPlacement = Pick<
+  SceneNode,
+  'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'
+>
+
 /**
- * The box, in its parent's space, a layer takes when a multi-selection's canvas box `from` is
- * resized to `to`: its center keeps its relative place in the box and its width and height scale
- * along its own axes, so a rotated layer keeps its angle.
+ * Where a layer lands, in its parent's space, when a multi-selection's canvas box `from` is
+ * resized to `to`. Figma scales the layer's whole transform with the box, which skews a rotated
+ * layer under an uneven scale. A layer here cannot skew, so it takes what Figma then reports for
+ * it, and what a `.fig` file of that result opens as: its top-left corner and x axis where the
+ * scale puts them, its width and height the scaled lengths of its own axes, and its y axis square
+ * to its x axis. An even scale, or a layer upright in the box, comes out exactly as in Figma.
  */
-export function placeInResizedBounds(placement: SelectionPlacement, from: Rect, to: Rect): Rect {
+export function placeInResizedBounds(
+  placement: SelectionPlacement,
+  from: Rect,
+  to: Rect
+): LayerPlacement {
+  const { node, world, parentWorld } = placement
   const scaleX = from.width > 0 ? to.width / from.width : 1
   const scaleY = from.height > 0 ? to.height / from.height : 1
-  const { node, parentInverse, center, axisX, axisY } = placement
-  const width = node.width * Math.hypot(scaleX * axisX.x, scaleY * axisX.y)
-  const height = node.height * Math.hypot(scaleX * axisY.x, scaleY * axisY.y)
-  const target = { x: to.x + (center.x - from.x) * scaleX, y: to.y + (center.y - from.y) * scaleY }
-  return { ...positionCenteredAt({ ...node, width, height }, parentInverse, target), width, height }
+  const scale = Matrix.multiply(
+    Matrix.translated(to.x - from.x * scaleX, to.y - from.y * scaleY),
+    Matrix.scaled(scaleX, scaleY)
+  )
+  const [a, b, tx, c, d, ty] = Matrix.multiply(scale, world)
+  // The scaled axes: x along the first column, y along the second.
+  const xLength = Math.hypot(a, c)
+  const yLength = Math.hypot(b, d)
+  const width = node.width * xLength
+  const height = node.height * yLength
+  const ux = xLength > 0 ? a / xLength : 1
+  const uy = xLength > 0 ? c / xLength : 0
+  const mirrored = a * d - b * c < 0 ? -1 : 1
+  const squared: Mat3 = [ux, -uy * mirrored, tx, uy, ux * mirrored, ty, 0, 0, 1]
+  const sized = { ...node, width, height }
+  const { x, y, rotation, flipX, flipY } =
+    localTransformFromWorld(sized, squared, parentWorld) ?? node
+  return { x, y, width, height, rotation, flipX, flipY }
 }
 
 /**

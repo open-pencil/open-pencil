@@ -70,6 +70,56 @@ describe('placing a layer in resized selection bounds', () => {
     const moved = graph.createNode('RECTANGLE', page.id, { ...rect, rotation: 90 })
     expectRect(getAxisAlignedWorldBounds(moved, graph), to)
   })
+
+  test('under an uneven scale a turned layer takes the angle and size Figma reports', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    // 100×50 turned 30° counterclockwise on the canvas, as Figma's 30°, about (150, 150).
+    const node = graph.createNode('RECTANGLE', page.id, {
+      x: 100,
+      y: 125,
+      width: 100,
+      height: 50,
+      rotation: -30
+    })
+    const placement = selectionPlacement(node, graph)
+    const from = getAxisAlignedWorldBounds(node, graph)
+    const to = { ...from, width: from.width * 2 }
+    const placed = placeInResizedBounds(placement, from, to)
+
+    // Figma skews the layer and then reports rotation 16.1°, W 180.3, H 66.2: its x axis
+    // stretched to (√3, −½) and its y axis to (1, √3⁄2), the top-left corner kept in place.
+    expect(placed.rotation).toBeCloseTo((-Math.atan2(0.5, Math.sqrt(3)) * 180) / Math.PI, 6)
+    expect(placed.width).toBeCloseTo(100 * Math.hypot(Math.sqrt(3), 0.5), 6)
+    expect(placed.height).toBeCloseTo(50 * Math.hypot(1, Math.sqrt(3) / 2), 6)
+    const moved = graph.createNode('RECTANGLE', page.id, placed)
+    const scaledX = (x: number) => to.x + (x - from.x) * 2
+    const [ox, oy, tx, ty] = Matrix.mapPoints(placement.world, [0, 0, 100, 0])
+    const [mx, my, nx, ny] = Matrix.mapPoints(getWorldMatrix(moved, graph), [0, 0, placed.width, 0])
+    expect(mx).toBeCloseTo(scaledX(ox), 6)
+    expect(my).toBeCloseTo(oy, 6)
+    expect(nx).toBeCloseTo(scaledX(tx), 6)
+    expect(ny).toBeCloseTo(ty, 6)
+  })
+
+  test('an even scale keeps a turned layer’s angle and scales it whole', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('RECTANGLE', page.id, {
+      x: 100,
+      y: 125,
+      width: 100,
+      height: 50,
+      rotation: -30
+    })
+    const from = getAxisAlignedWorldBounds(node, graph)
+    const to = { x: from.x, y: from.y, width: from.width * 2, height: from.height * 2 }
+    const placed = placeInResizedBounds(selectionPlacement(node, graph), from, to)
+    expect(placed.rotation).toBeCloseTo(-30, 6)
+    expect(placed.width).toBeCloseTo(200, 6)
+    expect(placed.height).toBeCloseTo(100, 6)
+    expectRect(getAxisAlignedWorldBounds(graph.createNode('RECTANGLE', page.id, placed), graph), to)
+  })
 })
 
 describe('placing a layer in a rotated selection', () => {

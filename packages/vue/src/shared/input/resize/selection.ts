@@ -1,4 +1,4 @@
-import { compact } from 'es-toolkit'
+import { compact, isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
@@ -7,6 +7,7 @@ import {
   transformZoneAt,
   type HandlePosition
 } from '@open-pencil/core/geometry'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { placeInResizedBounds, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import { layerResizes } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
@@ -20,7 +21,7 @@ import {
 } from '#vue/shared/input/resize'
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { createResizeDrag } from '#vue/shared/input/resize/start'
-import type { DragResizeSelection, DragState } from '#vue/shared/input/types'
+import type { DragResizeMember, DragResizeSelection, DragState } from '#vue/shared/input/types'
 
 /**
  * A multi-selection's box on the canvas, the box the overlay draws its handles on: its layers'
@@ -97,17 +98,36 @@ export function applySelectionResize(
   for (const { drag, placement } of d.members) {
     const node = editor.graph.getNode(drag.nodeId)
     if (!node) continue
-    const rect = placeInResizedBounds(placement, origBounds, bounds)
-    applyResizedRect(drag, node, rect, scaledChanges(drag, node.type, rect), editor)
+    const { rotation, flipX, flipY, ...rect } = placeInResizedBounds(placement, origBounds, bounds)
+    const changes = { ...scaledChanges(drag, node.type, rect), rotation, flipX, flipY }
+    applyResizedRect(drag, node, rect, changes, editor)
   }
   editor.requestRepaint()
 }
+
+/** The angle and flips a member had when the drag started. */
+function startingTurn({ placement: { node } }: DragResizeMember): Turn {
+  return { rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
+}
+
+type Turn = Pick<SceneNode, 'rotation' | 'flipX' | 'flipY'>
 
 /** Commits every member's resize, then fits the groups around them once, as one undo step. */
 export function commitSelectionResize(dragState: DragResizeSelection, editor: Editor) {
   const d = toRaw(dragState)
   editor.undo.runBatch('Resize', () => {
-    for (const { drag } of d.members) commitResizePreview(drag, editor, { fitGroups: false })
+    for (const member of d.members) {
+      const node = editor.graph.getNode(member.drag.nodeId)
+      if (!node) continue
+      // A rotated layer under an uneven scale turns; the resize commit records the box, so the
+      // turn goes in its own step of the same batch, from where the drag started.
+      const start = startingTurn(member)
+      const turn = { rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
+      commitResizePreview(member.drag, editor, { fitGroups: false })
+      if (isEqual(turn, start)) continue
+      editor.graph.updateNodePreview(member.drag.nodeId, start)
+      editor.updateNodeWithUndo(member.drag.nodeId, turn, 'Resize')
+    }
     const parentIds = compact(
       d.members.map(({ drag }) => editor.graph.getNode(drag.nodeId)?.parentId)
     )
@@ -117,7 +137,10 @@ export function commitSelectionResize(dragState: DragResizeSelection, editor: Ed
 
 /** Puts every member back where the abandoned resize started. */
 export function cancelSelectionResize(dragState: DragResizeSelection, editor: Editor) {
-  for (const { drag } of toRaw(dragState).members) cancelResizePreview(drag, editor)
+  for (const member of toRaw(dragState).members) {
+    cancelResizePreview(member.drag, editor)
+    editor.graph.updateNodePreview(member.drag.nodeId, startingTurn(member))
+  }
 }
 
 /** Puts back a single-layer or multi-selection resize the pointer abandoned; other drags pass. */

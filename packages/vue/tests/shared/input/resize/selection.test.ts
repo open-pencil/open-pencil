@@ -119,3 +119,46 @@ describe('resizing a multi-selection inside a group', () => {
     expect(box(editor.graph.getNode(b.id))).toEqual({ x: 100, y: 100, width: 50, height: 50 })
   })
 })
+
+describe('stretching a multi-selection with a turned layer', () => {
+  /** A square turned 45° beside an upright one; the box's right edge is at x 200. */
+  function turned() {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const a = editor.graph.createNode('RECTANGLE', page, {
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50,
+      rotation: 45
+    })
+    const b = editor.graph.createNode('RECTANGLE', page, { x: 150, y: 0, width: 50, height: 50 })
+    editor.select([a.id, b.id])
+    return { a: a.id, b: b.id }
+  }
+
+  test('turns the layer as Figma reports it, and one undo puts its angle back', () => {
+    const { a } = turned()
+    const drag = start(200, 25)
+    expect(drag.handle).toBe('e')
+    // Doubling the box's width stretches the turned square's axes to (2, 1) and (−2, 1) over √2.
+    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor)
+    commitSelectionResize(drag, editor)
+    const node = editor.graph.getNode(a)
+    expect(node?.rotation).toBeCloseTo((Math.atan2(1, 2) * 180) / Math.PI, 6)
+    expect(node?.width).toBeCloseTo((50 * Math.sqrt(5)) / Math.SQRT2, 6)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(a)?.rotation).toBe(45)
+    expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
+  })
+
+  test('cancelling puts its angle back', () => {
+    const { a } = turned()
+    const drag = start(200, 25)
+    applySelectionResize(drag, 200 + drag.origBounds.width, 25, false, editor)
+    cancelSelectionResize(drag, editor)
+    expect(editor.graph.getNode(a)?.rotation).toBe(45)
+    expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
+  })
+})
