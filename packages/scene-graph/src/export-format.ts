@@ -3,7 +3,16 @@
  * export adapter that supports node export; labels and options come from that
  * adapter, so this list only decides what the Export panel offers.
  */
-export const EXPORT_FORMAT_IDS = ['png', 'jpg', 'webp', 'svg', 'pdf', 'pptx', 'drawio'] as const
+export const EXPORT_FORMAT_IDS = [
+  'png',
+  'jpg',
+  'webp',
+  'svg',
+  'pdf',
+  'pptx',
+  'drawio',
+  'handoff'
+] as const
 
 export type ExportFormatId = (typeof EXPORT_FORMAT_IDS)[number]
 

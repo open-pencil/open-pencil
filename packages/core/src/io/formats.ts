@@ -617,6 +617,41 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   }
 }
 
+/** Everything a coding agent needs to rebuild the selection exactly; see `formats/handoff`. */
+export const handoffFormat: IOFormatAdapter<'handoff'> = {
+  id: 'handoff',
+  label: 'Code handoff (Claude Code)',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['zip'],
+  mimeTypes: ['application/zip'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request, _options?: unknown, context?: IOContext) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const [{ exportHandoffPackage }, { sceneNodesToTailwindJSX }, { vectorElement }] =
+      await Promise.all([
+        import('./formats/handoff'),
+        import('@lawha/dom-css/export'),
+        import('#core/io/formats/html/vectors')
+      ])
+    const data = await exportHandoffPackage({
+      graph: request.graph,
+      nodeIds: target.nodeIds,
+      tailwindJSX: sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement }),
+      canvasKit: context?.canvasKit,
+      rasterize: (nodeIds, scale) =>
+        renderRaster(
+          { ...request, target: { scope: 'selection', nodeIds } },
+          { format: 'PNG', scale },
+          context
+        )
+    })
+    return { format: 'handoff', mimeType: 'application/zip', extension: 'zip', data }
+  }
+}
+
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
@@ -630,7 +665,8 @@ export const BUILTIN_IO_FORMATS = [
   pptxFormat,
   jsxFormat,
   tailwindJSXFormat,
-  htmlFormat
+  htmlFormat,
+  handoffFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

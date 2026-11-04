@@ -12,7 +12,8 @@ export {
   svgFormat,
   jsxFormat,
   htmlFormat,
-  tailwindJSXFormat
+  tailwindJSXFormat,
+  handoffFormat
 } from './formats'
 export { vectorElement } from './formats/html/vectors'
 export {
