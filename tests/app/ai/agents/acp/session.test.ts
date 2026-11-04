@@ -7,6 +7,7 @@ import type {
 } from '@agentclientprotocol/sdk'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   AgentSessionResumeError,
@@ -14,9 +15,6 @@ import {
   resumingAgent
 } from '@/app/ai/agents/acp/session'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'

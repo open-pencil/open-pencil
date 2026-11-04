@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { pageId, rect } from './helpers'
 
 describe('SceneGraph', () => {

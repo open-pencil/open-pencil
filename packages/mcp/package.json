@@ -76,6 +76,7 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@open-pencil/test-support": "workspace:*",
     "@types/node": "^25.9.9",
     "@types/ws": "^8.18.1"
   }

@@ -3,8 +3,7 @@ import { expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 
-import { expectDefined } from '../helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 test('nested synchronization converts between explicit source and occurrence coordinates', () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id

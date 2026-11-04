@@ -1,11 +1,12 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import {
   mergeVariableModeClaims,
   mergeVariableModeMaps,
   variableModeLayer
 } from '#fig/node-change/variable/maps'
+
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 const SIZES = 3
 const THEME = 8

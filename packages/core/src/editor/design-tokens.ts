@@ -10,9 +10,9 @@ import {
 } from '#core/io/formats/design-tokens/apply'
 import type { TokenImportPlan } from '#core/io/formats/design-tokens/plan'
 
-import type { NodeActions } from './nodes'
+import type { NodeActions } from './nodes/actions'
 import type { EditorContext } from './types'
-import type { createVariableActions } from './variables'
+import type { createVariableActions } from './variables/actions'
 
 type VariableActions = ReturnType<typeof createVariableActions>
 export function createDesignTokenActions(

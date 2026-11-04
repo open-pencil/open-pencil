@@ -1,13 +1,8 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-const LINEAR_MODES = ['LINEAR_BURN', 'LINEAR_DODGE'] as const
+import { solid } from '../paints'
 
-const solid = (r: number, g: number, b: number) => ({
-  type: 'SOLID' as const,
-  color: { r, g, b, a: 1 },
-  opacity: 1,
-  visible: true
-})
+const LINEAR_MODES = ['LINEAR_BURN', 'LINEAR_DODGE'] as const
 
 function addBackdrops(graph: SceneGraph, pageId: string): void {
   const colors = [solid(0.2, 0.45, 0.85), solid(0.55, 0.55, 0.55), solid(0.9, 0.6, 0.2)]

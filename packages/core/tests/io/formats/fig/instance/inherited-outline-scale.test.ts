@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#core-tests/helpers/fig/guid'
-
+import { guid } from '@open-pencil/test-support/fig/guid'
 import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'

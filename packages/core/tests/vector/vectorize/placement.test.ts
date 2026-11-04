@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { importSVG } from '@open-pencil/core/tools'

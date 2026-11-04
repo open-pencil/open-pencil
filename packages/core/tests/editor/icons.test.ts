@@ -8,8 +8,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { buildIconData } from '#core/icons/svg'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
 const BODIES: Record<string, string> = {

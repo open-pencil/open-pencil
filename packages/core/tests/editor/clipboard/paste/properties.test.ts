@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor, type Editor } from '@open-pencil/core'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 

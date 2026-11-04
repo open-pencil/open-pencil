@@ -4,8 +4,8 @@ import { create as createPRNG, oneOf, real53, type PRNG } from 'lib0/prng'
 import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import {
   expectSameLayerTree,
   settleGraphSync,

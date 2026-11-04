@@ -2,12 +2,14 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodesToTailwindJSX } from '#dom-css/export/tailwind-jsx'
 
-import { makeGraph, pageId, tw } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
+
+import { tw } from './helpers'
 
 describe('Tailwind JSX structure', () => {
   test('layer names cannot add attributes', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       name: 'a" onClick={alert(1)} x="',
       width: 100,
       height: 48
@@ -18,13 +20,13 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('backslashes and line breaks in names use string literals', () => {
-    const graph = makeGraph()
-    const backslash = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const backslash = graph.createNode('RECTANGLE', firstPageId(graph), {
       name: 'a\\b',
       width: 8,
       height: 8
     })
-    const lines = graph.createNode('RECTANGLE', pageId(graph), {
+    const lines = graph.createNode('RECTANGLE', firstPageId(graph), {
       name: 'two\nlines',
       width: 8,
       height: 8
@@ -34,8 +36,8 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('basic rectangle — div with w/h', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       name: 'Box',
       width: 100,
       height: 48
@@ -49,8 +51,8 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('text node uses <p> with text classes', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       name: 'Title',
       width: 200,
       height: 24,
@@ -69,8 +71,8 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('section uses <section> tag', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('SECTION', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('SECTION', firstPageId(graph), {
       width: 800,
       height: 600
     })
@@ -79,8 +81,8 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('frame with children renders nested', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       name: 'Card',
       width: 320,
       height: 200,
@@ -116,13 +118,13 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('selections are separated by blank lines', () => {
-    const graph = makeGraph()
-    const a = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const a = graph.createNode('RECTANGLE', firstPageId(graph), {
       name: 'A',
       width: 40,
       height: 40
     })
-    const b = graph.createNode('ELLIPSE', pageId(graph), {
+    const b = graph.createNode('ELLIPSE', firstPageId(graph), {
       name: 'B',
       width: 80,
       height: 80
@@ -135,8 +137,8 @@ describe('Tailwind JSX structure', () => {
   })
 
   test('default values are omitted', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       opacity: 1,

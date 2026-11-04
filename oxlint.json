@@ -406,7 +406,7 @@
       "files": [
         "tests/e2e/perf/basic.spec.ts",
         "tests/e2e/viewport/zoom-pan.spec.ts",
-        "tests/engine/visual-*.ts"
+        "packages/core/tests/canvas/visual/*.ts"
       ],
       "rules": {
         "no-console": "off"

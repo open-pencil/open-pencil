@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { percentLength } from '@open-pencil/scene-graph/text'
 import { createConnector, connectorSublayers, freeEndpoint } from '@open-pencil/scene-graph/connectors'

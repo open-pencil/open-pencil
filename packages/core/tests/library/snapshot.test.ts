@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { createLibraryRevision, discoverPublishableLibraryChanges } from '@open-pencil/core/library'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'

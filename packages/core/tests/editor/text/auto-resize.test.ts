@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import { setTextMeasurer } from '@open-pencil/core/layout'
 import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'

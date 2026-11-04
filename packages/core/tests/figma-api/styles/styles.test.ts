@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { createAPI } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'

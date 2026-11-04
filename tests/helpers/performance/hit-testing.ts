@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 
+import { readProbe } from './probe'
+
 export async function measureHitTesting(page: Page, run: () => Promise<void>) {
   const probe = await page.evaluateHandle(() => {
     const graph = window.openPencil?.getStore?.().graph
@@ -21,14 +23,5 @@ export async function measureHitTesting(page: Page, run: () => Promise<void>) {
       }
     }
   })
-  try {
-    await run()
-    return await probe.evaluate((probe) => probe.read())
-  } finally {
-    try {
-      await probe.evaluate((probe) => probe.dispose())
-    } finally {
-      await probe.dispose()
-    }
-  }
+  return readProbe(probe, run)
 }

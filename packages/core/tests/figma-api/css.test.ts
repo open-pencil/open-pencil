@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 import { renderNodesToHTML } from '#core/io/formats/html'
 
 const RED = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }] as const

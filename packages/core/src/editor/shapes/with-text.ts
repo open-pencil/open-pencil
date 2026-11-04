@@ -16,7 +16,7 @@ import { shapeWithTextKindFields, shapeWithTextLabel } from '@open-pencil/scene-
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import type { NodeActions } from '#core/editor/nodes'
+import type { NodeActions } from '#core/editor/nodes/actions'
 import type { EditorContext } from '#core/editor/types'
 import { textStyleChanges } from '#core/text/character-style'
 

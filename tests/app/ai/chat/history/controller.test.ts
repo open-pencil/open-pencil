@@ -5,14 +5,12 @@ import type { UIMessage } from 'ai'
 import { reactive } from 'vue'
 
 import type { ACPAgentID } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
 import type { AgentSessionLink } from '@/app/ai/chat/history/types'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 function editor(): ChatDocumentEditor {
   const id = crypto.randomUUID()
   return {

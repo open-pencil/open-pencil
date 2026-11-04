@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/servers/store'
 import {
   checkedCloudConnection,
@@ -10,8 +12,6 @@ import {
 import { readCloudSessionToken, saveCloudSessionToken } from '@/app/cloud/sessions/token'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
-import { fetchStub } from '#tests/helpers/fetch'
-
 const ORIGIN = 'https://cloud.example.com'
 const user = { userId: 'user-1', email: 'ada@example.com', name: 'Ada' }
 const workspace = {

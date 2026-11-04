@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument, type DocumentAssemblyOptions } from '#fig/document/materialize'
 import { unsupportedExpressionData } from '#fig/node-change/variable/unsupported'
 import { noop } from 'es-toolkit/function'
 
 import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 const COLLECTION = '1:1'
 const DEFAULT_MODE = '1:2'

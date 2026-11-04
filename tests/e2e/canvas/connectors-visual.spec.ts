@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { connectorDriver } from '#tests/helpers/canvas/connector-driver'
 import { pasteFigmaClipboard } from '#tests/helpers/canvas/figma-paste'
@@ -10,7 +12,7 @@ const layers = layerDriver(() => editor.page)
 const connectors = connectorDriver(() => editor.page)
 
 test('FigJam connectors draw their elbows, curve, caps, dashes, and label as Figma routed them', async () => {
-  const html = await readFile('tests/fixtures/clipboard/figjam-connectors.html', 'utf8')
+  const html = await readFile(repoPath('tests/fixtures/clipboard/figjam-connectors.html'), 'utf8')
   await pasteFigmaClipboard(editor.page, html)
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
@@ -18,7 +20,7 @@ test('FigJam connectors draw their elbows, curve, caps, dashes, and label as Fig
 })
 
 test('dragging a sticky routes the connectors attached to it again', async () => {
-  const html = await readFile('tests/fixtures/clipboard/figjam-connectors.html', 'utf8')
+  const html = await readFile(repoPath('tests/fixtures/clipboard/figjam-connectors.html'), 'utf8')
   await pasteFigmaClipboard(editor.page, html)
   await editor.canvas.waitForRender()
   const center = await layers.screenCenter('c-B')

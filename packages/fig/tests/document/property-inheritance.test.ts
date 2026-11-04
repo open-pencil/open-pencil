@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
 import { propertyBinding } from '#fig-tests/helpers/component-props'
-import { guid } from '#fig-tests/helpers/guid'
 import { createDocumentReader } from '#fig/document/read'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('inherits parent definition semantics without replacing local property identity', () => {
   const changes = [

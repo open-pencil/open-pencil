@@ -2,18 +2,17 @@
 
 Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforces the layout and kebab-case domain names. Every tool is a workspace named `@open-pencil/<domain>-tools`, listed literally in the root `workspaces` (the manifest schema rejects globs on purpose), so it can declare dependencies and run through `bun --filter`. `bun run check:tools` type-checks every tool through `tools/tsconfig.json`, reporting only files under `tools/` as `check:test-types` does for tests (`tools/checks/test-types/src/index.ts`); `bun run test:tools` runs every tool with a `test` script. A tool imports its own files through its package.json `imports` alias (`#ci/*`, `#release/*`), other tools through their package name, and the docs site config through the shared `#docs-config/*` path.
 
-| Role        | Contract                                                                                                               | Domains                                                                                                                |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `checks/`   | Read the tree and exit non-zero; never write inside the repository except an own baseline behind an explicit `--write` | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `test-homes`, `package-quality`, `bundle-budget` |
-| `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `emoji-metrics`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters`             |
-| `release/`  | Build, verify, and publish packages and native artifacts                                                               | `package-artifacts`, `release-packages`                                                                                |
-| `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot                  | `policy`, `images`, `pr-review-guidance`                                                                               |
-| `dev/`      | Test running, benchmarks, and local services for humans                                                                | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                                            |
+| Role        | Contract                                                                                              | Domains                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `checks/`   | Read the tree and exit non-zero; never write inside the repository                                    | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `package-quality`, `bundle-budget`   |
+| `generate/` | Write generated files or artifacts, idempotently                                                      | `brand`, `demo`, `emoji-metrics`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters` |
+| `release/`  | Build, verify, and publish packages and native artifacts                                              | `package-artifacts`, `release-packages`                                                                    |
+| `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot | `policy`, `images`, `pr-review-guidance`                                                                   |
+| `dev/`      | Test running, benchmarks, and local services for humans                                               | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                                |
 
 - Nothing under `generate/` or `release/` runs from `bun run check` except through a check entrypoint; `generate/authoring-reference` keeps its `check.ts` beside `generate.ts` until it splits.
 - Resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts-tools`, not parent-directory traversal. Keep sibling imports relative.
-- `checks/bundle-budget` owns `check:bundle`, the gzipped startup budget; it reads the last build's Vite manifest, so `preview.yml` runs it after `bun run build`.
-- `checks/test-homes` owns `engine-baseline.txt` and `check:test-homes`; `dev/unit-tests` owns the shard map and runner (`tests/AGENTS.md`).
+- `dev/unit-tests` owns the shard map and runner (`tests/AGENTS.md`).
 - No `scripts/` entrypoints: root `package.json` scripts call tool files directly.
 
 ## CI

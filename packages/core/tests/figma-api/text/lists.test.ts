@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalone'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'

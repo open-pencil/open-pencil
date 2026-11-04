@@ -1,4 +1,4 @@
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
@@ -54,7 +54,11 @@ function lone(name: string, props: Partial<SceneNode>, type: 'RECTANGLE' | 'FRAM
   return { name, graph, pageId, nodeId: node.id, inkId: node.id, bounds: box, ink: box }
 }
 
-function frameWithChildPastItsEdge(name: string, childProps: Partial<SceneNode>): FlippedCase {
+function frameWithChildPastItsEdge(
+  name: string,
+  childProps: Partial<SceneNode>,
+  frameProps: Partial<SceneNode> = {}
+): FlippedCase {
   const { graph, pageId } = emptyPage()
   const frame = graph.createNode('FRAME', pageId, {
     x: 40,
@@ -62,7 +66,8 @@ function frameWithChildPastItsEdge(name: string, childProps: Partial<SceneNode>)
     width: 120,
     height: 80,
     fills: [],
-    clipsContent: false
+    clipsContent: false,
+    ...frameProps
   })
   const child = graph.createNode('RECTANGLE', frame.id, {
     x: -30,
@@ -75,36 +80,6 @@ function frameWithChildPastItsEdge(name: string, childProps: Partial<SceneNode>)
   const ink = worldBox(graph, child)
   return {
     name,
-    graph,
-    pageId,
-    nodeId: frame.id,
-    inkId: child.id,
-    bounds: unionBoxes([worldBox(graph, frame), ink]),
-    ink
-  }
-}
-
-function flippedFrameWithChildPastItsEdge(): FlippedCase {
-  const { graph, pageId } = emptyPage()
-  const frame = graph.createNode('FRAME', pageId, {
-    x: 40,
-    y: 30,
-    width: 120,
-    height: 80,
-    fills: [],
-    clipsContent: false,
-    flipX: true
-  })
-  const child = graph.createNode('RECTANGLE', frame.id, {
-    x: -30,
-    y: 10,
-    width: 60,
-    height: 20,
-    fills: RED
-  })
-  const ink = worldBox(graph, child)
-  return {
-    name: 'a flipped frame with a child past its edge',
     graph,
     pageId,
     nodeId: frame.id,
@@ -149,7 +124,7 @@ export function flippedCases(): FlippedCase[] {
       flipY: true,
       rotation: 45
     }),
-    flippedFrameWithChildPastItsEdge(),
+    frameWithChildPastItsEdge('a flipped frame with a child past its edge', {}, { flipX: true }),
     groupWithFlippedChild()
   ]
 }

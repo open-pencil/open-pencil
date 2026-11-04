@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
 
 import { importClipboardNodes } from '@open-pencil/core/clipboard'

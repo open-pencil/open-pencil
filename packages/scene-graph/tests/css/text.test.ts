@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   parseCSSFontFamily,
   parseCSSLetterSpacing,
-  parseCSSLineHeight
+  parseCSSLineHeight,
+  resolveCSSFontFamily
 } from '@open-pencil/scene-graph/css'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
@@ -22,6 +23,23 @@ describe('parseCSSFontFamily', () => {
     ['', null]
   ])('%s', (value, expected) => {
     expect(parseCSSFontFamily(value)).toBe(expected)
+  })
+})
+
+describe('resolveCSSFontFamily', () => {
+  test.each([
+    ['system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', 'Inter'],
+    ['-apple-system, BlinkMacSystemFont, sans-serif', 'Inter'],
+    ['BlinkMacSystemFont, sans-serif', 'Inter'],
+    ['Sans-Serif', 'Inter'],
+    ['serif', 'Merriweather'],
+    ['ui-monospace, SFMono-Regular, Menlo, monospace', 'Roboto Mono'],
+    ['monospace', 'Roboto Mono'],
+    ['"serif", sans-serif', 'serif'],
+    ['"Helvetica Neue", Arial, sans-serif', 'Helvetica Neue'],
+    ['', null]
+  ])('%s', (value, expected) => {
+    expect(resolveCSSFontFamily(value)).toBe(expected)
   })
 })
 

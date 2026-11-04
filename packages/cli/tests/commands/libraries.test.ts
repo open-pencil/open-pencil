@@ -1,24 +1,15 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 import * as v from 'valibot'
 
 import { FileSystemLibraryCatalog } from '@open-pencil/cli/library'
 
 setDefaultTimeout(60_000)
-
-async function cli(args: string[]) {
-  const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], { stdout: 'pipe', stderr: 'pipe' })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: await proc.exited }
-}
-
 const librarySchema = v.object({ latestRevisionId: v.string() })
 
 describe('libraries CLI', () => {
@@ -34,11 +25,11 @@ describe('libraries CLI', () => {
         children: [{ id: 'button', type: 'frame', name: 'Primary Button', reusable: true }]
       })
     )
-    const created = await cli(['convert', authored, '-o', source])
+    const created = await runCLI(['convert', authored, '-o', source])
     expect(created.exitCode).toBe(0)
 
     const publish = (...extra: string[]) =>
-      cli([
+      runCLI([
         'libraries',
         'publish',
         source,
@@ -51,7 +42,7 @@ describe('libraries CLI', () => {
         ...extra
       ])
     const latest = async () => {
-      const listed = await cli(['libraries', 'list', '--root', catalog, '--json'])
+      const listed = await runCLI(['libraries', 'list', '--root', catalog, '--json'])
       const [library] = v.parse(
         v.pipe(v.string(), v.parseJson(), v.array(librarySchema)),
         listed.stdout

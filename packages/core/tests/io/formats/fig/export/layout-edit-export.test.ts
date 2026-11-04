@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#core-tests/helpers/fig/guid'
-
+import { guid } from '@open-pencil/test-support/fig/guid'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'

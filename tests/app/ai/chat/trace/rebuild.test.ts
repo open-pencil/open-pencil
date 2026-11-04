@@ -6,6 +6,7 @@ import type { UIMessage } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { ContextLimits } from '@/app/ai/chat/compaction/limits'
 import { messagesSinceCompaction, replyCompactions } from '@/app/ai/chat/compaction/marker'
@@ -17,7 +18,6 @@ import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 

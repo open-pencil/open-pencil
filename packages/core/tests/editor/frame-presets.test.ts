@@ -3,8 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { computeLayout } from '@open-pencil/core/layout'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 const PHONE_PRESET = { name: 'iPhone Air', width: 420, height: 912 }
 const DESKTOP_PRESET = { name: 'Desktop', width: 1440, height: 1024 }
 
