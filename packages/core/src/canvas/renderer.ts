@@ -2,7 +2,7 @@ import { isEqual, noop } from 'es-toolkit'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
-import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { drawnBlurRadius, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -677,6 +677,11 @@ export class SkiaRenderer {
 
   measureTextNode(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
     return RenderText.measureTextNode(this, node, maxWidth)
+  }
+
+  /** Where `node`'s glyphs draw ink in its box, as `measureTextInkAsDrawn` finds it. */
+  measureTextInk(node: SceneNode): VisualBounds | null | undefined {
+    return RenderText.measureTextInkAsDrawn(this, node)
   }
 
   measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {

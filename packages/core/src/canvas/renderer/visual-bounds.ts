@@ -12,6 +12,7 @@ import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { projectedNode, type RotationPreview } from '#core/geometry'
+import { measureTextInk } from '#core/text/ink'
 
 /** The axis-aligned box around `bounds` once `matrix` maps it. */
 export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBounds {
@@ -35,14 +36,31 @@ export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBound
   }
 }
 
+/**
+ * What a node draws before strokes and effects, in its own axes: a text's glyphs where their ink
+ * is known (`measureTextInk`), underlines included, and its box otherwise, with the lines and
+ * decoration a fixed-size box lets run past it.
+ */
+function ownShape(node: SceneNode): VisualBounds {
+  const ink = node.type === 'TEXT' && !node.textPathData ? measureTextInk(node) : undefined
+  if (ink) return ink
+  return {
+    minX: 0,
+    minY: 0,
+    maxX: node.width,
+    maxY: node.height + textLinesOverflow(node) + textDecorationOverflow(node)
+  }
+}
+
 export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   const effects = effectOverflow(node.effects)
+  const shape = ownShape(node)
   return mapVisualBounds(getWorldMatrix(node, graph), {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY: node.height + textLinesOverflow(node) + stroke + effects.bottom
+    minX: shape.minX - stroke - effects.left,
+    minY: shape.minY - stroke - effects.top,
+    maxX: shape.maxX + stroke + effects.right,
+    maxY: shape.maxY + stroke + effects.bottom
   })
 }
 
@@ -54,12 +72,12 @@ export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): Visua
 function localVisualBounds(node: SceneNode): VisualBounds {
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   const effects = effectOverflow(node.effects)
+  const shape = ownShape(node)
   const box: VisualBounds = {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY:
-      node.height + textLinesOverflow(node) + stroke + effects.bottom + textDecorationOverflow(node)
+    minX: shape.minX - stroke - effects.left,
+    minY: shape.minY - stroke - effects.top,
+    maxX: shape.maxX + stroke + effects.right,
+    maxY: shape.maxY + stroke + effects.bottom
   }
   const hasNonInsideStroke = node.strokes.some(
     (stroke) => stroke.visible && stroke.align !== 'INSIDE'

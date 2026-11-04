@@ -21,6 +21,7 @@ import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/font/manager'
+import { installTextInkMeasurer } from '#core/text/ink'
 import { prepareTextFonts } from '#core/text/prepare'
 import { fontResolver } from '#core/text/resolver'
 
@@ -100,6 +101,7 @@ export function createEditor(options?: EditorOptions) {
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
   let uninstallTextMeasurer: (() => void) | null = null
+  let uninstallTextInkMeasurer: (() => void) | null = null
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
@@ -392,11 +394,18 @@ export function createEditor(options?: EditorOptions) {
             _renderer ? pendingTextLayout.measure(_renderer, node, maxWidth) : null
           )
         : null
+    uninstallTextInkMeasurer?.()
+    uninstallTextInkMeasurer =
+      typeof renderer.measureTextInk === 'function'
+        ? installTextInkMeasurer((node) => _renderer?.measureTextInk(node))
+        : null
   }
 
   function releaseTextMeasurer() {
     uninstallTextMeasurer?.()
     uninstallTextMeasurer = null
+    uninstallTextInkMeasurer?.()
+    uninstallTextInkMeasurer = null
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {
