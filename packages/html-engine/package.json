@@ -10,7 +10,7 @@
   "files": [
     "dist",
     "src",
-    "wasm/html-engine.wasm",
+    "wasm",
     "README.md",
     "THIRD-PARTY-NOTICES.md"
   ],
