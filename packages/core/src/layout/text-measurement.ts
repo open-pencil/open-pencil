@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { lineHeightPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
+import { lineStepPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
 
 import { rangeCapHeight } from '#core/text/character-face'
 import { measureTextWithFont, type MeasuredTextLines } from '#core/text/font/glyphs'
@@ -23,7 +23,7 @@ export function estimateTextSize(
   const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''
 
-  const ownLineH = lineHeightPixels(node.lineHeight, fontSize) ?? 0
+  const ownLineH = lineStepPixels(node.lineHeight, fontSize) ?? 0
   const explicitLineH = ownLineH > 0 ? ownLineH : undefined
   const hardLines = text.split('\n')
   const measured = hardLines.map(

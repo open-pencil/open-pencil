@@ -4,11 +4,12 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
+import { estimateTextSize } from '#core/layout/text-measurement'
 import { fontManager } from '#core/text/font/manager'
 
 const run = (start: number, length: number, style: StyleRun['style']): StyleRun => ({
@@ -21,8 +22,19 @@ let ck: CanvasKit
 let provider: TypefaceFontProvider
 
 function layOut(props: Partial<SceneNode>): TextLayout {
+  return buildParagraph(
+    { ck, fontProvider: provider, fontsLoaded: true },
+    textNode(props),
+    undefined,
+    {
+      halfLeading: true
+    }
+  )
+}
+
+function textNode(props: Partial<SceneNode>): SceneNode {
   const graph = new SceneGraph()
-  const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+  return graph.createNode('TEXT', graph.getPages()[0].id, {
     fontFamily: 'Inter',
     fontSize: 24,
     lineHeight: null,
@@ -30,9 +42,6 @@ function layOut(props: Partial<SceneNode>): TextLayout {
     height: 400,
     textAutoResize: 'WIDTH_AND_HEIGHT',
     ...props
-  })
-  return buildParagraph({ ck, fontProvider: provider, fontsLoaded: true }, node, undefined, {
-    halfLeading: true
   })
 }
 
@@ -86,25 +95,25 @@ function rightmostInk(layout: TextLayout, top: number, bottom: number): number {
   )
 }
 
+beforeAll(async () => {
+  ck = await getCanvasKit()
+  provider = ck.TypefaceFontProvider.Make()
+  fontManager.attachProvider(ck, provider)
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  provider.registerFont(inter, 'Inter')
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+})
+
+afterAll(() => {
+  fontManager.detachProvider(provider)
+  provider.delete()
+})
+
 // Baselines and heights measured in live Figma (2026-10-11) from the lines it saves, Inter.
 describe('lines of mixed sizes', () => {
-  beforeAll(async () => {
-    ck = await getCanvasKit()
-    provider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, provider)
-    const inter = expectDefined(
-      await fontManager.fetchBundledFont('/InterVariable.ttf'),
-      'bundled Inter font'
-    )
-    provider.registerFont(inter, 'Inter')
-    await fontManager.markLoaded('Inter', 'Regular', inter)
-  })
-
-  afterAll(() => {
-    fontManager.detachProvider(provider)
-    provider.delete()
-  })
-
   test('steps each baseline down by the height of the line it starts', () => {
     const below = layOut({
       text: 'first line\nSmall LARGE',
@@ -238,5 +247,70 @@ describe('lines of mixed sizes', () => {
     })
     expect(larger.getLineMetrics()).toHaveLength(1)
     expect(larger.didExceedMaxLines()).toBe(true)
+  })
+})
+
+/** Each line's baseline below the first. */
+function baselineSteps(layout: TextLayout): number[] {
+  const [first, ...rest] = layout.getLineMetrics().map((line) => line.baseline)
+  return [0, ...rest.map((baseline) => Math.round((baseline - first) * 1000) / 1000)]
+}
+
+/** The bottom row of each run of rows with ink, drawing the layout at scale 1. */
+function inkBottoms(layout: TextLayout): number[] {
+  const rows = inkRows(layout).map((row) => row.includes(true))
+  return rows.flatMap((inked, y) => (inked && !rows[y + 1] ? [y] : []))
+}
+
+// Figma desktop 126 (2026-11-04), Inter: lines step by an exact line height in pixels and each
+// baseline lands on a whole pixel; a percent line height is whole pixels to begin with.
+describe('fractional line heights', () => {
+  const lines = (count: number) => Array.from({ length: count }, () => 'H').join('\n')
+
+  test('step lines by the whole pixels between baselines an exact line height sets', () => {
+    for (const [fontSize, lineHeight, steps, height] of [
+      [23, 30.6, [0, 30, 61, 91], 123],
+      [23, 25.3, [0, 25, 51, 76], 102],
+      [17, 22.7, [0, 22, 45, 68], 91],
+      [17, 20.45, [0, 21, 41, 62], 82]
+    ] as const) {
+      const layout = layOut({ text: lines(4), fontSize, lineHeight: pixelLength(lineHeight) })
+      expect(baselineSteps(layout)).toEqual([...steps])
+      expect(Math.ceil(layout.getHeight())).toBe(height)
+      layout.delete()
+    }
+  })
+
+  test('draw each line on the baseline it is placed at', () => {
+    const layout = layOut({ text: lines(4), fontSize: 23, lineHeight: pixelLength(30.6) })
+    const bottoms = inkBottoms(layout)
+    expect(bottoms.map((bottom) => bottom - bottoms[0])).toEqual([0, 30, 61, 91])
+    layout.delete()
+  })
+
+  test('step lines by no pixels at a percent line height under half a pixel', () => {
+    // A larger character sets its line apart from the others; Figma still makes it 1 px tall.
+    const layout = layOut({
+      text: 'H\nHH\nH',
+      fontSize: 14,
+      lineHeight: percentLength(2),
+      styleRuns: [run(3, 1, { fontSize: 30 })]
+    })
+    expect(Math.ceil(layout.getHeight())).toBe(1)
+    layout.delete()
+  })
+
+  test('round a percent line height to whole pixels', () => {
+    for (const [fontSize, percent, height] of [
+      [13, 110, 140],
+      [14, 120, 170],
+      [12, 130, 160]
+    ] as const) {
+      const props = { text: lines(10), fontSize, lineHeight: percentLength(percent) }
+      const layout = layOut(props)
+      expect(Math.ceil(layout.getHeight())).toBe(height)
+      layout.delete()
+      expect(estimateTextSize(textNode({ ...props, text: 'H' })).height).toBe(height / 10)
+    }
   })
 })

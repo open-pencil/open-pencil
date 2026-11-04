@@ -69,17 +69,17 @@ function metric(value: number): number {
   return Math.round(value * METRIC_STEPS) / METRIC_STEPS
 }
 
-/**
- * A line's box as Figma sets it. The line is as tall as the tallest line height on it, auto
- * standing for a font's own height rounded to a whole pixel, and its baseline sits where its
- * tallest font, centred in that height, puts it. Fonts' heights are the shaped runs' own, so a
- * fallback font counts with its metrics. Returns `null` for a line with nothing to measure.
- */
 /** The line a point `y` of the paragraph falls on, or `fallback` past them all. */
 function lineAt(lines: readonly LineMetrics[], y: number, fallback: LineMetrics): LineMetrics {
   return lines.find((line) => y < line.baseline + line.descent) ?? fallback
 }
 
+/**
+ * A line's box as Figma sets it. The line is as tall as the tallest line height on it: a set
+ * one as `lineStepPixels` gives it, auto a font's own height rounded to a whole pixel. Its
+ * baseline sits where its tallest font, centred in that height, puts it. Fonts' heights are the shaped runs' own, so a
+ * fallback font counts with its metrics. Returns `null` for a line with nothing to measure.
+ */
 export function figmaLineBox(
   ck: CanvasKit,
   paragraph: Paragraph,
@@ -107,7 +107,7 @@ export function figmaLineBox(
       const runNatural = metric(rect[3] - rect[1])
       // A first-line indent is a placeholder with no height.
       if (runNatural <= 0) continue
-      height = Math.max(height, Math.round(run.lineHeight ?? runNatural))
+      height = Math.max(height, run.lineHeight ?? Math.round(runNatural))
       if (runNatural > natural) {
         natural = runNatural
         // The newline that makes an empty line stands on the line above, so its box is
@@ -262,16 +262,22 @@ export function placeLines<Block extends LineBlock>(
   const boxes = lineBoxes(ck, blocks, metrics)
   if (!boxes) return null
   const all = boxes.flat()
-  if (allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))) return null
+  // A paragraph steps lines by whole pixels, so lines alike at a whole-pixel height already
+  // stand where Figma puts them.
+  const height = all[0].height
+  const alike = allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))
+  if (alike && allSame([height, Math.round(height)])) return null
 
-  // Distances from the first baseline add up whole-pixel line heights, so they stay exact.
+  // Figma steps lines by their exact heights and puts each baseline on a whole pixel, so a
+  // baseline stands the whole pixels between those below the first (Figma desktop 126).
   const first = all[0]
   const last = all[all.length - 1]
+  const start = Math.round(first.ascent)
   let below = 0
   const baselines = blocks.map((block, index) =>
     boxes[index].map((box, line) => {
       if (index > 0 || line > 0) below += box.height + (line === 0 ? block.spaceBefore : 0)
-      return first.ascent + below
+      return first.ascent + Math.round(first.ascent + below) - start
     })
   )
   const placed = new Map<Block, BlockPlacement & { y: number }>()
