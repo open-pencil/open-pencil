@@ -13,6 +13,11 @@ export function textAutoWidthDriver(page: () => Page) {
         const sceneURL = '/tests/helpers/canvas/text-auto-width/scene.ts'
         const scenes: typeof TextAutoWidthScenes = await import(sceneURL)
         scenes.createTextAutoWidthScene(store.graph, store.state.currentPageId)
+        // Layers built on the graph skip the editor's text sizing; apply it as an edit would.
+        for (const node of store.graph.getAllNodes()) {
+          if (node.type === 'TEXT')
+            store.updateNode(node.id, { textAutoResize: node.textAutoResize })
+        }
         store.clearSelection()
         store.requestRender()
       })
