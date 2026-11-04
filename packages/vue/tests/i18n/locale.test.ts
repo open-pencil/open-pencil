@@ -24,6 +24,12 @@ describe('browser locale matching', () => {
     expect(resolveBrowserLocale(['zh-Hant'])).toBe('en')
   })
 
+  test('matches Brazilian and European Portuguese to pt-BR', () => {
+    expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['pt-PT'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['pt'])).toBe('pt-BR')
+  })
+
   test('falls back to English when no locale matches', () => {
     expect(resolveBrowserLocale(['ko-KR'])).toBe('en')
   })
