@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
+
+import { FIXTURES } from '#html-engine-tests/helpers/paths'
 
 import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
@@ -18,10 +21,10 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   return element
 }
 
-/** The engine with a Latin subset of Inter as its sans-serif font, so text has lines. */
+/** The engine with the repository's Latin subset of Inter as its sans-serif font, so text has lines. */
 async function engineWithInter() {
   const engine = await loadHTMLEngine()
-  engine.addFont(await Bun.file(new URL('fixtures/inter-latin.woff2', import.meta.url)).bytes())
+  engine.addFont(await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes())
   engine.setGenericFamily('sans-serif', ['Inter Variable', 'Inter'])
   return engine
 }
