@@ -17,6 +17,37 @@ export function createYogaNode(): YogaNode {
   return Yoga.Node.create(yogaConfig)
 }
 
+/**
+ * The stroke a frame counts inside its padding, per side: its visible INSIDE strokes when its
+ * strokes are included in layout, as Figma lays it out and as a CSS border takes room.
+ */
+function includedStrokeWeights(
+  node: SceneNode
+): Record<'top' | 'right' | 'bottom' | 'left', number> {
+  const stroke = node.strokes.find((paint) => paint.visible)
+  if (!node.strokesIncludedInLayout || stroke?.align !== 'INSIDE') {
+    return { top: 0, right: 0, bottom: 0, left: 0 }
+  }
+  if (!node.independentStrokeWeights) {
+    return { top: stroke.weight, right: stroke.weight, bottom: stroke.weight, left: stroke.weight }
+  }
+  return {
+    top: node.borderTopWeight,
+    right: node.borderRightWeight,
+    bottom: node.borderBottomWeight,
+    left: node.borderLeftWeight
+  }
+}
+
+/** A layout container's padding, with the strokes it includes in layout added to each side. */
+export function setLayoutPadding(yogaNode: YogaNode, node: SceneNode): void {
+  const stroke = includedStrokeWeights(node)
+  yogaNode.setPadding(Edge.Top, node.paddingTop + stroke.top)
+  yogaNode.setPadding(Edge.Right, node.paddingRight + stroke.right)
+  yogaNode.setPadding(Edge.Bottom, node.paddingBottom + stroke.bottom)
+  yogaNode.setPadding(Edge.Left, node.paddingLeft + stroke.left)
+}
+
 export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): void {
   yogaChild.setPositionType(PositionType.Absolute)
   yogaChild.setPosition(Edge.Left, child.x)

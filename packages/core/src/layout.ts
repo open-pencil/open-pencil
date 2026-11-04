@@ -4,7 +4,6 @@ import {
   Display,
   FlexDirection,
   Gutter,
-  Edge,
   MeasureMode,
   Overflow,
   Wrap,
@@ -53,7 +52,8 @@ import {
   mapAlignSelf,
   mapGridTrack,
   mapJustify,
-  parentStretchedAxis
+  parentStretchedAxis,
+  setLayoutPadding
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
@@ -239,10 +239,7 @@ function configureFlexContainer(
     yogaNode.setAlignContent(Align.SpaceBetween)
   }
 
-  yogaNode.setPadding(Edge.Top, node.paddingTop)
-  yogaNode.setPadding(Edge.Right, node.paddingRight)
-  yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
-  yogaNode.setPadding(Edge.Left, node.paddingLeft)
+  setLayoutPadding(yogaNode, node)
 
   // Space between takes the place of the gap in Figma's auto layout. A generated frame keeps it
   // as the least space between its sublayers, as a sticky note keeps its author clear of a long body.
@@ -281,10 +278,7 @@ function configureChildAsGrid(
   yogaChild.setGap(Gutter.Column, child.gridColumnGap)
   yogaChild.setGap(Gutter.Row, child.gridRowGap)
 
-  yogaChild.setPadding(Edge.Top, child.paddingTop)
-  yogaChild.setPadding(Edge.Right, child.paddingRight)
-  yogaChild.setPadding(Edge.Bottom, child.paddingBottom)
-  yogaChild.setPadding(Edge.Left, child.paddingLeft)
+  setLayoutPadding(yogaChild, child)
 
   const isParentRow = parent.layoutMode === 'HORIZONTAL'
   const selfOverride = child.layoutAlignSelf !== 'AUTO'
