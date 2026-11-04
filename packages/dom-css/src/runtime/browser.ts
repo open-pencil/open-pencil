@@ -190,7 +190,12 @@ const IMAGE_LOAD_LIMIT_MS = 10_000
 
 /** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
 function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
-  const pending = Array.from(root.querySelectorAll('img')).filter((image) => !image.complete)
+  const images = Array.from(root.querySelectorAll('img'))
+  // A lazy image outside the sandbox's view would never load, so every image loads now.
+  for (const image of images) {
+    if (image.getAttribute('loading') === 'lazy') image.setAttribute('loading', 'eager')
+  }
+  const pending = images.filter((image) => !image.complete)
   if (pending.length === 0) return Promise.resolve()
   const loaded = Promise.all(
     pending.map(

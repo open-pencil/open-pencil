@@ -155,6 +155,23 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(byId(document, 'after').layout?.box.y).toBe(30)
   })
 
+  test('loads lazy images below the view before recording layout', async ({ page }) => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"></svg>'
+    await page.route('https://images.test/lazy.svg', async (route) => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 300)
+      })
+      await route.fulfill({ contentType: 'image/svg+xml', body: svg })
+    })
+    const document = await captured(
+      page,
+      '<div id="spacer"></div><img id="lazy" loading="lazy" src="https://images.test/lazy.svg">',
+      'body { margin: 0 } #spacer { height: 3000px } img { display: block }'
+    )
+
+    expect(byId(document, 'lazy').layout?.box).toEqual({ x: 0, y: 3000, width: 40, height: 20 })
+  })
+
   test('leaves layout out unless asked', async ({ page }) => {
     const document = createHeadlessCSSRuntime().parseHTML('<div id="plain"></div>')
     const computed = await browserRuntimeComputeStyles(page, document, '', 'iframe')
