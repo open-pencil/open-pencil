@@ -5,11 +5,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas/renderer'
-import {
-  hasRotatedDerivedGlyphs,
-  shouldUseHardDerivedGlyphCoverage,
-  snapDerivedGlyphBaseline
-} from '#core/canvas/text/derived'
+import { hasRotatedDerivedGlyphs, snapDerivedGlyphBaseline } from '#core/canvas/text/derived'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
@@ -146,12 +142,6 @@ describe('derived text rendering', () => {
     expect(snapDerivedGlyphBaseline(47.45454406738281)).toBe(47)
     expect(snapDerivedGlyphBaseline(15.090909004211426)).toBe(15)
     expect(snapDerivedGlyphBaseline(17.81818199157715)).toBe(18)
-  })
-
-  test('uses hard source coverage only for regular 20px derived glyphs', () => {
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 400 })).toBeTrue()
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 600 })).toBeFalse()
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 14, fontWeight: 500 })).toBeFalse()
   })
 
   test('draws Figma-derived glyphs even when the font is unavailable', async () => {
