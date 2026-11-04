@@ -39,6 +39,17 @@ export interface LinePiece {
   paragraph: Paragraph
   x: number
   y: number
+  /** The block's line the piece starts with. */
+  line: number
+}
+
+/**
+ * How far a paragraph line `top` below the box must move to draw its glyphs on the whole pixel
+ * its exact `baseline` rounds to: Figma draws every baseline on a whole pixel of the box, and a
+ * paragraph draws a line's glyphs on its own baseline rounded (Figma desktop 126).
+ */
+export function wholePixelShift(top: number, baseline: number): number {
+  return Math.round(top + baseline) - top - Math.round(baseline)
 }
 
 /** Where a block's lines go when they do not stack as its paragraph has them. */
@@ -232,7 +243,7 @@ function buildPieces(
       // Lines that lay out or snap apart are drawn one by one.
       return grouped ? buildPieces(block, width, offsets, false) : null
     }
-    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from] })
+    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from], line: from })
     from = to
   }
   return pieces
@@ -249,14 +260,13 @@ export interface PlacedLines<Block> {
  * line is as tall as its tallest line height, and each baseline stands that far, plus the
  * paragraph's spacing, below the one before, where a paragraph would stack the lines' boxes.
  * `null` keeps the paragraphs' placement: for lines alike, where it is the same, and for
- * lines that cannot be measured or drawn apart. Baselines land on whole pixels of the box,
- * whose top stands `firstBaseline` above the first one, the first line's ascent by default.
+ * lines that cannot be measured or drawn apart. Baselines stay exact, as Figma saves them;
+ * drawing puts each on a whole pixel.
  */
 export function placeLines<Block extends LineBlock>(
   ck: CanvasKit,
   blocks: readonly Block[],
-  width: number,
-  firstBaseline?: number
+  width: number
 ): PlacedLines<Block> | null {
   const metrics = blocks.map((block) => block.metrics)
   // A single line has none to be spaced from.
@@ -270,16 +280,14 @@ export function placeLines<Block extends LineBlock>(
   const alike = allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))
   if (alike && allSame([height, Math.round(height)])) return null
 
-  // Figma steps lines by their exact heights and puts each baseline on a whole pixel, so a
-  // baseline stands the whole pixels between those below the first (Figma desktop 126).
+  // Figma steps lines by their exact heights (Figma desktop 126).
   const first = all[0]
   const last = all[all.length - 1]
-  const origin = firstBaseline ?? first.ascent
   let below = 0
   const baselines = blocks.map((block, index) =>
     boxes[index].map((box, line) => {
       if (index > 0 || line > 0) below += box.height + (line === 0 ? block.spaceBefore : 0)
-      return first.ascent + Math.round(origin + below) - Math.round(origin)
+      return metric(first.ascent + below)
     })
   )
   const placed = new Map<Block, BlockPlacement & { y: number }>()
