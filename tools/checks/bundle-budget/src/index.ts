@@ -19,7 +19,8 @@ const files = staticFiles(manifest, STARTUP_ENTRY)
 const sizes = await Promise.all(
   files.map(async (file) => Bun.gzipSync(await readFile(resolve(dist, file))).length)
 )
-const kib = Math.round(sizes.reduce((total, size) => total + size, 0) / 1024)
+const bytes = sizes.reduce((total, size) => total + size, 0)
+const kib = Math.round(bytes / 1024)
 
 console.log(
   `Startup: ${kib} KiB gzipped in ${files.length} files, budget ${STARTUP_BUDGET_KIB} KiB.`
@@ -29,7 +30,7 @@ if (onDemand.length > 0) {
   console.error(`Startup code is left out of the precache: ${onDemand.join(', ')}`)
   process.exit(1)
 }
-if (kib > STARTUP_BUDGET_KIB) {
+if (bytes > STARTUP_BUDGET_KIB * 1024) {
   console.error('Startup code is over budget: load the new code on demand with a dynamic import.')
   process.exit(1)
 }
