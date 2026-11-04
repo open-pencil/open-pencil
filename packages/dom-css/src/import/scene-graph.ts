@@ -55,6 +55,7 @@ import {
   applyParagraphs,
   type CSSCharacterStyle
 } from './text'
+import { cssTransform, type CSSTransforms } from './transform'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -175,6 +176,8 @@ function applyElementStyle(
     }
     node.strokes = strokes
     setBorderWeights(node, style, strokes[0])
+    // A CSS border takes room inside the box, as an inside stroke included in layout does.
+    node.strokesIncludedInLayout = true
   }
 
   const effects = cssShadows(pickStyle(style, 'box-shadow'))
@@ -225,6 +228,8 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
     node.textAlignHorizontal = textAlign
   }
 
+  // Lays out as one line through its sizing; the line limit is for truncating it, as an
+  // export writes it back as `nowrap`.
   if (pickStyle(style, 'white-space') === 'nowrap') node.maxLines = 1
 }
 
@@ -296,11 +301,29 @@ function hasContent(element: DesignElement): boolean {
   return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }
 
+/** What building the layers records for laying them out: captured boxes and transforms. */
+interface Recorded {
+  boxes: CapturedBoxes
+  transforms: CSSTransforms
+}
+
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
-function record(boxes: CapturedBoxes, node: SceneNode, captured: CapturedBox | undefined) {
+function record(recorded: Recorded, node: SceneNode, captured: CapturedBox | undefined) {
   if (!captured) return
-  boxes.set(node.id, captured)
+  recorded.boxes.set(node.id, captured)
   applyCapturedLines(node, captured)
+}
+
+/** Remembers the element's box, and its transform, for the layer built for it. */
+function recordElement(
+  recorded: Recorded,
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration
+) {
+  record(recorded, node, capturedBox(element))
+  const transform = cssTransform(style)
+  if (transform) recorded.transforms.set(node.id, transform)
 }
 
 function createElementNode(
@@ -308,7 +331,7 @@ function createElementNode(
   parentId: string,
   element: DesignElement,
   parentFlow: ParentFlow,
-  boxes: CapturedBoxes
+  recorded: Recorded
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
@@ -320,12 +343,12 @@ function createElementNode(
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
     linkText(text, element)
-    record(boxes, text, capturedBox(element))
+    recordElement(recorded, text, element, style)
     return text
   }
   if (!hasBoxStyle(element, style) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
-    record(boxes, text, capturedBox(element))
+    recordElement(recorded, text, element, style)
     return text
   }
 
@@ -334,7 +357,7 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
-  record(boxes, node, capturedBox(element))
+  recordElement(recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
@@ -343,7 +366,7 @@ function createElementNode(
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
-  createChildLayers(graph, node, element, style, flow, boxes)
+  createChildLayers(graph, node, element, style, flow, recorded)
   return node
 }
 
@@ -357,13 +380,13 @@ function createChildLayers(
   element: DesignElement,
   style: DesignStyleDeclaration,
   flow: FlowKind | null,
-  boxes: CapturedBoxes
+  recorded: Recorded
 ): void {
   if (flow !== 'flex' && holdsRichText(element)) {
     const textStyle = inheritedTextStyle(element, style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
-    record(boxes, text, capturedTextBox(element))
+    record(recorded, text, capturedTextBox(element))
     return
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
@@ -372,8 +395,8 @@ function createChildLayers(
     : undefined
   for (const child of element.children) {
     const inherited = inheritedTextStyle(element, style)
-    const layer = createDesignNode(graph, node.id, child, flow ?? 'none', boxes, inherited)
-    if (layer?.type === 'TEXT') record(boxes, layer, textBox)
+    const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
+    if (layer?.type === 'TEXT') record(recorded, layer, textBox)
   }
 }
 
@@ -382,7 +405,7 @@ function createDesignNode(
   parentId: string,
   node: DesignNode,
   parentFlow: ParentFlow,
-  boxes: CapturedBoxes,
+  recorded: Recorded,
   inheritedStyle: DesignStyleDeclaration = {}
 ): SceneNode | null {
   if (node.type === 'text') {
@@ -392,7 +415,7 @@ function createDesignNode(
     return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
   }
 
-  return createElementNode(graph, parentId, node, parentFlow, boxes)
+  return createElementNode(graph, parentId, node, parentFlow, recorded)
 }
 
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
@@ -407,6 +430,8 @@ export interface DesignLayers {
   graph: SceneGraph
   /** Empty unless the document's layout was recorded; see `placeLayersFromLayout`. */
   boxes: CapturedBoxes
+  /** The elements' transforms, for `applyCSSTransforms` once the layers are laid out. */
+  transforms: CSSTransforms
 }
 
 /**
@@ -420,17 +445,17 @@ export function designDocumentToLayers(
 ): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
-  const boxes: CapturedBoxes = new Map()
+  const recorded: Recorded = { boxes: new Map(), transforms: new Map() }
 
   page.name = options.pageName ?? 'DesignDOM'
 
   for (const child of document.children) {
-    createDesignNode(graph, page.id, child, 'none', boxes)
+    createDesignNode(graph, page.id, child, 'none', recorded)
   }
-  placeTopLevelLayers(graph, page.id, boxes)
+  placeTopLevelLayers(graph, page.id, recorded.boxes)
 
   fitPageToChildren(page, graph)
-  return { graph, boxes }
+  return { graph, ...recorded }
 }
 
 export function designDocumentToSceneGraph(
@@ -441,5 +466,6 @@ export function designDocumentToSceneGraph(
 }
 
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
+export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 
 export type { DesignDocumentToSceneGraphOptions as ToSceneGraphOptions }
