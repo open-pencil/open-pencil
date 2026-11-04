@@ -1,1 +1,0 @@
-- `figma.getNodeByIdAsync()`, `get_node`, and `get_page_tree` find a layer by its ID on a page not opened yet, loading that page as Figma does.

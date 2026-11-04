@@ -1,1 +1,0 @@
-- Release builds occasionally ask whether you would like to donate toward OpenPencil's development and infrastructure, and File → Support OpenPencil… and Settings → General link to the donation page.

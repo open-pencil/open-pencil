@@ -1,1 +1,0 @@
-- Switching a variable mode or editing a variable's value lays out bound auto layouts once instead of once per bound layer: on a frame of 1,600 bound cards, from about 36 seconds to under 0.1 seconds.

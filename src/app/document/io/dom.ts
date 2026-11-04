@@ -9,6 +9,7 @@ import type { EditorPreparationController } from '@/app/editor/preparation/contr
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
+import { HTML_IMPORT_VIEWPORT } from '@/constants'
 
 type OpenDOMDocumentState = EditorState & {
   documentName: string
@@ -64,9 +65,11 @@ export function createDOMOpenActions({
     await yieldToUI()
     const pageName = options.documentName ?? 'DOM Import'
     load.update({ phase: 'decoding', detail: pageName })
+    // Laid out as a browser would, so layers land where the page put its elements.
     const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
-      signal: load.signal
+      signal: load.signal,
+      compute: { layout: true, viewport: HTML_IMPORT_VIEWPORT }
     })
     load.signal.throwIfAborted()
     const graph = await sceneGraphFromStyledHTML(styled, { pageName })

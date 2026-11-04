@@ -1,1 +1,0 @@
-- Cloud caps how many uploads, documents, collaboration tickets, and invitations one account can request per minute across all of its documents and workspaces, not only per document or workspace.

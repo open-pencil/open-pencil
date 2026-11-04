@@ -1,1 +1,0 @@
-- Zoom to fit and zoom to selection fill the canvas with the layers inside the margins Figma keeps, zooming in past 100% for small layers, and zoom to fit on an empty page shows its origin at the centre at 100%; a page opens fitted to its layers on its first visit and returns to the view it was left at after (#1675).

@@ -1,1 +1,0 @@
-- A Tab behaviour for tab triggers drawn as instances of a component, as in the shadcn/ui kit: in preview and generated Reka and Radix code, the chosen tab shows its selected variant and a tab drawn disabled cannot be chosen; design JSX writes such triggers as `Tabs.Tab` (#1710).

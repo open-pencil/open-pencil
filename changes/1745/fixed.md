@@ -1,1 +1,0 @@
-- A nested instance keeps the size its outer instance's variable mode gives it when its component is edited or pasted from Figma.
