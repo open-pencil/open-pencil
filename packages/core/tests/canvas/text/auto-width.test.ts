@@ -240,4 +240,14 @@ describe('text that sizes its own width', () => {
     expect([narrow.width, narrow.height]).toEqual([100, wide.height])
     expect(lines(narrow)).toBe(1)
   })
+
+  test('keeps the size it has while its fonts are not prepared', () => {
+    const shown = resized(autoWidthText({ ...FIGMA_TEXT }))
+    const pending = withTextMeasurer(
+      () => null,
+      () => textAutoResizeChanges(shown, { maxWidth: 100 })
+    )
+
+    expect(pending.width ?? shown.width).toBe(shown.width)
+  })
 })

@@ -118,12 +118,20 @@ export function measureTextForLayout(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } {
+  return measuredTextSize(node, maxWidth) ?? { width: node.width, height: node.height }
+}
+
+/** The size `measureTextForLayout` measures or estimates; null while the text's fonts are not prepared. */
+function measuredTextSize(
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } | null {
   if (!globalTextMeasurer) return estimateTextSize(node, maxWidth)
   const measured = globalTextMeasurer(node, maxWidth)
   if (measured) return measured
   // Empty text measures nothing but its line, which needs no fonts beyond the default.
   if (node.type !== 'TEXT' || !node.text) return estimateTextSize(node, maxWidth)
-  return { width: node.width, height: node.height }
+  return null
 }
 
 /**
@@ -137,9 +145,12 @@ export function measureAutoWidthText(
 ): { width: number; height: number } {
   const measured = measureTextForLayout(node, wrapWidth)
   if (wrapWidth === undefined) return measured
-  // Its one-line width, without the max width the paragraph would otherwise wrap it at.
-  const natural = measureTextForLayout({ ...node, maxWidth: null }).width
-  return natural > wrapWidth ? { width: wrapWidth, height: measured.height } : measured
+  // Its one-line width, without the max width the paragraph would otherwise wrap it at; while
+  // its fonts are not prepared that is unknown, and the text keeps the size it has.
+  const natural = measuredTextSize({ ...node, maxWidth: null })
+  return natural && natural.width > wrapWidth
+    ? { width: wrapWidth, height: measured.height }
+    : measured
 }
 
 const installedMeasurers: TextMeasurer[] = []
