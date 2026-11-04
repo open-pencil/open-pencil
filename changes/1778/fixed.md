@@ -1,0 +1,2 @@
+- SVG and PDF export of a flipped or rotated layer draws it inside the exported image again, instead of a blank or cut image (#1778).
+- SVG and PDF export turn a rotated and flipped layer the way the canvas does, and a rotated line about its start (#1778).
