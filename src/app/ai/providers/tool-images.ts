@@ -1,6 +1,23 @@
 import type { LanguageModelMiddleware } from 'ai'
 import { partition } from 'es-toolkit'
 
+import type { AIProviderID } from '@open-pencil/core/constants'
+
+/**
+ * Providers whose own documentation lists WebP image input, so tool images reach their models as
+ * WebP; see `development/ai-chat.md`.
+ */
+const WEBP_IMAGE_PROVIDERS: ReadonlySet<AIProviderID> = new Set([
+  'anthropic', // https://platform.claude.com/docs/en/build-with-claude/vision#supported-formats
+  'openai', // https://developers.openai.com/api/docs/guides/images-vision
+  'google', // https://ai.google.dev/gemini-api/docs/image-understanding
+  'deepseek' // https://api-docs.deepseek.com/guides/vision
+])
+
+export function providerTakesWebPImages(providerID: AIProviderID): boolean {
+  return WEBP_IMAGE_PROVIDERS.has(providerID)
+}
+
 type Prompt = Parameters<
   NonNullable<LanguageModelMiddleware['transformParams']>
 >[0]['params']['prompt']

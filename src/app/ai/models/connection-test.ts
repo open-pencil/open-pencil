@@ -130,7 +130,7 @@ export async function testProviderConnection(
 
   try {
     await generateText({
-      model: createLanguageModel(config, runtime),
+      model: await createLanguageModel(config, runtime),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
       abortSignal: AbortSignal.timeout(15_000)
