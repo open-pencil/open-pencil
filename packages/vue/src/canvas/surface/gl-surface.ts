@@ -67,32 +67,53 @@ export function releaseWebGLContext(
   if (wasCurrent) park(ck)
 }
 
+/** The inline size and margins a canvas had before sizeCanvas first pinned it. */
+type PinnedStyle = Pick<CSSStyleDeclaration, 'width' | 'height' | 'marginLeft' | 'marginTop'>
+const ownStyles = new WeakMap<HTMLCanvasElement, PinnedStyle>()
+
+function restoreOwnStyle(canvas: HTMLCanvasElement) {
+  let own = ownStyles.get(canvas)
+  if (!own) {
+    const { width, height, marginLeft, marginTop } = canvas.style
+    own = { width, height, marginLeft, marginTop }
+    ownStyles.set(canvas, own)
+  }
+  Object.assign(canvas.style, own)
+}
+
+/**
+ * Sizes the canvas bitmap to the box the page's CSS gives it, pinned to whole CSS pixels as Figma
+ * pins its canvas. A panel sized in percent leaves the box at a fraction of a pixel, and the
+ * browser shows a canvas at whole pixels, so its bitmap was stretched by one device pixel across
+ * the width, softening every line. The canvas moves under a pixel to the nearest whole one;
+ * pointers map from its box, so they follow. Under a transform, where no snap holds, the canvas
+ * takes its layout size rounded and stays where it is.
+ */
 export function sizeCanvas(
   canvas: HTMLCanvasElement,
   editor: Editor,
   onViewportResize?: (width: number, height: number) => void
 ) {
   const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
-  // The box the page's CSS gives the canvas, pinned to whole CSS pixels as Figma pins its canvas.
-  // A panel sized in percent leaves the box at a fraction of a pixel, and the browser shows a
-  // canvas at whole pixels, so its bitmap was stretched by one device pixel across the width,
-  // softening every line. The canvas moves under a pixel to the nearest whole one; pointers map
-  // from its box, so they follow.
-  canvas.style.width = ''
-  canvas.style.height = ''
-  canvas.style.marginLeft = ''
-  canvas.style.marginTop = ''
+  restoreOwnStyle(canvas)
   const box = canvas.getBoundingClientRect()
-  const left = Math.round(box.left)
-  const top = Math.round(box.top)
-  const width = Math.max(1, Math.round(box.right) - left)
-  const height = Math.max(1, Math.round(box.bottom) - top)
+  const layout = getComputedStyle(canvas)
+  const layoutWidth = Number.parseFloat(layout.width) || box.width
+  const layoutHeight = Number.parseFloat(layout.height) || box.height
+  const transformed =
+    Math.abs(layoutWidth - box.width) > 0.01 || Math.abs(layoutHeight - box.height) > 0.01
+  const left = transformed ? box.left : Math.round(box.left)
+  const top = transformed ? box.top : Math.round(box.top)
+  const width = Math.max(1, transformed ? Math.round(layoutWidth) : Math.round(box.right) - left)
+  const height = Math.max(1, transformed ? Math.round(layoutHeight) : Math.round(box.bottom) - top)
   canvas.width = Math.round(width * dpr)
   canvas.height = Math.round(height * dpr)
   canvas.style.width = `${width}px`
   canvas.style.height = `${height}px`
-  canvas.style.marginLeft = `${left - box.left}px`
-  canvas.style.marginTop = `${top - box.top}px`
+  if (!transformed) {
+    canvas.style.marginLeft = `calc(${canvas.style.marginLeft || '0px'} + ${left - box.left}px)`
+    canvas.style.marginTop = `calc(${canvas.style.marginTop || '0px'} + ${top - box.top}px)`
+  }
   if (onViewportResize) {
     onViewportResize(width, height)
   } else if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
