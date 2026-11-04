@@ -204,6 +204,18 @@ describe('document kinds', () => {
     expect(editor.state.activeTool).toBe('SELECT')
   })
 
+  test('a pen path in progress is kept when the host stops offering the pen', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(100, 0)
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+    expect(editor.state.penState).toBeNull()
+    expect(editor.state.activeTool).toBe('SELECT')
+    const drawn = editor.graph.getChildren(editor.state.currentPageId)
+    expect(drawn.map((node) => node.type)).toEqual(['VECTOR'])
+  })
+
   test("a host's tools only narrow a board's, and read-only narrows them further", () => {
     const editor = createEditor()
     editor.setDocumentKind('board')

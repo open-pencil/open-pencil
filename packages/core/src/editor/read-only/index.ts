@@ -1,6 +1,6 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { EditorContext } from '#core/editor/types'
+import type { EditorContext, Tool } from '#core/editor/types'
 import { offeredTool, type EditorRestrictions } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
@@ -54,11 +54,13 @@ export interface RestrictionEnds {
   endEdits: () => void
   /** Ends a pen path continuing an existing layer, which handles-only paths do not allow. */
   endPathContinuation: () => void
+  /** Picks a tool as the toolbar does, committing a pen path in progress when it is not the pen. */
+  pickTool: (tool: Tool) => void
 }
 
 export function createReadOnlyActions(
   ctx: EditorContext,
-  { endEdits, endPathContinuation }: RestrictionEnds
+  { endEdits, endPathContinuation, pickTool }: RestrictionEnds
 ) {
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
@@ -87,7 +89,9 @@ export function createReadOnlyActions(
       endPathContinuation()
       if (ctx.state.nodeEditState) ctx.state.nodeEditState.hoveredRegion = null
     }
-    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
+    // A tool no longer offered gives way to Move as a picked tool does, so a pen path in
+    // progress is committed rather than left pending.
+    pickTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.requestRepaint()
   }
 

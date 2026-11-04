@@ -371,7 +371,8 @@ export function createEditor(options?: EditorOptions) {
     },
     endPathContinuation: () => {
       if (state.penState?.resumingNodeId) shapes.penCommit(false)
-    }
+    },
+    pickTool: shapes.setTool
   })
 
   // The edited text follows changes made outside the editor, such as a panel field being
