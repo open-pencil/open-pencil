@@ -19,7 +19,7 @@ import {
   commitResizePreview,
   scaledChanges
 } from '#vue/shared/input/resize'
-import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { signedResizeRect } from '#vue/shared/input/resize/rect'
 import { createResizeDrag } from '#vue/shared/input/resize/start'
 import type { DragResizeMember, DragResizeSelection, DragState } from '#vue/shared/input/types'
 
@@ -79,6 +79,11 @@ export function tryStartSelectionResize(
   }
 }
 
+/** `size` at least a pixel long, keeping its sign. */
+function atLeastOne(size: number): number {
+  return Math.sign(size || 1) * Math.max(Math.abs(size), 1)
+}
+
 /** Scales the selection's box with the pointer; Shift keeps its proportions. */
 export function applySelectionResize(
   dragState: DragResizeSelection,
@@ -94,7 +99,9 @@ export function applySelectionResize(
     shiftKey && origBounds.width > 0 && origBounds.height > 0
       ? origBounds.width / origBounds.height
       : null
-  const bounds = calculateResizeRect(d.handle, origBounds, cx - d.startX, cy - d.startY, aspect)
+  // Signed: dragged past the opposite edge, the box and every layer in it come out mirrored.
+  const signed = signedResizeRect(d.handle, origBounds, cx - d.startX, cy - d.startY, aspect)
+  const bounds = { ...signed, width: atLeastOne(signed.width), height: atLeastOne(signed.height) }
   for (const { drag, placement } of d.members) {
     const node = editor.graph.getNode(drag.nodeId)
     if (!node) continue

@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { mapValues } from 'es-toolkit'
+
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
 import {
   applySelectionResize,
@@ -160,5 +164,33 @@ describe('stretching a multi-selection with a turned layer', () => {
     cancelSelectionResize(drag, editor)
     expect(editor.graph.getNode(a)?.rotation).toBe(45)
     expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
+  })
+})
+
+describe('dragging a multi-selection’s edge past the opposite one', () => {
+  test('mirrors the selection: the layers swap sides and each is flipped, in one undo step', () => {
+    const { a, b } = setup()
+    // The right edge from x 150 to x −75: the box mirrors to −75…0, at half its width.
+    const drag = start(150, 75)
+    applySelectionResize(drag, -75, 75, false, editor)
+    commitSelectionResize(drag, editor)
+    const world = (id: string) => {
+      const node = editor.graph.getNode(id)
+      if (!node) throw new Error('missing layer')
+      const bounds = getAxisAlignedWorldBounds(node, editor.graph)
+      return mapValues(bounds, (value) => Math.round(value * 1e6) / 1e6)
+    }
+    expect(world(a)).toEqual({ x: -25, y: 0, width: 25, height: 50 })
+    expect(world(b)).toEqual({ x: -75, y: 100, width: 25, height: 50 })
+    // Drawn mirrored: the layer's own x axis now runs right to left on the canvas.
+    const node = editor.graph.getNode(a)
+    if (!node) throw new Error('missing layer')
+    const [x0, , x1] = Matrix.mapPoints(getWorldMatrix(node, editor.graph), [0, 0, 1, 0])
+    expect(x1).toBeLessThan(x0)
+
+    editor.undo.undo()
+    expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
+    expect(editor.graph.getNode(a)?.rotation).toBe(0)
+    expect(editor.graph.getNode(a)?.flipY).toBe(false)
   })
 })
