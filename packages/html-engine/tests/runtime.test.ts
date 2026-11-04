@@ -129,6 +129,38 @@ describe('the HTML engine runtime', () => {
     )
   })
 
+  test("pairs a shader layer's children past the still frame the serializer writes", async () => {
+    const card: DesignDocument = {
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { id: 'card', style: 'position:relative;width:200px' },
+          shader: {
+            preset: { components: [{ type: 'Swirl' }] },
+            frame: 'data:image/png;base64,AAAA'
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'p',
+              attrs: { id: 'title', style: 'margin:0;height:30px' },
+              children: []
+            }
+          ]
+        }
+      ]
+    }
+    const runtime = createHTMLEngineRuntime({ engine: engineWithInter })
+    const document = await runtime.computeStyles(card, '', {
+      layout: true,
+      viewport: { width: 800, height: 600 }
+    })
+
+    expect(elementById(document, 'title').layout?.box.height).toBe(30)
+  })
+
   test('counts a line of spaces where white space is kept', async () => {
     const document = await styled(
       '<pre id="p" style="font:16px sans-serif;margin:0">one\n   \ntwo</pre>'

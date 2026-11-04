@@ -67,8 +67,11 @@ function pairElements(
   const children = elementChildren(capture)
   const body = capture.nodes.findIndex((node) => node.tag === 'body')
   const pairs: [DesignElement, HTMLEngineNode][] = []
-  const pair = (elements: readonly DesignElement[], parent: number) => {
+  const pair = (elements: readonly DesignElement[], parent: number, shaderFrame = false) => {
     const queue = [...(children.get(parent) ?? [])]
+    // The serializer writes a shader's still frame as an image ahead of its layer's children.
+    const first = queue.at(0)
+    if (shaderFrame && first !== undefined && capture.nodes[first].tag === 'img') queue.shift()
     for (const element of elements) {
       let node = queue.shift()
       while (node !== undefined && capture.nodes[node].tag !== element.tagName) {
@@ -79,7 +82,7 @@ function pairElements(
       }
       if (node === undefined) return
       pairs.push([element, capture.nodes[node]])
-      pair(designElements(element.children), node)
+      pair(designElements(element.children), node, element.shader?.frame !== undefined)
     }
   }
   if (body !== -1) pair(designElements(document.children), body)
