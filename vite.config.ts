@@ -26,7 +26,7 @@ import { donationDefine } from './vite/funding'
 import { aiIconCollection } from './vite/icons'
 import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
-import { openPencilPwaPlugin } from './vite/pwa'
+import { chunkFileNames, openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
 
@@ -111,7 +111,8 @@ export default defineConfig(async ({ command, mode }) => {
             : {
                 main: resolve(__dirname, 'index.html'),
                 updater: resolve(__dirname, 'updater.html')
-              }
+              },
+        output: { chunkFileNames }
       }
     },
     server: createDevServerOptions(
