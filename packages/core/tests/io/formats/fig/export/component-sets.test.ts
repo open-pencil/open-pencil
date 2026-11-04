@@ -25,7 +25,9 @@ import {
 } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { buildConnectorSublayers } from '@open-pencil/scene-graph/connectors'
+import { createSlotProperty } from '@open-pencil/scene-graph/slots'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
@@ -423,8 +425,9 @@ describe("a set's properties as each variant's linked copy", () => {
       })
     }
 
-    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
-      .nodeChanges
+    const records = parseFigBuffer(
+      (await exportFigFile(graph)).slice().buffer as ArrayBuffer
+    ).nodeChanges
     expect(definitionsOf(setRecord(records)).map((definition) => definition.name)).toEqual([
       'Size',
       'Show dot'
@@ -432,6 +435,73 @@ describe("a set's properties as each variant's linked copy", () => {
     const written = savedCopies(records)
     expect(written.map(({ copies }) => Object.keys(copies))).toEqual([['Show dot'], ['Show dot']])
     expect(written[1]?.dot).toBe(written[1]?.copies['Show dot'])
+  })
+
+  // A slot made in one variant is its set's property, as any variant's is, so the set's record
+  // defines what each variant's copy links to, and the save opens again.
+  test('a slot made in a variant of a set read from a .fig is saved as its set’s', async () => {
+    const bytes = await kitStyleArchive()
+    for (const keepArchive of [true, false]) {
+      const graph = await open(bytes)
+      if (!keepArchive) releaseFigArchive(graph)
+      const set = expectDefined(
+        graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET'),
+        'set'
+      )
+      const variant = expectDefined(graph.getChildren(set.id)[0], 'variant')
+      const frame = graph.createNode('FRAME', variant.id, { name: 'Thumb' })
+      createSlotProperty(graph, frame.id, createComponentPropertyId())
+      expect(graph.getNode(variant.id)?.componentPropertyDefinitions).toEqual([])
+
+      const saved = await exportFigFile(graph)
+      const records = parseFigBuffer(saved.slice().buffer as ArrayBuffer).nodeChanges
+      const slot = definitionsOf(setRecord(records)).find(
+        (definition) => definition.name === 'Thumb'
+      )
+      for (const record of variantRecords(records, setRecord(records)))
+        expect(
+          ((record.componentPropDefs ?? []) as SavedCopy[]).map((copy) =>
+            guidOf(copy.parentPropDefId)
+          )
+        ).toEqual([guidOf(slot?.id)])
+      const reread = await open(saved)
+      const readSet = reread.getAllNodes().find((node) => node.type === 'COMPONENT_SET')
+      expect(readSet?.componentPropertyDefinitions.map((definition) => definition.name)).toContain(
+        'Thumb'
+      )
+    }
+  })
+
+  // A graph can still hold a variant that defines a property itself after its set was read from
+  // a .fig, whose saved definitions lack it; the set's record must define it all the same.
+  test('a property a variant of a set read from a .fig defines itself is saved as its set’s', async () => {
+    const bytes = await kitStyleArchive()
+    for (const keepArchive of [true, false]) {
+      const graph = await open(bytes)
+      if (!keepArchive) releaseFigArchive(graph)
+      const set = expectDefined(
+        graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET'),
+        'set'
+      )
+      const variant = expectDefined(graph.getChildren(set.id)[0], 'variant')
+      graph.updateNode(variant.id, {
+        componentPropertyDefinitions: [
+          { id: 'prop:dot', name: 'Show dot', type: 'BOOLEAN', defaultValue: 'true' }
+        ]
+      })
+
+      const saved = await exportFigFile(graph)
+      const records = parseFigBuffer(saved.slice().buffer as ArrayBuffer).nodeChanges
+      expect(definitionsOf(setRecord(records)).map((definition) => definition.name)).toEqual([
+        'State',
+        'Show dot'
+      ])
+      expect(savedCopies(records).map(({ copies }) => Object.keys(copies))).toEqual([
+        ['Show dot'],
+        ['Show dot']
+      ])
+      expect(await open(saved)).toBeDefined()
+    }
   })
 
   test('a duplicated variant gives its copies GUIDs of its own', async () => {
@@ -461,7 +531,8 @@ describe("a set's properties as each variant's linked copy", () => {
       expect(new Set(copies).size).toBe(3)
       // Each variant's dot binds its own variant's copy.
       expect(after.map(({ dot }) => dot)).toEqual(copies)
-      if (keepArchive) expect(copies.slice(0, 2)).toEqual(before.map(({ copies: own }) => own['Show dot']))
+      if (keepArchive)
+        expect(copies.slice(0, 2)).toEqual(before.map(({ copies: own }) => own['Show dot']))
     }
   })
 
@@ -478,8 +549,9 @@ describe("a set's properties as each variant's linked copy", () => {
     )
     set.addComponentProperty('Label', 'TEXT', 'Label')
 
-    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
-      .nodeChanges
+    const records = parseFigBuffer(
+      (await exportFigFile(graph)).slice().buffer as ArrayBuffer
+    ).nodeChanges
     const recordGuids = new Set(records.map((record) => guidOf(record.guid)))
     const copyIds = variantRecords(records, setRecord(records)).flatMap((variant) =>
       ((variant.componentPropDefs ?? []) as SavedCopy[]).map((copy) => guidOf(copy.id))
@@ -492,7 +564,9 @@ describe("a set's properties as each variant's linked copy", () => {
   // Figma's own property GUIDs may pass 31 bits; a full save writes the set's property and the
   // variants' copies under one GUID, and the file reads back with the property intact.
   test('a full save links copies to a property saved under a GUID past 31 bits', async () => {
-    const parsed = parseFigBuffer((await exportFigFile(await dotSet())).slice().buffer as ArrayBuffer)
+    const parsed = parseFigBuffer(
+      (await exportFigFile(await dotSet())).slice().buffer as ArrayBuffer
+    )
     const set = setRecord(parsed.nodeChanges)
     const property = expectDefined(
       definitionsOf(set).find((definition) => definition.type === 'BOOL'),
@@ -543,8 +617,10 @@ describe("a set's properties as each variant's linked copy", () => {
       [set.id, instance.id].map((id) => expectDefined(graph.getNode(id), id)),
       graph
     )
-    const records = expectDefined(await parseFigmaClipboard(expectDefined(html, 'html')), 'parsed')
-      .nodes
+    const records = expectDefined(
+      await parseFigmaClipboard(expectDefined(html, 'html')),
+      'parsed'
+    ).nodes
     const largeCopy = savedCopies(records)[1]?.copies['Show dot']
     const written = expectDefined(
       records.find((record) => record.type === 'INSTANCE'),
@@ -644,10 +720,7 @@ describe("a set's properties as each variant's linked copy", () => {
       'pasted instance'
     )
     const variant = expectDefined(target.graph.getMainComponent(pasted.id), 'pasted variant')
-    expect(target.graph.getChildren(variant.id).map((layer) => layer.name)).toEqual([
-      'Dot',
-      'Mark'
-    ])
+    expect(target.graph.getChildren(variant.id).map((layer) => layer.name)).toEqual(['Dot', 'Mark'])
   })
 
   test('a connector in the set an instance brings joins the layers written beside it', async () => {
@@ -658,7 +731,11 @@ describe("a set's properties as each variant's linked copy", () => {
       'large'
     )
     const mark = graph.createNode('RECTANGLE', large.id, { name: 'Mark', width: 4, height: 4 })
-    const end = (nodeId: string) => ({ nodeId, magnet: 'CENTER' as const, position: { x: 0, y: 0 } })
+    const end = (nodeId: string) => ({
+      nodeId,
+      magnet: 'CENTER' as const,
+      position: { x: 0, y: 0 }
+    })
     const dot = expectDefined(graph.getChildren(large.id)[0], 'dot')
     const link = graph.createNode('CONNECTOR', large.id, {
       name: 'Link',

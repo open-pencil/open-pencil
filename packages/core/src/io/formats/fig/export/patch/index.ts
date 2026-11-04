@@ -92,15 +92,29 @@ function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
 
 /**
  * A set's variants write their copies of its boolean, text, swap, and slot properties from the
- * set's, so an edited set writes its variants too; only the fields that differ are patched.
+ * set's, so an edited set writes its variants too; only the fields that differ are patched. A
+ * variant defining a property itself, as an older OpenPencil saved one, writes it as its set's,
+ * which the set's saved record lacks, so an edited one writes its set and siblings as well.
  */
 function addSetVariants(
   graph: SceneGraph,
   changes: ArchiveChangeSummary,
   add: (id: string) => unknown
 ): void {
+  const sets = new Set<string>()
   for (const id of changes.touched) {
-    if (graph.getNode(id)?.type !== 'COMPONENT_SET') continue
+    const node = graph.getNode(id)
+    if (node?.type === 'COMPONENT_SET') sets.add(id)
+    const parent = node?.parentId ? graph.getNode(node.parentId) : undefined
+    if (
+      node?.type === 'COMPONENT' &&
+      parent?.type === 'COMPONENT_SET' &&
+      node.componentPropertyDefinitions.some((definition) => definition.type !== 'VARIANT')
+    )
+      sets.add(parent.id)
+  }
+  for (const id of sets) {
+    add(id)
     for (const child of graph.getChildren(id)) if (child.type === 'COMPONENT') add(child.id)
   }
 }
