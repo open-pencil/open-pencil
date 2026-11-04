@@ -220,7 +220,9 @@ export class HTMLEngine {
     options: HTMLEngineLayoutOptions
   ): Promise<[string[], string] | null> {
     const signal = AbortSignal.timeout(options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS)
-    const resource = options.fetch ? await withDeadline(options.fetch(url, signal), signal) : null
+    const { fetch } = options
+    // An async wrapper turns a callback that throws before it returns into a rejection.
+    const resource = fetch ? await withDeadline((async () => fetch(url, signal))(), signal) : null
     if (!resource) {
       this.#exports.fail(id)
       return null

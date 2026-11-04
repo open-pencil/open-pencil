@@ -38,10 +38,14 @@ function jpegHeader(width: number, height: number, orientation: number): Uint8Ar
   return bytes
 }
 
-/** A 1×1 PNG header claiming 640×480, which is all the engine reads of it. */
+/** A PNG's signature and IHDR chunk claiming `width`×`height`, which is all the engine reads of it. */
 function pngHeader(width: number, height: number): Uint8Array {
   const bytes = new Uint8Array(33)
   bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  bytes.set(
+    [...'IHDR'].map((c) => c.charCodeAt(0)),
+    12
+  )
   const view = new DataView(bytes.buffer)
   view.setUint32(16, width)
   view.setUint32(20, height)
@@ -132,6 +136,22 @@ describe('the HTML engine', () => {
     expect(boxOf(capture, 'box')[3]).toBe(10)
   })
 
+  test('fails only the resource whose fetch throws before it returns', async () => {
+    const engine = await loadHTMLEngine()
+    const capture = await engine.layout(
+      '<link rel="stylesheet" href="broken.css"><div id="box" style="height:10px"></div>',
+      {
+        baseURL: 'https://example.com/',
+        viewport: VIEWPORT,
+        fetch: () => {
+          throw new Error('no network')
+        }
+      }
+    )
+
+    expect(boxOf(capture, 'box')[3]).toBe(10)
+  })
+
   test('takes only whole positive viewport sizes', async () => {
     const engine = await loadHTMLEngine()
     for (const viewport of [
@@ -163,6 +183,24 @@ describe('raster image sizes', () => {
     expect(rasterImageSize(jpegHeader(640, 480, 1))).toEqual([640, 480])
     expect(rasterImageSize(jpegHeader(640, 480, 6))).toEqual([480, 640])
     expect(rasterImageSize(jpegHeader(640, 480, 8))).toEqual([480, 640])
+  })
+
+  test("keeps a JPEG's Exif orientation through an XMP segment after it", () => {
+    const exif = jpegHeader(640, 480, 6)
+    const marker = new TextEncoder().encode('http://ns.adobe.com/xap/1.0/\0')
+    const xmp = new Uint8Array(4 + marker.length)
+    xmp.set([0xff, 0xe1])
+    new DataView(xmp.buffer).setUint16(2, 2 + marker.length)
+    xmp.set(marker, 4)
+    const bytes = new Uint8Array([...exif.subarray(0, 38), ...xmp, ...exif.subarray(38)])
+
+    expect(rasterImageSize(bytes)).toEqual([480, 640])
+  })
+
+  test('is null for a PNG signature without its IHDR chunk', () => {
+    const bytes = pngHeader(640, 480)
+    bytes.set([0, 0, 0, 0], 12)
+    expect(rasterImageSize(bytes)).toBeNull()
   })
 
   test('is null for an AVIF cut off inside its size box', () => {

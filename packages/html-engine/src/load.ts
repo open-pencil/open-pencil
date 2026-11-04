@@ -12,6 +12,12 @@ let locator: HTMLEngineLocator = () =>
 
 let loading: Promise<HTMLEngine> | null = null
 
+/**
+ * How long a remote module may take to arrive, so a request that never settles cannot hold every
+ * later load waiting on it; a failed load is retried by the next caller.
+ */
+const MODULE_LOAD_TIMEOUT_MS = 60_000
+
 /** Points the engine at the host's copy of its module. Call before the first `loadHTMLEngine`. */
 export function setHTMLEngineLocator(locate: HTMLEngineLocator): void {
   locator = locate
@@ -20,7 +26,7 @@ export function setHTMLEngineLocator(locate: HTMLEngineLocator): void {
 
 async function readModule(url: string): Promise<ArrayBuffer> {
   if (!url.startsWith('file:')) {
-    const response = await fetch(url)
+    const response = await fetch(url, { signal: AbortSignal.timeout(MODULE_LOAD_TIMEOUT_MS) })
     if (!response.ok)
       throw new Error(`html-engine.wasm failed to load from ${url}: ${response.status}`)
     return response.arrayBuffer()

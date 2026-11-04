@@ -35,12 +35,18 @@ const APP1 = 0xe1
 const ORIENTATION_TAG = 0x0112
 
 /**
- * The Exif Orientation in an APP1 segment starting at `at`, or 1 when it has none. Orientations 5
+ * The Exif Orientation in an APP1 segment starting at `at`: 1 when the Exif data names none,
+ * and null when the segment is not Exif, such as XMP, which says nothing about orientation. Orientations 5
  * to 8 turn the image a quarter, so browsers lay it out with width and height swapped.
  */
-function exifOrientation(bytes: Uint8Array, view: DataView, at: number, end: number): number {
+function exifOrientation(
+  bytes: Uint8Array,
+  view: DataView,
+  at: number,
+  end: number
+): number | null {
   const tiff = at + 10
-  if (tiff + 8 > end || ascii(bytes, at + 4, 6) !== 'Exif\0\0') return 1
+  if (tiff + 8 > end || ascii(bytes, at + 4, 6) !== 'Exif\0\0') return null
   const littleEndian = ascii(bytes, tiff, 2) === 'II'
   const firstIFD = tiff + view.getUint32(tiff + 4, littleEndian)
   if (firstIFD + 2 > end) return 1
@@ -64,7 +70,7 @@ function jpegSize(bytes: Uint8Array, view: DataView): Size | null {
     const end = Math.min(bytes.length, at + 2 + view.getUint16(at + 2))
     // A segment's length counts its own two bytes, so less is a broken file.
     if (end < at + 4) return null
-    if (marker === APP1) orientation = exifOrientation(bytes, view, at, end)
+    if (marker === APP1) orientation = exifOrientation(bytes, view, at, end) ?? orientation
     if (isStartOfFrame(marker)) {
       const size: Size = [view.getUint16(at + 7), view.getUint16(at + 5)]
       return orientation >= 5 && orientation <= 8 ? [size[1], size[0]] : size
@@ -77,7 +83,13 @@ function jpegSize(bytes: Uint8Array, view: DataView): Size | null {
 /** An image file's pixel size from its header, or null for a format it does not know. */
 export function rasterImageSize(bytes: Uint8Array): Size | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-  if (bytes.length > 24 && bytes[0] === 0x89 && ascii(bytes, 1, 3) === 'PNG') {
+  // The size is in the IHDR chunk, which a PNG must start with.
+  if (
+    bytes.length > 24 &&
+    bytes[0] === 0x89 &&
+    ascii(bytes, 1, 3) === 'PNG' &&
+    ascii(bytes, 12, 4) === 'IHDR'
+  ) {
     return [view.getUint32(16), view.getUint32(20)]
   }
   if (bytes.length > 10 && ascii(bytes, 0, 3) === 'GIF') {
