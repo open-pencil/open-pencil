@@ -26,9 +26,9 @@ export function unreferencedObject(expression: ExpressionBuilder<CloudDatabase, 
     expression.not(
       expression.exists(
         expression
-          .selectFrom('documentCollaborationState')
-          .select('documentCollaborationState.documentId')
-          .whereRef('documentCollaborationState.snapshotObjectId', '=', 'storageObject.id')
+          .selectFrom('documentRoomSnapshot')
+          .select('documentRoomSnapshot.documentId')
+          .whereRef('documentRoomSnapshot.snapshotObjectId', '=', 'storageObject.id')
       )
     )
   ])

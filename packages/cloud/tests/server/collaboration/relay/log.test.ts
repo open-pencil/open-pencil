@@ -128,5 +128,7 @@ describe('room log', () => {
     release?.()
     await Promise.all([first, second])
     expect(sequences).toEqual([1, 2])
+    const reopened = await openRoomLog(memory.store, room, limits)
+    expect(reopened.document.getText('t').toString()).toBe('ab')
   })
 })

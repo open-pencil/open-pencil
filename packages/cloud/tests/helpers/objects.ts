@@ -43,16 +43,14 @@ export function createMemoryObjectStore() {
       contents.delete(key)
       deletedKeys.push(key)
     },
-    async write(key, bytes, contentType) {
-      const object: StoredObject = {
+    async write({ key, bytes, contentType, checksum }) {
+      stored.set(key, {
         byteSize: bytes.byteLength,
-        checksum: `sha256:${key}`,
+        checksum,
         checksumVerification: 'native',
         contentType
-      }
-      stored.set(key, object)
+      })
       contents.set(key, Uint8Array.from(bytes))
-      return object
     },
     async read(key) {
       return contents.get(key) ?? null

@@ -172,7 +172,9 @@ A save logs what changed since the last one in PostgreSQL as a single update, a 
 typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
 the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
-last one; a replaced snapshot is no longer referenced, and the object sweep removes it. A room
+last one. A compaction records its file before writing it and points the room at it last, so a
+replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
+15 minutes old. A room
 reopens from its snapshot and the updates logged after it. Tickets are short-lived signed JWTs; the client presents a fresh one before the
 current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
 

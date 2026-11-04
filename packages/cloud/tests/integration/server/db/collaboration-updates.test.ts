@@ -38,9 +38,7 @@ describe('migration 028', () => {
         { id: solo, collaborationEpoch: 0 },
         { id: shared, collaborationEpoch: 1 }
       ])
-      expect(await database.selectFrom('documentCollaborationState').selectAll().execute()).toEqual(
-        []
-      )
+      expect(await database.selectFrom('documentRoomSnapshot').selectAll().execute()).toEqual([])
     } finally {
       await runtime.close()
     }

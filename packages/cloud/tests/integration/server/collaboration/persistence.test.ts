@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { createCollaborationStateStore } from '#cloud/server'
+import { createCollaborationStateStore, createRevisionCompactionService } from '#cloud/server'
 import { unreferencedObject } from '#cloud/server/cleanup/objects'
 
 async function storedRoom() {
@@ -56,7 +56,7 @@ describe('collaboration state store', () => {
       await store.compact(room, 3, bytes(8))
       expect(await store.load(room)).toEqual({ snapshot: bytes(8), updates: [], sequence: 3 })
       const logged = await runtime.database
-        .selectFrom('documentCollaborationUpdate')
+        .selectFrom('documentRoomUpdate')
         .select('sequence')
         .execute()
       expect(logged).toEqual([])
@@ -134,6 +134,51 @@ describe('collaboration state store', () => {
         .execute()
       expect(files).toHaveLength(1)
       expect((await store.load(room)).snapshot).toBeNull()
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('leaves the room as it was when a snapshot cannot be written, and its file to the sweep', async () => {
+    const { runtime, room, objects } = await storedRoom()
+    try {
+      const store = createCollaborationStateStore(runtime.database, objects.store)
+      await store.compact(room, 0, bytes(1))
+      const failing = createCollaborationStateStore(runtime.database, {
+        ...objects.store,
+        async write() {
+          throw new Error('Object store unavailable')
+        }
+      })
+      await expect(failing.compact(room, 0, bytes(2))).rejects.toThrow('Object store unavailable')
+
+      expect((await store.load(room)).snapshot).toEqual(bytes(1))
+      const unreferenced = await runtime.database
+        .selectFrom('storageObject')
+        .select('objectKey')
+        .where('objectKey', 'like', `collaboration/${room.documentId}/0/%`)
+        .where(unreferencedObject)
+        .execute()
+      expect(unreferenced).toHaveLength(1)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('sweeps a replaced snapshot only once a compaction could no longer be writing it', async () => {
+    const { runtime, store, room, objects } = await storedRoom()
+    try {
+      await store.compact(room, 0, bytes(1))
+      await store.compact(room, 0, bytes(2))
+      const sweep = (minutes: number) =>
+        createRevisionCompactionService(runtime.database, objects.store).compactRevisions({
+          batchSize: 100,
+          graceMs: 24 * 60 * 60_000,
+          now: new Date(Date.now() + minutes * 60_000)
+        })
+      expect((await sweep(1)).objectsDeleted).toBe(0)
+      expect((await sweep(20)).objectsDeleted).toBe(1)
+      expect((await store.load(room)).snapshot).toEqual(bytes(2))
     } finally {
       await runtime.close()
     }
