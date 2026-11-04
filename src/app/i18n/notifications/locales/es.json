@@ -31,6 +31,7 @@
   "openQueuedFilesFailed": "No se pudieron abrir los archivos entregados a OpenPencil: {error}",
   "tokensLeftOut": "No incluido en la hoja de estilos: {names}.",
   "designTokensLeftOut": "No incluidos en los design tokens: {names}.",
+  "designTokensAmbiguous": "Estos estilos remiten a una variable cuya ruta también tiene otra colección, así que otras herramientas pueden leer la equivocada: {names}.",
   "designTokensImported": "Se importaron {count} design tokens.",
   "unsupportedVariableExpressions": "OpenPencil aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}."
 }

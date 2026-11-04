@@ -46,6 +46,26 @@ const TEXT_BINDING_FIELDS: readonly TextBindingField[] = [
   'lineHeight'
 ]
 
+/** The collection and variable a bound style field points at, as OpenPencil records them. */
+const bindingTargetSchema = v.object({
+  targetVariableSetName: v.string(),
+  targetVariableName: v.string()
+})
+type BindingTarget = v.InferOutput<typeof bindingTargetSchema>
+
+/** Recorded targets by field; one that does not read is left out, not the whole extension. */
+const aliasDataSchema = v.pipe(
+  v.record(v.string(), v.unknown()),
+  v.transform((entries): Record<string, BindingTarget> =>
+    Object.fromEntries(
+      Object.entries(entries).flatMap(([field, entry]) => {
+        const target = v.safeParse(bindingTargetSchema, entry)
+        return target.success ? [[field, target.output]] : []
+      })
+    )
+  )
+)
+
 const ownTextSchema = v.object({
   text: v.object({
     fontFamily: v.string(),
@@ -57,11 +77,13 @@ const ownTextSchema = v.object({
     textDecoration: v.picklist(['NONE', 'UNDERLINE', 'STRIKETHROUGH']),
     textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
   }),
-  bindings: v.optional(v.record(v.string(), v.string()))
+  bindings: v.optional(v.record(v.string(), v.string())),
+  aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
 const ownEffectsSchema = v.object({
   effects: v.optional(v.array(v.unknown())),
-  bindings: v.optional(v.record(v.string(), v.string()))
+  bindings: v.optional(v.record(v.string(), v.string())),
+  aliasData: v.optional(v.fallback(aliasDataSchema, {}))
 })
 
 /** The composite types that become styles. */
@@ -71,7 +93,8 @@ const STYLE_KINDS: Partial<Record<string, PlannedStyle['kind']>> = {
 }
 
 type Resolve = (path: readonly string[]) => ResolvedReference | undefined
-type Alias = (path: readonly string[]) => AliasTarget | undefined
+/** The variable a reference names; the collection and name a file records find it among same paths. */
+type Alias = (path: readonly string[], target?: BindingTarget) => AliasTarget | undefined
 
 /** A field's value: its own, or what the token it references holds, decoded the same way. */
 function fieldValue<T>(
@@ -154,11 +177,25 @@ function textBindings(token: ReadToken, alias: Alias): PlannedStyle['bindings'] 
   else if (isPlainObject(token.value)) references = token.value
   const bindings: PlannedStyle['bindings'] = {}
   for (const field of TEXT_BINDING_FIELDS) {
-    const path = referencePath(references[field])
-    const target = path && alias(path)
+    const reference = references[field]
+    const path = referencePath(reference)
+    const target = path && alias(path, recordedTarget(own, field, reference))
     if (target) bindings[field] = target
   }
   return bindings
+}
+
+/**
+ * The variable OpenPencil recorded for a bound field, while the field still holds the reference
+ * it wrote; another tool's edit to the reference goes by its path.
+ */
+function recordedTarget(
+  own: { bindings?: Record<string, string>; aliasData?: Record<string, BindingTarget> } | null,
+  field: string,
+  reference: unknown
+): BindingTarget | undefined {
+  if (!own || reference === undefined || own.bindings?.[field] !== reference) return undefined
+  return own.aliasData?.[field]
 }
 
 /** Shadows read from a token, each with the token paths its fields reference. */
@@ -257,46 +294,72 @@ function effectStyle(
   resolve: Resolve,
   alias: Alias
 ): Pick<PlannedStyle, 'fields' | 'bindings'> | null {
-  const own = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
-  const ownBindings = own.success ? (own.output.bindings ?? {}) : {}
+  const parsed = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = parsed.success ? parsed.output : null
+  const ownBindings = own?.bindings ?? {}
   // Extension effects that do not read fall back to the token's own shadows.
-  const exact = own.success && own.output.effects ? tryParseFigmaEffects(own.output.effects) : null
+  const exact = own?.effects ? tryParseFigmaEffects(own.effects) : null
   if (exact && isEqual(token.value, shadowTokenValue(exact, ownBindings))) {
-    return { fields: { effects: exact }, bindings: aliasedBindings(ownBindings, alias) }
+    return {
+      fields: { effects: exact },
+      bindings: aliasedBindings(ownBindings, own?.aliasData ?? {}, alias)
+    }
   }
   const shadows = shadowList(token.value, resolve)
   if (!shadows) return null
   const placed = exact
     ? replaceShadows(exact, shadows.effects)
     : { effects: shadows.effects, positions: shadows.effects.map((_, index) => index), kept: null }
-  const references: Record<string, string> = {}
-  // Effects `$value` cannot hold, such as a bound blur, keep the bindings OpenPencil recorded.
-  for (const [field, reference] of Object.entries(ownBindings)) {
-    const target = effectBindingTarget(field)
-    const index = target && placed.kept?.get(target.index)
-    if (target && index !== undefined && index !== null)
-      references[effectBindingField(index, target.property)] = reference
-  }
+  const { references, targets } = keptBindings(own, placed.kept)
   shadows.references.forEach((paths, shadow) => {
     const index = placed.positions.at(shadow)
     if (index === undefined) return
     for (const [property, path] of Object.entries(paths)) {
       const field = `effects/${index}/${property}`
-      if (effectBindingTarget(field)) references[field] = tokenReference(path)
+      if (!effectBindingTarget(field)) continue
+      references[field] = tokenReference(path)
+      const target = recordedTarget(own, field, references[field])
+      if (target) targets[field] = target
     }
   })
-  return { fields: { effects: placed.effects }, bindings: aliasedBindings(references, alias) }
+  return {
+    fields: { effects: placed.effects },
+    bindings: aliasedBindings(references, targets, alias)
+  }
 }
 
-/** Bound fields whose references name a variable, as alias targets. */
+/**
+ * The bindings OpenPencil recorded for effects `$value` cannot hold, such as a bound blur, moved
+ * to where `kept` puts each of those effects now.
+ */
+function keptBindings(
+  own: v.InferOutput<typeof ownEffectsSchema> | null,
+  kept: ReadonlyMap<number, number> | null
+): { references: Record<string, string>; targets: Record<string, BindingTarget> } {
+  const references: Record<string, string> = {}
+  const targets: Record<string, BindingTarget> = {}
+  for (const [field, reference] of Object.entries(own?.bindings ?? {})) {
+    const bound = effectBindingTarget(field)
+    const index = bound && kept?.get(bound.index)
+    if (!bound || index === undefined || index === null) continue
+    const moved = effectBindingField(index, bound.property)
+    references[moved] = reference
+    const target = own?.aliasData?.[field]
+    if (target) targets[moved] = target
+  }
+  return { references, targets }
+}
+
+/** Bound fields whose references name a variable, found by the targets recorded for them. */
 function aliasedBindings(
   references: Readonly<Record<string, string>>,
+  targets: Readonly<Record<string, BindingTarget>>,
   alias: Alias
 ): PlannedStyle['bindings'] {
   const bindings: PlannedStyle['bindings'] = {}
   for (const [field, reference] of Object.entries(references)) {
     const path = referencePath(reference)
-    const target = path && effectBindingTarget(field) && alias(path)
+    const target = path && effectBindingTarget(field) && alias(path, targets[field])
     if (target) bindings[field] = target
   }
   return bindings
