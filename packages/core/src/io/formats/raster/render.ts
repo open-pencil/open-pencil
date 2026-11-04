@@ -3,14 +3,11 @@ import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import {
-  computeDescendantVisualBounds,
-  unionVisualBounds,
-  type VisualBounds
-} from '@open-pencil/scene-graph/geometry'
+import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
@@ -54,14 +51,6 @@ export function oversizedRaster(width: number, height: number): string | null {
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
-}
-
-export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
-  return computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
 }
 
 /**

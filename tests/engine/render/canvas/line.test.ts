@@ -65,8 +65,9 @@ describe('line rendering', () => {
       const width = image.width()
       const alphaAt = (x: number, y: number) => pixels[(y * width + x) * 4 + 3]
 
-      expect(alphaAt(10, 36)).toBeGreaterThan(0)
-      expect(alphaAt(22, 36)).toBe(0)
+      // The image starts at the frame's corner: the line turns about its start, down x = 10.
+      expect(alphaAt(10, 20)).toBeGreaterThan(0)
+      expect(alphaAt(22, 20)).toBe(0)
 
       image.delete()
     } finally {
