@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import * as v from 'valibot'
 
 import type { SkillScan } from '../types'
@@ -62,6 +63,5 @@ export async function readProjectSkills(
 
 /** The desktop's reader, through the shell's skill commands. */
 export async function nativeProjectSkillReader(home: HomeSkillReader): Promise<ProjectSkillReader> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return { ...home, skillsFolders: (dir) => invoke<unknown>('project_skill_folders', { dir }) }
 }

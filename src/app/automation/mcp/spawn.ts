@@ -1,3 +1,7 @@
+import { invoke } from '@tauri-apps/api/core'
+import { homeDir, join } from '@tauri-apps/api/path'
+import { readTextFile, exists } from '@tauri-apps/plugin-fs'
+import { Command } from '@tauri-apps/plugin-shell'
 import { promiseTimeout } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
@@ -147,7 +151,6 @@ const discoveryTokenSchema = v.pipe(
  */
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
-    const { readTextFile } = await import('@tauri-apps/plugin-fs')
     const info = v.safeParse(discoveryTokenSchema, await readTextFile(discoveryPath))
     return info.success ? (info.output.authToken ?? null) : null
   } catch {
@@ -158,7 +161,6 @@ async function readDiscoveryToken(discoveryPath: string): Promise<string | null>
 /** Check whether the discovery file exists on disk. */
 async function discoveryFileExists(discoveryPath: string): Promise<boolean> {
   try {
-    const { exists } = await import('@tauri-apps/plugin-fs')
     return await exists(discoveryPath)
   } catch {
     return false
@@ -172,7 +174,6 @@ async function discoveryFileExists(discoveryPath: string): Promise<boolean> {
  * endpoint's discoveryPath field.
  */
 async function computeExpectedDiscoveryPath(): Promise<string> {
-  const { homeDir, join } = await import('@tauri-apps/api/path')
   const home = await homeDir()
   if (!home) throw new Error('homeDir() returned an empty string')
 
@@ -218,7 +219,6 @@ async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<strin
       // Validate the server-reported path before accepting it. The /health
       // endpoint is unauthenticated, so we only accept paths within the
       // user's home directory ending in mcp.json.
-      const { homeDir } = await import('@tauri-apps/api/path')
       const home = await homeDir()
       const sep = home.includes('\\') ? '\\' : '/'
       const hasTraversal = healthDiscoveryPath.split(/[\\/]/).some((segment) => segment === '..')
@@ -515,14 +515,12 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     return existing
   }
 
-  const { invoke } = await import('@tauri-apps/api/core')
   const lookup = await invoke<MCPLookup>('mcp_lookup')
   if (!lookup.available) return rememberStartupError(missingMCPError(lookup.searched))
 
   const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.
 
-  const { Command } = await import('@tauri-apps/plugin-shell')
   // Scope file tools to the configured root, defaulting to the user's home.
   // The app bundle directory (Tauri executableDir) is read-only and cannot be
   // used as a safe fallback for open_file, save_file, or export tools.
@@ -655,7 +653,6 @@ export async function spawnMCPIfNeeded(
  */
 async function resolveTauriHomeDir(): Promise<string> {
   try {
-    const { homeDir } = await import('@tauri-apps/api/path')
     const dir = await homeDir()
     if (!dir) {
       throw new Error('homeDir() returned an empty string')

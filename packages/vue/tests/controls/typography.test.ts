@@ -409,3 +409,154 @@ test('an axis set while text is edited styles the selected characters, and undoe
     renderer.destroy()
   }
 })
+
+/** "Hello" drawn at 40 by a range over all of it, over the layer's own 14, and its actions. */
+function rangeSized() {
+  const editor = createEditor()
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    fontSize: 14,
+    styleRuns: [{ start: 0, length: 5, style: { fontSize: 40 } }]
+  })
+  const actions = createTypographyActions({
+    editor,
+    nodes: computed(() => [text]),
+    activeFormatting: computed(() => []),
+    supports: () => true,
+    options: {}
+  })
+  const node = () => editor.graph.getNode(text.id)
+  return { editor, actions, node }
+}
+
+test('a size set on a layer a range sized draws every character at it, and undoes', () => {
+  const { editor, actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  actions.commitProp('fontSize', 30, 40)
+  expect(node()?.fontSize).toBe(30)
+  expect(node()?.styleRuns).toEqual([])
+  editor.undoAction()
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})
+
+test('a cancelled size on a layer a range sized puts the range back', () => {
+  const { actions, node } = rangeSized()
+  actions.updateProp('fontSize', 30)
+  expect(node()?.styleRuns).toEqual([])
+  actions.cancelProp('fontSize')
+  expect(node()?.fontSize).toBe(14)
+  expect(node()?.styleRuns).toEqual([{ start: 0, length: 5, style: { fontSize: 40 } }])
+})
+
+test('a cancelled axis edit on selected characters puts back their own axes', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const range = { start: 6, length: 5, style: { fontVariations: [{ axis: 'wght', value: 700 }] } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20,
+    styleRuns: [range]
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  try {
+    axes.previewAxis('wght', 500)
+    axes.cancelAxis()
+    expect(editor.graph.getNode(text.id)?.styleRuns).toEqual([range])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
+})
+
+test('an axis set on a whole text keeps the other axes a range sets', () => {
+  const editor = createEditor()
+  const width = { start: 0, length: 5, style: { fontVariations: [{ axis: 'wdth', value: 80 }] } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello',
+    styleRuns: [width]
+  })
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.setAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    expect(node()?.styleRuns).toEqual([
+      {
+        start: 0,
+        length: 5,
+        style: {
+          fontVariations: [
+            { axis: 'wdth', value: 80 },
+            { axis: 'wght', value: 600 }
+          ]
+        }
+      }
+    ])
+    editor.undoAction()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([width])
+  } finally {
+    scope.stop()
+    editor.dispose()
+  }
+})
+
+test('a cancelled axis preview that outlived text editing puts back the layer and its ranges', async () => {
+  await fontManager.loadFont('Inter', 'Regular')
+  const ck = await initCanvasKit()
+  const surface = ck.MakeSurface(200, 200)
+  if (!surface) throw new Error('Expected a surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  const editor = createEditor()
+  editor.setCanvasKit(ck, renderer)
+  await renderer.loadFonts()
+  const range = { start: 6, length: 5, style: { fontSize: 30 } }
+  const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+    text: 'Hello world',
+    fontFamily: 'Inter',
+    width: 200,
+    height: 20,
+    styleRuns: [range]
+  })
+  editor.startTextEditing(text.id)
+  const state = editor.textEditor?.state
+  if (!state) throw new Error('Expected a text editor')
+  state.selectionAnchor = 6
+  state.cursor = 11
+  const scope = effectScope()
+  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  if (!axes) throw new Error('Expected the axes')
+  const node = () => editor.graph.getNode(text.id)
+  try {
+    axes.previewAxis('wght', 500)
+    editor.commitTextEdit()
+    axes.previewAxis('wght', 600)
+    expect(node()?.fontVariations).toEqual([{ axis: 'wght', value: 600 }])
+    axes.cancelAxis()
+    expect(node()?.fontVariations).toEqual([])
+    expect(node()?.styleRuns).toEqual([range])
+  } finally {
+    scope.stop()
+    editor.dispose()
+    renderer.destroy()
+  }
+})

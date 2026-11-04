@@ -11,6 +11,7 @@ export {
 export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   compressFigDataSync,
+  figArchiveKind,
   figArchiveMetaJSON,
   parseFigBuffer,
   readFigArchiveMeta,
@@ -24,7 +25,9 @@ export {
 export {
   figArchiveComponentUsePages,
   figArchiveRecordInfo,
+  figArchiveRecordPages,
   figComponentUsePages,
+  figRecordPages,
   patchFigArchive,
   patchFigRecords,
   type FigArchiveRecordInfo,

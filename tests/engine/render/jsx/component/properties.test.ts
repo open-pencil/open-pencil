@@ -9,7 +9,8 @@ import {
   Text,
   node,
   property,
-  type ComponentProperty
+  type ComponentProperty,
+  type LayerRef
 } from '@open-pencil/design-jsx'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
@@ -20,7 +21,10 @@ test('only instances take property values; layers bind fields to property()', ()
   expectTypeOf<Parameters<typeof Text>[0]['properties']>().toEqualTypeOf<undefined>()
   expectTypeOf<Parameters<typeof Component>[0]['properties']>().toEqualTypeOf<undefined>()
   expectTypeOf<Parameters<typeof Instance>[0]['properties']>().toEqualTypeOf<
-    | Record<string, string | boolean | number | Record<string, string | boolean | number>>
+    | Record<
+        string,
+        string | boolean | number | LayerRef | Record<string, string | boolean | number>
+      >
     | undefined
   >()
   expectTypeOf<Parameters<typeof Text>[0]['text']>().toEqualTypeOf<
@@ -288,6 +292,6 @@ test('exposing follows Figma’s rules, and unknown exposed values are errors', 
     renderTree(graph, Instance({ of: 'Card', properties: { Other: { Label: 'x' } } }))
   ).rejects.toThrow('Unknown component property or exposed instance: Other')
   await expect(renderTree(graph, Instance({ of: 'Card', Title: { Label: 'x' } }))).rejects.toThrow(
-    'Expected a string or boolean for component property: Title'
+    'Expected a string, boolean, or ref() for component property: Title'
   )
 })

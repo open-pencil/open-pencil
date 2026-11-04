@@ -95,6 +95,9 @@ export {
   type CollaborationRelayOptions,
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
+  type SavedRoom,
+  readRelayPeerState,
+  type RelayPeerState,
   type RelayAuthorization,
   type RelayConnection,
   type RelaySocket,
@@ -182,6 +185,14 @@ export {
   type TransactionalEmailWorker,
   type TransactionalEmailWorkerOptions
 } from './email'
+export {
+  CLOUD_ERROR_SOURCES,
+  cloudErrorHandler,
+  reportCloudError,
+  type CloudErrorContext,
+  type CloudErrorReporter,
+  type CloudErrorSource
+} from './errors'
 export {
   createInternalRoutes,
   createInternalService,

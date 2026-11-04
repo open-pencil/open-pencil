@@ -1,4 +1,4 @@
-import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
@@ -70,12 +70,10 @@ function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
   return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
 }
 
-type VariableAliasRef = NonNullable<NonNullable<NonNullable<Paint['colorVar']>['value']>['alias']>
-
-let variableColorResolver: ((alias: VariableAliasRef) => Color | null) | null = null
+let variableColorResolver: ((alias: VariableAliasValue) => Color | null) | null = null
 
 export function setVariableColorResolver(
-  resolver: ((alias: VariableAliasRef) => Color | null) | null
+  resolver: ((alias: VariableAliasValue) => Color | null) | null
 ): void {
   variableColorResolver = resolver
 }

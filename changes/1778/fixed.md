@@ -1,0 +1,1 @@
+- SVG and PDF export turn a rotated and flipped layer the way the canvas does, and a rotated line about its start (#1778).

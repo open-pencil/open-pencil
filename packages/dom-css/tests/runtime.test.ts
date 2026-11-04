@@ -70,6 +70,15 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(html).not.toContain('@tailwindcss/browser@4')
   })
 
+  it('refuses to record layout in the headless runtime', async () => {
+    const runtime = createHeadlessCSSRuntime()
+    const document = runtime.parseHTML('<div></div>')
+
+    await expect(runtime.computeStyles(document, '', { layout: true })).rejects.toThrow(
+      'cannot record layout'
+    )
+  })
+
   it('uses the headless runtime outside browser contexts', () => {
     const runtime = createCSSRuntime()
 

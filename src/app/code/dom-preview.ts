@@ -50,7 +50,7 @@ export async function previewDOMCode(
   styling: ComponentStyling
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const graph = sceneGraphFromStyledHTML(await designDocument(source, styling), {
+    const graph = await sceneGraphFromStyledHTML(await designDocument(source, styling), {
       pageName: 'Code preview'
     })
     const pageId = graph.getPages()[0]?.id ?? graph.rootId

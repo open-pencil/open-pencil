@@ -24,6 +24,8 @@ export interface TextLayoutBlockLines {
 /** What placing a text layout block's lines reads of it. */
 interface LineBlock {
   paragraph: Paragraph
+  /** The paragraph's line metrics as laid out, so placing reads them from the block. */
+  metrics: LineMetrics[]
   lines?: TextLayoutBlockLines
   lead: number
   length: number
@@ -37,6 +39,23 @@ export interface LinePiece {
   paragraph: Paragraph
   x: number
   y: number
+  /** The block's line the piece starts with. */
+  line: number
+}
+
+/**
+ * How far a paragraph `top` below the box must move to draw a line's glyphs, which it draws on
+ * `drawn`, on the whole pixel the line's exact `baseline` rounds to, as Figma draws every
+ * baseline (Figma desktop 126). A paragraph draws glyphs on whole pixels of its own, but not
+ * always on the one its baseline rounds to.
+ */
+export function wholePixelShift(top: number, baseline: number, drawn: number): number {
+  return Math.round(top + baseline) - top - drawn
+}
+
+/** Where a glyph on an exact `baseline` is drawn, for a box drawn `top` down: on a whole pixel. */
+export function drawnBaseline(baseline: number, top: number): number {
+  return top + Math.round(baseline - top)
 }
 
 /** Where a block's lines go when they do not stack as its paragraph has them. */
@@ -67,17 +86,17 @@ function metric(value: number): number {
   return Math.round(value * METRIC_STEPS) / METRIC_STEPS
 }
 
-/**
- * A line's box as Figma sets it. The line is as tall as the tallest line height on it, auto
- * standing for a font's own height rounded to a whole pixel, and its baseline sits where its
- * tallest font, centred in that height, puts it. Fonts' heights are the shaped runs' own, so a
- * fallback font counts with its metrics. Returns `null` for a line with nothing to measure.
- */
 /** The line a point `y` of the paragraph falls on, or `fallback` past them all. */
 function lineAt(lines: readonly LineMetrics[], y: number, fallback: LineMetrics): LineMetrics {
   return lines.find((line) => y < line.baseline + line.descent) ?? fallback
 }
 
+/**
+ * A line's box as Figma sets it. The line is as tall as the tallest line height on it: a set
+ * one as `lineStepPixels` gives it, auto a font's own height rounded to a whole pixel. Its
+ * baseline sits where its tallest font, centred in that height, puts it. Fonts' heights are the shaped runs' own, so a
+ * fallback font counts with its metrics. Returns `null` for a line with nothing to measure.
+ */
 export function figmaLineBox(
   ck: CanvasKit,
   paragraph: Paragraph,
@@ -105,7 +124,7 @@ export function figmaLineBox(
       const runNatural = metric(rect[3] - rect[1])
       // A first-line indent is a placeholder with no height.
       if (runNatural <= 0) continue
-      height = Math.max(height, Math.round(run.lineHeight ?? runNatural))
+      height = Math.max(height, run.lineHeight ?? Math.round(runNatural))
       if (runNatural > natural) {
         natural = runNatural
         // The newline that makes an empty line stands on the line above, so its box is
@@ -230,7 +249,7 @@ function buildPieces(
       // Lines that lay out or snap apart are drawn one by one.
       return grouped ? buildPieces(block, width, offsets, false) : null
     }
-    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from] })
+    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from], line: from })
     from = to
   }
   return pieces
@@ -247,29 +266,34 @@ export interface PlacedLines<Block> {
  * line is as tall as its tallest line height, and each baseline stands that far, plus the
  * paragraph's spacing, below the one before, where a paragraph would stack the lines' boxes.
  * `null` keeps the paragraphs' placement: for lines alike, where it is the same, and for
- * lines that cannot be measured or drawn apart.
+ * lines that cannot be measured or drawn apart. Baselines stay exact, as Figma saves them;
+ * drawing puts each on a whole pixel.
  */
 export function placeLines<Block extends LineBlock>(
   ck: CanvasKit,
   blocks: readonly Block[],
   width: number
 ): PlacedLines<Block> | null {
-  const metrics = blocks.map((block) => block.paragraph.getLineMetrics())
+  const metrics = blocks.map((block) => block.metrics)
   // A single line has none to be spaced from.
   if (metrics.flat().length < 2) return null
   const boxes = lineBoxes(ck, blocks, metrics)
   if (!boxes) return null
   const all = boxes.flat()
-  if (allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))) return null
+  // A paragraph steps lines by whole pixels, so lines alike at a whole-pixel height already
+  // stand where Figma puts them.
+  const height = all[0].height
+  const alike = allSame(all.map((box) => box.height)) && allSame(all.map((box) => box.ascent))
+  if (alike && allSame([height, Math.round(height)])) return null
 
-  // Distances from the first baseline add up whole-pixel line heights, so they stay exact.
+  // Figma steps lines by their exact heights (Figma desktop 126).
   const first = all[0]
   const last = all[all.length - 1]
   let below = 0
   const baselines = blocks.map((block, index) =>
     boxes[index].map((box, line) => {
       if (index > 0 || line > 0) below += box.height + (line === 0 ? block.spaceBefore : 0)
-      return first.ascent + below
+      return metric(first.ascent + below)
     })
   )
   const placed = new Map<Block, BlockPlacement & { y: number }>()

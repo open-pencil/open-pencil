@@ -236,7 +236,7 @@ async function testConnection() {
             @click="openWorkspace"
             >{{ storage.openWorkspace }}</AppButton
           >
-          <p v-if="!configured" class="text-[11px] text-muted">
+          <p v-if="!configured" class="text-2xs text-muted">
             {{ settings.configureStorageHint }}
           </p>
         </SettingsSection>

@@ -309,6 +309,15 @@ export function createDocumentVersionService(
           })
           .where('id', '=', documentId)
           .execute()
+        // The rooms of the replaced state never open again, so what the relay saved of them goes.
+        await transaction
+          .deleteFrom('documentRoomUpdate')
+          .where('documentId', '=', documentId)
+          .execute()
+        await transaction
+          .deleteFrom('documentRoomSnapshot')
+          .where('documentId', '=', documentId)
+          .execute()
         // A moment after the state it replaces, so the history lists it first.
         await keepRevision(transaction, {
           documentId,
@@ -361,6 +370,7 @@ export function createDocumentVersionService(
           id: copyId,
           workspaceId: document.workspaceId,
           name: input.name,
+          kind: document.kind,
           createdBy: userId
         })
         await transaction

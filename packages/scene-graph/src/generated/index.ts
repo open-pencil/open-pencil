@@ -71,11 +71,6 @@ export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
   return generatedFrameKind(node)?.resizes ?? true
 }
 
-/** Whether a layer takes strokes and effects: any layer but a sticky note. */
-export function layerStrokesAndEffects(node: Pick<SceneNode, 'type'>): boolean {
-  return generatedFrameKind(node)?.strokesAndEffects ?? true
-}
-
 export type { GeneratedFrameKind } from './kind'
 export * from './shape-with-text'
 export * from './sticky'

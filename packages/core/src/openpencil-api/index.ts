@@ -37,7 +37,8 @@ import {
   writeFillOkHCL,
   writeLayoutDirection,
   writeStrokeOkHCL,
-  writeTextDirection
+  writeTextDirection,
+  writeTextMarkdown
 } from './nodes'
 import { getStatus, listStatuses, setStatus, type StatusInfo } from './statuses'
 import { bindVariable, unbindVariable, type VariableRef } from './variables'
@@ -238,5 +239,15 @@ export class OpenPencilAPI {
 
   setTextDirection(node: NodeRef, direction: string): void {
     writeTextDirection(this.figma.graph, node, direction)
+  }
+
+  /**
+   * Sets a text layer's text from Markdown, styled as FigJam styles Markdown typed into a text:
+   * `#` and `##` headings bold at 2.5× and 1.5× the text's size, deeper ones bold at its size,
+   * `**bold**`, `*italic*`, `~strike~`, `` `code` `` in Roboto Mono, links, lists, and quotes.
+   * Load the fonts it uses first, as for `characters`.
+   */
+  setTextMarkdown(node: NodeRef, markdown: string): void {
+    writeTextMarkdown(this.figma.graph, node, markdown)
   }
 }

@@ -212,7 +212,9 @@ describe('applyPhoto', () => {
         query: 'should not run'
       })
 
-      expect(result.error).toContain(`(${type}) is not a suitable stock photo target`)
+      // A page reads as Figma's PAGE, the type the error names.
+      const named = type === 'CANVAS' ? 'PAGE' : type
+      expect(result.error).toContain(`(${named}) is not a suitable stock photo target`)
       expect(calls).toHaveLength(0)
       expect(node.fills).toEqual(originalFills)
       expect(graph.images.size).toBe(0)

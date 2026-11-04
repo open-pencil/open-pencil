@@ -50,7 +50,7 @@ describe('.fig round trip of behaviours', () => {
       ...emptyBehaviour('textField'),
       texts: { value: { propertyId: 'value' } },
       booleans: { filled: { propertyId: 'filled', on: 'Yes', off: 'No' } },
-      states: guessInteractionStates('interaction', ['Default', 'Focus'])
+      states: guessInteractionStates('textField', 'interaction', ['Default', 'Focus'])
     })
     expect(
       missingBindings(editor.graph, set, readBehaviour(set) ?? emptyBehaviour('button'))

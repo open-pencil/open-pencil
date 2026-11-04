@@ -1,6 +1,6 @@
-import type { VisualBoundsNode } from '../geometry'
+import type { SceneNode } from '../types'
 
-type TextBoundsNode = Pick<VisualBoundsNode, 'type' | 'height' | 'derivedTextHeight'>
+type TextBoundsNode = Pick<SceneNode, 'type' | 'height' | 'derivedTextHeight'>
 
 /**
  * How far a text's lines reach below its box: a fixed-size box does not clip them, as in Figma,

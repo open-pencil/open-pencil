@@ -1,1 +1,0 @@
-- On phones, Share sends a room link through the system share sheet (Messages, Mail, AirDrop) instead of only copying it; browsers without a share sheet still copy the link.

@@ -12,8 +12,8 @@ import {
 import { lineEndAt } from '#vue/shared/input/line/end'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
+import { pressSelects } from '#vue/shared/input/select/move'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
-import { getNodeEditState } from '#vue/shared/input/vector'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   for (const id of editor.state.selectedIds) {
@@ -60,17 +60,20 @@ function updateHoveredNode(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep: boolean
 ) {
-  const hit = deep
-    ? fns.hitTestInScope(cx, cy, true)
-    : (hitTestLabel(cx, cy, fns) ?? fns.hitTestInScope(cx, cy, false))
-  const editNodeId = getNodeEditState(editor)?.nodeId
-  editor.setHoveredNode(
-    hit && !editor.state.selectedIds.has(hit.id) && hit.id !== editNodeId ? hit.id : null
-  )
+  // A label takes the hover before the layers under it, with or without ⌘, as it takes a press.
+  const hit = hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
+  const editNodeId = editor.getNodeEditState()?.nodeId
+  // No outline on a layer a press would not select.
+  const hovered =
+    hit &&
+    !editor.state.selectedIds.has(hit.id) &&
+    hit.id !== editNodeId &&
+    pressSelects(hit, cx, cy, editor, deep)
+  editor.setHoveredNode(hovered ? hit.id : null)
 }
 
 export function updateHoverCursor(
@@ -79,11 +82,11 @@ export function updateHoverCursor(
   editor: Editor,
   fns: Pick<
     HitTestFns,
-    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+    'hitTestLayer' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
   >,
   deep = false
 ): string | null {
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     editor.setHoveredNode(null)
     return null
   }

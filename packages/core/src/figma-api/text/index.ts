@@ -1,5 +1,10 @@
-import { compact } from 'es-toolkit/array'
+import type {
+  LetterSpacing,
+  LineHeight,
+  TextListOptions
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { upperFirst } from 'es-toolkit/string'
+import * as v from 'valibot'
 
 import type {
   SceneGraph,
@@ -25,36 +30,24 @@ import {
   withParagraphSpacing
 } from '@open-pencil/scene-graph/text'
 
-import { invalid, received } from '#core/figma-api/accessors/text/messages'
+import { lengthOrAuto, letterSpacingLength } from '#core/figma-api/accessors/text/values'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
-import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
+import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
+import { parseFigma } from '#core/figma-api/validation'
+import {
+  adjustRunsForDelete,
+  getStyleAt,
+  insertedStyleAt,
+  insertRunsWithStyle,
+  type InsertStyleSource
+} from '#core/text/style-runs'
 
 import { assertTextRange } from './style'
 
-/** Figma's plugin API line height: automatic, or a size in pixels or percent of the font size. */
-export type FigmaLineHeight = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
-/** Figma's plugin API letter spacing, in pixels or percent of the font size. */
-export interface FigmaLetterSpacing {
-  unit: 'PIXELS' | 'PERCENT'
-  value: number
-}
-
-/** Figma's complaint about a length's `.value`, or null when it is a number. */
-function amountProblem(amount: unknown): string | null {
-  if (amount === undefined) return 'Required value missing at .value'
-  // NaN is a number to typeof, but not to Figma's check.
-  return typeof amount === 'number' && !Number.isNaN(amount)
-    ? null
-    : `Expected number, received ${received(amount)} at .value`
-}
-
-/** A length object a script passes to `method`, checked as Figma checks it. */
-function lengthObject(method: string, property: string, value: unknown) {
-  if (typeof value !== 'object' || value === null) {
-    throw invalid(method, `Expected object, received ${received(value)}`, property)
-  }
-  return value as { unit?: unknown; value?: unknown }
-}
+/** Figma's `LineHeight`: automatic, or a size in pixels or percent of the font size. */
+export type FigmaLineHeight = LineHeight
+/** Figma's `LetterSpacing`, in pixels or percent of the font size. */
+export type FigmaLetterSpacing = LetterSpacing
 
 /**
  * Accepts Figma's object, kept in its unit so a percent follows the font size as in Figma, or a
@@ -63,51 +56,18 @@ function lengthObject(method: string, property: string, value: unknown) {
 export function lineHeightValue(value: unknown): TextLength | null {
   if (value === null) return null
   if (typeof value === 'number') return pixelLength(value)
-  const length = lengthObject('set_lineHeight', 'lineHeight', value)
-  if (length.unit === 'AUTO') return null
-  if (length.unit !== 'PIXELS' && length.unit !== 'PERCENT') {
-    throw invalid(
-      'set_lineHeight',
-      'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO',
-      'lineHeight'
-    )
-  }
-  const problem = amountProblem(length.value)
-  if (problem) throw invalid('set_lineHeight', problem, 'lineHeight')
-  return { unit: length.unit, value: length.value as number }
+  return lengthOrAuto('set_lineHeight', value, 'lineHeight')
 }
 
 /** Accepts Figma's object, in its unit, or a bare number of pixels as earlier scripts wrote it. */
 export function letterSpacingValue(value: unknown): TextLength {
   if (typeof value === 'number') return pixelLength(value)
-  const length = lengthObject('set_letterSpacing', 'letterSpacing', value)
-  const unitKnown = length.unit === 'PIXELS' || length.unit === 'PERCENT'
-  // Figma lists every problem, the value's before the unit's.
-  const problems = compact([
-    amountProblem(length.value),
-    unitKnown ? null : 'Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'
-  ])
-  if (problems.length > 0) {
-    throw invalid('set_letterSpacing', problems.join('\n'), 'letterSpacing')
-  }
-  return { unit: length.unit as TextLength['unit'], value: length.value as number }
+  return letterSpacingLength('set_letterSpacing', value, 'letterSpacing')
 }
 
-/** Which neighbour inserted characters copy their style from, as Figma's `insertCharacters` takes it. */
-export type InsertStyleSource = 'BEFORE' | 'AFTER'
+export type { InsertStyleSource }
 
-const INSERT_STYLE_SOURCES: ReadonlySet<string> = new Set(['BEFORE', 'AFTER'])
-
-/**
- * The style inserted characters take, as Figma gives it: the preceding character's for `BEFORE`
- * and the following one's for `AFTER`, or the closest character's at either end of the text.
- */
-function insertedStyle(node: SceneNode, start: number, useStyle: InsertStyleSource) {
-  if (node.text.length === 0) return {}
-  const preferred = useStyle === 'BEFORE' ? start - 1 : start
-  const index = Math.min(Math.max(preferred, 0), node.text.length - 1)
-  return getStyleAt(node.styleRuns, index)
-}
+const INSERT_STYLE_SOURCES = ['BEFORE', 'AFTER'] as const satisfies readonly InsertStyleSource[]
 
 /**
  * A text's style runs once its characters are replaced. Figma resets the styles applied to
@@ -127,13 +87,7 @@ export function insertCharacters(
   useStyle: InsertStyleSource = 'BEFORE'
 ): void {
   // Scripts are not type-checked, so the value is checked as Figma checks it.
-  if (!INSERT_STYLE_SOURCES.has(useStyle)) {
-    throw invalid(
-      'insertCharacters',
-      'Invalid option: expected one of "BEFORE"|"AFTER"',
-      'useStyle'
-    )
-  }
+  parseFigma(v.picklist(INSERT_STYLE_SOURCES), useStyle, 'insertCharacters', 'useStyle')
   assertEditPosition('insertCharacters', node, 'start', start)
   assertTextFontsLoaded('insertCharacters', node)
   const text = node.text.slice(0, start) + characters + node.text.slice(start)
@@ -148,11 +102,13 @@ export function insertCharacters(
     node.styleRuns,
     start,
     characters.length,
-    insertedStyle(node, start, useStyle)
+    insertedStyleAt(node.styleRuns, node.text.length, start, useStyle)
   )
   graph.updateNode(node.id, { text, textParagraphs, styleRuns })
   recordInstanceOverride(graph, node.id, ['text', 'textParagraphs', 'styleRuns'])
 }
+
+const editPositionSchema = v.pipe(finiteNumberSchema, v.integer(), v.minValue(0))
 
 /**
  * A position an edit can use: an integer from 0 through the text length, the end included,
@@ -164,8 +120,7 @@ function assertEditPosition(
   name: string,
   value: number
 ) {
-  if (!Number.isInteger(value)) throw invalid(method, 'Expected int, received number', name)
-  if (value < 0) throw invalid(method, 'Too small: expected number to be >=0', name)
+  parseFigma(editPositionSchema, value, method, name)
   if (value > node.text.length) {
     const verb = method === 'insertCharacters' ? 'insert' : 'delete'
     throw new Error(
@@ -194,7 +149,9 @@ export function deleteCharacters(
 }
 
 type ListType = TextListOptions['type']
-const LIST_TYPES: ReadonlySet<string> = new Set<ListType>(['NONE', 'ORDERED', 'UNORDERED'])
+const listOptionsSchema = v.strictObject({
+  type: v.picklist(['NONE', 'ORDERED', 'UNORDERED'] as const satisfies readonly ListType[])
+})
 
 /** The styles of the paragraphs a range touches: a newline belongs to the paragraph it ends. */
 function rangeParagraphStyles(node: SceneNode, start: number, end: number): TextParagraphStyle[] {
@@ -234,17 +191,12 @@ export function setRangeListOptions(
   node: SceneNode,
   start: number,
   end: number,
-  options: TextListOptions
+  value: TextListOptions
 ): void {
-  if (!LIST_TYPES.has(options.type)) {
-    throw new Error(
-      `in setRangeListOptions: Property "options" failed validation: Invalid enum value. ` +
-        `Expected 'NONE' | 'ORDERED' | 'UNORDERED', received '${String(options.type)}' at .type`
-    )
-  }
+  const { type } = parseFigma(listOptionsSchema, value, 'setRangeListOptions', 'options')
   assertTextRange('setRangeListOptions', node, start, end)
   assertTextFontsLoaded('setRangeListOptions', node)
-  updateParagraphs(graph, node, start, end, (style) => withListType(style, options.type))
+  updateParagraphs(graph, node, start, end, (style) => withListType(style, type))
 }
 
 export function getRangeIndentation(
@@ -259,14 +211,11 @@ export function getRangeIndentation(
   return levels.size === 1 ? level : mixed
 }
 
-/** What Figma reports about an indentation it rejects, or `null`. */
-function indentationProblem(level: number): string | null {
-  if (!Number.isInteger(level)) return 'Expected integer, received float'
-  if (level < 0) return 'Number must be greater than or equal to 0'
-  if (level > MAX_LIST_INDENTATION)
-    return `Number must be less than or equal to ${MAX_LIST_INDENTATION}`
-  return null
-}
+/** A whole level of nesting; Figma stops at a fraction before checking the bounds. */
+const indentationSchema = v.config(
+  v.pipe(finiteNumberSchema, v.integer(), v.minValue(0), v.maxValue(MAX_LIST_INDENTATION)),
+  { abortPipeEarly: true }
+)
 
 export function setRangeIndentation(
   graph: SceneGraph,
@@ -275,10 +224,7 @@ export function setRangeIndentation(
   end: number,
   level: number
 ): void {
-  const invalid = indentationProblem(level)
-  if (invalid) {
-    throw new Error(`in setRangeIndentation: Property "indentation" failed validation: ${invalid}`)
-  }
+  parseFigma(indentationSchema, level, 'setRangeIndentation', 'indentation')
   assertTextRange('setRangeIndentation', node, start, end)
   assertTextFontsLoaded('setRangeIndentation', node)
   updateParagraphs(graph, node, start, end, (style) => withIndentation(style, level))
@@ -290,11 +236,6 @@ export function setRangeIndentation(
  */
 function spacingParagraphs(node: SceneNode, start: number, end: number): [number, number] {
   return [paragraphIndexAt(node.text, start), paragraphIndexAt(node.text, end)]
-}
-
-/** What Figma reports about a spacing it rejects, or `null`. */
-export function spacingProblem(value: number): string | null {
-  return value >= 0 ? null : 'Number must be greater than or equal to 0'
 }
 
 export function getRangeParagraphSpacing(
@@ -317,8 +258,7 @@ export function setRangeParagraphSpacing(
   value: number
 ): void {
   const method = `setRange${upperFirst(field)}`
-  const invalid = spacingProblem(value)
-  if (invalid) throw new Error(`in ${method}: Property "value" failed validation: ${invalid}`)
+  parseFigma(atLeast(0), value, method)
   assertTextRange(method, node, start, end)
   assertTextFontsLoaded(method, node)
   // Ranges change the paragraphs of their characters; one more reaches the end position's.

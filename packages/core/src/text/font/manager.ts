@@ -1,21 +1,29 @@
 /* eslint-disable max-lines -- font loading and registration share FontManager lifecycle state */
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import { uniq } from 'es-toolkit/array'
 
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import {
   faceLoadKey,
   namesWeight,
   normalizeFontFamily,
-  parseFontStyle,
-  styleToWeight
+  parseFontStyle
 } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
-import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
+import {
+  fallbackDrawsCharacter,
+  fontFallbackEntry,
+  type FontFallbackScript
+} from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
-import { fontFaceRenderFamily, type FamilyFace } from '#core/text/font/faces'
+import {
+  browserFaceDescriptors,
+  fontFaceRenderFamily,
+  type FamilyFace
+} from '#core/text/font/faces'
 import { loadHarfBuzz } from '#core/text/font/harfbuzz'
 import { LocalFonts } from '#core/text/font/local'
 import { sameFontFile, SharedReads, withHarfBuzz } from '#core/text/font/reads'
@@ -29,6 +37,7 @@ import {
   type HostFontLoader,
   type LocalFontAccessState
 } from '#core/text/font/sources'
+import { fontStandIn, standInFont } from '#core/text/font/stand-in'
 import {
   fontAxes,
   hasNamedInstance,
@@ -37,6 +46,7 @@ import {
   type FontAxis,
   type NamedInstance
 } from '#core/text/font/variation'
+import { sfntFont } from '#core/text/font/woff2'
 import { collectGraphFontKeys } from '#core/text/requirements/collect'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-font/resolver'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-font/resolver'
@@ -47,6 +57,8 @@ export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
+  /** Faces a load looked for everywhere and found nowhere, until one of them loads after all. */
+  private missingFaces = new Set<string>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   /** The name each file of a family loaded from several files is registered under. */
   private fileFamilies = new Map<ArrayBuffer, string>()
@@ -68,7 +80,8 @@ export class FontManager {
     ArrayBuffer,
     { axes: FontAxis[]; instances: NamedInstance[] } | null
   >()
-  private blockedNodeIds = new Set<string>()
+  /** Layers kept off the canvas while their fonts are prepared, by graph, with how many hold each. */
+  private blockedNodes = new WeakMap<SceneGraph, Map<string, number>>()
   private fontProvider: TypefaceFontProvider | null = null
   private fontProviders = new Set<TypefaceFontProvider>()
   private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
@@ -91,6 +104,39 @@ export class FontManager {
   private cjkFallbackPromise: Promise<string[]> | null = null
   private arabicFallbackFamilies: string[] = []
   private arabicFallbackPromise: Promise<string[]> | null = null
+  private readonly sharedProviders = new Map<
+    CanvasKit,
+    { provider: TypefaceFontProvider; users: number }
+  >()
+
+  /**
+   * The provider every renderer and shaper of `canvasKit` draws from. They share one module's
+   * heap, and a provider holds its own copy of each font file, so a second provider would copy
+   * every face again: the scene and overlay canvases, and every CJK system font, alike. Each call
+   * is matched by {@link releaseProvider}; the last release deletes it.
+   */
+  acquireProvider(canvasKit: CanvasKit): TypefaceFontProvider {
+    const shared = this.sharedProviders.get(canvasKit)
+    if (shared) {
+      shared.users++
+      return shared.provider
+    }
+    const provider = canvasKit.TypefaceFontProvider.Make()
+    this.sharedProviders.set(canvasKit, { provider, users: 1 })
+    this.attachProvider(canvasKit, provider)
+    return provider
+  }
+
+  releaseProvider(provider: TypefaceFontProvider): void {
+    for (const [canvasKit, shared] of this.sharedProviders) {
+      if (shared.provider !== provider) continue
+      if (--shared.users > 0) return
+      this.sharedProviders.delete(canvasKit)
+      this.detachProvider(provider)
+      provider.delete()
+      return
+    }
+  }
 
   attachProvider(canvasKit: CanvasKit, provider: TypefaceFontProvider): void {
     this.fontProviders.add(provider)
@@ -133,16 +179,31 @@ export class FontManager {
     return this.registrationGeneration
   }
 
-  blockNodesUntilFontsResolve(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.add(nodeId)
+  /**
+   * Keeps `nodeIds` of `graph` off the canvas until each is unblocked as many times as it was
+   * blocked, so one preparation that ends does not show text another still prepares.
+   */
+  blockNodesUntilFontsResolve(graph: SceneGraph, nodeIds: readonly string[]): void {
+    let blocked = this.blockedNodes.get(graph)
+    if (!blocked) {
+      blocked = new Map()
+      this.blockedNodes.set(graph, blocked)
+    }
+    for (const nodeId of nodeIds) blocked.set(nodeId, (blocked.get(nodeId) ?? 0) + 1)
   }
 
-  unblockNodes(nodeIds: readonly string[]): void {
-    for (const nodeId of nodeIds) this.blockedNodeIds.delete(nodeId)
+  unblockNodes(graph: SceneGraph, nodeIds: readonly string[]): void {
+    const blocked = this.blockedNodes.get(graph)
+    if (!blocked) return
+    for (const nodeId of nodeIds) {
+      const holds = blocked.get(nodeId) ?? 0
+      if (holds > 1) blocked.set(nodeId, holds - 1)
+      else blocked.delete(nodeId)
+    }
   }
 
-  isNodeBlocked(nodeId: string): boolean {
-    return this.blockedNodeIds.has(nodeId)
+  isNodeBlocked(graph: SceneGraph, nodeId: string): boolean {
+    return this.blockedNodes.get(graph)?.has(nodeId) ?? false
   }
 
   localAccessState(): LocalFontAccessState {
@@ -381,6 +442,13 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     signal?.throwIfAborted()
     const loaded = this.loadedData(family, style)
+    // A stand-in gives way to the family's own face once it is installed or local access is granted.
+    if (loaded && this.loadedFontSource(family, style) === 'stand-in') {
+      const installed = await this.loadInstalledFont(family, style)
+      if (installed) return installed
+      this.registerFontInCanvasKit(family, loaded)
+      return loaded
+    }
     if (loaded) {
       this.registerFontInCanvasKit(family, loaded)
       return this.withRemoteCoverage(family, style, loaded, characters, signal)
@@ -392,11 +460,39 @@ export class FontManager {
     const shared = this.sharedVariableFace(family, style)
     if (shared) return this.withRemoteCoverage(family, style, shared, characters, signal)
 
-    return (
+    const found =
       (await this.loadBundledFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
-      (await this.loadRemoteFont(family, style, characters, signal))
-    )
+      (await this.loadRemoteFont(family, style, characters, signal)) ??
+      (await this.loadStandIn(family, style))
+    if (!found) this.missingFaces.add(`${family}|${style}`)
+    return found
+  }
+
+  /**
+   * Whether a load looked for this face and found it nowhere, so text in it draws in another face,
+   * as Figma draws a missing font, rather than waiting for it.
+   */
+  isFaceMissing(family: string, style: string): boolean {
+    return this.missingFaces.has(`${family}|${style}`)
+  }
+
+  /**
+   * The open font that draws a family nobody may ship, made to the family's widths and line box,
+   * under the family's own name, so text is laid out and drawn alike wherever it is read from.
+   */
+  private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
+    const standIn = fontStandIn(family)
+    if (!standIn) return null
+    try {
+      const file = await this.fetchBundledFont(standIn.file)
+      if (!file) return null
+      const font = standInFont(await sfntFont(file), standIn)
+      return font ? this.registerAndCache(family, style, font, 'stand-in') : null
+    } catch (e) {
+      console.warn(`Stand-in font load failed for "${family}" ${style}:`, e)
+      return null
+    }
   }
 
   /**
@@ -655,6 +751,12 @@ export class FontManager {
     }
   }
 
+  /**
+   * Loads the fallback faces for `script`. The first installed one of its families comes in, and
+   * the next only for the characters of its writing system among `characters` that CanvasKit finds
+   * no glyph for in the fallbacks loaded: each is a whole system face, tens of megabytes for a CJK one, copied
+   * into CanvasKit. Web fonts come in, cut to the characters, when no installed face covers them.
+   */
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
     targetFamilies: string[],
@@ -663,26 +765,32 @@ export class FontManager {
   ): Promise<string[]> {
     signal?.throwIfAborted()
     const manifest = fontFallbackEntry(script, this.fallbackUserAgent)
+    const needed = uniq(Array.from(characters)).filter((character) =>
+      fallbackDrawsCharacter(script, character)
+    )
+    // Families only come in, so what one check resolved stays resolved.
+    let pending = needed
+    const missing = () => (pending = this.unresolvedCharacters(targetFamilies, pending))
 
+    let installed = false
     for (const family of manifest.localFamilies) {
+      if (installed && missing().length === 0) break
       signal?.throwIfAborted()
       const buffer =
         (await this.loadHostFont(family, 'Regular')) ?? (await this.localFonts.read(family))
       signal?.throwIfAborted()
-      if (
-        buffer &&
-        this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
-        !targetFamilies.includes(family)
-      ) {
-        targetFamilies.push(family)
+      if (buffer && this.registerAndCache(family, 'Regular', buffer, 'fallback')) {
+        if (!targetFamilies.includes(family)) targetFamilies.push(family)
+        installed = true
       }
     }
 
-    if (targetFamilies.length === 0 || characters) {
+    const remoteCharacters = installed ? missing().join('') : characters
+    if (!installed || remoteCharacters) {
       const results = await Promise.allSettled(
         manifest.remoteFamilies.map(async (family) => {
           signal?.throwIfAborted()
-          const data = await this.loadRemoteFont(family, 'Regular', characters, signal)
+          const data = await this.loadRemoteFont(family, 'Regular', remoteCharacters, signal)
           signal?.throwIfAborted()
           return data ? family : null
         })
@@ -699,6 +807,36 @@ export class FontManager {
     }
 
     return targetFamilies
+  }
+
+  /**
+   * The characters CanvasKit finds no glyph for in `families`, shaped with the provider the
+   * canvas draws from. Without one, as in an export before any canvas or shaper holds it, it
+   * cannot tell and counts every character missing, so every family loads as it always did.
+   */
+  private unresolvedCharacters(families: readonly string[], characters: string[]): string[] {
+    if (characters.length === 0) return []
+    if (families.length === 0) return characters
+    const shared = this.sharedProviders.entries().next().value
+    if (!shared) return characters
+    const [canvasKit, { provider }] = shared
+    const style = new canvasKit.ParagraphStyle({
+      textStyle: { fontFamilies: [...families], fontSize: 16 }
+    })
+    const builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(style, provider)
+    try {
+      builder.addText(characters.join(''))
+      const paragraph = builder.build()
+      try {
+        paragraph.layout(Number.MAX_SAFE_INTEGER)
+        const unresolved = new Set(paragraph.unresolvedCodepoints())
+        return characters.filter((character) => unresolved.has(character.codePointAt(0) ?? 0))
+      } finally {
+        paragraph.delete()
+      }
+    } finally {
+      builder.delete()
+    }
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
@@ -762,7 +900,12 @@ export class FontManager {
   }
 
   /** Adds `buffer` to the files of `style` after its own, returning the copy of it they keep. */
-  private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer {
+  private registerSupplemental(
+    family: string,
+    style: string,
+    buffer: ArrayBuffer,
+    source?: FontLoadedSource
+  ): ArrayBuffer {
     const key = `${family}|${style}`
     const supplemental = this.supplementalFamilyData.get(key) ?? []
     const kept = supplemental.find((file) => sameFontFile(file, buffer))
@@ -770,7 +913,7 @@ export class FontManager {
     supplemental.push(buffer)
     this.supplementalFamilyData.set(key, supplemental)
     this.registerFontInCanvasKit(family, buffer)
-    this.registerFontInBrowser(family, style, buffer)
+    if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)
     return buffer
   }
 
@@ -781,6 +924,7 @@ export class FontManager {
     source?: FontLoadedSource
   ): ArrayBuffer | null {
     const key = `${family}|${style}`
+    this.missingFaces.delete(key)
     const existing = this.loadedFamilies.get(key)
     if (existing && sameFontFile(existing, buffer)) {
       if (source) this.loadedFamilySources.set(key, source)
@@ -789,14 +933,16 @@ export class FontManager {
     }
     if (existing) {
       const replaced = this.replacedFileData.get(key) ?? new Set<ArrayBuffer>()
-      replaced.add(this.registerSupplemental(family, style, existing))
+      replaced.add(
+        this.registerSupplemental(family, style, existing, this.loadedFamilySources.get(key))
+      )
       this.replacedFileData.set(key, replaced)
       this.replacedFamilies.add(family)
     }
     this.loadedFamilies.set(key, buffer)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
-    this.registerFontInBrowser(family, style, buffer)
+    if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)
     for (const listener of this.faceListeners) listener(family, style)
     return buffer
   }
@@ -843,12 +989,7 @@ export class FontManager {
   /** Makes a face available to the page's own text, such as fields over canvas labels. */
   registerFontInBrowser(family: string, style: string, data: ArrayBuffer) {
     if (!IS_BROWSER) return
-    const weight = styleToWeight(style)
-    const italic = style.toLowerCase().includes('italic') ? 'italic' : 'normal'
-    const face = new FontFace(family, data, {
-      weight: String(weight),
-      style: italic
-    })
+    const face = new FontFace(family, data, browserFaceDescriptors(style, data))
     face
       .load()
       .then(() => document.fonts.add(face))
@@ -856,6 +997,16 @@ export class FontManager {
         console.warn(`Failed to load font "${family}" (${style})`)
       })
   }
+}
+
+/**
+ * Whether the page draws a face from `source` by itself: it draws installed fonts by name and
+ * falls back to the system's. A browser face would copy a whole system file, and one under an
+ * installed family's name stands in for all of that family's faces: WebView2 draws their bold
+ * and italic text in it.
+ */
+function pageDrawsByName(source: FontLoadedSource | undefined): boolean {
+  return source === 'local' || source === 'fallback'
 }
 
 export const fontManager = new FontManager()

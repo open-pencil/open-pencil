@@ -114,16 +114,16 @@ export const designToComponentMap = defineTool({
   name: 'design_to_component_map',
   description:
     'Analyze the document and return a structured component decomposition: components (with variants, props, instance counts), screens, and a dependency overview.',
-  execution: { kind: 'sync', mutation: 'none' },
+  execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     page: v.optional(
       v.pipe(v.string(), v.description('Page name to analyze (default: current page)'))
     )
   }),
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     if (args.page) {
       const target = figma.root.children.find((page) => page.name === args.page)
-      if (target) figma.currentPage = target
+      if (target) await figma.setCurrentPageAsync(target)
       else return { error: `Page "${args.page}" not found` }
     }
 

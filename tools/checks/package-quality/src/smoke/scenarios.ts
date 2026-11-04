@@ -65,11 +65,23 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime failed')"
   },
   {
+    name: 'Oxlint plugin',
+    code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
+  },
+  {
+    name: 'Oxlint recommended configuration',
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+  },
+  {
     name: 'Cloud contract',
     code: "const { CLOUD_AI_TOKEN_AUDIENCE, aiWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_AI_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(aiWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
   },
   {
     name: 'XPath query',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { matchByXPath, queryByXPath } = await import('@open-pencil/core/xpath'); const graph = new SceneGraph(); new FigmaAPI(graph).createRectangle(); const found = await queryByXPath(graph, '//RECTANGLE'); if (found.length !== 1 || !(await matchByXPath(graph, '@width > 0', found[0]))) throw new Error('XPath query smoke failed')"
+  },
+  {
+    name: 'PDF export',
+    code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core/io'); const graph = new SceneGraph(); const rectangle = new FigmaAPI(graph).createRectangle(); const result = await new IORegistry(BUILTIN_IO_FORMATS).exportContent('pdf', { graph, target: { scope: 'node', nodeId: rectangle.id } }); if (!(result.data instanceof Uint8Array) || new TextDecoder().decode(result.data.subarray(0, 5)) !== '%PDF-') throw new Error('PDF export smoke failed')"
   }
 ]

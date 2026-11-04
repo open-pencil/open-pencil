@@ -42,6 +42,13 @@ export interface FigSessionComponentPagesRequest {
   componentIds: string[]
 }
 
+export interface FigSessionRecordPagesRequest {
+  type: 'record-pages'
+  requestId: string
+  /** Archive GUIDs of the records, as `session:local`. */
+  recordIds: string[]
+}
+
 export interface FigSessionPatchArchiveRequest {
   type: 'patch-archive'
   requestId: string
@@ -68,6 +75,7 @@ export type FigSessionRequest =
   | FigSessionOriginalArchiveRequest
   | FigSessionArchiveInfoRequest
   | FigSessionComponentPagesRequest
+  | FigSessionRecordPagesRequest
   | FigSessionPatchArchiveRequest
   | FigSessionRetireRequest
   | FigSessionCancelRequest
@@ -97,6 +105,7 @@ export type FigSessionResponse =
   | { type: 'original-archive-result'; requestId: string; bytes: Uint8Array }
   | { type: 'archive-info-result'; requestId: string; info: FigArchiveRecordInfo }
   | { type: 'component-pages-result'; requestId: string; pageIds: string[] }
+  | { type: 'record-pages-result'; requestId: string; pageIds: (string | null)[] }
   | { type: 'patch-archive-result'; requestId: string; bytes: Uint8Array }
   | { type: 'archive-error'; requestId: string; error: string }
   | { type: 'disposed' }

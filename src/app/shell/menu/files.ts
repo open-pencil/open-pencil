@@ -1,3 +1,5 @@
+import { open } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
 import { basename } from 'pathe'
@@ -123,13 +125,11 @@ export async function openDesignFileBatch<T>(
 
 export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
-  const { readFile } = await import('@tauri-apps/plugin-fs')
   const bytes = await readFile(path)
   return new File([bytes], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {
-  const { open } = await import('@tauri-apps/plugin-dialog')
   const paths = await open({
     filters: [{ name: 'Design file', extensions: READABLE_DOCUMENT_EXTENSIONS }],
     multiple: true
@@ -141,8 +141,8 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
 export async function openFileFromPath(path: string) {
   if (!isTauri()) return
   const file = await readTauriDesignFile(path)
-  await openFileInNewTab(file, undefined, path)
-  rememberRecentFile(path)
+  const store = await openFileInNewTab(file, undefined, path)
+  rememberRecentFile(path, store.state.documentKind)
 }
 
 /**

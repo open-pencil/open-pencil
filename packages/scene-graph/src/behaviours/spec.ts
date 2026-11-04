@@ -2,7 +2,7 @@ import { omitBy } from 'es-toolkit/object'
 
 import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
-import { behaviourContract } from './kinds'
+import { behaviourContract, hasInvalidState } from './kinds'
 import { behaviourProperties, emptyBehaviour, guessInteractionStates, textBinding } from './model'
 import { isNumberRange, type Behaviour, type BehaviourSpec } from './schema'
 
@@ -90,12 +90,18 @@ function resolveStates(
 ): void {
   const name = typeof states === 'string' ? states : states.property
   const definition = findProperty(properties, name, ['VARIANT'], 'states')
-  const guessed = guessInteractionStates(definition.id, definition.variantOptions ?? [])
+  const guessed = guessInteractionStates(
+    behaviour.kind,
+    definition.id,
+    definition.variantOptions ?? []
+  )
   if (typeof states === 'string') {
     behaviour.states = guessed
     return
   }
   const { property: _property, ...values } = states
+  if (values.invalid !== undefined && !hasInvalidState(behaviour.kind))
+    throw new Error(`A ${behaviour.kind} has no invalid state`)
   behaviour.states = { ...guessed, ...stripUndefined(values) }
 }
 

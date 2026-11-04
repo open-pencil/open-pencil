@@ -57,7 +57,7 @@
     },
     {
       "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }]
     },
     {
       "identifier": "fs:allow-stat",
@@ -92,7 +92,7 @@
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "**" }],
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },
@@ -112,11 +112,11 @@
     },
     {
       "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }]
     },
     {
       "identifier": "fs:allow-remove",
-      "allow": [{ "path": "**" }],
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
       "deny": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },
@@ -140,6 +140,8 @@
         },
         { "name": "codex-acp", "cmd": "codex-acp", "args": false },
         { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
+        { "name": "cursor-agent", "cmd": "cursor-agent", "args": ["acp"] },
+        { "name": "grok", "cmd": "grok", "args": ["agent", "stdio"] },
         {
           "name": "npm",
           "cmd": "npm",
@@ -174,6 +176,8 @@
         },
         { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
         { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
+        { "name": "cmd-cursor-agent", "cmd": "cmd", "args": ["/c", "cursor-agent", "acp"] },
+        { "name": "cmd-grok", "cmd": "cmd", "args": ["/c", "grok", "agent", "stdio"] },
         {
           "name": "cmd-npm",
           "cmd": "cmd",

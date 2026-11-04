@@ -26,7 +26,7 @@ const ai = useAIMessages()
     >
       <ChatReferenceText :text="message.submission.displayText" />
     </div>
-    <div class="flex items-center gap-1 text-[10px] text-muted">
+    <div class="flex items-center gap-1 text-3xs text-muted">
       <span>{{ message.kind === 'steer' && steers ? ai.queuedSteer : ai.queuedFollowUp }}</span>
       <IconButton :label="ai.removeQueuedMessage" size="xs" @click="emit('remove')">
         <icon-lucide-x class="size-3" />

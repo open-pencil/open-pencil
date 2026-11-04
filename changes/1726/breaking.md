@@ -1,0 +1,1 @@
+- `@open-pencil/core/text` no longer exports `adjustRunsForInsert`. Use `runsAfterTyping`, which moves the runs for typed text and gives it the style of the text it continues.

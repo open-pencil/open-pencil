@@ -7,7 +7,7 @@ const DARK = 0x1e / 255
 const LIGHT = 0.96
 
 async function openFresh(page: Page) {
-  await page.goto('/')
+  await page.goto('/?test')
   await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
   await page.locator('#loader').waitFor({ state: 'detached' })
 }
@@ -38,4 +38,11 @@ test('the light theme starts documents on the light page', async ({ page }) => {
   await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   expect(await currentPageColor(page)).toBeCloseTo(LIGHT, 3)
+})
+
+test('a design started from Home takes the dark page in the dark theme', async ({ page }) => {
+  await page.goto('/')
+  await page.getByTestId('home-new-design').click()
+  await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
+  expect(await currentPageColor(page)).toBeCloseTo(DARK, 3)
 })

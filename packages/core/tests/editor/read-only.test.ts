@@ -92,6 +92,33 @@ describe('read-only documents', () => {
     expect(changes).toEqual([true, false])
   })
 
+  test('keeps a vector edit in progress, as it keeps edited text', () => {
+    const { editor, pageId } = setup()
+    const path = editor.graph.createNode('VECTOR', pageId, {
+      width: 100,
+      height: 10,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    })
+    editor.enterNodeEditMode(path.id)
+    const vertex = editor.state.nodeEditState?.vertices[1]
+    if (vertex) vertex.y = 40
+
+    editor.setReadOnly(true)
+
+    expect(editor.state.nodeEditState).toBeNull()
+    const committed = getNodeOrThrow(editor.graph, path.id)
+    expect(committed.height).toBe(40)
+    expect(committed.vectorNetwork?.vertices[1]).toMatchObject({ x: 100, y: 40 })
+    expect(() => editor.enterNodeEditMode(path.id)).toThrow(ReadOnlyDocumentError)
+  })
+
   test('edits again once editable', () => {
     const { editor, rect } = setup()
     editor.setReadOnly(true)

@@ -3,11 +3,13 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import {
   clearRecentFiles,
   forgetRecentFile,
+  recentDocumentKind,
   recentDocuments,
   recentFiles,
   recentLocalFileAt,
   rememberRecentFile,
-  rememberRecentStorageDocument
+  rememberRecentStorageDocument,
+  type RecentDocument
 } from '@/app/recent-files'
 
 afterEach(() => clearRecentFiles())
@@ -16,9 +18,9 @@ describe('recent documents', () => {
   test('keeps the latest local file first without duplicates', () => {
     recentDocuments.value = []
 
-    rememberRecentFile('/tmp/first.fig')
-    rememberRecentFile('/tmp/second.fig')
-    rememberRecentFile('/tmp/first.fig')
+    rememberRecentFile('/tmp/first.fig', 'design')
+    rememberRecentFile('/tmp/second.fig', 'design')
+    rememberRecentFile('/tmp/first.fig', 'design')
 
     expect(recentFiles.value.map(({ kind, name }) => ({ kind, name }))).toEqual([
       { kind: 'local', name: 'first.fig' },
@@ -28,10 +30,11 @@ describe('recent documents', () => {
   })
 
   test('tracks storage documents alongside local files', () => {
-    rememberRecentFile('/tmp/local.fig')
+    rememberRecentFile('/tmp/local.fig', 'design')
     rememberRecentStorageDocument(
       { providerId: 's3-compatible', documentId: 'remote-1' },
-      'Remote design'
+      'Remote design',
+      'design'
     )
 
     expect(recentFiles.value.map(({ id, kind, name }) => ({ id, kind, name }))).toEqual([
@@ -51,8 +54,8 @@ describe('recent documents', () => {
       containerId: 'workspace-1',
       documentId: 'doc-1'
     }
-    rememberRecentStorageDocument({ ...document, profileId: 'server-a' }, 'On A')
-    rememberRecentStorageDocument({ ...document, profileId: 'server-b' }, 'On B')
+    rememberRecentStorageDocument({ ...document, profileId: 'server-a' }, 'On A', 'design')
+    rememberRecentStorageDocument({ ...document, profileId: 'server-b' }, 'On B', 'design')
 
     expect(recentFiles.value.map(({ id, name }) => ({ id, name }))).toEqual([
       { id: 'storage:openpencil-cloud:server-b:doc-1', name: 'On B' },
@@ -65,8 +68,8 @@ describe('recent documents', () => {
   })
 
   test('forgets missing local files and clears the list', () => {
-    rememberRecentFile('/tmp/first.fig')
-    rememberRecentFile('/tmp/second.fig')
+    rememberRecentFile('/tmp/first.fig', 'design')
+    rememberRecentFile('/tmp/second.fig', 'design')
 
     forgetRecentFile('/tmp/first.fig')
     expect(recentFiles.value.map((document) => document.name)).toEqual(['second.fig'])
@@ -74,5 +77,38 @@ describe('recent documents', () => {
     clearRecentFiles()
     expect(recentFiles.value).toEqual([])
     expect(recentLocalFileAt(0)).toBeNull()
+  })
+
+  test('remembers whether each file is a design or a board, whatever its name', () => {
+    rememberRecentFile('/tmp/plan.fig', 'board')
+    rememberRecentFile('/tmp/screens.fig', 'design')
+    rememberRecentStorageDocument(
+      { providerId: 's3-compatible', documentId: 'b' },
+      'Retro',
+      'board'
+    )
+    expect(recentFiles.value.map(({ name, documentKind }) => [name, documentKind])).toEqual([
+      ['Retro', 'board'],
+      ['screens.fig', 'design'],
+      ['plan.fig', 'board']
+    ])
+    expect(recentFiles.value.map(recentDocumentKind)).toEqual(['board', 'design', 'board'])
+  })
+
+  test('reads the kind of files recorded before kinds were', () => {
+    const updatedAt = new Date().toISOString()
+    const legacy: RecentDocument[] = [
+      { id: 'local:/tmp/plan.jam', kind: 'local', path: '/tmp/plan.jam', name: 'plan', updatedAt },
+      { id: 'local:/tmp/ui.fig', kind: 'local', path: '/tmp/ui.fig', name: 'ui', updatedAt },
+      {
+        id: 'storage:s3-compatible:r',
+        kind: 'storage',
+        providerId: 's3-compatible',
+        documentId: 'r',
+        name: 'Remote',
+        updatedAt
+      }
+    ]
+    expect(legacy.map(recentDocumentKind)).toEqual(['board', 'design', 'design'])
   })
 })

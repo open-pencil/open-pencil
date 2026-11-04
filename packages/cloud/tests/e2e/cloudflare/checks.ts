@@ -200,8 +200,8 @@ try {
   viewer.close()
   await until(async () => {
     const saved = await database
-      .selectFrom('documentCollaborationState')
-      .select('state')
+      .selectFrom('documentRoomSnapshot')
+      .select('snapshotObjectId')
       .where('documentId', '=', documentId)
       .executeTakeFirst()
     return saved !== undefined

@@ -1,4 +1,4 @@
-import { isPlainObject } from 'es-toolkit/predicate'
+import { isPlainObject } from 'es-toolkit'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 

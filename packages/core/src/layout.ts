@@ -18,7 +18,7 @@ import {
   asFlatLeaf,
   asLaidOutIn,
   fillKeepsSizeInHuggingParent,
-  heldHugAxis,
+  heldHugAxes,
   ownAxisSizing,
   setCrossAxisSizing,
   setMainAxisSizing
@@ -86,12 +86,18 @@ function resolveComputedLayoutDirection(
 }
 
 export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
+  computeSubtreeLayouts(graph, scopeId ?? graph.rootId, new Set())
+}
+
+export function computeSubtreeLayouts(
+  graph: SceneGraph,
+  rootId: string,
+  relaidInstances: ReadonlySet<string>
+): void {
   graph.withLayoutMutations(() => {
-    const rootId = scopeId ?? graph.rootId
-    const visited = new Set<string>()
-    computeLayoutsBottomUp(graph, rootId, visited)
+    computeLayoutsBottomUp(graph, rootId, new Set(), relaidInstances)
     if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
-      computeLayoutsBottomUp(graph, rootId, new Set())
+      computeLayoutsBottomUp(graph, rootId, new Set(), relaidInstances)
     }
     routeUnroutedConnectors(graph, rootId)
   })
@@ -141,16 +147,23 @@ export function layoutAuthoredNodes(graph: SceneGraph, rootIds: Iterable<string>
   }
 }
 
-function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {
+function computeLayoutsBottomUp(
+  graph: SceneGraph,
+  nodeId: string,
+  visited: Set<string>,
+  relaidInstances: ReadonlySet<string>
+): void {
   const node = graph.getNode(nodeId)
   if (!node || visited.has(nodeId)) return
   visited.add(nodeId)
 
   for (const childId of node.childIds) {
-    computeLayoutsBottomUp(graph, childId, visited)
+    computeLayoutsBottomUp(graph, childId, visited, relaidInstances)
   }
 
-  if (node.layoutMode !== 'NONE' && !preservesImportedInstanceLayout(node)) {
+  const keepsSavedInstanceLayout =
+    preservesImportedInstanceLayout(node) && !relaidInstances.has(nodeId)
+  if (node.layoutMode !== 'NONE' && !keepsSavedInstanceLayout) {
     computeLayout(graph, nodeId)
   }
 }
@@ -180,9 +193,9 @@ function buildYogaTree(
   const stretchedAxis = parentStretchedAxis(graph, frame)
   if (stretchedAxis === 'width') root.setWidth(frame.width)
   if (stretchedAxis === 'height') root.setHeight(frame.height)
-  const heldAxis = heldHugAxis(graph, frame)
-  if (heldAxis === 'width') root.setWidth(frame.width)
-  if (heldAxis === 'height') root.setHeight(frame.height)
+  const heldAxes = heldHugAxes(graph, frame)
+  if (heldAxes.includes('width')) root.setWidth(frame.width)
+  if (heldAxes.includes('height')) root.setHeight(frame.height)
 
   configureFlexContainer(root, frame, direction)
 
@@ -410,9 +423,9 @@ function configureChildAsAutoLayout(
   }
 
   configureFlexContainer(yogaChild, child, direction)
-  const heldAxis = heldHugAxis(graph, child)
-  if (heldAxis === 'width' && widthSizing === 'HUG') yogaChild.setWidth(child.width)
-  if (heldAxis === 'height' && heightSizing === 'HUG') yogaChild.setHeight(child.height)
+  const heldAxes = heldHugAxes(graph, child)
+  if (heldAxes.includes('width') && widthSizing === 'HUG') yogaChild.setWidth(child.width)
+  if (heldAxes.includes('height') && heightSizing === 'HUG') yogaChild.setHeight(child.height)
 
   const grandchildren = graph.getChildren(child.id).map((gc) => asLaidOutIn(graph, gc, child))
   for (const gc of grandchildren) {

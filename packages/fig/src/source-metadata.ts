@@ -97,13 +97,20 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   isMask: ['mask'],
   maskType: ['maskType'],
   maskIsOutline: ['maskIsOutline'],
-  componentPropertyDefinitions: ['componentPropDefs'],
+  // A set's saved value order lists the values its properties had; preferred values replace it.
+  componentPropertyDefinitions: ['componentPropDefs', 'stateGroupPropertyValueOrders'],
   componentPropertyReferences: ['componentPropRefs'],
   componentPropertyAssignments: ['componentPropAssignments'],
+  // A variant's specs are written from its values.
+  componentPropertyValues: ['variantPropSpecs'],
   variantPropSpecs: ['variantPropSpecs']
 }
 
+const NO_STALE_FIELDS: ReadonlySet<string> = new Set()
+
 export function staleFigmaRawFields(editedFields: readonly string[] = []): ReadonlySet<string> {
+  // Read for every layer the renderer draws, so an unedited layer allocates nothing.
+  if (editedFields.length === 0) return NO_STALE_FIELDS
   return new Set(editedFields.flatMap((key) => EDITED_RAW_FIELDS[key] ?? []))
 }
 

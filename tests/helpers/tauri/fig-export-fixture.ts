@@ -1,5 +1,10 @@
 import { mockIPC } from '@tauri-apps/api/mocks'
 
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { installNativeFigArchives } from '@/app/document/io/native-fig'
+
 import { installTauriMockWindow } from './mocks'
 
 installTauriMockWindow()
@@ -25,10 +30,7 @@ mockIPC((cmd, args) => {
   return new Uint8Array([7, 8, 9]).buffer
 })
 
-const [{ exportFigFile }, { SceneGraph }] = await Promise.all([
-  import('@open-pencil/core/io/formats/fig/export'),
-  import('@open-pencil/scene-graph')
-])
+installNativeFigArchives()
 const bytes = await exportFigFile(new SceneGraph())
 if (bytes.length !== 3 || bytes[0] !== 7 || bytes[1] !== 8 || bytes[2] !== 9) {
   throw new Error(`Unexpected export bytes: ${Array.from(bytes).join(',')}`)

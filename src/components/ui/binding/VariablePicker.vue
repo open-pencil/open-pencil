@@ -47,6 +47,11 @@ const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
 const canCreate = computed(() => createName.value.trim().length > 0)
 const styles = computed(() => useBindingFieldUI({ state, open: open.value, disabled, derived }, ui))
+/** Hovering the variable button of a bound value names its variable. */
+const triggerTooltip = computed(() => {
+  const bound = state === 'bound' ? items.find((item) => item.id === selected) : undefined
+  return bound?.name ?? triggerLabel
+})
 const pickerItems = computed<AppPickerItem[]>(() =>
   items.map((item) => ({ value: item.id, label: item.name, group: item.collection }))
 )
@@ -92,7 +97,7 @@ defineOptions({ inheritAttrs: false })
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"
       :close-label="closeLabel ?? common.close"
-      :tooltip="triggerLabel"
+      :tooltip="triggerTooltip"
       :side="side"
       @select="emit('select', $event)"
       @close-auto-focus="emit('closeAutoFocus', $event)"
@@ -134,7 +139,6 @@ defineOptions({ inheritAttrs: false })
           v-if="state !== 'unbound'"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="detach"
         >
           <template #leading><icon-lucide-unlink class="size-3" /></template>
@@ -154,13 +158,7 @@ defineOptions({ inheritAttrs: false })
             :class="styles.createInput"
             data-slot="createInput"
           />
-          <AppButton
-            size="xs"
-            variant="soft"
-            :disabled="!canCreate"
-            data-slot="createSubmit"
-            type="submit"
-          >
+          <AppButton size="xs" variant="soft" :disabled="!canCreate" type="submit">
             {{ createSubmitLabel }}
           </AppButton>
         </form>
@@ -168,7 +166,6 @@ defineOptions({ inheritAttrs: false })
           v-else-if="createLabel"
           size="xs"
           class="w-full justify-start"
-          data-slot="action"
           @click="startCreate"
         >
           <template #leading><icon-lucide-plus class="size-3" /></template>

@@ -13,12 +13,21 @@ import {
   editDocument,
   loadDocument,
   measureDocumentText,
+  measureTextHeadlessly,
   populateWholeDocument
 } from '#cli/headless'
 
-/** A Figma API over a headless document, with CanvasKit raster export and pixel decoding. */
+/**
+ * A Figma API over a headless document, with CanvasKit raster export and pixel decoding, and
+ * the renderer that measures text measuring geometry, booleans, and flatten too.
+ */
 export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> {
   const figma = new FigmaAPI(graph)
+  const renderer = await measureTextHeadlessly()
+  // The process's one renderer keeps paths by layer id, which another document's layers share.
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  figma.setRenderer(renderer)
   figma.exportImage = (nodeIds, options) =>
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
   figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())

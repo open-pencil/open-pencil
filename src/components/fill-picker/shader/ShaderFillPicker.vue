@@ -133,7 +133,7 @@ function applyJSON() {
 
     <div>
       <div class="mb-1 flex items-center justify-between">
-        <span class="text-[11px] text-muted">{{ panels.effects }}</span>
+        <span class="text-2xs text-muted">{{ panels.effects }}</span>
         <div class="flex items-center">
           <IconButton
             :label="panels.shaderPreset"
@@ -150,7 +150,7 @@ function applyJSON() {
       </div>
 
       <div v-if="editingJSON" class="flex flex-col gap-1.5">
-        <AppTextarea v-model="json" :rows="8" class="font-mono text-[11px]" />
+        <AppTextarea v-model="json" :rows="8" class="font-mono text-2xs" />
         <AppAlert v-if="invalid" tone="error" :heading="panels.invalidShaderPreset" />
         <div class="flex justify-end gap-1.5">
           <AppButton variant="ghost" size="sm" @click="editingJSON = false">

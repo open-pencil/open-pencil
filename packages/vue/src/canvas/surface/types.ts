@@ -11,15 +11,10 @@ export type CanvasRenderLayer = 'full' | 'scene' | 'overlays'
 
 export interface UseCanvasOptions {
   shouldSuspendRender?: () => boolean
-  onPresented?: (versions: { renderVersion: number; sceneVersion: number }) => void
   /**
    * Selects which render layer this canvas owns.
    */
   layer?: CanvasRenderLayer
-  /**
-   * Enables the experimental tiled scene renderer for this surface.
-   */
-  sceneRenderer?: 'retained' | 'tiled'
   /**
    * Forces ruler visibility on or off for this canvas.
    *

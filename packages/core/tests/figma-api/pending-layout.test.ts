@@ -37,6 +37,21 @@ describe('geometry reads after edits', () => {
     expect(row.width).toBe(150)
   })
 
+  // Measured in Figma desktop 126.
+  test('appending a child already there moves it to the end of the row', () => {
+    const api = createAPI()
+    const row = hugRow(api)
+    const first = api.createRectangle()
+    first.resize(40, 20)
+    row.appendChild(first)
+    const second = api.createRectangle()
+    second.resize(60, 30)
+    row.appendChild(second)
+    row.appendChild(first)
+    expect([second.x, first.x]).toEqual([0, 70])
+    expect([row.width, row.height]).toEqual([110, 30])
+  })
+
   test('removing a child and changing spacing reflow the rest before the next read', () => {
     const api = createAPI()
     const row = hugRow(api)

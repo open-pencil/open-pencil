@@ -26,7 +26,7 @@ test('diamond contours use Manhattan distance and dispose their retained program
     gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   }
   const node = graph.createNode('RECTANGLE', page.id, { width: 101, height: 101, fills: [fill] })
-  let effect = renderer.diamondGradientEffect
+  let effect = renderer.shaders.diamondGradient
   try {
     const draw = () => {
       const canvas = surface.getCanvas()
@@ -35,9 +35,9 @@ test('diamond contours use Manhattan distance and dispose their retained program
       surface.flush()
     }
     draw()
-    effect = renderer.diamondGradientEffect
+    effect = renderer.shaders.diamondGradient
     draw()
-    expect(renderer.diamondGradientEffect).toBe(effect)
+    expect(renderer.shaders.diamondGradient).toBe(effect)
     const image = surface.makeImageSnapshot()
     try {
       const pixels = expectDefined(
@@ -63,7 +63,7 @@ test('diamond contours use Manhattan distance and dispose their retained program
     renderer.destroy()
   }
   expect(effect?.isDeleted()).toBe(true)
-  expect(renderer.diamondGradientEffect).toBeNull()
+  expect(renderer.shaders.diamondGradient).toBeNull()
 })
 
 test('diamond gradients preserve transformed contours and intermediate stops', async () => {
