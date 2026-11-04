@@ -45,6 +45,8 @@ export type CloudRelayOptions = {
    */
   onRefused?: () => void
   createSocket?: (url: string) => WebSocket
+  /** Whether the relay answers the heartbeat, as its tickets say; an older one turns a ping away. */
+  heartbeat?: boolean
   /** Where the page's `pagehide` and `pageshow` arrive; the window by default. */
   page?: Window
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
@@ -208,25 +210,26 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     const next = createSocket(options.url)
     next.binaryType = 'arraybuffer'
     socket = next
-    // Anything from the relay answers; a socket that stopped speaking for this room stops asking.
+    // Anything from the relay answers; a socket that stopped speaking for this room stops asking,
+    // and one still connecting was asked nothing, so it owes no answer yet.
     let answered = true
     const heartbeat = useIntervalFn(
       () => {
         if (socket !== next) {
           heartbeat.pause()
-        } else if (!answered) {
+        } else if (next.readyState === WebSocket.OPEN && !answered) {
           heartbeat.pause()
           giveUp(next)
-        } else {
+        } else if (next.readyState === WebSocket.OPEN) {
           answered = false
-          if (next.readyState === WebSocket.OPEN) next.send(RELAY_HEARTBEAT.ping)
+          next.send(RELAY_HEARTBEAT.ping)
         }
       },
       HEARTBEAT_INTERVAL_MS,
       { immediate: false }
     )
     // Started by hand: VueUse starts it on its own only where it finds a window.
-    heartbeat.resume()
+    if (options.heartbeat === true) heartbeat.resume()
     // A socket that was replaced or left behind by `leave()` no longer speaks for this room.
     next.addEventListener('open', () => {
       if (socket !== next) return

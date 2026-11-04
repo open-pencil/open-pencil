@@ -299,7 +299,8 @@ export function cloudRelayTransport(
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
     onRestored: events.onRestored,
-    onRefused: events.onRefused
+    onRefused: events.onRefused,
+    heartbeat: first.relayHeartbeat
   })
 }
 

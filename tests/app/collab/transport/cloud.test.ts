@@ -75,6 +75,8 @@ function room(
     /** The document moved to another room by this ticket request. */
     movedAt?: number
     page?: EventTarget
+    /** Whether the relay answers the heartbeat, as its tickets say. */
+    heartbeat?: boolean
   } = {}
 ) {
   const sockets: FakeSocket[] = []
@@ -96,6 +98,7 @@ function room(
     },
     reconnectDelayMs: () => 0,
     page: options.page ? asDouble<Window>(options.page) : undefined,
+    heartbeat: options.heartbeat,
     onError: (_message, error) => errors.push(error),
     onRestored: () => {
       restored += 1
@@ -430,7 +433,7 @@ describe('Cloud relay transport', () => {
   test('asks the relay whether it still hears this peer, and keeps a socket that answers', async () => {
     jest.useFakeTimers()
     try {
-      const { transport, sockets } = room()
+      const { transport, sockets } = room({ heartbeat: true })
       await settle()
       const socket = sockets[0]
       if (!socket) throw new Error('Expected a socket')
@@ -451,7 +454,7 @@ describe('Cloud relay transport', () => {
   test('gives up a socket the relay stopped answering, and connects again', async () => {
     jest.useFakeTimers()
     try {
-      const { transport, sockets, left } = room()
+      const { transport, sockets, left } = room({ heartbeat: true })
       await settle()
       const socket = sockets[0]
       if (!socket) throw new Error('Expected a socket')
@@ -466,6 +469,38 @@ describe('Cloud relay transport', () => {
       jest.advanceTimersByTime(0)
       await settle()
       expect(sockets).toHaveLength(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('never pings a relay whose tickets do not say it answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room()
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(60_000)
+      expect(socket.texts).toEqual([])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('waits for a slow connection instead of giving it up', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room({ heartbeat: true })
+      await settle()
+      jest.advanceTimersByTime(60_000)
+      expect(sockets).toHaveLength(1)
+      expect(sockets[0]?.readyState).toBe(WebSocket.CONNECTING)
       await transport.leave()
     } finally {
       jest.useRealTimers()
