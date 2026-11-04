@@ -120,3 +120,62 @@ test('places and truncates lines of mixed sizes as Figma does', async () => {
   )
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('text-lines.png')
 })
+
+test('steps lines by a fractional line height as Figma does', async () => {
+  const heights = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Missing editor')
+    const tint = {
+      type: 'SOLID' as const,
+      color: { r: 0.86, g: 0.91, b: 0.98, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const text = Array.from({ length: 8 }, (_, index) => `Line ${index + 1}`).join('\n')
+    // Each tint is as tall as Figma desktop 126 makes the text: eight exact pixel steps rounded
+    // up, or eight whole-pixel steps for a percent line height.
+    const samples = [
+      { x: 40, fontSize: 15, lineHeight: { value: 22.5, unit: 'PIXELS' as const }, height: 180 },
+      { x: 200, fontSize: 23, lineHeight: { value: 30.6, unit: 'PIXELS' as const }, height: 245 },
+      { x: 360, fontSize: 13, lineHeight: { value: 110, unit: 'PERCENT' as const }, height: 112 }
+    ]
+    const texts: string[] = []
+    for (const sample of samples) {
+      store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+        name: 'Figma height',
+        x: sample.x,
+        y: 40,
+        width: 120,
+        height: sample.height,
+        fills: [tint]
+      })
+      const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+        x: sample.x,
+        y: 40,
+        width: 120,
+        height: 100,
+        text,
+        fontFamily: 'Inter',
+        fontSize: sample.fontSize,
+        lineHeight: sample.lineHeight,
+        textAutoResize: 'HEIGHT'
+      })
+      texts.push(node.id)
+    }
+    // Texts take their height once laid out in their fonts.
+    await store.loadFontsForNodes(texts)
+    for (const id of texts) store.updateNode(id, { textAutoResize: 'HEIGHT' })
+    store.requestRender()
+    return texts.map((id) => store.graph.getNode(id)?.height)
+  })
+  expect(heights).toEqual([180, 245, 112])
+  await editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'fractional-line-heights.png'
+  )
+})
