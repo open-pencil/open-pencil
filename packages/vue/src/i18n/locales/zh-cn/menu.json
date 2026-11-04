@@ -42,6 +42,7 @@
   "pasteToReplace": "粘贴并替换",
   "copyProperties": "复制属性",
   "pasteProperties": "粘贴属性",
+  "pasteAsLayers": "粘贴为图层",
   "copyPasteAs": "复制/粘贴为",
   "copyAsText": "复制为文本",
   "copyAsSVG": "复制为 SVG",

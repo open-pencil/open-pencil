@@ -166,10 +166,13 @@ ja:editor.wideGamutUnavailable
 ja:files.browserFileAPINotSupported
 ja:files.clipboardImageFetchFailed
 ja:files.clipboardImagesFetchFailed
+ja:files.htmlPasteEmpty
+ja:files.htmlPasteFailed
 ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
 ja:files.mermaidPasteFailed
+ja:files.noHTMLToPasteAsLayers
 ja:fonts.downloadFallbackPacksDescription
 ja:fonts.unsupportedFormat
 ja:media.getPexelsAPIKey
@@ -389,10 +392,13 @@ zh-cn:editor.wideGamutUnavailable
 zh-cn:files.browserFileAPINotSupported
 zh-cn:files.clipboardImageFetchFailed
 zh-cn:files.clipboardImagesFetchFailed
+zh-cn:files.htmlPasteEmpty
+zh-cn:files.htmlPasteFailed
 zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
 zh-cn:files.mermaidPasteFailed
+zh-cn:files.noHTMLToPasteAsLayers
 zh-cn:fonts.downloadFallbackPacksDescription
 zh-cn:fonts.unsupportedFormat
 zh-cn:media.getPexelsAPIKey

@@ -26,6 +26,7 @@ import {
   setNodeBox,
   strokeWeightFromStyle
 } from './box'
+import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
   applyContainerLayout,
@@ -254,12 +255,12 @@ function createRichTextNode(
 
 /** Whether an element draws nothing of its own, so its text can join the text around it. */
 function isPlainElement(element: DesignElement): boolean {
-  return !hasBoxStyle(mergedStyle(element))
+  return !hasBoxStyle(element, mergedStyle(element))
 }
 
 function isInlineElement(element: DesignElement): boolean {
   const style = mergedStyle(element)
-  return elementDisplay(element, style) === 'inline' && !hasBoxStyle(style)
+  return elementDisplay(element, style) === 'inline' && !hasBoxStyle(element, style)
 }
 
 /** Whether the element's children are text in one layer: inline content, or text blocks. */
@@ -291,49 +292,6 @@ function linkText(node: SceneNode, element: DesignElement): void {
   }
 }
 
-function hasBoxStyle(style: DesignStyleDeclaration): boolean {
-  return [
-    'aspect-ratio',
-    'background-color',
-    'border-color',
-    'border-style',
-    'border-width',
-    'border-top-style',
-    'border-top-width',
-    'border-right-style',
-    'border-right-width',
-    'border-bottom-style',
-    'border-bottom-width',
-    'border-left-style',
-    'border-left-width',
-    'border-radius',
-    'box-shadow',
-    'display',
-    'height',
-    'padding',
-    'padding-top',
-    'padding-right',
-    'padding-bottom',
-    'padding-left',
-    'padding-block',
-    'padding-inline',
-    'width',
-    'min-width',
-    'max-width',
-    'min-height',
-    'max-height',
-    'object-fit',
-    'overflow',
-    'position',
-    'top',
-    'right',
-    'bottom',
-    'left',
-    'flex-wrap',
-    'align-self'
-  ].some((property) => pickStyle(style, property) !== undefined)
-}
-
 function hasContent(element: DesignElement): boolean {
   return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }
@@ -357,7 +315,7 @@ function createElementNode(
   if (display === 'none') return null
   if (
     isTextLikeElement(element) &&
-    !hasBoxStyle(style) &&
+    !hasBoxStyle(element, style) &&
     element.children.every((child) => child.type === 'text')
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
@@ -365,7 +323,7 @@ function createElementNode(
     record(boxes, text, capturedBox(element))
     return text
   }
-  if (!hasBoxStyle(style) && holdsRichText(element)) {
+  if (!hasBoxStyle(element, style) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
     record(boxes, text, capturedBox(element))
     return text
