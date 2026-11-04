@@ -394,6 +394,46 @@ describe("a set's properties as each variant's linked copy", () => {
 
   // A duplicate of a variant carries its original's saved copies; the original keeps their
   // GUIDs, which its untouched layers name, and the duplicate gets copies of its own.
+  // An older OpenPencil saved a variant's properties on the variant itself, and a graph can still
+  // hold one. Figma keeps every variant's properties on its set (desktop 126), so a save writes
+  // them there and gives each variant a copy, which the variant's bound layers name.
+  test('a property a variant defines itself is saved as its set’s', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const set = graph.createNode('COMPONENT_SET', page, {
+      name: 'Chip',
+      componentPropertyDefinitions: [
+        { id: 'prop:size', name: 'Size', type: 'VARIANT', defaultValue: 'Small' }
+      ]
+    })
+    for (const size of ['Small', 'Large']) {
+      const variant = graph.createNode('COMPONENT', set.id, {
+        name: `Size=${size}`,
+        componentPropertyValues: { Size: size },
+        componentPropertyDefinitions:
+          size === 'Large'
+            ? [{ id: 'prop:dot', name: 'Show dot', type: 'BOOLEAN', defaultValue: 'true' }]
+            : []
+      })
+      graph.createNode('RECTANGLE', variant.id, {
+        name: 'Dot',
+        componentPropertyReferences:
+          size === 'Large' ? [{ field: 'VISIBLE', propertyId: 'prop:dot' }] : []
+      })
+    }
+
+    const records = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+      .nodeChanges
+    expect(definitionsOf(setRecord(records)).map((definition) => definition.name)).toEqual([
+      'Size',
+      'Show dot'
+    ])
+    const written = savedCopies(records)
+    expect(written.map(({ copies }) => Object.keys(copies))).toEqual([['Show dot'], ['Show dot']])
+    expect(written[1]?.dot).toBe(written[1]?.copies['Show dot'])
+  })
+
   test('a duplicated variant gives its copies GUIDs of its own', async () => {
     const bytes = await exportFigFile(await dotSet())
     const before = savedCopies(parseFigBuffer(bytes.slice().buffer as ArrayBuffer).nodeChanges)

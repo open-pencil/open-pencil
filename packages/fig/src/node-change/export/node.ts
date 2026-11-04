@@ -58,7 +58,7 @@ import {
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
 import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
-import { boundPropertyGuid, variantPropertyCopies } from './property-copies'
+import { boundPropertyGuid, variantPropertyCopies, writtenSetProperties } from './property-copies'
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
@@ -705,13 +705,18 @@ function applyPropertyDefinitions(
   if (copies && set) {
     // A variant written outside its set, as a copied variant is, defines its set's properties
     // itself under its copies' GUIDs, which its layers name, as Figma copies one (desktop 126).
-    const copied = set.componentPropertyDefinitions.filter((def) => def.type !== 'VARIANT')
+    const copied = writtenSetProperties(context, set).filter((def) => def.type !== 'VARIANT')
     nc.componentPropDefs = copied.map((def, index) =>
       propertyDefinitionRecord(context, def, copies[index]?.id, localIdCounter)
     )
     return
   }
-  const componentPropDefs = node.componentPropertyDefinitions.map((def) =>
+  // A set also writes the properties its variants define themselves; see `writtenSetProperties`.
+  const definitions =
+    node.type === 'COMPONENT_SET'
+      ? writtenSetProperties(context, node)
+      : node.componentPropertyDefinitions
+  const componentPropDefs = definitions.map((def) =>
     propertyDefinitionRecord(context, def, undefined, localIdCounter)
   )
   if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0))

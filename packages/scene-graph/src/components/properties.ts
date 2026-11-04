@@ -235,6 +235,43 @@ export function removeComponentProperty(
   return true
 }
 
+/**
+ * Moves the boolean, text, instance swap, and slot properties a set's variants define themselves
+ * onto the set, under their IDs, so the layers and instances naming them still do: a variant's
+ * properties are its set's, as Figma keeps them, and combining components moves theirs to the
+ * set (desktop 126). A property the set already has under that ID is not added again. Returns
+ * the IDs of the set and the variants it changed.
+ */
+export function moveVariantPropertiesToSet(graph: SceneGraph, setId: string): string[] {
+  const set = graph.getNode(setId)
+  if (set?.type !== 'COMPONENT_SET') return []
+  const changed: string[] = []
+  const known = new Set(set.componentPropertyDefinitions.map((definition) => definition.id))
+  const moved: ComponentPropertyDefinition[] = []
+  for (const variant of graph.getChildren(setId)) {
+    const own = variant.componentPropertyDefinitions.filter(
+      (definition) => definition.type !== 'VARIANT'
+    )
+    if (variant.type !== 'COMPONENT' || own.length === 0) continue
+    for (const definition of own) {
+      if (known.has(definition.id)) continue
+      known.add(definition.id)
+      moved.push(definition)
+    }
+    graph.updateNode(variant.id, {
+      componentPropertyDefinitions: variant.componentPropertyDefinitions.filter(
+        (definition) => definition.type === 'VARIANT'
+      )
+    })
+    changed.push(variant.id)
+  }
+  if (moved.length === 0) return changed
+  graph.updateNode(setId, {
+    componentPropertyDefinitions: [...moved, ...set.componentPropertyDefinitions]
+  })
+  return [setId, ...changed]
+}
+
 /** A new component property ID, in the `prop:` form the editor, plugin API, and design JSX share. */
 export function createComponentPropertyId(): string {
   return `prop:${randomHex(8)}`

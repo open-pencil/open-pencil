@@ -1,9 +1,10 @@
 import { bindingVariant, instanceVariant, variantSet } from '#fig/document/component/links'
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
+import { uniqBy } from 'es-toolkit/array'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { getOrCreatePropertyGuid, type SceneNodeToKiwiContext } from './context'
 
@@ -22,9 +23,48 @@ interface SavedCopy {
   keptBy?: string
 }
 
+/** The properties each save has worked out for a set, by the map it keeps copy GUIDs in. */
+const setPropertiesByExport = new WeakMap<
+  Map<string, GUID>,
+  Map<string, ComponentPropertyDefinition[]>
+>()
+
+/**
+ * The properties a set is written with: its own, then any its variants define themselves, as
+ * an older OpenPencil saved them. Figma keeps every variant's properties on its set (desktop 126),
+ * so the set writes them all and each variant writes a copy of each but the variant properties.
+ */
+export function writtenSetProperties(
+  context: SceneNodeToKiwiContext,
+  set: SceneNode
+): ComponentPropertyDefinition[] {
+  let bySet = setPropertiesByExport.get(context.propertyCopyGuids)
+  if (!bySet) {
+    bySet = new Map()
+    setPropertiesByExport.set(context.propertyCopyGuids, bySet)
+  }
+  let properties = bySet.get(set.id)
+  if (!properties) {
+    const variants = context.graph
+      .getChildren(set.id)
+      .flatMap((variant) =>
+        variant.type === 'COMPONENT'
+          ? variant.componentPropertyDefinitions.filter((item) => item.type !== 'VARIANT')
+          : []
+      )
+    properties = uniqBy([...set.componentPropertyDefinitions, ...variants], (item) => item.id)
+    bySet.set(set.id, properties)
+  }
+  return properties
+}
+
 /** Whether a property is one each of the set's variants copies: any but a variant property. */
-function copiedProperty(set: SceneNode, propertyId: string): boolean {
-  return set.componentPropertyDefinitions.some(
+function copiedProperty(
+  context: SceneNodeToKiwiContext,
+  set: SceneNode,
+  propertyId: string
+): boolean {
+  return writtenSetProperties(context, set).some(
     (definition) => definition.id === propertyId && definition.type !== 'VARIANT'
   )
 }
@@ -78,7 +118,7 @@ export function variantPropertyCopies(
 ): { id: GUID; parentPropDefId: GUID }[] | null {
   const set = variantSet(context.graph, node)
   if (!set) return null
-  return set.componentPropertyDefinitions.flatMap((definition) =>
+  return writtenSetProperties(context, set).flatMap((definition) =>
     definition.type === 'VARIANT'
       ? []
       : [
@@ -98,7 +138,7 @@ function propertyGuidIn(
   localIdCounter: { value: number }
 ): GUID {
   const set = variant && variantSet(context.graph, variant)
-  return variant && set && copiedProperty(set, propertyId)
+  return variant && set && copiedProperty(context, set, propertyId)
     ? copyGuid(context, variant, propertyId, localIdCounter)
     : getOrCreatePropertyGuid(context, propertyId, localIdCounter)
 }
