@@ -334,6 +334,31 @@ describe('cap-height leading trim', () => {
     }
   })
 
+  test('estimates the space between paragraphs as live layout lays it out', () => {
+    for (const leadingTrim of ['CAP_HEIGHT', 'NONE'] as const) {
+      const node = textNode({ text: '75\n50\n25', fontSize: 20, paragraphSpacing: 10, leadingTrim })
+      const layout = layOutNode(node)
+      expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+      layout.delete()
+    }
+  })
+
+  test('estimates only the lines a truncated text shows', () => {
+    for (const leadingTrim of ['CAP_HEIGHT', 'NONE'] as const) {
+      const node = textNode({
+        text: '75\n50\n25',
+        fontSize: 20,
+        paragraphSpacing: 10,
+        textTruncation: 'ENDING',
+        maxLines: 2,
+        leadingTrim
+      })
+      const layout = layOutNode(node)
+      expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
+      layout.delete()
+    }
+  })
+
   test('estimates the tallest cap height of the first line', () => {
     const node = textNode({
       text: 'aBIG',

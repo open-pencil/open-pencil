@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { lineHeightPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
 
 import { rangeCapHeight } from '#core/text/character-face'
 import { measureTextWithFont, type MeasuredTextLines } from '#core/text/font/glyphs'
@@ -32,13 +32,36 @@ export function estimateTextSize(
       estimateTextLines(line, fontSize, maxWidth, explicitLineH)
   )
   const width = measured.reduce((widest, line) => Math.max(widest, line.width), 0)
-  const lines = measured.reduce((count, line) => count + line.lines, 0)
+  const { lines, paragraphSpacing } = stackParagraphs(node, measured)
   const { lineHeight } = measured[0]
   if (node.leadingTrim === 'CAP_HEIGHT') {
     const firstLineCapHeight = rangeCapHeight(node, 0, hardLines[0].length)
-    return { width, height: firstLineCapHeight + (lines - 1) * lineHeight }
+    return { width, height: firstLineCapHeight + (lines - 1) * lineHeight + paragraphSpacing }
   }
-  return { width, height: untrimmedHeight(lines, lineHeight) }
+  return { width, height: untrimmedHeight(lines, lineHeight) + paragraphSpacing }
+}
+
+function shownLineLimit(node: SceneNode): number {
+  if (node.textTruncation === 'ENDING' && node.maxLines != null && node.maxLines > 0) {
+    return node.maxLines
+  }
+  return Number.POSITIVE_INFINITY
+}
+
+function stackParagraphs(node: SceneNode, paragraphs: MeasuredTextLines[]) {
+  const limit = shownLineLimit(node)
+  let lines = 0
+  let paragraphSpacing = 0
+  for (const [index, paragraph] of paragraphs.entries()) {
+    if (lines >= limit) {
+      break
+    }
+    if (index > 0) {
+      paragraphSpacing += paragraphSpacingAt(node, index - 1, 'paragraphSpacing')
+    }
+    lines += Math.min(paragraph.lines, limit - lines)
+  }
+  return { lines, paragraphSpacing }
 }
 
 function estimateTextLines(
