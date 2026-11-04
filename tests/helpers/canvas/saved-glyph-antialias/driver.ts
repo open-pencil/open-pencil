@@ -6,18 +6,22 @@ import { fromUint8Array } from 'js-base64'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
+import {
+  SAVED_GLYPH_ROW_PITCH,
+  SAVED_GLYPH_ROW_TOP,
+  SAVED_GLYPH_SAMPLES
+} from '#tests/helpers/canvas/saved-glyph-antialias/scene'
+import type * as SavedGlyphScenes from '#tests/helpers/canvas/saved-glyph-antialias/scene'
 
 const UNAVAILABLE_FAMILY = 'Repro Unavailable Sans'
-const SAMPLES = [
-  { fontSize: 20, fontWeight: 400, fontStyle: 'Regular' },
-  { fontSize: 18, fontWeight: 400, fontStyle: 'Regular' },
-  { fontSize: 20, fontWeight: 600, fontStyle: 'SemiBold' }
-]
-const ROW_TOP = 12
-const ROW_PITCH = 40
 
 export function savedGlyphAntialiasDriver(page: () => Page) {
   const canvas = () => new CanvasHelper(page())
+  const scenes = pageScene<typeof SavedGlyphScenes>(
+    page,
+    '/tests/helpers/canvas/saved-glyph-antialias/scene.ts'
+  )
 
   async function settle() {
     await page().evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())
@@ -51,43 +55,10 @@ export function savedGlyphAntialiasDriver(page: () => Page) {
   }
 
   async function createLiveText() {
-    await page().evaluate(
-      async ({ samples, top, pitch }) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('Editor unavailable')
-        const pageId = store.state.currentPageId
-        const solid = (value: number) => [
-          {
-            type: 'SOLID' as const,
-            color: { r: value, g: value, b: value, a: 1 },
-            opacity: 1,
-            visible: true
-          }
-        ]
-        store.graph.createNode('RECTANGLE', pageId, {
-          name: 'Paper',
-          width: 180,
-          height: 140,
-          fills: solid(1)
-        })
-        for (const [index, sample] of samples.entries()) {
-          store.graph.createNode('TEXT', pageId, {
-            ...sample,
-            name: `Saved ${sample.fontSize}/${sample.fontWeight}`,
-            text: `Quick AVW ${sample.fontSize}`,
-            x: 12,
-            y: top + index * pitch,
-            width: 150,
-            height: 30,
-            fontFamily: 'Inter',
-            textAutoResize: 'WIDTH_AND_HEIGHT',
-            fills: solid(0.08)
-          })
-        }
-        await store.loadFontsForNodes(store.graph.getChildren(pageId).map((node) => node.id))
-      },
-      { samples: SAMPLES, top: ROW_TOP, pitch: ROW_PITCH }
-    )
+    const layers = await scenes.build('createSavedGlyphScene')
+    await page().evaluate(async (ids) => {
+      await window.openPencil?.getStore?.().loadFontsForNodes(ids)
+    }, layers)
   }
 
   async function reopenWithoutFont(bytes: number[]): Promise<number> {
@@ -115,7 +86,7 @@ export function savedGlyphAntialiasDriver(page: () => Page) {
   }
 
   return {
-    samples: SAMPLES.length,
+    samples: SAVED_GLYPH_SAMPLES.length,
 
     async show(): Promise<number> {
       await createLiveText()
@@ -151,19 +122,18 @@ export function savedGlyphAntialiasDriver(page: () => Page) {
             return ink === 0 ? 0 : partial / ink
           })
         },
-        { base64: fromUint8Array(png), zoom, rows: SAMPLES.length, top: ROW_TOP, pitch: ROW_PITCH }
+        {
+          base64: fromUint8Array(png),
+          zoom,
+          rows: SAVED_GLYPH_SAMPLES.length,
+          top: SAVED_GLYPH_ROW_TOP,
+          pitch: SAVED_GLYPH_ROW_PITCH
+        }
       )
     },
 
     async capture(zoom: number, width: number, height: number) {
-      await page().evaluate((scale) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('Editor unavailable')
-        store.setZoomAroundPoint(1, 0, 0)
-        store.pan(-store.state.panX, -store.state.panY)
-        store.setZoomAroundPoint(scale, 0, 0)
-        store.requestRender()
-      }, zoom)
+      await showView(page(), { zoom, panX: 0, panY: 0 })
       await settle()
       return canvas().screenshotCanvasRegion(width, height)
     }

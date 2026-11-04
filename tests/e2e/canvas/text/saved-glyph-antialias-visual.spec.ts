@@ -1,6 +1,6 @@
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { savedGlyphAntialiasDriver } from '#tests/helpers/canvas/saved-glyph-antialias-driver'
+import { savedGlyphAntialiasDriver } from '#tests/helpers/canvas/saved-glyph-antialias/driver'
 
 test.use({ deviceScaleFactor: 1 })
 
