@@ -357,6 +357,27 @@ describe('Cloud relay transport', () => {
     await transport.leave()
   })
 
+  test('drops a ticket refresh that comes back while the page is hidden', async () => {
+    jest.useFakeTimers()
+    try {
+      const page = new EventTarget()
+      const { transport, sockets, tickets } = room({ page })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the page is hidden.
+      jest.advanceTimersByTime(240_000)
+      page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+      await settle()
+      expect(tickets()).toBe(2)
+      jest.advanceTimersByTime(240_000)
+      await settle()
+      expect(tickets()).toBe(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   test('stays out of the room after it was left, whatever the page does', async () => {
     const page = new EventTarget()
     const { transport, sockets } = room({ page })

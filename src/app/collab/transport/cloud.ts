@@ -103,7 +103,8 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   async function refresh() {
     try {
       const next = await options.ticket(roomId)
-      if (left) return
+      // A hidden page asks for a ticket again when it is shown.
+      if (left || suspended) return
       if (!next) {
         restored()
         return
@@ -113,7 +114,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     } catch (error) {
       report('Refreshing the collaboration ticket failed:', error)
       // Try again while the current ticket still holds, rather than wait for the relay to drop us.
-      if (!left && ticketExpiresAt - Date.now() > MINIMUM_REFRESH_MS) {
+      if (!left && !suspended && ticketExpiresAt - Date.now() > MINIMUM_REFRESH_MS) {
         refreshTimer = setTimeout(() => void refresh(), MINIMUM_REFRESH_MS)
       }
     }
