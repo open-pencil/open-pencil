@@ -2,12 +2,10 @@ import { expect, test } from 'bun:test'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas/renderer'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 test('diamond contours use Manhattan distance and dispose their retained program', async () => {
   const ck = await initCanvasKit()
   const surface = expectDefined(ck.MakeSurface(101, 101), 'surface')

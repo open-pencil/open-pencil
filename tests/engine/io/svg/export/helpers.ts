@@ -1,8 +1,6 @@
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 export function makeGraph() {
   const graph = new SceneGraph()
   graph.createNode('CANVAS', graph.rootId, { name: 'Page 1' })

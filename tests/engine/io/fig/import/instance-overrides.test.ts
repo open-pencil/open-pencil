@@ -2,9 +2,7 @@ import { describe, test, expect } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const ID = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
 const SIZE = { x: 100, y: 100 }
 

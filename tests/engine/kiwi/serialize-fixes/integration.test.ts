@@ -4,8 +4,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'
-
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { ROOT_GUID, pageId } from './helpers'
 

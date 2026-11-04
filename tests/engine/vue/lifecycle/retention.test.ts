@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 import { defineComponent, h, KeepAlive, nextTick, ref, watchEffect } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
@@ -11,7 +12,6 @@ import { createRetainedScopePlugin } from '#vue/lifecycle/retention/plugin'
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import { useFontPicker } from '#vue/primitives/FontPicker/useFontPicker'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
 
 async function flushRetention() {

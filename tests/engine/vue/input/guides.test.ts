@@ -3,12 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { ref } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import type { DragState } from '#vue/shared/input/types'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 function setup() {
   const editor = createEditor()
   Object.assign(editor.state, { showRulers: true })

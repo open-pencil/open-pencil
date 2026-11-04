@@ -1,7 +1,7 @@
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { expectDefined } from '../assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { capturedFigRecordsSchema, readFixture } from './fixtures'
 
 const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)

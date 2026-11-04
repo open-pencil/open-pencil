@@ -8,12 +8,12 @@ import * as v from 'valibot'
 
 import { toolNumber } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startServer } from '#mcp/server'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 import { DESKTOP_APP_ORIGINS, parseCORSOrigins, resolveCORSOrigins } from '#mcp/transport/origins'
 
-import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   readHealth,

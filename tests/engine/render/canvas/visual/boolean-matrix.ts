@@ -2,11 +2,11 @@ import { writeFile } from 'node:fs/promises'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { asPageNode, createAPI } from '#tests/helpers/plugin-api'
 
 const CELL_W = 180

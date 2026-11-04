@@ -2,15 +2,13 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { withTextParagraph, type TextLayout } from '#core/canvas/text'
 import { fontManager } from '#core/text/font/manager'
-
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
-
 const FONT_FAMILY = 'Painted text fixture'
 beforeAll(async () => {
   // Inter's variable file draws both styles, as the bundled Inter does.

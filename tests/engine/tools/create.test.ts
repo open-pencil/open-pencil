@@ -4,7 +4,8 @@ import { describe, expect, test } from 'bun:test'
 import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 /** The `render` tool answers with the rendered root and its child IDs. */

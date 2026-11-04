@@ -10,5 +10,12 @@ export function workspaceRoot(from = dirname(fileURLToPath(import.meta.url))): s
   }
 }
 
-/** Shared archives live outside the package; this is the only path that reaches them. */
-export const FIXTURES = join(workspaceRoot(), 'tests/fixtures')
+const root = workspaceRoot()
+
+/** A file in the repository, for assets that are not modules. */
+export function repoPath(...segments: string[]): string {
+  return join(root, ...segments)
+}
+
+/** The shared fixture corpus; a module import would escape the importing package's root. */
+export const FIXTURES = repoPath('tests/fixtures')

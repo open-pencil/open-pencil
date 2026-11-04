@@ -3,12 +3,11 @@ import { readFileSync } from 'node:fs'
 
 import type { CanvasKit, Paragraph, ParagraphBuilder, TypefaceFontProvider } from 'canvaskit-wasm'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
-
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
-
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 let provider: TypefaceFontProvider
 beforeAll(async () => {

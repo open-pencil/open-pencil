@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createSceneGeometry, nodeOrientationMatrix } from '#core/geometry'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { applyFixtureTransform, nestedGeometryFixture } from '#tests/helpers/geometry'
 
 for (const flipX of [false, true]) {

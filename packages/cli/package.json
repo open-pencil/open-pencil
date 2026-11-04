@@ -58,6 +58,7 @@
   },
   "devDependencies": {
     "@open-pencil/fig": "workspace:*",
+    "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14"
   }
 }

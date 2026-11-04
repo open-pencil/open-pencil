@@ -1,10 +1,10 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 

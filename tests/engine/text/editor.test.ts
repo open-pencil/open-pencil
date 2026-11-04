@@ -5,10 +5,10 @@ import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canva
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { TextLayout } from '#core/canvas/text/layout'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { asDouble } from '#tests/helpers/doubles'
 
 const mockCk = asDouble<CanvasKit>({

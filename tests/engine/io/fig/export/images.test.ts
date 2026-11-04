@@ -5,8 +5,8 @@ import { unzipSync } from 'fflate'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { storeImageBytes } from '#tests/helpers/scene'
 
 describe('fig export/import with images', () => {

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { renderNodesToPPTX, type PPTXExportStats, BUILTIN_IO_FORMATS } from '@open-pencil/core/io'
-
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   SLIDE_WIDTH_IN,

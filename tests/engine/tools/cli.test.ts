@@ -2,7 +2,9 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { cliSourcePath, repoPath } from '#tests/helpers/paths'
+import { repoPath } from '@open-pencil/test-support/paths'
+
+import { cliSourcePath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(30_000)

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('delete_node', () => {

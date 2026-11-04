@@ -5,9 +5,7 @@ import { tool } from 'ai'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, toolsToAI } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, expectFills } from '#tests/helpers/assert'
-
+import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
 type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
 type SDKTool = {
   execute(args: Record<string, unknown>, call: { toolCallId: string }): Promise<unknown>

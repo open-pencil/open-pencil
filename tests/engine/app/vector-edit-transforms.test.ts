@@ -6,12 +6,12 @@ import { regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { createVectorEditHistoryActions } from '@/app/editor/vector/history'
 import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
 import type { VectorEditState } from '@/app/editor/vector/types'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { asDouble } from '#tests/helpers/doubles'
 
 const NETWORK: VectorNetwork = {

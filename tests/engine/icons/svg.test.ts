@@ -2,12 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 describe('SVG XML parsing', () => {
   test('reads quoted root metadata through the XML parser', () => {
     const svg = `<svg width='120' height="80" viewBox='10 20 300 200'><path d='M0 0'/></svg>`

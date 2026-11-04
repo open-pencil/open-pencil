@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, pageId, rect } from '#tests/helpers/layout'
 
 describe('min/max constraints', () => {

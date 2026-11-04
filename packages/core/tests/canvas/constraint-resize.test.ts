@@ -5,7 +5,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { materializeDocument } from '@open-pencil/fig'
 
-import { expectDefined } from '../helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { absoluteConstraintRecords } from '../helpers/fig/absolute-constraints'
 import { FIXTURES } from '../helpers/fig/fixtures'
 

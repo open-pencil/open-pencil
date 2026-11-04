@@ -1,6 +1,7 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
@@ -13,7 +14,6 @@ import {
   TileSurfacePool
 } from '#core/canvas/renderer/tiles'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 

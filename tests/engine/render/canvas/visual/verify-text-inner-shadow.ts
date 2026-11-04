@@ -3,14 +3,12 @@ import { join } from 'node:path'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage } from '#core/io/formats/raster'
 import { fontManager } from '#core/text'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 async function main() {
   const ck = await initCanvasKit()
 

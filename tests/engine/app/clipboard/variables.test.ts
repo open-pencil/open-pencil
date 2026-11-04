@@ -1,9 +1,8 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { createEditorStore } from '@/app/editor/session/create'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 test('cross-document paste imports variable aliases and undoes definitions with the pasted nodes', async () => {
   const source = createEditorStore()
   const collection = source.graph.createCollection('Spacing')

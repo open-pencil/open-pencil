@@ -1,16 +1,15 @@
 import { beforeAll, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 import { resolveLabelFontCoverage } from '#core/canvas/renderer/fonts'
 import { resolveParagraphFontFamilies } from '#core/text/font/families'
 import { fontManager } from '#core/text/font/manager'
 import { FontResolver, missingGlyphOccurrences } from '#core/text/resolver'
-
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
-
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 beforeAll(async () => {
   ck = await initCanvasKit()

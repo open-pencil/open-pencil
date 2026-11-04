@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { APICallError, StreamProviderError } from 'ai'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import {
@@ -11,9 +12,6 @@ import {
   isContextLimitError,
   isInsufficientCreditError
 } from '@/app/ai/chat/failure'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 describe('AI chat failures', () => {
   test('a request past the context window is its own failure, which compaction can fix', () => {
     const openAI = new APICallError({

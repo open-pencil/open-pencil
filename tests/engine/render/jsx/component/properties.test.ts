@@ -12,8 +12,8 @@ import {
   type ComponentProperty,
   type LayerRef
 } from '@open-pencil/design-jsx'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
 
 test('only instances take property values; layers bind fields to property()', () => {

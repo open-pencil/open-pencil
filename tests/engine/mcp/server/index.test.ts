@@ -9,13 +9,13 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 
 import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { MCPToolScope } from '#mcp/tool/scope'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
-import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   readHealth,

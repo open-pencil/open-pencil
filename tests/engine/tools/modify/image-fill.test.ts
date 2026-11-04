@@ -3,9 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, expectFills } from '#tests/helpers/assert'
-
+import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
 const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 function setup() {

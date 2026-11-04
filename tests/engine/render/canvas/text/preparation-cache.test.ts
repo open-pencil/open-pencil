@@ -4,6 +4,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
@@ -11,9 +12,6 @@ import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { fontManager } from '#core/text/font/manager'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 async function fixture(maxEntries = 8, maxUnits = 1000) {
   const ck = await initCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()

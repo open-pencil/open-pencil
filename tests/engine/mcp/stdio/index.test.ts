@@ -8,10 +8,10 @@ import type { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   waitForBrowserRegistration,

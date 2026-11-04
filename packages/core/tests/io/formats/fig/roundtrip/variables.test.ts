@@ -1,6 +1,6 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { parseFixture } from '#core-tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#core-tests/helpers/test-utils'
 

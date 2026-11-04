@@ -5,7 +5,6 @@ import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
-
 import { getTextMeasurer } from '@open-pencil/core/layout'
 
 import { loadDocument, measureDocumentText } from '#cli/headless'

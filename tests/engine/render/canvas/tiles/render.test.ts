@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
@@ -16,8 +17,6 @@ import {
   tileKeysForWorldBounds,
   tileWorldBounds
 } from '#core/canvas/renderer/tiles'
-
-import { expectDefined } from '#tests/helpers/assert'
 
 import { expectRgbaPixels } from '../helpers'
 

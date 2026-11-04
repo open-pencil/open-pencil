@@ -8,7 +8,7 @@ import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 
-import { expectDefined } from '../helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import {
   capturedFigRecordsSchema,
   FIXTURES,

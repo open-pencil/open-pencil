@@ -7,7 +7,7 @@ import { parseFigFile, type ParseFigFileOptions } from '@open-pencil/core/io/for
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { FIXTURES } from '../paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { collectAllNodes } from './traversal'
 
 export { FIXTURES }

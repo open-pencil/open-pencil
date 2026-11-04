@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }

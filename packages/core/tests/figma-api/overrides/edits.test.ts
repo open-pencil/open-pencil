@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI, registerTestFont, solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'

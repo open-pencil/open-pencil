@@ -2,11 +2,10 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode } from '#core/canvas/scene'
-
-import { expectDefined } from '#tests/helpers/assert'
 
 import { asCanvas, asRenderer } from './helpers'
 

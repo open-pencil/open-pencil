@@ -6,9 +6,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { importSVG } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 let graph: SceneGraph
 let figma: FigmaAPI
 

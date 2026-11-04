@@ -7,12 +7,10 @@ import {
   type FontFallbackScript
 } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { ensureGraphFonts } from '@/app/editor/fonts'
-
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
-
 describe('app font loading', () => {
   test('requests platform fallback before parsing large native primary fonts', () => {
     const graph = new SceneGraph()

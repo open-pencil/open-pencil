@@ -2,9 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { fontManager, textNeededFallbackScripts } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { repoPath } from '#tests/helpers/paths'
-
+import { repoPath } from '@open-pencil/test-support/paths'
 async function loadInter() {
   const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', interData)

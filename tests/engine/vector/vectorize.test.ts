@@ -5,12 +5,11 @@ import {
   resolveVectorFramePlacement,
   svgToVectorPaths
 } from '@open-pencil/core/vector'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { testPath } from '#tests/helpers/paths'
-
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 const VECTORIZE_FIXTURES = testPath('fixtures/vectorize')

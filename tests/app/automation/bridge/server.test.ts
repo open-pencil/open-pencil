@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { agentStarted, endAgentSession, type AgentSession } from '@/app/automation/agents'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { asDouble } from '#tests/helpers/doubles'
 
 const claude: AgentSession = { session: 'bridge-session', kind: 'mcp', client: 'claude-code' }

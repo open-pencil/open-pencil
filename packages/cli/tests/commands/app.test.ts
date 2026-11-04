@@ -8,7 +8,6 @@ import { join, resolve } from 'node:path'
 import * as v from 'valibot'
 
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
-
 setDefaultTimeout(60_000)
 
 const TOKEN = 'cli-app-test-token'

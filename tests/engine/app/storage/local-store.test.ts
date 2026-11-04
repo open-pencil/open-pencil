@@ -1,14 +1,13 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import {
   createMemoryLocalCanvasStore,
   resetLocalCanvasStoreForTests
 } from '@/app/storage/local-store'
 import { createIdbLocalCanvasStore } from '@/app/storage/local-store/idb'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 describe('local canvas store (memory)', () => {
   test('writes and reads fig bytes outside localStorage', async () => {
     const store = createMemoryLocalCanvasStore()

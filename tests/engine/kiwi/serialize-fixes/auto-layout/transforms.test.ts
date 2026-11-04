@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { ROOT_GUID, pageId } from '../helpers'
 

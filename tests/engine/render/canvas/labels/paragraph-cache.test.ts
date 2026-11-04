@@ -1,11 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
-
-import { repoPath } from '#tests/helpers/paths'
-
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {

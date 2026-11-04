@@ -7,9 +7,7 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 function expectFigmaEditableTextDefaults(
   textNode: NonNullable<Awaited<ReturnType<typeof parseFigmaClipboard>>>['nodes'][number]
 ) {

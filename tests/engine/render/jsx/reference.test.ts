@@ -4,10 +4,10 @@ import { renderJSX } from '@open-pencil/core/design-jsx'
 import { CODEGEN_PROMPT as BARREL_CODEGEN, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 import { AUTHORING_EXAMPLES, JSX_REFERENCE } from '@open-pencil/design-jsx'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 
-import { getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
 
 function exampleGraph() {

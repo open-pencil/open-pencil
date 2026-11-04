@@ -15,7 +15,6 @@ import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot 
 
 import { asDouble } from '#tests/helpers/doubles'
 import { testPath } from '#tests/helpers/paths'
-
 function setupGlobals() {
   globalThis.window = asDouble<Window & typeof globalThis>({
     innerWidth: 1024,

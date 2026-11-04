@@ -5,7 +5,6 @@ import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
-
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
 setDefaultTimeout(60_000)

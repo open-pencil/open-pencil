@@ -2,12 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
 import type { VectorEditState } from '@/app/editor/vector/types'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const TRIANGLE: VectorNetwork = {
   vertices: [
     { x: 0, y: 0 },

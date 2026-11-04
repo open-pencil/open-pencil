@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
+import { expectFills } from '@open-pencil/test-support/assert'
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
 describe('clone', () => {

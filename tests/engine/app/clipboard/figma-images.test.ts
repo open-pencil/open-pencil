@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 async function sha1Hex(bytes: Uint8Array) {
   const digest = await crypto.subtle.digest('SHA-1', Uint8Array.from(bytes))
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')

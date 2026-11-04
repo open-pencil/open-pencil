@@ -3,9 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-
-import { getNodeOrThrow } from '#tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 function guid(localID: number): NonNullable<NodeChange['guid']> {
   return { sessionID: 0, localID }
 }

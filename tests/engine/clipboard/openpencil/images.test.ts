@@ -9,8 +9,8 @@ import {
   getInstanceOverride,
   setInstanceOverride
 } from '@open-pencil/scene-graph/instances/overrides'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { storeImageBytes } from '#tests/helpers/scene'
 
 describe('clipboard roundtrip with images', () => {

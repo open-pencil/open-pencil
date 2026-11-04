@@ -4,8 +4,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 export { ALL_TOOLS }
 
-import { expectDefined } from './assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 export interface ToolResult {
   id?: string
   name?: string

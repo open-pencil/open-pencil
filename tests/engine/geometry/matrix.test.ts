@@ -8,9 +8,7 @@
 import { describe, test, expect } from 'bun:test'
 
 import TransformMatrix from '@open-pencil/scene-graph/matrix'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 describe('TransformMatrix.identity', () => {
   test('produces a 3x3 identity matrix', () => {
     const id = TransformMatrix.identity()

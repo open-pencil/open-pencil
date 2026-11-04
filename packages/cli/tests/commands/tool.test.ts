@@ -5,8 +5,8 @@ import { join } from 'node:path'
 
 import * as v from 'valibot'
 
-import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
-
+import { CLI_ENTRY } from '#cli-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 setDefaultTimeout(60_000)
 
 const FIXTURE = join(FIXTURES, 'gold-preview.fig')

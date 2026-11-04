@@ -9,9 +9,7 @@ import {
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '@open-pencil/scene-graph/color'
-
-import { getNodeOrThrow } from '#tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 describe('OkHCL metadata toggling', () => {
   test('can disable fill OkHCL metadata', () => {
     const graph = new SceneGraph()

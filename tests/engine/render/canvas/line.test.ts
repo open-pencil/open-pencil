@@ -3,11 +3,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {

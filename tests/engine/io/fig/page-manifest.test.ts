@@ -5,7 +5,6 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 
 import { testPath } from '#tests/helpers/paths'
-
 const fixturePath = testPath('fixtures/gold-preview.fig')
 
 test('reports FIG pages before materializing NodeChange objects', () => {

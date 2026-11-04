@@ -4,15 +4,13 @@ import { readFileSync } from 'node:fs'
 import * as v from 'valibot'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { signInScope } from '@/app/ai/agents/acp/auth/terminal'
 import { HARNESS_PACKAGE } from '@/app/ai/agents/pi/companion'
 import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/setup/native'
 import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { resolvePlatformCommand, resolveScopedCommand } from '@/app/tauri/command'
-
-import { repoPath } from '#tests/helpers/paths'
-
 const WINDOWS_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
 const MAC_UA =

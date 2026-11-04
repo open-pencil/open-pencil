@@ -8,9 +8,7 @@ import {
   rgbaToOkHCL,
   setNodeFillOkHCL
 } from '@open-pencil/scene-graph/color'
-
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 describe('OkHCL toggle conversion', () => {
   test('enabling OkHCL from an existing rgba fill preserves the visible color closely', () => {
     const graph = new SceneGraph()

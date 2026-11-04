@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { once, pick } from 'es-toolkit'
 import * as v from 'valibot'
 

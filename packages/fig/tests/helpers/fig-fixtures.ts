@@ -11,9 +11,7 @@ import {
   initCodec,
   type NodeChange
 } from '@open-pencil/kiwi/fig/codec'
-
-import { FIXTURES } from './paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 export { FIXTURES }
 
 export function readFixtureBytes(name: string): Uint8Array {

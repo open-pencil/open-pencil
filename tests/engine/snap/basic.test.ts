@@ -2,9 +2,7 @@ import { describe, test, expect } from 'bun:test'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { computeSnap, computeSelectionBounds } from '@open-pencil/scene-graph/snap'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 function node(overrides: Partial<SceneNode> & { id: string }): SceneNode {
   return { x: 0, y: 0, width: 100, height: 100, rotation: 0, ...overrides } as SceneNode
 }

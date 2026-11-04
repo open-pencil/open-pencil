@@ -1,8 +1,8 @@
 import { ROTATION_HANDLE_DISTANCE } from '@open-pencil/core/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { applyFixtureTransform, nestedGeometryData } from '#tests/helpers/geometry'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')

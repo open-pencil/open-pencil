@@ -3,8 +3,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { fontManager } from '@open-pencil/core/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { registerTestFont } from '#tests/helpers/fonts/bundled'
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
 

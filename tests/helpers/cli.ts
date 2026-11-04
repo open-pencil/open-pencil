@@ -1,5 +1,4 @@
 import { cliSourcePath } from './paths'
-
 const CLI = cliSourcePath('index.ts')
 
 export interface CLICommandResult {

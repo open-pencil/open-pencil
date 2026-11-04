@@ -5,8 +5,8 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { decompressFigKiwiDataAsync } from '@open-pencil/kiwi/fig/container'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 

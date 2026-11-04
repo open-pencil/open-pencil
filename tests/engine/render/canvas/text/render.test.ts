@@ -7,6 +7,8 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -21,9 +23,6 @@ import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
-
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
 
 import { asDouble, expectRgbaPixels } from '../helpers'
 

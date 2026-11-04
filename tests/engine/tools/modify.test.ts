@@ -2,10 +2,10 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts, estimateTextSize } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
+import { expectDefined, expectFills, getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
-import { expectDefined, expectFills, getNodeOrThrow } from '#tests/helpers/assert'
 import { registerTestFont } from '#tests/helpers/fonts/bundled'
-import { repoPath } from '#tests/helpers/paths'
 import { getTool, runTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 beforeAll(() => registerTestFont())

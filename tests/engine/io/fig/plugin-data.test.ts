@@ -6,8 +6,8 @@ import { materializeDocument } from '@open-pencil/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 function doc(): NodeChange {

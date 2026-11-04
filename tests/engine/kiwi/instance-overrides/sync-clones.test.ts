@@ -2,9 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { expectDefined } from '#tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 test('nested component swap changes descendants through source instance chains', () => {
   const guid = (localID: number) => ({ sessionID: 1, localID })
   const changes = [

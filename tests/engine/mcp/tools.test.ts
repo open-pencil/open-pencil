@@ -5,9 +5,7 @@ import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, expectFills } from '#tests/helpers/assert'
-
+import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
 interface PageTreeResult {
   page: string
   children: PageTreeNode[]

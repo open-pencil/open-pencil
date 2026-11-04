@@ -3,8 +3,8 @@ import { expect, test } from 'bun:test'
 import { renderTree } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { Component, Frame, Instance, Rectangle } from '@open-pencil/design-jsx'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
 
 test('overriding one instance dimension preserves the other inherited dimension', async () => {

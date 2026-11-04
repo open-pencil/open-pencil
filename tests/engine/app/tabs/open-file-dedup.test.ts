@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 import * as figModule from '@open-pencil/core/io/formats/fig'
 import * as layoutModule from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
@@ -24,9 +25,6 @@ import {
   type Tab
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 function setupGlobals() {
   Reflect.defineProperty(globalThis, 'window', {
     value: {

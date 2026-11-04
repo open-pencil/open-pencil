@@ -8,11 +8,9 @@ import { TextEditor } from '@open-pencil/core/text'
 import { SceneGraph, type StyleRun, type DerivedTextGlyph } from '@open-pencil/scene-graph'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { fontManager } from '#core/text/font/manager'
-
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-
 function setup() {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id

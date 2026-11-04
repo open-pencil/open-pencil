@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { mockFontsource } from '#tests/helpers/fonts/fontsource'
 

@@ -6,7 +6,7 @@ import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer

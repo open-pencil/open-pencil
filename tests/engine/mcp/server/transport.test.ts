@@ -6,11 +6,11 @@ import { join } from 'node:path'
 import type { WebSocket } from 'ws'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
-import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   openWs,

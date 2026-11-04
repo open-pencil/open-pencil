@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 const NAVY: Color = { r: 2 / 255, g: 26 / 255, b: 59 / 255, a: 1 }

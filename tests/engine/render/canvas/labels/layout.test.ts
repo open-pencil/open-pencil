@@ -4,6 +4,7 @@ import type { Font } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { hitTestComponentLabel, hitTestFrameTitle } from '#core/canvas/labels/hit-test'
 import { labelLayout } from '#core/canvas/labels/layout'
@@ -14,7 +15,6 @@ import {
 } from '#core/canvas/labels/transform'
 import { createSceneGeometry } from '#core/geometry'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { nestedGeometryFixture } from '#tests/helpers/geometry'
 
 const font = {

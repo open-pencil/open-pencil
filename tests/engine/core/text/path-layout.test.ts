@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, TextPathData, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   calibratePathTextLayout,
@@ -15,7 +16,6 @@ import {
   textPathStartArc
 } from '#core/text/path'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { loadFigFixture } from '#tests/helpers/fig/fixtures'
 
 /** Signed shortest angular difference a - b. */

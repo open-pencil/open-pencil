@@ -11,8 +11,8 @@ import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 heavy('gold-preview.fig clipboard roundtrip', () => {

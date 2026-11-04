@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
-import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
+import { CLI_ENTRY } from '#cli-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import * as v from 'valibot'
 
 import { getTextMeasurer } from '@open-pencil/core/layout'

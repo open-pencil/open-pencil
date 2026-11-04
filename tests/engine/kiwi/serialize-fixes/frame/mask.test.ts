@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { pageId, toKiwi } from '../helpers'
 

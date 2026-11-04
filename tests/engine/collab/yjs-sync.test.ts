@@ -9,8 +9,8 @@ import type { Fill, GeometryPath, SceneNode, VectorNetwork } from '@open-pencil/
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { withSyncedStores } from '#tests/helpers/collab/synced-stores'
 
 function firstPage(graph: SceneGraph): SceneNode {

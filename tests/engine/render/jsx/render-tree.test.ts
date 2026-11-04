@@ -20,8 +20,8 @@ import {
   linearGradient,
   solid
 } from '@open-pencil/design-jsx'
+import { expectDefined, getNodeOrThrow, childIdAt } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'
 
 describe('renderTree', () => {

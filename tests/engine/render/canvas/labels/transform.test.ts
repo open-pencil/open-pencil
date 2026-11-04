@@ -3,14 +3,12 @@ import { expect, test } from 'bun:test'
 import type { Font } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { LabelCache } from '#core/canvas/labels/cache'
 import { hitTestSectionTitle, hitTestFrameTitle } from '#core/canvas/labels/hit-test'
 import { frameLabelPlacement, labelTransform } from '#core/canvas/labels/transform'
 import { createSceneGeometry } from '#core/geometry'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 function fixture() {
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')

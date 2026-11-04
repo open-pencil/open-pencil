@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { outlineColorInMode } from '@open-pencil/core/canvas'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { figJamColor, figJamSectionColorFields, figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'

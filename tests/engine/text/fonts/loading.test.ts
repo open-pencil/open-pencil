@@ -6,8 +6,8 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { fontManager, isVariableFont, FontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { fetchStub } from '#tests/helpers/fetch'
 
 function pageId(graph: SceneGraph) {

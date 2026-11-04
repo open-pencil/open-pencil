@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '#core-tests/helpers/figma-api'
 import type { ConnectorStrokeCap } from '@figma/plugin-typings/plugin-api-standalone'
 import { pick } from 'es-toolkit'

@@ -1,13 +1,12 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import type { RenderChunk } from '#core/canvas/renderer/chunks'
 import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
-
-import { expectDefined } from '#tests/helpers/assert'
 
 import { asRenderer, expectRgbaPixels } from '../helpers'
 

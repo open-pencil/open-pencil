@@ -4,12 +4,10 @@ import { createEditor } from '@open-pencil/core'
 import type { Fill, GeometryPath, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { cloneVectorNetwork, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
-
-import { getNodeOrThrow } from '#tests/helpers/assert'
-
 const RED: Fill = {
   type: 'SOLID',
   color: { r: 1, g: 0, b: 0, a: 1 },

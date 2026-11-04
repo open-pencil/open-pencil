@@ -12,8 +12,8 @@ import {
   okhclToRGBA,
   rgbaToOkHCL
 } from '@open-pencil/scene-graph/color'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 import { solidFill } from '#tests/helpers/plugin-api'
 

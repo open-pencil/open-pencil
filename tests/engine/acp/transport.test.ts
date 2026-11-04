@@ -4,13 +4,11 @@ import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk'
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
 import { classifyToolState } from '@/components/chat/tool/state'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const TEXT_ID = 'text-1'
 
 /** The message the chat builds from one turn's updates, as the transport streams them. */

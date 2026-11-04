@@ -1,8 +1,5 @@
 import { fontManager } from '@open-pencil/core/text'
-
-import { expectDefined } from '#tests/helpers/assert'
-
-/**
+import { expectDefined } from '@open-pencil/test-support/assert' /**
  * Registers the app's bundled variable Inter as `family`, upright and italic, as a host's own
  * fonts are, so `loadFontAsync` loads any weight of it: text edits refuse unloaded fonts.
  */
