@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 
@@ -37,7 +38,7 @@ function countCellColoredPixels(
 describe('boolean visual matrix', () => {
   test('generates a non-empty visual fixture for supported shape cases', async () => {
     const proc = Bun.spawnSync({
-      cmd: [process.execPath, 'packages/core/tests/canvas/visual/boolean-matrix.ts'],
+      cmd: [process.execPath, join(import.meta.dir, 'boolean-matrix.ts')],
       stdout: 'pipe',
       stderr: 'pipe'
     })

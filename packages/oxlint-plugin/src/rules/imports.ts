@@ -124,6 +124,96 @@ const noDeepParentRelativePaths = defineRule({
   }
 })
 
+/** A script named by a path from wherever the process happens to run, such as `tests/x.ts`. */
+function isCwdRelativeScript(value: string): boolean {
+  if (value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value)) return false
+  return /[\\/]/.test(value) && /\.[cm]?[jt]sx?$/.test(value)
+}
+
+const SPAWN_FUNCTIONS = new Set(['spawn', 'spawnSync', 'execFile', 'execFileSync', 'fork'])
+
+/** `spawn` for `spawn(...)` and `Bun.spawn(...)`. */
+function calleeName(callee: ESTree.Node): string | null {
+  if (callee.type === 'Identifier') return callee.name
+  if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    return callee.property.name
+  }
+  return null
+}
+
+const INTERPRETERS = new Set(['bun', 'node', 'tsx', 'deno'])
+/** Interpreter words between the interpreter and its script, as in `bun run x.ts`. */
+const INTERPRETER_SUBCOMMANDS = new Set(['run', 'test'])
+
+function isInterpreter(node: ESTree.Node): boolean {
+  if (node.type === 'MemberExpression') {
+    return (
+      node.object.type === 'Identifier' &&
+      node.object.name === 'process' &&
+      node.property.type === 'Identifier' &&
+      node.property.name === 'execPath'
+    )
+  }
+  const value = staticString(node)
+  return value !== null && INTERPRETERS.has(value)
+}
+
+/** The command line a spawn call runs: `Bun.spawn([...])`, `{ cmd: [...] }`, or `spawn(cmd, [...])`. */
+function spawnedCommand(node: ESTree.CallExpression): ESTree.Node[] {
+  if (!SPAWN_FUNCTIONS.has(calleeName(node.callee) ?? '')) return []
+  const [first, second] = node.arguments
+  const elements = (list: ESTree.Node | undefined): ESTree.Node[] =>
+    list?.type === 'ArrayExpression'
+      ? list.elements.filter((element): element is ESTree.Expression => element !== null)
+      : []
+  if (first?.type === 'ArrayExpression') return elements(first)
+  if (first?.type === 'ObjectExpression') {
+    const cmd = first.properties.find(
+      (property) =>
+        property.type === 'Property' &&
+        property.key.type === 'Identifier' &&
+        property.key.name === 'cmd'
+    )
+    return cmd?.type === 'Property' ? elements(cmd.value) : []
+  }
+  return first ? [first, ...elements(second)] : []
+}
+
+/** The argument that names the script a command line runs: the command, or an interpreter's script. */
+function scriptArgument(command: readonly ESTree.Node[]): ESTree.Node | undefined {
+  const [program, ...rest] = command
+  if (!program) return undefined
+  if (!isInterpreter(program)) return program
+  return rest.find((argument) => {
+    const value = staticString(argument)
+    return value === null || !(value.startsWith('-') || INTERPRETER_SUBCOMMANDS.has(value))
+  })
+}
+
+const noCwdRelativeScriptPaths = defineRule({
+  meta: {
+    docs: {
+      description:
+        'Disallow spawning a script by a path relative to the working directory — resolve it first'
+    }
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        const script = scriptArgument(spawnedCommand(node))
+        const value = script ? staticString(script) : null
+        if (script && value !== null && isCwdRelativeScript(value)) {
+          context.report({
+            node: script,
+            message:
+              'Resolve the script with repoPath() or import.meta before spawning it; a path relative to the working directory breaks when the run starts elsewhere or the file moves.'
+          })
+        }
+      }
+    }
+  }
+})
+
 const noFunctionAliasImports = defineRule({
   meta: {
     docs: {
@@ -146,4 +236,9 @@ const noFunctionAliasImports = defineRule({
   }
 })
 
-export { noDeepParentRelativeImports, noDeepParentRelativePaths, noFunctionAliasImports }
+export {
+  noCwdRelativeScriptPaths,
+  noDeepParentRelativeImports,
+  noDeepParentRelativePaths,
+  noFunctionAliasImports
+}

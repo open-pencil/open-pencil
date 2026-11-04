@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
+import { lint, lintFiles, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
 const rule = 'no-deep-parent-relative-imports'
 
@@ -84,4 +84,34 @@ describe('no-deep-parent-relative-paths', () => {
   ])('accepts %s', async (source) => {
     expect(ruleDiagnostics(await lint(source, rules), rule)).toHaveLength(0)
   })
+})
+
+test('no-cwd-relative-script-paths flags script paths a spawn takes from the working directory', async () => {
+  const rule = 'no-cwd-relative-script-paths'
+  const cases = {
+    'bun-spawn.ts': ["Bun.spawn([process.execPath, 'tests/helpers/fixture.ts'])", 1],
+    'bun-cmd.ts': [
+      "Bun.spawnSync({ cmd: [process.execPath, 'packages/core/tests/matrix.ts'] })",
+      1
+    ],
+    'node-args.ts': ["spawn('bun', ['./scripts/run.mjs'])", 1],
+    'node-command.ts': ["execFileSync('scripts/build.ts')", 1],
+    'bun-run.ts': ["Bun.spawn(['bun', 'run', '--silent', 'tools/dev/serve.ts'])", 1],
+    'resolved.ts': ["Bun.spawn([process.execPath, join(import.meta.dir, 'matrix.ts')])", 0],
+    'absolute.ts': ["Bun.spawn([process.execPath, '/tmp/script.ts'])", 0],
+    'git-pathspec.ts': ["Bun.spawn(['git', 'log', '--', 'src/app/index.ts'], { cwd: root })", 0],
+    'script-name.ts': ["Bun.spawn([process.execPath, 'run', 'build'])", 0],
+    'not-a-spawn.ts': ["resolve('tests/helpers/fixture.ts')", 0]
+  } as const
+  const diagnostics = ruleDiagnostics(
+    await lintFiles(
+      Object.fromEntries(Object.entries(cases).map(([path, [source]]) => [path, source])),
+      { [`open-pencil/${rule}`]: 'error' }
+    ),
+    rule
+  )
+  for (const [path, [, count]] of Object.entries(cases)) {
+    const found = diagnostics.filter((diagnostic) => diagnostic.filename?.endsWith(path))
+    expect(found, path).toHaveLength(count)
+  }
 })
