@@ -144,9 +144,17 @@ export async function parseFigFileInWorker(
       throw error
     }
     console.warn('Worker parsing failed, falling back to main thread:', error)
-    const archive = buffer.byteLength > 0 ? buffer : await readAgain()
+    const archive = buffer.byteLength > 0 ? buffer : await readArchiveAgain(readAgain)
     options.signal?.throwIfAborted()
     return parseFigFileSync(archive, options)
+  }
+}
+
+async function readArchiveAgain(readAgain: () => Promise<ArrayBuffer>): Promise<ArrayBuffer> {
+  try {
+    return await readAgain()
+  } catch (cause) {
+    throw new Error('The file changed while it was opening. Open it again.', { cause })
   }
 }
 

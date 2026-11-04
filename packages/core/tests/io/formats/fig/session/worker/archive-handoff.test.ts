@@ -81,6 +81,25 @@ test('a worker that fails after taking the file falls back to reading it again',
   }
 }, 20000)
 
+test('a file that cannot be read again after the worker failed says it changed while opening', async () => {
+  const buffer = (await twoPageFile()).slice().buffer
+  const unreadable = new DOMException('The file was modified', 'NotReadableError')
+  const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+
+  try {
+    const opening = parseFigFileInWorker(
+      buffer,
+      { populate: 'first-page' },
+      () => Promise.reject(unreadable),
+      workerFailingAfterTransfer
+    )
+    await expect(opening).rejects.toThrow('The file changed while it was opening. Open it again.')
+    await expect(opening).rejects.toMatchObject({ cause: unreadable })
+  } finally {
+    warn.mockRestore()
+  }
+}, 20000)
+
 test('a worker that cannot start leaves the file to the main thread without reading it again', async () => {
   const bytes = await twoPageFile()
   const buffer = bytes.slice().buffer
