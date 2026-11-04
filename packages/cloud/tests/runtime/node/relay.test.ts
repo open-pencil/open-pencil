@@ -6,6 +6,7 @@ import {
   decodeRelayServerFrame,
   encodeRelayClientFrame,
   RELAY_CLOSE,
+  RELAY_HEARTBEAT,
   RELAY_PATH,
   type RelayServerFrame
 } from '#cloud/contract'
@@ -77,6 +78,32 @@ describe('Node collaboration relay listener', () => {
       })
     )
     expect(await client.welcomed).toMatchObject({ type: 'welcome', peers: ['server'] })
+  })
+
+  test('answers the heartbeat without taking it for a frame', async () => {
+    const base = await listening()
+    const client = open(`${base}${RELAY_PATH}`)
+    cleanups.push(async () => client.socket.close())
+    await client.opened
+    const answer = new Promise<unknown>((resolve) => {
+      client.socket.addEventListener('message', (event: MessageEvent<unknown>) => {
+        if (typeof event.data === 'string') resolve(event.data)
+      })
+    })
+    client.socket.send(RELAY_HEARTBEAT.ping)
+    expect(await answer).toBe(RELAY_HEARTBEAT.pong)
+    // The socket is still the relay's to admit.
+    client.socket.send(
+      encodeRelayClientFrame({
+        type: 'auth',
+        token: await relayTicket({
+          documentId: crypto.randomUUID(),
+          permission: 'edit',
+          principal: user('alice')
+        })
+      })
+    )
+    expect(await client.welcomed).toMatchObject({ type: 'welcome' })
   })
 
   test('refuses upgrades on other paths', async () => {

@@ -27,6 +27,7 @@ import { trackDocumentFormat } from '@/app/telemetry'
 type DocumentSourceState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  roomKeepsEdits: boolean
 }
 
 export { createDocumentSourceState }
