@@ -19,6 +19,7 @@ import {
 } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
+import { makeParagraphBuilder, resetFontCollection } from '#core/text/font/collection'
 import {
   browserFaceDescriptors,
   fontFaceRenderFamily,
@@ -133,6 +134,7 @@ export class FontManager {
       if (--shared.users > 0) return
       this.sharedProviders.delete(canvasKit)
       this.detachProvider(provider)
+      resetFontCollection(provider)
       provider.delete()
       return
     }
@@ -823,7 +825,7 @@ export class FontManager {
     const style = new canvasKit.ParagraphStyle({
       textStyle: { fontFamilies: [...families], fontSize: 16 }
     })
-    const builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(style, provider)
+    const builder = makeParagraphBuilder(canvasKit, style, provider)
     try {
       builder.addText(characters.join(''))
       const paragraph = builder.build()
@@ -975,6 +977,7 @@ export class FontManager {
     if (registeredData?.has(data)) return true
     try {
       provider.registerFont(data, family)
+      resetFontCollection(provider)
       const familyRegistrations = registeredData ?? new Set<ArrayBuffer>()
       familyRegistrations.add(data)
       registrations.set(family, familyRegistrations)
