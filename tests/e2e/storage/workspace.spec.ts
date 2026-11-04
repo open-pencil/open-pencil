@@ -164,7 +164,7 @@ test('storage workspace directs unconfigured users to Settings', async ({ page }
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByTestId('home-new-design')).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Design', exact: true })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
