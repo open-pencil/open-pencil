@@ -13,6 +13,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Plugin API nodes read Figma's node types: a page's `type` is `PAGE` instead of `CANVAS`, and `figma.root.type` is `DOCUMENT` instead of `FRAME`, in `node.type` and `toJSON()`. Scripts that compared against `CANVAS` should compare against `PAGE`.
 - Cloud keeps each collaboration room's snapshot in object storage beside the documents' files instead of in PostgreSQL. Upgrading starts every document's live room over from its last saved version, so edits a room held that no saved version has yet are dropped.
 - `useCanvas` from `@open-pencil/vue/canvas/surface` no longer takes `onPresented`; listen for the editor's `render:presented` event with `editor.onEditorEvent('render:presented', …)`, which fires once a frame shows the whole visible scene (#1753).
+- `@open-pencil/core/text` no longer exports `adjustRunsForInsert`. Use `runsAfterTyping`, which moves the runs for typed text and gives it the style of the text it continues.
+- `@open-pencil/scene-graph/geometry` no longer exports `computeVisualBounds`, `nodeVisualBounds`, `computeDescendantVisualBounds` or the `VisualBoundsNode` type; use `computeContentBounds` from `@open-pencil/core/io/formats/raster`, which bounds layers by their world matrix. `textDecorationOverflow` now takes a text node's `type`, `fontSize`, `textDecoration`, `textUnderlineOffset` and `textDecorationThickness`, with `fontSize` and `textDecoration` required (#1778).
 
 ### Added
 
@@ -68,7 +70,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Pasting a layer copied out of a component, while it is bound to one of the component's properties, pastes it unbound instead of failing.
 - Text is always laid out in its own fonts: text whose font, script fallback, or emoji font is still loading or not available is laid out again once it arrives, instead of keeping the size of another face, which left titles, sticky notes, and imported text narrower or wider than they drew.
 - Text with its leading trimmed to cap height, such as badge digits, sits where Figma puts it once its font is loaded, instead of several pixels too low.
-- Text with a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, instead of drifting a pixel every line or two.
+- Text keeps the baselines Figma saves and draws each on the whole pixel Figma draws it on, and a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, so 16 px Inter and lines at a fractional line height or paragraph spacing no longer sit a pixel or half a pixel off or drift, and glyph positions saved to `.fig` match Figma's.
+- Text typed at the edge of a styled range, after Enter, at the start, over a selection, through an input method or pasted while editing, keeps that range's colour, font and variable bindings, and so does text typed after deleting everything.
 - The first Chinese, Japanese, or Korean text in the desktop app loads one system font per script instead of every listed one and keeps a single copy of each, using hundreds of megabytes less memory, and draws in about 70 ms instead of 2 s per render while its fonts load (#1684).
 - On Windows, page text in an installed font, such as interactive component previews on the canvas, draws in its bold, italic, and light faces instead of the regular one.
 - A text that sizes itself outside auto layout resizes when a variable bound to its size, such as its font size, changes.
@@ -82,6 +85,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Spread and Compact arrange a pile of layers the same way every time, rather than differently on each run.
 - New stars have Figma's inner radius.
 - A rotated frame draws its whole fill, and exports of rotated layers are no longer cropped to a shifted box (#1767).
+- SVG and PDF export turn a rotated and flipped layer the way the canvas does, and a rotated line about its start (#1778).
+- The canvas draws sharp at any panel width, instead of slightly soft when the panels leave it a fraction of a pixel wide (#1774).
 - Opening a document keeps the loader up until its page is fully drawn where it opens, instead of showing the canvas while it still fills in (#1753).
 - HTML export draws linear, radial, and angular gradient fills and every stacked fill with its blend mode, writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use. Diamond gradients are still left out.
 - HTML export, Tailwind JSX, canvas islands, and `getCSSAsync()` blur layers and shadows as the canvas draws them, and text keeps its shadows; layer and background blurs were 2.3 times as strong, and text shadows were dropped. Imported CSS shadows draw as the browser draws them.
@@ -105,6 +110,7 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - On Linux, Backspace and keys such as `[`, `]` and `N` type into comments and other text fields again instead of running menu commands, so Backspace no longer deletes the selected layer while you type.
 - The Linux desktop app no longer exits at startup on Wayland with the NVIDIA driver when its WebKitGTK is older than 2.54.2.
 - On Windows and Linux, the Software Update window no longer shows the editor menu bar (#1230).
+- A Cloud document left by navigating away in the same browser tab leaves its collaboration room at once, instead of staying in it until the browser discards the page.
 - Cloud answers a malformed document, workspace, version, share, invitation, or upload ID in an API request with not found instead of a server error.
 
 ### Performance
