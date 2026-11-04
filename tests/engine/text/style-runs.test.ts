@@ -2,10 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   adjustRunsForDelete,
-  adjustRunsForInsert,
   applyStyleToRange,
   getStyleAt,
+  insertRunsWithStyle,
   removeStyleFromRange,
+  runsAfterTyping,
   selectionHasStyle,
   toggleBoldInRange,
   toggleDecorationInRange,
@@ -65,25 +66,73 @@ describe('selectionHasStyle', () => {
   })
 })
 
-describe('adjustRunsForInsert', () => {
-  test('insert before run shifts start', () => {
-    const runs: StyleRun[] = [{ start: 5, length: 3, style: { fontWeight: 700 } }]
-    const adjusted = adjustRunsForInsert(runs, 2, 4)
-    expect(adjusted[0].start).toBe(9)
-    expect(adjusted[0].length).toBe(3)
+describe('runsAfterTyping', () => {
+  const bold: StyleRun = { start: 2, length: 3, style: { fontWeight: 700 } }
+
+  test('typing before a run shifts it', () => {
+    expect(runsAfterTyping([bold], 8, 1, 1, 4)).toEqual([{ ...bold, start: 6 }])
   })
 
-  test('insert inside run extends length', () => {
-    const runs: StyleRun[] = [{ start: 2, length: 6, style: { fontWeight: 700 } }]
-    const adjusted = adjustRunsForInsert(runs, 4, 3)
-    expect(adjusted[0].start).toBe(2)
-    expect(adjusted[0].length).toBe(9)
+  test('typing inside a run extends it', () => {
+    expect(runsAfterTyping([bold], 8, 3, 3, 2)).toEqual([{ ...bold, length: 5 }])
   })
 
-  test('insert after run leaves it unchanged', () => {
-    const runs: StyleRun[] = [{ start: 0, length: 3, style: { fontWeight: 700 } }]
-    const adjusted = adjustRunsForInsert(runs, 10, 5)
-    expect(adjusted[0]).toEqual({ start: 0, length: 3, style: { fontWeight: 700 } })
+  test('typing at the end of a run extends it', () => {
+    expect(runsAfterTyping([bold], 8, 5, 5, 2)).toEqual([{ ...bold, length: 5 }])
+  })
+
+  test('typing at the start of a run takes the style before it', () => {
+    expect(runsAfterTyping([bold], 8, 2, 2, 1)).toEqual([{ ...bold, start: 3 }])
+  })
+
+  test('typing at the start of the text takes the first character style', () => {
+    const leading: StyleRun = { start: 0, length: 3, style: { fontWeight: 700 } }
+    expect(runsAfterTyping([leading], 8, 0, 0, 2)).toEqual([{ ...leading, length: 5 }])
+  })
+
+  test('typing over a selection takes the style of its first character', () => {
+    expect(runsAfterTyping([bold], 8, 4, 7, 2)).toEqual([{ ...bold, length: 4 }])
+    expect(runsAfterTyping([bold], 8, 1, 4, 1)).toEqual([{ ...bold, start: 2, length: 1 }])
+    const leadingBold: StyleRun = { start: 0, length: 1, style: { fontWeight: 700 } }
+    expect(runsAfterTyping([leadingBold], 8, 1, 4, 1)).toEqual([leadingBold])
+  })
+
+  test('typing into an empty text adds no runs', () => {
+    expect(runsAfterTyping([], 0, 0, 0, 3)).toEqual([])
+  })
+})
+
+describe('insertRunsWithStyle', () => {
+  const bold = { fontWeight: 700 }
+
+  test('merges the inserted run with an equal-styled neighbour on either side', () => {
+    const runs: StyleRun[] = [
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold }
+    ]
+    expect(insertRunsWithStyle(runs, 2, 2, bold)).toEqual([{ start: 0, length: 6, style: bold }])
+  })
+
+  test('leaves equal-styled runs away from the insert as they were', () => {
+    const runs: StyleRun[] = [
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold },
+      { start: 6, length: 2, style: bold }
+    ]
+    expect(insertRunsWithStyle(runs, 5, 1, {})).toEqual([
+      { start: 0, length: 2, style: bold },
+      { start: 2, length: 2, style: bold },
+      { start: 7, length: 2, style: bold }
+    ])
+  })
+
+  test('keeps a neighbour with another style apart from the inserted run', () => {
+    const italic = { italic: true }
+    const runs: StyleRun[] = [{ start: 0, length: 2, style: italic }]
+    expect(insertRunsWithStyle(runs, 2, 3, bold)).toEqual([
+      { start: 0, length: 2, style: italic },
+      { start: 2, length: 3, style: bold }
+    ])
   })
 })
 
