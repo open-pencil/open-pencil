@@ -363,7 +363,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
     if (state.editingTextId) text.commitTextEdit()
-    vectorEdit.exitNodeEditMode(true)
+    vectorEdit.exitNodeEditMode(true, { release: true })
     shapes.penCancel()
     shapes.pencilCancel()
     state.gradientEdit = null

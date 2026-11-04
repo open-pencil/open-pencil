@@ -12,6 +12,7 @@ import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext, EditorState, ResumedPath } from '#core/editor/types'
+import { editsHandlesOnly } from '#core/editor/vector/limits'
 import { offeredTool } from '#core/editor/views'
 
 type PenStateInit = NonNullable<EditorState['penState']>
@@ -122,6 +123,8 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
     // A vector inside an instance draws its component's path, so it is not continued there.
     if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return false
     if (!getNodeEditCapability(ctx.graph, nodeId).editable) return false
+    // Continuing a path adds points to it, and leaves the path open for editing.
+    if (editsHandlesOnly(ctx.state) || ctx.state.nodeEditState?.keepOpen) return false
     return offeredTool(ctx.state, 'PEN') === 'PEN'
   }
 

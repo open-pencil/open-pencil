@@ -98,6 +98,28 @@ provideEditor(editor)
 
 The fixed viewport dimensions above keep the example short. In a resizable shell, return the actual canvas container size from `getViewportSize`; do not include the surrounding sidebars or toolbar. See [SDK Getting Started](../getting-started) for installation requirements and migration notes.
 
+## Limiting what the editor offers
+
+A shell that is not a general design tool, such as a lettering game or a guided exercise, narrows the editor rather than hiding controls. Restrictions only take away from what the document offers, and everything that reads the editor's profile follows them: the toolbar's tools, the tool keys, `setTool`, the canvas, and the editor's actions.
+
+```ts
+// Only Move and Hand; a tool no longer offered gives way to Move.
+editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+
+// Paths keep their points: only handles move. Adding, deleting, joining, breaking, aligning,
+// and continuing points with the pen are refused, and points select but do not drag.
+editor.setHostRestrictions({ pathEdits: 'handles' })
+
+// Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or
+// another layer leave it open. Every point shows its handles.
+editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
+
+// Only the host ends it.
+editor.exitNodeEditMode(true, { release: true })
+```
+
+`setReadOnly(true)` is the strongest restriction: the document can be looked at, selected in, and copied from, and an open path closes.
+
 ## Why this split works
 
 - the SDK owns editor integration and reusable headless logic

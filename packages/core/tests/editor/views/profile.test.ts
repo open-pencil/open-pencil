@@ -22,6 +22,7 @@ describe('canvas view profiles', () => {
       leaveTo: null,
       edits: true,
       tools: null,
+      pathEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
@@ -46,6 +47,7 @@ describe('canvas view profiles', () => {
       leaveTo: { id: 'edit' },
       edits: true,
       tools: null,
+      pathEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
@@ -190,5 +192,41 @@ describe('document kinds', () => {
       ['SELECT', 'HAND'],
       16
     ])
+  })
+
+  test('a host that offers some tools leaves only those, and the tool in use gives way to Move', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])]).toEqual(['SELECT', 'HAND'])
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('RECTANGLE')
+    expect(editor.state.activeTool).toBe('SELECT')
+  })
+
+  test("a host's tools only narrow a board's, and read-only narrows them further", () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND', 'RECTANGLE', 'STICKY']) })
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])].toSorted()).toEqual([
+      'HAND',
+      'SELECT',
+      'STICKY'
+    ])
+    editor.setReadOnly(true)
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])].toSorted()).toEqual([
+      'HAND',
+      'SELECT'
+    ])
+  })
+
+  test('a host can let paths change only by their handles, and give them back whole', () => {
+    const editor = createEditor()
+    editor.setHostRestrictions({ pathEdits: 'handles' })
+    expect(resolveEditorProfile(editor.state).pathEdits).toBe('handles')
+    editor.setHostRestrictions({ tools: new Set(['SELECT']) })
+    expect(resolveEditorProfile(editor.state).pathEdits).toBe('handles')
+    editor.setHostRestrictions({ pathEdits: 'all', tools: null })
+    expect(resolveEditorProfile(editor.state)).toMatchObject({ pathEdits: 'all', tools: null })
   })
 })

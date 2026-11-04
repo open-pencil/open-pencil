@@ -1,8 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
-import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
-import { regenerateFillGeometry } from '@open-pencil/core/vector'
+import { computeHandleVisibleVertices, regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'

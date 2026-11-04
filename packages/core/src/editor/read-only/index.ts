@@ -1,7 +1,7 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext } from '#core/editor/types'
-import { offeredTool } from '#core/editor/views'
+import { offeredTool, type EditorRestrictions } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
 
@@ -62,5 +62,18 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
     ctx.requestRepaint()
   }
 
-  return { setReadOnly }
+  /**
+   * Narrows what the editor offers, as a host that is not a general design tool does: only some
+   * tools, or path edits that move handles alone. Each restriction given replaces the one before;
+   * one left out stays. A tool no longer on offer gives way to Move.
+   */
+  function setHostRestrictions(
+    restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits'>>
+  ): void {
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
+    ctx.requestRepaint()
+  }
+
+  return { setReadOnly, setHostRestrictions }
 }

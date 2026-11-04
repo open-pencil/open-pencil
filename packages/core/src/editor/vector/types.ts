@@ -3,14 +3,34 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { UpdateNodeWithUndo } from '#core/editor/shapes/pen/draw'
-import type { VectorHandleField } from '#core/vector/handle-selection'
+import type { NodeEditHandles, VectorHandleField } from '#core/vector/handle-selection'
 
 /**
  * A vector path being edited point by point. Its geometry is page-absolute, mapped through the
  * node's world matrix, so nested, rotated, and flipped vectors edit in place; the canvas draws it
  * through the `NodeEditOverlayState` fields.
  */
+/** How a host opens a path for editing. */
+export interface NodeEditOptions {
+  /**
+   * Keeps the path open: clicking off it, Escape, Enter, another tool, or another layer leave it
+   * open, and only the host ends it, with `exitNodeEditMode(commit, { release: true })`. A game
+   * whose canvas is the one path being shaped keeps it open.
+   */
+  keepOpen?: boolean
+  /** Which points show their handles; by default those near the selection, as in Figma. */
+  handles?: NodeEditHandles
+}
+
+/** How the host leaves a path open for editing. */
+export interface NodeEditExitOptions {
+  /** Ends a path the host keeps open, too. */
+  release?: boolean
+}
+
 export interface NodeEditState extends NodeEditOverlayState {
+  /** Whether only the host can end the session (`NodeEditOptions.keepOpen`). */
+  keepOpen: boolean
   origNetwork: VectorNetwork
   origBounds: Rect
   /** Session geometry as entered (page-absolute) — commit is a no-op when unchanged */
