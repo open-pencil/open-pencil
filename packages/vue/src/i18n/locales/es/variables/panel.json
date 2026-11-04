@@ -107,6 +107,7 @@
   "importDesignTokens": "Importar design tokens",
   "libraryCollection": "Biblioteca",
   "libraryCollectionHint": "Copiada de una biblioteca. Los cambios se guardan en este archivo y se ven en Figma.",
+  "makeCollectionLocal": "Hacer local",
   "addedToLibraryCollection": "Añadida aquí. Figma no muestra las variables añadidas a la colección de una biblioteca.",
   "importTokensDescription": "Elige adónde va cada colección y cada modo. Las variables con el mismo nombre se actualizan; no se elimina nada.",
   "importNewCollection": "Nueva colección",

@@ -1,0 +1,1 @@
+- Variables: a collection copied from a library can be made local from its menu, so the file owns it and Figma shows the variables and modes added to it.
