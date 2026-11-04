@@ -1,6 +1,6 @@
 # @open-pencil/html-engine
 
-HTML laid out as a browser lays it out, without a browser: [Blitz](https://github.com/DioxusLabs/blitz) (Stylo for style, Taffy for layout, Parley for text) compiled to WebAssembly. It captures every node's border box, the computed styles that differ from their initial values, inline boxes on each line, and text lines with their runs.
+HTML laid out as a browser lays it out, without a browser: [Blitz](https://github.com/DioxusLabs/blitz) (Stylo for style, Taffy for layout, Parley for text) compiled to WebAssembly. It captures every node's border box, its computed styles (properties with a fixed initial value only when they differ from it, and always the ones whose initial value depends on the element or is inherited, such as `display`, `color`, sizes, and fonts), inline boxes on each line, and text lines with their runs.
 
 ```ts
 import { loadHTMLEngine } from '@open-pencil/html-engine'

@@ -197,6 +197,29 @@ describe('raster image sizes', () => {
     expect(rasterImageSize(bytes)).toEqual([480, 640])
   })
 
+  test('reads a JPEG frame after fill bytes before its marker', () => {
+    const plain = jpegHeader(640, 480, 1)
+    const bytes = new Uint8Array([...plain.subarray(0, 38), 0xff, 0xff, ...plain.subarray(38)])
+
+    expect(rasterImageSize(bytes)).toEqual([640, 480])
+  })
+
+  test('reads an AVIF size box wherever it sits', () => {
+    const header = new TextEncoder().encode('\0\0\0\x18ftypavif\0\0\0\0avifmif1miaf')
+    const ispe = new Uint8Array(20)
+    const view = new DataView(ispe.buffer)
+    view.setUint32(0, 20)
+    ispe.set(
+      [...'ispe'].map((c) => c.charCodeAt(0)),
+      4
+    )
+    view.setUint32(12, 1920)
+    view.setUint32(16, 1080)
+    const bytes = new Uint8Array([...header, ...new Uint8Array(8000), ...ispe])
+
+    expect(rasterImageSize(bytes)).toEqual([1920, 1080])
+  })
+
   test('is null for a PNG signature without its IHDR chunk', () => {
     const bytes = pngHeader(640, 480)
     bytes.set([0, 0, 0, 0], 12)

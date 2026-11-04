@@ -66,16 +66,39 @@ function jpegSize(bytes: Uint8Array, view: DataView): Size | null {
   let at = 2
   while (at + 9 < bytes.length) {
     if (bytes[at] !== 0xff) return null
-    const marker = bytes[at + 1]
-    const end = Math.min(bytes.length, at + 2 + view.getUint16(at + 2))
+    // Any number of 0xFF fill bytes may come before a marker.
+    let markerAt = at + 1
+    while (markerAt < bytes.length && bytes[markerAt] === 0xff) markerAt++
+    if (markerAt + 7 >= bytes.length) return null
+    const marker = bytes[markerAt]
     // A segment's length counts its own two bytes, so less is a broken file.
-    if (end < at + 4) return null
-    if (marker === APP1) orientation = exifOrientation(bytes, view, at, end) ?? orientation
+    const length = view.getUint16(markerAt + 1)
+    if (length < 2) return null
+    const segment = markerAt - 1
+    const end = Math.min(bytes.length, markerAt + 1 + length)
+    if (marker === APP1) orientation = exifOrientation(bytes, view, segment, end) ?? orientation
     if (isStartOfFrame(marker)) {
-      const size: Size = [view.getUint16(at + 7), view.getUint16(at + 5)]
+      const size: Size = [view.getUint16(markerAt + 6), view.getUint16(markerAt + 4)]
       return orientation >= 5 && orientation <= 8 ? [size[1], size[0]] : size
     }
     at = end
+  }
+  return null
+}
+
+const ISPE = [0x69, 0x73, 0x70, 0x65]
+
+/**
+ * An AVIF's size from its `ispe` box, wherever the file puts it: the box's type, then its
+ * version and flags, then two 32-bit sizes. A match counts only when the size the box header
+ * before it gives holds all of that and fits in the file.
+ */
+function avifSize(bytes: Uint8Array, view: DataView): Size | null {
+  for (let at = 4; at + 16 <= bytes.length; at++) {
+    if (ISPE.some((byte, index) => bytes[at + index] !== byte)) continue
+    const boxSize = view.getUint32(at - 4)
+    if (boxSize < 20 || at - 4 + boxSize > bytes.length) continue
+    return [view.getUint32(at + 8), view.getUint32(at + 12)]
   }
   return null
 }
@@ -100,9 +123,7 @@ export function rasterImageSize(bytes: Uint8Array): Size | null {
   }
   if (bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8) return jpegSize(bytes, view)
   if (bytes.length > 32 && ascii(bytes, 4, 4) === 'ftyp' && /avi[fs]/.test(ascii(bytes, 8, 4))) {
-    const at = ascii(bytes, 0, Math.min(bytes.length, 4096)).indexOf('ispe')
-    // The box name, version and flags, then two 32-bit sizes.
-    if (at > 0 && at + 16 <= bytes.length) return [view.getUint32(at + 8), view.getUint32(at + 12)]
+    return avifSize(bytes, view)
   }
   return null
 }

@@ -2,8 +2,9 @@
 // unchanged: the crate, the workspace manifest and lockfile, and the pinned toolchain. Their hash
 // is written beside the module, so CI can restore both from a cache and skip Cargo.
 //   bun scripts/wasm.ts [--check]
+import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 
 import * as v from 'valibot'
 
@@ -12,7 +13,7 @@ const OUTPUT = join(PACKAGE, 'wasm', 'html-engine.wasm')
 const STAMP = `${OUTPUT}.sha256`
 const TARGET = 'wasm32-unknown-unknown'
 
-const metadataSchema = v.object({ target_directory: v.string(), workspace_root: v.string() })
+const metadataSchema = v.object({ target_directory: v.string() })
 
 async function cargo(args: string[]): Promise<string> {
   const child = Bun.spawn(['cargo', ...args], { cwd: PACKAGE, stdout: 'pipe', stderr: 'inherit' })
@@ -21,11 +22,19 @@ async function cargo(args: string[]): Promise<string> {
   return stdout
 }
 
-async function workspace() {
+/** The Cargo workspace root, found by its lockfile, so a current module needs no Cargo. */
+function workspaceRoot(from = PACKAGE): string {
+  for (let dir = from; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, 'Cargo.lock'))) return dir
+    if (dirname(dir) === dir) throw new Error(`No Cargo.lock above ${from}`)
+  }
+}
+
+async function targetDirectory(): Promise<string> {
   const text = await cargo(['metadata', '--format-version', '1', '--no-deps'])
   const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), metadataSchema), text)
   if (!parsed.success) throw new Error('cargo metadata returned an unexpected shape')
-  return parsed.output
+  return parsed.output.target_directory
 }
 
 /** A hash of every file the module is built from, by path relative to the workspace root. */
@@ -58,7 +67,7 @@ async function builtHash(): Promise<string | null> {
   }
 }
 
-const { target_directory: targetDirectory, workspace_root: root } = await workspace()
+const root = workspaceRoot()
 const hash = await sourcesHash(root)
 if ((await builtHash()) === hash) {
   process.stdout.write('html-engine.wasm is up to date\n')
@@ -67,7 +76,8 @@ if ((await builtHash()) === hash) {
 } else {
   await cargo(['build', '--release', '--target', TARGET, '--manifest-path', 'crate/Cargo.toml'])
   await mkdir(join(PACKAGE, 'wasm'), { recursive: true })
-  await copyFile(join(targetDirectory, TARGET, 'release', 'open_pencil_html_engine.wasm'), OUTPUT)
+  const target = await targetDirectory()
+  await copyFile(join(target, TARGET, 'release', 'open_pencil_html_engine.wasm'), OUTPUT)
   await writeFile(STAMP, `${hash}\n`)
   process.stdout.write(`Built ${relative(root, OUTPUT)}\n`)
 }
