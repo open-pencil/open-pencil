@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { exportFigFile, parseFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'

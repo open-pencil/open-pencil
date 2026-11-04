@@ -3,8 +3,7 @@ import { expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const zero = { x: 0, y: 0 }
 
 /** An open path through four points: 0 → 1 → 2 → 3. */

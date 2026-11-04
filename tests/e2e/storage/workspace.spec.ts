@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { openAppMenu } from '#tests/helpers/menu'
 
@@ -53,7 +55,7 @@ async function memoryBucket(page: Page): Promise<Map<string, Buffer>> {
 test('configured storage lists previews through ranges before opening the document', async ({
   page
 }) => {
-  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  const fixture = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
   let fullDocumentGets = 0
   let rangeGets = 0
   await page.route('https://s3.example.com/**', async (route) => {
@@ -222,7 +224,7 @@ test('Delete removes a stored document from the bucket, and a document deleted e
   ]) {
     objects.set(
       `open_pencil_storage/canvases/${id}.fig`,
-      readFileSync('tests/fixtures/gold-preview.fig')
+      readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
     )
     objects.set(
       `open_pencil_storage/canvases/${id}.meta.json`,

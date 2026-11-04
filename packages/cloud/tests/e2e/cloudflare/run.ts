@@ -1,7 +1,9 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 
-import { cloudDeployPath, cloudPackagePath, repositoryPath } from '#cloud-tests/helpers/paths'
+import { cloudDeployPath, cloudPackagePath } from '#cloud-tests/helpers/paths'
 import { composeCommand, runProcess } from '#cloud-tests/helpers/process'
+
+import { repoPath } from '@open-pencil/test-support/paths'
 
 // Runs the Cloudflare Worker under `wrangler dev`, against PostgreSQL and SeaweedFS from Compose,
 // then checks it from outside as clients reach it: see checks.ts. The Worker is a copy of the
@@ -96,7 +98,7 @@ try {
       'wrangler',
       'dev',
       '--assets',
-      repositoryPath('dist-cloud'),
+      repoPath('dist-cloud'),
       '--ip',
       '127.0.0.1',
       '--port',

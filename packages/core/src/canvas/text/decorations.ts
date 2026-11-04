@@ -4,6 +4,7 @@ import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 
 import type { TextLayout } from '#core/canvas/text/layout'
+import { drawnBaseline } from '#core/canvas/text/layout/lines'
 import { styleRunColor } from '#core/canvas/text/paragraph'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import type { PreparedText } from '#core/canvas/text/preparation/cache'
@@ -134,7 +135,8 @@ function drawKeycapFrames(
         (item) => source >= item.start && source < item.start + item.length
       )
       runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
-      drawKeycapFrame(ck, canvas, glyph.x, glyph.y, glyph.fontSize, runPaint)
+      // On the whole pixel its character is drawn on.
+      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y, y), glyph.fontSize, runPaint)
     }
   } finally {
     runPaint.delete()

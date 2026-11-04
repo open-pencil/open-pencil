@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import {
   FIG_PACKAGE_STATUS,
   figArchiveKind,
@@ -21,6 +20,7 @@ import {
   getSchemaBytes,
   initCodec
 } from '@open-pencil/kiwi/fig/codec'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 /** A 3 × 2 PNG, as a `.fig` thumbnail chunk holds one. */

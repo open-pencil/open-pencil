@@ -5,6 +5,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
 import { createCloudAPIClient } from '@open-pencil/cloud/client'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { StorageRevisionConflictError } from '@/app/integrations/storage'
 import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adapter'
@@ -448,7 +449,7 @@ describe('Cloud storage adapter', () => {
     const server = cloudServer()
     const storage = adapter(server)
     const id = crypto.randomUUID()
-    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const figBytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
     await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
     const thumbnail = await storage.getThumbnail?.(id)
     expect(thumbnail?.subarray(0, 8)).toEqual(
@@ -461,7 +462,7 @@ describe('Cloud storage adapter', () => {
     const server = cloudServer()
     const storage = adapter(server)
     const id = crypto.randomUUID()
-    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const figBytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
     await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
     server.answerRanges('ignored')
     await expect(storage.getThumbnail?.(id) ?? Promise.resolve()).rejects.toThrow('HTTP 200')
@@ -472,7 +473,7 @@ describe('Cloud storage adapter', () => {
     const server = cloudServer()
     const storage = adapter(server)
     const id = crypto.randomUUID()
-    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const figBytes = new Uint8Array(readFileSync(repoPath('tests/fixtures/gold-preview.fig')))
     await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
     const preview = () => storage.getThumbnail?.(id) ?? Promise.resolve()
 

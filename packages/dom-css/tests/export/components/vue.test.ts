@@ -24,7 +24,6 @@ import {
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
-import { cssRules, fileText } from '#dom-css-tests/helpers'
 import type { ComponentStyling } from '#dom-css/export'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
@@ -32,6 +31,7 @@ import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { cssRules, fileText } from '@open-pencil/test-support/dom-css'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']

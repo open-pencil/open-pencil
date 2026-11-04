@@ -2,8 +2,7 @@ import { describe, test, expect } from 'bun:test'
 
 import { createEditor, gridNudge } from '@open-pencil/core'
 
-import { getNodeOrThrow } from '../helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 describe('nudgeSelected', () => {
   function setup() {
     const editor = createEditor()

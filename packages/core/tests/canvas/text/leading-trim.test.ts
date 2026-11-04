@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -60,7 +60,7 @@ function layOut(props: Partial<SceneNode>): TextLayout {
   return layOutNode(textNode(props))
 }
 
-/** Figma's trimmed height: cap height to last baseline, to the nearest pixel. */
+/** Figma's trimmed height: cap height to last baseline, to the nearest pixel, as it draws them. */
 function trimmedHeight(capHeight: number, below = 0): number {
   return Math.round(capHeight + below)
 }
@@ -214,8 +214,8 @@ describe('cap-height leading trim', () => {
     for (const fontSize of BADGE_FONT_SIZES) {
       const capHeight = INTER_CAP_HEIGHT_EMS * fontSize
       const layout = layOut({ text: '75', fontSize })
-      // The box ends at the baseline; the rest of the cap height stands above it.
-      expect(baselines(layout)[0]).toBe(trimmedHeight(capHeight))
+      // The box starts at the cap height and ends where the baseline is drawn.
+      expect(baselines(layout)[0]).toBeCloseTo(capHeight, 2)
       expect(layout.getHeight()).toBe(trimmedHeight(capHeight))
       expect(inkRows(layout).top).toBeLessThanOrEqual(1)
       layout.delete()
@@ -228,7 +228,7 @@ describe('cap-height leading trim', () => {
     expect(baselines(layout)).toHaveLength(2)
     expect(second - first).toBeCloseTo(22, 2)
     expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 22))
-    expect(layout.getHeight()).toBeCloseTo(second, 2)
+    expect(layout.getHeight()).toBe(Math.round(second))
     layout.delete()
   })
 
@@ -237,7 +237,7 @@ describe('cap-height leading trim', () => {
     const [first, second] = baselines(layout)
     expect(second - first).toBeCloseTo(30, 2)
     expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 30))
-    expect(layout.getHeight()).toBeCloseTo(second, 2)
+    expect(layout.getHeight()).toBe(Math.round(second))
     layout.delete()
   })
 
@@ -246,7 +246,7 @@ describe('cap-height leading trim', () => {
     const [first, second] = baselines(layout)
     expect(second - first).toBeCloseTo((interAscenderEms + interDescenderEms) * 20, 0)
     expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, second - first))
-    expect(layout.getHeight()).toBeCloseTo(second, 2)
+    expect(layout.getHeight()).toBe(Math.round(second))
     layout.delete()
   })
 
@@ -255,7 +255,7 @@ describe('cap-height leading trim', () => {
     const [first, second] = baselines(layout)
     expect(second - first).toBeCloseTo(32, 2)
     expect(layout.getHeight()).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 32))
-    expect(layout.getHeight()).toBeCloseTo(second, 2)
+    expect(layout.getHeight()).toBe(Math.round(second))
     layout.delete()
   })
 
@@ -266,12 +266,12 @@ describe('cap-height leading trim', () => {
       textAutoResize: 'NONE' as const,
       textTruncation: 'ENDING' as const
     }
-    // The last baseline sits on the trimmed height, to the nearest pixel: 14.55 + 22 is 37.
-    const lastBaseline = trimmedHeight(INTER_CAP_HEIGHT_EMS * 20, 22)
-    for (const height of [lastBaseline, lastBaseline + 1]) {
+    // The last baseline is drawn on the trimmed height, to the nearest pixel: 14.55 + 22 is 37.
+    const lastBaseline = INTER_CAP_HEIGHT_EMS * 20 + 22
+    for (const height of [trimmedHeight(lastBaseline), trimmedHeight(lastBaseline) + 1]) {
       const fits = layOut({ ...truncated, height })
       expect(baselines(fits)).toHaveLength(2)
-      expect(baselines(fits)[1]).toBe(lastBaseline)
+      expect(baselines(fits)[1]).toBeCloseTo(lastBaseline, 2)
       fits.delete()
     }
     const overflows = layOut({ ...truncated, height: 36 })
@@ -309,7 +309,7 @@ describe('cap-height leading trim', () => {
       fontSize: 40,
       styleRuns: [{ start: 0, length: 1, style: { fontSize: 12 } }]
     })
-    expect(baselines(layout)[0]).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 40))
+    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 40, 2)
     expect(inkRows(layout).top).toBeLessThanOrEqual(1)
     layout.delete()
   })
@@ -338,14 +338,14 @@ describe('cap-height leading trim', () => {
     expect(trimmedHeight(displayCapHeightEms * fontSize)).not.toBe(
       trimmedHeight(INTER_CAP_HEIGHT_EMS * fontSize)
     )
-    expect(baselines(layout)[0]).toBe(trimmedHeight(displayCapHeightEms * fontSize))
+    expect(baselines(layout)[0]).toBeCloseTo(displayCapHeightEms * fontSize, 2)
     expect(layout.getHeight()).toBe(trimmedHeight(displayCapHeightEms * fontSize))
     layout.delete()
   })
 
   test('measures the cap height from the glyphs of a font that declares none', () => {
     const layout = layOut({ text: 'HE', fontSize: 20, fontFamily: 'No Cap Height' })
-    expect(baselines(layout)[0]).toBe(trimmedHeight(INTER_CAP_HEIGHT_EMS * 20))
+    expect(baselines(layout)[0]).toBeCloseTo(INTER_CAP_HEIGHT_EMS * 20, 2)
     expect(inkRows(layout).top).toBeLessThanOrEqual(1)
     layout.delete()
   })
@@ -353,7 +353,7 @@ describe('cap-height leading trim', () => {
   test('trims to a typical cap height a font that declares a zero one', () => {
     const node = textNode({ text: 'HE', fontSize: 20, fontFamily: 'Zero Cap Height' })
     const layout = layOutNode(node)
-    expect(baselines(layout)[0]).toBe(trimmedHeight(TYPICAL_CAP_HEIGHT_EMS * 20))
+    expect(baselines(layout)[0]).toBeCloseTo(TYPICAL_CAP_HEIGHT_EMS * 20, 2)
     expect(estimateTextSize(node).height).toBeCloseTo(layout.getHeight(), 2)
     layout.delete()
   })

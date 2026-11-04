@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { TextNode } from '@figma/plugin-typings/plugin-api-standalone'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
@@ -59,5 +59,35 @@ describe('plugin text sizing', () => {
     expect(mode()).toBe('NONE')
     node.characters = 'Hello there, this wraps across lines'
     expect(size(node)).toEqual([100, 10])
+  })
+
+  // Figma desktop 126 (2026-11-04): a line height of zero, or one under half a pixel as a
+  // percent, sets the lines on top of each other, and the text is 0 px tall.
+  test('a line height of zero makes text 0 px tall', () => {
+    for (const lineHeight of [
+      { unit: 'PIXELS', value: 0 },
+      { unit: 'PERCENT', value: 0 },
+      { unit: 'PERCENT', value: 2 }
+    ] as const) {
+      const node = text()
+      node.fontSize = 14
+      node.lineHeight = lineHeight
+      node.characters = 'H\nH\nH'
+      expect(node.height).toBe(0)
+    }
+  })
+
+  test('a single line is its exact line height in pixels, rounded up', () => {
+    for (const [fontSize, value, height] of [
+      [9, 11.25, 12],
+      [13, 16.25, 17],
+      [16, 22.5, 23]
+    ] as const) {
+      const node = text()
+      node.fontSize = fontSize
+      node.lineHeight = { unit: 'PIXELS', value }
+      node.characters = 'H'
+      expect(node.height).toBe(height)
+    }
   })
 })

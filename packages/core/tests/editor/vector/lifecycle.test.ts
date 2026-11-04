@@ -4,8 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { handleVisibleVertices } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const TRIANGLE: VectorNetwork = {
   vertices: [
     { x: 0, y: 0 },

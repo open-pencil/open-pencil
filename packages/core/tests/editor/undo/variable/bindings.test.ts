@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 
 function pageId(editor: ReturnType<typeof createEditor>): string {

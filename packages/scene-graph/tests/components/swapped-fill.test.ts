@@ -3,8 +3,7 @@ import { expect, test } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
-import { expectDefined } from '../helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const solid = (r: number, g: number, b: number): SceneNode['fills'] => [
   { type: 'SOLID', color: { r, g, b, a: 1 }, opacity: 1, visible: true }
 ]

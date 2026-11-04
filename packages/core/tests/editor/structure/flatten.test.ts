@@ -9,6 +9,7 @@ import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 const cleanups: (() => void)[] = []
 
@@ -33,17 +34,17 @@ async function createEditorWithRenderer() {
 }
 
 async function loadInterRegular() {
-  const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+  const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', data)
 }
 
 async function loadInterBold() {
-  const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
+  const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Bold', data)
 }
 
 async function loadNotoSansSC() {
-  const file = Bun.file('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+  const file = Bun.file(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf'))
   const text = await file.slice(0, 32).text()
   if (text.startsWith('version ')) return false
   const data = await file.arrayBuffer()

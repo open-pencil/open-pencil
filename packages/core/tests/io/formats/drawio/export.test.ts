@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { parseDrawIOFile } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {

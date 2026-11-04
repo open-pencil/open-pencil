@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '#core/canvas'
 import { DEFAULT_SELECTION_THEME } from '#core/constants'
 import { initCanvasKit } from '#core/io/formats/raster/headless'

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '#core/editor'
 import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
