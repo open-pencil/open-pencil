@@ -227,4 +227,17 @@ describe('text that sizes its own width', () => {
     expect(graph.getNode(text.id)?.width).toBe(100)
     expect(frame.width).toBe(100)
   })
+
+  // Measured in Figma: ending truncation on auto-width text makes it one line, so a narrower
+  // max width shortens that line rather than growing the box.
+  test('stays one line when its max width shrinks under ending truncation without a line cap', () => {
+    const wide = resized(
+      autoWidthText({ ...FIGMA_TEXT, maxWidth: 400, textTruncation: 'ENDING', maxLines: null })
+    )
+    const narrow = changed(wide, { maxWidth: 100 })
+
+    expect(lines(wide)).toBe(1)
+    expect([narrow.width, narrow.height]).toEqual([100, wide.height])
+    expect(lines(narrow)).toBe(1)
+  })
 })
