@@ -89,3 +89,36 @@ describe('strokes included in auto layout', () => {
     expect([child.x, child.y, child.width]).toEqual([14, 14, 72])
   })
 })
+
+describe('strokes included in auto layout with negative spacing', () => {
+  function overlappingRow(strokesIncludedInLayout: boolean) {
+    const graph = new SceneGraph()
+    const row = graph.createNode('FRAME', graph.getPages()[0].id, {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: -10,
+      paddingTop: 10,
+      paddingRight: 10,
+      paddingBottom: 10,
+      paddingLeft: 10,
+      strokes: [BLACK],
+      strokesIncludedInLayout
+    })
+    const children = [0, 1].map(() =>
+      graph.createNode('RECTANGLE', row.id, { width: 50, height: 50 })
+    )
+    computeAllLayouts(graph)
+    return { row, children }
+  }
+
+  test('keeps the stroke inset on the side the overlap pads', () => {
+    const without = overlappingRow(false)
+    const included = overlappingRow(true)
+
+    expect(included.row.width).toBe(without.row.width + 8)
+    expect(included.children.map((child) => child.x)).toEqual(
+      without.children.map((child) => child.x + 4)
+    )
+  })
+})

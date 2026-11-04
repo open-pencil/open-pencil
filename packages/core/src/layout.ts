@@ -2,6 +2,7 @@ import {
   Align,
   Direction,
   Display,
+  Edge,
   FlexDirection,
   Gutter,
   MeasureMode,
@@ -53,6 +54,7 @@ import {
   mapGridTrack,
   mapJustify,
   parentStretchedAxis,
+  layoutPadding,
   setLayoutPadding
 } from './layout/yoga-helpers'
 
@@ -232,9 +234,10 @@ function insertFlexChildren(
     yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
   }
   if (overlap > 0 && hasInFlowChild) {
-    if (!horizontal) yogaParent.setPadding(Edge.Bottom, parent.paddingBottom + overlap)
-    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, parent.paddingLeft + overlap)
-    else yogaParent.setPadding(Edge.Right, parent.paddingRight + overlap)
+    const padding = layoutPadding(parent)
+    if (!horizontal) yogaParent.setPadding(Edge.Bottom, padding.bottom + overlap)
+    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, padding.left + overlap)
+    else yogaParent.setPadding(Edge.Right, padding.right + overlap)
   }
 }
 

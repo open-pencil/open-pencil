@@ -41,11 +41,24 @@ function includedStrokeWeights(
 
 /** A layout container's padding, with the strokes it includes in layout added to each side. */
 export function setLayoutPadding(yogaNode: YogaNode, node: SceneNode): void {
+  const padding = layoutPadding(node)
+  yogaNode.setPadding(Edge.Top, padding.top)
+  yogaNode.setPadding(Edge.Right, padding.right)
+  yogaNode.setPadding(Edge.Bottom, padding.bottom)
+  yogaNode.setPadding(Edge.Left, padding.left)
+}
+
+/** A layout container's padding on each side, with the strokes it includes in layout added. */
+export function layoutPadding(
+  node: SceneNode
+): Record<'top' | 'right' | 'bottom' | 'left', number> {
   const stroke = includedStrokeWeights(node)
-  yogaNode.setPadding(Edge.Top, node.paddingTop + stroke.top)
-  yogaNode.setPadding(Edge.Right, node.paddingRight + stroke.right)
-  yogaNode.setPadding(Edge.Bottom, node.paddingBottom + stroke.bottom)
-  yogaNode.setPadding(Edge.Left, node.paddingLeft + stroke.left)
+  return {
+    top: node.paddingTop + stroke.top,
+    right: node.paddingRight + stroke.right,
+    bottom: node.paddingBottom + stroke.bottom,
+    left: node.paddingLeft + stroke.left
+  }
 }
 
 export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): void {
