@@ -36,6 +36,7 @@
   "noMatchingFiles": "「{query}」に一致するファイルはありません。",
   "documentActions": "{name} の操作",
   "deleteDocument": "削除",
+  "removeFromRecent": "最近使用した項目から削除",
   "deleteDocumentConfirmation": "「{name}」を削除しますか？",
   "deleteDocumentDescription": "このドキュメントは開けるすべての人に対して削除されます。この操作は元に戻せません。",
   "deleteDocumentFailed": "「{name}」を削除できませんでした。もう一度お試しください。",

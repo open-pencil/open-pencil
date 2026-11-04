@@ -148,6 +148,12 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     grow: 1,
     align_self: 'STRETCH'
   }),
+  batch_update: (t) => ({
+    operations: JSON.stringify([
+      { id: t.frame, props: { direction: 'VERTICAL', spacing: 4, name: 'Batched' } },
+      { id: t.rect, props: { opacity: 0.3, corner_radius: 5 } }
+    ])
+  }),
   update_node: (t) => ({
     id: t.placed,
     x: 5,

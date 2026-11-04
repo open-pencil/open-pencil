@@ -1,0 +1,1 @@
+- HTML export, Tailwind JSX, canvas islands, and `getCSSAsync()` blur layers and shadows as the canvas draws them, and text keeps its shadows; layer and background blurs were 2.3 times as strong, and text shadows were dropped. Imported CSS shadows draw as the browser draws them.

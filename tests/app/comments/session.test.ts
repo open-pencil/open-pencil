@@ -126,7 +126,10 @@ test('going to a comment opens its page and its thread', async () => {
   const store = openDocument()
   const first = store.state.currentPageId
   const added = comment(store, 40, 40, 'on page one')
-  store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+  store.preparationController.acknowledgePresentation({
+    renderVersion: Number.MAX_SAFE_INTEGER,
+    sceneVersion: Number.MAX_SAFE_INTEGER
+  })
   await store.switchPage(store.graph.addPage('Second').id)
   expect(store.state.currentPageId).not.toBe(first)
 

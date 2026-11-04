@@ -1,5 +1,6 @@
 import type { Effect, Fill, Stroke, TextLength } from '@open-pencil/scene-graph'
 import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
+import { blurSigma } from '@open-pencil/scene-graph/geometry'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -25,26 +26,71 @@ export type EffectFieldCSS = (field: string, literal: string) => string
 
 const LITERAL: EffectFieldCSS = (_field, literal) => literal
 
-function shadowToCSS(effect: Effect, index: number, css: EffectFieldCSS): string {
+function px(value: number): string {
+  return `${Number(value.toFixed(3))}px`
+}
+
+/**
+ * An effect's blur as a CSS length of `sigmas` times the Gaussian the canvas blurs it by: a
+ * literal length, or the bound variable, whose value is a Figma radius, scaled in `calc()`.
+ */
+function blurLength(effect: Effect, index: number, css: EffectFieldCSS, sigmas: number): string {
+  const literal = `${effect.radius}px`
+  const bound = css(`effects/${index}/radius`, literal)
+  if (bound !== literal) return `calc(${bound} * ${Number((sigmas * blurSigma(1)).toFixed(6))})`
+  return px(sigmas * blurSigma(effect.radius))
+}
+
+/**
+ * A shadow as `box-shadow` writes it, or as `text-shadow` does without its spread. CSS blurs a
+ * shadow by half its blur length, so the length is twice the sigma the canvas blurs it by.
+ */
+function shadowToCSS(effect: Effect, index: number, css: EffectFieldCSS, spread = true): string {
   const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
   const length = (property: string, value: number) =>
     css(`effects/${index}/${property}`, `${value}px`)
-  return [
+  const parts = [
     `${inset}${length('offsetX', effect.offset.x)}`,
     length('offsetY', effect.offset.y),
-    length('radius', effect.radius),
-    length('spread', effect.spread),
-    css(`effects/${index}/color`, cssColor(effect.color))
-  ].join(' ')
+    blurLength(effect, index, css, 2)
+  ]
+  if (spread) parts.push(length('spread', effect.spread))
+  parts.push(css(`effects/${index}/color`, cssColor(effect.color)))
+  return parts.join(' ')
 }
 
-/** The first effect as a drop shadow, as a text's `text-shadow` writes it. */
-export function dropShadowToCSS(effect: Effect | undefined, css = LITERAL): string | undefined {
-  if (effect?.type !== 'DROP_SHADOW' || !effect.visible) return undefined
-  return shadowToCSS(effect, 0, css)
+/** A blur as CSS's `blur()` takes it: the sigma itself, as the canvas blurs by. */
+function blurToCSS(effect: Effect, index: number, css: EffectFieldCSS): string {
+  return `blur(${blurLength(effect, index, css, 1)})`
 }
 
 const isShadow = (effect: Effect) => effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
+
+/** The visible effects with the index a bound field names them by. */
+function visibleEffects(effects: Effect[]): [number, Effect][] {
+  return [...effects.entries()].filter(([, effect]) => effect.visible)
+}
+
+/**
+ * The blurs as the canvas draws them: the first visible layer blur as `filter`, and every
+ * background blur in turn as `backdrop-filter`.
+ */
+function addBlurs(
+  style: DesignStyleDeclaration,
+  visible: [number, Effect][],
+  css: EffectFieldCSS
+): void {
+  const layer = visible.find(
+    ([, effect]) => effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR'
+  )
+  if (layer) style.filter = blurToCSS(layer[1], layer[0], css)
+  const backdrop = visible.filter(([, effect]) => effect.type === 'BACKGROUND_BLUR')
+  if (backdrop.length > 0) {
+    style['backdrop-filter'] = backdrop
+      .map(([index, effect]) => blurToCSS(effect, index, css))
+      .join(' ')
+  }
+}
 
 /**
  * Every visible shadow, in order, plus layer and background blur. `css` names the variable a
@@ -52,17 +98,30 @@ const isShadow = (effect: Effect) => effect.type === 'DROP_SHADOW' || effect.typ
  */
 export function effectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  const visible = [...effects.entries()].filter(([, effect]) => effect.visible)
+  const visible = visibleEffects(effects)
   const shadows = visible.filter(([, effect]) => isShadow(effect))
   if (shadows.length > 0)
     style['box-shadow'] = shadows
       .map(([index, effect]) => shadowToCSS(effect, index, css))
       .join(', ')
-  for (const [index, effect] of visible) {
-    const blur = () => `blur(${css(`effects/${index}/radius`, `${effect.radius}px`)})`
-    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') style.filter = blur()
-    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = blur()
+  addBlurs(style, visible, css)
+  return style
+}
+
+/**
+ * Text's effects: each visible drop shadow as `text-shadow`, which has no spread and shadows the
+ * glyphs, and its layer and background blurs. An inner shadow has no form CSS gives text.
+ */
+export function textEffectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = {}
+  const visible = visibleEffects(effects)
+  const shadows = visible.filter(([, effect]) => effect.type === 'DROP_SHADOW')
+  if (shadows.length > 0) {
+    style['text-shadow'] = shadows
+      .map(([index, effect]) => shadowToCSS(effect, index, css, false))
+      .join(', ')
   }
+  addBlurs(style, visible, css)
   return style
 }
 

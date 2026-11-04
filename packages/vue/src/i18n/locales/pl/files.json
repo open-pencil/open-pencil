@@ -36,6 +36,7 @@
   "noMatchingFiles": "Brak plików pasujących do „{query}”.",
   "documentActions": "Działania dla {name}",
   "deleteDocument": "Usuń",
+  "removeFromRecent": "Usuń z ostatnich",
   "deleteDocumentConfirmation": "Usunąć „{name}”?",
   "deleteDocumentDescription": "Dokument zostanie usunięty dla wszystkich, którzy mogą go otworzyć. Tej operacji nie można cofnąć.",
   "deleteDocumentFailed": "Nie udało się usunąć „{name}”. Spróbuj ponownie.",

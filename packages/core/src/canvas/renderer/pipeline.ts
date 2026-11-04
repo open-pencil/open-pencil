@@ -306,7 +306,11 @@ export function render(
   )
 
   if (layer !== 'overlays') {
-    if (requiresUncachedSceneRender) r.tiledScenePending = false
+    // Drawn directly, the whole scene is on screen this frame.
+    if (requiresUncachedSceneRender) {
+      r.tiledScenePending = false
+      r.tiledSceneCovered = true
+    }
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 

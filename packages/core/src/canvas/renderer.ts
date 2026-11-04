@@ -409,10 +409,21 @@ export class SkiaRenderer {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 
-  replaceSurface(surface: Surface): void {
-    this.tiledScene.destroy()
-    // Live textures belong to the old surface's context, so they go before it does.
-    releaseLiveImages(this)
+  /**
+   * Draws into `surface` from now on. A surface on the same GPU context, such as the canvas
+   * resized, keeps the rendered tiles and live textures, which belong to the context; only
+   * newly exposed tiles render. A new context starts them over.
+   */
+  replaceSurface(surface: Surface, { sameContext = false }: { sameContext?: boolean } = {}): void {
+    if (sameContext) {
+      for (const live of this.images.live.values()) {
+        if (live.surface === this.surface) live.surface = surface
+      }
+    } else {
+      this.tiledScene.destroy()
+      // Live textures belong to the old surface's context, so they go before it does.
+      releaseLiveImages(this)
+    }
     this.surface.delete()
     this.surface = surface
     this.invalidateScenePicture()

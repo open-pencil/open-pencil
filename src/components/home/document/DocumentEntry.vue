@@ -43,8 +43,11 @@ const {
   previewURL?: string | null
   view?: 'grid' | 'list'
   disabled?: boolean
-  /** Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them. */
-  menu?: { actions: string; delete: string }
+  /**
+   * Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them.
+   * `destructive: false` marks an item that only takes the entry off a list, such as Recents.
+   */
+  menu?: { actions: string; delete: string; destructive?: boolean }
   class?: HTMLAttributes['class']
 }>()
 const emit = defineEmits<{ open: []; delete: [] }>()
@@ -53,7 +56,12 @@ const { files } = useI18n()
 const kindLabel = computed(() =>
   kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
 )
-const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-error' })
+const menuUI = computed(() =>
+  useMenuUI({
+    content: 'min-w-40',
+    item: menu?.destructive === false ? 'justify-start gap-2' : 'justify-start gap-2 text-error'
+  })
+)
 </script>
 
 <template>
@@ -123,7 +131,8 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
                   data-test-id="home-document-delete"
                   @select="emit('delete')"
                 >
-                  <icon-lucide-trash-2 :class="menuUI.icon" />
+                  <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+                  <icon-lucide-x v-else :class="menuUI.icon" />
                   {{ menu.delete }}
                 </DropdownMenuItem>
               </MenuScrollArea>
@@ -135,7 +144,8 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
         <ContextMenuContent :class="menuUI.content">
           <MenuScrollArea>
             <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
-              <icon-lucide-trash-2 :class="menuUI.icon" />
+              <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+              <icon-lucide-x v-else :class="menuUI.icon" />
               {{ menu.delete }}
             </ContextMenuItem>
           </MenuScrollArea>

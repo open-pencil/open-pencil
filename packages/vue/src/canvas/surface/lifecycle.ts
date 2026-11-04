@@ -147,9 +147,18 @@ export function createCanvasSurfaceManager({
     return true
   }
 
-  function acknowledgePresentation() {
+  /**
+   * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
+   * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
+   * Only a canvas drawing the editor's own state reports, since the versions are the editor's:
+   * a split pane showing another view, perhaps another page, says nothing about this one.
+   */
+  function reportPresented(renderer: SkiaRenderer) {
+    const layer = options?.layer ?? 'full'
+    if (layer === 'overlays' || (layer === 'scene' && !renderer.tiledSceneCovered)) return
     const renderedState = options?.getRenderState?.() ?? editor.state
-    options?.onPresented?.({
+    if (renderedState !== editor.state) return
+    editor.reportPresented({
       renderVersion: renderedState.renderVersion,
       sceneVersion: renderedState.sceneVersion
     })
@@ -181,7 +190,7 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
-    acknowledgePresentation()
+    reportPresented(state.renderer)
     if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
     }
@@ -218,8 +227,13 @@ export function createCanvasSurfaceManager({
       createSurface(canvas, { reloadFonts: true })
       return
     }
-    state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
-    state.renderer.replaceSurface(surface)
+    // Tiles keep the colours they were recorded in, so a resize that changes the presentation
+    // color space starts them over like a new context.
+    const presentation = result.presentation ?? 'srgb'
+    const sameContext =
+      result.glHandle === null && state.renderer.presentationColorSpace === presentation
+    state.renderer.presentationColorSpace = presentation
+    state.renderer.replaceSurface(surface, { sameContext })
     renderNow()
   }
 

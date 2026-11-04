@@ -36,6 +36,7 @@
   "noMatchingFiles": "Aucun fichier ne correspond à « {query} ».",
   "documentActions": "Actions pour {name}",
   "deleteDocument": "Supprimer",
+  "removeFromRecent": "Retirer des récents",
   "deleteDocumentConfirmation": "Supprimer « {name} » ?",
   "deleteDocumentDescription": "Le document est supprimé pour toutes les personnes qui peuvent l’ouvrir. Cette action est irréversible.",
   "deleteDocumentFailed": "Impossible de supprimer « {name} ». Réessayez.",

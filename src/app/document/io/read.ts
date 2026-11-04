@@ -68,6 +68,14 @@ export function createOpenActions({
       await fitCurrentPageToViewport()
       load.update({ phase: 'preparing-render', detail: state.documentName })
       editor.requestRender()
+      // The document is open by now: a canvas that cannot show it fails the render, not the read.
+      await preparationController
+        .waitForPresentation(load.id, editor.state)
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error)
+          load.fail({ code: 'render-failed', message, retryable: true })
+          toast.error(notificationMessages.get().operationFailed({ error: message }))
+        })
       succeeded = true
     } catch (e) {
       if (load.signal.aborted) return

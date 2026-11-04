@@ -37,7 +37,10 @@ describe("a document's remembered view", () => {
     const store = openedFromPath()
     rememberRecentFile(PATH, 'design')
     const second = store.graph.addPage('Second').id
-    store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+    store.preparationController.acknowledgePresentation({
+      renderVersion: Number.MAX_SAFE_INTEGER,
+      sceneVersion: Number.MAX_SAFE_INTEGER
+    })
     await store.switchPage(second)
     store.centerOn(300, 200, 2)
 
@@ -81,7 +84,10 @@ describe("a document's remembered view", () => {
     }))
     expect(rememberedDocumentView(store)).toBeNull()
 
-    store.preparationController.acknowledgePresentation(Number.MAX_SAFE_INTEGER)
+    store.preparationController.acknowledgePresentation({
+      renderVersion: Number.MAX_SAFE_INTEGER,
+      sceneVersion: Number.MAX_SAFE_INTEGER
+    })
     await store.switchPage(hidden.id)
     rememberDocumentView(store)
     expect(recentDocuments.value[0]?.view?.pageId).toBe(hidden.id)
