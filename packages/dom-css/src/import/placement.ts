@@ -8,10 +8,14 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { DesignElement } from '../types'
 import { mergedStyle, pickStyle } from './css-values'
 
-/** Where the engine that styled the document laid a layer out, and its lines of text. */
+/**
+ * Where the engine that styled the document laid a layer out. For text, `box` is the box its
+ * lines stack in, `lines` how many there are, and `extent` the box the words themselves take.
+ */
 export interface CapturedBox {
   box: Rect
   lines?: number
+  extent?: Rect
 }
 
 /** Captured boxes by the id of the layer built for them. */
@@ -33,17 +37,30 @@ const SIZE_FIELDS = [
   'counterAxisSizing'
 ] as const satisfies readonly (keyof SceneNode)[]
 
-/** The element's own box, when its layout was recorded. */
+const PAGE_ORIGIN: Rect = { x: 0, y: 0, width: 0, height: 0 }
+
+function union(rects: readonly Rect[]): Rect {
+  const left = Math.min(...rects.map((rect) => rect.x))
+  const top = Math.min(...rects.map((rect) => rect.y))
+  const right = Math.max(...rects.map((rect) => rect.x + rect.width))
+  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height))
+  return { x: left, y: top, width: right - left, height: bottom - top }
+}
+
+/** The element's own box, when its layout was recorded, and the extent of its words. */
 export function capturedBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout) return undefined
-  return { box: layout.box, lines: layout.lines?.length }
+  const lines = layout.lines ?? []
+  return lines.length > 0
+    ? { box: layout.box, lines: lines.length, extent: union(lines) }
+    : { box: layout.box }
 }
 
 /**
  * The box of the text an element holds: its content box, inside its padding and borders, where
- * CSS stacks its line boxes. The text's own extent is narrower when it does not fill a line,
- * as a layer that fills its parent's width is wider than its words.
+ * CSS stacks its line boxes. The words take less when they do not fill a line, as a layer that
+ * fills its parent's width is wider than its words.
  */
 export function capturedTextBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
@@ -60,43 +77,63 @@ export function capturedTextBox(element: DesignElement): CapturedBox | undefined
       width: width - inset('left') - inset('right'),
       height: height - inset('top') - inset('bottom')
     },
-    lines: layout.lines.length
+    lines: layout.lines.length,
+    extent: union(layout.lines)
   }
 }
 
-function relativeTo(rect: Rect, origin: Rect): Rect {
+/** Text the page set on one line, which keeps to one line and measures its own width. */
+function isSingleLine(node: SceneNode, captured: CapturedBox): boolean {
+  return node.type === 'TEXT' && captured.lines === 1
+}
+
+/**
+ * Prepares a text layer for its captured lines: text the page set on one line sizes to its
+ * words, so a fallback font a little wider than the page's does not wrap it.
+ */
+export function applyCapturedLines(node: SceneNode, captured: CapturedBox): void {
+  if (isSingleLine(node, captured)) node.textAutoResize = 'WIDTH_AND_HEIGHT'
+}
+
+function offset(rect: Rect, origin: Rect): Rect {
   return { x: rect.x - origin.x, y: rect.y - origin.y, width: rect.width, height: rect.height }
 }
 
-/** Text's height follows its lines as it measures them, so only its width is compared. */
-function sizeDiffers(node: SceneNode, rect: Rect): boolean {
-  const width = Math.abs(node.width - rect.width) > TOLERANCE
-  return node.type === 'TEXT' ? width : width || Math.abs(node.height - rect.height) > TOLERANCE
+function near(a: number, b: number): boolean {
+  return Math.abs(a - b) <= TOLERANCE
 }
 
-function differs(node: SceneNode, rect: Rect): boolean {
-  return (
-    Math.abs(node.x - rect.x) > TOLERANCE ||
-    Math.abs(node.y - rect.y) > TOLERANCE ||
-    sizeDiffers(node, rect)
-  )
+/**
+ * Whether a layer is the size it was captured at. Text's height follows its lines as it
+ * measures them, and a single line's width follows its font, so neither is compared.
+ */
+function sizeMatches(node: SceneNode, captured: CapturedBox): boolean {
+  if (isSingleLine(node, captured)) return true
+  if (!near(node.width, captured.box.width)) return false
+  return node.type === 'TEXT' || near(node.height, captured.box.height)
+}
+
+/**
+ * Whether a layer sits where it was captured relative to `origin`. A single line's horizontal
+ * place follows its width when it is centered or right-aligned, so only its top is compared.
+ */
+function matches(node: SceneNode, captured: CapturedBox, origin: Rect): boolean {
+  const rect = offset(captured.box, origin)
+  if (!near(node.y, rect.y)) return false
+  return isSingleLine(node, captured) || (near(node.x, rect.x) && sizeMatches(node, captured))
 }
 
 function hasAutoLayout(node: SceneNode): boolean {
   return node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID'
 }
 
-/**
- * Gives a layer the size it was captured at, and returns whether that changed it. Text that
- * sizes to its content keeps measuring its own width when it took one line, so a font a little
- * wider than the page's does not wrap it; its height follows its lines either way.
- */
+/** Gives a layer the size it was captured at, and returns whether that changed it. */
 function fixSize(node: SceneNode, captured: CapturedBox): boolean {
   const before = pick(node, SIZE_FIELDS)
   node.layoutGrow = 0
   if (node.layoutAlignSelf === 'STRETCH') node.layoutAlignSelf = 'AUTO'
   if (node.type === 'TEXT') {
-    if ((captured.lines ?? 1) > 1 || node.textAutoResize !== 'WIDTH_AND_HEIGHT') {
+    if (!isSingleLine(node, captured)) {
       node.width = captured.box.width
       node.textAutoResize = 'HEIGHT'
     }
@@ -111,14 +148,21 @@ function fixSize(node: SceneNode, captured: CapturedBox): boolean {
   return !isEqual(pick(node, SIZE_FIELDS), before)
 }
 
+/** Moves a layer to where it was captured relative to `origin`; a single line where its words were. */
+function place(node: SceneNode, captured: CapturedBox, origin: Rect): void {
+  const rect = offset(captured.box, origin)
+  const words =
+    isSingleLine(node, captured) && captured.extent ? offset(captured.extent, origin) : rect
+  node.x = words.x
+  node.y = rect.y
+  fixSize(node, captured)
+}
+
 /** Places the page's top-level layers where the page had them, at the size it gave them. */
 export function placeTopLevelLayers(graph: SceneGraph, pageId: string, boxes: CapturedBoxes): void {
   for (const node of graph.getChildren(pageId)) {
     const captured = boxes.get(node.id)
-    if (!captured) continue
-    node.x = captured.box.x
-    node.y = captured.box.y
-    fixSize(node, captured)
+    if (captured) place(node, captured, PAGE_ORIGIN)
   }
 }
 
@@ -129,11 +173,7 @@ function placeChildren(graph: SceneGraph, node: SceneNode, own: CapturedBox, box
   node.height = own.box.height
   for (const child of graph.getChildren(node.id)) {
     const captured = boxes.get(child.id)
-    if (!captured) continue
-    const rect = relativeTo(captured.box, own.box)
-    child.x = rect.x
-    child.y = rect.y
-    fixSize(child, { ...captured, box: rect })
+    if (captured) place(child, captured, own.box)
   }
 }
 
@@ -149,11 +189,11 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
     for (const { node } of graph.flattenTree(page.id)) {
       const own = boxes.get(node.id)
       if (!own || node.type === 'CANVAS') continue
-      if (sizeDiffers(node, own.box) && fixSize(node, own)) changed++
+      if (!sizeMatches(node, own) && fixSize(node, own)) changed++
       if (!hasAutoLayout(node)) continue
       const misplaced = graph.getChildren(node.id).some((child) => {
         const captured = boxes.get(child.id)
-        return captured !== undefined && differs(child, relativeTo(captured.box, own.box))
+        return captured !== undefined && !matches(child, captured, own.box)
       })
       if (misplaced) {
         placeChildren(graph, node, own, boxes)

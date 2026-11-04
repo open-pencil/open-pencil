@@ -46,8 +46,12 @@ describe('captured layout in the projection', () => {
     const text = graph.getChildren(cardLayer.id)[0]
 
     expect(text.type).toBe('TEXT')
-    // The 240×72 box less its 16px padding on the top and left.
-    expect(boxes.get(text.id)).toEqual({ box: rect(16, 16, 224, 56), lines: 2 })
+    // The 240×72 box less its 16px padding on the top and left; the words span the lines.
+    expect(boxes.get(text.id)).toEqual({
+      box: rect(16, 16, 224, 56),
+      lines: 2,
+      extent: rect(16, 16, 200, 40)
+    })
   })
 
   it('records nothing when the layout was not captured', () => {

@@ -37,6 +37,7 @@ import {
   type ParentFlow
 } from './flow'
 import {
+  applyCapturedLines,
   capturedBox,
   capturedTextBox,
   placeTopLevelLayers,
@@ -337,8 +338,11 @@ function hasContent(element: DesignElement): boolean {
   return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }
 
+/** Remembers where the layer's element was laid out, and how many lines its text took. */
 function record(boxes: CapturedBoxes, node: SceneNode, captured: CapturedBox | undefined) {
-  if (captured) boxes.set(node.id, captured)
+  if (!captured) return
+  boxes.set(node.id, captured)
+  applyCapturedLines(node, captured)
 }
 
 function createElementNode(

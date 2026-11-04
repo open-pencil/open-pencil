@@ -73,4 +73,18 @@ describe('laying out HTML from its captured layout', () => {
     expect(header).toMatchObject({ x: 0, y: 0, width: 1440, height: 64 })
     expect(main).toMatchObject({ x: 0, y: 96, width: 1440, height: 300 })
   })
+
+  test('keeps text the page set on one line on one line', async () => {
+    const label = element(
+      { 'padding-left': '12px', ...box(60, 20) },
+      { box: rect(0, 0, 72, 20), lines: [rect(12, 2, 40, 16)] },
+      [{ type: 'text', text: 'Docs' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [label] })
+    const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const text = graph.getChildren(labelLayer.id)[0]
+
+    // It sizes to its words, so a fallback font wider than the page's does not wrap it.
+    expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT' })
+  })
 })
