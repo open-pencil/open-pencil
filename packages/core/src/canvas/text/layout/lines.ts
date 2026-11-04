@@ -52,6 +52,11 @@ export function wholePixelShift(top: number, baseline: number): number {
   return Math.round(top + baseline) - top - Math.round(baseline)
 }
 
+/** Where a glyph on an exact `baseline` is drawn, for a box drawn `top` down: on a whole pixel. */
+export function drawnBaseline(baseline: number, top: number): number {
+  return top + Math.round(baseline - top)
+}
+
 /** Where a block's lines go when they do not stack as its paragraph has them. */
 export interface BlockPlacement {
   height: number
