@@ -1,0 +1,117 @@
+name: Desktop preview
+
+# Unsigned desktop builds of the current branch for macOS, Windows and Linux, published as the
+# "desktop-preview" GitHub release. The signed release pipeline (build.yml) needs signing keys
+# and a tag on master; this one needs neither, so testers can download the app today.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/arabic-rtl-mockups
+    paths-ignore:
+      - '**/*.md'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-preview
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            label: macos-arm64
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            label: macos-intel
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: windows-x64
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: linux-x64
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop -> target
+          key: ${{ matrix.target }}
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: bun install --frozen-lockfile
+      - name: Preview build settings (no updater signing, no repo-wide lint)
+        shell: bash
+        run: |
+          cat > preview-config.json <<'EOF'
+          {
+            "build": {
+              "beforeBuildCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run build:packages && bunx vite build"
+            },
+            "bundle": { "createUpdaterArtifacts": false }
+          }
+          EOF
+      - name: Build
+        shell: bash
+        run: node node_modules/@tauri-apps/cli/tauri.js build --target ${{ matrix.target }} --config preview-config.json
+      - name: Collect installers
+        shell: bash
+        run: |
+          mkdir -p out
+          B=desktop/target/${{ matrix.target }}/release/bundle
+          for f in $B/dmg/*.dmg $B/nsis/*.exe $B/msi/*.msi $B/appimage/*.AppImage $B/deb/*.deb; do
+            [ -f "$f" ] || continue
+            name=$(basename "$f")
+            cp "$f" "out/Lawha-${{ matrix.label }}.${name##*.}"
+          done
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lawha-${{ matrix.label }}
+          path: out/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: ls -la dist
+      - name: Publish the desktop-preview release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-preview
+          name: Lawha desktop (preview)
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: |
+            Unsigned preview builds of commit ${{ github.sha }}.
+
+            - macOS: open the .dmg, drag Lawha to Applications. The first time, right-click Lawha → Open (it is not notarized).
+            - Windows: run the .exe; if SmartScreen warns, choose More info → Run anyway.
+            - Linux: the .AppImage runs directly (chmod +x), or install the .deb.
+          files: dist/*
+          overwrite_files: true
