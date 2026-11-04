@@ -1,5 +1,5 @@
 import type { Editor, PastedTextLink } from '@open-pencil/core'
-import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
@@ -79,6 +79,16 @@ export function pastedText({ html, text }: WebClipboard): {
 }
 
 /**
+ * Whether pasting as text should offer layers: the copy is HTML source, or its HTML lays boxes
+ * out. A sentence copied from a page or a document carries text styling only, so it does not.
+ */
+export function offersLayers(clipboard: WebClipboard): boolean {
+  return (
+    isHTMLMarkup(clipboard.text) || (clipboard.html !== '' && browserHTMLHasBoxes(clipboard.html))
+  )
+}
+
+/**
  * Lays HTML out as a browser would, at the width of the frame it goes into or the import
  * viewport on the canvas, and pastes the layers centred on the point.
  */
@@ -102,8 +112,8 @@ export async function pasteHTMLAsLayers(
 }
 
 /**
- * Pastes a copy from outside OpenPencil as text, as Figma does. When it holds HTML, a notice
- * offers to paste it as layers instead, taking the text back first.
+ * Pastes a copy from outside OpenPencil as text, as Figma does. When its HTML lays boxes out, a
+ * notice offers to paste it as layers instead, taking the text back first.
  */
 export async function pasteWebClipboard(
   editor: Editor,
@@ -115,7 +125,7 @@ export async function pasteWebClipboard(
   rememberWebClipboard(clipboard.html, clipboard.text)
   const pastedId = await editor.pasteText(text, x, y, links)
   const markup = layerMarkup(clipboard)
-  if (!pastedId || !markup) return pastedId !== null
+  if (!pastedId || !markup || !offersLayers(clipboard)) return pastedId !== null
   toast.info(filesMessages.get().pastedAsText, {
     label: menuMessages.get().pasteAsLayers,
     run: (toastId) => {

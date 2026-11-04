@@ -78,6 +78,29 @@ test('a web page pastes as text with its links, and the notice pastes it as laye
   await expect.poll(pageLayers).toEqual([])
 })
 
+test('a sentence copied from a page pastes as text without offering layers', async () => {
+  // As Chromium copies a sentence from inside a paragraph: text styling only, no boxes.
+  const textStyle = 'color: rgb(0, 0, 0); font-family: system-ui; font-size: 16px'
+  await paste({
+    'text/html':
+      `<span style="${textStyle}; display: inline !important;">Open files and </span>` +
+      `<a href="https://openpencil.dev/" style="${textStyle}">an editor</a>`,
+    'text/plain': 'Open files and an editor'
+  })
+
+  await expect
+    .poll(pageLayers)
+    .toEqual([
+      {
+        type: 'TEXT',
+        text: 'Open files and an editor',
+        links: ['https://openpencil.dev/'],
+        children: []
+      }
+    ])
+  await expect(editor.page.getByRole('button', { name: 'Paste as layers' })).toHaveCount(0)
+})
+
 test('plain text pastes as a text layer with nothing to offer', async () => {
   await paste({ 'text/plain': 'Just a sentence' })
 

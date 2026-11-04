@@ -26,6 +26,7 @@ import {
   setNodeBox,
   strokeWeightFromStyle
 } from './box'
+import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
   applyContainerLayout,
@@ -289,84 +290,6 @@ function linkText(node: SceneNode, element: DesignElement): void {
   if (hyperlink && node.text.length > 0) {
     node.styleRuns = [{ start: 0, length: node.text.length, style: { hyperlink } }]
   }
-}
-
-/**
- * What each box property is set to when it draws or sizes nothing. A browser computes every
- * property, so a span with only text styling still has a transparent background and no padding;
- * only values that draw or size something make a box.
- */
-const NO_BOX_VALUES: Record<string, readonly string[]> = {
-  'aspect-ratio': ['auto'],
-  'background-color': ['transparent', 'rgba(0, 0, 0, 0)'],
-  'border-style': ['none', 'hidden'],
-  'border-top-style': ['none', 'hidden'],
-  'border-right-style': ['none', 'hidden'],
-  'border-bottom-style': ['none', 'hidden'],
-  'border-left-style': ['none', 'hidden'],
-  'box-shadow': ['none'],
-  height: ['auto'],
-  width: ['auto'],
-  'min-width': ['auto'],
-  'min-height': ['auto'],
-  'max-width': ['none'],
-  'max-height': ['none'],
-  'object-fit': ['fill'],
-  overflow: ['visible'],
-  position: ['static'],
-  top: ['auto'],
-  right: ['auto'],
-  bottom: ['auto'],
-  left: ['auto'],
-  'flex-wrap': ['nowrap'],
-  'align-self': ['auto']
-}
-
-/** Lengths that take no room: every part of the value is zero. */
-const ZERO_LENGTH_PROPERTIES = new Set([
-  'border-width',
-  'border-top-width',
-  'border-right-width',
-  'border-bottom-width',
-  'border-left-width',
-  'border-radius',
-  'min-width',
-  'min-height',
-  'padding',
-  'padding-top',
-  'padding-right',
-  'padding-bottom',
-  'padding-left',
-  'padding-block',
-  'padding-inline'
-])
-
-function isZeroLength(value: string): boolean {
-  return value
-    .trim()
-    .split(/\s+/)
-    .every((part) => /^0(px)?$/.test(part))
-}
-
-const BOX_PROPERTIES = [...Object.keys(NO_BOX_VALUES), ...ZERO_LENGTH_PROPERTIES]
-
-function drawsBox(property: string, value: string): boolean {
-  const normalized = value.trim().toLowerCase()
-  if (ZERO_LENGTH_PROPERTIES.has(property) && isZeroLength(normalized)) return false
-  return !(NO_BOX_VALUES[property] ?? []).includes(normalized)
-}
-
-/**
- * Whether the element draws or sizes a box of its own, so it becomes a layer rather than text in
- * the text around it. Its display counts when it is not its tag's own.
- */
-function hasBoxStyle(element: DesignElement, style: DesignStyleDeclaration): boolean {
-  const display = pickStyle(style, 'display')
-  if (display !== undefined && display.trim() !== elementDisplay(element, {})) return true
-  return BOX_PROPERTIES.some((property) => {
-    const value = pickStyle(style, property)
-    return value !== undefined && drawsBox(property, value)
-  })
 }
 
 function hasContent(element: DesignElement): boolean {

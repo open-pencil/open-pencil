@@ -1,1 +1,1 @@
-- Text copied from a web page or another app pastes as one text layer, as in Figma, keeping its links; when the copy holds HTML, **Paste as layers** (in the Edit menu, the canvas context menu, and the notice after pasting) lays it out as layers instead.
+- Text copied from a web page or another app pastes as one text layer, as in Figma, keeping its links. **Paste as layers**, in the Edit menu and the canvas context menu, lays the copied HTML out as layers instead, and a notice offers it after pasting a card or other laid-out part of a web page, or HTML source.
