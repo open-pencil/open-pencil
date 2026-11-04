@@ -477,6 +477,12 @@ export function installComponentPropertyAccessors(
         }
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
+        // A variant's properties are its set's, as Figma keeps them (desktop 126).
+        const parent = node.parentId ? graph(this, internals).getNode(node.parentId) : undefined
+        if (node.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET')
+          throw new Error(
+            'in addComponentProperty: Can only set component property definitions on a product component'
+          )
         const definition: ComponentPropertyDefinition = {
           id: createComponentPropertyId(),
           name: name.trim(),

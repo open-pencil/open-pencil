@@ -1,0 +1,1 @@
+- Component sets' boolean, text, instance swap, and slot properties read from a .fig appear once, on the set, keep an instance's value when it switches variant, and are saved so that Figma shows them on instances, including on sets made in OpenPencil (#1737).
