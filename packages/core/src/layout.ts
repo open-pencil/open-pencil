@@ -2,9 +2,9 @@ import {
   Align,
   Direction,
   Display,
+  Edge,
   FlexDirection,
   Gutter,
-  Edge,
   MeasureMode,
   Overflow,
   Wrap,
@@ -53,7 +53,9 @@ import {
   mapAlignSelf,
   mapGridTrack,
   mapJustify,
-  parentStretchedAxis
+  parentStretchedAxis,
+  layoutPadding,
+  setLayoutPadding
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
@@ -232,9 +234,10 @@ function insertFlexChildren(
     yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
   }
   if (overlap > 0 && hasInFlowChild) {
-    if (!horizontal) yogaParent.setPadding(Edge.Bottom, parent.paddingBottom + overlap)
-    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, parent.paddingLeft + overlap)
-    else yogaParent.setPadding(Edge.Right, parent.paddingRight + overlap)
+    const padding = layoutPadding(parent)
+    if (!horizontal) yogaParent.setPadding(Edge.Bottom, padding.bottom + overlap)
+    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, padding.left + overlap)
+    else yogaParent.setPadding(Edge.Right, padding.right + overlap)
   }
 }
 
@@ -272,10 +275,7 @@ function configureFlexContainer(
     yogaNode.setAlignContent(Align.SpaceBetween)
   }
 
-  yogaNode.setPadding(Edge.Top, node.paddingTop)
-  yogaNode.setPadding(Edge.Right, node.paddingRight)
-  yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
-  yogaNode.setPadding(Edge.Left, node.paddingLeft)
+  setLayoutPadding(yogaNode, node)
 
   const primaryGap = primaryAxisGap(node)
   yogaNode.setGap(
@@ -311,10 +311,7 @@ function configureChildAsGrid(
   yogaChild.setGap(Gutter.Column, child.gridColumnGap)
   yogaChild.setGap(Gutter.Row, child.gridRowGap)
 
-  yogaChild.setPadding(Edge.Top, child.paddingTop)
-  yogaChild.setPadding(Edge.Right, child.paddingRight)
-  yogaChild.setPadding(Edge.Bottom, child.paddingBottom)
-  yogaChild.setPadding(Edge.Left, child.paddingLeft)
+  setLayoutPadding(yogaChild, child)
 
   const isParentRow = parent.layoutMode === 'HORIZONTAL'
   const selfOverride = child.layoutAlignSelf !== 'AUTO'
