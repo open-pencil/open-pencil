@@ -357,7 +357,8 @@ export function handleNodeEditMove(
     const unsnappedDx = cx - d.startX
     const unsnappedDy = cy - d.startY
     const es = editor.getNodeEditState()
-    if (!es) return
+    // A host that keeps points in place mid-drag stops the points where they are.
+    if (!es || editsHandlesOnly(editor.state)) return
     let snapped = { x: unsnappedDx, y: unsnappedDy }
     if (disableSnapping) editor.setSnapGuides([])
     else snapped = applyNodeEditSnap(d, unsnappedDx, unsnappedDy, editor, es)

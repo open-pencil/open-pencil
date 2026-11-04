@@ -14,8 +14,9 @@ import type { NodeEditHandles, VectorHandleField } from '#core/vector/handle-sel
 export interface NodeEditOptions {
   /**
    * Keeps the path open: clicking off it, Escape, Enter, another tool, or another layer leave it
-   * open, and only the host ends it, with `exitNodeEditMode(commit, { release: true })`. A game
-   * whose canvas is the one path being shaped keeps it open.
+   * open, and the host ends it, with `exitNodeEditMode(commit, { release: true })`. Switching to
+   * another page, deleting the layer, replacing the document, or going read-only end it too. A
+   * game whose canvas is the one path being shaped keeps it open.
    */
   keepOpen?: boolean
   /** Which points show their handles; by default those near the selection, as in Figma. */

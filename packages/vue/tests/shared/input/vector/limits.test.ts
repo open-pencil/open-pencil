@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 
 import type { DragState } from '#vue/shared/input/types'
-import { handleNodeEditDown } from '#vue/shared/input/vector'
+import { handleNodeEditDown, handleNodeEditMove } from '#vue/shared/input/vector'
 
 let editor: Editor
 
@@ -59,5 +59,17 @@ describe('editing a path whose points the host keeps', () => {
   test("a press on a handle of a point that is not selected drags the handle", () => {
     setup()
     expect(press(30, -40)?.type).toBe('edit-handle')
+  })
+
+  test('a point drag already under way stops moving the point once the host keeps points', () => {
+    setup()
+    editor.setHostRestrictions({ pathEdits: 'all' })
+    const drag = press(100, 0)
+    if (drag?.type !== 'edit-node') throw new Error('Expected a point drag')
+    editor.setHostRestrictions({ pathEdits: 'handles' })
+
+    handleNodeEditMove(drag, 140, 30, editor, false, false, false, true)
+
+    expect(editor.getNodeEditState()?.vertices[1]).toMatchObject({ x: 100, y: 0 })
   })
 })

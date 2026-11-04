@@ -47,9 +47,11 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     if (!es || selectedIds.includes(es.nodeId)) return
     // Replacing the document clears the selection before it says so: drop the path, not commit it.
     if (ctx.graph !== sessionGraph) close()
-    // A path the host keeps open keeps its layer selected.
-    else if (es.keepOpen) actions.select([es.nodeId])
-    else exitNodeEditMode(true)
+    // A path the host keeps open keeps its layer selected while its page is shown; switching to
+    // another page ends it, as the layer is no longer on the canvas.
+    else if (es.keepOpen && ctx.graph.pageOf(es.nodeId) === ctx.state.currentPageId)
+      actions.select([es.nodeId])
+    else exitNodeEditMode(true, { release: true })
   })
 
   function commitNodeEditChanges(es: NonNullable<typeof ctx.state.nodeEditState>) {

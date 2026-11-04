@@ -48,7 +48,18 @@ export function guardUndo(undo: UndoManager, isReadOnly: () => boolean): UndoMan
   })
 }
 
-export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) {
+/** What the restrictions end when they take effect. */
+export interface RestrictionEnds {
+  /** Ends every edit in progress, as a read-only document has none. */
+  endEdits: () => void
+  /** Ends a pen path continuing an existing layer, which handles-only paths do not allow. */
+  endPathContinuation: () => void
+}
+
+export function createReadOnlyActions(
+  ctx: EditorContext,
+  { endEdits, endPathContinuation }: RestrictionEnds
+) {
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
@@ -71,6 +82,11 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
     restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits'>>
   ): void {
     ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
+    if (restrictions.pathEdits === 'handles') {
+      // What was drawn stays; the path just stops growing, and regions stop taking the pointer.
+      endPathContinuation()
+      if (ctx.state.nodeEditState) ctx.state.nodeEditState.hoveredRegion = null
+    }
     ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.requestRepaint()
   }

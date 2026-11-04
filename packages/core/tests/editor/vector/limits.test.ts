@@ -93,4 +93,25 @@ describe('a path whose points the host keeps', () => {
     editor.nodeEditRemoveVertex(1)
     expect(shape().vertices).toHaveLength(2)
   })
+
+  test('a pen path continuing the layer stops growing when the host keeps points, and keeps what it drew', () => {
+    const { editor, vector } = openHandlesOnly()
+    editor.setHostRestrictions({ pathEdits: 'all' })
+    editor.penResumeFromEndpoint(vector.id, 2)
+    editor.penAddVertex(260, 0)
+    expect(editor.state.penState?.vertices).toHaveLength(4)
+
+    editor.setHostRestrictions({ pathEdits: 'handles' })
+
+    expect(editor.state.penState).toBeNull()
+    expect(editor.graph.getNode(vector.id)?.vectorNetwork?.vertices).toHaveLength(4)
+  })
+
+  test('regions stop being hatched under the pointer once only handles may change', () => {
+    const { editor, session } = openHandlesOnly()
+    editor.setHostRestrictions({ pathEdits: 'all' })
+    session().hoveredRegion = 0
+    editor.setHostRestrictions({ pathEdits: 'handles' })
+    expect(session().hoveredRegion).toBeNull()
+  })
 })

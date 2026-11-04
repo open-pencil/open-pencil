@@ -212,6 +212,14 @@ describe('a path the host keeps open', () => {
     expect(editor.state.penState).toBeNull()
   })
 
+  test('ends when its page is switched away from', async () => {
+    const { editor, vector } = keptOpen()
+    const second = editor.graph.addPage('Second')
+    await editor.switchPage(second.id)
+    expect(editor.state.nodeEditState).toBeNull()
+    expect(editor.state.selectedIds.has(vector.id)).toBe(false)
+  })
+
   test('ends when the host releases it, or the document goes read-only', () => {
     const released = keptOpen()
     released.editor.exitNodeEditMode(true, { release: true })
