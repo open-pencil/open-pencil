@@ -1,3 +1,4 @@
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement, DesignLayout } from '../types'
@@ -46,37 +47,30 @@ function lineTextNodes(element: Element, view: DocumentView): Text[] {
   return texts
 }
 
-/** Rects of text on one line overlap vertically; each line is the union of its rects. */
-function groupIntoLines(rects: DOMRectReadOnly[]): DOMRect[] {
-  const sorted = [...rects].sort((a, b) => a.top - b.top || a.left - b.left)
-  const lines: DOMRect[] = []
-  for (const rect of sorted) {
-    const line = lines.find((candidate) => {
-      const overlap = Math.min(candidate.bottom, rect.bottom) - Math.max(candidate.top, rect.top)
-      return overlap > Math.min(candidate.height, rect.height) / 2
+/** Rects of text on one line overlap vertically by more than half; each line spans its rects. */
+function groupIntoLines(rects: readonly Rect[]): Rect[] {
+  const lines: Rect[][] = []
+  for (const rect of [...rects].sort((a, b) => a.y - b.y || a.x - b.x)) {
+    const line = lines.find((group) => {
+      const span = computeBounds(group)
+      const overlap =
+        Math.min(span.y + span.height, rect.y + rect.height) - Math.max(span.y, rect.y)
+      return overlap > Math.min(span.height, rect.height) / 2
     })
-    if (!line) {
-      lines.push(DOMRect.fromRect(rect))
-      continue
-    }
-    const left = Math.min(line.left, rect.left)
-    const top = Math.min(line.top, rect.top)
-    const right = Math.max(line.right, rect.right)
-    const bottom = Math.max(line.bottom, rect.bottom)
-    line.x = left
-    line.y = top
-    line.width = right - left
-    line.height = bottom - top
+    if (line) line.push(rect)
+    else lines.push([rect])
   }
-  return lines.sort((a, b) => a.top - b.top)
+  return lines.map((group) => computeBounds(group))
 }
 
-function lineRects(element: Element, view: DocumentView): DOMRect[] {
+function lineRects(element: Element, origin: DOMRectReadOnly, view: DocumentView): Rect[] {
   const document = element.ownerDocument
   const rects = lineTextNodes(element, view).flatMap((text) => {
     const range = document.createRange()
     range.selectNodeContents(text)
-    return Array.from(range.getClientRects()).filter(hasArea)
+    return Array.from(range.getClientRects())
+      .filter(hasArea)
+      .map((rect) => toRect(rect, origin))
   })
   return groupIntoLines(rects)
 }
@@ -92,8 +86,8 @@ function measureElement(
     if (fragments.length > 0) layout.fragments = fragments.map((rect) => toRect(rect, origin))
     return layout
   }
-  const lines = lineRects(element, view)
-  if (lines.length > 0) layout.lines = lines.map((rect) => toRect(rect, origin))
+  const lines = lineRects(element, origin, view)
+  if (lines.length > 0) layout.lines = lines
   return layout
 }
 

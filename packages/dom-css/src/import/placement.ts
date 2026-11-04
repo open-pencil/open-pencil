@@ -1,12 +1,13 @@
 import { isEqual, pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { autoLayoutSizingFields } from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement } from '../types'
-import { mergedStyle, pickStyle } from './css-values'
+import { contentInsets } from './box'
+import { mergedStyle } from './css-values'
 
 /**
  * Where the engine that styled the document laid a layer out. For text, `box` is the box its
@@ -39,21 +40,13 @@ const SIZE_FIELDS = [
 
 const PAGE_ORIGIN: Rect = { x: 0, y: 0, width: 0, height: 0 }
 
-function union(rects: readonly Rect[]): Rect {
-  const left = Math.min(...rects.map((rect) => rect.x))
-  const top = Math.min(...rects.map((rect) => rect.y))
-  const right = Math.max(...rects.map((rect) => rect.x + rect.width))
-  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height))
-  return { x: left, y: top, width: right - left, height: bottom - top }
-}
-
 /** The element's own box, when its layout was recorded, and the extent of its words. */
 export function capturedBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout) return undefined
   const lines = layout.lines ?? []
   return lines.length > 0
-    ? { box: layout.box, lines: lines.length, extent: union(lines) }
+    ? { box: layout.box, lines: lines.length, extent: computeBounds(lines) }
     : { box: layout.box }
 }
 
@@ -65,20 +58,17 @@ export function capturedBox(element: DesignElement): CapturedBox | undefined {
 export function capturedTextBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout?.lines || layout.lines.length === 0) return undefined
-  const style = mergedStyle(element)
-  const inset = (side: 'top' | 'right' | 'bottom' | 'left') =>
-    (parseCSSNumber(pickStyle(style, `padding-${side}`)) ?? 0) +
-    (parseCSSNumber(pickStyle(style, `border-${side}-width`)) ?? 0)
+  const insets = contentInsets(mergedStyle(element))
   const { x, y, width, height } = layout.box
   return {
     box: {
-      x: x + inset('left'),
-      y: y + inset('top'),
-      width: width - inset('left') - inset('right'),
-      height: height - inset('top') - inset('bottom')
+      x: x + insets.left,
+      y: y + insets.top,
+      width: width - insets.left - insets.right,
+      height: height - insets.top - insets.bottom
     },
     lines: layout.lines.length,
-    extent: union(layout.lines)
+    extent: computeBounds(layout.lines)
   }
 }
 

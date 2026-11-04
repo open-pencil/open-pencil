@@ -148,22 +148,37 @@ export function applyPositioning(node: SceneNode, style: DesignStyleDeclaration)
   if (top !== null) node.y = top
 }
 
+/** The padding and borders between an element's border box and its content box, per side. */
+export interface ContentInsets {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
+export function contentInsets(style: DesignStyleDeclaration): ContentInsets {
+  // A border takes room once it has a style other than none, its CSS default, whatever its color.
+  const borderStyle = borderStyleFromCSS(style)
+  const bordered = borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+  const side = (name: keyof ContentInsets, axis: 'block' | 'inline') =>
+    (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
+    (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
+  return {
+    top: side('top', 'block'),
+    right: side('right', 'inline'),
+    bottom: side('bottom', 'block'),
+    left: side('left', 'inline')
+  }
+}
+
 /**
  * What CSS adds outside an explicit size: padding and borders, unless `box-sizing: border-box`
  * puts them inside it as auto layout does.
  */
 function contentBoxExtras(style: DesignStyleDeclaration): { width: number; height: number } {
   if (pickStyle(style, 'box-sizing')?.trim() === 'border-box') return { width: 0, height: 0 }
-  // A border takes room once it has a style other than none, its CSS default, whatever its color.
-  const borderStyle = borderStyleFromCSS(style)
-  const bordered = borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
-  const side = (name: 'top' | 'right' | 'bottom' | 'left', axis: 'block' | 'inline') =>
-    (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
-    (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
-  return {
-    width: side('left', 'inline') + side('right', 'inline'),
-    height: side('top', 'block') + side('bottom', 'block')
-  }
+  const insets = contentInsets(style)
+  return { width: insets.left + insets.right, height: insets.top + insets.bottom }
 }
 
 /** Explicit sizes count the padding and borders CSS places outside them. */
