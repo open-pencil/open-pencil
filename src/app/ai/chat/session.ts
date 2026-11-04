@@ -106,7 +106,9 @@ export function createChatSessionManager({
   getActiveEditorStore
 }: ChatSessionOptions) {
   const failure = ref<AIChatFailure | null>(null)
-  let transportDirty = false
+  // Bumped by anything that changes the transport; a chat keeps the revision it was built from.
+  let transportRevision = 0
+  let chatTransportRevision = 0
   let currentChatStore: EditorStore | null = null
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
@@ -147,7 +149,7 @@ export function createChatSessionManager({
   }
 
   function markTransportDirty() {
-    transportDirty = true
+    transportRevision++
   }
 
   async function destroyAgentTransports(): Promise<void> {
@@ -265,7 +267,9 @@ export function createChatSessionManager({
       currentChatMessages.set(currentChatStore, chat.messages)
     }
 
-    if (!chat || transportDirty || currentChatStore !== store) {
+    if (!chat || chatTransportRevision !== transportRevision || currentChatStore !== store) {
+      // Read before building: a change while the transport loads leaves this chat out of date.
+      const revision = transportRevision
       const messages = initialMessages ?? currentChatMessages.get(store)
       const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
       // Failures belong to the provider this chat was created for, even if the profile changes.
@@ -333,7 +337,7 @@ export function createChatSessionManager({
       })
       chat = created
       currentChatStore = store
-      transportDirty = false
+      chatTransportRevision = revision
     }
     return chat
   }
@@ -344,7 +348,7 @@ export function createChatSessionManager({
     failure.value = null
     chat = null
     currentChatStore = null
-    transportDirty = false
+    chatTransportRevision = transportRevision
   }
 
   function setOverrideTransport(factory: (() => ChatTransport<UIMessage>) | null) {
