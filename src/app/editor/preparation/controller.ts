@@ -214,8 +214,10 @@ export function createEditorPreparationController(
           remainingMs: presentationTimeoutMs
         }
         presentationWaiters.set(id, waiter)
-        if (timing()) startTimer(id, waiter)
-        else if (canvasFailure) settle(id, canvasFailure)
+        // A failed canvas fails the wait only when no other canvas can present the scene.
+        if (canvases > 0) {
+          if (timing()) startTimer(id, waiter)
+        } else if (canvasFailure) settle(id, canvasFailure)
       })
     },
     attachCanvas() {

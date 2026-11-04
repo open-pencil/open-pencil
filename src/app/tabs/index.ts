@@ -8,7 +8,7 @@ import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/format
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
-import { nextFrame } from '@open-pencil/vue/shared/frame'
+import { nextFrame, nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -364,7 +364,7 @@ async function showImportedGraph(
     preparation: load,
     beforePresentation: async () => {
       if (remembered) {
-        await nextFrame()
+        await nextShownFrame()
         store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
       } else {
         await store.fitCurrentPageToViewport()

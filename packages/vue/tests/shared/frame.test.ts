@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { nextTick, shallowRef } from 'vue'
 
-import { nextFrame } from '#vue/shared/frame'
+import { nextFrame, nextShownFrame } from '#vue/shared/frame'
 
 const saved = {
   request: globalThis.requestAnimationFrame,
@@ -75,6 +75,18 @@ describe('waiting for the next frame', () => {
     shown.visibility.value = 'hidden'
     expect(await settled(frame)).toBe(true)
     expect(shown.pending.size).toBe(0)
+  })
+
+  // Placing the view needs the canvas's size, which a hidden tab never reports.
+  test('a shown frame waits for the tab to be shown, then for its frame', async () => {
+    const hidden = page('hidden')
+    const frame = nextShownFrame({ visibility: hidden.visibility })
+    expect(await settled(frame)).toBe(false)
+    expect(hidden.pending.size).toBe(0)
+    hidden.visibility.value = 'visible'
+    expect(await settled(frame)).toBe(false)
+    hidden.draw()
+    expect(await settled(frame)).toBe(true)
   })
 
   test('resolves when the frame comes back at once, as a test double may run it', async () => {

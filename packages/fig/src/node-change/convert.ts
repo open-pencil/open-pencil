@@ -1066,8 +1066,12 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
   }
 }
 
-/** Whether a frame's record is a component set: it defines a variant property, or OpenPencil marked it one. */
+/**
+ * Whether a record is a component set: typed as one, or a frame that defines a variant property
+ * or that OpenPencil marked one.
+ */
 export function isComponentSetRecord(nc: NodeChange): boolean {
+  if (mapNodeType(nc.type) === 'COMPONENT_SET') return true
   const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
   return (
     !!defs?.some((d) => d.type === 'VARIANT') ||

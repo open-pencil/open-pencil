@@ -1,4 +1,4 @@
-import { useDocumentVisibility } from '@vueuse/core'
+import { until, useDocumentVisibility } from '@vueuse/core'
 import { watch, type Ref } from 'vue'
 
 /** Whether the browser shows the page; shared by every wait. */
@@ -30,4 +30,15 @@ export function nextFrame(options: NextFrameOptions = {}): Promise<void> {
     }
     frame = requestAnimationFrame(done)
   })
+}
+
+/**
+ * Waits for a frame drawn while the page is shown, by which the canvas has reported its size:
+ * a hidden tab reports none. Placing the view, such as fitting a page, waits for this so it
+ * uses the canvas's own size, while work before it goes on in a background tab.
+ */
+export async function nextShownFrame(options: NextFrameOptions = {}): Promise<void> {
+  const visibility = options.visibility ?? documentVisibility
+  if (visibility.value === 'hidden') await until(visibility).not.toBe('hidden')
+  await nextFrame({ visibility })
 }

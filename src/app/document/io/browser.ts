@@ -1,4 +1,4 @@
-import { nextFrame } from '@open-pencil/vue/shared/frame'
+import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import type { ViewportSize } from '@/app/document/io/types'
 
@@ -95,7 +95,7 @@ export function createDocumentViewportActions(editor: ViewportEditor, viewportSi
   }
 
   async function fitCurrentPageToViewport() {
-    await nextFrame()
+    await nextShownFrame()
     editor.zoomToFit()
   }
 
