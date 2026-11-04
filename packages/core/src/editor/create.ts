@@ -507,7 +507,8 @@ export function createEditor(options?: EditorOptions) {
      * tool held while a key is down, as Space holds the hand, leaves it open.
      */
     setTool: (tool: Tool, options?: { held?: boolean }) => {
-      if (!options?.held && state.nodeEditState && tool !== 'SELECT' && tool !== 'PEN')
+      const picked = !options?.held && offeredTool(state, tool) === tool
+      if (picked && state.nodeEditState && tool !== 'SELECT' && tool !== 'PEN')
         vectorEdit.exitNodeEditMode(true)
       shapes.setTool(tool, options)
     },

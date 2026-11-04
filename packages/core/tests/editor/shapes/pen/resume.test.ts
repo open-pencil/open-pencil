@@ -156,3 +156,15 @@ test('does not continue a library layer or a board path', () => {
   pen.penResumeOnPath(id)
   expect(editor.state.penState).toBeNull()
 })
+
+test('a point the open path does not have commits nothing and keeps it open', () => {
+  const { pen, id } = setup()
+  editor.enterNodeEditMode(id)
+  expectDefined(editor.state.nodeEditState?.vertices[3]).y = 100
+
+  pen.penResumeFromEndpoint(id, 9)
+
+  expect(editor.state.nodeEditState?.nodeId).toBe(id)
+  expect(editor.state.penState).toBeNull()
+  expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
+})

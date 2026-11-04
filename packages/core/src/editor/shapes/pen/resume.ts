@@ -130,7 +130,7 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
    * A path open for editing and a pen path in progress are committed first, so the pen continues
    * the path as it stands and nothing drawn is lost.
    */
-  function resumeOn(nodeId: string, pick: (network: VectorNetwork) => PenChain | null) {
+  function resumeOn(nodeId: string, pick: (network: VectorNetwork) => PenChain) {
     if (!resumable(nodeId)) return
     if (ctx.state.nodeEditState) deps.exitNodeEditMode(true)
     if (ctx.state.penState) deps.penCommit(false)
@@ -138,9 +138,7 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
     const node = ctx.graph.getNode(nodeId)
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
     const absNetwork = transformVectorNetwork(getWorldMatrix(node, ctx.graph), node.vectorNetwork)
-    const chain = pick(absNetwork)
-    if (!chain) return
-    ctx.state.penState = createResumedPenState(node, chain)
+    ctx.state.penState = createResumedPenState(node, pick(absNetwork))
     ctx.setSelectedIds(new Set())
     ctx.setActiveTool('PEN')
     ctx.requestRender()
@@ -152,13 +150,14 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
 
   /** Continues the path from one of its points; a point that is not in the path does nothing. */
   function penResumeFromEndpoint(nodeId: string, endpointVertexIndex: number) {
-    resumeOn(nodeId, (network) =>
-      Number.isInteger(endpointVertexIndex) &&
-      endpointVertexIndex >= 0 &&
-      endpointVertexIndex < network.vertices.length
-        ? chainEndingAt(network, endpointVertexIndex)
-        : null
-    )
+    // Points are counted in the path as it is being edited, or as stored when it is not open.
+    const open = ctx.state.nodeEditState
+    const node = ctx.graph.getNode(nodeId)
+    const count =
+      open?.nodeId === nodeId ? open.vertices.length : (node?.vectorNetwork?.vertices.length ?? 0)
+    if (!Number.isInteger(endpointVertexIndex) || endpointVertexIndex < 0) return
+    if (endpointVertexIndex >= count) return
+    resumeOn(nodeId, (network) => chainEndingAt(network, endpointVertexIndex))
   }
 
   /** Starts a new piece of `nodeId`'s path at a page point, as a pen click off the path does in Figma. */

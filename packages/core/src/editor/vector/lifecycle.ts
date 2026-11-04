@@ -1,3 +1,4 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import { slotScope } from '@open-pencil/scene-graph/slots'
@@ -23,6 +24,9 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     return ctx.state.nodeEditState
   }
 
+  /** The document the open path belongs to; a session never commits into another one. */
+  let sessionGraph: SceneGraph | null = null
+
   // A path whose layer is gone, by undo, a script, or another document, has nothing to edit.
   const close = () => {
     ctx.state.nodeEditState = null
@@ -39,7 +43,10 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
   // mode and keeps what was edited.
   ctx.onEditorEvent('selection:changed', (selectedIds) => {
     const es = ctx.state.nodeEditState
-    if (es && !selectedIds.includes(es.nodeId)) exitNodeEditMode(true)
+    if (!es || selectedIds.includes(es.nodeId)) return
+    // Replacing the document clears the selection before it says so: drop the path, not commit it.
+    if (ctx.graph !== sessionGraph) close()
+    else exitNodeEditMode(true)
   })
 
   function commitNodeEditChanges(es: NonNullable<typeof ctx.state.nodeEditState>) {
@@ -86,6 +93,7 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     const absNetwork = transformVectorNetwork(world, node.vectorNetwork)
 
     ctx.state.snapGuides = []
+    sessionGraph = ctx.graph
     ctx.state.nodeEditState = {
       nodeId,
       origNetwork: cloneVectorNetwork(node.vectorNetwork),

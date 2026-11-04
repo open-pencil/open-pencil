@@ -142,3 +142,31 @@ test('picking a tool that does not edit paths leaves edit mode; holding one does
   expect(editor.graph.getNode(path.id)?.width).toBe(120)
   expect([...editor.state.selectedIds]).toEqual([path.id])
 })
+
+test('a document opened over the path drops it, without writing into the new document', () => {
+  const graph = new SceneGraph()
+  const editor = createEditor({ graph })
+  const path = graph.createNode('VECTOR', editor.state.currentPageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  editor.enterNodeEditMode(path.id)
+  expectDefined(editor.state.nodeEditState?.vertices[0]).x -= 20
+
+  const next = new SceneGraph()
+  const pageId = expectDefined(next.getPages()[0]).id
+  const twin = next.createNodeWithId(path.id, 'VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  editor.replaceGraph(next)
+
+  expect(editor.state.nodeEditState).toBeNull()
+  expect(next.getNode(twin.id)?.vectorNetwork).toEqual(TRIANGLE)
+  expect(graph.getNode(path.id)?.width).toBe(100)
+})
+
+test('a tool the document does not offer leaves the path open', () => {
+  const editor = createEditor()
+  const path = editor.graph.createNode('VECTOR', editor.state.currentPageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  editor.setDocumentKind('board')
+  editor.enterNodeEditMode(path.id)
+
+  editor.setTool('RECTANGLE')
+  expect(editor.state.activeTool).not.toBe('RECTANGLE')
+  expect(editor.state.nodeEditState?.nodeId).toBe(path.id)
+})
