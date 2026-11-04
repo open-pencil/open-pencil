@@ -67,19 +67,41 @@ export function releaseWebGLContext(
   if (wasCurrent) park(ck)
 }
 
-/** The inline size and margins a canvas had before sizeCanvas first pinned it. */
+/** A canvas's inline size and margins. */
 type PinnedStyle = Pick<CSSStyleDeclaration, 'width' | 'height' | 'marginLeft' | 'marginTop'>
-const ownStyles = new WeakMap<HTMLCanvasElement, PinnedStyle>()
+/** Per canvas: the inline style its owner set, and the style sizeCanvas last wrote over it. */
+const pinnedStyles = new WeakMap<HTMLCanvasElement, { own: PinnedStyle; written: PinnedStyle }>()
 
-function restoreOwnStyle(canvas: HTMLCanvasElement): PinnedStyle {
-  let own = ownStyles.get(canvas)
-  if (!own) {
-    const { width, height, marginLeft, marginTop } = canvas.style
-    own = { width, height, marginLeft, marginTop }
-    ownStyles.set(canvas, own)
-  }
+function inlineStyle(canvas: HTMLCanvasElement): PinnedStyle {
+  const { width, height, marginLeft, marginTop } = canvas.style
+  return { width, height, marginLeft, marginTop }
+}
+
+function samePinnedStyle(a: PinnedStyle, b: PinnedStyle): boolean {
+  return (
+    a.width === b.width &&
+    a.height === b.height &&
+    a.marginLeft === b.marginLeft &&
+    a.marginTop === b.marginTop
+  )
+}
+
+/**
+ * Puts back the inline style the canvas's owner set, so the page's own sizing is measured. A style
+ * that differs from what sizeCanvas last wrote was set by the owner since, and becomes theirs.
+ */
+function restoreOwnStyle(canvas: HTMLCanvasElement): void {
+  const current = inlineStyle(canvas)
+  const pinned = pinnedStyles.get(canvas)
+  const own = pinned && samePinnedStyle(current, pinned.written) ? pinned.own : current
+  pinnedStyles.set(canvas, { own, written: current })
   Object.assign(canvas.style, own)
-  return own
+}
+
+/** Records the style sizeCanvas wrote, so a later change by the owner can be told apart. */
+function rememberWrittenStyle(canvas: HTMLCanvasElement): void {
+  const pinned = pinnedStyles.get(canvas)
+  if (pinned) pinnedStyles.set(canvas, { own: pinned.own, written: inlineStyle(canvas) })
 }
 
 /**
@@ -119,6 +141,7 @@ export function sizeCanvas(
     canvas.style.marginLeft = `${marginLeft + left - box.left}px`
     canvas.style.marginTop = `${marginTop + top - box.top}px`
   }
+  rememberWrittenStyle(canvas)
   if (onViewportResize) {
     onViewportResize(width, height)
   } else if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
