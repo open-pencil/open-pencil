@@ -165,7 +165,7 @@ export function createCollaborationStateStore(
         })
       } catch (error) {
         // Nothing records the file, so nothing would ever sweep it.
-        await objects.delete(objectKey).catch(() => undefined)
+        await objects.delete(objectKey)
         throw error
       }
     }

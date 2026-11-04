@@ -138,10 +138,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         persistTimer: null,
         log
       }
-      document.on('update', (update: Uint8Array) => {
-        log.record(update)
-        schedulePersist(room)
-      })
+      document.on('update', () => schedulePersist(room))
       rooms.set(room.id, room)
       return room
     })()
@@ -158,7 +155,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     if (room.persistTimer) clearTimeout(room.persistTimer)
     room.persistTimer = null
     try {
-      await room.log.save(room.document, { closing })
+      await room.log.save({ closing })
       return true
     } catch (error) {
       report('Saving a collaboration room failed:', error)
