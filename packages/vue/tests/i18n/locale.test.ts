@@ -28,6 +28,8 @@ describe('browser locale matching', () => {
     expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('pt-BR')
     expect(resolveBrowserLocale(['pt-PT'])).toBe('pt-BR')
     expect(resolveBrowserLocale(['pt'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['en-US', 'pt-BR'])).toBe('en')
+    expect(resolveBrowserLocale(['fr-CA', 'pt-PT'])).toBe('fr')
   })
 
   test('falls back to English when no locale matches', () => {
