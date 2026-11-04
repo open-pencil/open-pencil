@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "open_pencil"
-version = "0.17.0-beta.1"
+version = "0.17.0-beta.2"
 dependencies = [
  "fix-path-env",
  "fontique",

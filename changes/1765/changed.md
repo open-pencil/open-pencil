@@ -1,1 +1,0 @@
-- Imported HTML lands where a browser lays it out at 1440×900: CSS grid, floats, viewport units, media queries, and `body` styles place layers as on the page, and auto layout is kept wherever it reproduces the page.

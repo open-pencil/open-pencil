@@ -1,1 +1,0 @@
-- A design or board saved to disk in the desktop app appears in recent files on Home, as a file opened from disk does.

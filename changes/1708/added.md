@@ -1,1 +1,0 @@
-- `@open-pencil/oxlint-plugin/recommended` is the Oxlint configuration OpenPencil's repositories extend: the TypeScript, import, unicorn, promise, and Node rules they follow and the plugin's own, for a JSON `extends` path or `oxlint.config.ts`.

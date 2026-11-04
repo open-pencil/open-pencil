@@ -1,1 +1,0 @@
-- Official builds offer to report an unexpected error, or a problem you describe from **File → Report a Problem…**, to the OpenPencil team, optionally with recent diagnostics and the open document; nothing is sent until you choose **Send report**, and the next launch offers the error that ended a crashed session.

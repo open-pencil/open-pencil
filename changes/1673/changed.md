@@ -1,1 +1,0 @@
-- Model settings open from the chat's model picker instead of a gear beside the message field.
