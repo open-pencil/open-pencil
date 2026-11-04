@@ -26,6 +26,7 @@ import {
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
+import { primaryAxisGap, siblingOverlap } from './layout/item-spacing'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
@@ -37,7 +38,6 @@ export {
 } from './layout/text-measurement'
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 import { fitShapeWithTextFrame } from './layout/shape-with-text'
@@ -198,27 +198,60 @@ function buildYogaTree(
   if (heldAxes.includes('height')) root.setHeight(frame.height)
 
   configureFlexContainer(root, frame, direction)
+  insertFlexChildren(root, frame, graph, direction)
 
-  const children = graph.getChildren(frame.id).map((child) => asLaidOutIn(graph, child, frame))
-  for (const child of children) {
+  return root
+}
+
+function insertFlexChildren(
+  yogaParent: YogaNode,
+  parent: SceneNode,
+  graph: SceneGraph,
+  direction: 'LTR' | 'RTL'
+): void {
+  // Each in-flow child gives up the overlap after it, and the frame takes it back as trailing
+  // padding: a row then fits as many children as Figma's sum of sizes and negative gaps allows,
+  // every row starts at the frame's edge, and a hugging frame ends at its last child.
+  const overlap = siblingOverlap(parent)
+  const horizontal = parent.layoutMode === 'HORIZONTAL'
+  let hasInFlowChild = false
+  for (const node of graph.getChildren(parent.id)) {
+    const child = asLaidOutIn(graph, node, parent)
     const yogaChild = createYogaNode()
 
     if (child.layoutPositioning === 'ABSOLUTE') {
       configureAbsoluteChild(yogaChild, child)
     } else if (!child.visible) {
       yogaChild.setDisplay(Display.None)
-    } else if (child.layoutMode === 'GRID') {
-      configureChildAsGrid(yogaChild, child, frame, graph, direction)
-    } else if (child.layoutMode !== 'NONE') {
-      configureChildAsAutoLayout(yogaChild, child, frame, graph, direction)
     } else {
-      configureChildAsLeaf(yogaChild, child, frame, graph)
+      configureInFlowChild(yogaChild, child, parent, graph, direction)
+      if (overlap > 0) yogaChild.setMargin(horizontal ? Edge.End : Edge.Bottom, -overlap)
+      hasInFlowChild = true
     }
 
-    root.insertChild(yogaChild, root.getChildCount())
+    yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
   }
+  if (overlap > 0 && hasInFlowChild) {
+    if (!horizontal) yogaParent.setPadding(Edge.Bottom, parent.paddingBottom + overlap)
+    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, parent.paddingLeft + overlap)
+    else yogaParent.setPadding(Edge.Right, parent.paddingRight + overlap)
+  }
+}
 
-  return root
+function configureInFlowChild(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  graph: SceneGraph,
+  direction: 'LTR' | 'RTL'
+): void {
+  if (child.layoutMode === 'GRID') {
+    configureChildAsGrid(yogaChild, child, parent, graph, direction)
+  } else if (child.layoutMode !== 'NONE') {
+    configureChildAsAutoLayout(yogaChild, child, parent, graph, direction)
+  } else {
+    configureChildAsLeaf(yogaChild, child, parent, graph)
+  }
 }
 
 function configureFlexContainer(
@@ -244,10 +277,7 @@ function configureFlexContainer(
   yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
   yogaNode.setPadding(Edge.Left, node.paddingLeft)
 
-  // Space between takes the place of the gap in Figma's auto layout. A generated frame keeps it
-  // as the least space between its sublayers, as a sticky note keeps its author clear of a long body.
-  const primaryGap =
-    node.primaryAxisAlign === 'SPACE_BETWEEN' && !isGeneratedFrame(node) ? 0 : node.itemSpacing
+  const primaryGap = primaryAxisGap(node)
   yogaNode.setGap(
     Gutter.Column,
     node.layoutMode === 'HORIZONTAL' ? primaryGap : node.counterAxisSpacing
@@ -427,22 +457,7 @@ function configureChildAsAutoLayout(
   if (heldAxes.includes('width') && widthSizing === 'HUG') yogaChild.setWidth(child.width)
   if (heldAxes.includes('height') && heightSizing === 'HUG') yogaChild.setHeight(child.height)
 
-  const grandchildren = graph.getChildren(child.id).map((gc) => asLaidOutIn(graph, gc, child))
-  for (const gc of grandchildren) {
-    const yogaGC = createYogaNode()
-    if (gc.layoutPositioning === 'ABSOLUTE') {
-      configureAbsoluteChild(yogaGC, gc)
-    } else if (!gc.visible) {
-      yogaGC.setDisplay(Display.None)
-    } else if (gc.layoutMode === 'GRID') {
-      configureChildAsGrid(yogaGC, gc, child, graph, direction)
-    } else if (gc.layoutMode !== 'NONE') {
-      configureChildAsAutoLayout(yogaGC, gc, child, graph, direction)
-    } else {
-      configureChildAsLeaf(yogaGC, gc, child, graph)
-    }
-    yogaChild.insertChild(yogaGC, yogaChild.getChildCount())
-  }
+  insertFlexChildren(yogaChild, child, graph, direction)
 }
 
 function derivedGrowingLeafFitsParent(
