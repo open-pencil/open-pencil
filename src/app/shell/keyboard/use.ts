@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -41,6 +42,7 @@ export function useKeyboard() {
 
   registerKeyboardShortcuts({
     inputFocused,
+    overlays: useOpenOverlays(),
     store,
     runCommand,
     actions,

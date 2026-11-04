@@ -94,6 +94,8 @@ function siblingShortcut(
   }
 }
 
+// Fallback for overlays that do not register through `useOverlayOpen` yet: menus, popovers, and
+// context menus built on Reka's roots directly. Remove once they all go through shared wrappers.
 const EDITOR_SHORTCUT_OVERLAY_SELECTOR =
   '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
 const PICKER_SELECTOR = '[data-picker-content]'
@@ -138,6 +140,7 @@ function shouldIgnoreShortcut(
 ) {
   return (
     isButtonActivation(event) ||
+    !!options.overlays?.holdsKeys(history) ||
     hasOpenDismissableLayer(history) ||
     originatedInOverlay(event, history) ||
     isEditing(event) ||
