@@ -1,0 +1,1 @@
+- In a shared Cloud document, the tab that saves for the room uploads a checkpoint a minute after the last edit instead of after every pause, and closing it no longer warns about unsaved changes while the room holds the edits.
