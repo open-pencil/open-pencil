@@ -42,6 +42,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
+import { useCanvasViewportBounds } from '@/app/editor/canvas/viewport'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -61,8 +62,9 @@ import CanvasLabelEditor from './canvas/labels/CanvasLabelEditor.vue'
 import { canvasLabelPresentation } from './canvas/labels/presentation'
 import NumberField from './inputs/NumberField.vue'
 
-const { paneId } = defineProps<{
+const { paneId, headerHeight = 0 } = defineProps<{
   paneId?: string
+  headerHeight?: number
 }>()
 
 const store = useEditorStore()
@@ -70,7 +72,12 @@ const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const isActivePane = computed(() => !paneId || store.activePaneId.value === paneId)
-const followView = useFollowView(useTemplateRef<HTMLElement>('area'))
+const area = useTemplateRef<HTMLElement>('area')
+const followView = useFollowView(area)
+const viewportBounds = useCanvasViewportBounds(area, () => headerHeight)
+onUnmounted(
+  store.panes.registerViewport(paneId ?? store.activePaneId.value, () => viewportBounds.value)
+)
 
 function activatePane() {
   if (paneId) store.setActivePane(paneId)
@@ -130,6 +137,7 @@ useCanvas(sceneCanvasRef, store, {
   }
 })
 const {
+  render: renderOverlays,
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
@@ -148,6 +156,7 @@ const {
     )
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
+  getViewportBounds: () => viewportBounds.value,
   shouldSuspendRender,
   getRenderState,
   onViewportResize
@@ -174,11 +183,16 @@ const {
   updatePaneCursor,
   activatePane,
   () => isActivePane.value,
-  () => appPreferences.value.navigation.zoomSpeed
+  () => appPreferences.value.navigation.zoomSpeed,
+  () => viewportBounds.value
 )
+
+// Moving chrome only repaints the overlay; the scene and its surface remain untouched.
+watch(viewportBounds, () => renderOverlays())
 
 watch(isActivePane, (active) => {
   if (!active) cleanupInteractions()
+  else if (area.value) store.setViewportSize(area.value.clientWidth, area.value.clientHeight)
 })
 onUnmounted(cleanupInteractions)
 

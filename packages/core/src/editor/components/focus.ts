@@ -19,9 +19,9 @@ export function createComponentFocusActions(ctx: EditorContext) {
     ctx.setSelectedIds(new Set([component.id]))
 
     const abs = ctx.graph.getAbsolutePosition(component.id)
-    const { width: viewW, height: viewH } = ctx.getViewportSize()
-    ctx.state.panX = viewW / 2 - (abs.x + component.width / 2) * ctx.state.zoom
-    ctx.state.panY = viewH / 2 - (abs.y + component.height / 2) * ctx.state.zoom
+    const { x, y, width, height } = ctx.getViewportBounds()
+    ctx.state.panX = x + width / 2 - (abs.x + component.width / 2) * ctx.state.zoom
+    ctx.state.panY = y + height / 2 - (abs.y + component.height / 2) * ctx.state.zoom
     ctx.requestRender()
   }
 

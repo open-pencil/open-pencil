@@ -8,7 +8,7 @@ test.describe('split canvas views', () => {
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
     await expect(page.locator('[data-slot="canvas-pane-header"]')).toHaveCount(0)
-    await canvas.drawRect(140, 180, 180, 120)
+    await canvas.drawRect(400, 180, 180, 120)
 
     await page.getByRole('menuitem', { name: 'View', exact: true }).click()
     await page.getByRole('menuitem', { name: 'Split right' }).click()
@@ -29,7 +29,7 @@ test.describe('split canvas views', () => {
     expect(firstBox?.width).toBeGreaterThan(300)
     expect(secondBox?.width).toBeGreaterThan(300)
 
-    await panes.nth(0).click({ position: { x: 100, y: 100 } })
+    await panes.nth(0).click({ position: { x: 400, y: 100 } })
     await expect(panes.nth(0)).toHaveAttribute('data-active-pane', 'true')
     await expect(headers.nth(0)).toHaveAttribute('data-active', 'true')
 

@@ -32,7 +32,7 @@ export function createPageViewportStore(ctx: EditorContext) {
    * layer fitted into the canvas, and the origin at the centre at 100% when it has none.
    */
   function firstVisitViewport(pageId: string): ViewportTransform {
-    const size = ctx.getViewportSize()
+    const size = ctx.getViewportBounds()
     // Nothing to fit into a canvas not yet measured: the page opens at the origin at 100%, and a
     // host that reports its size later calls zoomToFit.
     if (!isMeasured()) {
@@ -40,7 +40,7 @@ export function createPageViewportStore(ctx: EditorContext) {
       return { panX: 0, panY: 0, zoom: 1 }
     }
     const bounds = pageContentBounds(ctx.graph, pageId)
-    if (!bounds) return { panX: size.width / 2, panY: size.height / 2, zoom: 1 }
+    if (!bounds) return { panX: size.x + size.width / 2, panY: size.y + size.height / 2, zoom: 1 }
     return fitViewport(bounds, size, FIT_INSETS)
   }
 

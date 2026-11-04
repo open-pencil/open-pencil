@@ -50,6 +50,8 @@ function buildEditorStore(initialGraph?: SceneGraph) {
   const state = shallowReactive<AppEditorState>(createInitialAppEditorState(graph.getPages()[0].id))
 
   const viewportSize = { width: 0, height: 0 }
+  const panes = createCanvasPaneRegistry(state)
+  const getViewportBounds = () => panes.getActiveViewportBounds() ?? { x: 0, y: 0, ...viewportSize }
   const editor = createEditor({
     graph,
     state,
@@ -58,6 +60,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     shaderRasterizer: createShaderRasterizer(),
     resolveFigmaClipboardImages: IS_TAURI ? resolveFigmaClipboardImages : undefined,
     skipInitialGraphSetup: !!initialGraph,
+    getViewportBounds,
     getUserName: () => useCollabIdentity().name.value,
     getViewportSize: () =>
       viewportSize.width > 0 && viewportSize.height > 0
@@ -75,20 +78,12 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     editor.subscribeToGraph()
   }
 
-  const { selectedNodes, selectedNode, layerTree, disposeSelection } = createEditorComputedRefs(
-    editor,
-    state
-  )
-  // Mirror the document color space into app state so UI can react to it.
-  const syncDocumentColorSpace = () => {
-    state.documentColorSpace = editor.graph.documentColorSpace
-  }
-  syncDocumentColorSpace()
-  const stopColorSpaceSync = editor.onEditorEvent(
-    'document:color-space-changed',
-    syncDocumentColorSpace
-  )
-  editor.onEditorEvent('graph:replaced', syncDocumentColorSpace)
+  const {
+    selectedNodes,
+    selectedNode,
+    layerTree,
+    dispose: disposeComputed
+  } = createEditorComputedRefs(editor, state)
   const recentPages = createRecentPages(editor)
 
   const preparationEvents = createEditorPreparationEvents()
@@ -140,12 +135,17 @@ function buildEditorStore(initialGraph?: SceneGraph) {
   const preparationController = createEditorPreparationController(state, preparationEvents, {
     editor
   })
-  const modules = createEditorStoreModules(editor, state, io, viewportSize, preparationController)
+  const modules = createEditorStoreModules(
+    editor,
+    state,
+    io,
+    viewportSize,
+    preparationController,
+    getViewportBounds
+  )
 
   // ─── Public API ───────────────────────────────────────────────
   // Spread all core Editor methods, then override getters and add app-specific.
-
-  const panes = createCanvasPaneRegistry(state)
 
   async function switchPage(pageId: string, options: AppSwitchPageOptions = {}) {
     const page = editor.graph.getNode(pageId)
@@ -221,6 +221,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
       return preparationEvents.on(event, handler)
     },
     panes,
+    getViewportBounds,
     selectedNodes,
     selectedNode,
     layerTree,
@@ -239,9 +240,8 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     // App-specific overrides and additions
     ...modules,
     dispose() {
-      stopColorSpaceSync()
       recentPages.dispose()
-      disposeSelection()
+      disposeComputed()
       modules.dispose()
     }
   }

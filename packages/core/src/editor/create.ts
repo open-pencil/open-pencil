@@ -276,6 +276,8 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    getViewportBounds: () =>
+      options?.getViewportBounds?.() ?? { x: 0, y: 0, ..._getViewportSize() },
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,

@@ -74,12 +74,12 @@ function toggleRemoteCursors() {
 }
 
 function zoomIn() {
-  const center = store.viewportScreenCenter()
+  const center = store.viewportCanvasCenter()
   store.applyZoom(-100, center.x, center.y)
 }
 
 function zoomOut() {
-  const center = store.viewportScreenCenter()
+  const center = store.viewportCanvasCenter()
   store.applyZoom(100, center.x, center.y)
 }
 

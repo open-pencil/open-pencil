@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useCanvasViewportBounds } from '@/app/editor/canvas/viewport'
 import type { CanvasSplitNode } from '@/app/editor/panes/split-tree'
 import CanvasPaneHeader from '@/components/canvas/CanvasPaneHeader.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -16,6 +18,9 @@ const { node } = defineProps<{
 const store = useEditorStore()
 const direction = computed(() => (node.type === 'split' ? node.direction : 'horizontal'))
 const splitterStyles = tv(splitterTheme)
+const visibleBounds = useCanvasViewportBounds(useTemplateRef<HTMLElement>('pane'))
+const { height: headerHeight } = useElementSize(useTemplateRef<HTMLElement>('header'))
+const showHeader = computed(() => store.state.showUI && store.visiblePaneCount.value > 1)
 
 function setLayout(sizes: number[]) {
   if (node.type === 'split') store.setSplitSizes(node.id, sizes)
@@ -25,11 +30,19 @@ function setLayout(sizes: number[]) {
 <template>
   <div
     v-if="node.type === 'pane'"
+    ref="pane"
     :data-pane-id="node.paneId"
     class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
   >
-    <CanvasPaneHeader v-if="store.visiblePaneCount.value > 1" :pane-id="node.paneId" />
-    <EditorCanvas :pane-id="node.paneId" />
+    <EditorCanvas :pane-id="node.paneId" :header-height="showHeader ? headerHeight : 0" />
+    <div
+      v-if="showHeader"
+      ref="header"
+      class="absolute top-0 z-10"
+      :style="{ left: `${visibleBounds.x}px`, width: `${visibleBounds.width}px` }"
+    >
+      <CanvasPaneHeader :pane-id="node.paneId" />
+    </div>
   </div>
 
   <SplitterGroup

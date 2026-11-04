@@ -55,9 +55,9 @@ function fixedSizePatch(
 
 export function createFramePresetActions(ctx: EditorContext, createShape: CreateShape) {
   function createFrameFromPreset(preset: FramePresetDimensions): string {
-    const { width: viewportWidth, height: viewportHeight } = ctx.getViewportSize()
-    const centerX = (viewportWidth / 2 - ctx.state.panX) / ctx.state.zoom
-    const centerY = (viewportHeight / 2 - ctx.state.panY) / ctx.state.zoom
+    const { x, y, width, height } = ctx.getViewportBounds()
+    const centerX = (x + width / 2 - ctx.state.panX) / ctx.state.zoom
+    const centerY = (y + height / 2 - ctx.state.panY) / ctx.state.zoom
     const previousSelection = new Set(ctx.state.selectedIds)
     const id = ctx.undo.runBatch('Create frame', () => {
       const createdId = createShape(

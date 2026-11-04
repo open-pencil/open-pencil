@@ -2,6 +2,7 @@ import { computed, watch } from 'vue'
 
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { IORegistry } from '@open-pencil/core/io'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state'
 
 import { createDocumentExportActions } from '@/app/document/export'
@@ -37,6 +38,16 @@ export function defineEditorStoreAccessors(store: object, editor: Editor) {
 
 export function createEditorComputedRefs(editor: Editor, state: AppEditorState) {
   const { nodes: selectedNodes, dispose: disposeSelection } = createSelectedNodeState(editor)
+  // Mirror document color space into app state alongside the other derived document state.
+  const syncDocumentColorSpace = () => {
+    state.documentColorSpace = editor.graph.documentColorSpace
+  }
+  syncDocumentColorSpace()
+  const stopColorSpaceSync = editor.onEditorEvent(
+    'document:color-space-changed',
+    syncDocumentColorSpace
+  )
+  const stopGraphSync = editor.onEditorEvent('graph:replaced', syncDocumentColorSpace)
 
   const selectedNode = computed(() =>
     selectedNodes.value.length === 1 ? selectedNodes.value[0] : undefined
@@ -47,7 +58,16 @@ export function createEditorComputedRefs(editor: Editor, state: AppEditorState) 
     return editor.getLayerTree()
   })
 
-  return { selectedNodes, selectedNode, layerTree, disposeSelection }
+  return {
+    selectedNodes,
+    selectedNode,
+    layerTree,
+    dispose() {
+      stopColorSpaceSync()
+      stopGraphSync()
+      disposeSelection()
+    }
+  }
 }
 
 export function createEditorStoreModules(
@@ -55,13 +75,14 @@ export function createEditorStoreModules(
   state: AppEditorState,
   io: IORegistry,
   viewportSize: ViewportSize,
-  preparationController: EditorPreparationController
+  preparationController: EditorPreparationController,
+  getViewportBounds: () => Rect
 ) {
   const flash = createFlashActions(editor, state)
   const documentIO = createDocumentIOActions(editor, state, viewportSize, preparationController)
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
-  const profiler = createProfilerActions(editor)
+  const profiler = createProfilerActions(editor, getViewportBounds)
   const designCheck = createDesignCheck(editor, state)
   // A document opens with the panels its kind starts with: a board on the canvas alone.
   watch(

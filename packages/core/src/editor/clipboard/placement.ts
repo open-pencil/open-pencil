@@ -140,10 +140,15 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
 
   /** The visible part of the canvas, or null when the editor has no viewport. */
   function viewportRect(): Rect | null {
-    const { width, height } = ctx.getViewportSize()
+    const { x, y, width, height } = ctx.getViewportBounds()
     if (width <= 0 || height <= 0) return null
     const { panX, panY, zoom } = ctx.state
-    return { x: -panX / zoom, y: -panY / zoom, width: width / zoom, height: height / zoom }
+    return {
+      x: (x - panX) / zoom,
+      y: (y - panY) / zoom,
+      width: width / zoom,
+      height: height / zoom
+    }
   }
 
   /** Centers each axis of the layers that does not fit inside their frame. */

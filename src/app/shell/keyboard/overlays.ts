@@ -4,7 +4,9 @@ import type { OpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 // context menus built on Reka's roots directly. Remove once they all go through shared wrappers.
 const OVERLAY_SELECTOR = '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
 const PICKER_SELECTOR = '[data-picker-content]'
-const OPEN_LAYER_SELECTOR = '[data-dismissable-layer]:not([data-state="closed"])'
+// A persistent canvas toolbar leaves shortcuts available; its opened menus still take them.
+const OPEN_LAYER_SELECTOR =
+  '[data-dismissable-layer]:not([data-state="closed"]):not([role="toolbar"])'
 
 function originatedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
   return event

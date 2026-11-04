@@ -54,14 +54,14 @@ export function createIconActions(ctx: EditorContext) {
     const icon = await fetchIcon(name, ICON_SIZE)
     // Opening another document while the icon loaded leaves nothing to insert it into.
     if (ctx.graph !== graph) return null
-    const { width, height } = ctx.getViewportSize()
+    const { x: left, y: top, width, height } = ctx.getViewportBounds()
     const parentId = ctx.state.enteredContainerId ?? ctx.state.currentPageId
     const origin =
       parentId === ctx.state.currentPageId
         ? { x: 0, y: 0 }
         : ctx.graph.getAbsolutePosition(parentId)
-    const x = (width / 2 - ctx.state.panX) / ctx.state.zoom - origin.x - ICON_SIZE / 2
-    const y = (height / 2 - ctx.state.panY) / ctx.state.zoom - origin.y - ICON_SIZE / 2
+    const x = (left + width / 2 - ctx.state.panX) / ctx.state.zoom - origin.x - ICON_SIZE / 2
+    const y = (top + height / 2 - ctx.state.panY) / ctx.state.zoom - origin.y - ICON_SIZE / 2
     const previousSelection = new Set(ctx.state.selectedIds)
     const frame = placeIcon(ctx.graph, parentId, icon, {
       size: ICON_SIZE,

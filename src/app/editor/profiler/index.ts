@@ -1,30 +1,10 @@
 import type { Editor } from '@open-pencil/core'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-export function createProfilerActions(editor: Editor) {
-  function activeCanvas() {
-    return (
-      document.querySelector<HTMLCanvasElement>(
-        '[data-active-pane="true"] [data-test-id="canvas-element"]'
-      ) ?? document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
-    )
-  }
-
-  function viewportScreenCenter() {
-    const canvas = activeCanvas()
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-    }
-    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-  }
-
+export function createProfilerActions(editor: Editor, getViewportBounds: () => Rect) {
   function viewportCanvasCenter() {
-    const canvas = activeCanvas()
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      return { x: rect.width / 2, y: rect.height / 2 }
-    }
-    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const { x, y, width, height } = getViewportBounds()
+    return { x: x + width / 2, y: y + height / 2 }
   }
 
   function toggleProfiler() {
@@ -35,5 +15,5 @@ export function createProfilerActions(editor: Editor) {
     editor.requestRepaint()
   }
 
-  return { viewportScreenCenter, viewportCanvasCenter, toggleProfiler }
+  return { viewportCanvasCenter, toggleProfiler }
 }

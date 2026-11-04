@@ -26,6 +26,8 @@ export interface UseCanvasOptions {
    * Overlays that pin to the viewport edge, such as issue edge pins, keep clear of them.
    */
   getOverlayObstacles?: () => readonly Rect[]
+  /** Unobscured canvas area where rulers are drawn; defaults to the whole canvas. */
+  getViewportBounds?: () => Rect
   /**
    * Keeps the drawing buffer after presenting frames.
    *

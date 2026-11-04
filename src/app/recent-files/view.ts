@@ -9,7 +9,7 @@ import {
 
 type ViewedDocument = Pick<
   EditorStore,
-  'graph' | 'state' | 'getDocumentFilePath' | 'getStorageBinding' | 'getViewportSize'
+  'graph' | 'state' | 'getDocumentFilePath' | 'getStorageBinding' | 'getViewportBounds'
 >
 
 function recentIdOf(store: ViewedDocument): string | null {
@@ -20,10 +20,10 @@ function recentIdOf(store: ViewedDocument): string | null {
 export function rememberDocumentView(store: ViewedDocument): void {
   const id = recentIdOf(store)
   if (!id) return
-  const { width, height } = store.getViewportSize()
+  const { x, y, width, height } = store.getViewportBounds()
   const { panX, panY, zoom, currentPageId } = store.state
   if (width <= 0 || height <= 0 || zoom <= 0) return
-  const center = { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom }
+  const center = { x: (x + width / 2 - panX) / zoom, y: (y + height / 2 - panY) / zoom }
   // A view too far out to store as a number opens fitted instead.
   if (!Number.isFinite(center.x) || !Number.isFinite(center.y)) return
   rememberRecentDocumentView(id, { pageId: currentPageId, center, zoom })

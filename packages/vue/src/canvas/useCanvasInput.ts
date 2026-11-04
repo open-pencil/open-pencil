@@ -3,6 +3,7 @@ import { onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { createAutoLayoutValueEdit } from '#vue/canvas/auto-layout/value-edit'
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
@@ -67,7 +68,8 @@ export function useCanvasInput(
   onActivate?: () => void,
   isEnabled: () => boolean = () => true,
   /** How far wheel and pinch zoom move per event; 1 is the default rate. */
-  zoomSpeed: () => number = () => 1
+  zoomSpeed: () => number = () => 1,
+  getRulerBounds?: () => Rect
 ) {
   const drag = ref<DragState | null>(null)
   const profile = () => resolveEditorProfile(editor.state)
@@ -165,6 +167,7 @@ export function useCanvasInput(
   const guideInput = createGuideInput({
     canvasRef,
     editor,
+    getRulerBounds,
     canvasToLocal,
     setDrag,
     setCursor: (cursor) => {

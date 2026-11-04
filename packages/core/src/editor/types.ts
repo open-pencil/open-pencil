@@ -267,6 +267,8 @@ export interface EditorOptions {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
   getViewportSize?: () => { width: number; height: number }
+  /** Unobscured canvas area in screen pixels, for fitting, centering, and placing layers. */
+  getViewportBounds?: () => Rect
   /** The name of whoever is editing, which a sticky note they place is signed with. */
   getUserName?: () => string
   /** Where icons are searched and fetched; defaults to Iconify. */
@@ -289,6 +291,7 @@ export interface EditorContext {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages: FigmaClipboardImageResolver | null
   getViewportSize: () => { width: number; height: number }
+  getViewportBounds: () => Rect
   getUserName: () => string
   icons: IconProvider
   getCk: () => CanvasKit | null

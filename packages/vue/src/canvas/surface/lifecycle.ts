@@ -177,6 +177,7 @@ export function createCanvasSurfaceManager({
   function renderNow() {
     if (!state.renderer || isDestroyed()) return
     state.renderer.overlayObstacles = overlayObstacles()
+    state.renderer.chromeBounds = options?.getViewportBounds?.() ?? null
     const view = options?.getRenderState?.() ?? editor.state
     state.renderer.renderFromEditorState(
       view,

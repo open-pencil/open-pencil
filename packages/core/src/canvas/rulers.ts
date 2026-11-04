@@ -3,7 +3,7 @@ import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
-import { getGuideScreenSegment } from '#core/canvas/guides/geometry'
+import { getGuideScreenSegment, type GuideViewport } from '#core/canvas/guides/geometry'
 import type { GuideOverlayState, GuideSelection } from '#core/canvas/guides/types'
 import {
   MEASUREMENT_COLOR,
@@ -31,41 +31,42 @@ interface SelectionScreenBounds {
 }
 
 function getSelectionScreenBounds(
-  r: SkiaRenderer,
+  view: GuideViewport,
   graph: SceneGraph,
   selNodes: SceneNode[]
 ): SelectionScreenBounds {
   const b = computeAbsoluteBounds(selNodes, (id) => graph.getAbsolutePosition(id))
   return {
-    sx1: b.x * r.zoom + r.panX,
-    sx2: (b.x + b.width) * r.zoom + r.panX,
-    sy1: b.y * r.zoom + r.panY,
-    sy2: (b.y + b.height) * r.zoom + r.panY
+    sx1: b.x * view.zoom + view.panX,
+    sx2: (b.x + b.width) * view.zoom + view.panX,
+    sy1: b.y * view.zoom + view.panY,
+    sy2: (b.y + b.height) * view.zoom + view.panY
   }
 }
 
 function drawHorizontalRulerTicks(
   r: SkiaRenderer,
+  view: GuideViewport,
   canvas: Canvas,
   font: InstanceType<CanvasKit['Font']>,
   step: number,
   selBounds: SelectionScreenBounds | null
 ): void {
   const R = RULER_SIZE
-  const vw = r.viewportWidth
+  const vw = view.width
   const minorStep = step / 5
   const badgeW = RULER_BADGE_EXCLUSION
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(R, 0, vw, R), r.ck.ClipOp.Intersect, false)
-  const worldLeft = -r.panX / r.zoom
-  const worldRight = (vw - r.panX) / r.zoom
+  const worldLeft = -view.panX / r.zoom
+  const worldRight = (vw - view.panX) / r.zoom
   const startX = Math.floor(worldLeft / step) * step
 
   // Every tick is one line segment in a single draw; only the labels are drawn one by one.
   const ticks: number[] = []
   for (let wx = startX; wx <= worldRight; wx += minorStep) {
-    const sx = wx * r.zoom + r.panX
+    const sx = wx * r.zoom + view.panX
     if (sx < R) continue
     const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -86,25 +87,26 @@ function drawHorizontalRulerTicks(
 
 function drawVerticalRulerTicks(
   r: SkiaRenderer,
+  view: GuideViewport,
   canvas: Canvas,
   font: InstanceType<CanvasKit['Font']>,
   step: number,
   selBounds: SelectionScreenBounds | null
 ): void {
   const R = RULER_SIZE
-  const vh = r.viewportHeight
+  const vh = view.height
   const minorStep = step / 5
   const badgeW = RULER_BADGE_EXCLUSION
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(0, R, R, vh), r.ck.ClipOp.Intersect, false)
-  const worldTop = -r.panY / r.zoom
-  const worldBottom = (vh - r.panY) / r.zoom
+  const worldTop = -view.panY / r.zoom
+  const worldBottom = (vh - view.panY) / r.zoom
   const startY = Math.floor(worldTop / step) * step
 
   const ticks: number[] = []
   for (let wy = startY; wy <= worldBottom; wy += minorStep) {
-    const sy = wy * r.zoom + r.panY
+    const sy = wy * r.zoom + view.panY
     if (sy < R) continue
     const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -135,25 +137,35 @@ export function drawRulers(
   guides?: GuideOverlayState
 ): void {
   const R = RULER_SIZE
-  const vw = r.viewportWidth
-  const vh = r.viewportHeight
-  if (vw === 0 || vh === 0) return
+  const bounds = r.chromeBounds ?? { x: 0, y: 0, width: r.viewportWidth, height: r.viewportHeight }
+  const view: GuideViewport = {
+    panX: r.panX - bounds.x,
+    panY: r.panY - bounds.y,
+    zoom: r.zoom,
+    width: bounds.width,
+    height: bounds.height
+  }
+  const vw = view.width
+  const vh = view.height
+  if (vw <= 0 || vh <= 0) return
+  const font = r.chromeFonts.size ?? r.chromeFonts.text
+  if (!font) return
+  canvas.save()
+  canvas.translate(bounds.x, bounds.y)
+  canvas.clipRect(r.ck.LTRBRect(0, 0, vw, vh), r.ck.ClipOp.Intersect, false)
 
   canvas.drawRect(r.ck.LTRBRect(0, 0, vw, R), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, R, R, vh), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, 0, R, R), r.rulerBgPaint)
 
-  const font = r.chromeFonts.size ?? r.chromeFonts.text
-  if (!font) return
-
   const step = rulerStep(r)
   const selNodes = [...selectedIds]
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
-  const selBounds = selNodes.length > 0 ? getSelectionScreenBounds(r, graph, selNodes) : null
+  const selBounds = selNodes.length > 0 ? getSelectionScreenBounds(view, graph, selNodes) : null
 
-  drawHorizontalRulerTicks(r, canvas, font, step, selBounds)
-  drawVerticalRulerTicks(r, canvas, font, step, selBounds)
+  drawHorizontalRulerTicks(r, view, canvas, font, step, selBounds)
+  drawVerticalRulerTicks(r, view, canvas, font, step, selBounds)
 
   if (selBounds) {
     r.rulerHlPaint.setColor(r.selColor(RULER_HIGHLIGHT_ALPHA))
@@ -164,7 +176,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx1 - r.panX) / r.zoom).toString(),
+      Math.round((selBounds.sx1 - view.panX) / r.zoom).toString(),
       Math.max(R, selBounds.sx1),
       0,
       'horizontal'
@@ -173,7 +185,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx2 - r.panX) / r.zoom).toString(),
+      Math.round((selBounds.sx2 - view.panX) / r.zoom).toString(),
       selBounds.sx2,
       0,
       'horizontal'
@@ -182,7 +194,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sy1 - r.panY) / r.zoom).toString(),
+      Math.round((selBounds.sy1 - view.panY) / r.zoom).toString(),
       0,
       Math.max(R, selBounds.sy1),
       'vertical'
@@ -191,14 +203,15 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sy2 - r.panY) / r.zoom).toString(),
+      Math.round((selBounds.sy2 - view.panY) / r.zoom).toString(),
       0,
       selBounds.sy2,
       'vertical'
     )
   }
 
-  drawGuideRulerPositions(r, canvas, graph, font, guides)
+  drawGuideRulerPositions(r, view, canvas, graph, font, guides)
+  canvas.restore()
 }
 
 function guideSelections(guides?: GuideOverlayState): GuideSelection[] {
@@ -245,6 +258,7 @@ function drawGuideRulerLabel(
 
 function drawGuideRulerPositions(
   r: SkiaRenderer,
+  view: GuideViewport,
   canvas: Canvas,
   graph: SceneGraph,
   font: InstanceType<CanvasKit['Font']>,
@@ -253,13 +267,7 @@ function drawGuideRulerPositions(
   if (guides?.preview) {
     const owner = graph.getNode(guides.preview.ownerId)
     if (!owner) return
-    const segment = getGuideScreenSegment(graph, owner, guides.preview, {
-      panX: r.panX,
-      panY: r.panY,
-      zoom: r.zoom,
-      width: r.viewportWidth,
-      height: r.viewportHeight
-    })
+    const segment = getGuideScreenSegment(graph, owner, guides.preview, view)
     drawGuideRulerLabel(
       r,
       canvas,
@@ -275,13 +283,7 @@ function drawGuideRulerPositions(
     const owner = graph.getNode(selection.ownerId)
     const guide = owner?.guides.find((candidate) => candidate.id === selection.guideId)
     if (!owner || !guide) continue
-    const segment = getGuideScreenSegment(graph, owner, guide, {
-      panX: r.panX,
-      panY: r.panY,
-      zoom: r.zoom,
-      width: r.viewportWidth,
-      height: r.viewportHeight
-    })
+    const segment = getGuideScreenSegment(graph, owner, guide, view)
     drawGuideRulerLabel(
       r,
       canvas,

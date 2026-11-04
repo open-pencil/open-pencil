@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef, triggerRef } from 'vue'
 
 import { type EditorState, copyEditorViewState, pickEditorViewState } from '@open-pencil/core'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import {
   closePaneNode,
@@ -23,6 +24,18 @@ export function createCanvasPaneRegistry(state: EditorState) {
   const activePaneId = ref(initialPane.id)
   const splitTree = ref<CanvasSplitNode>({ type: 'pane', paneId: initialPane.id })
   const visiblePaneCount = computed(() => paneCount(splitTree.value))
+  const viewports = new Map<string, () => Rect>()
+
+  function registerViewport(paneId: string, bounds: () => Rect) {
+    viewports.set(paneId, bounds)
+    return () => {
+      if (viewports.get(paneId) === bounds) viewports.delete(paneId)
+    }
+  }
+
+  function getActiveViewportBounds() {
+    return viewports.get(activePaneId.value)?.()
+  }
 
   function getPane(paneId: string): CanvasPaneState | undefined {
     return panes.value.get(paneId)
@@ -117,7 +130,9 @@ export function createCanvasPaneRegistry(state: EditorState) {
     closePane,
     resizePane,
     setSplitSizes,
-    maxVisiblePanes: MAX_VISIBLE_CANVAS_PANES
+    maxVisiblePanes: MAX_VISIBLE_CANVAS_PANES,
+    registerViewport,
+    getActiveViewportBounds
   }
 }
 

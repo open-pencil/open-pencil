@@ -33,6 +33,27 @@ function openedFromPath(path = PATH) {
 
 // Figma reopens a file on the page and at the view it was left at.
 describe("a document's remembered view", () => {
+  test('remembers the visible centre when panels cover unequal parts of the canvas', () => {
+    const store = openedFromPath()
+    store.panes.registerViewport(store.activePaneId.value, () => ({
+      x: 400,
+      y: 28,
+      width: 1200,
+      height: 1052
+    }))
+    rememberRecentFile(PATH, 'design')
+    store.centerOn(300, 200, 2)
+    expect(store.viewportCanvasCenter()).toEqual({ x: 1000, y: 554 })
+
+    rememberDocumentView(store)
+
+    expect(rememberedDocumentView(store)).toEqual({
+      pageId: store.state.currentPageId,
+      center: { x: 300, y: 200 },
+      zoom: 2
+    })
+  })
+
   test('keeps the page and the world point at the canvas centre with the recent file', async () => {
     const store = openedFromPath()
     rememberRecentFile(PATH, 'design')

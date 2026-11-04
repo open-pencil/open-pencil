@@ -49,6 +49,7 @@ function setup() {
     getCk: () => null,
     loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
+    getViewportBounds: () => ({ x: 0, y: 0, width: 800, height: 600 }),
     icons: iconify,
     subscribeToGraph: () => undefined,
     resolveFigmaClipboardImages: null,

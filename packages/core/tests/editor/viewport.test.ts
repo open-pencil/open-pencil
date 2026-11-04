@@ -5,6 +5,57 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const VIEWPORT = { width: 800, height: 600 }
 
+describe('canvas covered by editor panels', () => {
+  const visible = { x: 240, y: 28, width: 460, height: 572 }
+
+  function setup() {
+    return createEditor({ getViewportSize: () => VIEWPORT, getViewportBounds: () => visible })
+  }
+
+  test('fits and centers layers in the unobscured area', () => {
+    const editor = setup()
+    const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 180
+    })
+    editor.zoomToFit()
+    expect(editor.state.zoom).toBeCloseTo(390 / 300)
+    expect(screenOf(editor, 250, 290)).toEqual({ x: 480, y: 294 })
+
+    editor.select([node.id])
+    editor.zoomToSelection()
+    expect(editor.state.zoom).toBeCloseTo(360 / 300)
+    expect(screenOf(editor, 250, 290)).toEqual({ x: 480, y: 294 })
+
+    editor.centerOn(250, 290)
+    expect(screenOf(editor, 250, 290)).toEqual({ x: 470, y: 314 })
+    editor.zoomTo100()
+    expect(screenOf(editor, 250, 290)).toEqual({ x: 470, y: 314 })
+  })
+
+  test('reveals an object hidden behind a sidebar without changing its zoom', () => {
+    const editor = setup()
+    const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 60,
+      y: 100,
+      width: 100,
+      height: 100
+    })
+    editor.revealNodes([node.id])
+    expect(editor.state.zoom).toBe(1)
+    expect(screenOf(editor, 110, 150)).toEqual({ x: 470, y: 314 })
+  })
+
+  test('a new page fits into the visible part of the canvas', async () => {
+    const editor = setup()
+    const page = editor.graph.addPage('Another page')
+    await editor.switchPage(page.id)
+    expect(screenOf(editor, 0, 0)).toEqual({ x: 470, y: 314 })
+  })
+})
+
 /** The world point at the center of the viewport. */
 function center(editor: ReturnType<typeof createEditor>) {
   const { panX, panY, zoom } = editor.state
@@ -101,8 +152,20 @@ describe('zoomToFit', () => {
   test('leaves hidden layers and children outside an unclipped frame out of the fit', () => {
     const { editor } = withRect({ x: 100, y: 200, width: 300, height: 180 })
     const page = editor.state.currentPageId
-    editor.graph.createNode('RECTANGLE', page, { x: 3000, y: 3000, width: 100, height: 100, visible: false })
-    const frame = editor.graph.createNode('FRAME', page, { x: 100, y: 200, width: 300, height: 180, clipsContent: false })
+    editor.graph.createNode('RECTANGLE', page, {
+      x: 3000,
+      y: 3000,
+      width: 100,
+      height: 100,
+      visible: false
+    })
+    const frame = editor.graph.createNode('FRAME', page, {
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 180,
+      clipsContent: false
+    })
     editor.graph.createNode('RECTANGLE', frame.id, { x: 400, y: 0, width: 100, height: 100 })
 
     editor.zoomToFit()

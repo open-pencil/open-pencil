@@ -225,6 +225,8 @@ export class SkiaRenderer {
   statusLabels: PlacedStatusLabel[] = []
   /** Screen rectangles of UI floating over this canvas, which overlays such as edge pins avoid. */
   overlayObstacles: readonly Rect[] = []
+  /** Unobscured area where rulers are drawn, in canvas CSS pixels. */
+  chromeBounds: Rect | null = null
   /** Layers flashing for attention and those the AI is working on or just finished. */
   readonly feedback = createFeedbackMarks()
 

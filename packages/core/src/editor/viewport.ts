@@ -51,11 +51,7 @@ function clampZoom(zoom: number): number {
  * The viewport that fills the `size` canvas less `insets` with `bounds`, centred there, as Figma
  * fits layers: zoomed past 100% for small layers, to the maximum zoom for a point.
  */
-export function fitViewport(
-  bounds: Rect,
-  size: { width: number; height: number },
-  insets: ViewportInsets
-): ViewportTransform {
+export function fitViewport(bounds: Rect, size: Rect, insets: ViewportInsets): ViewportTransform {
   // A canvas too small for the insets fits into all of itself rather than a negative area.
   const fitted = size.width > insets.left + insets.right && size.height > insets.top + insets.bottom
   const { left, top } = fitted ? insets : { left: 0, top: 0 }
@@ -65,8 +61,8 @@ export function fitViewport(
   const zoom = clampZoom(Number.isNaN(fit) ? 1 : fit)
   return {
     zoom,
-    panX: left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
-    panY: top + areaHeight / 2 - (bounds.y + bounds.height / 2) * zoom
+    panX: size.x + left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
+    panY: size.y + top + areaHeight / 2 - (bounds.y + bounds.height / 2) * zoom
   }
 }
 
@@ -133,7 +129,7 @@ export function createViewportActions(ctx: EditorContext) {
   ) {
     const previous = currentViewport()
     const bounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-    const next = fitViewport(bounds, ctx.getViewportSize(), insets)
+    const next = fitViewport(bounds, ctx.getViewportBounds(), insets)
     ctx.state.zoom = next.zoom
     ctx.state.panX = next.panX
     ctx.state.panY = next.panY
@@ -144,10 +140,10 @@ export function createViewportActions(ctx: EditorContext) {
   /** Put the world point (x, y) at the center of the viewport, at `zoom` (the current one by default). */
   function centerOn(x: number, y: number, zoom = ctx.state.zoom) {
     const previous = currentViewport()
-    const { width, height } = ctx.getViewportSize()
+    const { x: left, y: top, width, height } = ctx.getViewportBounds()
     const nextZoom = clampZoom(zoom)
-    const panX = width / 2 - x * nextZoom
-    const panY = height / 2 - y * nextZoom
+    const panX = left + width / 2 - x * nextZoom
+    const panY = top + height / 2 - y * nextZoom
     // Remote cursors are finite but unbounded; a point that overflows leaves the view alone.
     if (!Number.isFinite(panX) || !Number.isFinite(panY)) return
     ctx.state.zoom = nextZoom
@@ -168,15 +164,15 @@ export function createViewportActions(ctx: EditorContext) {
   }
 
   function zoomToLevel(level: number) {
-    const { width: viewW, height: viewH } = ctx.getViewportSize()
-    const centerX = (-ctx.state.panX + viewW / 2) / ctx.state.zoom
-    const centerY = (-ctx.state.panY + viewH / 2) / ctx.state.zoom
+    const { x, y, width, height } = ctx.getViewportBounds()
+    const centerX = (-ctx.state.panX + x + width / 2) / ctx.state.zoom
+    const centerY = (-ctx.state.panY + y + height / 2) / ctx.state.zoom
 
     const previous = currentViewport()
     ctx.state.zoom = clampZoom(level)
     // Keep the world point at the center of the viewport where it was.
-    ctx.state.panX = viewW / 2 - centerX * ctx.state.zoom
-    ctx.state.panY = viewH / 2 - centerY * ctx.state.zoom
+    ctx.state.panX = x + width / 2 - centerX * ctx.state.zoom
+    ctx.state.panY = y + height / 2 - centerY * ctx.state.zoom
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -205,7 +201,7 @@ export function createViewportActions(ctx: EditorContext) {
     const nodes = nodeIds.map((id) => ctx.graph.getNode(id)).filter((node) => node !== undefined)
     if (nodes.length === 0) return
     const bounds = computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, ctx.graph)))
-    const { width, height } = ctx.getViewportSize()
+    const { x, y, width, height } = ctx.getViewportBounds()
     const { zoom, panX, panY } = ctx.state
     const fits =
       bounds.width * zoom <= width - margin * 2 && bounds.height * zoom <= height - margin * 2
@@ -218,9 +214,12 @@ export function createViewportActions(ctx: EditorContext) {
     const right = left + bounds.width * zoom
     const bottom = top + bounds.height * zoom
     const visible =
-      left >= margin && top >= margin && right <= width - margin && bottom <= height - margin
+      left >= x + margin &&
+      top >= y + margin &&
+      right <= x + width - margin &&
+      bottom <= y + height - margin
     if (visible) return
-    pan(width / 2 - (left + right) / 2, height / 2 - (top + bottom) / 2)
+    pan(x + width / 2 - (left + right) / 2, y + height / 2 - (top + bottom) / 2)
   }
 
   return {

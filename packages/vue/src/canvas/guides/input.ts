@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { computeGuideRedline, hitTestGuides } from '@open-pencil/core/canvas'
 import { RULER_SIZE } from '@open-pencil/core/constants'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragGuide, DragState } from '#vue/shared/input/types'
@@ -13,6 +14,7 @@ interface GuideInputOptions {
   canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
   setDrag: (drag: DragState) => void
   setCursor: (cursor: string | null) => void
+  getRulerBounds?: () => Rect
 }
 
 export function selectedTopLevelGuideFrameId(editor: Editor): string | null {
@@ -27,7 +29,8 @@ export function createGuideInput({
   editor,
   canvasToLocal,
   setDrag,
-  setCursor
+  setCursor,
+  getRulerBounds
 }: GuideInputOptions) {
   function viewport() {
     const canvas = canvasRef.value
@@ -74,6 +77,12 @@ export function createGuideInput({
 
   function rulerAxis(sx: number, sy: number): DragGuide['axis'] | null {
     if (!rulersShown()) return null
+    const bounds = getRulerBounds?.()
+    if (bounds) {
+      sx -= bounds.x
+      sy -= bounds.y
+      if (sx < 0 || sy < 0 || sx >= bounds.width || sy >= bounds.height) return null
+    }
     if (sx < RULER_SIZE && sy < RULER_SIZE) return null
     if (sy < RULER_SIZE) return 'y'
     if (sx < RULER_SIZE) return 'x'
@@ -178,7 +187,7 @@ export function createGuideInput({
 
   function finish(drag: DragGuide): void {
     if (drag.dragStarted) {
-      if (rulersShown() && (drag.currentScreenX < RULER_SIZE || drag.currentScreenY < RULER_SIZE)) {
+      if (overRulerStrip(drag.currentScreenX, drag.currentScreenY)) {
         if (!drag.duplicate && drag.guideId && drag.originalOwnerId) {
           editor.removeGuide(drag.originalOwnerId, drag.guideId)
           editor.setSelectedGuide(null)
@@ -202,6 +211,13 @@ export function createGuideInput({
       }
     }
     clearHoverAndPreview()
+  }
+
+  function overRulerStrip(sx: number, sy: number): boolean {
+    const bounds = getRulerBounds?.()
+    return (
+      rulersShown() && (sx < (bounds?.x ?? 0) + RULER_SIZE || sy < (bounds?.y ?? 0) + RULER_SIZE)
+    )
   }
 
   function deleteSelected(event: KeyboardEvent): boolean {

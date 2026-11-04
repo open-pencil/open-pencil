@@ -82,43 +82,45 @@ const open = computed(
     <PopoverPortal>
       <PopoverContent
         v-if="open && reference"
+        as-child
         :reference="reference"
         side="top"
         align="center"
         :side-offset="gap"
         :collision-padding="8"
         :class="['z-40', styles.bar(), floatingSurface, motionStyles.floating]"
-        role="toolbar"
         data-test-id="selection-toolbar"
         :data-kind="kind"
         @open-auto-focus.prevent
         @close-auto-focus.prevent
         @interact-outside.prevent
       >
-        <StickyTools v-if="kind === 'sticky'" />
-        <ShapeTools v-else-if="kind === 'shape'" />
-        <ConnectorTools v-else-if="kind === 'connector'" />
-        <SectionTools
-          v-else-if="kind === 'section'"
-          :single="!several"
-          :locked="layers.every((layer) => layer.locked)"
-          @rename="emit('renameSection')"
-        />
-        <template v-else-if="kind === 'text'">
-          <template v-if="textOnly">
-            <LayerTools />
-            <span :class="styles.divider()" />
+        <div role="toolbar">
+          <StickyTools v-if="kind === 'sticky'" />
+          <ShapeTools v-else-if="kind === 'shape'" />
+          <ConnectorTools v-else-if="kind === 'connector'" />
+          <SectionTools
+            v-else-if="kind === 'section'"
+            :single="!several"
+            :locked="layers.every((layer) => layer.locked)"
+            @rename="emit('renameSection')"
+          />
+          <template v-else-if="kind === 'text'">
+            <template v-if="textOnly">
+              <LayerTools />
+              <span :class="styles.divider()" />
+            </template>
+            <TextTools :align="!several" />
           </template>
-          <TextTools :align="!several" />
-        </template>
-        <LayerTools
-          v-else-if="kind === 'layer' || kind === 'group'"
-          :ungroup="kind === 'group' && !several"
-        />
-        <template v-if="several">
-          <span v-if="kind !== 'mixed' && kind !== 'image'" :class="styles.divider()" />
-          <ArrangeTools />
-        </template>
+          <LayerTools
+            v-else-if="kind === 'layer' || kind === 'group'"
+            :ungroup="kind === 'group' && !several"
+          />
+          <template v-if="several">
+            <span v-if="kind !== 'mixed' && kind !== 'image'" :class="styles.divider()" />
+            <ArrangeTools />
+          </template>
+        </div>
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>
