@@ -1,1 +1,0 @@
-- Initials on collaborator and account avatars stay readable on light colors: the avatar darkens the person's color just enough, as the follow frame already did.

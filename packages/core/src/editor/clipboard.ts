@@ -30,6 +30,7 @@ import {
   createClipboardPlacementActions,
   type ClipboardPlacement
 } from './clipboard/placement'
+import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
 import type { EditorContext } from './types'
@@ -440,6 +441,10 @@ export function createClipboardActions(ctx: EditorContext) {
   const fontActions = createClipboardFontActions(ctx)
   const assetActions = createClipboardAssetActions(ctx, pushCreatedNodesUndo)
   const placementActions = createClipboardPlacementActions(ctx)
+  const webActions = createClipboardWebActions(ctx, {
+    pushCreatedNodesUndo,
+    loadFontsForNodes: fontActions.loadFontsForNodes
+  })
 
   return {
     collectSubtrees,
@@ -455,6 +460,7 @@ export function createClipboardActions(ctx: EditorContext) {
     deleteNodes,
     deleteSelected,
     ...assetActions,
+    ...webActions,
     ...exportActions
   }
 }

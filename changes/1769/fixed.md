@@ -1,0 +1,1 @@
+- A Cloud document left by navigating away in the same browser tab leaves its collaboration room at once, instead of staying in it until the browser discards the page.

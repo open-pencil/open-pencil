@@ -1,3 +1,0 @@
-- Pasting a layer copied out of a component, while it is bound to one of the component's properties, pastes it unbound instead of failing.
-- The Plugin API's `componentPropertyReferences` reports the bindings of any layer in a component or instance, not only frames, text, components, and instances.
-- A library no longer reports its components as changed after a FIG round trip with fonts loaded.

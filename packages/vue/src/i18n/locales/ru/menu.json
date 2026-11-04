@@ -42,6 +42,7 @@
   "pasteToReplace": "Вставить для замены",
   "copyProperties": "Копировать свойства",
   "pasteProperties": "Вставить свойства",
+  "pasteAsLayers": "Вставить как слои",
   "copyPasteAs": "Копировать/Вставить как",
   "copyAsText": "Копировать как текст",
   "copyAsSVG": "Копировать как SVG",

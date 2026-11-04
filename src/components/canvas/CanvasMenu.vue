@@ -116,6 +116,13 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <span>{{ t.pasteToReplace }}</span>
         </ContextMenuItem>
         <ContextMenuItem
+          data-test-id="context-paste-as-layers"
+          :class="cls.item"
+          @select="canvasMenuActions.pasteAsLayers"
+        >
+          <span>{{ t.pasteAsLayers }}</span>
+        </ContextMenuItem>
+        <ContextMenuItem
           data-test-id="context-duplicate"
           :class="cls.item"
           :disabled="!hasSelection"

@@ -1,1 +1,0 @@
-- AI and MCP agents can no longer add layers inside an instance with `render`, `import_svg`, `import_mermaid`, `insert_icon`, or `insert_library_component`, which left the document unable to save as `.fig`; layers rendered into an instance's slot save too.

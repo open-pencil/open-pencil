@@ -1,1 +1,0 @@
-- Escape clears the selection at any depth and Enter keeps layers without children selected, as in Figma; a click takes the empty area of a component or instance whatever its fill, while a ⌘-click passes through a frame or instance whose fill does not show (#1697).

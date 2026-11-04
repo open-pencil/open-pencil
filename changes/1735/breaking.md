@@ -1,1 +1,0 @@
-- Plugin API nodes read Figma's node types: a page's `type` is `PAGE` instead of `CANVAS`, and `figma.root.type` is `DOCUMENT` instead of `FRAME`, in `node.type` and `toJSON()`. Scripts that compared against `CANVAS` should compare against `PAGE`.

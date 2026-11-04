@@ -1,6 +1,6 @@
 {
   "name": "open-pencil-app",
-  "version": "0.17.0-beta.1",
+  "version": "0.17.0-beta.2",
   "private": true,
   "license": "MIT",
   "workspaces": [
@@ -319,7 +319,7 @@
     "protobufjs": "7.5.5",
     "websocket-driver": "0.7.5"
   },
-  "packageManager": "bun@1.4.2",
+  "packageManager": "bun@1.4.4",
   "patchedDependencies": {
     "unifont@1.0.3": "patches/unifont@1.0.3.patch"
   }
