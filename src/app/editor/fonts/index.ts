@@ -89,8 +89,10 @@ async function getTauriFonts(): Promise<HostFontFamily[]> {
 
 export function preloadFonts(): void {
   configureTauriFontCache()
+  // The installed families are listed ahead for the font picker. The page draws them by name
+  // already; a face registered under a family's name would stand in for all of its faces.
   if (isTauri()) {
-    void getTauriFonts().then(registerFontFaces)
+    void getTauriFonts()
     return
   }
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
@@ -120,14 +122,6 @@ export async function clearDownloadedFontCache(): Promise<void> {
 
 export async function predownloadFallbackFonts() {
   return fontManager.ensureFallbackPack()
-}
-
-function registerFontFaces(fonts: HostFontFamily[]): void {
-  if (typeof document === 'undefined') return
-  for (const { family } of fonts) {
-    const face = new FontFace(family, `local("${family}")`)
-    document.fonts.add(face)
-  }
 }
 
 export async function listFamilies(): Promise<FontFamilyOption[]> {

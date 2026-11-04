@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { ParentEntries } from '#collab/tree/entries'
+import { LayerTree } from '#collab/tree/layer-tree'
 import { create as createPRNG, oneOf, real53 } from 'lib0/prng'
-
-import type { ParentEntries } from '@/app/collab/tree/entries'
-import { LayerTree } from '@/app/collab/tree/layer-tree'
 
 const ROOT = 'root'
 const PAGE = 'page'

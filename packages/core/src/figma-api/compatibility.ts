@@ -1,4 +1,5 @@
 import type {
+  BaseNodeMixin,
   BooleanOperationNode,
   ComponentNode,
   ComponentPropertyDefinitions,
@@ -406,6 +407,11 @@ type GeometryMembersMatch = Expect<
   Extends<Pick<FigmaNodeProxy, GeometryKeys>, Pick<GeometryMixin, GeometryKeys>>
 >
 const _geometryMembersMatch: GeometryMembersMatch = true
+
+type CSSMembersMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, 'getCSSAsync'>, Pick<BaseNodeMixin, 'getCSSAsync'>>
+>
+const _cssMembersMatch: CSSMembersMatch = true
 
 // --- Styles: each style's members are Figma's, apart from consumers, which read node proxies ---
 

@@ -61,7 +61,16 @@ import type {
   FigmaVectorNode
 } from './node-types'
 import { startPendingLayout } from './pending-layout'
-import { FigmaNodeProxy, INTERNAL_ID, MIXED, type FigmaFont, type NodeProxyHost } from './proxy'
+import {
+  FigmaNodeProxy,
+  INTERNAL_ID,
+  loadPage,
+  MIXED,
+  pageOfNode,
+  setPageHost,
+  type FigmaFont,
+  type NodeProxyHost
+} from './proxy'
 import { newShapeWithText } from './shape-with-text'
 import { FigmaStyleMethods } from './styles/api'
 import type { ExportImageOptions } from './types'
@@ -75,6 +84,14 @@ const noop = () => undefined
 export interface FigmaAPIOptions {
   /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
   fetch?: images.ImageFetch
+  /**
+   * Loads a page's layers, for a host that loads pages as they are visited, as the editor does a
+   * file it opens: `page.loadAsync`, `figma.loadAllPagesAsync`, and `setCurrentPageAsync` call
+   * it, as they load pages in Figma's dynamic-page mode. Without one every page is in memory.
+   */
+  loadPage?: (pageId: string) => Promise<void>
+  /** The page holding a layer not loaded yet, which `getNodeByIdAsync` loads to find it. */
+  pageOfNode?: (nodeId: string) => Promise<string | null>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -119,6 +136,8 @@ export type { FigmaVariationSettings } from './fonts/variations'
 export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   readonly graph: SceneGraph
   private _currentPageId: string
+  /** Counts page switches, so a switch whose page loads after a later one does not undo it. */
+  #pageSwitch = 0
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
   private _nodeTypes = new Map<string, string | undefined>()
@@ -141,6 +160,8 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     super()
     this.graph = graph
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
+    if (options.loadPage)
+      setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
@@ -232,6 +253,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   set currentPage(page: FigmaNodeProxy) {
+    this.#pageSwitch++
     this._currentPageId = page[INTERNAL_ID]
   }
 
@@ -241,7 +263,13 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   /** The async lookup that Figma requires in dynamic-page mode; same result as getNodeById. */
+  /** As in Figma's dynamic-page mode, a layer on a page not loaded yet loads that page. */
   async getNodeByIdAsync(id: string): Promise<FigmaNodeProxy | null> {
+    const node = this.getNodeById(id)
+    if (node) return node
+    const pageId = await pageOfNode(this, id)
+    if (!pageId) return null
+    await loadPage(this, pageId)
     return this.getNodeById(id)
   }
 
@@ -257,8 +285,15 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     if (this._rawNode(page).type !== 'CANVAS') {
       return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
     }
-    this._currentPageId = this._nodeId(page)
-    return Promise.resolve()
+    const pageId = this._nodeId(page)
+    const pageSwitch = ++this.#pageSwitch
+    return loadPage(this, pageId).then(() => {
+      if (pageSwitch !== this.#pageSwitch) return undefined
+      if (this.graph.getNode(pageId)?.type !== 'CANVAS')
+        throw new Error('in setCurrentPageAsync: The page was removed while it loaded')
+      this._currentPageId = pageId
+      return undefined
+    })
   }
 
   // --- Node Creation ---
@@ -643,9 +678,9 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     if (message) this.notify(message)
   }
 
-  /** Every page is already in memory. */
+  /** Loads every page's layers, one page after another, as Figma does in dynamic-page mode. */
   async loadAllPagesAsync(): Promise<void> {
-    return undefined
+    for (const page of this.graph.getPages()) await loadPage(this, page.id)
   }
 
   commitUndo(): void {

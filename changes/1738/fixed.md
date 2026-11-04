@@ -1,0 +1,1 @@
+- On Windows, page text in an installed font, such as interactive component previews on the canvas, draws in its bold, italic, and light faces instead of the regular one.

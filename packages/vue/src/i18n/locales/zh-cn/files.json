@@ -36,6 +36,7 @@
   "noMatchingFiles": "没有与“{query}”匹配的文件。",
   "documentActions": "{name} 的操作",
   "deleteDocument": "删除",
+  "removeFromRecent": "从最近使用中移除",
   "deleteDocumentConfirmation": "删除“{name}”？",
   "deleteDocumentDescription": "该文档将对所有可以打开它的人删除。此操作无法撤销。",
   "deleteDocumentFailed": "无法删除“{name}”。请重试。",

@@ -65,7 +65,8 @@ export function prepareNodeTransfer(
   result.componentId = source.componentId ? node(source.componentId) : null
   result.instanceOverrides = remapInstanceOverrideState(source.instanceOverrides, {
     node,
-    variable
+    variable,
+    collection: (id) => refs.collections.get(id)
   })
   result.boundVariables = Object.fromEntries(
     Object.entries(source.boundVariables).map(([field, id]) => [field, variable(id)])

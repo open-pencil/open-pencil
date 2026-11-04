@@ -52,7 +52,7 @@ export const getPageTree = defineTool({
   name: 'get_page_tree',
   description:
     'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size, and text for TEXT nodes. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.',
-  execution: { kind: 'sync', mutation: 'none' },
+  execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     depth: v.optional(
       toolNumber(
@@ -79,12 +79,15 @@ export const getPageTree = defineTool({
       )
     )
   }),
-  execute: (figma, { depth, root_id, node_types }) => {
+  execute: async (figma, { depth, root_id, node_types }) => {
     const typeFilter = node_types && node_types.length > 0 ? new Set(node_types) : undefined
 
     if (root_id !== undefined) {
-      const root = figma.getNodeById(root_id)
+      // A layer on a page not yet visited loads that page, as in Figma's dynamic-page mode.
+      const root = await figma.getNodeByIdAsync(root_id)
       if (!root) return { error: `Node "${root_id}" not found` }
+      // A page not yet visited has no layers until it loads.
+      if (figma.graph.getNode(root.id)?.type === 'CANVAS') await root.loadAsync()
       return { root: root.id, tree: nodeToTreeEntry(root, 1, depth, typeFilter) }
     }
 
@@ -102,7 +105,7 @@ export const getNode = defineTool({
   name: 'get_node',
   description:
     'Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.',
-  execution: { kind: 'sync', mutation: 'none' },
+  execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     depth: v.optional(
@@ -114,8 +117,9 @@ export const getNode = defineTool({
       )
     )
   }),
-  execute: (figma, { id, depth }) => {
-    const node = figma.getNodeById(id)
+  execute: async (figma, { id, depth }) => {
+    // A layer on a page not yet visited loads that page, as in Figma's dynamic-page mode.
+    const node = await figma.getNodeByIdAsync(id)
     if (!node) return { error: `Node "${id}" not found` }
     return nodeToResult(node, depth)
   }

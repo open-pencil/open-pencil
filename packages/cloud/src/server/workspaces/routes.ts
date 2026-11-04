@@ -9,7 +9,8 @@ import type { CloudDatabase } from '#cloud/server/db'
 import {
   CLOUD_RATE_LIMITS,
   createRouteRateLimiter,
-  routeParamResource
+  routeParamResource,
+  createResourceRateLimiter
 } from '#cloud/server/rate-limit'
 import {
   validatedJSON,
@@ -80,22 +81,22 @@ export function createWorkspaceRoutes(
     // Resending mails the invitation again, so it counts against the same budget as sending.
     router.use(
       '/:workspaceId/invitations/:invitationId/resend',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
-        () => false,
-        routeParamResource('workspaceId')
+        routeParamResource('workspaceId'),
+        () => false
       )
     )
     router.use(
       '/:workspaceId/invitations',
-      createRouteRateLimiter(
+      createResourceRateLimiter(
         rateLimit.database,
         rateLimit.secret,
         CLOUD_RATE_LIMITS.invitationMutation,
-        (context) => context.req.method !== 'POST',
-        routeParamResource('workspaceId')
+        routeParamResource('workspaceId'),
+        (context) => context.req.method !== 'POST'
       )
     )
   }

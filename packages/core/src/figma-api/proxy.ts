@@ -23,6 +23,7 @@ import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import { installVectorNodeProxyAccessors } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
+import { installCSSAccessors } from './css'
 import { installDevStatusAccessors } from './dev-status'
 import { installExportAccessors } from './export/accessors'
 import type { ExportHost } from './export/render'
@@ -47,6 +48,31 @@ export type { FigmaFont, FigmaFontName } from './fonts/names'
 export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
+
+/** How a host loads pages as they are visited; see `FigmaAPIOptions`. */
+export interface PageHost {
+  load: (pageId: string) => Promise<void>
+  pageOfNode?: (nodeId: string) => Promise<string | null>
+}
+
+/**
+ * How each API loads a page's layers, a host's hook kept off `figma`, which has only Figma's
+ * members. Without one every page is in memory.
+ */
+const pageHosts = new WeakMap<NodeProxyHost, PageHost>()
+
+export function setPageHost(api: NodeProxyHost, host: PageHost): void {
+  pageHosts.set(api, host)
+}
+
+export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
+  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+}
+
+/** The page holding a layer not loaded yet, which loading that page brings in. */
+export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
+  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
+}
 
 export interface NodeProxyHost extends ExportHost {
   wrapNode(id: string): FigmaNodeProxy
@@ -91,11 +117,12 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
     if (type) installInstanceOverrideAccessors(this, internals, type)
     if (type) installStyleReferenceAccessors(this, internals, type, id === graph.rootId, MIXED)
     if (type && id !== graph.rootId) installExportAccessors(this, internals)
+    installCSSAccessors(this, internals)
     if (type) installGeometryAccessors(this, internals, type)
     // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
-    // alone; every page here is already loaded.
+    // alone, as the editor loads a page's layers when it is first visited.
     if (type === 'CANVAS')
-      Object.defineProperty(this, 'loadAsync', { value: () => Promise.resolve() })
+      Object.defineProperty(this, 'loadAsync', { value: () => loadPage(api, id) })
     if (id === graph.rootId)
       Object.defineProperty(this, 'documentColorProfile', {
         get: () => (graph.documentColorSpace === 'display-p3' ? 'DISPLAY_P3' : 'SRGB')

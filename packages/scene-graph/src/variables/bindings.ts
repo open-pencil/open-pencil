@@ -333,7 +333,18 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
  * is written but not returned.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
-  const relaid: string[] = []
+  return [...reconcileVariableBindingUpdates(graph, scope).keys()]
+}
+
+/**
+ * As `reconcileVariableBindings`, with the layout fields each relaid layer received. Effects
+ * are written too, but draw without layout, so a layer whose only change is an effect is left out.
+ */
+export function reconcileVariableBindingUpdates(
+  graph: SceneGraph,
+  scope?: BindingScope
+): Map<string, Partial<SceneNode>> {
+  const relaid = new Map<string, Partial<SceneNode>>()
   for (const node of scopedNodes(graph, scope)) {
     const layoutUpdates = {
       ...resolvedNumericBindings(graph, node),
@@ -343,7 +354,7 @@ export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScop
     const updates = { ...layoutUpdates, ...resolvedEffectBindings(graph, node) }
     if (isEmptyObject(updates)) continue
     graph.updateNode(node.id, updates)
-    if (!isEmptyObject(layoutUpdates)) relaid.push(node.id)
+    if (!isEmptyObject(layoutUpdates)) relaid.set(node.id, layoutUpdates)
   }
   return relaid
 }

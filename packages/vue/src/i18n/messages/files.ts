@@ -46,6 +46,7 @@ export const filesMessageDefaults = {
   noMatchingFiles: params('No files match “{query}”.'),
   documentActions: params('Actions for {name}'),
   deleteDocument: 'Delete',
+  removeFromRecent: 'Remove from recent',
   deleteDocumentConfirmation: params('Delete “{name}”?'),
   deleteDocumentDescription:
     'The document is deleted for everyone who can open it. This can’t be undone.',

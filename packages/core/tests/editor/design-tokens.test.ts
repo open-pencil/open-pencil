@@ -258,6 +258,125 @@ describe('design token import', () => {
       { type: 'DROP_SHADOW', radius: 2 }
     ])
   })
+
+  describe('a shadow bound to variables', () => {
+    /** An effect style with a layer blur, then a shadow whose blur and colour are bound. */
+    function boundShadow() {
+      const source = designSystem()
+      const card = source.createNode('RECTANGLE', source.getPages()[0].id, {
+        name: 'Elevation/Card',
+        sharedStyleType: 'EFFECT',
+        internalOnly: true,
+        effects: [
+          {
+            type: 'LAYER_BLUR',
+            color: { r: 0, g: 0, b: 0, a: 0 },
+            offset: { x: 0, y: 0 },
+            radius: 6,
+            spread: 0,
+            visible: true
+          },
+          {
+            type: 'DROP_SHADOW',
+            color: blue,
+            offset: { x: 0, y: 4 },
+            radius: 24,
+            spread: 0,
+            visible: true
+          }
+        ]
+      })
+      card.source.id = 'style:card'
+      source.bindVariable(card.id, 'effects/1/radius', variableNamed(source, 'Space/Gutter').id)
+      source.bindVariable(card.id, 'effects/1/color', variableNamed(source, 'Accent').id)
+      return source
+    }
+
+    /** The exported files with the styles file's text edited, as another tool would. */
+    function editedStyles(source: SceneGraph, edit: (text: string) => string) {
+      return exported(source).map((file) =>
+        file.path === 'styles.tokens.json' ? { ...file, text: edit(file.text) } : file
+      )
+    }
+
+    function importedStyle(files: DesignTokenSourceFile[]) {
+      const graph = new SceneGraph()
+      importInto(graph, files)
+      const [style] = getSharedStyles(graph, 'effect')
+      return { graph, node: graph.getNode(style.nodeId) }
+    }
+
+    test('writes the bound fields as references to their variables’ tokens', () => {
+      const styles = exportDesignTokens(boundShadow()).files.find(
+        (file) => file.path === 'styles.tokens.json'
+      )
+      expect(styles?.content).toMatchObject({
+        Elevation: { Card: { $value: { blur: '{Space.Gutter}', color: '{Accent}' } } }
+      })
+    })
+
+    test('reads the references back as bindings on the same effect', () => {
+      const { graph, node } = importedStyle(exported(boundShadow()))
+
+      expect(node?.boundVariables).toEqual({
+        'effects/1/radius': variableNamed(graph, 'Space/Gutter').id,
+        'effects/1/color': variableNamed(graph, 'Accent').id
+      })
+      expect(node?.effects).toMatchObject([
+        { type: 'LAYER_BLUR', radius: 6 },
+        { type: 'DROP_SHADOW', radius: 24 }
+      ])
+    })
+
+    test('binds the references a shadow edited in another tool keeps, and the blur’s own', () => {
+      const source = boundShadow()
+      const soft = source.createVariable('Blur/Soft', 'FLOAT', variableNamed(source, 'Accent').collectionId, 6)
+      const [style] = getSharedStyles(source, 'effect')
+      source.bindVariable(style.nodeId, 'effects/0/radius', soft.id)
+      const files = editedStyles(source, (text) =>
+        text.replace('"offsetY":{"value":4', '"offsetY":{"value":8')
+      )
+      const { graph, node } = importedStyle(files)
+
+      expect(node?.effects[1]).toMatchObject({ offset: { x: 0, y: 8 }, radius: 24 })
+      expect(node?.boundVariables).toEqual({
+        'effects/0/radius': variableNamed(graph, 'Blur/Soft').id,
+        'effects/1/radius': variableNamed(graph, 'Space/Gutter').id,
+        'effects/1/color': variableNamed(graph, 'Accent').id
+      })
+    })
+
+    test('lets a variable go when the token writes its field as a value again', () => {
+      const source = boundShadow()
+      const { graph } = importedStyle(exported(source))
+      importInto(
+        graph,
+        editedStyles(source, (text) =>
+          text.replace('"blur":"{Space.Gutter}"', '"blur":{"value":30,"unit":"px"}')
+        )
+      )
+
+      const [style] = getSharedStyles(graph, 'effect')
+      const node = graph.getNode(style.nodeId)
+      expect(node?.effects[1].radius).toBe(30)
+      expect(node?.boundVariables).toEqual({
+        'effects/1/color': variableNamed(graph, 'Accent').id
+      })
+    })
+
+    test('skips a shadow whose field names a token that does not exist', () => {
+      const graph = new SceneGraph()
+      const { plan } = importInto(
+        graph,
+        editedStyles(boundShadow(), (text) => text.replace('{Space.Gutter}', '{Space.Missing}'))
+      )
+
+      expect(plan.skipped).toContainEqual(
+        expect.objectContaining({ name: 'Elevation/Card', reason: 'invalid-value' })
+      )
+      expect(getSharedStyles(graph, 'effect')).toEqual([])
+    })
+  })
 })
 
 test('a formula token holds its result and keeps the formula with token references', () => {

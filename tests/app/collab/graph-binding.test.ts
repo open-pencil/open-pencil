@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
-import { bindCollabGraphEvents } from '@/app/collab/yjs-sync'
+import { bindCollabGraphEvents } from '@open-pencil/collab'
+
+import { collabEditor } from '@/app/collab/editor'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { settleGraphSync, withSyncedStores } from '#tests/helpers/collab/synced-stores'
@@ -14,7 +16,7 @@ describe('collab graph binding', () => {
       hostSync.syncAllNodesToYjs()
       await settleGraphSync()
       const unbind = bindCollabGraphEvents({
-        store: hostStore,
+        editor: collabEditor(hostStore),
         getYdoc: () => hostDoc,
         getYnodes: () => hostDoc.getMap<Y.Map<unknown>>('nodes'),
         getSuppressGraphSync: () => stores.hostSuppressGraphSync,
