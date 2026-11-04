@@ -666,7 +666,9 @@
       "name": "@open-pencil/test-support",
       "version": "0.17.0-beta.1",
       "dependencies": {
+        "@acemir/cssom": "^0.9.31",
         "@open-pencil/core": "workspace:*",
+        "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/test-support": "workspace:*",
         "valibot": "^1.5.0",

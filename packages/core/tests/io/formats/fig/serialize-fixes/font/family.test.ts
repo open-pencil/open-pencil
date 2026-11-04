@@ -4,7 +4,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { pageId, toKiwi } from '../helpers'
+import { pageId, toKiwi } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
 
 describe('Fix 5: font family normalization in derivedTextData', () => {
   test('optical size suffix stripped in roundtrip', async () => {

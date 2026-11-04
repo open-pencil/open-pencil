@@ -4,7 +4,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { pageId, toKiwi } from '../helpers'
+import { pageId, toKiwi } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
 
 describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
   test('FRAME without clipsContent gets frameMaskDisabled=true', () => {

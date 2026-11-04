@@ -13,21 +13,19 @@ import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
 import {
   DOM_CSS_COLORS,
   computedCardDocument,
   cssCardCSS,
-  cssCardHTML,
+  cardHTML,
   fixtureMatrixCSS,
   fixtureMatrixHTML,
   findTextElement,
   tailwindBadgeClasses,
   tailwindCardClasses,
-  tailwindInputClasses,
+  tailwindTextInputClasses,
   tailwindNavClasses
-} from '#tests/helpers/dom-css'
-
+} from '@open-pencil/test-support/dom-css'
 function expectFrame(node: SceneNode | undefined) {
   expect(node?.type).toBe('FRAME')
   if (node?.type !== 'FRAME') throw new Error('Expected frame node')
@@ -144,7 +142,7 @@ function expectStyleRoundTripHTML(graph: SceneGraph) {
 
 describe('@open-pencil/dom-css conversion', () => {
   it('converts HTML and CSS to DesignDOM with one API call', async () => {
-    const document = await htmlToDesignDocument(cssCardHTML, {
+    const document = await htmlToDesignDocument(cardHTML, {
       cssText: cssCardCSS,
       runtime: createHeadlessCSSRuntime()
     })
@@ -157,7 +155,7 @@ describe('@open-pencil/dom-css conversion', () => {
   })
 
   it('converts HTML and CSS to a scene graph with one API call', async () => {
-    const graph = await htmlToSceneGraph(cssCardHTML, {
+    const graph = await htmlToSceneGraph(cardHTML, {
       cssText: cssCardCSS,
       runtime: createHeadlessCSSRuntime()
     })
@@ -210,7 +208,7 @@ describe('@open-pencil/dom-css conversion', () => {
 
   it('projects a parsed and styled HTML/CSS card into a scene graph', async () => {
     const runtime = createHeadlessCSSRuntime()
-    const document = await runtime.computeStyles(runtime.parseHTML(cssCardHTML), cssCardCSS)
+    const document = await runtime.computeStyles(runtime.parseHTML(cardHTML), cssCardCSS)
     const graph = designDocumentToSceneGraph(document)
     const page = graph.getPages()[0]
     const card = page ? graph.getChildren(page.id)[0] : undefined
@@ -510,7 +508,7 @@ describe('@open-pencil/dom-css conversion', () => {
 
   it('projects Tailwind input, badge, and nav fixtures through generated CSS', async () => {
     const runtime = createHeadlessCSSRuntime()
-    const inputClasses = [...tailwindInputClasses]
+    const inputClasses = [...tailwindTextInputClasses]
     const badgeClasses = [...tailwindBadgeClasses]
     const navClasses = [...tailwindNavClasses]
     const classes = [...inputClasses, ...badgeClasses, ...navClasses]

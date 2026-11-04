@@ -9,9 +9,13 @@ import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
-
+import {
+  TEST_COLORS,
+  cardCSS,
+  cardHTML,
+  fixtureCSS,
+  fixtureHTML
+} from '@open-pencil/test-support/dom-css'
 const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 

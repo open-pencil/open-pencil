@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { switchSet } from '#dom-css-tests/behaviours/fixtures'
-import { fileText } from '#dom-css-tests/helpers'
 import { layerComponents, layerMarkup } from '#dom-css/export'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { fileText } from '@open-pencil/test-support/dom-css'
 
 function card(graph: SceneGraph, name: string) {
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {

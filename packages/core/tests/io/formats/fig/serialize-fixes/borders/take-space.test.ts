@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { pageId, toKiwi } from '../helpers'
+import { pageId, toKiwi } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
 
 describe('Fix 3: bordersTakeSpace serialization', () => {
   test('auto-layout frame with strokesIncludedInLayout=true gets bordersTakeSpace=true', () => {

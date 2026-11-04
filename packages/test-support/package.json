@@ -8,6 +8,7 @@
   "sideEffects": false,
   "exports": {
     "./assert": "./src/assert.ts",
+    "./dom-css": "./src/dom-css.ts",
     "./doubles": "./src/doubles.ts",
     "./fetch": "./src/fetch.ts",
     "./fig/fixtures": "./src/fig/fixtures.ts",
@@ -27,7 +28,9 @@
     "#test-support/*": "./src/*.ts"
   },
   "dependencies": {
+    "@acemir/cssom": "^0.9.31",
     "@open-pencil/core": "workspace:*",
+    "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/test-support": "workspace:*",
     "valibot": "^1.5.0",

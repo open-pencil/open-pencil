@@ -80,7 +80,7 @@ export const LARGE_FIXTURES = ['material3.fig', 'nuxtui.fig'] as const
  * process, since one alone can take several gigabytes.
  */
 export const HEAVY_UNIT_TEST_PATTERNS = [
-  'tests/engine/clipboard/fixtures/',
+  'packages/core/tests/clipboard/fixtures/',
   'tests/engine/io/fig/heavy/',
   'packages/core/tests/io/formats/fig/roundtrip/exhaustive.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
