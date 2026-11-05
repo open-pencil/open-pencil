@@ -21,5 +21,6 @@
   "installFailed": "无法安装更新：{error}",
   "restartFailed": "无法重新启动 Lawha：{error}",
   "unavailable": "更新暂不可用。请先发布包含 latest.json 的已签名版本。",
-  "checkFailed": "无法检查更新：{error}"
+  "checkFailed": "无法检查更新：{error}",
+  "download": "下载"
 }

@@ -25,7 +25,8 @@ export const updatesMessageDefaults = {
   installFailed: params('Could not install the update: {error}'),
   restartFailed: params('Could not restart Lawha: {error}'),
   unavailable: 'Updates are not available yet. Publish a signed release with latest.json first.',
-  checkFailed: params('Could not check for updates: {error}')
+  checkFailed: params('Could not check for updates: {error}'),
+  download: 'Download'
 } as const
 
 export const updatesMessages = i18n('updates', updatesMessageDefaults)

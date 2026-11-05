@@ -21,5 +21,6 @@
   "installFailed": "No se pudo instalar la actualización: {error}",
   "restartFailed": "No se pudo reiniciar Lawha: {error}",
   "unavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json.",
-  "checkFailed": "Error al encontrar actualizaciones: {error}"
+  "checkFailed": "Error al encontrar actualizaciones: {error}",
+  "download": "Descargar"
 }

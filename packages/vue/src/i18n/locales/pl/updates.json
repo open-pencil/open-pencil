@@ -21,5 +21,6 @@
   "installFailed": "Nie udało się zainstalować aktualizacji: {error}",
   "restartFailed": "Nie udało się ponownie uruchomić Lawha: {error}",
   "unavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json.",
-  "checkFailed": "Nie udało się sprawdzić aktualizacji: {error}"
+  "checkFailed": "Nie udało się sprawdzić aktualizacji: {error}",
+  "download": "Pobierz"
 }

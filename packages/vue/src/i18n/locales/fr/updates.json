@@ -21,5 +21,6 @@
   "installFailed": "Impossible d’installer la mise à jour : {error}",
   "restartFailed": "Impossible de redémarrer Lawha : {error}",
   "unavailable": "Les mises à jour ne sont pas encore disponibles. Publiez d’abord une version signée avec latest.json.",
-  "checkFailed": "Impossible de rechercher des mises à jour : {error}"
+  "checkFailed": "Impossible de rechercher des mises à jour : {error}",
+  "download": "Télécharger"
 }

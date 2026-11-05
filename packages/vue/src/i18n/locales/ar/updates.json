@@ -21,5 +21,6 @@
   "installFailed": "تعذّر تثبيت التحديث: {error}",
   "restartFailed": "تعذّرت إعادة تشغيل Lawha: {error}",
   "unavailable": "التحديثات غير متاحة بعد. انشر إصدارًا موقّعًا مع latest.json أولًا.",
-  "checkFailed": "تعذّر التحقق من وجود تحديثات: {error}"
+  "checkFailed": "تعذّر التحقق من وجود تحديثات: {error}",
+  "download": "تنزيل"
 }

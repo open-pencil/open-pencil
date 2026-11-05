@@ -1,8 +1,16 @@
 name: Desktop preview
 
-# Unsigned desktop builds of the current branch for macOS, Windows and Linux, published as the
-# "desktop-preview" GitHub release. The signed release pipeline (build.yml) needs signing keys
-# and a tag on master; this one needs neither, so testers can download the app today.
+# Every push to the branch builds the desktop app (macOS, Windows, Linux) and the Android app and
+# publishes them as the "desktop-preview" GitHub release, with the files the apps update from:
+#
+# - latest.json: the Tauri updater manifest. Desktop apps check it at startup and install a
+#   newer version themselves. Needs the TAURI_SIGNING_PRIVATE_KEY secret (the key whose public
+#   half is in desktop/tauri.conf.json); without it the builds still publish, without updates.
+# - android.json: the newest APK's version code and link. The Android app checks it at startup
+#   and offers the download. Needs ANDROID_KEYSTORE_B64 and ANDROID_KEYSTORE_PASSWORD so every
+#   APK has the same signature and installs over the last one.
+#
+# The web app needs none of this: Vercel deploys each push and the PWA updates itself.
 
 on:
   workflow_dispatch:
@@ -19,8 +27,12 @@ concurrency:
   group: desktop-preview
   cancel-in-progress: true
 
+env:
+  # Each run is a newer version, so installed apps see it as an update.
+  APP_VERSION: 0.17.${{ github.run_number }}
+
 jobs:
-  build:
+  desktop:
     strategy:
       fail-fast: false
       matrix:
@@ -28,17 +40,24 @@ jobs:
           - platform: macos-latest
             target: aarch64-apple-darwin
             label: macos-arm64
+            updater: darwin-aarch64
           - platform: macos-latest
             target: x86_64-apple-darwin
             label: macos-intel
+            updater: darwin-x86_64
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             label: windows-x64
+            updater: windows-x86_64
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             label: linux-x64
+            updater: linux-x86_64
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,22 +79,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: bun install --frozen-lockfile
-      - name: Preview build settings (no updater signing, no repo-wide lint)
+      - name: Build settings
         shell: bash
         run: |
-          cat > preview-config.json <<'EOF'
+          SIGNED=false
+          [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && SIGNED=true
+          cat > preview-config.json <<EOF
           {
-            "version": "0.17.0",
+            "version": "$APP_VERSION",
             "build": {
               "beforeBuildCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run build:packages && bunx vite build"
             },
-            "bundle": { "createUpdaterArtifacts": false }
+            "bundle": { "createUpdaterArtifacts": $SIGNED }
           }
           EOF
+          cat preview-config.json
       - name: Build
         shell: bash
         run: node node_modules/@tauri-apps/cli/tauri.js build --target ${{ matrix.target }} --config preview-config.json
-      - name: Collect installers
+      - name: Collect installers and update files
         shell: bash
         run: |
           mkdir -p out
@@ -85,34 +107,137 @@ jobs:
             name=$(basename "$f")
             cp "$f" "out/Lawha-${{ matrix.label }}.${name##*.}"
           done
+          # The file the updater installs, and its signature.
+          case "${{ matrix.updater }}" in
+            darwin-*) UPD=$(ls $B/macos/*.app.tar.gz 2>/dev/null | head -1); EXT=app.tar.gz ;;
+            windows-*) UPD=$(ls $B/nsis/*.exe 2>/dev/null | head -1); EXT=setup.exe ;;
+            linux-*) UPD=$(ls $B/appimage/*.AppImage 2>/dev/null | head -1); EXT=AppImage ;;
+          esac
+          if [ -n "$UPD" ] && [ -f "$UPD.sig" ]; then
+            cp "$UPD" "out/update-${{ matrix.updater }}.$EXT"
+            cp "$UPD.sig" "out/update-${{ matrix.updater }}.sig"
+          fi
           ls -la out
       - uses: actions/upload-artifact@v4
         with:
           name: lawha-${{ matrix.label }}
           path: out/*
 
+  android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - name: NDK
+        run: sdkmanager "ndk;27.0.12077973" "build-tools;34.0.0" "platforms;android-34"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mobile -> target
+      - run: bun install --frozen-lockfile
+      - name: Version
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          p = 'mobile/tauri.conf.json'
+          d = json.load(open(p))
+          d['version'] = os.environ['APP_VERSION']
+          json.dump(d, open(p, 'w'), indent=2)
+          EOF
+      - name: Build and sign the APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ]; then
+            echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/lawha.jks"
+            export LAWHA_KEYSTORE="$RUNNER_TEMP/lawha.jks" LAWHA_KEYSTORE_PASS="$ANDROID_KEYSTORE_PASSWORD"
+          else
+            # No release key yet: a throwaway key, so the APK installs but cannot update older ones.
+            keytool -genkeypair -keystore "$RUNNER_TEMP/temp.jks" -alias lawha -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass temporary -keypass temporary -dname "CN=Lawha"
+            export LAWHA_KEYSTORE="$RUNNER_TEMP/temp.jks" LAWHA_KEYSTORE_PASS=temporary
+          fi
+          mkdir -p out
+          mobile/build-apk.sh "$PWD/out/Lawha-android.apk"
+      - name: android.json
+        run: |
+          CODE=$(python3 -c "import os; a,b,c=os.environ['APP_VERSION'].split('.'); print(int(a)*1000000+int(b)*1000+int(c))")
+          URL="https://github.com/${{ github.repository }}/releases/download/desktop-preview/Lawha-android.apk"
+          printf '{"version":"%s","versionCode":%s,"url":"%s","signed":%s}\n' "$APP_VERSION" "$CODE" "$URL" \
+            "$([ -n "$ANDROID_KEYSTORE_B64" ] && echo true || echo false)" > out/android.json
+          cat out/android.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lawha-android
+          path: out/*
+
   publish:
-    needs: build
+    needs: [desktop, android]
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - run: ls -la dist
+      - name: latest.json (desktop updater manifest)
+        run: |
+          python3 - <<'EOF'
+          import json, os, glob, datetime
+          base = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/desktop-preview/"
+          platforms = {}
+          for sig in glob.glob('dist/update-*.sig'):
+              key = os.path.basename(sig)[len('update-'):-len('.sig')]
+              files = [f for f in glob.glob(f'dist/update-{key}.*') if not f.endswith('.sig')]
+              if not files:
+                  continue
+              platforms[key] = {
+                  'signature': open(sig).read().strip(),
+                  'url': base + os.path.basename(files[0]),
+              }
+          if platforms:
+              manifest = {
+                  'version': os.environ['APP_VERSION'],
+                  'notes': f"Build {os.environ['GITHUB_SHA'][:9]}",
+                  'pub_date': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                  'platforms': platforms,
+              }
+              json.dump(manifest, open('dist/latest.json', 'w'), indent=2)
+              print(json.dumps(manifest, indent=2)[:2000])
+          else:
+              print('No signed updates (TAURI_SIGNING_PRIVATE_KEY not set); publishing installers only.')
+          EOF
+          ls -la dist
       - name: Publish the desktop-preview release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: desktop-preview
-          name: Lawha desktop (preview)
+          name: Lawha ${{ env.APP_VERSION }} (preview)
           prerelease: true
           make_latest: false
           target_commitish: ${{ github.sha }}
           body: |
-            Unsigned preview builds of commit ${{ github.sha }}.
+            Lawha ${{ env.APP_VERSION }}, built from ${{ github.sha }}. Installed apps update themselves from this release.
 
             - macOS: open the .dmg, drag Lawha to Applications. The first time, right-click Lawha → Open (it is not notarized).
             - Windows: run the .exe; if SmartScreen warns, choose More info → Run anyway.
             - Linux: the .AppImage runs directly (chmod +x), or install the .deb.
+            - Android: install Lawha-android.apk (allow installs from this source).
           files: dist/*
           overwrite_files: true

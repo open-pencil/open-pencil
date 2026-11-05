@@ -21,5 +21,6 @@
   "installFailed": "Das Update konnte nicht installiert werden: {error}",
   "restartFailed": "Lawha konnte nicht neu gestartet werden: {error}",
   "unavailable": "Updates sind noch nicht verfügbar. Veröffentliche zuerst ein signiertes Release mit latest.json.",
-  "checkFailed": "Updates konnten nicht geprüft werden: {error}"
+  "checkFailed": "Updates konnten nicht geprüft werden: {error}",
+  "download": "Herunterladen"
 }

@@ -21,5 +21,6 @@
   "installFailed": "アップデートをインストールできませんでした: {error}",
   "restartFailed": "Lawha を再起動できませんでした: {error}",
   "unavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",
-  "checkFailed": "アップデートの確認中にエラーが発生しました: {error}"
+  "checkFailed": "アップデートの確認中にエラーが発生しました: {error}",
+  "download": "ダウンロード"
 }

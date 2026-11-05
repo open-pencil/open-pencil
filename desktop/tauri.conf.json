@@ -90,14 +90,20 @@
     }
   },
   "plugins": {
-    "fs": { "requireLiteralLeadingDot": true },
+    "fs": {
+      "requireLiteralLeadingDot": true
+    },
     "deep-link": {
-      "desktop": { "schemes": ["lawha"] }
+      "desktop": {
+        "schemes": ["lawha"]
+      }
     },
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4QzBCRjBFNzhFNEVEMDEKUldRQjdlUjREci9BV0hLaEJPeG5tRXdsWkhQWFdEa0VxcEtNR1o1S2VJeGlKU1VDTldQTi9wYncK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkwQjVFNTQxMzk5RjIxMEIKUldRTElaODVRZVcxa0lFbUpGNnAvQmtQMnR2MmVhK1ZzZzdHQmZiUXlXNzhNWVBmL0xkc0YxcnUK",
       "requireSignedVersion": true,
-      "endpoints": ["https://github.com/aliaaldihnayn-lab/design/releases/latest/download/latest.json"],
+      "endpoints": [
+        "https://github.com/aliaaldihnayn-lab/design/releases/download/desktop-preview/latest.json"
+      ],
       "windows": {
         "installMode": "passive"
       }
