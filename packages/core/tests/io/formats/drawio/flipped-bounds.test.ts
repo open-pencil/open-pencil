@@ -5,6 +5,7 @@ import { RED, worldBox } from '#core-tests/helpers/flipped-layers'
 
 import { parseDrawIOFile } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { shadowReach } from '@open-pencil/scene-graph/geometry'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 
@@ -64,4 +65,24 @@ describe('draw.io cells of flipped layers', () => {
       expect(geometry.height).toBeCloseTo(box.maxY - box.minY, 1)
     })
   }
+})
+
+test('a shadowed star’s image cell holds its shadow as far as it is drawn', async () => {
+  const { graph, node } = star({
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        radius: 10,
+        spread: 0,
+        offset: { x: 0, y: 0 },
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        visible: true,
+        blendMode: 'NORMAL',
+        showShadowBehindNode: false
+      }
+    ]
+  })
+  const reach = shadowReach(10, 1)
+  const { geometry } = await firstCell(graph, node.id)
+  expect(geometry).toMatchObject({ width: 60 + 2 * reach, height: 40 + 2 * reach })
 })

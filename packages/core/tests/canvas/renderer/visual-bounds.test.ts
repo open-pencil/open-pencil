@@ -11,8 +11,11 @@ import {
   type Stroke
 } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { blurReach, shadowReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 
 function close(
   actual: unknown,
@@ -199,18 +202,25 @@ describe('content bounds', () => {
     expect(boundsOf({ strokes })).toEqual({ minX: 96, minY: 196, maxX: 154, maxY: 264 })
   })
 
-  test('a drop shadow grows the side it is offset to', () => {
+  test('a drop shadow is the box moved by its offset, grown to where its ink fades', () => {
+    const reach = shadowReach(10, 0.5)
     expect(boundsOf({ effects: [shadow(10, { x: 5, y: -3 })] })).toEqual({
-      minX: 90,
-      minY: 187,
-      maxX: 165,
-      maxY: 270
+      minX: 105 - reach,
+      minY: 197 - reach,
+      maxX: 155 + reach,
+      maxY: 257 + reach
     })
   })
 
-  test('a layer blur grows every side by its radius', () => {
+  test('a layer blur grows every side to where its kernel ends', () => {
     const blur: Effect = { ...shadow(20, { x: 0, y: 0 }), type: 'LAYER_BLUR' }
-    expect(boundsOf({ effects: [blur] })).toEqual({ minX: 80, minY: 180, maxX: 170, maxY: 280 })
+    const reach = blurReach(20)
+    expect(boundsOf({ effects: [blur] })).toEqual({
+      minX: 100 - reach,
+      minY: 200 - reach,
+      maxX: 150 + reach,
+      maxY: 260 + reach
+    })
   })
 
   test('an invisible effect leaves the box as it is', () => {
@@ -222,12 +232,23 @@ describe('content bounds', () => {
       strokes: [stroke(5, 'OUTSIDE')],
       effects: [shadow(10, { x: 3, y: 3 })]
     })
-    expect(bounds).toEqual({ minX: 85, minY: 185, maxX: 168, maxY: 278 })
+    const reach = shadowReach(10, 0.5)
+    expect(bounds).toEqual({
+      minX: 98 - reach,
+      minY: 198 - reach,
+      maxX: 158 + reach,
+      maxY: 268 + reach
+    })
   })
 
-  test('several effects take the largest overflow on each side', () => {
+  test('several shadows each reach as far as their own offset and blur take them', () => {
     const effects = [shadow(5, { x: 10, y: 0 }), shadow(3, { x: -10, y: 0 })]
-    expect(boundsOf({ effects })).toEqual({ minX: 87, minY: 195, maxX: 165, maxY: 265 })
+    expect(boundsOf({ effects })).toEqual({
+      minX: 90 - shadowReach(3, 0.5),
+      minY: 200 - shadowReach(5, 0.5),
+      maxX: 160 + shadowReach(5, 0.5),
+      maxY: 260 + shadowReach(5, 0.5)
+    })
   })
 
   test('inside stroke geometry does not grow the box, outside stroke geometry does', () => {
@@ -337,5 +358,50 @@ describe('text past its box', () => {
     })
     expect(normal.maxY).toBe(43)
     expect(decorated.maxY).toBeCloseTo(61.2, 6)
+  })
+})
+
+describe('RenderedBoundsCache', () => {
+  function frameWithTwoChildren() {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, { width: 10, height: 10, clipsContent: false })
+    const first = graph.createNode('RECTANGLE', frame.id, { width: 10, height: 10 })
+    const second = graph.createNode('RECTANGLE', frame.id, { y: 20, width: 10, height: 10 })
+    return { graph, frame, first, second }
+  }
+
+  test('measures a node the graph does not hold apart from the layer whose id it takes', () => {
+    const { graph, first } = frameWithTwoChildren()
+    const cache = new RenderedBoundsCache()
+    expect(cache.ownAxes(graph, first).maxX).toBe(10)
+    const drawnInItsPlace = { ...first, width: 100 }
+    expect(cache.ownAxes(graph, drawnInItsPlace).maxX).toBe(100)
+    expect(cache.ownAxes(graph, first).maxX).toBe(10)
+  })
+
+  test('measures a previewed node and its ancestors again, and keeps the rest', () => {
+    const { graph, frame, first, second } = frameWithTwoChildren()
+    const cache = new RenderedBoundsCache()
+    expect(cache.ownAxes(graph, frame).maxX).toBe(10)
+    expect(cache.ownAxes(graph, second).maxX).toBe(10)
+    second.width = 50
+    graph.updateNodePreview(first.id, { width: 100 })
+    expect(cache.ownAxes(graph, first).maxX).toBe(100)
+    expect(cache.ownAxes(graph, second).maxX).toBe(10)
+    expect(cache.ownAxes(graph, frame).maxX).toBe(100)
+  })
+
+  test('forgets a redrawn node and its ancestors, and keeps the rest', () => {
+    const { graph, frame, first, second } = frameWithTwoChildren()
+    const cache = new RenderedBoundsCache()
+    expect(cache.ownAxes(graph, frame).maxX).toBe(10)
+    expect(cache.ownAxes(graph, second).maxX).toBe(10)
+    first.width = 100
+    second.width = 50
+    cache.forget(first.id)
+    expect(cache.ownAxes(graph, first).maxX).toBe(100)
+    expect(cache.ownAxes(graph, second).maxX).toBe(10)
+    expect(cache.ownAxes(graph, frame).maxX).toBe(100)
   })
 })

@@ -28,6 +28,18 @@ function unionBounds(bounds: Array<Rect | null>): Rect | null {
   return result
 }
 
+/** The masks erase everything past what they draw, so only where both draw can show. */
+function maskedInBounds(masks: Rect | null, masked: Rect | null): Rect | null {
+  if (!masks || !masked) {
+    return unionBounds([masks, masked])
+  }
+  const x = Math.max(masks.x, masked.x)
+  const y = Math.max(masks.y, masked.y)
+  const right = Math.min(masks.x + masks.width, masked.x + masked.width)
+  const bottom = Math.min(masks.y + masks.height, masked.y + masked.height)
+  return { x, y, width: Math.max(0, right - x), height: Math.max(0, bottom - y) }
+}
+
 export function renderMaskedChildIds(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -66,10 +78,10 @@ export function renderMaskedChildIds(
       ? r.ck.ColorFilter.MakeLuma()
       : null
     const bounds = getChildBounds
-      ? unionBounds([
-          ...masks.map((mask) => getChildBounds(mask.id)),
-          ...childIds.slice(start, end).map((id) => getChildBounds(id))
-        ])
+      ? maskedInBounds(
+          unionBounds(masks.map((mask) => getChildBounds(mask.id))),
+          unionBounds(childIds.slice(start, end).map((id) => getChildBounds(id)))
+        )
       : null
     const layerBounds = bounds
       ? r.ck.LTRBRect(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)

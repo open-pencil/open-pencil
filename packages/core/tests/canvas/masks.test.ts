@@ -6,6 +6,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import type { Canvas, InputRect, Paint } from 'canvaskit-wasm'
 
 import { renderNode } from '#core/canvas/scene'
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { asCanvas, asRenderer } from './helpers'
 
 const ck = await initCanvasKit()
@@ -115,6 +116,7 @@ function createRenderer() {
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
+    renderedBounds: new RenderedBoundsCache(),
     effectLayerPaint: {
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),
@@ -157,7 +159,7 @@ describe('canvas masks', () => {
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenCalledWith('DstIn')
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenLastCalledWith('SrcOver')
     expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
-    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 200, 200)
+    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 100, 100)
     for (const call of canvas.saveLayer.mock.calls) {
       expect(call[1]).toBeInstanceOf(Float32Array)
     }
