@@ -22,8 +22,14 @@ import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import { DESKTOP_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/ai-setup/access'
 
-const { agentsAvailable, detections = {} } = defineProps<{
+const {
+  agentsAvailable,
+  subscriptionsAvailable = agentsAvailable,
+  detections = {}
+} = defineProps<{
   agentsAvailable: boolean
+  /** Subscription sign-in needs the desktop app but no host process. */
+  subscriptionsAvailable?: boolean
   /** What setup found of each agent on this computer. */
   detections?: Partial<Record<OnboardingAccess, AgentDetection>>
 }>()
@@ -78,7 +84,7 @@ function toggle(providerID: OnboardingAccess, checked: boolean): void {
       </template>
     </AppAlert>
   </section>
-  <section v-if="agentsAvailable" :class="styles.group()">
+  <section v-if="subscriptionsAvailable" :class="styles.group()">
     <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessSubscriptions }}</h3>
     <AppCheckboxCard
       v-for="subscription in ONBOARDING_SUBSCRIPTIONS"
