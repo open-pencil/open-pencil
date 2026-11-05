@@ -6,7 +6,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -26,6 +25,7 @@ import {
 import { toolTip } from '@/app/editor/toolbar/shortcuts'
 import ToolButton from '@/components/toolbar/ToolButton.vue'
 import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/toolbar/types'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menu } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -85,7 +85,7 @@ function flyoutItemClass() {
       />
     </slot>
 
-    <DropdownMenuRoot>
+    <AppDropdownMenuRoot>
       <DropdownMenuTrigger as-child>
         <ToolbarButton
           v-test-id="toolbarFlyoutTestId(tool.key, mobile)"
@@ -139,6 +139,6 @@ function flyoutItemClass() {
           </MenuScrollArea>
         </DropdownMenuContent>
       </DropdownMenuPortal>
-    </DropdownMenuRoot>
+    </AppDropdownMenuRoot>
   </div>
 </template>

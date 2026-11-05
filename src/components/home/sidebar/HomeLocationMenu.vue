@@ -5,7 +5,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -14,6 +13,7 @@ import { computed } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 import homeLocationMenuTheme from '@/theme/home/location-menu'
 
@@ -62,7 +62,7 @@ const isActive = (location: HomeLocation) =>
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <AppDropdownMenuRoot>
     <DropdownMenuTrigger :class="ui.trigger()">
       <icon-lucide-clock v-if="active.kind === 'recent'" :class="ui.icon()" />
       <icon-lucide-users v-else-if="active.kind === 'shared'" :class="ui.icon()" />
@@ -163,5 +163,5 @@ const isActive = (location: HomeLocation) =>
         </template>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

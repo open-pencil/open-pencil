@@ -28,18 +28,51 @@ function unescapedIndexOf(text: string, stop: string, from: number): number {
   return index
 }
 
-/** The first family of a CSS `font-family` list, and whether it was a quoted string. */
-function firstFontFamily(value: string | undefined): { name: string; quoted: boolean } | null {
-  const text = value?.trimStart()
-  if (!text) return null
-  const quote = text[0]
+/** A family of a CSS `font-family` list: its name, and whether it was a quoted string. */
+export interface CSSFontFamily {
+  name: string
+  quoted: boolean
+}
+
+/** The family at the start of `text` and where the next one starts, or null when none is left. */
+function nextFontFamily(text: string): { family: CSSFontFamily | null; rest: string } | null {
+  const trimmed = text.trimStart()
+  if (!trimmed) return null
+  const quote = trimmed[0]
   if (quote === '"' || quote === "'") {
-    const name = decodeCSSEscapes(text.slice(1, unescapedIndexOf(text, quote, 1)))
-    return name ? { name, quoted: true } : null
+    const end = unescapedIndexOf(trimmed, quote, 1)
+    const name = decodeCSSEscapes(trimmed.slice(1, end))
+    const comma = unescapedIndexOf(trimmed, ',', end)
+    return { family: name ? { name, quoted: true } : null, rest: trimmed.slice(comma + 1) }
   }
-  const words = decodeCSSEscapes(text.slice(0, unescapedIndexOf(text, ',', 0)))
-  const name = words.trim().replace(/\s+/gu, ' ')
-  return name ? { name, quoted: false } : null
+  const comma = unescapedIndexOf(trimmed, ',', 0)
+  const name = decodeCSSEscapes(trimmed.slice(0, comma)).trim().replace(/\s+/gu, ' ')
+  return { family: name ? { name, quoted: false } : null, rest: trimmed.slice(comma + 1) }
+}
+
+/**
+ * Every family of a CSS `font-family` list in order, without quotes and escapes, as
+ * `parseCSSFontFamily` reads the first.
+ */
+export function parseCSSFontFamilies(value: string | undefined): CSSFontFamily[] {
+  const families: CSSFontFamily[] = []
+  for (let next = nextFontFamily(value ?? ''); next; next = nextFontFamily(next.rest)) {
+    if (next.family) families.push(next.family)
+  }
+  return families
+}
+
+function firstFontFamily(value: string | undefined): CSSFontFamily | null {
+  return parseCSSFontFamilies(value)[0] ?? null
+}
+
+/**
+ * The real family a family of a `font-family` list names: a generic one, such as `sans-serif`,
+ * mapped to a real one, and any other name as it is. A quoted name is never a generic.
+ */
+export function cssFontFamilyName(family: CSSFontFamily): string {
+  if (family.quoted) return family.name
+  return CSS_GENERIC_FONT_FAMILIES[family.name.toLowerCase()] ?? family.name
 }
 
 /**
@@ -61,7 +94,7 @@ const MONOSPACE_FAMILY = 'Roboto Mono'
  * them, and for `-apple-system` and `BlinkMacSystemFont`, which browsers read as `system-ui`.
  * Keyed by lowercase name; the rest of the generics, such as `cursive`, draw in the sans-serif one.
  */
-const GENERIC_FONT_FAMILIES: Record<string, string> = {
+export const CSS_GENERIC_FONT_FAMILIES: Readonly<Record<string, string>> = {
   serif: SERIF_FAMILY,
   'ui-serif': SERIF_FAMILY,
   monospace: MONOSPACE_FAMILY,
@@ -85,9 +118,7 @@ const GENERIC_FONT_FAMILIES: Record<string, string> = {
  */
 export function resolveCSSFontFamily(value: string | undefined): string | null {
   const family = firstFontFamily(value)
-  if (!family) return null
-  if (family.quoted) return family.name
-  return GENERIC_FONT_FAMILIES[family.name.toLowerCase()] ?? family.name
+  return family ? cssFontFamilyName(family) : null
 }
 
 /**

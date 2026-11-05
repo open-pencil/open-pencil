@@ -14,10 +14,11 @@ import {
   MenubarSubTrigger,
   MenubarTrigger
 } from 'reka-ui'
-import { useTemplateRef, watch } from 'vue'
+import { ref, useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { useI18n } from '@open-pencil/vue/i18n'
+import { useOverlayOpen } from '@open-pencil/vue/lifecycle/overlays'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -69,6 +70,9 @@ const menubar = useTemplateRef<HTMLElement>('menubar')
 const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar, {
   smooth: animationsEnabled
 })
+/** The open top-level menu, empty when none is; an open menu holds the canvas's keys back. */
+const openMenu = ref('')
+useOverlayOpen(() => openMenu.value !== '')
 </script>
 
 <template>
@@ -119,7 +123,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         :data-overflow-start="overflowStart || undefined"
         :data-overflow-end="overflowEnd || undefined"
       >
-        <MenubarRoot class="flex w-max items-center gap-0.5">
+        <MenubarRoot v-model="openMenu" class="flex w-max items-center gap-0.5">
           <MenubarMenu v-for="menu in topMenus" :key="menu.label">
             <MenubarTrigger
               v-test-id="`menubar-${menu.label.toLowerCase()}`"
