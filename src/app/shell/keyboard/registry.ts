@@ -75,6 +75,15 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
       run: () => setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
     },
     { id: 'toggle-ui', keys: menuKeys('toggle-ui', '$mod+Backslash'), run: actions.toggleUI },
+    // Matched by key position, since Shift turns \ into | on most layouts.
+    {
+      id: 'split-right',
+      keys: '$mod+Shift+Backslash',
+      run: () => {
+        if (store.visiblePaneCount.value < store.panes.maxVisiblePanes)
+          store.splitPane(store.activePaneId.value, 'horizontal')
+      }
+    },
     { id: 'toggle-ai', keys: '$mod+KeyJ', run: actions.toggleAI },
     {
       id: 'toggle-comments',
