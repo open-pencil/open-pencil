@@ -4,7 +4,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -12,6 +11,7 @@ import {
 import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -27,7 +27,7 @@ const item = menuItem({ justify: 'start' })
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="binding.available.value && !binding.definition.value">
+  <AppDropdownMenuRoot v-if="binding.available.value && !binding.definition.value">
     <DropdownMenuTrigger as-child>
       <IconButton
         :label="panels.applyComponentProperty({ field: binding.fieldLabel.value })"
@@ -60,5 +60,5 @@ const item = menuItem({ justify: 'start' })
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

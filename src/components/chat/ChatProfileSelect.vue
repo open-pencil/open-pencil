@@ -16,6 +16,7 @@ import { computed, ref } from 'vue'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
+import { useOverlayOpen } from '@open-pencil/vue/lifecycle/overlays'
 
 import {
   aiModelSettings,
@@ -33,6 +34,7 @@ import { chatProfileTheme } from './ui'
 
 const { ai } = useI18n()
 const open = ref(false)
+useOverlayOpen(open)
 const profiles = computed(designModelProfiles)
 const ui = chatProfileTheme()
 const selectCls = useSelectUI({

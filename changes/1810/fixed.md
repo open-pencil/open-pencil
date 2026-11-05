@@ -1,0 +1,2 @@
+- Each split view's header shows that view's current zoom, and clicking it opens the zoom menu for that view.
+- In split view, a previewing view's header shows that it is previewing, with Reset and Stop, and the Play button toggles preview.

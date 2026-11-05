@@ -4,7 +4,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItemIndicator,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { computed } from 'vue'
@@ -13,6 +12,7 @@ import type { VariableType } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
@@ -36,7 +36,7 @@ function toggle(type: VariableType, on: boolean) {
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <AppDropdownMenuRoot>
     <DropdownMenuTrigger as-child>
       <IconButton
         size="sm"
@@ -67,5 +67,5 @@ function toggle(type: VariableType, on: boolean) {
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>
