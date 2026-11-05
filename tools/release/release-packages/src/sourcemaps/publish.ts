@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 import { defineCommand, runMain } from 'citty'
 import * as v from 'valibot'
@@ -31,7 +31,7 @@ const credentialsSchema = v.object({
 const posthogCLI = Bun.resolveSync('@posthog/cli/run-posthog-cli.js', import.meta.dir)
 
 export type SourceMapsOptions = {
-  /** The build to publish; the workspace's `dist` by default. */
+  /** The build to publish, relative to the workspace root; its `dist` by default. */
   dist?: string
   /** The PostHog release the chunks belong to; the app's, at the workspace version, by default. */
   release?: { name: string; version: string }
@@ -49,7 +49,8 @@ export type SourceMapsOptions = {
  */
 export async function publishSourceMaps(root: string, options: SourceMapsOptions = {}) {
   v.parse(credentialsSchema, process.env)
-  const dist = options.dist ?? join(root, 'dist')
+  // The CLI runs from the root, so a relative build is the root's, for every step alike.
+  const dist = resolve(root, options.dist ?? 'dist')
   const { name, version } = options.release ?? {
     name: POSTHOG_RELEASE_NAME,
     version: (await readPackageManifest(join(root, 'package.json'))).version
