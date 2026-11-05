@@ -245,6 +245,15 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('toggle-ui') ?? '$mod+Backslash',
       run: ({ actions }) => actions.toggleUI()
     },
+    // Matched by key position, since Shift turns \ into | on most layouts.
+    {
+      id: 'split-right',
+      keys: '$mod+Shift+Backslash',
+      run: ({ store }) => {
+        if (store.visiblePaneCount.value < store.panes.maxVisiblePanes)
+          store.splitPane(store.activePaneId.value, 'horizontal')
+      }
+    },
     { id: 'toggle-ai', keys: '$mod+KeyJ', run: ({ actions }) => actions.toggleAI() },
     {
       id: 'toggle-comments',
