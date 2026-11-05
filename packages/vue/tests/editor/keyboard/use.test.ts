@@ -254,4 +254,12 @@ describe('useEditorKeyboard', () => {
     press('ArrowRight', { key: 'ArrowRight' })
     expect(editor.graph.getNode(rect)?.x).toBe(0)
   })
+
+  test("a preview leaves Space to its controls and still stops the browser's own Save", () => {
+    const editor = mountKeyboard()
+    editor.startPlay()
+    expect(press('Space', { key: ' ' })).toBe(false)
+    expect(editor.state.activeTool).toBe('SELECT')
+    expect(press('KeyS', MOD)).toBe(true)
+  })
 })
