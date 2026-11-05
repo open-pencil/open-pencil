@@ -131,7 +131,6 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
 export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
   useEditorKeyboard({
     shortcuts: appShortcuts(options),
-    onEscape: () => useComments().closeCard(),
-    ignore: () => !!options.store.state.numberFieldFocused
+    onEscape: () => useComments().closeCard()
   })
 }

@@ -7,18 +7,16 @@ import {
   MenubarItemIndicator,
   MenubarMenu,
   MenubarPortal,
-  MenubarRoot,
   MenubarSeparator,
   MenubarSub,
   MenubarSubContent,
   MenubarSubTrigger,
   MenubarTrigger
 } from 'reka-ui'
-import { ref, useTemplateRef, watch } from 'vue'
+import { useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { useI18n } from '@open-pencil/vue/i18n'
-import { useOverlayOpen } from '@open-pencil/vue/lifecycle/overlays'
 import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -44,6 +42,7 @@ import BrandMark from '@/components/brand/BrandMark.vue'
 import { CloudDocumentStatusHost } from '@/components/cloud/integration'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
+import AppMenubarRoot from '@/components/ui/menu/AppMenubarRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -70,9 +69,6 @@ const menubar = useTemplateRef<HTMLElement>('menubar')
 const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar, {
   smooth: animationsEnabled
 })
-/** The open top-level menu, empty when none is; an open menu holds the canvas's keys back. */
-const openMenu = ref('')
-useOverlayOpen(() => openMenu.value !== '')
 </script>
 
 <template>
@@ -123,7 +119,7 @@ useOverlayOpen(() => openMenu.value !== '')
         :data-overflow-start="overflowStart || undefined"
         :data-overflow-end="overflowEnd || undefined"
       >
-        <MenubarRoot v-model="openMenu" class="flex w-max items-center gap-0.5">
+        <AppMenubarRoot class="flex w-max items-center gap-0.5">
           <MenubarMenu v-for="menu in topMenus" :key="menu.label">
             <MenubarTrigger
               v-test-id="`menubar-${menu.label.toLowerCase()}`"
@@ -204,7 +200,7 @@ useOverlayOpen(() => openMenu.value !== '')
               </MenubarContent>
             </MenubarPortal>
           </MenubarMenu>
-        </MenubarRoot>
+        </AppMenubarRoot>
       </div>
       <!-- Sits beside the hidden menus; it keeps its width when it switches sides, so the bar's overflow never flips back.
            Pointer affordance only: arrow keys already move through the menus and scroll them into view. -->

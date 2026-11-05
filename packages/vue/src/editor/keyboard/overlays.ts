@@ -1,12 +1,11 @@
 import type { OpenOverlays } from '#vue/lifecycle/overlays'
 
-// Fallback for overlays that do not register through `useOverlayOpen` yet: menus, popovers, and
-// context menus built on Reka's roots directly. Remove once they all go through shared wrappers.
+// A key pressed inside a dialog, menu, list, or picker is that widget's own, such as an arrow in
+// an inline list that never opened as an overlay.
 const OVERLAY_SELECTOR = '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
 const PICKER_SELECTOR = '[data-picker-content]'
-const OPEN_LAYER_SELECTOR = '[data-dismissable-layer]:not([data-state="closed"])'
 
-function originatedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
+function pressedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
   return event
     .composedPath()
     .some(
@@ -17,25 +16,17 @@ function originatedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
     )
 }
 
-/** A popover, menu, or dialog that is open; one fading out after closing no longer counts. */
-function hasOpenDismissableLayer(allowPickers: boolean) {
-  return [...document.querySelectorAll(OPEN_LAYER_SELECTOR)].some(
-    (layer) => !(allowPickers && layer.closest(PICKER_SELECTOR))
-  )
-}
-
 /**
  * Whether an open dialog, menu, list, or picker holds the canvas's keys back, shortcuts and
- * nudging alike; `history` asks about undo and redo, which a picker leaves to the document.
+ * nudging alike: one registered as open (`useOverlayOpen`), or the one the key was pressed in.
+ * The shortcut listener captures on the window, so it runs before an overlay's own handlers and
+ * sees an overlay still open even when its Escape is about to close it.
+ * `history` asks about undo and redo, which a picker leaves to the document.
  */
 export function overlayHoldsKeys(
   event: KeyboardEvent,
   overlays: OpenOverlays | undefined,
   history = false
 ): boolean {
-  return (
-    !!overlays?.holdsKeys(history) ||
-    hasOpenDismissableLayer(history) ||
-    originatedInOverlay(event, history)
-  )
+  return !!overlays?.holdsKeys(history) || pressedInOverlay(event, history)
 }
