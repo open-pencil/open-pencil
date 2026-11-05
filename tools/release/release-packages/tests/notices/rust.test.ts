@@ -14,12 +14,10 @@ test("a release source without an artifact's package writes no notices for it", 
     manifest: 'packages/engine/crate/Cargo.toml',
     deny: 'packages/engine/deny.toml',
     targets: ['wasm32-unknown-unknown'],
-    packageDirectory: 'packages/engine',
+    directory: 'packages/engine',
     notices: 'wasm/THIRD-PARTY-NOTICES.md'
   }
 
   await expect(writeReleaseNotices(root, [artifact])).resolves.toBeUndefined()
-  expect(await Bun.file(join(root, artifact.packageDirectory, artifact.notices)).exists()).toBe(
-    false
-  )
+  expect(await Bun.file(join(root, artifact.directory, artifact.notices)).exists()).toBe(false)
 })

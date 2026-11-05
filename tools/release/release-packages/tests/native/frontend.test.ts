@@ -1,11 +1,17 @@
 import { expect, test } from 'bun:test'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import { releaseCommands } from '#release/native/commands'
 import { desktopReleasePaths } from '#release/native/context'
-import { prepareSharedFrontend } from '#release/native/frontend'
+import {
+  archiveSharedFrontend,
+  DESKTOP_RESOURCES,
+  JAVASCRIPT_NOTICES,
+  prepareSharedFrontend,
+  SHARED_FRONTEND_INPUTS
+} from '#release/native/frontend'
 import { digestFile } from '#release/native/manifest'
 
 test.each(['valid', 'beta', 'source', 'version', 'digest'])(
@@ -53,13 +59,14 @@ test.each(['valid', 'beta', 'source', 'version', 'digest'])(
       if (scenario === 'valid') {
         await operation
         expect(JSON.parse(await readFile(config, 'utf8'))).toEqual({
-          build: { beforeBuildCommand: null }
+          build: { beforeBuildCommand: null },
+          bundle: { resources: DESKTOP_RESOURCES }
         })
       } else if (scenario === 'beta') {
         await operation
         expect(JSON.parse(await readFile(config, 'utf8'))).toEqual({
           build: { beforeBuildCommand: null },
-          bundle: { windows: { wix: { version: '0.16.0.2' } } }
+          bundle: { resources: DESKTOP_RESOURCES, windows: { wix: { version: '0.16.0.2' } } }
         })
       } else {
         await expect(operation).rejects.toThrow()
@@ -70,3 +77,26 @@ test.each(['valid', 'beta', 'source', 'version', 'digest'])(
     }
   }
 )
+
+test('archives the shared frontend inputs with their notices and returns the digest', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'release-frontend-archive-'))
+  try {
+    const archive = (execute?: Parameters<typeof archiveSharedFrontend>[1]) =>
+      archiveSharedFrontend(root, execute)
+    await expect(archive()).rejects.toThrow(`Missing ${JAVASCRIPT_NOTICES}`)
+    for (const notices of [JAVASCRIPT_NOTICES, 'desktop/generated/THIRD-PARTY-NOTICES.md']) {
+      await mkdir(dirname(join(root, notices)), { recursive: true })
+      await writeFile(join(root, notices), '# Notices')
+    }
+    const requests: string[][] = []
+    const sha256 = await archiveSharedFrontend(root, async (request) => {
+      requests.push(request.args ?? [])
+      await writeFile(join(root, 'frontend.tar'), 'archive')
+      return { stdout: '', stderr: '' }
+    })
+    expect(requests).toEqual([['-cf', 'frontend.tar', ...SHARED_FRONTEND_INPUTS]])
+    expect(sha256).toBe((await digestFile(join(root, 'frontend.tar'))).sha256)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

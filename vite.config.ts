@@ -29,6 +29,7 @@ import { metricsBrandPlugin } from './vite/metrics'
 import { chunkFileNames, openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
+import { thirdPartyNoticesPlugins } from './vite/third-party-notices'
 
 const host = process.env.TAURI_DEV_HOST
 const automationRoute = localAutomationRoute(host)
@@ -46,6 +47,7 @@ export default defineConfig(async ({ command, mode }) => {
   // Agents automate the editor's own development server; a Cloud site, built or served, has none.
   const automation = !metrics && !cloudSite
   await Promise.all([ensureBrandAssets(['web']), metrics ? undefined : ensureDemoDocument()])
+  const notices = thirdPartyNoticesPlugins()
   return {
     resolve: {
       alias: createOpenPencilAliases(__dirname, { cloud })
@@ -83,8 +85,10 @@ export default defineConfig(async ({ command, mode }) => {
       automation ? openPencilAutomationPlugin(command, host) : undefined,
       vue(),
       metrics ? metricsBrandPlugin((outDir) => resolve(outDir, '..')) : openPencilPwaPlugin(),
-      cloudSite ? cloudSitePlugin() : undefined
+      cloudSite ? cloudSitePlugin() : undefined,
+      notices.page
     ],
+    worker: { plugins: () => [notices.worker()] },
     clearScreen: false,
     // A Cloud server routes its own pages and falls back to the editor itself, so a development
     // server it takes files from answers only the files it has. Its dependency cache is its own,

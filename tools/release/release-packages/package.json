@@ -5,6 +5,9 @@
   "imports": {
     "#release/*": "./src/*.ts"
   },
+  "exports": {
+    "./notices/javascript": "./src/notices/javascript.ts"
+  },
   "scripts": {
     "check-changelog": "bun src/changelog/check.ts ../../..",
     "build": "bun src/cli.ts build",

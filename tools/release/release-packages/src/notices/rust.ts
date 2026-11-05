@@ -75,8 +75,8 @@ export async function writeReleaseNotices(
   artifacts: readonly NoticedArtifact[]
 ): Promise<void> {
   for (const artifact of artifacts) {
-    if (!existsSync(join(root, artifact.packageDirectory))) continue
-    const output = join(root, artifact.packageDirectory, artifact.notices)
+    if (!existsSync(join(root, artifact.directory))) continue
+    const output = join(root, artifact.directory, artifact.notices)
     await mkdir(dirname(output), { recursive: true })
     await writeFile(output, await rustNotices(root, artifact))
   }
