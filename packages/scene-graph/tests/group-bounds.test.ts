@@ -91,6 +91,33 @@ for (const [name, transform] of [
   })
 }
 
+test('a rotated group whose children start off its corner keeps them in place', () => {
+  const { graph, group, a, b } = rotatedGroup({ rotation: 30 })
+  graph.updateNode(a, { x: 30, y: 20 })
+  const before = { a: worldBox(graph, a), b: worldBox(graph, b) }
+
+  expect(fitEnclosingGroups(graph, [group])).not.toBeNull()
+  // The children's bounds in the group's frame, (30,20)…(160,90), now start at its corner.
+  expectBox(getAxisAlignedBoundsInParent([...graph.getChildren(group)], group, graph), {
+    x: 0,
+    y: 0,
+    width: 130,
+    height: 70
+  })
+  expectBox(worldBox(graph, a), before.a)
+  expectBox(worldBox(graph, b), before.b)
+})
+
+test('a fitted rotated group fits again without change', () => {
+  for (const rotation of [17, 30, 45, 123]) {
+    const { graph, group, b } = rotatedGroup({ rotation })
+    graph.updateNode(b, { rotation: 13 })
+    fitEnclosingGroups(graph, [group])
+    // Its frame leaves rounding residue in the children's bounds; that is no change.
+    expect(fitEnclosingGroups(graph, [group])).toBeNull()
+  }
+})
+
 test('fitting a rotated group can be undone', () => {
   const { graph, group, b } = rotatedGroup({ rotation: 30 })
   const original = { ...graph.getNode(group) }

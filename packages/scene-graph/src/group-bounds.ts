@@ -139,6 +139,12 @@ function fittedBox(
   }
 }
 
+const FIT_TOLERANCE = 1e-9
+
+function unchanged(value: number, previous: number): boolean {
+  return Math.abs(value - previous) <= FIT_TOLERANCE * Math.max(1, Math.abs(previous))
+}
+
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
 function fitGroup(
   graph: SceneGraph,
@@ -151,7 +157,13 @@ function fitGroup(
   const fitted = fittedBox(graph, group, group.parentId, children, options)
   if (!fitted) return
   const { box, shift } = fitted
-  if (shift.x === 0 && shift.y === 0 && box.width === group.width && box.height === group.height) {
+  // A rotated group's frame leaves rounding residue; a fit within it changes nothing.
+  if (
+    unchanged(shift.x, 0) &&
+    unchanged(shift.y, 0) &&
+    unchanged(box.width, group.width) &&
+    unchanged(box.height, group.height)
+  ) {
     return
   }
   for (const node of [group, ...children]) {
