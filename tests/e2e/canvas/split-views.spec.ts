@@ -75,4 +75,28 @@ test.describe('split canvas views', () => {
     await expect(page.getByTestId('layers-panel')).toBeVisible()
     canvas.assertNoErrors()
   })
+
+  // Split view keeps the panels, so the previewing view's header says it and leaves it.
+  test('previews the active view and shows it in that view header', async ({ page }) => {
+    await page.goto('/?test')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    await page.keyboard.press('Meta+Shift+Backslash')
+    const headers = page.locator('[data-slot="canvas-pane-header"]')
+    const play = page.getByTestId('editor-start-preview')
+
+    await play.click()
+    await expect(play).toHaveAttribute('aria-pressed', 'true')
+    await expect(headers.nth(1).getByTestId('pane-previewing')).toBeVisible()
+    await expect(headers.nth(0).getByTestId('pane-previewing')).toHaveCount(0)
+
+    await headers.nth(1).getByTestId('pane-leave-preview').click()
+    await expect(headers.getByTestId('pane-previewing')).toHaveCount(0)
+    await expect(play).toHaveAttribute('aria-pressed', 'false')
+
+    await play.click()
+    await play.click()
+    await expect(headers.getByTestId('pane-previewing')).toHaveCount(0)
+    canvas.assertNoErrors()
+  })
 })

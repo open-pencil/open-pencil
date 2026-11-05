@@ -189,7 +189,9 @@ const { pending: roomPending } = useRoomActions()
             })
           "
           data-test-id="editor-start-preview"
-          @click="store.startPlay()"
+          toggle
+          :active="store.state.canvasView.id === 'play'"
+          @click="store.togglePlay()"
         >
           <icon-lucide-play class="size-3.5" />
         </IconButton>

@@ -9,10 +9,12 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
+import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import ZoomDropdown from '@/components/editor/ZoomDropdown.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -24,9 +26,12 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const { menu: menuText } = useI18n()
+const { menu: menuText, editor } = useI18n()
 const view = computed(() => store.getPaneView(paneId))
 const isActive = computed(() => store.activePaneId.value === paneId)
+// Split view keeps the panels, so the canvas-only preview pill never shows; the header says it.
+const previewing = computed(() => view.value?.canvasView.id === 'play')
+const leaveShortcut = formatShortcut(appMenuShortcut('toggle-preview')) ?? ''
 const pageName = computed(() => {
   const pageId = view.value?.currentPageId
   return pageId ? (store.graph.getNode(pageId)?.name ?? menuText.value.view) : menuText.value.view
@@ -56,6 +61,23 @@ function split(direction: SplitDirection) {
     @pointerdown="activatePane"
   >
     <span :class="headerCls.title()">{{ pageName }}</span>
+    <template v-if="previewing">
+      <span data-test-id="pane-previewing" :class="headerCls.badge()">
+        <icon-lucide-play class="size-3" />
+        {{ editor.previewing }}
+      </span>
+      <IconButton :label="editor.resetPreview" size="xs" @click="store.resetPlay()">
+        <icon-lucide-rotate-ccw :class="headerCls.icon()" />
+      </IconButton>
+      <IconButton
+        :label="editor.leavePreview({ shortcut: leaveShortcut })"
+        data-test-id="pane-leave-preview"
+        size="xs"
+        @click="store.stopPlay()"
+      >
+        <icon-lucide-square :class="headerCls.icon()" />
+      </IconButton>
+    </template>
     <ZoomDropdown :pane-id="paneId" />
     <div :class="headerCls.actions()">
       <DropdownMenuRoot>
