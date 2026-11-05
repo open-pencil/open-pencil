@@ -44,6 +44,21 @@ jobs:
           VITE_OPENPENCIL_FEEDBACK: "on"
         run: bun run build:packages && bun run build:cloud
 
+      # wrangler builds the Worker without deploying it, so the bundle whose source map PostHog gets
+      # is the one that ships, with the chunk ID its error reports carry.
+      - name: Build the Worker
+        working-directory: ${{ env.DEPLOYMENT }}
+        run: bunx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker" --assets "$GITHUB_WORKSPACE/dist-cloud"
+
+      - name: Upload the Worker's source maps for error reports
+        env:
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: "267806"
+          POSTHOG_CLI_HOST: https://eu.posthog.com
+        run: >-
+          bun tools/release/release-packages/src/sourcemaps/publish.ts --dist "$RUNNER_TEMP/worker"
+          --release-name openpencil-cloud --release-version "$GITHUB_SHA" --linked
+
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.
       - name: Migrate the database
@@ -80,7 +95,8 @@ jobs:
           workingDirectory: ${{ env.DEPLOYMENT }}
           packageManager: bun
           command: >-
-            deploy --assets ${{ github.workspace }}/dist-cloud
+            deploy ${{ runner.temp }}/worker/worker.js --config wrangler.jsonc --no-bundle
+            --assets ${{ github.workspace }}/dist-cloud
             --secrets-file ${{ runner.temp }}/cloud-secrets.json
 
       - name: Check the deployment
