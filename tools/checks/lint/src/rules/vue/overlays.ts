@@ -217,4 +217,52 @@ const noOverlayContentFromOpenState = {
   }
 } satisfies RuleDefinition
 
-export { noOverlayContentFromOpenState }
+/** Reka's overlay roots and the shared wrapper that counts each as an open overlay. */
+const OVERLAY_ROOT_WRAPPERS: Record<string, string> = {
+  DialogRoot: 'AppDialogRoot',
+  AlertDialogRoot: 'AppAlertDialogRoot',
+  DropdownMenuRoot: 'AppDropdownMenuRoot',
+  ContextMenuRoot: 'AppContextMenuRoot',
+  MenubarRoot: 'AppMenubarRoot',
+  PopoverRoot: 'AppPopoverRoot',
+  SelectRoot: 'AppSelectRoot',
+  ComboboxRoot: 'AppCombobox'
+}
+
+/**
+ * App code opens dialogs, menus, popovers, and selects through the wrappers in
+ * `src/components/ui`, which register them as open overlays, so canvas shortcuts and nudging wait
+ * while one is open (`packages/vue/src/lifecycle/overlays/index.ts`).
+ */
+const noRawOverlayRootsInApp = {
+  meta: {
+    type: 'problem',
+    docs: { description: "Open Reka's overlay roots through the app's registering wrappers" },
+    schema: []
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || file.includes('/src/components/ui/')) return {}
+    if (file.includes('/packages/') || /\/(tests|tools)\//.test(file)) return {}
+    return {
+      ImportDeclaration(node) {
+        if (node.source.value !== 'reka-ui') return
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== 'ImportSpecifier') continue
+          const name =
+            specifier.imported.type === 'Identifier'
+              ? specifier.imported.name
+              : specifier.imported.value
+          const wrapper = OVERLAY_ROOT_WRAPPERS[name]
+          if (!wrapper) continue
+          context.report({
+            node: specifier,
+            message: `Use ${wrapper} from src/components/ui instead of Reka's ${name}, so it counts as an open overlay.`
+          })
+        }
+      }
+    }
+  }
+} satisfies RuleDefinition
+
+export { noOverlayContentFromOpenState, noRawOverlayRootsInApp }

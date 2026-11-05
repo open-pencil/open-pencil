@@ -161,11 +161,6 @@ function onCardOpen(event: Event) {
 const cardKey = computed(() => (draftAt.value ? 'draft' : (activePin.value?.thread.id ?? null)))
 watch(cardKey, (key) => key && focusCard(), { flush: 'post' })
 
-// Escape closes the card only; the editor's Escape would leave the Comment tool as well.
-function onCardEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-}
-
 function closeCard() {
   comments.closeCard()
 }
@@ -240,7 +235,6 @@ function closeCard() {
           :class="draftAt ? draftCls.content : threadCls.content"
           data-canvas-obstacle
           @open-auto-focus="onCardOpen"
-          @escape-key-down="onCardEscape"
         >
           <CommentComposer
             v-if="draftAt"
