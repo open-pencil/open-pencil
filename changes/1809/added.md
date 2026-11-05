@@ -1,0 +1,1 @@
+- SDK hosts bind the editor's keyboard with `useEditorKeyboard` from `@open-pencil/vue/editor/keyboard`: command shortcuts, tool keys the editor offers, the held Space hand, nudging, Delete, Enter, Escape, and zoom, with the host's own keys added beside them. `Editor.getViewportSize()` is public (#1809).
