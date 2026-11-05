@@ -41,6 +41,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { parseFlowchart } = await import('@open-pencil/mermaid'); const chart = parseFlowchart('flowchart LR\\n  A[Start] --> B{Done?}'); if (chart.direction !== 'LR' || chart.nodes[1]?.shape !== 'diam' || chart.edges.length !== 1) throw new Error('Mermaid package smoke failed')"
   },
   {
+    name: 'HTML engine',
+    code: "const { loadHTMLEngine } = await import('@open-pencil/html-engine'); const engine = await loadHTMLEngine(); const capture = await engine.layout('<body style=margin:0><div id=box style=width:120px;height:40px></div></body>', { viewport: { width: 800, height: 600 } }); const box = capture.nodes.find((node) => node.attrs?.id === 'box')?.box; if (box?.[2] !== 120 || box[3] !== 40) throw new Error('HTML engine package smoke failed')"
+  },
+  {
     name: 'Emit package',
     code: "const { jsx } = await import('@open-pencil/emit'); const code = jsx.printJSX(jsx.element('Card', [jsx.attribute('wide', null)], [], 0)); if (code !== '<Card wide />') throw new Error('Codegen package smoke failed: ' + code)"
   },

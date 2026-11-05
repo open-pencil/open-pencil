@@ -38,10 +38,17 @@ export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
 export { playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
-export { EDIT_VIEW, resolveEditorProfile } from './views'
-export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'
+export { EDIT_VIEW, NO_HOST_RESTRICTIONS, resolveEditorProfile } from './views'
+export type {
+  CanvasView,
+  EditorProfile,
+  EditorProfileInputs,
+  EditorRestrictions,
+  PathEdits
+} from './views'
 export type { ShaderRasterizer } from './shaders/types'
-export type { NodeEditState } from './vector/types'
+export { editsHandlesOnly } from './vector/limits'
+export type { NodeEditExitOptions, NodeEditOptions, NodeEditState } from './vector/types'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
 export type {

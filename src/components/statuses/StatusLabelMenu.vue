@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+import { PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
@@ -10,6 +10,7 @@ import { openStatusesDialog } from '@/app/editor/statuses/dialog'
 import { useSelectedStatuses } from '@/app/editor/statuses/selection'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import { menu } from '@/components/ui/menu/menu'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 
 /**
  * The menu a status pill or dot on the canvas opens, beside it: the document's states and Remove.
@@ -56,7 +57,7 @@ function clear() {
 </script>
 
 <template>
-  <PopoverRoot :open="!!reference" @update:open="(open) => !open && emit('close')">
+  <AppPopoverRoot :open="!!reference" @update:open="(open) => !open && emit('close')">
     <PopoverPortal>
       <PopoverContent
         v-if="reference"
@@ -91,5 +92,5 @@ function clear() {
         </button>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

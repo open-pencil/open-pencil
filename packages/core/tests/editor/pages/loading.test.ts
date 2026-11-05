@@ -264,7 +264,9 @@ test("loading a page's layers from the opened file asks for one render", async (
   editor.dispose()
 })
 
-test('preparing a page loads the pages holding the component sets its instances use', async () => {
+// Switching a variant needs the rest of its set; the set's page, whose other layers the page
+// does not use, stays unloaded.
+test('preparing a page loads the component sets its instances use, not their pages', async () => {
   await initCodec()
   const source = new SceneGraph()
   const [design] = source.getPages()
@@ -284,6 +286,10 @@ test('preparing a page loads the pages holding the component sets its instances 
   const toggle = set('Library', 'Switch')
   source.createInstance(knob.off.id, toggle.on.id)
   source.createInstance(toggle.off.id, design.id)
+  const library = source.getPages().find((page) => page.name === 'Library')
+  if (!library) throw new Error('No library page')
+  const examples = source.createNode('FRAME', library.id, { name: 'Examples' })
+  source.createInstance(toggle.on.id, examples.id)
   const bytes = await exportFigFile(source)
   const graph = await parseFigFile(bytes.slice().buffer, { populate: 'none' })
   const editor = createEditor({ graph, skipInitialGraphSetup: true })
@@ -299,5 +305,6 @@ test('preparing a page loads the pages holding the component sets its instances 
 
   expect(variants('Switch')).toEqual(['State=Off', 'State=On'])
   expect(variants('Knob')).toEqual(['State=Off', 'State=On'])
+  expect([...graph.getAllNodes()].some((node) => node.name === 'Examples')).toBe(false)
   editor.dispose()
 })

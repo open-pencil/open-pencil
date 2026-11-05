@@ -8,6 +8,7 @@ import { Frame, type TreeNode } from '@open-pencil/design-jsx'
 import { htmlToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
 import { parseDrawIOFile, type DrawIOFile } from '@open-pencil/drawio'
 import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
+import { loadHTMLEngine, type HTMLEngineCapture } from '@open-pencil/html-engine'
 import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 import type { GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
 import { parseFlowchart, type Flowchart } from '@open-pencil/mermaid'
@@ -29,10 +30,11 @@ const figDocument: FigContainerDocument = { schemaDeflated: new Uint8Array([1]),
 const kiwiGuid: KiwiGUID = { sessionID: 1, localID: 2 }
 const drawioFile: DrawIOFile | null = parseDrawIOFile('<mxfile/>')
 const flowchart: Flowchart = parseFlowchart('flowchart LR\\n  A --> B')
+declare const capture: HTMLEngineCapture
 void editorFactory; void editor; void designDocument; void color; void vector; void maybeNode
 void penDocument; void figDocument; void kiwiGuid; void FIG_PACKAGE_STATUS
 void FIG_KIWI_DEFAULT_VERSION; void buildFigKiwi; void parsePenFile; void htmlToDesignDocument
-void testIdSelector; void tree; void drawioFile; void flowchart
+void testIdSelector; void tree; void drawioFile; void flowchart; void loadHTMLEngine; void capture.nodes[0]?.box
 `
 
 export async function verifyTypeConsumer(root: string, consumerDirectory: string): Promise<void> {

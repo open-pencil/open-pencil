@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectRoot, SelectSeparator, SelectTrigger } from 'reka-ui'
+import { SelectSeparator, SelectTrigger } from 'reka-ui'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
@@ -12,6 +12,7 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
+import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 import { useSelectUI } from '@/components/ui/select/select'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
@@ -83,7 +84,7 @@ function handleSelect(value: SizeSelectValue) {
       @cancel="ctx.cancelPreview"
     >
       <template #after-variable>
-        <SelectRoot
+        <AppSelectRoot
           v-model:open="popupOpen"
           :model-value="sizing()"
           @update:model-value="handleSelect($event as SizeSelectValue)"
@@ -114,7 +115,7 @@ function handleSelect(value: SizeSelectValue) {
               {{ ctx.node[item.prop] == null ? item.addLabel : item.removeLabel }}
             </AppSelectItem>
           </AppSelectContent>
-        </SelectRoot>
+        </AppSelectRoot>
       </template>
     </VariableNumberField>
   </Tip>

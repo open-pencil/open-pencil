@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
@@ -14,6 +15,7 @@ import {
 } from '#core/text/resolver'
 
 import { drawTextLayout } from './decorations'
+import { textInkBounds } from './ink'
 import { buildParagraph } from './layout/build'
 import { resolveParagraphLayoutWidth } from './paragraph'
 import { withPreparedText } from './preparation'
@@ -256,6 +258,35 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const bytes = picture.serialize()
   picture.delete()
   return bytes ?? null
+}
+
+/**
+ * Where `node`'s glyphs draw ink in its box (`textInkBounds`), measured once per shaping, box,
+ * and alignment; `undefined` while its fonts are not ready or for text set on a path.
+ */
+export function measureTextInkAsDrawn(
+  r: TextRenderer,
+  node: SceneNode
+): VisualBounds | null | undefined {
+  if (!r.fontsLoaded || !r.fontProvider) return undefined
+  if (node.type !== 'TEXT' || node.textPathData) return undefined
+  // Text in faces other than its own draws its saved glyphs, whose ink its layout does not show.
+  const readiness = nodeFontReadiness(r, node)
+  if (readiness === 'pending' || readiness === 'exhausted') return undefined
+  if (readiness !== 'ready' && (node.derivedTextGlyphs?.length ?? 0) > 0) return undefined
+  if (!node.text) return null
+  const compute = () => {
+    const layout = buildParagraph(r, node, undefined, { halfLeading: true })
+    try {
+      return textInkBounds(node, layout, textVerticalOffset(node, layout.getHeight()))
+    } finally {
+      layout.delete()
+    }
+  }
+  const key = `${node.width}:${node.height}:${node.textAlignVertical}`
+  return r.textPreparationCache
+    ? r.textPreparationCache.ink(node, key, fontManager.generation(), r.fontProvider, compute)
+    : compute()
 }
 
 /** Offset that places laid-out text of `contentHeight` in the node box by vertical alignment. */

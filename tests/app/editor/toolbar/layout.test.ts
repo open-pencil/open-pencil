@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  NO_HOST_RESTRICTIONS,
+  resolveEditorProfile,
+  TOOL_SHORTCUTS
+} from '@open-pencil/core'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import {
@@ -248,7 +253,7 @@ describe('toolbarLayoutFor', () => {
     resolveEditorProfile({
       documentKind,
       canvasView: { id: 'edit' },
-      hostRestrictions: { readOnly }
+      hostRestrictions: { ...NO_HOST_RESTRICTIONS, readOnly }
     }).tools
 
   test('keeps the whole layout when the profile offers every tool', () => {

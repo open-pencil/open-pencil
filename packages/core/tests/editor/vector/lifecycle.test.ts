@@ -1,6 +1,7 @@
-import { expect, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
+import { handleVisibleVertices } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -168,4 +169,82 @@ test('a tool the document does not offer leaves the path open', () => {
   editor.setTool('RECTANGLE')
   expect(editor.state.activeTool).not.toBe('RECTANGLE')
   expect(editor.state.nodeEditState?.nodeId).toBe(path.id)
+})
+
+describe('a path the host keeps open', () => {
+  function keptOpen() {
+    const graph = new SceneGraph()
+    const pageId = expectDefined(graph.getPages()[0]).id
+    const vector = graph.createNode('VECTOR', pageId, {
+      width: 100,
+      height: 50,
+      vectorNetwork: structuredClone(TRIANGLE)
+    })
+    const other = graph.createNode('RECTANGLE', pageId, { x: 300, width: 40, height: 40 })
+    const editor = createEditor({ graph })
+    editor.enterNodeEditMode(vector.id, { keepOpen: true })
+    return { editor, vector, other }
+  }
+
+  test('stays open through what leaves an ordinary path', () => {
+    const { editor, vector, other } = keptOpen()
+    editor.exitNodeEditMode(true)
+    editor.setTool('HAND')
+    editor.select([other.id])
+    editor.enterNodeEditMode(other.id)
+    expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
+    expect([...editor.state.selectedIds]).toEqual([vector.id])
+  })
+
+  test('keeps its last points, so its layer stays', () => {
+    const { editor, vector } = keptOpen()
+    for (const index of [0, 1, 2]) editor.nodeEditSelectVertex(index, index > 0)
+    editor.nodeEditDeleteSelected()
+    expect(editor.graph.getNode(vector.id)).toBeDefined()
+    expect(editor.state.nodeEditState?.vertices).toHaveLength(3)
+    expect(editor.state.nodeEditState?.history).toEqual([])
+  })
+
+  test('is not left for the pen', () => {
+    const { editor, vector } = keptOpen()
+    editor.penResumeFromEndpoint(vector.id, 0)
+    expect(editor.state.penState).toBeNull()
+  })
+
+  test('ends when its page is switched away from', async () => {
+    const { editor, vector } = keptOpen()
+    const second = editor.graph.addPage('Second')
+    await editor.switchPage(second.id)
+    expect(editor.state.nodeEditState).toBeNull()
+    expect(editor.state.selectedIds.has(vector.id)).toBe(false)
+  })
+
+  test('ends when the host releases it, or the document goes read-only', () => {
+    const released = keptOpen()
+    released.editor.exitNodeEditMode(true, { release: true })
+    expect(released.editor.state.nodeEditState).toBeNull()
+
+    const readOnly = keptOpen()
+    readOnly.editor.setReadOnly(true)
+    expect(readOnly.editor.state.nodeEditState).toBeNull()
+  })
+})
+
+test('a host can show the handles of every point, not only near the selection', () => {
+  const graph = new SceneGraph()
+  const pageId = expectDefined(graph.getPages()[0]).id
+  const vector = graph.createNode('VECTOR', pageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: structuredClone(TRIANGLE)
+  })
+  const editor = createEditor({ graph })
+
+  editor.enterNodeEditMode(vector.id)
+  expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(new Set())
+  editor.exitNodeEditMode(true)
+  editor.enterNodeEditMode(vector.id, { handles: 'all' })
+  expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(
+    new Set([0, 1, 2])
+  )
 })

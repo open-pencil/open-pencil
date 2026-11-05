@@ -102,6 +102,11 @@ function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
   return node.textPathData !== null || readiness !== 'ready'
 }
 
+/** Whether every fill of the text draws its saved glyphs, on its path or for want of its fonts. */
+export function drawsOnlySavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean {
+  return (node.derivedTextGlyphs?.length ?? 0) > 0 && drawsSaved(r, node) && drawsSavedText(node)
+}
+
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
   return (
     drawsSaved(r, node) && canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)

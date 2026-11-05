@@ -7,10 +7,11 @@ import {
   intersectVisualBounds,
   strokeOverflow,
   unionVisualBounds,
+  visualBoundsToRect,
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type {
   AnalyzeOverlapsArgs,
@@ -40,15 +41,6 @@ export function visualBoundsArea(bounds: VisualBounds): number {
   const width = bounds.maxX - bounds.minX
   const height = bounds.maxY - bounds.minY
   return width > 0 && height > 0 ? width * height : 0
-}
-
-export function boundsToRect(bounds: VisualBounds): Rect {
-  return {
-    x: bounds.minX,
-    y: bounds.minY,
-    width: bounds.maxX - bounds.minX,
-    height: bounds.maxY - bounds.minY
-  }
 }
 
 export function toNodeSummary(node: SceneNode): OverlapNodeSummary {
@@ -403,7 +395,7 @@ function makeOverlapItem(
   suggestion: string,
   areaField: 'intersection' | 'overflow' = 'intersection'
 ): OverlapItem {
-  const intersectionRect = boundsToRect(intersection)
+  const intersectionRect = visualBoundsToRect(intersection)
   const area =
     areaField === 'intersection'
       ? visualBoundsArea(intersection)

@@ -48,6 +48,7 @@ Pinch-to-zoom on UI panels (layers, properties) is prevented so it doesn't accid
 | Snap to pixel grid | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>'</kbd> |
 | Rulers | <kbd>⇧</kbd><kbd>R</kbd> | <kbd>Shift</kbd> + <kbd>R</kbd> |
 | Multiplayer cursors | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> | <kbd>Alt</kbd> + <kbd>Ctrl</kbd> + <kbd>\\</kbd> |
+| Split right | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>\\</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>\\</kbd> |
 
 ## Frames and Pages
 

@@ -1,7 +1,7 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { EditorContext } from '#core/editor/types'
-import { offeredTool } from '#core/editor/views'
+import type { EditorContext, Tool } from '#core/editor/types'
+import { offeredTool, type EditorRestrictions } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
 
@@ -48,7 +48,20 @@ export function guardUndo(undo: UndoManager, isReadOnly: () => boolean): UndoMan
   })
 }
 
-export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) {
+/** What the restrictions end when they take effect. */
+export interface RestrictionEnds {
+  /** Ends every edit in progress, as a read-only document has none. */
+  endEdits: () => void
+  /** Ends a pen path continuing an existing layer, which handles-only paths do not allow. */
+  endPathContinuation: () => void
+  /** Picks a tool as the toolbar does, committing a pen path in progress when it is not the pen. */
+  pickTool: (tool: Tool) => void
+}
+
+export function createReadOnlyActions(
+  ctx: EditorContext,
+  { endEdits, endPathContinuation, pickTool }: RestrictionEnds
+) {
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
@@ -62,5 +75,25 @@ export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) 
     ctx.requestRepaint()
   }
 
-  return { setReadOnly }
+  /**
+   * Narrows what the editor offers, as a host that is not a general design tool does: only some
+   * tools, or path edits that move handles alone. Each restriction given replaces the one before;
+   * one left out stays. A tool no longer on offer gives way to Move.
+   */
+  function setHostRestrictions(
+    restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits'>>
+  ): void {
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
+    if (restrictions.pathEdits === 'handles') {
+      // What was drawn stays; the path just stops growing, and regions stop taking the pointer.
+      endPathContinuation()
+      if (ctx.state.nodeEditState) ctx.state.nodeEditState.hoveredRegion = null
+    }
+    // A tool no longer offered gives way to Move as a picked tool does, so a pen path in
+    // progress is committed rather than left pending.
+    pickTool(offeredTool(ctx.state, ctx.state.activeTool))
+    ctx.requestRepaint()
+  }
+
+  return { setReadOnly, setHostRestrictions }
 }
