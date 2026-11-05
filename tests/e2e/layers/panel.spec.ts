@@ -57,8 +57,9 @@ const NUMBERED_GROUP = /^Group \d+$/
 
 test('demo layers visible in panel', async () => {
   const names = await getLayerNames()
-  expect(names).toContain('1 · Hello')
-  expect(names).toContain('8 · Yours')
+  const sections = (await getSceneTree()).children.map((child) => child.name)
+  expect(sections.length).toBeGreaterThan(0)
+  for (const name of sections) expect(names).toContain(name)
 })
 
 test('clicking a node inside a frame does not reparent it', async () => {

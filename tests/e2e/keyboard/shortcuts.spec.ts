@@ -496,52 +496,68 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  // The previous test left one 60 × 60 rectangle. Fitting it zooms in past 100%, as in Figma,
-  // and shows it whole.
-  async function expectRectangleFitted() {
-    const fit = await editor.page.evaluate(() => {
+  // Two 60 × 60 rectangles far apart. Fitting zooms in past 100%, as in Figma; zooming to the
+  // selection shows the selected one alone.
+  async function screenBoxes() {
+    return editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
-      const [id] = store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
-      if (!id) throw new Error('Expected a layer on the page')
-      const box = store.graph.getAbsoluteBounds(id)
       const center = store.viewportCanvasCenter()
       const { zoom, panX, panY } = store.state
-      return {
-        zoom,
-        left: box.x * zoom + panX,
-        top: box.y * zoom + panY,
-        right: (box.x + box.width) * zoom + panX,
-        bottom: (box.y + box.height) * zoom + panY,
-        width: center.x * 2,
-        height: center.y * 2
-      }
+      const boxes = store.graph.getChildren(store.state.currentPageId).map((node) => {
+        const box = store.graph.getAbsoluteBounds(node.id)
+        return {
+          left: box.x * zoom + panX,
+          top: box.y * zoom + panY,
+          right: (box.x + box.width) * zoom + panX,
+          bottom: (box.y + box.height) * zoom + panY
+        }
+      })
+      return { boxes, width: center.x * 2, height: center.y * 2 }
     })
-    expect(fit.zoom).toBeGreaterThan(1)
-    expect(fit.left).toBeGreaterThanOrEqual(0)
-    expect(fit.top).toBeGreaterThanOrEqual(0)
-    expect(fit.right).toBeLessThanOrEqual(fit.width)
-    expect(fit.bottom).toBeLessThanOrEqual(fit.height)
   }
 
-  for (const [label, keys, selectFirst] of [
+  type ScreenBox = { left: number; top: number; right: number; bottom: number }
+  function inside(box: ScreenBox, width: number, height: number) {
+    return box.left >= 0 && box.top >= 0 && box.right <= width && box.bottom <= height
+  }
+
+  for (const [label, keys, selection] of [
     ['⌘1 zooms to fit', 'Meta+1', false],
     ['⌘2 zooms to selection', 'Meta+2', true],
     ['⇧1 zooms to fit (same as ⌘1)', 'Shift+1', false],
     ['⇧2 zooms to selection (same as ⌘2)', 'Shift+2', true]
   ] as const) {
     test(label, async () => {
-      if (selectFirst) await editor.canvas.selectAll()
+      await editor.canvas.clearCanvas()
+      await editor.canvas.drawRect(100, 100, 60, 60)
+      await editor.canvas.drawRect(700, 450, 60, 60)
       await editor.page.evaluate(() => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
+        const [first] = store.graph.getChildren(store.state.currentPageId)
+        if (!first) throw new Error('Expected a layer on the page')
+        store.select([first.id])
         store.state.zoom = 0.25
       })
 
       await editor.page.keyboard.press(keys)
       await editor.canvas.waitForRender()
 
-      await expectRectangleFitted()
+      const { boxes, width, height } = await screenBoxes()
+      const [first, second] = boxes
+      if (!first || !second) throw new Error('Expected two layers on the page')
+      expect(inside(first, width, height)).toBe(true)
+      if (selection) {
+        // The selected rectangle fills most of the canvas's shorter side; the other is off-screen.
+        expect(first.bottom - first.top).toBeGreaterThan(Math.min(width, height) / 2)
+        expect(inside(second, width, height)).toBe(false)
+      } else {
+        expect(inside(second, width, height)).toBe(true)
+        // Both spread across most of the canvas, which a fit capped at 100% would not do.
+        const span = Math.max(second.right - first.left, second.bottom - first.top)
+        expect(span).toBeGreaterThan(Math.min(width, height) * 0.75)
+      }
     })
   }
 })
