@@ -62,7 +62,7 @@ export function createEditorComputedRefs(editor: Editor, state: AppEditorState) 
     selectedNodes,
     selectedNode,
     layerTree,
-    dispose() {
+    dispose: () => {
       stopColorSpaceSync()
       stopGraphSync()
       disposeSelection()

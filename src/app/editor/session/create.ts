@@ -60,7 +60,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     shaderRasterizer: createShaderRasterizer(),
     resolveFigmaClipboardImages: IS_TAURI ? resolveFigmaClipboardImages : undefined,
     skipInitialGraphSetup: !!initialGraph,
-    getViewportBounds,
+    getViewportBounds: panes.getActiveViewportBounds,
     getUserName: () => useCollabIdentity().name.value,
     getViewportSize: () =>
       viewportSize.width > 0 && viewportSize.height > 0

@@ -12,6 +12,15 @@ describe('canvas covered by editor panels', () => {
     return createEditor({ getViewportSize: () => VIEWPORT, getViewportBounds: () => visible })
   }
 
+  test('uses the full viewport until panel bounds become available', () => {
+    const editor = createEditor({
+      getViewportSize: () => VIEWPORT,
+      getViewportBounds: () => undefined
+    })
+    editor.centerOn(100, 200)
+    expect(screenOf(editor, 100, 200)).toEqual({ x: 400, y: 300 })
+  })
+
   test('fits and centers layers in the unobscured area', () => {
     const editor = setup()
     const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
