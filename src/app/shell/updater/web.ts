@@ -109,20 +109,21 @@ export function useWebUpdates(): void {
   if (IS_TAURI) return
   const overlays = useOpenOverlays()
   void import('virtual:pwa-register').then(({ registerSW }) => {
-    let registration: ServiceWorkerRegistration | undefined
     const update = registerSW({
       immediate: true,
-      onRegisteredSW: (_url, registered) => {
-        registration = registered
-      },
       onNeedRefresh: () =>
         offerWebUpdate({
+          // Workbox reports a version already waiting before `onRegisteredSW` runs, so the
+          // registration is looked up when the update is taken rather than kept from that callback.
           reload: () =>
-            takeWebUpdate({
-              controlled: navigator.serviceWorker.controller !== null,
-              waiting: registration?.waiting ?? null,
-              activate: () => void update(true),
-              reload: () => window.location.reload()
+            void navigator.serviceWorker.getRegistration().then((registration) => {
+              takeWebUpdate({
+                controlled: navigator.serviceWorker.controller !== null,
+                waiting: registration?.waiting ?? null,
+                activate: () => void update(true),
+                reload: () => window.location.reload()
+              })
+              return undefined
             }),
           overlayOpen: () => overlays?.holdsKeys() ?? false
         })
