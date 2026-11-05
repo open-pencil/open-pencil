@@ -67,7 +67,8 @@ describe('placing a layer in resized selection bounds', () => {
     // Doubling the canvas width widens the layer's own height axis, which now runs across.
     expect(rect.width).toBeCloseTo(100, 6)
     expect(rect.height).toBeCloseTo(40, 6)
-    const moved = graph.createNode('RECTANGLE', page.id, { ...rect, rotation: 90 })
+    expect(rect.rotation).toBeCloseTo(90, 6)
+    const moved = graph.createNode('RECTANGLE', page.id, rect)
     expectRect(getAxisAlignedWorldBounds(moved, graph), to)
   })
 

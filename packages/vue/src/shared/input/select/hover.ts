@@ -12,7 +12,11 @@ import {
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
 import { lineEndAt } from '#vue/shared/input/line/end'
-import { selectionBox, selectionResizeHandleAt } from '#vue/shared/input/resize/selection'
+import {
+  selectionBox,
+  selectionResizeHandleAt,
+  selectionTakes
+} from '#vue/shared/input/resize/selection'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
 import { pressSelects } from '#vue/shared/input/select/move'
@@ -44,7 +48,8 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
 function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   if (editor.state.selectedIds.size > 1) {
     const box = selectionBox(editor)
-    return box ? boxRotationCursor(cx, cy, box, editor.renderer?.zoom ?? 1) : null
+    if (!box || !selectionTakes(editor, layerRotates)) return null
+    return boxRotationCursor(cx, cy, box, editor.renderer?.zoom ?? 1)
   }
   if (editor.state.selectedIds.size !== 1) return null
 

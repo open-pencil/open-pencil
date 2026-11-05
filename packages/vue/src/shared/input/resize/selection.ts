@@ -1,12 +1,13 @@
 import { compact } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import {
   createSceneGeometry,
   transformZoneAt,
   type HandlePosition
 } from '@open-pencil/core/geometry'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { placeInResizedBounds, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import { layerResizes } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
@@ -37,6 +38,17 @@ export function selectionBox(editor: Editor): Rect | null {
   return computeBounds(nodes.map((node) => geometry.bounds(node)))
 }
 
+/**
+ * Whether a multi-selection's handles act on any of its layers: an unlocked one that `takes` the
+ * action. A press starts nothing otherwise, so hovering shows no cursor for it either.
+ */
+export function selectionTakes(editor: Editor, takes: (node: SceneNode) => boolean): boolean {
+  return [...editor.state.selectedIds].some((id) => {
+    const node = editor.graph.getNode(id)
+    return node !== undefined && !node.locked && takes(node)
+  })
+}
+
 /** The multi-selection box's resize handle under a canvas point. */
 export function selectionResizeHandleAt(
   cx: number,
@@ -44,7 +56,7 @@ export function selectionResizeHandleAt(
   editor: Editor
 ): HandlePosition | null {
   const box = selectionBox(editor)
-  if (!box) return null
+  if (!box || !selectionTakes(editor, layerResizes)) return null
   const zone = transformZoneAt({ x: cx, y: cy }, box, editor.renderer?.zoom ?? 1)
   return zone?.kind === 'resize' ? zone.handle : null
 }
@@ -77,6 +89,15 @@ export function tryStartSelectionResize(
     origBounds: box,
     members
   }
+}
+
+function roundsToPixels(editor: Editor): boolean {
+  const state = optionalEditorState(editor)
+  return (
+    state !== undefined &&
+    state.snappingPreferences.pixelGrid &&
+    resolveEditorProfile(state).pixelGrid
+  )
 }
 
 /** `size` at least a pixel long, keeping its sign. */
@@ -128,10 +149,17 @@ export function applySelectionResize(
   const d = toRaw(dragState)
   const { origBounds } = d
   const bounds = resizedBox(d, cx, cy, shiftKey, ctrlKey, editor)
+  // A layer locked to its ratio lands on whole pixels in a design, as Figma rounds it.
+  const round = roundsToPixels(editor) ? (size: number) => Math.max(1, Math.round(size)) : undefined
   for (const { drag, placement } of d.members) {
     const node = editor.graph.getNode(drag.nodeId)
     if (!node) continue
-    const { rotation, flipX, flipY, ...rect } = placeInResizedBounds(placement, origBounds, bounds)
+    const { rotation, flipX, flipY, ...rect } = placeInResizedBounds(
+      placement,
+      origBounds,
+      bounds,
+      { keepRatio: drag.lockedAspectRatio !== null, round }
+    )
     const changes = { ...scaledChanges(drag, node.type, rect), rotation, flipX, flipY }
     applyResizedRect(drag, node, rect, changes, editor)
   }

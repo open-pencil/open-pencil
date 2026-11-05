@@ -337,6 +337,13 @@ function positionCenteredAt(node: SceneNode, parentInverse: Mat3 | null, center:
   return { x: px - qx, y: py - qy }
 }
 
+export interface ResizedBoundsOptions {
+  /** The layer is locked to its ratio: it scales evenly instead of stretching. */
+  keepRatio?: boolean
+  /** Adjusts a locked layer's sizes, such as to whole pixels. */
+  round?: (size: number) => number
+}
+
 /** Where a layer sits in its parent and how large it is, with its angle and flips. */
 export type LayerPlacement = Pick<
   SceneNode,
@@ -354,7 +361,8 @@ export type LayerPlacement = Pick<
 export function placeInResizedBounds(
   placement: SelectionPlacement,
   from: Rect,
-  to: Rect
+  to: Rect,
+  { keepRatio = false, round = (size: number) => size }: ResizedBoundsOptions = {}
 ): LayerPlacement {
   const { node, world, parentWorld } = placement
   const scaleX = from.width > 0 ? to.width / from.width : 1
@@ -367,8 +375,10 @@ export function placeInResizedBounds(
   // The scaled axes: x along the first column, y along the second.
   const xLength = Math.hypot(a, c)
   const yLength = Math.hypot(b, d)
-  const width = node.width * xLength
-  const height = node.height * yLength
+  // A layer locked to its ratio scales evenly, by the mean of the box's scales, as in Figma.
+  const even = Math.sqrt(Math.abs(scaleX * scaleY))
+  const width = keepRatio ? round(node.width * even) : node.width * xLength
+  const height = keepRatio ? round(node.height * even) : node.height * yLength
   const ux = xLength > 0 ? a / xLength : 1
   const uy = xLength > 0 ? c / xLength : 0
   const mirrored = a * d - b * c < 0 ? -1 : 1

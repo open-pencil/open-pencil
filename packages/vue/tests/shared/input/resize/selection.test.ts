@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { mapValues } from 'es-toolkit'
+import { compact, mapValues } from 'es-toolkit'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -11,8 +11,11 @@ import {
   applySelectionResize,
   cancelSelectionResize,
   commitSelectionResize,
+  selectionResizeHandleAt,
   tryStartSelectionResize
 } from '#vue/shared/input/resize/selection'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
+import type { DragState } from '#vue/shared/input/types'
 
 let editor: Editor
 
@@ -208,5 +211,86 @@ describe('dragging a multi-selection’s edge past the opposite one', () => {
     expect(box(editor.graph.getNode(a))).toEqual({ x: 0, y: 0, width: 50, height: 50 })
     expect(editor.graph.getNode(a)?.rotation).toBe(0)
     expect(editor.graph.getNode(a)?.flipY).toBe(false)
+  })
+})
+
+describe('stretching a multi-selection with a layer locked to its ratio', () => {
+  test('the locked layer scales evenly from its corner, as Figma measured', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const a = editor.graph.createNode('RECTANGLE', page, {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 50,
+      targetAspectRatio: { x: 100, y: 50 }
+    })
+    const b = editor.graph.createNode('RECTANGLE', page, { x: 300, y: 200, width: 50, height: 100 })
+    editor.select([a.id, b.id])
+    // Figma 126, the box's right edge dragged from 350 to 600: the free layer stretches to
+    // 100 × 100, the locked one scales by √2 to 141 × 71, its corner kept at (100, 100).
+    const drag = start(350, 200)
+    applySelectionResize(drag, 600, 200, false, editor)
+    commitSelectionResize(drag, editor)
+    expect(box(editor.graph.getNode(a.id))).toEqual({ x: 100, y: 100, width: 141, height: 71 })
+    expect(box(editor.graph.getNode(b.id))).toEqual({ x: 500, y: 200, width: 100, height: 100 })
+  })
+})
+
+describe('a press on a multi-selection’s handle that does not move', () => {
+  test('records nothing and keeps the layers’ imported geometry', () => {
+    const { a, b } = setup()
+    const layers = compact([a, b].map((id) => editor.graph.getNode(id)))
+    editor.graph.applyImportedStateDuring(() => {
+      for (const node of layers) node.source.fig.rawNodeFields.vectorData = { imported: true }
+    })
+    const before = editor.undo.canUndo
+    const drag = start(150, 150)
+    commitSelectionResize(drag, editor)
+    expect(editor.undo.canUndo).toBe(before)
+    expect(editor.graph.getNode(a)?.source.fig.rawNodeFields.vectorData).toEqual({ imported: true })
+  })
+})
+
+describe('the multi-selection box’s handles', () => {
+  test('show no resize cursor when no selected layer can take it', () => {
+    const { a, b } = setup()
+    for (const id of [a, b]) editor.graph.updateNode(id, { locked: true })
+    expect(selectionResizeHandleAt(150, 150, editor)).toBeNull()
+  })
+
+  test('a press inside the box, on a member’s corner, moves the selection instead', () => {
+    setup()
+    const fns: HitTestFns = {
+      hitTestLayer: (cx, cy) =>
+        editor.graph.hitTestSelectable(
+          cx,
+          cy,
+          editor.state.currentPageId,
+          editor.state.selectedIds
+        ),
+      hitTestFrameTitle: () => null,
+      hitTestSectionTitle: () => null,
+      hitTestComponentLabel: () => null
+    }
+    const press = { shiftKey: false, altKey: false, metaKey: false, ctrlKey: false } as MouseEvent
+    let drag: DragState | null = null
+    // The first layer's bottom-right corner, inside the box, where no handle is drawn.
+    handleSelectDown(
+      press,
+      50,
+      50,
+      50,
+      50,
+      editor,
+      fns,
+      () => false,
+      () => false,
+      (next) => {
+        drag = next
+      }
+    )
+    expect((drag as DragState | null)?.type).not.toBe('resize')
+    expect((drag as DragState | null)?.type).not.toBe('resize-selection')
   })
 })
