@@ -60,6 +60,10 @@ test.describe('split canvas views', () => {
     await page.getByRole('menuitem', { name: 'Split right' }).click()
     const surfaces = page.locator('canvas[data-ready="1"]')
     await expect(surfaces).toHaveCount(4)
+    await surfaces.evaluateAll((elements) => {
+      for (const surface of elements) surface.setAttribute('data-test-kept', '')
+    })
+    const kept = page.locator('canvas[data-ready="1"][data-test-kept]')
     const panes = page.locator('[data-active-pane]')
     const headers = page.locator('[data-slot="canvas-pane-header"]')
 
@@ -67,11 +71,14 @@ test.describe('split canvas views', () => {
     await expect(page.getByTestId('layers-panel')).not.toBeVisible()
     await expect(panes).toHaveCount(2)
     await expect(surfaces).toHaveCount(4)
+    await expect(kept).toHaveCount(4)
     await expect(headers).toHaveCount(0)
 
     await page.keyboard.press('Meta+\\')
     await expect(page.getByTestId('layers-panel')).toBeVisible()
     await expect(headers).toHaveCount(2)
+    await expect(surfaces).toHaveCount(4)
+    await expect(kept).toHaveCount(4)
     canvas.assertNoErrors()
   })
 })
