@@ -1,0 +1,1 @@
+- Scripts and agents see every style of bundled fonts and of Google Fonts families they have loaded in `figma.listAvailableFontsAsync()`, not only Regular.
