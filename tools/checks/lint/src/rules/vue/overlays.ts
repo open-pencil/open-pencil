@@ -187,7 +187,11 @@ const noOverlayContentFromOpenState = {
         const template = vueTemplateAst(context.sourceCode.getText(), file)
         if (!template) return
         walkVueTemplateAst(template, (element) => {
-          if (element.type !== VUE_ELEMENT_NODE || INSTANT_CLOSE_ROOTS.has(pascalCaseTag(element.tag))) return
+          if (
+            element.type !== VUE_ELEMENT_NODE ||
+            INSTANT_CLOSE_ROOTS.has(pascalCaseTag(element.tag))
+          )
+            return
           const open = element.props.find((prop) => isVueBindDirective(prop, 'open'))
           if (!open || open.type !== VUE_DIRECTIVE_NODE) return
           if (open.exp?.type === VUE_SIMPLE_EXPRESSION_NODE && open.exp.content.trim() === 'true') {
