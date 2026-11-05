@@ -11,6 +11,8 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
+import { measureTextInk } from '#core/text/ink'
+
 const INTRINSIC_CONTAINER_TYPES = new Set([
   'FRAME',
   'COMPONENT',
@@ -83,20 +85,30 @@ function translatedBounds(bounds: VisualBounds, offset: Vector, overflow: number
   }
 }
 
+/**
+ * What a node draws in its own axes before strokes and effects: a text's glyphs where their ink
+ * is known (`measureTextInk`), as Figma's render bounds take a text, and its box otherwise, with
+ * lines a fixed-size box lets run past it. `null` for a text that draws no glyph.
+ */
+function ownShape(node: SceneNode): VisualBounds | null {
+  const ink = node.type === 'TEXT' && !node.textPathData ? measureTextInk(node) : undefined
+  if (ink !== undefined) return ink
+  return { minX: 0, minY: 0, maxX: node.width, maxY: node.height + textLinesOverflow(node) }
+}
+
 function ownRenderBounds(node: SceneNode, graph: SceneGraph): VisualBounds | null {
   if (!hasRenderableGeometry(node)) return null
+  const shape = ownShape(node)
+  if (!shape) return null
 
-  // Text lines past a fixed-size box draw, and cast their shadow, as in Figma.
-  const linesOverflow = textLinesOverflow(node)
-  const base = transformedRect(node, graph, 0, 0, node.width, node.height + linesOverflow)
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
   let bounds = transformedRect(
     node,
     graph,
-    -stroke,
-    -stroke,
-    node.width + stroke * 2,
-    node.height + stroke * 2
+    shape.minX - stroke,
+    shape.minY - stroke,
+    shape.maxX - shape.minX + stroke * 2,
+    shape.maxY - shape.minY + stroke * 2
   )
   const localGeometry = geometryBlobBounds([...node.fillGeometry, ...node.strokeGeometry])
   if (localGeometry) {
@@ -114,15 +126,16 @@ function ownRenderBounds(node: SceneNode, graph: SceneGraph): VisualBounds | nul
       ) ?? bounds
   }
 
-  if (linesOverflow > 0) bounds = unionVisualBounds(bounds, base) ?? bounds
-
+  // A shadow is the stroked shape moved by its offset and grown by its radius and spread
+  // (Figma desktop 126).
+  const drawn = bounds
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') {
       bounds =
         unionVisualBounds(
           bounds,
-          translatedBounds(base, effect.offset, effect.radius * 3 + effect.spread)
+          translatedBounds(drawn, effect.offset, effect.radius + effect.spread)
         ) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
       bounds = translatedBounds(bounds, { x: 0, y: 0 }, effect.radius + effect.spread)

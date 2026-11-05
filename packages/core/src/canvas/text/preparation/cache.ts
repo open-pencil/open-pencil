@@ -1,6 +1,7 @@
 import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -34,6 +35,8 @@ export interface PreparedText {
 interface ShapingResult {
   covered: boolean
   sizes: Map<number, Size>
+  /** Where the text draws ink, by its box and vertical alignment; `null` for none. */
+  inks: Map<string, VisualBounds | null>
 }
 
 /**
@@ -158,6 +161,27 @@ export class TextPreparationCache {
   }
 
   /**
+   * Where `node`'s text draws ink in a box `key` names, measured once per shaping; `undefined`
+   * from `compute`, ink that cannot be known, is not kept.
+   */
+  ink(
+    node: SceneNode,
+    key: string,
+    generation: number,
+    provider: TypefaceFontProvider,
+    compute: () => VisualBounds | null | undefined
+  ): VisualBounds | null | undefined {
+    this.useScope(generation, provider)
+    const inks = this.shapingFor(node).result.inks
+    if (inks.has(key)) return inks.get(key) ?? null
+    const ink = compute()
+    if (ink === undefined) return undefined
+    if (inks.size >= MAX_MEASURED_WIDTHS) inks.clear()
+    inks.set(key, ink)
+    return ink
+  }
+
+  /**
    * Drops `id`'s paragraphs and, unless `keepShaping`, its coverage and measured sizes. Keep
    * them only for changes `shapingInputs` compares, such as layout resizing the box.
    */
@@ -208,7 +232,7 @@ export class TextPreparationCache {
     const key = JSON.stringify(inputs)
     let result = this.results.get(key)
     if (!result) {
-      result = { covered: false, sizes: new Map() }
+      result = { covered: false, sizes: new Map(), inks: new Map() }
       this.results.set(key, result)
     }
     const created: Shaping = { inputs, key, result }
