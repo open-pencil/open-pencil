@@ -109,6 +109,26 @@ describe('resize snapping preferences', () => {
     expect(editor.state.snapGuides).toEqual([])
   })
 
+  test('a mirrored layer snaps the edge its handle moves', () => {
+    // Mirrored, the layer's own right handle is the edge at canvas x 10.25.
+    const { editor, nodeId, drag } = setup('e')
+    editor.updateNode(nodeId, { flipX: true })
+    editor.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: false }
+    editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: -50,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    const press = { ...drag, startX: 10.25 }
+    // Dragged 7.25 left on the canvas, the edge lands 3 short of the neighbour's right edge at 0.
+    applyResize(press, 3, press.startY, false, editor)
+    expect(editor.state.snapGuides.length).toBeGreaterThan(0)
+    commitResizePreview(press, editor)
+
+    expect(editor.graph.getNode(nodeId)?.width).toBeCloseTo(110.25)
+  })
+
   test('object edges take priority over the pixel grid', () => {
     const { editor, nodeId, drag } = setup('e')
     const pageId = editor.state.currentPageId
