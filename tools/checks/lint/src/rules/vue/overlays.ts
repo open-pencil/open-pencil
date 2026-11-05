@@ -166,6 +166,11 @@ const INSTANT_CLOSE_ROOTS = new Set([
   'AppContextMenuRoot'
 ])
 
+/** A component tag as its PascalCase name, so `<app-popover-root>` matches `AppPopoverRoot`. */
+function pascalCaseTag(tag: string): string {
+  return tag.replace(/(^|-)([a-z])/g, (_match, _dash, letter: string) => letter.toUpperCase())
+}
+
 const noOverlayContentFromOpenState = {
   meta: {
     docs: {
@@ -182,7 +187,7 @@ const noOverlayContentFromOpenState = {
         const template = vueTemplateAst(context.sourceCode.getText(), file)
         if (!template) return
         walkVueTemplateAst(template, (element) => {
-          if (element.type !== VUE_ELEMENT_NODE || INSTANT_CLOSE_ROOTS.has(element.tag)) return
+          if (element.type !== VUE_ELEMENT_NODE || INSTANT_CLOSE_ROOTS.has(pascalCaseTag(element.tag))) return
           const open = element.props.find((prop) => isVueBindDirective(prop, 'open'))
           if (!open || open.type !== VUE_DIRECTIVE_NODE) return
           if (open.exp?.type === VUE_SIMPLE_EXPRESSION_NODE && open.exp.content.trim() === 'true') {

@@ -88,7 +88,11 @@ function cancelFromEscape(event: KeyboardEvent) {
 
 <template>
   <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
-    <AppPopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
+    <AppPopoverRoot
+      v-model:open="popupOpen"
+      overlay-kind="picker"
+      @update:open="emit('openChange', $event)"
+    >
       <PopoverTrigger as-child>
         <button
           type="button"
