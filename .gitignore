@@ -102,3 +102,7 @@ dist-metrics/
 
 # SwiftPM output of desktop Swift packages built by hand
 desktop/swift/*/.build/
+
+# Rust build output, and the HTML engine's WebAssembly module built from it
+/target
+packages/html-engine/wasm/

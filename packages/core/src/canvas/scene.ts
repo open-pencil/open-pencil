@@ -9,6 +9,7 @@ import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
+import { mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
@@ -18,7 +19,7 @@ import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
-import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
+import { subtreeVisualBounds } from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
 import {
   configureStrokePaint,

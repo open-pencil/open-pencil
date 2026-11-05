@@ -61,6 +61,7 @@ test('canonical destinations are registered before they hold files', async () =>
     'emit',
     'drawio',
     'mermaid',
+    'html-engine',
     'pen',
     'cli',
     'mcp'
