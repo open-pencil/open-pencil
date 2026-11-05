@@ -160,7 +160,10 @@ const INSTANT_CLOSE_ROOTS = new Set([
   'ComboboxRoot',
   'AppPicker',
   'AppSelect',
-  'AppCombobox'
+  'AppCombobox',
+  'AppPopoverRoot',
+  'AppDropdownMenuRoot',
+  'AppContextMenuRoot'
 ])
 
 const noOverlayContentFromOpenState = {

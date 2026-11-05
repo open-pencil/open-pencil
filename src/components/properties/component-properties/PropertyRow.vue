@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
 import type { ComponentPropertyType } from '@open-pencil/scene-graph'
@@ -12,6 +12,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 
@@ -75,7 +76,7 @@ const shownValue = computed(() => {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open">
+  <AppPopoverRoot v-model:open="open">
     <PopoverTrigger as-child>
       <button
         type="button"
@@ -158,5 +159,5 @@ const shownValue = computed(() => {
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>
