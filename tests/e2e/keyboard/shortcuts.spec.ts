@@ -498,28 +498,21 @@ test.describe('zoom shortcuts', () => {
 
   // Two 60 × 60 rectangles far apart. Fitting zooms in past 100%, as in Figma; zooming to the
   // selection shows the selected one alone.
+  /** Each page layer's box on screen, and whether it lies wholly inside the canvas. */
   async function screenBoxes() {
     return editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
+      const { x: halfWidth, y: halfHeight } = store.viewportCanvasCenter()
       const { zoom, panX, panY } = store.state
-      const boxes = store.graph.getChildren(store.state.currentPageId).map((node) => {
+      return store.graph.getChildren(store.state.currentPageId).map((node) => {
         const box = store.graph.getAbsoluteBounds(node.id)
-        return {
-          left: box.x * zoom + panX,
-          top: box.y * zoom + panY,
-          right: (box.x + box.width) * zoom + panX,
-          bottom: (box.y + box.height) * zoom + panY
-        }
+        const [left, top] = [box.x * zoom + panX, box.y * zoom + panY]
+        const [right, bottom] = [left + box.width * zoom, top + box.height * zoom]
+        const shown = left >= 0 && top >= 0 && right <= halfWidth * 2 && bottom <= halfHeight * 2
+        return { left, top, right, bottom, shown, side: Math.min(halfWidth, halfHeight) * 2 }
       })
-      return { boxes, width: center.x * 2, height: center.y * 2 }
     })
-  }
-
-  type ScreenBox = { left: number; top: number; right: number; bottom: number }
-  function inside(box: ScreenBox, width: number, height: number) {
-    return box.left >= 0 && box.top >= 0 && box.right <= width && box.bottom <= height
   }
 
   for (const [label, keys, selection] of [
@@ -544,20 +537,16 @@ test.describe('zoom shortcuts', () => {
       await editor.page.keyboard.press(keys)
       await editor.canvas.waitForRender()
 
-      const { boxes, width, height } = await screenBoxes()
-      const [first, second] = boxes
+      const [first, second] = await screenBoxes()
       if (!first || !second) throw new Error('Expected two layers on the page')
-      expect(inside(first, width, height)).toBe(true)
-      if (selection) {
-        // The selected rectangle fills most of the canvas's shorter side; the other is off-screen.
-        expect(first.bottom - first.top).toBeGreaterThan(Math.min(width, height) / 2)
-        expect(inside(second, width, height)).toBe(false)
-      } else {
-        expect(inside(second, width, height)).toBe(true)
-        // Both spread across most of the canvas, which a fit capped at 100% would not do.
-        const span = Math.max(second.right - first.left, second.bottom - first.top)
-        expect(span).toBeGreaterThan(Math.min(width, height) * 0.75)
-      }
+      expect(first.shown).toBe(true)
+      // Zooming to the selection fills the canvas's shorter side with the selected rectangle and
+      // leaves the other off-screen; fitting spreads both across it, past what 100% would show.
+      expect(second.shown).toBe(!selection)
+      const span = selection
+        ? first.bottom - first.top
+        : Math.max(second.right - first.left, second.bottom - first.top)
+      expect(span).toBeGreaterThan(first.side * (selection ? 0.5 : 0.75))
     })
   }
 })
