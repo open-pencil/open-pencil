@@ -1,0 +1,1 @@
+- Each mode's "Use a variable" button in the Variables dialog names its mode for screen readers (#1820).
