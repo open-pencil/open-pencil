@@ -244,7 +244,10 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
+  const { scheduleComponentSync, isSyncingComponents } = createComponentSyncScheduler(
+    () => _graph,
+    requestRender
+  )
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -489,6 +492,7 @@ export function createEditor(options?: EditorOptions) {
     // Lifecycle
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
+    isSyncingComponents,
     requestRender,
     requestRefresh,
     textSelectionChanged,

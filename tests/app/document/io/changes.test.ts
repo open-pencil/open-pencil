@@ -322,3 +322,36 @@ test('a dragged typography field undone back leaves the document saved', async (
     editor.dispose()
   }
 })
+
+test('instances following an undone component edit leave the document saved', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const page = editor.state.currentPageId
+    const component = editor.graph.createNode('COMPONENT', page, {
+      layoutMode: 'VERTICAL',
+      itemSpacing: 8,
+      width: 200,
+      height: 100
+    })
+    editor.graph.createNode('RECTANGLE', component.id, { width: 40, height: 20 })
+    const instance = editor.graph.createInstance(component.id, page, { x: 300 })
+    if (!instance) throw new Error('The component has no instance')
+    await settle()
+    changes.markSaved()
+
+    editor.updateNodeWithUndo(component.id, { itemSpacing: 24 }, 'Spacing')
+    await settle()
+    expect(editor.graph.getNode(instance.id)?.itemSpacing).toBe(24)
+    expect(changes.hasUnsavedChanges()).toBe(true)
+
+    editor.undoAction()
+    await settle()
+    await settle()
+    expect(editor.graph.getNode(instance.id)?.itemSpacing).toBe(8)
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
