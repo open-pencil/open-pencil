@@ -130,7 +130,8 @@ const showPanels = computed(() => store.state.showUI && !canvasAlone.value)
  * Reka (2.11) attaches a resize handle's arrow-key listener in an effect that runs before a
  * handle mounted into an existing splitter is in the document, and never again, so handles that
  * come back with the panels could not be resized from the keyboard. They start disabled and are
- * enabled once rendered, which runs that effect again.
+ * enabled once rendered, which runs that effect again. Remove once
+ * https://github.com/unovue/reka-ui/issues/3160 is fixed.
  */
 const handlesReady = ref(false)
 watch(
