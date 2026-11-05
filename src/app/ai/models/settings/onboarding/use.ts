@@ -18,6 +18,7 @@ import {
 } from '@/app/ai/models'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
+import { isTauri } from '@/app/tauri/env'
 
 import { applyOnboardingPlan } from './apply'
 import { existingOnboardingConnection, useOnboardingConnections } from './connections'
@@ -55,10 +56,13 @@ function initialAnswers(): OnboardingAnswers {
 interface AIOnboardingOptions {
   /** Agents run as local processes, so only a desktop app that may spawn them offers them. */
   agentsAvailable?: boolean
+  /** Subscription sign-in needs the desktop app but no host process. */
+  subscriptionsAvailable?: boolean
 }
 
 export function useAIOnboarding({
-  agentsAvailable = canRunHostProcesses()
+  agentsAvailable = canRunHostProcesses(),
+  subscriptionsAvailable = isTauri()
 }: AIOnboardingOptions = {}) {
   const answers = reactive<OnboardingAnswers>(initialAnswers())
   const current = currentOnboardingModels(aiModelSettings.value)
@@ -69,11 +73,12 @@ export function useAIOnboarding({
   const busy = ref(false)
   const saveResult = ref<SettingsSaveResult | null>(null)
 
-  const recommended = computed(() => planOnboarding(answers, { agentsAvailable, current }))
+  const availability = { agentsAvailable, subscriptionsAvailable, current }
+  const recommended = computed(() => planOnboarding(answers, availability))
   const roles = useOnboardingRoles(recommended, configured)
   const { plan } = roles
   /** Requested goals nothing selected covers; setup offers OpenRouter for them. */
-  const gaps = computed(() => uncoveredGoals(answers, { agentsAvailable, current }))
+  const gaps = computed(() => uncoveredGoals(answers, availability))
   /** Setup can finish once there is a design model, planned or already configured. */
   const hasDesign = computed(() => recommended.value.design !== null || current.design !== null)
 
@@ -183,6 +188,7 @@ export function useAIOnboarding({
 
   return {
     agentsAvailable,
+    subscriptionsAvailable,
     answers,
     step,
     recommended,

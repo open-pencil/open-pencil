@@ -8,6 +8,7 @@ import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
+import { isTauri } from '@/app/tauri/env'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogBody, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
@@ -24,17 +25,19 @@ import AISetupSkills from './AISetupSkills.vue'
 const {
   entry,
   offersTour = true,
-  agentsAvailable = canRunHostProcesses()
+  agentsAvailable = canRunHostProcesses(),
+  subscriptionsAvailable = isTauri()
 } = defineProps<{
   entry: AISetupEntry
   offersTour?: boolean
   agentsAvailable?: boolean
+  subscriptionsAvailable?: boolean
 }>()
 const emit = defineEmits<{ close: []; advanced: []; tour: [] }>()
 const { ai, common } = useI18n()
 const styles = tv(theme)()
 
-const onboarding = useAIOnboarding({ agentsAvailable })
+const onboarding = useAIOnboarding({ agentsAvailable, subscriptionsAvailable })
 const {
   answers,
   step,
@@ -159,6 +162,7 @@ async function finish(): Promise<void> {
         <AISetupAccess
           v-model="answers.access"
           :agents-available="agentsAvailable"
+          :subscriptions-available="subscriptionsAvailable"
           :detections="detections"
         />
       </template>
