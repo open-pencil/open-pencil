@@ -42,7 +42,7 @@ function solidColor(fills: Fill[]): Fill | undefined {
 /** Dots one diameter apart, drawn as one run of round points so a line is one call. */
 function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
   // A line of no thickness has no dots; stepping by it would never end.
-  if (rect.height <= 0) return
+  if (!hasDots(rect)) return
   const radius = rect.height / 2
   const y = rect.y + radius
   const points: number[] = []
@@ -59,11 +59,18 @@ function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
 /** A wavy line's stroke, as a share of its rect's height. */
 const WAVE_STROKE = 2 / 3
 
+/** Whether a dotted line has room for a dot, which `drawDots` paints one line height apart. */
+function hasDots(rect: TextDecorationRect): boolean {
+  return rect.height > 0 && rect.width >= rect.height
+}
+
 /**
  * Where a decoration draws ink: its rect, which a dotted line's dots and a straight line fill,
- * and a wavy line's stroke reaching past its crests and troughs.
+ * and a wavy line's stroke reaching past its crests and troughs; `null` for a dotted line too
+ * short for a dot.
  */
-export function decorationInk(rect: TextDecorationRect): VisualBounds {
+export function decorationInk(rect: TextDecorationRect): VisualBounds | null {
+  if (rect.style === 'DOTTED' && !hasDots(rect)) return null
   const reach = rect.style === 'WAVY' ? (rect.height * WAVE_STROKE) / 2 : 0
   return {
     minX: rect.x - reach,
