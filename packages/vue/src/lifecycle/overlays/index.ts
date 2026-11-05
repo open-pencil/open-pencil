@@ -2,11 +2,12 @@ import { hasInjectionContext, inject, onScopeDispose, shallowReactive, toValue, 
 import type { InjectionKey, MaybeRefOrGetter, Plugin } from 'vue'
 
 /**
- * What an open overlay holds back. Every overlay holds back the canvas's keys, such as shortcuts
+ * What an open overlay holds back. An overlay holds back the canvas's keys, such as shortcuts
  * and nudging; a picker, such as a fill or colour picker, leaves undo and redo to the document,
- * as in Figma.
+ * as in Figma; a toolbar that floats over the canvas, such as FigJam's selection toolbar, holds
+ * nothing back, since it stays open while you work on the canvas.
  */
-export type OverlayKind = 'overlay' | 'picker'
+export type OverlayKind = 'overlay' | 'picker' | 'toolbar'
 
 /** The overlays open in the app: dialogs, menus, lists, popovers, and pickers. */
 export interface OpenOverlays {
@@ -23,7 +24,9 @@ function createOverlayRegistry(): OverlayRegistry {
   return {
     open,
     holdsKeys(history = false) {
-      return [...open.values()].some((kind) => !history || kind !== 'picker')
+      return [...open.values()].some(
+        (kind) => kind !== 'toolbar' && (!history || kind !== 'picker')
+      )
     }
   }
 }

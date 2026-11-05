@@ -51,6 +51,13 @@ describe('open overlays', () => {
     expect(holds(overlays)).toEqual({ shortcuts: true, history: false })
   })
 
+  test('a toolbar over the canvas holds nothing back', () => {
+    const { open, overlays } = appWithOverlay('toolbar')
+    open.value = true
+
+    expect(holds(overlays)).toEqual({ shortcuts: false, history: false })
+  })
+
   test('an overlay that goes away while open stops counting', () => {
     const { open, scope, overlays } = appWithOverlay()
     open.value = true

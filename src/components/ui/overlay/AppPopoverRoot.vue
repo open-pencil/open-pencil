@@ -14,7 +14,10 @@ const {
 } = defineProps<{
   open?: boolean
   defaultOpen?: boolean
-  /** `picker` for a fill or colour picker, which leaves undo and redo to the document. */
+  /**
+   * `picker` for a fill or colour picker, which leaves undo and redo to the document; `toolbar`
+   * for one over the canvas, which holds nothing back and marks its content `data-overlay-kind`.
+   */
   overlayKind?: OverlayKind
 }>()
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
