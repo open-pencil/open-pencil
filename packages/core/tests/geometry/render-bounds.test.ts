@@ -1,8 +1,9 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportBounds } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 type Rectangle = ReturnType<FigmaAPI['createRectangle']>
 
@@ -23,6 +24,8 @@ function shadow(radius: number, spread: number, offset = { x: 5, y: -3 }) {
 function blur(type: 'LAYER_BLUR' | 'BACKGROUND_BLUR', radius: number) {
   return { type, visible: true, radius, blurType: 'NORMAL' as const }
 }
+
+beforeAll(() => registerTestFont())
 
 // Figma desktop 126 (2026-11-05): each layer's absoluteRenderBounds, which its 1x PNG export
 // matches to the pixel, as x, y, width, height on the page.
@@ -117,6 +120,69 @@ describe('render bounds as Figma measures them', () => {
     ['a group is what its layers draw', figma.group(inGroup, figma.currentPage), [3, -3, 46, 28]]
   ]
 
+  const shadowed = (node: { effects: unknown }) => {
+    node.effects = [shadow(4, 0)]
+  }
+  const groupWithShadow = figma.group(
+    [rectangle(), rectangle((rect) => (rect.x = 30))],
+    figma.currentPage
+  )
+  shadowed(groupWithShadow)
+  const shadowedFrame = (filled: boolean, x: number) => {
+    const [container] = frame(false)
+    container.x = x
+    if (!filled) container.fills = []
+    shadowed(container)
+    return container
+  }
+  const text = (setUp: (node: ReturnType<FigmaAPI['createText']>) => void) => {
+    const node = figma.createText()
+    node.fontSize = 24
+    node.characters = 'AB'
+    setUp(node)
+    return node
+  }
+  const [outsideFrame] = frame(true)
+  outsideFrame.x = 300
+  const outside = [figma.createRectangle(), figma.createRectangle()]
+  outside.forEach((rect, index) => {
+    outsideFrame.appendChild(rect)
+    rect.resize(10, 10)
+    rect.x = 60 + index * 20
+    rect.y = 60 - index * 60
+  })
+  const outsideGroup = figma.group(outside, outsideFrame)
+  cases.push(
+    ['a group casts its shadow from its layers', groupWithShadow, [3, -3, 46, 28]],
+    [
+      'a frame with no fill casts its shadow from its children',
+      shadowedFrame(false, 100),
+      [100, 0, 79, 71]
+    ],
+    [
+      'a filled frame casts its shadow from its box and children',
+      shadowedFrame(true, 200),
+      [200, -7, 79, 78]
+    ]
+  )
+
+  test('a text paints with a fill or a stroke, and draws nothing with neither', () => {
+    const bare = text((node) => (node.fills = []))
+    expect(bare.absoluteRenderBounds).toBeNull()
+    expect(exportBounds(graph, [bare.id])).toBeNull()
+    const stroked = text((node) => {
+      node.fills = []
+      node.strokes = solid(1, 0, 0)
+      node.strokeWeight = 2
+    })
+    expect(stroked.absoluteRenderBounds).not.toBeNull()
+  })
+
+  test('layers all outside the frame that clips them draw nothing', () => {
+    expect(figma.getNodeById(outsideGroup.id)?.absoluteRenderBounds).toBeNull()
+    expect(exportBounds(graph, [outsideGroup.id])).toBeNull()
+  })
+
   for (const [name, node, figmaBounds] of cases) {
     test(name, () => {
       const proxy = figma.getNodeById(node.id) as Rectangle
@@ -137,8 +203,19 @@ describe('render bounds as Figma measures them', () => {
   test('a turned layer takes the box around it', () => {
     const turned = rectangle((rect) => (rect.rotation = 30))
     const render = turned.absoluteRenderBounds
+    const rounded = (values: number[]) => values.map((value) => +value.toFixed(2))
+    expect(render && rounded([render.x, render.y, render.width, render.height])).toEqual([
+      3, -1, 18.66, 22.32
+    ])
+    const exported = exportBounds(graph, [turned.id])
     expect(
-      render && [render.x, render.y, render.width, render.height].map((v) => +v.toFixed(2))
+      exported &&
+        rounded([
+          exported.minX,
+          exported.minY,
+          exported.maxX - exported.minX,
+          exported.maxY - exported.minY
+        ])
     ).toEqual([3, -1, 18.66, 22.32])
   })
 })
