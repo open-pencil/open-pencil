@@ -26,9 +26,10 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
-      # No local action: this workflow's file comes from the pull request, the checkout from the
-      # default branch, so a local action the two name differently would not resolve. Dependencies
-      # come from the default branch's lockfile, like the script itself.
+      # No local action: on pull_request_review this workflow's file comes from the pull request
+      # while the checkout is the default branch's, so a local action the two name differently
+      # would not resolve (issue_comment runs both from the default branch). Dependencies come
+      # from the default branch's lockfile, like the script itself.
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           no-cache: true
