@@ -1,0 +1,1 @@
+- A text drawn from its saved glyphs, because its font is missing or still loading or because it is set on a path, keeps the accents, round tops, and descenders it draws past its box at an opacity below 100% or with a blend mode, as does upper-cased text whose case changes its length and right-to-left text such as Arabic (#1805).
