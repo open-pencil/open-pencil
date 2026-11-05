@@ -6,6 +6,7 @@ import { isDrawIOExportFileName } from '@open-pencil/drawio'
 import {
   buildPenGraph,
   isDataURL,
+  isDocumentAssetPath,
   parsePenDocument,
   penAssets,
   type PenIconRequest,
@@ -238,15 +239,43 @@ async function writeFig(
 /** The size icons are fetched at; each is scaled to the box it is drawn in. */
 const PEN_ICON_SIZE = 24
 
+/** The file a percent-encoded image URL names. A malformed escape is the URL as written. */
+function penImageFile(url: string): string {
+  try {
+    return decodeURIComponent(url)
+  } catch {
+    return url
+  }
+}
+
+/** One asset read. A host that throws for a missing file reads as missing. */
+async function readPenAsset(path: string, input: ReadDocumentInput): Promise<Uint8Array | null> {
+  try {
+    return (await input.readAsset?.(path)) ?? null
+  } catch {
+    return null
+  }
+}
+
 /**
  * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
- * host; null when either fails.
+ * host; null when either fails. Pencil stores the file under its name and writes the URL
+ * percent-encoded, so a file URL is read decoded, then as written when that name has no file.
  */
 async function loadPenImage(url: string, input: ReadDocumentInput): Promise<Uint8Array | null> {
   try {
-    if (!isDataURL(url)) return (await input.readAsset?.(url)) ?? null
-    // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
-    return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
+    if (isDataURL(url)) {
+      // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
+      return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
+    }
+    const path = penImageFile(url)
+    // A decoded `..` or an absolute path would leave the document folder, which the URL as
+    // collected does not, so only a path that still names a document file is read decoded.
+    if (path !== url && isDocumentAssetPath(path)) {
+      const decoded = await readPenAsset(path, input)
+      if (decoded) return decoded
+    }
+    return await readPenAsset(url, input)
   } catch {
     return null
   }
