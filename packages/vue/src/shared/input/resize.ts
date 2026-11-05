@@ -155,6 +155,10 @@ function turnOf(node: Turn): Turn {
   return { rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
 }
 
+function changedNothing(d: DragResize, node: SceneNode | undefined): boolean {
+  return (!d.appliedRect || sameRect(d.appliedRect, d.origRect)) && !turnDuring(d, node)
+}
+
 /** The angle and flips the drag changed on the layer, from and to, or null when it kept them. */
 function turnDuring(
   d: DragResize,
@@ -172,6 +176,11 @@ export function scaledChanges(
   type: SceneNode['type'],
   newRect: Rect
 ): Partial<SceneNode> {
+  // Back at its starting size, the layer takes back the geometry it started with, which an
+  // earlier step of the drag scaled.
+  if (newRect.width === d.origRect.width && newRect.height === d.origRect.height) {
+    return { ...newRect, ...startingGeometry(d) }
+  }
   return {
     ...newRect,
     ...scaledGeometryChanges(
@@ -227,6 +236,19 @@ function applyConstrainedChildren(
     }
     editor.graph.updateNodePreview(childId, childChanges)
     editor.renderer?.invalidateVectorPath(childId)
+  }
+}
+
+/** The layer's own geometry as the drag found it. */
+function startingGeometry(d: DragResize): Partial<SceneNode> {
+  return {
+    vectorNetwork: d.origVectorNetwork,
+    fillGeometry: d.origFillGeometry,
+    strokeGeometry: d.origStrokeGeometry,
+    derivedTextGlyphs: d.origDerivedTextGlyphs,
+    strokes: d.origStrokes,
+    textPathData: d.origTextPathData,
+    textPathBox: d.origTextPathBox
   }
 }
 
@@ -406,15 +428,7 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
   optionalEditorState(editor)?.snapGuides.splice(0)
   restoreResizePreview(d, editor)
   // The preview scaled the layer's own geometry too, which a commit would have replaced.
-  editor.graph.updateNodePreview(d.nodeId, {
-    vectorNetwork: d.origVectorNetwork,
-    fillGeometry: d.origFillGeometry,
-    strokeGeometry: d.origStrokeGeometry,
-    derivedTextGlyphs: d.origDerivedTextGlyphs,
-    strokes: d.origStrokes,
-    textPathData: d.origTextPathData,
-    textPathBox: d.origTextPathBox
-  })
+  editor.graph.updateNodePreview(d.nodeId, startingGeometry(d))
   if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
   const turn = startingTurn(d)
   if (turn) editor.graph.updateNodePreview(d.nodeId, turn)
@@ -436,6 +450,11 @@ export function commitResizePreview(
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
+  // A press that left the layer as it was records nothing, and leaves its imported geometry be.
+  if (changedNothing(d, node)) {
+    cancelResizePreview(d, editor)
+    return
+  }
   const parentId = node?.parentId
   // A section resized over layers takes in the ones it now covers, a lock that Control set aside
   // takes the new size, and an axis that stopped hugging or filling stays fixed, in one undo step.

@@ -127,6 +127,51 @@ test('a cancelled resize gives a vector back its own geometry', () => {
   }
 })
 
+test('a vector dragged back to its size keeps its own geometry', () => {
+  const editor = createEditor()
+  try {
+    const network = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 50 }
+      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+      regions: []
+    }
+    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      width: 100,
+      height: 50,
+      vectorNetwork: network
+    })
+    const resize = { ...drag(vector), origVectorNetwork: structuredClone(network) }
+    applyResize(resize, 200, 25, false, editor, true)
+    // Out to twice the width, then back past the start and to it again, as a hand drags.
+    applyResize(resize, 99, 25, false, editor, true)
+    applyResize(resize, 100, 25, false, editor, true)
+    expect(vector.vectorNetwork?.vertices[1]?.x).toBe(100)
+  } finally {
+    editor.dispose()
+  }
+})
+
+test('a press on a handle that does not move keeps a layer’s imported geometry', () => {
+  const editor = createEditor()
+  try {
+    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      width: 100,
+      height: 50
+    })
+    editor.graph.applyImportedStateDuring(() => {
+      vector.source.fig.rawNodeFields.vectorData = { imported: true }
+    })
+    commitResizePreview(drag(vector), editor)
+    expect(vector.source.fig.rawNodeFields.vectorData).toEqual({ imported: true })
+    expect(editor.undo.canUndo).toBe(false)
+  } finally {
+    editor.dispose()
+  }
+})
+
 describe('resizing an instance', () => {
   test('places its layers by their constraints without making their sizes overrides', () => {
     // Repeats a Figma desktop 126 script: an instance resized to twice its component's size
