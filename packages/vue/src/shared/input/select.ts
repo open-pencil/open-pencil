@@ -10,6 +10,7 @@ import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
+import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
 import {
   createSelectionMoveDrag,
   pressSelects,
@@ -68,7 +69,11 @@ function tryStartHandleDrag(
     setDrag(scaleDrag)
     return true
   }
-  const resizeDrag = tryStartResize(cx, cy, editor)
+  // A multi-selection resizes from its bounds' handles, the only ones it draws.
+  const resizeDrag =
+    editor.state.selectedIds.size > 1
+      ? tryStartSelectionResize(cx, cy, editor)
+      : tryStartResize(cx, cy, editor)
   if (resizeDrag) {
     setDrag(resizeDrag)
     return true

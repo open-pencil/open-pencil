@@ -361,14 +361,20 @@ export function createEditor(options?: EditorOptions) {
     penCommit: shapes.penCommit,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
-  const readOnly = createReadOnlyActions(ctx, () => {
-    nodes.flushNudge()
-    nodes.cancelNodePreviews()
-    if (state.editingTextId) text.commitTextEdit()
-    vectorEdit.exitNodeEditMode(true)
-    shapes.penCancel()
-    shapes.pencilCancel()
-    state.gradientEdit = null
+  const readOnly = createReadOnlyActions(ctx, {
+    endEdits: () => {
+      nodes.flushNudge()
+      nodes.cancelNodePreviews()
+      if (state.editingTextId) text.commitTextEdit()
+      vectorEdit.exitNodeEditMode(true, { release: true })
+      shapes.penCancel()
+      shapes.pencilCancel()
+      state.gradientEdit = null
+    },
+    endPathContinuation: () => {
+      if (state.penState?.resumingNodeId) shapes.penCommit(false)
+    },
+    pickTool: shapes.setTool
   })
 
   // The edited text follows changes made outside the editor, such as a panel field being
