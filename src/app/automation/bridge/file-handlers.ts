@@ -55,15 +55,15 @@ function assertAutomationSaveDestination(
   if (path) {
     if (hasDocumentExtension(path, kind)) return
     throw new Error(
-      `Cannot save to "${path}": save_file writes only .${extension} files. ` +
-        `Pass path "${documentPathFor(path, kind)}" instead.`
+      `Cannot save to "${path}": only .${extension} files can be saved. ` +
+        `Save to "${documentPathFor(path, kind)}" instead.`
     )
   }
   const current = inPlaceSaveName(store)
   if (!current || hasDocumentExtension(current, kind)) return
   throw new Error(
-    `"${store.state.documentName}" is open from "${current}", which save_file cannot write: ` +
-      `it writes only .${extension} files. Pass path "${documentPathFor(current, kind)}" to save it.`
+    `"${store.state.documentName}" is open from "${current}", which cannot be saved: ` +
+      `only .${extension} files can be. Save to "${documentPathFor(current, kind)}" instead.`
   )
 }
 
@@ -75,12 +75,12 @@ function unsavedDocumentError(store: AutomationTarget['store']): Error {
   if (!source) {
     return new Error(
       `"${name}" has not been saved to a file yet; ` +
-        `pass a path ending in .${DOCUMENT_EXTENSIONS[kind]} to save it`
+        `save it to a path ending in .${DOCUMENT_EXTENSIONS[kind]}`
     )
   }
   return new Error(
-    `"${name}" was opened from "${source}", which save_file cannot write. ` +
-      `Pass path "${documentPathFor(source, kind)}" to save it.`
+    `"${name}" was opened from "${source}", which cannot be saved. ` +
+      `Save to "${documentPathFor(source, kind)}" instead.`
   )
 }
 

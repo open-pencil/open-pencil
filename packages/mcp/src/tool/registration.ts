@@ -243,7 +243,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     {
       description: resolvedRoot
         ? 'Save the current document to a .fig file, or a .jam file for a board. If path is provided, it must be inside the configured MCP root.'
-        : 'Save the current document to a .fig file, or a .jam file for a board. Uses the existing file path if available, otherwise prompts for a location.',
+        : 'Save the current document to a .fig file, or a .jam file for a board. Saves to the file the document is open from, and fails when it has none.',
       inputSchema: resolvedRoot
         ? v.strictObject({
             path: v.optional(

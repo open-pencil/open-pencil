@@ -396,7 +396,7 @@ describe('close_file and save_file never prompt', () => {
     const tab = dirtyTab()
     await expect(
       request('save_file', { document_id: tab.id, path: '/tmp/nested/never-written.pen' })
-    ).rejects.toThrow('Pass path "/tmp/nested/never-written.fig" instead')
+    ).rejects.toThrow('"/tmp/nested/never-written.fig"')
     expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBeNull()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -415,9 +415,7 @@ describe('close_file and save_file never prompt', () => {
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes.pen')
     expect(tab.store.hasWritableSource()).toBe(true)
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
-      'Pass path "/tmp/notes.fig" to save it'
-    )
+    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow('"/tmp/notes.fig"')
     expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBe('/tmp/notes.pen')
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -428,7 +426,7 @@ describe('close_file and save_file never prompt', () => {
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes')
     await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      'Pass path "/tmp/notes.fig" to save it'
+      '"/tmp/notes.fig"'
     )
     expect(fsWrites(commands)).toEqual([])
     expect(getTabById(tab.id)).toBeDefined()
@@ -442,8 +440,7 @@ describe('close_file and save_file never prompt', () => {
     tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
     expect(tab.store.hasWritableSource()).toBe(false)
     await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
-      'was opened from "/tmp/designs/notes.pen", which save_file cannot write. ' +
-        'Pass path "/tmp/designs/notes.fig" to save it.'
+      '"/tmp/designs/notes.fig"'
     )
     expect(fsWrites(commands)).toEqual([])
     await request('save_file', { document_id: tab.id, path: '/tmp/designs/notes.fig' })
@@ -603,7 +600,7 @@ describe('file paths in a browser go through the MCP server', () => {
         document_id: tab.id,
         path: '/root/kuan-2d-framework.pen'
       })
-    ).rejects.toThrow('Pass path "/root/kuan-2d-framework.fig" instead')
+    ).rejects.toThrow('"/root/kuan-2d-framework.fig"')
     expect(fetch).not.toHaveBeenCalled()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
     expect(tab.store.hasWritableSource()).toBe(false)
@@ -614,7 +611,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
       requestThroughServer('save_file', { document_id: pen.id, path: '/root/copy.PEN' })
-    ).rejects.toThrow('Pass path "/root/copy.fig" instead')
+    ).rejects.toThrow('"/root/copy.fig"')
     expect(fetch).not.toHaveBeenCalled()
     expect(pen.store.hasUnsavedChanges()).toBe(true)
 
@@ -635,7 +632,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const design = dirtyTab()
     await expect(
       requestThroughServer('save_file', { document_id: design.id, path: '/root/design.jam' })
-    ).rejects.toThrow('Pass path "/root/design.fig" instead')
+    ).rejects.toThrow('"/root/design.fig"')
     expect(fetch.mock.calls).toHaveLength(1)
     expect(design.store.hasUnsavedChanges()).toBe(true)
   })
