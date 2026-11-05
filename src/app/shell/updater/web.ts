@@ -10,7 +10,7 @@ import { allTabs } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 export type WebUpdateOptions = {
-  /** Loads the new version; the page's own reload unless a test stands in. */
+  /** Takes the new version and reloads into it; a plain reload unless the worker supplies it. */
   reload?: () => void
   /** Asks about unsaved documents, as the desktop restart does. */
   confirm?: () => Promise<boolean>
@@ -23,10 +23,10 @@ export type WebUpdateOptions = {
 }
 
 /**
- * Offers the version the service worker just installed, instead of reloading the editor under the
- * person using it. Reload asks about unsaved documents first, and the offer comes back each time
- * the page is shown again. A page in the background with nothing unsaved and nothing open reloads
- * on its own, so it is current when it comes back.
+ * Offers the version the service worker just installed and keeps waiting, instead of reloading the
+ * editor under the person using it. Reload asks about unsaved documents first, and the offer comes
+ * back each time the page is shown again. A page in the background with nothing unsaved and nothing
+ * open reloads on its own, so it is current when it comes back.
  */
 export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   const reload = options.reload ?? (() => window.location.reload())
@@ -69,16 +69,22 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
 
 /**
  * Registers the web app's service worker, whose new versions wait for the person through
- * `offerWebUpdate`. Called from the app's setup, where the open overlays are known; the offer is in
- * the app's bundle, since the old version's chunks may be gone once the new one is in.
+ * `offerWebUpdate`. Until they take one, the old worker keeps serving the old version's files, so
+ * the page they are on can still load its own chunks. Called from the app's setup, where the open
+ * overlays are known.
  */
 export function useWebUpdates(): void {
   if (IS_TAURI) return
   const overlays = useOpenOverlays()
   void import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({
+    // Takes the waiting version and reloads once it is in control.
+    const update = registerSW({
       immediate: true,
-      onNeedReload: () => offerWebUpdate({ overlayOpen: () => overlays?.holdsKeys() ?? false })
+      onNeedRefresh: () =>
+        offerWebUpdate({
+          reload: () => void update(true),
+          overlayOpen: () => overlays?.holdsKeys() ?? false
+        })
     })
     return undefined
   })
