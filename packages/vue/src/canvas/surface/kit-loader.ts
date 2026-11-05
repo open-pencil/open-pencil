@@ -5,6 +5,8 @@ import type { Ref } from 'vue'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
+import { nextFrame } from '#vue/shared/frame'
+
 type CanvasKitLoaderOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>
   lifecycle: { destroyed: boolean }
@@ -36,9 +38,7 @@ export function useCanvasKitLoader({
     setCanvasKit(await getCanvasKit())
     if (isDestroyed()) return
 
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve)
-    })
+    await nextFrame()
     if (!createSurface(canvas)) throw new Error('WebGL is unavailable, so the canvas cannot draw')
     await loadFonts()
     if (isDestroyed()) return

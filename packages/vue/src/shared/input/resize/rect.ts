@@ -63,7 +63,12 @@ export function constrainToAspectRatio(
   return { x, y, width, height }
 }
 
-export function calculateResizeRect(
+/**
+ * The box a handle drags `origRect` to, with signed sizes: a handle dragged past the opposite
+ * edge gives a negative width or height, with `x` and `y` where the box's left and top edges
+ * land, so the box comes out mirrored, as Figma flips a selection dragged through itself.
+ */
+export function signedResizeRect(
   handle: HandlePosition,
   origRect: Rect,
   dx: number,
@@ -91,6 +96,17 @@ export function calculateResizeRect(
   if (aspect !== null) {
     ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, aspect))
   }
+  return { x, y, width, height }
+}
+
+export function calculateResizeRect(
+  handle: HandlePosition,
+  origRect: Rect,
+  dx: number,
+  dy: number,
+  aspect: number | null
+): Rect {
+  let { x, y, width, height } = signedResizeRect(handle, origRect, dx, dy, aspect)
 
   if (width < 0) {
     x += width

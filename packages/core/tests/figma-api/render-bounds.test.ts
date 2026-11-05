@@ -41,6 +41,33 @@ describe('absoluteRenderBounds', () => {
     expect(emptyVector.absoluteRenderBounds).toBeNull()
   })
 
+  // Figma desktop 126 (2026-11-05): a shadow is the shape moved by its offset and grown by its
+  // radius and spread, not by three times its radius.
+  test('absoluteRenderBounds grows a shadow by its radius and spread', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    for (const [radius, spread, figma] of [
+      [2, 1, { x: 3, y: -2, width: 18, height: 26 }],
+      [8, 0, { x: 0, y: -7, width: 26, height: 36 }]
+    ] as const) {
+      const rect = api.createRectangle()
+      rect.x = 3
+      rect.y = 4
+      rect.resize(10, 20)
+      rect.effects = [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 5, y: -3 },
+          radius,
+          spread,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+      expect(rect.absoluteRenderBounds).toEqual(figma)
+    }
+  })
+
   // Figma 126 draws a fixed-size text's lines past its box, and their shadow with them.
   test('absoluteRenderBounds reaches text lines past a fixed-size box and their shadow', () => {
     const graph = new SceneGraph()

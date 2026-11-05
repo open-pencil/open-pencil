@@ -1,12 +1,12 @@
 import { escapeRegExp } from 'es-toolkit'
 
 import type { ClipboardSnapshot, Editor, PastedTextLink } from '@open-pencil/core'
+import { HTML_IMPORT_VIEWPORT } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLHasBoxes, browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { filesMessages, menuMessages } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
-import { HTML_IMPORT_VIEWPORT } from '@/constants'
 
 import { isDesignClipboardHTML } from '../html'
 import { rememberWebClipboard } from '../memory'

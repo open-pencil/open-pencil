@@ -646,7 +646,13 @@ function applyPropertyDefinitions(
   const componentPropDefs = definitions.map((def) =>
     propertyDefinitionRecord(context, def, undefined, localIdCounter)
   )
-  if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0))
+  // The saved definitions lack the ones a set's variants added since, which their copies link
+  // to, so the set writes them all.
+  const variantsAdded = definitions.length > node.componentPropertyDefinitions.length
+  if (
+    variantsAdded ||
+    shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)
+  )
     nc.componentPropDefs = componentPropDefs
 }
 

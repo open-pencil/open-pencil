@@ -48,6 +48,15 @@ test('an injected chunk without a source map link passes', async () => {
   })
 })
 
+test('a build that keeps its maps may link them, as the Worker does', async () => {
+  await withDist(
+    { 'worker.js': `run()\n//# sourceMappingURL=worker.js.map${CHUNK_ID}`, 'worker.js.map': '{}' },
+    async (dist) => {
+      await assertInjectedChunks(dist, await listSourceMaps(dist), { linked: true })
+    }
+  )
+})
+
 test.each([
   ['no maps', {}, /No source maps/],
   ['no chunk ID', { 'a.js': 'run()', 'a.js.map': '{}' }, /no PostHog chunk ID/],
@@ -61,6 +70,19 @@ test.each([
     const error: unknown = await assertInjectedChunks(dist, await listSourceMaps(dist)).catch(
       (caught: unknown) => caught
     )
+    expect(error).toBeInstanceOf(Error)
+    expect(String(error)).toMatch(message)
+  })
+})
+
+test.each([
+  ['no maps', {}, /No source maps/],
+  ['no chunk ID', { 'worker.js': 'run()', 'worker.js.map': '{}' }, /no PostHog chunk ID/]
+])('a linked build with %s is still refused', async (_scenario, files, message) => {
+  await withDist(files, async (dist) => {
+    const error: unknown = await assertInjectedChunks(dist, await listSourceMaps(dist), {
+      linked: true
+    }).catch((caught: unknown) => caught)
     expect(error).toBeInstanceOf(Error)
     expect(String(error)).toMatch(message)
   })

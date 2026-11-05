@@ -135,6 +135,7 @@ export default defineConfig({
     'shared/dom-events': './src/shared/dom-events.ts',
     'shared/drag/index': './src/shared/drag/index.ts',
     'shared/font-status/index': './src/shared/font-status/index.ts',
+    'shared/frame': './src/shared/frame.ts',
     'shared/input/index': './src/shared/input/index.ts',
     'shared/search/index': './src/shared/search/index.ts',
     'testing/index': './src/testing/index.ts',

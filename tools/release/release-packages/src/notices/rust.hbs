@@ -1,0 +1,20 @@
+# Third-party notices
+
+This binary is compiled from the Rust crates below, each under the license it is listed with. Each crate is listed with the exact source it was built from: its version on crates.io, or the Git repository and commit Cargo fetched it at. The crates under MPL-2.0 are distributed unmodified from those sources.
+
+{{#each licenses}}
+## {{{name}}}
+
+{{#each used_by}}
+{{#if (eq crate.source "registry+https://github.com/rust-lang/crates.io-index")}}
+- [{{crate.name}} {{crate.version}}](https://crates.io/crates/{{crate.name}}/{{crate.version}})
+{{else}}
+- {{crate.name}} {{crate.version}}, built from `{{{crate.source}}}`
+{{/if}}
+{{/each}}
+
+```text
+{{{text}}}
+```
+
+{{/each}}

@@ -28,6 +28,7 @@ export function useKeyboard() {
   const { runCommand, setOpacityTarget } = useEditorCommands()
   const activeElement = useActiveElement({ triggerOnRemoval: true })
   const inputFocused = computed(() => isInputElement(activeElement.value))
+  const overlays = useOpenOverlays()
 
   const actions = createKeyboardActions({
     store,
@@ -38,11 +39,11 @@ export function useKeyboard() {
   })
 
   bindEditorClipboard(store)
-  bindNudgeKeys(store)
+  bindNudgeKeys(store, overlays)
 
   registerKeyboardShortcuts({
     inputFocused,
-    overlays: useOpenOverlays(),
+    overlays,
     store,
     runCommand,
     actions,

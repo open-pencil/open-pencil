@@ -1,0 +1,2 @@
+- Raster text exports, `absoluteRenderBounds`, and the canvas take a text by the ink of its glyphs, as Figma does, so text without a shadow or blur, once its fonts are loaded, exports at Figma's size, to a pixel in width, and a text 0 px tall draws on the canvas.
+- Text centred or bottom-aligned in its box draws its baseline on the pixel Figma draws it on.

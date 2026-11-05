@@ -1,4 +1,6 @@
+import { useDocumentVisibility } from '@vueuse/core'
 import { TimeoutError } from 'es-toolkit/error'
+import { watch, type Ref } from 'vue'
 
 import type { Editor, RenderVersions } from '@open-pencil/core'
 
@@ -14,13 +16,19 @@ import type { AppEditorState } from '@/app/editor/session/types'
 
 const PRESENTATION_TIMEOUT_MS = 10_000
 
+/** Whether the browser shows the page, for every editor; a hidden tab draws no frames. */
+const documentVisibility = useDocumentVisibility()
+
 interface PresentationWaiter {
   versions: RenderVersions
   resolve: () => void
   reject: (error: Error) => void
-  /** Runs only while a canvas shows the document, which is the only place it is presented. */
+  /**
+   * Runs only while a canvas shows the document, which is the only place it is presented, and
+   * the browser tab is shown: a hidden tab draws nothing.
+   */
   timer: ReturnType<typeof setTimeout> | null
-  /** When the timer last started, so hiding the tab keeps the time it already had. */
+  /** When the timer last started, so pausing it keeps the time it already had. */
   startedAt: number
   /** The time left to draw the scene while shown. */
   remainingMs: number
@@ -30,6 +38,8 @@ export interface EditorPreparationControllerOptions {
   presentationTimeoutMs?: number
   /** The editor whose canvases report frames shown, through `render:presented`. */
   editor?: Pick<Editor, 'onEditorEvent'>
+  /** Whether the browser shows the page; the document's own by default. */
+  visibility?: Readonly<Ref<DocumentVisibilityState>>
 }
 
 export interface EditorPreparationController {
@@ -70,6 +80,15 @@ export function createEditorPreparationController(
   let canvases = 0
   let canvasFailure: Error | null = null
   const presentationWaiters = new Map<number, PresentationWaiter>()
+  // A hidden tab draws no frames, so presents nothing: the limit runs only while it is shown.
+  const visibility = options.visibility ?? documentVisibility
+  const timing = () => canvases > 0 && visibility.value !== 'hidden'
+  const stopVisibility = watch(visibility, () => {
+    for (const [id, waiter] of presentationWaiters) {
+      if (timing()) startTimer(id, waiter)
+      else pauseTimer(waiter)
+    }
+  })
 
   function settle(id: number, outcome: Error | null) {
     const waiter = presentationWaiters.get(id)
@@ -195,14 +214,16 @@ export function createEditorPreparationController(
           remainingMs: presentationTimeoutMs
         }
         presentationWaiters.set(id, waiter)
-        if (canvases > 0) startTimer(id, waiter)
-        else if (canvasFailure) settle(id, canvasFailure)
+        // A failed canvas fails the wait only when no other canvas can present the scene.
+        if (canvases > 0) {
+          if (timing()) startTimer(id, waiter)
+        } else if (canvasFailure) settle(id, canvasFailure)
       })
     },
     attachCanvas() {
       canvases += 1
       canvasFailure = null
-      for (const [id, waiter] of presentationWaiters) startTimer(id, waiter)
+      if (timing()) for (const [id, waiter] of presentationWaiters) startTimer(id, waiter)
       let attached = true
       return () => {
         if (!attached) return
@@ -222,6 +243,7 @@ export function createEditorPreparationController(
       for (const id of presentationWaiters.keys()) settle(id, error)
     },
     dispose() {
+      stopVisibility()
       stopPresentations?.()
       activeCancel?.('tab-closed')
       activeAbort?.abort()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { SlotLimit } from '@open-pencil/vue/controls/slots'
@@ -8,6 +8,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
@@ -29,7 +30,7 @@ function label(limit: SlotLimit): string {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popupOpen">
+  <AppPopoverRoot v-model:open="popupOpen">
     <PopoverTrigger
       :data-issues="issues > 0 || undefined"
       data-property="slot-limits"
@@ -85,5 +86,5 @@ function label(limit: SlotLimit): string {
         </ul>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

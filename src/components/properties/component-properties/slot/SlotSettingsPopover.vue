@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
 import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue/controls/slots'
@@ -10,6 +10,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
@@ -71,7 +72,7 @@ const candidates = computed<AppPickerItem[]>(() =>
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popupOpen">
+  <AppPopoverRoot v-model:open="popupOpen">
     <PopoverTrigger as-child>
       <IconButton :label="panels.slotSettings" data-property="slot-settings">
         <icon-lucide-sliders-horizontal class="size-3.5" />
@@ -181,5 +182,5 @@ const candidates = computed<AppPickerItem[]>(() =>
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

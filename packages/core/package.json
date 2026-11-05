@@ -205,6 +205,7 @@
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/drawio": "workspace:*",
     "@open-pencil/fig": "workspace:*",
+    "@open-pencil/html-engine": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/mermaid": "workspace:*",
     "@open-pencil/pen": "workspace:*",

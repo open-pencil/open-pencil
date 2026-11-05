@@ -3,7 +3,7 @@ import { useElementSize } from '@vueuse/core'
 import { clamp } from 'es-toolkit'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
@@ -112,6 +112,8 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
  * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
  * canvas-only layout; split view keeps the panels for the other panes.
  */
+// The view being worked in runs its design, which the Play button shows pressed.
+const previewing = computed(() => resolveEditorProfile(store.state).live !== null)
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
@@ -121,6 +123,26 @@ const toolsStay = computed(() => {
   const profile = resolveEditorProfile(store.state)
   return !profile.panelsOpen && profile.pointer === 'tools'
 })
+/**
+ * Whether the side panels show. Hiding them keeps the splitter and its canvases mounted, so the
+ * canvas keeps its drawing surfaces and split views rather than starting new ones.
+ */
+const showPanels = computed(() => store.state.showUI && !canvasAlone.value)
+/**
+ * Reka (2.11) attaches a resize handle's arrow-key listener in an effect that runs before a
+ * handle mounted into an existing splitter is in the document, and never again, so handles that
+ * come back with the panels could not be resized from the keyboard. They start disabled and are
+ * enabled once rendered, which runs that effect again.
+ */
+const handlesReady = ref(false)
+watch(
+  showPanels,
+  (shown) => {
+    handlesReady.value = false
+    if (shown) void nextTick(() => (handlesReady.value = true))
+  },
+  { immediate: true }
+)
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -132,7 +154,7 @@ const { pending: roomPending } = useRoomActions()
   </div>
 
   <SplitterGroup
-    v-else-if="!isMobile && showChrome && store.state.showUI && !canvasAlone"
+    v-else-if="!isMobile && showChrome"
     :key="tab.id"
     ref="workspace"
     direction="horizontal"
@@ -140,62 +162,93 @@ const { pending: roomPending } = useRoomActions()
     @layout="displayedLayout = $event"
     @keydown="onResizeKeyHandled"
   >
-    <SplitterPanel
-      id="layers"
-      :default-size="leftSize"
-      :min-size="sidebarMinimum"
-      :max-size="sidebarMaximum"
-      class="flex"
-    >
-      <LayersPanel />
-    </SplitterPanel>
-    <SplitterResizeHandle
-      data-test-id="left-splitter-handle"
-      :class="horizontalSplitterStyles.handle()"
-      @dragging="onDragging(0, $event)"
-      @keydown.capture="onResizeKeyDown(0, $event)"
-    >
-      <div :class="horizontalSplitterStyles.divider()" />
-    </SplitterResizeHandle>
+    <!-- Panels that come and go keep their place through `order`, as Reka requires. -->
+    <template v-if="showPanels">
+      <SplitterPanel
+        id="layers"
+        :order="0"
+        :default-size="leftSize"
+        :min-size="sidebarMinimum"
+        :max-size="sidebarMaximum"
+        class="flex"
+      >
+        <LayersPanel />
+      </SplitterPanel>
+      <SplitterResizeHandle
+        data-test-id="left-splitter-handle"
+        :disabled="!handlesReady"
+        :class="horizontalSplitterStyles.handle()"
+        @dragging="onDragging(0, $event)"
+        @keydown.capture="onResizeKeyDown(0, $event)"
+      >
+        <div :class="horizontalSplitterStyles.divider()" />
+      </SplitterResizeHandle>
+    </template>
     <!-- Let the canvas take the remainder; its cached default must not outlive sidebar changes. -->
-    <SplitterPanel id="canvas" :min-size="30" class="flex">
+    <SplitterPanel id="canvas" :order="1" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
         <ActiveRoomOverlay />
-        <EditorToolbar />
+        <EditorToolbar v-if="showPanels || (toolsStay && !canvasAlone)" />
+        <template v-if="!showPanels">
+          <WorkspacePill
+            v-if="canvasAlone"
+            mode="preview"
+            :document-name="store.state.documentName"
+            :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
+            @reset="store.resetPlay()"
+            @leave="store.stopPlay()"
+          />
+          <WorkspacePill
+            v-else
+            mode="collapsed"
+            :document-name="store.state.documentName"
+            :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+            :chat-open="floatingChat"
+            @show-ui="store.state.showUI = true"
+            @toggle-chat="floatingChat = !floatingChat"
+          />
+          <FloatingChat v-if="!canvasAlone && floatingChat" @close="floatingChat = false" />
+        </template>
       </div>
     </SplitterPanel>
-    <SplitterResizeHandle
-      data-test-id="right-splitter-handle"
-      :class="horizontalSplitterStyles.handle()"
-      @dragging="onDragging(2, $event)"
-      @keydown.capture="onResizeKeyDown(2, $event)"
-    >
-      <div :class="horizontalSplitterStyles.divider()" />
-    </SplitterResizeHandle>
-    <SplitterPanel
-      id="properties"
-      :default-size="rightSize"
-      :min-size="sidebarMinimum"
-      :max-size="sidebarMaximum"
-      class="flex flex-col"
-    >
-      <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
-        <CollabPanel class="min-w-0 flex-1" />
-        <IconButton
-          :label="
-            editor.startPreview({
-              shortcut: formatShortcut(appMenuShortcut('toggle-preview')) ?? ''
-            })
-          "
-          data-test-id="editor-start-preview"
-          @click="store.startPlay()"
-        >
-          <icon-lucide-play class="size-3.5" />
-        </IconButton>
-      </div>
-      <PropertiesPanel />
-    </SplitterPanel>
+    <template v-if="showPanels">
+      <SplitterResizeHandle
+        data-test-id="right-splitter-handle"
+        :disabled="!handlesReady"
+        :class="horizontalSplitterStyles.handle()"
+        @dragging="onDragging(2, $event)"
+        @keydown.capture="onResizeKeyDown(2, $event)"
+      >
+        <div :class="horizontalSplitterStyles.divider()" />
+      </SplitterResizeHandle>
+      <SplitterPanel
+        id="properties"
+        :order="2"
+        :default-size="rightSize"
+        :min-size="sidebarMinimum"
+        :max-size="sidebarMaximum"
+        class="flex flex-col"
+      >
+        <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
+          <CollabPanel class="min-w-0 flex-1" />
+          <IconButton
+            :label="
+              editor.startPreview({
+                shortcut: formatShortcut(appMenuShortcut('toggle-preview')) ?? ''
+              })
+            "
+            data-test-id="editor-start-preview"
+            toggle
+            :active="previewing"
+            @click="store.togglePlay()"
+          >
+            <icon-lucide-play class="size-3.5" />
+          </IconButton>
+        </div>
+        <PropertiesPanel />
+      </SplitterPanel>
+    </template>
   </SplitterGroup>
 
   <div
@@ -210,35 +263,6 @@ const { pending: roomPending } = useRoomActions()
       <EditorToolbar />
     </div>
     <MobileDrawer />
-  </div>
-
-  <div v-else-if="showChrome" :key="'collapsed-' + tab.id" class="flex flex-1 overflow-hidden">
-    <div class="relative flex min-w-0 flex-1">
-      <EditorCanvas />
-      <ActiveRoomOverlay />
-      <EditorToolbar v-if="toolsStay && !canvasAlone" />
-      <WorkspacePill
-        v-if="!isMobile && canvasAlone"
-        mode="preview"
-        :document-name="store.state.documentName"
-        :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
-        @reset="store.resetPlay()"
-        @leave="store.stopPlay()"
-      />
-      <WorkspacePill
-        v-else-if="!isMobile"
-        mode="collapsed"
-        :document-name="store.state.documentName"
-        :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
-        :chat-open="floatingChat"
-        @show-ui="store.state.showUI = true"
-        @toggle-chat="floatingChat = !floatingChat"
-      />
-      <FloatingChat
-        v-if="!isMobile && !canvasAlone && floatingChat"
-        @close="floatingChat = false"
-      />
-    </div>
   </div>
 
   <div v-else :key="'bare-' + tab.id" class="flex flex-1 overflow-hidden">

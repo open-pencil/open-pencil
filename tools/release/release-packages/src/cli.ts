@@ -4,6 +4,8 @@ import { defineCommand, runMain } from 'citty'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
+import { NOTICED_ARTIFACTS } from './notices/artifacts'
+import { writeReleaseNotices } from './notices/rust'
 import { adoptPublishedReleaseArtifacts, releaseSourceFromEnv } from './resume'
 import {
   buildReleasePackages,
@@ -27,6 +29,11 @@ await runMain(
     meta: { name: 'release-packages', description: 'Build and publish verified npm packages' },
     subCommands: {
       build: command('build', 'Build public packages in dependency order', buildReleasePackages),
+      notices: command(
+        'notices',
+        'Write the third-party notices of the Rust crates compiled into shipped binaries',
+        (root) => writeReleaseNotices(root, NOTICED_ARTIFACTS)
+      ),
       prepare: command(
         'prepare',
         'Prepare transparent publish directories',

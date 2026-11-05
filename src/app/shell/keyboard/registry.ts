@@ -19,6 +19,7 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
 import { shortcutEvent } from '@/app/shell/keyboard/layout'
+import { overlayHoldsKeys } from '@/app/shell/keyboard/overlays'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
   KeyboardShortcutOptions,
@@ -94,31 +95,6 @@ function siblingShortcut(
   }
 }
 
-// Fallback for overlays that do not register through `useOverlayOpen` yet: menus, popovers, and
-// context menus built on Reka's roots directly. Remove once they all go through shared wrappers.
-const EDITOR_SHORTCUT_OVERLAY_SELECTOR =
-  '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
-const PICKER_SELECTOR = '[data-picker-content]'
-const OPEN_LAYER_SELECTOR = '[data-dismissable-layer]:not([data-state="closed"])'
-
-function originatedInOverlay(event: KeyboardEvent, allowPickers = false) {
-  return event
-    .composedPath()
-    .some(
-      (target) =>
-        target instanceof Element &&
-        target.matches(EDITOR_SHORTCUT_OVERLAY_SELECTOR) &&
-        !(allowPickers && target.closest(PICKER_SELECTOR))
-    )
-}
-
-/** A popover, menu, or dialog that is open; one fading out after closing no longer counts. */
-function hasOpenDismissableLayer(allowPickers = false) {
-  return [...document.querySelectorAll(OPEN_LAYER_SELECTOR)].some(
-    (layer) => !(allowPickers && layer.closest(PICKER_SELECTOR))
-  )
-}
-
 /**
  * While text is edited its input handles the keys, undo and redo among them. Focus can leave it
  * for a panel field while the edit stays open, as after a typed font size; undo and redo then
@@ -140,9 +116,7 @@ function shouldIgnoreShortcut(
 ) {
   return (
     isButtonActivation(event) ||
-    !!options.overlays?.holdsKeys(history) ||
-    hasOpenDismissableLayer(history) ||
-    originatedInOverlay(event, history) ||
+    overlayHoldsKeys(event, options.overlays, history) ||
     isEditing(event) ||
     options.inputFocused.value ||
     editingTextHandles(options, history) ||
@@ -270,6 +244,15 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'toggle-ui',
       keys: appMenuTinykeysShortcut('toggle-ui') ?? '$mod+Backslash',
       run: ({ actions }) => actions.toggleUI()
+    },
+    // Matched by key position, since Shift turns \ into | on most layouts.
+    {
+      id: 'split-right',
+      keys: '$mod+Shift+Backslash',
+      run: ({ store }) => {
+        if (store.visiblePaneCount.value < store.panes.maxVisiblePanes)
+          store.splitPane(store.activePaneId.value, 'horizontal')
+      }
     },
     { id: 'toggle-ai', keys: '$mod+KeyJ', run: ({ actions }) => actions.toggleAI() },
     {

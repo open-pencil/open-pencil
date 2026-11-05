@@ -228,6 +228,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     activePaneId: panes.activePaneId,
     visiblePaneCount: panes.visiblePaneCount,
     getPaneRenderState: panes.getPaneRenderState,
+    getPaneView: panes.getPaneView,
     setActivePane: panes.setActivePane,
     switchPage,
     recentPages: recentPages.ids,

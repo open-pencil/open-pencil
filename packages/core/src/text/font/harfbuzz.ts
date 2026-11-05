@@ -1,6 +1,7 @@
 import type * as HarfBuzzModule from 'harfbuzzjs'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'
@@ -164,6 +165,8 @@ const outlineCache = new ResourceCache<number, readonly OutlineCommand[]>({
   maxWeight: 100_000,
   weight: (commands) => commands.length + 1
 })
+/** Glyph boxes any instance measured, in font units with y running up; `null` for no ink. */
+const boxCache = new ResourceCache<number, VisualBounds | null>({ maxEntries: 50_000 })
 let nextInstanceId = 0
 
 /**
@@ -236,6 +239,42 @@ function outlineDrawFuncs(hb: HarfBuzz): HarfBuzzModule.DrawFuncs {
   draw.setClosePathFunc((data) => commands(data).push({ type: 'Z' }))
   outlineDrawing = draw
   return draw
+}
+
+/**
+ * The box around `glyphId`'s outline in `instance`, as the font measures it at its axes, scaled
+ * from font units to `fontSize` with y running down from the baseline; `null` for a glyph that
+ * draws nothing.
+ */
+export function glyphBox(
+  parsed: HarfBuzzFont,
+  instance: HarfBuzzInstance,
+  glyphId: number,
+  fontSize: number
+): VisualBounds | null {
+  const key = instance.id + glyphId
+  let box = boxCache.get(key)
+  if (box === undefined) {
+    const extents = instance.font.glyphExtents(glyphId)
+    box =
+      extents && extents.width !== 0 && extents.height !== 0
+        ? {
+            minX: extents.xBearing,
+            minY: extents.yBearing + extents.height,
+            maxX: extents.xBearing + extents.width,
+            maxY: extents.yBearing
+          }
+        : null
+    boxCache.set(key, box)
+  }
+  if (!box) return null
+  const scale = fontSize / parsed.face.upem
+  return {
+    minX: box.minX * scale,
+    minY: -box.maxY * scale,
+    maxX: box.maxX * scale,
+    maxY: -box.minY * scale
+  }
 }
 
 /**

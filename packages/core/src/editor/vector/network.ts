@@ -4,6 +4,7 @@ import type { EditorContext } from '#core/editor/types'
 import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '#core/vector'
 
 import { pushNodeEditHistory } from './history'
+import { editsHandlesOnly } from './limits'
 import type { NodeEditState } from './types'
 
 export function setNodeEditNetwork(es: NodeEditState, network: VectorNetwork) {
@@ -42,7 +43,7 @@ export function createVectorEditNetworkActions(
 
   function nodeEditConnectEndpoints(a: number, b: number) {
     const es = getNodeEditState()
-    if (!es || a === b) return
+    if (!es || a === b || editsHandlesOnly(ctx.state)) return
     if (a < 0 || b < 0 || a >= es.vertices.length || b >= es.vertices.length) return
     pushNodeEditHistory(es)
 
@@ -75,7 +76,7 @@ export function createVectorEditNetworkActions(
   /** Splits the segment under a canvas point; false when no segment is near enough. */
   function nodeEditAddVertex(cx: number, cy: number): boolean {
     const es = getNodeEditState()
-    if (!es) return false
+    if (!es || editsHandlesOnly(ctx.state)) return false
     const live = getLiveNetwork(es)
     const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / ctx.state.zoom)
     if (!nearest) return false
@@ -92,7 +93,7 @@ export function createVectorEditNetworkActions(
 
   function nodeEditRemoveVertex(vertexIndex: number) {
     const es = getNodeEditState()
-    if (!es) return
+    if (!es || editsHandlesOnly(ctx.state)) return
     const live = getLiveNetwork(es)
     const next = removeVertex(live, vertexIndex)
     if (!next) return
