@@ -21,13 +21,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
 
       - name: Format check
         run: bun run format:check
 
       # The demo document's shader fills are drawn at build time in a headless Chromium.
-      - uses: ./.github/actions/setup-playwright
+      - uses: ./.github/actions/setup/playwright
 
       - run: bun run build
         env:

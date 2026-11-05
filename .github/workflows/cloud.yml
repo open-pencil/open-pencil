@@ -31,12 +31,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
-      - uses: ./.github/actions/setup-playwright
+      - uses: ./.github/actions/setup/playwright
 
       # The Worker serves the editor and the portal as static assets. The editor names this
       # deployment as the official server and, like app.openpencil.dev, sends the daily ping.

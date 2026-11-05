@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       # Dependencies come from the default branch's lockfile, like the script itself.
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           install-args: --frozen-lockfile --filter @open-pencil/pr-review-guidance-tools
           cache-scope: pr-review-guidance

@@ -60,7 +60,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
       - name: Validate PR commit messages
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
       - name: Validate the changelog and its fragments
@@ -98,7 +98,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
@@ -151,7 +151,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
@@ -182,7 +182,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
 
       - name: Validate generated brand assets
         run: bun run check:icons
@@ -219,7 +219,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
@@ -254,7 +254,7 @@ jobs:
           workspaces: . -> target
           key: native-test
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
 
       - name: Typecheck native interaction tests
         run: bun run check:native-test
@@ -279,7 +279,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
 
       # The runner's rustup installs the toolchain rust-toolchain.toml pins.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
@@ -319,7 +319,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           lfs: 'true'
           # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
@@ -342,7 +342,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
 
       - name: Typecheck and test the feedback Worker against a local D1
         run: bun run test:feedback
@@ -358,7 +358,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
@@ -391,14 +391,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - name: Install Chromium for the demo document
         if: matrix.worker
-        uses: ./.github/actions/setup-playwright
+        uses: ./.github/actions/setup/playwright
 
       # The Worker serves the editor and the portal as static assets, and every official
       # deployment bundles them.

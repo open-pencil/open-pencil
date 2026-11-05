@@ -48,7 +48,7 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
-      - uses: ./.pipeline/.github/actions/setup-workspace
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           install-args: --cwd .pipeline --frozen-lockfile
           cache-save: 'false'
@@ -87,7 +87,7 @@ jobs:
         with:
           workspaces: . -> target
           key: chromium-${{ matrix.target }}
-      - uses: ./.pipeline/.github/actions/setup-workspace
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
           cache-save: 'false'
@@ -142,7 +142,7 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
-      - uses: ./.pipeline/.github/actions/setup-workspace
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           install-args: --cwd .pipeline --frozen-lockfile
           cache-save: 'false'

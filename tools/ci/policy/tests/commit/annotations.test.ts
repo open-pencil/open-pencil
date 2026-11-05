@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import formatWithAnnotations, { commitAnnotations } from '#ci/commit-annotations'
+import formatWithAnnotations, { commitAnnotations } from '#ci/commit/annotations'
 
 const problem = (message: string) => ({ level: 2 as const, name: 'type-empty', message })
 

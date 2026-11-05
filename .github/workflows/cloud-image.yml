@@ -51,7 +51,7 @@ jobs:
       # The HTML engine's WebAssembly module, built here where it is cached and Rust is installed;
       # the image builds everything else from the context, which carries the module. Releases from
       # before the engine have none to build.
-      - uses: ./.pipeline/.github/actions/setup-workspace
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: cloud-image
 

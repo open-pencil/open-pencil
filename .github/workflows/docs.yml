@@ -25,13 +25,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
       # The demo document the landing's stages open draws its shader stills in headless Chromium.
       - name: Install Chromium for the demo document
-        uses: ./.github/actions/setup-playwright
+        uses: ./.github/actions/setup/playwright
 
       - run: bun run --filter @open-pencil/docs build:site
 
@@ -57,12 +57,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           cache-save: 'false'
 
       - name: Install Chromium for landing posters
-        uses: ./.github/actions/setup-playwright
+        uses: ./.github/actions/setup/playwright
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -89,7 +89,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           cache-save: 'false'
 

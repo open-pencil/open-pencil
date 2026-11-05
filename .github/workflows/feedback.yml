@@ -34,7 +34,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-workspace
+      - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
 
