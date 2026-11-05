@@ -412,14 +412,27 @@ function deleteStar(graph: SceneGraph): void {
   graph.deleteNode(componentNamed(graph, 'Kind=Star')?.id ?? '')
 }
 
-test('an edit is refused while a variant of the set cannot be built', async () => {
+test('an edit is refused, and changes nothing, while a variant of the set cannot be built', async () => {
   const { graph, editor } = await openLazily({ iconOnPage: true })
   deleteStar(graph)
   const { chipId, stateId } = chipState(editor, graph)
+  const nodes = graph.nodes.size
   expect(editor.renameVariantValue(chipId, stateId, 'Disabled', 'Off')).toBe(false)
+  expect(graph.nodes.size).toBe(nodes)
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
   expect(optionValues(editor, graph, 'State')).toEqual(STATES)
-  expect(componentNamed(graph, 'State=Disabled')).toBeUndefined()
-  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default', 'Hover', 'Pressed'])
+})
+
+test('a value that a variant the file holds already has is a conflict, built or not', async () => {
+  const { graph, editor } = await openLazily({ iconOnPage: true })
+  deleteStar(graph)
+  const { stateId } = chipState(editor, graph)
+  const variantId = pageInstance(graph).componentId ?? ''
+  expect(editor.setVariantPropertyValue(variantId, stateId, 'Disabled')).toEqual({
+    kind: 'conflict',
+    componentIds: [variantId]
+  })
+  expect(graph.getNode(variantId)?.componentPropertyValues.State).toBe('Default')
 })
 
 test('loading the internal canvas is refused while it nests a deleted component', async () => {

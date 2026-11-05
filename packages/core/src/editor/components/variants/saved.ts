@@ -91,6 +91,24 @@ function shows(values: Record<string, string>, wanted: Record<string, string>): 
   return Object.entries(wanted).every(([name, value]) => values[name] === value)
 }
 
+/** A variant the file saves with exactly these values that no load has built. */
+export function unbuiltVariantWith(
+  graph: SceneGraph,
+  setId: string,
+  requested: Record<string, string>
+): SavedVariantValues | undefined {
+  const definitions = getVariantDefinitions(graph, setId)
+  if (definitions.some((definition) => !Object.hasOwn(requested, definition.name))) {
+    return undefined
+  }
+  const exact = Object.fromEntries(
+    definitions.map((definition) => [definition.name, requested[definition.name]])
+  )
+  return savedVariantValues(graph, setId).find(
+    (variant) => !variant.built && shows(variant.values, exact)
+  )
+}
+
 /** The variant with exactly these values, built from the opened file first when no load built it. */
 export function findOrBuildVariant(
   graph: SceneGraph,
@@ -101,15 +119,6 @@ export function findOrBuildVariant(
   if (built) {
     return built
   }
-  const definitions = getVariantDefinitions(graph, setId)
-  if (definitions.some((definition) => !Object.hasOwn(requested, definition.name))) {
-    return undefined
-  }
-  const exact = Object.fromEntries(
-    definitions.map((definition) => [definition.name, requested[definition.name]])
-  )
-  const unbuilt = savedVariantValues(graph, setId).find(
-    (variant) => !variant.built && shows(variant.values, exact)
-  )
+  const unbuilt = unbuiltVariantWith(graph, setId, requested)
   return unbuilt ? graph.getNode(loadReaderVariant(graph, unbuilt.id) ?? '') : undefined
 }

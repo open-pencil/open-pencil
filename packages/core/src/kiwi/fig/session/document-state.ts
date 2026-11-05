@@ -217,7 +217,7 @@ export function savedReaderVariants(graph: SceneGraph, setId: string): readonly 
 
 /**
  * Build variants `savedReaderVariants` names, from the opened file, as a page load would.
- * Returns whether every one is built: one nesting a component the user deleted is not.
+ * Returns whether they are built: none is when one of them needs a layer the user deleted.
  */
 export function loadReaderVariants(graph: SceneGraph, variantIds: readonly string[]): boolean {
   const state = states.get(graph)

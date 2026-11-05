@@ -186,38 +186,22 @@ export function createFigDocumentSession(
   const needsDeletedLayer = ({ contentIds, ancestorIds }: SceneDependencyClosure): boolean =>
     [...contentIds].some((sourceId) => isDeleted(state.componentIds.get(sourceId))) ||
     [...ancestorIds].some((sourceId) => isDeleted(state.sources.get(sourceId)))
-  /** Each component's own dependencies, read once a load of several finds one it cannot build. */
-  const componentClosures = new Map<string, SceneDependencyClosure>()
-  const closureOf = (id: string): SceneDependencyClosure => {
-    let closure = componentClosures.get(id)
-    if (!closure) {
-      closure = archive.reader.selectComponents([id]).dependencyClosure
-      componentClosures.set(id, closure)
-    }
-    return closure
-  }
-  const buildComponents = (reader: ReturnType<typeof archive.reader.selectComponents>): void => {
-    loadPageTransaction(state, reader.dependencyClosure, () =>
-      keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
-        materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
-      )
-    )
-  }
+  /** All or none: the components' joint dependencies are checked before any of them is built. */
   const loadComponents = (ids: readonly string[]): boolean => {
     const pending = ids.filter((id) => !state.components.has(id))
     if (pending.length === 0) {
       return true
     }
     const reader = archive.reader.selectComponents(pending)
-    if (!needsDeletedLayer(reader.dependencyClosure)) {
-      buildComponents(reader)
-      return true
+    if (needsDeletedLayer(reader.dependencyClosure)) {
+      return false
     }
-    const buildable = pending.filter((id) => !needsDeletedLayer(closureOf(id)))
-    if (buildable.length > 0) {
-      buildComponents(archive.reader.selectComponents(buildable))
-    }
-    return false
+    loadPageTransaction(state, reader.dependencyClosure, () =>
+      keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
+        materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
+      )
+    )
+    return true
   }
   return {
     checkpoint(): FigSessionCheckpoint {
@@ -244,8 +228,8 @@ export function createFigDocumentSession(
     /**
      * Build components the pages left out, such as variants no instance uses, with what they
      * depend on. Layers already in the graph keep their order; the new ones take their saved
-     * places among them. Returns whether every one is built: one that nests a component the user
-     * deleted is not.
+     * places among them. Returns whether they are built: none is when one of them needs a layer
+     * the user deleted.
      */
     loadComponents,
     graph: state.graph,

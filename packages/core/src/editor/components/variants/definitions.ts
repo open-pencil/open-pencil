@@ -19,6 +19,7 @@ import {
   updateVariantName
 } from './history'
 import {
+  findExactVariant,
   getComponentSet,
   getComponentSetVariants,
   getVariantDefinitions,
@@ -26,7 +27,7 @@ import {
   variantValues,
   type VariantMutationResult
 } from './model'
-import { findOrBuildVariant, variantPropertyValues } from './saved'
+import { unbuiltVariantWith, variantPropertyValues } from './saved'
 
 export function reorderPropertyDefinitions(
   ctx: EditorContext,
@@ -322,9 +323,13 @@ export function setVariantPropertyValue(
     ...variantValues(ctx.graph, componentSetId, variant),
     [definition.name]: normalizedValue
   }
-  const conflicting = findOrBuildVariant(ctx.graph, componentSetId, requested)
+  const conflicting = findExactVariant(ctx.graph, componentSetId, requested)
   if (conflicting && conflicting.id !== variantId) {
     return { kind: 'conflict', componentIds: [variantId, conflicting.id] }
+  }
+  const unbuiltTwin = unbuiltVariantWith(ctx.graph, componentSetId, requested)
+  if (unbuiltTwin) {
+    return { kind: 'conflict', componentIds: [variantId] }
   }
 
   setVariantValues(ctx.graph, componentSetId, variantId, {
