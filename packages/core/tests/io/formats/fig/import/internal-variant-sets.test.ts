@@ -7,11 +7,15 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { switchVariant } from '#core/figma-api/variants'
+import { switchVariant, syncVariantName } from '#core/figma-api/variants'
+import { parseFigFileViaWorker } from '#core/io/formats/fig/read'
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import {
+  loadReaderVariants,
   populateFigInternalPages,
-  registerReaderRecovery
+  registerReaderRecovery,
+  savedReaderVariants
 } from '#core/kiwi/fig/session/document-state'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
 
@@ -39,13 +43,23 @@ function variant(graph: SceneGraph, setId: string, property: string, value: stri
   return node
 }
 
+interface LibraryFileOptions {
+  chipName?: (state: string) => string
+  /** Chip variants saved with a name and no specs. */
+  nameOnly?: boolean
+  /** An instance of the first icon on the page too, so the icon set is built at open. */
+  iconOnPage?: boolean
+}
+
 /**
  * Library sets copied onto the internal canvas: a chip whose instance on the page uses one
- * variant, and whose last variant holds an icon from a second set nothing else uses.
+ * variant, and whose last variant holds an icon from a second set.
  */
-async function libraryVariantFile(
-  chipName: (state: string) => string = (state) => `State=${state}`
-): Promise<Uint8Array> {
+async function libraryVariantFile({
+  chipName = (state) => `State=${state}`,
+  nameOnly = false,
+  iconOnPage = false
+}: LibraryFileOptions = {}): Promise<Uint8Array> {
   await initCodec()
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
@@ -57,10 +71,16 @@ async function libraryVariantFile(
   const chipVariants = STATES.map((state, index) => {
     const node = variant(graph, chip.id, 'State', state, index * 120)
     graph.updateNode(node.id, { name: chipName(state) })
+    if (nameOnly) {
+      graph.updateNode(node.id, { componentPropertyValues: {} })
+    }
     return node
   })
   graph.createInstance(iconVariants[0].id, chipVariants[3].id)
   graph.createInstance(chipVariants[0].id, page.id)
+  if (iconOnPage) {
+    graph.createInstance(iconVariants[0].id, page.id)
+  }
   return exportFigFile(graph)
 }
 
@@ -225,7 +245,7 @@ test('loading the internal canvas after a switch adds the other variants once, i
 
 test('a variant whose name disagrees with its saved values is listed and found by its values', async () => {
   const misnamed = (state: string) => (state === 'Disabled' ? 'State=Off' : `State=${state}`)
-  const graph = await parseFigFile((await libraryVariantFile(misnamed)).slice().buffer, {
+  const graph = await parseFigFile((await libraryVariantFile({ chipName: misnamed })).slice().buffer, {
     populate: 'first-page'
   })
   const editor = createEditor({ graph })
@@ -264,4 +284,172 @@ test('setProperties from the plugin API switches to an unbuilt variant', async (
   expect(graph.getNode(pageInstance(graph).componentId ?? '')?.componentPropertyValues.State).toBe(
     'Pressed'
   )
+})
+
+async function openLazily(options: LibraryFileOptions = {}) {
+  const graph = await parseFigFile((await libraryVariantFile(options)).slice().buffer, {
+    populate: 'first-page'
+  })
+  return { graph, editor: createEditor({ graph }) }
+}
+
+function chipState(editor: Editor, graph: SceneGraph) {
+  const chip = setNamed(graph, 'Chip')
+  const [state] = editor.getComponentSetPropertyDefs(chip?.id ?? '')
+  return { chipId: chip?.id ?? '', stateId: state.id }
+}
+
+function componentNamed(graph: SceneGraph, name: string): SceneNode | undefined {
+  return [...graph.nodes.values()].find((node) => node.type === 'COMPONENT' && node.name === name)
+}
+
+function optionValues(editor: Editor, graph: SceneGraph, property: string): string[] {
+  return editor.getVariantOptionAvailability(pageInstance(graph).id, property).map(({ value }) => value)
+}
+
+test('a variant renamed through the plugin API to an unbuilt variant keeps its values', async () => {
+  const { graph } = await openLazily()
+  const variantId = pageInstance(graph).componentId ?? ''
+  graph.updateNode(variantId, { name: 'State=Hover' })
+  syncVariantName(graph, graph.getNode(variantId) ?? pageInstance(graph))
+  expect(graph.getNode(variantId)?.componentPropertyValues.State).toBe('Default')
+})
+
+test('a built variant whose value changed lists its new value, not the saved one', async () => {
+  const { graph, editor } = await openLazily()
+  const { stateId } = chipState(editor, graph)
+  editor.setVariantPropertyValue(pageInstance(graph).componentId ?? '', stateId, 'Idle')
+  expect(optionValues(editor, graph, 'State')).toEqual(['Idle', 'Hover', 'Pressed', 'Disabled'])
+})
+
+test('a variant saved with a name only keeps its value after its property is renamed', async () => {
+  const { graph, editor } = await openLazily({ nameOnly: true })
+  const { chipId, stateId } = chipState(editor, graph)
+  editor.renamePropertyDefinition(chipId, stateId, 'Status')
+  expect(editor.getVariantOptionAvailability(pageInstance(graph).id, 'Status')).toEqual(
+    allAvailable(STATES)
+  )
+  const instance = switchToDisabled(editor, graph)
+  expect(graph.getNode(instance.componentId ?? '')?.componentPropertyValues.Status).toBe('Disabled')
+})
+
+test('a variant property added to the set reaches the variants not built yet', async () => {
+  const { graph, editor } = await openLazily()
+  const { chipId } = chipState(editor, graph)
+  editor.addPropertyDefinition(chipId, 'Size', 'VARIANT', 'Large')
+  const instance = switchToDisabled(editor, graph)
+  expect(graph.getNode(instance.componentId ?? '')?.componentPropertyValues).toEqual({
+    State: 'Disabled',
+    Size: 'Large'
+  })
+})
+
+test('renaming a value reaches the variants not built yet', async () => {
+  const { graph, editor } = await openLazily()
+  const { chipId, stateId } = chipState(editor, graph)
+  editor.renameVariantValue(chipId, stateId, 'Disabled', 'Off')
+  expect(optionValues(editor, graph, 'State')).toEqual(['Default', 'Hover', 'Pressed', 'Off'])
+  const instance = switchState(editor, graph, 'Off')
+  expect(graph.getChildren(instance.id).map((node) => node.name)).toEqual([
+    'Disabled fill',
+    'Kind=Star'
+  ])
+})
+
+test('a variant nesting a component the user deleted is not built, and the component stays deleted', async () => {
+  const { graph, editor } = await openLazily({ iconOnPage: true })
+  graph.deleteNode(componentNamed(graph, 'Kind=Star')?.id ?? '')
+  expect(editor.switchInstanceVariant(pageInstance(graph).id, 'State', 'Disabled')).toEqual({
+    kind: 'unavailable',
+    requested: { State: 'Disabled' }
+  })
+  expect(componentNamed(graph, 'Kind=Star')).toBeUndefined()
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
+})
+
+test('a variant built after a live edit to a component it nests shows the edit', async () => {
+  const { graph, editor } = await openLazily({ iconOnPage: true })
+  const star = componentNamed(graph, 'Kind=Star')
+  graph.updateNode(graph.getChildren(star?.id ?? '')[0].id, { opacity: 0.5 })
+  const instance = switchToDisabled(editor, graph)
+  const variantIcon = graph
+    .getChildren(instance.componentId ?? '')
+    .find((node) => node.type === 'INSTANCE')
+  expect(graph.getChildren(variantIcon?.id ?? '')[0].opacity).toBe(0.5)
+})
+
+test('loading the internal canvas keeps a reorder of the variants a switch built', async () => {
+  const { graph, editor } = await openLazily()
+  switchToDisabled(editor, graph)
+  const chip = setNamed(graph, 'Chip')
+  const disabled = componentNamed(graph, 'State=Disabled')
+  graph.insertChildAt(disabled?.id ?? '', chip?.id ?? '', 0)
+  populateFigInternalPages(graph)
+  const order = builtValues(graph, 'Chip', 'State')
+  expect(order.indexOf('Disabled')).toBeLessThan(order.indexOf('Default'))
+  expect(order.toSorted()).toEqual(STATES.toSorted())
+})
+
+test('a file opened through the reader worker lists and switches to unbuilt variants', async () => {
+  const bytes = (await libraryVariantFile()).slice().buffer
+  const graph = await parseFigFileViaWorker(bytes, { populate: 'first-page' })
+  try {
+    const editor = createEditor({ graph })
+    expect(editor.getVariantOptionAvailability(pageInstance(graph).id, 'State')).toEqual(
+      allAvailable(STATES)
+    )
+    const instance = switchToDisabled(editor, graph)
+    expect(graph.getChildren(instance.id).map((node) => node.name)).toEqual([
+      'Disabled fill',
+      'Kind=Star'
+    ])
+  } finally {
+    releaseFigPopulationWorker(graph)
+  }
+})
+
+function deleteStar(graph: SceneGraph): void {
+  graph.deleteNode(componentNamed(graph, 'Kind=Star')?.id ?? '')
+}
+
+test('an edit is refused while a variant of the set cannot be built', async () => {
+  const { graph, editor } = await openLazily({ iconOnPage: true })
+  deleteStar(graph)
+  const { chipId, stateId } = chipState(editor, graph)
+  expect(editor.renameVariantValue(chipId, stateId, 'Disabled', 'Off')).toBe(false)
+  expect(optionValues(editor, graph, 'State')).toEqual(STATES)
+  expect(componentNamed(graph, 'State=Disabled')).toBeUndefined()
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default', 'Hover', 'Pressed'])
+})
+
+test('loading the internal canvas is refused while it nests a deleted component', async () => {
+  const { graph } = await openLazily({ iconOnPage: true })
+  deleteStar(graph)
+  expect(() => populateFigInternalPages(graph)).toThrow('deleted')
+  expect(componentNamed(graph, 'State=Disabled')).toBeUndefined()
+  expect(componentNamed(graph, 'Kind=Star')).toBeUndefined()
+})
+
+test('a variant whose set the user deleted is not built', async () => {
+  const { graph } = await openLazily()
+  const chipId = setNamed(graph, 'Chip')?.id ?? ''
+  const unbuiltIds = savedReaderVariants(graph, chipId)
+    .filter((variant) => variant.layerId === undefined)
+    .map((variant) => variant.id)
+  graph.deleteNode(chipId)
+  const nodes = graph.nodes.size
+  expect(loadReaderVariants(graph, unbuiltIds)).toBe(false)
+  expect(graph.nodes.size).toBe(nodes)
+})
+
+test('undo and redo of an edit that built the rest of the set', async () => {
+  const { graph, editor } = await openLazily()
+  const { chipId, stateId } = chipState(editor, graph)
+  expect(editor.renameVariantValue(chipId, stateId, 'Disabled', 'Off')).toBe(true)
+  editor.undo.undo()
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(STATES)
+  expect(optionValues(editor, graph, 'State')).toEqual(STATES)
+  editor.undo.redo()
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default', 'Hover', 'Pressed', 'Off'])
+  expect(optionValues(editor, graph, 'State')).toEqual(['Default', 'Hover', 'Pressed', 'Off'])
 })

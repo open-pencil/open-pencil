@@ -11,7 +11,7 @@ import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 
 import {
-  assertComponentSetEditable,
+  prepareComponentSetEdit,
   captureVariantSnapshot,
   recordSnapshotChange,
   refreshVariantOptions,
@@ -26,17 +26,15 @@ import {
   variantValues,
   type VariantMutationResult
 } from './model'
-import { findOrBuildVariant } from './saved'
+import { findOrBuildVariant, variantPropertyValues } from './saved'
 
 export function reorderPropertyDefinitions(
   ctx: EditorContext,
   componentSetId: string,
   propertyIds: string[]
 ): boolean {
-  assertComponentSetEditable(ctx, componentSetId)
   const componentSet = getComponentSet(ctx.graph, componentSetId)
-  const before = captureVariantSnapshot(ctx, componentSetId)
-  if (!componentSet || !before) return false
+  if (!componentSet) return false
   const definitionsById = new Map(
     componentSet.componentPropertyDefinitions.map((definition) => [definition.id, definition])
   )
@@ -49,6 +47,9 @@ export function reorderPropertyDefinitions(
   }
   if (propertyIds.every((id, index) => componentSet.componentPropertyDefinitions[index]?.id === id))
     return true
+  if (!prepareComponentSetEdit(ctx, componentSetId)) return false
+  const before = captureVariantSnapshot(ctx, componentSetId)
+  if (!before) return false
 
   ctx.graph.updateNode(componentSetId, {
     componentPropertyDefinitions: propertyIds.flatMap((id) => {
@@ -69,14 +70,12 @@ export function reorderVariantValues(
   propertyId: string,
   values: string[]
 ): boolean {
-  assertComponentSetEditable(ctx, componentSetId)
   const componentSet = getComponentSet(ctx.graph, componentSetId)
   const definition = getVariantDefinitions(ctx.graph, componentSetId).find(
     (item) => item.id === propertyId
   )
-  const currentValues = getVariantOptions(ctx.graph, componentSetId, propertyId)
-  const before = captureVariantSnapshot(ctx, componentSetId)
-  if (!componentSet || !definition || !before) return false
+  const currentValues = variantPropertyValues(ctx.graph, componentSetId, propertyId)
+  if (!componentSet || !definition) return false
   if (
     values.length !== currentValues.length ||
     new Set(values).size !== currentValues.length ||
@@ -85,6 +84,9 @@ export function reorderVariantValues(
     return false
   }
   if (values.every((value, index) => currentValues[index] === value)) return true
+  if (!prepareComponentSetEdit(ctx, componentSetId)) return false
+  const before = captureVariantSnapshot(ctx, componentSetId)
+  if (!before) return false
 
   ctx.graph.updateNode(componentSetId, {
     componentPropertyDefinitions: componentSet.componentPropertyDefinitions.map((item) =>
@@ -145,13 +147,13 @@ export function addPropertyDefinition(
   type: ComponentPropertyType = 'VARIANT',
   defaultValue = ''
 ): string | undefined {
-  assertComponentSetEditable(ctx, componentSetId)
   const node = getComponentSet(ctx.graph, componentSetId)
   const normalizedName = name.trim()
   if (!node || !normalizedName) return undefined
   if (node.componentPropertyDefinitions.some((definition) => definition.name === normalizedName)) {
     return undefined
   }
+  if (!prepareComponentSetEdit(ctx, componentSetId)) return undefined
 
   const before = captureVariantSnapshot(ctx, componentSetId)
   if (!before) return undefined
@@ -166,11 +168,11 @@ export function removePropertyDefinition(
   componentSetId: string,
   propertyId: string
 ): boolean {
-  assertComponentSetEditable(ctx, componentSetId)
   const node = getComponentSet(ctx.graph, componentSetId)
   const definition = node?.componentPropertyDefinitions.find((item) => item.id === propertyId)
+  if (!node || !definition || !prepareComponentSetEdit(ctx, componentSetId)) return false
   const before = captureVariantSnapshot(ctx, componentSetId)
-  if (!node || !definition || !before) return false
+  if (!before) return false
 
   ctx.graph.updateNode(componentSetId, {
     componentPropertyDefinitions: node.componentPropertyDefinitions.filter(
@@ -227,12 +229,10 @@ export function renamePropertyDefinition(
   propertyId: string,
   newName: string
 ): boolean {
-  assertComponentSetEditable(ctx, componentSetId)
   const node = getComponentSet(ctx.graph, componentSetId)
   const normalizedName = newName.trim()
   const definition = node?.componentPropertyDefinitions.find((item) => item.id === propertyId)
-  const before = captureVariantSnapshot(ctx, componentSetId)
-  if (!node || !definition || !before || !normalizedName) return false
+  if (!node || !definition || !normalizedName) return false
   if (
     node.componentPropertyDefinitions.some(
       (item) => item.id !== propertyId && item.name === normalizedName
@@ -241,6 +241,9 @@ export function renamePropertyDefinition(
     return false
   }
   if (definition.name === normalizedName) return true
+  if (!prepareComponentSetEdit(ctx, componentSetId)) return false
+  const before = captureVariantSnapshot(ctx, componentSetId)
+  if (!before) return false
 
   renameProperty(ctx.graph, componentSetId, propertyId, normalizedName)
   const after = captureVariantSnapshot(ctx, componentSetId)
@@ -255,23 +258,19 @@ export function renameVariantValue(
   previousValue: string,
   newValue: string
 ): boolean {
-  assertComponentSetEditable(ctx, componentSetId)
   const definition = getVariantDefinitions(ctx.graph, componentSetId).find(
     (item) => item.id === propertyId
   )
   const normalizedValue = newValue.trim()
-  const before = captureVariantSnapshot(ctx, componentSetId)
   const componentSet = getComponentSet(ctx.graph, componentSetId)
-  if (
-    !definition ||
-    !componentSet ||
-    !before ||
-    !normalizedValue ||
-    previousValue === normalizedValue
-  )
+  if (!definition || !componentSet || !normalizedValue || previousValue === normalizedValue)
     return false
+  const knownValues = variantPropertyValues(ctx.graph, componentSetId, propertyId)
+  if (!knownValues.includes(previousValue) || knownValues.includes(normalizedValue)) return false
+  if (!prepareComponentSetEdit(ctx, componentSetId)) return false
+  const before = captureVariantSnapshot(ctx, componentSetId)
+  if (!before) return false
   const options = getVariantOptions(ctx.graph, componentSetId, propertyId)
-  if (!options.includes(previousValue) || options.includes(normalizedValue)) return false
 
   ctx.graph.updateNode(componentSetId, {
     componentPropertyDefinitions: componentSet.componentPropertyDefinitions.map((item) =>

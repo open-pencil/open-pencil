@@ -216,15 +216,22 @@ export function savedReaderVariants(graph: SceneGraph, setId: string): readonly 
 }
 
 /**
- * Build a variant `savedReaderVariants` names, from the opened file, as a page load would.
- * Returns the variant's layer.
+ * Build variants `savedReaderVariants` names, from the opened file, as a page load would.
+ * Returns whether every one is built: one nesting a component the user deleted is not.
  */
-export function loadReaderVariant(graph: SceneGraph, variantId: string): string | undefined {
+export function loadReaderVariants(graph: SceneGraph, variantIds: readonly string[]): boolean {
   const state = states.get(graph)
   if (!state || state.complete) {
-    return undefined
+    return false
   }
   const session = liveReaderSession(graph, state)
-  graph.applyImportedStateDuring(() => session.loadComponent(variantId))
-  return session.layerOf(variantId)
+  return graph.applyImportedStateDuring(() => session.loadComponents(variantIds))
+}
+
+/** `loadReaderVariants` for one variant, returning its layer once built. */
+export function loadReaderVariant(graph: SceneGraph, variantId: string): string | undefined {
+  if (!loadReaderVariants(graph, [variantId])) {
+    return undefined
+  }
+  return states.get(graph)?.session?.layerOf(variantId)
 }

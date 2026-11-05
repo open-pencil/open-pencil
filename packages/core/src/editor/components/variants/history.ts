@@ -11,6 +11,7 @@ import {
   getDefaultVariantForComponentSet,
   getVariantDefinitions
 } from './model'
+import { buildSavedVariants } from './saved'
 
 /** A component set's property definitions and its variants' values and names, for undo. */
 export type VariantSnapshot = {
@@ -18,11 +19,19 @@ export type VariantSnapshot = {
   variants: Map<string, Pick<SceneNode, 'componentPropertyValues' | 'name'>>
 }
 
-export function assertComponentSetEditable(ctx: EditorContext, componentSetId: string): void {
+/**
+ * An edit reaches every variant the set saves, so the ones not built yet are built first.
+ * Returns false, and the edit does not go ahead, when one of them cannot be built.
+ */
+export function prepareComponentSetEdit(ctx: EditorContext, componentSetId: string): boolean {
   assertNodeEditable(ctx.graph, componentSetId)
+  if (!buildSavedVariants(ctx.graph, componentSetId)) {
+    return false
+  }
   for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
     assertNodeEditable(ctx.graph, variant.id)
   }
+  return true
 }
 
 export function captureVariantSnapshot(

@@ -87,13 +87,11 @@ function mergeSavedOrder(
  */
 export function keepContainerOrder(
   state: AssemblyState,
-  reader: {
-    dependencyClosure: SceneDependencyClosure
-    savedChildIds: (sourceId: string) => readonly string[]
-  },
+  reader: { savedChildIds: (sourceId: string) => readonly string[] },
+  containerIds: Iterable<string>,
   load: () => void
 ): void {
-  const containers = [...reader.dependencyClosure.ancestorIds].flatMap((sourceId) => {
+  const containers = [...new Set(containerIds)].flatMap((sourceId) => {
     const layer = state.graph.getNode(state.sources.get(sourceId) ?? '')
     return layer && layer.childIds.length > 0
       ? [{ sourceId, layer, previous: [...layer.childIds] }]

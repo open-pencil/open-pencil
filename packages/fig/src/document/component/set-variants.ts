@@ -12,7 +12,8 @@ export interface SavedVariant {
   id: string
   name: string
   specs: VariantPropSpec[]
-  built: boolean
+  /** The layer a load built for it; none while it is only saved. */
+  layerId: string | undefined
 }
 
 /** Every component set's variant record GUIDs, in saved order. */
@@ -50,7 +51,7 @@ export function createSavedVariants(source: {
       id,
       name: header?.name ?? '',
       specs: header ? extractVariantPropSpecs(header) : [],
-      built: source.isBuilt(id)
+      layerId: source.isBuilt(id) ? source.layerOf().get(id) : undefined
     }
   }
   const savedOf = (setId: string): SavedVariant[] => {

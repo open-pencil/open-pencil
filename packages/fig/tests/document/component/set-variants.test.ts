@@ -48,6 +48,7 @@ test('lists only the set asked for, from headers, with specs by property id', ()
     layerOf: () =>
       new Map([
         ['1:10', 'chip'],
+        ['1:11', 'chip on'],
         ['1:20', 'toggle']
       ]),
     isBuilt: (id) => id === '1:11' || id.startsWith('1:2'),
@@ -61,19 +62,19 @@ test('lists only the set asked for, from headers, with specs by property id', ()
       id: '1:11',
       name: 'State=Named On',
       specs: [{ propDefId: '1:90', value: 'On' }],
-      built: true
+      layerId: 'chip on'
     },
     {
       id: '1:12',
       name: 'State=Named Off',
       specs: [{ propDefId: '1:90', value: 'Off' }],
-      built: false
+      layerId: undefined
     },
     {
       id: '1:13',
       name: 'State=Named Mixed',
       specs: [{ propDefId: '1:90', value: 'Mixed' }],
-      built: false
+      layerId: undefined
     }
   ])
   expect(saved.ofSetLayer('toggle')).toEqual([])
