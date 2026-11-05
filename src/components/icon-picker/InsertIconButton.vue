@@ -54,6 +54,7 @@ function insert(name: string) {
     :heading="panels.insertIcon"
     :tooltip="panels.insertIcon"
     :side="popupSide"
+    :tooltip-side="popupSide"
     :align="align"
     @select="insert"
   >

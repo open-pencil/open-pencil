@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
@@ -59,6 +59,13 @@ const hiddenActions = computed(() =>
 const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
 const toolbarUI = { flyoutContent: flyoutMenuCls.content }
 const { editActions, arrangeActions } = useToolbarActions({ store, getCommand, menu })
+
+// Canvas overlays keep clear of the toolbar's box as of the last render, so redraw once it moves.
+watch(
+  () => appPreferences.value.toolbarDock,
+  () => store.requestRender(),
+  { flush: 'post' }
+)
 
 const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
 
