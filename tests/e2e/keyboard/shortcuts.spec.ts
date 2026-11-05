@@ -270,6 +270,8 @@ test.describe('UI toggles', () => {
 
     await editor.page.keyboard.press('Meta+\\')
     await editor.canvas.waitForRender()
+    // The selection toolbar shows over the canvas and must not hold the restore shortcut back.
+    await expect(editor.page.getByTestId('selection-toolbar')).toBeVisible()
 
     const after = await getUIVisible()
     expect(after).toBe(!before)
