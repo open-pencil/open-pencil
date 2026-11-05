@@ -1,3 +1,5 @@
+import { Channel, invoke } from '@tauri-apps/api/core'
+
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import type { FetchFunction } from '@/app/http/types'
@@ -144,7 +146,6 @@ async function executeTauriFetch(
 
   const request = new Request(input, init)
   request.signal.throwIfAborted()
-  const { Channel, invoke } = await import('@tauri-apps/api/core')
   request.signal.throwIfAborted()
 
   // Capture generated multipart headers before consuming the Request body.

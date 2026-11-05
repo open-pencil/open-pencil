@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { ACP_AGENTS, IS_TAURI } from '@open-pencil/core/constants'
+import { acpAgentFor, IS_TAURI } from '@open-pencil/core/constants'
 
 import {
   codingAgentDetection,
@@ -99,7 +99,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     if (!agentsAvailable) return found
     for (const providerID of ONBOARDING_AGENTS) {
       const pi = agents.piSetup(providerID)
-      const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === providerID)
+      const agent = acpAgentFor(providerID)
       if (pi) found[providerID] = piDetection(pi)
       else if (agent) found[providerID] = codingAgentDetection(agent, agents.agentSetup(providerID))
     }

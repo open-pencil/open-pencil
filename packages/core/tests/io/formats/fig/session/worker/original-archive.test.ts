@@ -7,11 +7,13 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { FigmaAPI } from '#core/figma-api'
 import { parseFigFileViaWorker } from '#core/io/formats/fig/read'
 import {
   createFigPopulationWorker,
   releaseFigPopulationWorker
 } from '#core/kiwi/fig/population/client'
+import { pendingReaderPageOfNode } from '#core/kiwi/fig/session/document-state'
 
 test('saving an unedited worker-opened .fig returns its original bytes', async () => {
   await initCodec()
@@ -112,6 +114,31 @@ test('an abandoned page load stops the worker, and the archive is written withou
     await expect(loading).rejects.toThrow('Aborted')
     edit(opened)
     expect(names(await exportFigFile(opened))).toContain('Edited again')
+  } finally {
+    releaseFigPopulationWorker(opened)
+  }
+}, 20000)
+
+test('a layer named by its ID on a page not loaded yet is found through the worker', async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  source.createNode('TEXT', source.getPages()[0].id, { text: 'First' })
+  const later = source.createNode('TEXT', source.addPage('Second').id, { text: 'Second' })
+  const bytes = await exportFigFile(source)
+
+  const opened = await parseFigFileViaWorker(bytes.slice().buffer, { populate: 'first-page' })
+  try {
+    const second = opened.getPages()[1]
+    const figma = new FigmaAPI(opened, {
+      loadPage: async (id) => {
+        await createFigPopulationWorker(opened)?.populate(id)
+      },
+      pageOfNode: (id) => pendingReaderPageOfNode(opened, id)
+    })
+    expect(opened.getNode(later.id)).toBeUndefined()
+    expect(await pendingReaderPageOfNode(opened, later.id)).toBe(second.id)
+    expect((await figma.getNodeByIdAsync(later.id))?.characters).toBe('Second')
+    expect(opened.getChildren(second.id)).toHaveLength(1)
   } finally {
     releaseFigPopulationWorker(opened)
   }

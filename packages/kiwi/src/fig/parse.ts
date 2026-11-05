@@ -8,7 +8,7 @@ import {
   type RuntimeMessage
 } from '../schema-runtime'
 import type { NodeChange } from './codec'
-import { decompressFigKiwiData } from './container'
+import { decompressFigKiwiData, figFileKind, type FigFileKind } from './container'
 import { extractFigPageManifest, type FigPageManifestEntry } from './page-manifest'
 
 /**
@@ -44,11 +44,12 @@ interface FigKiwiPayload {
   schemaDeflated: Uint8Array
   dataRaw: Uint8Array
   version: number
+  kind: FigFileKind
 }
 
 export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
-  const header = new TextDecoder().decode(data.slice(0, 8))
-  if (header !== 'fig-kiwi') return null
+  const kind = figFileKind(data)
+  if (!kind) return null
 
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   const version = view.getUint32(8, true)
@@ -69,7 +70,7 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
   }
   if (chunks.length < 2) return null
 
-  return { schemaDeflated: chunks[0], dataRaw: decompressFigKiwiData(chunks[1]), version }
+  return { schemaDeflated: chunks[0], dataRaw: decompressFigKiwiData(chunks[1]), version, kind }
 }
 
 function isRuntimeMessage(value: unknown): value is RuntimeMessage {
@@ -87,6 +88,8 @@ export interface FigKiwiDecodeResult {
   figKiwiVersion: number
   /** Deflated kiwi schema bytes from the original file (for roundtrip fidelity). */
   figSchemaDeflated: Uint8Array
+  /** A design file or a FigJam board, by the canvas's header. */
+  kind: FigFileKind
 }
 
 /** Decode one raw `fig-kiwi` canvas payload. Outer `.fig` archive handling lives in `@open-pencil/fig`. */
@@ -127,6 +130,7 @@ export function decodeFigKiwiCanvas(
     nodeChanges,
     blobs,
     figKiwiVersion: payload.version,
-    figSchemaDeflated: payload.schemaDeflated
+    figSchemaDeflated: payload.schemaDeflated,
+    kind: payload.kind
   }
 }

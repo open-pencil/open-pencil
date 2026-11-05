@@ -10,7 +10,7 @@ export default {
     /** On your avatar while you are in a room. */
     live: 'absolute -top-0.5 -right-0.5 size-2 rounded-full border border-panel bg-success-fill',
     overflow:
-      'relative flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-panel bg-hover text-[9px] font-semibold text-surface outline-none focus-visible:ring-2 focus-visible:ring-panel-focus',
+      'relative flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-panel bg-hover text-4xs font-semibold text-surface outline-none focus-visible:ring-2 focus-visible:ring-panel-focus',
     card: ['z-50 w-60 p-2', floatingSurface, motionStyles.floating],
     leave: 'mt-2 w-full'
   }

@@ -1,8 +1,7 @@
 import type { SceneGraph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
-import { expectDefined } from './assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
 /** Alphas that survive the two-digit hex of exported colors exactly. */
@@ -272,6 +271,19 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textDecorationThickness: 2,
     textUnderlineOffset: 3,
     textDecorationSkipInk: false
+  }),
+  leafCase('text font settings', 'TEXT', {
+    text: 'Numbers 0123',
+    fontFeatures: [
+      { tag: 'TNUM', enabled: true },
+      { tag: 'LIGA', enabled: false }
+    ],
+    fontVariations: [
+      { axis: 'wght', value: 650 },
+      { axis: 'opsz', value: 14 }
+    ],
+    opticalSizeFromFontSize: false,
+    textLanguage: 'de'
   }),
   leafCase('text paragraph spacing', 'TEXT', {
     text: 'One\nTwo',

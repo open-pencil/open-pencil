@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import type { DesignTokens } from './tokens/references'
@@ -21,6 +22,8 @@ export interface DesignElement {
   children: DesignNode[]
   inlineStyle?: DesignStyleDeclaration
   computedStyle?: DesignStyleDeclaration
+  /** Where the engine that computed the styles laid the element out, when it was asked to. */
+  layout?: DesignLayout
   sourceSceneNodeId?: string
   sourceSceneNode?: SceneNode
   /**
@@ -43,8 +46,29 @@ export interface DesignStyleSheet {
 
 export type DesignStyleDeclaration = Record<string, string>
 
+/**
+ * An element as laid out, in CSS pixels from the top-left of the document, before transforms,
+ * which move what is drawn but not the layout. `fragments` are an inline element's boxes, one per
+ * line it spans, and `lines` are the line boxes of the text it holds directly or through its
+ * inline descendants.
+ */
+export interface DesignLayout {
+  box: Rect
+  fragments?: Rect[]
+  lines?: Rect[]
+}
+
+/** The viewport an engine lays the document out in; `height` resolves `vh` units. */
+export interface DesignViewport {
+  width: number
+  height: number
+}
+
 export interface CSSComputeOptions {
   includeBrowserDefaults?: boolean
+  /** Record where each element is laid out as well as its computed style. */
+  layout?: boolean
+  viewport?: DesignViewport
 }
 
 export interface CSSRuntime {

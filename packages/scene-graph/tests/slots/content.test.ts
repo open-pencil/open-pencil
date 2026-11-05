@@ -2,6 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
+  hasInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
+import {
   claimSlotContent,
   clearSlotContent,
   ownsSlotContent,
@@ -9,6 +13,8 @@ import {
   slotPropertyId,
   slotScope
 } from '@open-pencil/scene-graph/slots'
+
+import { observeWrites } from '../helpers/observe'
 
 /** A component set with a Small and a Large variant, each with a `Content` slot. */
 function panel(graph: SceneGraph, page: SceneNode) {
@@ -149,5 +155,59 @@ describe('slot scope', () => {
     expect(graph.getChildren(slot.id).map((child) => child.name)).toEqual(['Default'])
     expect(instance.componentPropertyAssignments).toEqual({})
     expect(graph.getChildren(slot.id)[0].componentId).not.toBeNull()
+  })
+})
+
+describe('claiming slot content reports the instance', () => {
+  test('before its overrides change, and with an event', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const { small } = panel(graph, page)
+    const instance = graph.createInstance(small.id, page.id)
+    if (!instance) throw new Error('No instance')
+    const slot = graph.getChildren(instance.id)[0]
+    const [content] = graph.getChildren(slot.id)
+    setInstanceOverride(instance.instanceOverrides, instance.id, content.id, 'name')
+    const scope = slotScope(graph, slot.id)
+    if (scope.kind !== 'slot') throw new Error(`Expected a slot, got ${scope.kind}`)
+
+    const seen = observeWrites(graph)
+    claimSlotContent(graph, scope)
+    seen.stop()
+
+    const kept = seen.before.get(instance.id)
+    expect(kept && hasInstanceOverride(kept.overrides, instance.id, content.id, 'name')).toBe(true)
+    expect(hasInstanceOverride(instance.instanceOverrides, instance.id, content.id, 'name')).toBe(
+      false
+    )
+    expect(seen.touched.has(instance.id)).toBe(true)
+  })
+
+  test('a nested instance is reported before it takes over the overrides', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const { small } = panel(graph, page)
+    const card = graph.createNode('COMPONENT', page.id, { name: 'Card' })
+    graph.createNode('RECTANGLE', card.id, { name: 'Inner' })
+    const slotFrame = graph.getChildren(small.id)[0]
+    graph.createInstance(card.id, slotFrame.id)
+    const instance = graph.createInstance(small.id, page.id)
+    if (!instance) throw new Error('No instance')
+    const slot = graph.getChildren(instance.id)[0]
+    const nested = graph.getChildren(slot.id).find((child) => child.type === 'INSTANCE')
+    const inner = nested && graph.getChildren(nested.id)[0]
+    if (!nested || !inner) throw new Error('No nested instance')
+    setInstanceOverride(instance.instanceOverrides, instance.id, inner.id, 'opacity', 0.5)
+    const scope = slotScope(graph, slot.id)
+    if (scope.kind !== 'slot') throw new Error(`Expected a slot, got ${scope.kind}`)
+
+    const seen = observeWrites(graph)
+    claimSlotContent(graph, scope)
+    seen.stop()
+
+    const kept = seen.before.get(nested.id)
+    expect(kept && hasInstanceOverride(kept.overrides, nested.id, inner.id, 'opacity')).toBe(false)
+    expect(hasInstanceOverride(nested.instanceOverrides, nested.id, inner.id, 'opacity')).toBe(true)
+    expect(seen.touched.has(nested.id)).toBe(true)
   })
 })

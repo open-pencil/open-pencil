@@ -1,8 +1,10 @@
+import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
   loadAISigningKey,
   parseCloudDeploymentTOML,
   type AISigningKey,
   type CloudEnvironment,
+  type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
 
@@ -26,6 +28,8 @@ export type CloudflareCloudEnvironment = CloudflareCloudBindings & Record<string
 export type PreparedCloudflareCloud = {
   config: CloudServerConfig
   aiSigningKey: AISigningKey | undefined
+  /** Set when the deployment configures error tracking. */
+  reportError: CloudErrorReporter | undefined
 }
 
 /** The Worker's string variables and secrets, with `DATABASE_URL` from Hyperdrive. */
@@ -44,14 +48,24 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
  */
 export function cloudflareCloudSetup(source: string) {
   let prepared: Promise<PreparedCloudflareCloud> | null = null
-  return (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
+  /** Set once an attempt's config parses, so its later setup steps that fail can be reported. */
+  let reportError: CloudErrorReporter | undefined
+  const prepare = (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
     prepared ??= (async () => {
+      // An attempt whose config fails to parse has no project to report to, not an earlier one's.
+      reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
-      return { config, aiSigningKey: await loadAISigningKey(config) }
+      reportError = createPostHogErrorReporter(config, 'cloudflare')
+      return { config, aiSigningKey: await loadAISigningKey(config), reportError }
     })().catch((error: unknown) => {
       prepared = null
       throw error
     })
     return prepared
+  }
+  return {
+    prepare,
+    /** The reporter of the latest attempt, once its config parsed, if it configures error tracking. */
+    reporter: () => reportError
   }
 }

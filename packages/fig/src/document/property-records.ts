@@ -20,20 +20,20 @@ function normalizeDefaults(node: NodeChange): void {
   }
 }
 
+/**
+ * Figma binds a layer to component properties through its parameter map alone: a legacy
+ * `componentPropRefs` entry draws nothing, whether or not the map repeats it (live-verified), so
+ * the references are the map's.
+ */
 export function normalizeComponentPropertyRecords(node: NodeChange): void {
   normalizeDefaults(node)
-  const parameters = node.parameterConsumptionMap
-  const refs = structuredClone((node.componentPropRefs as ComponentPropRef[] | undefined) ?? [])
-  for (const entry of parameters?.entries ?? []) {
+  const refs: ComponentPropRef[] = []
+  for (const entry of node.parameterConsumptionMap?.entries ?? []) {
     const id = entry.variableData?.value?.propRefValue?.defId
     if (entry.variableData?.dataType !== 'PROP_REF' || !id || !entry.variableField) continue
     if (!BOUND_FIELDS.has(entry.variableField)) continue
-    const ref = { defID: structuredClone(id), componentPropNodeField: entry.variableField }
-    const index = refs.findIndex(
-      (candidate) => candidate.componentPropNodeField === entry.variableField
-    )
-    if (index === -1) refs.push(ref)
-    else refs[index] = ref
+    refs.push({ defID: structuredClone(id), componentPropNodeField: entry.variableField })
   }
   if (refs.length) node.componentPropRefs = refs
+  else Reflect.deleteProperty(node, 'componentPropRefs')
 }

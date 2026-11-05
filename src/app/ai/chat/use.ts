@@ -1,8 +1,8 @@
-import { ref } from 'vue'
-
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
+import { resumingAgent } from '@/app/ai/agents/acp/session'
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
+import { propertiesTab } from '@/app/ai/chat/panel'
 import { createChatSessionManager } from '@/app/ai/chat/session'
 import {
   apiKeyStatus,
@@ -33,10 +33,6 @@ import {
   setRememberCredentials
 } from '@/app/settings/credentials/media'
 
-export type PropertiesTab = 'design' | 'code' | 'ai' | 'lint'
-
-const activeTab = ref<PropertiesTab>('design')
-
 const chatSession = createChatSessionManager({
   isConfigured,
   isACPProvider,
@@ -54,7 +50,8 @@ const history = createConversationHistory({
   backend: () => {
     if (isACPProvider.value) return 'acp'
     return isHarnessProvider.value ? 'harness' : 'direct'
-  }
+  },
+  resumingAgent: () => resumingAgent(providerID.value)
 })
 
 registerAIChatEffects(chatSession.markTransportDirty)
@@ -83,11 +80,12 @@ export function useAIChat() {
     setRememberCredentials,
     unsplashKeyStatus,
     setUnsplashKey,
-    activeTab,
+    activeTab: propertiesTab,
     isConfigured,
     history,
     ensureChat: history.ensureChat,
     resetChat: history.newChat,
+    compactAgent: chatSession.compactAgent,
     chatFailure: chatSession.failure,
     clearChatFailure: chatSession.clearFailure
   }

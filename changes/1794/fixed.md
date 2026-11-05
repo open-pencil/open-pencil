@@ -1,0 +1,1 @@
+- A file opened in a browser tab in the background is read right away instead of waiting until the tab is shown, and a page switch drawn there no longer fails with "The operation was timed out".

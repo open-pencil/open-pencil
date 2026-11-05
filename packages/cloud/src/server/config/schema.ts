@@ -146,7 +146,15 @@ const rawCloudServerConfigSchema = v.object({
   ),
   billingPortalURL: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
-  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32)))
+  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** Where server errors are reported; without it the server reports nothing. */
+  errorTracking: v.optional(
+    v.object({
+      provider: v.literal('posthog'),
+      host: httpURLSchema,
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+    })
+  )
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>
@@ -263,6 +271,9 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   return config
 }
 
+/** PostHog's US Cloud ingestion host. */
+const POSTHOG_DEFAULT_HOST = 'https://us.i.posthog.com'
+
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
   authSecret: 'BETTER_AUTH_SECRET',
@@ -276,7 +287,8 @@ const DEFAULT_SECRET_NAMES = {
   smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
   aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
-  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN'
+  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN',
+  posthogProjectAPIKey: 'POSTHOG_PROJECT_API_KEY'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -503,6 +515,16 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
+  error_tracking: v.optional(
+    v.strictObject({
+      provider: v.literal('posthog'),
+      host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
+      project_api_key: v.optional(configurableTextSchema, {
+        from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
+      })
+    })
   )
 })
 

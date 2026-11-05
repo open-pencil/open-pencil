@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import IconDownload from '~icons/lucide/download'
 import IconEye from '~icons/lucide/eye'
 import IconFile from '~icons/lucide/file'
@@ -26,8 +25,9 @@ import type {
 } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
+import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openVariablesDialog } from '@/app/editor/tokens/dialog'
+import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -37,8 +37,8 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
-import { browseFiles } from '@/app/shell/menu/navigation'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -51,7 +51,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
+import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -97,7 +97,6 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
-  const router = useRouter()
   const {
     commands,
     menuItem: commandMenuItem,
@@ -109,9 +108,12 @@ export function useAppMenu() {
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-tab': 'newTab',
     open: 'open',
-    'browse-files': 'browseFiles',
     'open-tour': 'openTour',
+    diagnostics: 'diagnostics',
+    'report-problem': 'reportProblem',
+    'support-openpencil': 'supportOpenPencil',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -126,6 +128,7 @@ export function useAppMenu() {
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
+    'paste-as-layers': 'pasteAsLayers',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
@@ -179,11 +182,9 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => {
-      void import('@/app/tabs').then((m) => m.createTab())
-    },
+    new: () => createTab(),
+    'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
-    'browse-files': () => browseFiles(router),
     'open-tour': () => {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
     },
@@ -196,10 +197,9 @@ export function useAppMenu() {
     'previous-tab': () => switchAdjacentTab(-1),
     'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
-    variables: () => openVariablesDialog(store),
-    'insert-icon': () => {
-      store.state.iconPickerOpen = true
-    },
+    diagnostics: () => openSettingsDialog('diagnostics'),
+    'report-problem': () => openReportDialog(),
+    'support-openpencil': () => donate('menu'),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
@@ -352,13 +352,13 @@ export function useAppMenu() {
       disabled: disabled(entry),
       checked: checked(entry),
       onCheckedChange: onCheckedChange(entry),
-      sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      sub: entry.sub ? visibleMenuEntries(entry.sub.map(buildEntry)) : undefined
     }
   }
 
   function groupLabel(group: AppMenuGroupSchema): string {
-    const key = group.label.toLowerCase() as keyof typeof menu.value
-    return menu.value[key] ?? group.label
+    const key = group.label.toLowerCase()
+    return key in menu.value ? menu.value[key as keyof typeof menu.value] : group.label
   }
 
   function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {
@@ -366,7 +366,7 @@ export function useAppMenu() {
     return {
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: visibleMenuEntries(group.items.map(buildEntry))
     }
   }
 

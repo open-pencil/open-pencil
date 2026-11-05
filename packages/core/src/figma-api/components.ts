@@ -9,12 +9,14 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
+  recordAssignmentOverride,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
   removeComponentProperty,
   createComponentPropertyId,
   exposedInstances,
   instanceExposureIssue,
-  resolveComponentPropertyValue
+  resolveComponentPropertyValue,
+  resolvedVariantDefinition
 } from '@open-pencil/scene-graph/components'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
@@ -167,8 +169,15 @@ function definitions(
 ): Record<string, FigmaComponentPropertyDefinition> {
   const node = raw(target, internals)
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return {}
+  const scene = graph(target, internals)
+  const resolved =
+    node.type === 'COMPONENT_SET'
+      ? node.componentPropertyDefinitions.map((item) =>
+          resolvedVariantDefinition(scene, node, item)
+        )
+      : node.componentPropertyDefinitions
   return Object.fromEntries(
-    node.componentPropertyDefinitions.map((definition) => [
+    resolved.map((definition) => [
       propertyName(definition),
       {
         type: definition.type,
@@ -324,6 +333,7 @@ function applyProperty(
   const scene = graph(target, internals)
   const result = applyComponentPropertyValue(scene, node.id, definition, String(value))
   if (!result) throw new Error(`Unable to apply component property: ${propertyName(definition)}`)
+  recordAssignmentOverride(scene, node.id, definition.id)
   measurePropertyText({ graph: scene }, node.id, definition)
 }
 export function installComponentPropertyAccessors(
@@ -339,13 +349,15 @@ export function installComponentPropertyAccessors(
     componentPropertyReferences: {
       get(this: ProxyThis) {
         const node = raw(this, internals)
-        if (
-          node.type !== 'INSTANCE' &&
-          node.type !== 'COMPONENT' &&
-          node.type !== 'FRAME' &&
-          node.type !== 'TEXT'
-        )
-          return null
+        // Any layer in a component or instance, and a component itself, has references, as in
+        // Figma (desktop 126); anything else, a placed instance included, has none.
+        const holder = node.parentId
+          ? graph(this, internals).closest(
+              node.parentId,
+              (ancestor) => ancestor.type === 'COMPONENT' || ancestor.type === 'INSTANCE'
+            )
+          : undefined
+        if (node.type !== 'COMPONENT' && !holder) return null
         // References name properties by key, `Name#id`, as componentPropertyDefinitions does.
         const definitions = referableDefinitions(graph(this, internals), node)
         return Object.fromEntries(
@@ -469,6 +481,12 @@ export function installComponentPropertyAccessors(
         }
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
+        // A variant's properties are its set's, as Figma keeps them (desktop 126).
+        const parent = node.parentId ? graph(this, internals).getNode(node.parentId) : undefined
+        if (node.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET')
+          throw new Error(
+            'in addComponentProperty: Can only set component property definitions on a product component'
+          )
         const definition: ComponentPropertyDefinition = {
           id: createComponentPropertyId(),
           name: name.trim(),

@@ -161,21 +161,6 @@ onScopeDispose(() => {
   for (const stop of unsubscribe) stop()
 })
 
-function syncCanvasScope(nodeId: string) {
-  const node = editor.graph.getNode(nodeId)
-  if (!node) return
-  let parentId = node.parentId
-  while (parentId && parentId !== editor.state.currentPageId) {
-    if (editor.graph.isContainer(parentId)) {
-      editor.enterContainer(parentId)
-      return
-    }
-    const parent = editor.graph.getNode(parentId)
-    parentId = parent?.parentId ?? null
-  }
-  editor.state.enteredContainerId = null
-}
-
 function select(id: string, selection: boolean | LayerSelectionMode) {
   const mode = typeof selection === 'boolean' ? { additive: selection, range: false } : selection
   emit('select', id, mode.additive)
@@ -196,7 +181,8 @@ function select(id: string, selection: boolean | LayerSelectionMode) {
   } finally {
     applyingSelection = false
   }
-  if (!mode.additive && !mode.range) syncCanvasScope(id)
+  // A layer picked here leaves canvas clicks as a click on it there would, as in Figma.
+  if (!mode.additive && !mode.range) editor.enterContainerOf(id)
   scrollToNode(id)
 }
 

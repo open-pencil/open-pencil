@@ -1,8 +1,4 @@
-import {
-  captureDocumentChange,
-  isEmptyDocumentChange,
-  restoreDocumentChange
-} from '#core/editor/history/document-change'
+import { recordEdit } from '#core/editor/history/edit'
 import type { EditorContext } from '#core/editor/types'
 import {
   arrangeLayers,
@@ -30,15 +26,8 @@ export function createArrangeActions(ctx: EditorContext) {
         if (ctx.graph !== graph) {
           throw new Error('The document changed while the layers were being arranged')
         }
-        const finish = captureDocumentChange(ctx.graph, ctx.state.currentPageId)
-        apply()
-        const change = finish()
-        if (isEmptyDocumentChange(change)) return
-        ctx.undo.push({
-          label: 'Arrange',
-          forward: () => restoreDocumentChange(ctx, change, 'after'),
-          inverse: () => restoreDocumentChange(ctx, change, 'before')
-        })
+        // The moves land after the layout's await, so any batch open now is another edit's.
+        recordEdit(ctx, { label: 'Arrange', ownStep: true }, apply)
       })
     } finally {
       ctx.requestRender()

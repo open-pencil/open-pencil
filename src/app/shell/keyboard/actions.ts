@@ -5,7 +5,7 @@ import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 import type { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
-import type { PropertiesTab } from '@/app/ai/chat/use'
+import type { PropertiesTab } from '@/app/ai/chat/panel'
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -72,12 +72,14 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
-    if (store.state.play) {
-      store.stopPlay()
-      return
-    }
+    if (store.leaveCanvasView()) return
     if (store.state.rotationPreview) {
       store.setRotationPreview(null)
+      return
+    }
+    // Esc leaves the eyedropper without touching the selection or a waiting color picker.
+    if (store.state.activeTool === 'EYEDROPPER') {
+      store.setTool('SELECT')
       return
     }
     if (store.state.nodeEditState) {
@@ -94,11 +96,9 @@ export function createKeyboardActions({
       else store.penCancel()
       return
     }
-    if (store.state.enteredContainerId) {
-      store.exitContainer()
-      return
-    }
     if (useComments().closeCard()) return
+    // Figma's Escape clears the selection at any depth; Shift+Enter is the way up a level.
+    store.exitContainers()
     store.clearSelection()
     store.setTool('SELECT')
   }

@@ -5,7 +5,8 @@ export function createDefaultEditorSharedState(): EditorSharedState {
   return {
     activeTool: 'SELECT',
     shapeWithTextKind: 'SQUARE',
-    readOnly: false,
+    hostRestrictions: { readOnly: false },
+    documentKind: 'design',
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },
     showPixelGrid: true,
     gradientEdit: null,

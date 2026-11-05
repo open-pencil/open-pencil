@@ -13,6 +13,7 @@ import {
   HARNESS_PACKAGE
 } from '@/app/ai/agents/pi/companion'
 import { MCP_EXECUTABLE, MCP_INSTALL_TARGET, MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
+import { restartMCPRuntime } from '@/app/automation/mcp/runtime'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import {
@@ -28,12 +29,35 @@ import {
   lookupAgents,
   type AgentLookup
 } from './native'
+import { AgentNotInstalledError } from './not-installed'
 
 export type DetectedAgent = {
   definition: ACPAgentDef
   cliPath: string | null
   adapterPath: string | null
   status: 'available' | 'needs-adapter' | 'not-installed'
+}
+
+/**
+ * The executable to spawn from a finished lookup. `null` means the lookup itself failed, so the
+ * command is tried anyway. A lookup that did not find it refuses to start, so a missing agent is
+ * reported as such rather than as a shell that exited.
+ */
+export function spawnCommandFromLookup(
+  agent: ACPAgentDef,
+  executables: AgentLookup['executables'] | null
+): string {
+  if (executables && !executables[agent.command]) throw new AgentNotInstalledError(agent)
+  return agent.command
+}
+
+export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
+  try {
+    return spawnCommandFromLookup(agent, (await lookupAgents()).executables)
+  } catch (error) {
+    if (error instanceof AgentNotInstalledError) throw error
+    return agent.command
+  }
 }
 
 export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {
@@ -285,7 +309,6 @@ export const agentDiscovery = createAgentDiscovery({
   installBridge: installCanvasBridge,
   installHarness: installHarnessCompanion,
   async restartBridge() {
-    const { restartMCPRuntime } = await import('@/app/automation/mcp/runtime')
     const result = await restartMCPRuntime()
     if (!result.ok) throw result.error
   }

@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
@@ -20,13 +22,11 @@ const lookupSchema = v.object({
 export type AgentLookup = v.InferOutput<typeof lookupSchema>
 
 export async function lookupAgents(): Promise<AgentLookup> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return v.parse(lookupSchema, await invoke<unknown>('agent_lookup'))
 }
 
 /** The folder coding agents start in, which the desktop shell creates in the app's data. */
 export async function agentWorkspace(): Promise<string> {
-  const { invoke } = await import('@tauri-apps/api/core')
   return v.parse(v.string(), await invoke<unknown>('agent_workspace'))
 }
 
@@ -69,7 +69,6 @@ async function installPackage(
   searchPath: string,
   manager: PackageManager = 'npm'
 ): Promise<void> {
-  const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolvePlatformCommand(
     manager,
     manager === 'bun' ? bunInstallArgs(packageName) : npmInstallArgs(packageName)

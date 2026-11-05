@@ -1,3 +1,4 @@
+import { BaseDirectory, readFile, mkdir, writeFile, remove } from '@tauri-apps/plugin-fs'
 import { dirname } from 'pathe'
 import * as v from 'valibot'
 
@@ -40,7 +41,6 @@ function removeStorageEntriesWithPrefix(prefix: string): void {
 export async function readCacheText(key: string): Promise<string | null> {
   if (isTauriRuntime()) {
     try {
-      const { BaseDirectory, readFile } = await import('@tauri-apps/plugin-fs')
       return textDecoder.decode(
         await readFile(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
       )
@@ -55,7 +55,6 @@ export async function readCacheText(key: string): Promise<string | null> {
 
 export async function writeCacheText(key: string, value: string): Promise<void> {
   if (isTauriRuntime()) {
-    const { BaseDirectory, mkdir, writeFile } = await import('@tauri-apps/plugin-fs')
     await mkdir(cacheDirectoryPath(key), { baseDir: BaseDirectory.AppLocalData, recursive: true })
     await writeFile(cachePath(key), textEncoder.encode(value), {
       baseDir: BaseDirectory.AppLocalData
@@ -70,7 +69,6 @@ export async function writeCacheText(key: string, value: string): Promise<void> 
 export async function removeCacheEntry(key: string): Promise<void> {
   if (isTauriRuntime()) {
     try {
-      const { BaseDirectory, remove } = await import('@tauri-apps/plugin-fs')
       await remove(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
     } catch (error) {
       console.warn(`Cache delete skipped for "${key}":`, error)
@@ -86,7 +84,6 @@ export async function readCacheBytes(key: string): Promise<ArrayBuffer | null> {
   if (!isTauriRuntime()) return null
 
   try {
-    const { BaseDirectory, readFile } = await import('@tauri-apps/plugin-fs')
     const data = await readFile(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
   } catch {
@@ -97,7 +94,6 @@ export async function readCacheBytes(key: string): Promise<ArrayBuffer | null> {
 export async function writeCacheBytes(key: string, value: ArrayBuffer): Promise<void> {
   if (!isTauriRuntime()) return
 
-  const { BaseDirectory, mkdir, writeFile } = await import('@tauri-apps/plugin-fs')
   await mkdir(cacheDirectoryPath(key), { baseDir: BaseDirectory.AppLocalData, recursive: true })
   await writeFile(cachePath(key), new Uint8Array(value), { baseDir: BaseDirectory.AppLocalData })
 }
@@ -105,7 +101,6 @@ export async function writeCacheBytes(key: string, value: ArrayBuffer): Promise<
 export async function removeCachePrefix(prefix: string): Promise<void> {
   if (isTauriRuntime()) {
     try {
-      const { BaseDirectory, remove } = await import('@tauri-apps/plugin-fs')
       await remove(cachePath(prefix), { baseDir: BaseDirectory.AppLocalData, recursive: true })
     } catch (error) {
       console.warn(`Cache prefix delete skipped for "${prefix}":`, error)

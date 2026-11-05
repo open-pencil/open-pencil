@@ -62,3 +62,8 @@ maximum_participants = 100
 
 [entitlements.ai]
 enabled = false
+
+# Server errors go to the OpenPencil PostHog project; the key is the POSTHOG_PROJECT_API_KEY secret.
+[error_tracking]
+provider = "posthog"
+host = "https://eu.i.posthog.com"

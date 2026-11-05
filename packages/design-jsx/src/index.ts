@@ -18,7 +18,7 @@ export {
   Rect,
   Page,
   INTRINSIC_ELEMENTS
-} from './components'
+} from './elements/functions'
 export {
   Accordion,
   Button,
@@ -42,6 +42,7 @@ export {
   type TreeNode,
   type BaseProps,
   type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type TextProps,
@@ -54,7 +55,7 @@ export {
   resolveToTree
 } from './tree'
 
-export type { RenderResult } from './renderer'
+export type { RenderResult } from './render/roots'
 
 export {
   backgroundBlur,
@@ -65,7 +66,7 @@ export {
   type BlurEffectOptions,
   type EffectColor,
   type ShadowEffectOptions
-} from './effects'
+} from './helpers/effects'
 
 export {
   angularGradient,
@@ -80,7 +81,7 @@ export {
   type PaintStop,
   type ShaderFill,
   type SolidPaintOptions
-} from './paints'
+} from './helpers/paints'
 
 export {
   defineMode,
@@ -94,14 +95,14 @@ export {
   type DesignVariable,
   type VariableInput
 } from './variables'
-export { isComponentProperty, property, type ComponentProperty } from './component-properties'
+export { isComponentProperty, property, type ComponentProperty } from './components/properties'
 export { isLayerRef, ref, type LayerRef } from './refs'
 
 export { createElement } from './mini-react'
 
 export { buildComponent, createDesignJSXRenderer, type DesignJSXRenderer } from './render'
 export type { ArtworkPlacement, DesignJSXServices, SVGSource } from './services'
-export type { RenderOptions } from './types'
+export type { RenderOptions } from './render/types'
 export {
   DESIGN_JSX_ELEMENTS,
   elementPropsByName,
@@ -142,7 +143,7 @@ export {
 } from './export'
 export { parseJSXAttributes } from './attributes'
 export { jsxNodeFields, type JSXNodeFields } from './fields'
-export { reconcileRenderedLayers } from './reconcile'
+export { reconcileRenderedLayers } from './render/reconcile'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'
 export {
   createStreamingJSXParser,

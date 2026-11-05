@@ -1,1 +1,0 @@
-- In vector edit mode, the filled region under the pointer is hatched, as in Figma. Clicking inside it selects the region with its points, which then drag together.

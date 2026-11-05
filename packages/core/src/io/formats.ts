@@ -11,10 +11,11 @@ import {
   type PenIconRequest,
   type PenIconSource
 } from '@open-pencil/pen'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
+import { prepareGraphFonts } from '#core/text/prepare'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
@@ -166,12 +167,18 @@ function rasterFormat<F extends RasterExportFormat>(format: F): IOFormatAdapter<
   }
 }
 
+/** The file a document saves as: Figma's `.fig` for a design, FigJam's `.jam` for a board. */
+export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentKind, 'fig' | 'jam'>> = {
+  design: 'fig',
+  board: 'jam'
+}
+
 export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
   label: 'OpenPencil Document',
   role: 'native-document',
   category: 'document',
-  extensions: ['fig'],
+  extensions: ['fig', 'jam'],
   mimeTypes: ['application/octet-stream'],
   support: {
     readDocument: true,
@@ -183,7 +190,8 @@ export const figFormat: IOFormatAdapter<'fig'> = {
   },
   exportOptions: FIXED_SIZE_EXPORT,
   matchesFile(fileName) {
-    return lowerExt(fileName) === 'fig'
+    const ext = lowerExt(fileName)
+    return ext === 'fig' || ext === 'jam'
   },
   async readDocument(input) {
     const data = input.data.slice().buffer
@@ -223,7 +231,8 @@ async function writeFig(
     renderHeadlessThumbnail: options?.renderThumbnail ?? false,
     documentName: options?.documentName ?? (fileName && filename(fileName))
   })
-  return { format: 'fig', mimeType: 'application/octet-stream', extension: 'fig', data }
+  const extension = DOCUMENT_EXTENSIONS[graph.documentKind]
+  return { format: 'fig', mimeType: 'application/octet-stream', extension, data }
 }
 
 /** The size icons are fetched at; each is scaled to the box it is drawn in. */
@@ -312,6 +321,13 @@ export const penFormat: IOFormatAdapter<'pen'> = {
       loadPenImages(assets.images, input),
       loadPenIcons(assets.icons, context?.icons ?? defaultIcons)
     ])
+    // Its text takes fonts from variables and components too, so the fonts it uses are read
+    // from a build without layout and prepared before the build that lays it out.
+    const unlaid = buildPenGraph(doc, { images, icons })
+    await prepareGraphFonts(
+      unlaid,
+      unlaid.getPages(true).map((page) => page.id)
+    )
     // A .pen file stores its layout intent, not the sizes and positions it implies.
     const graph = buildPenGraph(doc, {
       images,
@@ -362,6 +378,10 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
       throw new Error(`Could not read the draw.io pages ${file.unreadable.join(', ')}`)
     }
     const graph = drawioToSceneGraph(file)
+    await prepareGraphFonts(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
     // draw.io stores label text, not the sizes it lays out to.
     layoutAuthoredNodes(
       graph,

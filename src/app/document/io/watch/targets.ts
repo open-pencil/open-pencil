@@ -1,3 +1,4 @@
+import { watch as tauriWatch } from '@tauri-apps/plugin-fs'
 import { useIntervalFn } from '@vueuse/core'
 
 const RECENT_WRITE_MS = 1000
@@ -9,7 +10,6 @@ export async function watchTauriFile(
   getLastWriteTime: () => number,
   reloadFromDisk: () => void
 ) {
-  const { watch: tauriWatch } = await import('@tauri-apps/plugin-fs')
   const unwatch = await tauriWatch(
     filePath,
     (event) => {

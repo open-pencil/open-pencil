@@ -57,8 +57,9 @@ describe('frame navigation', () => {
     const { editor, right } = frames()
     editor.zoomToPreviousFrame()
     const { panX, panY, zoom } = editor.state
-    const centerX = (VIEWPORT.width / 2 - panX) / zoom
-    const centerY = (VIEWPORT.height / 2 - panY) / zoom
+    // The frame is centred in the canvas less the zoom-to-selection insets (60/40 and 60/100).
+    const centerX = (60 + (VIEWPORT.width - 100) / 2 - panX) / zoom
+    const centerY = (60 + (VIEWPORT.height - 160) / 2 - panY) / zoom
     expect(centerX).toBeCloseTo(right.x + right.width / 2)
     expect(centerY).toBeCloseTo(right.y + right.height / 2)
   })

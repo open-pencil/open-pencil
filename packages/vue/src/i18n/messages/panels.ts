@@ -143,6 +143,7 @@ export const panelMessageDefaults = {
   /** A star's inner radius as a share of its outer one. */
   starRatio: 'Ratio',
   spread: 'Spread',
+  effectColor: 'Color',
 
   page: 'Page',
   selectionColors: 'Selection colors',
@@ -255,6 +256,9 @@ export const panelMessageDefaults = {
   behaviourCheckboxDescription: 'Checks and unchecks',
   behaviourSliderDescription: 'Drags a thumb along a track',
   behaviourTabsDescription: 'Shows one panel at a time',
+  behaviourTab: 'Tab',
+  behaviourTabDescription: 'A trigger of tabs, drawn selected or not',
+  behaviourSelected: 'Selected',
   behaviourTextField: 'Text field',
   behaviourTextFieldDescription: 'Takes one line of typing',
   behaviourTextarea: 'Textarea',
@@ -289,8 +293,11 @@ export const panelMessageDefaults = {
   behaviourMoreOptions: 'More options',
   behaviourValue: 'Value',
   behaviourDisabled: 'Disabled',
+  behaviourInvalid: 'Invalid',
   behaviourOnValue: 'On',
   behaviourOffValue: 'Off',
+  /** A value's on or off variant field, such as "Checked: On". */
+  behaviourValueField: params('{value}: {side}'),
   behaviourTrack: 'Track',
   behaviourThumb: 'Thumb',
   behaviourRange: 'Range',
@@ -318,6 +325,7 @@ export const panelMessageDefaults = {
   behaviourStatePressed: 'Pressed',
   behaviourStateFocus: 'Focus',
   behaviourStateDisabled: 'Disabled',
+  behaviourStateInvalid: 'Invalid',
   behaviourStateUnset: 'None',
   behaviourStateField: params('{state} state'),
   searchComponentProperties: 'Search properties',
@@ -397,9 +405,11 @@ export const panelMessageDefaults = {
   blendModeNormal: 'Normal',
   blendModeDarken: 'Darken',
   blendModeMultiply: 'Multiply',
+  blendModeLinearBurn: 'Plus darker',
   blendModeColorBurn: 'Color burn',
   blendModeLighten: 'Lighten',
   blendModeScreen: 'Screen',
+  blendModeLinearDodge: 'Plus lighter',
   blendModeColorDodge: 'Color dodge',
   blendModeOverlay: 'Overlay',
   blendModeSoftLight: 'Soft light',
@@ -615,6 +625,21 @@ export const panelMessageDefaults = {
   recentIcons: 'Recent',
   iconsInFile: 'In this file',
   otherIconSets: 'Other',
+  /** The image fill's button that fills it with a photo from Unsplash or Pexels. */
+  stockPhoto: 'Stock photo',
+  searchPhotos: 'Search photos...',
+  noPhotosFound: 'No photos found',
+  photoSearchHint: params('Type to search free photos on {service}'),
+  photoSearchFailed: params('{service} could not be searched. Check your connection and key.'),
+  insertPhotoFailed: 'The photo could not be inserted.',
+  photoService: 'Photo service',
+  /** The picker's credit for a photo, as the services ask to be credited. */
+  photoCredit: params('Photo by {photographer} on {service}'),
+  photoKeyHeading: params('Connect {service}'),
+  photoKeyDescription: params(
+    '{service} photos are free to use. Add its free API key in Settings to search them here.'
+  ),
+  photoKeyAction: 'Open Settings',
   iconResultCount: count({ one: '{count} result', many: '{count} results' }),
   /** More icons match than a search returns. */
   iconResultCountCapped: params('{count}+ results'),

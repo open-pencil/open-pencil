@@ -9,7 +9,7 @@ Premi <kbd>⌘</kbd><kbd>J</kbd> o <kbd>Ctrl</kbd><kbd>J</kbd>. L’assistente p
 
 ## Configurare i modelli
 
-Al primo avvio, la configurazione guidata chiede in cosa deve aiutarti l’IA e cosa usi già: un agente di programmazione come Claude Code, Codex o Gemini CLI nell’app desktop, un account API o un server locale o aziendale. Collega quell’accesso e lo assegna ai ruoli **Design agent** e **Vision**, lasciando invariato ciò che hai configurato a mano. Con OpenRouter puoi accedere invece di incollare una chiave API. Puoi saltarla e riavviarla da **Impostazioni → IA e agenti → Avvia la configurazione guidata**. Per configurare i modelli a mano:
+Al primo avvio, la configurazione guidata chiede in cosa deve aiutarti l’IA e cosa usi già: un agente di programmazione come Claude Code, Codex, Gemini CLI, Cursor o Grok Build nell’app desktop, un account API o un server locale o aziendale. Collega quell’accesso e lo assegna ai ruoli **Design agent** e **Vision**, lasciando invariato ciò che hai configurato a mano. Con OpenRouter puoi accedere invece di incollare una chiave API. Puoi saltarla e riavviarla da **Impostazioni → IA e agenti → Avvia la configurazione guidata**. Per configurare i modelli a mano:
 
 1. Apri la chat.
 2. Seleziona l’icona delle impostazioni.
@@ -34,6 +34,12 @@ Il token è conservato nell’archivio sicuro delle credenziali, non nelle norma
 Gli strumenti coprono lettura, creazione, modifica, struttura, variabili, vettori, analisi, descrizione, generazione di codice e immagini stock. Ogni chiamata agisce sull’editor attivo e partecipa alla cronologia quando applicabile.
 
 Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_create` e `diff_jsx` i confronti strutturali, `diff_visual` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
+
+## Skill
+
+Le skill sono cartelle con un `SKILL.md` nel formato [Agent Skills](https://agentskills.io/specification): istruzioni per un tipo di lavoro, con file di riferimento facoltativi. L’IA integrata vede nome e descrizione di ogni skill attiva e ne carica le istruzioni quando una richiesta corrisponde; gli script di una skill non vengono eseguiti.
+
+In **Impostazioni → Skill** carica una skill come ZIP della sua cartella o come `SKILL.md`. Nell’app desktop vengono lette anche `~/.agents/skills` e `~/.claude/skills`, e le cartelle `.agents/skills` e `.claude/skills` accanto al documento aperto, usate solo dopo **Fidati della cartella**. Digita `/` all’inizio di un messaggio per scegliere una skill e `@` per menzionare un livello, una pagina o una skill. Le menzioni appaiono come chip, anche nelle risposte; un clic mostra il livello sulla tela.
 
 ## Verifica visiva
 

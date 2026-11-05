@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -14,7 +15,7 @@ import { registerKeyboardShortcuts } from '@/app/shell/keyboard/registry'
 import { openFileDialog } from '@/app/shell/menu/use'
 import {
   closeTab,
-  createHomeTab,
+  openNewFileTab,
   createTab,
   switchAdjacentTab,
   activeTab as activeTabRef
@@ -27,6 +28,7 @@ export function useKeyboard() {
   const { runCommand, setOpacityTarget } = useEditorCommands()
   const activeElement = useActiveElement({ triggerOnRemoval: true })
   const inputFocused = computed(() => isInputElement(activeElement.value))
+  const overlays = useOpenOverlays()
 
   const actions = createKeyboardActions({
     store,
@@ -37,10 +39,11 @@ export function useKeyboard() {
   })
 
   bindEditorClipboard(store)
-  bindNudgeKeys(store)
+  bindNudgeKeys(store, overlays)
 
   registerKeyboardShortcuts({
     inputFocused,
+    overlays,
     store,
     runCommand,
     actions,
@@ -51,7 +54,7 @@ export function useKeyboard() {
       if (activeTabRef.value) void closeTab(activeTabRef.value.id)
     },
     createTab: () => createTab(),
-    showHome: () => createHomeTab(),
+    openNewFileTab: () => openNewFileTab(),
     switchAdjacentTab
   })
 }

@@ -40,20 +40,49 @@ test('vector paths render their resolved style fills', async () => {
           visible: true
         }
       ],
+      // Two rectangles side by side; the right one is orange of its own.
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 260, y: 0 },
+          { x: 260, y: 140 },
+          { x: 0, y: 140 },
+          { x: 440, y: 0 },
+          { x: 440, y: 140 }
+        ],
+        segments: [
+          [0, 1],
+          [1, 2],
+          [2, 3],
+          [3, 0],
+          [1, 4],
+          [4, 5],
+          [5, 2]
+        ].map(([start, end]) => ({
+          start,
+          end,
+          tangentStart: { x: 0, y: 0 },
+          tangentEnd: { x: 0, y: 0 }
+        })),
+        regions: [
+          { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] },
+          {
+            windingRule: 'NONZERO',
+            loops: [[4, 5, 6, 1]],
+            fills: [
+              {
+                type: 'SOLID',
+                color: { r: 1, g: 0.32, b: 0, a: 1 },
+                opacity: 1,
+                visible: true
+              }
+            ]
+          }
+        ]
+      },
       fillGeometry: [
         { windingRule: 'NONZERO', commandsBlob: rectangleBlob(0, 0, 260, 140) },
-        {
-          windingRule: 'NONZERO',
-          commandsBlob: rectangleBlob(260, 0, 180, 140),
-          fills: [
-            {
-              type: 'SOLID',
-              color: { r: 1, g: 0.32, b: 0, a: 1 },
-              opacity: 1,
-              visible: true
-            }
-          ]
-        }
+        { windingRule: 'NONZERO', commandsBlob: rectangleBlob(260, 0, 180, 140) }
       ]
     })
 

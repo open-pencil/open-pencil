@@ -34,6 +34,8 @@ export const MEASUREMENT_PILL_RADIUS = 3
 export const MEASUREMENT_TEXT_BASELINE = 4
 export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
 export const SNAP_THRESHOLD_SCREEN_PX = 5
+/** The grid a board's layers land on, as FigJam's dots every 16 units. */
+export const BOARD_GRID = 16
 
 export const RULER_SIZE = 20
 export const RULER_BG_COLOR = { r: 0.14, g: 0.14, b: 0.14, a: 1 } satisfies Color
@@ -244,6 +246,14 @@ export const PAGE_DEFAULT_BACKGROUNDS: Record<InterfaceTheme, Color> = {
   dark: { r: 0x1e / 255, g: 0x1e / 255, b: 0x1e / 255, a: 1 }
 }
 
+/** A FigJam board's page, #F5F5F5 whatever the interface theme, as Figma saves it. */
+export const BOARD_PAGE_BACKGROUND = {
+  r: 245 / 255,
+  g: 245 / 255,
+  b: 245 / 255,
+  a: 1
+} satisfies Color
+
 /** A new section's fill, which Figma picks from the interface theme it was made in. */
 export const SECTION_DEFAULT_FILLS: Record<InterfaceTheme, Fill> = {
   light: { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true },
@@ -267,6 +277,9 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
 export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
+/** Figma's zoom range, 2% to 25,600%. */
+export const ZOOM_MIN = 0.02
+export const ZOOM_MAX = 256
 export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 

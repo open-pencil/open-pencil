@@ -11,7 +11,7 @@ export const FONT_POLICIES = new Set(['allow', 'strict', 'warn'])
  */
 export function reportFontStatus(status: DocumentFontStatus, policy: string): void {
   if (policy === 'allow' || status.faithful) return
-  const names = status.issues.map((face) => `${face.family} ${face.style}`).join(', ')
+  const names = status.issues.map((face) => `${face.family} ${face.name}`).join(', ')
   const message = `Font substitution: ${names}`
   if (policy === 'strict') {
     printError(message)

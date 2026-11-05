@@ -1,9 +1,10 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { standardStyleName } from '@open-pencil/scene-graph/font-style'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 import { existingAssetKey } from './asset-keys'
-import { remapCopiedReferences } from './copied-references'
 import { contentHash } from './hash'
 import { assertLibraryAssetKey } from './identity'
 import type { LibraryAssetDescriptor, PortableLibrarySnapshot } from './types'
@@ -16,7 +17,9 @@ const VOLATILE_NODE_FIELDS = new Set([
   'instanceOverrides',
   'componentPropertyAssignments',
   'textPicture',
+  // Caches measured from the fonts at hand, which a FIG round trip writes or leaves out by them.
   'derivedTextGlyphs',
+  'derivedTextHeight',
   'derivedLayout',
   'librarySource'
 ])
@@ -114,6 +117,24 @@ export function extractLibrarySnapshot(
   }
 }
 
+/** A field as an asset's content compares it. */
+function libraryField(node: SceneNode, key: string, value: unknown): unknown {
+  // Plugin content such as a behaviour is part of the asset; its bookkeeping is not.
+  if (key === 'pluginData') return contentPluginData(node.pluginData)
+  if (key === 'fontStyle') return libraryStyleName(node)
+  return normalizedLibraryField(key, value)
+}
+
+/**
+ * The face a text's name names, compared as a name: a file writes the name the text left to its
+ * weight and slant, and spells some as Figma's fonts do ("Semi Bold" for "SemiBold").
+ */
+function libraryStyleName(node: SceneNode): string {
+  return (node.fontStyle ?? standardStyleName(node.fontWeight, node.italic))
+    .toLowerCase()
+    .replace(/\s+/gu, '')
+}
+
 function normalizedLibraryField(key: string, value: unknown): unknown {
   if (key === 'lineHeight' && (value === null || value === 17)) return null
   if (
@@ -156,13 +177,7 @@ export function canonicalLibraryNode(
           key !== 'name' &&
           key !== 'symbolDescription'
       )
-      .map(([key, value]) => [
-        key,
-        // Plugin content such as a behaviour is part of the asset; its bookkeeping is not.
-        key === 'pluginData'
-          ? contentPluginData(node.pluginData)
-          : normalizedLibraryField(key, value)
-      ])
+      .map(([key, value]) => [key, libraryField(node, key, value)])
   )
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =

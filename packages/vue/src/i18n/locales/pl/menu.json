@@ -5,9 +5,11 @@
   "object": "Obiekt",
   "arrange": "Rozmieszczenie",
   "text": "Tekst",
-  "new": "Nowy",
+  "new": "Nowy projekt",
+  "newTab": "Nowa karta",
   "open": "Otwórz…",
   "openTour": "Otwórz przewodnik",
+  "diagnostics": "Diagnostyka…",
   "save": "Zapisz",
   "saveAs": "Zapisz jako…",
   "exportSelection": "Eksportuj zaznaczenie…",
@@ -40,6 +42,7 @@
   "pasteToReplace": "Wklej, aby zastąpić",
   "copyProperties": "Kopiuj właściwości",
   "pasteProperties": "Wklej właściwości",
+  "pasteAsLayers": "Wklej jako warstwy",
   "copyPasteAs": "Kopiuj/Wklej jako",
   "copyAsText": "Kopiuj jako tekst",
   "copyAsSVG": "Kopiuj jako SVG",
@@ -83,8 +86,9 @@
   "exportSelectionAsDrawIO": "Eksportuj zaznaczenie jako draw.io",
   "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
   "togglePreview": "Podgląd",
-  "browseFiles": "Przeglądaj pliki…",
   "saveTo": "Zapisz w…",
   "showVersionHistory": "Pokaż historię wersji",
-  "saveToVersionHistory": "Zapisz w historii wersji…"
+  "saveToVersionHistory": "Zapisz w historii wersji…",
+  "reportProblem": "Zgłoś problem…",
+  "supportOpenPencil": "Wesprzyj OpenPencil…"
 }

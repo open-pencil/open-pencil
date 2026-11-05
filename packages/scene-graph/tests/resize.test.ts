@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { ConstraintType } from '@open-pencil/scene-graph'
-import { constrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { constrainedChildRect, scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
 
 // Live Figma, 2026-10-10: a locked 100×50 rectangle at 50,50 in a 200×200 frame.
 const child = { x: 50, y: 50, width: 100, height: 50 }
@@ -61,5 +61,36 @@ describe('constraints with a locked aspect ratio', () => {
       width: 200,
       height: 50
     })
+  })
+})
+
+describe('saved stroke outlines through a resize', () => {
+  const outline = { windingRule: 'NONZERO' as const, commandsBlob: new Uint8Array([0]) }
+  const vector = (segments: number) => ({
+    type: 'VECTOR' as const,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 }
+      ],
+      segments: Array.from({ length: segments }, () => ({
+        start: 0,
+        end: 1,
+        tangentStart: { x: 0, y: 0 },
+        tangentEnd: { x: 0, y: 0 }
+      })),
+      regions: []
+    },
+    fillGeometry: [],
+    strokeGeometry: [outline],
+    derivedTextGlyphs: null,
+    strokes: [],
+    textPathData: null,
+    textPathBox: null
+  })
+
+  test('go where a path can draw the stroke again, and stay where only the outline can', () => {
+    expect(scaledGeometryChanges(vector(1), 10, 10, 20, 10).strokeGeometry).toEqual([])
+    expect(scaledGeometryChanges(vector(0), 10, 10, 20, 10).strokeGeometry).toHaveLength(1)
   })
 })

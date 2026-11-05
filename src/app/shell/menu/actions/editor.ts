@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import {
   setCommentsOnCanvas,
   setDesignIssuesOnCanvas,
@@ -86,6 +87,10 @@ export function createSharedEditorMenuActions(
       store.state.showUI = !store.state.showUI
     },
     'toggle-preview': () => store.togglePlay(),
+    'insert-icon': () => {
+      store.state.iconPickerOpen = true
+    },
+    variables: () => openVariablesDialog(store),
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),

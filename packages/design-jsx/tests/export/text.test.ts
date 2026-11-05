@@ -114,6 +114,40 @@ describe('rich text export', () => {
     )
   })
 
+  test('writes font settings on the text and on spans', () => {
+    const code = exportText({
+      text: 'ab',
+      fontFeatures: [{ tag: 'LIGA', enabled: false }],
+      fontVariations: [{ axis: 'wght', value: 450 }],
+      textLanguage: 'en',
+      styleRuns: [
+        {
+          start: 1,
+          length: 1,
+          style: {
+            fontFeatures: [{ tag: 'TNUM', enabled: true }],
+            fontVariations: [{ axis: 'wght', value: 650 }],
+            textLanguage: 'de'
+          }
+        }
+      ]
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" fontFeatures={{ liga: false }} fontVariations={{ wght: 450 }} lang="en">a<Span fontFeatures={{ tnum: true }} fontVariations={{ wght: 650 }} lang="de">b</Span></Text>'
+    )
+  })
+
+  test('writes an optical size that does not follow the font size', () => {
+    const code = exportText({
+      text: 'a',
+      fontVariations: [{ axis: 'opsz', value: 14 }],
+      opticalSizeFromFontSize: false
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" fontVariations={{ opsz: 14 }} fontOpticalSizing="none">a</Text>'
+    )
+  })
+
   test('writes a percent of the font size as a percent string', () => {
     const code = exportText({
       text: 'ab',

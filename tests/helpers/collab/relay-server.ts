@@ -14,11 +14,31 @@ const AUTH_SECRET = 'relay-integration-secret-at-least-32-characters'
 
 /** A Cloud relay on a loopback port, keeping room state in memory; `close` stops it. */
 export async function startTestRelay() {
-  const states = new Map<string, Uint8Array>()
+  /** Each room's snapshot and the updates logged after it, by document and epoch. */
+  const rooms = new Map<
+    string,
+    { snapshot: Uint8Array | null; updates: Uint8Array[]; sequence: number }
+  >()
+  const saved = (room: { documentId: string; roomEpoch: number }) => {
+    const key = `${room.documentId}:${room.roomEpoch}`
+    const entry = rooms.get(key) ?? { snapshot: null, updates: [], sequence: 0 }
+    rooms.set(key, entry)
+    return entry
+  }
   const store: CollaborationStateStore = {
-    load: async (room) => states.get(`${room.documentId}:${room.roomEpoch}`) ?? null,
-    store: async (room, state) => {
-      states.set(`${room.documentId}:${room.roomEpoch}`, state)
+    load: async (room) => {
+      const { snapshot, updates, sequence } = saved(room)
+      return { snapshot, updates: [...updates], sequence }
+    },
+    append: async (room, sequence, update) => {
+      const entry = saved(room)
+      entry.updates.push(update)
+      entry.sequence = sequence
+    },
+    compact: async (room, _sequence, state) => {
+      const entry = saved(room)
+      entry.snapshot = state
+      entry.updates = []
     }
   }
   const relay = createCollaborationRelay({
@@ -38,7 +58,8 @@ export async function startTestRelay() {
   const url = `ws://127.0.0.1:${address.port}${RELAY_PATH}`
   return {
     url,
-    states,
+    /** Each room the relay saved: its snapshot and the updates logged after it. */
+    rooms,
     /** Tells a document's rooms its version history changed, as the server does. */
     announceVersions: (documentId: string) => relay.announceVersions(documentId),
     /** Joins a document's room with the given permission, as a guest or a signed-in user. */

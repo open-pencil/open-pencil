@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import {
+  useAIMessages,
   useCommonMessages,
   useCredentialMessages,
   useMediaMessages,
@@ -12,6 +13,7 @@ import { useMediaSettingsEditor, type MediaSettingsService } from '@/app/setting
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
+import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -20,7 +22,9 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 const { service } = defineProps<{ service: MediaSettingsService }>()
 const emit = defineEmits<{ done: [] }>()
 const editor = useMediaSettingsEditor(service)
-const { key, providerID, keyStatus, error, dirty, busy, clearCredential } = editor
+const { key, providerID, keyStatus, keyCheck, error, dirty, busy, clearCredential, checkKey } =
+  editor
+const ai = useAIMessages()
 const common = useCommonMessages()
 const credentials = useCredentialMessages()
 const media = useMediaMessages()
@@ -48,6 +52,32 @@ const keyURL = computed(() => {
 const placeholder = computed(() => {
   if (keyStatus.value === 'configured') return credentials.value.savedReplace
   return provider.value?.keyPlaceholder ?? ''
+})
+const keyCheckStatus = computed(() => {
+  if (keyCheck.value === null) return 'idle'
+  if (keyCheck.value === 'checking') return 'testing'
+  return keyCheck.value === 'ok' ? 'success' : 'error'
+})
+const keyCheckMessage = computed(() => {
+  const service = title.value
+  switch (keyCheck.value) {
+    case 'ok':
+      return media.value.photoKeyWorks({ service })
+    case 'missing':
+      return ai.value.connectionTestMissingAPIKey
+    case 'rejected':
+      return service === 'Unsplash'
+        ? media.value.unsplashKeyRejected
+        : media.value.photoKeyRejected({ service })
+    case 'rate-limited':
+      return media.value.photoKeyRateLimited({ service })
+    case 'network':
+      return media.value.photoKeyUnreachable({ service })
+    case 'failed':
+      return media.value.photoKeyCheckFailed({ service })
+    default:
+      return undefined
+  }
 })
 async function save() {
   if (await editor.save()) emit('done')
@@ -86,6 +116,13 @@ async function save() {
             :key-u-r-l="keyURL"
             :key-u-r-l-label="credentials.getAPIKey"
             @clear="clearCredential"
+          />
+          <ProviderConnectionTestButton
+            v-if="service !== 'vectorize'"
+            :status="keyCheckStatus"
+            :message="keyCheckMessage"
+            :disabled="busy"
+            @test="checkKey"
           />
         </fieldset>
         <SettingsSaveFeedback :error="error" />

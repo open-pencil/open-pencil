@@ -10,11 +10,13 @@ export {
   MAX_PROTOCOL_LINE_BYTES,
   parseHarnessRequest,
   type HarnessAdapterID,
+  type HarnessCompactionEvent,
   type HarnessProviderCapability,
   type HarnessRequest,
   type HarnessSandboxID,
   type HarnessSessionConfiguration,
   type HarnessSidecarMessage,
+  type HarnessSkill,
   type HarnessTurnEvent,
   type HarnessTurnUsage,
   type JSONValue

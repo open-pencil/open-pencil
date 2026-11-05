@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+import * as v from 'valibot'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
@@ -9,6 +11,12 @@ const temporaryDirectories: string[] = []
 const repositoryRoot = await resolveWorkspaceRoot(import.meta.dir)
 const oxlint = join(repositoryRoot, 'node_modules/.bin/oxlint')
 const plugin = join(repositoryRoot, 'lint/plugin.js')
+const RULE = 'open-pencil/no-mixed-case-acronym-identifiers'
+/** The rule as oxlint.json configures it, with the upstream names this repository accepts. */
+const ruleConfig = v.parse(
+  v.pipe(v.string(), v.parseJson(), v.object({ rules: v.object({ [RULE]: v.unknown() }) })),
+  readFileSync(join(repositoryRoot, 'oxlint.json'), 'utf8')
+).rules[RULE]
 
 function lint(source: string): ReturnType<typeof Bun.spawnSync> {
   const directory = mkdtempSync(join(tmpdir(), 'open-pencil-acronym-lint-'))
@@ -19,7 +27,7 @@ function lint(source: string): ReturnType<typeof Bun.spawnSync> {
     config,
     JSON.stringify({
       jsPlugins: [plugin],
-      rules: { 'open-pencil/no-mixed-case-acronym-identifiers': 'error' }
+      rules: { [RULE]: ruleConfig }
     })
   )
   writeFileSync(file, source)

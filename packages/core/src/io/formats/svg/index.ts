@@ -3,7 +3,6 @@ export {
   type SVGExportOptions,
   geometryBlobToSVGPath,
   nodeOutlinePath,
-  vectorNetworkToSVGPaths,
   type OutlineNode
 } from './export'
 export {

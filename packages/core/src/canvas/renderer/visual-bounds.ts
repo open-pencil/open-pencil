@@ -9,6 +9,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { projectedNode, type RotationPreview } from '#core/geometry'
 
@@ -41,13 +42,14 @@ export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): Visua
     minX: -stroke - effects.left,
     minY: -stroke - effects.top,
     maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom
+    maxY: node.height + textLinesOverflow(node) + stroke + effects.bottom
   })
 }
 
 /**
  * What a node draws itself, in its own axes before position, rotation, and flips: the box grown
- * by strokes and effects, its path geometry, and text decoration. Children are not included.
+ * by strokes and effects, its path geometry, and text lines and decoration. Children are not
+ * included.
  */
 function localVisualBounds(node: SceneNode): VisualBounds {
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
@@ -56,7 +58,8 @@ function localVisualBounds(node: SceneNode): VisualBounds {
     minX: -stroke - effects.left,
     minY: -stroke - effects.top,
     maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom + textDecorationOverflow(node)
+    maxY:
+      node.height + textLinesOverflow(node) + stroke + effects.bottom + textDecorationOverflow(node)
   }
   const hasNonInsideStroke = node.strokes.some(
     (stroke) => stroke.visible && stroke.align !== 'INSIDE'
@@ -106,6 +109,27 @@ export function subtreeVisualBounds(
         unionVisualBounds(bounds, mapVisualBounds(matrix, localVisualBounds(child))) ?? bounds
       pending.push({ node: child, matrix })
     }
+  }
+  return bounds
+}
+
+/**
+ * What the layers and their visible descendants draw, in page coordinates; null when none is
+ * visible. Each layer's world matrix places it, so a turned, flipped, or turned-parent layer gets
+ * the box it draws.
+ */
+export function computeContentBounds(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): VisualBounds | null {
+  let bounds: VisualBounds | null = null
+  for (const nodeId of nodeIds) {
+    const node = graph.getNode(nodeId)
+    if (!node?.visible) continue
+    bounds = unionVisualBounds(
+      bounds,
+      subtreeVisualBounds(graph, node, getWorldMatrix(node, graph))
+    )
   }
   return bounds
 }

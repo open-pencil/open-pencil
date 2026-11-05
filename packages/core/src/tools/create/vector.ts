@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { defineTool, nodeSummary, positionInputs, toolNumber } from '#core/tools/schema'
 import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -68,6 +69,8 @@ export const createVector = defineTool({
       if ('error' in parsed) return parsed
       parsedPath = parsed
     }
+    const parent = args.parent_id ? figma.getNodeById(args.parent_id) : null
+    if (parent) prepareSlotInsertion(figma.graph, parent.id, 'create_vector')
 
     const node = figma.createVector()
     node.x = args.x
@@ -94,10 +97,7 @@ export const createVector = defineTool({
         ]
       })
     }
-    if (args.parent_id) {
-      const parent = figma.getNodeById(args.parent_id)
-      if (parent) parent.appendChild(node)
-    }
+    if (parent) parent.appendChild(node)
     return nodeSummary(node)
   }
 })

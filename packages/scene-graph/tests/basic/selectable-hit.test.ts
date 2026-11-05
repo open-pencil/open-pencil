@@ -283,7 +283,7 @@ describe('a click just outside a shape', () => {
       fills: FILL
     })
     const hit = (x: number, y: number, zoom: number) =>
-      graph.hitTestSelectable(x, y, page, new Set(), 3.5 / zoom)?.name ?? null
+      graph.hitTestSelectable(x, y, page, new Set(), { pad: 3.5 / zoom })?.name ?? null
     for (const zoom of [0.5, 1, 4]) {
       const inside = 3.4 / zoom
       const outside = 3.6 / zoom
@@ -298,6 +298,26 @@ describe('a click just outside a shape', () => {
     }
   })
 
+  test('a group’s empty area takes no click, so a layer under the group shows through', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const line = graph.createNode('RECTANGLE', page, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 400,
+      height: 300,
+      fills: FILL
+    })
+    const group = graph.createNode('GROUP', page, { name: 'Dots', x: 150, y: 150, width: 300, height: 200 })
+    graph.createNode('ELLIPSE', group.id, { name: 'Dot', width: 20, height: 20, fills: FILL })
+    expect(graph.hitTestSelectable(160, 160, page, new Set())?.name).toBe('Dots')
+    expect(graph.hitTestSelectable(300, 250, page, new Set())?.id).toBe(line.id)
+    expect(graph.hitTestDeep(300, 250, page)?.id).toBe(line.id)
+    graph.updateNode(line.id, { visible: false })
+    expect(graph.hitTestSelectable(300, 250, page, new Set())).toBeNull()
+  })
+
   test('reaches a shape at its group’s edge, and the group only through its shapes', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
@@ -309,15 +329,33 @@ describe('a click just outside a shape', () => {
       height: 50
     })
     graph.createNode('RECTANGLE', group.id, { name: 'Box', width: 50, height: 50, fills: FILL })
-    expect(graph.hitTestSelectable(152, 120, page, new Set(), 3.5)?.name).toBe('Group')
+    expect(graph.hitTestSelectable(152, 120, page, new Set(), { pad: 3.5 })?.name).toBe('Group')
     expect(graph.hitTestDeep(152, 120, page, 3.5)?.name).toBe('Box')
-    expect(graph.hitTestSelectable(155, 120, page, new Set(), 3.5)).toBeNull()
+    expect(graph.hitTestSelectable(155, 120, page, new Set(), { pad: 3.5 })).toBeNull()
   })
 
   test('leaves a frame’s edge exact, so the page around it starts a marquee', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('FRAME', page, { name: 'Empty', width: 100, height: 100, fills: FILL })
-    expect(graph.hitTestSelectable(102, 50, page, new Set(), 3.5)).toBeNull()
+    expect(graph.hitTestSelectable(102, 50, page, new Set(), { pad: 3.5 })).toBeNull()
+  })
+
+  // FigJam board, Figma desktop: a click on a layer inside a frame selects the frame.
+  test('selects a top-level frame whole when frames stay closed, as on a board', () => {
+    const { graph, page } = scene()
+    const click = (framesOpen: boolean) =>
+      graph.hitTestSelectable(170, 170, page, new Set(), { framesOpen })?.name ?? null
+    // In a design the click looks into the top-level frame and takes the frame inside it.
+    expect([click(true), click(false)]).toEqual(['Nested', 'Top'])
+    // Selected, it stays closed: another click inside keeps the frame.
+    const top = [...graph.nodes.values()].find((node) => node.name === 'Top')
+    if (!top) throw new Error('Missing Top')
+    expect(graph.hitTestSelectable(170, 170, page, new Set([top.id]), { framesOpen: false })?.name).toBe('Top')
+    // Entered by a double-click, it is open from the page: the click reaches the frame inside.
+    const entered = { framesOpen: false, enteredId: top.id }
+    expect(graph.hitTestSelectable(170, 170, page, new Set(), entered)?.name).toBe('Nested')
+    // A click outside the entered frame still lands as a click from nothing does.
+    expect(graph.hitTestSelectable(850, 50, page, new Set(), entered)?.name).toBe('Component')
   })
 })

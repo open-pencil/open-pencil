@@ -5,9 +5,11 @@
   "object": "Oggetto",
   "arrange": "Disponi",
   "text": "Testo",
-  "new": "Nuovo",
+  "new": "Nuovo design",
+  "newTab": "Nuova scheda",
   "open": "Apri…",
   "openTour": "Apri il tour",
+  "diagnostics": "Diagnostica…",
   "save": "Salva",
   "saveAs": "Salva con nome…",
   "exportSelection": "Esporta selezione…",
@@ -40,6 +42,7 @@
   "pasteToReplace": "Incolla per sostituire",
   "copyProperties": "Copia proprietà",
   "pasteProperties": "Incolla proprietà",
+  "pasteAsLayers": "Incolla come livelli",
   "copyPasteAs": "Copia/Incolla come",
   "copyAsText": "Copia come testo",
   "copyAsSVG": "Copia come SVG",
@@ -83,8 +86,9 @@
   "exportSelectionAsDrawIO": "Esporta selezione come draw.io",
   "exportSelectionAsFig": "Esporta selezione come .fig",
   "togglePreview": "Anteprima",
-  "browseFiles": "Sfoglia file…",
   "saveTo": "Salva in…",
   "showVersionHistory": "Mostra cronologia versioni",
-  "saveToVersionHistory": "Salva nella cronologia versioni…"
+  "saveToVersionHistory": "Salva nella cronologia versioni…",
+  "reportProblem": "Segnala un problema…",
+  "supportOpenPencil": "Sostieni OpenPencil…"
 }

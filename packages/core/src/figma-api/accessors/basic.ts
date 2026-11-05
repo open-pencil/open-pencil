@@ -1,5 +1,3 @@
-import { isEmptyObject, pickBy } from 'es-toolkit'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
@@ -29,9 +27,11 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import type { FigmaNodeType } from '#core/figma-api/members'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
-import type { NodeProxyHost } from '#core/figma-api/proxy'
+import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
+import { atLeast } from '#core/figma-api/schema'
 import {
   containerTransform,
   setContainerTransform,
@@ -39,6 +39,7 @@ import {
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -92,6 +93,13 @@ function setTransform(
   fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
 }
 
+/** A node's type as Figma's plugin API names it (`FigmaNodeType`). */
+export function figmaNodeType(graph: SceneGraph, node: SceneNode): FigmaNodeType {
+  if (node.id === graph.rootId) return 'DOCUMENT'
+  if (slotPropertyId(node)) return 'SLOT'
+  return node.type === 'CANVAS' ? 'PAGE' : node.type
+}
+
 export function installBasicNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals
@@ -103,9 +111,8 @@ export function installBasicNodeProxyAccessors(
       }
     },
     type: {
-      get(this: ProxyThis): SceneNode['type'] | 'SLOT' {
-        const node = raw(this, internals)
-        return slotPropertyId(node) ? 'SLOT' : node.type
+      get(this: ProxyThis): FigmaNodeType {
+        return figmaNodeType(graph(this, internals), raw(this, internals))
       }
     },
     name: {
@@ -253,7 +260,34 @@ export function installBasicNodeProxyAccessors(
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+    },
+    getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
+      const top = topLevelFrame(graph(this, internals), raw(this, internals))
+      return top ? (this[internals.api] as NodeProxyHost).wrapNode(top.id) : undefined
     }
+  })
+}
+
+/** The layers `getTopLevelFrame` can return; a shape or boolean is never one. */
+const TOP_LEVEL_FRAME_TYPES: ReadonlySet<SceneNode['type']> = new Set([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * The container a layer sits in at the top of its page or section: the nearest of the layer and
+ * its ancestors that is a frame, group, section, component, or instance directly under a page or
+ * section. A shape directly on a page has none (Figma desktop 126).
+ */
+function topLevelFrame(scene: SceneGraph, node: SceneNode): SceneNode | undefined {
+  return scene.closest(node.id, (current) => {
+    const parent = current.parentId ? scene.getNode(current.parentId) : undefined
+    const topLevel = parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+    return topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)
   })
 }
 
@@ -264,49 +298,83 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 
 /**
  * A vector's path scaled to its new size, as Figma's resize does. The stroke keeps its weight: with
- * a network to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
- * when the path is set; without one, the outline is all that draws the stroke, so it scales too.
+ * a path to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
+ * when the path is set; without one, the outline is all that draws the stroke, so it scales.
  */
 function resizedVectorGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
   if (node.type !== 'VECTOR') return {}
-  const strokesPath = (node.vectorNetwork?.vertices.length ?? 0) > 0
-  const snapshot = createResizeSnapshot(node)
-  const path = {
-    ...snapshot,
-    strokes: [],
-    strokeGeometry: strokesPath ? [] : snapshot.strokeGeometry
-  }
   // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
   // its own extent and gets the shape back.
   const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
   const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
   const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
-  const geometry = scaledGeometryChanges(
-    path,
+  return scaledGeometryChanges(
+    createResizeSnapshot(node),
     fromWidth,
     fromHeight,
     width || fromWidth,
     height || fromHeight
   )
-  if (!strokesPath || isEmptyObject(geometry) || node.strokeGeometry.length === 0) return geometry
-  return { ...geometry, strokeGeometry: [] }
 }
 
-/** The least size Figma's `resize` gives a vector side; `resizeWithoutConstraints` allows zero. */
-const MIN_VECTOR_RESIZE = 0.0001
+/** The least size Figma's `resize` gives a side; `resizeWithoutConstraints` allows zero. */
+const MIN_RESIZE = 0.0001
 
-/** The size a resize gives a node: a vector cannot become 0×0, and `resize` keeps its sides above zero. */
+/**
+ * The size a resize gives a node, as Figma's does: it refuses a side that is not a number or is
+ * negative, and a vector cannot become 0×0. `resize` keeps the sides above zero, except a line's
+ * height of zero, which is the height a line has.
+ */
 function resizedSize(
   node: SceneNode,
   width: number,
   height: number,
   constrained: boolean
 ): { width: number; height: number } {
-  if (node.type !== 'VECTOR') return { width, height }
-  if (width === 0 && height === 0)
+  const method = constrained ? 'resize' : 'resizeWithoutConstraints'
+  for (const [property, value] of [
+    ['width', width],
+    ['height', height]
+  ] as const) {
+    parseFigma(atLeast(0), value, method, property)
+  }
+  if (node.type === 'VECTOR' && width === 0 && height === 0)
     throw new Error('Cannot set width and height of vector node to zero')
   if (!constrained) return { width, height }
-  return { width: Math.max(width, MIN_VECTOR_RESIZE), height: Math.max(height, MIN_VECTOR_RESIZE) }
+  return {
+    width: Math.max(width, MIN_RESIZE),
+    height: node.type === 'LINE' && height === 0 ? 0 : Math.max(height, MIN_RESIZE)
+  }
+}
+
+interface ChangedSides {
+  width: boolean
+  height: boolean
+}
+
+/** Auto layout given a new size on an axis stops hugging along it, as in Figma; the other keeps on. */
+function resizedLayoutSizing(node: SceneNode, changed: ChangedSides): Partial<SceneNode> {
+  if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return {}
+  const row = node.layoutMode === 'HORIZONTAL'
+  const sizing: Partial<SceneNode> = {}
+  if ((row ? changed.width : changed.height) && node.primaryAxisSizing !== 'FIXED')
+    sizing.primaryAxisSizing = 'FIXED'
+  if ((row ? changed.height : changed.width) && node.counterAxisSizing !== 'FIXED')
+    sizing.counterAxisSizing = 'FIXED'
+  return sizing
+}
+
+/**
+ * How a text sizes itself after a resize, as in Figma: a new height fixes it, and a new width alone
+ * leaves auto-width text sizing only its height.
+ */
+function resizedTextSizing(node: SceneNode, changed: ChangedSides): Partial<SceneNode> {
+  if (node.type !== 'TEXT') return {}
+  const mode = node.textAutoResize
+  if (changed.height && (mode === 'HEIGHT' || mode === 'WIDTH_AND_HEIGHT'))
+    return { textAutoResize: 'NONE' }
+  if (changed.width && mode === 'WIDTH_AND_HEIGHT') return { textAutoResize: 'HEIGHT' }
+  return {}
 }
 
 /**
@@ -326,6 +394,8 @@ function resizeNode(
   const scene = graph(target, internals)
   const node = raw(target, internals)
   const { width, height } = resizedSize(node, requestedWidth, requestedHeight, constrained)
+  // Figma has no size for a layer inside an instance: the resize does nothing, and records nothing.
+  if (node.parentId && findInstanceAncestor(scene, node.parentId)) return
   const before = containerTransform(node, scene)
   const size = { width: node.width, height: node.height }
   // An instance's layers follow its constraints however it is resized, as in Figma.
@@ -334,39 +404,21 @@ function resizeNode(
       ? new Map(descendants(scene, node).map((child) => [child.id, createResizeSnapshot(child)]))
       : new Map<string, ResizeSnapshot>()
   const geometry = resizedVectorGeometry(node, width, height)
-  // Text given a size stops sizing itself to its content, as in Figma.
-  const fixesText =
-    node.type === 'TEXT' &&
-    (node.textAutoResize === 'WIDTH_AND_HEIGHT' || node.textAutoResize === 'HEIGHT')
   // A locked ratio does not hold here; it takes the new size, as in Figma.
   const recaptured = recapturedAspectRatio(node, width, height)
-  // Auto layout given a size keeps it, as in Figma: hugging axes become fixed.
-  const fixed = node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL'
-  const sizing = fixed
-    ? pickBy(
-        { primaryAxisSizing: 'FIXED' as const, counterAxisSizing: 'FIXED' as const },
-        (value, key) => node[key] !== value
-      )
-    : {}
-  scene.updateNode(node.id, {
-    width,
-    height,
-    ...geometry,
-    ...recaptured,
-    ...sizing,
-    ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
-  })
+  const changed = { width: width !== size.width, height: height !== size.height }
+  const sizing = { ...resizedLayoutSizing(node, changed), ...resizedTextSizing(node, changed) }
+  scene.updateNode(node.id, { width, height, ...geometry, ...recaptured, ...sizing })
   if (placed.size > 0 && size.width > 0 && size.height > 0) {
     const changes = computeConstrainedResizeChanges(scene, node.id, size, { width, height }, placed)
     for (const [id, change] of changes) scene.updateNode(id, change)
   }
+  // A size the layer already has records nothing, as in Figma; a new one records both sides.
   recordInstanceOverride(scene, node.id, [
-    'width',
-    'height',
+    ...(changed.width || changed.height ? ['width', 'height'] : []),
     ...Object.keys(geometry),
     ...Object.keys(recaptured),
-    ...Object.keys(sizing),
-    ...(fixesText ? ['textAutoResize'] : [])
+    ...Object.keys(sizing)
   ])
   setTransform(target, internals, () => before)
 }

@@ -24,7 +24,7 @@ test('recovering an unsaved document restores its selected conversation automati
   await chat.chatTab.click()
   await expect(chat.userMessage()).toContainText('Conversation belonging to recovered document')
   await expect(chat.assistantMessage()).toBeVisible()
-  await expect(
-    page.getByRole('button', { name: 'Conversation history', exact: true })
-  ).toContainText('Conversation belonging to recovered document')
+  await expect(page.getByTestId('chat-title')).toHaveText(
+    'Conversation belonging to recovered document'
+  )
 })

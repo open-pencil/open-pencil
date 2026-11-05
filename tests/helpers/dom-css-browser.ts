@@ -1,9 +1,11 @@
 import process from 'node:process'
 
 import { test, type Page } from '@playwright/test'
+import { pick } from 'es-toolkit'
 
-import type { DesignDocument } from '@open-pencil/dom-css'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { CSSComputeOptions, DesignDocument, DesignNode } from '@open-pencil/dom-css'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const BROWSER_RUNTIME_MODULE = `/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
 const DOM_CSS_BROWSER_MODULE = '/@id/@open-pencil/dom-css/browser'
@@ -95,105 +97,87 @@ export async function browserRuntimeComputeStyles(
   page: Page,
   document: DesignDocument,
   cssText: string,
-  sandbox: 'shadow-root' | 'iframe' = 'iframe'
+  sandbox: 'shadow-root' | 'iframe' = 'iframe',
+  compute: CSSComputeOptions = {}
 ) {
   await ensureAppPage(page)
 
   return page.evaluate(
-    async ({ designDocument, css, modulePath, sandboxMode }) => {
+    async ({ designDocument, css, modulePath, sandboxMode, computeOptions }) => {
       const { createBrowserCSSRuntime } = await import(modulePath)
       const runtime = createBrowserCSSRuntime({ document: window.document, sandbox: sandboxMode })
-      return runtime.computeStyles(designDocument, css)
+      return runtime.computeStyles(designDocument, css, computeOptions)
     },
     {
       designDocument: document,
       css: cssText,
       modulePath: BROWSER_RUNTIME_MODULE,
-      sandboxMode: sandbox
+      sandboxMode: sandbox,
+      computeOptions: compute
     }
   )
 }
 
-export async function publicBrowserHTMLSceneGraph(page: Page, html: string, cssText = '') {
+/** Where a browser import starts: HTML, or a card of Tailwind `classes` around a heading. */
+type BrowserImportSource = { html: string } | { classes: readonly string[] }
+
+/**
+ * The first layer on the page a public browser import builds from `source`, and the image
+ * hashes whose bytes it stored, read in the page through `@open-pencil/dom-css/browser`.
+ */
+async function importedFirstLayer(page: Page, source: BrowserImportSource, cssText: string) {
   await ensureAppPage(page)
   await page.setContent('<main></main>')
 
   return page.evaluate(
-    async ({ sourceHTML, css, modulePath }) => {
-      const { browserHTMLToSceneGraph } = await import(modulePath)
-      const graph = await browserHTMLToSceneGraph(sourceHTML, { cssText: css })
+    async ({ from, css, modulePath }) => {
+      const { browserHTMLToSceneGraph, browserJSXToSceneGraph, jsx } = await import(modulePath)
+      const graph: SceneGraph =
+        'html' in from
+          ? await browserHTMLToSceneGraph(from.html, { cssText: css })
+          : await browserJSXToSceneGraph(
+              jsx('article', {
+                class: from.classes.join(' '),
+                children: jsx('h1', { children: 'OpenPencil' })
+              }),
+              { cssText: css }
+            )
       const pageNode = graph.getPages()[0]
-      const card = pageNode ? graph.getChildren(pageNode.id)[0] : undefined
-      return card
-        ? {
-            height: card.height,
-            itemSpacing: card.itemSpacing,
-            layoutMode: card.layoutMode,
-            paddingLeft: card.paddingLeft,
-            type: card.type,
-            width: card.width
-          }
-        : null
+      const layer = pageNode ? graph.getChildren(pageNode.id)[0] : undefined
+      return layer ? { layer, storedImages: [...graph.images.keys()] } : null
     },
-    { sourceHTML: html, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
+    { from: source, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
   )
+}
+
+/** The card frame's size and layout. */
+function cardLayout(layer: SceneNode) {
+  return pick(layer, ['height', 'itemSpacing', 'layoutMode', 'paddingLeft', 'type', 'width'])
+}
+
+export async function publicBrowserHTMLSceneGraph(page: Page, html: string, cssText = '') {
+  const imported = await importedFirstLayer(page, { html }, cssText)
+  return imported ? cardLayout(imported.layer) : null
 }
 
 export async function publicBrowserSceneGraph(page: Page, classes: string[], cssText: string) {
-  await ensureAppPage(page)
-  await page.setContent('<main></main>')
-
-  return page.evaluate(
-    async ({ candidates, css, modulePath }) => {
-      const { browserJSXToSceneGraph, jsx } = await import(modulePath)
-      const graph = await browserJSXToSceneGraph(
-        jsx('article', {
-          class: candidates.join(' '),
-          children: jsx('h1', { children: 'OpenPencil' })
-        }),
-        { cssText: css }
-      )
-      const pageNode = graph.getPages()[0]
-      const card = pageNode ? graph.getChildren(pageNode.id)[0] : undefined
-      return card
-        ? {
-            height: card.height,
-            itemSpacing: card.itemSpacing,
-            layoutMode: card.layoutMode,
-            paddingLeft: card.paddingLeft,
-            type: card.type,
-            width: card.width
-          }
-        : null
-    },
-    { candidates: classes, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
-  )
+  const imported = await importedFirstLayer(page, { classes }, cssText)
+  return imported ? cardLayout(imported.layer) : null
 }
 
 export async function publicBrowserImageNode(page: Page, html: string, cssText: string) {
-  await ensureAppPage(page)
-  await page.setContent('<main></main>')
-
-  return page.evaluate(
-    async ({ sourceHTML, css, modulePath }) => {
-      const { browserHTMLToSceneGraph } = await import(modulePath)
-      const graph = await browserHTMLToSceneGraph(sourceHTML, { cssText: css })
-      const pageNode = graph.getPages()[0]
-      const image = pageNode ? graph.getChildren(pageNode.id)[0] : undefined
-      const fill = image?.fills[0]
-      return image
-        ? {
-            fillType: fill?.type,
-            hasImageBytes: fill?.imageHash ? graph.images.has(fill.imageHash) : false,
-            height: image.height,
-            imageScaleMode: fill?.imageScaleMode,
-            type: image.type,
-            width: image.width
-          }
-        : null
-    },
-    { sourceHTML: html, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
-  )
+  const imported = await importedFirstLayer(page, { html }, cssText)
+  if (!imported) return null
+  const { layer: image, storedImages } = imported
+  const fill = image.fills[0]
+  return {
+    fillType: fill?.type,
+    hasImageBytes: fill?.imageHash ? storedImages.includes(fill.imageHash) : false,
+    height: image.height,
+    imageScaleMode: fill?.imageScaleMode,
+    type: image.type,
+    width: image.width
+  }
 }
 
 export async function publicBrowserTextNode(page: Page, html: string, cssText: string) {
@@ -221,4 +205,57 @@ export async function computedStyleProperties(
       styleProperties.map((property) => [property, computed.getPropertyValue(property)])
     )
   }, properties)
+}
+
+const CORE_HTML_LAYERS_MODULE = '/@id/@open-pencil/core/io/formats/html/layers'
+
+/**
+ * Imports HTML as the app does: styled and laid out by the browser, then built into layers by
+ * Core. Returns each element with an id, its captured box, and the box of the layer named for it.
+ */
+export interface ImportedLayer {
+  id: string
+  captured: Rect
+  layer: Rect
+}
+
+export async function browserImportedLayers(
+  page: Page,
+  html: string,
+  viewport: { width: number; height: number }
+): Promise<ImportedLayer[]> {
+  await ensureAppPage(page)
+  return page.evaluate(
+    async ({ source, size, domModule, layersModule }) => {
+      const { browserHTMLToDesignDocument } = await import(domModule)
+      const { sceneGraphFromStyledHTML } = await import(layersModule)
+      const styled: DesignDocument = await browserHTMLToDesignDocument(source, {
+        compute: { layout: true, viewport: size }
+      })
+      const graph: SceneGraph = await sceneGraphFromStyledHTML(styled)
+      const captured = new Map<string, Rect>()
+      const walk = (nodes: DesignNode[]) => {
+        for (const node of nodes) {
+          if (node.type !== 'element') continue
+          if (node.attrs.id && node.layout) captured.set(node.attrs.id, node.layout.box)
+          walk(node.children)
+        }
+      }
+      walk(styled.children)
+      const pageId = graph.getPages()[0].id
+      return graph.flattenTree(pageId).flatMap(({ node }) => {
+        const box = captured.get(node.name)
+        if (!box) return []
+        const position = graph.getAbsolutePosition(node.id)
+        const layer = { x: position.x, y: position.y, width: node.width, height: node.height }
+        return [{ id: node.name, captured: box, layer }]
+      })
+    },
+    {
+      source: html,
+      size: viewport,
+      domModule: DOM_CSS_BROWSER_MODULE,
+      layersModule: CORE_HTML_LAYERS_MODULE
+    }
+  )
 }

@@ -1,7 +1,10 @@
-import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+
+import { inlineImportSource, normalizedFilename } from '#lint/support/context.ts'
 import { createImportSourceRule } from '#lint/support/factories.ts'
 import type { RuleContext, RuleDefinition } from '#lint/support/types.ts'
-import type { TSESTree } from '@typescript-eslint/utils'
+import * as v from 'valibot'
 
 function isPackageOrSubpath(source: string, packageName: string): boolean {
   return source === packageName || source.startsWith(`${packageName}/`)
@@ -15,167 +18,95 @@ const noVueSelfPackageImports = createImportSourceRule({
     `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
 })
 
-const noCrossPackageSourceImports = createImportSourceRule({
-  description:
-    'Disallow imports that reach into another workspace package source tree — use package exports or package-local aliases',
-  check: (source) =>
-    (source.includes('/packages/') ||
-      /^(?:\.\.\/){2,}packages\//.test(source) ||
-      /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)) &&
-    `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
+const manifestSchema = v.object({
+  name: v.optional(v.string()),
+  workspaces: v.optional(v.array(v.string())),
+  exports: v.optional(v.unknown())
 })
 
-interface ImportBoundaryRuleOptions {
-  description: string
-  applies(file: string): boolean
-  message: string
-  minDepth?: number
+function readManifest(path: string) {
+  const parsed = v.safeParse(
+    v.pipe(v.string(), v.parseJson(), manifestSchema),
+    readFileSync(path, 'utf8')
+  )
+  return parsed.success ? parsed.output : null
 }
 
-function createParentRelativeImportRule({
-  description,
-  applies,
-  message,
-  minDepth = 1
-}: ImportBoundaryRuleOptions): RuleDefinition {
-  return {
-    meta: {
-      docs: { description }
-    },
-    create(context: RuleContext) {
-      const file = normalizedFilename(context)
-      if (!applies(file)) return {}
-
-      function reportSource(node: TSESTree.Node, source: string | null) {
-        if (!source?.startsWith('../')) return
-        const parentPrefix = source.match(/^(?:\.\.\/)+/)?.[0]
-        const depth = parentPrefix ? parentPrefix.split('../').length - 1 : 0
-        if ((depth ?? 0) < minDepth) return
-        if (/^(?:\.\.\/)+package\.json$/.test(source)) return
-        context.report({ node, message })
-      }
-
-      function reportParentRelative(
-        node:
-          | TSESTree.ImportDeclaration
-          | TSESTree.ExportAllDeclaration
-          | TSESTree.ExportNamedDeclaration
-      ) {
-        reportSource(node, importSource(node))
-      }
-
-      return {
-        ExportAllDeclaration: reportParentRelative,
-        ExportNamedDeclaration: reportParentRelative,
-        ImportDeclaration: reportParentRelative,
-        ImportExpression(node) {
-          reportSource(
-            node,
-            node.source?.type === 'Literal' && typeof node.source.value === 'string'
-              ? node.source.value
-              : null
-          )
-        }
-      }
-    }
+/** The repository the rule runs in, found by its lockfile from this file. */
+function repositoryRoot(): string | null {
+  for (let dir = import.meta.dirname; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, 'bun.lock'))) return dir
+    if (dirname(dir) === dir) return null
   }
 }
 
-const noDeepParentRelativeImports = createParentRelativeImportRule({
-  description: 'Disallow deep parent-relative imports — use package/test aliases instead',
-  applies: () => true,
-  message: 'Use an import alias instead of path drilling with ../.. imports.',
-  minDepth: 2
-})
+/** The subpaths an `exports` field declares: `.` for a bare target or conditions alone. */
+function declaredSubpaths(exports: unknown): string[] {
+  if (exports === undefined) return []
+  if (typeof exports !== 'object' || exports === null) return ['.']
+  const keys = Object.keys(exports)
+  return keys.some((key) => key.startsWith('.')) ? keys : ['.']
+}
+
+let workspaceExports: ReadonlyMap<string, readonly string[]> | undefined
+
+/** Each workspace package that declares `exports`, by name, with its subpaths; read once. */
+function exportsByPackage(): ReadonlyMap<string, readonly string[]> {
+  if (workspaceExports) return workspaceExports
+  const packages = new Map<string, readonly string[]>()
+  const root = repositoryRoot()
+  for (const workspace of (root && readManifest(join(root, 'package.json'))?.workspaces) || []) {
+    const manifest = root ? readManifest(join(root, workspace, 'package.json')) : null
+    if (manifest?.name && manifest.exports !== undefined) {
+      packages.set(manifest.name, declaredSubpaths(manifest.exports))
+    }
+  }
+  workspaceExports = packages
+  return packages
+}
+
+/** Whether `subpath` is one an `exports` key declares, `*` patterns included. */
+function isDeclared(subpath: string, keys: readonly string[]): boolean {
+  return keys.some((key) => {
+    const star = key.indexOf('*')
+    if (star === -1) return key === subpath
+    const [prefix, suffix] = [key.slice(0, star), key.slice(star + 1)]
+    return (
+      subpath.length > prefix.length + suffix.length &&
+      subpath.startsWith(prefix) &&
+      subpath.endsWith(suffix)
+    )
+  })
+}
 
 /**
- * A path that climbs two or more directories, written as `../..`, `..\\..`, or `'..', '..'`.
- * An unknown part, such as a template expression, ends the run of parent segments.
+ * The message for a workspace package specifier whose subpath its package does not export. The
+ * repository's TypeScript paths map every subpath to source, so such an import type-checks and
+ * runs here and fails only for a consumer that resolves through `exports`.
  */
-function climbsTwoLevels(values: (string | null)[]): boolean {
-  const joined = values
-    .map((value) => value ?? '\u0000')
-    .join('/')
-    .replaceAll('\\', '/')
-  return /(^|\/)\.\.\/+\.\.(\/|$)/.test(joined)
+function undeclaredSubpath(source: string): string | false {
+  const match = /^(@[^/]+\/[^/]+|[^@/][^/]*)(\/.+)?$/.exec(source)
+  if (!match) return false
+  const [, name, rest] = match
+  const keys = exportsByPackage().get(name)
+  if (!keys) return false
+  const subpath = rest ? `.${rest}` : '.'
+  return (
+    !isDeclared(subpath, keys) &&
+    `'${source}' is not in ${name}'s package.json exports, so it resolves only inside this repository. Import a subpath the package exports, or add one.`
+  )
 }
 
-function staticString(node: TSESTree.Node): string | null {
-  if (node.type === 'Literal' && typeof node.value === 'string') return node.value
-  if (node.type === 'TemplateLiteral') {
-    const head = node.quasis[0]?.value.cooked ?? null
-    return head !== null && node.expressions.length ? `${head}\u0000` : head
-  }
-  return null
-}
-
-/** `import.meta.url`, `.dir`, or `.dirname`, directly or wrapped, as in `dirname(fileURLToPath(import.meta.url))`. */
-function isImportMetaLocation(node: TSESTree.Node): boolean {
-  if (node.type === 'MemberExpression') {
-    if (node.object.type === 'MetaProperty') {
-      return (
-        node.property.type === 'Identifier' &&
-        ['url', 'dir', 'dirname'].includes(node.property.name)
-      )
-    }
-    return isImportMetaLocation(node.object)
-  }
-  if (node.type === 'CallExpression') return node.arguments.some(isImportMetaLocation)
-  return false
-}
-
-const noDeepParentRelativePaths: RuleDefinition = {
-  meta: {
-    docs: {
-      description:
-        'Disallow climbing two or more directories from import.meta — use a path helper or alias'
-    }
-  },
-  create(context: RuleContext) {
-    const message =
-      'Resolve the file through a path helper such as repoPath() or an import alias instead of climbing with ../..'
-    function check(node: TSESTree.Node, relative: TSESTree.CallExpressionArgument[]) {
-      if (relative.length && climbsTwoLevels(relative.map(staticString))) {
-        context.report({ node, message })
-      }
-    }
-    return {
-      NewExpression(node) {
-        if (node.callee.type !== 'Identifier' || node.callee.name !== 'URL') return
-        if (!node.arguments[1] || !isImportMetaLocation(node.arguments[1])) return
-        check(node, node.arguments.slice(0, 1))
-      },
-      CallExpression(node) {
-        const start = node.arguments.findIndex(isImportMetaLocation)
-        if (start !== -1) check(node, node.arguments.slice(start + 1))
-      }
-    }
-  }
-}
-
-const noCoreParentRelativeImports = createParentRelativeImportRule({
-  description: 'Disallow parent-relative imports in core internals — use #core/* aliases',
-  applies: (file) =>
-    file.includes('/packages/core/src/') && !file.includes('/packages/core/src/kiwi/kiwi-schema/'),
-  message: 'Use the #core/* package-local alias instead of parent-relative core imports.'
-})
-
-const noMcpParentRelativeImports = createParentRelativeImportRule({
-  description: 'Disallow parent-relative imports in MCP internals — use #mcp/* aliases',
-  applies: (file) => file.includes('/packages/mcp/src/'),
-  message: 'Use the #mcp/* package-local alias instead of parent-relative MCP imports.'
-})
-
-const noVueParentRelativeImports = createParentRelativeImportRule({
-  description: 'Disallow parent-relative imports in Vue SDK internals — use #vue/* aliases',
-  applies: (file) => file.includes('/packages/vue/src/'),
-  message: 'Use the #vue/* package-local alias instead of parent-relative Vue SDK imports.'
-})
-
-const noCliParentRelativeImports = createParentRelativeImportRule({
-  description: 'Disallow parent-relative imports in CLI internals — use #cli/* aliases',
-  applies: (file) => file.includes('/packages/cli/src/'),
-  message: 'Use the #cli/* package-local alias instead of parent-relative CLI imports.'
+const noCrossPackageSourceImports = createImportSourceRule({
+  description:
+    "Disallow imports that reach into another workspace package's source tree or a subpath its exports do not declare — use package exports or package-local aliases",
+  includeExports: true,
+  check: (source) =>
+    ((source.includes('/packages/') ||
+      /^(?:\.\.\/){2,}packages\//.test(source) ||
+      /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)) &&
+      `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`) ||
+    undeclaredSubpath(source)
 })
 
 const noCoreSelfPackageImports = createImportSourceRule({
@@ -227,17 +158,75 @@ const noCoreFrameworkImports = createImportSourceRule({
     `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
 })
 
+/**
+ * Tauri's modules reach the native side only when one of their functions is called, so shipped
+ * code imports them statically like any other module. Only the startup support gate loads them
+ * inline: it must parse on engines that cannot run the app, which `src/main.ts` keeps free of the
+ * app bundle. Tests and tooling, which load Tauri's mocks and CLI in a set order, are not shipped.
+ */
+const noInlineTauriImports: RuleDefinition = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Import Tauri modules statically, outside the startup support gate' },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || /\/(tools|tests)\//.test(file)) return {}
+    if (/\/src\/app\/shell\/support\/(gate|render)\.ts$/.test(file)) return {}
+    return {
+      ImportExpression(node) {
+        const source = inlineImportSource(node)
+        if (!source?.startsWith('@tauri-apps/')) return
+        context.report({
+          node,
+          message: `Import '${source}' statically; Tauri's modules reach the native side only when called.`
+        })
+      }
+    }
+  }
+}
+
+/**
+ * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
+ * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
+ * an edit's step came to land after an await and left undone documents unsaved.
+ */
+const noDocumentChangeCapture: RuleDefinition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow captureDocumentChange outside core editor history — record edits with recordEdit or recordEditAsync'
+    },
+    schema: []
+  },
+  create(context: RuleContext) {
+    const file = normalizedFilename(context)
+    // The history module owns the capture, and its tests exercise it directly.
+    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/history/')) return {}
+    return {
+      ImportSpecifier(node) {
+        const imported =
+          node.imported.type === 'Identifier' ? node.imported.name : node.imported.value
+        if (imported !== 'captureDocumentChange') return
+        context.report({
+          node,
+          message:
+            'Record the edit with recordEdit or recordEditAsync instead of capturing a document change by hand.'
+        })
+      }
+    }
+  }
+}
+
 export {
+  noDocumentChangeCapture,
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
-  noDeepParentRelativeImports,
-  noDeepParentRelativePaths,
-  noCoreParentRelativeImports,
-  noMcpParentRelativeImports,
-  noVueParentRelativeImports,
-  noCliParentRelativeImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
   noAppImportsInPackages,
-  noCoreFrameworkImports
+  noCoreFrameworkImports,
+  noInlineTauriImports
 }

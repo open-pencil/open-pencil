@@ -9,8 +9,8 @@ import {
   syncInstance
 } from '@open-pencil/scene-graph/instances'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 /** Draws each glyph as one path tinted with the icon's colour, as the Iconify source does. */

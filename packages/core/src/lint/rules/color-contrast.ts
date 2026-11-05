@@ -1,11 +1,7 @@
+import { clipPolygon } from '@open-pencil/scene-graph/clipping'
 import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
-import {
-  clipPolygon,
-  degToRad,
-  rotatedCorners,
-  rotatePoint
-} from '@open-pencil/scene-graph/geometry'
+import { degToRad, rotatedCorners, rotatePoint } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { defineRule } from '#core/lint/rule'

@@ -14,5 +14,7 @@
   "shape": "Kształt",
   "connector": "Łącznik",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "eyedropper": "Zakraplacz",
+  "eyedropperSample": "Pobierz kolor z kanwy"
 }

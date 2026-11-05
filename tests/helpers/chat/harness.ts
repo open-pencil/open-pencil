@@ -27,6 +27,12 @@ export class ChatHarness {
     return this.page.getByTestId('chat-profile-selector')
   }
 
+  /** Model settings open from the model picker's Manage models and roles. */
+  async openModelSettings(): Promise<void> {
+    await this.profileTrigger.click()
+    await this.page.getByRole('button', { name: 'Manage models and roles…' }).click()
+  }
+
   userMessage() {
     return this.page.getByTestId('chat-message-user').last()
   }
@@ -36,7 +42,7 @@ export class ChatHarness {
   }
 
   async open(): Promise<void> {
-    await this.page.goto('/')
+    await this.page.goto('/?test')
     await this.page.evaluate(async () => {
       const themeModulePath = '/src/app/shell/theme.ts'
       const themeModule = await import(themeModulePath)

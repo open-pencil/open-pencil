@@ -141,6 +141,12 @@
       ],
       "#cloud-tests/*": [
         "./packages/cloud/tests/*"
+      ],
+      "#oxlint-plugin/*": [
+        "./packages/oxlint-plugin/src/*"
+      ],
+      "#oxlint-plugin-tests/*": [
+        "./packages/oxlint-plugin/tests/*"
       ]
     },
     "types": [
@@ -157,6 +163,7 @@
     "packages/design-jsx/src/global.d.ts",
     "tests/**/*.ts",
     "packages/*/tests/**/*.ts",
+    "packages/test-support/src/**/*.ts",
     "packages/*/tests/**/*.tsx",
     "tests/helpers/tauri/native-global.d.ts"
   ],

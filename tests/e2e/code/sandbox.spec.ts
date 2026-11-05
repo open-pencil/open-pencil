@@ -5,7 +5,7 @@ import type { evaluateDesignJSX as EvaluateDesignJSX } from '@/app/code/sandbox/
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 })

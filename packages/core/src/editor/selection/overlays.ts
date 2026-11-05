@@ -73,6 +73,13 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  /** Hands a layer's name on the canvas to the field renaming it, or back to the canvas. */
+  function setRenamingLabel(id: string | null) {
+    if (ctx.state.renamingLabelId === id) return
+    ctx.state.renamingLabelId = id
+    ctx.requestRepaint()
+  }
+
   function setDropTarget(id: string | null) {
     if (ctx.state.dropTargetId === id) return
     ctx.state.dropTargetId = id
@@ -125,6 +132,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setCodeFocusNode,
     setMeasurementMode,
     setDropTarget,
+    setRenamingLabel,
     setLayoutInsertIndicator,
     setAutoLayoutHover,
     setShapeHandleHover

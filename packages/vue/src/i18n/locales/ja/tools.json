@@ -14,5 +14,7 @@
   "shape": "シェイプ",
   "connector": "コネクタ",
   "hand": "手のひらツール",
-  "comment": "コメント"
+  "comment": "コメント",
+  "eyedropper": "スポイト",
+  "eyedropperSample": "キャンバスから色を取得"
 }

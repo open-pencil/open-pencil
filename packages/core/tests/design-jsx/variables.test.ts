@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import {
   defineMode,
@@ -387,4 +386,22 @@ test('a reference export writes is one rendering resolves back to the same varia
   expect(references).toContain('bg={designVar("Ink", "x")}')
   const [copy] = await renderJSX(graph, references)
   expect(graph.getNode(copy.id)?.boundVariables['fills/0/color']).toBe(named.id)
+})
+
+test('a shadow bound to variables exports its bindings and renders them back', async () => {
+  const graph = new SceneGraph()
+  const elevation = graph.createCollection('Elevation')
+  const blur = graph.createVariable('Blur', 'FLOAT', elevation.id, 12)
+  const tint = graph.createVariable('Tint', 'COLOR', elevation.id, { r: 0, g: 0, b: 0, a: 0.5 })
+  const [card] = await renderJSX(graph, '<Frame name="Card" w={40} h={40} shadow="0 4 12 #00000080" />')
+  graph.bindVariable(card.id, 'effects/0/radius', blur.id)
+  graph.bindVariable(card.id, 'effects/0/color', tint.id)
+
+  const exported = sceneNodeToJSX(card.id, graph)
+  expect(exported).toContain('"effects/0/radius": elevation.Blur')
+  const [copy] = await renderJSX(graph, exported)
+  expect(graph.getNode(copy.id)?.boundVariables).toEqual({
+    'effects/0/color': tint.id,
+    'effects/0/radius': blur.id
+  })
 })

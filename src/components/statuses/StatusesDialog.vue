@@ -177,7 +177,7 @@ function discard() {
       <div
         v-for="state in removed"
         :key="state.id"
-        :class="[rows.row(), 'text-[11px] text-muted']"
+        :class="[rows.row(), 'text-2xs text-muted']"
         data-test-id="status-removed-row"
         :data-state-id="state.id"
       >
