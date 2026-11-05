@@ -12,7 +12,11 @@ import {
   sizeAutoResizingText
 } from '@open-pencil/core/layout'
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
-import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
+import {
+  installTextInkMeasurer,
+  prepareGraphFonts,
+  type DocumentFontStatus
+} from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
@@ -64,6 +68,8 @@ export function measureTextHeadlessly(): Promise<SkiaRenderer> {
   textMeasurer ??= (async () => {
     const renderer = await headlessRenderer()
     installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+    // Bounds take a text by its ink, as the app's do, for exports and absoluteRenderBounds.
+    installTextInkMeasurer((node) => renderer.measureTextInk(node))
     return renderer
   })().catch((error: unknown) => {
     textMeasurer = null
