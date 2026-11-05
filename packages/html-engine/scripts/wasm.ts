@@ -75,6 +75,12 @@ if ((await builtHash()) === hash) {
 } else if (process.argv.includes('--check')) {
   throw new Error('html-engine.wasm is missing or older than its sources; run bun run build:wasm')
 } else {
+  if (!Bun.which('cargo')) {
+    throw new Error(
+      'html-engine.wasm is missing or older than its sources, and building it needs Rust: ' +
+        'install rustup, or build it where Rust is and bring wasm/ along'
+    )
+  }
   await cargo([
     'build',
     '--profile',

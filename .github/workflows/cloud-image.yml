@@ -41,6 +41,15 @@ jobs:
           ref: ${{ env.RELEASE_TAG || github.sha }}
           persist-credentials: false
 
+      # The HTML engine's WebAssembly module, built here where it is cached and Rust is installed;
+      # the image builds everything else from the context, which carries the module.
+      - uses: ./.github/actions/setup-workspace
+        with:
+          cache-scope: cloud-image
+
+      - name: Build the HTML engine's WebAssembly module
+        run: bun run --filter @open-pencil/html-engine build:wasm
+
       # A rebuild of an older release must not move latest back to it.
       - name: Find the latest release
         id: latest
