@@ -4,6 +4,7 @@ import { toRaw } from 'vue'
 import type { Editor } from '@open-pencil/core'
 import { ROTATION_SNAP_DEGREES } from '@open-pencil/core/constants'
 import { createSceneGeometry } from '@open-pencil/core/geometry'
+import { computeAllLayouts } from '@open-pencil/core/layout'
 import { placeRotatedAbout, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 
@@ -125,7 +126,24 @@ export function handleSelectionRotateMove(
   for (const { nodeId, placement } of d.members) {
     editor.graph.updateNodePreview(nodeId, placeRotatedAbout(placement, pivot, delta))
   }
+  // An auto layout places its turned children again, as the commit's layout will, and Figma's.
+  for (const parentId of autoLayoutParents(editor, d)) {
+    editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, parentId))
+  }
   editor.requestRepaint()
+}
+
+/** The auto layout frames that place some of the turning layers. */
+function autoLayoutParents(editor: Editor, d: DragRotateSelection): Set<string> {
+  const parents = new Set<string>()
+  for (const { placement } of d.members) {
+    const parentId = placement.node.parentId
+    const parent = parentId ? editor.graph.getNode(parentId) : undefined
+    if (parent && parent.layoutMode !== 'NONE' && placement.node.layoutPositioning !== 'ABSOLUTE') {
+      parents.add(parent.id)
+    }
+  }
+  return parents
 }
 
 function startingPlace({ placement }: DragRotateSelection['members'][number]) {

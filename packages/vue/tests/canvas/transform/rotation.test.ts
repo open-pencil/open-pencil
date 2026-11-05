@@ -132,3 +132,40 @@ describe('rotating a multi-selection', () => {
     expect(press(75, 75).hit).toBe(false)
   })
 })
+
+describe('rotating auto layout children together', () => {
+  test('the layout places them while they turn as it does once they are turned', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', page, {
+      x: 100,
+      y: 100,
+      width: 190,
+      height: 120,
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: 20,
+      paddingLeft: 20,
+      paddingTop: 20
+    })
+    const a = editor.graph.createNode('RECTANGLE', frame.id, { width: 100, height: 50 })
+    const b = editor.graph.createNode('RECTANGLE', frame.id, { width: 50, height: 100 })
+    editor.runLayoutForNode(frame.id)
+    editor.select([a.id, b.id])
+    const box = selectionBox(editor)
+    if (!box) throw new Error('expected a selection box')
+    const { drag } = press(box.x + box.width / 2, box.y - 24)
+    if (drag?.type !== 'rotate-selection') throw new Error('expected a selection rotation')
+    // A quarter turn about the box's center.
+    handleSelectionRotateMove(
+      editor,
+      drag,
+      box.x + box.width / 2 + 100,
+      box.y + box.height / 2,
+      false
+    )
+    const during = [place(editor.graph.getNode(a.id)), place(editor.graph.getNode(b.id))]
+    commitRotationDrag(editor, drag)
+    expect([place(editor.graph.getNode(a.id)), place(editor.graph.getNode(b.id))]).toEqual(during)
+    expect(during.map((layer) => layer.rotation)).toEqual([90, 90])
+  })
+})
