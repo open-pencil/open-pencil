@@ -51,4 +51,27 @@ test.describe('split canvas views', () => {
     await expect(headers).toHaveCount(0)
     await expect(page.locator('canvas[data-ready="1"]')).toHaveCount(2)
   })
+
+  test('keeps both views on screen while the editor UI is hidden', async ({ page }) => {
+    await page.goto('/?test')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    await page.getByRole('menuitem', { name: 'View', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Split right' }).click()
+    const surfaces = page.locator('canvas[data-ready="1"]')
+    await expect(surfaces).toHaveCount(4)
+    const panes = page.locator('[data-active-pane]')
+    const headers = page.locator('[data-slot="canvas-pane-header"]')
+
+    await page.keyboard.press('Meta+\\')
+    await expect(page.getByTestId('layers-panel')).not.toBeVisible()
+    await expect(panes).toHaveCount(2)
+    await expect(surfaces).toHaveCount(4)
+    await expect(headers).toHaveCount(0)
+
+    await page.keyboard.press('Meta+\\')
+    await expect(page.getByTestId('layers-panel')).toBeVisible()
+    await expect(headers).toHaveCount(2)
+    canvas.assertNoErrors()
+  })
 })
