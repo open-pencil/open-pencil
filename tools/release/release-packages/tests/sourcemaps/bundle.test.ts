@@ -75,6 +75,19 @@ test.each([
   })
 })
 
+test.each([
+  ['no maps', {}, /No source maps/],
+  ['no chunk ID', { 'worker.js': 'run()', 'worker.js.map': '{}' }, /no PostHog chunk ID/]
+])('a linked build with %s is still refused', async (_scenario, files, message) => {
+  await withDist(files, async (dist) => {
+    const error: unknown = await assertInjectedChunks(dist, await listSourceMaps(dist), {
+      linked: true
+    }).catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(Error)
+    expect(String(error)).toMatch(message)
+  })
+})
+
 test('the download page does not offer the source maps archive', () => {
   const name = sourceMapsAssetName('0.17.0')
   expect(classifyAsset({ name, url: `https://example.com/${name}`, size: 1 })).toBeNull()
