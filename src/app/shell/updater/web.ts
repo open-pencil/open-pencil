@@ -85,27 +85,35 @@ export function watchForWebUpdates(check: () => void, hidden: () => boolean = us
   })
 }
 
-/** A service worker registration, as far as `watchInstalledVersions` needs it. */
+/** A service worker, as far as the updater needs one. */
+type ServiceWorkerLike = EventTarget & { readonly state: ServiceWorkerState }
+
+/** A service worker registration, as far as `watchNewVersions` needs it. */
 export type InstallingRegistration = EventTarget & {
-  readonly installing: (EventTarget & { readonly state: ServiceWorkerState }) | null
+  readonly installing: ServiceWorkerLike | null
+  readonly active: ServiceWorkerLike | null
 }
 
 /**
- * Calls `onInstalled` each time a new version finishes installing. Workbox stops listening for
- * updates after the first one it finds a minute or more after registering, so a version that
- * installs after another failed would otherwise never be offered.
+ * Calls `onNewVersion` each time a version finishes installing beside an active one, which the
+ * first install has none of. Workbox stops listening for updates after the first one it finds a
+ * minute or more after registering, so a version that installs after another failed would otherwise
+ * never be offered. An install already under way, from another tab or while the page registered,
+ * counts as well. A page loaded with a forced reload has no controller, so the active version, not
+ * the controller, tells an update from the first install.
  */
-export function watchInstalledVersions(
+export function watchNewVersions(
   registration: InstallingRegistration,
-  onInstalled: () => void
+  onNewVersion: () => void
 ): void {
-  useEventListener(registration, 'updatefound', () => {
-    const { installing } = registration
+  const follow = (installing: ServiceWorkerLike | null) => {
     if (!installing) return
     useEventListener(installing, 'statechange', () => {
-      if (installing.state === 'installed') onInstalled()
+      if (installing.state === 'installed' && registration.active) onNewVersion()
     })
-  })
+  }
+  follow(registration.installing)
+  useEventListener(registration, 'updatefound', () => follow(registration.installing))
 }
 
 /** The service worker's side of taking a new version, which `takeWebUpdate` drives. */
@@ -161,11 +169,10 @@ export function useWebUpdates(): void {
     let takenElsewhere = false
     // The plugin's own reload is left out (`onNeedReload`): it would reload every tab.
     const { needRefresh, updateServiceWorker } = useRegisterSW({ onNeedReload: () => undefined })
-    // The first worker to install on a page no worker controls is no new version.
     void navigator.serviceWorker.getRegistration().then((registration) => {
       if (registration)
-        watchInstalledVersions(registration, () => {
-          if (navigator.serviceWorker.controller) needRefresh.value = true
+        watchNewVersions(registration, () => {
+          needRefresh.value = true
         })
       return undefined
     })

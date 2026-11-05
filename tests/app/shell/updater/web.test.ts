@@ -9,7 +9,7 @@ import {
   offerWebUpdate,
   takeWebUpdate,
   watchForWebUpdates,
-  watchInstalledVersions
+  watchNewVersions
 } from '@/app/shell/updater/web'
 
 const { updates: messages } = useI18n()
@@ -195,6 +195,7 @@ describe('checking for a web update', () => {
 /** A registration whose updates the test finds and installs by hand. */
 class Registration extends EventTarget {
   installing: WaitingWorker | null = null
+  active: WaitingWorker | null = null
 
   found(): WaitingWorker {
     const worker = new WaitingWorker()
@@ -210,17 +211,43 @@ function settle(worker: WaitingWorker, state: ServiceWorkerState) {
   worker.dispatchEvent(new Event('statechange'))
 }
 
-describe('watching installed versions', () => {
+function watching(registration: Registration) {
+  let versions = 0
+  watchNewVersions(registration, () => versions++)
+  return () => versions
+}
+
+describe('watching new versions', () => {
   test('reports every version that installs, after one that failed too', () => {
     const registration = new Registration()
-    let installed = 0
-    watchInstalledVersions(registration, () => installed++)
+    registration.active = new WaitingWorker()
+    const versions = watching(registration)
 
     settle(registration.found(), 'redundant')
-    expect(installed).toBe(0)
+    expect(versions()).toBe(0)
     settle(registration.found(), 'installed')
-    expect(installed).toBe(1)
+    expect(versions()).toBe(1)
     settle(registration.found(), 'installed')
-    expect(installed).toBe(2)
+    expect(versions()).toBe(2)
+  })
+
+  test('reports a version that was already installing when watching began', () => {
+    const registration = new Registration()
+    registration.active = new WaitingWorker()
+    const installing = new WaitingWorker()
+    installing.state = 'installing'
+    registration.installing = installing
+    const versions = watching(registration)
+
+    settle(installing, 'installed')
+    expect(versions()).toBe(1)
+  })
+
+  test('leaves out the first install, which no active version precedes', () => {
+    const registration = new Registration()
+    const versions = watching(registration)
+
+    settle(registration.found(), 'installed')
+    expect(versions()).toBe(0)
   })
 })
