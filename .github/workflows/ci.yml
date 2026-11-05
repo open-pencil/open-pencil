@@ -232,11 +232,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@stable
-
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: desktop -> target
+          workspaces: . -> target
           key: native-test
 
       - uses: ./.github/actions/setup-bun

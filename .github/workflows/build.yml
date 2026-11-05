@@ -142,12 +142,12 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 26.x
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+      # rustup installs the toolchain rust-toolchain.toml pins; this adds the release target to it.
+      - name: Add the Rust target
+        run: rustup target add ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: desktop -> target
+          workspaces: . -> target
           key: ${{ matrix.target }}
       - name: Install native dependencies on Linux
         if: runner.os == 'Linux'

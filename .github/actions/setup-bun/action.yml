@@ -65,7 +65,7 @@ runs:
     - uses: actions/cache@v6
       with:
         path: packages/html-engine/wasm
-        key: html-engine-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'packages/html-engine/rust-toolchain.toml', 'packages/html-engine/crate/**') }}
+        key: html-engine-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'packages/html-engine/crate/**') }}
         enableCrossOsArchive: true
 
     - name: Save dependency cache
