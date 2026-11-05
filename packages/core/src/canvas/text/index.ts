@@ -276,7 +276,7 @@ export function measureTextInkAsDrawn(
   if (readiness !== 'ready' && (node.derivedTextGlyphs?.length ?? 0) > 0) return undefined
   if (!node.text) return null
   const compute = () => {
-    const layout = buildParagraph(r, node)
+    const layout = buildParagraph(r, node, undefined, { halfLeading: true })
     try {
       return textInkBounds(node, layout, textVerticalOffset(node, layout.getHeight()))
     } finally {

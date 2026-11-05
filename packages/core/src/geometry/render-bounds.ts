@@ -91,7 +91,7 @@ function paints(node: SceneNode): boolean {
  * box lets run past it. `null` for a text that draws no glyph.
  */
 function ownShape(node: SceneNode): VisualBounds | null {
-  const ink = node.type === 'TEXT' && !node.textPathData ? measureTextInk(node) : undefined
+  const ink = measureTextInk(node)
   if (ink !== undefined) return ink
   return {
     minX: 0,
