@@ -26,6 +26,34 @@ test('flags Reka overlay roots imported by app code', async () => {
   ])
 })
 
+const WRAPPERS = {
+  DialogRoot: 'AppDialogRoot',
+  AlertDialogRoot: 'AppAlertDialogRoot',
+  DropdownMenuRoot: 'AppDropdownMenuRoot',
+  ContextMenuRoot: 'AppContextMenuRoot',
+  MenubarRoot: 'AppMenubarRoot',
+  PopoverRoot: 'AppPopoverRoot',
+  SelectRoot: 'AppSelectRoot',
+  ComboboxRoot: 'AppCombobox'
+}
+
+test('names the wrapper for every Reka overlay root', async () => {
+  expect(
+    await flagged(
+      Object.fromEntries(
+        Object.keys(WRAPPERS).map((root) => [`src/components/${root}.vue`, component(root)])
+      )
+    )
+  ).toEqual(
+    Object.entries(WRAPPERS)
+      .map(
+        ([root, wrapper]) =>
+          `Use ${wrapper} from src/components/ui instead of Reka's ${root}, so it counts as an open overlay.`
+      )
+      .sort()
+  )
+})
+
 test('flags a namespace import of reka-ui in app code', async () => {
   expect(
     await flagged({
