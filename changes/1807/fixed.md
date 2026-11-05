@@ -1,0 +1,1 @@
+- Toggle UI reveals the canvas beneath side panels without moving the artwork or changing its zoom.
