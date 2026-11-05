@@ -62,4 +62,17 @@ test.describe('split canvas views', () => {
     await expect(headers).toHaveCount(0)
     await expect(page.locator('canvas[data-ready="1"]')).toHaveCount(2)
   })
+
+  test('Shift+Cmd+Backslash splits the active view right', async ({ page }) => {
+    await page.goto('/?test')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    const panes = page.locator('[data-active-pane]')
+
+    await page.keyboard.press('Meta+Shift+Backslash')
+    await expect(panes).toHaveCount(2)
+    await expect(panes.nth(1)).toHaveAttribute('data-active-pane', 'true')
+    await expect(page.getByTestId('layers-panel')).toBeVisible()
+    canvas.assertNoErrors()
+  })
 })
