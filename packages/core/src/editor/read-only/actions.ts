@@ -42,6 +42,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getVariantOptions',
   'hitTestAtPoint',
   'isInteractiveEditing',
+  'isSyncingComponents',
   'isTopLevel',
   'pageSwitchCount',
   'previewRenameSelected',
