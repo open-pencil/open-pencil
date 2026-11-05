@@ -275,6 +275,24 @@ test.describe('UI toggles', () => {
     await editor.canvas.waitForRender()
     expect(await getUIVisible()).toBe(before)
   })
+
+  test('with the UI hidden, the selection toolbar leaves shortcuts to the canvas', async () => {
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.drawRect(200, 100, 60, 60)
+    expect(await getSelectedCount()).toBe(1)
+
+    await editor.page.keyboard.press('Meta+\\')
+    await expect(editor.page.getByTestId('selection-toolbar')).toBeVisible()
+
+    await editor.page.keyboard.press('Backspace')
+    await editor.canvas.waitForRender()
+    expect(await getPageChildren()).toHaveLength(1)
+
+    await editor.page.keyboard.press('Meta+\\')
+    await editor.canvas.waitForRender()
+    expect(await getUIVisible()).toBe(true)
+  })
 })
 
 test.describe('duplicate', () => {
@@ -415,25 +433,30 @@ test.describe('zoom shortcuts', () => {
     if (!activeBounds || !inactiveBounds) throw new Error('Expected canvas pane bounds')
     expect(activeBounds.width).toBeLessThan(inactiveBounds.width)
 
-    const centerBefore = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
-      return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
-    })
-
-    expect(centerBefore.center.x).toBeCloseTo(activeBounds.width / 2)
-    expect(centerBefore.center.y).toBeCloseTo(activeBounds.height / 2)
+    const readCenter = () =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const center = store.viewportCanvasCenter()
+        return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
+      })
+    // The pane reports its new size to the store once its resize observer runs, in whole CSS
+    // pixels, as the canvas is sized.
+    await expect
+      .poll(async () => {
+        const { center } = await readCenter()
+        return Math.max(
+          Math.abs(center.x - activeBounds.width / 2),
+          Math.abs(center.y - activeBounds.height / 2)
+        )
+      })
+      .toBeLessThan(1)
+    const centerBefore = await readCenter()
 
     await editor.page.keyboard.press('Shift+Equal')
     await editor.canvas.waitForRender()
     const zoomedIn = await getZoom()
-    const centerAfter = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
-      return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
-    })
+    const centerAfter = await readCenter()
 
     await editor.page.keyboard.press('Minus')
     await editor.canvas.waitForRender()
@@ -473,45 +496,54 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  test('⌘1 zooms to fit', async () => {
-    await editor.page.keyboard.press('Meta+1')
-    await editor.canvas.waitForRender()
+  // The previous test left one 60 × 60 rectangle. Fitting it zooms in past 100%, as in Figma,
+  // and shows it whole.
+  async function expectRectangleFitted() {
+    const fit = await editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const [id] = store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
+      if (!id) throw new Error('Expected a layer on the page')
+      const box = store.graph.getAbsoluteBounds(id)
+      const center = store.viewportCanvasCenter()
+      const { zoom, panX, panY } = store.state
+      return {
+        zoom,
+        left: box.x * zoom + panX,
+        top: box.y * zoom + panY,
+        right: (box.x + box.width) * zoom + panX,
+        bottom: (box.y + box.height) * zoom + panY,
+        width: center.x * 2,
+        height: center.y * 2
+      }
+    })
+    expect(fit.zoom).toBeGreaterThan(1)
+    expect(fit.left).toBeGreaterThanOrEqual(0)
+    expect(fit.top).toBeGreaterThanOrEqual(0)
+    expect(fit.right).toBeLessThanOrEqual(fit.width)
+    expect(fit.bottom).toBeLessThanOrEqual(fit.height)
+  }
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
+  for (const [label, keys, selectFirst] of [
+    ['⌘1 zooms to fit', 'Meta+1', false],
+    ['⌘2 zooms to selection', 'Meta+2', true],
+    ['⇧1 zooms to fit (same as ⌘1)', 'Shift+1', false],
+    ['⇧2 zooms to selection (same as ⌘2)', 'Shift+2', true]
+  ] as const) {
+    test(label, async () => {
+      if (selectFirst) await editor.canvas.selectAll()
+      await editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        store.state.zoom = 0.25
+      })
 
-  test('⌘2 zooms to selection', async () => {
-    await editor.canvas.selectAll()
+      await editor.page.keyboard.press(keys)
+      await editor.canvas.waitForRender()
 
-    await editor.page.keyboard.press('Meta+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧1 zooms to fit (same as ⌘1)', async () => {
-    await editor.page.keyboard.press('Shift+1')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧2 zooms to selection (same as ⌘2)', async () => {
-    await editor.canvas.selectAll()
-
-    await editor.page.keyboard.press('Shift+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
+      await expectRectangleFitted()
+    })
+  }
 })
 
 test.describe('auto-layout shortcut', () => {
