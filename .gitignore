@@ -66,6 +66,7 @@ storybook-static/
 /public/demo.fig
 /public/canvaskit.wasm
 /desktop/icons/
+/docs
 
 # Documentation build/cache output
 packages/docs/.vitepress/cache/
