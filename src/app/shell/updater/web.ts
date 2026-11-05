@@ -113,51 +113,47 @@ export function takeWebUpdate(update: WaitingUpdate): void {
 export function useWebUpdates(): void {
   if (IS_TAURI) return
   const overlays = useOpenOverlays()
-  void import('virtual:pwa-register').then(({ registerSW }) => {
+  // A first visit's worker taking control of the page is no new version.
+  const controlledAtStart = navigator.serviceWorker.controller !== null
+  // Imported when called: tests load this module, and only Vite supplies the plugin's modules.
+  void import('virtual:pwa-register/vue').then(({ useRegisterSW }) => {
     let taking = false
     let takenElsewhere = false
-    let offered = false
-    // The plugin may report the same version more than once; one offer stands for it.
-    const offer = () => {
-      if (offered) return
-      offered = true
-      offerWebUpdate({
-        // Workbox reports a version already waiting before `onRegisteredSW` runs, so the
-        // registration is looked up when the update is taken rather than kept from that callback.
-        reload: () =>
-          void navigator.serviceWorker.getRegistration().then((registration) => {
-            taking = true
-            takeWebUpdate({
-              takenElsewhere,
-              controlled: navigator.serviceWorker.controller !== null,
-              waiting: registration?.waiting ?? null,
-              activate: () => void update(true),
-              reload: () => window.location.reload()
-            })
-            return undefined
-          }),
-        overlayOpen: () => overlays?.holdsKeys() ?? false
-      })
-    }
+    // The plugin's own reload is left out (`onNeedReload`): it would reload every tab.
+    const { needRefresh, updateServiceWorker } = useRegisterSW({ onNeedReload: () => undefined })
     // Taking the new version switches every open tab to it. Only the tab that took it reloads at
-    // once; another tab keeps, or now gets, the offer, which reloads when it will not lose anything.
-    // That holds even for a tab that never heard of the version before it took over, which the
-    // plugin's own reload, on `onNeedReload`, would miss. A first visit's worker taking control of
-    // the page is no new version.
-    const controlledAtStart = navigator.serviceWorker.controller !== null
+    // once; another tab keeps, or now gets, the offer, which reloads when it will not lose
+    // anything, even when the switch reached it before the plugin reported the version.
     useEventListener(navigator.serviceWorker, 'controllerchange', () => {
       if (taking) {
         window.location.reload()
       } else if (controlledAtStart) {
         takenElsewhere = true
-        offer()
+        needRefresh.value = true
       }
     })
-    const update = registerSW({
-      immediate: true,
-      onNeedReload: () => undefined,
-      onNeedRefresh: offer
-    })
+    whenever(
+      needRefresh,
+      () =>
+        offerWebUpdate({
+          // Workbox reports a version already waiting before `onRegisteredSW` runs, so the
+          // registration is looked up when the update is taken rather than kept from that callback.
+          reload: () =>
+            void navigator.serviceWorker.getRegistration().then((registration) => {
+              taking = true
+              takeWebUpdate({
+                takenElsewhere,
+                controlled: navigator.serviceWorker.controller !== null,
+                waiting: registration?.waiting ?? null,
+                activate: () => void updateServiceWorker(true),
+                reload: () => window.location.reload()
+              })
+              return undefined
+            }),
+          overlayOpen: () => overlays?.holdsKeys() ?? false
+        }),
+      { once: true }
+    )
     return undefined
   })
 }
