@@ -1,0 +1,19 @@
+# The Rust crates that npm packages build to WebAssembly, each in its package's `crate/`.
+# desktop/ is a workspace of its own: Cargo sets profiles per workspace, and these crates build
+# for size, while the desktop app builds for speed with its own lockfile.
+[workspace]
+resolver = "3"
+members = ["packages/html-engine/crate"]
+exclude = ["desktop"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+publish = false
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

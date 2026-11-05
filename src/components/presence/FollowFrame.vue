@@ -3,10 +3,10 @@ import { useEventListener } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { isEditing } from '@open-pencil/vue/editor/keyboard'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { FollowedLabel } from '@/app/presence/registry'
-import { isEditing } from '@/app/shell/keyboard/focus'
 import followFrameTheme from '@/theme/collaboration/follow-frame'
 
 import { personFill } from './color'

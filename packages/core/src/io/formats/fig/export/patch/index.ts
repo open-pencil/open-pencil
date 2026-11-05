@@ -90,6 +90,35 @@ function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
   return { byGuid, byNode: new Map([...byGuid].map(([guid, nodeId]) => [nodeId, guid])) }
 }
 
+/**
+ * A set's variants write their copies of its boolean, text, swap, and slot properties from the
+ * set's, so an edited set writes its variants too; only the fields that differ are patched. A
+ * variant defining a property itself, as an older OpenPencil saved one, writes it as its set's,
+ * which the set's saved record lacks, so an edited one writes its set and siblings as well.
+ */
+function addSetVariants(
+  graph: SceneGraph,
+  changes: ArchiveChangeSummary,
+  add: (id: string) => unknown
+): void {
+  const sets = new Set<string>()
+  for (const id of changes.touched) {
+    const node = graph.getNode(id)
+    if (node?.type === 'COMPONENT_SET') sets.add(id)
+    const parent = node?.parentId ? graph.getNode(node.parentId) : undefined
+    if (
+      node?.type === 'COMPONENT' &&
+      parent?.type === 'COMPONENT_SET' &&
+      node.componentPropertyDefinitions.some((definition) => definition.type !== 'VARIANT')
+    )
+      sets.add(parent.id)
+  }
+  for (const id of sets) {
+    add(id)
+    for (const child of graph.getChildren(id)) if (child.type === 'COMPONENT') add(child.id)
+  }
+}
+
 /** An edited component changes every instance of it, and so every component nesting one. */
 function addComponentInstances(
   graph: SceneGraph,
@@ -178,6 +207,7 @@ function planRecords(
     return owner
   }
   for (const id of changes.touched) add(id)
+  addSetVariants(graph, changes, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)

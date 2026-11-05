@@ -1,1 +1,0 @@
-- Spread and Compact arrange a pile of layers the same way every time, rather than differently on each run.

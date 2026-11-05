@@ -20,7 +20,7 @@ import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
 import { textStyleChanges } from '#core/text/character-style'
 
-import type { NodeActions } from './nodes'
+import type { NodeActions } from './nodes/actions'
 
 /**
  * Sticky note commands. A note's colour sits on the note and its text on its sublayers, so each

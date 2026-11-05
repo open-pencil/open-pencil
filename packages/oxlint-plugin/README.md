@@ -81,6 +81,7 @@ An `extends` path resolves from the file that declares it, so a configuration in
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `no-deep-parent-relative-imports`   | An alias instead of `../../` imports. `minDepth` (default 2) sets how many `../` are too many, and `alias` names the alias in the message.                              |
 | `no-deep-parent-relative-paths`     | A path helper or alias instead of climbing two directories from `import.meta`.                                                                                          |
+| `no-cwd-relative-paths`             | A path resolved with `repoPath()` or `import.meta` before a file call or spawn uses it, not left relative to the working directory.                                     |
 | `no-function-alias-imports`         | No imports renamed to end in `Fn`.                                                                                                                                      |
 | `no-useless-pass-through-wrappers`  | No functions that only call another with the same arguments.                                                                                                            |
 | `no-mixed-case-acronym-identifiers` | `baseURL`, not `baseUrl`. `ignoredImports` lists packages whose names keep their casing where imported, and `ignoredIdentifiers` lists upstream names used as they are. |

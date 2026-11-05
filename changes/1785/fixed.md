@@ -1,0 +1,1 @@
+- Text with a line height of zero, or a percent one under half a pixel, sets its lines on one baseline and is 0 px tall, as in Figma, and a single line at a fractional line height in pixels takes Figma's height.

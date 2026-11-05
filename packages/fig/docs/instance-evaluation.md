@@ -58,6 +58,15 @@ Definitions with `parentPropDefId` inherit semantics within source ancestry whil
 local property identity. Current typed `varValue` and `PROP_REF` parameter records are
 normalized alongside older property forms.
 
+Those definitions are a set's variants' copies of its boolean, text, swap, and slot
+properties: the variant's layers bind to its copy and an instance assigns its variant's copy,
+while scripts see the set's property alone. Records keep the copies, so evaluation and patch
+saves use Figma's ids; the graph does not. `foldVariantPropertyCopies`
+(`src/document/component/links.ts`) gives layers and instances the set's property as each
+page is read, and `variantPropertyCopies` (`src/node-change/export/property-copies.ts`) writes
+each variant's copies back under the GUIDs it saved, naming them from its layers and
+instances. Property ids are only unique within a set, so a copy resolves against its own set.
+
 **Implemented:** an outer owner's assignment supersedes an inner owner's explicit claim on the
 same field; unrelated fields of that claim are kept. A claim whose path passes through a swapped
 instance and resolved in the replaced component is stale and dropped. A missing target that did

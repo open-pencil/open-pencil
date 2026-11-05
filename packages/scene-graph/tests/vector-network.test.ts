@@ -8,8 +8,7 @@ import {
   vectorNetworkToSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
 
-import { expectDefined } from './helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 function lineNetwork(x: number): VectorNetwork {
   return {
     vertices: [

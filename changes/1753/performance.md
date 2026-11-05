@@ -1,1 +1,0 @@
-- Resizing the canvas, such as dragging a panel, keeps what is already drawn and renders only the newly exposed edge, instead of blanking and redrawing the whole scene (#1753).

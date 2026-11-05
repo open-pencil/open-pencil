@@ -3,17 +3,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
+import { appMenuShortcut } from '@/app/shell/menu/shortcut'
+import ZoomDropdown from '@/components/editor/ZoomDropdown.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import canvasPaneHeaderTheme from '@/theme/canvas/pane-header'
@@ -23,14 +27,18 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const { menu: menuText } = useI18n()
-const pane = computed(() => store.panes.getPane(paneId))
+const { menu: menuText, editor } = useI18n()
+const view = computed(() => store.getPaneView(paneId))
 const isActive = computed(() => store.activePaneId.value === paneId)
+// Split view keeps the panels, so the canvas-only preview pill never shows; the header says it.
+const previewing = computed(
+  () => resolveEditorProfile(store.getPaneRenderState(paneId)).live !== null
+)
+const leaveShortcut = formatShortcut(appMenuShortcut('toggle-preview')) ?? ''
 const pageName = computed(() => {
-  const pageId = pane.value?.currentPageId
+  const pageId = view.value?.currentPageId
   return pageId ? (store.graph.getNode(pageId)?.name ?? menuText.value.view) : menuText.value.view
 })
-const zoom = computed(() => Math.round((pane.value?.zoom ?? 1) * 100))
 const canSplit = computed(() => store.visiblePaneCount.value < store.panes.maxVisiblePanes)
 const canClose = computed(() => store.visiblePaneCount.value > 1)
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -56,9 +64,26 @@ function split(direction: SplitDirection) {
     @pointerdown="activatePane"
   >
     <span :class="headerCls.title()">{{ pageName }}</span>
-    <span :class="headerCls.zoom()">{{ zoom }}%</span>
+    <template v-if="previewing">
+      <span data-test-id="pane-previewing" :class="headerCls.badge()">
+        <icon-lucide-play class="size-3" />
+        <span :class="headerCls.badgeLabel()">{{ editor.previewing }}</span>
+      </span>
+      <IconButton :label="editor.resetPreview" size="xs" @click="store.resetPlay()">
+        <icon-lucide-rotate-ccw :class="headerCls.icon()" />
+      </IconButton>
+      <IconButton
+        :label="editor.leavePreview({ shortcut: leaveShortcut })"
+        data-test-id="pane-leave-preview"
+        size="xs"
+        @click="store.stopPlay()"
+      >
+        <icon-lucide-square :class="headerCls.icon()" />
+      </IconButton>
+    </template>
+    <ZoomDropdown :pane-id="paneId" />
     <div :class="headerCls.actions()">
-      <DropdownMenuRoot>
+      <AppDropdownMenuRoot>
         <DropdownMenuTrigger as-child>
           <IconButton :label="`${menuText.splitRight} / ${menuText.splitDown}`" size="xs">
             <icon-lucide-panels-top-left :class="headerCls.icon()" />
@@ -82,7 +107,7 @@ function split(direction: SplitDirection) {
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
 
       <IconButton
         :label="menuText.closeView"

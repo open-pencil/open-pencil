@@ -7,8 +7,8 @@ import {
   captureGraphCheckpoint,
   captureTouchedCheckpoint
 } from '@open-pencil/scene-graph/checkpoint'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import {
   expectSameLayerTree,
   settleGraphSync,

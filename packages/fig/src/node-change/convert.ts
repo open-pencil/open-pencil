@@ -696,7 +696,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
 function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
-    (nodeType === 'FRAME' && isComponentSet(nc)) ||
+    (nodeType === 'FRAME' && isComponentSetRecord(nc)) ||
     readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
@@ -1066,10 +1066,17 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
   }
 }
 
-function isComponentSet(nc: NodeChange): boolean {
+/**
+ * Whether a record is a component set: typed as one, or a frame that defines a variant property
+ * or that OpenPencil marked one.
+ */
+export function isComponentSetRecord(nc: NodeChange): boolean {
+  if (mapNodeType(nc.type) === 'COMPONENT_SET') return true
   const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
-  if (!defs?.length) return false
-  return defs.some((d) => d.type === 'VARIANT')
+  return (
+    !!defs?.some((d) => d.type === 'VARIANT') ||
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
+  )
 }
 
 function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig']['layout'] {

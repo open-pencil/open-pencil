@@ -9,14 +9,19 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
-  lineHeightPixels,
+  lineStepPixels,
   topLevelNumberDigits,
   type TextListItem,
   type TextParagraphRange
 } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
+import {
+  TextLayout,
+  type LineCapHeight,
+  type TextLayoutBlock,
+  type TextLayoutMarker
+} from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
@@ -28,7 +33,9 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { shownText } from '#core/text/case'
+import { autoWidthWrapWidth } from '#core/layout/text-measurement'
+import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
+import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
 import { utf8Length } from '#core/text/utf8'
@@ -62,8 +69,9 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
-  // A percent line height follows the font size of the characters it spaces.
-  const own = (fontSize = node.fontSize) => lineHeightPixels(node.lineHeight, fontSize) || null
+  // A percent line height follows the font size of the characters it spaces; one of zero, or a
+  // percent one under half a pixel, steps lines by none, as Figma does.
+  const own = (fontSize = node.fontSize) => lineStepPixels(node.lineHeight, fontSize)
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
@@ -77,7 +85,7 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
     const runSize = run.style.fontSize ?? node.fontSize
     const lineHeight =
       run.style.lineHeight !== undefined
-        ? lineHeightPixels(run.style.lineHeight, runSize) || null
+        ? lineStepPixels(run.style.lineHeight, runSize)
         : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
@@ -111,23 +119,19 @@ function paragraphLines(
   }
   return {
     heights: lineHeightRuns(node, lead),
-    // A trimmed edge is laid out by where it stands in the paragraph.
-    build:
-      node.leadingTrim === 'CAP_HEIGHT'
-        ? undefined
-        : (start, end, lines, truncated) => {
-            const from = Math.max(0, start - lead)
-            const to = justified ? node.text.length : end - lead
-            const line: ParagraphNode = {
-              ...node,
-              text: node.text.slice(from, to),
-              styleRuns: sliceStyleRuns(node.styleRuns, from, to)
-            }
-            return buildSkParagraph(r, line, color, options, {
-              firstLineIndent: start === 0 ? firstLineIndent : 0,
-              truncation: lineTruncation(lines, truncated)
-            })
-          }
+    build: (start, end, lines, truncated) => {
+      const from = Math.max(0, start - lead)
+      const to = justified ? node.text.length : end - lead
+      const line: ParagraphNode = {
+        ...node,
+        text: node.text.slice(from, to),
+        styleRuns: sliceStyleRuns(node.styleRuns, from, to)
+      }
+      return buildSkParagraph(r, line, color, options, {
+        firstLineIndent: start === 0 ? firstLineIndent : 0,
+        truncation: lineTruncation(lines, truncated)
+      })
+    }
   }
 }
 
@@ -143,10 +147,28 @@ function needsParagraphLayout(node: ParagraphNode): boolean {
 
 function layoutForNode(layout: TextLayout, node: ParagraphNode): void {
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
-    layout.layout(1e6)
-    layout.layout(Math.max(node.width || 1, Math.ceil(layout.getLongestLine())))
+    layoutAutoWidth(layout, node)
   } else {
     layout.layout(resolveParagraphLayoutWidth(node))
+  }
+}
+
+function truncatesAtMaxWidth(node: ParagraphNode): boolean {
+  return node.textTruncation === 'ENDING' && autoWidthWrapWidth(node) !== undefined
+}
+
+function layoutAutoWidth(layout: TextLayout, node: ParagraphNode): void {
+  const wrapWidth = resolveParagraphLayoutWidth(node)
+  if (truncatesAtMaxWidth(node)) {
+    const measuredBoxWidth = node.width || wrapWidth
+    layout.layout(Math.min(measuredBoxWidth, wrapWidth))
+    return
+  }
+  layout.layout(wrapWidth)
+  const widestLine = Math.ceil(layout.getLongestLine())
+  const width = Math.min(wrapWidth, Math.max(node.width || 1, widestLine))
+  if (width !== wrapWidth) {
+    layout.layout(width)
   }
 }
 
@@ -245,7 +267,7 @@ function buildBlocks(
     }
     throw error
   }
-  return new TextLayout(r.ck, blocks, maxLines)
+  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node))
 
   function buildBlock(index: number, start: number, end: number): TextLayoutBlock {
     const shownRange: TextParagraphRange = shownRanges[index]
@@ -264,8 +286,7 @@ function buildBlocks(
       paragraphStyle.listType === 'NONE' && paragraphIndent > 0 ? paragraphIndent : 0
     const blockOptions = (lines?: number): ParagraphBlockOptions => ({
       firstLineIndent,
-      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis },
-      edges: { first: index === 0, last: index === sources.length - 1 }
+      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis }
     })
     const betweenItems =
       index > 0 &&
@@ -363,14 +384,41 @@ function createTextLayout(
         r.ck,
         buildSkParagraph(r, node, color, options),
         shownText(node).length,
-        paragraphLines(r, node, color, options)
+        paragraphLines(r, node, color, options),
+        trimmedCapHeight(node)
       )
 }
 
+function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
+  if (node.leadingTrim !== 'CAP_HEIGHT') {
+    return undefined
+  }
+  const sourceIndex = shownToSourceIndex(node)
+  return (start, end) => {
+    const sourceStart = sourceIndex(start)
+    const sourceEnd = end > start ? sourceIndex(end - 1) + 1 : sourceStart
+    return rangeCapHeight(node, sourceStart, sourceEnd)
+  }
+}
+
+function shownToSourceIndex(node: ParagraphNode): (shownIndex: number) => number {
+  if (textCaseSegments(node).every((segment) => segment.textCase === 'ORIGINAL')) {
+    return (shownIndex) => Math.min(shownIndex, node.text.length)
+  }
+  let indices: number[] | undefined
+  return (shownIndex) => {
+    indices ??= shownSourceIndices(node)
+    return indices[shownIndex] ?? node.text.length
+  }
+}
+
 /** How many laid-out line boxes fit the fixed height, preserving the first line. */
-function linesWithinHeight(layout: TextLayout, height: number): number {
+function linesWithinHeight(layout: TextLayout, node: ParagraphNode): number {
   const lines = layout.getLineMetrics()
-  const firstOverflow = lines.findIndex((line) => line.baseline + line.descent > height)
+  const trimmed = node.leadingTrim === 'CAP_HEIGHT'
+  const firstOverflow = lines.findIndex(
+    (line) => line.baseline + (trimmed ? 0 : line.descent) > node.height
+  )
   return Math.max(1, firstOverflow === -1 ? lines.length : firstOverflow)
 }
 
@@ -389,7 +437,9 @@ export function buildParagraph(
   let fittingLines: number | undefined
   try {
     layoutForNode(layout, node)
-    if (heightTruncation) fittingLines = linesWithinHeight(layout, node.height)
+    if (heightTruncation) {
+      fittingLines = linesWithinHeight(layout, node)
+    }
   } catch (error) {
     layout.delete()
     throw error

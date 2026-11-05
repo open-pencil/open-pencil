@@ -34,6 +34,7 @@ import {
   restoreComponentCheckpoint,
   type ComponentCheckpoint
 } from './component/checkpoint'
+import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
 import type { ComponentConstruction } from './components'
 import { loadPageTransaction } from './load-transaction'
@@ -84,6 +85,8 @@ export interface AssemblyState {
   savedSizeNodes: Set<string>
   /** Component property types by definition id, carried across page loads. */
   definitionTypes?: Map<string, string>
+  /** A variant's copies of its set's properties, read from its record by GUID. */
+  propertyCopies: (sourceId: string) => PropertyCopies
 }
 
 export interface FigSessionCheckpoint {
@@ -142,7 +145,8 @@ function restoreAssemblyState(
     components,
     sources: new Map(checkpoint.sources),
     componentIds: new Map(checkpoint.componentIds),
-    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds)
+    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
 }
 
@@ -305,7 +309,8 @@ function createAssemblyState(
     sources: new Map(),
     components: new Map(),
     componentIds: new Map(),
-    savedSizeNodes: new Set()
+    savedSizeNodes: new Set(),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
   applyDocumentMetadata(graph, document)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
@@ -522,6 +527,14 @@ function materializeReaderInto(
       parent.childIds = [...ordered, ...parent.childIds.filter((id) => !ordered.includes(id))]
   }
   for (const page of pages) populateInstances(page)
+  // Before instances sync, so they bind and assign the set properties their variants' copies
+  // stand for.
+  const componentSources = new Map([...componentIds].map(([source, node]) => [node, source]))
+  foldVariantPropertyCopies(
+    graph,
+    [...graph.nodes.values()].filter((node) => !existingNodeIds.has(node.id)),
+    (variant) => state.propertyCopies(componentSources.get(variant.id) ?? variant.id)
+  )
   for (const instanceId of resync) graph.syncInstance(instanceId)
   if (resync.size > 0) restoreDerivedSizes(graph, derivedSizes)
   // Records name other layers by GUID, so links wait until every layer of the pass exists,

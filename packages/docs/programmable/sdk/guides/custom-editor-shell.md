@@ -98,6 +98,43 @@ provideEditor(editor)
 
 The fixed viewport dimensions above keep the example short. In a resizable shell, return the actual canvas container size from `getViewportSize`; do not include the surrounding sidebars or toolbar. See [SDK Getting Started](../getting-started) for installation requirements and migration notes.
 
+## Keyboard
+
+`useEditorKeyboard()` binds the editor's keys as OpenPencil does: each command's keybinding, the tool keys the profile offers, a held Space for the hand, arrow nudges, Delete, Enter and Escape for selections and paths, opacity digits, and zoom. Keys wait while a text field, an open dialog or menu, or text being edited has them, and undo and redo stop the browser's own. Call it in a component under `provideEditor`, and add the shell's own keys beside the editor's:
+
+```ts
+import { useEditorKeyboard } from '@open-pencil/vue/editor/keyboard'
+
+useEditorKeyboard({
+  shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => save() }],
+  // Runs once nothing in progress took Escape, before the selection clears; true if handled.
+  onEscape: () => closeOpenPanel()
+})
+```
+
+## Limiting what the editor offers
+
+A shell that is not a general design tool, such as a lettering game or a guided exercise, narrows the editor rather than hiding controls. Restrictions only take away from what the document offers, and everything that reads the editor's profile follows them: the toolbar's tools, the tool keys, `setTool`, the canvas, and the editor's actions.
+
+```ts
+// Only Move and Hand; a tool no longer offered gives way to Move.
+editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+
+// Paths keep their points: only handles move. Adding, deleting, joining, breaking, aligning,
+// and continuing points with the pen are refused, and points select but do not drag.
+editor.setHostRestrictions({ pathEdits: 'handles' })
+
+// Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or
+// another layer leave it open. Every point shows its handles.
+editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
+
+// The host ends it; so do switching pages, deleting the layer, replacing the document, and
+// going read-only.
+editor.exitNodeEditMode(true, { release: true })
+```
+
+`setReadOnly(true)` is the strongest restriction: the document can be looked at, selected in, and copied from, and an open path closes.
+
 ## Why this split works
 
 - the SDK owns editor integration and reusable headless logic

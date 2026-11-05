@@ -1,0 +1,39 @@
+{
+  "//": "Bun resolves workspace packages through these paths at test time, as the root and Core configs do, so helpers share the source modules the tests load; tsconfig.tests.json type-checks this package.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2023"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "bun"
+    ],
+    "paths": {
+      "#test-support/*": [
+        "./src/*"
+      ],
+      "@open-pencil/core": [
+        "../core/src/index.ts"
+      ],
+      "@open-pencil/core/*": [
+        "../core/src/*"
+      ],
+      "@open-pencil/scene-graph": [
+        "../scene-graph/src/index.ts"
+      ],
+      "@open-pencil/scene-graph/*": [
+        "../scene-graph/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

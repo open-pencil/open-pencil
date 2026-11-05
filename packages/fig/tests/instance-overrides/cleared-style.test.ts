@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { STYLE_GOVERNED_FIELDS } from '#fig/instance-overrides/cleared-style'
 import { CLEARED_STYLE, SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
@@ -9,6 +8,7 @@ import { staleFigmaRawFields } from '#fig/source-metadata'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
 import { SHARED_STYLE_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 const solid = (r: number, g: number, b: number): NodeChange['fillPaints'] => [
   { type: 'SOLID', color: { r, g, b, a: 1 }, opacity: 1, visible: true }

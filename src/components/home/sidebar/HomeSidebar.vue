@@ -4,7 +4,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -15,6 +14,7 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { sideList } from '@/components/ui/list/side-list'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
@@ -86,7 +86,7 @@ const workspaceLocations = computed(() =>
           <IconButton :label="t.homeNewWorkspace" @click="emit('newWorkspace')">
             <icon-lucide-plus class="size-3.5" />
           </IconButton>
-          <DropdownMenuRoot :modal="false">
+          <AppDropdownMenuRoot :modal="false">
             <DropdownMenuTrigger as-child>
               <IconButton :label="t.homeAccount({ email: account.email })">
                 <icon-lucide-ellipsis class="size-3.5" />
@@ -132,7 +132,7 @@ const workspaceLocations = computed(() =>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </div>
       </div>
       <div :class="ui.items()">

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { openAppMenu } from '#tests/helpers/menu'
 
@@ -53,7 +55,7 @@ async function memoryBucket(page: Page): Promise<Map<string, Buffer>> {
 test('configured storage lists previews through ranges before opening the document', async ({
   page
 }) => {
-  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  const fixture = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
   let fullDocumentGets = 0
   let rangeGets = 0
   await page.route('https://s3.example.com/**', async (route) => {
@@ -129,7 +131,7 @@ test('configured storage lists previews through ranges before opening the docume
   await page.goto('/storage?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.keyboard.press('ControlOrMeta+KeyT')
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
   const panel = page.getByTestId('settings-storage-panel')
@@ -142,7 +144,7 @@ test('configured storage lists previews through ranges before opening the docume
 
   await page.getByTestId('settings-storage-open-workspace').click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  const entry = page.getByRole('button', { name: /Remote design/ })
+  const entry = page.getByRole('button', { name: /^Remote design/ })
   await expect(entry).toBeVisible()
   const preview = entry.locator('img')
   await expect(preview).toBeVisible()
@@ -160,11 +162,11 @@ test('configured storage lists previews through ranges before opening the docume
 test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
   await page.goto('/storage?test')
   await new CanvasHelper(page).waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.keyboard.press('ControlOrMeta+KeyT')
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'New design', exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Design', exact: true })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
@@ -180,9 +182,10 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  // Before storage is configured, the command opens storage settings.
+  // With nowhere to save yet, the command opens the settings where a place is set up.
   let file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await file.getByRole('menuitem', { name: 'Save to…' }).click()
+  await page.getByRole('dialog', { name: 'Settings' }).getByRole('tab', { name: 'Storage' }).click()
   const panel = page.getByTestId('settings-storage-panel')
   await expect(panel).toBeVisible()
   await panel.getByRole('button', { name: /S3 storage/ }).click()
@@ -194,7 +197,7 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   await page.getByTestId('app-settings-done').click()
 
   file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await file.getByRole('menuitem', { name: 'Save to…' }).click()
   await expect
     .poll(() => [...objects.keys()].filter((key) => key.includes('/canvases/')).sort())
     .toEqual([
@@ -221,7 +224,7 @@ test('Delete removes a stored document from the bucket, and a document deleted e
   ]) {
     objects.set(
       `open_pencil_storage/canvases/${id}.fig`,
-      readFileSync('tests/fixtures/gold-preview.fig')
+      readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
     )
     objects.set(
       `open_pencil_storage/canvases/${id}.meta.json`,

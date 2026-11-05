@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { isVariableFont, isWOFF2, WebFontResolver } from '@open-pencil/core/text'
 
 const FONT_URL = 'https://fonts.gstatic.com/s/test/faces.woff2'

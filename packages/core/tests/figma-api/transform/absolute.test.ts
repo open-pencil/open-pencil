@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 describe('absolute position', () => {
   test('relative and absolute transforms include rotation and reflection', () => {
     const api = createAPI()

@@ -67,6 +67,7 @@
     "open-pencil/no-silent-catch": "error",
     "open-pencil/no-deep-parent-relative-imports": "error",
     "open-pencil/no-deep-parent-relative-paths": "error",
+    "open-pencil/no-cwd-relative-paths": "error",
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
     "open-pencil/no-broad-unknown-type-assertions": "error",

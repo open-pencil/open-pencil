@@ -123,7 +123,7 @@ jobs:
         run: bun run check:tools
 
       - name: Enforce architecture and type-shape boundaries
-        run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
+        run: bun run check:arch && bun run test:type-shapes
 
       - name: Build the editor without Cloud
         run: bun run check:cloud-off
@@ -194,8 +194,8 @@ jobs:
       - name: Test repository tooling
         run: bun run test:tools
 
-      - name: Detect duplicated product code
-        run: bun run test:dupes
+      - name: Detect duplicated product code and test helpers
+        run: bun run test:dupes && bun run test:dupes:helpers
 
   storybook:
     name: Component workshop
@@ -249,6 +249,41 @@ jobs:
 
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
+
+  html-engine:
+    name: HTML engine crate
+    needs: changes
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/html-engine
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      # The runner's rustup installs the toolchain packages/html-engine/rust-toolchain.toml pins.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: . -> target
+          key: html-engine
+
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-deny@0.20.2
+
+      - name: Check Rust formatting and lints
+        run: bun run check:rust
+
+      - name: Check dependency licenses
+        run: bun run check:licenses
+
+      - name: Build the WebAssembly module
+        run: bun run build:wasm
 
   unit-tests:
     needs: changes
@@ -365,7 +400,7 @@ jobs:
 
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, feedback-tests, cloud-tests, cloud-storage]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, html-engine, unit-tests, feedback-tests, cloud-tests, cloud-storage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

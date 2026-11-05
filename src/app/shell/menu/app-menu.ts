@@ -128,6 +128,7 @@ export function useAppMenu() {
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
+    'paste-as-layers': 'pasteAsLayers',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',

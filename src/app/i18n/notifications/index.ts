@@ -13,6 +13,9 @@ export const notificationMessageDefaults = {
   copiedProperties: 'Copied properties.',
   tokensLeftOut: params('Left out of the stylesheet: {names}.'),
   designTokensLeftOut: params('Left out of the design tokens: {names}.'),
+  designTokensAmbiguous: params(
+    'These styles refer to a variable whose path another collection also has, so other tools may read the wrong one: {names}.'
+  ),
   designTokensImported: params('Imported {count} design tokens.'),
   unsupportedVariableExpressions: params(
     'OpenPencil can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'

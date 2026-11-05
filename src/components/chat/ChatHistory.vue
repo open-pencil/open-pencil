@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { useFocus } from '@vueuse/core'
 import {
-  PopoverRoot,
   PopoverTrigger,
   PopoverPortal,
   PopoverContent,
-  DropdownMenuRoot,
   DropdownMenuTrigger,
   DropdownMenuPortal,
   DropdownMenuContent,
@@ -19,8 +17,10 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
 import historyTheme from '@/theme/chat/history'
@@ -107,7 +107,7 @@ function closeMenu(event: Event) {
 <template>
   <div :class="styles.root()">
     <div :class="styles.header()">
-      <PopoverRoot v-model:open="open">
+      <AppPopoverRoot v-model:open="open">
         <Tip :label="ai.chatHistory">
           <PopoverTrigger :class="triggerClass" :disabled="disabled" :aria-label="ai.chatHistory">
             <icon-lucide-panel-left :class="styles.icon()" />
@@ -164,7 +164,7 @@ function closeMenu(event: Event) {
             </div>
           </PopoverContent>
         </PopoverPortal>
-      </PopoverRoot>
+      </AppPopoverRoot>
       <span :class="styles.heading()" data-test-id="chat-title">{{
         selected?.title || ai.newChat
       }}</span>
@@ -172,7 +172,7 @@ function closeMenu(event: Event) {
       <IconButton :label="ai.newChat" :disabled="disabled" size="sm" @click="emit('create')"
         ><icon-lucide-plus :class="styles.icon()"
       /></IconButton>
-      <DropdownMenuRoot v-if="saved">
+      <AppDropdownMenuRoot v-if="saved">
         <Tip :label="ai.chatActions">
           <DropdownMenuTrigger
             :class="triggerClass"
@@ -204,7 +204,7 @@ function closeMenu(event: Event) {
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </div>
     <form
       v-if="editing"

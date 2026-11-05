@@ -6,7 +6,7 @@
 # The build's output is JavaScript and static files, so it runs on the builder's own platform
 # once, whichever platforms the image is for, with Bun for that platform too. Playwright's
 # Chromium draws the demo document.
-FROM --platform=$BUILDPLATFORM oven/bun:1.4.2 AS bun
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.4 AS bun
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/playwright:v1.63.0-noble AS build
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun

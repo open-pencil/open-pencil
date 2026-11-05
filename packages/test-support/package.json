@@ -1,0 +1,70 @@
+{
+  "name": "@open-pencil/test-support",
+  "version": "0.17.0-beta.1",
+  "private": true,
+  "description": "Test helpers shared by more than one owner's tests: assertions, paths, test doubles, the heavy-test switch, and .fig and font fixtures. Owner-specific helpers stay in that owner's tests/helpers.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./assert": "./src/assert.ts",
+    "./dom-css": "./src/dom-css.ts",
+    "./doubles": "./src/doubles.ts",
+    "./fetch": "./src/fetch.ts",
+    "./fig/absolute-constraints": "./src/fig/absolute-constraints.ts",
+    "./fig/fixtures": "./src/fig/fixtures.ts",
+    "./fig/guid": "./src/fig/guid.ts",
+    "./fig/nested-binding": "./src/fig/nested-binding.ts",
+    "./fig/schema": "./src/fig/schema.ts",
+    "./fig/traversal": "./src/fig/traversal.ts",
+    "./fonts/bundled": "./src/fonts/bundled.ts",
+    "./geometry": "./src/geometry.ts",
+    "./heavy": "./src/heavy.ts",
+    "./paths": "./src/paths.ts",
+    "./scene": "./src/scene.ts",
+    "./vue/renderer": "./src/vue/renderer.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  },
+  "imports": {
+    "#test-support/*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "@acemir/cssom": "^0.9.31",
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/dom-css": "workspace:*",
+    "@open-pencil/fig": "workspace:*",
+    "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "valibot": "^1.5.0",
+    "vue": "^3.5.43"
+  },
+  "peerDependenciesMeta": {
+    "@acemir/cssom": {
+      "optional": true
+    },
+    "@open-pencil/core": {
+      "optional": true
+    },
+    "@open-pencil/dom-css": {
+      "optional": true
+    },
+    "@open-pencil/fig": {
+      "optional": true
+    },
+    "@open-pencil/kiwi": {
+      "optional": true
+    },
+    "@open-pencil/scene-graph": {
+      "optional": true
+    },
+    "valibot": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  }
+}

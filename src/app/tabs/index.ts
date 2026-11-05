@@ -8,12 +8,13 @@ import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/format
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+import { nextFrame, nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
-import { confirmDocumentClose } from '@/app/document/close/controller'
+import { confirmDocumentClose, holdsUnkeptEdits } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
 import { documentAssetReader } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
@@ -89,7 +90,7 @@ export const allTabs = computed(() =>
     name: t.store.state.documentName,
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
-    isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
+    isDirty: t.kind === 'document' && holdsUnkeptEdits(t.store),
     // What kind of file the tab holds, for its icon, as Home marks its files.
     fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
     isPreparing: t.store.state.preparation !== null,
@@ -247,7 +248,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (choice === 'discard') await closingTab.store.discardRecovery()
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
-  if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
+  if (choice !== 'discard' && holdsUnkeptEdits(closingTab.store)) return
   rememberDocumentView(closingTab.store)
   removeTab(closingTab)
 }
@@ -269,12 +270,6 @@ function removeTab(closingTab: Tab): void {
     const newIdx = Math.min(idx, tabsRef.value.length - 1)
     activateTab(tabsRef.value[newIdx])
   }
-}
-
-function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
 }
 
 function isDOMImportFile(file: File): boolean {
@@ -369,10 +364,10 @@ async function showImportedGraph(
     preparation: load,
     beforePresentation: async () => {
       if (remembered) {
-        await yieldToUI()
+        await nextShownFrame({ signal: load?.signal })
         store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
       } else {
-        await store.fitCurrentPageToViewport()
+        await store.fitCurrentPageToViewport(load?.signal)
       }
     }
   })
@@ -608,7 +603,7 @@ export async function openFileInNewTab(
       return store
     }
 
-    await yieldToUI()
+    await nextFrame()
     load.update({ phase: 'reading', detail: file.name })
     const isFig = isFigArchiveName(file.name)
     let imported: SceneGraph

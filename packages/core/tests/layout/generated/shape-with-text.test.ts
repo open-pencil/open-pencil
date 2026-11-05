@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'

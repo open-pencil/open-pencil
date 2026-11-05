@@ -1,7 +1,7 @@
 import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 
 import { isLineSegment, segmentToAbsolute, splitCubicAt } from './curve-math'
-import { reindexRegionLoops, remapRegions } from './regions'
+import { reindexRegionLoops, remapRegions } from './regions/remap'
 export {
   computeAccurateBounds,
   cubicExtrema,

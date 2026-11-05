@@ -11,60 +11,31 @@ const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 /**
  * Unit test shards, keyed by owning package or application area.
  *
- * Each group lists the owner's canonical test home from
- * `packages/docs/development/testing.md` (`packages/<owner>/tests`,
- * `tests/app`, `tests/integration`) together with the `tests/engine/**`
- * directories it still owns, so a file is discovered from either place and a
- * move needs no shard change. A path that does not exist yet contributes no
- * files. `render` is Core-owned but
- * sharded separately because canvas suites parse large fixtures.
+ * Each group lists its owners' canonical test homes from
+ * `packages/docs/development/testing.md` (`packages/<owner>/tests`, `tests/app`,
+ * `tests/integration`). A path that does not exist yet contributes no files. A file belongs to
+ * the group with the longest path that contains it, so `render` takes Core's canvas suites,
+ * which parse large fixtures, into a shard of their own while `core` keeps the rest of
+ * `packages/core/tests`.
  */
 export const UNIT_TEST_GROUPS = {
-  app: [
-    'tests/app',
-    'tests/integration',
-    'tests/engine/acp',
-    'tests/engine/app',
-    'tests/engine/collab',
-    'tests/engine/tauri'
-  ],
-  cli: ['packages/cli/tests', 'tests/engine/cli'],
-  core: [
-    'packages/core/tests',
-    'tests/engine/clipboard',
-    'tests/engine/color',
-    'tests/engine/core',
-    'tests/engine/editor',
-    'tests/engine/icons',
-    'tests/engine/layout',
-    'tests/engine/lint',
-    'tests/engine/profiler',
-    'tests/engine/text',
-    'tests/engine/tools',
-    'tests/engine/vector'
-  ],
+  app: ['tests/app', 'tests/integration'],
+  cli: ['packages/cli/tests'],
+  core: ['packages/core/tests'],
   dom: [
     'packages/emit/tests',
     'packages/drawio/tests',
     'packages/mermaid/tests',
+    'packages/html-engine/tests',
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
-    'packages/pen/tests',
-    'tests/engine/dom-css'
+    'packages/pen/tests'
   ],
-  fig: ['packages/fig/tests', 'packages/kiwi/tests', 'tests/engine/io', 'tests/engine/kiwi'],
-  mcp: ['packages/mcp/tests', 'tests/engine/mcp'],
-  render: ['tests/engine/render'],
-  'scene-graph': [
-    'packages/scene-graph/tests',
-    'packages/collab/tests',
-    'tests/engine/geometry',
-    'tests/engine/hit-test',
-    'tests/engine/random',
-    'tests/engine/scene-graph',
-    'tests/engine/snap'
-  ],
-  vue: ['packages/vue/tests', 'tests/engine/vue']
+  fig: ['packages/fig/tests', 'packages/kiwi/tests'],
+  mcp: ['packages/mcp/tests'],
+  render: ['packages/core/tests/canvas'],
+  'scene-graph': ['packages/scene-graph/tests', 'packages/collab/tests'],
+  vue: ['packages/vue/tests']
 } as const
 
 export type UnitTestGroup = keyof typeof UNIT_TEST_GROUPS | 'all'
@@ -80,17 +51,17 @@ export const LARGE_FIXTURES = ['material3.fig', 'nuxtui.fig'] as const
  * process, since one alone can take several gigabytes.
  */
 export const HEAVY_UNIT_TEST_PATTERNS = [
-  'tests/engine/clipboard/fixtures/',
-  'tests/engine/io/fig/heavy/',
+  'packages/core/tests/clipboard/fixtures/',
+  'packages/core/tests/io/formats/fig/heavy/',
   'packages/core/tests/io/formats/fig/roundtrip/exhaustive.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/variables.test.ts',
   'packages/core/tests/io/formats/fig/import/stale-overrides.test.ts',
-  'tests/engine/io/fig/export/text.test.ts',
-  'tests/engine/io/fig/export/worker.test.ts',
-  'tests/engine/io/fig/import/group-reclassify.test.ts',
-  'tests/engine/layout/auto-layout/text/measurement.test.ts',
-  'tests/engine/render/canvas/cache.test.ts'
+  'packages/core/tests/io/formats/fig/export/text/basic.test.ts',
+  'packages/core/tests/io/formats/fig/export/worker.test.ts',
+  'packages/core/tests/io/formats/fig/import/group-reclassify.test.ts',
+  'packages/core/tests/layout/auto-layout/text/measurement.test.ts',
+  'packages/core/tests/canvas/cache.test.ts'
 ] as const
 
 export function unitTestGroupNames(): UnitTestGroup[] {
@@ -109,16 +80,34 @@ export function isHeavyUnitTest(path: string): boolean {
   )
 }
 
+/** The shard path that owns a test file: the longest one containing it. */
+export function owningUnitTestPath(file: string): string | undefined {
+  const normalized = normalizePath(file)
+  return pathsForUnitTestGroup('all')
+    .filter((path) => normalized.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0]
+}
+
+/** A group's test files, without those a more specific path of another group owns. */
+async function listGroupTestFiles(group: UnitTestGroup): Promise<string[]> {
+  const paths = pathsForUnitTestGroup(group)
+  const files = await listTestFiles(paths)
+  return files.filter((file) => {
+    const owner = owningUnitTestPath(file)
+    return owner !== undefined && paths.includes(owner)
+  })
+}
+
 export async function listUnitTests(
   group: UnitTestGroup,
   options: { includeHeavy?: boolean } = {}
 ): Promise<string[]> {
-  const files = await listTestFiles(pathsForUnitTestGroup(group))
+  const files = await listGroupTestFiles(group)
   return options.includeHeavy ? files : files.filter((file) => !isHeavyUnitTest(file))
 }
 
 export async function listHeavyUnitTests(group: UnitTestGroup = 'all'): Promise<string[]> {
-  const files = await listTestFiles(pathsForUnitTestGroup(group))
+  const files = await listGroupTestFiles(group)
   return files.filter(isHeavyUnitTest)
 }
 

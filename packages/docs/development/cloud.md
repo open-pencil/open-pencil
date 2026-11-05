@@ -166,10 +166,21 @@ sequenceDiagram
   B->>R: yjs-update (dropped)
 ```
 
-The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved in
-PostgreSQL by document and collaboration epoch, so a newcomer gets the document even when nobody
-else is online. Tickets are short-lived signed JWTs; the client presents a fresh one before the
-current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
+The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
+document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
+typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
+the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+documents' revisions, which a room's row names, so the database holds only the updates since the
+last one. A compaction records its file before writing it and points the room at it last, so a
+replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
+15 minutes old. A room reopens from its snapshot and the updates logged after it. Tickets are
+short-lived signed JWTs; the client presents a fresh one before the current one expires, and the
+relay closes a socket whose ticket lapsed or changed identity. It checks a ticket when it hears from
+the peer or sends it anything, not on a timer, so on Cloudflare an idle room's Durable Object
+hibernates while its sockets stay open: each socket keeps its peer as an attachment, and the object
+it wakes to resumes them and loads the room's document only once a message needs it. Presence alone
+wakes the object without loading the document.
 
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,
 which may not be lower. A larger frame, such as a big paste, the first editor's copy of a large

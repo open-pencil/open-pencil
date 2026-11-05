@@ -6,7 +6,7 @@ import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-grap
 
 import { separateShadowChildren } from '#core/canvas/shadows/silhouette'
 
-import { expectDefined } from '../helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '../helpers/figma-rows'
 
 const ck = await initCanvasKit()

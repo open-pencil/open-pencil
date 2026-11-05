@@ -3,13 +3,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   PopoverAnchor,
   PopoverContent,
-  PopoverPortal,
-  PopoverRoot
+  PopoverPortal
 } from 'reka-ui'
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
@@ -20,8 +18,10 @@ import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -109,7 +109,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
 </script>
 
 <template>
-  <PopoverRoot v-if="context && isComponent" v-model:open="nestedOpen">
+  <AppPopoverRoot v-if="context && isComponent" v-model:open="nestedOpen">
     <PopoverAnchor as-child>
       <PanelSection
         :key="context.node.id"
@@ -117,7 +117,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         data-test-id="component-property-list"
       >
         <template #actions>
-          <DropdownMenuRoot>
+          <AppDropdownMenuRoot>
             <DropdownMenuTrigger as-child>
               <IconButton
                 :label="panels.createComponentProperty"
@@ -169,7 +169,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
                 </MenuScrollArea>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </template>
 
         <div
@@ -329,5 +329,5 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

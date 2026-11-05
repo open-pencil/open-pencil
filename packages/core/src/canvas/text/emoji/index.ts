@@ -1,6 +1,7 @@
 import type { Canvas, Image, Paint } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -10,6 +11,7 @@ import {
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { drawnBaseline } from '#core/canvas/text/layout/lines'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { characterFamily } from '#core/text/character-face'
@@ -54,6 +56,11 @@ function emojiImage(r: SkiaRenderer, text: string): Image | null {
  * Draws `image` over an emoji's square, 1 em wide from 0.07 em below the baseline at the
  * canvas origin, as Figma places it.
  */
+/** The 1 em square an emoji's image fills, on its baseline. */
+export function emojiSquare(size: number): VisualBounds {
+  return { minX: 0, minY: -0.93 * size, maxX: size, maxY: 0.07 * size }
+}
+
 function drawEmojiSquare(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -61,10 +68,11 @@ function drawEmojiSquare(
   size: number,
   paint: Paint
 ): void {
+  const square = emojiSquare(size)
   canvas.drawImageRectOptions(
     image,
     r.ck.LTRBRect(0, 0, image.width(), image.height()),
-    r.ck.LTRBRect(0, -0.93 * size, size, 0.07 * size),
+    r.ck.LTRBRect(square.minX, square.minY, square.maxX, square.maxY),
     r.ck.FilterMode.Linear,
     r.ck.MipmapMode.Linear,
     paint
@@ -135,7 +143,8 @@ export function drawLaidOutEmoji(
       const image = emojiImage(r, text.slice(start, drawnUntil))
       if (!image) continue
       canvas.save()
-      canvas.translate(glyph.x, glyph.y)
+      // On the whole pixel the text around it is drawn on.
+      canvas.translate(glyph.x, drawnBaseline(glyph.y))
       drawEmojiSquare(r, canvas, image, glyph.fontSize, paint)
       canvas.restore()
     }

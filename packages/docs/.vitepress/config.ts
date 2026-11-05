@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { createFileSystemTypesCache } from '@shikijs/vitepress-twoslash/cache-fs'
 import tailwindcss from '@tailwindcss/vite'
+import ts from 'typescript'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
@@ -13,7 +14,7 @@ import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fin
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
 import { landingPreloads } from './landing-head.ts'
-import { docsLocales } from './locales.ts'
+import { docsLocales } from './locales/docs.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
@@ -77,6 +78,9 @@ export default defineConfig({
           dir: resolve(configDir, 'cache/twoslash')
         }),
         twoslashOptions: {
+          // `typescript` resolves to a wrapper package without lib files, which is where
+          // Twoslash looks unless told; ask the compiler where its own libs are.
+          tsLibDirectory: dirname(ts.getDefaultLibFilePath({})),
           compilerOptions: {
             baseUrl: repoRoot,
             paths: {

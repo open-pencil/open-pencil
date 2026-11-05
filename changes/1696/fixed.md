@@ -1,1 +1,0 @@
-- PDF export works in the installed `openpencil` CLI and MCP server, which run on Node.js, instead of failing with "Cannot read properties of undefined (reading 'jsPDF')".

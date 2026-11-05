@@ -3,12 +3,10 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -18,6 +16,8 @@ import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
@@ -74,7 +74,7 @@ const menuUI = computed(() =>
     :data-kind="kind"
     :class="styles.root({ class: normalizeClass(className) })"
   >
-    <ContextMenuRoot :disabled="!menu">
+    <AppContextMenuRoot :disabled="!menu">
       <ContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
         <button
           type="button"
@@ -115,7 +115,7 @@ const menuUI = computed(() =>
         <div v-if="$slots.actions" data-slot="actions" :class="styles.actions()">
           <slot name="actions" />
         </div>
-        <DropdownMenuRoot v-if="menu">
+        <AppDropdownMenuRoot v-if="menu">
           <DropdownMenuTrigger
             :aria-label="menu.actions"
             data-test-id="home-document-actions"
@@ -138,7 +138,7 @@ const menuUI = computed(() =>
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
       </ContextMenuTrigger>
       <ContextMenuPortal v-if="menu">
         <ContextMenuContent :class="menuUI.content">
@@ -151,6 +151,6 @@ const menuUI = computed(() =>
           </MenuScrollArea>
         </ContextMenuContent>
       </ContextMenuPortal>
-    </ContextMenuRoot>
+    </AppContextMenuRoot>
   </div>
 </template>

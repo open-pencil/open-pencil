@@ -222,7 +222,8 @@ describe('createCloudAPIClient', () => {
         guestName: 'Guest',
         guestId: 'stable-guest-id-123'
       })
-    ).toEqual(collaborationTicket)
+      // A server from before the heartbeat says nothing of it, so the editor never pings its relay.
+    ).toEqual({ ...collaborationTicket, relayHeartbeat: false })
     expect(requests[0]?.url).toBe(
       'https://cloud.example.com/api/shares/share-id/collaboration-ticket'
     )

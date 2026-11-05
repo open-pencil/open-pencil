@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { asTextNode, registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { asTextNode } from '#core-tests/helpers/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'

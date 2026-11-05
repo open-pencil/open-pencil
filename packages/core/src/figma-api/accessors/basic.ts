@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -30,7 +31,6 @@ import {
 import type { FigmaNodeType } from '#core/figma-api/members'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
-import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
 import { atLeast } from '#core/figma-api/schema'
 import {
   containerTransform,
@@ -42,6 +42,7 @@ import type { FigmaTransform } from '#core/figma-api/types'
 import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
+import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -239,7 +240,8 @@ export function installBasicNodeProxyAccessors(
     absoluteRenderBounds: {
       get(this: ProxyThis): Rect | null {
         flushPendingLayout(graph(this, internals))
-        return computeAbsoluteRenderBounds(graph(this, internals), raw(this, internals))
+        const bounds = absoluteRenderBounds(graph(this, internals), raw(this, internals))
+        return bounds && visualBoundsToRect(bounds)
       }
     }
   })

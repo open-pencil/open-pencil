@@ -13,6 +13,14 @@ export const NOT_EDITOR_PAGES = [
   /^\/(?:welcome|auth|account|admin)(?:[/?]|$)/
 ]
 
+/** Shiki emits every grammar and theme it has; they are cached on first use, not precached. */
+export function chunkFileNames({ moduleIds }: { moduleIds: string[] }) {
+  // A facade chunk has no modules of its own, and it belongs with the app.
+  const shikiData =
+    moduleIds.length > 0 && moduleIds.every((id) => /\/@shikijs\/(langs|themes)\//.test(id))
+  return shikiData ? 'assets/shiki/[name]-[hash].js' : 'assets/[name]-[hash].js'
+}
+
 export function openPencilPwaPlugin() {
   return VitePWA({
     registerType: 'autoUpdate',
@@ -24,7 +32,15 @@ export function openPencilPwaPlugin() {
       sourcemap: false,
       globPatterns: ['**/*.{js,css,html,wasm,png,svg,ico,ttf,webmanifest}'],
       navigateFallback: '/index.html',
-      navigateFallbackDenylist: NOT_EDITOR_PAGES
+      navigateFallbackDenylist: NOT_EDITOR_PAGES,
+      globIgnores: ['assets/shiki/**'],
+      runtimeCaching: [
+        {
+          urlPattern: /\/assets\/shiki\//,
+          handler: 'CacheFirst',
+          options: { cacheName: 'shiki', expiration: { maxEntries: 100 } }
+        }
+      ]
     },
     manifest: {
       name: 'OpenPencil',

@@ -1,1 +1,0 @@
-- Self-hosted Cloud servers can report their errors to PostHog error tracking through an optional `[error_tracking]` table in the deployment configuration; servers without it send nothing.

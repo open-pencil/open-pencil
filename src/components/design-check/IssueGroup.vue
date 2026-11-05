@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { computed, ref } from 'vue'
@@ -14,6 +13,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -71,7 +71,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
             : messages.fixAll({ count: group.fixes.length })
         }}
       </AppButton>
-      <DropdownMenuRoot v-model:open="menuOpen" :modal="false">
+      <AppDropdownMenuRoot v-model:open="menuOpen" :modal="false">
         <DropdownMenuTrigger as-child>
           <IconButton size="xs" :label="messages.ruleActions">
             <icon-lucide-ellipsis class="size-3.5" />
@@ -87,7 +87,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </template>
 
     <ul :class="styles.rows()">

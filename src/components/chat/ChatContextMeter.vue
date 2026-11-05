@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { compactAutomatically } from '@/app/ai/chat/preferences'
 import { formatCompactNumber } from '@/app/i18n/number'
 import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 import { chatContextTheme } from './ui'
@@ -40,7 +41,7 @@ const full = computed(() => ratio.value >= FULL)
 </script>
 
 <template>
-  <PopoverRoot>
+  <AppPopoverRoot>
     <PopoverTrigger
       :class="ui.meter()"
       :aria-label="ai.contextUsed({ percent: percent })"
@@ -86,5 +87,5 @@ const full = computed(() => ratio.value >= FULL)
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

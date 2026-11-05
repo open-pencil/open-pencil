@@ -1,5 +1,7 @@
 import { describe, expect, jest, test } from 'bun:test'
 
+import { nextTick, shallowRef } from 'vue'
+
 import { createEditor } from '@open-pencil/core'
 
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
@@ -264,6 +266,68 @@ describe('editor preparation controller', () => {
       jest.useRealTimers()
     }
   })
+  // A canvas in a browser tab that is hidden draws no frames: the scene waits to be presented
+  // until the tab is shown, as it does in an editor tab in the background.
+  test('pauses the limit while the browser hides the page, keeping the time it had', async () => {
+    jest.useFakeTimers()
+    try {
+      const visibility = shallowRef<DocumentVisibilityState>('visible')
+      const state = createInitialAppEditorState('page')
+      const controller = createEditorPreparationController(state, undefined, {
+        presentationTimeoutMs: 100,
+        visibility
+      })
+      controller.attachCanvas()
+      const handle = controller.begin({ kind: 'page-switch' })
+      let failure: unknown = null
+      const waiting = controller.waitForPresentation(handle.id, at(7)).catch((error: unknown) => {
+        failure = error
+      })
+      jest.advanceTimersByTime(50)
+      visibility.value = 'hidden'
+      await nextTick()
+      jest.advanceTimersByTime(1_000)
+      await Promise.resolve()
+      expect(failure).toBeNull()
+
+      // Shown again, the scene has the 50 ms it had left, not a fresh limit.
+      visibility.value = 'visible'
+      await nextTick()
+      jest.advanceTimersByTime(49)
+      await Promise.resolve()
+      expect(failure).toBeNull()
+      jest.advanceTimersByTime(1)
+      await waiting
+      expect(failure).toHaveProperty('message', 'The operation was timed out')
+      handle.fail({ code: 'render-failed', message: 'Timed out', retryable: true })
+      controller.dispose()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // Another pane's canvas failing does not fail a wait the working one can still present.
+  test('keeps a hidden wait pending while a working canvas remains', async () => {
+    const visibility = shallowRef<DocumentVisibilityState>('hidden')
+    const state = createInitialAppEditorState('page')
+    const controller = createEditorPreparationController(state, undefined, { visibility })
+    controller.attachCanvas()
+    controller.failCanvas(new Error('The canvas could not start'))
+    const handle = controller.begin({ kind: 'page-switch' })
+    let outcome = 'pending' as 'pending' | 'presented' | 'failed'
+    const waiting = controller.waitForPresentation(handle.id, at(7)).then(
+      () => (outcome = 'presented'),
+      () => (outcome = 'failed')
+    )
+    await Promise.resolve()
+    expect(outcome).toBe('pending')
+    controller.acknowledgePresentation(at(7))
+    await waiting
+    expect(outcome).toBe('presented')
+    handle.complete()
+    controller.dispose()
+  })
+
   test('emits exactly one terminal outcome', () => {
     const state = createInitialAppEditorState('page')
     const events = createEditorPreparationEvents()

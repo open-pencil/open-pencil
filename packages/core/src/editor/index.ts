@@ -33,13 +33,22 @@ export type { RecordEditOptions } from './history/edit'
 export type { PageSnapshot } from './history/snapshot/page'
 export { graphFromDocumentChange, graphFromPageSnapshot } from './history/snapshot/graph'
 export type { ClipboardPayload, ClipboardSnapshot, CopyOptions } from './clipboard/copy'
+export type { PastedTextLink } from './clipboard/web'
 export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
 export { playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
-export { EDIT_VIEW, resolveEditorProfile } from './views'
-export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'
+export { EDIT_VIEW, NO_HOST_RESTRICTIONS, resolveEditorProfile } from './views'
+export type {
+  CanvasView,
+  EditorProfile,
+  EditorProfileInputs,
+  EditorRestrictions,
+  PathEdits
+} from './views'
 export type { ShaderRasterizer } from './shaders/types'
+export { editsHandlesOnly } from './vector/limits'
+export type { NodeEditExitOptions, NodeEditOptions, NodeEditState } from './vector/types'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
 export type {
@@ -49,14 +58,14 @@ export type {
   SwitchPageOptions
 } from './pages'
 export type { ExposableComponentField } from './components/authoring/context'
-export type { VariableTokenFields } from './variables'
+export type { VariableTokenFields } from './variables/actions'
 export { reapplyInstanceComponentProperties } from './components/properties'
 export { createGuideActions } from './guides'
 export { createTextActions } from './text'
 export { resizedPathTextGlyphs } from './text/path-edit'
-export { opacityFromBuffer } from './nodes'
+export { opacityFromBuffer } from './nodes/actions'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
-export type { NodePreview } from './node-preview'
+export type { NodePreview } from './nodes/preview'
 export { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
 export {
   applySampledColor,

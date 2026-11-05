@@ -2,6 +2,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Effect as KiwiEffect, NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { assignmentOverrideField } from '@open-pencil/scene-graph/components'
 import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 import {
   bindingOverrideField,
@@ -224,6 +225,7 @@ export function materializeInstance(
     nodes.set(current, node)
     if (existing && current !== occurrence && node.type === 'COMPONENT') return node
     applyBindingClaims(current, node, owner)
+    recordOwnerAssignments(owner, node, current)
     const sourceChildId = sourceChildren.get(current)
     if (owner && current.mainComponentId !== null && sourceChildId) {
       setInstanceOverride(
@@ -253,6 +255,27 @@ export function materializeInstance(
   const root = create(occurrence, parentId)
   recordPropertyClaims(nodes)
   return { root, nodes }
+}
+
+function recordOwnerAssignments(
+  owner: SceneNode | undefined,
+  node: SceneNode,
+  { ownerAssignedProperties = [] }: InstanceOccurrence
+): void {
+  if (!owner) {
+    return
+  }
+  for (const propertyId of ownerAssignedProperties) {
+    if (Object.hasOwn(node.componentPropertyAssignments, propertyId)) {
+      setInstanceOverride(
+        owner.instanceOverrides,
+        owner.id,
+        node.id,
+        assignmentOverrideField(propertyId),
+        node.componentPropertyAssignments[propertyId]
+      )
+    }
+  }
 }
 
 /** Whether a raw claim actually carries the scene value its kind maps to. */

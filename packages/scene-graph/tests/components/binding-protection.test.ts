@@ -3,8 +3,7 @@ import { expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
-import { expectDefined } from '../helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 for (const legacyOwner of ['outer', 'self'] as const) {
   test(`per-field claims do not weaken another owner's ${legacyOwner} whole-map protection`, () => {
     const graph = new SceneGraph()

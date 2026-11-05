@@ -5,8 +5,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 function nodeIn(children: PenNode[], id: string) {

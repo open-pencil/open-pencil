@@ -6,7 +6,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -20,6 +19,7 @@ import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-mode
 import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -51,7 +51,7 @@ function select(choice: VariableModeChoice, value: string) {
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="choices.length > 0">
+  <AppDropdownMenuRoot v-if="choices.length > 0">
     <DropdownMenuTrigger as-child>
       <IconButton :label="panels.applyVariableMode" data-variable-mode-menu>
         <icon-lucide-swatch-book class="size-3.5" />
@@ -109,5 +109,5 @@ function select(choice: VariableModeChoice, value: string) {
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

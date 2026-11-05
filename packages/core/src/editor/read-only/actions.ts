@@ -26,7 +26,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getInstanceComponentPropertyDefinitions',
   'getInstanceComponentPropertyValue',
   'getLayerTree',
+  'getLiveNetwork',
   'getNode',
+  'getNodeEditState',
   'getPages',
   'getSelectedNode',
   'getSelectedNodes',
@@ -94,6 +96,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
 
   // Viewport and pages
   'applyZoom',
+  'getViewportSize',
   'centerOn',
   'clearPageViewports',
   'commitPageSwitch',
@@ -132,7 +135,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
 
   // Ending what was in progress
   'cancelNodePreviews',
+  'exitNodeEditMode',
   'flushNudge',
+  'nodeEditCancelDrag',
   'penCancel',
   'pencilCancel',
 

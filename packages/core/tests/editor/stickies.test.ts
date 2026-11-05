@@ -8,8 +8,7 @@ import { lineHeightPixels, percentLength } from '@open-pencil/scene-graph/text'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 
-import { expectDefined } from '../helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 function setup() {
   const editor = createEditor({ getUserName: () => 'Ada Lovelace' })
   return { editor, pageId: editor.state.currentPageId }
