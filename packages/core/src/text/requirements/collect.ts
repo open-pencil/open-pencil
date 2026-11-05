@@ -66,26 +66,37 @@ export interface GraphFontRequirements {
   scripts: FontFallbackScript[]
 }
 
+/** What the text of `nodes` needs to measure and draw: its characters and the scripts among them. */
+export function collectFontRequirements(nodes: readonly SceneNode[]): GraphFontRequirements {
+  const characters = new Set<string>()
+  const scripts = new Set<FontFallbackScript>()
+  for (const node of nodes) {
+    if (node.type !== 'TEXT') continue
+    for (const { character, sourceIndex } of shownCharacters(node)) {
+      characters.add(character)
+      const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
+      if (script) scripts.add(script)
+    }
+  }
+  return {
+    characters: Array.from(characters).join(''),
+    nodes: [...nodes],
+    scripts: Array.from(scripts)
+  }
+}
+
+/** What the text of `nodeIds` and the layers inside them needs. */
 export function collectGraphFontRequirements(
   graph: SceneGraph,
   nodeIds: readonly string[]
 ): GraphFontRequirements {
-  const characters = new Set<string>()
   const nodes: SceneNode[] = []
-  const scripts = new Set<FontFallbackScript>()
   const collect = (nodeId: string) => {
     const node = graph.getNode(nodeId)
     if (!node) return
     nodes.push(node)
-    if (node.type === 'TEXT') {
-      for (const { character, sourceIndex } of shownCharacters(node)) {
-        characters.add(character)
-        const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
-        if (script) scripts.add(script)
-      }
-    }
     for (const childId of node.childIds) collect(childId)
   }
   for (const nodeId of nodeIds) collect(nodeId)
-  return { characters: Array.from(characters).join(''), nodes, scripts: Array.from(scripts) }
+  return collectFontRequirements(nodes)
 }

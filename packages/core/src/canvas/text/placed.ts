@@ -7,7 +7,7 @@ import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
-import { shownCharacters } from '#core/text/case'
+import { shownSourceIndices } from '#core/text/case'
 import { candidateSources, fontAt, styleRunAt, type StyleRun } from '#core/text/character-face'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
@@ -285,10 +285,7 @@ function lineRunOutline(
  */
 function sourceIndices(node: SceneNode, text: string): (index: number) => number {
   if (text === node.text) return (index) => index
-  const indices: number[] = []
-  for (const { character, sourceIndex } of shownCharacters(node)) {
-    indices.push(...Array.from({ length: character.length }, () => sourceIndex))
-  }
+  const indices = shownSourceIndices(node)
   return (index) => indices.at(index) ?? index
 }
 

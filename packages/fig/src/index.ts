@@ -25,7 +25,9 @@ export {
 export {
   figArchiveComponentUsePages,
   figArchiveRecordInfo,
+  figArchiveRecordPages,
   figComponentUsePages,
+  figRecordPages,
   patchFigArchive,
   patchFigRecords,
   type FigArchiveRecordInfo,

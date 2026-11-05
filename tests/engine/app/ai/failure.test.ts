@@ -2,13 +2,37 @@ import { describe, expect, test } from 'bun:test'
 
 import { APICallError, StreamProviderError } from 'ai'
 
+import { ACP_AGENTS } from '@open-pencil/core/constants'
+
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import {
   classifyAIChatError,
   classifyAIChatFinish,
+  isContextLimitError,
   isInsufficientCreditError
 } from '@/app/ai/chat/failure'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('AI chat failures', () => {
+  test('a request past the context window is its own failure, which compaction can fix', () => {
+    const openAI = new APICallError({
+      message: 'Bad Request',
+      url: 'https://api.openai.com/v1/responses',
+      requestBodyValues: {},
+      statusCode: 400,
+      responseBody:
+        '{"error":{"code":"context_length_exceeded","message":"Your input exceeds the context window"}}'
+    })
+    expect(isContextLimitError(openAI)).toBe(true)
+    expect(classifyAIChatError(openAI).reason).toBe('context-limit')
+    expect(
+      isContextLimitError(new Error('prompt is too long: 210000 tokens > 200000 maximum'))
+    ).toBe(true)
+    expect(isContextLimitError({ statusCode: 413 })).toBe(true)
+    expect(isContextLimitError(new Error('Rate limit exceeded'))).toBe(false)
+  })
+
   test('recognizes provider credit and quota failures', () => {
     expect(isInsufficientCreditError({ statusCode: 402 })).toBe(true)
     expect(isInsufficientCreditError(new Error('Insufficient balance. Please top up.'))).toBe(true)
@@ -77,6 +101,17 @@ describe('AI chat failures', () => {
     expect(classifyAIChatError(new Error('API key expired.')).reason).toBe('authentication')
     expect(classifyAIChatError(new Error('Invalid API key.')).reason).toBe('authentication')
     expect(classifyAIChatError(new Error('Failed to fetch provider')).reason).toBe('network')
+    const cursor = expectDefined(
+      ACP_AGENTS.find((agent) => agent.id === 'cursor'),
+      'Cursor'
+    )
+    expect(classifyAIChatError(new AgentNotInstalledError(cursor)).reason).toBe(
+      'agent-not-installed'
+    )
+    expect(classifyAIChatError(new Error('ENOENT: no such file')).reason).toBe('request-failed')
+    expect(classifyAIChatError(new Error('"agent" is not installed.')).reason).toBe(
+      'request-failed'
+    )
     expect(classifyAIChatError(new Error('Provider unavailable')).reason).toBe('request-failed')
   })
 

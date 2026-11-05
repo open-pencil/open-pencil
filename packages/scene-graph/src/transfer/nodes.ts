@@ -65,7 +65,8 @@ export function prepareNodeTransfer(
   result.componentId = source.componentId ? node(source.componentId) : null
   result.instanceOverrides = remapInstanceOverrideState(source.instanceOverrides, {
     node,
-    variable
+    variable,
+    collection: (id) => refs.collections.get(id)
   })
   result.boundVariables = Object.fromEntries(
     Object.entries(source.boundVariables).map(([field, id]) => [field, variable(id)])
@@ -106,10 +107,11 @@ export function prepareNodeTransfer(
     id: property(definition.id),
     defaultValue: propertyValue(definition.id, definition.defaultValue)
   }))
-  result.componentPropertyReferences = source.componentPropertyReferences.map((reference) => ({
-    ...reference,
-    propertyId: property(reference.propertyId)
-  }))
+  // A reference to a property that neither the transfer nor its destination defines names nothing.
+  result.componentPropertyReferences = source.componentPropertyReferences.flatMap((reference) => {
+    const propertyId = refs.properties.get(reference.propertyId)
+    return propertyId ? [{ ...reference, propertyId }] : []
+  })
   result.componentPropertyAssignments = values(source.componentPropertyAssignments)
   // Variant values are keyed by display names, unlike definition-ID assignments.
   result.componentPropertyValues = { ...source.componentPropertyValues }

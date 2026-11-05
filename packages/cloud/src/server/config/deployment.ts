@@ -99,6 +99,16 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
   }
 }
 
+function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
+  const tracking = config.error_tracking
+  if (!tracking) return undefined
+  return {
+    provider: tracking.provider,
+    host: tracking.host,
+    projectAPIKey: configuredText(environment, tracking.project_api_key)
+  }
+}
+
 /** Hard limits, whatever a plan allows; each lives in the section it limits. */
 function technicalLimits(config: CloudDeploymentConfig) {
   return {
@@ -166,6 +176,7 @@ export function parseCloudDeploymentConfig(
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),
+    errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
 }

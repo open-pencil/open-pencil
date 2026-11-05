@@ -5,3 +5,5 @@ TURNSTILE_HOSTNAMES=example.com
 # The metrics snapshot's tokens; without real ones its requests fail and nothing is recorded.
 GITHUB_TOKEN=github_development
 CLOUDFLARE_ANALYTICS_TOKEN=cloudflare_development
+# Signs report upload tokens; any string works locally.
+REPORT_UPLOAD_SECRET=report-upload-development

@@ -73,10 +73,7 @@ export function useDocumentFontStatus() {
       preparation.update({ phase: 'preparing-render' })
       editor.requestRender()
       if (editor.renderer) {
-        await editor.preparationController.waitForPresentation(
-          preparation.id,
-          editor.state.sceneVersion
-        )
+        await editor.preparationController.waitForPresentation(preparation.id, editor.state)
       }
       refresh()
       succeeded = true

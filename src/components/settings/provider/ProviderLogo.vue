@@ -4,9 +4,11 @@ import { computed } from 'vue'
 import IconAnthropic from '~icons/ai/anthropic'
 import IconClaudeCode from '~icons/ai/claudecode'
 import IconCodex from '~icons/ai/codex'
+import IconCursor from '~icons/ai/cursor'
 import IconDeepSeek from '~icons/ai/deepseek'
 import IconGemini from '~icons/ai/gemini'
 import IconGeminiCLI from '~icons/ai/geminicli'
+import IconGrok from '~icons/ai/grok'
 import IconLMStudio from '~icons/ai/lmstudio'
 import IconMiniMax from '~icons/ai/minimax'
 import IconOllama from '~icons/ai/ollama'
@@ -32,7 +34,9 @@ const LOGOS: Record<string, Component> = {
   lmstudio: IconLMStudio,
   'acp:claude-code': IconClaudeCode,
   'acp:codex': IconCodex,
+  'acp:cursor': IconCursor,
   'acp:gemini-cli': IconGeminiCLI,
+  'acp:grok-build': IconGrok,
   'harness:pi': IconBot
 }
 

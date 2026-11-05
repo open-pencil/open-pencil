@@ -14,7 +14,6 @@ import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
 import { pressSelects } from '#vue/shared/input/select/move'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
-import { getNodeEditState } from '#vue/shared/input/vector'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   for (const id of editor.state.selectedIds) {
@@ -67,7 +66,7 @@ function updateHoveredNode(
 ) {
   // A label takes the hover before the layers under it, with or without ⌘, as it takes a press.
   const hit = hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
-  const editNodeId = getNodeEditState(editor)?.nodeId
+  const editNodeId = editor.getNodeEditState()?.nodeId
   // No outline on a layer a press would not select.
   const hovered =
     hit &&
@@ -87,7 +86,7 @@ export function updateHoverCursor(
   >,
   deep = false
 ): string | null {
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     editor.setHoveredNode(null)
     return null
   }

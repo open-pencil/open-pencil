@@ -95,7 +95,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
           {{ panels.libraryUpdates }}
           <template v-if="visibleUpdateGroups.length" #trailing>
-            <span class="rounded-full bg-accent px-1.5 text-[10px] text-on-accent">{{
+            <span class="rounded-full bg-accent px-1.5 text-3xs text-on-accent">{{
               visibleUpdateGroups.length
             }}</span>
           </template>
@@ -122,7 +122,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             <icon-lucide-library class="size-4 text-component" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ library.name }}</p>
-              <p class="text-[10px] text-muted">
+              <p class="text-3xs text-muted">
                 {{ panels.libraryAssetCount({ count: library.assetCount }) }}
               </p>
             </div>
@@ -160,7 +160,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             <div class="min-w-0 flex-1">
               <button type="button" class="block w-full text-left" @click="reviewUpdate(asset)">
                 <p class="truncate text-xs text-surface">{{ asset.name }}</p>
-                <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
+                <p data-test-id="library-update-instance-count" class="text-3xs text-muted">
                   {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
                 </p>
               </button>

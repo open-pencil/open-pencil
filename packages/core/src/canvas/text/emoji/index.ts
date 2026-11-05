@@ -10,6 +10,7 @@ import {
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { drawnBaseline } from '#core/canvas/text/layout/lines'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { characterFamily } from '#core/text/character-face'
@@ -135,7 +136,8 @@ export function drawLaidOutEmoji(
       const image = emojiImage(r, text.slice(start, drawnUntil))
       if (!image) continue
       canvas.save()
-      canvas.translate(glyph.x, glyph.y)
+      // On the whole pixel the text around it is drawn on.
+      canvas.translate(glyph.x, drawnBaseline(glyph.y, offsetY))
       drawEmojiSquare(r, canvas, image, glyph.fontSize, paint)
       canvas.restore()
     }

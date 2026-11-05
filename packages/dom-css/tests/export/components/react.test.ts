@@ -14,11 +14,13 @@ import {
   textFieldSet,
   buttonSet,
   collapsibleSet,
+  invalidCheckboxSet,
   labelledButtonSet,
   radioGroupComponent,
   settingsSectionSet,
   switchSet,
   tabsComponent,
+  tabsOfTabSets,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
@@ -211,11 +213,36 @@ describe('generated React form controls', () => {
       progressComponent(),
       numberFieldComponent(),
       textFieldSet(),
-      textareaComponent()
+      textFieldSet({ invalid: true }),
+      textareaComponent(),
+      invalidCheckboxSet()
     ]) {
       const { folder } = await generate(fixture)
       expect(await typeErrors(folder, fixture.set.name)).toEqual([])
     }
+  })
+
+  test('an invalid checkbox is marked for assistive technology and its styles', async () => {
+    const { component } = await generate(invalidCheckboxSet())
+    const valid = render(component)
+    expect(valid).not.toContain('aria-invalid')
+    expect(valid).not.toContain('data-invalid')
+    const invalid = render(component, { invalid: true })
+    expect(invalid).toContain('aria-invalid="true"')
+    expect(invalid).toContain('data-invalid="true"')
+    // `invalid` is the component's own prop, never passed on to the element.
+    expect(invalid).not.toMatch(/ invalid=/)
+    // An `aria-invalid` the caller passes stays while `invalid` is off.
+    expect(render(component, { 'aria-invalid': 'true' })).toContain('aria-invalid="true"')
+  })
+
+  test("an invalid field marks its input, and its root for the field's styles", async () => {
+    const { component } = await generate(textFieldSet({ invalid: true }))
+    const html = render(component, { invalid: true })
+    expect(html).toMatch(/^<div[^>]*data-invalid="true"/)
+    expect(html).toMatch(/<input[^>]*aria-invalid="true"/)
+    expect(html.match(/aria-invalid/g)).toHaveLength(1)
+    expect(render(component, { 'aria-invalid': 'true' })).toMatch(/<input[^>]*aria-invalid="true"/)
   })
 
   test("a slider starts at the design's value as Radix's list, within its range", async () => {
@@ -329,6 +356,15 @@ describe('generated React components', () => {
     expect([first?.rest?.left, second?.rest?.left]).toEqual(['0px', '90px'])
     expect(first?.active).toEqual({ 'background-color': '#4F45E6' })
     expect(second?.active).toEqual(first?.active)
+  })
+
+  test('tabs drawn as Tab instances start on the selected one and keep a disabled tab disabled', async () => {
+    const { component } = await generate(tabsOfTabSets())
+    // Account, Password, and Billing, in their list's order.
+    const [account, password, billing] = render(component).match(/<button[^>]*>/g) ?? []
+    expect(account).toContain('aria-selected="true"')
+    expect(password).not.toContain('disabled')
+    expect(billing).toContain('disabled=""')
   })
 
   test('a layer drawn as a frame in one state and an instance in another is both', async () => {

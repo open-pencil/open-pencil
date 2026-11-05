@@ -1,6 +1,7 @@
 import type { Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
@@ -9,7 +10,7 @@ import { nodeOrientationMatrix } from '#core/geometry'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
-import { blurSigma, renderNoiseEffects } from './effects'
+import { renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,
@@ -79,7 +80,7 @@ function shadowLayerBounds(
     height: node.height
   }
   const offset = effect.offset
-  const padding = effect.radius * 2 + Math.abs(spread)
+  const padding = drawnBlurRadius(effect.radius) * 2 + Math.abs(spread)
   return r.ck.LTRBRect(
     box.x + Math.min(0, offset.x) - padding,
     box.y + Math.min(0, offset.y) - padding,

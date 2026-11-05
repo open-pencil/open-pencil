@@ -2,6 +2,7 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import {
   browserNotificationPermission,
   requestBrowserNotificationPermission
@@ -18,6 +19,7 @@ const { ai, settings } = useI18n()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
+const defaults = DEFAULT_APP_PREFERENCES.notifications
 </script>
 
 <template>
@@ -40,13 +42,26 @@ const failed = notificationPreference('agentFailed')
           >{{ ai.notificationsAllow }}</AppButton
         >
       </SettingsRow>
-      <SettingsRow :label="ai.notifyNeedsInput" :description="ai.notifyNeedsInputHint">
+      <SettingsRow
+        :label="ai.notifyNeedsInput"
+        :description="ai.notifyNeedsInputHint"
+        :modified="needsInput !== defaults.agentNeedsInput"
+        @reset="needsInput = defaults.agentNeedsInput"
+      >
         <AppSwitch v-model="needsInput" :label="ai.notifyNeedsInput" />
       </SettingsRow>
-      <SettingsRow :label="ai.notifyFinished">
+      <SettingsRow
+        :label="ai.notifyFinished"
+        :modified="finished !== defaults.agentFinished"
+        @reset="finished = defaults.agentFinished"
+      >
         <AppSwitch v-model="finished" :label="ai.notifyFinished" />
       </SettingsRow>
-      <SettingsRow :label="ai.notifyFailed">
+      <SettingsRow
+        :label="ai.notifyFailed"
+        :modified="failed !== defaults.agentFailed"
+        @reset="failed = defaults.agentFailed"
+      >
         <AppSwitch v-model="failed" :label="ai.notifyFailed" />
       </SettingsRow>
     </SettingsGroup>

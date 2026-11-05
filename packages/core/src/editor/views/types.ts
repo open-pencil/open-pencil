@@ -59,6 +59,11 @@ export interface EditorProfile {
    * board it selects the frame, and double-click or Enter goes inside.
    */
   framesOpen: boolean
+  /**
+   * What a section's title is coloured from: its fill, as in Figma Design, or its outline, as a
+   * FigJam board draws it.
+   */
+  sectionTitles: 'fill' | 'outline'
   /** Whether design lint checks the document; a FigJam board has none. */
   lint: boolean
   /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */

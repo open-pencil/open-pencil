@@ -2,6 +2,7 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
@@ -12,7 +13,6 @@ import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { renderBooleanOperation } from './boolean'
-import { blurSigma } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
@@ -155,6 +155,8 @@ function renderMaskNodeContent(
   absY: number,
   frame: Mat3 | null
 ): void {
+  // A mask whose fonts are still prepared masks nothing in yet, so what it masks stays hidden too.
+  if (fontManager.isNodeBlocked(graph, node.id)) return
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
@@ -164,7 +166,7 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = (blur?.radius ?? 0) * 2
+    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
@@ -265,7 +267,7 @@ export function renderNodeSelf(
     node.internalOnly ||
     !node.visible ||
     node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
+    fontManager.isNodeBlocked(graph, nodeId)
   ) {
     return
   }
@@ -317,8 +319,13 @@ function nodeIsolationLayerBounds(
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
  * node-edit mode, or left to a live island while the canvas previews.
  */
-function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
-  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
+  if (
+    node.internalOnly ||
+    !node.visible ||
+    node.isMask ||
+    fontManager.isNodeBlocked(graph, node.id)
+  )
     return false
   return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
 }
@@ -339,7 +346,7 @@ export function renderNode(
   frame: Mat3 | null = null
 ): void {
   const found = graph.getNode(nodeId)
-  if (!found || !drawsNode(found, overlays)) return
+  if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
 
   r.drawCounts.nodes++
@@ -374,7 +381,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
     r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = layerBlur.radius * 2
+    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
     canvas.saveLayer(
       r.effectLayerPaint,
       viewportLayerBounds(r, world(), blurPadding) ??

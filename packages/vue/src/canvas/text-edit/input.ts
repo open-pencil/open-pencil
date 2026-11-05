@@ -1,11 +1,11 @@
 import { getNodeEditCapability, resolveEditorProfile, type Editor } from '@open-pencil/core'
+import { LAYER_HIT_PAD } from '@open-pencil/core/constants'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { generatedFrameOwner, generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import type { CanvasLabelKind } from '#vue/canvas/labels/edit'
 import type { DragState } from '#vue/shared/input/types'
 
-type NodeEditMethods = Partial<{ enterNodeEditMode: (nodeId: string) => void }>
 type GetCoords = (e: MouseEvent) => { cx: number; cy: number }
 type HitTest = (cx: number, cy: number, deep: boolean) => SceneNode | null
 type SetDrag = (drag: DragState) => void
@@ -107,8 +107,10 @@ export function createTextEditInput(options: TextEditInputOptions) {
     cx: number,
     cy: number
   ): SceneNode | null {
-    // Double-clicking goes one level into the container, as in Figma.
-    const hit = editor.graph.hitTestSelectable(cx, cy, containerId, new Set())
+    // Double-clicking goes one level into the container, as in Figma, taking a click as near a
+    // layer as a press does: thin strokes are hit within the same few screen pixels.
+    const pad = LAYER_HIT_PAD / (editor.renderer?.zoom ?? editor.state.zoom)
+    const hit = editor.graph.hitTestSelectable(cx, cy, containerId, new Set(), { pad })
     if (hit) return hit
     return editor.graph.isPointInNode(containerId, cx, cy)
       ? (editor.graph.getNode(containerId) ?? null)
@@ -163,7 +165,6 @@ export function createTextEditInput(options: TextEditInputOptions) {
    * takes a double-click.
    */
   function pressDeeper(e: MouseEvent, rapid = false) {
-    const nodeEditEditor = editor as Editor & NodeEditMethods
     if (editor.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
@@ -192,7 +193,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
 
     if (hit.type === 'VECTOR') {
-      nodeEditEditor.enterNodeEditMode?.(hit.id)
+      editor.enterNodeEditMode(hit.id)
       return
     }
 

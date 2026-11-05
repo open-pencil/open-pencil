@@ -8,7 +8,7 @@
  * no shared references between source and copy.
  */
 
-import { geometryCommandCoordCount } from './geometry'
+import { readGeometryBlob } from './geometry'
 import { cloneInstanceOverrideState } from './instances/overrides'
 import { createDefaultSourceMetadata } from './node-defaults'
 import type {
@@ -159,21 +159,15 @@ export function transformGeometryBlob(
   ty = 0
 ): Uint8Array {
   const out = blob.slice()
-  const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
-  let offset = 0
-  while (offset < out.length) {
-    const command = out[offset++]
-    const coords = geometryCommandCoordCount(command)
-    if (coords == null) break
-    for (let i = 0; i < coords; i++) {
-      if (offset + 8 > out.length) break
-      const x = dv.getFloat32(offset, true)
-      const y = dv.getFloat32(offset + 4, true)
-      dv.setFloat32(offset, m00 * x + m01 * y + tx, true)
-      dv.setFloat32(offset + 4, m10 * x + m11 * y + ty, true)
-      offset += 8
+  const view = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  readGeometryBlob(out, (_, coords, offset) => {
+    for (let i = 0; i < coords.length; i += 2) {
+      const x = coords[i]
+      const y = coords[i + 1]
+      view.setFloat32(offset + i * 4, m00 * x + m01 * y + tx, true)
+      view.setFloat32(offset + i * 4 + 4, m10 * x + m11 * y + ty, true)
     }
-  }
+  })
   return out
 }
 

@@ -30,7 +30,9 @@ export async function preparePDFFonts(
   specs: readonly PDFPageSpec[]
 ): Promise<DocumentFontStatus> {
   const nodeIds = specs.flatMap((spec) => spec.nodeIds)
-  return prepareGraphFonts(graph, nodeIds, await pdfWrittenCharacters(graph, nodeIds))
+  return prepareGraphFonts(graph, nodeIds, {
+    extraCharacters: await pdfWrittenCharacters(graph, nodeIds)
+  })
 }
 
 /**

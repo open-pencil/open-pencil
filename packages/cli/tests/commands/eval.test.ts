@@ -100,6 +100,44 @@ describe('eval CLI', () => {
     expect(heights.paragraph).toBeGreaterThan(heights.line * 2)
   })
 
+  test('measures geometry, booleans, and flatten with the renderer that measures text', async () => {
+    const script = `
+      const rect = figma.createRectangle()
+      rect.resize(40, 20)
+      rect.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }]
+      rect.strokeWeight = 4
+      const fill = rect.fillGeometry[0].data
+      const strokes = rect.strokeGeometry.length
+      const outline = rect.outlineStroke().name
+      const flat = figma.flatten([figma.createStar()], figma.currentPage)
+      return { fill, strokes, outline, flattened: flat.vectorNetwork.vertices.length > 0 }
+    `
+    const result = await cli(
+      ['eval', join(FIXTURES, 'circle-text.fig'), '--stdin', '--json'],
+      script
+    )
+    expect(result.exitCode).toBe(0)
+    const measured = v.parse(
+      v.pipe(
+        v.string(),
+        v.parseJson(),
+        v.object({
+          fill: v.string(),
+          strokes: v.number(),
+          outline: v.string(),
+          flattened: v.boolean()
+        })
+      ),
+      result.stdout
+    )
+    expect(measured).toEqual({
+      fill: 'M0 0 L40 0 L40 20 L0 20 L0 0 Z',
+      strokes: 1,
+      outline: 'Rectangle (Stroke)',
+      flattened: true
+    })
+  })
+
   test('saves a script’s edits laid out, though the script never read them back', async () => {
     const out = join(await mkdtemp(join(tmpdir(), 'open-pencil-eval-')), 'badge.fig')
     // A hugging badge whose label a property shortens: its saved width fits the new label.

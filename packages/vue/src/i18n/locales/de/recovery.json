@@ -1,11 +1,12 @@
 {
   "preserveUnsavedWork": "Ungespeicherte Arbeit automatisch sichern",
   "preserveUnsavedWorkDescription": "Lokale Wiederherstellungskopien speichern, um Dokumente nach einem unerwarteten Beenden wiederherzustellen.",
-  "dialogTitle": "Nicht gespeicherte Arbeit wiederherstellen",
-  "dialogDescription": "OpenPencil hat Dokumente aus einer vorherigen Sitzung gefunden.",
+  "sectionTitle": "Ungespeicherte Arbeit",
+  "sectionDescription": "Ungespeicherte Änderungen aus Dokumenten, die ohne Speichern geschlossen wurden oder beim Beenden von OpenPencil geöffnet waren. Öffne eines, um weiterzuarbeiten.",
+  "crashNote": "Nach einem Absturz behalten",
   "restoreFailed": "Dieses Dokument konnte nicht wiederhergestellt werden.",
+  "discardFailed": "Diese Kopie konnte nicht verworfen werden.",
   "settingsTitle": "Wiederherstellung",
   "settingsDescription": "Lokale Wiederherstellungskopien für ungespeicherte Dokumente verwalten.",
-  "restore": "Wiederherstellen",
   "discard": "Verwerfen"
 }

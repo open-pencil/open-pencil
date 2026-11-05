@@ -227,7 +227,8 @@ describe('@open-pencil/dom-css conversion', () => {
     // A color function in the `border` shorthand, and a shadow color after its lengths.
     expect(card.strokes[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slate200))
     expect(card.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(card.effects[0]?.radius).toBe(24)
+    // A 24px CSS blur is a Gaussian of 12, which the canvas draws at 0.43 × radius.
+    expect(card.effects[0]?.radius).toBeCloseTo(12 / 0.43, 6)
     expect(card.effects[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slateShadow))
 
     const [title, description] = graph.getChildren(card.id)
@@ -493,7 +494,7 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(dialog.maxWidth).toBe(420 + 2 * 24 + 2 * 1)
     expect(dialog.itemSpacing).toBe(16)
     expect(dialog.effects[0]?.type).toBe('DROP_SHADOW')
-    expect(dialog.effects[0]?.radius).toBe(40)
+    expect(dialog.effects[0]?.radius).toBeCloseTo(20 / 0.43, 6)
 
     const [, , inputNode, buttonNode] = graph.getChildren(dialog.id)
     const input = expectFrame(inputNode)

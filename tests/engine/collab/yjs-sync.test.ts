@@ -4,12 +4,11 @@ import { create as createPRNG } from 'lib0/prng'
 import * as Y from 'yjs'
 import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
+import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@open-pencil/collab'
+import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import type { Fill, GeometryPath, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
-
-import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { withSyncedStores } from '#tests/helpers/collab/synced-stores'
@@ -213,12 +212,8 @@ describe('collab yjs-sync', () => {
         const refs = getNodeOrThrow(peer, hostPage.id).childIds.filter((c) => c === ellipse.id)
         expect(refs).toHaveLength(1)
         expect(peer.getPages().map((page) => page.id)).toContain(hostPage.id)
-        expect(() =>
-          nodeVisualBounds(peerEllipse, (id) => {
-            const n = peer.getNode(id)
-            return { x: n?.x ?? 0, y: n?.y ?? 0 }
-          })
-        ).not.toThrow()
+        expect(() => computeContentBounds(peer, [peerEllipse.id])).not.toThrow()
+        expect(computeContentBounds(peer, [peerEllipse.id])).not.toBeNull()
       },
       { connectImmediately: false }
     )

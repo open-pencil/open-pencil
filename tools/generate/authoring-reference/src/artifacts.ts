@@ -8,7 +8,8 @@ const HEADER =
 
 export const AUTHORING_REFERENCE_ARTIFACTS = {
   'skills/open-pencil/references/design-authoring.md': HEADER + JSX_REFERENCE,
-  'packages/docs/reference/design-authoring.md': HEADER + JSX_REFERENCE
+  // VitePress compiles the page as a Vue template, so `{{ }}` in JSX examples must stay literal.
+  'packages/docs/reference/design-authoring.md': `${HEADER}::: v-pre\n\n${JSX_REFERENCE}\n\n:::\n`
 }
 
 export async function writeReferences(root: string): Promise<void> {

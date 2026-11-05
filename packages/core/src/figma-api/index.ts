@@ -1,3 +1,16 @@
+import type {
+  BaseNode,
+  BooleanOperationNode,
+  ChildrenMixin,
+  ComponentNode,
+  ComponentSetNode,
+  GroupNode,
+  Image,
+  PageNode,
+  SceneNode,
+  UtilAPI,
+  VectorNode
+} from '@figma/plugin-typings/plugin-api-standalone'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pencil/scene-graph'
@@ -9,7 +22,10 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
-import { invalidateBooleanAncestors } from '#core/editor/graph-events'
+import {
+  invalidateBooleanAncestors,
+  rendererInvalidationForChanges
+} from '#core/editor/graph-events'
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
@@ -45,8 +61,18 @@ import type {
   FigmaVectorNode
 } from './node-types'
 import { startPendingLayout } from './pending-layout'
-import { FigmaNodeProxy, INTERNAL_ID, MIXED, type FigmaFont, type NodeProxyHost } from './proxy'
+import {
+  FigmaNodeProxy,
+  INTERNAL_ID,
+  loadPage,
+  MIXED,
+  pageOfNode,
+  setPageHost,
+  type FigmaFont,
+  type NodeProxyHost
+} from './proxy'
 import { newShapeWithText } from './shape-with-text'
+import { FigmaStyleMethods } from './styles/api'
 import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
@@ -58,6 +84,14 @@ const noop = () => undefined
 export interface FigmaAPIOptions {
   /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
   fetch?: images.ImageFetch
+  /**
+   * Loads a page's layers, for a host that loads pages as they are visited, as the editor does a
+   * file it opens: `page.loadAsync`, `figma.loadAllPagesAsync`, and `setCurrentPageAsync` call
+   * it, as they load pages in Figma's dynamic-page mode. Without one every page is in memory.
+   */
+  loadPage?: (pageId: string) => Promise<void>
+  /** The page holding a layer not loaded yet, which `getNodeByIdAsync` loads to find it. */
+  pageOfNode?: (nodeId: string) => Promise<string | null>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -99,11 +133,14 @@ export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
-export class FigmaAPI implements NodeProxyHost {
+export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   readonly graph: SceneGraph
   private _currentPageId: string
+  /** Counts page switches, so a switch whose page loads after a later one does not undo it. */
+  #pageSwitch = 0
   private _selection: FigmaNodeProxy[] = []
   private _nodeCache = new Map<string, FigmaNodeProxy>()
+  private _nodeTypes = new Map<string, string | undefined>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
   private _unbindRendererEvents: (() => void) | null = null
@@ -120,18 +157,25 @@ export class FigmaAPI implements NodeProxyHost {
   readonly #fetch: images.ImageFetch
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
+    super()
     this.graph = graph
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
+    if (options.loadPage)
+      setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
+  get renderer(): SkiaRenderer | null {
+    return this._renderer
+  }
+
   /**
-   * The renderer that measures for the API: boolean results and flattened vectors. It keeps
-   * each boolean operation's result between readings, so the API tells it when a change lands
-   * inside one, as the editor does for its renderers.
+   * The renderer that measures for the API: geometry, boolean results, and flattened vectors. It
+   * keeps paths between readings, so the API tells it when a layer's shape changes or a change
+   * lands inside a boolean operation, as the editor does for its renderers.
    */
   setRenderer(renderer: SkiaRenderer | null): void {
     this._unbindRendererEvents?.()
@@ -141,10 +185,16 @@ export class FigmaAPI implements NodeProxyHost {
     const graph = this.graph
     const invalidate = (id: string | null | undefined) =>
       invalidateBooleanAncestors(graph, [renderer], id)
+    // A layer's own paths are kept too, so an edit to its shape drops them, as the editor's do.
+    const changed = (id: string, changes: Partial<CoreSceneNode>) => {
+      invalidate(id)
+      const { geometryCache } = rendererInvalidationForChanges(changes, { preview: false })
+      if (geometryCache) renderer.invalidateVectorPath(id)
+    }
     this._unbindRendererEvents = graph.onNodeEvents({
       created: (node) => invalidate(node.parentId),
-      updated: (id) => invalidate(id),
-      previewUpdated: (id) => invalidate(id),
+      updated: (id, changes) => changed(id, changes),
+      previewUpdated: (id, changes) => changed(id, changes),
       deleted: (_id, parentId) => invalidate(parentId),
       reparented: (id, oldParentId) => {
         invalidate(oldParentId)
@@ -166,10 +216,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   wrapNode(id: string): FigmaNodeProxy {
+    const type = this.graph.getNode(id)?.type
     let proxy = this._nodeCache.get(id)
-    if (!proxy) {
+    // A node that changed type, such as a detached instance, gets the members of its new type.
+    if (!proxy || this._nodeTypes.get(id) !== type) {
       proxy = new FigmaNodeProxy(id, this.graph, this)
       this._nodeCache.set(id, proxy)
+      this._nodeTypes.set(id, type)
     }
     return proxy
   }
@@ -200,6 +253,7 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   set currentPage(page: FigmaNodeProxy) {
+    this.#pageSwitch++
     this._currentPageId = page[INTERNAL_ID]
   }
 
@@ -209,7 +263,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   /** The async lookup that Figma requires in dynamic-page mode; same result as getNodeById. */
+  /** As in Figma's dynamic-page mode, a layer on a page not loaded yet loads that page. */
   async getNodeByIdAsync(id: string): Promise<FigmaNodeProxy | null> {
+    const node = this.getNodeById(id)
+    if (node) return node
+    const pageId = await pageOfNode(this, id)
+    if (!pageId) return null
+    await loadPage(this, pageId)
     return this.getNodeById(id)
   }
 
@@ -225,8 +285,15 @@ export class FigmaAPI implements NodeProxyHost {
     if (this._rawNode(page).type !== 'CANVAS') {
       return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
     }
-    this._currentPageId = this._nodeId(page)
-    return Promise.resolve()
+    const pageId = this._nodeId(page)
+    const pageSwitch = ++this.#pageSwitch
+    return loadPage(this, pageId).then(() => {
+      if (pageSwitch !== this.#pageSwitch) return undefined
+      if (this.graph.getNode(pageId)?.type !== 'CANVAS')
+        throw new Error('in setCurrentPageAsync: The page was removed while it loaded')
+      this._currentPageId = pageId
+      return undefined
+    })
   }
 
   // --- Node Creation ---
@@ -611,9 +678,9 @@ export class FigmaAPI implements NodeProxyHost {
     if (message) this.notify(message)
   }
 
-  /** Every page is already in memory. */
+  /** Loads every page's layers, one page after another, as Figma does in dynamic-page mode. */
   async loadAllPagesAsync(): Promise<void> {
-    return undefined
+    for (const page of this.graph.getPages()) await loadPage(this, page.id)
   }
 
   commitUndo(): void {

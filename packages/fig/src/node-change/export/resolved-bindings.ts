@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  resolvedEffectBindings,
   resolvedNumericBindings,
   resolvedPaintBindings,
   resolvedRunBindings,
@@ -18,7 +19,8 @@ export function nodeWithResolvedBindings(graph: SceneGraph, node: SceneNode): Sc
     ...resolvedNumericBindings(graph, node, 'default'),
     ...resolvedPaintBindings(graph, node, 'default'),
     ...resolvedValueBindings(graph, node, 'default'),
-    ...resolvedRunBindings(graph, node, 'default')
+    ...resolvedRunBindings(graph, node, 'default'),
+    ...resolvedEffectBindings(graph, node, 'default')
   }
   return Object.keys(changes).length > 0 ? { ...node, ...changes } : node
 }

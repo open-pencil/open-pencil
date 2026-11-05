@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
 import type { WorkspaceMembers, WorkspaceRole } from '@open-pencil/cloud/contract'
@@ -8,7 +7,7 @@ import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 import { useDateFormat } from '@/app/i18n/date'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -73,7 +72,6 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudWorkspace()
-const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const t = useCloudMessages()
 const common = useCommonMessages()
 const dates = useDateFormat()
@@ -255,9 +253,7 @@ function invite() {
                   <template #option="{ option }">
                     <span class="flex flex-col">
                       <span>{{ option.label }}</span>
-                      <span class="text-[11px] text-muted">{{
-                        roleDescriptions[option.value]
-                      }}</span>
+                      <span class="text-2xs text-muted">{{ roleDescriptions[option.value] }}</span>
                     </span>
                   </template>
                 </AppSelect>
@@ -267,18 +263,16 @@ function invite() {
               </form>
               <div v-if="invitationLink" :class="ui.sent()">
                 <p :class="ui.note()">{{ t.invitationSentNote }}</p>
-                <AppButton
+                <AppCopyButton
                   class="self-start"
+                  :value="invitationLink"
+                  :label="t.copyInvitationLink"
+                  :copied-label="common.copied"
                   size="sm"
                   variant="outline"
-                  @click="copy(invitationLink)"
                 >
-                  <template #leading>
-                    <icon-lucide-check v-if="copied" class="size-3.5" />
-                    <icon-lucide-link v-else class="size-3.5" />
-                  </template>
-                  {{ copied ? common.copied : t.copyInvitationLink }}
-                </AppButton>
+                  <template #icon><icon-lucide-link aria-hidden="true" /></template>
+                </AppCopyButton>
               </div>
             </section>
 
@@ -336,10 +330,16 @@ function invite() {
                 <span :class="ui.role()">{{ roleLabels[invitation.role] }}</span>
                 <template v-if="resent?.invitationId === invitation.id">
                   <AppBadge>{{ t.invitationResent }}</AppBadge>
-                  <IconButton :label="t.copyInvitationLink" @click="copy(resent.link)">
-                    <icon-lucide-check v-if="copied" class="size-3.5" />
-                    <icon-lucide-link v-else class="size-3.5" />
-                  </IconButton>
+                  <AppCopyButton
+                    icon
+                    :value="resent.link"
+                    :label="t.copyInvitationLink"
+                    :copied-label="common.copied"
+                  >
+                    <template #icon
+                      ><icon-lucide-link class="size-3" aria-hidden="true"
+                    /></template>
+                  </AppCopyButton>
                 </template>
                 <AppButton
                   v-else

@@ -105,7 +105,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
           </span>
         </p>
         <p class="truncate text-xs text-muted">{{ person.email }}</p>
-        <p v-if="person.suspendedReason" class="mt-0.5 text-[11px] text-muted">
+        <p v-if="person.suspendedReason" class="mt-0.5 text-2xs text-muted">
           {{ messages.suspendedReason({ reason: person.suspendedReason }) }}
         </p>
       </div>

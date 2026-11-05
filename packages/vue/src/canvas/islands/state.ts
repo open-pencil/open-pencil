@@ -20,7 +20,12 @@ export interface ControlState {
 const TEXT_INPUTS = new Set(['textField', 'textarea', 'numberField'])
 
 function initialChoice(control: ControlModel): string {
-  if (control.kind === 'tabs') return '0'
+  if (control.kind === 'tabs') {
+    // The tab drawn selected, at its place among the triggers; else the first, as Reka starts.
+    const tab = control.items.find((item) => booleanOf(item, 'value')?.designed)
+    const index = tab ? control.triggers.indexOf(tab.path) : -1
+    return String(Math.max(index, 0))
+  }
   const index = control.items.findIndex((item) => {
     const value = booleanOf(item, 'value') ?? booleanOf(item, 'open')
     return value?.designed ?? false
@@ -70,8 +75,22 @@ export function isDisabled(control: ControlModel, state: ControlState | undefine
   return !!state?.booleans.disabled || !!control.states?.designedDisabled
 }
 
+/** Whether a control is invalid: its invalid value is on, or it is drawn invalid. */
+function isInvalid(control: ControlModel, state: ControlState): boolean {
+  return !!state.booleans.invalid || !!control.states?.designedInvalid
+}
+
+/**
+ * The state a control's states property shows: disabled, then invalid, which the pointer and
+ * focus leave as it is, then the interactions. A disabled control the property draws no
+ * disabled value for shows its invalid value, if any, or its rest value, never an interaction.
+ */
 function interactionState(control: ControlModel, state: ControlState): InteractionState {
-  if (isDisabled(control, state)) return 'disabled'
+  const values = control.states?.values
+  const disabled = isDisabled(control, state)
+  if (disabled && values?.disabled !== undefined) return 'disabled'
+  if (isInvalid(control, state) && values?.invalid !== undefined) return 'invalid'
+  if (disabled) return 'rest'
   if (state.pressed) return 'pressed'
   if (state.hovered) return 'hover'
   if (state.focused) return 'focus'

@@ -13,6 +13,7 @@ export const BEHAVIOUR_KINDS = [
   'slider',
   'progress',
   'tabs',
+  'tab',
   'collapsible',
   'accordion'
 ] as const
@@ -21,9 +22,17 @@ export type BehaviourKind = (typeof BEHAVIOUR_KINDS)[number]
 
 /**
  * The interaction states a control can show, each drawn as a value of one variant property:
- * at rest, under the pointer, while pressed, focused from the keyboard, and disabled.
+ * at rest, under the pointer, while pressed, focused from the keyboard, disabled, and invalid. Only
+ * a form control has an invalid state (`hasInvalidState`), shown while its value fails validation.
  */
-export const INTERACTION_STATES = ['rest', 'hover', 'pressed', 'focus', 'disabled'] as const
+export const INTERACTION_STATES = [
+  'rest',
+  'hover',
+  'pressed',
+  'focus',
+  'disabled',
+  'invalid'
+] as const
 
 export type InteractionState = (typeof INTERACTION_STATES)[number]
 
@@ -52,7 +61,8 @@ export interface BehaviourPartContract {
   required: boolean
   /**
    * Whether the slot holds the control's items, each an instance with its own behaviour (a
-   * radio, a toggle, a collapsible), which the control turns on and off.
+   * radio, a toggle, a collapsible, a tab), which the control turns on and off. A tab list's
+   * triggers may also be plain layers, which have no state of their own.
    */
   items?: boolean
   /**
@@ -67,6 +77,11 @@ export interface BehaviourContract {
   parts: BehaviourPartContract[]
 }
 
+const DISABLED: BehaviourValueContract = { id: 'disabled', type: 'boolean', required: false }
+
+/** Whether a form control's value fails validation, which code marks with `aria-invalid`. */
+const INVALID: BehaviourValueContract = { id: 'invalid', type: 'boolean', required: false }
+
 /**
  * A text field or textarea: its text is a text property, and `filled`, when bound, draws the
  * empty field with its placeholder.
@@ -75,7 +90,8 @@ const TEXT_INPUT: BehaviourContract = {
   values: [
     { id: 'value', type: 'text', required: true },
     { id: 'filled', type: 'boolean', required: false },
-    { id: 'disabled', type: 'boolean', required: false }
+    DISABLED,
+    INVALID
   ],
   parts: []
 }
@@ -87,7 +103,7 @@ const TEXT_INPUT: BehaviourContract = {
  */
 export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContract>> = {
   button: {
-    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    values: [DISABLED],
     parts: []
   },
   textField: TEXT_INPUT,
@@ -96,7 +112,8 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     values: [
       { id: 'value', type: 'number', required: false },
       { id: 'text', type: 'text', required: true },
-      { id: 'disabled', type: 'boolean', required: false }
+      DISABLED,
+      INVALID
     ],
     parts: [
       { id: 'increment', required: false },
@@ -104,46 +121,31 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     ]
   },
   toggle: {
-    values: [
-      { id: 'value', type: 'boolean', required: true },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'value', type: 'boolean', required: true }, DISABLED],
     parts: []
   },
   switch: {
-    values: [
-      { id: 'value', type: 'boolean', required: true },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'value', type: 'boolean', required: true }, DISABLED, INVALID],
     parts: [{ id: 'thumb', required: false }]
   },
   checkbox: {
-    values: [
-      { id: 'value', type: 'boolean', required: true },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'value', type: 'boolean', required: true }, DISABLED, INVALID],
     parts: [{ id: 'indicator', required: false }]
   },
   radio: {
-    values: [
-      { id: 'value', type: 'boolean', required: true },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'value', type: 'boolean', required: true }, DISABLED, INVALID],
     parts: [{ id: 'indicator', required: false }]
   },
   radioGroup: {
-    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    values: [DISABLED, INVALID],
     parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
   toggleGroup: {
-    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    values: [DISABLED],
     parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
   slider: {
-    values: [
-      { id: 'value', type: 'number', required: false },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'value', type: 'number', required: false }, DISABLED],
     parts: [
       { id: 'track', required: true },
       { id: 'range', required: false },
@@ -153,9 +155,17 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   tabs: {
     values: [{ id: 'value', type: 'choice', required: false }],
     parts: [
-      { id: 'list', required: true, children: 'trigger' },
+      { id: 'list', required: true, items: true, children: 'trigger' },
       { id: 'panels', required: false, children: 'content' }
     ]
+  },
+  // A tab list's trigger, after Reka's TabsTrigger: on while its tab is the chosen one.
+  tab: {
+    values: [
+      { id: 'value', type: 'boolean', required: true },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: []
   },
   progress: {
     values: [{ id: 'value', type: 'number', required: false }],
@@ -165,21 +175,28 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     ]
   },
   collapsible: {
-    values: [
-      { id: 'open', type: 'boolean', required: false },
-      { id: 'disabled', type: 'boolean', required: false }
-    ],
+    values: [{ id: 'open', type: 'boolean', required: false }, DISABLED],
     parts: [
       { id: 'trigger', required: true },
       { id: 'content', required: true }
     ]
   },
   accordion: {
-    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    values: [DISABLED],
     parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   }
 }
 
 export function behaviourContract(kind: BehaviourKind): BehaviourContract {
   return BEHAVIOUR_CONTRACTS[kind]
+}
+
+/** Whether a kind of control can be invalid: a form control, whose contract has `invalid`. */
+export function hasInvalidState(kind: BehaviourKind): boolean {
+  return BEHAVIOUR_CONTRACTS[kind].values.some((value) => value.id === 'invalid')
+}
+
+/** The interaction states a kind of control can show. */
+export function interactionStatesOf(kind: BehaviourKind): InteractionState[] {
+  return INTERACTION_STATES.filter((state) => state !== 'invalid' || hasInvalidState(kind))
 }

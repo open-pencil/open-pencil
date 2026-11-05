@@ -14,13 +14,15 @@ import { chatReferenceTheme } from '@/components/chat/ui'
 import { sceneNodeIcon } from '@/components/icons'
 
 /**
- * A layer, page, or skill named in chat text. In the transcript it shows its target when
- * clicked; in the composer it is part of the text and only shows what it names.
+ * A layer, page, skill, or command named in chat text. In the transcript it shows its target
+ * when clicked; in the composer it is part of the text and only shows what it names. A command
+ * has nothing to show, so it never acts as a button.
  */
-const { reference, interactive = true } = defineProps<{
+const { reference, interactive: clickable = true } = defineProps<{
   reference: ChatReference
   interactive?: boolean
 }>()
+const interactive = computed(() => clickable && reference.kind !== 'command')
 
 const ai = useAIMessages()
 const ui = chatReferenceTheme()
@@ -91,6 +93,11 @@ async function open() {
     <icon-lucide-file v-else-if="reference.kind === 'page'" :class="ui.icon()" aria-hidden="true" />
     <icon-lucide-book-open
       v-else-if="reference.kind === 'skill'"
+      :class="ui.icon()"
+      aria-hidden="true"
+    />
+    <icon-lucide-square-slash
+      v-else-if="reference.kind === 'command'"
       :class="ui.icon()"
       aria-hidden="true"
     />

@@ -49,13 +49,13 @@ const useDescription = computed(() => {
             />
           </SettingsRow>
           <SettingsRow v-if="!uploaded" :label="ai.skillsLocation">
-            <code class="text-[11px] break-all text-muted">{{ skill.location }}</code>
+            <code class="text-2xs break-all text-muted">{{ skill.location }}</code>
           </SettingsRow>
           <SettingsRow v-if="skill.files.length" :label="ai.skillsFiles">
             <template #description>
               <ul class="mt-1 flex flex-col gap-0.5">
                 <li v-for="file in skill.files" :key="file">
-                  <code class="text-[11px] break-all text-muted">{{ file }}</code>
+                  <code class="text-2xs break-all text-muted">{{ file }}</code>
                 </li>
               </ul>
             </template>

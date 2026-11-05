@@ -22,7 +22,7 @@ export default {
       link: {}
     },
     size: {
-      xs: { base: 'h-6 px-1.5 text-[10px]', icon: 'size-3' },
+      xs: { base: 'h-6 px-1.5 text-3xs', icon: 'size-3' },
       sm: { base: 'h-7 px-2 text-xs' },
       md: { base: 'h-8 px-3 text-xs' },
       lg: { base: 'h-9 px-3.5 text-sm' }

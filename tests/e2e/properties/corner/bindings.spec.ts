@@ -41,7 +41,12 @@ test('collapsed equivalent corners preserve their shared token through expansion
   })
   const section = propertySection(page, 'Appearance')
   const field = propertyField(page, 'cornerRadius')
-  await expect(field.getByText('Radius/shared', { exact: true })).toBeVisible()
+  await expect(field).toHaveAttribute('data-bound')
+  // A bound number shows its value; hovering the variable button names the variable.
+  await expect(field).toContainText('12')
+  await field.getByRole('button', { name: 'Apply variable' }).hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Radius/shared')
+  await page.mouse.move(0, 0)
   if (process.platform === 'darwin') {
     await expect(section).toHaveScreenshot('shared-corner-token.png')
   }
@@ -62,13 +67,12 @@ test('collapsed equivalent corners preserve their shared token through expansion
   const toggle = section.getByRole('button', { name: 'Independent corner radii' })
   await toggle.click()
   for (const path of paths) {
-    await expect(
-      propertyField(page, path).getByText('Radius/shared', { exact: true })
-    ).toBeVisible()
+    await expect(propertyField(page, path)).toHaveAttribute('data-bound')
+    await expect(propertyField(page, path)).toContainText('12')
   }
   expect(await readCorners()).toEqual(original)
   await toggle.click()
-  await expect(field.getByText('Radius/shared', { exact: true })).toBeVisible()
+  await expect(field).toHaveAttribute('data-bound')
   await field.click({ position: { x: 40, y: 13 } })
   const input = field.getByRole('spinbutton', { name: 'Radius', exact: true })
   await expect(input).toHaveValue('12')
@@ -77,7 +81,7 @@ test('collapsed equivalent corners preserve their shared token through expansion
   await field.click({ position: { x: 40, y: 13 } })
   await input.fill('18')
   await input.press('Escape')
-  await expect(field.getByText('Radius/shared', { exact: true })).toBeVisible()
+  await expect(field).toHaveAttribute('data-bound')
   expect(await readCorners()).toEqual(original)
   await field.click({ position: { x: 40, y: 13 } })
   await input.fill('24')
@@ -88,7 +92,7 @@ test('collapsed equivalent corners preserve their shared token through expansion
     independent: false
   })
   await canvas.pressKey('Meta+z')
-  await expect(field.getByText('Radius/shared', { exact: true })).toBeVisible()
+  await expect(field).toHaveAttribute('data-bound')
   expect(await readCorners()).toEqual(original)
   await canvas.pressKey('Meta+Shift+z')
   expect(await readCorners()).toEqual({

@@ -18,7 +18,7 @@ test('Design profile selector exposes provider and capabilities', async ({
 
 test('OpenRouter accepts a custom model ID from Settings', async ({ configuredChat: chat }) => {
   const customModel = 'meta-llama/llama-3.3-70b-instruct'
-  await chat.page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await chat.page.locator('[data-model-id]').first().click()
   await chat.page.getByLabel('Model ID').click()
   // The catalog replaces the fallback list once it loads; pick only after it has settled.
@@ -33,7 +33,7 @@ test('OpenRouter accepts a custom model ID from Settings', async ({ configuredCh
 })
 
 test('Get API key links to the provider key page', async ({ configuredChat: chat }) => {
-  await chat.page.getByTestId('provider-settings-trigger').click()
+  await chat.openModelSettings()
   await chat.page.locator('[data-model-id]').first().click()
 
   await expect(chat.page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(

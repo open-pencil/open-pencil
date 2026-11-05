@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { registerTestFont } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
 
 beforeAll(async () => {
   await registerTestFont()
@@ -68,7 +68,7 @@ describe('text case ranges', () => {
   test('reject what Figma rejects, and small caps OpenPencil cannot draw', () => {
     const { text } = styledText()
     expect(() => text.setRangeTextCase(0, 5, 'SHOUT' as 'UPPER')).toThrow(
-      `in setRangeTextCase: Property "value" failed validation: Invalid enum value. Expected 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE' | 'SMALL_CAPS' | 'SMALL_CAPS_FORCED', received 'SHOUT'`
+      `in setRangeTextCase: Property "textCase" failed validation: Invalid option: expected one of "ORIGINAL"|"UPPER"|"LOWER"|"TITLE"|"SMALL_CAPS"|"SMALL_CAPS_FORCED"`
     )
     expect(() => text.setRangeTextCase(0, 5, 'SMALL_CAPS' as 'UPPER')).toThrow(
       'in setRangeTextCase: OpenPencil does not support the SMALL_CAPS text case'
@@ -106,13 +106,13 @@ describe('hyperlink ranges', () => {
   test('reject links Figma rejects', () => {
     const { text } = styledText()
     expect(() => text.setRangeHyperlink(0, 5, 'https://x' as never)).toThrow(
-      'in setRangeHyperlink: Property "value" failed validation: Expected object, received string'
+      'in setRangeHyperlink: Property "hyperlink" failed validation: Expected one of the following, but none matched:\n  Expected object, received string\n  Expected null, received string'
     )
     expect(() => text.setRangeHyperlink(0, 5, { type: 'PAGE', value: 'x' } as never)).toThrow(
-      `in setRangeHyperlink: Property "value" failed validation: Invalid enum value. Expected 'URL' | 'NODE', received 'PAGE' at .type`
+      'in setRangeHyperlink: Property "hyperlink" failed validation: Expected one of the following, but none matched:\n  Invalid option: expected one of "URL"|"NODE" at .type\n  Expected null, received object'
     )
     expect(() => text.setRangeHyperlink(0, 5, { type: 'URL', value: 3 } as never)).toThrow(
-      'in setRangeHyperlink: Property "value" failed validation: Expected string, received number at .value'
+      'in setRangeHyperlink: Property "hyperlink" failed validation: Expected one of the following, but none matched:\n  Expected string, received number at .value\n  Expected null, received object'
     )
   })
 
@@ -267,7 +267,7 @@ describe('bound variable ranges', () => {
   test('reject fields and variables Figma cannot bind', () => {
     const { text, size, family } = sized()
     expect(() => text.setRangeBoundVariable(0, 5, 'opacity' as 'fontSize', size)).toThrow(
-      `in setRangeBoundVariable: Property "field" failed validation: Invalid enum value. Expected 'fontFamily' | 'fontSize'`
+      `in setRangeBoundVariable: Property "field" failed validation: Invalid option: expected one of "fontFamily"|"fontSize"|`
     )
     expect(() => text.setRangeBoundVariable(0, 5, 'fontSize', family)).toThrow(
       'in setRangeBoundVariable: Cannot bind a STRING variable to "fontSize", which takes FLOAT'

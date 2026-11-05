@@ -107,7 +107,7 @@ watch(open, (v) => {
     <DropdownMenuTrigger as-child>
       <button
         data-test-id="zoom-dropdown-trigger"
-        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover"
+        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted hover:bg-hover"
       >
         {{ zoomPercent() }}%
       </button>

@@ -1,9 +1,10 @@
 import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
+import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 
 import type { StagedJSXPreview } from './stage'
 
@@ -31,11 +32,7 @@ async function recordStaged(
   signal.throwIfAborted()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   signal.throwIfAborted()
-  const bounds = computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  const bounds = computeContentBounds(graph, nodeIds)
   if (!bounds || !fitsPreview(bounds)) return null
   return recordWorldPicture(renderer, bounds, (canvas) => {
     for (const id of nodeIds) renderer.renderNode(canvas, graph, id, {})
