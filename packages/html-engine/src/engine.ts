@@ -132,7 +132,7 @@ function restoreImageKinds(
 
 /**
  * Blitz, Stylo, Taffy, and Parley compiled to WebAssembly: lays HTML out as a browser does and
- * captures every node's box, computed styles, and text lines. The engine holds one document at a
+ * captures every element's box and computed styles, and the lines its text sets. The engine holds one document at a
  * time, so layouts on one instance run one after another.
  */
 export class HTMLEngine {

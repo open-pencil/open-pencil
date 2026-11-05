@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -65,12 +66,16 @@ export async function rustNotices(root: string, artifact: NoticedArtifact): Prom
   }
 }
 
-/** Writes every artifact's notices into the package that ships it. */
+/**
+ * Writes every artifact's notices into the package that ships it. A release source from before
+ * an artifact's package existed, such as an older tag built again, has none to write.
+ */
 export async function writeReleaseNotices(
   root: string,
   artifacts: readonly NoticedArtifact[]
 ): Promise<void> {
   for (const artifact of artifacts) {
+    if (!existsSync(join(root, artifact.packageDirectory))) continue
     const output = join(root, artifact.packageDirectory, artifact.notices)
     await mkdir(dirname(output), { recursive: true })
     await writeFile(output, await rustNotices(root, artifact))

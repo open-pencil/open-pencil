@@ -1,6 +1,6 @@
 # @open-pencil/html-engine
 
-HTML laid out as a browser lays it out, without a browser: [Blitz](https://github.com/DioxusLabs/blitz) (Stylo for style, Taffy for layout, Parley for text) compiled to WebAssembly. It captures every node's border box, its computed styles (properties with a fixed initial value only when they differ from it, and always the ones whose initial value depends on the element or is inherited, such as `display`, `color`, sizes, and fonts), inline boxes on each line, and text lines with their runs.
+HTML laid out as a browser lays it out, without a browser: [Blitz](https://github.com/DioxusLabs/blitz) (Stylo for style, Taffy for layout, Parley for text) compiled to WebAssembly. It captures every element's border box and computed styles (properties with a fixed initial value only when they differ from it, and always the ones whose initial value depends on the element or is inherited, such as `display`, `color`, sizes, and fonts), an inline element's boxes on each line, the text lines its text sets with their runs, and the text of every text node.
 
 ```ts
 import { loadHTMLEngine } from '@open-pencil/html-engine'
@@ -12,8 +12,9 @@ engine.setGenericFamily('sans-serif', ['Inter'])
 const capture = await engine.layout(html, {
   baseURL: 'https://example.com/',
   viewport: { width: 1440, height: 900 },
-  fetch: async (url) => {
-    const response = await fetch(url)
+  // The engine aborts `signal` when a request runs past its deadline.
+  fetch: async (url, signal) => {
+    const response = await fetch(url, { signal })
     return response.ok ? { url: response.url, bytes: await response.bytes() } : null
   }
 })
