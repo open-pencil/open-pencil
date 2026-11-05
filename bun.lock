@@ -831,12 +831,27 @@
         "es-toolkit": "^1.52.0",
       },
     },
+    "tools/checks/workflows": {
+      "name": "@open-pencil/workflows-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "yaml": "^2.9.0",
+      },
+    },
+    "tools/ci/cloud-deploy": {
+      "name": "@open-pencil/cloud-deploy-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+      },
+    },
     "tools/ci/images": {
       "name": "@open-pencil/ci-images-tools",
     },
     "tools/ci/policy": {
       "name": "@open-pencil/ci-policy-tools",
       "dependencies": {
+        "@commitlint/format": "^21.2.3",
+        "@commitlint/types": "^21.2.3",
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
     },
@@ -967,6 +982,7 @@
     },
     "tools/release/package-artifacts": {
       "name": "@open-pencil/package-artifacts-tools",
+      "version": "0.0.0",
       "dependencies": {
         "@publint/pack": "^0.1.5",
         "pkg-types": "^2.3.1",
@@ -999,6 +1015,7 @@
       "name": "@open-pencil/vite-config",
       "dependencies": {
         "@open-pencil/core": "workspace:*",
+        "@open-pencil/release-packages-tools": "workspace:*",
         "unplugin-icons": "^23.0.1",
         "unplugin-vue-components": "^31.1.0",
         "vite": "8.1.4",
@@ -1801,6 +1818,8 @@
 
     "@open-pencil/cloud": ["@open-pencil/cloud@workspace:packages/cloud"],
 
+    "@open-pencil/cloud-deploy-tools": ["@open-pencil/cloud-deploy-tools@workspace:tools/ci/cloud-deploy"],
+
     "@open-pencil/cloud-off-tools": ["@open-pencil/cloud-off-tools@workspace:tools/checks/cloud-off"],
 
     "@open-pencil/cloud-tools": ["@open-pencil/cloud-tools@workspace:tools/dev/cloud"],
@@ -1882,6 +1901,8 @@
     "@open-pencil/vite-config": ["@open-pencil/vite-config@workspace:vite"],
 
     "@open-pencil/vue": ["@open-pencil/vue@workspace:packages/vue"],
+
+    "@open-pencil/workflows-tools": ["@open-pencil/workflows-tools@workspace:tools/checks/workflows"],
 
     "@openfeature/core": ["@openfeature/core@1.12.0", "", {}, "sha512-7PCPzyd1OC19begz30+CRknFB0ChtyaZUhk7YWrk+Bov1fpVw0HYkTXtoxxsvPfDZB9P9WsT7uixN+Z8f9+bcA=="],
 

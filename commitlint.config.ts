@@ -30,5 +30,7 @@ export default {
       (RELEASE_TITLE.test(message.split('\n')[0] ?? '') ||
         (process.env.COMMITLINT_PR_TITLE !== '1' && isIgnored(message)))
   ],
+  // In GitHub Actions, also an error annotation for each rejected message.
+  formatter: './tools/ci/policy/src/commit-annotations.ts',
   helpUrl: 'https://github.com/open-pencil/open-pencil/blob/master/CONTRIBUTING.md#commit-messages'
 } satisfies UserConfig
