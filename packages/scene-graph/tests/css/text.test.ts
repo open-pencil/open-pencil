@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  parseCSSFontFamilies,
   parseCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight,
@@ -23,6 +24,22 @@ describe('parseCSSFontFamily', () => {
     ['', null]
   ])('%s', (value, expected) => {
     expect(parseCSSFontFamily(value)).toBe(expected)
+  })
+})
+
+describe('parseCSSFontFamilies', () => {
+  test('reads every family in order, quoted or not', () => {
+    expect(parseCSSFontFamilies(`"Foo, Bar", O'Reilly, 'Noto\\26 Sans', sans-serif`)).toEqual([
+      { name: 'Foo, Bar', quoted: true },
+      { name: "O'Reilly", quoted: false },
+      { name: 'Noto&Sans', quoted: true },
+      { name: 'sans-serif', quoted: false }
+    ])
+  })
+
+  test('skips empty entries', () => {
+    expect(parseCSSFontFamilies(' , Inter ,, ')).toEqual([{ name: 'Inter', quoted: false }])
+    expect(parseCSSFontFamilies(undefined)).toEqual([])
   })
 })
 

@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { useScroll } from '@vueuse/core'
-import {
-  TreeItem,
-  TreeVirtualizer,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  ContextMenuPortal
-} from 'reka-ui'
+import { TreeItem, TreeVirtualizer, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 
@@ -25,6 +19,7 @@ import {
 import { useEditorStore } from '@/app/editor/active-store'
 import { layerIssueMarks } from '@/app/editor/design-check/layers'
 import { appPreferences } from '@/app/settings/preferences/store'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import CanvasMenu from '../canvas/CanvasMenu.vue'
@@ -226,7 +221,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
 
 <template>
   <LayerTreeRoot v-slot="scope" :indent-per-level="indent">
-    <ContextMenuRoot :modal="false">
+    <AppContextMenuRoot :modal="false">
       <!-- The trigger covers the pinned row too, so right-clicking it opens the layer menu. -->
       <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
         <div
@@ -321,6 +316,6 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
       <ContextMenuPortal>
         <CanvasMenu />
       </ContextMenuPortal>
-    </ContextMenuRoot>
+    </AppContextMenuRoot>
   </LayerTreeRoot>
 </template>

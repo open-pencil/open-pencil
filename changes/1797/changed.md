@@ -1,0 +1,1 @@
+- HTML imported from the CLI lands where a browser lays it out at 1440×900, as it does in the app: media queries, the page's linked stylesheets, and its own margins apply, and text is set in the page's own `@font-face` fonts or the first family of its font list that is installed or downloadable.

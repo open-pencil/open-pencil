@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+import { PopoverContent, PopoverPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -8,6 +8,7 @@ import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import theme from '@/theme/figjam/toolbar'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
@@ -78,7 +79,7 @@ const open = computed(
 </script>
 
 <template>
-  <PopoverRoot :open="open">
+  <AppPopoverRoot :open="open">
     <PopoverPortal>
       <PopoverContent
         v-if="open && reference"
@@ -121,5 +122,5 @@ const open = computed(
         </template>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

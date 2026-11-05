@@ -1,4 +1,4 @@
-import type { DesignDocument } from '@open-pencil/dom-css'
+import type { DesignDocument, DesignViewport } from '@open-pencil/dom-css'
 import {
   applyCSSTransforms,
   designDocumentToLayers,
@@ -14,6 +14,9 @@ import { prepareGraphFonts } from '#core/text/prepare'
  * pass can expose mismatches the previous layout hid, deeper in the tree.
  */
 const MAX_PLACEMENT_PASSES = 6
+
+/** The viewport HTML is laid out in when it is imported: a common laptop's, 1440 by 900. */
+export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
 
 /**
  * The layers a styled DOM describes, with the sizes and positions its layout implies, laid out

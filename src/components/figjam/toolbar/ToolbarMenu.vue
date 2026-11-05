@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { provide } from 'vue'
 
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/figjam/toolbar'
 import { motionStyles } from '@/theme/motion/styles'
@@ -31,7 +32,7 @@ const MENU_GAP = 8
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open">
+  <AppPopoverRoot v-model:open="open">
     <Tip as-child :label="label" :disabled="open">
       <PopoverTrigger :aria-label="label" :data-property="property" :class="styles.trigger()">
         <slot name="trigger" />
@@ -49,5 +50,5 @@ const MENU_GAP = 8
         <slot />
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

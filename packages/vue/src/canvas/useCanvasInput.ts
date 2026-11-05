@@ -16,6 +16,11 @@ import type { CanvasToolContext, CanvasToolPointer } from '#vue/canvas/tools/reg
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import {
+  cancelRotationDrag,
+  commitRotationDrag,
+  handleSelectionRotateMove
+} from '#vue/canvas/transform/rotation'
+import {
   cancelNodeEditDrag,
   handleBendHandleMove,
   handleNodeEditPointerUp,
@@ -31,7 +36,12 @@ import {
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { cancelMove, handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
-import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import {
+  applySelectionResize,
+  cancelResizeDrag,
+  commitSelectionResize
+} from '#vue/shared/input/resize/selection'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
@@ -51,6 +61,7 @@ const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type'
   'draw',
   'gradient',
   'rotate',
+  'rotate-selection',
   'connector-draw',
   'connector-end',
   'connector-line',
@@ -75,7 +86,14 @@ export function useCanvasInput(
   // layers move, resize, or rotate.
   watch(
     () => drag.value?.type,
-    (type) => editor.setTransforming(type === 'move' || type === 'resize' || type === 'rotate')
+    (type) =>
+      editor.setTransforming(
+        type === 'move' ||
+          type === 'resize' ||
+          type === 'resize-selection' ||
+          type === 'rotate' ||
+          type === 'rotate-selection'
+      )
   )
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
@@ -337,6 +355,10 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'rotate-selection') {
+      handleSelectionRotateMove(editor, d, cx, cy, e.shiftKey)
+      return
+    }
     if (d.type === 'rotate') {
       handleRotateMove(d, cx, cy, e.shiftKey)
       return
@@ -351,6 +373,10 @@ export function useCanvasInput(
     }
     if (d.type === 'resize') {
       applyResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
+      return
+    }
+    if (d.type === 'resize-selection') {
+      applySelectionResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
       return
     }
 
@@ -430,6 +456,7 @@ export function useCanvasInput(
       drag.value = null
       return
     } else if (d.type === 'resize') commitResizePreview(d, editor)
+    else if (d.type === 'resize-selection') commitSelectionResize(d, editor)
     else if (d.type === 'pen-drag') {
       const penState = editor.state.penState
       if (penState?.pendingClose) {
@@ -438,14 +465,8 @@ export function useCanvasInput(
       drag.value = null
       return
     } else if (d.type === 'pencil-drag') finishPencilDrag(editor)
-    else if (d.type === 'rotate') {
-      const preview = editor.state.rotationPreview
-      if (preview?.nodeId === d.nodeId && preview.angle !== d.origRotation) {
-        editor.updateNode(d.nodeId, { rotation: preview.angle })
-        editor.commitRotation(d.nodeId, d.origRotation)
-      }
-      if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if ('commit' in d) d.commit()
+    else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
+    else if ('commit' in d) d.commit()
     else if (d.type === 'marquee') finishMarquee(editor, d)
 
     drag.value = null
@@ -463,7 +484,7 @@ export function useCanvasInput(
 
   /** Drops what a drag showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
-    if (d.type === 'resize') cancelResizePreview(d, editor)
+    if (d.type === 'resize' || d.type === 'resize-selection') cancelResizeDrag(d, editor)
     else if ('cancel' in d) d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
@@ -472,9 +493,8 @@ export function useCanvasInput(
   function discardDrag(d: DragState) {
     discardDrawnPreview(d)
     if (d.type === 'move') cancelMove(d, editor)
-    else if (d.type === 'rotate') {
-      if (editor.state.rotationPreview?.nodeId === d.nodeId) editor.setRotationPreview(null)
-    } else cancelNodeEditDrag(d, editor)
+    else if (d.type === 'rotate' || d.type === 'rotate-selection') cancelRotationDrag(editor, d)
+    else cancelNodeEditDrag(d, editor)
   }
 
   function cancelPointerInteraction() {
@@ -599,6 +619,7 @@ export function useCanvasInput(
           type === 'draw' ||
           type === 'sticky-draw' ||
           type === 'rotate' ||
+          type === 'rotate-selection' ||
           type === 'shape-handle' ||
           type === 'sticky-scale'
         )
