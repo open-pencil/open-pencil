@@ -33,7 +33,7 @@ Apply migrations to the local database with `bunx wrangler d1 migrations apply f
 
 ## Production setup
 
-Done once on the Cloudflare account; `.github/workflows/feedback.yml` deploys every change to `master` afterwards.
+Done once on the Cloudflare account; `.github/workflows/deploy-feedback.yml` deploys every change to `master` afterwards.
 
 1. `bunx wrangler d1 create feedback --jurisdiction eu` and put the database ID in `wrangler.jsonc` (done for the production database).
 2. Onboard `openpencil.dev` to Email Service so `hello@openpencil.dev` can send. Sending to addresses outside the account needs the Workers Paid plan; send one confirmation to an outside address before announcing the waitlist.

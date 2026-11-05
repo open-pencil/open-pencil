@@ -15,7 +15,7 @@ on:
     paths:
       - 'packages/cloud/deploy/Dockerfile'
       - 'packages/cloud/deploy/Dockerfile.dockerignore'
-      - '.github/workflows/cloud-image.yml'
+      - '.github/workflows/image-cloud.yml'
 
 permissions:
   contents: read

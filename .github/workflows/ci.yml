@@ -322,7 +322,7 @@ jobs:
       - uses: ./.github/actions/setup/workspace
         with:
           lfs: 'true'
-          # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
+          # Quick shards read only the small fixtures; ci-heavy.yml pulls the large .fig corpora.
           lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/variable-override-precedence.fig,tests/fixtures/fonts/*
 
       - name: Build shared Core test dependency

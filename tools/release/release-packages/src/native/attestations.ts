@@ -1,6 +1,8 @@
 import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { RELEASE_WORKFLOW_PATH } from '#release/provenance'
+
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 
@@ -30,7 +32,7 @@ export async function verifyAttestations(
         '--repo',
         repository,
         '--signer-workflow',
-        `${repository}/.github/workflows/build.yml`,
+        `${repository}/${RELEASE_WORKFLOW_PATH}`,
         '--signer-digest',
         identity.workflowCommit,
         '--deny-self-hosted-runners'

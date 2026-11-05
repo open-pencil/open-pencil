@@ -6,7 +6,7 @@ on:
     branches: [master]
     paths:
       - 'tools/ci/images/native-contracts/Dockerfile'
-      - '.github/workflows/native-contracts-image.yml'
+      - '.github/workflows/image-native-contracts.yml'
 
 permissions:
   contents: read
