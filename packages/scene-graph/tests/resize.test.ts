@@ -64,6 +64,62 @@ describe('constraints with a locked aspect ratio', () => {
   })
 })
 
+// Live Figma, 2026-11-05 (#1816): a 22.6×16.5 rectangle at 0.7,3.75 in a 100×100 frame, resized
+// through the plugin API.
+describe('constraints keep fractional boxes', () => {
+  const fractional = { x: 0.7, y: 3.75, width: 22.6, height: 16.5 }
+  const frame = { width: 100, height: 100 }
+  const place = (
+    horizontal: ConstraintType,
+    vertical: ConstraintType,
+    after: { width: number; height: number },
+    before = frame
+  ) => {
+    const rect = constrainedChildRect(fractional, before, after, horizontal, vertical)
+    return [rect.x, rect.y, rect.width, rect.height].map((v) => Math.round(v * 100000) / 100000)
+  }
+
+  test('a resize to the same size, or one the constraints ignore, leaves the box alone', () => {
+    expect(place('MIN', 'MIN', frame)).toEqual([0.7, 3.75, 22.6, 16.5])
+    expect(place('MIN', 'MIN', { width: 120, height: 100 })).toEqual([0.7, 3.75, 22.6, 16.5])
+  })
+
+  test('Right and Left & right follow the change in the parent rounded to whole pixels', () => {
+    expect(place('MAX', 'MIN', { width: 120.4, height: 100 })).toEqual([20.7, 3.75, 22.6, 16.5])
+    expect(place('STRETCH', 'MIN', { width: 120.4, height: 100 })).toEqual([0.7, 3.75, 42.6, 16.5])
+  })
+
+  test('Center follows the change in the rounded half of the parent', () => {
+    expect(place('CENTER', 'MIN', { width: 121, height: 100 })).toEqual([11.7, 3.75, 22.6, 16.5])
+    expect(place('CENTER', 'MIN', { width: 120.4, height: 100 })).toEqual([10.7, 3.75, 22.6, 16.5])
+  })
+
+  test('Scale follows the exact ratio', () => {
+    expect(place('SCALE', 'MIN', { width: 130, height: 100 })).toEqual([0.91, 3.75, 29.38, 16.5])
+    expect(place('SCALE', 'SCALE', { width: 113, height: 107.3 })).toEqual([
+      0.791, 4.02375, 25.538, 17.7045
+    ])
+  })
+
+  test('Left & right shrunk past zero takes the magnitude', () => {
+    expect(place('STRETCH', 'MIN', { width: 70, height: 100 })).toEqual([0.7, 3.75, 7.4, 16.5])
+  })
+
+  test('a run of resizes back to the start lands where it began', () => {
+    for (const constraint of ['MAX', 'CENTER', 'STRETCH', 'SCALE'] as const) {
+      let box = fractional
+      let parent = frame
+      for (const next of [{ width: 120.4, height: 100.6 }, { width: 99.3, height: 100.2 }, frame]) {
+        box = constrainedChildRect(box, parent, next, constraint, constraint)
+        parent = next
+      }
+      expect([box.x, box.y, box.width, box.height].map((v) => Math.round(v * 1e6) / 1e6)).toEqual([
+        0.7, 3.75, 22.6, 16.5
+      ])
+    }
+  })
+})
+
 describe('saved stroke outlines through a resize', () => {
   const outline = { windingRule: 'NONZERO' as const, commandsBlob: new Uint8Array([0]) }
   const vector = (segments: number) => ({

@@ -45,25 +45,41 @@ const CONSTRAINT_CONTAINER_TYPES = new Set([
   'BOOLEAN_OPERATION'
 ])
 
+type AxisPlacement = { position: number; size: number }
+
+/**
+ * Where a constraint places a child on one axis when its parent goes from `parentBefore` to
+ * `parentAfter`, as Figma does (live-measured, #1060, #1816): Right and Left & right move or grow
+ * it by the change in the parent's size rounded to whole pixels, Center by the change in its
+ * rounded half, and Scale by the exact ratio. The child's own box is never rounded, so a resize
+ * to the same size changes nothing and a run of resizes lands where one resize does. Left & right
+ * shrunk past zero takes the magnitude, as Figma does. `scaleStep` snaps a scaled position to that
+ * fraction of a pixel.
+ */
 function constrainedAxis(
   position: number,
   size: number,
   parentBefore: number,
   parentAfter: number,
-  constraint: ConstraintType
-): { position: number; size: number } {
-  const delta = parentAfter - parentBefore
+  constraint: ConstraintType,
+  scaleStep = 0
+): AxisPlacement {
+  const delta = Math.round(parentAfter) - Math.round(parentBefore)
   if (constraint === 'MAX') return { position: position + delta, size }
-  if (constraint === 'CENTER') return { position: position + delta / 2, size }
-  if (constraint === 'STRETCH') return { position, size: Math.max(1, size + delta) }
+  if (constraint === 'CENTER') {
+    return { position: position + Math.round(parentAfter / 2) - Math.round(parentBefore / 2), size }
+  }
+  if (constraint === 'STRETCH') return { position, size: Math.abs(size + delta) }
   if (constraint === 'SCALE' && parentBefore > 0) {
     const scale = parentAfter / parentBefore
-    return { position: position * scale, size: Math.max(1, size * scale) }
+    const scaled = position * scale
+    return {
+      position: scaleStep > 0 ? Math.round(scaled / scaleStep) * scaleStep : scaled,
+      size: size * scale
+    }
   }
   return { position, size }
 }
-
-type AxisPlacement = { position: number; size: number }
 
 const FLEXIBLE_CONSTRAINTS: ReadonlySet<ConstraintType> = new Set(['STRETCH', 'SCALE'])
 
@@ -108,7 +124,43 @@ function keepLockedRatio(
     : { x: resizedInPlace(x, y.size * aspectRatio, horizontal), y }
 }
 
-/** A child's box after its parent resizes, keeping a locked aspect ratio as Figma does. */
+function placedChildRect(
+  child: Rect,
+  parentBefore: Pick<Rect, 'width' | 'height'>,
+  parentAfter: Pick<Rect, 'width' | 'height'>,
+  horizontal: ConstraintType,
+  vertical: ConstraintType,
+  aspectRatio: number | null,
+  scaleStep: number
+): Rect {
+  const { x, y } = keepLockedRatio(
+    constrainedAxis(
+      child.x,
+      child.width,
+      parentBefore.width,
+      parentAfter.width,
+      horizontal,
+      scaleStep
+    ),
+    constrainedAxis(
+      child.y,
+      child.height,
+      parentBefore.height,
+      parentAfter.height,
+      vertical,
+      scaleStep
+    ),
+    horizontal,
+    vertical,
+    aspectRatio
+  )
+  return { x: x.position, y: y.position, width: x.size, height: y.size }
+}
+
+/**
+ * A child's box after its parent is resized, by a handle or `resize()`, keeping a locked aspect
+ * ratio as Figma does.
+ */
 export function constrainedChildRect(
   child: Rect,
   parentBefore: Pick<Rect, 'width' | 'height'>,
@@ -117,43 +169,13 @@ export function constrainedChildRect(
   vertical: ConstraintType,
   aspectRatio: number | null = null
 ): Rect {
-  let x = constrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal)
-  let y = constrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical)
-  ;({ x, y } = keepLockedRatio(x, y, horizontal, vertical, aspectRatio))
-  return {
-    x: Math.round(x.position),
-    y: Math.round(y.position),
-    width: Math.round(x.size),
-    height: Math.round(y.size)
-  }
-}
-
-function layoutConstrainedAxis(
-  position: number,
-  size: number,
-  parentBefore: number,
-  parentAfter: number,
-  constraint: ConstraintType
-): { position: number; size: number } {
-  const delta = Math.round(parentAfter) - Math.round(parentBefore)
-  if (constraint === 'MAX') return { position: position + delta, size }
-  if (constraint === 'CENTER') {
-    return { position: position + Math.round(parentAfter / 2) - Math.round(parentBefore / 2), size }
-  }
-  if (constraint === 'STRETCH') return { position, size: Math.abs(size + delta) }
-  if (constraint === 'SCALE' && parentBefore > 0) {
-    const scale = parentAfter / parentBefore
-    return { position: Math.round(position * scale * 128) / 128, size: size * scale }
-  }
-  return { position, size }
+  return placedChildRect(child, parentBefore, parentAfter, horizontal, vertical, aspectRatio, 0)
 }
 
 /**
  * Where a child goes when layout resizes its parent, as Figma places a layer that ignores auto
- * layout when its Hug frame grows (measured on desktop 126): Right and Left & right move or grow
- * it by the change in the parent's size rounded to whole pixels, Center by the change in its
- * rounded half, and Scale by the exact ratio, its position to 1/128 of a pixel. Sizes are not
- * rounded, so applying a run of changes one at a time lands where applying them at once does.
+ * layout when its Hug frame grows (measured on desktop 126): as `constrainedChildRect`, except
+ * that a scaled position lands on 1/128 of a pixel.
  */
 export function layoutConstrainedChildRect(
   child: Rect,
@@ -163,19 +185,15 @@ export function layoutConstrainedChildRect(
   vertical: ConstraintType,
   aspectRatio: number | null = null
 ): Rect {
-  const placed = keepLockedRatio(
-    layoutConstrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal),
-    layoutConstrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical),
+  return placedChildRect(
+    child,
+    parentBefore,
+    parentAfter,
     horizontal,
     vertical,
-    aspectRatio
+    aspectRatio,
+    1 / 128
   )
-  return {
-    x: placed.x.position,
-    y: placed.y.position,
-    width: placed.x.size,
-    height: placed.y.size
-  }
 }
 
 export function scaledChildRect(
