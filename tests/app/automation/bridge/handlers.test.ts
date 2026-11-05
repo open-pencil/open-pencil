@@ -9,6 +9,7 @@ import { asDouble } from '@open-pencil/test-support/doubles'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { automationFiles } from '@/app/automation/bridge/server'
+import * as saveTargets from '@/app/document/io/save/targets'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -471,6 +472,70 @@ describe('close_file and save_file never prompt', () => {
     await request('save_file', { document_id: tab.id })
     expect(opened.count).toBe(1)
     expect(tab.store.hasUnsavedChanges()).toBe(false)
+  })
+
+  /** Save As installs this handle, then the first open fails and later opens write. */
+  function pickedHandle(name: string) {
+    const calls = { createWritable: 0, write: 0 }
+    let fail = true
+    const handle = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name,
+      getFile: async () => asDouble<File>({ lastModified: 0 }),
+      createWritable: async () => {
+        calls.createWritable += 1
+        if (fail) {
+          fail = false
+          throw new Error('disk full')
+        }
+        return asDouble<FileSystemWritableFileStream>({
+          write: async () => {
+            calls.write += 1
+          },
+          close: async () => undefined
+        })
+      }
+    })
+    return { handle, calls }
+  }
+
+  async function failSaveAs(tab: ReturnType<typeof createTab>, name: string) {
+    const picked = pickedHandle(name)
+    vi.spyOn(saveTargets, 'chooseBrowserFigSaveHandle').mockResolvedValue(picked.handle)
+    await expect(tab.store.saveFigFileAs()).rejects.toThrow()
+    return picked
+  }
+
+  test('a failed Save As to .fig is what the next save writes', async () => {
+    const imported = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name: 'notes.pen',
+      getFile: async () => asDouble<File>({ lastModified: 0 })
+    })
+    const tab = createTab()
+    tab.store.setDocumentSource('notes.pen', 'pen', imported)
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    const picked = await failSaveAs(tab, 'copy.fig')
+    expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.pen')
+    await request('save_file', { document_id: tab.id })
+    expect(picked.calls).toEqual({ createWritable: 2, write: 1 })
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+  })
+
+  test('a failed Save As to .pen is not written by the next save', async () => {
+    const imported = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name: 'notes.fig',
+      getFile: async () => asDouble<File>({ lastModified: 0 })
+    })
+    const tab = createTab()
+    tab.store.setDocumentSource('notes.fig', 'fig', imported)
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    const picked = await failSaveAs(tab, 'notes.pen')
+    expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.fig')
+    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
+    expect(picked.calls).toEqual({ createWritable: 1, write: 0 })
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 })
 

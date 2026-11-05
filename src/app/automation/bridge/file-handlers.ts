@@ -26,19 +26,21 @@ export interface AutomationFiles {
 const saveArgsSchema = v.object({ path: v.optional(v.string()) })
 
 /**
- * Automation always writes a Figma archive. The destination is the path asked for, else the
- * file the document already has, else the browser handle's name when a Save As kept the handle
- * and cleared the path. A stored document has neither, and is left alone. `open_file` reads
- * `.fig` and `.jam` as that archive and any other extension, such as `.pen`, as another format,
- * so a mismatched destination is refused before a byte is written.
+ * Automation always writes a Figma archive. The destination is the path asked for, or else the
+ * file `saveFigFile` will write: a desktop path, or the browser handle `createWritable` will
+ * open. That handle is installed by Save As before the write, and the remembered identity is
+ * updated only after success, so the two can differ. A stored document has no such file.
+ * `open_file` reads `.fig` and `.jam` as that archive and any other extension, such as `.pen`,
+ * as another format, so a mismatched destination is refused before a byte is written.
  */
-function assertAutomationSaveDestination(
-  explicitPath: string | undefined,
-  sourcePath: string | null,
-  handleName: string | null,
-  kind: DocumentKind
-): void {
-  const destination = explicitPath || sourcePath || handleName
+function inPlaceSaveName(store: AutomationTarget['store']): string | null {
+  if (store.getStorageBinding()) return null
+  const filePath = store.getDocumentFilePath()
+  if (filePath && isTauri()) return filePath
+  return store.getDocumentFileHandle()?.name ?? null
+}
+
+function assertAutomationSaveDestination(destination: string | null, kind: DocumentKind): void {
   if (!destination) return
   const extension = DOCUMENT_EXTENSIONS[kind]
   if (destination.toLowerCase().endsWith(`.${extension}`)) return
@@ -85,12 +87,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
     const name = store.state.documentName
     // close_file with unsaved "save" uses this too, so an existing file is checked the same way.
-    assertAutomationSaveDestination(
-      path,
-      store.getDocumentFilePath(),
-      store.getSourceIdentity().handle?.name ?? null,
-      store.state.documentKind
-    )
+    assertAutomationSaveDestination(path || inPlaceSaveName(store), store.state.documentKind)
     if (!path && !store.hasWritableSource()) {
       throw new Error(`"${name}" has not been saved to a file yet; pass a path to save it`)
     }
