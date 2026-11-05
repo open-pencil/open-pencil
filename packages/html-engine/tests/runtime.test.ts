@@ -161,6 +161,24 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'title').layout?.box.height).toBe(30)
   })
 
+  test('reports a value a stylesheet sets back to its initial one over an inline style', async () => {
+    const document = await styled(
+      '<style>#box { opacity: 1 !important }</style><div id="box" style="opacity:0.5"></div>'
+    )
+
+    expect(elementById(document, 'box').computedStyle?.opacity).toBe('1')
+  })
+
+  test('pairs past SVG elements whose names the parser keeps mixed-case', async () => {
+    const document = await styled(
+      `<svg width="40" height="20"><defs><linearGradient id="g"></linearGradient></defs>
+        <rect id="r" width="30" height="10" style="display:inline"></rect></svg>`
+    )
+
+    expect(elementById(document, 'g').computedStyle).toBeDefined()
+    expect(elementById(document, 'r').computedStyle).toBeDefined()
+  })
+
   test('counts a line of spaces where white space is kept', async () => {
     const document = await styled(
       '<pre id="p" style="font:16px sans-serif;margin:0">one\n   \ntwo</pre>'

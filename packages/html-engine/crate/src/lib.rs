@@ -534,7 +534,13 @@ pub fn capture() -> String {
         let mut nodes = Vec::new();
         capture_node(doc, doc.root_node(), &mut nodes, None);
         let (w, h) = doc.viewport().window_size;
-        json!({ "engine": "blitz", "viewport": [w, h], "nodes": nodes }).to_string()
+        // Values the nodes leave out are these; the host fills them back in.
+        let initial: Map<String, Value> = default_styles()
+            .iter()
+            .map(|(property, value)| ((*property).to_owned(), value.clone().into()))
+            .collect();
+        json!({ "engine": "blitz", "viewport": [w, h], "initial": initial, "nodes": nodes })
+            .to_string()
     })
 }
 

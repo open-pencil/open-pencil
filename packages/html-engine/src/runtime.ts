@@ -74,7 +74,8 @@ function pairElements(
     if (shaderFrame && first !== undefined && capture.nodes[first].tag === 'img') queue.shift()
     for (const element of elements) {
       let node = queue.shift()
-      while (node !== undefined && capture.nodes[node].tag !== element.tagName) {
+      // The HTML parser keeps SVG's mixed-case names, such as `linearGradient`; the document may not.
+      while (node !== undefined && !sameTag(capture.nodes[node].tag, element.tagName)) {
         const tag = capture.nodes[node].tag
         if (tag === undefined || !IMPLIED_WRAPPERS.has(tag)) return
         queue.unshift(...(children.get(node) ?? []))
@@ -87,6 +88,10 @@ function pairElements(
   }
   if (body !== -1) pair(designElements(document.children), body)
   return pairs
+}
+
+function sameTag(captured: string | undefined, tagName: string): boolean {
+  return captured?.toLowerCase() === tagName.toLowerCase()
 }
 
 function designElements(nodes: DesignDocument['children']): DesignElement[] {
@@ -165,7 +170,8 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {
-        element.computedStyle = withShorthands(node.style ?? {})
+        // Every captured property's computed value, so none falls back to a stale inline one.
+        element.computedStyle = withShorthands({ ...capture.initial, ...node.style })
         if (compute.layout) element.layout = layoutOf(node)
       }
       return styled
