@@ -313,7 +313,8 @@ jobs:
       fail-fast: true
       matrix:
         group: [app, cli, core, dom, fig, mcp, render, scene-graph, vue]
-    name: Unit tests — ${{ matrix.group }}
+    # GitHub appends the group, and a skipped job shows the bare name.
+    name: Unit tests
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -366,7 +367,8 @@ jobs:
         run: bun run test:cloud
 
   cloud-storage:
-    name: Cloud storage — ${{ matrix.store }}
+    # No matrix value in the name: GitHub appends it, and a skipped job shows the bare name.
+    name: Cloud storage
     needs: changes
     if: needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 15
@@ -374,18 +376,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # PostgreSQL and SeaweedFS: object-store checks, then the full revision flow.
-          - store: SeaweedFS
-            script: test:e2e
-          # Garage's S3 compatibility for the object-store checks.
-          - store: Garage
-            script: test:e2e:garage
-          # The Cloudflare Worker under wrangler dev, with its relay Durable Object, against
-          # PostgreSQL and SeaweedFS.
-          - store: Cloudflare Workers
-            script: test:e2e:cloudflare
-            worker: true
+        # SeaweedFS: PostgreSQL and SeaweedFS, object-store checks, then the full revision flow.
+        # Garage: Garage's S3 compatibility for the object-store checks.
+        # Cloudflare Workers: the Worker under wrangler dev, with its relay Durable Object, against
+        # PostgreSQL and SeaweedFS.
+        store: [SeaweedFS, Garage, Cloudflare Workers]
+    env:
+      CLOUD_E2E_SCRIPT: ${{ fromJSON('{"SeaweedFS":"test:e2e","Garage":"test:e2e:garage","Cloudflare Workers":"test:e2e:cloudflare"}')[matrix.store] }}
+      # Only the Workers run serves the built Cloud site.
+      WORKER: ${{ matrix.store == 'Cloudflare Workers' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -397,21 +396,19 @@ jobs:
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - name: Install Chromium for the demo document
-        if: matrix.worker
+        if: env.WORKER == 'true'
         uses: ./.github/actions/setup/playwright
 
       # The Worker serves the editor and the portal as static assets, and every official
       # deployment bundles them.
       - name: Build the Cloud site
-        if: matrix.worker
+        if: env.WORKER == 'true'
         run: bun run build:cloud
       - name: Bundle the official Workers
-        if: matrix.worker
+        if: env.WORKER == 'true'
         run: bun tools/ci/cloud-deploy/src/bundle.ts
 
       - name: Run Cloud end-to-end tests against ${{ matrix.store }}
-        env:
-          CLOUD_E2E_SCRIPT: ${{ matrix.script }}
         run: bun --filter @open-pencil/cloud "$CLOUD_E2E_SCRIPT"
 
   result:

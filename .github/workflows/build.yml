@@ -145,6 +145,8 @@ jobs:
           package-manager-cache: false
       # rustup installs the toolchain rust-toolchain.toml pins; this adds the release target to it.
       - name: Add the Rust target
+        # Bash on every runner: Windows' default PowerShell does not read $TARGET.
+        shell: bash
         env:
           TARGET: ${{ matrix.target }}
         run: rustup target add "$TARGET"
