@@ -55,6 +55,11 @@ export class FamilyFaceCatalog {
     return lookup
   }
 
+  /** The families the host's catalog lists. */
+  hostFamilies(): string[] {
+    return [...this.hostFaces.keys()]
+  }
+
   /** The faces `faces` found for a family, once it has; `undefined` before. */
   foundFaces(family: string): FamilyFace[] | null | undefined {
     return this.found.get(family)

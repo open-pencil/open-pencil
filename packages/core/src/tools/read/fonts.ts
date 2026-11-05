@@ -53,7 +53,7 @@ export const listFonts = defineTool({
 export const listAvailableFonts = defineTool({
   name: 'list_available_fonts',
   description:
-    'List font families the host can render (system fonts on desktop plus any bundled fonts). ' +
+    'List font families the host can render: installed, bundled, and online families. ' +
     'Use this to discover what fonts are available to set on a text node — distinct from list_fonts ' +
     'which only reports families currently used in the page.',
   execution: { kind: 'async', mutation: 'none' },

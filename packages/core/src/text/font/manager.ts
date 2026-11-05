@@ -322,7 +322,8 @@ export class FontManager {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
       }
     }
-    for (const font of fonts) byFamily.set(font.family, { family: font.family, source: 'local' })
+    for (const family of [...fonts.map((font) => font.family), ...this.faces.hostFamilies()])
+      byFamily.set(family, { family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
 

@@ -7,7 +7,6 @@ import {
   WEB_FONT_PROVIDER_IDS,
   fontManager,
   prepareGraphFonts,
-  type FamilyFace,
   type FontFamilyOption,
   type HostFontFamily,
   type LocalFontAccessState,
@@ -126,17 +125,8 @@ export async function predownloadFallbackFonts() {
 }
 
 export async function listFamilies(): Promise<FontFamilyOption[]> {
-  configureTauriFontCache()
-  if (isTauri()) {
-    const [systemFonts, webFonts] = await Promise.all([
-      getTauriFonts(),
-      fontManager.listFamilyOptions()
-    ])
-    const byFamily = new Map(webFonts.map((font) => [font.family, font]))
-    for (const font of systemFonts)
-      byFamily.set(font.family, { family: font.family, source: 'local' })
-    return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
-  }
+  // The font manager lists the installed families once the host has read them.
+  await listFonts()
   return fontManager.listFamilyOptions()
 }
 
@@ -146,47 +136,6 @@ export async function listFonts(): Promise<HostFontFamily[]> {
     return getTauriFonts()
   }
   return []
-}
-
-/** A face a script can set, as Figma's `listAvailableFontsAsync` lists it. */
-export interface AvailableFont {
-  fontName: { family: string; style: string }
-}
-
-/**
- * Every face a script can set: each installed family's faces, then each other family's faces as
- * far as they are known, such as a bundled family's or a web family's once it has been looked up.
- * A web family not looked up yet is listed as `Regular`, since its faces take a request each.
- */
-export function availableFonts(
-  installed: readonly HostFontFamily[],
-  families: readonly FontFamilyOption[],
-  knownFaces: (family: string) => readonly FamilyFace[] | null = (family) =>
-    fontManager.familyFacesSync(family)
-): AvailableFont[] {
-  const fonts = installed.flatMap(({ family, faces }) =>
-    faces.map(({ style }) => ({ fontName: { family, style } }))
-  )
-  const listed = new Set(installed.map(({ family }) => family))
-  for (const { family } of families) {
-    if (listed.has(family)) continue
-    const faces = knownFaces(family)
-    const styles = faces?.length ? faces.map(({ style }) => style) : ['Regular']
-    for (const style of styles) fonts.push({ fontName: { family, style } })
-  }
-  return fonts
-}
-
-/**
- * The faces a script can set, as Figma's `listAvailableFontsAsync` lists them. Listing families
- * can forget the faces found so far (the first request for local fonts does), so the faces of
- * each family a font is loaded from are looked up again before the list is made.
- */
-export async function listAvailableFonts(): Promise<AvailableFont[]> {
-  const [installed, families] = await Promise.all([listFonts(), listFamilies()])
-  const loaded = families.filter(({ family }) => fontManager.isLoaded(family))
-  await Promise.all(loaded.map(({ family }) => fontManager.familyFaces(family).catch(() => null)))
-  return availableFonts(installed, families)
 }
 
 interface FontRenderInvalidator {
