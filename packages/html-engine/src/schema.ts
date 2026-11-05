@@ -57,6 +57,8 @@ const capturedNodeSchema = v.object({
 export const captureSchema = v.object({
   engine: v.literal('blitz'),
   viewport: v.tuple([v.number(), v.number()]),
+  /** The initial values of the properties nodes leave out of `style` when they hold them. */
+  initial: v.record(v.string(), v.string()),
   nodes: v.array(capturedNodeSchema)
 })
 

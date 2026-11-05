@@ -91,6 +91,9 @@ const PROPERTIES: &[&str] = &[
     "mix-blend-mode",
     "clip-path",
     "transform",
+    "translate",
+    "rotate",
+    "scale",
     "transform-origin",
     "object-fit",
     "object-position",
@@ -114,6 +117,7 @@ const PROPERTIES: &[&str] = &[
     "text-shadow",
     "text-indent",
     "white-space",
+    "text-wrap-mode",
     "text-overflow",
     "vertical-align",
     "list-style-type",
@@ -284,6 +288,10 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
     let mut out = Map::new();
     for property in PROPERTIES {
         let value = doc.resolved_style_value(node.id, property);
+        // Stylo answers a property it does not implement with an empty value.
+        if value.is_empty() {
+            continue;
+        }
         // A property with a fixed initial value is left out at it; the host knows them.
         if defaults.get(*property).is_some_and(|d| *d == value) {
             continue;
@@ -293,12 +301,13 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
     Value::Object(out)
 }
 
+/// Initial values of the captured properties that are not inherited. An inherited property is
+/// always reported, since a missing value would read as the parent's, not the initial one.
 fn default_styles() -> &'static HashMap<&'static str, String> {
     use std::sync::OnceLock;
     static DEFAULTS: OnceLock<HashMap<&'static str, String>> = OnceLock::new();
     DEFAULTS.get_or_init(|| {
         [
-            ("visibility", "visible"),
             ("opacity", "1"),
             ("z-index", "auto"),
             ("overflow-x", "visible"),
@@ -335,17 +344,16 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
             ("mix-blend-mode", "normal"),
             ("clip-path", "none"),
             ("transform", "none"),
+            ("translate", "none"),
+            ("rotate", "none"),
+            ("scale", "none"),
             ("object-fit", "fill"),
             ("object-position", "50% 50%"),
             ("aspect-ratio", "auto"),
             ("text-shadow", "none"),
-            ("text-indent", "0px"),
-            ("text-transform", "none"),
             ("text-decoration-line", "none"),
             ("text-overflow", "clip"),
             ("vertical-align", "baseline"),
-            ("word-spacing", "0px"),
-            ("letter-spacing", "normal"),
             ("content", "normal"),
             ("grid-template-columns", "none"),
             ("grid-template-rows", "none"),
@@ -365,8 +373,6 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
             ("min-height", "auto"),
             ("max-width", "none"),
             ("max-height", "none"),
-            ("font-style", "normal"),
-            ("font-stretch", "100%"),
         ]
         .into_iter()
         .map(|(k, v)| (k, v.to_owned()))
@@ -528,7 +534,13 @@ pub fn capture() -> String {
         let mut nodes = Vec::new();
         capture_node(doc, doc.root_node(), &mut nodes, None);
         let (w, h) = doc.viewport().window_size;
-        json!({ "engine": "blitz", "viewport": [w, h], "nodes": nodes }).to_string()
+        // Values the nodes leave out are these; the host fills them back in.
+        let initial: Map<String, Value> = default_styles()
+            .iter()
+            .map(|(property, value)| ((*property).to_owned(), value.clone().into()))
+            .collect();
+        json!({ "engine": "blitz", "viewport": [w, h], "initial": initial, "nodes": nodes })
+            .to_string()
     })
 }
 
