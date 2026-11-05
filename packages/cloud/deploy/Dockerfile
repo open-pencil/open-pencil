@@ -12,7 +12,16 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/playwright:v1.63.0-noble AS bui
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 WORKDIR /src
+# Rust builds the HTML engine's WebAssembly module: rustup installs the toolchain
+# rust-toolchain.toml pins, and build scripts link with the system C toolchain.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends build-essential curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+    | sh -s -- -y --profile minimal --default-toolchain none
+ENV PATH="/root/.cargo/bin:${PATH}"
 COPY . .
+RUN rustup toolchain install
 RUN bun install --frozen-lockfile
 RUN bun run build:packages
 RUN bun run build:cloud

@@ -242,6 +242,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # The image has no Rust: rustup alone, which installs the toolchain rust-toolchain.toml pins.
+      - name: Install rustup
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: . -> target
