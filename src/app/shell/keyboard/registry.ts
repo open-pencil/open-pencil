@@ -119,8 +119,7 @@ function shouldIgnoreShortcut(
     overlayHoldsKeys(event, options.overlays, history) ||
     isEditing(event) ||
     options.inputFocused.value ||
-    editingTextHandles(options, history) ||
-    !!options.store.state.numberFieldFocused
+    editingTextHandles(options, history)
   )
 }
 

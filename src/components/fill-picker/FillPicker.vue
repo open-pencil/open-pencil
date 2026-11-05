@@ -79,11 +79,6 @@ const { panels } = useI18n()
 /** Dragging a gradient handle or sampling a color on the canvas leaves the picker open. */
 const keepPickerOpen = useEyedropperKeepOpen(() => keepOpen)
 const outside = pickerOutsideHandlers(() => keepPickerOpen)
-
-function cancelFromEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-  emit('cancel')
-}
 </script>
 
 <template>
@@ -115,7 +110,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           :side-offset="4"
           side="left"
           data-picker-content
-          @escape-key-down="cancelFromEscape"
+          @escape-key-down="emit('cancel')"
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >
