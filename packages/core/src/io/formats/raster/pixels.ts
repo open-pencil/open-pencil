@@ -57,7 +57,21 @@ export function createCanvasKitRasterCodec(ck: CanvasKit): RasterCodec {
       }
     },
     encodePNG: (image) => encode(image, ck.ImageFormat.PNG, 100),
-    encodeJPG: (image) => encode(image, ck.ImageFormat.JPEG, 90)
+    encodeJPG(image) {
+      // JPEG ignores alpha; premultiplied colour is the colour laid over black.
+      const source = ck.MakeImage(info(image.width, image.height), image.data, image.width * 4)
+      if (!source) return null
+      try {
+        const overBlack = source.readPixels(0, 0, {
+          ...info(image.width, image.height),
+          alphaType: ck.AlphaType.Premul
+        })
+        if (!(overBlack instanceof Uint8Array)) return null
+        return encode({ ...image, data: overBlack }, ck.ImageFormat.JPEG, 90)
+      } finally {
+        source.delete()
+      }
+    }
   }
 }
 

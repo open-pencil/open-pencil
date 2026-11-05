@@ -24,8 +24,8 @@ describe('headless text bounds', () => {
     // Lowercase glyphs sit well inside the line box.
     expect(bounds.y).toBeGreaterThan(text.y + 10)
     expect(bounds.height).toBeLessThan(text.height / 2)
-    const [width, height] = pngSize(await text.exportAsync({ format: 'PNG' }))
-    expect(width).toBe(Math.ceil(bounds.x + bounds.width) - Math.floor(bounds.x))
-    expect(height).toBeLessThan(text.height / 2)
+    // An export is the ink rounded up.
+    const size = pngSize(await text.exportAsync({ format: 'PNG' }))
+    expect(size).toEqual([Math.ceil(bounds.width), Math.ceil(bounds.height)])
   })
 })
