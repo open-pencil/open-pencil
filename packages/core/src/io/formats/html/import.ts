@@ -59,39 +59,93 @@ function resource(
 }
 
 /**
+ * The most one stylesheet, font, or image may hold, and the most a page's resources may hold
+ * together, so a page that links a huge file cannot exhaust the importer's memory.
+ */
+const MAX_RESOURCE_BYTES = 64 * 1024 * 1024
+const MAX_PAGE_BYTES = 256 * 1024 * 1024
+
+/** A response's body, or null once it runs past `MAX_RESOURCE_BYTES`. */
+async function boundedBody(response: Response): Promise<Uint8Array | null> {
+  if (!response.body) return new Uint8Array()
+  if (Number(response.headers.get('content-length')) > MAX_RESOURCE_BYTES) {
+    await response.body.cancel()
+    return null
+  }
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let length = 0
+  for (let read = await reader.read(); !read.done; read = await reader.read()) {
+    length += read.value.byteLength
+    if (length > MAX_RESOURCE_BYTES) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(read.value)
+  }
+  const body = new Uint8Array(length)
+  let at = 0
+  for (const chunk of chunks) {
+    body.set(chunk, at)
+    at += chunk.byteLength
+  }
+  return body
+}
+
+async function readAssetAt(
+  url: string,
+  readAsset: ReadHTMLOptions['readAsset']
+): Promise<HTMLEngineResource | null> {
+  try {
+    const path = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
+    const bytes = await readAsset?.(path)
+    return bytes && bytes.byteLength <= MAX_RESOURCE_BYTES ? resource(url, bytes) : null
+  } catch {
+    // A malformed escape in the URL, or a host that could not read the file.
+    return null
+  }
+}
+
+async function readFileAt(url: string, signal: AbortSignal): Promise<HTMLEngineResource | null> {
+  const { readFile, stat } = await import(/* @vite-ignore */ 'node:fs/promises')
+  const info = await stat(new URL(url)).catch(() => null)
+  if (!info?.isFile() || info.size > MAX_RESOURCE_BYTES) return null
+  const bytes = await readFile(new URL(url), { signal }).catch(() => null)
+  return bytes ? resource(url, bytes) : null
+}
+
+/**
  * Fetches what a page asks for: its own files through `readAsset`, `file:` URLs from disk, and
- * the rest, such as `https:` and `data:`, over the network.
+ * the rest, such as `https:` and `data:`, over the network, each up to `MAX_RESOURCE_BYTES`.
  */
 function pageFetch(readAsset: ReadHTMLOptions['readAsset']): HTMLEngineFetch {
   return async (url, signal) => {
-    if (url.startsWith(ASSET_BASE_URL)) {
-      const path = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
-      const bytes = await readAsset?.(path)
-      return bytes ? resource(url, bytes) : null
-    }
-    if (url.startsWith('file:')) {
-      const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
-      const bytes = await readFile(new URL(url), { signal }).catch(() => null)
-      return bytes ? resource(url, bytes) : null
-    }
+    if (url.startsWith(ASSET_BASE_URL)) return readAssetAt(url, readAsset)
+    if (url.startsWith('file:')) return readFileAt(url, signal)
     const response = await fetch(url, { signal }).catch(() => null)
     if (!response?.ok) return null
+    const body = await boundedBody(response).catch(() => null)
     const contentType = response.headers.get('content-type') ?? undefined
-    return resource(response.url || url, await response.arrayBuffer(), contentType)
+    return body ? resource(response.url || url, body, contentType) : null
   }
 }
 
 /**
  * A fetch that answers each URL it has answered before from the same response, so a page styled
- * twice gets the same stylesheets and fonts both times, whatever the network does in between.
+ * twice gets the same stylesheets and fonts both times, whatever the network does in between, and
+ * that holds the page's resources to `MAX_PAGE_BYTES` together.
  */
 function rememberingFetch(fetch: HTMLEngineFetch): HTMLEngineFetch {
   const answered = new Map<string, HTMLEngineResource>()
+  let total = 0
   return async (url, signal) => {
     const known = answered.get(url)
     if (known) return known
     const fetched = await fetch(url, signal)
-    if (fetched) answered.set(url, fetched)
+    // Past the page's total, a resource is left out as one that failed to load.
+    if (!fetched || total + fetched.bytes.byteLength > MAX_PAGE_BYTES) return null
+    total += fetched.bytes.byteLength
+    answered.set(url, fetched)
     return fetched
   }
 }

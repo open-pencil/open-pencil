@@ -216,6 +216,26 @@ describe('reading HTML', () => {
     expect(box).toMatchObject({ width: 300, height: 10 })
   })
 
+  test('imports a page whose resources are malformed or too large', async () => {
+    const requested: string[] = []
+    const { graph } = await readHTMLDocument(
+      `<link rel="stylesheet" href="a%zz.css"><link rel="stylesheet" href="huge.css">
+      <div class="box" style="width:50px;height:20px"></div>`,
+      {
+        readAsset: async (path) => {
+          requested.push(path)
+          // One byte over the limit a resource may hold.
+          return new TextEncoder().encode(`.box { width: 300px }${' '.repeat(64 * 1024 * 1024)}`)
+        }
+      }
+    )
+    const box = graph.getChildren(graph.getPages()[0].id)[0]
+
+    // The malformed URL never reaches the host, and the huge stylesheet is left out.
+    expect(requested).toEqual(['huge.css'])
+    expect(box).toMatchObject({ width: 50, height: 20 })
+  })
+
   test('text is set in the first family of its list there is a font for, as in a browser', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="font-family:'No Such Family', '${TEST_FAMILY}', sans-serif">Found</p>
