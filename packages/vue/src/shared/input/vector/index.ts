@@ -22,7 +22,7 @@ export {
   isEndpoint,
   NODE_HIT_THRESHOLD
 } from '#vue/shared/input/vector/hit-test'
-import type { Editor, NodeEditState } from '@open-pencil/core'
+import { editsHandlesOnly, type Editor, type NodeEditState } from '@open-pencil/core'
 import { regionVertexIndices, vectorHandleId } from '@open-pencil/core/vector'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -36,8 +36,11 @@ export function handleNodeEditDown(
   const es = editor.getNodeEditState()
   if (!es) return
 
+  // When only handles may change, points select but do not drag, and regions and segments
+  // take no press.
+  const handlesOnly = editsHandlesOnly(editor.state)
   const handleHit = hitTestEditHandle(editor, cx, cy)
-  const ri = handleHit ? null : hitTestEditRegion(editor, cx, cy)
+  const ri = handleHit || handlesOnly ? null : hitTestEditRegion(editor, cx, cy)
   if (!e.shiftKey && !pressesPickedRegion(es, ri)) es.selectedRegions = new Set()
 
   if (handleHit) {
@@ -79,6 +82,10 @@ export function handleNodeEditDown(
       editor.nodeEditSelectVertex(vi, e.shiftKey)
     }
 
+    if (handlesOnly) {
+      editor.requestRepaint()
+      return
+    }
     startPointsDrag(es, [vi], cx, cy, editor, setDrag)
     return
   }
@@ -86,7 +93,7 @@ export function handleNodeEditDown(
   // As in Figma, a press on a segment selects the segment itself, not its endpoints, and drags
   // its two points with the rest of the selection. A press on a selected segment keeps the
   // selection so all of it drags; the click acts only on a release without a drag.
-  const si = hitTestEditSegment(editor, cx, cy)
+  const si = handlesOnly ? null : hitTestEditSegment(editor, cx, cy)
   if (si !== null) {
     const click = selectPressedSegment(es, si, e.shiftKey)
     editor.requestRepaint()
@@ -350,7 +357,8 @@ export function handleNodeEditMove(
     const unsnappedDx = cx - d.startX
     const unsnappedDy = cy - d.startY
     const es = editor.getNodeEditState()
-    if (!es) return
+    // A host that keeps points in place mid-drag stops the points where they are.
+    if (!es || editsHandlesOnly(editor.state)) return
     let snapped = { x: unsnappedDx, y: unsnappedDy }
     if (disableSnapping) editor.setSnapGuides([])
     else snapped = applyNodeEditSnap(d, unsnappedDx, unsnappedDy, editor, es)

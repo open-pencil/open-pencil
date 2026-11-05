@@ -8,6 +8,13 @@ import type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions
 
 export const EDIT_VIEW: CanvasView = { id: 'edit' }
 
+/** A host that takes nothing away: the document's kind and the view decide everything. */
+export const NO_HOST_RESTRICTIONS: EditorRestrictions = {
+  readOnly: false,
+  tools: null,
+  pathEdits: 'all'
+}
+
 /** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
 export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
 
@@ -16,6 +23,7 @@ type DocumentBehaviour = Pick<
   EditorProfile,
   | 'edits'
   | 'tools'
+  | 'pathEdits'
   | 'toolKeys'
   | 'snapGrid'
   | 'dotGrid'
@@ -34,6 +42,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
   design: {
     edits: true,
     tools: null,
+    pathEdits: 'all',
     toolKeys: TOOL_SHORTCUTS,
     snapGrid: 1,
     dotGrid: null,
@@ -47,6 +56,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
   board: {
     edits: true,
     tools: BOARD_TOOLS,
+    pathEdits: 'all',
     toolKeys: BOARD_TOOL_SHORTCUTS,
     snapGrid: BOARD_GRID,
     dotGrid: BOARD_GRID,
@@ -84,13 +94,26 @@ function viewBehaviour(view: CanvasView): ViewBehaviour {
   return view.id === 'play' ? playBehaviour(view.revision) : EDIT_BEHAVIOUR
 }
 
+/** The tools both offer; null offers every tool. */
+function commonTools(
+  a: ReadonlySet<Tool> | null,
+  b: ReadonlySet<Tool> | null
+): ReadonlySet<Tool> | null {
+  if (!a) return b
+  if (!b) return a
+  return new Set([...a].filter((tool) => b.has(tool)))
+}
+
 /** Narrows a profile by the host's restrictions; a restriction only ever takes away. */
 function restrict(profile: EditorProfile, restrictions: EditorRestrictions): EditorProfile {
-  if (!restrictions.readOnly) return profile
-  const tools = profile.tools
-    ? new Set([...profile.tools].filter((tool) => READ_ONLY_TOOLS.has(tool)))
-    : READ_ONLY_TOOLS
-  return { ...profile, edits: false, tools }
+  let tools = commonTools(profile.tools, restrictions.tools)
+  if (restrictions.readOnly) tools = commonTools(tools, READ_ONLY_TOOLS)
+  return {
+    ...profile,
+    edits: profile.edits && !restrictions.readOnly,
+    tools,
+    pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits
+  }
 }
 
 /**

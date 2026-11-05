@@ -1,11 +1,26 @@
 import type { EditorState, Tool } from '#core/editor/types'
 
 /**
- * What the host takes away from every view, whatever the canvas shows: a read-only document, as
- * for a viewer or an earlier version, can be looked at, selected in, and copied from, not changed.
+ * How much of a path vector edit mode may change: anything, or only the handles of its points,
+ * which keep their places and connections. A host that lets players reshape curves but not
+ * redraw them, as a lettering game does, offers handles only.
+ */
+export type PathEdits = 'all' | 'handles'
+
+/**
+ * What the host takes away from every view, whatever the canvas shows. A restriction only ever
+ * takes away from what the document's kind and the view offer.
  */
 export interface EditorRestrictions {
+  /**
+   * A read-only document, as for a viewer or an earlier version, can be looked at, selected in,
+   * and copied from, not changed.
+   */
   readOnly: boolean
+  /** The only tools the host offers, or null to leave the profile's tools as they are. */
+  tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change. */
+  pathEdits: PathEdits
 }
 
 /**
@@ -43,6 +58,8 @@ export interface EditorProfile {
   edits: boolean
   /** The tools on offer, or null for every tool. */
   tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change: anything, or only its handles. */
+  pathEdits: PathEdits
   /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
