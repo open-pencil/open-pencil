@@ -176,6 +176,13 @@ describe('render bounds as Figma measures them', () => {
       node.strokeWeight = 2
     })
     expect(stroked.absoluteRenderBounds).not.toBeNull()
+    // An emoji draws apart from the fills, so a text of one paints with none.
+    const emoji = text((node) => {
+      node.characters = '\u{1F600}'
+      node.fills = []
+    })
+    expect(emoji.absoluteRenderBounds).not.toBeNull()
+    expect(exportBounds(graph, [emoji.id])).not.toBeNull()
   })
 
   test('layers all outside the frame that clips them draw nothing', () => {
