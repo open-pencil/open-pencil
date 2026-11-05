@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, jest, test } from 'bun:test'
 
 import { nextTick, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
-import { offerWebUpdate, takeWebUpdate } from '@/app/shell/updater/web'
+import { offerWebUpdate, takeWebUpdate, watchForWebUpdates } from '@/app/shell/updater/web'
 
 const { updates: messages } = useI18n()
 
@@ -148,5 +148,41 @@ describe('taking a web update', () => {
 
   test('reloads a page another tab already moved to the new version', () => {
     expect(taking(true, null, true)).toEqual(['reload'])
+  })
+})
+
+describe('checking for a web update', () => {
+  test('asks every hour while the page stays open', () => {
+    jest.useFakeTimers()
+    try {
+      let checks = 0
+      watchForWebUpdates(
+        () => checks++,
+        () => false
+      )
+      jest.advanceTimersByTime(59 * 60_000)
+      expect(checks).toBe(0)
+      jest.advanceTimersByTime(60_000)
+      expect(checks).toBe(1)
+      jest.advanceTimersByTime(60 * 60_000)
+      expect(checks).toBe(2)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('asks when the page is shown again, not when it is hidden', async () => {
+    const hidden = ref(false)
+    let checks = 0
+    watchForWebUpdates(
+      () => checks++,
+      () => hidden.value
+    )
+    hidden.value = true
+    await nextTick()
+    expect(checks).toBe(0)
+    hidden.value = false
+    await nextTick()
+    expect(checks).toBe(1)
   })
 })

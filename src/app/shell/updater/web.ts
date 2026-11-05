@@ -1,4 +1,4 @@
-import { useDocumentVisibility, useEventListener, whenever } from '@vueuse/core'
+import { useDocumentVisibility, useEventListener, useIntervalFn, whenever } from '@vueuse/core'
 import { watch } from 'vue'
 
 import { updatesMessages } from '@open-pencil/vue/i18n'
@@ -8,6 +8,15 @@ import { confirmAppExit } from '@/app/document/close/exit'
 import { toast } from '@/app/shell/ui'
 import { allTabs } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
+
+/** How often an open page asks for a new version, besides each time it is shown again. */
+const WEB_UPDATE_CHECK_MS = 60 * 60 * 1000
+
+/** Whether nobody is looking at the page. */
+function useDocumentHidden(): () => boolean {
+  const visibility = useDocumentVisibility()
+  return () => visibility.value === 'hidden'
+}
 
 export type WebUpdateOptions = {
   /** Takes the new version and reloads into it; a plain reload unless the worker supplies it. */
@@ -33,12 +42,7 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   const confirm = options.confirm ?? confirmAppExit
   const hasUnkeptEdits = options.hasUnkeptEdits ?? (() => allTabs.value.some((tab) => tab.isDirty))
   const overlayOpen = options.overlayOpen ?? (() => false)
-  const hidden =
-    options.hidden ??
-    (() => {
-      const visibility = useDocumentVisibility()
-      return () => visibility.value === 'hidden'
-    })()
+  const hidden = options.hidden ?? useDocumentHidden()
   let reloading = false
   const reloadOnce = () => {
     if (reloading) return
@@ -67,6 +71,18 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
     if (wasHidden && !isHidden && !reloading) offer()
   })
   whenever(() => hidden() && !hasUnkeptEdits() && !overlayOpen(), reloadOnce, { immediate: true })
+}
+
+/**
+ * Asks for a new version every hour and whenever the page is shown again. The browser itself checks
+ * only when a page loads, and the editor can stay open for days without loading another.
+ */
+export function watchForWebUpdates(check: () => void, hidden: () => boolean = useDocumentHidden()) {
+  // Started by hand: VueUse starts it on its own only where it finds a window.
+  useIntervalFn(check, WEB_UPDATE_CHECK_MS, { immediate: false }).resume()
+  watch(hidden, (isHidden, wasHidden) => {
+    if (wasHidden && !isHidden) check()
+  })
 }
 
 /** The service worker's side of taking a new version, which `takeWebUpdate` drives. */
@@ -122,6 +138,14 @@ export function useWebUpdates(): void {
     let takenElsewhere = false
     // The plugin's own reload is left out (`onNeedReload`): it would reload every tab.
     const { needRefresh, updateServiceWorker } = useRegisterSW({ onNeedReload: () => undefined })
+    // Offline, or with the server unreachable, the next check tries again.
+    watchForWebUpdates(
+      () =>
+        void navigator.serviceWorker
+          .getRegistration()
+          .then((registration) => registration?.update())
+          .catch(() => undefined)
+    )
     // Taking the new version switches every open tab to it. Only the tab that took it reloads at
     // once; another tab keeps, or now gets, the offer, which reloads when it will not lose
     // anything, even when the switch reached it before the plugin reported the version.
