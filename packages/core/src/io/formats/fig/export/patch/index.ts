@@ -90,6 +90,21 @@ function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
   return { byGuid, byNode: new Map([...byGuid].map(([guid, nodeId]) => [nodeId, guid])) }
 }
 
+/**
+ * A set's variants write their copies of its boolean, text, swap, and slot properties from the
+ * set's, so an edited set writes its variants too; only the fields that differ are patched.
+ */
+function addSetVariants(
+  graph: SceneGraph,
+  changes: ArchiveChangeSummary,
+  add: (id: string) => unknown
+): void {
+  for (const id of changes.touched) {
+    if (graph.getNode(id)?.type !== 'COMPONENT_SET') continue
+    for (const child of graph.getChildren(id)) if (child.type === 'COMPONENT') add(child.id)
+  }
+}
+
 /** An edited component changes every instance of it, and so every component nesting one. */
 function addComponentInstances(
   graph: SceneGraph,
@@ -178,6 +193,7 @@ function planRecords(
     return owner
   }
   for (const id of changes.touched) add(id)
+  addSetVariants(graph, changes, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)

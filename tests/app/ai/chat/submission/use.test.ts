@@ -4,12 +4,11 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 import { ref, shallowRef } from 'vue'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import { AgentSetupError } from '@/app/ai/agents/setup/readiness'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import type { EditorStore } from '@/app/editor/active-store'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 const messages = ref({
   openSettings: 'Open settings',
   requestFailed: 'Request failed',

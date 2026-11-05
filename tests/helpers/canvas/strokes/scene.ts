@@ -4,6 +4,8 @@ import {
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
 
+import { solid } from '../paints'
+
 const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [
   { name: 'sharp', cornerRadius: 0, dashPattern: undefined },
@@ -156,7 +158,7 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
     y: 60,
     width: 120,
     height: 80,
-    fills: [{ type: 'SOLID', color: { r: 0.2, g: 0.7, b: 0.4, a: 1 }, opacity: 1, visible: true }]
+    fills: [solid(0.2, 0.7, 0.4)]
   })
   const lines: Array<[string, Partial<SceneNode>, GradientTransform]> = [
     ['horizontal', { x: 60, y: 200, width: 300, height: 0 }, IDENTITY_GRADIENT_TRANSFORM],
@@ -203,9 +205,7 @@ export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string):
         })),
         regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
       },
-      fills: [
-        { type: 'SOLID', color: { r: 0.86, g: 0.91, b: 0.98, a: 1 }, opacity: 1, visible: true }
-      ],
+      fills: [solid(0.86, 0.91, 0.98)],
       strokes: [
         {
           type: 'SOLID',

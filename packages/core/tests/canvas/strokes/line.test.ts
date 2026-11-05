@@ -7,8 +7,7 @@ import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-grap
 import { silhouetteBounds } from '#core/canvas/shadows/silhouette'
 import { makeLineStrokeOutline } from '#core/canvas/strokes/line'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const SIZE = 400
 
 const ck = await initCanvasKit()

@@ -6,11 +6,11 @@ import { restoreSubtree, snapshotSubtree } from './history/subtree'
 import { adoptCoveredLayers } from './shapes/adopt'
 import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
-import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen'
+import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen/draw'
 import { createPencilActions } from './shapes/pencil'
 import { defaultNodeName, nextNumberedName } from './structure/rename'
 import type { EditorContext } from './types'
-export type { PenDragOptions } from './shapes/pen'
+export type { PenDragOptions } from './shapes/pen/draw'
 
 /** Layers Figma numbers when drawn, as "Rectangle 1"; others keep their type's name. */
 const NUMBERED_WHEN_DRAWN: ReadonlySet<NodeType> = new Set([
@@ -84,7 +84,13 @@ export function createShapeActions(ctx: EditorContext, updateNodeWithUndo: Updat
   const pencilActions = createPencilActions(ctx, createShape)
   const framePresetActions = createFramePresetActions(ctx, createShape)
 
-  function setTool(tool: typeof ctx.state.activeTool) {
+  /**
+   * Picks a tool. Another tool than the pen ends the path it is drawing and keeps what was drawn,
+   * the hand too, as in Figma desktop 126. A tool `held` only while a key is down, as Space holds
+   * the hand to pan, leaves the path to continue once it is let go.
+   */
+  function setTool(tool: typeof ctx.state.activeTool, options?: { held?: boolean }) {
+    if (ctx.state.penState && tool !== 'PEN' && !options?.held) penActions.penCommit(false)
     ctx.setActiveTool(tool)
   }
 

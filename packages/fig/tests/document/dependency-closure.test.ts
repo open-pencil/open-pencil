@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { collectSceneDependencies } from '#fig/document/dependency-closure'
 import { createSourceIndex } from '#fig/instance-overrides/source-index'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('retains external preferred choices separately from required component dependencies', () => {
   const changes = [

@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { cssRules } from '#dom-css-tests/helpers'
 import {
   stateStyles,
   stateStylesToCSS,
@@ -17,6 +16,7 @@ import { sortBy } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { cssRules } from '@open-pencil/test-support/dom-css'
 
 import {
   buttonSet,

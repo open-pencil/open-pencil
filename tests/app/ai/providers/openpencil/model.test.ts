@@ -25,7 +25,7 @@ describe('OpenPencil Cloud models', () => {
       }
     })
     const { config, runtime } = cloudModelConfig(client, 'anthropic/claude-sonnet-5-5')
-    const model = languageModelInstance(createLanguageModel(config, runtime))
+    const model = languageModelInstance(await createLanguageModel(config, runtime))
     await Promise.resolve(
       model.doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
     ).catch(() => undefined)

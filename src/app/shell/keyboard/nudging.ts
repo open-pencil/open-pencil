@@ -2,9 +2,11 @@ import { useEventListener } from '@vueuse/core'
 
 import { gridNudge, resolveEditorProfile } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { OpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isEditing } from '@/app/shell/keyboard/focus'
+import { overlayHoldsKeys } from '@/app/shell/keyboard/overlays'
 import { isReservedModShortcut } from '@/app/shell/keyboard/reserved'
 
 const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
@@ -27,7 +29,7 @@ function selectionOrigin(store: EditorStore): Vector {
   return { x, y }
 }
 
-export function bindNudgeKeys(store: EditorStore) {
+export function bindNudgeKeys(store: EditorStore, overlays: OpenOverlays | undefined) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e) || store.state.editingTextId) return
     if (isReservedModShortcut(e)) e.preventDefault()
@@ -35,6 +37,7 @@ export function bindNudgeKeys(store: EditorStore) {
 
     const delta = NUDGE_DELTAS[e.code]
     if (!delta || store.state.selectedIds.size === 0) return
+    if (overlayHoldsKeys(e, overlays)) return
 
     const [x, y] = delta
     const { snapGrid } = resolveEditorProfile(store.state)

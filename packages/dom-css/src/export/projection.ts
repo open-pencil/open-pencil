@@ -14,13 +14,13 @@ import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
   cssColor,
-  dropShadowToCSS,
   effectsToCSS,
   fillToCSS,
   gradientToCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
-  strokeColorToCSS
+  strokeColorToCSS,
+  textEffectsToCSS
 } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
 import { textCaseToCSS, textElementContent } from './text'
@@ -417,8 +417,7 @@ function styleFromTextNode(
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
-  const shadow = dropShadowToCSS(node.effects[0], css)
-  if (shadow) style['text-shadow'] = shadow
+  Object.assign(style, textEffectsToCSS(node.effects, css))
   if (node.textDecoration !== 'NONE') {
     style['text-decoration-line'] =
       node.textDecoration === 'UNDERLINE' ? 'underline' : 'line-through'

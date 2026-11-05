@@ -49,18 +49,29 @@ export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
 
+/** How a host loads pages as they are visited; see `FigmaAPIOptions`. */
+export interface PageHost {
+  load: (pageId: string) => Promise<void>
+  pageOfNode?: (nodeId: string) => Promise<string | null>
+}
+
 /**
  * How each API loads a page's layers, a host's hook kept off `figma`, which has only Figma's
- * members; see `FigmaAPIOptions.loadPage`. Without one every page is in memory.
+ * members. Without one every page is in memory.
  */
-const pageLoaders = new WeakMap<NodeProxyHost, (pageId: string) => Promise<void>>()
+const pageHosts = new WeakMap<NodeProxyHost, PageHost>()
 
-export function setPageLoader(api: NodeProxyHost, load: (pageId: string) => Promise<void>): void {
-  pageLoaders.set(api, load)
+export function setPageHost(api: NodeProxyHost, host: PageHost): void {
+  pageHosts.set(api, host)
 }
 
 export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
-  return pageLoaders.get(api)?.(pageId) ?? Promise.resolve()
+  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+}
+
+/** The page holding a layer not loaded yet, which loading that page brings in. */
+export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
+  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
 }
 
 export interface NodeProxyHost extends ExportHost {

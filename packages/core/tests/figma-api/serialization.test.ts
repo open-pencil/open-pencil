@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
-
 interface SerializedNodeWithChildren {
   children?: unknown[]
 }

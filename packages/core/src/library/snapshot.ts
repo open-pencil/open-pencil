@@ -17,7 +17,9 @@ const VOLATILE_NODE_FIELDS = new Set([
   'instanceOverrides',
   'componentPropertyAssignments',
   'textPicture',
+  // Caches measured from the fonts at hand, which a FIG round trip writes or leaves out by them.
   'derivedTextGlyphs',
+  'derivedTextHeight',
   'derivedLayout',
   'librarySource'
 ])

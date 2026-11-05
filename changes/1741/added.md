@@ -1,1 +1,0 @@
-- CSS, HTML and Tailwind export write a shadow or blur field bound to a variable as that variable's `var()` where the layer draws the variable's value, and design token export writes it as a reference to the variable's token, which import binds back.

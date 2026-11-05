@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
 
 const ck = await initCanvasKit()

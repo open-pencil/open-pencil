@@ -108,6 +108,7 @@ function appendInternalResources(context: InternalResourceContext): void {
           componentPropertyDefinitionsById: context.componentPropertyDefinitionsById,
           modeIdToGuid: context.modeIdToGuid,
           propertyIdToGuid: context.propertyIdToGuid,
+          propertyCopyGuids: context.propertyCopyGuids,
           pluginDataOverrides: context.pluginDataOverrides,
           runtime: context.runtime
         }

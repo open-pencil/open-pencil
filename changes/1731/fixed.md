@@ -1,1 +1,0 @@
-- A Vue text field or textarea exported as code puts the attributes it is given, such as `name`, `required`, or `aria-invalid`, on its input rather than its wrapper, as the React components do (#1731).

@@ -26,7 +26,7 @@ import {
   type TextEditSession
 } from './text/session'
 import type { EditorContext } from './types'
-import { createVariableBindingActions } from './variable-bindings'
+import { createVariableBindingActions } from './variables/bindings'
 
 /**
  * Path text is edited by re-flowing glyph OUTLINES along its path. When the font

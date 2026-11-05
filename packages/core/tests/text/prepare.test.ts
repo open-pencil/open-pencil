@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, describe, expect, spyOn, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { NOTO_COLOR_EMOJI_FAMILY } from '#core/text/emoji'

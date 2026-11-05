@@ -117,4 +117,4 @@ This is load rollback, not an undo command. Existing user history remains intact
 - [Recovery](../../core/src/kiwi/fig/session/recovery.ts)
 - [Session tests](../tests/document/session.test.ts)
 - [Checkpoint validation](../tests/document/checkpoint.test.ts)
-- [Worker/undo/recovery integration tests](../../../tests/engine/io/fig/session/)
+- [Worker/undo/recovery integration tests](../../core/tests/io/formats/fig/session/)

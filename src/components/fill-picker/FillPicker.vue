@@ -62,10 +62,14 @@ const emit = defineEmits<{
   openChange: [open: boolean]
   cancel: []
 }>()
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })

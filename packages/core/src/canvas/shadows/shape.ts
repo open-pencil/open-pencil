@@ -1,10 +1,9 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
-import { blurSigma } from '#core/canvas/effects'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
 import { sideStrokeRRects, strokeAlignShare } from '#core/canvas/strokes/sides'

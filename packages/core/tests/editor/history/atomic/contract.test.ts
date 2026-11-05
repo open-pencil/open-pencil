@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { createEditor, executeAtomicTool, type DocumentChange } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
@@ -157,6 +156,12 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     sizing_vertical: 'FIXED',
     grow: 1,
     align_self: 'STRETCH'
+  }),
+  batch_update: (t) => ({
+    operations: JSON.stringify([
+      { id: t.frame, props: { direction: 'VERTICAL', spacing: 4, name: 'Batched' } },
+      { id: t.rect, props: { opacity: 0.3, corner_radius: 5 } }
+    ])
   }),
   update_node: (t) => ({
     id: t.placed,

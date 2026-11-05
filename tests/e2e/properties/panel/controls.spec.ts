@@ -1,5 +1,6 @@
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { propertyField, propertyItems, propertySection } from '#tests/helpers/properties'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
@@ -417,7 +418,7 @@ test('width can create, bind, and detach a number variable', async () => {
   await editor.page.getByRole('button', { name: 'Create', exact: true }).click()
   await editor.canvas.waitForRender()
 
-  await expect(widthField.getByText('Card/width')).toBeVisible()
+  await expect(widthField).toHaveAttribute('data-bound')
   const boundVariable = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -435,7 +436,7 @@ test('width can create, bind, and detach a number variable', async () => {
   await widthInput.press('Enter')
   await editor.canvas.waitForRender()
 
-  await expect(widthField.getByText('Card/width')).toHaveCount(0)
+  await expect(widthField).not.toHaveAttribute('data-bound')
   const directWidth = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -457,7 +458,7 @@ test('bound NumberField detach edit is one undo step', async () => {
   await editor.page.getByPlaceholder('Variable name').fill('Radius/default')
   await editor.page.getByRole('button', { name: 'Create', exact: true }).click()
   await editor.canvas.waitForRender()
-  await expect(field.getByText('Radius/default')).toBeVisible()
+  await expect(field).toHaveAttribute('data-bound')
 
   const readState = () =>
     editor.page.evaluate(() => {

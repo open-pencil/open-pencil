@@ -10,11 +10,9 @@ import type { ViewportSize } from '@/app/document/io/types'
 import { createDesignCheck } from '@/app/editor/design-check/session'
 import { createFlashActions } from '@/app/editor/flash'
 import { createMobileClipboardActions } from '@/app/editor/mobile-clipboard'
-import { createPenActions } from '@/app/editor/pen'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import { createProfilerActions } from '@/app/editor/profiler'
 import type { AppEditorState } from '@/app/editor/session/types'
-import { createVectorEditActions } from '@/app/editor/vector'
 
 export function defineEditorStoreAccessors(store: object, editor: Editor) {
   Object.defineProperties(store, {
@@ -60,8 +58,6 @@ export function createEditorStoreModules(
   preparationController: EditorPreparationController
 ) {
   const flash = createFlashActions(editor, state)
-  const pen = createPenActions(editor, state)
-  const vectorEdit = createVectorEditActions(editor, state)
   const documentIO = createDocumentIOActions(editor, state, viewportSize, preparationController)
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
@@ -78,13 +74,6 @@ export function createEditorStoreModules(
 
   return {
     ...flash,
-    ...pen,
-    ...vectorEdit,
-    /** Going read-only keeps a vector edit in progress, as the editor keeps edited text. */
-    setReadOnly(readOnly: boolean) {
-      if (readOnly) vectorEdit.exitNodeEditMode(true)
-      editor.setReadOnly(readOnly)
-    },
     openFigFile: documentIO.openFigFile,
     openDOMFile: documentIO.openDOMFile,
     importDOMText: documentIO.importDOMText,

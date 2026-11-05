@@ -12,7 +12,7 @@ import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import type { NodeActions } from '#core/editor/nodes'
+import type { NodeActions } from '#core/editor/nodes/actions'
 import type { EditorContext } from '#core/editor/types'
 import { textStyleChanges } from '#core/text/character-style'
 

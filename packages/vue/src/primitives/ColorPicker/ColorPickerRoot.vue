@@ -34,10 +34,14 @@ const emit = defineEmits<{
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 
 const outside = pickerOutsideHandlers(() => keepOpen)
 

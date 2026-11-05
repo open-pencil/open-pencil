@@ -1,7 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
@@ -14,6 +13,7 @@ import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
+import { computeContentBounds } from './visual-bounds'
 
 export function renderSceneToCanvas(
   r: Pick<
@@ -306,7 +306,11 @@ export function render(
   )
 
   if (layer !== 'overlays') {
-    if (requiresUncachedSceneRender) r.tiledScenePending = false
+    // Drawn directly, the whole scene is on screen this frame.
+    if (requiresUncachedSceneRender) {
+      r.tiledScenePending = false
+      r.tiledSceneCovered = true
+    }
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
@@ -423,13 +427,7 @@ function recordScenePicture(
   const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
-    const sceneContentBounds = pageNode
-      ? computeDescendantVisualBounds(
-          pageNode.childIds,
-          (id) => graph.getNode(id),
-          (id) => graph.getAbsolutePosition(id)
-        )
-      : null
+    const sceneContentBounds = pageNode ? computeContentBounds(graph, pageNode.childIds) : null
     const sceneBounds = sceneContentBounds
       ? {
           x: sceneContentBounds.minX,

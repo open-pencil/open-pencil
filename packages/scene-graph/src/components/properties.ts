@@ -1,6 +1,5 @@
 import type { SceneGraph } from '../graph'
-import { findInstanceAncestor } from '../instances'
-import { instanceMainComponent } from '../instances/main-component'
+import { findInstanceAncestor, instanceMainComponent } from '../instances/main-component'
 import { setInstanceOverride } from '../instances/overrides'
 import { walkInstanceSources } from '../instances/source-walk'
 import { randomHex } from '../random'
@@ -172,6 +171,60 @@ export function applyComponentPropertyValue(
   return definition.type === 'INSTANCE_SWAP' ? target : instance
 }
 
+export function reapplyComponentPropertyAssignments(
+  graph: SceneGraph,
+  instanceId: string
+): ComponentPropertyDefinition[] {
+  const instance = graph.getNode(instanceId)
+  if (instance?.type !== 'INSTANCE') {
+    return []
+  }
+  const definitions = new Map(
+    componentPropertyDefinitions(graph, instance).map((definition) => [definition.id, definition])
+  )
+  const applied: ComponentPropertyDefinition[] = []
+  for (const [propertyId, value] of Object.entries(instance.componentPropertyAssignments)) {
+    const definition = definitions.get(propertyId)
+    if (definition && definition.type !== 'VARIANT') {
+      applyComponentPropertyValue(graph, instanceId, definition, value)
+      applied.push(definition)
+    }
+  }
+  return applied
+}
+
+const ASSIGNMENT_OVERRIDE_PREFIX = 'componentPropertyAssignments/'
+
+export function assignmentOverrideField(propertyId: string): string {
+  return `${ASSIGNMENT_OVERRIDE_PREFIX}${propertyId}`
+}
+
+export function overriddenAssignmentId(field: string): string | undefined {
+  return field.startsWith(ASSIGNMENT_OVERRIDE_PREFIX)
+    ? field.slice(ASSIGNMENT_OVERRIDE_PREFIX.length)
+    : undefined
+}
+
+export function recordAssignmentOverride(
+  graph: SceneGraph,
+  instanceId: string,
+  propertyId: string
+): void {
+  const instance = graph.getNode(instanceId)
+  const owner = instance?.parentId ? findInstanceAncestor(graph, instance.parentId) : undefined
+  if (!instance || !owner) {
+    return
+  }
+  setInstanceOverride(
+    owner.instanceOverrides,
+    owner.id,
+    instance.id,
+    assignmentOverrideField(propertyId),
+    instance.componentPropertyAssignments[propertyId]
+  )
+  graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
+}
+
 function componentSubtree(graph: SceneGraph, componentId: string): SceneNode[] {
   const component = graph.getNode(componentId)
   if (!component) return []
@@ -233,6 +286,43 @@ export function removeComponentProperty(
   ]
   for (const node of nodes) removePropertyFromNode(graph, node, propertyId)
   return true
+}
+
+/**
+ * Moves the boolean, text, instance swap, and slot properties a set's variants define themselves
+ * onto the set, under their IDs, so the layers and instances naming them still do: a variant's
+ * properties are its set's, as Figma keeps them, and combining components moves theirs to the
+ * set (desktop 126). A property the set already has under that ID is not added again. Returns
+ * the IDs of the set and the variants it changed.
+ */
+export function moveVariantPropertiesToSet(graph: SceneGraph, setId: string): string[] {
+  const set = graph.getNode(setId)
+  if (set?.type !== 'COMPONENT_SET') return []
+  const changed: string[] = []
+  const known = new Set(set.componentPropertyDefinitions.map((definition) => definition.id))
+  const moved: ComponentPropertyDefinition[] = []
+  for (const variant of graph.getChildren(setId)) {
+    const own = variant.componentPropertyDefinitions.filter(
+      (definition) => definition.type !== 'VARIANT'
+    )
+    if (variant.type !== 'COMPONENT' || own.length === 0) continue
+    for (const definition of own) {
+      if (known.has(definition.id)) continue
+      known.add(definition.id)
+      moved.push(definition)
+    }
+    graph.updateNode(variant.id, {
+      componentPropertyDefinitions: variant.componentPropertyDefinitions.filter(
+        (definition) => definition.type === 'VARIANT'
+      )
+    })
+    changed.push(variant.id)
+  }
+  if (moved.length === 0) return changed
+  graph.updateNode(setId, {
+    componentPropertyDefinitions: [...moved, ...set.componentPropertyDefinitions]
+  })
+  return [setId, ...changed]
 }
 
 /** A new component property ID, in the `prop:` form the editor, plugin API, and design JSX share. */

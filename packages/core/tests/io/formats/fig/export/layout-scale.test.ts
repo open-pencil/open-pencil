@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { nestedLayoutScaleFixtureSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { nestedLayoutScaleFixtureSchema } from '@open-pencil/test-support/fig/schema'
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'

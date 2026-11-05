@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { propertyField, propertySection } from '#tests/helpers/properties'
 import { getSelectedNode, getNodeById } from '#tests/helpers/store'

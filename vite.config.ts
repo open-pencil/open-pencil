@@ -26,7 +26,7 @@ import { donationDefine } from './vite/funding'
 import { aiIconCollection } from './vite/icons'
 import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
-import { openPencilPwaPlugin } from './vite/pwa'
+import { chunkFileNames, openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
 
@@ -97,6 +97,8 @@ export default defineConfig(async ({ command, mode }) => {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
+      // `check:bundle` reads the chunk graph from it.
+      manifest: true,
       // Official releases upload their maps to PostHog for error reports, then remove them
       // (`tools/release/release-packages/src/sourcemaps/publish.ts`); no chunk links one.
       sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
@@ -111,7 +113,8 @@ export default defineConfig(async ({ command, mode }) => {
             : {
                 main: resolve(__dirname, 'index.html'),
                 updater: resolve(__dirname, 'updater.html')
-              }
+              },
+        output: { chunkFileNames }
       }
     },
     server: createDevServerOptions(

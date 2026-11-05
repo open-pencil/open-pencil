@@ -10,6 +10,7 @@ import {
   bySavedPosition,
   createSourceIndex,
   parentIdOf,
+  type InterpreterIndex,
   type SourceIndex
 } from '../instance-overrides/source-index'
 import { symbolOverridesOf } from '../instance-overrides/types'
@@ -22,8 +23,13 @@ import {
 import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
-import { inheritComponentPropertyDefinitions, inheritFromAncestors } from './property-inheritance'
+import {
+  inheritComponentPropertyDefinitions,
+  inheritFromAncestors,
+  linkedPropertyCopies
+} from './property-inheritance'
 import { vectorStyleTable } from './style-dependencies'
+import { createDocumentVariables, type DocumentVariables } from './variables'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
 export function createDocumentReader(source: readonly NodeChange[], pageIds?: ReadonlySet<string>) {
@@ -45,7 +51,10 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
-  'overrideKey'
+  'overrideKey',
+  // A variant's copies of its set's properties are read for every variant a page links, which
+  // would otherwise keep each variant's whole record decoded for the session.
+  'componentPropDefs'
 ] as const
 
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
@@ -81,7 +90,8 @@ interface ReaderRecords {
   /** Whole records kept for the document: components the interpreter reads, and styles. */
   shared: WholeRecord
   /** Indexes whole records, for the interpreter that reads components on demand. */
-  interpreterIndex(): SourceIndex
+  interpreterIndex(): InterpreterIndex
+  readonly variables: DocumentVariables
 }
 
 function assetIds(records: readonly NodeChange[]): Map<string, string> {
@@ -125,13 +135,18 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const assets = assetIds(records)
   for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
+  const variables = createDocumentVariables(records)
   return {
     records,
     index,
     bindingDiagnostics,
     scope: () => same,
     shared: same,
-    interpreterIndex: () => createSourceIndex(records.filter((record) => !isResource(record)))
+    interpreterIndex: () => ({
+      ...createSourceIndex(records.filter((record) => !isResource(record))),
+      variables
+    }),
+    variables
   }
 }
 
@@ -197,10 +212,12 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     }
     return record
   }
-  const interpreterIndex = (): SourceIndex => {
+  const variables = createDocumentVariables(records, decodeRecord)
+  const interpreterIndex = (): InterpreterIndex => {
     const { sources, children } = createSourceIndex(records.filter((record) => !isResource(record)))
     const lists = new WeakMap<readonly NodeChange[], NodeChange[]>()
     return {
+      variables,
       sources: new DecodedMap(sources, shared),
       children: new DecodedMap(children, (list) => {
         let whole = lists.get(list)
@@ -228,7 +245,8 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       return whole
     },
     shared,
-    interpreterIndex
+    interpreterIndex,
+    variables
   }
 }
 
@@ -276,7 +294,10 @@ function createScopedReader(
     )
     .map(whole)
   const sourceInterpreter = shared.sourceInterpreter
-  const interpreter = createIndexedOccurrenceInterpreter(createSourceIndex(sceneChanges))
+  const interpreter = createIndexedOccurrenceInterpreter({
+    ...createSourceIndex(sceneChanges),
+    variables: shared.records.variables
+  })
   const pages = changes
     .filter((change) => change.type === 'CANVAS')
     .toSorted(bySavedPosition)
@@ -315,6 +336,12 @@ function createScopedReader(
       return structuredClone(resources.map(whole))
     },
     bindingDiagnostics,
+    /** A record's copies of its set's properties, each by its own id to the set property's. */
+    propertyCopies(id: string): Map<string, string> {
+      // Headers carry the saved definitions, links included, so no whole record is decoded.
+      const header = index.sources.get(id)
+      return header ? linkedPropertyCopies(header) : new Map()
+    },
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
       const page = interpreter.page(id, options)

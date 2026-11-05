@@ -233,13 +233,26 @@ export interface UserPictureTable {
   createdAt: TimestampColumn
 }
 
-export interface DocumentCollaborationStateTable {
+/** A collaboration room's latest snapshot, a stored file, by document and epoch. */
+export interface DocumentRoomSnapshotTable {
   documentId: string
   roomEpoch: number
-  state: Uint8Array
-  version: Generated<number>
+  /** The stored file holding the room's snapshot. */
+  snapshotObjectId: string
+  /** The last logged update the snapshot holds; later ones are in `documentRoomUpdate`. */
+  throughSequence: number
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+/** An update a room logged after its snapshot, one per save. */
+export interface DocumentRoomUpdateTable {
+  documentId: string
+  roomEpoch: number
+  sequence: number
+  /** One Yjs update, as the relay merged the changes of one save. */
+  data: Uint8Array
+  createdAt: TimestampColumn
 }
 
 export interface InvitationContinuationTable {
@@ -363,7 +376,8 @@ export interface CloudDatabase {
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
-  documentCollaborationState: DocumentCollaborationStateTable
+  documentRoomSnapshot: DocumentRoomSnapshotTable
+  documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   workspaceEntitlement: WorkspaceEntitlementTable
   workspaceStorageUsage: WorkspaceStorageUsageTable

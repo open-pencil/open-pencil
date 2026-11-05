@@ -2,7 +2,7 @@ import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
 import { keycapFrame } from '#core/text/keycap'
 
-import { appendOutlineCommand } from './outline-path'
+import { appendOutlineCommand } from './outlines/commands'
 
 /** Draws a keycap frame with `paint`, its pen at `x` on the baseline `y`. */
 export function drawKeycapFrame(

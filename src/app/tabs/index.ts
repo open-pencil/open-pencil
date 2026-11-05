@@ -13,7 +13,7 @@ import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
-import { confirmDocumentClose } from '@/app/document/close/controller'
+import { confirmDocumentClose, holdsUnkeptEdits } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
 import { documentAssetReader } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
@@ -89,7 +89,7 @@ export const allTabs = computed(() =>
     name: t.store.state.documentName,
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
-    isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
+    isDirty: t.kind === 'document' && holdsUnkeptEdits(t.store),
     // What kind of file the tab holds, for its icon, as Home marks its files.
     fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
     isPreparing: t.store.state.preparation !== null,
@@ -247,7 +247,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (choice === 'discard') await closingTab.store.discardRecovery()
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
-  if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
+  if (choice !== 'discard' && holdsUnkeptEdits(closingTab.store)) return
   rememberDocumentView(closingTab.store)
   removeTab(closingTab)
 }
@@ -363,15 +363,20 @@ async function showImportedGraph(
   const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
   const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
-  await store.switchPage(pageId, { preparation: load })
+  // The view is placed before the first frame counts as shown, so the loader gives way to the
+  // page drawn where it opens rather than one that then moves and fills in.
+  await store.switchPage(pageId, {
+    preparation: load,
+    beforePresentation: async () => {
+      if (remembered) {
+        await yieldToUI()
+        store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+      } else {
+        await store.fitCurrentPageToViewport()
+      }
+    }
+  })
   load?.signal.throwIfAborted()
-  load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  if (remembered) {
-    await yieldToUI()
-    store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
-  } else {
-    await store.fitCurrentPageToViewport()
-  }
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {

@@ -34,8 +34,8 @@ import { createUndoBridge } from './bridges/undo'
 import { createClipboardActions } from './clipboard'
 import { createClipboardPropertiesActions } from './clipboard/paste/properties'
 import { createColorSpaceActions } from './color-space'
-import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
+import { createComponentSyncScheduler } from './components/sync'
 import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
 import { createConnectorLineActions } from './connectors/line'
 import { createConnectorRouting } from './connectors/routing'
@@ -50,13 +50,14 @@ import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
-import { createNodeActions } from './nodes'
+import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
 import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
+import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
@@ -71,10 +72,13 @@ import type {
   EditorEventName,
   EditorEvents,
   EditorOptions,
-  EditorState
+  EditorState,
+  RenderVersions,
+  Tool
 } from './types'
 import { createUndoActions } from './undo'
-import { createVariableActions } from './variables'
+import { createVariableActions } from './variables/actions'
+import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
 import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
@@ -149,6 +153,11 @@ export function createEditor(options?: EditorOptions) {
 
   function requestRefresh() {
     state.sceneVersion++
+  }
+
+  /** A canvas showed a frame of `versions` with nothing left to fill in. */
+  function reportPresented(versions: RenderVersions) {
+    emitEditorEvent('render:presented', versions)
   }
 
   function requestRepaint() {
@@ -340,10 +349,21 @@ export function createEditor(options?: EditorOptions) {
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
   /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
   const readsOnly = () => !resolveEditorProfile(state).edits
+  const vectorEdit = createVectorEditActions(ctx, {
+    updateNodeWithUndo: nodes.updateNodeWithUndo,
+    select: selection.select,
+    deleteSelected: clipboard.deleteSelected,
+    penCommit: shapes.penCommit
+  })
+  const penResume = createPenResumeActions(ctx, {
+    penCommit: shapes.penCommit,
+    exitNodeEditMode: vectorEdit.exitNodeEditMode
+  })
   const readOnly = createReadOnlyActions(ctx, () => {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
     if (state.editingTextId) text.commitTextEdit()
+    vectorEdit.exitNodeEditMode(true)
     shapes.penCancel()
     shapes.pencilCancel()
     state.gradientEdit = null
@@ -389,6 +409,8 @@ export function createEditor(options?: EditorOptions) {
 
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
+    // A pen path belongs to the document it was drawn in.
+    if (state.penState) shapes.penCancel()
     undo.discardBatches()
     pendingTextLayout.clear()
     _graph = newGraph
@@ -456,6 +478,7 @@ export function createEditor(options?: EditorOptions) {
     requestRefresh,
     textSelectionChanged,
     requestRepaint,
+    reportPresented,
     onEditorEvent,
     setCanvasKit,
     setNavigationPhase,
@@ -477,6 +500,21 @@ export function createEditor(options?: EditorOptions) {
 
     // Shapes & tools
     ...shapes,
+
+    // Vector edit mode: a path edited point by point, and the pen continuing a path
+    ...vectorEdit,
+    ...penResume,
+    /**
+     * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as
+     * the hand with H, commits the path and leaves vector edit mode, as in Figma desktop 126; a
+     * tool held while a key is down, as Space holds the hand, leaves it open.
+     */
+    setTool: (tool: Tool, options?: { held?: boolean }) => {
+      const picked = !options?.held && offeredTool(state, tool) === tool
+      if (picked && state.nodeEditState && tool !== 'SELECT' && tool !== 'PEN')
+        vectorEdit.exitNodeEditMode(true)
+      shapes.setTool(tool, options)
+    },
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,

@@ -11,6 +11,11 @@ import { unreferencedObject } from './objects'
 
 /** How long a save between versions is kept before compaction may delete it. */
 export const REVISION_COMPACTION_GRACE_MS = 24 * 60 * 60_000
+/**
+ * How long a stored file nothing refers to is left alone: a collaboration room records its next
+ * snapshot's file before writing it and points the room at it moments later.
+ */
+export const OBJECT_SWEEP_GRACE_MS = 15 * 60_000
 
 export type RevisionCompactionOptions = {
   batchSize: number
@@ -161,9 +166,10 @@ export function createRevisionCompactionService(
   }
 
   /** Deletes freed files from the object store, then their rows; a failure stays for next time. */
-  async function sweepObjects(batchSize: number, result: RevisionCompactionResult) {
+  async function sweepObjects(now: Date, batchSize: number, result: RevisionCompactionResult) {
     const freed = await unreferencedObjects(database)
       .select(['id', 'objectKey'])
+      .where('createdAt', '<', new Date(now.getTime() - OBJECT_SWEEP_GRACE_MS))
       .limit(batchSize)
       .execute()
     for (const object of freed) {
@@ -225,7 +231,7 @@ export function createRevisionCompactionService(
       } catch {
         result.failed++
       }
-      await sweepObjects(input.batchSize, result)
+      await sweepObjects(now, input.batchSize, result)
       return result
     }
   }

@@ -7,8 +7,7 @@ import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 import { makeBooleanOperationPath, makeBooleanSourcePath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await initCanvasKit()
 
 const SIZE = 160

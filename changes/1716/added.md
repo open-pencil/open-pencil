@@ -1,1 +1,0 @@
-- Form controls (text fields, textareas, number fields, switches, checkboxes, radios, and radio groups) have an invalid state: a behaviour binds it as a value or as an Invalid or Error variant beside Disabled, preview shows it, and generated Vue and React components take an `invalid` prop that sets `aria-invalid` (#1716).

@@ -5,9 +5,7 @@ import * as v from 'valibot'
 import { materializeFigFragment } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { prepareGraphTransfer, applyGraphTransfer } from '@open-pencil/scene-graph/transfer'
-
-import { readFixtureObject } from '#tests/helpers/fig/fixtures'
-
+import { readFixtureObject } from '@open-pencil/test-support/fig/fixtures'
 const figRecordsSchema = v.object({
   nodeChanges: v.array(v.record(v.string(), v.unknown())),
   blobs: v.array(v.string())

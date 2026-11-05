@@ -66,7 +66,8 @@ import {
   INTERNAL_ID,
   loadPage,
   MIXED,
-  setPageLoader,
+  pageOfNode,
+  setPageHost,
   type FigmaFont,
   type NodeProxyHost
 } from './proxy'
@@ -89,6 +90,8 @@ export interface FigmaAPIOptions {
    * it, as they load pages in Figma's dynamic-page mode. Without one every page is in memory.
    */
   loadPage?: (pageId: string) => Promise<void>
+  /** The page holding a layer not loaded yet, which `getNodeByIdAsync` loads to find it. */
+  pageOfNode?: (nodeId: string) => Promise<string | null>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -157,7 +160,8 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     super()
     this.graph = graph
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
-    if (options.loadPage) setPageLoader(this, options.loadPage)
+    if (options.loadPage)
+      setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
@@ -259,7 +263,13 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   /** The async lookup that Figma requires in dynamic-page mode; same result as getNodeById. */
+  /** As in Figma's dynamic-page mode, a layer on a page not loaded yet loads that page. */
   async getNodeByIdAsync(id: string): Promise<FigmaNodeProxy | null> {
+    const node = this.getNodeById(id)
+    if (node) return node
+    const pageId = await pageOfNode(this, id)
+    if (!pageId) return null
+    await loadPage(this, pageId)
     return this.getNodeById(id)
   }
 
