@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-import { headlessRenderNodes, MAX_RASTER_PIXELS } from '#core/io/formats/raster'
+import {
+  createCanvasKitRasterCodec,
+  headlessRenderNodes,
+  initCanvasKit,
+  MAX_RASTER_PIXELS
+} from '#core/io/formats/raster'
 
 // Figma's answers measured in Figma desktop 126.
 
@@ -220,6 +225,27 @@ describe('exportAsync', () => {
     expect(pngSize(await rect.exportAsync(unscaled))).toEqual([24, 14])
     const jpg = await rect.exportAsync({ format: 'JPG' })
     expect([jpg[0], jpg[1]]).toEqual([0xff, 0xd8])
+  })
+
+  test('exports a layer that draws nothing as one blank pixel, and refuses it as a vector', async () => {
+    const figma = createAPI()
+    const codec = createCanvasKitRasterCodec(await initCanvasKit())
+    figma.rasterCodec = codec
+    figma.exportImage = (ids, options) =>
+      headlessRenderNodes(figma.graph, options.pageId ?? figma.currentPageId, ids, options)
+    const rect = figma.createRectangle()
+    rect.fills = []
+    const scaled = { format: 'PNG', constraint: { type: 'SCALE', value: 3 } } as const
+    for (const settings of [{ format: 'PNG' }, scaled] as const) {
+      const png = codec.decode(await rect.exportAsync(settings))
+      expect(png).toEqual({ width: 1, height: 1, data: new Uint8Array([0, 0, 0, 0]) })
+    }
+    const jpg = codec.decode(await rect.exportAsync({ format: 'JPG' }))
+    expect(jpg).toEqual({ width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255]) })
+    const refused = 'Failed to export node. This node may not have any visible layers.'
+    await expect(rect.exportAsync({ format: 'SVG' })).rejects.toThrow(refused)
+    await expect(rect.exportAsync({ format: 'SVG_STRING' })).rejects.toThrow(refused)
+    await expect(rect.exportAsync({ format: 'PDF' })).rejects.toThrow(refused)
   })
 
   test('lays out a script’s pending edits before exporting', async () => {
