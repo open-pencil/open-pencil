@@ -3,7 +3,7 @@ import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { listFamilies, listFonts } from '@/app/editor/fonts'
+import { availableFonts, listFamilies, listFonts } from '@/app/editor/fonts'
 import { createTauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
@@ -50,14 +50,7 @@ export function makeFigmaFromStore(
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
-    const fonts = systemFonts.flatMap(({ family, faces }) =>
-      faces.map(({ style }) => ({ fontName: { family, style } }))
-    )
-    const seenFamilies = new Set(systemFonts.map(({ family }) => family))
-    for (const { family } of familyOptions) {
-      if (!seenFamilies.has(family)) fonts.push({ fontName: { family, style: 'Regular' } })
-    }
-    return fonts
+    return availableFonts(systemFonts, familyOptions)
   }
   return api
 }

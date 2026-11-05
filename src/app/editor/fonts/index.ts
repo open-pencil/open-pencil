@@ -7,6 +7,7 @@ import {
   WEB_FONT_PROVIDER_IDS,
   fontManager,
   prepareGraphFonts,
+  type FamilyFace,
   type FontFamilyOption,
   type HostFontFamily,
   type LocalFontAccessState,
@@ -145,6 +146,35 @@ export async function listFonts(): Promise<HostFontFamily[]> {
     return getTauriFonts()
   }
   return []
+}
+
+/** A face a script can set, as Figma's `listAvailableFontsAsync` lists it. */
+export interface AvailableFont {
+  fontName: { family: string; style: string }
+}
+
+/**
+ * Every face a script can set: each installed family's faces, then each other family's faces as
+ * far as they are known, such as a bundled family's or a web family's once it has been looked up.
+ * A web family not looked up yet is listed as `Regular`, since its faces take a request each.
+ */
+export function availableFonts(
+  installed: readonly HostFontFamily[],
+  families: readonly FontFamilyOption[],
+  knownFaces: (family: string) => readonly FamilyFace[] | null = (family) =>
+    fontManager.familyFacesSync(family)
+): AvailableFont[] {
+  const fonts = installed.flatMap(({ family, faces }) =>
+    faces.map(({ style }) => ({ fontName: { family, style } }))
+  )
+  const listed = new Set(installed.map(({ family }) => family))
+  for (const { family } of families) {
+    if (listed.has(family)) continue
+    const faces = knownFaces(family)
+    const styles = faces?.length ? faces.map(({ style }) => style) : ['Regular']
+    for (const style of styles) fonts.push({ fontName: { family, style } })
+  }
+  return fonts
 }
 
 interface FontRenderInvalidator {
