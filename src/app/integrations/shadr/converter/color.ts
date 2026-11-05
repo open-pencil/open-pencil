@@ -1,4 +1,4 @@
-import type { Color } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function colorToShadrHex(c?: Color): string {
   if (!c) return 'ffffff'

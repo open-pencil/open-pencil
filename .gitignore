@@ -64,6 +64,7 @@ storybook-static/
 /.cache/demo.lock/
 /.cache/landing-posters/
 /public/demo.fig
+/public/canvaskit.wasm
 /desktop/icons/
 
 # Documentation build/cache output

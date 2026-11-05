@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 
 import ActionBuilderSection from './event-builder/components/ActionBuilderSection.vue'
 import BlockPropertiesSection from './event-builder/components/BlockPropertiesSection.vue'

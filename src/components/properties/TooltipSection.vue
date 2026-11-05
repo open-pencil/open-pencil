@@ -2,7 +2,8 @@
 import { ref, watch } from 'vue'
 
 import type { PluginDataEntry } from '@open-pencil/scene-graph'
-import { useSceneComputed, useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,7 +20,7 @@ const TOOLTIP_KEY = 'tooltip'
 const activeTooltip = useSceneComputed(() => {
   const current = node.value
   if (!current?.pluginData) return ''
-  const entry = current.pluginData.find((e) => e.key === TOOLTIP_KEY)
+  const entry = current.pluginData.find((e: PluginDataEntry) => e.key === TOOLTIP_KEY)
   return entry?.value ?? ''
 })
 
@@ -43,7 +44,7 @@ function commitTooltip() {
   const targetNodes = editor.getSelectedNodes()
   const targets = targetNodes.length > 0 ? targetNodes : [current]
   for (const target of targets) {
-    const clean = (target.pluginData ?? []).filter((e) => e.key !== TOOLTIP_KEY)
+    const clean = (target.pluginData ?? []).filter((e: PluginDataEntry) => e.key !== TOOLTIP_KEY)
     const nextPluginData: PluginDataEntry[] = text
       ? [...clean, { pluginId: PLUGIN_ID, key: TOOLTIP_KEY, value: text }]
       : clean
