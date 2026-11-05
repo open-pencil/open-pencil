@@ -274,16 +274,13 @@ jobs:
 
       - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
         with:
-          tool: cargo-deny@0.20.2,cargo-about@0.9.3
+          tool: cargo-deny@0.20.2
 
       - name: Check Rust formatting and lints
         run: bun run check:rust
 
       - name: Check dependency licenses
         run: bun run check:licenses
-
-      - name: Check third-party notices
-        run: bun run check:notices
 
       - name: Build the WebAssembly module
         run: bun run build:wasm

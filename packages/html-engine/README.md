@@ -21,4 +21,4 @@ const capture = await engine.layout(html, {
 
 The engine fetches nothing itself: the host answers each stylesheet, font, and image the document asks for, or declines it. Raster images are laid out at their pixel size, read from their headers. The engine has no fonts of its own, so the host registers the ones layout may use.
 
-The module, `wasm/html-engine.wasm`, is built from the Rust crate in `crate/` by `bun run build`, which needs Rust; rustup installs the toolchain `rust-toolchain.toml` pins. A host that serves the module somewhere other than beside this package sets `setHTMLEngineLocator`. `THIRD-PARTY-NOTICES.md` lists the licenses of the Rust crates compiled into it.
+The module, `wasm/html-engine.wasm`, is built from the Rust crate in `crate/` by `bun run build`, which needs Rust; rustup installs the toolchain `rust-toolchain.toml` pins. A host that serves the module somewhere other than beside this package sets `setHTMLEngineLocator`. The published package carries `wasm/THIRD-PARTY-NOTICES.md`, which the release writes with the licenses and sources of the Rust crates compiled into the module.
