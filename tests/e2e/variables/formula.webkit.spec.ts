@@ -143,7 +143,7 @@ test('references are atomic pills with editable operators and plain source on co
   await value.fill('{base} * 2')
   const pill = value.locator('[data-reference]')
   await expect(pill).toHaveText('base')
-  expect(await pill.evaluate((element) => element.isContentEditable)).toBe(false)
+  expect(await pill.evaluate((element: HTMLElement) => element.isContentEditable)).toBe(false)
   await expect(value).not.toContainText('{')
   await value.press('Meta+a')
   const copied = await value.evaluate((element) => {
