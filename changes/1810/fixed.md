@@ -1,0 +1,1 @@
+- Each split view's header shows that view's current zoom, and clicking it opens the zoom menu for that view.
