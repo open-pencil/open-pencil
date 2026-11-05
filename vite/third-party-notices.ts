@@ -43,6 +43,7 @@ const manifestSchema = v.object({
   name: v.optional(v.string()),
   version: v.optional(v.string()),
   license: v.optional(v.string()),
+  dependencies: v.optional(v.record(v.string(), v.string())),
   workspaces: v.optional(v.array(v.string()))
 })
 
@@ -105,21 +106,34 @@ function serviceWorkerPackages(outDir: string): NoticeEntry[] {
   // version string that can lag the package's own.
   const pwa = packageDirectory('vite-plugin-pwa', dirname(fileURLToPath(import.meta.url)))
   const build = packageDirectory('workbox-build', pwa)
-  return [...names].toSorted().map((name) => {
-    const directory = packageDirectory(name, build)
-    const manifest = readManifest(directory)
-    const text = (pattern: RegExp) => {
-      const file = readdirSync(directory).find((entry) => pattern.test(entry))
-      return file ? readFileSync(join(directory, file), 'utf8') : null
+  // Each marked package and what it brings along outside Workbox, such as idb under
+  // workbox-expiration; the marked packages' Workbox dependencies are marked themselves.
+  const directories = new Map<string, string>()
+  const add = (name: string, from: string) => {
+    const directory = packageDirectory(name, from)
+    if (directories.has(directory)) return
+    directories.set(directory, name)
+    for (const dependency of Object.keys(readManifest(directory).dependencies ?? {})) {
+      if (!dependency.startsWith('workbox-')) add(dependency, directory)
     }
-    return {
-      name,
-      version: manifest.version ?? null,
-      license: manifest.license ?? null,
-      licenseText: text(/^licen[cs]e/i),
-      noticeText: text(/^notice/i)
-    }
-  })
+  }
+  for (const name of names) add(name, build)
+  return [...directories]
+    .map(([directory, name]) => {
+      const manifest = readManifest(directory)
+      const text = (pattern: RegExp) => {
+        const file = readdirSync(directory).find((entry) => pattern.test(entry))
+        return file ? readFileSync(join(directory, file), 'utf8') : null
+      }
+      return {
+        name,
+        version: manifest.version ?? null,
+        license: manifest.license ?? null,
+        licenseText: text(/^licen[cs]e/i),
+        noticeText: text(/^notice/i)
+      }
+    })
+    .toSorted((a, b) => `${a.name}@${a.version}`.localeCompare(`${b.name}@${b.version}`))
 }
 
 /**

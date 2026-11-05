@@ -14,6 +14,7 @@ export const HEALTH_ROUTES = [
 export interface HealthOptions {
   attempts?: number
   delayMs?: number
+  timeoutMs?: number
   fetch?: typeof fetch
 }
 
@@ -21,12 +22,17 @@ export interface HealthOptions {
 async function routeStatus(
   url: string,
   accept: string,
-  { attempts = 11, delayMs = 3000, fetch: get = fetch }: HealthOptions
+  { attempts = 11, delayMs = 3000, timeoutMs = 10_000, fetch: get = fetch }: HealthOptions
 ): Promise<string> {
   let status = ''
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      const response = await get(url, { headers: { accept }, redirect: 'manual' })
+      const response = await get(url, {
+        headers: { accept },
+        redirect: 'manual',
+        // A whole-request deadline: a stalled attempt fails and is retried.
+        signal: AbortSignal.timeout(timeoutMs)
+      })
       await response.body?.cancel()
       if (response.status === 200) return '200'
       status = `HTTP ${response.status}`

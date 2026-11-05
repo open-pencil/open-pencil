@@ -57,3 +57,17 @@ test('reports a step whose run is an alias of a literal block', () => {
   ].join('\n')
   expect(multiLineRuns(workflow)).toEqual([{ line: 7, lines: 2 }])
 })
+
+test('reports a literal block of several commands in a job step', () => {
+  const workflow = [
+    'jobs:',
+    '  build:',
+    '    steps:',
+    '      - name: Build',
+    '        run: |',
+    '          bun install',
+    '          bun run build',
+    ''
+  ].join('\n')
+  expect(multiLineRuns(workflow)).toEqual([{ line: 5, lines: 2 }])
+})

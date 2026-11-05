@@ -13,7 +13,7 @@ import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 import { multiLineRuns } from './steps'
 
 const root = await resolveWorkspaceRoot(import.meta.dir)
-const patterns = ['.github/workflows/*.{yml,yaml}', '.github/actions/*/action.{yml,yaml}']
+const patterns = ['.github/workflows/*.{yml,yaml}', '.github/actions/**/action.{yml,yaml}']
 const files = (
   await Promise.all(
     patterns.map((pattern) =>

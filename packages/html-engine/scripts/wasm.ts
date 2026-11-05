@@ -48,10 +48,14 @@ async function sourcesHash(root: string): Promise<string> {
     ...[...new Bun.Glob('crate/src/**/*.rs').scanSync({ cwd: PACKAGE })].map((file) =>
       join(PACKAGE, file)
     )
-  ].sort()
+  ]
+  // Paths with forward slashes, so a module built on Windows matches its stamp elsewhere.
+  const sources = files
+    .map((file) => ({ file, name: relative(root, file).replaceAll('\\', '/') }))
+    .toSorted((a, b) => a.name.localeCompare(b.name))
   const hasher = new Bun.CryptoHasher('sha256')
-  for (const file of files) {
-    hasher.update(relative(root, file))
+  for (const { file, name } of sources) {
+    hasher.update(name)
     hasher.update('\0')
     hasher.update(await readFile(file))
     hasher.update('\0')

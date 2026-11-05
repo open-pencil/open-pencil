@@ -16,6 +16,7 @@ test('bundles each official deployment around the built Cloud site', async () =>
     return { stdout: '', stderr: '' }
   })
   expect(requests.map((request) => request.cwd)).toEqual(deployments)
+  expect(requests.every((request) => request.command === 'bunx')).toBe(true)
   expect(requests[0]?.args).toEqual([
     'wrangler',
     'deploy',
