@@ -236,4 +236,22 @@ describe('useEditorKeyboard', () => {
     expect(ran).toEqual(['delete'])
     expect(editor.graph.getNode(rect)).toBeDefined()
   })
+
+  test('a tool key the host does not offer leaves the held hand to return to the tool before', () => {
+    const editor = mountKeyboard()
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+    press('Space', { key: ' ' })
+    press('KeyP')
+    press('Space', { key: ' ' }, 'keyup')
+    expect(editor.state.activeTool).toBe('SELECT')
+  })
+
+  test('arrow keys move nothing in a preview', () => {
+    const editor = mountKeyboard()
+    const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([rect])
+    editor.startPlay()
+    press('ArrowRight', { key: 'ArrowRight' })
+    expect(editor.graph.getNode(rect)?.x).toBe(0)
+  })
 })

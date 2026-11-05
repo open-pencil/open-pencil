@@ -41,6 +41,8 @@ export function bindNudgeKeys(
 ) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e) || store.state.editingTextId || heldBack(e)) return
+    // A preview runs the design; only the keys that leave it work there.
+    if (resolveEditorProfile(store.state).shortcuts === 'view') return
     if (isReservedModShortcut(e)) e.preventDefault()
     if (e.metaKey || e.ctrlKey || e.altKey) return
 
