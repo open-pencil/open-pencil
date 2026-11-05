@@ -5,7 +5,12 @@ import { nextTick, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
-import { offerWebUpdate, takeWebUpdate, watchForWebUpdates } from '@/app/shell/updater/web'
+import {
+  offerWebUpdate,
+  takeWebUpdate,
+  watchForWebUpdates,
+  watchInstalledVersions
+} from '@/app/shell/updater/web'
 
 const { updates: messages } = useI18n()
 
@@ -184,5 +189,38 @@ describe('checking for a web update', () => {
     hidden.value = false
     await nextTick()
     expect(checks).toBe(1)
+  })
+})
+
+/** A registration whose updates the test finds and installs by hand. */
+class Registration extends EventTarget {
+  installing: WaitingWorker | null = null
+
+  found(): WaitingWorker {
+    const worker = new WaitingWorker()
+    worker.state = 'installing'
+    this.installing = worker
+    this.dispatchEvent(new Event('updatefound'))
+    return worker
+  }
+}
+
+function settle(worker: WaitingWorker, state: ServiceWorkerState) {
+  worker.state = state
+  worker.dispatchEvent(new Event('statechange'))
+}
+
+describe('watching installed versions', () => {
+  test('reports every version that installs, after one that failed too', () => {
+    const registration = new Registration()
+    let installed = 0
+    watchInstalledVersions(registration, () => installed++)
+
+    settle(registration.found(), 'redundant')
+    expect(installed).toBe(0)
+    settle(registration.found(), 'installed')
+    expect(installed).toBe(1)
+    settle(registration.found(), 'installed')
+    expect(installed).toBe(2)
   })
 })
