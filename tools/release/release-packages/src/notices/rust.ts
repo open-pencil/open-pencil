@@ -67,15 +67,17 @@ export async function rustNotices(root: string, artifact: NoticedArtifact): Prom
 }
 
 /**
- * Writes every artifact's notices into the package that ships it. A release source from before
- * an artifact's package existed, such as an older tag built again, has none to write.
+ * Writes every artifact's notices into the directory that ships them. A release source from
+ * before an artifact or its license policy existed, such as an older tag built again, has none
+ * to write.
  */
 export async function writeReleaseNotices(
   root: string,
   artifacts: readonly NoticedArtifact[]
 ): Promise<void> {
   for (const artifact of artifacts) {
-    if (!existsSync(join(root, artifact.directory))) continue
+    if (!existsSync(join(root, artifact.manifest)) || !existsSync(join(root, artifact.deny)))
+      continue
     const output = join(root, artifact.directory, artifact.notices)
     await mkdir(dirname(output), { recursive: true })
     await writeFile(output, await rustNotices(root, artifact))

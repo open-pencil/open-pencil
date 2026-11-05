@@ -17,7 +17,10 @@ const CHUNKS_BY_SOURCE = {
 
 type Deps = NonNullable<UserConfig['deps']>
 
-export interface LibraryConfig extends Omit<UserConfig, 'deps'> {
+/** Output options in their object form, which the preset merges into its own. */
+type OutputOptions = Exclude<UserConfig['outputOptions'], (...args: never[]) => unknown>
+
+export interface LibraryConfig extends Omit<UserConfig, 'deps' | 'outputOptions'> {
   /**
    * Modules left out of the bundle besides `node:` built-ins; tsdown already leaves out the
    * package's dependencies and peer dependencies.
@@ -30,6 +33,7 @@ export interface LibraryConfig extends Omit<UserConfig, 'deps'> {
    * kept at its source path (`unbundle`), or rolldown's own grouping.
    */
   chunks?: 'by-source' | 'unbundle' | 'default'
+  outputOptions?: OutputOptions
 }
 
 /**

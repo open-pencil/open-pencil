@@ -41,13 +41,22 @@ jobs:
           ref: ${{ env.RELEASE_TAG || github.sha }}
           persist-credentials: false
 
+      # The setup action as of this workflow's commit, since a rebuilt release's tree may predate it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .pipeline
+          persist-credentials: false
+
       # The HTML engine's WebAssembly module, built here where it is cached and Rust is installed;
-      # the image builds everything else from the context, which carries the module.
-      - uses: ./.github/actions/setup-workspace
+      # the image builds everything else from the context, which carries the module. Releases from
+      # before the engine have none to build.
+      - uses: ./.pipeline/.github/actions/setup-workspace
         with:
           cache-scope: cloud-image
 
       - name: Build the HTML engine's WebAssembly module
+        if: hashFiles('packages/html-engine/package.json') != ''
         run: bun run --filter @open-pencil/html-engine build:wasm
 
       # A rebuild of an older release must not move latest back to it.

@@ -11,3 +11,4 @@
 target
 packages/cloud/deploy/generated
 scratch
+.pipeline

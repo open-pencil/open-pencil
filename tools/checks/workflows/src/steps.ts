@@ -1,4 +1,4 @@
-import { isMap, isPair, isScalar, isSeq, parseDocument, visit } from 'yaml'
+import { isAlias, isMap, isPair, isScalar, isSeq, parseDocument, visit } from 'yaml'
 
 /** A step whose `run` holds more than one line of shell. */
 export interface MultiLineRun {
@@ -21,15 +21,18 @@ export function multiLineRuns(text: string): MultiLineRun[] {
   const found: MultiLineRun[] = []
   visit(document, {
     Pair(_, pair, path) {
-      if (!isScalar(pair.key) || pair.key.value !== 'run' || !isScalar(pair.value)) return
+      if (!isScalar(pair.key) || pair.key.value !== 'run') return
+      // An alias (`run: *script`) runs the text its anchor names.
+      const node = isAlias(pair.value) ? pair.value.resolve(document) : pair.value
+      if (!isScalar(node)) return
       // Only a step's own `run`: a mapping in the `steps` sequence, not an action input of that name.
       const [steps, sequence, step] = path.slice(-3)
       if (!isPair(steps) || !isScalar(steps.key) || steps.key.value !== 'steps') return
       if (!isSeq(sequence) || !isMap(step)) return
-      const value = pair.value.value
-      if (typeof value !== 'string') return
-      const lines = value.replace(/\n+$/, '').split('\n').length
-      if (lines > 1) found.push({ line: lineAt(text, pair.value.range?.[0] ?? 0), lines })
+      if (typeof node.value !== 'string') return
+      const lines = node.value.replace(/\n+$/, '').split('\n').length
+      const range = isAlias(pair.value) ? pair.value.range : node.range
+      if (lines > 1) found.push({ line: lineAt(text, range?.[0] ?? 0), lines })
     }
   })
   return found

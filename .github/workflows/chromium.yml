@@ -78,12 +78,14 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
-      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
-        with:
-          targets: ${{ matrix.target }}
+      # rustup installs the toolchain rust-toolchain.toml pins; this adds the build target to it.
+      - name: Add the Rust target
+        env:
+          TARGET: ${{ matrix.target }}
+        run: rustup target add "$TARGET"
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          workspaces: desktop -> target
+          workspaces: . -> target
           key: chromium-${{ matrix.target }}
       - uses: ./.pipeline/.github/actions/setup-workspace
         with:
