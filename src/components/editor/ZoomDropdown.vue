@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -20,6 +19,7 @@ import {
 } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -103,7 +103,7 @@ watch(open, (v) => {
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="open">
+  <AppDropdownMenuRoot v-model:open="open">
     <DropdownMenuTrigger as-child>
       <button
         data-test-id="zoom-dropdown-trigger"
@@ -233,5 +233,5 @@ watch(open, (v) => {
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

@@ -2,11 +2,9 @@
 import {
   ContextMenuContent,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   PopoverContent,
-  PopoverPortal,
-  PopoverRoot
+  PopoverPortal
 } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
@@ -17,8 +15,10 @@ import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import { COMMENT_PIN_SIZE } from '@/theme/comments'
 
@@ -188,7 +188,7 @@ function closeCard() {
       :class="ui.pins()"
       :style="{ transform: `translate(${placement.panX}px, ${placement.panY}px)` }"
     >
-      <ContextMenuRoot v-for="pin in pins" :key="pin.thread.id" :modal="false">
+      <AppContextMenuRoot v-for="pin in pins" :key="pin.thread.id" :modal="false">
         <ContextMenuTrigger as-child>
           <CommentPin
             :author="author.name(pin.thread.author)"
@@ -214,7 +214,7 @@ function closeCard() {
             </MenuScrollArea>
           </ContextMenuContent>
         </ContextMenuPortal>
-      </ContextMenuRoot>
+      </AppContextMenuRoot>
 
       <CommentPin
         v-if="draftPlace"
@@ -225,7 +225,7 @@ function closeCard() {
       />
     </div>
 
-    <PopoverRoot
+    <AppPopoverRoot
       :open="!!cardReference && (!!activePin || !!draftAt)"
       @update:open="(open: boolean) => !open && closeCard()"
     >
@@ -266,6 +266,6 @@ function closeCard() {
           </CommentThreadCard>
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </div>
 </template>

@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import type { Component } from 'vue'
@@ -17,6 +16,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { NODE_ICONS } from '@/components/icons'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -42,7 +42,7 @@ const itemCls = menuItem({ justify: 'between' })
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="popupOpen">
+  <AppDropdownMenuRoot v-model:open="popupOpen">
     <Tip :label="panels.layerType">
       <DropdownMenuTrigger as-child>
         <button
@@ -73,5 +73,5 @@ const itemCls = menuItem({ justify: 'between' })
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

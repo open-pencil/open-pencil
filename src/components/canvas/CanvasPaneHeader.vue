@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -14,6 +13,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import canvasPaneHeaderTheme from '@/theme/canvas/pane-header'
@@ -58,7 +58,7 @@ function split(direction: SplitDirection) {
     <span :class="headerCls.title()">{{ pageName }}</span>
     <span :class="headerCls.zoom()">{{ zoom }}%</span>
     <div :class="headerCls.actions()">
-      <DropdownMenuRoot>
+      <AppDropdownMenuRoot>
         <DropdownMenuTrigger as-child>
           <IconButton :label="`${menuText.splitRight} / ${menuText.splitDown}`" size="xs">
             <icon-lucide-panels-top-left :class="headerCls.icon()" />
@@ -82,7 +82,7 @@ function split(direction: SplitDirection) {
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
 
       <IconButton
         :label="menuText.closeView"
