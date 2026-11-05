@@ -177,6 +177,18 @@ export function availableFonts(
   return fonts
 }
 
+/**
+ * The faces a script can set, as Figma's `listAvailableFontsAsync` lists them. Listing families
+ * can forget the faces found so far (the first request for local fonts does), so the faces of
+ * each family a font is loaded from are looked up again before the list is made.
+ */
+export async function listAvailableFonts(): Promise<AvailableFont[]> {
+  const [installed, families] = await Promise.all([listFonts(), listFamilies()])
+  const loaded = families.filter(({ family }) => fontManager.isLoaded(family))
+  await Promise.all(loaded.map(({ family }) => fontManager.familyFaces(family).catch(() => null)))
+  return availableFonts(installed, families)
+}
+
 interface FontRenderInvalidator {
   invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void
 }
