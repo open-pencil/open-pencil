@@ -105,7 +105,7 @@ The fixed viewport dimensions above keep the example short. In a resizable shell
 ```ts
 useEditorKeyboard({
   shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => save() }],
-  // The shell's own Escape runs first; return true when it handled the key.
+  // Runs once nothing in progress took Escape, before the selection clears; true if handled.
   onEscape: () => closeOpenPanel()
 })
 ```

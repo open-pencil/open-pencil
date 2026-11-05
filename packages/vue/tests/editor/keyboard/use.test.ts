@@ -191,4 +191,37 @@ describe('useEditorKeyboard', () => {
     expect(editor.state.activeTool).toBe('SELECT')
     input.remove()
   })
+
+  test('a host key that replaces an editor key carries its own view and history rules', () => {
+    const ran: string[] = []
+    const editor = mountKeyboard({
+      shortcuts: [{ id: 'host-escape', keys: 'Escape', run: () => ran.push('escape') }]
+    })
+    editor.startPlay()
+    press('Escape')
+    expect(ran).toEqual([])
+  })
+
+  test('keeps still while the host says another editor has the keys', () => {
+    let active = false
+    const editor = mountKeyboard({ active: () => active })
+    const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([rect])
+    const x = () => editor.graph.getNode(rect)?.x
+    press('KeyR')
+    press('ArrowRight', { key: 'ArrowRight' })
+    press('Space', { key: ' ' })
+    expect([editor.state.activeTool, x()]).toEqual(['SELECT', 0])
+    active = true
+    press('ArrowRight', { key: 'ArrowRight' })
+    expect(x()).toBe(1)
+  })
+
+  test('zooms in a read-only document', () => {
+    const editor = mountKeyboard()
+    editor.setReadOnly(true)
+    const before = editor.state.zoom
+    press('Equal', { key: '=', ...MOD })
+    expect(editor.state.zoom).toBeGreaterThan(before)
+  })
 })

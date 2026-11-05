@@ -1,5 +1,6 @@
 import { opacityFromBuffer, type Editor } from '@open-pencil/core'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import type { useEditorCommands } from '#vue/editor/commands'
 
@@ -10,8 +11,9 @@ export interface EditorKeyActionsOptions {
   runCommand: EditorCommands['runCommand']
   setOpacityTarget: EditorCommands['setOpacityTarget']
   /**
-   * The host's own Escape, run before the editor's selection steps: return true when it handled
-   * the key, as closing a comment card does.
+   * The host's own Escape, run once nothing in progress took it (a path, a pen or pencil stroke,
+   * a preview, a rotation, the eyedropper) and before the selection clears: return true when it
+   * handled the key, as closing a comment card does.
    */
   onEscape?: () => boolean
 }
@@ -129,7 +131,7 @@ export function createEditorKeyActions({
     if (selectionKey !== opacitySelectionKey) resetOpacityBuffer()
     if (!opacityBuffer) {
       opacitySelectionKey = selectionKey
-      opacityCoalesceKey = crypto.randomUUID()
+      opacityCoalesceKey = randomHex()
     }
     opacityBuffer += digit
     if (opacityBuffer.length > 3) opacityBuffer = opacityBuffer.slice(-3)

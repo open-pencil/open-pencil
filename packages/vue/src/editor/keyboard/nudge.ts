@@ -30,9 +30,17 @@ function selectionOrigin(store: Editor): Vector {
   return { x, y }
 }
 
-export function bindNudgeKeys(store: Editor, overlays: OpenOverlays | undefined) {
+/**
+ * Arrow keys move the selection: by 1, by 10 with Shift, or onto the profile's snap grid.
+ * `heldBack` says when the host keeps the keys, as for another editor on the page.
+ */
+export function bindNudgeKeys(
+  store: Editor,
+  overlays: OpenOverlays | undefined,
+  heldBack: (event: KeyboardEvent) => boolean = () => false
+) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
-    if (isEditing(e) || store.state.editingTextId) return
+    if (isEditing(e) || store.state.editingTextId || heldBack(e)) return
     if (isReservedModShortcut(e)) e.preventDefault()
     if (e.metaKey || e.ctrlKey || e.altKey) return
 

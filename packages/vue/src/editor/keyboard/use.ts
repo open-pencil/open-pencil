@@ -1,16 +1,12 @@
 import { useActiveElement, useEventListener } from '@vueuse/core'
 import { uniq } from 'es-toolkit'
 import { createKeybindingsHandler, type KeyBindingMap } from 'tinykeys'
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
 import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
 
 import { isCanvasTextInput } from '#vue/canvas/text-edit'
-import {
-  editorCommandMetadata,
-  useEditorCommands,
-  type EditorCommandId
-} from '#vue/editor/commands'
+import { useEditorCommands } from '#vue/editor/commands'
 import { useEditor } from '#vue/editor/context'
 import { useOpenOverlays } from '#vue/lifecycle/overlays'
 
@@ -19,77 +15,26 @@ import { isButtonActivation, isEditing, isInputElement } from './focus'
 import { shortcutEvent } from './layout'
 import { bindNudgeKeys } from './nudge'
 import { overlayHoldsKeys } from './overlays'
+import { editorShortcuts, type EditorShortcut } from './shortcuts'
 import { bindSpaceHandTool } from './space-hand'
-
-/** A key binding: the tinykeys keys it answers to and what it runs. */
-export interface EditorShortcut {
-  id: string
-  keys: string | string[]
-  run: (event: KeyboardEvent) => void
-  /** Whether the browser's own action for the key is stopped; by default always. */
-  preventDefault?: (event: KeyboardEvent) => boolean
-  /** Runs wherever focus is, in a text field or with a dialog open, as app-wide keys do. */
-  global?: boolean
-  /** Switches or leaves the canvas's view, so it runs in every view, a preview's included. */
-  view?: boolean
-  /** Undo or redo, which run while a picker is open and text is not being typed. */
-  history?: boolean
-}
 
 export interface EditorKeyboardOptions {
   /** The host's own keys: saving, tabs, panels. They follow the same focus rules as the editor's. */
   shortcuts?: readonly EditorShortcut[]
   /**
-   * The host's own Escape, run before the editor's selection steps: return true when it handled
-   * the key, as closing a comment card does.
+   * The host's own Escape, run once nothing in progress took it (a path, a pen or pencil stroke,
+   * a preview, a rotation, the eyedropper) and before the selection clears: return true when it
+   * handled the key, as closing a comment card does.
    */
   onEscape?: () => boolean
   /** More reasons to hold the editor's keys back, as a focused value field of the host's. */
   ignore?: (event: KeyboardEvent) => boolean
-}
-
-const UNDO_REDO = new Set<EditorCommandId>(['edit.undo', 'edit.redo'])
-
-/** The editor commands a key runs directly, by their registered keybinding. */
-const KEY_COMMANDS: readonly EditorCommandId[] = [
-  'edit.undo',
-  'edit.redo',
-  'selection.createComponent',
-  'selection.detachInstance',
-  'selection.createComponentSet',
-  'selection.toggleMask',
-  'selection.toggleVisibility',
-  'selection.toggleLock',
-  'selection.flipHorizontal',
-  'selection.flipVertical',
-  'selection.tidyUp',
-  'selection.distributeHorizontal',
-  'selection.distributeVertical',
-  'selection.ungroup',
-  'selection.group',
-  'selection.bringForward',
-  'selection.bringToFront',
-  'selection.sendBackward',
-  'selection.sendToBack',
-  'selection.selectParent',
-  'selection.duplicate',
-  'selection.selectAll',
-  'selection.selectInverse',
-  'view.zoom100',
-  'view.zoomFit',
-  'view.zoomSelection',
-  'view.zoomNextFrame',
-  'view.zoomPreviousFrame',
-  'view.nextPage',
-  'view.previousPage'
-]
-
-/**
- * Tab steps through sibling layers only while nothing on the page holds focus, so it still
- * moves focus through the panels' controls.
- */
-function isCanvasFocus(event: KeyboardEvent) {
-  return event.target === document.body || event.target instanceof HTMLCanvasElement
+  /**
+   * Whether this editor takes the keys now. The keys listen on the window, so a page with more
+   * than one editor passes the one in use, and the others stay still. Every key, the held Space
+   * hand and nudging included, follows it; by default the editor always does.
+   */
+  active?: MaybeRefOrGetter<boolean>
 }
 
 /**
@@ -111,66 +56,12 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
     setOpacityTarget,
     onEscape: options.onEscape
   })
-  const spaceTool = bindSpaceHandTool(inputFocused, editor)
-  bindNudgeKeys(editor, overlays)
-
-  const zoomAtViewportCenter = (delta: number) => () => {
-    const { width, height } = editor.getViewportSize()
-    editor.applyZoom(delta, width / 2, height / 2)
-  }
-  const command = (id: EditorCommandId): EditorShortcut[] => {
-    const keys = editorCommandMetadata(id).keybinding
-    return keys ? [{ id, keys, run: () => runCommand(id), history: UNDO_REDO.has(id) }] : []
-  }
-  const sibling = (
-    id: 'selection.selectNextSibling' | 'selection.selectPreviousSibling'
-  ): EditorShortcut => ({
-    id,
-    keys: editorCommandMetadata(id).keybinding ?? [],
-    run: (event) => {
-      if (isCanvasFocus(event)) runCommand(id)
-    },
-    preventDefault: isCanvasFocus
-  })
-  const bare = (event: KeyboardEvent) =>
-    !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+  const active = () => toValue(options.active ?? true)
+  const spaceTool = bindSpaceHandTool(inputFocused, editor, active)
+  bindNudgeKeys(editor, overlays, (event) => !active() || !!options.ignore?.(event))
 
   const shortcuts: EditorShortcut[] = [
-    ...KEY_COMMANDS.flatMap(command),
-    {
-      id: 'zoom-in',
-      keys: ['$mod+Equal', '$mod+Shift+Equal'],
-      run: zoomAtViewportCenter(-100),
-      global: true
-    },
-    { id: 'zoom-out', keys: '$mod+Minus', run: zoomAtViewportCenter(100), global: true },
-    { id: 'zoom-in-unmodified', keys: 'Shift+Equal', run: zoomAtViewportCenter(-100) },
-    { id: 'zoom-out-unmodified', keys: 'Minus', run: zoomAtViewportCenter(100) },
-    { id: 'toggle-auto-layout', keys: 'Shift+KeyA', run: () => actions.toggleAutoLayout() },
-    // Figma's key, matched by key position since Shift turns ' into ".
-    {
-      id: 'toggle-pixel-grid',
-      keys: 'Shift+Quote',
-      run: () => {
-        editor.state.showPixelGrid = editor.state.showPixelGrid === false
-        editor.requestRepaint()
-      }
-    },
-    { id: 'delete-backspace', keys: 'Backspace', run: () => actions.smartDelete(false) },
-    { id: 'delete', keys: 'Delete', run: () => actions.smartDelete(false) },
-    { id: 'delete-alt', keys: 'Alt+Delete', run: () => actions.smartDelete(true) },
-    { id: 'enter', keys: 'Enter', run: () => actions.confirmOrEditSelection() },
-    { id: 'escape', keys: 'Escape', run: () => actions.escapeOrDeselect(), view: true },
-    sibling('selection.selectNextSibling'),
-    sibling('selection.selectPreviousSibling'),
-    ...['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit): EditorShortcut => ({
-      id: `selection-opacity-${digit}`,
-      keys: digit,
-      run: (event) => {
-        if (bare(event)) actions.opacityDigit(digit)
-      },
-      preventDefault: bare
-    })),
+    ...editorShortcuts(editor, runCommand, actions),
     ...(options.shortcuts ?? [])
   ]
 
@@ -201,8 +92,8 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
 
   const bindings: KeyBindingMap = {}
   const globalBindings: KeyBindingMap = {}
-  const viewKeys = new Set<string>()
-  const historyKeys = new Set<string>()
+  /** The shortcut that owns each editor key: a host's replaces the editor's, flags and all. */
+  const owners = new Map<string, EditorShortcut>()
 
   // Every key a design or a board picks a tool with; which tool it picks, if any, comes from the
   // editor profile's key map when it is pressed, so a host's tool restrictions hold.
@@ -219,10 +110,8 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
   }
 
   for (const shortcut of shortcuts) {
-    const keys = [shortcut.keys].flat()
-    if (shortcut.view) for (const key of keys) viewKeys.add(key)
-    if (shortcut.history) for (const key of keys) historyKeys.add(key)
-    for (const key of keys) {
+    for (const key of [shortcut.keys].flat()) {
+      if (!shortcut.global) owners.set(key, shortcut)
       ;(shortcut.global ? globalBindings : bindings)[key] = (event: KeyboardEvent) => {
         shortcut.run(event)
         if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
@@ -235,15 +124,25 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
       Object.entries(bindings).map(([keys, handler]) => [
         keys,
         (event: KeyboardEvent) => {
-          if (heldBack(event, historyKeys.has(keys))) return
+          const owner = owners.get(keys)
+          if (!active() || heldBack(event, !!owner?.history)) return
           const { shortcuts: allowed } = resolveEditorProfile(editor.state)
-          if (allowed === 'view' && !viewKeys.has(keys)) return
+          if (allowed === 'view' && !owner?.view) return
           handler(event)
         }
       ])
     )
   )
-  const globalHandler = createKeybindingsHandler(globalBindings)
+  const globalHandler = createKeybindingsHandler(
+    Object.fromEntries(
+      Object.entries(globalBindings).map(([keys, handler]) => [
+        keys,
+        (event: KeyboardEvent) => {
+          if (active()) handler(event)
+        }
+      ])
+    )
+  )
 
   useEventListener(window, 'keydown', (event) => editorHandler(shortcutEvent(event)), {
     capture: true
