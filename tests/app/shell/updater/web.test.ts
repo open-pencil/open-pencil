@@ -13,9 +13,12 @@ afterEach(() => {
   for (const entry of toast.toasts.value) toast.remove(entry.id)
 })
 
-function offered(options: { agrees?: boolean; dirty?: boolean; hidden?: boolean } = {}) {
+function offered(
+  options: { agrees?: boolean; dirty?: boolean; hidden?: boolean; overlay?: boolean } = {}
+) {
   const hidden = ref(options.hidden ?? false)
   const dirty = ref(options.dirty ?? false)
+  const overlay = ref(options.overlay ?? false)
   let reloads = 0
   let asked = 0
   offerWebUpdate({
@@ -27,10 +30,11 @@ function offered(options: { agrees?: boolean; dirty?: boolean; hidden?: boolean 
       return options.agrees ?? true
     },
     hasUnkeptEdits: () => dirty.value,
+    overlayOpen: () => overlay.value,
     hidden: () => hidden.value
   })
   const offer = toast.toasts.value.find((entry) => entry.message === messages.value.webUpdateReady)
-  return { offer, hidden, dirty, reloads: () => reloads, asked: () => asked }
+  return { offer, hidden, dirty, overlay, reloads: () => reloads, asked: () => asked }
 }
 
 describe('web updates', () => {
@@ -67,5 +71,27 @@ describe('web updates', () => {
     hidden.value = true
     await nextTick()
     expect(reloads()).toBe(1)
+  })
+
+  test('leave a page in the background alone while a dialog may hold a draft', async () => {
+    const { hidden, overlay, reloads } = offered({ overlay: true })
+    hidden.value = true
+    await nextTick()
+    expect(reloads()).toBe(0)
+    overlay.value = false
+    await nextTick()
+    expect(reloads()).toBe(1)
+  })
+
+  test('offer the new version again when the page is shown again', async () => {
+    const { hidden } = offered({ dirty: true })
+    for (const entry of toast.toasts.value) toast.remove(entry.id)
+    hidden.value = true
+    await nextTick()
+    hidden.value = false
+    await nextTick()
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual([
+      messages.value.webUpdateReady
+    ])
   })
 })

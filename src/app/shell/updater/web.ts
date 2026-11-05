@@ -1,10 +1,13 @@
 import { useDocumentVisibility, whenever } from '@vueuse/core'
+import { watch } from 'vue'
 
 import { updatesMessages } from '@open-pencil/vue/i18n'
+import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { confirmAppExit } from '@/app/document/close/exit'
 import { toast } from '@/app/shell/ui'
 import { allTabs } from '@/app/tabs'
+import { IS_TAURI } from '@/constants'
 
 export type WebUpdateOptions = {
   /** Loads the new version; the page's own reload unless a test stands in. */
@@ -13,19 +16,23 @@ export type WebUpdateOptions = {
   confirm?: () => Promise<boolean>
   /** Whether any tab holds edits nothing else keeps. */
   hasUnkeptEdits?: () => boolean
+  /** Whether a dialog, menu, or picker is open, which may hold a draft no tab counts. */
+  overlayOpen?: () => boolean
   /** Whether nobody is looking at the page. */
   hidden?: () => boolean
 }
 
 /**
  * Offers the version the service worker just installed, instead of reloading the editor under the
- * person using it. Reload asks about unsaved documents first; a page in the background with nothing
- * unsaved reloads on its own, so it is current when it comes back.
+ * person using it. Reload asks about unsaved documents first, and the offer comes back each time
+ * the page is shown again. A page in the background with nothing unsaved and nothing open reloads
+ * on its own, so it is current when it comes back.
  */
 export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   const reload = options.reload ?? (() => window.location.reload())
   const confirm = options.confirm ?? confirmAppExit
   const hasUnkeptEdits = options.hasUnkeptEdits ?? (() => allTabs.value.some((tab) => tab.isDirty))
+  const overlayOpen = options.overlayOpen ?? (() => false)
   const hidden =
     options.hidden ??
     (() => {
@@ -39,15 +46,40 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
     reload()
   }
 
-  const messages = updatesMessages.get()
-  toast.info(messages.webUpdateReady, {
-    label: messages.reload,
-    run: () => {
-      void confirm().then((agreed) => {
-        if (agreed) reloadOnce()
-        return undefined
-      })
-    }
+  function offer() {
+    const messages = updatesMessages.get()
+    toast.info(messages.webUpdateReady, {
+      label: messages.reload,
+      run: () => {
+        void confirm().then((agreed) => {
+          if (agreed) reloadOnce()
+          return undefined
+        })
+      }
+    })
+  }
+
+  offer()
+  // A toast someone missed, or that newer ones pushed out, is offered again on their return.
+  watch(hidden, (isHidden, wasHidden) => {
+    if (wasHidden && !isHidden && !reloading) offer()
   })
-  whenever(() => hidden() && !hasUnkeptEdits(), reloadOnce, { immediate: true })
+  whenever(() => hidden() && !hasUnkeptEdits() && !overlayOpen(), reloadOnce, { immediate: true })
+}
+
+/**
+ * Registers the web app's service worker, whose new versions wait for the person through
+ * `offerWebUpdate`. Called from the app's setup, where the open overlays are known; the offer is in
+ * the app's bundle, since the old version's chunks may be gone once the new one is in.
+ */
+export function useWebUpdates(): void {
+  if (IS_TAURI) return
+  const overlays = useOpenOverlays()
+  void import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({
+      immediate: true,
+      onNeedReload: () => offerWebUpdate({ overlayOpen: () => overlays?.holdsKeys() ?? false })
+    })
+    return undefined
+  })
 }

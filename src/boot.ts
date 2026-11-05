@@ -16,7 +16,6 @@ import { reportErrorAction } from '@/app/reports/state'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { toast } from '@/app/shell/ui'
-import { offerWebUpdate } from '@/app/shell/updater/web'
 import { IS_TAURI } from '@/constants'
 
 import App from './App.vue'
@@ -58,14 +57,5 @@ export async function boot(): Promise<void> {
     // Official builds offer to report it; others keep it in the console and the diagnostics log.
     const report = reportErrorAction(error, 'vue')
     if (report) toast.error(diagnosticsMessages.get().reportUnexpectedError, report)
-  }
-
-  if (!IS_TAURI) {
-    void import('virtual:pwa-register').then(({ registerSW }) => {
-      // A new version waits for the person instead of reloading the editor under them. The offer
-      // is in this bundle: once the new version is in, the old one's chunks may be gone.
-      registerSW({ immediate: true, onNeedReload: () => offerWebUpdate() })
-      return undefined
-    })
   }
 }
