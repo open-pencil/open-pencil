@@ -1,1 +1,1 @@
-- Saving from MCP or the CLI refuses a destination that is not a `.fig` file, or a `.jam` file for a board, including the open file or the browser file the save will write, instead of writing a Figma archive that cannot be opened again.
+- Saving from MCP or the CLI to a destination that is not a `.fig` file, or a `.jam` file for a board, now fails before writing and names the `.fig` path to save to instead. Before, it wrote a Figma archive that could not be opened again.
