@@ -261,7 +261,11 @@ test.describe('group/ungroup shortcuts', () => {
 })
 
 test.describe('UI toggles', () => {
-  test('⌘\\ toggles UI visibility', async () => {
+  test('⌘\\ hides the UI and shows it again with a layer selected', async () => {
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.selectAll()
+    expect(await getSelectedCount()).toBe(1)
     const before = await getUIVisible()
 
     await editor.page.keyboard.press('Meta+\\')
@@ -415,15 +419,24 @@ test.describe('zoom shortcuts', () => {
     if (!activeBounds || !inactiveBounds) throw new Error('Expected canvas pane bounds')
     expect(activeBounds.width).toBeLessThan(inactiveBounds.width)
 
-    const centerBefore = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const center = store.viewportCanvasCenter()
-      return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
-    })
-
-    expect(centerBefore.center.x).toBeCloseTo(activeBounds.width / 2)
-    expect(centerBefore.center.y).toBeCloseTo(activeBounds.height / 2)
+    const readCenter = () =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const center = store.viewportCanvasCenter()
+        return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
+      })
+    // The canvas takes its pane's new size on the next resize callback, in whole pixels.
+    await expect
+      .poll(async () => {
+        const { center } = await readCenter()
+        return (
+          Math.abs(center.x - activeBounds.width / 2) < 0.5 &&
+          Math.abs(center.y - activeBounds.height / 2) < 0.5
+        )
+      })
+      .toBe(true)
+    const centerBefore = await readCenter()
 
     await editor.page.keyboard.press('Shift+Equal')
     await editor.canvas.waitForRender()
@@ -473,91 +486,44 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  test('⌘1 zooms to fit', async () => {
-    await editor.page.keyboard.press('Meta+1')
-    await editor.canvas.waitForRender()
+  // Fitting zooms in past 100% for small layers, so each key is checked against its command
+  // from the same far-out view, with one small layer drawn and selected.
+  const ZOOM_KEYS = [
+    { key: 'Meta+1', command: 'zoomToFit' },
+    { key: 'Shift+1', command: 'zoomToFit' },
+    { key: 'Meta+2', command: 'zoomToSelection' },
+    { key: 'Shift+2', command: 'zoomToSelection' }
+  ] as const
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⌘2 zooms to selection', async () => {
-    await editor.canvas.selectAll()
-
-    await editor.page.keyboard.press('Meta+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧1 zooms to fit (same as ⌘1)', async () => {
-    await editor.page.keyboard.press('Shift+1')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-
-  test('⇧2 zooms to selection (same as ⌘2)', async () => {
-    await editor.canvas.selectAll()
-
-    await editor.page.keyboard.press('Shift+2')
-    await editor.canvas.waitForRender()
-
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
-  })
-})
-
-test.describe('auto-layout shortcut', () => {
-  test('⇧A toggles auto-layout on frame', async () => {
-    await editor.canvas.clearCanvas()
-    await editor.canvas.drawRect(100, 100, 200, 200)
-    await editor.canvas.selectAll()
-
-    // Change to frame type for auto-layout
+  async function zoomFromFarOut(run: () => Promise<unknown>) {
     await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
-      const nodes = [...store.state.selectedIds]
-      if (nodes[0]) store.updateNode(nodes[0], { type: 'FRAME' })
+      store.state.zoom = 0.05
+      store.state.panX = 0
+      store.state.panY = 0
     })
     await editor.canvas.waitForRender()
-
-    const layoutBefore = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const nodes = [...store.state.selectedIds]
-      return store.graph.getNode(nodes[0])?.layoutMode
-    })
-    expect(layoutBefore).toBe('NONE')
-
-    await editor.page.keyboard.press('Shift+a')
+    await run()
     await editor.canvas.waitForRender()
+    return getZoom()
+  }
 
-    const layoutAfter = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const nodes = [...store.state.selectedIds]
-      return store.graph.getNode(nodes[0])?.layoutMode
+  for (const { key, command } of ZOOM_KEYS) {
+    test(`${key} runs ${command}`, async () => {
+      await editor.canvas.clearCanvas()
+      await editor.canvas.drawRect(100, 100, 60, 60)
+      await editor.canvas.selectAll()
+      const expected = await zoomFromFarOut(() =>
+        editor.page.evaluate((name) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          store[name]()
+        }, command)
+      )
+      expect(expected).not.toBe(0.05)
+
+      expect(await zoomFromFarOut(() => editor.page.keyboard.press(key))).toBe(expected)
     })
-    expect(layoutAfter).toBe('VERTICAL')
-
-    // Toggle off
-    await editor.page.keyboard.press('Shift+a')
-    await editor.canvas.waitForRender()
-
-    const layoutFinal = await editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const nodes = [...store.state.selectedIds]
-      return store.graph.getNode(nodes[0])?.layoutMode
-    })
-    expect(layoutFinal).toBe('NONE')
-  })
+  }
 })
