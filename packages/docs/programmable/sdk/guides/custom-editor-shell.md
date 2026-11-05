@@ -98,6 +98,20 @@ provideEditor(editor)
 
 The fixed viewport dimensions above keep the example short. In a resizable shell, return the actual canvas container size from `getViewportSize`; do not include the surrounding sidebars or toolbar. See [SDK Getting Started](../getting-started) for installation requirements and migration notes.
 
+## Keyboard
+
+`useEditorKeyboard()` binds the editor's keys as OpenPencil does: each command's keybinding, the tool keys the profile offers, a held Space for the hand, arrow nudges, Delete, Enter and Escape for selections and paths, opacity digits, and zoom. Keys wait while a text field, an open dialog or menu, or text being edited has them, and undo and redo stop the browser's own. Call it in a component under `provideEditor`, and add the shell's own keys beside the editor's:
+
+```ts
+import { useEditorKeyboard } from '@open-pencil/vue/editor/keyboard'
+
+useEditorKeyboard({
+  shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => save() }],
+  // Runs once nothing in progress took Escape, before the selection clears; true if handled.
+  onEscape: () => closeOpenPanel()
+})
+```
+
 ## Limiting what the editor offers
 
 A shell that is not a general design tool, such as a lettering game or a guided exercise, narrows the editor rather than hiding controls. Restrictions only take away from what the document offers, and everything that reads the editor's profile follows them: the toolbar's tools, the tool keys, `setTool`, the canvas, and the editor's actions.

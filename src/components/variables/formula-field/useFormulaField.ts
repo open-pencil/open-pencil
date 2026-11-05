@@ -17,7 +17,8 @@ import { Annotation, EditorSelection, Prec } from '@codemirror/state'
 import { EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
 import { getCurrentInstance, watch, type Ref, type ShallowRef } from 'vue'
 
-import { shortcutCode } from '@/app/shell/keyboard/layout'
+import { shortcutCode } from '@open-pencil/vue/editor/keyboard'
+
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { formulaEditorTheme } from '@/theme/code/formula'
 

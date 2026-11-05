@@ -4,10 +4,10 @@ import {
   editorCommandMetadata,
   useEditorCommands,
   type EditorCommandId
-} from '@open-pencil/vue/editor/commands'
+} from '#vue/editor/commands'
 
-import { isEditing } from '@/app/shell/keyboard/focus'
-import { shortcutEvent } from '@/app/shell/keyboard/layout'
+import { isEditing } from './focus'
+import { shortcutEvent } from './layout'
 
 const DOCUMENT_COMMANDS = ['edit.undo', 'edit.redo'] as const satisfies EditorCommandId[]
 

@@ -1,3 +1,5 @@
+import { pickBy } from 'es-toolkit'
+
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import { BOARD_GRID } from '#core/constants'
@@ -112,6 +114,10 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
     ...profile,
     edits: profile.edits && !restrictions.readOnly,
     tools,
+    // A key whose tool is taken away picks nothing.
+    toolKeys: tools
+      ? pickBy(profile.toolKeys, (tool) => !!tool && tools.has(tool))
+      : profile.toolKeys,
     pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits
   }
 }
