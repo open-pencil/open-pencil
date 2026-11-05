@@ -41,6 +41,22 @@ if (lightGroups.length === 0 && heavyFiles.length === 0) {
   process.exit(0)
 }
 
+/**
+ * Tests that load a module their package builds from another language, with the script that
+ * builds it. It skips the build when the module is current, so running it first costs little.
+ */
+const MODULES_BUILT_BEFORE_TESTS = [
+  { tests: 'packages/html-engine/tests/', build: 'packages/html-engine/scripts/wasm.ts' }
+]
+
+async function buildModulesFor(files: readonly string[]): Promise<void> {
+  for (const { tests, build } of MODULES_BUILT_BEFORE_TESTS) {
+    if (!files.some((file) => file.includes(tests))) continue
+    const child = Bun.spawn([process.execPath, build], { stdio: ['inherit', 'inherit', 'inherit'] })
+    if ((await child.exited) !== 0) throw new Error(`${build} failed`)
+  }
+}
+
 async function runBunTest(files: string[], args: string[]): Promise<number> {
   const child = Bun.spawn([process.execPath, 'test', ...args, ...files], {
     stdio: ['inherit', 'inherit', 'inherit'],
@@ -61,6 +77,7 @@ const batches = coverage
     ]
 // A name filter may match tests in only some of the batches; the others then have none to run.
 const args = batches.length > 1 ? [...bunTestArgs, '--pass-with-no-tests'] : bunTestArgs
+await buildModulesFor(batches.flatMap(({ files }) => files))
 const failed: string[] = []
 for (const { label, files } of batches) {
   if ((await runBunTest(files, args)) !== 0) failed.push(label)

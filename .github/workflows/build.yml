@@ -81,6 +81,12 @@ jobs:
           POSTHOG_CLI_PROJECT_ID: "267806"
           POSTHOG_CLI_HOST: https://eu.posthog.com
         run: bun .pipeline/tools/release/release-packages/src/sourcemaps/publish.ts --archive
+      # The licenses of the Rust crates compiled into shipped binaries, which their packages carry.
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-about@0.9.3
+      - name: Write third-party notices
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts notices
       - name: Prepare and validate npm tarballs
         run: |
           bun .pipeline/tools/release/release-packages/src/cli.ts prepare

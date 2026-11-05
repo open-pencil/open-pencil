@@ -40,6 +40,7 @@
         "@open-pencil/feedback": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/harness": "workspace:*",
+        "@open-pencil/html-engine": "workspace:*",
         "@open-pencil/kiwi": "workspace:*",
         "@open-pencil/mermaid": "workspace:*",
         "@open-pencil/pen": "workspace:*",
@@ -559,6 +560,18 @@
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
+    },
+    "packages/html-engine": {
+      "name": "@open-pencil/html-engine",
+      "version": "0.17.0-beta.2",
+      "dependencies": {
+        "valibot": "^1.5.0",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "tsdown": "^0.22.14",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
@@ -1795,6 +1808,8 @@
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
 
     "@open-pencil/harness": ["@open-pencil/harness@workspace:packages/harness"],
+
+    "@open-pencil/html-engine": ["@open-pencil/html-engine@workspace:packages/html-engine"],
 
     "@open-pencil/i18n-tools": ["@open-pencil/i18n-tools@workspace:tools/checks/i18n"],
 
