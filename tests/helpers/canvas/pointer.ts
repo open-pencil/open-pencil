@@ -15,9 +15,9 @@ export abstract class CanvasPointer {
     return bounds
   }
 
-  async click(canvasX: number, canvasY: number) {
+  async click(canvasX: number, canvasY: number, options?: Parameters<Page['mouse']['click']>[2]) {
     const box = await this.canvasBounds()
-    await this.page.mouse.click(box.x + canvasX, box.y + canvasY)
+    await this.page.mouse.click(box.x + canvasX, box.y + canvasY, options)
   }
 
   async drag(fromX: number, fromY: number, toX: number, toY: number, steps = 10) {

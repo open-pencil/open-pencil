@@ -141,7 +141,7 @@ for (const scale of ['110%', '125%', '150%']) {
     page
   }) => {
     await page.goto('/?test')
-    const canvas = new CanvasHelper(page)
+    const canvas = new CanvasHelper(page, { fullCanvas: true })
     await canvas.waitForInit()
     await canvas.drawRect(440, 100, 160, 100)
     const before = await getSelectedNode(page)

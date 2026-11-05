@@ -387,7 +387,7 @@ test.describe('zoom shortcuts', () => {
     expect(zoomedOut.zoom).toBeLessThan(zoomedInWithShift.zoom)
   })
 
-  test('Figma plus and minus shortcuts zoom around the active canvas center', async () => {
+  test('Figma plus and minus shortcuts zoom around the visible center of the active canvas', async () => {
     await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -412,7 +412,11 @@ test.describe('zoom shortcuts', () => {
     const inactiveCanvas = editor.page.locator('[data-active-pane="false"]')
     const activeBounds = await activeCanvas.boundingBox()
     const inactiveBounds = await inactiveCanvas.boundingBox()
-    if (!activeBounds || !inactiveBounds) throw new Error('Expected canvas pane bounds')
+    const headerBounds = await editor.page
+      .locator('[data-slot="canvas-pane-header"][data-active="true"]')
+      .boundingBox()
+    if (!activeBounds || !inactiveBounds || !headerBounds)
+      throw new Error('Expected canvas pane bounds')
     expect(activeBounds.width).toBeLessThan(inactiveBounds.width)
 
     const centerBefore = await editor.page.evaluate(() => {
@@ -422,8 +426,11 @@ test.describe('zoom shortcuts', () => {
       return { center, canvasPoint: store.screenToCanvas(center.x, center.y) }
     })
 
-    expect(centerBefore.center.x).toBeCloseTo(activeBounds.width / 2)
-    expect(centerBefore.center.y).toBeCloseTo(activeBounds.height / 2)
+    expect(centerBefore.center.x).toBeCloseTo(
+      headerBounds.x - activeBounds.x + headerBounds.width / 2
+    )
+    const visibleTop = headerBounds.y + headerBounds.height - activeBounds.y
+    expect(centerBefore.center.y).toBeCloseTo((visibleTop + activeBounds.height) / 2)
 
     await editor.page.keyboard.press('Shift+Equal')
     await editor.canvas.waitForRender()
@@ -473,44 +480,44 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  test('⌘1 zooms to fit', async () => {
+  test('⌘1 zooms in to fit small content', async () => {
+    await editor.page.keyboard.press('Meta+0')
     await editor.page.keyboard.press('Meta+1')
     await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    expect(zoom).toBeGreaterThan(1)
   })
 
   test('⌘2 zooms to selection', async () => {
     await editor.canvas.selectAll()
 
+    await editor.page.keyboard.press('Meta+0')
     await editor.page.keyboard.press('Meta+2')
     await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    expect(zoom).toBeGreaterThan(1)
   })
 
   test('⇧1 zooms to fit (same as ⌘1)', async () => {
+    await editor.page.keyboard.press('Meta+0')
     await editor.page.keyboard.press('Shift+1')
     await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    expect(zoom).toBeGreaterThan(1)
   })
 
   test('⇧2 zooms to selection (same as ⌘2)', async () => {
     await editor.canvas.selectAll()
 
+    await editor.page.keyboard.press('Meta+0')
     await editor.page.keyboard.press('Shift+2')
     await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    expect(zoom).toBeGreaterThan(1)
   })
 })
 

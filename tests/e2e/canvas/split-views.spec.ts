@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test.describe('split canvas views', () => {
   test('splits, resizes, activates, and closes independent canvas views', async ({ page }) => {
     await page.goto('/?test')
-    const canvas = new CanvasHelper(page)
+    const canvas = new CanvasHelper(page, { fullCanvas: true })
     await canvas.waitForInit()
     await expect(page.locator('[data-slot="canvas-pane-header"]')).toHaveCount(0)
     await canvas.drawRect(400, 180, 180, 120)

@@ -1,6 +1,5 @@
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+
 const editor = useEditorSetup()
 
 function getPageChildren() {
@@ -26,8 +25,7 @@ function getSelectedCount() {
 }
 
 async function rightClickShape(x: number, y: number) {
-  const box = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
-  await editor.page.mouse.click(box.x + x, box.y + y, { button: 'right' })
+  await editor.canvas.click(x, y, { button: 'right' })
 }
 
 function contextMenu() {

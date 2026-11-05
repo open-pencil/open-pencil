@@ -57,7 +57,7 @@ test.describe('arrow key nudging', () => {
     const canvasElement = editor.page.getByTestId('canvas-element')
     await canvasElement.focus()
 
-    await editor.canvas.click(pill.x, pill.y)
+    await editor.page.mouse.click(pill.x, pill.y)
     const menu = editor.page.getByTestId('status-label-menu')
     await expect(menu).toBeVisible()
     await expect(canvasElement).toBeFocused()

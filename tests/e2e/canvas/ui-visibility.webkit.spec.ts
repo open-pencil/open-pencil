@@ -12,7 +12,7 @@ import {
 
 test('Toggle UI reveals the canvas without moving or redrawing the scene', async ({ page }) => {
   await page.goto('/?test&no-rulers')
-  const canvas = new CanvasHelper(page)
+  const canvas = new CanvasHelper(page, { fullCanvas: true })
   await canvas.waitForInit()
   await canvas.drawRect(440, 180, 160, 120)
   await page.keyboard.press('Escape')
@@ -55,7 +55,7 @@ test('Toggle UI reveals the canvas without moving or redrawing the scene', async
 
 test('rulers and zoom to selection follow the visible area between panels', async ({ page }) => {
   await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
+  const canvas = new CanvasHelper(page, { fullCanvas: true })
   await canvas.waitForInit()
   await canvas.clearCanvas()
   const handle = page.getByTestId('left-splitter-handle')
@@ -96,7 +96,7 @@ test('rulers and zoom to selection follow the visible area between panels', asyn
 
 test('split views and custom sidebar widths survive UI toggles', async ({ page }) => {
   await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
+  const canvas = new CanvasHelper(page, { fullCanvas: true })
   await canvas.waitForInit()
   const handle = page.getByTestId('left-splitter-handle')
   await handle.focus()
@@ -130,7 +130,7 @@ test('split views and custom sidebar widths survive UI toggles', async ({ page }
 
 test('keyboard and menu zoom keep the visible canvas centre fixed', async ({ page }) => {
   await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
+  const canvas = new CanvasHelper(page, { fullCanvas: true })
   await canvas.waitForInit()
   await page.getByTestId('left-splitter-handle').focus()
   await page.keyboard.press('ArrowRight')

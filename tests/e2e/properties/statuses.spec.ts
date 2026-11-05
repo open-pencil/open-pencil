@@ -54,7 +54,7 @@ test('sets a status from the Status section and from the label on the canvas', a
     const store = window.openPencil?.getStore?.()
     store?.clearSelection()
   })
-  await editor.canvas.click(pill.x, pill.y)
+  await editor.page.mouse.click(pill.x, pill.y)
   const menu = editor.page.getByTestId('status-label-menu')
   await expect(menu).toBeVisible()
   await menu.getByRole('button', { name: 'Completed' }).click()

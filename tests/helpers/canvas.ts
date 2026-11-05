@@ -14,10 +14,12 @@ export class CanvasHelper extends CanvasPointer {
   readonly page: Page
   readonly canvas: Locator
   readonly errors: string[] = []
+  private readonly fullCanvas: boolean
 
-  constructor(page: Page) {
+  constructor(page: Page, options: { fullCanvas?: boolean } = {}) {
     super()
     this.page = page
+    this.fullCanvas = options.fullCanvas ?? false
     this.canvas = page.getByTestId('canvas-area')
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
@@ -97,12 +99,11 @@ export class CanvasHelper extends CanvasPointer {
   }
 
   async screenshotCanvas() {
-    return this.canvas.screenshot()
+    return this.page.screenshot({ clip: await this.canvasBounds() })
   }
 
   async screenshotCanvasRegion(width = 900, height = 700) {
-    const box = await this.canvas.boundingBox()
-    if (!box) throw new Error('Canvas has no bounding box — is it visible?')
+    const box = await this.canvasBounds()
     const viewport = this.page.viewportSize()
     if (!viewport) throw new Error('Viewport unavailable')
     return this.page.screenshot({
@@ -113,6 +114,24 @@ export class CanvasHelper extends CanvasPointer {
         height: Math.min(height, viewport.height - box.y)
       }
     })
+  }
+
+  protected override async canvasBounds() {
+    const b = await super.canvasBounds()
+    // Interaction coordinates remain relative to the visible workspace. Tests of the canvas
+    // beneath the sidebars opt into its full surface instead.
+    const panel = this.page.locator('[data-panel-id="canvas"]')
+    if (this.fullCanvas || !(await panel.isVisible())) return b
+    const visible = await panel.boundingBox()
+    if (!visible) return b
+    const x = Math.max(b.x, visible.x)
+    const y = Math.max(b.y, visible.y)
+    return {
+      x,
+      y,
+      width: Math.max(0, Math.min(b.x + b.width, visible.x + visible.width) - x),
+      height: Math.max(0, Math.min(b.y + b.height, visible.y + visible.height) - y)
+    }
   }
 
   async drawRect(x: number, y: number, width: number, height: number) {
