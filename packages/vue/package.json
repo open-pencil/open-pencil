@@ -279,6 +279,11 @@
       "import": "./dist/internal/scene-computed/index.js",
       "default": "./dist/internal/scene-computed/index.js"
     },
+    "./lifecycle/overlays": {
+      "types": "./dist/lifecycle/overlays/index.d.ts",
+      "import": "./dist/lifecycle/overlays/index.js",
+      "default": "./dist/lifecycle/overlays/index.js"
+    },
     "./lifecycle/retention": {
       "types": "./dist/lifecycle/retention/index.d.ts",
       "import": "./dist/lifecycle/retention/index.js",
@@ -398,6 +403,11 @@
       "types": "./dist/shared/font-status/index.d.ts",
       "import": "./dist/shared/font-status/index.js",
       "default": "./dist/shared/font-status/index.js"
+    },
+    "./shared/frame": {
+      "types": "./dist/shared/frame.d.ts",
+      "import": "./dist/shared/frame.js",
+      "default": "./dist/shared/frame.js"
     },
     "./shared/input": {
       "types": "./dist/shared/input/index.d.ts",

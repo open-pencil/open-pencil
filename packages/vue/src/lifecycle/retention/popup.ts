@@ -2,10 +2,21 @@ import { watchImmediate } from '@vueuse/core'
 import { computed, getCurrentInstance, onDeactivated, ref } from 'vue'
 import type { Ref } from 'vue'
 
+import { useOverlayOpen, type OverlayKind } from '#vue/lifecycle/overlays'
+
 import { useRetainedActivity } from './context'
 
-/** Close transient state and remove portals before their owning panel is suspended. */
-export function useRetainedPopup(open: Ref<boolean> = ref(false), cancel?: () => void) {
+/**
+ * Close transient state and remove portals before their owning panel is suspended. The popup
+ * counts as an open overlay while it is open (`useOverlayOpen`); a fill or colour picker passes
+ * `kind: 'picker'`.
+ */
+export function useRetainedPopup(
+  open: Ref<boolean> = ref(false),
+  cancel?: () => void,
+  kind: OverlayKind = 'overlay'
+) {
+  useOverlayOpen(open, kind)
   const activity = useRetainedActivity()
   const portalActive = computed(() => activity?.value ?? true)
 

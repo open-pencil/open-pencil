@@ -13,7 +13,7 @@ Headless Vue 3 primitives and composables; the root app is one consumer. Primiti
 
 ## Retained panels
 
-The app's `DesignPanel` retains at most one selection-property subtree through `RetainedPanel`. The app installs `createRetainedScopePlugin()`; opted-in descendants receive `provideRetainedActivity()`. Vue component scopes are detached, so pausing only a parent or bare `KeepAlive` does not suspend descendant work. Cancel drafts synchronously before DOM detachment can fire blur, close transient state and gate portals with `useRetainedPopup()`, and invalidate pending async results on deactivation or disposal. The plugin lets cleanup flush before pausing each component scope and resumes it on activation; it requires Vue's Options API. Unmounting the owning editor releases the retained subtree.
+The app's `DesignPanel` retains at most one selection-property subtree through `RetainedPanel`. The app installs `createRetainedScopePlugin()`; opted-in descendants receive `provideRetainedActivity()`. Vue component scopes are detached, so pausing only a parent or bare `KeepAlive` does not suspend descendant work. Cancel drafts synchronously before DOM detachment can fire blur, close transient state and gate portals with `useRetainedPopup()`, and invalidate pending async results on deactivation or disposal. The plugin lets cleanup flush before pausing each component scope and resumes it on activation; it requires Vue's Options API. Unmounting the owning editor releases the retained subtree. `useRetainedPopup()` also counts the popup as open through `useOverlayOpen()`, which the app's `createOpenOverlaysPlugin()` collects for code that waits on overlays (`packages/vue/tests/lifecycle/overlays.test.ts`).
 
 ## Canvas tools
 

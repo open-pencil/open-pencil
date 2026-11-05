@@ -1,9 +1,9 @@
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
-import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
@@ -26,7 +26,7 @@ type OpenDOMFileOptions = {
     handle?: FileSystemFileHandle,
     path?: string
   ) => void
-  fitCurrentPageToViewport: () => Promise<void>
+  fitCurrentPageToViewport: (signal?: AbortSignal) => Promise<void>
   preparationController: EditorPreparationController
 }
 
@@ -62,7 +62,7 @@ export function createDOMOpenActions({
     options: DOMTextImportOptions,
     load: ReturnType<EditorPreparationController['begin']>
   ) {
-    await yieldToUI()
+    await nextFrame()
     const pageName = options.documentName ?? 'DOM Import'
     load.update({ phase: 'decoding', detail: pageName })
     // Laid out as a browser would, so layers land where the page put its elements.
@@ -73,12 +73,14 @@ export function createDOMOpenActions({
     })
     load.signal.throwIfAborted()
     const graph = await sceneGraphFromStyledHTML(styled, { pageName })
-    await yieldToUI()
+    await nextFrame()
     await applyImportedDocument(editor, graph, load)
     // Into a reused tab too, the document opens with the panels its kind starts with.
     state.showUI = resolveEditorProfile(editor.state).panelsOpen
     state.documentName = pageName
-    await fitCurrentPageToViewport()
+    // A later open supersedes this one while it waits for a hidden tab to be shown.
+    await fitCurrentPageToViewport(load.signal)
+    load.signal.throwIfAborted()
     editor.requestRender()
     return pageName
   }

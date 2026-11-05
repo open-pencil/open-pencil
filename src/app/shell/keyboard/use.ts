@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -27,6 +28,7 @@ export function useKeyboard() {
   const { runCommand, setOpacityTarget } = useEditorCommands()
   const activeElement = useActiveElement({ triggerOnRemoval: true })
   const inputFocused = computed(() => isInputElement(activeElement.value))
+  const overlays = useOpenOverlays()
 
   const actions = createKeyboardActions({
     store,
@@ -37,10 +39,11 @@ export function useKeyboard() {
   })
 
   bindEditorClipboard(store)
-  bindNudgeKeys(store)
+  bindNudgeKeys(store, overlays)
 
   registerKeyboardShortcuts({
     inputFocused,
+    overlays,
     store,
     runCommand,
     actions,
