@@ -1,4 +1,4 @@
-import { useDocumentVisibility, whenever } from '@vueuse/core'
+import { useDocumentVisibility, useEventListener, whenever } from '@vueuse/core'
 import { watch } from 'vue'
 
 import { updatesMessages } from '@open-pencil/vue/i18n'
@@ -51,6 +51,8 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
     toast.info(messages.webUpdateReady, {
       label: messages.reload,
       run: () => {
+        // A dialog's draft is no document, so nothing would ask about it: it is closed first.
+        if (overlayOpen()) return
         void confirm().then((agreed) => {
           if (agreed) reloadOnce()
           return undefined
@@ -67,6 +69,36 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
   whenever(() => hidden() && !hasUnkeptEdits() && !overlayOpen(), reloadOnce, { immediate: true })
 }
 
+/** The service worker's side of taking a new version, which `takeWebUpdate` drives. */
+export type WaitingUpdate = {
+  /** Whether a service worker controls this page, as `navigator.serviceWorker.controller` says. */
+  controlled: boolean
+  /** The installed version waiting to take over, if any. */
+  waiting: (EventTarget & { readonly state: ServiceWorkerState }) | null
+  /** Asks the waiting version to take over, reloading a controlled page once it does. */
+  activate: () => void
+  reload: () => void
+}
+
+/**
+ * Has the new version take over and reloads into it. The service worker reloads a page it already
+ * controlled; a page loaded before any worker controlled it, such as on a first visit, reloads here
+ * once the new version is active, or at once when none is left waiting.
+ */
+export function takeWebUpdate(update: WaitingUpdate): void {
+  const { waiting } = update
+  if (update.controlled) {
+    update.activate()
+  } else if (!waiting) {
+    update.reload()
+  } else {
+    useEventListener(waiting, 'statechange', () => {
+      if (waiting.state === 'activated') update.reload()
+    })
+    update.activate()
+  }
+}
+
 /**
  * Registers the web app's service worker, whose new versions wait for the person through
  * `offerWebUpdate`. Until they take one, the old worker keeps serving the old version's files, so
@@ -77,12 +109,21 @@ export function useWebUpdates(): void {
   if (IS_TAURI) return
   const overlays = useOpenOverlays()
   void import('virtual:pwa-register').then(({ registerSW }) => {
-    // Takes the waiting version and reloads once it is in control.
+    let registration: ServiceWorkerRegistration | undefined
     const update = registerSW({
       immediate: true,
+      onRegisteredSW: (_url, registered) => {
+        registration = registered
+      },
       onNeedRefresh: () =>
         offerWebUpdate({
-          reload: () => void update(true),
+          reload: () =>
+            takeWebUpdate({
+              controlled: navigator.serviceWorker.controller !== null,
+              waiting: registration?.waiting ?? null,
+              activate: () => void update(true),
+              reload: () => window.location.reload()
+            }),
           overlayOpen: () => overlays?.holdsKeys() ?? false
         })
     })
