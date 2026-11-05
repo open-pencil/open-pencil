@@ -2,12 +2,12 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogBody, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
@@ -24,7 +24,7 @@ import AISetupSkills from './AISetupSkills.vue'
 const {
   entry,
   offersTour = true,
-  agentsAvailable = IS_TAURI
+  agentsAvailable = canRunHostProcesses()
 } = defineProps<{
   entry: AISetupEntry
   offersTour?: boolean

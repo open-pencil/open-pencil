@@ -20,11 +20,31 @@ const AVAILABLE_UPDATE = {
 }
 
 afterEach(async () => {
+  if ('window' in globalThis) {
+    Reflect.deleteProperty(globalThis.window, '__OPENPENCIL_DESKTOP_CAPABILITIES__')
+  }
   await clearTauriMocks()
   for (const entry of toast.toasts.value) toast.remove(entry.id)
 })
 
 describe('checkForAppUpdate', () => {
+  test('does nothing in a package that turns self-update off', async () => {
+    const calls: string[] = []
+    await mockTauriIPC((cmd) => {
+      calls.push(cmd)
+      return AVAILABLE_UPDATE
+    })
+    Object.defineProperty(window, '__OPENPENCIL_DESKTOP_CAPABILITIES__', {
+      value: Object.freeze({ selfUpdate: false, hostProcesses: true }),
+      configurable: true
+    })
+
+    await checkForAppUpdate({ messages })
+
+    expect(calls).toEqual([])
+    expect(toast.toasts.value).toEqual([])
+  })
+
   test('returns quietly when no update is available', async () => {
     const calls: string[] = []
     await mockTauriIPC((cmd) => {

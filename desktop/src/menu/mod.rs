@@ -405,12 +405,8 @@ pub fn install_app_menu<R: tauri::Runtime>(
     };
     #[cfg(target_os = "macos")]
     let app_menu = {
+        use tauri::Manager;
         let items = app_menu_file()?;
-        let mut check_updates =
-            MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
-        if let Some(accelerator) = &items.check_updates.accelerator {
-            check_updates = check_updates.accelerator(accelerator);
-        }
         let mut settings = MenuItemBuilder::new(&items.settings.label).id("settings");
         if let Some(accelerator) = &items.settings.accelerator {
             settings = settings.accelerator(accelerator);
@@ -419,13 +415,22 @@ pub fn install_app_menu<R: tauri::Runtime>(
         if let Some(accelerator) = &items.quit.accelerator {
             quit = quit.accelerator(accelerator);
         }
-        SubmenuBuilder::new(app, tauri::Manager::package_info(app).name.clone())
-            .item(&PredefinedMenuItem::about(
-                app,
-                Some(&items.about.label),
-                None,
-            )?)
-            .item(&check_updates.build(app)?)
+        let mut app_menu = SubmenuBuilder::new(app, app.package_info().name.clone()).item(
+            &PredefinedMenuItem::about(app, Some(&items.about.label), None)?,
+        );
+        // A package that delivers its own updates has no updater for this item to open.
+        if app
+            .state::<crate::capabilities::DesktopCapabilities>()
+            .self_update
+        {
+            let mut check_updates =
+                MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
+            if let Some(accelerator) = &items.check_updates.accelerator {
+                check_updates = check_updates.accelerator(accelerator);
+            }
+            app_menu = app_menu.item(&check_updates.build(app)?);
+        }
+        app_menu
             .separator()
             .item(&settings.build(app)?)
             .separator()
