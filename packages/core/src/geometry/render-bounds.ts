@@ -11,6 +11,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { mayHoldEmoji } from '#core/text/emoji'
@@ -168,6 +169,16 @@ function swept(bounds: VisualBounds, matrix: Mat3, reach: VisualBounds): VisualB
   }
 }
 
+/** A drop shadow of `content`: moved by its `offset` and grown by `by` on every side. */
+function shadowOf(content: VisualBounds, matrix: Mat3, offset: Vector, by: number): VisualBounds {
+  return swept(content, matrix, {
+    minX: offset.x - by,
+    minY: offset.y - by,
+    maxX: offset.x + by,
+    maxY: offset.y + by
+  })
+}
+
 /**
  * What a node's effects make of `content`, everything it and its children draw, in the frame
  * `matrix` maps its axes into. With `figma` reach, a drop shadow is the content moved by its
@@ -187,14 +198,7 @@ function withEffects(
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') {
-      const by = effect.radius + effect.spread
-      const { x, y } = effect.offset
-      const shadow = swept(content, matrix, {
-        minX: x - by,
-        minY: y - by,
-        maxX: x + by,
-        maxY: y + by
-      })
+      const shadow = shadowOf(content, matrix, effect.offset, effect.radius + effect.spread)
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
       const by = effect.radius
@@ -225,14 +229,7 @@ function withDrawnShadows(node: SceneNode, content: VisualBounds, matrix: Mat3):
   for (const effect of node.effects) {
     if (effect.visible && effect.type === 'DROP_SHADOW') {
       const by = shadowReach(effect.radius, effect.color.a) + effect.spread
-      const { x, y } = effect.offset
-      const shadow = swept(content, matrix, {
-        minX: x - by,
-        minY: y - by,
-        maxX: x + by,
-        maxY: y + by
-      })
-      bounds = unionVisualBounds(bounds, shadow) ?? bounds
+      bounds = unionVisualBounds(bounds, shadowOf(content, matrix, effect.offset, by)) ?? bounds
     }
   }
   return bounds

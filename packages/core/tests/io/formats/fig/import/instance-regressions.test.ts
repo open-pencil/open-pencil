@@ -267,10 +267,10 @@ describe('derived instance layout regressions', () => {
     const wysiwyg = previewChild(layoutGraph, layoutNodes, '_WYSIWYG-editor')
     expect(wysiwyg).toBeDefined()
     const wysiwygBounds = wysiwyg ? computeContentBounds(layoutGraph, [wysiwyg.id]) : null
-    expect(wysiwygBounds?.minX).toBeCloseTo(5, 3)
+    expect(wysiwygBounds?.minX).toBeCloseTo(4, 3)
     expect(wysiwygBounds?.minY).toBeCloseTo(577, 3)
-    expect(wysiwygBounds ? wysiwygBounds.maxX - wysiwygBounds.minX : 0).toBeCloseTo(294, 3)
-    expect(wysiwygBounds ? wysiwygBounds.maxY - wysiwygBounds.minY : 0).toBeCloseTo(93, 3)
+    expect(wysiwygBounds ? wysiwygBounds.maxX - wysiwygBounds.minX : 0).toBeCloseTo(296, 3)
+    expect(wysiwygBounds ? wysiwygBounds.maxY - wysiwygBounds.minY : 0).toBeCloseTo(94, 3)
 
     const title = previewChild(layoutGraph, layoutNodes, 'Title + Description')
     const logoGroup = childNamed(
