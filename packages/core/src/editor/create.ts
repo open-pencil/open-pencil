@@ -509,6 +509,9 @@ export function createEditor(options?: EditorOptions) {
     // Pages
     ...pages,
 
+    /** The size of the canvas the editor draws into, in screen pixels. */
+    getViewportSize: _getViewportSize,
+
     // Canvas and frame guides
     ...guides,
     ...designIssues,

@@ -1,16 +1,9 @@
-import { useActiveElement } from '@vueuse/core'
-import { computed } from 'vue'
-
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useOpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createKeyboardActions } from '@/app/shell/keyboard/actions'
 import { bindEditorClipboard } from '@/app/shell/keyboard/clipboard'
-import { isInputElement } from '@/app/shell/keyboard/focus'
-import { bindNudgeKeys } from '@/app/shell/keyboard/nudging'
 import { registerKeyboardShortcuts } from '@/app/shell/keyboard/registry'
 import { openFileDialog } from '@/app/shell/menu/use'
 import {
@@ -25,27 +18,12 @@ export function useKeyboard() {
   const { activeTab } = useAIChat()
   const store = useEditorStore()
   const { isMobile } = useViewportKind()
-  const { runCommand, setOpacityTarget } = useEditorCommands()
-  const activeElement = useActiveElement({ triggerOnRemoval: true })
-  const inputFocused = computed(() => isInputElement(activeElement.value))
-  const overlays = useOpenOverlays()
-
-  const actions = createKeyboardActions({
-    store,
-    activeTab,
-    isMobile,
-    runCommand,
-    setOpacityTarget
-  })
+  const actions = createKeyboardActions({ store, activeTab, isMobile })
 
   bindEditorClipboard(store)
-  bindNudgeKeys(store, overlays)
 
   registerKeyboardShortcuts({
-    inputFocused,
-    overlays,
     store,
-    runCommand,
     actions,
     openFileDialog: () => {
       void openFileDialog()

@@ -244,6 +244,11 @@
       "import": "./dist/editor/inline-rename/index.js",
       "default": "./dist/editor/inline-rename/index.js"
     },
+    "./editor/keyboard": {
+      "types": "./dist/editor/keyboard/index.d.ts",
+      "import": "./dist/editor/keyboard/index.js",
+      "default": "./dist/editor/keyboard/index.js"
+    },
     "./editor/menu-model": {
       "types": "./dist/editor/menu-model/index.d.ts",
       "import": "./dist/editor/menu-model/index.js",
@@ -473,10 +478,12 @@
     "nanostores": "^1.5.4",
     "reka-ui": "^2.10.5",
     "shaders": "4.0.4",
+    "tinykeys": "^3.1.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {
     "@open-pencil/test-support": "workspace:*",
+    "happy-dom": "^20.14.6",
     "tsdown": "^0.22.14",
     "unplugin-raw": "^0.7.0",
     "unplugin-vue": "^7.2.0"

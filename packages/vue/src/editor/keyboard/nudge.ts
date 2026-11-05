@@ -1,13 +1,14 @@
 import { useEventListener } from '@vueuse/core'
 
 import { gridNudge, resolveEditorProfile } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import type { OpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
 
-import type { EditorStore } from '@/app/editor/active-store'
-import { isEditing } from '@/app/shell/keyboard/focus'
-import { overlayHoldsKeys } from '@/app/shell/keyboard/overlays'
-import { isReservedModShortcut } from '@/app/shell/keyboard/reserved'
+import type { OpenOverlays } from '#vue/lifecycle/overlays'
+
+import { isEditing } from './focus'
+import { overlayHoldsKeys } from './overlays'
+import { isReservedModShortcut } from './reserved'
 
 const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowUp: [0, -1],
@@ -17,7 +18,7 @@ const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
 }
 
 /** The top-left corner on the canvas of the selected layers a nudge moves: the unlocked ones. */
-function selectionOrigin(store: EditorStore): Vector {
+function selectionOrigin(store: Editor): Vector {
   let x = Infinity
   let y = Infinity
   for (const id of store.state.selectedIds) {
@@ -29,7 +30,7 @@ function selectionOrigin(store: EditorStore): Vector {
   return { x, y }
 }
 
-export function bindNudgeKeys(store: EditorStore, overlays: OpenOverlays | undefined) {
+export function bindNudgeKeys(store: Editor, overlays: OpenOverlays | undefined) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e) || store.state.editingTextId) return
     if (isReservedModShortcut(e)) e.preventDefault()

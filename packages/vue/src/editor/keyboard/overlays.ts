@@ -1,4 +1,4 @@
-import type { OpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
+import type { OpenOverlays } from '#vue/lifecycle/overlays'
 
 // Fallback for overlays that do not register through `useOverlayOpen` yet: menus, popovers, and
 // context menus built on Reka's roots directly. Remove once they all go through shared wrappers.

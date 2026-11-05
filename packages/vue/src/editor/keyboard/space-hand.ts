@@ -1,11 +1,11 @@
 import { useEventListener } from '@vueuse/core'
 import type { ComputedRef } from 'vue'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import type { Editor } from '@open-pencil/core'
 
 import { isButtonActivation } from './focus'
 
-export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: EditorStore) {
+export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: Editor) {
   let toolBeforeSpace: typeof store.state.activeTool | null = null
 
   function restoreTool() {
