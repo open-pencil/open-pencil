@@ -1,3 +1,4 @@
 - Resizing a layer inside a group or boolean operation fits the group to its children, as moving one does, in the same undo step.
 - Rotated and flipped groups fit their children after a layer inside them moves, resizes, or leaves, keeping their angle, where they kept their old bounds.
 - A rotated layer, or a layer inside a rotated frame, resizes along its own axes with the opposite edge kept in place, and a handle dragged past the opposite edge mirrors the layer, as in Figma.
+- Pressing a resize handle without moving it, or dragging back to the starting size, leaves a vector imported from a `.fig` file as it was, where it lost its imported geometry or kept the stretched one.
