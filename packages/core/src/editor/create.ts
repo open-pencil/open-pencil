@@ -111,6 +111,12 @@ export function createEditor(options?: EditorOptions) {
   const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
     events.emit('font:loaded', family, style)
   )
+  // Text blocked while its fonts were prepared is missing from the tiles drawn meanwhile.
+  const stopUnblockEvents = fontManager.onNodesUnblocked((graph, nodeIds) => {
+    if (graph !== _graph) return
+    for (const renderer of _renderers) for (const id of nodeIds) renderer.redrawNode(id, graph)
+    requestRender()
+  })
 
   void prefetchFigmaSchema()
 
@@ -457,6 +463,7 @@ export function createEditor(options?: EditorOptions) {
     interactiveEdits.clear()
     stopFontResolutionEvents()
     stopFontLoadEvents()
+    stopUnblockEvents()
     unsubscribeFromGraph()
   }
 

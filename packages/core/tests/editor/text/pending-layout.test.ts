@@ -351,7 +351,8 @@ function editorSetup() {
     nodeFontReadiness: () => (measurable ? 'ready' : 'pending'),
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
-    invalidateNodePicture: noop
+    invalidateNodePicture: noop,
+    redrawNode: noop
   }
   editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], renderer as SkiaRenderer)
   const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
