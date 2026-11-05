@@ -1,11 +1,15 @@
 import { useEventListener } from '@vueuse/core'
 import type { ComputedRef } from 'vue'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 
 import { isButtonActivation } from './focus'
 
-export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: EditorStore) {
+export function bindSpaceHandTool(
+  inputFocused: ComputedRef<boolean>,
+  store: Editor,
+  active: () => boolean = () => true
+) {
   let toolBeforeSpace: typeof store.state.activeTool | null = null
 
   function restoreTool() {
@@ -16,7 +20,9 @@ export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: Edi
 
   useEventListener(window, 'keydown', (event: KeyboardEvent) => {
     if (event.code !== 'Space' || isButtonActivation(event)) return
-    if (inputFocused.value || store.state.editingTextId) return
+    if (!active() || inputFocused.value || store.state.editingTextId) return
+    // A preview's controls take Space themselves, as a switch or a checkbox does.
+    if (resolveEditorProfile(store.state).shortcuts === 'view') return
     if (event.metaKey || event.ctrlKey || event.altKey) return
     event.preventDefault()
     if (toolBeforeSpace !== null || store.state.activeTool === 'HAND') return

@@ -1,4 +1,4 @@
-import type { OpenOverlays } from '@open-pencil/vue/lifecycle/overlays'
+import type { OpenOverlays } from '#vue/lifecycle/overlays'
 
 // A key pressed inside a dialog, menu, list, or picker is that widget's own, such as an arrow in
 // an inline list that never opened as an overlay.
@@ -19,8 +19,8 @@ function pressedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
 /**
  * Whether an open dialog, menu, list, or picker holds the canvas's keys back, shortcuts and
  * nudging alike: one registered as open (`useOverlayOpen`), or the one the key was pressed in.
- * The shortcut listeners are bound when the editor starts, before any overlay binds its own, so
- * they see an overlay still open even when its Escape is about to close it.
+ * The shortcut listener captures on the window, so it runs before an overlay's own handlers and
+ * sees an overlay still open even when its Escape is about to close it.
  * `history` asks about undo and redo, which a picker leaves to the document.
  */
 export function overlayHoldsKeys(
