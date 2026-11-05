@@ -89,6 +89,36 @@ describe('waiting for the next frame', () => {
     expect(await settled(frame)).toBe(true)
   })
 
+  test('a shown frame waits again when the tab is hidden before its frame', async () => {
+    const shown = page('visible')
+    const frame = nextShownFrame({ visibility: shown.visibility })
+    expect(await settled(frame)).toBe(false)
+    shown.visibility.value = 'hidden'
+    expect(await settled(frame)).toBe(false)
+    expect(shown.pending.size).toBe(0)
+    shown.visibility.value = 'visible'
+    expect(await settled(frame)).toBe(false)
+    shown.draw()
+    expect(await settled(frame)).toBe(true)
+  })
+
+  test('a shown frame stops waiting when its work is cancelled', async () => {
+    const hidden = page('hidden')
+    const abort = new AbortController()
+    let reason: unknown = null
+    const frame = nextShownFrame({ visibility: hidden.visibility, signal: abort.signal }).catch(
+      (error: unknown) => {
+        reason = error
+      }
+    )
+    abort.abort(new Error('superseded'))
+    await frame
+    expect(reason).toHaveProperty('message', 'superseded')
+    hidden.visibility.value = 'visible'
+    await nextTick()
+    expect(hidden.pending.size).toBe(0)
+  })
+
   test('resolves when the frame comes back at once, as a test double may run it', async () => {
     const visibility = shallowRef<DocumentVisibilityState>('visible')
     globalThis.requestAnimationFrame = (callback) => {

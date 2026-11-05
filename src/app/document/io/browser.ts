@@ -94,8 +94,9 @@ export function createDocumentViewportActions(editor: ViewportEditor, viewportSi
     return { ...viewportSize }
   }
 
-  async function fitCurrentPageToViewport() {
-    await nextShownFrame()
+  /** Fits the page once the canvas has its size; `signal` stops waiting for it. */
+  async function fitCurrentPageToViewport(signal?: AbortSignal) {
+    await nextShownFrame({ signal })
     editor.zoomToFit()
   }
 

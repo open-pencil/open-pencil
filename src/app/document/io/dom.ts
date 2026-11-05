@@ -26,7 +26,7 @@ type OpenDOMFileOptions = {
     handle?: FileSystemFileHandle,
     path?: string
   ) => void
-  fitCurrentPageToViewport: () => Promise<void>
+  fitCurrentPageToViewport: (signal?: AbortSignal) => Promise<void>
   preparationController: EditorPreparationController
 }
 
@@ -78,7 +78,9 @@ export function createDOMOpenActions({
     // Into a reused tab too, the document opens with the panels its kind starts with.
     state.showUI = resolveEditorProfile(editor.state).panelsOpen
     state.documentName = pageName
-    await fitCurrentPageToViewport()
+    // A later open supersedes this one while it waits for a hidden tab to be shown.
+    await fitCurrentPageToViewport(load.signal)
+    load.signal.throwIfAborted()
     editor.requestRender()
     return pageName
   }

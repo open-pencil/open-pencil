@@ -314,15 +314,16 @@ describe('editor preparation controller', () => {
     controller.attachCanvas()
     controller.failCanvas(new Error('The canvas could not start'))
     const handle = controller.begin({ kind: 'page-switch' })
-    let failure: unknown = null
-    const waiting = controller.waitForPresentation(handle.id, at(7)).catch((error: unknown) => {
-      failure = error
-    })
+    let outcome = 'pending' as 'pending' | 'presented' | 'failed'
+    const waiting = controller.waitForPresentation(handle.id, at(7)).then(
+      () => (outcome = 'presented'),
+      () => (outcome = 'failed')
+    )
     await Promise.resolve()
-    expect(failure).toBeNull()
+    expect(outcome).toBe('pending')
     controller.acknowledgePresentation(at(7))
     await waiting
-    expect(failure).toBeNull()
+    expect(outcome).toBe('presented')
     handle.complete()
     controller.dispose()
   })

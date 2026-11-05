@@ -364,10 +364,10 @@ async function showImportedGraph(
     preparation: load,
     beforePresentation: async () => {
       if (remembered) {
-        await nextShownFrame()
+        await nextShownFrame({ signal: load?.signal })
         store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
       } else {
-        await store.fitCurrentPageToViewport()
+        await store.fitCurrentPageToViewport(load?.signal)
       }
     }
   })
