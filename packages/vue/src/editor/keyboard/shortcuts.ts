@@ -1,4 +1,11 @@
-import type { Editor } from '@open-pencil/core'
+import { uniq } from 'es-toolkit'
+
+import {
+  BOARD_TOOL_SHORTCUTS,
+  resolveEditorProfile,
+  TOOL_SHORTCUTS,
+  type Editor
+} from '@open-pencil/core'
 
 import {
   editorCommandMetadata,
@@ -65,6 +72,29 @@ const KEY_COMMANDS: readonly EditorCommandId[] = [
  */
 function isCanvasFocus(event: KeyboardEvent) {
   return event.target === document.body || event.target instanceof HTMLCanvasElement
+}
+
+/**
+ * A shortcut for every key a design or a board picks a tool with. Which tool a key picks, if any,
+ * comes from the editor profile when it is pressed, so a board's keys and a host's tool
+ * restrictions hold; a key that picks nothing leaves the browser its own action.
+ */
+export function toolShortcuts(editor: Editor, beforePick: () => void): EditorShortcut[] {
+  const toolFor = (code: string) => resolveEditorProfile(editor.state).toolKeys[code]
+  const codes = uniq([...Object.keys(TOOL_SHORTCUTS), ...Object.keys(BOARD_TOOL_SHORTCUTS)])
+  return codes.map((code) => ({
+    id: `tool-${code}`,
+    keys: code,
+    run: () => {
+      const tool = toolFor(code)
+      if (!tool) return
+      beforePick()
+      // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
+      if (tool === 'SHAPE_WITH_TEXT') editor.setShapeWithTextKind('SQUARE')
+      editor.setTool(tool)
+    },
+    preventDefault: () => toolFor(code) !== undefined
+  }))
 }
 
 /** The editor's own keys, besides tool keys, the held Space hand, and nudging. */
