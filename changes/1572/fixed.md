@@ -1,1 +1,1 @@
-- Hiding the editor UI preserves canvas content and split views, and showing it again restores custom panel widths.
+- Hiding and showing the editor UI keeps the canvas as it is instead of starting it again, and keeps split views on screen while the UI is hidden.
