@@ -217,15 +217,20 @@ export function savedReaderVariants(graph: SceneGraph, setId: string): readonly 
 
 /**
  * Build variants `savedReaderVariants` names, from the opened file, as a page load would.
- * Returns whether they are built: none is when one of them needs a layer the user deleted.
+ * Returns whether they are built: none is when one of them needs a layer the user deleted. When
+ * `accept` throws once they are built, the load is undone and the error rethrown.
  */
-export function loadReaderVariants(graph: SceneGraph, variantIds: readonly string[]): boolean {
+export function loadReaderVariants(
+  graph: SceneGraph,
+  variantIds: readonly string[],
+  accept?: () => void
+): boolean {
   const state = states.get(graph)
   if (!state || state.complete) {
     return false
   }
   const session = liveReaderSession(graph, state)
-  return graph.applyImportedStateDuring(() => session.loadComponents(variantIds))
+  return graph.applyImportedStateDuring(() => session.loadComponents(variantIds, accept))
 }
 
 /** `loadReaderVariants` for one variant, returning its layer once built. */

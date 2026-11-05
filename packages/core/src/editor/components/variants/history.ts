@@ -21,16 +21,20 @@ export type VariantSnapshot = {
 
 /**
  * An edit reaches every variant the set saves, so the ones not built yet are built first.
- * Returns false, and the edit does not go ahead, when one of them cannot be built.
+ * Returns false, and the edit does not go ahead, when one of them cannot be built. A variant
+ * that is not editable throws, and the variants built for the edit are removed again.
  */
 export function prepareComponentSetEdit(ctx: EditorContext, componentSetId: string): boolean {
   assertNodeEditable(ctx.graph, componentSetId)
-  if (!buildSavedVariants(ctx.graph, componentSetId)) {
+  const assertVariantsEditable = () => {
+    for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
+      assertNodeEditable(ctx.graph, variant.id)
+    }
+  }
+  if (!buildSavedVariants(ctx.graph, componentSetId, assertVariantsEditable)) {
     return false
   }
-  for (const variant of getComponentSetVariants(ctx.graph, componentSetId)) {
-    assertNodeEditable(ctx.graph, variant.id)
-  }
+  assertVariantsEditable()
   return true
 }
 

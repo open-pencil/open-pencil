@@ -186,8 +186,14 @@ export function createFigDocumentSession(
   const needsDeletedLayer = ({ contentIds, ancestorIds }: SceneDependencyClosure): boolean =>
     [...contentIds].some((sourceId) => isDeleted(state.componentIds.get(sourceId))) ||
     [...ancestorIds].some((sourceId) => isDeleted(state.sources.get(sourceId)))
-  /** All or none: the components' joint dependencies are checked before any of them is built. */
-  const loadComponents = (ids: readonly string[]): boolean => {
+  /**
+   * All or none: the components' joint dependencies are checked before any of them is built, and
+   * the load is undone when `accept`, run once they are built, throws.
+   */
+  const loadComponents = (
+    ids: readonly string[],
+    accept: () => void = () => undefined
+  ): boolean => {
     const pending = ids.filter((id) => !state.components.has(id))
     if (pending.length === 0) {
       return true
@@ -196,11 +202,12 @@ export function createFigDocumentSession(
     if (needsDeletedLayer(reader.dependencyClosure)) {
       return false
     }
-    loadPageTransaction(state, reader.dependencyClosure, () =>
+    loadPageTransaction(state, reader.dependencyClosure, () => {
       keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
         materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
       )
-    )
+      accept()
+    })
     return true
   }
   return {

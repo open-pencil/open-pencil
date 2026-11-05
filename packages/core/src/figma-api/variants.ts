@@ -14,7 +14,11 @@ import {
   getVariantDefinitions,
   variantValues
 } from '#core/editor/components/variants/model'
-import { buildSavedVariants, findOrBuildVariant } from '#core/editor/components/variants/saved'
+import {
+  buildSavedVariants,
+  findOrBuildVariant,
+  unbuiltVariantWith
+} from '#core/editor/components/variants/saved'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 // Variant edits through the Plugin API run the panel's own edits, with Figma's messages. Figma
@@ -173,11 +177,13 @@ export function syncVariantName(scene: SceneGraph, node: SceneNode): void {
   const parsed = parseVariantName(node.name)
   const names = Object.keys(parsed)
   if (names.length !== axes.length || !axes.every((axis) => parsed[axis]?.trim())) return
-  if (!buildSavedVariants(scene, setId)) return
   const values = { ...node.componentPropertyValues, ...parsed }
+  if (axes.every((axis) => node.componentPropertyValues[axis] === values[axis])) return
   // Values another variant has already leave the set in error in Figma; these stay too.
   const twin = findExactVariant(scene, setId, values)
   if (twin && twin.id !== node.id) return
+  if (unbuiltVariantWith(scene, setId, values)) return
+  if (!buildSavedVariants(scene, setId)) return
   setVariantValues(scene, setId, node.id, values)
   refreshVariantOptions(scene, setId, { dropUnused: true })
 }

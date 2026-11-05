@@ -49,6 +49,8 @@ interface LibraryFileOptions {
   nameOnly?: boolean
   /** An instance of the first icon on the page too, so the icon set is built at open. */
   iconOnPage?: boolean
+  /** A chip state whose variant a library owns, so it cannot be edited here. */
+  readOnlyState?: string
 }
 
 /**
@@ -58,7 +60,8 @@ interface LibraryFileOptions {
 async function libraryVariantFile({
   chipName = (state) => `State=${state}`,
   nameOnly = false,
-  iconOnPage = false
+  iconOnPage = false,
+  readOnlyState
 }: LibraryFileOptions = {}): Promise<Uint8Array> {
   await initCodec()
   const graph = new SceneGraph()
@@ -73,6 +76,15 @@ async function libraryVariantFile({
     graph.updateNode(node.id, { name: chipName(state) })
     if (nameOnly) {
       graph.updateNode(node.id, { componentPropertyValues: {} })
+    }
+    if (state === readOnlyState) {
+      graph.updateNode(node.id, {
+        librarySource: {
+          identity: { libraryId: 'kit', assetKey: 'chip', revisionId: 'r1' },
+          sourceNodeId: null,
+          readOnly: true
+        }
+      })
     }
     return node
   })
@@ -465,4 +477,52 @@ test('undo and redo of an edit that built the rest of the set', async () => {
   editor.undo.redo()
   expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default', 'Hover', 'Pressed', 'Off'])
   expect(optionValues(editor, graph, 'State')).toEqual(['Default', 'Hover', 'Pressed', 'Off'])
+})
+
+function renameThroughPlugin(graph: SceneGraph, variantId: string, name: string): void {
+  graph.updateNode(variantId, { name })
+  syncVariantName(graph, graph.getNode(variantId) ?? pageInstance(graph))
+}
+
+test('a plugin rename that keeps the values builds nothing', async () => {
+  const { graph } = await openLazily()
+  const variantId = pageInstance(graph).componentId ?? ''
+  renameThroughPlugin(graph, variantId, 'State = Default')
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
+})
+
+test('a plugin rename to a built twin builds nothing and keeps the values', async () => {
+  const { graph, editor } = await openLazily()
+  const variantId = pageInstance(graph).componentId ?? ''
+  switchState(editor, graph, 'Hover')
+  renameThroughPlugin(graph, variantId, 'State=Hover')
+  expect(graph.getNode(variantId)?.componentPropertyValues.State).toBe('Default')
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default', 'Hover'])
+})
+
+test('a plugin rename to an unbuilt twin builds nothing and keeps the values', async () => {
+  const { graph } = await openLazily()
+  const variantId = pageInstance(graph).componentId ?? ''
+  renameThroughPlugin(graph, variantId, 'State=Pressed')
+  expect(graph.getNode(variantId)?.componentPropertyValues.State).toBe('Default')
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
+})
+
+test('a plugin rename to new values builds the rest of the set first', async () => {
+  const { graph } = await openLazily()
+  const variantId = pageInstance(graph).componentId ?? ''
+  renameThroughPlugin(graph, variantId, 'State=Idle')
+  expect(graph.getNode(variantId)?.componentPropertyValues.State).toBe('Idle')
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Idle', 'Hover', 'Pressed', 'Disabled'])
+})
+
+test('an edit that meets a read-only saved variant throws and removes what it built', async () => {
+  const { graph, editor } = await openLazily({ readOnlyState: 'Pressed' })
+  const { chipId, stateId } = chipState(editor, graph)
+  const nodes = graph.nodes.size
+  expect(() => editor.renameVariantValue(chipId, stateId, 'Disabled', 'Off')).toThrow('library')
+  expect(graph.nodes.size).toBe(nodes)
+  expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
+  const instance = switchToDisabled(editor, graph)
+  expect(graph.getNode(instance.componentId ?? '')?.componentPropertyValues.State).toBe('Disabled')
 })

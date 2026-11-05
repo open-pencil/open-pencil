@@ -65,13 +65,14 @@ export function savedVariantValues(graph: SceneGraph, setId: string): SavedVaria
 /**
  * Build every variant of the set the opened file holds, so an edit to the set's properties,
  * values or names reaches all of them, as it does a set whose variants are all built. Returns
- * whether they all are: one nesting a component the user deleted is not built.
+ * whether they are: none is when one of them nests a layer the user deleted. When `accept`
+ * throws once they are built, they are removed again and the error rethrown.
  */
-export function buildSavedVariants(graph: SceneGraph, setId: string): boolean {
+export function buildSavedVariants(graph: SceneGraph, setId: string, accept?: () => void): boolean {
   const unbuiltIds = savedReaderVariants(graph, setId)
     .filter((variant) => variant.layerId === undefined)
     .map((variant) => variant.id)
-  return unbuiltIds.length === 0 || loadReaderVariants(graph, unbuiltIds)
+  return unbuiltIds.length === 0 || loadReaderVariants(graph, unbuiltIds, accept)
 }
 
 /** A variant property's values across the set, those of variants not built yet included. */
