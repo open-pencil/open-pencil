@@ -377,18 +377,30 @@ function transformStrokeScale(transform: string | null | undefined): number {
   return Math.min(xScale, yScale)
 }
 
-/** Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx <svg>). */
+/**
+ * Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx `<svg>`).
+ * A descendant transform is applied in user space. `originX` and `originY` are a viewBox min,
+ * subtracted next, and the path is then scaled into the icon: that pair is the viewBox transform.
+ * `rootTransform` is the root `<svg>` element's own transform, applied last, outside the viewBox.
+ */
 export function scalePathInfos(
   pathInfos: IconPathInfo[],
   scaleX: number,
-  scaleY: number
+  scaleY: number,
+  originX = 0,
+  originY = 0,
+  rootTransform: string | null = null
 ): IconData['paths'] {
+  const root = rootTransform && rootTransform !== 'none' ? rootTransform : null
   return pathInfos.map((path) => {
     let transformedPath = svgpath(path.d)
     if (path.transform && path.transform !== 'none') {
       transformedPath = transformedPath.transform(path.transform)
     }
+    if (originX !== 0 || originY !== 0)
+      transformedPath = transformedPath.translate(-originX, -originY)
     if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
+    if (root) transformedPath = transformedPath.transform(root)
     // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
     // arc's own end can put it on its start, and a degenerate arc draws nothing.
     const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
@@ -402,7 +414,10 @@ export function scalePathInfos(
       fill,
       stroke,
       strokeWidth:
-        path.strokeWidth * transformStrokeScale(path.transform) * Math.min(scaleX, scaleY),
+        path.strokeWidth *
+        transformStrokeScale(path.transform) *
+        transformStrokeScale(root) *
+        Math.min(scaleX, scaleY),
       strokeCap: path.strokeCap,
       strokeJoin: path.strokeJoin
     }

@@ -1,0 +1,1 @@
+- Inline SVG in design JSX honors a viewBox that does not start at zero, so artwork drawn at that origin sits at the icon's corner instead of being offset or clipped.
