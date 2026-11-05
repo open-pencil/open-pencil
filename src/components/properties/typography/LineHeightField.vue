@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectRoot, SelectTrigger } from 'reka-ui'
+import { SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
@@ -11,6 +11,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
+import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 
 import { TEXT_LENGTH_UNITS, useTextLength } from './useTextLength'
 
@@ -76,7 +77,7 @@ function setMode(mode: string) {
       ><span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span></template
     >
     <template #after-variable>
-      <SelectRoot
+      <AppSelectRoot
         v-model:open="popupOpen"
         :model-value="automatic ? 'AUTO' : 'FIXED'"
         @update:model-value="setMode"
@@ -92,7 +93,7 @@ function setMode(mode: string) {
           <AppSelectItem value="AUTO">{{ panels.auto }}</AppSelectItem>
           <AppSelectItem value="FIXED">{{ panels.sizingFixed }}</AppSelectItem>
         </AppSelectContent>
-      </SelectRoot>
+      </AppSelectRoot>
     </template>
   </VariableNumberField>
 </template>

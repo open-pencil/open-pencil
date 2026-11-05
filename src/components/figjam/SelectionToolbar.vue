@@ -91,7 +91,6 @@ const open = computed(
         :class="['z-40', styles.bar(), floatingSurface, motionStyles.floating]"
         role="toolbar"
         data-test-id="selection-toolbar"
-        data-overlay-kind="toolbar"
         :data-kind="kind"
         @open-auto-focus.prevent
         @close-auto-focus.prevent

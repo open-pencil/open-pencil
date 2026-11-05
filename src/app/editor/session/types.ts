@@ -32,7 +32,6 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     statusesOpen: false,
     iconPickerOpen: false,
     renameNodeId: null,
-    numberFieldFocused: false,
     preparation: null,
     canvasPresentation: null,
     documentColorSpace: 'srgb'
@@ -63,7 +62,6 @@ export type AppEditorState = EditorState & {
   /** The icon picker, opened from the toolbar, the Object menu, or the palette. */
   iconPickerOpen: boolean
   renameNodeId: string | null
-  numberFieldFocused: boolean
   preparation: EditorPreparation | null
   /** Color space the canvas is presenting, reported by the surface. */
   canvasPresentation: PresentationColorSpace | null
