@@ -111,7 +111,8 @@ export function takeWebUpdate(update: WaitingUpdate): void {
  * overlays are known.
  */
 export function useWebUpdates(): void {
-  if (IS_TAURI) return
+  // Plain HTTP away from localhost has no service workers, as some browsers do not.
+  if (IS_TAURI || !('serviceWorker' in navigator)) return
   const overlays = useOpenOverlays()
   // A first visit's worker taking control of the page is no new version.
   const controlledAtStart = navigator.serviceWorker.controller !== null
