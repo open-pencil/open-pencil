@@ -224,4 +224,16 @@ describe('useEditorKeyboard', () => {
     press('Equal', { key: '=', ...MOD })
     expect(editor.state.zoom).toBeGreaterThan(before)
   })
+
+  test('a global host key replaces the editor key of the same name', () => {
+    const ran: string[] = []
+    const editor = mountKeyboard({
+      shortcuts: [{ id: 'host-delete', keys: 'Delete', run: () => ran.push('delete'), global: true }]
+    })
+    const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([rect])
+    press('Delete', { key: 'Delete' })
+    expect(ran).toEqual(['delete'])
+    expect(editor.graph.getNode(rect)).toBeDefined()
+  })
 })

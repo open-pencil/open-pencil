@@ -111,7 +111,14 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
 
   for (const shortcut of shortcuts) {
     for (const key of [shortcut.keys].flat()) {
-      if (!shortcut.global) owners.set(key, shortcut)
+      // A key has one shortcut: the one bound last, global or not, replaces any before it.
+      if (shortcut.global) {
+        Reflect.deleteProperty(bindings, key)
+        owners.delete(key)
+      } else {
+        Reflect.deleteProperty(globalBindings, key)
+        owners.set(key, shortcut)
+      }
       ;(shortcut.global ? globalBindings : bindings)[key] = (event: KeyboardEvent) => {
         shortcut.run(event)
         if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
