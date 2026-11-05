@@ -117,9 +117,10 @@ class WaitingWorker extends EventTarget {
   }
 }
 
-function taking(controlled: boolean, waiting: WaitingWorker | null) {
+function taking(controlled: boolean, waiting: WaitingWorker | null, takenElsewhere = false) {
   const calls: string[] = []
   takeWebUpdate({
+    takenElsewhere,
     controlled,
     waiting,
     activate: () => calls.push('activate'),
@@ -143,5 +144,9 @@ describe('taking a web update', () => {
 
   test('reloads a page no worker controlled at once when nothing is left waiting', () => {
     expect(taking(false, null)).toEqual(['reload'])
+  })
+
+  test('reloads a page another tab already moved to the new version', () => {
+    expect(taking(true, null, true)).toEqual(['reload'])
   })
 })

@@ -71,6 +71,8 @@ export function offerWebUpdate(options: WebUpdateOptions = {}): void {
 
 /** The service worker's side of taking a new version, which `takeWebUpdate` drives. */
 export type WaitingUpdate = {
+  /** Whether another tab already took the new version, which now controls this page too. */
+  takenElsewhere: boolean
   /** Whether a service worker controls this page, as `navigator.serviceWorker.controller` says. */
   controlled: boolean
   /** The installed version waiting to take over, if any. */
@@ -81,13 +83,16 @@ export type WaitingUpdate = {
 }
 
 /**
- * Has the new version take over and reloads into it. The service worker reloads a page it already
- * controlled; a page loaded before any worker controlled it, such as on a first visit, reloads here
- * once the new version is active, or at once when none is left waiting.
+ * Has the new version take over and reloads into it. A page whose worker another tab already
+ * replaced just reloads. The service worker's switch reloads a page it already controlled; a page
+ * loaded before any worker controlled it, such as on a first visit, reloads here once the new
+ * version is active, or at once when none is left waiting.
  */
 export function takeWebUpdate(update: WaitingUpdate): void {
   const { waiting } = update
-  if (update.controlled) {
+  if (update.takenElsewhere) {
+    update.reload()
+  } else if (update.controlled) {
     update.activate()
   } else if (!waiting) {
     update.reload()
@@ -109,24 +114,49 @@ export function useWebUpdates(): void {
   if (IS_TAURI) return
   const overlays = useOpenOverlays()
   void import('virtual:pwa-register').then(({ registerSW }) => {
+    let taking = false
+    let takenElsewhere = false
+    let offered = false
+    // The plugin may report the same version more than once; one offer stands for it.
+    const offer = () => {
+      if (offered) return
+      offered = true
+      offerWebUpdate({
+        // Workbox reports a version already waiting before `onRegisteredSW` runs, so the
+        // registration is looked up when the update is taken rather than kept from that callback.
+        reload: () =>
+          void navigator.serviceWorker.getRegistration().then((registration) => {
+            taking = true
+            takeWebUpdate({
+              takenElsewhere,
+              controlled: navigator.serviceWorker.controller !== null,
+              waiting: registration?.waiting ?? null,
+              activate: () => void update(true),
+              reload: () => window.location.reload()
+            })
+            return undefined
+          }),
+        overlayOpen: () => overlays?.holdsKeys() ?? false
+      })
+    }
+    // Taking the new version switches every open tab to it. Only the tab that took it reloads at
+    // once; another tab keeps, or now gets, the offer, which reloads when it will not lose anything.
+    // That holds even for a tab that never heard of the version before it took over, which the
+    // plugin's own reload, on `onNeedReload`, would miss. A first visit's worker taking control of
+    // the page is no new version.
+    const controlledAtStart = navigator.serviceWorker.controller !== null
+    useEventListener(navigator.serviceWorker, 'controllerchange', () => {
+      if (taking) {
+        window.location.reload()
+      } else if (controlledAtStart) {
+        takenElsewhere = true
+        offer()
+      }
+    })
     const update = registerSW({
       immediate: true,
-      onNeedRefresh: () =>
-        offerWebUpdate({
-          // Workbox reports a version already waiting before `onRegisteredSW` runs, so the
-          // registration is looked up when the update is taken rather than kept from that callback.
-          reload: () =>
-            void navigator.serviceWorker.getRegistration().then((registration) => {
-              takeWebUpdate({
-                controlled: navigator.serviceWorker.controller !== null,
-                waiting: registration?.waiting ?? null,
-                activate: () => void update(true),
-                reload: () => window.location.reload()
-              })
-              return undefined
-            }),
-          overlayOpen: () => overlays?.holdsKeys() ?? false
-        })
+      onNeedReload: () => undefined,
+      onNeedRefresh: offer
     })
     return undefined
   })
