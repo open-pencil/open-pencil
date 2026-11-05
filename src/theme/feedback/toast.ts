@@ -1,12 +1,13 @@
 import { motionStyles } from '@/theme/motion/styles'
 
 /**
- * A toast floats on the surface menus and tooltips use, so a passing notice is as quiet as the rest
- * of the chrome. A warning or an error shows in its icon, and an action is an ordinary button.
+ * A toast is a floating bar like the toolbar, on the panel colour with the toolbar's shadow, so a
+ * passing notice is as quiet as the rest of the chrome. A warning or an error shows in its icon, and
+ * an action is an ordinary button.
  */
 const toastTheme = {
   slots: {
-    root: 'motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none flex min-h-9 max-w-md items-center gap-2 rounded-lg bg-panel py-1 text-xs text-surface shadow-[0_0_0_1px_var(--color-border),0_8px_30px_rgb(0_0_0/0.4)] data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',
+    root: 'motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none flex min-h-9 max-w-md items-center gap-2 rounded-lg bg-panel py-1 text-xs text-surface shadow-(--floating-bar-shadow) data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',
     icon: 'size-3.5 shrink-0',
     content: 'min-w-0 flex-1 py-1',
     message: 'leading-4 select-text',
