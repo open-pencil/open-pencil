@@ -49,7 +49,7 @@ test.describe('split canvas views', () => {
     // Each header shows its view's zoom and opens the zoom menu for that view.
     const zooms = headers.getByTestId('zoom-dropdown-trigger')
     await expect(zooms.nth(0)).toHaveText(await zooms.nth(1).innerText())
-    await page.keyboard.press('Meta+=')
+    await page.keyboard.press('ControlOrMeta+=')
     await expect(zooms.nth(0)).not.toHaveText(await zooms.nth(1).innerText())
     await zooms.nth(1).click()
     await page.getByRole('menuitem', { name: 'Zoom to 50%' }).click()
@@ -69,7 +69,7 @@ test.describe('split canvas views', () => {
     await canvas.waitForInit()
     const panes = page.locator('[data-active-pane]')
 
-    await page.keyboard.press('Meta+Shift+Backslash')
+    await page.keyboard.press('ControlOrMeta+Shift+Backslash')
     await expect(panes).toHaveCount(2)
     await expect(panes.nth(1)).toHaveAttribute('data-active-pane', 'true')
     await expect(page.getByTestId('layers-panel')).toBeVisible()
@@ -81,7 +81,7 @@ test.describe('split canvas views', () => {
     await page.goto('/?test')
     const canvas = new CanvasHelper(page)
     await canvas.waitForInit()
-    await page.keyboard.press('Meta+Shift+Backslash')
+    await page.keyboard.press('ControlOrMeta+Shift+Backslash')
     const headers = page.locator('[data-slot="canvas-pane-header"]')
     const play = page.getByTestId('editor-start-preview')
 

@@ -112,6 +112,8 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
  * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
  * canvas-only layout; split view keeps the panels for the other panes.
  */
+// The view being worked in runs its design, which the Play button shows pressed.
+const previewing = computed(() => resolveEditorProfile(store.state).live !== null)
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
@@ -238,7 +240,7 @@ const { pending: roomPending } = useRoomActions()
             "
             data-test-id="editor-start-preview"
             toggle
-            :active="store.state.canvasView.id === 'play'"
+            :active="previewing"
             @click="store.togglePlay()"
           >
             <icon-lucide-play class="size-3.5" />

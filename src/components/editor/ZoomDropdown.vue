@@ -24,7 +24,7 @@ import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
-/** A split view's header passes its pane; the view's header is pressed first, so it is active. */
+/** A split view's header passes its pane, which opening the menu makes active, by pointer or key. */
 const { paneId } = defineProps<{ paneId?: string }>()
 
 const store = useEditorStore()
@@ -105,6 +105,7 @@ function isActivePreset(level: number) {
 }
 
 watch(open, (v) => {
+  if (v && paneId) store.setActivePane(paneId)
   if (!v) editing.value = false
 })
 </script>

@@ -9,6 +9,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -30,7 +31,9 @@ const { menu: menuText, editor } = useI18n()
 const view = computed(() => store.getPaneView(paneId))
 const isActive = computed(() => store.activePaneId.value === paneId)
 // Split view keeps the panels, so the canvas-only preview pill never shows; the header says it.
-const previewing = computed(() => view.value?.canvasView.id === 'play')
+const previewing = computed(
+  () => resolveEditorProfile(store.getPaneRenderState(paneId)).live !== null
+)
 const leaveShortcut = formatShortcut(appMenuShortcut('toggle-preview')) ?? ''
 const pageName = computed(() => {
   const pageId = view.value?.currentPageId
@@ -64,7 +67,7 @@ function split(direction: SplitDirection) {
     <template v-if="previewing">
       <span data-test-id="pane-previewing" :class="headerCls.badge()">
         <icon-lucide-play class="size-3" />
-        {{ editor.previewing }}
+        <span :class="headerCls.badgeLabel()">{{ editor.previewing }}</span>
       </span>
       <IconButton :label="editor.resetPreview" size="xs" @click="store.resetPlay()">
         <icon-lucide-rotate-ccw :class="headerCls.icon()" />
