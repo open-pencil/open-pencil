@@ -46,6 +46,17 @@ test.describe('split canvas views', () => {
     expect(resizedFirstBox?.width).toBeGreaterThan(firstBox?.width ?? 0)
     expect(resizedSecondBox?.width).toBeLessThan(secondBox?.width ?? Number.POSITIVE_INFINITY)
 
+    // Each header shows its view's zoom and opens the zoom menu for that view.
+    const zooms = headers.getByTestId('zoom-dropdown-trigger')
+    await expect(zooms.nth(0)).toHaveText(await zooms.nth(1).innerText())
+    await page.keyboard.press('Meta+=')
+    await expect(zooms.nth(0)).not.toHaveText(await zooms.nth(1).innerText())
+    await zooms.nth(1).click()
+    await page.getByRole('menuitem', { name: 'Zoom to 50%' }).click()
+    await expect(zooms.nth(1)).toHaveText('50%')
+    await expect(headers.nth(1)).toHaveAttribute('data-active', 'true')
+    await expect(zooms.nth(0)).not.toHaveText('50%')
+
     await headers.nth(0).getByRole('button', { name: 'Close view' }).click()
     await expect(panes).toHaveCount(1)
     await expect(headers).toHaveCount(0)

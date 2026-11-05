@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -24,6 +24,9 @@ import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
+/** A split view's header passes its pane; the view's header is pressed first, so it is active. */
+const { paneId } = defineProps<{ paneId?: string }>()
+
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()
 const { menu: menuText, commands, panels } = useI18n()
@@ -36,8 +39,12 @@ const inputValue = ref('')
 const menuCls = useMenuUI({ content: 'min-w-52' })
 const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
 
+const zoom = computed(
+  () => (paneId ? store.getPaneView(paneId)?.zoom : undefined) ?? store.state.zoom
+)
+
 function zoomPercent() {
-  return Math.round(store.state.zoom * 100)
+  return Math.round(zoom.value * 100)
 }
 
 function startEditing() {
@@ -107,7 +114,8 @@ watch(open, (v) => {
     <DropdownMenuTrigger as-child>
       <button
         data-test-id="zoom-dropdown-trigger"
-        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted hover:bg-hover"
+        class="cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted tabular-nums hover:bg-hover"
+        :class="paneId ? 'shrink-0' : 'ml-auto'"
       >
         {{ zoomPercent() }}%
       </button>

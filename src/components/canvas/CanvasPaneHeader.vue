@@ -13,6 +13,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
+import ZoomDropdown from '@/components/editor/ZoomDropdown.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -24,13 +25,12 @@ const { paneId } = defineProps<{
 
 const store = useEditorStore()
 const { menu: menuText } = useI18n()
-const pane = computed(() => store.panes.getPane(paneId))
+const view = computed(() => store.getPaneView(paneId))
 const isActive = computed(() => store.activePaneId.value === paneId)
 const pageName = computed(() => {
-  const pageId = pane.value?.currentPageId
+  const pageId = view.value?.currentPageId
   return pageId ? (store.graph.getNode(pageId)?.name ?? menuText.value.view) : menuText.value.view
 })
-const zoom = computed(() => Math.round((pane.value?.zoom ?? 1) * 100))
 const canSplit = computed(() => store.visiblePaneCount.value < store.panes.maxVisiblePanes)
 const canClose = computed(() => store.visiblePaneCount.value > 1)
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -56,7 +56,7 @@ function split(direction: SplitDirection) {
     @pointerdown="activatePane"
   >
     <span :class="headerCls.title()">{{ pageName }}</span>
-    <span :class="headerCls.zoom()">{{ zoom }}%</span>
+    <ZoomDropdown :pane-id="paneId" />
     <div :class="headerCls.actions()">
       <DropdownMenuRoot>
         <DropdownMenuTrigger as-child>
