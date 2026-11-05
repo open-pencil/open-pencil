@@ -8,6 +8,7 @@ export {
   createFigDocumentSession,
   type DocumentAssemblyOptions
 } from './document/materialize'
+export type { SavedVariant } from './document/component/set-variants'
 export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   compressFigDataSync,

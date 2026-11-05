@@ -19,7 +19,6 @@ import {
   updateVariantName
 } from './history'
 import {
-  findExactVariant,
   getComponentSet,
   getComponentSetVariants,
   getVariantDefinitions,
@@ -27,6 +26,7 @@ import {
   variantValues,
   type VariantMutationResult
 } from './model'
+import { findOrBuildVariant } from './saved'
 
 export function reorderPropertyDefinitions(
   ctx: EditorContext,
@@ -323,7 +323,7 @@ export function setVariantPropertyValue(
     ...variantValues(ctx.graph, componentSetId, variant),
     [definition.name]: normalizedValue
   }
-  const conflicting = findExactVariant(ctx.graph, componentSetId, requested)
+  const conflicting = findOrBuildVariant(ctx.graph, componentSetId, requested)
   if (conflicting && conflicting.id !== variantId) {
     return { kind: 'conflict', componentIds: [variantId, conflicting.id] }
   }

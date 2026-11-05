@@ -14,6 +14,7 @@ import {
   getVariantDefinitions,
   variantValues
 } from '#core/editor/components/variants/model'
+import { findOrBuildVariant } from '#core/editor/components/variants/saved'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 // Variant edits through the Plugin API run the panel's own edits, with Figma's messages. Figma
@@ -74,7 +75,7 @@ export function switchVariant(
   const setId = component?.parentId
   const target =
     component && setId && getComponentSet(scene, setId)
-      ? findExactVariant(scene, setId, {
+      ? findOrBuildVariant(scene, setId, {
           ...variantValues(scene, setId, component),
           ...Object.fromEntries(
             values.map(({ definition, value }) => [definition.name, String(value)])

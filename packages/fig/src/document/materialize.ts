@@ -35,9 +35,10 @@ import {
   type ComponentCheckpoint
 } from './component/checkpoint'
 import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
+import { createSavedVariants, type SavedVariant } from './component/set-variants'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
 import type { ComponentConstruction } from './components'
-import { loadPageTransaction } from './load-transaction'
+import { keepContainerOrder, loadPageTransaction } from './load-transaction'
 import { applyDocumentMetadata } from './metadata'
 import { createArchiveDocumentReader, createDocumentReader } from './read'
 import {
@@ -97,6 +98,8 @@ export interface FigSessionCheckpoint {
   savedSizeNodeIds: string[]
   loadedPageIds: string[]
   components: Array<[string, ComponentCheckpoint]>
+  /** Saved variants, by the set's layer, of the sets with variants no load has built. */
+  savedVariants?: Array<[string, SavedVariant[]]>
 }
 
 /**
@@ -167,6 +170,12 @@ export function createFigDocumentSession(
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)
   let recordInfo: FigArchiveRecordInfo | undefined
+  const savedVariants = createSavedVariants({
+    sets: () => archive.reader.componentSetVariants,
+    layerOf: () => state.sources,
+    isBuilt: (id) => state.components.has(id),
+    header: (id) => archive.reader.recordHeader(id)
+  })
   return {
     checkpoint(): FigSessionCheckpoint {
       return structuredClone({
@@ -178,8 +187,32 @@ export function createFigDocumentSession(
         components: [...state.components].map(([id, component]) => [
           id,
           checkpointComponent(component)
-        ])
+        ]),
+        savedVariants: savedVariants.bySetLayer()
       } satisfies FigSessionCheckpoint)
+    },
+    /** The saved variants of the set a layer is, when a load has left some of them unbuilt. */
+    savedVariants(setLayerId: string): readonly SavedVariant[] {
+      return savedVariants.ofSetLayer(setLayerId)
+    },
+    layerOf(sourceId: string): string | undefined {
+      return state.sources.get(sourceId)
+    },
+    /**
+     * Build a component the pages left out, such as a variant no instance uses, with what it
+     * depends on. Layers already in the graph keep their order; the new ones take their saved
+     * places among them.
+     */
+    loadComponent(id: string): void {
+      if (state.components.has(id)) {
+        return
+      }
+      const reader = archive.reader.selectComponents([id])
+      loadPageTransaction(state, reader.dependencyClosure, () =>
+        keepContainerOrder(state, reader, () =>
+          materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
+        )
+      )
     },
     graph: state.graph,
     graphPageId(sourcePageId: string): string | undefined {
