@@ -196,6 +196,11 @@ pub fn font_add(bytes: &[u8], alias: Option<&str>) -> usize {
     })
 }
 
+/// A font file as TrueType or OpenType: WOFF and WOFF2 decompressed, anything else as it is.
+pub fn font_decode(bytes: &[u8]) -> Vec<u8> {
+    blitz_dom::decode_font_bytes(bytes).into_owned()
+}
+
 /// Maps a generic family (`serif`, `sans-serif`, …) to registered families, in fallback order.
 pub fn font_generic(generic: &str, families: &[&str]) -> bool {
     let Some(generic) = GenericFamily::parse(generic) else {
@@ -587,6 +592,12 @@ mod abi {
     #[unsafe(no_mangle)]
     pub extern "C" fn output_ptr() -> *const u8 {
         OUTPUT.with_borrow(|out| out.as_ptr())
+    }
+
+    /// The decoded font in the output buffer; returns its length.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn font_decode(ptr: *const u8, len: usize) -> usize {
+        set_output(super::font_decode(unsafe { bytes(ptr, len) }))
     }
 
     #[unsafe(no_mangle)]

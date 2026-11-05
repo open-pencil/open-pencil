@@ -42,16 +42,20 @@ if (lightGroups.length === 0 && heavyFiles.length === 0) {
 }
 
 /**
- * Tests that load a module their package builds from another language, with the script that
- * builds it. It skips the build when the module is current, so running it first costs little.
+ * Modules packages build from another language, with the shard groups whose tests load them:
+ * Core and its front ends read HTML with the HTML engine. Each script checks a current module
+ * without its compiler, so only a stale one needs Rust.
  */
-const MODULES_BUILT_BEFORE_TESTS = [
-  { tests: 'packages/html-engine/tests/', build: 'packages/html-engine/scripts/wasm.ts' }
+const MODULE_BUILDS: { script: string; groups: readonly UnitTestGroup[] }[] = [
+  {
+    script: 'packages/html-engine/scripts/wasm.ts',
+    groups: ['all', 'core', 'dom', 'cli', 'mcp', 'app']
+  }
 ]
 
-async function buildModulesFor(files: readonly string[]): Promise<void> {
-  for (const { tests, build } of MODULES_BUILT_BEFORE_TESTS) {
-    if (!files.some((file) => file.includes(tests))) continue
+async function buildModules(): Promise<void> {
+  for (const { script: build, groups: needed } of MODULE_BUILDS) {
+    if (!needed.includes(group)) continue
     const child = Bun.spawn([process.execPath, build], { stdio: ['inherit', 'inherit', 'inherit'] })
     if ((await child.exited) !== 0) throw new Error(`${build} failed`)
   }
@@ -77,7 +81,7 @@ const batches = coverage
     ]
 // A name filter may match tests in only some of the batches; the others then have none to run.
 const args = batches.length > 1 ? [...bunTestArgs, '--pass-with-no-tests'] : bunTestArgs
-await buildModulesFor(batches.flatMap(({ files }) => files))
+await buildModules()
 const failed: string[] = []
 for (const { label, files } of batches) {
   if ((await runBunTest(files, args)) !== 0) failed.push(label)

@@ -1,5 +1,8 @@
 import {
   createHeadlessCSSRuntime,
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule,
   type CSSComputeOptions,
   type CSSRuntime,
   type DesignDocument,
@@ -10,20 +13,89 @@ import {
 } from '@open-pencil/dom-css'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { HTMLEngine, HTMLEngineFetch } from './engine'
+import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
 import { loadHTMLEngine } from './load'
 import type { HTMLEngineCapture, HTMLEngineLine, HTMLEngineNode } from './schema'
 
 /** The viewport a document is laid out in when the caller names none, as HTML import uses. */
 const DEFAULT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
 
+/** A font a page's `@font-face` rule loads: the face the rule declares, and the file as TrueType or OpenType. */
+export interface HTMLEngineFontFace {
+  family: string
+  weight: number
+  italic: boolean
+  url: string
+  bytes: Uint8Array
+}
+
 export interface HTMLEngineRuntimeOptions {
   /** The engine to lay documents out with, with the fonts they may use registered. */
   engine?: () => Promise<HTMLEngine>
   /** The document's URL, which its relative URLs resolve against. */
   baseURL?: string
-  /** Answers the stylesheets, fonts, and images the document asks for. */
+  /**
+   * Answers the stylesheets, fonts, and images the document asks for. A stylesheet is read for
+   * its `@font-face` rules when it comes with a CSS content type.
+   */
   fetch?: HTMLEngineFetch
+  /**
+   * Receives each font the page's `@font-face` rules load, as the engine lays text out in it, so
+   * a host can draw that text in the same font. The layout waits for it.
+   */
+  onFontFace?: (face: HTMLEngineFontFace) => void | Promise<void>
+}
+
+function isStylesheet(resource: HTMLEngineResource): boolean {
+  return resource.contentType?.split(';')[0]?.trim().toLowerCase() === 'text/css'
+}
+
+/**
+ * A fetch that also reads the page's `@font-face` rules, from its own CSS and every stylesheet it
+ * fetches, and passes each font they load to `onFontFace` as the engine receives it.
+ */
+function fontFaceFetch(
+  engine: HTMLEngine,
+  cssText: string,
+  options: HTMLEngineRuntimeOptions
+): HTMLEngineFetch | undefined {
+  const { fetch, onFontFace } = options
+  if (!fetch || !onFontFace) return fetch
+  const rules = new Map<string, CSSFontFaceRule[]>()
+  // What CSS imports is a stylesheet whatever its name or the type it is served as.
+  const stylesheets = new Set<string>()
+  // The engine fetches a file once per rule that names it; each face is passed on once.
+  const delivered = new Set<string>()
+  const learn = (css: string, base: string | undefined) => {
+    for (const rule of parseFontFaceRules(css, base)) {
+      for (const source of rule.sources) rules.set(source, [...(rules.get(source) ?? []), rule])
+    }
+    for (const url of parseStylesheetImports(css, base)) stylesheets.add(url)
+  }
+  learn(cssText, options.baseURL)
+  return async (url, signal) => {
+    const resource = await fetch(url, signal)
+    if (!resource) return null
+    if (isStylesheet(resource) || stylesheets.has(url) || stylesheets.has(resource.url)) {
+      learn(new TextDecoder().decode(resource.bytes), resource.url)
+    }
+    // One file can serve several rules, such as a family and an alias of it.
+    const served = rules.get(url) ?? rules.get(resource.url) ?? []
+    const bytes = served.length > 0 ? engine.decodeFont(resource.bytes) : null
+    for (const rule of served) {
+      const face = `${url}|${rule.family}|${rule.weight}|${rule.italic}`
+      if (!bytes || delivered.has(face)) continue
+      delivered.add(face)
+      await onFontFace({
+        family: rule.family,
+        weight: rule.weight,
+        italic: rule.italic,
+        url,
+        bytes
+      })
+    }
+    return resource
+  }
 }
 
 type Box = HTMLEngineCapture['nodes'][number]['box']
@@ -98,14 +170,20 @@ function designElements(nodes: DesignDocument['children']): DesignElement[] {
   return nodes.filter((node): node is DesignElement => node.type === 'element')
 }
 
-/** Shorthands the importer reads as a browser reports them, built from their captured longhands. */
+/** Shorthands a browser runtime reports, `overflow` and `gap`, built from their captured longhands. */
 function withShorthands(style: DesignStyleDeclaration): DesignStyleDeclaration {
-  // Captures leave initial values out, and `visible` is the initial overflow.
-  const axis = (property: string) => (Object.hasOwn(style, property) ? style[property] : 'visible')
-  if (!Object.hasOwn(style, 'overflow-x') && !Object.hasOwn(style, 'overflow-y')) return style
-  const horizontal = axis('overflow-x')
-  const vertical = axis('overflow-y')
-  return { ...style, overflow: horizontal === vertical ? horizontal : `${horizontal} ${vertical}` }
+  // Captures leave initial values out.
+  const value = (property: string, initial: string) =>
+    Object.hasOwn(style, property) ? style[property] : initial
+  const pair = (first: string, second: string) => (first === second ? first : `${first} ${second}`)
+  const shorthands: DesignStyleDeclaration = {}
+  if (Object.hasOwn(style, 'overflow-x') || Object.hasOwn(style, 'overflow-y')) {
+    shorthands.overflow = pair(value('overflow-x', 'visible'), value('overflow-y', 'visible'))
+  }
+  if (Object.hasOwn(style, 'row-gap') || Object.hasOwn(style, 'column-gap')) {
+    shorthands.gap = pair(value('row-gap', 'normal'), value('column-gap', 'normal'))
+  }
+  return { ...style, ...shorthands }
 }
 
 /** White space values that keep spaces, so a line of them takes room as a line of words does. */
@@ -161,12 +239,11 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
     parseHTML: (html) => markup.parseHTML(html),
     serializeHTML: (document) => markup.serializeHTML(document),
     async computeStyles(document, cssText = '', compute: CSSComputeOptions = {}) {
-      const capture = await (
-        await engine()
-      ).layout(documentHTML(markup.serializeHTML(document), cssText), {
+      const laidOut = await engine()
+      const capture = await laidOut.layout(documentHTML(markup.serializeHTML(document), cssText), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: options.fetch
+        fetch: fontFaceFetch(laidOut, cssText, options)
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {

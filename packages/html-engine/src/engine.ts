@@ -12,6 +12,7 @@ const EXPORTS = [
   'dealloc',
   'output_ptr',
   'fonts_reset',
+  'font_decode',
   'font_add',
   'font_generic',
   'open',
@@ -29,6 +30,8 @@ type EngineExports = Record<(typeof EXPORTS)[number], (...args: number[]) => num
 export interface HTMLEngineResource {
   url: string
   bytes: Uint8Array
+  /** The resource's media type, such as `text/css`, when the host knows it. */
+  contentType?: string
 }
 
 /**
@@ -194,6 +197,14 @@ export class HTMLEngine {
         Boolean(this.#exports.font_generic(genericPointer, genericLength, pointer, length))
       )
     )
+  }
+
+  /** A font file as TrueType or OpenType, with WOFF and WOFF2 decompressed; others unchanged. */
+  decodeFont(bytes: Uint8Array): Uint8Array {
+    const length = this.#withBytes(bytes, (pointer, size) =>
+      this.#exports.font_decode(pointer, size)
+    )
+    return new Uint8Array(this.#exports.memory.buffer, this.#exports.output_ptr(), length).slice()
   }
 
   /** Forgets every registered font. */

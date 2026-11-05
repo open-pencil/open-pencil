@@ -187,6 +187,69 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'p').layout?.lines).toHaveLength(3)
   })
 
+  test('passes each @font-face font the page loads to the host, decoded', async () => {
+    const woff2 = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Faces.woff2')).bytes()
+    const faces: { family: string; weight: number; italic: boolean; signature: string }[] = []
+    const runtime = createHTMLEngineRuntime({
+      engine: engineWithInter,
+      baseURL: 'https://example.com/',
+      fetch: async (url) => {
+        if (url.endsWith('site.css')) {
+          return {
+            url,
+            contentType: 'text/css; charset=utf-8',
+            bytes: new TextEncoder().encode(
+              '@font-face { font-family: Brand; src: url(fonts/brand.woff2); font-weight: 700 }'
+            )
+          }
+        }
+        return url.endsWith('brand.woff2') ? { url, bytes: woff2 } : null
+      },
+      onFontFace: (face) => {
+        const signature = [...face.bytes.subarray(0, 4)].map((byte) => byte.toString(16)).join('')
+        faces.push({ family: face.family, weight: face.weight, italic: face.italic, signature })
+      }
+    })
+    await htmlToDesignDocument('<p style="font-family: Brand">Words</p>', {
+      runtime,
+      cssText: '@import url("site.css");'
+    })
+
+    // Decompressed from WOFF2 to TrueType, which starts with version 1.0.
+    expect(faces).toEqual([{ family: 'Brand', weight: 700, italic: false, signature: '0100' }])
+  })
+
+  test('passes a font to every rule that loads it, from stylesheets of any name', async () => {
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
+    const families: string[] = []
+    const runtime = createHTMLEngineRuntime({
+      engine: engineWithInter,
+      baseURL: 'https://example.com/',
+      // Served without a content type, under a name without `.css`: known as CSS because CSS imports it.
+      fetch: async (url) => {
+        if (url.endsWith('/styles')) {
+          return {
+            url,
+            bytes: new TextEncoder().encode(
+              `@font-face { font-family: Brand; src: url(brand.ttf) }
+              @font-face { font-family: 'Brand Alias'; src: url(brand.ttf) }`
+            )
+          }
+        }
+        return url.endsWith('brand.ttf') ? { url, bytes: font } : null
+      },
+      onFontFace: (face) => {
+        families.push(face.family)
+      }
+    })
+    await htmlToDesignDocument('<p style="font-family: Brand">Words</p>', {
+      runtime,
+      cssText: '@import url("styles");'
+    })
+
+    expect(families.toSorted()).toEqual(['Brand', 'Brand Alias'])
+  })
+
   test('leaves layout out unless asked', async () => {
     const document = await htmlToDesignDocument('<div id="box"></div>', {
       runtime: createHTMLEngineRuntime()
