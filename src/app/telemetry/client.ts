@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 
 import {
   DOCUMENT_FORMATS,
+  pingStepOf,
   USAGE_BATCH_LIMIT,
   type DocumentFormat,
   type Build,
@@ -63,9 +64,10 @@ export function createSharingClient(options: SharingClientOptions) {
     // The person may have turned the ping off while the checks above were pending.
     const { dailyPing, usageStats } = options.preferences()
     if (!dailyPing) return
-    const ping: Ping = { ...build, usageStats }
+    const pingDays = options.state.value.pingDays + 1
+    const ping: Ping = { ...build, usageStats, ...pingStepOf(pingDays) }
     if (await options.send.ping(ping)) {
-      options.state.value = { ...options.state.value, lastPingDay: day }
+      options.state.value = { ...options.state.value, lastPingDay: day, pingDays }
     }
   }
 

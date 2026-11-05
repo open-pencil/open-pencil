@@ -4,7 +4,7 @@ The Cloudflare Worker behind `feedback.openpencil.dev`. It is operated by the Op
 
 | Route | What it does | What it keeps |
 | --- | --- | --- |
-| `POST /ping` | The daily anonymous ping. | One counter per day and build (version, OS, architecture, desktop or web, browser family), and one per day, app, platform, and network (Cloudflare's AS number and operator name). Nothing per install, no addresses. |
+| `POST /ping` | The daily anonymous ping. | One counter per day and build (version, OS, architecture, desktop or web, browser family), one per day, app, platform, and network (Cloudflare's AS number and operator name), and one per day, app, and step of how many days the install has pinged. Nothing per install, no addresses. |
 | `POST /ingest` | Opt-in usage stats, forwarded to PostHog EU. Refuses any event or property not in `src/contract`. | Nothing. PostHog gets no client address, person profile, or GeoIP. |
 | `POST /reports` | Error and problem reports a person chose to send from the app, forwarded to PostHog EU: errors as `$exception` events for error tracking, which symbolicates their stacks with the source maps each release uploads; problems as `problem_reported`. Answers with the report's ID and, when it declared files, a one-hour upload token. | Nothing. PostHog gets no client address, person profile, or GeoIP. |
 | `PUT /reports/:id/files/:name` | Uploads one file the report declared, at its declared size, with the report's upload token. | The file in the EU R2 bucket `openpencil-reports`, deleted after 90 days. |

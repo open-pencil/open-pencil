@@ -21,7 +21,7 @@ const INSTALL_ID = '0123456789abcdef0123456789abcdef'
 function setup(overrides: Partial<SharingClientOptions> = {}) {
   const posts: { route: string; body: unknown; keepalive?: boolean }[] = []
   const preferences = ref<SharingPreferences>({ dailyPing: true, usageStats: 'unset' })
-  const state = ref<SharingState>({ installId: null, lastPingDay: null })
+  const state = ref<SharingState>({ installId: null, lastPingDay: null, pingDays: 0 })
   const clock = { now: new Date('2026-10-12T09:00:00.000Z') }
   let accept = true
   const client = createSharingClient({
@@ -64,7 +64,7 @@ function sharingUsage(context: ReturnType<typeof setup>) {
 }
 
 describe('daily ping', () => {
-  test('sends only the build, once a day', async () => {
+  test('sends only the build and the step of its days, once a day', async () => {
     const context = setup()
 
     await context.client.sendDailyPing()
@@ -74,10 +74,29 @@ describe('daily ping', () => {
 
     const ping = { ...BUILD, usageStats: 'unset' }
     expect(context.posts).toEqual([
-      { route: '/ping', body: ping, keepalive: undefined },
-      { route: '/ping', body: ping, keepalive: undefined }
+      {
+        route: '/ping',
+        body: { ...ping, pingDays: '1', enteredStep: true },
+        keepalive: undefined
+      },
+      {
+        route: '/ping',
+        body: { ...ping, pingDays: '2', enteredStep: true },
+        keepalive: undefined
+      }
     ])
-    expect(context.state.value.lastPingDay).toBe('2026-10-13')
+    expect(context.state.value).toMatchObject({ lastPingDay: '2026-10-13', pingDays: 2 })
+  })
+
+  test('reports a step, never the exact number of days', async () => {
+    const context = setup()
+    context.state.value = { ...context.state.value, lastPingDay: '2026-10-11', pingDays: 146 }
+    await context.client.sendDailyPing()
+
+    expect(context.posts.map((post) => post.body)).toEqual([
+      { ...BUILD, usageStats: 'unset', pingDays: '65+', enteredStep: false }
+    ])
+    expect(context.state.value.pingDays).toBe(147)
   })
 
   test('reports how the install answered the usage stats question', async () => {
@@ -86,7 +105,11 @@ describe('daily ping', () => {
     await context.client.sendDailyPing()
 
     expect(context.posts).toEqual([
-      { route: '/ping', body: { ...BUILD, usageStats: 'denied' }, keepalive: undefined }
+      {
+        route: '/ping',
+        body: { ...BUILD, usageStats: 'denied', pingDays: '1', enteredStep: true },
+        keepalive: undefined
+      }
     ])
   })
 
@@ -94,12 +117,15 @@ describe('daily ping', () => {
     const context = setup()
     context.rejectPosts()
     await context.client.sendDailyPing()
-    expect(context.state.value.lastPingDay).toBeNull()
+    expect(context.state.value).toMatchObject({ lastPingDay: null, pingDays: 0 })
 
     context.acceptPosts()
     await context.client.sendDailyPing()
-    expect(context.posts).toHaveLength(2)
-    expect(context.state.value.lastPingDay).toBe('2026-10-12')
+    expect(context.posts.map((post) => post.body)).toEqual([
+      { ...BUILD, usageStats: 'unset', pingDays: '1', enteredStep: true },
+      { ...BUILD, usageStats: 'unset', pingDays: '1', enteredStep: true }
+    ])
+    expect(context.state.value).toMatchObject({ lastPingDay: '2026-10-12', pingDays: 1 })
   })
 
   test('sends no ping when it is turned off while the build is being read', async () => {

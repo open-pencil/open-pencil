@@ -118,6 +118,33 @@ describe('ping', () => {
     expect(unknown).toEqual([{ asn: 0, name: '', count: 1 }])
   })
 
+  test('counts pings per day, app, and step, keeping the pings that entered a step apart', async () => {
+    await service.postJSON('/ping', { ...BUILD, pingDays: '1', enteredStep: true })
+    await service.postJSON('/ping', { ...BUILD, pingDays: '3-4', enteredStep: true })
+    await service.postJSON('/ping', { ...BUILD, pingDays: '3-4', enteredStep: false })
+    await service.postJSON('/ping', { ...BUILD, pingDays: '3-4', enteredStep: false })
+    await service.postJSON('/ping', { ...BUILD, app: 'web', pingDays: '65+', enteredStep: false })
+
+    const steps = await createFeedbackDatabase(service.db)
+      .selectFrom('pingSteps')
+      .selectAll()
+      .orderBy('app')
+      .orderBy('step')
+      .orderBy('entered')
+      .execute()
+    // Earlier pings came from versions before the steps and add nothing here.
+    expect(steps).toEqual([
+      { day: '2026-10-12', app: 'desktop', step: '1', entered: 1, count: 1 },
+      { day: '2026-10-12', app: 'desktop', step: '3-4', entered: 0, count: 2 },
+      { day: '2026-10-12', app: 'desktop', step: '3-4', entered: 1, count: 1 },
+      { day: '2026-10-12', app: 'web', step: '65+', entered: 0, count: 1 }
+    ])
+  })
+
+  test('refuses a step outside the list', async () => {
+    expect((await service.postJSON('/ping', { ...BUILD, pingDays: '147' })).status).toBe(400)
+  })
+
   test('refuses a ping without the usage stats answer', async () => {
     expect((await service.postJSON('/ping', omit(BUILD, ['usageStats']))).status).toBe(400)
   })
