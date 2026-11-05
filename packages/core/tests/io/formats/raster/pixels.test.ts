@@ -57,8 +57,9 @@ test('a JPEG lays transparent pixels over black', async () => {
   }
   const jpg = expectDefined(codec.encodeJPG({ width, height, data }), 'JPEG')
   const decoded = expectDefined(codec.decode(jpg), 'decoded JPEG')
-  const pixel = (x: number) => [...decoded.data.slice((4 * width + x) * 4, (4 * width + x) * 4 + 4)]
-  const near = (actual: number[], expected: number[]) =>
+  // A pixel on the middle row.
+  const pixel = (x: number) => decoded.data.subarray((4 * width + x) * 4, (4 * width + x + 1) * 4)
+  const near = (actual: Uint8Array, expected: number[]) =>
     actual.every((value, index) => Math.abs(value - expected[index]) <= 8)
   expect(near(pixel(3), [0, 0, 0, 255])).toBe(true)
   expect(near(pixel(12), [128, 0, 0, 255])).toBe(true)
