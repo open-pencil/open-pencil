@@ -1,0 +1,1 @@
+- Toasts float on the same surface as menus, with an icon only for progress, warnings, and errors, and their actions as regular buttons.
