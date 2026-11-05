@@ -39,6 +39,15 @@ export function savedGlyphLayerDriver(page: () => Page) {
       )
       const inked = inside.some((channel) => channel !== 255)
       return inked && samePixel(above, inside) && samePixel(below, inside)
+    },
+
+    /** How light a copy draws inside its box: the red channel there, 0 for black. */
+    async lightness(x: number): Promise<number> {
+      const { y, height } = SAVED_GLYPH_LAYER_BOX
+      const [inside] = await readScenePixels(page(), [
+        { x: x + SAVED_GLYPH_LAYER_FONT_SIZE / 2, y: y + height / 2 }
+      ])
+      return inside[0]
     }
   }
 }

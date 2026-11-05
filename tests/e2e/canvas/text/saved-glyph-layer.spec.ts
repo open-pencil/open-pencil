@@ -13,4 +13,7 @@ test('a trimmed text drawn from its saved glyphs keeps them past its box at half
     // A first frame may be drawn before the text settles; the settled frame must keep the ink.
     await expect.poll(() => scene.keepsInkPastBox(copy.x)).toBe(true)
   }
+  // The second copy draws through its opacity layer, lighter than the opaque one.
+  const [opaque, half] = SAVED_GLYPH_LAYER_COPIES
+  expect(await scene.lightness(half.x)).toBeGreaterThan(await scene.lightness(opaque.x))
 })
