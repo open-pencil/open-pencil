@@ -45,7 +45,7 @@ function ink(node: SceneNode): VisualBounds | null | undefined {
     }
   )
   try {
-    return textInkBounds(ck, node, layout, textVerticalOffset(node, layout.getHeight()))
+    return textInkBounds(node, layout, textVerticalOffset(node, layout.getHeight()))
   } finally {
     layout.delete()
   }

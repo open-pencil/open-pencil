@@ -278,7 +278,7 @@ export function measureTextInkAsDrawn(
   const compute = () => {
     const layout = buildParagraph(r, node)
     try {
-      return textInkBounds(r.ck, node, layout, textVerticalOffset(node, layout.getHeight()))
+      return textInkBounds(node, layout, textVerticalOffset(node, layout.getHeight()))
     } finally {
       layout.delete()
     }

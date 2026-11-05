@@ -1,5 +1,3 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -7,47 +5,13 @@ import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/decorat
 import { emojiSquare } from '#core/canvas/text/emoji'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
-import { appendOutlineCommand } from '#core/canvas/text/outlines/commands'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { characterFamily } from '#core/text/character-face'
 import { hasDecoration, textDecorationRects } from '#core/text/decorations'
-import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import type { GlyphOutlineSource, OutlineCommand } from '#core/text/font/glyphs'
+import { EMOJI_METRICS_FAMILY, mayHoldEmoji } from '#core/text/emoji'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
-import { COMBINING_KEYCAP, keycapFrame } from '#core/text/keycap'
-
-/** Each font's glyph outline bounds by glyph and size, `null` for a glyph that draws nothing. */
-const glyphBounds = new WeakMap<GlyphOutlineSource, Map<string, VisualBounds | null>>()
-
-function outlineBounds(
-  ck: CanvasKit,
-  source: GlyphOutlineSource,
-  id: number,
-  fontSize: number
-): VisualBounds | null {
-  let bySize = glyphBounds.get(source)
-  if (!bySize) {
-    bySize = new Map()
-    glyphBounds.set(source, bySize)
-  }
-  const key = `${id}:${fontSize}`
-  if (bySize.has(key)) return bySize.get(key) ?? null
-  const bounds = commandBounds(ck, source.outline(id, fontSize) ?? [])
-  bySize.set(key, bounds)
-  return bounds
-}
-
-/** The exact bounds of an outline's path, or `null` for one that encloses nothing. */
-function commandBounds(ck: CanvasKit, commands: readonly OutlineCommand[]): VisualBounds | null {
-  if (commands.length === 0) return null
-  const builder = new ck.PathBuilder()
-  for (const command of commands) appendOutlineCommand(builder, command, 0, 0)
-  const path = builder.detachAndDelete()
-  const [minX, minY, maxX, maxY] = path.computeTightBounds()
-  path.delete()
-  return maxX > minX && maxY > minY ? { minX, minY, maxX, maxY } : null
-}
+import { COMBINING_KEYCAP, keycapFrameBounds } from '#core/text/keycap'
 
 function moved(bounds: VisualBounds, x: number, y: number): VisualBounds {
   return {
@@ -66,13 +30,15 @@ function moved(bounds: VisualBounds, x: number, y: number): VisualBounds {
  * so its outline, is not known.
  */
 export function textInkBounds(
-  ck: CanvasKit,
   node: SceneNode,
   layout: TextLayout,
   offsetY: number
 ): VisualBounds | null | undefined {
   const text = shownText(node)
   const glyphs = laidOutGlyphs(node, layout, text, offsetY)
+  // Most text holds neither, and asking each glyph's face would cost more than its outline.
+  const keycaps = text.includes(COMBINING_KEYCAP)
+  const emoji = mayHoldEmoji(text)
   if (!glyphs) return undefined
   let ink: VisualBounds | null = null
   const add = (bounds: VisualBounds | null) => {
@@ -85,14 +51,14 @@ export function textInkBounds(
     const x = glyph.x
     const y = drawnBaseline(glyph.y)
     const character = glyph.firstCharacter
-    const outline = outlineBounds(ck, glyph.source, glyph.id, glyph.fontSize)
+    const outline = glyph.source.extents(glyph.id, glyph.fontSize)
     if (outline) add(moved(outline, x, y))
     if (character === undefined) continue
     // A keycap's frame and an emoji's image draw where its glyph stands, as their drawing does.
-    if (text[character] === COMBINING_KEYCAP) {
-      const frame = commandBounds(ck, keycapFrame(glyph.fontSize))
-      if (frame) add(moved(frame, x, y))
+    if (keycaps && text[character] === COMBINING_KEYCAP) {
+      add(moved(keycapFrameBounds(glyph.fontSize), x, y))
     } else if (
+      emoji &&
       character >= emojiUntil &&
       characterFamily(node, text, character) === EMOJI_METRICS_FAMILY
     ) {
