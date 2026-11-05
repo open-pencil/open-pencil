@@ -1,5 +1,7 @@
 ja:ai.aiSetupAccessAPI
 ja:ai.aiSetupAccessAgentsDesktop
+ja:ai.aiSetupAccessAgentsSandboxed
+ja:ai.aiSetupGetDownload
 ja:ai.aiSetupAccessChatGPT
 ja:ai.aiSetupAccessServerDescription
 ja:ai.aiSetupAgentAdapterMismatch
@@ -228,6 +230,8 @@ ja:updates.upToDate
 ja:updates.webUpdateReady
 zh-cn:ai.aiSetupAccessAPI
 zh-cn:ai.aiSetupAccessAgentsDesktop
+zh-cn:ai.aiSetupAccessAgentsSandboxed
+zh-cn:ai.aiSetupGetDownload
 zh-cn:ai.aiSetupAccessChatGPT
 zh-cn:ai.aiSetupAccessServerDescription
 zh-cn:ai.aiSetupAgentAdapterMismatch

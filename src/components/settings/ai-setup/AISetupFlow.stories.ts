@@ -16,6 +16,7 @@ interface Args {
   offersTour?: boolean
   tourFailed?: boolean
   agentsAvailable: boolean
+  subscriptionsAvailable?: boolean
 }
 
 const freshInstall: AIModelSettings = {
@@ -104,15 +105,30 @@ export const AccessInBrowser: Story = {
   }
 }
 export const AccessOnDesktop: Story = {
-  args: { agentsAvailable: true },
+  args: { agentsAvailable: true, subscriptionsAvailable: true },
   play: async () => {
     await next()
     await expect(page().getByRole('checkbox', { name: 'Claude Code' })).toBeVisible()
+    await expect(page().getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible()
+  }
+}
+
+/** A Snap or Flatpak that cannot start agents still signs in to a ChatGPT subscription. */
+export const AccessInSandboxedPackage: Story = {
+  args: { agentsAvailable: false, subscriptionsAvailable: true },
+  play: async () => {
+    await next()
+    await expect(page().getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible()
+    await expect(page().queryByRole('checkbox', { name: 'Claude Code' })).toBeNull()
+    await expect(
+      page().getByText(/This install of OpenPencil can.t start coding agents/)
+    ).toBeVisible()
+    await expect(page().getByRole('link', { name: /Download from GitHub/ })).toBeVisible()
   }
 }
 
 export const ConnectAgentAndFinish: Story = {
-  args: { agentsAvailable: true },
+  args: { agentsAvailable: true, subscriptionsAvailable: true },
   play: async () => {
     await next()
     await choose('Codex')
