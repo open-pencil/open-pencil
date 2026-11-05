@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { acpAgentFor, IS_TAURI } from '@open-pencil/core/constants'
+import { acpAgentFor } from '@open-pencil/core/constants'
 
 import {
   codingAgentDetection,
@@ -17,6 +17,7 @@ import {
   setModelConnectionAPIKey
 } from '@/app/ai/models'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
 import { applyOnboardingPlan } from './apply'
 import { existingOnboardingConnection, useOnboardingConnections } from './connections'
@@ -52,11 +53,13 @@ function initialAnswers(): OnboardingAnswers {
 }
 
 interface AIOnboardingOptions {
-  /** Agents run as local processes, so only the desktop app offers them. */
+  /** Agents run as local processes, so only a desktop app that may spawn them offers them. */
   agentsAvailable?: boolean
 }
 
-export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOptions = {}) {
+export function useAIOnboarding({
+  agentsAvailable = canRunHostProcesses()
+}: AIOnboardingOptions = {}) {
   const answers = reactive<OnboardingAnswers>(initialAnswers())
   const current = currentOnboardingModels(aiModelSettings.value)
   const configured = [current.design, current.vision, current.review, current.fast].filter(
