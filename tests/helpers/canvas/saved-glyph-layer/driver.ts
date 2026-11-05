@@ -4,8 +4,7 @@ import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
 import {
   SAVED_GLYPH_LAYER_BOX,
-  SAVED_GLYPH_LAYER_FONT_SIZE,
-  SAVED_GLYPH_LAYER_SHEET
+  SAVED_GLYPH_LAYER_FONT_SIZE
 } from '#tests/helpers/canvas/saved-glyph-layer/scene'
 import type * as SavedGlyphLayerScenes from '#tests/helpers/canvas/saved-glyph-layer/scene'
 
@@ -40,13 +39,6 @@ export function savedGlyphLayerDriver(page: () => Page) {
       )
       const inked = inside.some((channel) => channel !== 255)
       return inked && samePixel(above, inside) && samePixel(below, inside)
-    },
-
-    /** The sheet's region of the page, for a screenshot of the scene. */
-    async sheetClip() {
-      const box = await page().getByTestId('canvas-element').boundingBox()
-      if (!box) throw new Error('Canvas has no box')
-      return { x: box.x, y: box.y, ...SAVED_GLYPH_LAYER_SHEET }
     }
   }
 }

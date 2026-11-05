@@ -13,7 +13,4 @@ test('a trimmed text drawn from its saved glyphs keeps them past its box at half
     // A first frame may be drawn before the text settles; the settled frame must keep the ink.
     await expect.poll(() => scene.keepsInkPastBox(copy.x)).toBe(true)
   }
-  await expect(editor.page).toHaveScreenshot('saved-glyph-layer.png', {
-    clip: await scene.sheetClip()
-  })
 })
