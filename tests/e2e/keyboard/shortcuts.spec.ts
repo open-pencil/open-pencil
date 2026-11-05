@@ -496,8 +496,6 @@ test.describe('zoom shortcuts', () => {
     expect(zoomAfter).toBe(1)
   })
 
-  // Two 60 × 60 rectangles far apart. Fitting zooms in past 100%, as in Figma; zooming to the
-  // selection shows the selected one alone.
   /** Each page layer's box on screen, and whether it lies wholly inside the canvas. */
   async function screenBoxes() {
     return editor.page.evaluate(() => {
@@ -523,8 +521,10 @@ test.describe('zoom shortcuts', () => {
   ] as const) {
     test(label, async () => {
       await editor.canvas.clearCanvas()
+      // Two 60 × 60 rectangles 200 px apart, drawn in screen pixels at 100%.
+      await editor.page.evaluate(() => window.openPencil?.getStore?.()?.zoomTo100())
       await editor.canvas.drawRect(100, 100, 60, 60)
-      await editor.canvas.drawRect(700, 450, 60, 60)
+      await editor.canvas.drawRect(300, 250, 60, 60)
       await editor.page.evaluate(() => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
@@ -540,13 +540,13 @@ test.describe('zoom shortcuts', () => {
       const [first, second] = await screenBoxes()
       if (!first || !second) throw new Error('Expected two layers on the page')
       expect(first.shown).toBe(true)
-      // Zooming to the selection fills the canvas's shorter side with the selected rectangle and
-      // leaves the other off-screen; fitting spreads both across it, past what 100% would show.
+      // Zoom to selection fills the canvas with the selected one alone; fit spreads both across it.
       expect(second.shown).toBe(!selection)
       const span = selection
         ? first.bottom - first.top
         : Math.max(second.right - first.left, second.bottom - first.top)
       expect(span).toBeGreaterThan(first.side * (selection ? 0.5 : 0.75))
+      expect(await getZoom()).toBeGreaterThan(1) // Both span 260 px at 100%, as Figma zooms past it.
     })
   }
 })
