@@ -1,0 +1,5 @@
+exposure: 0.08
+contrast: 1.1
+saturation: 1.2
+vibrance: 0.25
+tonemap: aces

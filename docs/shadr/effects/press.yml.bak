@@ -1,0 +1,10 @@
+id: press
+name: Press
+move-x: 0
+move-y: 1
+scale-x: -3%
+scale-y: -3%
+opacity-delta: -20
+rotation-deg: 0
+duration-ms: 90
+interpolation: ease-out

@@ -1,0 +1,28 @@
+{
+    "name": "settings_confirm",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "cursorSize": 10,
+        "cursorSpeed": 2.0,
+        "cursorLayer": 9700
+    },
+    "blocks": [
+        {
+            "type": "component",
+            "component": "modal",
+            "params": {
+                "id": "reset_modal",
+                "title": "Reset all settings?",
+                "body": "Every value on this screen goes back to its default. This cannot be undone.",
+                "confirmLabel": "Reset",
+                "cancelLabel": "Keep",
+                "accent": "c05050"
+            },
+            "position": {
+                "x": 0,
+                "y": 0
+            }
+        }
+    ]
+}

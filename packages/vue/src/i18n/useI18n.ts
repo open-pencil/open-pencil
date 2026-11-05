@@ -34,7 +34,8 @@ import {
   cloudMessages,
   cloudPortalMessages,
   variablesMessages,
-  variableTypeMessages
+  variableTypeMessages,
+  eventBuilderMessages
 } from '#vue/i18n/messages'
 
 export function useI18nNamespace<MessagesStore extends Store>(messages: MessagesStore) {
@@ -71,6 +72,7 @@ export const useCloudMessages = () => useI18nNamespace(cloudMessages)
 export const useCloudPortalMessages = () => useI18nNamespace(cloudPortalMessages)
 export const useVariableMessages = () => useI18nNamespace(variablesMessages)
 export const useVariableTypeMessages = () => useI18nNamespace(variableTypeMessages)
+export const useEventBuilderMessages = () => useI18nNamespace(eventBuilderMessages)
 
 /** Compatibility aggregate. New code should import the narrow domain composable. */
 export function useI18n() {
@@ -98,6 +100,7 @@ export function useI18n() {
     updates: useUpdateMessages(),
     variables: useVariableMessages(),
     variableTypes: useVariableTypeMessages(),
+    eventBuilder: useEventBuilderMessages(),
     locale: useStore(locale) as Ref<Locale>,
     availableLocales: AVAILABLE_LOCALES,
     localeLabels: LOCALE_LABELS,

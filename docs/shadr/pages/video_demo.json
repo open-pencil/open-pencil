@@ -1,0 +1,44 @@
+{
+    "name": "video_demo",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "offsetX": 0,
+        "offsetY": 0,
+        "cursorSize": 10,
+        "cursorSpeed": 2.0,
+        "cursorLayer": 9700
+    },
+    "blocks": [
+        {
+            "type": "block",
+            "id": "backdrop",
+            "layer": 0.0,
+            "color": "08080b",
+            "opacity": 255,
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": 1920,
+                "height": 1080
+            }
+        },
+        {
+            "type": "video",
+            "id": "panel",
+            "layer": 30.0,
+            "video": "demo",
+            "stream": true,
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": 1920,
+                "height": 1080
+            }
+        }
+    ]
+}

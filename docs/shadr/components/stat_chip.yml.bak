@@ -1,0 +1,64 @@
+params:
+  id: "chip"
+  label: "Label"
+  value: "0"
+  accent: "4cc9f0"
+  width: 162
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 10.0
+    color: 15151c
+    opacity: 255
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: 88
+    rounding:
+      size: small
+    outline:
+      size: 1
+      color: 2a2a36
+
+    children:
+      - type: block
+        id: "${id}_accent"
+        layer: 11.0
+        color: "${accent}"
+        position:
+          x: 0
+          y: 0
+        size:
+          width: 3
+          height: 88
+
+      - type: text
+        id: "${id}_label"
+        layer: 12.0
+        color: 8a8a98
+        position:
+          x: 18
+          y: 20
+        # `size` on text is the font scale (64 = 1x), not a bounding box.
+        size:
+          width: 52
+          height: 52
+        text: "${label}"
+        textAlign: left
+
+      - type: text
+        id: "${id}_value"
+        layer: 12.0
+        color: f2f2f7
+        position:
+          x: 18
+          y: 51
+        size:
+          width: 72
+          height: 72
+        text: "${value}"
+        font: shadr_semibold
+        textAlign: left

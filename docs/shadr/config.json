@@ -1,0 +1,16 @@
+{
+  "publicHost": "127.0.0.1",
+  "bind": "127.0.0.1",
+  "port": 8125,
+  "hostEnabled": true,
+  "required": true,
+  "sendOnJoin": true,
+  "externalUrl": "",
+  "menuMode": "packet",
+  "rest": {
+    "enabled": false,
+    "bind": "127.0.0.1",
+    "port": 8128
+  },
+  "autoReloadResourcePack": true
+}

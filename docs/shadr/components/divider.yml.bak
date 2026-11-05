@@ -1,0 +1,17 @@
+params:
+  id: "divider"
+  width: 400
+  color: "2a2a36"
+  thickness: 1
+
+blocks:
+  - type: block
+    id: "${id}"
+    layer: 11.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${thickness}"

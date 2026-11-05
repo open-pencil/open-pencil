@@ -1,0 +1,10 @@
+id: lift
+name: Lift
+move-x: 0
+move-y: -3
+scale-x: 4%
+scale-y: 4%
+opacity-delta: 0
+rotation-deg: 0
+duration-ms: 140
+interpolation: ease-out

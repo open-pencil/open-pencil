@@ -1,0 +1,65 @@
+params:
+  id: "panel"
+  title: "Panel"
+  width: 520
+  height: 340
+  color: "15151c"
+  border: "2a2a36"
+  accent: "4cc9f0"
+  titleSize: 72
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 10.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: regular
+    outline:
+      size: 1
+      color: "${border}"
+
+    children:
+      - type: block
+        id: "${id}_accent"
+        layer: 11.0
+        color: "${accent}"
+        position:
+          x: 24
+          y: 26
+        size:
+          width: 3
+          height: "${titleSize} * 0.62"
+
+      - type: text
+        id: "${id}_title"
+        layer: 11.0
+        color: f2f2f7
+        position:
+          x: 38
+          y: 26
+        size:
+          width: "${titleSize}"
+          height: "${titleSize}"
+        text: "${title}"
+        font: shadr_semibold
+        textAlign: left
+
+      # The rule under the title. One pixel of a stretched fill glyph, which is what every
+      # divider in this library is; see divider.yml for the standalone version.
+      - type: block
+        id: "${id}_rule"
+        layer: 11.0
+        color: "${border}"
+        position:
+          x: 24
+          y: "26 + ${titleSize} * 0.9"
+        size:
+          width: "${width} - 48"
+          height: 1

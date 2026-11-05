@@ -1,0 +1,42 @@
+{
+    "params": {
+        "id": "progress",
+        "width": 400,
+        "height": 8,
+        "value": 0.5,
+        "color": "4cc9f0",
+        "track": "26262f"
+    },
+    "blocks": [
+        {
+            "type": "progress",
+            "id": "${id}_track",
+            "layer": 11.0,
+            "color": "${track}",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": "${width}",
+                "height": "${height}"
+            },
+            "children": [
+                {
+                    "type": "progress",
+                    "id": "${id}_fill",
+                    "layer": 12.0,
+                    "color": "${color}",
+                    "position": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "size": {
+                        "width": "${width} * ${value}",
+                        "height": "${height}"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+params:
+  id: "progress"
+  width: 400
+  height: 8
+  value: 0.5
+  color: "4cc9f0"
+  track: "26262f"
+
+blocks:
+  - type: progress
+    id: "${id}_track"
+    layer: 11.0
+    color: "${track}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+
+    children:
+      # `value` must already be 0..1. The expression language is arithmetic only, with no
+      # comparisons and no min/max, so there is nowhere to clamp it here, and a value above 1
+      # draws the fill past the end of its own track. Clamp on the way in.
+      - type: progress
+        id: "${id}_fill"
+        layer: 12.0
+        color: "${color}"
+        position:
+          x: 0
+          y: 0
+        size:
+          width: "${width} * ${value}"
+          height: "${height}"

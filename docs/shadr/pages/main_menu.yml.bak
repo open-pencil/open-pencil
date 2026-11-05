@@ -1,0 +1,113 @@
+name: main_menu
+screen:
+  width: 1920
+  height: 1080
+  cursorSize: 10
+  cursorSpeed: 2.0
+  cursorLayer: 9700
+
+blocks:
+  - type: block
+    id: backdrop
+    layer: 0.0
+    color: 08080b
+    opacity: 240
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 1080}
+
+  - type: gradient
+    id: title_wash
+    layer: 1.0
+    color: 4cc9f0
+    opacity: 26
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 420}
+
+  - type: text
+    id: wordmark
+    layer: 5.0
+    color: f2f2f7
+    position: {x: 1920/2, y: 210}
+    size: {width: 168, height: 168}
+    text: "shadr"
+    font: shadr_semibold
+    textAlign: center
+
+  - type: text
+    id: tagline
+    layer: 5.0
+    color: 7d7d8c
+    position: {x: 1920/2, y: 268}
+    size: {width: 54, height: 54}
+    text: "server-side interfaces, no client mod"
+    textAlign: center
+
+  # The destinations. A column grid so adding a fifth entry needs no arithmetic anywhere.
+  - type: grid_block
+    id: menu_column
+    direction: column
+    gap: 14
+    position: {x: 1920/2 - 130, y: 400}
+    children:
+      - type: component
+        component: button
+        params: {id: menu_play, label: "Play", width: 260, height: 52, fontSize: 68}
+      - type: component
+        component: button_ghost
+        params: {id: menu_shop, label: "Shop", width: 260, height: 52, fontSize: 68}
+      - type: component
+        component: button_ghost
+        params: {id: menu_settings, label: "Settings", width: 260, height: 52, fontSize: 68}
+      - type: component
+        component: button_ghost
+        params:
+          id: menu_quit
+          label: "Close"
+          width: 260
+          height: 52
+          fontSize: 68
+          sound: "shadr.close"
+
+  - type: component
+    component: divider
+    params: {id: footer_rule, width: 520}
+    position: {x: 1920/2 - 260, y: 700}
+
+  - type: grid_block
+    id: status_row
+    direction: row
+    gap: 16
+    position: {x: 1920/2 - 260, y: 730}
+    children:
+      - type: component
+        component: stat_chip
+        params:
+          id: status_players
+          label: "Online"
+          value: "%shadr_online%/%shadr_max_players%"
+          accent: "4cc9f0"
+      - type: component
+        component: stat_chip
+        params: {id: status_tps, label: "TPS", value: "%shadr_tps%", accent: "70e000"}
+      - type: component
+        component: stat_chip
+        params: {id: status_ping, label: "Ping", value: "%shadr_ping%ms", accent: "f0a04c"}
+
+animations:
+  # The wordmark and the menu arrive from slightly different places so the page assembles
+  # so it does not slide in as one slab.
+  - name: open
+    durationTicks: 14
+    steps:
+      - target: wordmark
+        axis: y
+        easing: smooth-out
+        from: 170
+        to: 210
+        duration: 12
+      - target: title_wash
+        axis: opacity
+        easing: ease-out
+        from: 0
+        to: 26
+        duration: 14

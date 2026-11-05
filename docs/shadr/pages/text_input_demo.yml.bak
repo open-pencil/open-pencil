@@ -1,0 +1,103 @@
+name: text_input_demo
+
+screen:
+  width: 1920
+  height: 1080
+
+blocks:
+  - type: block
+    id: dim
+    layer: 0.0
+    color: '08080b'
+    opacity: 200
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 1080}
+  - 
+    type: block_rounded
+    id: card
+    layer: 10.0
+    color: '15151c'
+    position: {x: halfWidth - 300, y: halfHeight - 190}
+    size: {width: 600, height: 380}
+    rounding: {size: regular}
+    outline: {size: 1, color: '2a2a36'}
+  - 
+    type: text
+    id: title
+    layer: 20.0
+    color: 'e8e8f0'
+    text: 'Send gold'
+    font: shadr_semibold
+    position: {x: 945, y: 408}
+    size: {width: 129, height: 70}
+    textAlign: center
+  - 
+    type: text
+    id: name_label
+    layer: 20.0
+    color: '8a8a9a'
+    text: 'Recipient'
+    position: {x: halfWidth - 250, y: halfHeight - 74}
+    size: {width: 24, height: 24}
+    textAlign: left
+  - 
+    type: text_input
+    id: recipient
+    layer: 20.0
+    color: '1b1b24'
+    position: {x: halfWidth - 260, y: halfHeight - 52}
+    size: {width: 520, height: 44}
+    rounding: {size: small}
+    outline: {size: 1, color: '2a2a36'}
+    placeholder: 'Player name'
+    maxLength: 16
+    fontSize: 26
+    textColor: 'e8e8f0'
+    font: shadr
+  - 
+    type: text
+    id: amount_label
+    layer: 20.0
+    color: '8a8a9a'
+    text: 'Amount'
+    position: {x: halfWidth - 250, y: halfHeight + 22}
+    size: {width: 24, height: 24}
+    textAlign: left
+  - 
+    type: text_input
+    id: amount
+    layer: 20.0
+    color: '1b1b24'
+    position: {x: halfWidth - 260, y: halfHeight + 44}
+    size: {width: 520, height: 44}
+    rounding: {size: small}
+    outline: {size: 1, color: '2a2a36'}
+    placeholder: '0'
+    maxLength: 8
+    fontSize: 26
+    textColor: 'e8e8f0'
+    font: shadr
+    onSubmitAction:
+      - "sound: shadr.click"
+  - 
+    type: text
+    id: preview
+    layer: 20.0
+    color: '6a6a7a'
+    text: 'Sending %input_amount% to %input_recipient%'
+    position: {x: halfWidth, y: halfHeight + 118}
+    size: {width: 22, height: 22}
+    textAlign: center
+  - 
+    type: block_rounded
+    id: confirm
+    layer: 20.0
+    color: '3b3b4d'
+    position: {x: halfWidth - 70, y: halfHeight + 148}
+    size: {width: 140, height: 40}
+    rounding: {size: small}
+    hoverEffect: lift
+    clickEffect: press
+    onClickAction:
+      - "sound: shadr.click"
+      - "message: sending %input_amount% to %input_recipient%"

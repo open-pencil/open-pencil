@@ -1,0 +1,10 @@
+id: tilt
+name: Tilt
+move-x: 0
+move-y: -2
+scale-x: 5%
+scale-y: 5%
+opacity-delta: 0
+rotation-deg: -2
+duration-ms: 160
+interpolation: smooth-out

@@ -1,0 +1,56 @@
+params:
+  id: "tooltip"
+  title: "Title"
+  body: "Explanation goes here."
+  width: 320
+  height: 92
+  accent: "4cc9f0"
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 60.0
+    color: 0d0d12
+    opacity: 245
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: small
+    outline:
+      size: 1
+      color: "${accent}"
+
+    children:
+      - type: text
+        id: "${id}_title"
+        layer: 61.0
+        color: f2f2f7
+        position:
+          x: 16
+          y: 14
+        size:
+          width: 56
+          height: 56
+        text: "${title}"
+        font: shadr_semibold
+        textAlign: left
+
+      - type: text
+        id: "${id}_body"
+        layer: 61.0
+        color: 9a9aa8
+        position:
+          x: 16
+          y: 44
+        size:
+          width: 48
+          height: 48
+        # Wraps at lineWidth. Text has no bounding box, so this is the only thing that
+        # stops a long body running off the side of the card it is inside.
+        lineWidth: 200
+        text: "${body}"
+        textAlign: left

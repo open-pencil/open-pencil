@@ -1,0 +1,6 @@
+{
+  "providers": [
+    {"type": "bitmap", "file": "minecraft:font/shadr/head_pixel.png", "ascent": 8, "height": 8, "chars": ["\uEF70"]},
+    {"type": "bitmap", "file": "minecraft:font/shadr/spaces.png", "ascent": -5000, "height": -3, "chars": ["\uEF71"]}
+  ]
+}

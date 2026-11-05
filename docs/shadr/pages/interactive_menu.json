@@ -1,0 +1,1456 @@
+{
+    "name": "interactive_menu",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "cursorSize": 10,
+        "cursorSpeed": 2,
+        "cursorLayer": 9700
+    },
+    "scrollRegions": [
+        {
+            "id": "tasks",
+            "x": 280,
+            "y": 360,
+            "width": 760,
+            "height": 448,
+            "contentHeight": 1536,
+            "step": 64
+        }
+    ],
+    "blocks": [
+        {
+            "type": "block_rounded",
+            "id": "background",
+            "layer": 0,
+            "color": "0b111c",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": 1920,
+                "height": 1080
+            },
+            "rounding": {
+                "size": "small"
+            }
+        },
+        {
+            "type": "block_rounded",
+            "id": "panel",
+            "layer": 5,
+            "color": "131e2e",
+            "position": {
+                "x": 220,
+                "y": 140
+            },
+            "size": {
+                "width": 1480,
+                "height": 800
+            },
+            "rounding": {
+                "size": "small"
+            }
+        },
+        {
+            "type": "text",
+            "id": "title",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 280,
+                "y": 194
+            },
+            "size": {
+                "width": 112,
+                "height": 112
+            },
+            "text": "Списки и перетаскивание",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "subtitle",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 280,
+                "y": 268
+            },
+            "size": {
+                "width": 52,
+                "height": 52
+            },
+            "text": "Прототип на shadr · онлайн: %shadr_online% / %shadr_max_players%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "list_title",
+            "layer": 20,
+            "color": "7fa9ce",
+            "position": {
+                "x": 280,
+                "y": 318
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "ДЕМО-СПИСОК · 24 ЗАПИСИ",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "list_frame",
+            "layer": 8,
+            "color": "0e1724",
+            "position": {
+                "x": 268,
+                "y": 348
+            },
+            "size": {
+                "width": 784,
+                "height": 472
+            },
+            "rounding": {
+                "size": "small"
+            }
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_0",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 360
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 01"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_0_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 01 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_1",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 424
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 02"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_1_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 02 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_2",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 488
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 03"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_2_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 03 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_3",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 552
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 04"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_3_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 04 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_4",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 616
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 05"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_4_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 05 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_5",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 680
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 06"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_5_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 06 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_6",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 744
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 07"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_6_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 07 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_7",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 808
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 08"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_7_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 08 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_8",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 872
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 09"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_8_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 09 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_9",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 936
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 10"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_9_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 10 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_10",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1000
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 11"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_10_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 11 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_11",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1064
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 12"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_11_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 12 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_12",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1128
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 13"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_12_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 13 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_13",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1192
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 14"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_13_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 14 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_14",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1256
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 15"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_14_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 15 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_15",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1320
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 16"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_15_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 16 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_16",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1384
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 17"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_16_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 17 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_17",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1448
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 18"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_17_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 18 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_18",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1512
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 19"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_18_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 19 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_19",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1576
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 20"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_19_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 20 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_20",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1640
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 21"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_20_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 21 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_21",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1704
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 22"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_21_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 22 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_22",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1768
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 23"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_22_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 23 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "row_23",
+            "layer": 12,
+            "color": "1c2b3f",
+            "position": {
+                "x": 280,
+                "y": 1832
+            },
+            "size": {
+                "width": 760,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollRegion": "tasks",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "message: Выбрана запись 24"
+            ],
+            "children": [
+                {
+                    "type": "text",
+                    "id": "row_23_label",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 20,
+                        "y": 16
+                    },
+                    "size": {
+                        "width": 56,
+                        "height": 56
+                    },
+                    "text": "Запись 24 — элемент списка",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "scroll_track",
+            "layer": 10,
+            "color": "25384d",
+            "position": {
+                "x": 1064,
+                "y": 360
+            },
+            "size": {
+                "width": 20,
+                "height": 448
+            },
+            "rounding": {
+                "size": "small"
+            }
+        },
+        {
+            "type": "block_rounded",
+            "id": "scroll_thumb",
+            "layer": 18,
+            "color": "7fa9ce",
+            "position": {
+                "x": 1064,
+                "y": 360
+            },
+            "size": {
+                "width": 20,
+                "height": 448
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "scrollbarFor": "tasks",
+            "permission": "shadr.command"
+        },
+        {
+            "type": "text",
+            "id": "drag_title",
+            "layer": 20,
+            "color": "7fa9ce",
+            "position": {
+                "x": 1160,
+                "y": 318
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "ПЕРЕТАСКИВАЕМАЯ КАРТОЧКА",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "drag_area",
+            "layer": 8,
+            "color": "0e1724",
+            "position": {
+                "x": 1160,
+                "y": 348
+            },
+            "size": {
+                "width": 480,
+                "height": 472
+            },
+            "rounding": {
+                "size": "small"
+            }
+        },
+        {
+            "type": "block_rounded",
+            "id": "status_card",
+            "layer": 12,
+            "color": "255377",
+            "position": {
+                "x": 1180,
+                "y": 380
+            },
+            "size": {
+                "width": 400,
+                "height": 190
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "draggable": true,
+            "dragGroup": "status",
+            "permission": "shadr.command",
+            "dragBounds": {
+                "x": 1160,
+                "y": 348,
+                "width": 480,
+                "height": 472
+            },
+            "children": [
+                {
+                    "type": "text",
+                    "id": "status_title",
+                    "layer": 13,
+                    "color": "e8edf5",
+                    "position": {
+                        "x": 22,
+                        "y": 24
+                    },
+                    "size": {
+                        "width": 72,
+                        "height": 72
+                    },
+                    "text": "Состояние сервера",
+                    "font": "shadr",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "text",
+                    "id": "status_tps",
+                    "layer": 13,
+                    "color": "93e5b5",
+                    "position": {
+                        "x": 22,
+                        "y": 76
+                    },
+                    "size": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "text": "TPS: %shadr_tps%",
+                    "font": "shadr",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "text",
+                    "id": "status_world",
+                    "layer": 13,
+                    "color": "b8d9ed",
+                    "position": {
+                        "x": 22,
+                        "y": 124
+                    },
+                    "size": {
+                        "width": 48,
+                        "height": 48
+                    },
+                    "text": "Мир: %shadr_world%",
+                    "font": "shadr",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "block_rounded",
+            "id": "up",
+            "layer": 25,
+            "color": "255377",
+            "position": {
+                "x": 280,
+                "y": 850
+            },
+            "size": {
+                "width": 170,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "permission": "shadr.command",
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "onClickAction": [
+                "sound: shadr.click",
+                "command: shadr scroll tasks up"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "up_label",
+            "layer": 26,
+            "color": "e8edf5",
+            "position": {
+                "x": 298,
+                "y": 867
+            },
+            "size": {
+                "width": 56,
+                "height": 56
+            },
+            "text": "Выше",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "down",
+            "layer": 25,
+            "color": "255377",
+            "position": {
+                "x": 470,
+                "y": 850
+            },
+            "size": {
+                "width": 170,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "permission": "shadr.command",
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "onClickAction": [
+                "sound: shadr.click",
+                "command: shadr scroll tasks down"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "down_label",
+            "layer": 26,
+            "color": "e8edf5",
+            "position": {
+                "x": 488,
+                "y": 867
+            },
+            "size": {
+                "width": 56,
+                "height": 56
+            },
+            "text": "Ниже",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "cancel",
+            "layer": 25,
+            "color": "255377",
+            "position": {
+                "x": 1120,
+                "y": 850
+            },
+            "size": {
+                "width": 290,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "permission": "shadr.command",
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "onClickAction": [
+                "sound: shadr.click",
+                "command: shadr drag cancel"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "cancel_label",
+            "layer": 26,
+            "color": "e8edf5",
+            "position": {
+                "x": 1138,
+                "y": 867
+            },
+            "size": {
+                "width": 56,
+                "height": 56
+            },
+            "text": "Отменить перенос",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "close",
+            "layer": 25,
+            "color": "255377",
+            "position": {
+                "x": 1430,
+                "y": 850
+            },
+            "size": {
+                "width": 210,
+                "height": 56
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "permission": "shadr.command",
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "onClickAction": [
+                "sound: shadr.click",
+                "close:"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "close_label",
+            "layer": 26,
+            "color": "e8edf5",
+            "position": {
+                "x": 1448,
+                "y": 867
+            },
+            "size": {
+                "width": 56,
+                "height": 56
+            },
+            "text": "Закрыть",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "instructions",
+            "layer": 26,
+            "color": "9aadc2",
+            "position": {
+                "x": 680,
+                "y": 865
+            },
+            "size": {
+                "width": 44,
+                "height": 44
+            },
+            "text": "Колесико над списком",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "footer",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 280,
+                "y": 914
+            },
+            "size": {
+                "width": 40,
+                "height": 40
+            },
+            "text": "ЛКМ: взять / отпустить карточку или бегунок. ПКМ: отменить перенос.",
+            "font": "shadr",
+            "textAlign": "left"
+        }
+    ]
+}

@@ -1,0 +1,188 @@
+{
+    "name": "hud_overlay",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "cursorSize": 0,
+        "cursorSpeed": 2.0,
+        "cursorLayer": 9700
+    },
+    "blocks": [
+        {
+            "type": "block_rounded",
+            "id": "identity",
+            "layer": 10.0,
+            "color": "0d0d12",
+            "opacity": 190,
+            "align": "left",
+            "position": {
+                "x": 24,
+                "y": 24
+            },
+            "size": {
+                "width": 260,
+                "height": 68
+            },
+            "rounding": {
+                "size": "small"
+            },
+            "outline": {
+                "size": 1,
+                "color": "24242e"
+            },
+            "children": [
+                {
+                    "type": "text",
+                    "id": "identity_name",
+                    "layer": 11.0,
+                    "color": "f2f2f7",
+                    "position": {
+                        "x": 18,
+                        "y": 14
+                    },
+                    "size": {
+                        "width": 58,
+                        "height": 58
+                    },
+                    "text": "%shadr_player%",
+                    "font": "shadr_semibold",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "text",
+                    "id": "identity_where",
+                    "layer": 11.0,
+                    "color": "7d7d8c",
+                    "position": {
+                        "x": 18,
+                        "y": 40
+                    },
+                    "size": {
+                        "width": 44,
+                        "height": 44
+                    },
+                    "text": "%shadr_world%  ·  %shadr_time%",
+                    "textAlign": "left"
+                }
+            ]
+        },
+        {
+            "type": "grid_block",
+            "id": "hud_stats",
+            "direction": "column",
+            "gap": 8,
+            "align": "right",
+            "position": {
+                "x": "1920 - 200",
+                "y": 24
+            },
+            "children": [
+                {
+                    "type": "component",
+                    "component": "badge",
+                    "params": {
+                        "id": "hud_tps",
+                        "label": "%shadr_tps% TPS",
+                        "width": 118,
+                        "color": "70e000"
+                    }
+                },
+                {
+                    "type": "component",
+                    "component": "badge",
+                    "params": {
+                        "id": "hud_ping",
+                        "label": "%shadr_ping% ms",
+                        "width": 118,
+                        "color": "4cc9f0",
+                        "textColor": "08080b"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "component",
+            "component": "section_header",
+            "params": {
+                "id": "xp_header",
+                "label": "%shadr_online% / %shadr_max_players% ONLINE",
+                "color": "9a9aa8"
+            },
+            "align": "left",
+            "position": {
+                "x": 24,
+                "y": "1080 - 108"
+            }
+        },
+        {
+            "type": "component",
+            "component": "progress_bar",
+            "params": {
+                "id": "xp_bar",
+                "width": 300,
+                "height": 8,
+                "value": "%shadr_online% / %shadr_max_players%",
+                "color": "70e000"
+            },
+            "align": "left",
+            "position": {
+                "x": 24,
+                "y": "1080 - 82"
+            }
+        },
+        {
+            "type": "component",
+            "component": "progress_bar",
+            "params": {
+                "id": "mana_bar",
+                "width": 300,
+                "height": 8,
+                "value": 0.75,
+                "color": "4cc9f0"
+            },
+            "align": "left",
+            "position": {
+                "x": 24,
+                "y": "1080 - 62"
+            }
+        },
+        {
+            "type": "component",
+            "component": "toast",
+            "params": {
+                "id": "hud_toast",
+                "title": "Quest complete",
+                "body": "Return to the village elder.",
+                "accent": "f0a04c"
+            },
+            "position": {
+                "x": "1920/2 - 190",
+                "y": 96
+            }
+        }
+    ],
+    "animations": [
+        {
+            "name": "open",
+            "durationTicks": 10,
+            "steps": [
+                {
+                    "target": "hud_toast",
+                    "axis": "y",
+                    "easing": "smooth-out",
+                    "from": 40,
+                    "to": 96,
+                    "duration": 10
+                },
+                {
+                    "target": "identity",
+                    "axis": "x",
+                    "easing": "ease-out",
+                    "from": -40,
+                    "to": 24,
+                    "duration": 8
+                }
+            ]
+        }
+    ]
+}

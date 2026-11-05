@@ -1,0 +1,492 @@
+{
+    "name": "admin_server",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "cursorSize": 10,
+        "cursorSpeed": 2,
+        "cursorLayer": 9700
+    },
+    "blocks": [
+        {
+            "type": "block_rounded",
+            "id": "background",
+            "layer": 0,
+            "color": "0b111c",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": 1920,
+                "height": 1080
+            },
+            "rounding": {
+                "size": "regular"
+            }
+        },
+        {
+            "type": "block_rounded",
+            "id": "panel",
+            "layer": 5,
+            "color": "131e2e",
+            "position": {
+                "x": 320,
+                "y": 180
+            },
+            "size": {
+                "width": 1280,
+                "height": 720
+            },
+            "rounding": {
+                "size": "regular"
+            }
+        },
+        {
+            "type": "text",
+            "id": "eyebrow",
+            "layer": 20,
+            "color": "7fa9ce",
+            "position": {
+                "x": 380,
+                "y": 225
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "SHADR / ADMIN",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "title",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 380,
+                "y": 275
+            },
+            "size": {
+                "width": 112,
+                "height": 112
+            },
+            "text": "Обзор сервера",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "subtitle",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 380,
+                "y": 335
+            },
+            "size": {
+                "width": 52,
+                "height": 52
+            },
+            "text": "Текущие показатели и быстрые действия",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "online_card",
+            "layer": 10,
+            "color": "1c2b3f",
+            "position": {
+                "x": 380,
+                "y": 410
+            },
+            "size": {
+                "width": 360,
+                "height": 165
+            },
+            "rounding": {
+                "size": "regular"
+            }
+        },
+        {
+            "type": "text",
+            "id": "online_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 404,
+                "y": 435
+            },
+            "size": {
+                "width": 52,
+                "height": 52
+            },
+            "text": "Игроки онлайн",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "online_value",
+            "layer": 20,
+            "color": "7dd3fc",
+            "position": {
+                "x": 404,
+                "y": 493
+            },
+            "size": {
+                "width": 104,
+                "height": 104
+            },
+            "text": "%shadr_online% / %shadr_max_players%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "tps_card",
+            "layer": 10,
+            "color": "1c2b3f",
+            "position": {
+                "x": 780,
+                "y": 410
+            },
+            "size": {
+                "width": 360,
+                "height": 165
+            },
+            "rounding": {
+                "size": "regular"
+            }
+        },
+        {
+            "type": "text",
+            "id": "tps_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 804,
+                "y": 435
+            },
+            "size": {
+                "width": 52,
+                "height": 52
+            },
+            "text": "TPS · за 1 минуту",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "tps_value",
+            "layer": 20,
+            "color": "93e5b5",
+            "position": {
+                "x": 804,
+                "y": 493
+            },
+            "size": {
+                "width": 104,
+                "height": 104
+            },
+            "text": "%shadr_tps%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "ping_card",
+            "layer": 10,
+            "color": "1c2b3f",
+            "position": {
+                "x": 1180,
+                "y": 410
+            },
+            "size": {
+                "width": 360,
+                "height": 165
+            },
+            "rounding": {
+                "size": "regular"
+            }
+        },
+        {
+            "type": "text",
+            "id": "ping_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 1204,
+                "y": 435
+            },
+            "size": {
+                "width": 52,
+                "height": 52
+            },
+            "text": "Ваш пинг",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "ping_value",
+            "layer": 20,
+            "color": "f4ca7b",
+            "position": {
+                "x": 1204,
+                "y": 493
+            },
+            "size": {
+                "width": 104,
+                "height": 104
+            },
+            "text": "%shadr_ping% ms",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "world_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 380,
+                "y": 620
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "Текущий мир",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "world_value",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 380,
+                "y": 655
+            },
+            "size": {
+                "width": 68,
+                "height": 68
+            },
+            "text": "%shadr_world%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "time_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 780,
+                "y": 620
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "Время в мире",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "time_value",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 780,
+                "y": 655
+            },
+            "size": {
+                "width": 68,
+                "height": 68
+            },
+            "text": "%shadr_time%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "admin_label",
+            "layer": 20,
+            "color": "9aadc2",
+            "position": {
+                "x": 1180,
+                "y": 620
+            },
+            "size": {
+                "width": 48,
+                "height": 48
+            },
+            "text": "Администратор",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "admin_value",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 1180,
+                "y": 655
+            },
+            "size": {
+                "width": 68,
+                "height": 68
+            },
+            "text": "%shadr_player%",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "refresh",
+            "layer": 12,
+            "color": "255377",
+            "position": {
+                "x": 380,
+                "y": 750
+            },
+            "size": {
+                "width": 340,
+                "height": 66
+            },
+            "rounding": {
+                "size": "regular"
+            },
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "sound: shadr.click",
+                "redirect: admin_server"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "refresh_text",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 404,
+                "y": 773
+            },
+            "size": {
+                "width": 64,
+                "height": 64
+            },
+            "text": "Обновить",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "players",
+            "layer": 12,
+            "color": "25384d",
+            "position": {
+                "x": 744,
+                "y": 750
+            },
+            "size": {
+                "width": 340,
+                "height": 66
+            },
+            "rounding": {
+                "size": "regular"
+            },
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "sound: shadr.click",
+                "command: list"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "players_text",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 768,
+                "y": 773
+            },
+            "size": {
+                "width": 64,
+                "height": 64
+            },
+            "text": "Список игроков",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "block_rounded",
+            "id": "close",
+            "layer": 12,
+            "color": "25384d",
+            "position": {
+                "x": 1108,
+                "y": 750
+            },
+            "size": {
+                "width": 432,
+                "height": 66
+            },
+            "rounding": {
+                "size": "regular"
+            },
+            "hoverEffect": "lift",
+            "clickEffect": "press",
+            "permission": "shadr.command",
+            "onClickAction": [
+                "sound: shadr.close",
+                "close:"
+            ]
+        },
+        {
+            "type": "text",
+            "id": "close_text",
+            "layer": 20,
+            "color": "e8edf5",
+            "position": {
+                "x": 1132,
+                "y": 773
+            },
+            "size": {
+                "width": 64,
+                "height": 64
+            },
+            "text": "Закрыть меню",
+            "font": "shadr",
+            "textAlign": "left"
+        },
+        {
+            "type": "text",
+            "id": "footer",
+            "layer": 20,
+            "color": "70879e",
+            "position": {
+                "x": 380,
+                "y": 849
+            },
+            "size": {
+                "width": 44,
+                "height": 44
+            },
+            "text": "Данные сервера · доступ через shadr.command",
+            "font": "shadr",
+            "textAlign": "left"
+        }
+    ]
+}

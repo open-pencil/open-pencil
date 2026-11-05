@@ -1,0 +1,46 @@
+params:
+  id: "button_ghost"
+  label: "Cancel"
+  width: 120
+  height: 44
+  color: "26262f"
+  border: "3a3a48"
+  textColor: "d8d8e2"
+  fontSize: 64
+  rounding: "small"
+  sound: "shadr.click"
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 12.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: "${rounding}"
+    outline:
+      size: 1
+      color: "${border}"
+    hoverEffect: lift
+    clickEffect: press
+    onClickAction:
+      - "sound: ${sound}"
+
+    children:
+      - type: text
+        id: "${id}_label"
+        layer: 13.0
+        color: "${textColor}"
+        position:
+          x: "${width} / 2"
+          y: "${height} / 2 - 0.1514 * ${fontSize}"
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${label}"
+        textAlign: center

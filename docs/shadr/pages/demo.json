@@ -1,0 +1,241 @@
+{
+    "name": "demo",
+    "screen": {
+        "width": 1920,
+        "height": 1080,
+        "offsetX": 0,
+        "offsetY": 0,
+        "cursorSize": 10,
+        "cursorSpeed": 2.0,
+        "cursorLayer": 9700
+    },
+    "blocks": [
+        {
+            "type": "block",
+            "id": "backdrop",
+            "layer": 0.0,
+            "color": "08080b",
+            "opacity": 0,
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "width": 1920,
+                "height": 1080
+            },
+            "enabled": "false"
+        },
+        {
+            "type": "block_rounded",
+            "id": "card",
+            "layer": 10.0,
+            "color": "15151c",
+            "opacity": 255,
+            "position": {
+                "x": "1920/2 - 260",
+                "y": "1080/2 - 170"
+            },
+            "size": {
+                "width": 520,
+                "height": 340
+            },
+            "rounding": {
+                "size": "regular"
+            },
+            "outline": {
+                "size": 1,
+                "color": "2a2a36"
+            },
+            "children": [
+                {
+                    "type": "text",
+                    "id": "card_title",
+                    "layer": 11.0,
+                    "color": "f2f2f7",
+                    "position": {
+                        "x": 32,
+                        "y": 38
+                    },
+                    "size": {
+                        "width": 96,
+                        "height": 96
+                    },
+                    "text": "shadr",
+                    "font": "shadr_sharp_semibold",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "text",
+                    "id": "card_body",
+                    "layer": 11.0,
+                    "color": "9a9aa8",
+                    "position": {
+                        "x": 32,
+                        "y": 82
+                    },
+                    "size": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "text": "Every element here is a glyph placed by a display entity.",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "text",
+                    "id": "card_body_sharp",
+                    "layer": 11.0,
+                    "color": "9a9aa8",
+                    "position": {
+                        "x": 32,
+                        "y": 132
+                    },
+                    "size": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "text": "Every element here is a glyph placed by a display entity.",
+                    "font": "shadr_sharp",
+                    "textAlign": "left"
+                },
+                {
+                    "type": "block_rounded",
+                    "id": "card_button",
+                    "layer": 12.0,
+                    "color": "4cc9f0",
+                    "position": {
+                        "x": 32,
+                        "y": 240
+                    },
+                    "size": {
+                        "width": 180,
+                        "height": 44
+                    },
+                    "rounding": {
+                        "size": "small"
+                    },
+                    "hoverEffect": "lift",
+                    "clickEffect": "press",
+                    "onClickAction": [
+                        "sound: shadr.click",
+                        "message: <#4cc9f0>shadr</#4cc9f0> button pressed"
+                    ],
+                    "children": [
+                        {
+                            "type": "text",
+                            "id": "card_button_label",
+                            "layer": 13.0,
+                            "color": "08080b",
+                            "position": {
+                                "x": 26,
+                                "y": 12
+                            },
+                            "size": {
+                                "width": 64,
+                                "height": 64
+                            },
+                            "text": "Press me",
+                            "font": "shadr_semibold",
+                            "textAlign": "left"
+                        }
+                    ],
+                    "hoverText": "oooh hover"
+                },
+                {
+                    "type": "block_rounded",
+                    "id": "card_close",
+                    "layer": 12.0,
+                    "color": "26262f",
+                    "position": {
+                        "x": 232,
+                        "y": 240
+                    },
+                    "size": {
+                        "width": 120,
+                        "height": 44
+                    },
+                    "rounding": {
+                        "size": "small"
+                    },
+                    "hoverEffect": "lift",
+                    "onClickAction": [
+                        "sound: shadr.close",
+                        "close: "
+                    ],
+                    "children": [
+                        {
+                            "type": "text",
+                            "layer": 13.0,
+                            "color": "d8d8e2",
+                            "position": {
+                                "x": 30,
+                                "y": 12
+                            },
+                            "size": {
+                                "width": 64,
+                                "height": 64
+                            },
+                            "text": "Close",
+                            "textAlign": "left"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "grid_block",
+            "id": "stat_row",
+            "direction": "row",
+            "gap": 16,
+            "position": {
+                "x": "1920/2 - 260",
+                "y": "1080/2 + 190"
+            },
+            "children": [
+                {
+                    "type": "component",
+                    "component": "stat_chip",
+                    "params": {
+                        "id": "chip_players",
+                        "label": "Players",
+                        "value": "128",
+                        "accent": "4cc9f0"
+                    }
+                },
+                {
+                    "type": "component",
+                    "component": "stat_chip",
+                    "params": {
+                        "id": "chip_tps",
+                        "label": "TPS",
+                        "value": "20.0",
+                        "accent": "70e000"
+                    }
+                },
+                {
+                    "type": "component",
+                    "component": "stat_chip",
+                    "params": {
+                        "id": "chip_ping",
+                        "label": "Ping",
+                        "value": "24ms",
+                        "accent": "f0a04c"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "blur",
+            "id": "el_blur_1",
+            "color": "ffffff",
+            "position": {
+                "x": 408,
+                "y": 289
+            },
+            "size": {
+                "width": 1102,
+                "height": 625
+            }
+        }
+    ]
+}

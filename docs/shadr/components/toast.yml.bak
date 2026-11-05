@@ -1,0 +1,65 @@
+params:
+  id: "toast"
+  title: "Saved"
+  body: "Your changes are live."
+  width: 380
+  height: 76
+  accent: "70e000"
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 70.0
+    color: 16161d
+    opacity: 250
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: small
+    outline:
+      size: 1
+      color: 2a2a36
+
+    children:
+      - type: progress
+        id: "${id}_bar"
+        layer: 71.0
+        color: "${accent}"
+        position:
+          x: 12
+          y: 14
+        size:
+          width: 4
+          height: "${height} - 28"
+
+      - type: text
+        id: "${id}_title"
+        layer: 71.0
+        color: f2f2f7
+        position:
+          x: 28
+          y: 16
+        size:
+          width: 56
+          height: 56
+        text: "${title}"
+        font: shadr_semibold
+        textAlign: left
+
+      - type: text
+        id: "${id}_body"
+        layer: 71.0
+        color: 9a9aa8
+        position:
+          x: 28
+          y: 44
+        size:
+          width: 46
+          height: 46
+        lineWidth: 260
+        text: "${body}"
+        textAlign: left

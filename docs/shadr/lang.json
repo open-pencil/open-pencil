@@ -1,0 +1,20 @@
+{
+    "prefix": "shadr: ",
+    "players-only": "players only",
+    "console-has-nowhere-to-put-it": "players only; the console has nowhere to put it",
+    "no-permission": "you do not have {permission}",
+    "reloaded": "reloaded {pages} page(s)",
+    "usage": "usage: /shadr <open|close|reload|pack|pages|effects|shader|stream|update>",
+    "pages": "pages: {pages}",
+    "no-such-page": "no such page: {page}",
+    "page-deleted": "This menu was deleted by an administrator and has been closed.",
+    "pack-not-sent": "this server does not send a pack (hosting is {mode})",
+    "pack-sent": "sent you the pack",
+    "shader-usage": "no shaders installed; add one to shaders/items and /shadr reload",
+    "shader-list": "shaders: {shaders}",
+    "shader-placed": "placed '{shader}' as '{handle}'; /shadr shader clear {handle} to remove",
+    "shader-cleared": "removed {count} shader display(s)",
+    "shader-cleared-one": "removed '{handle}'",
+    "shader-missing": "nothing placed under '{handle}'",
+    "update-disabled": "update checks are disabled in config.json (updates.check)"
+}

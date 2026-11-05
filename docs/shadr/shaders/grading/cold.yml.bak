@@ -1,0 +1,6 @@
+exposure: -0.05
+contrast: 1.06
+saturation: 0.94
+temperature: -24
+tonemap: aces
+shadows: 78808e

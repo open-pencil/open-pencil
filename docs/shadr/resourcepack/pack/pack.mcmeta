@@ -1,0 +1,31 @@
+{
+  "pack": {
+    "description": "§bshadr §8| §7UI resource pack",
+    "pack_format": 56,
+    "supported_formats": [0, 9999],
+    "min_format": 0,
+    "max_format": 9999
+  },
+  "overlays": {
+    "entries": [
+      {
+        "formats": [88, 999],
+        "min_format": 88,
+        "max_format": 999,
+        "directory": "shadr_26_2"
+      },
+      {
+        "formats": [80, 87],
+        "min_format": 80,
+        "max_format": 87,
+        "directory": "shadr_26_1"
+      },
+      {
+        "formats": [56, 79],
+        "min_format": 56,
+        "max_format": 79,
+        "directory": "shadr_1_21_x"
+      }
+    ]
+  }
+}

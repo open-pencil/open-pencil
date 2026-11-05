@@ -1,0 +1,63 @@
+name: stupidcli
+screen:
+  width: 1920
+  height: 1080
+  hud: false
+  cursorSize: 10
+  cursorSpeed: 2.0
+  cursorLayer: 9700
+
+blocks:
+  - type: block
+    id: backdrop
+    layer: 0.0
+    color: 08080b
+    opacity: 240
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 1080}
+  - type: text
+    id: title
+    layer: 5.0
+    color: f2f2f7
+    position: {x: 698, y: -14}
+    size: {width: 524, height: 568}
+    text: "stupidcli"
+    font: shadr_sharp_semibold
+    textAlign: center
+    clickEffect: pop
+  - type: text_input
+    id: el_text_input_2
+    layer: 6
+    color: ffffff
+    position:
+      x: 82
+      y: 971
+    size:
+      width: 1759
+      height: 64
+    rounding:
+      size: regular
+      radius: 50
+    onClickAction:
+      - "sound: shadr.click"
+  - type: text
+    id: el_text_4
+    layer: 7
+    color: ffffff
+    position:
+      x: 7
+      y: 170
+    size:
+      width: 1913
+      height: 760
+    text: placeholder
+animations:
+  - name: open
+    durationTicks: 20
+    steps:
+      - target: title
+        axis: width
+        easing: ease-in
+        from: 524
+        to: 600
+        duration: 20

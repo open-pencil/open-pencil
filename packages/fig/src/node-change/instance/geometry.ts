@@ -84,8 +84,7 @@ export function snapshotInstanceGeometry(
   const visit = (node: SceneNode): void => {
     for (const child of graph.getChildren(node.id)) {
       const path = instanceExportAddress(graph, owner, child, resolveGuid)
-      if (!path)
-        throw new Error(`Missing instance geometry address for ${child.id} under ${owner.id}`)
+      if (!path) continue
       const id = key(path)
       if (visited.has(id))
         throw new Error(`Ambiguous instance geometry address ${id} under ${owner.id}`)

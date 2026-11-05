@@ -1,0 +1,9 @@
+JetBrains Mono Nerd Font Mono (Regular, SemiBold)
+
+  nerd_mono.ttf           JetBrainsMonoNerdFontMono-Regular.ttf
+  nerd_mono_semibold.ttf  JetBrainsMonoNerdFontMono-SemiBold.ttf
+
+Base typeface: JetBrains Mono
+  Copyright 2020 The JetBrains Mono Project Authors
+  https://github.com/JetBrains/JetBrainsMono
+  Licensed under the SIL Open Font License, Version 1.1.

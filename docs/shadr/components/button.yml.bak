@@ -1,0 +1,45 @@
+params:
+  id: "button"
+  label: "Button"
+  width: 180
+  height: 44
+  # Filled with the accent, so the label takes the dark colour.
+  color: "4cc9f0"
+  textColor: "08080b"
+  fontSize: 64
+  rounding: "small"
+  sound: "shadr.click"
+
+blocks:
+  - type: block_rounded
+    id: "${id}"
+    layer: 12.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: "${rounding}"
+    hoverEffect: lift
+    clickEffect: press
+    onClickAction:
+      - "sound: ${sound}"
+
+    children:
+      - type: text
+        id: "${id}_label"
+        layer: 13.0
+        color: "${textColor}"
+        position:
+          x: "${width} / 2"
+          y: "${height} / 2 - 0.1514 * ${fontSize}"
+        # `size` on text is the FONT SCALE, not a bounding box. 64 is 1x.
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${label}"
+        font: shadr_semibold
+        textAlign: center

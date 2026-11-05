@@ -1,0 +1,7 @@
+exposure: 0.05
+contrast: 1.04
+saturation: 1.08
+temperature: 22
+tint: 4
+tonemap: aces
+highlights: 8a8478

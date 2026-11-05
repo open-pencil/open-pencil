@@ -1,0 +1,10 @@
+id: pop
+name: Pop
+move-x: 0
+move-y: 0
+scale-x: 8%
+scale-y: 8%
+opacity-delta: 0
+rotation-deg: 0
+duration-ms: 110
+interpolation: smooth-out

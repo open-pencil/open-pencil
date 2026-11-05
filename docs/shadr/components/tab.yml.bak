@@ -1,0 +1,50 @@
+params:
+  id: "tab"
+  label: "Tab"
+  width: 130
+  height: 46
+  color: "8a8a98"
+  underline: "15151c"
+  fontSize: 56
+
+blocks:
+  - type: block
+    id: "${id}"
+    layer: 12.0
+    color: 15151c
+    opacity: 0
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+    hoverEffect: lift
+    onClickAction:
+      - "sound: shadr.click"
+
+    children:
+      - type: text
+        id: "${id}_label"
+        layer: 13.0
+        color: "${color}"
+        position:
+          x: "${width} / 2"
+          y: "${height} / 2 - 0.1514 * ${fontSize} - 3"
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${label}"
+        font: shadr_semibold
+        textAlign: center
+
+      - type: block
+        id: "${id}_underline"
+        layer: 13.0
+        color: "${underline}"
+        position:
+          x: 0
+          y: "${height} - 2"
+        size:
+          width: "${width}"
+          height: 2

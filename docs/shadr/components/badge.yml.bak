@@ -1,0 +1,35 @@
+params:
+  id: "badge"
+  label: "NEW"
+  width: 76
+  height: 26
+  color: "4cc9f0"
+  textColor: "08080b"
+  fontSize: 40
+
+blocks:
+  - type: progress
+    id: "${id}"
+    layer: 13.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+
+    children:
+      - type: text
+        id: "${id}_label"
+        layer: 14.0
+        color: "${textColor}"
+        position:
+          x: "${width} / 2"
+          y: "${height} / 2 - 0.1514 * ${fontSize}"
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${label}"
+        font: shadr_semibold
+        textAlign: center

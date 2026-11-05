@@ -1,0 +1,207 @@
+name: shop
+screen:
+  width: 1920
+  height: 1080
+  cursorSize: 10
+  cursorSpeed: 2.0
+  cursorLayer: 9700
+
+blocks:
+  - type: block
+    id: backdrop
+    layer: 0.0
+    color: 08080b
+    opacity: 235
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 1080}
+
+  - type: component
+    component: panel
+    params:
+      id: shop_panel
+      title: "Shop"
+      width: 880
+      height: 620
+      accent: "f0a04c"
+    position: {x: 1920/2 - 440, y: 1080/2 - 310}
+
+  - type: grid_block
+    id: shop_tabs
+    direction: row
+    gap: 4
+    position: {x: 1920/2 - 416, y: 1080/2 - 228}
+    children:
+      - type: component
+        component: tab
+        params: {id: tab_blocks, label: "Blocks", color: "f2f2f7", underline: "f0a04c"}
+      - type: component
+        component: tab
+        params: {id: tab_tools, label: "Tools"}
+      - type: component
+        component: tab
+        params: {id: tab_food, label: "Food"}
+
+  - loop: 4
+    blocks:
+      - type: block_rounded
+        id: "offer_${loopIndex}"
+        layer: 12.0
+        color: 1b1b23
+        position:
+          x: 1920/2 - 416
+          y: "1080/2 - 160 + loopIndex * 92"
+        size: {width: 560, height: 78}
+        rounding: {size: small}
+        outline: {size: 1, color: 2a2a36}
+        hoverEffect: nudge
+        clickEffect: sink
+        onClickAction:
+          - "sound: shadr.click"
+          - "message: <#f0a04c>shop</#f0a04c> bought offer ${loopNumber}"
+
+        children:
+          - type: text
+            id: "offer_${loopIndex}_name"
+            layer: 13.0
+            color: f2f2f7
+            position: {x: 22, y: 18}
+            size: {width: 60, height: 60}
+            text: "Offer ${loopNumber}"
+            font: shadr_semibold
+            textAlign: left
+
+          - type: text
+            id: "offer_${loopIndex}_desc"
+            layer: 13.0
+            color: 8a8a98
+            position: {x: 22, y: 46}
+            size: {width: 46, height: 46}
+            text: "A stack of something useful"
+            textAlign: left
+
+          - type: text
+            id: "offer_${loopIndex}_price"
+            layer: 13.0
+            color: 70e000
+            position: {x: 536, y: 28}
+            size: {width: 58, height: 58}
+            text: "$${loopNumber}00"
+            font: shadr_semibold
+            textAlign: right
+
+  - type: component
+    component: section_header
+    params: {id: balance_header, label: "BALANCE"}
+    position: {x: 1920/2 + 176, y: 1080/2 - 168}
+
+  - type: text
+    id: balance_value
+    layer: 12.0
+    color: f2f2f7
+    position: {x: 1920/2 + 176, y: 1080/2 - 138}
+    size: {width: 104, height: 104}
+    text: "%shadr_online%"
+    font: shadr_semibold
+    textAlign: left
+
+  - type: component
+    component: progress_bar
+    params: {id: spend, width: 216, height: 8, value: 0.62, color: "f0a04c"}
+    position: {x: 1920/2 + 176, y: 1080/2 - 84}
+
+  - type: text
+    id: spend_caption
+    layer: 12.0
+    color: 6e6e7c
+    position: {x: 1920/2 + 176, y: 1080/2 - 70}
+    size: {width: 42, height: 42}
+    text: "62% of today's limit"
+    textAlign: left
+
+  - type: component
+    component: badge
+    params: {id: sale_badge, label: "SALE", color: "f0a04c"}
+    position: {x: 1920/2 + 176, y: 1080/2 - 20}
+
+  - type: block_rounded
+    id: featured
+    layer: 12.0
+    color: 231a12
+    position: {x: 1920/2 + 176, y: 1080/2 + 26}
+    size: {width: 216, height: 128}
+    rounding: {size: small}
+    outline: {size: 1, color: 5a4227}
+    hoverEffect: tilt
+    clickEffect: pop
+    onClickAction:
+      - "sound: shadr.click"
+      - "message: <#f0a04c>shop</#f0a04c> opened the featured bundle"
+
+    children:
+      - type: text
+        id: featured_label
+        layer: 13.0
+        color: f0a04c
+        position: {x: 18, y: 18}
+        size: {width: 42, height: 42}
+        text: "FEATURED"
+        font: shadr_semibold
+        textAlign: left
+
+      - type: text
+        id: featured_name
+        layer: 13.0
+        color: f2f2f7
+        position: {x: 18, y: 46}
+        size: {width: 64, height: 64}
+        text: "Starter bundle"
+        font: shadr_semibold
+        textAlign: left
+
+      - type: text
+        id: featured_price
+        layer: 13.0
+        color: 70e000
+        position: {x: 18, y: 84}
+        size: {width: 56, height: 56}
+        text: "$250"
+        textAlign: left
+
+  - type: component
+    component: tooltip
+    params:
+      id: featured_tip
+      title: "Best value"
+      body: "Includes tools, food and a stack of blocks."
+      accent: "f0a04c"
+    position: {x: 1920/2 - 372, y: 1080/2 + 228}
+
+  - type: grid_block
+    id: shop_actions
+    direction: row
+    gap: 10
+    position: {x: 1920/2 + 176, y: 1080/2 + 200}
+    children:
+      - type: component
+        component: button
+        params: {id: shop_buy, label: "Buy", width: 118, color: "f0a04c"}
+      - type: component
+        component: button_ghost
+        params: {id: shop_close, label: "Close", width: 98, sound: "shadr.close"}
+
+animations:
+  - name: open
+    durationTicks: 12
+    steps:
+      - target: shop_panel
+        axis: y
+        easing: smooth-out
+        from: 260
+        to: 230
+        duration: 12
+      - target: backdrop
+        axis: opacity
+        easing: linear
+        from: 0
+        to: 235
+        duration: 10

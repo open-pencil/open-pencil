@@ -1,0 +1,214 @@
+{
+  "name": "image_overworld",
+  "screen": {
+    "width": 1920,
+    "height": 1080,
+    "cursorSize": 10,
+    "cursorSpeed": 2,
+    "cursorLayer": 9700
+  },
+  "blocks": [
+    {
+      "type": "block_rounded",
+      "id": "background",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layer": 0,
+      "color": "080E19",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "panel",
+      "position": {
+        "x": 160,
+        "y": 100
+      },
+      "size": {
+        "width": 1600,
+        "height": 880
+      },
+      "layer": 5,
+      "color": "121D2E",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "position": {
+        "x": 220,
+        "y": 164
+      },
+      "size": {
+        "width": 40,
+        "height": 40
+      },
+      "layer": 30,
+      "text": "SHADR / IMAGE GALLERY",
+      "color": "8CAED8",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "position": {
+        "x": 220,
+        "y": 223
+      },
+      "size": {
+        "width": 96,
+        "height": 96
+      },
+      "layer": 30,
+      "text": "Обычный мир",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "position": {
+        "x": 220,
+        "y": 292
+      },
+      "size": {
+        "width": 42,
+        "height": 42
+      },
+      "layer": 30,
+      "text": "Полное изображение · contain",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "image",
+      "id": "full_image",
+      "position": {
+        "x": 220,
+        "y": 350
+      },
+      "size": {
+        "width": 1480,
+        "height": 490
+      },
+      "layer": 15,
+      "image": "gallery_overworld",
+      "fit": "contain",
+      "rounding": {
+        "radius": 20
+      },
+      "outline": {
+        "size": 2,
+        "color": "8ED8B4"
+      },
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "back",
+      "position": {
+        "x": 220,
+        "y": 890
+      },
+      "size": {
+        "width": 420,
+        "height": 62
+      },
+      "layer": 24,
+      "color": "263A55",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": true,
+      "hoverEffect": "lift",
+      "clickEffect": "press",
+      "onClickAction": [
+        "sound: shadr.click",
+        "open: image_gallery"
+      ]
+    },
+    {
+      "type": "text",
+      "id": "back_label",
+      "position": {
+        "x": 242,
+        "y": 911
+      },
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "layer": 30,
+      "text": "Назад в галерею",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "close",
+      "position": {
+        "x": 1450,
+        "y": 890
+      },
+      "size": {
+        "width": 250,
+        "height": 62
+      },
+      "layer": 24,
+      "color": "263A55",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": true,
+      "hoverEffect": "lift",
+      "clickEffect": "press",
+      "onClickAction": [
+        "sound: shadr.close",
+        "close:"
+      ]
+    },
+    {
+      "type": "text",
+      "id": "close_label",
+      "position": {
+        "x": 1472,
+        "y": 911
+      },
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "layer": 30,
+      "text": "Закрыть",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    }
+  ]
+}

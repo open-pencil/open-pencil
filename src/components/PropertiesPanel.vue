@@ -19,6 +19,7 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+import EventBuilder from './EventBuilder.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
@@ -70,14 +71,17 @@ const problemCount = computed(() => {
         >
           {{ panels.design }}
         </TabsTrigger>
+
         <TabsTrigger value="code" data-test-id="properties-tab-code" :class="tabStyles.trigger()">
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
         </TabsTrigger>
+        
         <TabsTrigger value="ai" data-test-id="properties-tab-ai" :class="tabStyles.trigger()">
           <icon-lucide-sparkles :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.ai }}</span>
         </TabsTrigger>
+        
         <TabsTrigger
           v-if="lints"
           value="lint"
@@ -97,6 +101,12 @@ const problemCount = computed(() => {
           />
           <span :class="tabStyles.label()">{{ checkMessages.tab }}</span>
         </TabsTrigger>
+        
+        <TabsTrigger value="event_builder" data-test-id="properties-tab-event-builder" :class="tabStyles.trigger()">
+          <icon-lucide-gamepad-2 :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">shadr</span>
+        </TabsTrigger>
+        
         <ZoomDropdown v-if="activeTab === 'design'" />
       </TabsList>
 
@@ -134,6 +144,15 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'ai'"
       >
         <ChatPanel />
+      </TabsContent>
+
+      <TabsContent
+        value="event_builder"
+        class="flex min-h-0 flex-1 flex-col"
+        :force-mount="true"
+        :hidden="activeTab !== 'event_builder'"
+      >
+        <EventBuilder />
       </TabsContent>
     </TabsRoot>
   </aside>

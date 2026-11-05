@@ -5,6 +5,8 @@
 interface ImportMetaEnv {
   /** `on` only in official release builds; without it the app sends no pings or usage stats. */
   readonly VITE_OPENPENCIL_FEEDBACK?: string
+  readonly VITE_SHADR_API_URL?: string
+  readonly VITE_SHADR_TOKEN?: string
 }
 
 declare const __OPENPENCIL_APP_VERSION__: string

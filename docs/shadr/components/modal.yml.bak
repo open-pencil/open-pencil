@@ -1,0 +1,137 @@
+params:
+  id: "modal"
+  title: "Are you sure?"
+  body: "This cannot be undone."
+  confirmLabel: "Confirm"
+  cancelLabel: "Cancel"
+  width: 460
+  height: 220
+  accent: "f0a04c"
+
+blocks:
+  - type: block
+    id: "${id}_scrim"
+    layer: 40.0
+    color: 000000
+    opacity: 170
+    position:
+      x: 0
+      y: 0
+    size:
+      width: 1920
+      height: 1080
+    onClickAction:
+      - "sound: shadr.hover"
+
+  - type: block_rounded
+    id: "${id}"
+    layer: 41.0
+    color: 16161d
+    position:
+      x: "1920 / 2 - ${width} / 2"
+      y: "1080 / 2 - ${height} / 2"
+    size:
+      width: "${width}"
+      height: "${height}"
+    rounding:
+      size: regular
+    outline:
+      size: 1
+      color: 2f2f3c
+
+    children:
+      - type: text
+        id: "${id}_title"
+        layer: 42.0
+        color: f2f2f7
+        position:
+          x: 32
+          y: 30
+        size:
+          width: 76
+          height: 76
+        text: "${title}"
+        font: shadr_semibold
+        textAlign: left
+
+      - type: text
+        id: "${id}_body"
+        layer: 42.0
+        color: 9a9aa8
+        position:
+          x: 32
+          y: 74
+        size:
+          width: 54
+          height: 54
+        lineWidth: 360
+        text: "${body}"
+        textAlign: left
+
+      - type: block_rounded
+        id: "${id}_confirm"
+        layer: 43.0
+        color: "${accent}"
+        position:
+          x: "${width} - 300"
+          y: "${height} - 66"
+        size:
+          width: 140
+          height: 44
+        rounding:
+          size: small
+        hoverEffect: lift
+        clickEffect: press
+        onClickAction:
+          - "sound: shadr.click"
+          - "close: "
+
+        children:
+          - type: text
+            id: "${id}_confirm_label"
+            layer: 44.0
+            color: "08080b"
+            position:
+              x: 70
+              y: "44 / 2 - 0.1514 * 60"
+            size:
+              width: 60
+              height: 60
+            text: "${confirmLabel}"
+            font: shadr_semibold
+            textAlign: center
+
+      - type: block_rounded
+        id: "${id}_cancel"
+        layer: 43.0
+        color: 26262f
+        position:
+          x: "${width} - 148"
+          y: "${height} - 66"
+        size:
+          width: 116
+          height: 44
+        rounding:
+          size: small
+        outline:
+          size: 1
+          color: 3a3a48
+        hoverEffect: lift
+        clickEffect: press
+        onClickAction:
+          - "sound: shadr.close"
+          - "close: "
+
+        children:
+          - type: text
+            id: "${id}_cancel_label"
+            layer: 44.0
+            color: d8d8e2
+            position:
+              x: 58
+              y: "44 / 2 - 0.1514 * 60"
+            size:
+              width: 60
+              height: 60
+            text: "${cancelLabel}"
+            textAlign: center

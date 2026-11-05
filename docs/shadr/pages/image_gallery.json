@@ -1,0 +1,515 @@
+{
+  "name": "image_gallery",
+  "screen": {
+    "width": 1920,
+    "height": 1080,
+    "cursorSize": 10,
+    "cursorSpeed": 2,
+    "cursorLayer": 9700
+  },
+  "blocks": [
+    {
+      "type": "block_rounded",
+      "id": "background",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layer": 0,
+      "color": "080E19",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "panel",
+      "position": {
+        "x": 160,
+        "y": 100
+      },
+      "size": {
+        "width": 1600,
+        "height": 880
+      },
+      "layer": 5,
+      "color": "121D2E",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "position": {
+        "x": 220,
+        "y": 164
+      },
+      "size": {
+        "width": 40,
+        "height": 40
+      },
+      "layer": 30,
+      "text": "SHADR / IMAGE GALLERY",
+      "color": "8CAED8",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "position": {
+        "x": 220,
+        "y": 223
+      },
+      "size": {
+        "width": 96,
+        "height": 96
+      },
+      "layer": 30,
+      "text": "Галерея миров",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "position": {
+        "x": 220,
+        "y": 292
+      },
+      "size": {
+        "width": 42,
+        "height": 42
+      },
+      "layer": 30,
+      "text": "Три картинки — три режима отображения",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "close",
+      "position": {
+        "x": 1510,
+        "y": 164
+      },
+      "size": {
+        "width": 190,
+        "height": 62
+      },
+      "layer": 24,
+      "color": "263A55",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": true,
+      "hoverEffect": "lift",
+      "clickEffect": "press",
+      "onClickAction": [
+        "sound: shadr.close",
+        "close:"
+      ]
+    },
+    {
+      "type": "text",
+      "id": "close_label",
+      "position": {
+        "x": 1532,
+        "y": 185
+      },
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "layer": 30,
+      "text": "Закрыть",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "block_rounded",
+      "id": "overworld_card",
+      "position": {
+        "x": 220,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 10,
+      "color": "1A2A40",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "image",
+      "id": "overworld_image",
+      "position": {
+        "x": 236,
+        "y": 370
+      },
+      "size": {
+        "width": 428,
+        "height": 292
+      },
+      "layer": 16,
+      "image": "gallery_overworld",
+      "fit": "contain",
+      "rounding": {
+        "radius": 18
+      },
+      "outline": {
+        "size": 2,
+        "color": "8ED8B4"
+      },
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "overworld_number",
+      "position": {
+        "x": 244,
+        "y": 701
+      },
+      "size": {
+        "width": 36,
+        "height": 36
+      },
+      "layer": 30,
+      "text": "01 / OVERWORLD",
+      "color": "8ED8B4",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "overworld_title",
+      "position": {
+        "x": 244,
+        "y": 749
+      },
+      "size": {
+        "width": 64,
+        "height": 64
+      },
+      "layer": 30,
+      "text": "Обычный мир",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "overworld_fit",
+      "position": {
+        "x": 244,
+        "y": 804
+      },
+      "size": {
+        "width": 38,
+        "height": 38
+      },
+      "layer": 30,
+      "text": "Вписать / CONTAIN",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "hitbox",
+      "id": "overworld_open",
+      "position": {
+        "x": 220,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 45,
+      "hoverText": "Открыть изображение",
+      "onClickAction": [
+        "sound: shadr.click",
+        "open: image_overworld"
+      ]
+    },
+    {
+      "type": "block_rounded",
+      "id": "nether_card",
+      "position": {
+        "x": 730,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 10,
+      "color": "1A2A40",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "image",
+      "id": "nether_image",
+      "position": {
+        "x": 746,
+        "y": 370
+      },
+      "size": {
+        "width": 428,
+        "height": 292
+      },
+      "layer": 16,
+      "image": "gallery_nether",
+      "fit": "cover",
+      "rounding": {
+        "radius": 18
+      },
+      "outline": {
+        "size": 2,
+        "color": "FFAD82"
+      },
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "nether_number",
+      "position": {
+        "x": 754,
+        "y": 701
+      },
+      "size": {
+        "width": 36,
+        "height": 36
+      },
+      "layer": 30,
+      "text": "02 / NETHER",
+      "color": "FFAD82",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "nether_title",
+      "position": {
+        "x": 754,
+        "y": 749
+      },
+      "size": {
+        "width": 64,
+        "height": 64
+      },
+      "layer": 30,
+      "text": "Незер",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "nether_fit",
+      "position": {
+        "x": 754,
+        "y": 804
+      },
+      "size": {
+        "width": 38,
+        "height": 38
+      },
+      "layer": 30,
+      "text": "Заполнить / COVER",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "hitbox",
+      "id": "nether_open",
+      "position": {
+        "x": 730,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 45,
+      "hoverText": "Открыть изображение",
+      "onClickAction": [
+        "sound: shadr.click",
+        "open: image_nether"
+      ]
+    },
+    {
+      "type": "block_rounded",
+      "id": "end_card",
+      "position": {
+        "x": 1240,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 10,
+      "color": "1A2A40",
+      "rounding": {
+        "radius": 16
+      },
+      "interactive": false
+    },
+    {
+      "type": "image",
+      "id": "end_image",
+      "position": {
+        "x": 1256,
+        "y": 370
+      },
+      "size": {
+        "width": 428,
+        "height": 292
+      },
+      "layer": 16,
+      "image": "gallery_end",
+      "fit": "stretch",
+      "rounding": {
+        "radius": 18
+      },
+      "outline": {
+        "size": 2,
+        "color": "C6AEFF"
+      },
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "end_number",
+      "position": {
+        "x": 1264,
+        "y": 701
+      },
+      "size": {
+        "width": 36,
+        "height": 36
+      },
+      "layer": 30,
+      "text": "03 / END",
+      "color": "C6AEFF",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "end_title",
+      "position": {
+        "x": 1264,
+        "y": 749
+      },
+      "size": {
+        "width": 64,
+        "height": 64
+      },
+      "layer": 30,
+      "text": "Энд",
+      "color": "EDF3FC",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "text",
+      "id": "end_fit",
+      "position": {
+        "x": 1264,
+        "y": 804
+      },
+      "size": {
+        "width": 38,
+        "height": 38
+      },
+      "layer": 30,
+      "text": "Растянуть / STRETCH",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    },
+    {
+      "type": "hitbox",
+      "id": "end_open",
+      "position": {
+        "x": 1240,
+        "y": 354
+      },
+      "size": {
+        "width": 460,
+        "height": 490
+      },
+      "layer": 45,
+      "hoverText": "Открыть изображение",
+      "onClickAction": [
+        "sound: shadr.click",
+        "open: image_end"
+      ]
+    },
+    {
+      "type": "text",
+      "id": "hint",
+      "position": {
+        "x": 220,
+        "y": 909
+      },
+      "size": {
+        "width": 40,
+        "height": 40
+      },
+      "layer": 30,
+      "text": "Нажмите на карточку, чтобы открыть изображение целиком",
+      "color": "9CB0C9",
+      "font": "shadr",
+      "textAlign": "left",
+      "lineWidth": 1600,
+      "interactive": false
+    }
+  ]
+}

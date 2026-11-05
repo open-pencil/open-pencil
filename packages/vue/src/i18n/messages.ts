@@ -32,8 +32,8 @@ import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/upda
 import { variablesMessageDefaults, variablesMessages } from '#vue/i18n/messages/variables/panel'
 import {
   variableTypeMessageDefaults,
-  variableTypeMessages
 } from '#vue/i18n/messages/variables/types'
+import { eventBuilderMessageDefaults, eventBuilderMessages } from '#vue/i18n/messages/event-builder'
 
 export {
   aiMessages,
@@ -65,7 +65,8 @@ export {
   cloudMessages,
   cloudPortalMessages,
   variablesMessages,
-  variableTypeMessages
+  variableTypeMessages,
+  eventBuilderMessages
 }
 
 export const messageDefaults = {
@@ -98,5 +99,6 @@ export const messageDefaults = {
   cloud: cloudMessageDefaults,
   cloudPortal: cloudPortalMessageDefaults,
   variables: variablesMessageDefaults,
-  variableTypes: variableTypeMessageDefaults
+  variableTypes: variableTypeMessageDefaults,
+  eventBuilder: eventBuilderMessageDefaults
 } as const

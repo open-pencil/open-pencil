@@ -1,0 +1,10 @@
+exposure: 0.1
+contrast: 1.12
+saturation: 0.9
+temperature: -6
+tonemap: aces
+shadows: 7c8290
+midtones: 808080
+highlights: 8a8478
+vignette: 0.28
+grain: 0.06

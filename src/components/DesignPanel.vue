@@ -55,6 +55,7 @@ import TextContentControl from './properties/text-content/TextContentControl.vue
 import TextContentSection from './properties/text-content/TextContentSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
+import TooltipSection from './properties/TooltipSection.vue'
 
 const store = useEditorStore()
 const libraryService = useLibraryService()
@@ -249,6 +250,7 @@ const { panels } = useI18n()
         <SelectionColorsSection />
       </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
+      <TooltipSection />
 
       <ExportSection />
     </div>

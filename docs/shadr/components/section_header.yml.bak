@@ -1,0 +1,19 @@
+params:
+  id: "section"
+  label: "Section"
+  color: "8a8a98"
+  fontSize: 48
+
+blocks:
+  - type: text
+    id: "${id}"
+    layer: 12.0
+    color: "${color}"
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${fontSize}"
+      height: "${fontSize}"
+    text: "${label}"
+    textAlign: left

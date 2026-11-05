@@ -1,0 +1,10 @@
+id: sink
+name: Sink
+move-x: 0
+move-y: 2
+scale-x: 0
+scale-y: 0
+opacity-delta: -15
+rotation-deg: 0
+duration-ms: 70
+interpolation: ease-out

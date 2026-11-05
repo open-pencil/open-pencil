@@ -1,0 +1,13 @@
+{
+  "textures": { "0": "minecraft:item/shadr/box_2", "particle": "minecraft:item/shadr/box_2" },
+  "elements": [
+    {
+      "from": [0, 0, 7.5],
+      "to": [16, 16, 8.5],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#0", "tintindex": 0 },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#0", "tintindex": 0 }
+      }
+    }
+  ]
+}

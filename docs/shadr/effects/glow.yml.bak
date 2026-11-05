@@ -1,0 +1,10 @@
+id: glow
+name: Glow
+move-x: 0
+move-y: 0
+scale-x: 1%
+scale-y: 1%
+opacity-delta: 45
+rotation-deg: 0
+duration-ms: 120
+interpolation: ease-out

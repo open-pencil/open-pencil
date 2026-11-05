@@ -44,6 +44,15 @@ test('geometry snapshots reject ambiguous occurrence addresses', () => {
   ).toThrow('Ambiguous instance geometry address')
 })
 
+test('geometry snapshots ignore nodes without an instance geometry address', () => {
+  const { graph, owner } = fixture()
+  graph.createNode('RECTANGLE', owner.id)
+  const result = snapshotInstanceGeometry(graph, owner, stringToGuid, [], (node) => ({
+    size: { x: node.width, y: node.height }
+  }))
+  expect(result).toHaveLength(1)
+})
+
 // Figma saves layers that have no override key with the unset GUID, so many siblings share it.
 test('layers saved with the unset override key keep distinct geometry addresses', () => {
   const at = (localID: number) => ({ sessionID: 1, localID })

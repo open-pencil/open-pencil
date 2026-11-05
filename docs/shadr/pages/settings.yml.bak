@@ -1,0 +1,96 @@
+name: settings
+screen:
+  width: 1920
+  height: 1080
+  cursorSize: 10
+  cursorSpeed: 2.0
+  cursorLayer: 9700
+
+blocks:
+  - type: block
+    id: backdrop
+    layer: 0.0
+    color: 08080b
+    opacity: 235
+    position: {x: 0, y: 0}
+    size: {width: 1920, height: 1080}
+
+  - type: component
+    component: panel
+    params:
+      id: settings_panel
+      title: "Settings"
+      width: 620
+      height: 520
+      accent: "4cc9f0"
+    position: {x: 1920/2 - 310, y: 1080/2 - 260}
+
+  - type: component
+    component: section_header
+    params: {id: display_header, label: "DISPLAY"}
+    position: {x: 1920/2 - 270, y: 1080/2 - 178}
+
+  - type: grid_block
+    id: display_rows
+    direction: column
+    gap: 0
+    position: {x: 1920/2 - 270, y: 1080/2 - 152}
+    children:
+      - type: component
+        component: list_row
+        params: {id: row_scale, label: "Interface scale", value: "Auto", width: 540}
+      - type: component
+        component: list_row
+        params: {id: row_cursor, label: "Cursor speed", value: "2.0", width: 540}
+      - type: component
+        component: list_row
+        params: {id: row_effects, label: "Hover effects", value: "On", width: 540}
+
+  - type: component
+    component: section_header
+    params: {id: sound_header, label: "SOUND"}
+    position: {x: 1920/2 - 270, y: 1080/2 - 4}
+
+  - type: grid_block
+    id: sound_rows
+    direction: column
+    gap: 0
+    position: {x: 1920/2 - 270, y: 1080/2 + 22}
+    children:
+      - type: component
+        component: list_row
+        params: {id: row_ui_sounds, label: "Interface sounds", value: "On", width: 540}
+      - type: component
+        component: list_row
+        params: {id: row_volume, label: "Volume", value: "80%", width: 540}
+
+  - type: component
+    component: progress_bar
+    params: {id: volume_bar, width: 540, height: 6, value: 0.8}
+    position: {x: 1920/2 - 270, y: 1080/2 + 126}
+
+  - type: grid_block
+    id: settings_actions
+    direction: row
+    gap: 10
+    position: {x: 1920/2 - 270, y: 1080/2 + 168}
+    children:
+      - type: component
+        component: button
+        params: {id: settings_save, label: "Save", width: 132}
+      - type: component
+        component: button_ghost
+        params: {id: settings_cancel, label: "Cancel", width: 116, sound: "shadr.close"}
+
+  - type: text
+    id: reset_link
+    layer: 14.0
+    color: c05050
+    position: {x: 1920/2 + 250, y: 1080/2 + 182}
+    size: {width: 48, height: 48}
+    text: "Reset all"
+    textAlign: right
+    hoverEffect: glow
+    onClickAction:
+      - "sound: shadr.click"
+      - "open: settings_confirm"

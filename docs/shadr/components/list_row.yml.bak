@@ -1,0 +1,61 @@
+params:
+  id: "row"
+  label: "Label"
+  value: "Value"
+  width: 440
+  height: 52
+  labelColor: "c8c8d4"
+  valueColor: "8a8a98"
+  fontSize: 60
+  sound: "shadr.hover"
+
+blocks:
+  - type: block
+    id: "${id}"
+    layer: 11.0
+    color: "15151c"
+    opacity: 0
+    position:
+      x: 0
+      y: 0
+    size:
+      width: "${width}"
+      height: "${height}"
+
+    children:
+      - type: text
+        id: "${id}_label"
+        layer: 12.0
+        color: "${labelColor}"
+        position:
+          x: 0
+          y: "${height} / 2 - 0.1514 * ${fontSize}"
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${label}"
+        textAlign: left
+
+      - type: text
+        id: "${id}_value"
+        layer: 12.0
+        color: "${valueColor}"
+        position:
+          x: "${width}"
+          y: "${height} / 2 - 0.1514 * ${fontSize}"
+        size:
+          width: "${fontSize}"
+          height: "${fontSize}"
+        text: "${value}"
+        textAlign: right
+
+      - type: block
+        id: "${id}_rule"
+        layer: 11.5
+        color: 24242e
+        position:
+          x: 0
+          y: "${height} - 1"
+        size:
+          width: "${width}"
+          height: 1

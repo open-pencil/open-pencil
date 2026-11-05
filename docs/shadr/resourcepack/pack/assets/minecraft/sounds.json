@@ -1,0 +1,7 @@
+{
+	"shadr.click": { "category": "master", "sounds": [ "shadr/click" ] },
+	"shadr.close": { "category": "master", "sounds": [ "shadr/close" ] },
+	"shadr.error": { "category": "master", "sounds": [ "shadr/error" ] },
+	"shadr.hover": { "category": "master", "sounds": [ "shadr/hover" ] },
+	"shadr.open": { "category": "master", "sounds": [ "shadr/open" ] }
+}
