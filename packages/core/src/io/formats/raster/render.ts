@@ -9,6 +9,7 @@ import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { SkiaRenderer } from '#core/canvas'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
+import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
 import { ckImageFormat } from './pixels'
@@ -54,16 +55,23 @@ function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: s
 }
 
 /**
- * What an export of `nodeIds` covers: everything they draw, or with `useAbsoluteBounds` their
- * boxes alone; null when nothing is visible.
+ * What an export of `nodeIds` covers: what they draw as Figma's render bounds take it, clipped by
+ * the frames around them, or with `useAbsoluteBounds` their boxes alone; null when nothing is
+ * visible.
  */
 export function exportBounds(
   graph: SceneGraph,
   nodeIds: string[],
   useAbsoluteBounds = false
 ): VisualBounds | null {
-  if (!useAbsoluteBounds) return computeContentBounds(graph, nodeIds)
   let bounds: VisualBounds | null = null
+  if (!useAbsoluteBounds) {
+    for (const id of nodeIds) {
+      const node = graph.getNode(id)
+      if (node) bounds = unionVisualBounds(bounds, absoluteRenderBounds(graph, node))
+    }
+    return bounds
+  }
   for (const id of nodeIds) {
     const node = graph.getNode(id)
     if (!node?.visible) continue
