@@ -26,6 +26,16 @@ test('flags Reka overlay roots imported by app code', async () => {
   ])
 })
 
+test('flags a namespace import of reka-ui in app code', async () => {
+  expect(
+    await flagged({
+      'src/components/Namespace.vue': `<script setup lang="ts">\nimport * as Reka from 'reka-ui'\n</script>\n<template><Reka.PopoverRoot /></template>\n`
+    })
+  ).toEqual([
+    "Import Reka's parts by name, so overlay roots can be told apart from their wrappers."
+  ])
+})
+
 test('leaves the shared wrappers and the other parts of an overlay', async () => {
   expect(
     await flagged({

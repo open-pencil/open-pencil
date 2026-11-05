@@ -248,6 +248,14 @@ const noRawOverlayRootsInApp = {
       ImportDeclaration(node) {
         if (node.source.value !== 'reka-ui') return
         for (const specifier of node.specifiers) {
+          if (specifier.type === 'ImportNamespaceSpecifier') {
+            context.report({
+              node: specifier,
+              message:
+                "Import Reka's parts by name, so overlay roots can be told apart from their wrappers."
+            })
+            continue
+          }
           if (specifier.type !== 'ImportSpecifier') continue
           const name =
             specifier.imported.type === 'Identifier'
