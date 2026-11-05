@@ -5,11 +5,6 @@ import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { UpdateNodeWithUndo } from '#core/editor/shapes/pen/draw'
 import type { NodeEditHandles, VectorHandleField } from '#core/vector/handle-selection'
 
-/**
- * A vector path being edited point by point. Its geometry is page-absolute, mapped through the
- * node's world matrix, so nested, rotated, and flipped vectors edit in place; the canvas draws it
- * through the `NodeEditOverlayState` fields.
- */
 /** How a host opens a path for editing. */
 export interface NodeEditOptions {
   /**
@@ -23,14 +18,19 @@ export interface NodeEditOptions {
   handles?: NodeEditHandles
 }
 
-/** How the host leaves a path open for editing. */
+/** How the host leaves vector edit mode. */
 export interface NodeEditExitOptions {
   /** Ends a path the host keeps open, too. */
   release?: boolean
 }
 
+/**
+ * A vector path being edited point by point. Its geometry is page-absolute, mapped through the
+ * node's world matrix, so nested, rotated, and flipped vectors edit in place; the canvas draws it
+ * through the `NodeEditOverlayState` fields.
+ */
 export interface NodeEditState extends NodeEditOverlayState {
-  /** Whether only the host can end the session (`NodeEditOptions.keepOpen`). */
+  /** Whether the host keeps the path open (`NodeEditOptions.keepOpen`). */
   keepOpen: boolean
   origNetwork: VectorNetwork
   origBounds: Rect

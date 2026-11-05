@@ -114,7 +114,8 @@ editor.setHostRestrictions({ pathEdits: 'handles' })
 // another layer leave it open. Every point shows its handles.
 editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
 
-// Only the host ends it.
+// The host ends it; so do switching pages, deleting the layer, replacing the document, and
+// going read-only.
 editor.exitNodeEditMode(true, { release: true })
 ```
 
