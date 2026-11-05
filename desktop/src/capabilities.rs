@@ -34,7 +34,11 @@ pub struct DesktopCapabilities {
 
 impl DesktopCapabilities {
     pub fn from_env() -> Self {
-        Self::from_lookup(|name| std::env::var(name).ok())
+        // `var_os`, not `var`: a value that is not Unicode must read as unrecognized, which
+        // turns the feature off, not as unset, which would leave it on.
+        Self::from_lookup(|name| {
+            std::env::var_os(name).map(|value| value.to_string_lossy().into_owned())
+        })
     }
 
     fn from_lookup(lookup: impl Fn(&str) -> Option<String>) -> Self {
