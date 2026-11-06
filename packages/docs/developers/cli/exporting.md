@@ -262,7 +262,7 @@ openpencil export design/library.fig -f storybook \
 
 This writes `badge.design.ts`, its `badge.design/` images, and the ownership manifest. The reference module records the implementation import/export, design identity and revision, implementation story URL, args, and `parameters.design`. Its type-only implementation import lets the consuming TypeScript project check that the named export exists; the exporter does not execute the implementation. `--no-design-images` leaves metadata and links without PNGs.
 
-Mapping exports do not accept `--watch`, `--page`, or `--rules`; rerun the command after reviewing a change. The reference module type-checks mapped args against the implementation's props when your consuming project runs TypeScript.
+Mapping exports do not accept `--watch`, `--page`, `--page-id`, or `--rules`; rerun the command after reviewing a change. The reference module type-checks mapped args against the implementation's props when your consuming project runs TypeScript.
 
 Import the reference into your existing story, with the Designs addon registered in Storybook:
 

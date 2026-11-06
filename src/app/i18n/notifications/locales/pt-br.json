@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Não foi possível iniciar o chat: {error}",
   "linkCopied": "Link copiado para a área de transferência.",
+  "implementationStoryReady": "Story de implementação pronta.",
+  "implementationStoryUnpinned": "Story de implementação pronta. Este mapeamento não está fixado a uma revisão de design.",
+  "openImplementationStory": "Abrir story",
   "clipboardMissingDesignData": "A área de transferência não contém dados de design.",
   "clipboardAccessBlocked": "O acesso à área de transferência está bloqueado neste contexto do navegador.",
   "copiedAs": "Copiado como {format}.",

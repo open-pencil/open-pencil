@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'bun:test'
 
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+
 import { rememberLoadedRevision } from '@/app/document/io/revision'
 import { notificationMessages } from '@/app/i18n/notifications'
 import {
@@ -9,7 +11,6 @@ import {
 } from '@/app/integrations/storybook/open'
 
 import { withNotificationLocale } from '#tests/helpers/i18n/notifications'
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 const SHA256_ABC = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
 

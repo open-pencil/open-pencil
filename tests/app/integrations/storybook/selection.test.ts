@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+
 import {
   implementationSelection,
   type ImplementationSelection
 } from '@/app/integrations/storybook/selection'
-
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 test('implementation selection requires exactly one saved component, set, or resolvable instance', () => {
   const graph = makeSceneGraph()

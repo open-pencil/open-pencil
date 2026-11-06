@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+
 import {
   findComponentMapping,
   implementationStoryURL,
@@ -125,10 +127,8 @@ export function requestOpenImplementationStory(store: EditorStore): void {
   void openImplementationStory(store, {
     pick: pickComponentMapping,
     isCurrent: () => getActiveEditorStore() === store,
-    matchesDocument: async (mappingPath, relative, document) => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('mapping_document_matches', { mappingPath, relative, document })
-    },
+    matchesDocument: (mappingPath, relative, document) =>
+      invoke<boolean>('mapping_document_matches', { mappingPath, relative, document }),
     open: async (url, pinned) => {
       if (IS_TAURI) await openExternalLink(url)
       else

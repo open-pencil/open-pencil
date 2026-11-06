@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+
 import { focusLinkedNode, type LinkedNodeStore } from '@/app/document/io/linked-node'
 import { rememberLoadedRevision } from '@/app/document/io/revision'
-
-import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 const SHA256_ABC = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
 
