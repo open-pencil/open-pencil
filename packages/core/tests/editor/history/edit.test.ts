@@ -110,4 +110,37 @@ describe('recordEditAsync', () => {
 
     expect(editor.undo.canUndo).toBe(false)
   })
+
+  // Known gap: nothing tells whose write is whose across an await, so the open edit takes in a
+  // write made elsewhere meanwhile, such as the user's or a collaborator's.
+  test.failing('leaves an edit made elsewhere while it awaits out of its step', async () => {
+    const { editor, pageId, card } = setup()
+    const other = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
+
+    await editor.recordEditAsync({ label: 'Agent: arrange' }, async () => {
+      await Promise.resolve()
+      editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(other.id, { x: 25 }))
+      editor.graph.updateNode(card.id, { x: 40 })
+    })
+
+    expect(editor.undo.undo()).toBe('Agent: arrange')
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.graph.getNode(other.id)?.x).toBe(25)
+  })
+
+  // Known gap: undo is not held back while an edit is open, so the open edit records the undo
+  // as its own change and undoing the edit replays the undone step.
+  test.failing('keeps an undo made while it awaits out of its step', async () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 25 }))
+
+    await editor.recordEditAsync({ label: 'Agent: resize' }, async () => {
+      await Promise.resolve()
+      editor.undo.undo()
+      editor.graph.updateNode(card.id, { width: 200 })
+    })
+
+    expect(editor.undo.undo()).toBe('Agent: resize')
+    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, width: 100 })
+  })
 })

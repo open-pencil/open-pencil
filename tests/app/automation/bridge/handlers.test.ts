@@ -4,14 +4,18 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 import { toRaw } from 'vue'
 
 import * as layoutModule from '@open-pencil/core/layout'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { automationFiles } from '@/app/automation/bridge/server'
 import * as saveTargets from '@/app/document/io/save/targets'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
+import { createDeferred } from '@/app/runtime/deferred'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
@@ -267,6 +271,55 @@ describe('undo and redo', () => {
 })
 
 // The stdio MCP server sends render JSX as written; these are what #830 lost on that path.
+describe('eval beside a tool call', () => {
+  // Known gap: eval does not take the document's edit lock that tool calls hold, so both record
+  // at once and each one's undo step takes in the other's change.
+  test.failing('waits for the call that holds the document and records its own step', async () => {
+    const tab = createTab()
+    const { store } = tab
+    const pageId = store.state.currentPageId
+    const card = store.graph.createNode('FRAME', pageId, { name: 'Card', width: 200, height: 200 })
+    const createShape = expectDefined(
+      ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+      'create_shape'
+    )
+    // The call holds the document's lock until the test lets it finish.
+    const held = createDeferred<undefined>()
+    const call = runEditorTool({
+      store,
+      figma: makeFigmaFromStore(store, pageId),
+      def: {
+        ...createShape,
+        execute: async (figma, args) => {
+          await held.promise
+          return createShape.execute(figma, args)
+        }
+      },
+      args: { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 },
+      source: 'MCP'
+    })
+    const script = request('eval', {
+      document_id: tab.id,
+      code: "figma.currentPage.findOne((node) => node.name === 'Card').name = 'Renamed'"
+    })
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    expect(store.graph.getNode(card.id)?.name).toBe('Card')
+
+    held.resolve(undefined)
+    await Promise.all([call, script])
+    expect(store.graph.getChildren(pageId)).toHaveLength(2)
+    expect(store.graph.getNode(card.id)?.name).toBe('Renamed')
+
+    expect(store.undo.undo()).toBe('Agent: eval')
+    expect(store.graph.getChildren(pageId)).toHaveLength(2)
+    expect(store.graph.getNode(card.id)?.name).toBe('Card')
+    expect(store.undo.undo()).toBe('MCP: create_shape')
+    expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+  })
+})
+
 describe('render JSX', () => {
   function render(tabId: string, args: Record<string, unknown>) {
     return request('tool', { document_id: tabId, name: 'render', args })
