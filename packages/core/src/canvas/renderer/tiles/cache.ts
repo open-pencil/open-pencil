@@ -25,14 +25,14 @@ export interface CachedTile {
 }
 
 const DEFAULT_MAX_TILE_BYTES = 128 * 1024 * 1024
-const MAXIMUM_TILE_CACHE_BYTES = 768 * 1024 * 1024
+const MAXIMUM_TILE_CACHE_BYTES = 384 * 1024 * 1024
 const TILE_BYTES = TILE_DEVICE_SIZE * TILE_DEVICE_SIZE * 4
 /**
- * The budget holds this many viewports' worth of tiles: the visible level with its overscan
- * ring, the level a zoom just left, the pyramid, the backdrop ring, and the page copy, so idle
- * work never evicts what the next frame draws.
+ * The budget holds the visible level with its overscan ring and enough nearby fallback tiles for
+ * navigation. Background stages stop when that working set does not fit instead of retaining a
+ * full five-viewport pyramid on large high-DPI windows.
  */
-const TILE_CACHE_VIEWPORTS = 5
+const TILE_CACHE_VIEWPORTS = 3
 
 /** The bytes of the tiles a viewport of this many device pixels can touch. */
 export function viewportTileBytes(widthPx: number, heightPx: number): number {

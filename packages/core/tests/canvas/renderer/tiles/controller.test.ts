@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Surface } from 'canvaskit-wasm'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import type { ImagePreview, ImagePreviewDecoder } from '#core/canvas/images/previews'
@@ -449,14 +449,18 @@ describe('tiles with image previews', () => {
     const sized = new TiledSceneController({ now: () => 0 })
     try {
       sized.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
-      // 1280 × 800 at DPR 1 is 3 × 2 tiles plus one each way; five viewports of those stay
+      // 1280 × 800 at DPR 1 is 3 × 2 tiles plus one each way; three viewports of those stay
       // under the 128 MB floor, which a DPR 2 viewport twice as large passes.
       expect(sized.tileCacheBytes()).toBe(128 * 1024 * 1024)
       renderer.dpr = 2
       renderer.viewportWidth = 2560
       renderer.viewportHeight = 1600
       sized.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
-      expect(sized.tileCacheBytes()).toBe(11 * 8 * tileBytes * 5)
+      expect(sized.tileCacheBytes()).toBe(11 * 8 * tileBytes * 3)
+      renderer.viewportWidth = 4096
+      renderer.viewportHeight = 3000
+      sized.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      expect(sized.tileCacheBytes()).toBe(384 * 1024 * 1024)
     } finally {
       sized.destroy()
     }

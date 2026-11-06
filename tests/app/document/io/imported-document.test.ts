@@ -42,3 +42,14 @@ test('prepared imported documents replace the live graph only after staging', as
   expect(liveEditor.state.currentPageId).toBe(page.id)
   liveEditor.dispose()
 })
+
+test('deferred imported documents replace the graph without staging the first page', async () => {
+  const liveGraph = new SceneGraph()
+  const liveEditor = createEditor({ graph: liveGraph, skipInitialGraphSetup: true })
+  const imported = new SceneGraph()
+
+  await applyImportedDocument(liveEditor, imported, undefined, { prepare: false })
+
+  expect(liveEditor.graph).toBe(imported)
+  liveEditor.dispose()
+})
