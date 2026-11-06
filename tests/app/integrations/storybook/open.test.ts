@@ -97,6 +97,50 @@ test('a cancelled picker or changed selection never opens a story', async () => 
   expect(h.open).not.toHaveBeenCalled()
 })
 
+for (const phase of ['picker', 'document match']) {
+  test(`cancels when a saved identity becomes another mapped state during ${phase}`, async () => {
+    const h = harness()
+    if (phase === 'picker') {
+      h.navigation.pick = async () => {
+        h.node.source.id = '42:10'
+        return { text: h.text, path: '/repo/openpencil.components.json' }
+      }
+    } else {
+      h.navigation.matchesDocument = async () => {
+        h.node.source.id = '42:10'
+        return true
+      }
+    }
+    await openImplementationStory(h.store, h.navigation)
+    expect(h.open).not.toHaveBeenCalled()
+  })
+
+  test(`cancels when a selected instance targets another main component during ${phase}`, async () => {
+    const h = harness()
+    const other = h.graph.createNode('COMPONENT', firstPageId(h.graph))
+    other.source.id = '42:10'
+    const instance = h.graph.createNode('INSTANCE', firstPageId(h.graph), {
+      componentId: h.node.id
+    })
+    h.store.state.selectedIds.clear()
+    h.store.state.selectedIds.add(instance.id)
+    const retarget = () => h.graph.updateNode(instance.id, { componentId: other.id })
+    if (phase === 'picker') {
+      h.navigation.pick = async () => {
+        retarget()
+        return { text: h.text, path: '/repo/openpencil.components.json' }
+      }
+    } else {
+      h.navigation.matchesDocument = async () => {
+        retarget()
+        return true
+      }
+    }
+    await openImplementationStory(h.store, h.navigation)
+    expect(h.open).not.toHaveBeenCalled()
+  })
+}
+
 test('mapping navigation errors follow the active locale and interpolate the actual candidate count', async () => {
   const english = notificationMessages.get()
   await withNotificationLocale('fr', async () => {
@@ -158,16 +202,14 @@ test('invalid mapping files report a localized error while retaining parser diag
   })
 })
 
-test('a saved identity changed during mapping lookup retains localized validation and never opens a story', async () => {
+test('a saved identity changed during mapping lookup cancels without reporting an invalid mapping', async () => {
   await withNotificationLocale('fr', async () => {
     const h = harness()
     h.navigation.matchesDocument = async () => {
       h.node.source.id = '42:99'
       return true
     }
-    await expect(openImplementationStory(h.store, h.navigation)).rejects.toThrow(
-      notificationMessages.get().implementationMappingInvalid
-    )
+    await expect(openImplementationStory(h.store, h.navigation)).resolves.toBeUndefined()
     expect(h.open).not.toHaveBeenCalled()
   })
 })

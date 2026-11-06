@@ -20,6 +20,7 @@ import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/c
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useMessages, useLocale } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
@@ -27,6 +28,7 @@ import type {
 
 import { createPlaceMenuActions } from '@/app/document/io/place'
 import { useEditorStore } from '@/app/editor/active-store'
+import { implementationSelection } from '@/app/integrations/storybook/selection'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -85,6 +87,7 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
+  const hasImplementationSelection = useSceneComputed(() => !!implementationSelection(store))
   const {
     commands,
     menuItem: commandMenuItem,
@@ -281,6 +284,8 @@ export function useAppMenu() {
 
   function disabled(item: AppMenuActionItem): boolean | undefined {
     switch (item.id) {
+      case 'selection.openImplementation':
+        return !hasImplementationSelection.value
       case 'view-split-right':
       case 'view-split-down':
         return store.visiblePaneCount.value >= store.panes.maxVisiblePanes
