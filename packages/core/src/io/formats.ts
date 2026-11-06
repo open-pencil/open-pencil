@@ -8,7 +8,6 @@ import {
   buildPenGraph,
   importedDocument,
   isDataURL,
-  isDocumentAssetPath,
   parsePenDocument,
   penAssets,
   rebaseImages,
@@ -248,43 +247,39 @@ const PEN_ICON_SIZE = 24
 /** How the host reads a file a document names, by its path from the document being read. */
 type ReadFile = ReadDocumentInput['readAsset']
 
-/** The file a percent-encoded image URL names. A malformed escape is the URL as written. */
-function penImageFile(url: string): string {
-  try {
-    return decodeURIComponent(url)
-  } catch {
-    return url
-  }
-}
-
-/** One asset read. A host that throws for a missing file reads as missing. */
-async function readPenAsset(path: string, read: ReadFile): Promise<Uint8Array | null> {
-  try {
-    return (await read?.(path)) ?? null
-  } catch {
-    return null
-  }
+/**
+ * The file a document-relative image URL names: pen.dev writes it percent-encoded, as a URL, so a
+ * document named `My Design.pen` names `My%20Design-assets/…`. Each step is decoded on its own and
+ * a malformed escape stays as written; null when decoding would add a step, such as `%2F` or
+ * `%2E%2E`, which the URL as written does not take.
+ */
+function penImageFile(url: string): string | null {
+  const steps = url.split('/')
+  const decoded = steps.map((step) => {
+    try {
+      return decodeURIComponent(step)
+    } catch {
+      return step
+    }
+  })
+  const added = decoded.some(
+    (step, index) => step !== steps[index] && (/[/\\]/.test(step) || step === '..' || step === '.')
+  )
+  return added ? null : decoded.join('/')
 }
 
 /**
  * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
- * host; null when either fails. Pencil stores the file under its name and writes the URL
- * percent-encoded, so a file URL is read decoded, then as written when that name has no file.
+ * host, by the file its URL names; null when either fails.
  */
 async function loadPenImage(url: string, read: ReadFile): Promise<Uint8Array | null> {
   try {
-    if (isDataURL(url)) {
-      // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
-      return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
+    if (!isDataURL(url)) {
+      const file = penImageFile(url)
+      return file === null ? null : ((await read?.(file)) ?? null)
     }
-    const path = penImageFile(url)
-    // A decoded `..` or an absolute path would leave the document folder, which the URL as
-    // collected does not, so only a path that still names a document file is read decoded.
-    if (path !== url && isDocumentAssetPath(path)) {
-      const decoded = await readPenAsset(path, read)
-      if (decoded) return decoded
-    }
-    return await readPenAsset(url, read)
+    // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
+    return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
   } catch {
     return null
   }

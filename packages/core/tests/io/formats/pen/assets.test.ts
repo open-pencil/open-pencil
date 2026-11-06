@@ -182,7 +182,7 @@ describe('penFormat.readDocument — assets', () => {
       },
       { icons: iconProvider([], []) }
     )
-    expect(asked).toContain('My Design-assets/red.png')
+    expect(asked).toEqual(['My Design-assets/red.png'])
     expect(graph.getNode('encoded')?.fills[0]?.type).toBe('IMAGE')
   })
 
@@ -236,7 +236,8 @@ describe('penFormat.readDocument — assets', () => {
     expect(graph.getNode('malformed')?.fills[0]?.type).toBe('IMAGE')
   })
 
-  test('reads a file whose name contains a percent escape', async () => {
+  test('reads a file whose name contains a percent sign from its escape', async () => {
+    // A URL names `file%20name.png` as `file%2520name.png`; `file%20name.png` is `file name.png`.
     const asked: string[] = []
     const { graph } = await io.readDocument(
       {
@@ -247,18 +248,17 @@ describe('penFormat.readDocument — assets', () => {
             type: 'rectangle',
             width: 50,
             height: 50,
-            fill: { type: 'image', url: 'file%20name.png' }
+            fill: { type: 'image', url: 'file%2520name.png' }
           }
         ]),
         readAsset: async (path) => {
           asked.push(path)
-          if (path !== 'file%20name.png') throw new Error(`missing ${path}`)
-          return PNG
+          return path === 'file%20name.png' ? PNG : null
         }
       },
       { icons: iconProvider([], []) }
     )
-    expect(asked).toContain('file%20name.png')
+    expect(asked).toEqual(['file%20name.png'])
     expect(graph.getNode('literal')?.fills[0]?.type).toBe('IMAGE')
   })
 
@@ -283,6 +283,6 @@ describe('penFormat.readDocument — assets', () => {
       },
       { icons: iconProvider([], []) }
     )
-    expect(asked).not.toContain('../secret.png')
+    expect(asked).toEqual([])
   })
 })
