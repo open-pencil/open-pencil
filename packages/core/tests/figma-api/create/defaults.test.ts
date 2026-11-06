@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
-
+import { expectFills } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -79,6 +78,9 @@ describe('new layer defaults', () => {
     // Figma fills a section #444444 in its dark theme.
     figma.theme = 'dark'
     expect(solid(expectFills(figma.createSection().fills))).toEqual([[0.27, 0.27, 0.27]])
+    // A board is light under either theme.
+    figma.graph.documentKind = 'board'
+    expect(solid(expectFills(figma.createSection().fills))).toEqual([WHITE])
   })
 
   test('each layer gets its own copy of the default paints', () => {

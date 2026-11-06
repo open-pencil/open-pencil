@@ -8,7 +8,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -23,6 +22,7 @@ import {
 } from '@/app/settings/preferences/apply'
 import { appPreferences, DESIGN_CHECK_PRESETS } from '@/app/settings/preferences/store'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -44,7 +44,7 @@ const presetModel = computed({
 </script>
 
 <template>
-  <DropdownMenuRoot :modal="false">
+  <AppDropdownMenuRoot :modal="false">
     <DropdownMenuTrigger as-child>
       <IconButton size="xs" :label="messages.rules">
         <icon-lucide-settings-2 class="size-3.5" />
@@ -87,5 +87,5 @@ const presetModel = computed({
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

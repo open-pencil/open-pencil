@@ -15,6 +15,8 @@ import type { EditorPreparationController } from '@/app/editor/preparation/contr
 type DocumentIOState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  roomKeepsEdits: boolean
+  showUI: boolean
 }
 
 export function createDocumentIOActions(
@@ -69,11 +71,14 @@ export function createDocumentIOActions(
   })
 
   return {
+    renameDocument: sourceActions.renameDocument,
+    onDocumentRenamed: sourceActions.onDocumentRenamed,
     downloadBlob,
     setViewportSize,
     getViewportSize,
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
+    getDocumentFileHandle: sourceState.getFileHandle,
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
     hasWritableSource: sourceState.hasWritableSource,

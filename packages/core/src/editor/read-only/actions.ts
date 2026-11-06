@@ -9,6 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
+  'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
   'getChildren',
@@ -25,7 +26,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getInstanceComponentPropertyDefinitions',
   'getInstanceComponentPropertyValue',
   'getLayerTree',
+  'getLiveNetwork',
   'getNode',
+  'getNodeEditState',
   'getPages',
   'getSelectedNode',
   'getSelectedNodes',
@@ -56,7 +59,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   // Selection and hover
   'clearSelection',
   'enterContainer',
-  'exitContainer',
+  'enterContainerOf',
+  'exitContainers',
   'select',
   'selectAll',
   'selectAtPoint',
@@ -83,6 +87,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setHoveredGuide',
   'setHoveredIssueMarker',
   'setLayoutInsertIndicator',
+  'setRenamingLabel',
   'setRotationPreview',
   'setSelectedGuide',
   'setShapeHandleHover',
@@ -91,6 +96,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
 
   // Viewport and pages
   'applyZoom',
+  'getViewportSize',
   'centerOn',
   'clearPageViewports',
   'commitPageSwitch',
@@ -100,6 +106,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePage',
   'preparePageNodes',
   'loadPageNodes',
+  'pageHoldingNode',
   'revealNodes',
   'setZoomAroundPoint',
   'switchPage',
@@ -114,6 +121,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToSelection',
 
   // Preview
+  'leaveCanvasView',
   'resetPlay',
   'startPlay',
   'stopPlay',
@@ -127,7 +135,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
 
   // Ending what was in progress
   'cancelNodePreviews',
+  'exitNodeEditMode',
   'flushNudge',
+  'nodeEditCancelDrag',
   'penCancel',
   'pencilCancel',
 

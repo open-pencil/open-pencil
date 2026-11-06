@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'

@@ -1,13 +1,12 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { withPDFTextLayout } from '#core/io/formats/pdf/prepare'
 import { renderNodesToSVG } from '#core/io/formats/svg'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 

@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { classifyAsset, filesFor } from '#docs-config/theme/landing/download/releases'
+import { chromiumAssets, chromiumTargets } from '#release/chromium/catalog'
 import { desktopAssets, desktopTargets } from '#release/native/catalog'
 
 const VERSION = '0.15.0'
@@ -36,6 +37,12 @@ test('the download page leaves out updater payloads and signatures', () => {
   }
   expect(classifyAsset(asset('SHA256SUMS'))).toBeNull()
   expect(classifyAsset(asset('latest.json'))).toBeNull()
+})
+
+test('the download page leaves out OpenPencil Chromium', () => {
+  const chromium = chromiumTargets.flatMap((target) => chromiumAssets(target, VERSION))
+  for (const file of chromium) expect(classifyAsset(asset(file.name))).toBeNull()
+  expect(classifyAsset(asset('latest-chromium.json'))).toBeNull()
 })
 
 test('a platform lists Apple Silicon or x64 first, then installers in format order', () => {

@@ -1,6 +1,6 @@
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { IORegistry } from '@open-pencil/core/io'
 import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state'
 
@@ -10,11 +10,9 @@ import type { ViewportSize } from '@/app/document/io/types'
 import { createDesignCheck } from '@/app/editor/design-check/session'
 import { createFlashActions } from '@/app/editor/flash'
 import { createMobileClipboardActions } from '@/app/editor/mobile-clipboard'
-import { createPenActions } from '@/app/editor/pen'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import { createProfilerActions } from '@/app/editor/profiler'
 import type { AppEditorState } from '@/app/editor/session/types'
-import { createVectorEditActions } from '@/app/editor/vector'
 
 export function defineEditorStoreAccessors(store: object, editor: Editor) {
   Object.defineProperties(store, {
@@ -60,23 +58,22 @@ export function createEditorStoreModules(
   preparationController: EditorPreparationController
 ) {
   const flash = createFlashActions(editor, state)
-  const pen = createPenActions(editor, state)
-  const vectorEdit = createVectorEditActions(editor, state)
   const documentIO = createDocumentIOActions(editor, state, viewportSize, preparationController)
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
   const profiler = createProfilerActions(editor)
   const designCheck = createDesignCheck(editor, state)
+  // A document opens with the panels its kind starts with: a board on the canvas alone.
+  watch(
+    () => state.documentKind,
+    () => {
+      state.showUI = resolveEditorProfile(state).panelsOpen
+    },
+    { immediate: true }
+  )
 
   return {
     ...flash,
-    ...pen,
-    ...vectorEdit,
-    /** Going read-only keeps a vector edit in progress, as the editor keeps edited text. */
-    setReadOnly(readOnly: boolean) {
-      if (readOnly) vectorEdit.exitNodeEditMode(true)
-      editor.setReadOnly(readOnly)
-    },
     openFigFile: documentIO.openFigFile,
     openDOMFile: documentIO.openDOMFile,
     importDOMText: documentIO.importDOMText,
@@ -84,6 +81,9 @@ export function createEditorStoreModules(
     getViewportSize: documentIO.getViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
+    renameDocument: documentIO.renameDocument,
+    /** Calls back with each name the person gives the document. */
+    onDocumentRenamed: documentIO.onDocumentRenamed,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     /** Counts the document changed by something outside its history, so it gets saved. */
@@ -93,6 +93,7 @@ export function createEditorStoreModules(
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
+    getDocumentFileHandle: documentIO.getDocumentFileHandle,
     hasWritableSource: documentIO.hasWritableSource,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,

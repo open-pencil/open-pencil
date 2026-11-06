@@ -2,6 +2,8 @@
 import { DialogContent, DialogOverlay, DialogPortal, DialogRoot } from 'reka-ui'
 import { computed, useAttrs } from 'vue'
 
+import { useOverlayOpen } from '@open-pencil/vue/lifecycle/overlays'
+
 import { useDialogUI, type DialogUI, type DialogVariants } from '@/components/ui/dialog/ui'
 
 defineOptions({ inheritAttrs: false })
@@ -23,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
+useOverlayOpen(open)
 const attrs = useAttrs()
 const cls = computed(() => useDialogUI(ui, { size, height }))
 </script>

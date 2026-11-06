@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -17,6 +16,7 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 
 import type { CloudServerEntry } from './types'
@@ -137,7 +137,7 @@ const title = (server: CloudServerEntry) =>
             >
               {{ t.signIn }}
             </AppButton>
-            <DropdownMenuRoot :modal="false">
+            <AppDropdownMenuRoot :modal="false">
               <DropdownMenuTrigger as-child>
                 <IconButton :label="t.settingsOptionsFor({ host: server.host })">
                   <icon-lucide-ellipsis class="size-3.5" />
@@ -184,7 +184,7 @@ const title = (server: CloudServerEntry) =>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPortal>
-            </DropdownMenuRoot>
+            </AppDropdownMenuRoot>
           </div>
         </div>
       </SettingsGroup>

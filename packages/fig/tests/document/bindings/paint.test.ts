@@ -45,6 +45,7 @@ test('a bound stroke follows the same rule', () => {
     a: 0.4
   })
   const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+    strokeStyleId: 'style:line',
     strokes: [
       {
         type: 'SOLID',
@@ -60,4 +61,13 @@ test('a bound stroke follows the same rule', () => {
   applyDocumentPaintBindings(graph, [node])
   expect(node.strokes[0].color).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   expect(node.strokes[0].opacity).toBeCloseTo(0.4)
+  expect(node.strokeStyleId).toBe('style:line')
+})
+
+test('resolving a bound color preserves the saved fill style assignment', () => {
+  const { graph, node } = setup(0.2, 1)
+  graph.updateNode(node.id, { fillStyleId: 'style:accent' })
+  applyDocumentPaintBindings(graph, [node])
+  expect(node.fills[0].opacity).toBeCloseTo(0.2)
+  expect(node.fillStyleId).toBe('style:accent')
 })

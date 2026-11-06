@@ -5,7 +5,7 @@ import { layerDriver } from '#tests/helpers/canvas/layers'
 
 /** A frame with enough children to scroll past its own row, expanded in the layers panel. */
 async function scrolledFrame(page: Page) {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

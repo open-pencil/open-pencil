@@ -3,7 +3,7 @@ import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { listFamilies, listFonts, loadFont } from '@/app/editor/fonts'
+import { listFamilies, listFonts } from '@/app/editor/fonts'
 import { createTauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
@@ -17,7 +17,16 @@ export function makeFigmaFromStore(
   store: EditorStore,
   pageId = store.state.currentPageId
 ): FigmaAPI {
-  const api = new FigmaAPI(store.graph, { fetch: imageFetch })
+  const api = new FigmaAPI(store.graph, {
+    fetch: imageFetch,
+    // A page not yet visited has no layers until the editor prepares it, as it does a page it
+    // switches to: with its fonts and layout.
+    loadPage: async (id) => {
+      if (!(await store.preparePageNodes(id)))
+        throw new Error(`Page "${id}" was closed before it finished loading`)
+    },
+    pageOfNode: (id) => store.pageHoldingNode(id)
+  })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
@@ -37,21 +46,12 @@ export function makeFigmaFromStore(
     zoom: store.state.zoom
   }
   api.exportImage = async (nodeIds, opts) =>
-    renderAutomationImage(
-      store,
-      nodeIds,
-      opts.scale ?? 1,
-      opts.format ?? 'PNG',
-      opts.pageId ?? pageId
-    )
+    renderAutomationImage(store, nodeIds, { ...opts, pageId: opts.pageId ?? pageId })
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
-  api.loadFontAsync = async ({ family, style }) => {
-    await loadFont(family, style).catch(() => null)
-  }
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
-    const fonts = systemFonts.flatMap(({ family, styles }) =>
-      styles.map((style) => ({ fontName: { family, style } }))
+    const fonts = systemFonts.flatMap(({ family, faces }) =>
+      faces.map(({ style }) => ({ fontName: { family, style } }))
     )
     const seenFamilies = new Set(systemFonts.map(({ family }) => family))
     for (const { family } of familyOptions) {

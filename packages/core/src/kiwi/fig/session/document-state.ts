@@ -1,6 +1,11 @@
-import { createFigDocumentSession, type FigSessionCheckpoint } from '@open-pencil/fig'
+import {
+  createFigDocumentSession,
+  figCheckpointRecords,
+  type FigSessionCheckpoint
+} from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { figArchive } from '#core/kiwi/fig/session/archive/access'
 import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/session/options'
 
 /**
@@ -50,6 +55,23 @@ export function isReaderPagePending(graph: SceneGraph, pageId: string): boolean 
   return session
     ? session.pages.some((page) => page.id === sourceId) && !session.loadedPageIds.has(sourceId)
     : !checkpoint.loadedPageIds.includes(sourceId)
+}
+
+/**
+ * The page holding a layer of the file while that page has not loaded, so a layer named by its
+ * ID, as a link to it names it, is found by loading its page. A layer's ID is its record's GUID;
+ * the archive answers which page holds it, in the reader's worker when there is one.
+ */
+export async function pendingReaderPageOfNode(
+  graph: SceneGraph,
+  nodeId: string
+): Promise<string | null> {
+  const archive = figArchive(graph)
+  const checkpoint = readerCheckpoint(graph)
+  if (!archive || !checkpoint || states.get(graph)?.complete) return null
+  const [pageGuid] = await archive.recordPages([nodeId])
+  const pageId = pageGuid ? figCheckpointRecords(checkpoint).get(pageGuid) : undefined
+  return pageId && isReaderPagePending(graph, pageId) ? pageId : null
 }
 
 /** Where the reader stands: which records became which layers, and which pages it loaded. */

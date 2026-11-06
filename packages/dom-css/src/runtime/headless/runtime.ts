@@ -1,7 +1,13 @@
 import { serializeHTML } from '#dom-css/export/html'
 import { INLINE_TAGS } from '#dom-css/import/flow'
 import { parseStyleAttribute } from '#dom-css/import/style-attribute'
-import type { CSSRuntime, DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
+import type {
+  CSSComputeOptions,
+  CSSRuntime,
+  DesignDocument,
+  DesignElement,
+  DesignNode
+} from '#dom-css/types'
 import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { computeHeadlessStyles } from './styles'
@@ -92,7 +98,11 @@ export function createHeadlessCSSRuntime(): CSSRuntime {
     serializeHTML(document: DesignDocument) {
       return serializeHTML(document)
     },
-    async computeStyles(document: DesignDocument, cssText = '') {
+    async computeStyles(document: DesignDocument, cssText = '', options: CSSComputeOptions = {}) {
+      // It resolves the cascade without a layout engine, so it has no boxes to record.
+      if (options.layout) {
+        throw new Error('The headless CSS runtime cannot record layout; use the browser runtime')
+      }
       return computeHeadlessStyles(document, cssText)
     }
   }

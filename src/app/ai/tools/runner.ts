@@ -1,6 +1,11 @@
 import { executeAtomicTool, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { isAtomicTool, toolChangesDocument, type ToolDef } from '@open-pencil/core/tools'
+import {
+  isAtomicTool,
+  toolChangesDocument,
+  toolFailure,
+  type ToolDef
+} from '@open-pencil/core/tools'
 
 import {
   AI_UNDO_PREFIX,
@@ -127,14 +132,14 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
   }
   try {
     if (isAtomicTool(def)) {
-      // An atomic tool commits its own step at once; loading its fonts after is not part of it.
-      const result = store.recordEdit({ ...options, push: false }, () =>
-        executeAtomicTool(store, figma, def, args, {
-          label: prefix,
-          signal: call.signal,
-          isLive: call.isLive
-        })
-      )
+      // An atomic tool records and commits its own step at once, from the layers it touched;
+      // loading its fonts after is not part of it.
+      const result = executeAtomicTool(store, figma, def, args, {
+        label: prefix,
+        signal: call.signal,
+        isLive: call.isLive,
+        onRecorded: options.onRecorded
+      })
       await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
       return result
     }
@@ -154,6 +159,12 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
 export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
   const { store, figma, def, args } = call
   if (!def.mutates) return def.execute(figma, args)
+  // Fonts load before the edit takes its turn, so an edit never waits on the network.
+  try {
+    await def.loadFonts(figma, args)
+  } catch (error) {
+    return toolFailure(error)
+  }
   const reply = call.reply ?? null
   const release = await editLock(store)()
   // Whatever fails from here, the lock and the reply's count of running tools are released.

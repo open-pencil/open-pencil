@@ -1,8 +1,8 @@
-import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/vector'
+import { handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { editedGradient, type Editor } from '@open-pencil/core'
+import { editedGradient, resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
@@ -10,10 +10,10 @@ import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
+import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
 import {
   createSelectionMoveDrag,
-  clickSelectsInside,
-  pressesSelection,
+  pressSelects,
   selectionIsLocked
 } from '#vue/shared/input/select/move'
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
@@ -21,18 +21,23 @@ import { tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
 
 export interface HitTestFns {
-  hitTestInScope: (cx: number, cy: number, deep: boolean) => SceneNode | null
-  isInsideContainerBounds: (cx: number, cy: number, containerId: string) => boolean
+  hitTestLayer: (cx: number, cy: number, deep: boolean) => SceneNode | null
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
 }
 
-/** Clears the selection and starts a marquee in the open frame or section under the press. */
+/**
+ * A press on nothing: leaves any entered container, clears the selection, and starts a marquee in
+ * the open frame or section under the press. Without a drag it selects that section only when
+ * nothing was selected; with a selection it only deselects, as in Figma.
+ */
 function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragState) => void) {
+  const selectsSection = editor.state.selectedIds.size === 0
+  editor.exitContainers()
   editor.clearSelection()
   const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
-  setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id })
+  setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id, selectsSection })
 }
 
 /**
@@ -51,7 +56,7 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (editor.state.readOnly) return false
+  if (!resolveEditorProfile(editor.state).edits) return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
@@ -64,7 +69,11 @@ function tryStartHandleDrag(
     setDrag(scaleDrag)
     return true
   }
-  const resizeDrag = tryStartResize(cx, cy, editor)
+  // A multi-selection resizes from its bounds' handles, the only ones it draws.
+  const resizeDrag =
+    editor.state.selectedIds.size > 1
+      ? tryStartSelectionResize(cx, cy, editor)
+      : tryStartResize(cx, cy, editor)
   if (resizeDrag) {
     setDrag(resizeDrag)
     return true
@@ -72,16 +81,18 @@ function tryStartHandleDrag(
   return !hitTestLabel(cx, cy, fns) && tryStartRotation(cx, cy)
 }
 
-/** Shift adds to the selection; a plain press selects the layer unless it keeps the selection. */
-function selectOnPress(hit: SceneNode, shiftKey: boolean, keepsSelection: boolean, editor: Editor) {
-  if (shiftKey) editor.select([hit.id], true)
-  else if (!editor.state.selectedIds.has(hit.id) && !keepsSelection) editor.select([hit.id])
-}
-
-/** A read-only document moves nothing, so a press selects a layer inside a selected frame at once. */
-function selectInsideOnPress(hit: SceneNode, keepsSelection: boolean, editor: Editor) {
-  if (keepsSelection && !editor.state.selectedIds.has(hit.id) && clickSelectsInside(hit, editor))
-    editor.select([hit.id])
+/**
+ * Shift adds to the selection; a plain press selects the layer when the press selects it and
+ * enters the container it was reached through, so Escape, pasting, and the marquee follow it.
+ */
+function selectOnPress(hit: SceneNode, shiftKey: boolean, selects: boolean, editor: Editor) {
+  if (shiftKey) {
+    editor.select([hit.id], true)
+    return
+  }
+  if (!selects) return
+  if (!editor.state.selectedIds.has(hit.id)) editor.select([hit.id])
+  editor.enterContainerOf(hit.id)
 }
 
 export function handleSelectDown(
@@ -97,7 +108,7 @@ export function handleSelectDown(
   setDrag: (d: DragState) => void
 ) {
   // Node edit mode intercept
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     handleNodeEditDown(e, cx, cy, editor, setDrag)
     return
   }
@@ -108,26 +119,19 @@ export function handleSelectDown(
 
   if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, fns, tryStartRotation, setDrag)) return
 
-  const hit =
-    tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
+  const deep = e.metaKey || e.ctrlKey
+  const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, fns, deep)
   if (!hit) {
-    if (!editor.state.enteredContainerId) startMarquee(cx, cy, editor, setDrag)
+    startMarquee(cx, cy, editor, setDrag)
     return
   }
 
-  const keepsSelection = !e.shiftKey && pressesSelection(hit, cx, cy, editor)
-  selectOnPress(hit, e.shiftKey, keepsSelection, editor)
+  selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
-  if (editor.state.readOnly) {
-    selectInsideOnPress(hit, keepsSelection, editor)
-    return
-  }
+  // A read-only document moves nothing.
+  if (!resolveEditorProfile(editor.state).edits) return
   if (selectionIsLocked(editor)) return
 
-  const drag = createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey)
-  // A click without dragging still selects a layer inside a selected frame; groups need a double-click.
-  if (drag.type === 'move' && keepsSelection && !editor.state.selectedIds.has(hit.id)) {
-    drag.selectOnClick = clickSelectsInside(hit, editor) ? hit.id : undefined
-  }
-  setDrag(drag)
+  // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.
+  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey))
 }

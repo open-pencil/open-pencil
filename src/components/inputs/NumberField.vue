@@ -26,6 +26,8 @@ export interface NumberFieldProps {
   inheritBinding?: boolean
   bound?: boolean
   editPolicy?: NumberFieldEditPolicy
+  /** Units a typed value may end with; the commit reports the one typed. */
+  units?: readonly string[]
   ui?: NumberFieldUI
 }
 
@@ -48,12 +50,10 @@ import {
   NumberFieldValue
 } from '@open-pencil/vue/primitives/NumberField'
 
-import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/input/number-field'
 
 const attrs = useAttrs()
 const slots = defineSlots<NumberFieldSlots>()
-const store = useEditorStore()
 const { panels } = useI18n()
 
 const {
@@ -70,6 +70,7 @@ const {
   inheritBinding = true,
   bound,
   editPolicy,
+  units,
   ui
 } = defineProps<NumberFieldProps>()
 const accessibleLabel = computed(() => {
@@ -79,9 +80,9 @@ const accessibleLabel = computed(() => {
 const styles = computed(() => tv(theme)({ suffix: Boolean(slots.suffix) }))
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
+  'update:modelValue': [value: number, unit?: string]
   'editing-change': [editing: boolean]
-  commit: [value: number, previous: number]
+  commit: [value: number, previous: number, unit?: string]
   cancel: []
   invalid: [expression: string, reason: NumberExpressionError]
   'detach-request': [source: 'edit' | 'scrub' | 'step']
@@ -104,19 +105,15 @@ defineOptions({ inheritAttrs: false })
     :inherit-binding="inheritBinding"
     :bound="bound"
     :edit-policy="editPolicy"
-    @update:model-value="emit('update:modelValue', $event)"
-    @commit="(val: number, prev: number) => emit('commit', val, prev)"
+    :units="units"
+    @update:model-value="(value: number, unit?: string) => emit('update:modelValue', value, unit)"
+    @commit="(val: number, prev: number, unit?: string) => emit('commit', val, prev, unit)"
     @cancel="emit('cancel')"
     @invalid="
       (expression: string, reason: NumberExpressionError) => emit('invalid', expression, reason)
     "
     @detach-request="emit('detach-request', $event)"
-    @editing-change="
-      (editing: boolean) => {
-        store.state.numberFieldFocused = editing
-        emit('editing-change', editing)
-      }
-    "
+    @editing-change="(editing: boolean) => emit('editing-change', editing)"
   >
     <div
       v-bind="{ ...attrs, ...rootAttrs }"
@@ -128,14 +125,11 @@ defineOptions({ inheritAttrs: false })
         actions.startScrub($event)
       "
     >
-      <span
-        v-if="editing || !slots.bound || rootAttrs['data-bound'] === undefined"
-        :class="styles.leading({ class: ui?.leading })"
-      >
+      <span :class="styles.leading({ class: ui?.leading })">
         <slot name="icon">
-          <span v-if="icon" class="text-[11px] leading-none">{{ icon }}</span>
+          <span v-if="icon" class="text-2xs leading-none">{{ icon }}</span>
         </slot>
-        <span v-if="label" class="text-[11px] leading-none">{{ label }}</span>
+        <span v-if="label" class="text-2xs leading-none">{{ label }}</span>
       </span>
       <NumberFieldInput :class="styles.field({ class: ui?.field })" />
       <NumberFieldValue :class="styles.display({ class: ui?.display })">

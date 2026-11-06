@@ -1,12 +1,16 @@
+import { createEventHook } from '@vueuse/core'
+
 import type { Editor, EditorState } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
 import {
+  documentFileName,
   documentNameFromFigPath,
   downloadNameFromPath,
-  figDownloadName
+  figDownloadName,
+  isFigArchiveName
 } from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
@@ -15,6 +19,7 @@ import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
+import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -22,6 +27,7 @@ import { trackDocumentFormat } from '@/app/telemetry'
 type DocumentSourceState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  roomKeepsEdits: boolean
 }
 
 export { createDocumentSourceState }
@@ -73,6 +79,21 @@ export function createDocumentSourceActions({
     })
   }
 
+  /**
+   * A write changes the file's time, which keys its Home preview, so the sharp cover is drawn
+   * again for it; without it Home falls back to the small cover inside the file. An edit made
+   * while `version` was being written is not in the file, so the cover is left to the next save.
+   */
+  function recacheRecentCover(version: number) {
+    const path = getFilePath()
+    const renderer = getRenderer()
+    if (!path || !renderer || !isFigArchiveName(path)) return
+    if (changes.capture() !== version) return
+    void cacheRecentFileCover(path, editor.graph, renderer).catch((error: unknown) => {
+      console.warn('[Recent files] Could not cache the preview after saving', error)
+    })
+  }
+
   function buildRecoveryFigFile() {
     return exportFigFile(editor.graph, {
       pageId: state.currentPageId,
@@ -85,6 +106,10 @@ export function createDocumentSourceActions({
     version: changes.capture,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
+    buildCover: () => {
+      const renderer = getRenderer()
+      return renderer ? drawHomeCardCover(editor.graph, renderer) : null
+    },
     hasWritableSource
   })
 
@@ -107,7 +132,10 @@ export function createDocumentSourceActions({
     startWatchingFile: () => {
       void startWatchingFile()
     },
-    onWriteSuccess: (version) => recovery.markProtectedVersion(version),
+    onWriteSuccess: (version) => {
+      recacheRecentCover(version)
+      return recovery.markProtectedVersion(version)
+    },
     onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
   })
 
@@ -126,6 +154,18 @@ export function createDocumentSourceActions({
   function markDocumentSaved() {
     changes.markSaved()
     setSavedVersion(changes.capture())
+  }
+
+  // Only names the person gives; a save's provisional name and the room's own are no rename.
+  const renamed = createEventHook<string>()
+
+  function renameDocument(name: string) {
+    const trimmed = name.trim()
+    if (state.hostRestrictions.readOnly || !trimmed || trimmed === state.documentName) return
+    state.documentName = trimmed
+    // Storage keeps the name with the document; a file's name is its path, which saving leaves as is.
+    if (getStorageBinding()) changes.markChanged()
+    void renamed.trigger(trimmed)
   }
 
   function setDocumentSource(
@@ -153,7 +193,7 @@ export function createDocumentSourceActions({
     stopWatchingFile()
     setFileHandle(null)
     setFilePath(null)
-    setDownloadName(`${documentName}.fig`)
+    setDownloadName(documentFileName(documentName, state.documentKind))
     setSourceIdentity({ handle: null, path: null })
     setStorageBinding(binding)
     state.documentName = documentName
@@ -234,7 +274,7 @@ export function createDocumentSourceActions({
       stopWatchingFile()
       setFileHandle(null)
       setFilePath(null)
-      setDownloadName(`${state.documentName}.fig`)
+      setDownloadName(documentFileName(state.documentName, state.documentKind))
       setStorageBinding({ ...storageLocationOf(location), documentId: createCanvasId() })
     })
     if (saved) {
@@ -256,6 +296,8 @@ export function createDocumentSourceActions({
   }
 
   return {
+    renameDocument,
+    onDocumentRenamed: renamed.on,
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,

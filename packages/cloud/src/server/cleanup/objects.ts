@@ -2,8 +2,8 @@ import type { CloudDatabase } from '#cloud/server/db'
 import type { ExpressionBuilder } from 'kysely'
 
 /**
- * No revision refers to the stored file any more, and no workspace keeps it as an image, so it
- * can leave the object store.
+ * No revision refers to the stored file any more, no workspace keeps it as an image, and no
+ * collaboration room keeps it as its snapshot, so it can leave the object store.
  */
 export function unreferencedObject(expression: ExpressionBuilder<CloudDatabase, 'storageObject'>) {
   return expression.and([
@@ -21,6 +21,14 @@ export function unreferencedObject(expression: ExpressionBuilder<CloudDatabase, 
           .selectFrom('workspaceImage')
           .select('workspaceImage.checksum')
           .whereRef('workspaceImage.storageObjectId', '=', 'storageObject.id')
+      )
+    ),
+    expression.not(
+      expression.exists(
+        expression
+          .selectFrom('documentRoomSnapshot')
+          .select('documentRoomSnapshot.documentId')
+          .whereRef('documentRoomSnapshot.snapshotObjectId', '=', 'storageObject.id')
       )
     )
   ])

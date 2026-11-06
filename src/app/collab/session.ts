@@ -4,35 +4,36 @@ import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import {
+  bindCollabGraphEvents,
+  bindDocumentSync,
+  bindVariableSync,
+  createYjsGraphSync,
+  readRoomName,
+  readRoot,
+  registerYjsObservers,
+  roomDocumentData,
+  trackRoomSaves,
+  TREE_FORMAT,
+  writeRoomName,
+  type RoomSaves,
+  type YNodes,
+  type YRecords
+} from '@open-pencil/collab'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
-import { bindDocumentSync, roomDocumentData } from '@/app/collab/document/sync'
+import { collabEditor, followRoomPages } from '@/app/collab/editor'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
-import type { YRecords } from '@/app/collab/records'
 import { connectCollabRoom } from '@/app/collab/room/connection'
-import { trackRoomSaves, type RoomSaves } from '@/app/collab/room/saves'
 import { deriveRoomStatus, type RoomStatus } from '@/app/collab/room/status'
-import {
-  readRoomName,
-  readRoot,
-  TREE_FORMAT,
-  writeRoomName,
-  type YNodes
-} from '@/app/collab/shared-tree/fields'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { RemotePeer } from '@/app/collab/types'
-import { bindVariableSync } from '@/app/collab/variables'
 import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
-import {
-  bindCollabGraphEvents,
-  createYjsGraphSync,
-  registerYjsObservers
-} from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
 import { setPeers } from '@/app/presence/registry'
 import { ROOM_STATUS_TICK_MS, ROOM_UNREACHABLE_MS } from '@/constants'
@@ -67,6 +68,8 @@ export interface RoomSession {
   roomHasDocument(): boolean
   /** Follow peers answering this tab's state with theirs; returns the unsubscribe. */
   onSynced(handler: (peerId: string) => void): () => void
+  /** Follow peers leaving the room, the relay included; returns the unsubscribe. */
+  onPeerLeave(handler: (peerId: string) => void): () => void
   /** Follow the server saying the document's version history changed; returns the unsubscribe. */
   onVersionsChanged(handler: () => void): () => void
   /** The awareness states of everyone in the room, this tab included. */
@@ -150,6 +153,7 @@ export function openRoomSession({
   const documentData = roomDocumentData(ydoc)
   const persistence = openSavedCopy(roomId, ydoc)
   const saves = trackRoomSaves(ydoc, [
+    meta,
     ynodes,
     yimages,
     yvariables,
@@ -159,7 +163,8 @@ export function openRoomSession({
     documentData.libraries,
     documentData.settings
   ])
-  const documentSync = bindDocumentSync({ store, ydoc, data: documentData, meta })
+  const editor = collabEditor(store)
+  const documentSync = bindDocumentSync({ editor, ydoc, data: documentData, meta })
   const adopt = (apply: () => void) => (holdsDocument ? store.adoptChanges(apply) : apply())
 
   const peers = shallowRef<RemotePeer[]>([])
@@ -192,14 +197,15 @@ export function openRoomSession({
   )
 
   const sync = createYjsGraphSync({
-    getStore: () => store,
+    getEditor: () => editor,
     getYdoc: () => (disposed ? null : ydoc),
     getYnodes: () => (disposed ? null : ynodes),
     getYimages: () => (disposed ? null : yimages),
     shareImage: roomImages ? (name, bytes) => roomImages.share(name, bytes) : undefined,
     setSuppressYjsEvents: (value) => {
       suppressYjsEvents = value
-    }
+    },
+    onApplied: followRoomPages(store)
   })
 
   function refreshDocument() {
@@ -224,14 +230,11 @@ export function openRoomSession({
       awareness.setLocalStateField('hasFile', hasDocument.value)
     }
     const name = readRoomName(meta)
-    if (hasDocument.value && name && origin === 'joined') store.state.documentName = name
+    if (hasDocument.value && name) store.state.documentName = name
   }
 
   function updatePeers() {
-    const next = buildRemotePeers(
-      awareness.getStates() as Map<number, Record<string, unknown>>,
-      awareness.clientID
-    )
+    const next = buildRemotePeers(awareness.getStates(), awareness.clientID)
     peers.value = next
     setPeers(store, next)
   }
@@ -242,7 +245,7 @@ export function openRoomSession({
   }
 
   const unregisterYjsObservers = registerYjsObservers({
-    store,
+    editor,
     ynodes,
     yimages,
     hasImageRef: roomImages ? (name) => roomImages.hasRef(name) : undefined,
@@ -256,6 +259,14 @@ export function openRoomSession({
     }
   })
   meta.observe(refreshDocument)
+  // A rename reaches the room once the tab shows the room's copy; before that the room's name
+  // wins, as the room's other document data does when the tab starts following it.
+  function publishName(name: string) {
+    if (disposed || store.state.hostRestrictions.readOnly || !hasDocument.value) return
+    if (readRoot(meta) !== store.graph.rootId || name === readRoomName(meta)) return
+    writeRoomName(meta, name)
+  }
+  const stopName = store.onDocumentRenamed(publishName).off
   awareness.on('change', updatePeers)
 
   const connection = connectCollabRoom({
@@ -292,9 +303,9 @@ export function openRoomSession({
   const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
   const stopAgentPreviews = shareAgentPreviews(store, connection)
   const voice = attachRoomVoice({ awareness, peers, connection })
-  const variableSync = bindVariableSync({ store, ydoc, yvariables, ycollections })
+  const variableSync = bindVariableSync({ editor, ydoc, yvariables, ycollections })
   const unbindGraphEvents = bindCollabGraphEvents({
-    store,
+    editor,
     getYdoc: () => (disposed ? null : ydoc),
     getYnodes: () => (disposed ? null : ynodes),
     getSuppressGraphSync: () => suppressGraphSync,
@@ -328,13 +339,15 @@ export function openRoomSession({
     },
     roomHasDocument: () => readRoot(meta) !== undefined,
     onSynced: (handler) => connection.onSynced(handler),
+    onPeerLeave: (handler) => connection.onPeerLeave(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
-    presence: () => awareness.getStates() as Map<number, Record<string, unknown>>,
+    presence: () => awareness.getStates(),
     clientId: awareness.clientID,
     peerForClient: (clientId) => connection.peerForClient(clientId),
     upload: connection.upload,
     dispose() {
       if (disposed) return
+      stopName()
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       variableSync.dispose()

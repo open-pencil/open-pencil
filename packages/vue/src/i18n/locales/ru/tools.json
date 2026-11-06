@@ -14,5 +14,7 @@
   "shape": "Фигура",
   "connector": "Соединитель",
   "hand": "Рука",
-  "comment": "Комментарий"
+  "comment": "Комментарий",
+  "eyedropper": "Пипетка",
+  "eyedropperSample": "Взять цвет с холста"
 }

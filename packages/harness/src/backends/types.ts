@@ -1,5 +1,6 @@
 import type {
   HarnessAdapterID,
+  HarnessCompactionEvent,
   HarnessProviderCapability,
   HarnessSessionConfiguration,
   HarnessTurnUsage,
@@ -18,6 +19,8 @@ export interface BackendSession {
   readonly sessionId: string
   readonly isResume: boolean
   runTurn(prompt: string, signal?: AbortSignal): AsyncIterable<BackendEvent>
+  /** Asks the agent to compact its context; the summary arrives on its next or active turn. */
+  compact(instructions?: string): Promise<void>
   stop(): Promise<HarnessResumeState>
   destroy(): Promise<void>
 }
@@ -28,6 +31,7 @@ export type BackendEvent =
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: JSONValue }
   | { type: 'tool-result'; toolCallId: string; toolName: string; output: JSONValue }
   | { type: 'finish'; finishReason: string; usage?: HarnessTurnUsage }
+  | HarnessCompactionEvent
   | { type: 'error'; message: string }
 
 export interface HarnessBackend {

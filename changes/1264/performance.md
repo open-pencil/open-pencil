@@ -1,1 +1,0 @@
-- Laying out a document with many repeated text layers measures each distinct text once, instead of shaping it again for every copy.

@@ -2,6 +2,7 @@
 import { tinykeys } from 'tinykeys'
 import { onScopeDispose } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
@@ -34,7 +35,7 @@ if (keys) {
 
 <template>
   <WorkspacePill
-    v-if="store.state.play"
+    v-if="resolveEditorProfile(store.state).live"
     mode="preview"
     :document-name="store.state.documentName"
     :shortcut="shortcut"

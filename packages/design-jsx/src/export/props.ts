@@ -5,9 +5,12 @@ import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { textLengthJSX } from '../overrides/text'
+import { withPropertyBindings } from './components/properties'
+import { componentReferences, type ComponentReference } from './components/references'
 import { collectDecorationProps } from './decoration'
 import { collectFontSettingProps, FONT_SETTING_FIELDS } from './font'
 import {
@@ -17,7 +20,7 @@ import {
   formatTracks,
   getNodeContext
 } from './helpers'
-import { collectEffectProps, collectFillProps, collectStrokeProps } from './paint'
+import { collectEffectProps, collectFillProps, collectStrokeProps } from './paints'
 import { collectStateProps } from './state'
 import type { JSXProp } from './value'
 import { variableReferences, type VariableExport } from './variables'
@@ -329,16 +332,23 @@ function collectShapeNodeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.type === 'POLYGON' && node.pointCount !== 3) {
     props.push(['points', node.pointCount])
   }
+  if (node.type === 'VECTOR' && node.vectorNetwork) {
+    // Figma's own form of a vector's geometry, which <Vector> reads back as written.
+    const paths = vectorNetworkPaths(node.vectorNetwork)
+    if (paths.length > 0) props.push(['paths', paths.map((path) => ({ ...path }))])
+  }
 }
 
 /**
  * The props of `node`, in the order they are printed, with the variables it binds written as
- * `variables` writes them: by default, by reference to the document's.
+ * `variables` writes them: by default, by reference to the document's. Components are named as
+ * `reference` names them.
  */
 export function collectProps(
   node: SceneNode,
   graph: SceneGraph,
-  variables: VariableExport = variableReferences(graph)
+  variables: VariableExport = variableReferences(graph),
+  reference: ComponentReference = componentReferences(graph)
 ): JSXProp[] {
   const props: JSXProp[] = []
   const ctx = getNodeContext(node, graph)
@@ -358,5 +368,5 @@ export function collectProps(
   collectShapeNodeProps(node, props)
   collectStateProps(node, ctx, props, variables)
 
-  return props
+  return withPropertyBindings(props, node, graph, reference)
 }

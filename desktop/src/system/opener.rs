@@ -48,6 +48,29 @@ pub fn open_external_url(
     Ok(())
 }
 
+/// Sends a page the editor opens in a new window, through `window.open`, to the system browser
+/// as `open_external_url` does. The webview opens no window of its own; without this handler it
+/// would drop the request and the link would do nothing.
+pub fn open_new_window_externally<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+) -> impl Fn(tauri::Url, tauri::webview::NewWindowFeatures) -> tauri::webview::NewWindowResponse<R>
+       + Send
+       + 'static {
+    move |url, _| {
+        #[cfg(not(feature = "native-test"))]
+        let opened = open_external_url(app.clone(), url.to_string());
+        #[cfg(feature = "native-test")]
+        let opened = {
+            use tauri::Manager;
+            open_external_url(app.state::<OpenedExternalUrls>(), url.to_string())
+        };
+        if let Err(error) = opened {
+            eprintln!("[opener] {url}: {error}");
+        }
+        tauri::webview::NewWindowResponse::Deny
+    }
+}
+
 #[cfg(feature = "native-test")]
 #[tauri::command]
 pub fn take_native_test_opened_urls(state: tauri::State<OpenedExternalUrls>) -> Vec<String> {

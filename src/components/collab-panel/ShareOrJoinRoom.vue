@@ -35,7 +35,7 @@ const JOIN_ERROR_ID = 'collab-join-error'
 
   <div class="mb-2 flex items-center gap-2">
     <div class="h-px flex-1 bg-border" />
-    <span class="text-[11px] text-muted">{{ collab.messages.orJoinRoom }}</span>
+    <span class="text-2xs text-muted">{{ collab.messages.orJoinRoom }}</span>
     <div class="h-px flex-1 bg-border" />
   </div>
 

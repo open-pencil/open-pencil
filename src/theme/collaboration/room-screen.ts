@@ -13,7 +13,7 @@ export const roomScreenTheme = {
     othersWaiting: 'mt-3 text-xs text-muted',
     actions: 'flex flex-col items-center gap-3',
     buttons: 'flex items-center justify-center gap-2',
-    footnote: 'flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted',
+    footnote: 'flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted',
     link: 'text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none'
   }
 } as const
@@ -25,6 +25,6 @@ export const roomNoticeTheme = {
     icon: 'size-4 shrink-0 text-muted',
     content: 'flex min-w-0 flex-col',
     title: 'text-xs font-medium text-surface',
-    description: 'text-[11px] text-muted'
+    description: 'text-2xs text-muted'
   }
 } as const

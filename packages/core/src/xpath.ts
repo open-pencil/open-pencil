@@ -117,9 +117,12 @@ function getAttrs(wrapped: XPathNode): XPathAttr[] {
       const value = attrValue(node, attrName)
       if (value === undefined || value === null || typeof value === 'symbol') continue
       const stringValue =
-        typeof value === 'object'
-          ? JSON.stringify(value)
-          : String(value as string | number | boolean)
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'bigint'
+          ? String(value)
+          : JSON.stringify(value)
       attrs.push({
         nodeType: NODE_TYPES.ATTRIBUTE_NODE,
         nodeName: attrName,
@@ -308,7 +311,7 @@ function buildSegment(graph: SceneGraph, node: SceneNode, parent: SceneNode | un
 
   const siblings = parent.childIds
     .map((id) => graph.getNode(id))
-    .filter((n): n is SceneNode => n !== undefined && n.type === tag)
+    .filter((n): n is SceneNode => n?.type === tag)
 
   const sameNameCount = siblings.filter((s) => s.name === node.name).length
   if (sameNameCount <= 1) return `${tag}[@name=${escaped}]`

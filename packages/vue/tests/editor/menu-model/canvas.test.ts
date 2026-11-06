@@ -1,11 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-
-import { ref } from 'vue'
-
+import { ref, computed } from 'vue'
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
-
-import { buildCanvasContextMenu } from '#vue/editor/menu-model/canvas'
-import type { CanvasMenuOptions } from '#vue/editor/menu-model/canvas'
+import { buildCanvasContextMenu, type CanvasMenuOptions } from '#vue/editor/menu-model/canvas'
 
 /** The canvas menu's command ids for a selection that is an icon or not. */
 function menuIds(isIcon: boolean) {
@@ -32,5 +28,114 @@ describe('canvas menu for icons', () => {
   test('offers Detach icon only for icons', () => {
     expect(menuIds(true)).toContain('selection.detachIcon')
     expect(menuIds(false)).not.toContain('selection.detachIcon')
+  })
+})
+
+function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
+  return {
+    hasSelection: ref(true),
+    isGroup: ref(false),
+    isComponent: ref(false),
+    isInstance: ref(false),
+    isIcon: ref(false),
+    canCreateComponentSet: ref(false),
+    canCreateSlot: ref(false),
+    canAutoArrange: ref(false),
+    ...overrides
+  } as CanvasMenuOptions['selection']
+}
+
+function options(overrides: Partial<CanvasMenuOptions> = {}): CanvasMenuOptions {
+  return {
+    commandMenuItem(id: EditorCommandId) {
+      return { id, label: id }
+    },
+    otherPages: [],
+    moveSelectionToPage: (pageId: string) => pageId,
+    selection: selection(),
+    t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' },
+    ...overrides
+  } as CanvasMenuOptions
+}
+
+function itemIds(menu: ReturnType<typeof buildCanvasContextMenu>) {
+  return menu.map((item) => (item.separator ? '---' : (item.id ?? item.label)))
+}
+
+describe('buildCanvasContextMenu', () => {
+  test('keeps the default selection menu in semantic groups', () => {
+    expect(itemIds(buildCanvasContextMenu(options()))).toEqual([
+      'selection.duplicate',
+      'selection.delete',
+      '---',
+      'selection.bringForward',
+      'selection.bringToFront',
+      'selection.sendBackward',
+      'selection.sendToBack',
+      '---',
+      'selection.group',
+      'selection.frameSelection',
+      'selection.wrapInAutoLayout',
+      'selection.toggleMask',
+      'selection.flatten',
+      'selection.outlineText',
+      'selection.outlineStroke',
+      '---',
+      'selection.createComponent',
+      '---',
+      'selection.toggleVisibility',
+      'selection.toggleLock',
+      '---',
+      'selection.flipHorizontal',
+      'selection.flipVertical'
+    ])
+  })
+
+  test('shows instance actions only for instances', () => {
+    expect(
+      itemIds(
+        buildCanvasContextMenu(
+          options({ selection: selection({ isInstance: computed(() => true) }) })
+        )
+      )
+    ).toContain('selection.detachInstance')
+  })
+
+  test('offers Create slot for layers of a main component', () => {
+    const ids = itemIds(
+      buildCanvasContextMenu(
+        options({ selection: selection({ canCreateSlot: computed(() => true) }) })
+      )
+    )
+    expect(ids).toContain('selection.createSlot')
+    expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('selection.createSlot')
+  })
+
+  test('offers Auto arrange for layers that can be arranged', () => {
+    const menu = buildCanvasContextMenu(
+      options({ selection: selection({ canAutoArrange: computed(() => true) }) })
+    )
+    const arrange = menu.at(-1)
+    expect(arrange && !arrange.separator ? arrange.label : undefined).toBe('Auto arrange')
+    expect(itemIds(arrange && !arrange.separator ? (arrange.sub ?? []) : [])).toEqual([
+      'selection.arrangeSpread',
+      'selection.arrangeCompact',
+      'selection.arrangePack',
+      '---',
+      'selection.arrangeFlowDown',
+      'selection.arrangeFlowRight',
+      'selection.arrangeTreeDown',
+      'selection.arrangeTreeRight',
+      'selection.arrangeRadial',
+      'selection.arrangeNetwork'
+    ])
+    expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('Auto arrange')
+  })
+
+  test('does not emit empty leading or repeated separators', () => {
+    const ids = itemIds(buildCanvasContextMenu(options({ otherPages: [] })))
+    expect(ids[0]).not.toBe('---')
+    expect(ids.at(-1)).not.toBe('---')
+    expect(ids.join(',')).not.toContain('---,---')
   })
 })

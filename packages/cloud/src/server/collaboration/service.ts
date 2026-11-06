@@ -74,13 +74,21 @@ export async function signCollaborationTicket({
     .setExpirationTime(expiresAtSeconds)
     .setSubject(principal.kind === 'user' ? principal.userId : principal.guestId)
     .sign(new TextEncoder().encode(authSecret))
-  return {
+  const ticket = {
     token,
-    provider: relayURL ? ('relay' as const) : ('trystero' as const),
-    ...(relayURL ? { serverURL: withQuery(relayURL, { [RELAY_DOCUMENT_PARAM]: documentId }) } : {}),
+    provider: 'trystero' as const,
     ...claims,
     roomKey,
-    expiresAt: new Date(expiresAtSeconds * 1000).toISOString()
+    expiresAt: new Date(expiresAtSeconds * 1000).toISOString(),
+    relayHeartbeat: false
+  }
+  if (!relayURL) return ticket
+  // This deployment's relay answers the heartbeat, which editors then use to notice a lost socket.
+  return {
+    ...ticket,
+    provider: 'relay' as const,
+    serverURL: withQuery(relayURL, { [RELAY_DOCUMENT_PARAM]: documentId }),
+    relayHeartbeat: true
   }
 }
 

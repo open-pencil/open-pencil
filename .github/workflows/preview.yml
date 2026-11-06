@@ -31,6 +31,8 @@ jobs:
 
       - run: bun run build
 
+      - run: bun run check:bundle
+
       - name: Upload preview artifact
         uses: actions/upload-artifact@v7
         with:

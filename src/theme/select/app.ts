@@ -9,7 +9,7 @@ const appSelectTheme = {
     ...selectTheme.variants,
     /** The control scale in `theme/control.ts`, with the padding and text of an input that size. */
     size: {
-      xs: { trigger: 'h-6 px-1.5 text-[11px]' },
+      xs: { trigger: 'h-6 px-1.5 text-2xs' },
       sm: { trigger: 'h-7 px-2.5 text-xs' },
       md: { trigger: 'h-8 px-3 text-xs' },
       lg: { trigger: 'h-9 px-3 text-sm' }

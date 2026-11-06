@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { computed } from 'vue'
@@ -14,6 +13,7 @@ import { variablesAddTestId, vTestId } from '@open-pencil/vue/testing'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { VARIABLE_TYPE_ICONS, VARIABLE_TYPES } from '@/components/variables/type-icons'
@@ -37,7 +37,7 @@ const items = computed(() => {
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <AppDropdownMenuRoot>
     <!-- Reka anchors the menu to the element it mounted with, so a new button needs a new trigger. -->
     <DropdownMenuTrigger :key="String(labelled)" as-child>
       <AppButton v-if="labelled" variant="soft" size="sm" data-test-id="variables-add-variable">
@@ -66,11 +66,11 @@ const items = computed(() => {
             <component :is="item.icon" :class="menu.icon" />
             <span class="flex min-w-0 flex-1 flex-col">
               <span>{{ item.label }}</span>
-              <span class="truncate text-[10px] text-muted">{{ item.hint }}</span>
+              <span class="truncate text-3xs text-muted">{{ item.hint }}</span>
             </span>
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

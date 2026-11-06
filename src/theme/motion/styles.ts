@@ -8,18 +8,25 @@ export const motionStyles = {
    */
   floating:
     'animate-in fade-in-0 zoom-in-95 duration-150 ease-out data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 motion-reduce:animate-none',
+  /** Controls a hover or focus reveals fade in and out; the trigger sets the end state. */
+  reveal: 'transition-opacity duration-150 ease-out motion-reduce:transition-none',
   spinner: 'animate-spin motion-reduce:animate-none',
   pulse: 'animate-pulse motion-reduce:animate-none'
 } as const
 
-/** A detail view sliding in over its list and back out the way it came. */
+/**
+ * A detail view sliding in over its list and back out the way it came. The view's background
+ * covers the list at once and only its content moves, so the two never show through each other;
+ * `duration` tells Vue how long that is, since the view itself has no transition to time.
+ */
 export const drillInTransition = {
+  duration: { enter: 150, leave: 100 },
   enterActiveClass:
-    'transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none',
-  enterFromClass: 'translate-x-3 opacity-0 motion-reduce:translate-x-0',
+    '*:transition-[opacity,translate] *:duration-150 *:ease-out motion-reduce:*:transition-none',
+  enterFromClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0',
   leaveActiveClass:
-    'transition-[opacity,translate] duration-100 ease-in motion-reduce:transition-none',
-  leaveToClass: 'translate-x-3 opacity-0 motion-reduce:translate-x-0'
+    '*:transition-[opacity,translate] *:duration-100 *:ease-in motion-reduce:*:transition-none',
+  leaveToClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0'
 } as const
 
 /** One view replacing another in place, such as an inspector switching to another item. */

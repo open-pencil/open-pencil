@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- SceneGraph is the facade over the domain modules */
-import { omitBy } from 'es-toolkit/object'
+import { omitBy, pick } from 'es-toolkit/object'
 import { isUndefined } from 'es-toolkit/predicate'
 
 import { removeStaleBindings } from './bindings'
@@ -13,6 +13,7 @@ import {
 } from './coordinate'
 import { cloneNodeProps, type NodeCloneMode } from './copy'
 import { bindNodeEvents } from './events'
+import { TRANSFORM_FIELDS } from './fields/geometry'
 import { LAYOUT_AFFECTING_KEYS } from './fields/layout'
 import { withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
@@ -23,11 +24,12 @@ import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
-import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { invalidateTextCaches } from './text/picture'
+import { textCacheInvalidationChanges } from './text/picture'
+import { remapCopiedReferences } from './transfer/copied'
 import type {
   DocumentColorSpace,
+  DocumentKind,
   EnabledLibraryBinding,
   NodeChangeObserver,
   NodeType,
@@ -57,6 +59,7 @@ export class SceneGraph {
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'srgb'
+  documentKind: DocumentKind = 'design'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter = new BufferedSceneEmitter()
   private absPosCache = new Map<string, Vector>()
@@ -519,6 +522,10 @@ export class SceneGraph {
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
 
+  /**
+   * Writes fields as given. Edits detach the shared styles whose fields they change before
+   * they get here (`styleDetachmentChanges`); resolving bindings or loading a file does not.
+   */
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.scopeDepths.preview > 0) {
       this.updateNodePreview(id, changes)
@@ -527,9 +534,7 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
-    const defined = omitBy(changes, isUndefined)
-    const detached = omitBy(styleDetachmentChanges(node, defined), isUndefined)
-    this.applyNodeChanges(node, this.sizedChanges(node, detached))
+    this.applyNodeChanges(node, this.sizedChanges(node, omitBy(changes, isUndefined)))
   }
 
   /** A size set from outside layout, with what it also sets on a generated frame. */
@@ -572,9 +577,14 @@ export class SceneGraph {
       if (node.componentId) this.unindexInstance(node.componentId, id)
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
-    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
-      markSourceFieldsEdited(node, Object.keys(changes))
+    this.markEdited(node, Object.keys(changes))
+    // Cache resets that change the node travel with the change, under the caller's own values,
+    // so a layout put-back cannot drop their event.
+    if (node.type === 'TEXT') {
+      const resets = omitBy(textCacheInvalidationChanges(node, changes), (value, key) =>
+        Object.is(node[key], value)
+      )
+      changes = { ...resets, ...changes }
     }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
@@ -587,8 +597,16 @@ export class SceneGraph {
     Object.assign(node, changes)
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
+    if (changes.effects) removeStaleBindings(node, 'effects', changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
     this.publishNodeUpdate(id, changes)
+  }
+
+  /** Marks fields an edit changed, unless metadata is being restored or layout is writing them. */
+  private markEdited(node: SceneNode, keys: string[]): void {
+    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
+      markSourceFieldsEdited(node, keys)
+    }
   }
 
   /** Publishes an update now, or leaves it to the running layout, which publishes once it ends. */
@@ -622,6 +640,7 @@ export class SceneGraph {
     node.parentId = newParentId
     newParent.childIds.push(nodeId)
 
+    const before = pick(node, TRANSFORM_FIELDS)
     if (isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)) {
       node.x += oldParentWorld[2] - newParentWorld[2]
       node.y += oldParentWorld[5] - newParentWorld[5]
@@ -630,6 +649,11 @@ export class SceneGraph {
       const local = localTransformFromWorld(node, world, newParentWorld)
       if (local) Object.assign(node, local)
     }
+    // The node keeps its place on the canvas by new coordinates, which a save must write.
+    this.markEdited(
+      node,
+      TRANSFORM_FIELDS.filter((key) => node[key] !== before[key])
+    )
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
   }
@@ -696,17 +720,17 @@ export class SceneGraph {
     py: number,
     scopeId: string,
     selectedIds: ReadonlySet<string>,
-    pad = 0
+    options?: HitTest.SelectableHitOptions
   ): SceneNode | null {
-    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, options)
   }
 
   hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {
     return HitTest.hitTestOpenContainer(this, px, py, scopeId)
   }
 
-  isOpenContainer(nodeId: string): boolean {
-    return HitTest.isOpenContainer(this, nodeId)
+  isOpenContainer(nodeId: string, framesOpen = true): boolean {
+    return HitTest.isOpenContainer(this, nodeId, framesOpen)
   }
 
   isPointInNode(nodeId: string, px: number, py: number): boolean {
@@ -728,6 +752,20 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const ids = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
+    // Copies point at one another, as a paste's do: an instance at a component cloned with it,
+    // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
+    remapCopiedReferences(this, ids)
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    ids: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -738,9 +776,10 @@ export class SceneGraph {
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    ids.set(src.id, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, ids)
     }
 
     return clone

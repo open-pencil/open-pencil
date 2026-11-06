@@ -43,16 +43,27 @@ const LOCALE_STORAGE_KEY = 'open-pencil-locale'
 
 export const localeSetting = atom<Locale | undefined>(undefined)
 
+/** A tag's language and script, as Unicode's likely subtags fill them in: `zh-TW` is `zh-Hant`. */
+function languageScript(tag: string): string | null {
+  try {
+    const { language, script } = new Intl.Locale(tag).maximize()
+    return `${language}-${script ?? ''}`
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The first browser language with a locale: the same tag, or the same language in the same
+ * script, so `zh` and `zh-SG` read Simplified Chinese and `zh-TW`, written in Traditional, does not.
+ */
 export function resolveBrowserLocale(languages: readonly string[]): Locale {
   const localesByCode = new Map(AVAILABLE_LOCALES.map((code) => [code.toLowerCase(), code]))
+  const localesByScript = new Map(AVAILABLE_LOCALES.map((code) => [languageScript(code), code]))
   for (const language of languages) {
-    const normalized = language.toLowerCase()
-    const exact = localesByCode.get(normalized)
-    if (exact) return exact
-
-    const base = normalized.split('-')[0]
-    const baseLocale = localesByCode.get(base)
-    if (baseLocale) return baseLocale
+    const match =
+      localesByCode.get(language.toLowerCase()) ?? localesByScript.get(languageScript(language))
+    if (match) return match
   }
   return 'en'
 }

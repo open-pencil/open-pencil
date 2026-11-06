@@ -8,7 +8,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -33,6 +32,7 @@ import { useDateFormat } from '@/app/i18n/date'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
@@ -134,7 +134,7 @@ function setScope(value: unknown) {
       <template #icon><icon-lucide-history class="size-3.5" /></template>
       {{ t.versionHistory }}
       <template #actions>
-        <DropdownMenuRoot :modal="false">
+        <AppDropdownMenuRoot :modal="false">
           <DropdownMenuTrigger as-child>
             <IconButton
               :label="t.versionFilter"
@@ -173,7 +173,7 @@ function setScope(value: unknown) {
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
         <IconButton
           v-if="list.canEdit.value"
           :label="t.addToVersionHistory"
@@ -213,7 +213,7 @@ function setScope(value: unknown) {
         @select="select(version)"
       >
         <template v-if="list.canEdit.value || linkable" #actions>
-          <DropdownMenuRoot :modal="false">
+          <AppDropdownMenuRoot :modal="false">
             <DropdownMenuTrigger as-child>
               <IconButton :label="t.versionOptions">
                 <icon-lucide-ellipsis class="size-3.5" />
@@ -257,7 +257,7 @@ function setScope(value: unknown) {
                 </MenuScrollArea>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </template>
       </CloudVersionListItem>
     </ul>

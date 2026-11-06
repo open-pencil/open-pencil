@@ -30,5 +30,12 @@
   "colorLightTeal": "Helltürkis",
   "colorLightBlue": "Hellblau",
   "colorLightViolet": "Hellviolett",
-  "colorLightPink": "Hellrosa"
+  "colorLightPink": "Hellrosa",
+  "changeColor": "Farbe ändern",
+  "lineStyle": "Linienstil",
+  "lineShape": "Linienform",
+  "solid": "Durchgezogen",
+  "thin": "Dünn",
+  "renameSection": "Abschnitt umbenennen",
+  "addText": "Text hinzufügen"
 }

@@ -11,6 +11,11 @@ export {
 } from './import/html'
 export { compileTailwindCSS } from './import/tailwind'
 export {
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule
+} from './import/font-faces'
+export {
   jsxToDesignDocument,
   jsxToSceneGraph,
   tailwindJSXToDesignDocument,
@@ -45,6 +50,8 @@ export type CSSComputeOptions = DesignTypes.CSSComputeOptions
 export type CSSRuntime = DesignTypes.CSSRuntime
 export type DesignDocument = DesignTypes.DesignDocument
 export type DesignElement = DesignTypes.DesignElement
+export type DesignLayout = DesignTypes.DesignLayout
+export type DesignViewport = DesignTypes.DesignViewport
 export type DesignNode = DesignTypes.DesignNode
 export type DesignStyleDeclaration = DesignTypes.DesignStyleDeclaration
 export type DesignStyleSheet = DesignTypes.DesignStyleSheet

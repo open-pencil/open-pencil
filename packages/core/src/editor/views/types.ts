@@ -1,0 +1,99 @@
+import type { EditorState, Tool } from '#core/editor/types'
+
+/**
+ * How much of a path vector edit mode may change: anything, or only the handles of its points,
+ * which keep their places and connections. A host that lets players reshape curves but not
+ * redraw them, as a lettering game does, offers handles only.
+ */
+export type PathEdits = 'all' | 'handles'
+
+/**
+ * What the host takes away from every view, whatever the canvas shows. A restriction only ever
+ * takes away from what the document's kind and the view offer.
+ */
+export interface EditorRestrictions {
+  /**
+   * A read-only document, as for a viewer or an earlier version, can be looked at, selected in,
+   * and copied from, not changed.
+   */
+  readOnly: boolean
+  /** The only tools the host offers, or null to leave the profile's tools as they are. */
+  tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change. */
+  pathEdits: PathEdits
+}
+
+/**
+ * What a canvas pane shows: the design being edited, or the design running as a preview whose
+ * controls respond to the pointer. Each pane has its own.
+ */
+export type CanvasView = { id: 'edit' } | { id: 'play'; revision: number }
+
+/**
+ * How the editor behaves for a canvas, resolved from what the document is for and the view it
+ * shows. Front ends read these values
+ * rather than asking which view is showing, so a new view is a new profile, not a new branch at
+ * every place that behaves differently.
+ */
+export interface EditorProfile {
+  /** What the pointer does on the canvas: every tool, or only panning and zooming. */
+  pointer: 'tools' | 'pan'
+  /** Which shortcuts run: every one, or only those that switch or leave the view. */
+  shortcuts: 'all' | 'view'
+  /** Whether the canvas draws what editing needs: selection, hover, pixel grid, and rulers. */
+  editChrome: boolean
+  /**
+   * The run of layers that hold controls as live components, and of animated shaders; a new
+   * revision starts them afresh. Null while layers draw as designed.
+   */
+  live: { revision: number } | null
+  /** Whether the editor's panels stay beside a canvas shown on its own. */
+  panels: boolean
+  /** The view leaving this one returns to, as Escape does, or null when there is none. */
+  leaveTo: CanvasView | null
+  /**
+   * Whether the document can change: actions that edit it, undo, and the canvas's edit handles,
+   * text editing, value scrubbing, guide editing, and layer drags.
+   */
+  edits: boolean
+  /** The tools on offer, or null for every tool. */
+  tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change: anything, or only its handles. */
+  pathEdits: PathEdits
+  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  toolKeys: Readonly<Partial<Record<string, Tool>>>
+  /**
+   * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas
+   * units: whole pixels in a design, FigJam's 16 on a board.
+   */
+  snapGrid: number
+  /** The grid of dots drawn under the page's layers, in canvas units, as a FigJam board's; null for none. */
+  dotGrid: number | null
+  /** Whether Figma's pixel grid shows when zoomed in far enough; a FigJam board has none. */
+  pixelGrid: boolean
+  /**
+   * Whether a click looks into a top-level frame by itself, as in Figma Design; on a FigJam
+   * board it selects the frame, and double-click or Enter goes inside.
+   */
+  framesOpen: boolean
+  /**
+   * What a section's title is coloured from: its fill, as in Figma Design, or its outline, as a
+   * FigJam board draws it.
+   */
+  sectionTitles: 'fill' | 'outline'
+  /** Whether design lint checks the document; a FigJam board has none. */
+  lint: boolean
+  /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */
+  rulers: boolean
+  /**
+   * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
+   * as FigJam shows it, with the panels a click away.
+   */
+  panelsOpen: boolean
+}
+
+/** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */
+export type EditorProfileInputs = Pick<
+  EditorState,
+  'documentKind' | 'canvasView' | 'hostRestrictions'
+>

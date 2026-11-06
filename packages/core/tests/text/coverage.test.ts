@@ -1,0 +1,81 @@
+import { describe, expect, test } from 'bun:test'
+
+import {
+  collectGraphFontRequirements,
+  fontManager,
+  textNeededFallbackScripts
+} from '@open-pencil/core/text'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
+
+function pageId(graph: SceneGraph): string {
+  return graph.getPages()[0].id
+}
+
+describe('font fallback coverage indexing', () => {
+  test('collects glyphs after applying visual text case', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', pageId(graph), { text: 'abc', textCase: 'UPPER' })
+    expect(collectGraphFontRequirements(graph, [node.id]).characters).toBe('ABC')
+  })
+
+  test('detects supplementary-plane Han code points', async () => {
+    const family = `SupplementaryHan_${Date.now()}`
+    const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    await fontManager.markLoaded(family, 'Regular', data)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      text: 'A𠀀B',
+      fontFamily: family,
+      fontWeight: 400
+    })
+
+    expect(textNeededFallbackScripts(node)).toContain('cjk-sc')
+  })
+
+  test('uses BCP-47 language hints for Han fallback selection', async () => {
+    const family = `LanguageHint_${Date.now()}`
+    const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    await fontManager.markLoaded(family, 'Regular', data)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      text: '骨骨',
+      textLanguage: 'ja-JP',
+      fontFamily: family,
+      fontWeight: 400,
+      styleRuns: [
+        {
+          start: 1,
+          length: 1,
+          style: { textLanguage: 'zh-Hant-TW' }
+        }
+      ]
+    })
+
+    expect(textNeededFallbackScripts(node)).toEqual(['cjk-jp', 'cjk-tc'])
+  })
+
+  test('uses UTF-16 style-run indices after a surrogate pair', async () => {
+    const cjkData = await Bun.file(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')).arrayBuffer()
+    const latinData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const cjkFamily = `CJKRunBase_${Date.now()}`
+    const latinFamily = `CJKRunOverride_${Date.now()}`
+    await fontManager.markLoaded(cjkFamily, 'Regular', cjkData)
+    await fontManager.markLoaded(latinFamily, 'Regular', latinData)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      text: '😀你',
+      fontFamily: cjkFamily,
+      fontWeight: 400,
+      styleRuns: [
+        {
+          start: 2,
+          length: 1,
+          style: { fontFamily: latinFamily }
+        }
+      ]
+    })
+
+    expect(textNeededFallbackScripts(node)).toContain('cjk-sc')
+  })
+})

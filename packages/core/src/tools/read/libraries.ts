@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { getComponentCatalog } from '#core/tools/component-catalog'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -34,6 +35,8 @@ export const insertLibraryComponent = defineTool({
     )
   }),
   execute: async (figma, args) => {
+    if (args.parent_id)
+      prepareSlotInsertion(figma.graph, args.parent_id, 'insert_library_component')
     const catalog = getComponentCatalog(figma.graph)
     if (!catalog) throw new Error('No component library catalog is configured')
     let variantValues: Record<string, string> | undefined
@@ -46,7 +49,7 @@ export const insertLibraryComponent = defineTool({
       if (entries.some(([, value]) => typeof value !== 'string')) {
         throw new TypeError('variant_values values must be strings')
       }
-      variantValues = Object.fromEntries(entries) as Record<string, string>
+      variantValues = Object.fromEntries(entries)
     }
     return catalog.insertComponent({
       libraryId: args.library_id,

@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 
@@ -11,6 +10,7 @@ import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import BoundFieldRow from '@/components/properties/binding/BoundFieldRow.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -36,7 +36,7 @@ const chip =
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="compact && binding.available.value && binding.definition.value">
+  <AppDropdownMenuRoot v-if="compact && binding.available.value && binding.definition.value">
     <DropdownMenuTrigger as-child>
       <button
         type="button"
@@ -66,7 +66,7 @@ const chip =
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
   <BoundFieldRow
     v-else-if="binding.available.value && binding.definition.value"
     :label="label ?? binding.fieldLabel.value"

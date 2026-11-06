@@ -1,17 +1,11 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { editsHandlesOnly, type Editor } from '@open-pencil/core'
 
-import {
-  getCanvasNodeEditState,
-  handleBendHandleMove,
-  resolveBendTargetHandle,
-  type CanvasNodeEditMethods
-} from '#vue/canvas/vector-input/bend'
+import { handleBendHandleMove, resolveBendTargetHandle } from '#vue/canvas/vector-input/bend'
 import type { DragState } from '#vue/shared/input/types'
 import {
   finishNodeEditMarquee,
-  getNodeEditState,
   hitTestEditHandle,
   hitTestEditRegion,
   isEndpoint,
@@ -20,7 +14,7 @@ import {
 } from '#vue/shared/input/vector'
 
 export function updateNodeEditHover(editor: Editor, cx: number, cy: number): boolean {
-  const state = getCanvasNodeEditState(editor)
+  const state = editor.getNodeEditState()
   if (!state) return false
   const hit = hitTestEditHandle(editor, cx, cy)
   const previous = state.hoveredHandleInfo
@@ -37,9 +31,10 @@ export function updateNodeEditHover(editor: Editor, cx: number, cy: number): boo
     state.hoveredHandleInfo = null
     editor.requestRepaint()
   }
-  // The region under the pointer is hatched, as in Figma, unless a handle is under it.
-  const es = getNodeEditState(editor)
-  const region = hit ? null : hitTestEditRegion(editor, cx, cy)
+  // The region under the pointer is hatched, as in Figma, unless a handle is under it or regions
+  // take no press because only handles may change.
+  const es = editor.getNodeEditState()
+  const region = hit || editsHandlesOnly(editor.state) ? null : hitTestEditRegion(editor, cx, cy)
   if (es && (es.hoveredRegion ?? null) !== region) {
     es.hoveredRegion = region
     editor.requestRepaint()
@@ -50,20 +45,19 @@ export function updateNodeEditHover(editor: Editor, cx: number, cy: number): boo
 export { handleBendHandleMove, resolveBendTargetHandle }
 
 export function handleNodeEditPointerUp(drag: Ref<DragState | null>, editor: Editor): boolean {
-  const methods = editor as Editor & CanvasNodeEditMethods
   const current = drag.value
   if (!current) return false
   if (current.type === 'bend-handle') {
     editor.setSnapGuides([])
-    if (current.lockedMode === null) methods.nodeEditZeroVertexHandles?.(current.vertexIndex)
-    methods.commitNodeEditChanges?.()
+    if (current.lockedMode === null) editor.nodeEditZeroVertexHandles(current.vertexIndex)
+    editor.commitNodeEditChanges()
     drag.value = null
     return true
   }
   if (current.type === 'edit-node') {
     editor.setSnapGuides([])
     finishPartClick(current, editor)
-    const state = getCanvasNodeEditState(editor)
+    const state = editor.getNodeEditState()
     if (state && current.origPositions.size === 1) {
       const [draggedIndex] = current.origPositions.keys()
       if (isEndpoint(draggedIndex, state.segments)) {
@@ -73,13 +67,13 @@ export function handleNodeEditPointerUp(drag: Ref<DragState | null>, editor: Edi
           if (index === draggedIndex || !isEndpoint(index, state.segments)) continue
           const target = state.vertices[index]
           if (Math.hypot(vertex.x - target.x, vertex.y - target.y) < threshold) {
-            methods.nodeEditConnectEndpoints?.(draggedIndex, index)
+            editor.nodeEditConnectEndpoints(draggedIndex, index)
             break
           }
         }
       }
     }
-    methods.commitNodeEditChanges?.()
+    editor.commitNodeEditChanges()
     drag.value = null
     return true
   }
@@ -90,7 +84,7 @@ export function handleNodeEditPointerUp(drag: Ref<DragState | null>, editor: Edi
   }
   if (current.type === 'edit-handle') {
     editor.setSnapGuides([])
-    methods.commitNodeEditChanges?.()
+    editor.commitNodeEditChanges()
     drag.value = null
     return true
   }
@@ -104,7 +98,7 @@ export function cancelNodeEditDrag(current: DragState | null, editor: Editor) {
     current?.type === 'edit-handle' ||
     current?.type === 'bend-handle'
   ) {
-    ;(editor as Editor & CanvasNodeEditMethods).nodeEditCancelDrag?.()
+    editor.nodeEditCancelDrag()
   }
   if (current?.type === 'edit-marquee') editor.setMarquee(null)
 }

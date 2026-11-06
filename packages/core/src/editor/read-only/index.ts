@@ -1,6 +1,7 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext, Tool } from '#core/editor/types'
+import { offeredTool, type EditorRestrictions } from '#core/editor/views'
 
 import { READ_ONLY_ACTIONS } from './actions'
 
@@ -12,12 +13,9 @@ export class ReadOnlyDocumentError extends Error {
   }
 }
 
-/** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
-export const READ_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
-
 /**
  * Returns the editor with every action that changes the document refused while `isReadOnly`
- * holds; the actions in `READ_ONLY_ACTIONS` and the editor's getters pass through.
+ * holds, as it does while the editor's profile offers no edits; the actions in `READ_ONLY_ACTIONS` and the editor's getters pass through.
  */
 export function guardReadOnly<T extends object>(editor: T, isReadOnly: () => boolean): T {
   const descriptors = Object.getOwnPropertyDescriptors(editor)
@@ -50,21 +48,52 @@ export function guardUndo(undo: UndoManager, isReadOnly: () => boolean): UndoMan
   })
 }
 
-export function createReadOnlyActions(ctx: EditorContext, endEdits: () => void) {
+/** What the restrictions end when they take effect. */
+export interface RestrictionEnds {
+  /** Ends every edit in progress, as a read-only document has none. */
+  endEdits: () => void
+  /** Ends a pen path continuing an existing layer, which handles-only paths do not allow. */
+  endPathContinuation: () => void
+  /** Picks a tool as the toolbar does, committing a pen path in progress when it is not the pen. */
+  pickTool: (tool: Tool) => void
+}
+
+export function createReadOnlyActions(
+  ctx: EditorContext,
+  { endEdits, endPathContinuation, pickTool }: RestrictionEnds
+) {
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
    */
   function setReadOnly(readOnly: boolean): void {
-    if (ctx.state.readOnly === readOnly) return
-    if (readOnly) {
-      endEdits()
-      if (!READ_ONLY_TOOLS.has(ctx.state.activeTool)) ctx.setActiveTool('SELECT')
-    }
-    ctx.state.readOnly = readOnly
+    if (ctx.state.hostRestrictions.readOnly === readOnly) return
+    if (readOnly) endEdits()
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, readOnly }
+    ctx.setActiveTool(offeredTool(ctx.state, ctx.state.activeTool))
     ctx.emitEditorEvent('document:read-only-changed', readOnly)
     ctx.requestRepaint()
   }
 
-  return { setReadOnly }
+  /**
+   * Narrows what the editor offers, as a host that is not a general design tool does: only some
+   * tools, or path edits that move handles alone. Each restriction given replaces the one before;
+   * one left out stays. A tool no longer on offer gives way to Move.
+   */
+  function setHostRestrictions(
+    restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits'>>
+  ): void {
+    ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
+    if (restrictions.pathEdits === 'handles') {
+      // What was drawn stays; the path just stops growing, and regions stop taking the pointer.
+      endPathContinuation()
+      if (ctx.state.nodeEditState) ctx.state.nodeEditState.hoveredRegion = null
+    }
+    // A tool no longer offered gives way to Move as a picked tool does, so a pen path in
+    // progress is committed rather than left pending.
+    pickTool(offeredTool(ctx.state, ctx.state.activeTool))
+    ctx.requestRepaint()
+  }
+
+  return { setReadOnly, setHostRestrictions }
 }

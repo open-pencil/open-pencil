@@ -11,6 +11,15 @@ export interface UsagePingTable {
   count: number
 }
 
+export interface PingNetworkTable {
+  day: string
+  asn: number
+  app: string
+  platform: string
+  name: string
+  count: number
+}
+
 export interface WaitlistTable {
   id: Generated<number>
   email: string
@@ -81,6 +90,7 @@ export interface RepoItemTable {
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
+  pingNetworks: PingNetworkTable
   waitlist: WaitlistTable
   githubStars: GithubStarsTable
   releaseDownloads: ReleaseDownloadsTable

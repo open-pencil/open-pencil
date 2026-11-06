@@ -1,4 +1,4 @@
-import { mapValues } from 'es-toolkit/object'
+import { mapValues } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { tryParseColor } from '@open-pencil/scene-graph/color'

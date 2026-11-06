@@ -144,7 +144,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     state.status = 'starting'
     state.failure = null
     state.externallyManaged = false
-    let failure: MCPFailure | null = null
+    let failure: MCPFailure | null
     let thrown: Error | null = null
     try {
       server = await dependencies.spawn()
@@ -205,7 +205,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
           const error = new Error('Editor is not ready')
           state.status = 'error'
           state.failure = null
-          return { ok: false, error } as MCPRuntimeResult
+          return { ok: false, error }
         }
         return startOperation()
       })

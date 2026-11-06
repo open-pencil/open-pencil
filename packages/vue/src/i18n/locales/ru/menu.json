@@ -5,9 +5,11 @@
   "object": "Объект",
   "arrange": "Порядок",
   "text": "Текст",
-  "new": "Создать",
+  "new": "Новый дизайн",
+  "newTab": "Новая вкладка",
   "open": "Открыть…",
   "openTour": "Открыть тур",
+  "diagnostics": "Диагностика…",
   "save": "Сохранить",
   "saveAs": "Сохранить как…",
   "exportSelection": "Экспорт выделения…",
@@ -40,6 +42,7 @@
   "pasteToReplace": "Вставить для замены",
   "copyProperties": "Копировать свойства",
   "pasteProperties": "Вставить свойства",
+  "pasteAsLayers": "Вставить как слои",
   "copyPasteAs": "Копировать/Вставить как",
   "copyAsText": "Копировать как текст",
   "copyAsSVG": "Копировать как SVG",
@@ -83,8 +86,9 @@
   "exportSelectionAsDrawIO": "Экспортировать выделение как draw.io",
   "exportSelectionAsFig": "Экспортировать выделение как .fig",
   "togglePreview": "Просмотр",
-  "browseFiles": "Обзор файлов…",
   "saveTo": "Сохранить в…",
   "showVersionHistory": "Показать историю версий",
-  "saveToVersionHistory": "Сохранить в историю версий…"
+  "saveToVersionHistory": "Сохранить в историю версий…",
+  "reportProblem": "Сообщить о проблеме…",
+  "supportOpenPencil": "Поддержать OpenPencil…"
 }

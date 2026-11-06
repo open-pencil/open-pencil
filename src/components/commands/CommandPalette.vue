@@ -6,11 +6,11 @@ import Search from '~icons/lucide/search'
 import X from '~icons/lucide/x'
 
 import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { shortcutCode } from '@open-pencil/vue/editor/keyboard'
 import { useCommandMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 import { CommandPaletteRoot } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { usePagePaletteGroup } from '@/app/editor/pages/palette'
-import { shortcutCode } from '@/app/shell/keyboard/layout'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'

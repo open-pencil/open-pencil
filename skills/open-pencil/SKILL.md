@@ -26,7 +26,7 @@ Use `openpencil --help`, per-command help, and the connected MCP server’s tool
 
 Inside `eval`, use `openpencil.setVariableFormula('Spacing', 'large', '{base} * 2')` for numeric formulas or `openpencil.setVariableFormula('State', 'visible', '{viewport} > 1024 and not {loading}')` for Boolean formulas, which use `and`, `or`, `not` and number comparisons. Collections and variables must already exist. An optional fourth argument selects a mode by name; otherwise the default mode is edited. The call validates before mutation and returns the resolved value. Length formulas use stored pixels. The CSS stylesheet writes number formulas as `calc()`; design-token files hold the result with the formula in `$extensions`.
 
-Variables follow Figma's plugin API: `figma.variables.getLocalVariables()`, `createVariable(name, collection, type)`, `variable.setValueForMode(modeId, value)`, and `node.setBoundVariable(field, variable)` with Figma's field names (`characters`, `width`, `paddingLeft`) and types; paint colours bind through `figma.variables.setBoundVariableForPaint`. To bind as the layer panel does, use `openpencil.bindVariable(node, field, variable)` and `openpencil.unbindVariable(node, field)` with OpenPencil names (`text`, `visible`, `opacity`, `fills/0/color`): text content takes a text or number variable, shown as text; visibility a boolean or text one. `openpencil` also sets layout and text direction (`setLayoutDirection`, `setTextDirection`), OkHCL paint colors (`setFillOkHCL`, `setStrokeOkHCL`), exposes instance swaps (`exposeInstanceSwap`), and reports font availability (`getFontStatus()`); booleans and flattening are Figma's `figma.union`, `subtract`, `intersect`, `exclude` and `figma.flatten`.
+Variables follow Figma's plugin API: `figma.variables.getLocalVariables()`, `createVariable(name, collection, type)`, `variable.setValueForMode(modeId, value)`, and `node.setBoundVariable(field, variable)` with Figma's field names (`characters`, `width`, `paddingLeft`) and types; paint colours bind through `figma.variables.setBoundVariableForPaint` and shadow or blur fields through `figma.variables.setBoundVariableForEffect`. To bind as the layer panel does, use `openpencil.bindVariable(node, field, variable)` and `openpencil.unbindVariable(node, field)` with OpenPencil names (`text`, `visible`, `opacity`, `fills/0/color`, `effects/0/radius`): text content takes a text or number variable, shown as text; visibility a boolean or text one. `openpencil` also sets layout and text direction (`setLayoutDirection`, `setTextDirection`), OkHCL paint colors (`setFillOkHCL`, `setStrokeOkHCL`), writes styled text from Markdown (`setTextMarkdown(text, markdown)`, or `set_text` with `markdown: true`), exposes instance swaps (`exposeInstanceSwap`), and reports font availability (`getFontStatus()`); booleans and flattening are Figma's `figma.union`, `subtract`, `intersect`, `exclude` and `figma.flatten`.
 
 ## Requirements
 
@@ -156,9 +156,11 @@ openpencil eval -c '
   buttons.length + " buttons updated"
 '
 
-# Modify and save to the same file
+# Modify and save to the same file; text edits need the text's fonts loaded first, as in Figma
 openpencil eval design.fig -w -c '
-  const texts = figma.currentPage.findAll(n => n.type === "TEXT");
+  const texts = figma.currentPage.findAll(n => n.type === "TEXT" && n.characters.length > 0);
+  const fonts = texts.flatMap(t => t.getRangeAllFontNames(0, t.characters.length));
+  await Promise.all(fonts.map(font => figma.loadFontAsync(font)));
   texts.forEach(t => { t.fontSize = 16 });
 '
 
@@ -171,11 +173,15 @@ echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig 
 # Style part of a text, and read how it is styled
 openpencil eval design.fig -w -c '
   const title = figma.currentPage.findOne(n => n.type === "TEXT" && n.name === "Title");
+  const fonts = [...title.getRangeAllFontNames(0, title.characters.length), { family: "Inter", style: "Bold" }];
+  await Promise.all(fonts.map(font => figma.loadFontAsync(font)));
   title.setRangeFontName(0, 5, { family: "Inter", style: "Bold" });
   title.setRangeFills(0, 5, [{ type: "SOLID", color: { r: 0.9, g: 0.1, b: 0.1 } }]);
   title.getStyledTextSegments(["fontName", "fills"]).map(s => [s.characters, s.fontName.style])
 '
 ```
+
+Text edits follow Figma's font rule: anything that lays text out again (`characters`, `fontSize`, `fontName`, spacing, case, alignment, auto-resize, and the matching `setRange…` methods) throws `Cannot write to node with unloaded font` until `figma.loadFontAsync` has loaded every font the text uses, and a new font has to be loaded before it is set. A font that is not available rejects `loadFontAsync`; replace it with `fontName = { family, style }` in a loaded font. The built-in text tools load fonts themselves.
 
 Text styles follow Figma's per-character model: `getStyledTextSegments(fields)` reads runs, `getRange…`/`setRange…` read and set font, size, fills, letter spacing, line height, decorations, text case, hyperlinks, text and fill style IDs, and bound variables for `[start, end)`, and a text's `fontSize`, `fontName`, `fills`, and similar read `figma.mixed` while characters differ. Check for it before using the value. Paints everywhere take Figma's shape: a solid `color` is `{ r, g, b }` with the alpha in `opacity`, and an image is `{ type: "IMAGE", imageHash, scaleMode: "FILL" | "FIT" | "CROP" | "TILE" }` with optional `rotation` and `scalingFactor`.
 

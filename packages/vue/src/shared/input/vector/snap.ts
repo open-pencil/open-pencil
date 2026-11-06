@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import type { Editor, NodeEditState } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -9,7 +9,6 @@ import {
   worldBoundsNode
 } from '#vue/shared/input/snap'
 import type { DragEditNode } from '#vue/shared/input/types'
-import type { NodeEditState } from '#vue/shared/input/vector/hit-test'
 
 function draggedVertexBounds(drag: DragEditNode, dx: number, dy: number): Rect | null {
   if (drag.origPositions.size === 0) return null

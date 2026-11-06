@@ -1,9 +1,12 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { solidFill } from '#core-tests/helpers/figma-api'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+// Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
+beforeAll(() => registerTestFont())
 
 describe('absoluteRenderBounds', () => {
   test('absoluteRenderBounds includes strokes and effects and returns null for invisible pixels', () => {
@@ -36,6 +39,58 @@ describe('absoluteRenderBounds', () => {
 
     const emptyVector = api.createVector()
     expect(emptyVector.absoluteRenderBounds).toBeNull()
+  })
+
+  // Figma desktop 126 (2026-11-05): a shadow is the shape moved by its offset and grown by its
+  // radius and spread, not by three times its radius.
+  test('absoluteRenderBounds grows a shadow by its radius and spread', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    for (const [radius, spread, figma] of [
+      [2, 1, { x: 3, y: -2, width: 18, height: 26 }],
+      [8, 0, { x: 0, y: -7, width: 26, height: 36 }]
+    ] as const) {
+      const rect = api.createRectangle()
+      rect.x = 3
+      rect.y = 4
+      rect.resize(10, 20)
+      rect.effects = [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 5, y: -3 },
+          radius,
+          spread,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+      expect(rect.absoluteRenderBounds).toEqual(figma)
+    }
+  })
+
+  // Figma 126 draws a fixed-size text's lines past its box, and their shadow with them.
+  test('absoluteRenderBounds reaches text lines past a fixed-size box and their shadow', () => {
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const text = api.createText()
+    text.characters = 'Lines'
+    text.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    text.textAutoResize = 'NONE'
+    text.resize(110, 40)
+    graph.updateNode(text.id, { derivedTextHeight: 150 })
+    text.effects = [
+      {
+        type: 'DROP_SHADOW',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        offset: { x: 0, y: 10 },
+        radius: 0,
+        spread: 0,
+        visible: true,
+        blendMode: 'NORMAL'
+      }
+    ]
+
+    expect(text.absoluteRenderBounds).toEqual({ x: 0, y: 0, width: 110, height: 160 })
   })
 
   test('absoluteRenderBounds is clipped by ancestor frames', () => {

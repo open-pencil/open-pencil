@@ -2,7 +2,6 @@
 import {
   ContextMenuContent,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -10,7 +9,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -25,6 +23,8 @@ import ZoomDropdown from '@/components/editor/ZoomDropdown.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
@@ -75,7 +75,7 @@ function setSort(value: unknown) {
       {{ messages.comments }}
       <template #actions>
         <ZoomDropdown />
-        <DropdownMenuRoot :modal="false">
+        <AppDropdownMenuRoot :modal="false">
           <DropdownMenuTrigger as-child>
             <IconButton :label="messages.filterAndSort" :active="filtered">
               <icon-lucide-list-filter class="size-3.5" />
@@ -120,7 +120,7 @@ function setSort(value: unknown) {
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
+        </AppDropdownMenuRoot>
       </template>
     </PanelHeader>
 
@@ -142,7 +142,7 @@ function setSort(value: unknown) {
       :label="filtered ? messages.noMatches : messages.empty"
     />
     <ul v-else :class="ui.list()" :aria-label="messages.comments">
-      <ContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
+      <AppContextMenuRoot v-for="thread in listed" :key="thread.id" :modal="false">
         <ContextMenuTrigger as-child>
           <CommentListItem
             :thread="thread"
@@ -152,7 +152,7 @@ function setSort(value: unknown) {
             @select="comments.focusThread(thread.id)"
           >
             <template #actions>
-              <DropdownMenuRoot :modal="false">
+              <AppDropdownMenuRoot :modal="false">
                 <DropdownMenuTrigger as-child>
                   <IconButton :label="messages.moreActions">
                     <icon-lucide-ellipsis class="size-3.5" />
@@ -165,7 +165,7 @@ function setSort(value: unknown) {
                     </MenuScrollArea>
                   </DropdownMenuContent>
                 </DropdownMenuPortal>
-              </DropdownMenuRoot>
+              </AppDropdownMenuRoot>
               <IconButton
                 :label="thread.resolved ? messages.reopen : messages.resolve"
                 :active="thread.resolved"
@@ -185,7 +185,7 @@ function setSort(value: unknown) {
             </MenuScrollArea>
           </ContextMenuContent>
         </ContextMenuPortal>
-      </ContextMenuRoot>
+      </AppContextMenuRoot>
     </ul>
   </section>
 </template>
