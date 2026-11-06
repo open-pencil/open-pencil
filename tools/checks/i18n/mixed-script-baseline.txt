@@ -223,6 +223,7 @@ ja:updates.restartFailed
 ja:updates.restartToFinish
 ja:updates.unavailable
 ja:updates.upToDate
+ja:updates.webUpdateReady
 zh-cn:ai.aiSetupAccessAPI
 zh-cn:ai.aiSetupAccessAgentsDesktop
 zh-cn:ai.aiSetupAccessChatGPT
@@ -444,6 +445,7 @@ zh-cn:updates.restartFailed
 zh-cn:updates.restartToFinish
 zh-cn:updates.unavailable
 zh-cn:updates.upToDate
+zh-cn:updates.webUpdateReady
 zh-cn:variables.copyAsCSS
 zh-cn:variables.copyAsTailwindTheme
 ja:variables.cssName
