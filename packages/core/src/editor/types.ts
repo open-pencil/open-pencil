@@ -266,6 +266,10 @@ export interface EditorOptions {
     signal?: AbortSignal
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
+  /**
+   * The canvas's size in screen pixels. Without it the editor uses the size the canvas last gave
+   * `setViewportSize`, and the window's before that.
+   */
   getViewportSize?: () => { width: number; height: number }
   /** The name of whoever is editing, which a sticky note they place is signed with. */
   getUserName?: () => string

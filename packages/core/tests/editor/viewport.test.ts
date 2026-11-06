@@ -158,3 +158,13 @@ describe('zoomToSelection', () => {
     expect(screenOf(editor, 760, 545)).toEqual({ x: 60 + 700 / 2, y: 60 + 440 / 2 })
   })
 })
+
+describe('setViewportSize', () => {
+  test('centres on the size the canvas reported', () => {
+    const editor = createEditor()
+    editor.setViewportSize(VIEWPORT.width, VIEWPORT.height)
+    editor.centerOn(300, 200, 2)
+    expect(editor.getViewportSize()).toEqual(VIEWPORT)
+    expect(center(editor)).toEqual({ x: 300, y: 200 })
+  })
+})

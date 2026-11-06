@@ -48,7 +48,6 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1440, height: 900 }),
 })
 provideEditor(editor)
 </script>
@@ -96,7 +95,7 @@ provideEditor(editor)
 </template>
 ```
 
-The fixed viewport dimensions above keep the example short. In a resizable shell, return the actual canvas container size from `getViewportSize`; do not include the surrounding sidebars or toolbar. See [SDK Getting Started](../getting-started) for installation requirements and migration notes.
+`CanvasRoot` takes the canvas's pointer input and typing and tells the editor the canvas's size, so zooming to fit fills the canvas rather than the window. It emits `ready` once the page draws and `failed` if the canvas cannot start. See [SDK Getting Started](../getting-started) for installation requirements and migration notes.
 
 ## Keyboard
 

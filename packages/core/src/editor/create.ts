@@ -91,9 +91,12 @@ export function createEditor(options?: EditorOptions) {
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
+  // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
+  const viewportSize = { width: 0, height: 0 }
   const _getViewportSize =
     options?.getViewportSize ??
     (() => {
+      if (viewportSize.width > 0 && viewportSize.height > 0) return { ...viewportSize }
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
@@ -518,6 +521,11 @@ export function createEditor(options?: EditorOptions) {
 
     /** The size of the canvas the editor draws into, in screen pixels. */
     getViewportSize: _getViewportSize,
+    /** Records the canvas's size in screen pixels, which zooming to fit and centring use. */
+    setViewportSize(width: number, height: number) {
+      viewportSize.width = width
+      viewportSize.height = height
+    },
 
     // Canvas and frame guides
     ...guides,
