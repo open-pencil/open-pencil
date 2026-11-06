@@ -35,6 +35,7 @@ import {
 } from '#vue/shared/input/connector/draw'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { cancelMove, handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
+import { createNavigationSettle } from '#vue/shared/input/navigation-settle'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import {
@@ -81,6 +82,7 @@ export function useCanvasInput(
   zoomSpeed: () => number = () => 1
 ) {
   const drag = ref<DragState | null>(null)
+  const navigationSettle = createNavigationSettle(editor)
   const profile = () => resolveEditorProfile(editor.state)
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
   // layers move, resize, or rotate.
@@ -305,6 +307,7 @@ export function useCanvasInput(
       return
     }
     pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)
+    if (drag.value?.type === 'pan') navigationSettle.cancel()
   }
 
   // Dispatching the full drag union is intentionally centralized here.
@@ -468,6 +471,7 @@ export function useCanvasInput(
     else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
     else if ('commit' in d) d.commit()
     else if (d.type === 'marquee') finishMarquee(editor, d)
+    else if (d.type === 'pan') navigationSettle.settle()
 
     drag.value = null
     cursorOverride.value = null
@@ -502,6 +506,7 @@ export function useCanvasInput(
     // Cleared first: ending a preview fires events whose listeners cancel again.
     drag.value = null
     if (d) discardDrag(d)
+    if (d?.type === 'pan') navigationSettle.settle()
     cursorOverride.value = null
     clearTransientInteractionFeedback()
   }
@@ -632,6 +637,7 @@ export function useCanvasInput(
     stopReadOnlyListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
+    navigationSettle.cancel()
     // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.
     canvasLabelEdit.commit()
   })
