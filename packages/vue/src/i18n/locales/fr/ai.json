@@ -78,7 +78,7 @@
   "attachImages": "Joindre des images",
   "removeImageAttachment": "Retirer l’image {name}",
   "dropImagesToAttach": "Déposez des images pour les joindre",
-  "queueMessage": "Orientez l’agent… Alt+Entrée attend qu’il ait fini",
+  "queueMessage": "Orientez l’agent… {shortcut} attend qu’il ait fini",
   "queuedSteer": "Envoyé après l’étape en cours",
   "queuedFollowUp": "Envoyé quand l’agent a fini",
   "removeQueuedMessage": "Retirer le message en attente",

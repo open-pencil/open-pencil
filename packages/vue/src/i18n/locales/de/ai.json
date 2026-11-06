@@ -78,7 +78,7 @@
   "attachImages": "Bilder anhängen",
   "removeImageAttachment": "Bild {name} entfernen",
   "dropImagesToAttach": "Bilder zum Anhängen ablegen",
-  "queueMessage": "Agent lenken … Alt+Enter wartet, bis er fertig ist",
+  "queueMessage": "Agent lenken … {shortcut} wartet, bis er fertig ist",
   "queuedSteer": "Wird nach dem aktuellen Schritt gesendet",
   "queuedFollowUp": "Wird gesendet, wenn der Agent fertig ist",
   "removeQueuedMessage": "Wartende Nachricht entfernen",

@@ -4,6 +4,7 @@ import type { ChatStatus } from 'ai'
 import { TooltipProvider } from 'reka-ui'
 import { computed, useTemplateRef } from 'vue'
 
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useChatEditor } from '@/components/chat/composer/useChatEditor'
@@ -37,7 +38,10 @@ const working = computed(() => status === 'streaming' || status === 'submitted')
 const host = useTemplateRef<HTMLDivElement>('host')
 const editor = useChatEditor(host, {
   label: () => ai.value.describeChange,
-  placeholder: () => (working.value ? ai.value.queueMessage : ai.value.describeChange),
+  placeholder: () =>
+    working.value
+      ? ai.value.queueMessage({ shortcut: formatShortcut('ALT+Enter') ?? '' })
+      : ai.value.describeChange,
   editable: () => !disabled,
   attributes: { 'data-test-id': 'chat-input' },
   completions,

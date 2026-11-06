@@ -599,8 +599,6 @@ zh-cn:ai.skillErrorNoDescription
 zh-cn:ai.skillErrorNoName
 ja:ai.skillsTrustDescription
 zh-cn:ai.skillsTrustDescription
-zh-cn:ai.queueMessage
-ja:ai.queueMessage
 ja:ai.skillsDescription
 ja:ai.notificationsHint
 ja:ai.notificationsAllowHint
