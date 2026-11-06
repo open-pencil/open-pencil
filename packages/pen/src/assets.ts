@@ -94,13 +94,19 @@ function rebasePaints<T extends PenPaints>(paints: T, rebase: (url: string) => s
 function rebaseNode<T extends PenOverride>(node: T, rebase: (url: string) => string): T {
   const rebased: T = { ...node }
   if (node.fill !== undefined) rebased.fill = rebasePaints(node.fill, rebase)
-  if (node.stroke !== undefined && !(typeof node.stroke === 'object' && 'thickness' in node.stroke)) {
+  if (
+    node.stroke !== undefined &&
+    !(typeof node.stroke === 'object' && 'thickness' in node.stroke)
+  ) {
     rebased.stroke = rebasePaints(node.stroke, rebase)
   }
   if (node.children) rebased.children = node.children.map((child) => rebaseNode(child, rebase))
   if (node.descendants) {
     rebased.descendants = Object.fromEntries(
-      Object.entries(node.descendants).map(([path, override]) => [path, rebaseNode(override, rebase)])
+      Object.entries(node.descendants).map(([path, override]) => [
+        path,
+        rebaseNode(override, rebase)
+      ])
     )
   }
   return rebased

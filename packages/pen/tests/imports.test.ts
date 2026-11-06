@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importedDocument, type PenDocument, type PenNode } from '@open-pencil/pen'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
@@ -95,7 +95,7 @@ describe('importedDocument', () => {
 
 describe('buildPenGraph with imports', () => {
   const imports = new Map([['ui', importedDocument('ui', library, new Map())]])
-  const read = () =>
+  const read = (from = imports) =>
     parseDocument(
       [
         {
@@ -113,7 +113,7 @@ describe('buildPenGraph with imports', () => {
         }
       ],
       { imports: { ui: '../library/ui.lib.pen' } },
-      { imports }
+      { imports: from }
     )
 
   test('draws instances of imported components, with their overrides', () => {
@@ -131,13 +131,28 @@ describe('buildPenGraph with imports', () => {
     expect(getNodeOrThrow(graph, 'cta').fills[0]?.color).toEqual(BLUE)
   })
 
-  test('puts imported layers on a page of their own, after the document', () => {
-    const graph = read()
-    const pages = graph.getPages()
-    expect(pages.map((page) => page.name)).toEqual(['Page 1', 'ui'])
-    expect(graph.getChildren(pages[1]?.id ?? '').map((node) => node.id)).toEqual([
+  test('puts the imported components it uses on the internal page, and nothing else', () => {
+    const unused: PenNode = { id: 'chip', type: 'frame', reusable: true }
+    const demo: PenNode = { id: 'demo', type: 'frame', children: [unused] }
+    const ui = importedDocument(
+      'ui',
+      { ...library, children: [...library.children, demo] },
+      new Map()
+    )
+    const graph = read(new Map([['ui', ui]]))
+    expect(graph.getPages().map((page) => page.name)).toEqual(['Page 1'])
+    const internal = graph.getPages(true).find((page) => page.internalOnly)
+    // The button names the glyph, so it comes too; the demo frame and the chip in it do not.
+    expect(graph.getChildren(internal?.id ?? '').map((node) => node.id)).toEqual([
       'ui:button',
       'ui:glyph'
     ])
+    expect(graph.getNode('ui:demo')).toBeUndefined()
+    expect(graph.getNode('ui:chip')).toBeUndefined()
+  })
+
+  test('adds no internal page when it uses no imported component', () => {
+    const graph = parseDocument([{ id: 'screen', type: 'frame' }], {}, { imports })
+    expect(graph.getPages(true).some((page) => page.internalOnly)).toBe(false)
   })
 })

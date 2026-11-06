@@ -76,7 +76,7 @@ function mergeThemes(
 /**
  * A document with the documents it imports read into it: their variables, theme axes, and
  * layers, which it names as `<alias>:<id>` and `$<alias>:<variable>`. The imported layers come
- * after its own; `buildPenGraph` draws them on pages of their own instead.
+ * after its own; `buildPenGraph` draws only the components it uses, on the internal page.
  */
 export function withImports(doc: PenDocument, imports: PenImports): PenDocument {
   if (imports.size === 0) return doc
@@ -119,4 +119,31 @@ export function importedDocument(
     variables,
     children: flat.children.map((node) => renameNode(node, names))
   }
+}
+
+/** The component IDs a layer, or what an override puts in, names: its own `ref` and its layers'. */
+function refsIn(node: PenOverride, refs: string[]): void {
+  if (typeof node.ref === 'string') refs.push(node.ref)
+  for (const child of node.children ?? []) refsIn(child, refs)
+  for (const inner of Object.values(node.descendants ?? {})) refsIn(inner, refs)
+}
+
+/**
+ * The imported components a document uses, in their documents' order: those its layers name, and
+ * those each of them names in turn. Components it never names are left out of it.
+ */
+export function importedComponentsInUse(
+  doc: PenDocument,
+  components: ReadonlyMap<string, PenNode>
+): PenNode[] {
+  const used = new Set<string>()
+  const pending: string[] = []
+  for (const node of doc.children) refsIn(node, pending)
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    const component = components.get(id)
+    if (!component || used.has(id)) continue
+    used.add(id)
+    refsIn(component, pending)
+  }
+  return [...components.values()].filter((component) => used.has(component.id))
 }
