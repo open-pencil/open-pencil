@@ -106,8 +106,9 @@ function assetIds(records: readonly NodeChange[]): Map<string, string> {
 }
 
 /**
- * Gives a record the fields of the styles it names, as do its overrides and its vector's regions,
- * whose style table entry may name a style without its paints.
+ * Gives a record the fields of the styles it names, as do its overrides, its text's ranges and its
+ * vector's regions, whose style table entry may name a style without its paints: an instance's
+ * override of a text range keeps only the fill style's reference.
  */
 function resolveStyleFields(
   styles: Parameters<typeof applyStyleRefsToFields>[0],
@@ -115,6 +116,8 @@ function resolveStyleFields(
   assets: ReadonlyMap<string, string>
 ): void {
   applyStyleRefsToFields(styles, node, assets)
+  for (const entry of node.textData?.styleOverrideTable ?? [])
+    applyStyleRefsToFields(styles, entry, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
   for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
 }
