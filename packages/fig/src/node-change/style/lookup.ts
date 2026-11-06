@@ -14,7 +14,14 @@ export type TextStyleField = (typeof TEXT_STYLE_FIELDS)[number]
 
 export type StyleSource = Pick<
   NodeChange,
-  'type' | 'styleType' | 'fillPaints' | 'effects' | 'layoutGrids' | TextStyleField
+  | 'type'
+  | 'styleType'
+  | 'fillPaints'
+  | 'effects'
+  | 'layoutGrids'
+  | 'variableConsumptionMap'
+  | 'parameterConsumptionMap'
+  | TextStyleField
 >
 
 export type StyleChangeMap = ReadonlyMap<string, Partial<StyleSource>>

@@ -44,9 +44,69 @@ function instance(
 const claim = (path: number[], fields: Partial<NodeChange>): NodeChange =>
   ({ guidPath: { guids: path.map(guid) }, ...fields }) as NodeChange
 
+const STYLE_VARIABLE = 42
+const CLAIMED_VARIABLE = 43
+const STYLE_VARIABLE_SIZE = 30
+const CLAIMED_VARIABLE_SIZE = 44
+
+function sizeVariable(localID: number, size: number): NodeChange {
+  return {
+    guid: guid(localID),
+    type: 'VARIABLE',
+    variableResolvedType: 'FLOAT',
+    variableSetID: { guid: guid(40) },
+    variableDataValues: {
+      entries: [
+        { modeID: guid(41), variableData: { dataType: 'FLOAT', value: { floatValue: size } } }
+      ]
+    }
+  } as NodeChange
+}
+
+const LINE_HEIGHT_VARIABLE = 45
+
+const bound = (variableField: string, variable: number): NodeChange['variableConsumptionMap'] => ({
+  entries: [
+    {
+      variableField,
+      variableData: {
+        dataType: 'ALIAS',
+        resolvedDataType: 'FLOAT',
+        value: { alias: { guid: guid(variable) } }
+      }
+    }
+  ]
+})
+
+const boundSize = (variable: number) => bound('FONT_SIZE', variable)
+
+const claimedVariableSize = {
+  fontSize: CLAIMED_VARIABLE_SIZE,
+  variableConsumptionMap: boundSize(CLAIMED_VARIABLE)
+}
+
 const records: NodeChange[] = [
   { guid: guid(0), type: 'DOCUMENT' },
   { guid: guid(1), type: 'CANVAS', parentIndex: under(0) },
+  {
+    guid: guid(40),
+    type: 'VARIABLE_SET',
+    variableSetModes: [{ id: guid(41), name: 'Default' }]
+  } as NodeChange,
+  sizeVariable(STYLE_VARIABLE, STYLE_VARIABLE_SIZE),
+  sizeVariable(CLAIMED_VARIABLE, CLAIMED_VARIABLE_SIZE),
+  sizeVariable(LINE_HEIGHT_VARIABLE, 36),
+  {
+    guid: guid(3),
+    type: 'TEXT',
+    parentIndex: under(1, ' '),
+    styleType: 'TEXT',
+    key: 'bound',
+    version: '1:0',
+    fontSize: 28,
+    lineHeight: { value: 32, units: 'PIXELS' },
+    variableConsumptionMap: boundSize(STYLE_VARIABLE)
+  },
   {
     guid: guid(2),
     type: 'TEXT',
@@ -61,6 +121,12 @@ const records: NodeChange[] = [
   { guid: guid(10), type: 'SYMBOL', parentIndex: under(1, '!') },
   text(11, 10, { fontSize: 28, letterSpacing: STYLE_LETTER_SPACING, styleIdForText: heading }),
   text(12, 10, { fontSize: 16, styleIdForText: missingLibraryStyle }),
+  text(13, 10, { fontSize: 28, styleIdForText: { assetRef: { key: 'bound', version: '1:0' } } }),
+  text(14, 10, {
+    fontSize: 28,
+    styleIdForText: { assetRef: { key: 'bound', version: '1:0' } },
+    variableConsumptionMap: bound('LINE_HEIGHT', LINE_HEIGHT_VARIABLE)
+  }),
   { guid: guid(20), type: 'SYMBOL', parentIndex: under(1, '"') },
   {
     guid: guid(21),
@@ -79,7 +145,10 @@ const records: NodeChange[] = [
     claim([12], { fontSize: 12 })
   ]),
   instance(31, 10, '$', [claim([11], { styleIdForText: CLEARED_STYLE, fontSize: 20 })]),
-  instance(32, 20, '%', [claim([21, 11], { fontSize: 20 })])
+  instance(32, 20, '%', [claim([21, 11], { fontSize: 20 })]),
+  instance(33, 10, '&', [claim([11], claimedVariableSize), claim([13], claimedVariableSize)]),
+  instance(34, 10, "'", [claim([13], { variableConsumptionMap: boundSize(STYLE_VARIABLE) })]),
+  instance(35, 10, '(', [claim([14], { fontSize: 20 })])
 ]
 
 function textOf(
@@ -123,6 +192,30 @@ describe('an instance text that keeps its inherited text style', async () => {
 
     test(`keeps a claimed decoration, which leaves the style attached (${reader})`, () => {
       expect(textOf(graph, sources, '1:30', [0]).textDecoration).toBe('UNDERLINE')
+    })
+
+    test(`draws the style's value over a claimed variable (${reader})`, () => {
+      const text = textOf(graph, sources, '1:33', [0])
+      expect(text.fontSize).toBe(28)
+      expect(text.boundVariables.fontSize).toBeUndefined()
+    })
+
+    test(`draws the style's variable over a claimed one (${reader})`, () => {
+      const text = textOf(graph, sources, '1:33', [2])
+      expect(text.fontSize).toBe(STYLE_VARIABLE_SIZE)
+      expect(text.boundVariables.fontSize).toBe(`1:${STYLE_VARIABLE}`)
+    })
+
+    test(`yields only the fields a claim touches (${reader})`, () => {
+      const text = textOf(graph, sources, '1:35', [3])
+      expect(text.fontSize).toBe(STYLE_VARIABLE_SIZE)
+      expect(text.boundVariables.lineHeight).toBe(`1:${LINE_HEIGHT_VARIABLE}`)
+    })
+
+    test(`keeps a claimed variable that repeats the style's (${reader})`, () => {
+      const text = textOf(graph, sources, '1:34', [2])
+      expect(text.fontSize).toBe(STYLE_VARIABLE_SIZE)
+      expect(text.boundVariables.fontSize).toBe(`1:${STYLE_VARIABLE}`)
     })
 
     test(`keeps a claimed field the style leaves unset (${reader})`, () => {
