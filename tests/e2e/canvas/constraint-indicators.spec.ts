@@ -1,0 +1,34 @@
+import type { ConstraintType } from '@open-pencil/scene-graph'
+
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { constraintIndicatorDriver } from '#tests/helpers/canvas/constraint-indicators/driver'
+
+const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
+const constrained = constraintIndicatorDriver(() => editor.page)
+
+async function expectCanvas(name: string) {
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
+  expect(buffer).toMatchSnapshot(`${name}.png`, { maxDiffPixelRatio: 0, threshold: 0 })
+}
+
+// A selected layer shows its constraints as dashed lines to its parent's edges (#1702).
+for (const [name, horizontal, vertical] of [
+  ['left-top', 'MIN', 'MIN'],
+  ['right-bottom', 'MAX', 'MAX'],
+  ['left-right-top-bottom', 'STRETCH', 'STRETCH'],
+  ['center', 'CENTER', 'CENTER'],
+  ['scale', 'SCALE', 'SCALE']
+] as const satisfies readonly (readonly [string, ConstraintType, ConstraintType])[]) {
+  test(`a selected layer pinned ${name} shows its constraint indicators`, async () => {
+    await constrained.selectConstrainedLayer(horizontal, vertical)
+    await editor.canvas.waitForRender()
+    await expectCanvas(`constraints-${name}`)
+  })
+}
+
+test('constraint indicators follow a rotated parent', async () => {
+  await constrained.selectConstrainedLayer('MIN', 'MAX', 20)
+  await editor.canvas.waitForRender()
+  await expectCanvas('constraints-rotated-parent')
+})

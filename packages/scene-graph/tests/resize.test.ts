@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { ConstraintType } from '@open-pencil/scene-graph'
-import { constrainedChildRect, scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
+import {
+  constrainedChildRect,
+  isConstraintEligible,
+  scaledGeometryChanges
+} from '@open-pencil/scene-graph/resize'
+import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
 // Live Figma, 2026-10-10: a locked 100×50 rectangle at 50,50 in a 200×200 frame.
 const child = { x: 50, y: 50, width: 100, height: 50 }
@@ -92,5 +97,27 @@ describe('saved stroke outlines through a resize', () => {
   test('go where a path can draw the stroke again, and stay where only the outline can', () => {
     expect(scaledGeometryChanges(vector(1), 10, 10, 20, 10).strokeGeometry).toEqual([])
     expect(scaledGeometryChanges(vector(0), 10, 10, 20, 10).strokeGeometry).toHaveLength(1)
+  })
+})
+
+describe('which layers follow constraints', () => {
+  test('frame children outside auto layout flow, but not groups, top-level layers, or section children', () => {
+    const graph = makeSceneGraph()
+    const pageId = firstPageId(graph)
+    const topLevel = createRect(graph, pageId)
+    const frame = graph.createNode('FRAME', pageId, { layoutMode: 'NONE' })
+    const child = createRect(graph, frame.id)
+    const group = graph.createNode('GROUP', frame.id)
+    const section = graph.createNode('SECTION', pageId)
+    const inSection = createRect(graph, section.id)
+    expect(isConstraintEligible(graph, topLevel)).toBe(false)
+    expect(isConstraintEligible(graph, child)).toBe(true)
+    expect(isConstraintEligible(graph, group)).toBe(false)
+    expect(isConstraintEligible(graph, inSection)).toBe(false)
+
+    graph.updateNode(frame.id, { layoutMode: 'HORIZONTAL' })
+    expect(isConstraintEligible(graph, child)).toBe(false)
+    graph.updateNode(child.id, { layoutPositioning: 'ABSOLUTE' })
+    expect(isConstraintEligible(graph, child)).toBe(true)
   })
 })
