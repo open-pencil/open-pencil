@@ -28,6 +28,7 @@ import type { NodeEditState } from '#core/editor/vector/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
+import type { MutationWithLayout } from '#core/layout/mutations'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -318,8 +319,7 @@ export interface EditorContext {
   runLayoutForNode: (id: string) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
-    fallbackId?: string,
-    beforeLayout?: (result: T) => Promise<void> | void
-  ) => Promise<T>
+    fallbackId?: string
+  ) => Promise<MutationWithLayout<T>>
   subscribeToGraph: () => void
 }

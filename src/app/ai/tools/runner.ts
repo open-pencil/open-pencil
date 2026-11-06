@@ -16,10 +16,13 @@ import {
   recordRunUndoEntry,
   type Run
 } from '@/app/ai/reply/run'
-import { AUTOMATION_UNDO_LABEL, loadAtomicToolFonts } from '@/app/automation/execution/editor'
+import {
+  AUTOMATION_UNDO_LABEL,
+  loadAtomicToolFonts,
+  recordAgentEdit
+} from '@/app/automation/execution/editor'
 import { acquireDocumentEdit } from '@/app/automation/execution/lock'
 import type { EditorStore } from '@/app/editor/active-store'
-import { ensureGraphFonts } from '@/app/editor/fonts'
 
 import { recordToolChange } from './changes/capture'
 
@@ -58,18 +61,6 @@ function writtenPageId(figma: FigmaAPI, args: Record<string, unknown>): string {
       ? graphOf(figma).closest(nodeId, (node) => node.type === 'CANVAS')
       : undefined
   return page?.id ?? figma.currentPageId
-}
-
-async function execute(call: EditorToolCall, pageId: string): Promise<unknown> {
-  const { store, figma, def, args } = call
-  return store.runMutationWithLayout(
-    () => def.execute(figma, args),
-    pageId,
-    async () => {
-      const page = store.graph.getNode(pageId)
-      if (page) await ensureGraphFonts(store.graph, page.childIds, store.renderer)
-    }
-  )
 }
 
 /** Records a reply's call once it ran: its undo entry, its change, and where its agent worked. */
@@ -132,7 +123,9 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
       await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
       return result
     }
-    return await store.recordEditAsync(options, () => execute(call, pageId))
+    return await recordAgentEdit(store, options, () => def.execute(figma, args), {
+      isLive: call.isLive
+    })
   } finally {
     if (reply && recorded.change) {
       await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)

@@ -1,3 +1,4 @@
+import type { RecordEditOptions } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { graphOf } from '@open-pencil/core/figma-api'
 
@@ -43,10 +44,37 @@ export async function loadAtomicToolFonts(
 }
 
 /**
- * Run a structural edit as one undo step by recording what it changes in the document, as the
- * AI chat does, so `undo` reverts what an automation client created, moved, or deleted on any
- * page, and the variables it changed. It waits for the document's other agent edits, as tool
- * calls do, so neither records the other's changes.
+ * Runs an agent's edit as one undo step of what it wrote and the layout that follows, with no
+ * wait between them. Loading the fonts its page draws text in and laying it out again come after
+ * the step closes: they are presentation, and what anyone else changes while fonts load must not
+ * land in the agent's step. A font that fails to load leaves the edit standing.
+ */
+export async function recordAgentEdit<T>(
+  store: EditorStore,
+  options: RecordEditOptions & { pageId: string },
+  run: () => T | Promise<T>,
+  { isLive }: { isLive?: () => boolean } = {}
+): Promise<T> {
+  const { result, relayout } = await store.recordEditAsync(options, () =>
+    store.runMutationWithLayout(run, options.pageId)
+  )
+  try {
+    const page = store.graph.getNode(options.pageId)
+    const loaded = page && (await ensureGraphFonts(store.graph, page.childIds, store.renderer))
+    if (loaded && isLive?.() !== false) {
+      relayout()
+      store.requestRender()
+    }
+  } catch (error) {
+    console.warn('[Agent fonts]', error)
+  }
+  return result
+}
+
+/**
+ * Runs an agent's script as one undo step of what it changes anywhere in the document, so `undo`
+ * reverts what it created, moved, or deleted on any page, and the variables it changed. It waits
+ * for the document's other agent edits, as tool calls do, so neither records the other's changes.
  */
 export async function executeWithDocumentUndo<T>(
   store: EditorStore,
@@ -56,7 +84,7 @@ export async function executeWithDocumentUndo<T>(
 ): Promise<T> {
   const release = await acquireDocumentEdit(store)
   try {
-    return await store.recordEditAsync({ label, pageId }, run)
+    return await recordAgentEdit(store, { label, pageId }, run)
   } finally {
     release()
   }

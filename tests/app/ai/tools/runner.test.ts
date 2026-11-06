@@ -10,6 +10,7 @@ import { DEFAULT_AGENT_STEPS } from '@/app/ai/reply/step-limit'
 import { readToolChange } from '@/app/ai/tools/changes/store'
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import * as fonts from '@/app/editor/fonts'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 import { createDeferred } from '@/app/runtime/deferred'
 let store: EditorStore
@@ -112,4 +113,33 @@ test("a reply's property edit is recorded once, as one undo entry", async () => 
   store.undo.undo()
   expect(store.graph.getNode(rect.id)?.opacity).toBe(1)
   expect(store.undo.canUndo).toBe(false)
+})
+
+test("an edit made while a call's fonts load stays out of the call's undo step", async () => {
+  const createShape = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+    'create_shape'
+  )
+  const pageId = store.state.currentPageId
+  const card = store.graph.createNode('RECTANGLE', pageId, { width: 100, height: 70 })
+  const fontsLoaded = createDeferred<boolean>()
+  const loadFonts = spyOn(fonts, 'ensureGraphFonts').mockReturnValue(fontsLoaded.promise)
+
+  const call = runEditorTool({
+    store,
+    figma: makeFigmaFromStore(store, pageId),
+    def: createShape,
+    args: { type: 'RECTANGLE', x: 200, y: 0, width: 40, height: 20 },
+    source: 'MCP'
+  })
+  while (loadFonts.mock.calls.length === 0) await Promise.resolve()
+  store.updateNodeWithUndo(card.id, { x: 25 }, 'Move')
+  fontsLoaded.resolve(true)
+  await call
+
+  expect(store.undo.undo()).toBe('Move')
+  expect(store.graph.getChildren(pageId)).toHaveLength(2)
+  expect(store.undo.undo()).toBe('MCP: create_shape')
+  expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+  expect(store.graph.getNode(card.id)?.x).toBe(0)
 })
