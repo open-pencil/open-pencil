@@ -264,3 +264,46 @@ for (const [name, size] of [
     await expectCanvas(name)
   })
 }
+
+// Figma outlines no parent of a selected layer, however deeply that parent is nested (#1703).
+test('a layer selected two frames deep outlines neither frame', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const outer = store.graph.createNode('FRAME', store.state.currentPageId, {
+      name: 'Outer',
+      x: 120,
+      y: 120,
+      width: 360,
+      height: 240,
+      fills: [
+        { type: 'SOLID', color: { r: 0.94, g: 0.94, b: 0.94, a: 1 }, visible: true, opacity: 1 }
+      ]
+    })
+    const inner = store.graph.createNode('FRAME', outer.id, {
+      name: 'Inner',
+      x: 40,
+      y: 40,
+      width: 240,
+      height: 140,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    const rect = store.graph.createNode('RECTANGLE', inner.id, {
+      name: 'Rectangle',
+      x: 60,
+      y: 40,
+      width: 80,
+      height: 60,
+      fills: [
+        { type: 'SOLID', color: { r: 0.42, g: 0.78, b: 0.58, a: 1 }, visible: true, opacity: 1 }
+      ]
+    })
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    store.select([rect.id])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('nested-layer-selected')
+})
