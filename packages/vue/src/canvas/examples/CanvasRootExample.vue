@@ -44,6 +44,6 @@ const cardAt = computed(() => {
   <CanvasRoot v-slot="{ ready }" :show-rulers="false" :input="input">
     <CanvasSurface class="block h-100 w-150" :data-ready="ready || undefined" />
   </CanvasRoot>
-  <p class="mt-2 text-xs" data-testid="selection">{{ selection || 'Nothing selected' }}</p>
-  <p class="text-xs" data-testid="card">Card at {{ cardAt }}</p>
+  <p class="mt-2 text-xs" data-test-id="selection">{{ selection || 'Nothing selected' }}</p>
+  <p class="text-xs" data-test-id="card">Card at {{ cardAt }}</p>
 </template>
