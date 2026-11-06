@@ -326,13 +326,28 @@ describe('editing a path: dragging a straight segment', () => {
     ])
   })
 
-  test('a segment pressed with a picked region drags with it instead', () => {
+  test('a segment Shift-pressed with a picked region drags with it instead of bending', () => {
     setup()
     const es = editor.getNodeEditState()
-    if (es) es.selectedRegions = new Set([0])
+    if (!es) throw new Error('expected edit mode')
+    // Close the path into a triangle with one region, picked with its points then Shift-deselected.
+    editor.setNodeEditNetwork(es, {
+      vertices: es.vertices,
+      segments: [...es.segments, { start: 2, end: 0, tangentStart: zero, tangentEnd: zero }],
+      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
+    })
+    es.selectedRegions = new Set([0])
+    es.selectedVertexIndices = new Set()
     const drag = press(30, 0, true)
     if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
-    expect(drag.insert).toBeUndefined()
+    handleNodeEditMove(drag, 30, -20, editor, false, false, false, true)
+    release(drag)
+    expect(points()).toEqual([
+      [0, -20],
+      [100, -20],
+      [100, 100]
+    ])
+    expect(es.selectedRegions).toEqual(new Set([0]))
   })
 
   test('a click without a drag only selects it', () => {
