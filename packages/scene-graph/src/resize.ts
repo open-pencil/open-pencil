@@ -124,77 +124,55 @@ function keepLockedRatio(
     : { x: resizedInPlace(x, y.size * aspectRatio, horizontal), y }
 }
 
-function placedChildRect(
+type ChildRectPlacer = (
   child: Rect,
   parentBefore: Pick<Rect, 'width' | 'height'>,
   parentAfter: Pick<Rect, 'width' | 'height'>,
   horizontal: ConstraintType,
   vertical: ConstraintType,
-  aspectRatio: number | null,
-  scaleStep: number
-): Rect {
-  const { x, y } = keepLockedRatio(
-    constrainedAxis(
-      child.x,
-      child.width,
-      parentBefore.width,
-      parentAfter.width,
+  aspectRatio?: number | null
+) => Rect
+
+/** Places a child by its constraints, snapping a scaled position to `scaleStep` when it is set. */
+function childRectPlacer(scaleStep: number): ChildRectPlacer {
+  return (child, parentBefore, parentAfter, horizontal, vertical, aspectRatio = null) => {
+    const { x, y } = keepLockedRatio(
+      constrainedAxis(
+        child.x,
+        child.width,
+        parentBefore.width,
+        parentAfter.width,
+        horizontal,
+        scaleStep
+      ),
+      constrainedAxis(
+        child.y,
+        child.height,
+        parentBefore.height,
+        parentAfter.height,
+        vertical,
+        scaleStep
+      ),
       horizontal,
-      scaleStep
-    ),
-    constrainedAxis(
-      child.y,
-      child.height,
-      parentBefore.height,
-      parentAfter.height,
       vertical,
-      scaleStep
-    ),
-    horizontal,
-    vertical,
-    aspectRatio
-  )
-  return { x: x.position, y: y.position, width: x.size, height: y.size }
+      aspectRatio
+    )
+    return { x: x.position, y: y.position, width: x.size, height: y.size }
+  }
 }
 
 /**
  * A child's box after its parent is resized, by a handle or `resize()`, keeping a locked aspect
  * ratio as Figma does.
  */
-export function constrainedChildRect(
-  child: Rect,
-  parentBefore: Pick<Rect, 'width' | 'height'>,
-  parentAfter: Pick<Rect, 'width' | 'height'>,
-  horizontal: ConstraintType,
-  vertical: ConstraintType,
-  aspectRatio: number | null = null
-): Rect {
-  return placedChildRect(child, parentBefore, parentAfter, horizontal, vertical, aspectRatio, 0)
-}
+export const constrainedChildRect = childRectPlacer(0)
 
 /**
  * Where a child goes when layout resizes its parent, as Figma places a layer that ignores auto
  * layout when its Hug frame grows (measured on desktop 126): as `constrainedChildRect`, except
  * that a scaled position lands on 1/128 of a pixel.
  */
-export function layoutConstrainedChildRect(
-  child: Rect,
-  parentBefore: Pick<Rect, 'width' | 'height'>,
-  parentAfter: Pick<Rect, 'width' | 'height'>,
-  horizontal: ConstraintType,
-  vertical: ConstraintType,
-  aspectRatio: number | null = null
-): Rect {
-  return placedChildRect(
-    child,
-    parentBefore,
-    parentAfter,
-    horizontal,
-    vertical,
-    aspectRatio,
-    1 / 128
-  )
-}
+export const layoutConstrainedChildRect = childRectPlacer(1 / 128)
 
 export function scaledChildRect(
   child: Rect,
