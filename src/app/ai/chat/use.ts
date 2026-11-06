@@ -56,6 +56,16 @@ const history = createConversationHistory({
 
 registerAIChatEffects(chatSession.markTransportDirty)
 
+if (import.meta.hot) {
+  // Vite waits for these callbacks before replacing the module or reloading the page.
+  // Tauri's shell children otherwise survive the WebView and keep agent sessions locked.
+  /* eslint-disable typescript-eslint/no-misused-promises -- Vite awaits these callbacks despite their void return types. */
+  import.meta.hot.dispose(history.dispose)
+  import.meta.hot.on('vite:beforeFullReload', history.dispose)
+  import.meta.hot.on('vite:ws:disconnect', history.dispose)
+  /* eslint-enable typescript-eslint/no-misused-promises */
+}
+
 if (IS_BROWSER) {
   exposeChatTransportOverride((factory) => {
     chatSession.setOverrideTransport(factory)

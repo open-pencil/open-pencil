@@ -81,7 +81,10 @@ export async function openAgentSession(
     })
     return { sessionId: resume, model: result.models?.currentModelId ?? null, resumed: true }
   } catch (e) {
-    if (isAuthRequiredError(e)) throw e
-    throw new AgentSessionResumeError(agentDef, e)
+    // Only ACP's resource_not_found confirms that the saved session is gone. A process
+    // still holding it after a reload, a connection failure, or sign-in can be retried.
+    if (typeof e === 'object' && e !== null && 'code' in e && e.code === -32002)
+      throw new AgentSessionResumeError(agentDef, e)
+    throw e
   }
 }

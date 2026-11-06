@@ -1,9 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import type {
-  InitializeResponse,
-  NewSessionRequest,
-  ResumeSessionRequest
+import {
+  RequestError,
+  type InitializeResponse,
+  type NewSessionRequest,
+  type ResumeSessionRequest
 } from '@agentclientprotocol/sdk'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
@@ -90,7 +91,7 @@ test('a saved session never silently becomes a new one', async () => {
   expect(withoutCapability.created).toEqual([])
   expect(withoutCapability.resumed).toEqual([])
 
-  const unknownSession = new Error('No conversation found')
+  const unknownSession = RequestError.resourceNotFound('s')
   const missing = connection({ resumeError: unknownSession })
   const failure = await openAgentSession(missing, resuming, resumes, {
     ...request,
@@ -108,4 +109,16 @@ test('a resume that needs sign-in keeps the sign-in error', async () => {
   await expect(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' })).rejects.toBe(
     authRequired
   )
+})
+
+test.each([
+  RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
+  RequestError.internalError(),
+  new Error('Connection closed')
+])('an unconfirmed resume failure preserves the original error for retry: %s', async (error) => {
+  const fake = connection({ resumeError: error })
+  await expect(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' })).rejects.toBe(
+    error
+  )
+  expect(fake.created).toEqual([])
 })
