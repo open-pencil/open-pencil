@@ -21,8 +21,10 @@ export function yieldToInheritedTextStyle(
     return
   }
   for (const field of FIELDS_AN_OVERRIDE_DETACHES) {
-    if (style[field] !== undefined) {
+    const styleValue = style[field]
+    if (styleValue !== undefined) {
       Reflect.deleteProperty(claim, field)
+      Object.assign(target.properties, { [field]: structuredClone(styleValue) })
     }
   }
 }

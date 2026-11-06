@@ -13,6 +13,7 @@ const heading = { assetRef: { key: 'heading', version: '2:0' } }
 const missingLibraryStyle = { assetRef: { key: 'missing', version: '1:0' } }
 const STYLE_LETTER_SPACING = { value: 2, units: 'PERCENT' as const }
 const CLAIMED_LETTER_SPACING = { value: 0, units: 'PIXELS' as const }
+const CLAIMED_LINE_HEIGHT = { value: 24, units: 'PIXELS' as const }
 
 function text(localID: number, parent: number, fields: Partial<NodeChange>): NodeChange {
   return {
@@ -72,6 +73,7 @@ const records: NodeChange[] = [
     claim([11], {
       fontSize: 20,
       letterSpacing: CLAIMED_LETTER_SPACING,
+      lineHeight: CLAIMED_LINE_HEIGHT,
       textDecoration: 'UNDERLINE'
     }),
     claim([12], { fontSize: 12 })
@@ -121,6 +123,13 @@ describe('an instance text that keeps its inherited text style', async () => {
 
     test(`keeps a claimed decoration, which leaves the style attached (${reader})`, () => {
       expect(textOf(graph, sources, '1:30', [0]).textDecoration).toBe('UNDERLINE')
+    })
+
+    test(`keeps a claimed field the style leaves unset (${reader})`, () => {
+      expect(textOf(graph, sources, '1:30', [0]).lineHeight).toEqual({
+        value: CLAIMED_LINE_HEIGHT.value,
+        unit: 'PIXELS'
+      })
     })
 
     test(`takes claimed values once the style is cleared or missing (${reader})`, () => {
