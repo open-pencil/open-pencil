@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+
 import {
   findComponentMapping,
   implementationStoryURL,
@@ -5,6 +7,7 @@ import {
   type ComponentMapping,
   type ComponentMappings
 } from '@open-pencil/dom-css/export/storybook/mapping'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { loadedFigFileName, matchesLoadedRevision } from '@/app/document/io/revision'
 import { getActiveEditorStore } from '@/app/editor/active-store'
@@ -125,10 +128,8 @@ export function requestOpenImplementationStory(store: EditorStore): void {
   void openImplementationStory(store, {
     pick: pickComponentMapping,
     isCurrent: () => getActiveEditorStore() === store,
-    matchesDocument: async (mappingPath, relative, document) => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('mapping_document_matches', { mappingPath, relative, document })
-    },
+    matchesDocument: (mappingPath, relative, document) =>
+      invoke<boolean>('mapping_document_matches', { mappingPath, relative, document }),
     open: async (url, pinned) => {
       if (IS_TAURI) await openExternalLink(url)
       else
@@ -144,5 +145,5 @@ export function requestOpenImplementationStory(store: EditorStore): void {
           }
         )
     }
-  }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : String(error)))
+  }).catch((error: unknown) => toast.error(errorMessage(error)))
 }

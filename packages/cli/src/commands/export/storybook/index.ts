@@ -332,14 +332,9 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
   let documents: string[]
   try {
     documents = await resolveDocuments(args)
-  } catch (error) {
-    printError(errorMessage(error))
-    process.exit(1)
-  }
-  try {
     if (await handleMappingExport(args, documents)) return
   } catch (error) {
-    printError(message(error))
+    printError(errorMessage(error))
     process.exit(1)
   }
   if (documents.length > 1 && !args.beside && !args.output) {

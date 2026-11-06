@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { behaviourProperties } from '@open-pencil/scene-graph/behaviours'
-import { restingVariant } from '@open-pencil/scene-graph/components'
+import { defaultVariant } from '@open-pencil/scene-graph/components'
 
 import type { ComponentMapping, ComponentMappingArgs } from './schema'
 
@@ -23,7 +23,7 @@ export function mappingComponent(graph: SceneGraph, mapping: ComponentMapping): 
 }
 
 export function mappingDefault(graph: SceneGraph, component: SceneNode): SceneNode {
-  const node = component.type === 'COMPONENT_SET' ? restingVariant(graph, component) : component
+  const node = component.type === 'COMPONENT_SET' ? defaultVariant(graph, component) : component
   if (!node) throw new Error(`Component ${component.source.id} has no default variant.`)
   return node
 }

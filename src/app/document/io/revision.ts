@@ -1,3 +1,5 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 interface LoadedRevision {
@@ -33,7 +35,7 @@ export async function matchesLoadedRevision(graph: SceneGraph, expected: string)
   if (!revision || !revision.unchanged) return false
   revision.digest ??= revision.file.arrayBuffer().then(async (bytes) => {
     const hash = await crypto.subtle.digest('SHA-256', bytes)
-    return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
+    return bytesToHex(new Uint8Array(hash))
   })
   const digest = await revision.digest
   return (

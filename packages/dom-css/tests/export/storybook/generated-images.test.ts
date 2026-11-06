@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-import { switchSet } from '#dom-css-tests/behaviours/fixtures'
+import { switchSet } from '#dom-css-tests/behaviours/fixtures/controls'
 import { exportStorybook, type StorybookFile } from '#dom-css/export/storybook/export'
 
 import { es } from '@open-pencil/emit'

@@ -167,8 +167,6 @@ export async function linkedIdentityNotice(
     if (result === 'ambiguous') return messages.persistedIdentityAmbiguous
     return messages.persistedIdentityNotFound({ id: clamp(target.id) })
   } catch (error) {
-    return notificationMessages
-      .get()
-      .operationFailed({ error: clamp(error instanceof Error ? error.message : String(error)) })
+    return notificationMessages.get().operationFailed({ error: clamp(errorMessage(error)) })
   }
 }

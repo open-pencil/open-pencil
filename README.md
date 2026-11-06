@@ -94,7 +94,7 @@ openpencil import card.html --css card.css    # HTML/CSS → editable .fig
 openpencil import https://example.com         # A web page → editable .fig
 ```
 
-[Component mappings](https://openpencil.dev/programmable/cli/exporting#link-an-existing-implementation) connect saved design identities to your existing Vue or React stories. Export design images and typed reference modules without replacing implementation code, and navigate between the design and its Storybook story.
+[Component mappings](https://openpencil.dev/developers/cli/exporting#link-an-existing-implementation) connect saved design identities to your existing Vue or React stories. Export design images and typed reference modules without replacing implementation code, and navigate between the design and its Storybook story.
 
 ### Lint and analyze
 
