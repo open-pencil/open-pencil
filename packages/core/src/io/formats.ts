@@ -1,6 +1,7 @@
 import { groupBy } from 'es-toolkit'
 import { dirname, join } from 'pathe'
 import { filename } from 'pathe/utils'
+import { decodePath } from 'ufo'
 
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { isDrawIOExportFileName } from '@open-pencil/drawio'
@@ -248,41 +249,14 @@ const PEN_ICON_SIZE = 24
 type ReadFile = ReadDocumentInput['readAsset']
 
 /**
- * The file a document-relative image URL names: pen.dev writes it percent-encoded, as a URL, so a
- * document named `My Design.pen` names `My%20Design-assets/…`. Each step is decoded on its own and
- * a malformed escape stays as written; null when decoding would add a step, such as `%2F` or
- * `%2E%2E`, or a scheme or drive such as `C%3A`, which the URL as written does not take.
- */
-function penImageFile(url: string): string | null {
-  const steps = url.split('/')
-  const decoded = steps.map((step) => {
-    try {
-      return decodeURIComponent(step)
-    } catch {
-      return step
-    }
-  })
-  const added = decoded.some(
-    (step, index) =>
-      step !== steps[index] &&
-      (/[/\\]/.test(step) ||
-        step === '..' ||
-        step === '.' ||
-        (index === 0 && /^[a-z][a-z0-9+.-]*:/i.test(step)))
-  )
-  return added ? null : decoded.join('/')
-}
-
-/**
  * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
- * host, by the file its URL names; null when either fails.
+ * host; null when either fails.
  */
 async function loadPenImage(url: string, read: ReadFile): Promise<Uint8Array | null> {
   try {
-    if (!isDataURL(url)) {
-      const file = penImageFile(url)
-      return file === null ? null : ((await read?.(file)) ?? null)
-    }
+    // pen.dev writes the path percent-encoded, as `My%20Design-assets/…`; the host keeps the
+    // read inside the folder it allows.
+    if (!isDataURL(url)) return (await read?.(decodePath(url))) ?? null
     // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
     return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
   } catch {

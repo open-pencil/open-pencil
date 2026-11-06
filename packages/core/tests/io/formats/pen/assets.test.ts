@@ -262,18 +262,18 @@ describe('penFormat.readDocument — assets', () => {
     expect(graph.getNode('literal')?.fills[0]?.type).toBe('IMAGE')
   })
 
-  test('does not read a percent-encoded drive or scheme', async () => {
+  test('keeps an encoded slash inside the file name', async () => {
     const asked: string[] = []
     await io.readDocument(
       {
-        name: 'drive.pen',
+        name: 'slash.pen',
         data: penBytes([
           {
-            id: 'drive',
+            id: 'slash',
             type: 'rectangle',
             width: 50,
             height: 50,
-            fill: { type: 'image', url: 'C%3A/secret.png' }
+            fill: { type: 'image', url: 'assets/a%2Fb%20c.png' }
           }
         ]),
         readAsset: async (path) => {
@@ -283,30 +283,6 @@ describe('penFormat.readDocument — assets', () => {
       },
       { icons: iconProvider([], []) }
     )
-    expect(asked).toEqual([])
-  })
-
-  test('does not read a percent-encoded path that leaves the document folder', async () => {
-    const asked: string[] = []
-    await io.readDocument(
-      {
-        name: 'escape.pen',
-        data: penBytes([
-          {
-            id: 'escape',
-            type: 'rectangle',
-            width: 50,
-            height: 50,
-            fill: { type: 'image', url: '%2e%2e/secret.png' }
-          }
-        ]),
-        readAsset: async (path) => {
-          asked.push(path)
-          return PNG
-        }
-      },
-      { icons: iconProvider([], []) }
-    )
-    expect(asked).toEqual([])
+    expect(asked).toEqual(['assets/a%2Fb c.png'])
   })
 })
