@@ -1,22 +1,19 @@
-import { inflateSync } from 'fflate'
-
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import {
-  ByteBuffer,
-  compileSchema,
-  decodeBinarySchema,
-  type CompiledDefinition,
-  type RuntimeCodec,
-  type RuntimeMessage
-} from '@open-pencil/kiwi/schema-runtime'
+import { ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 
 import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
-import { symbolDataOf, symbolOverridesOf } from '../instance-overrides/types'
 import { patchedRecord, type FigRecordFieldPatch } from './fields'
+export {
+  figArchiveComponentUsePages,
+  figArchiveRecordPages,
+  figComponentUsePages,
+  figRecordPages
+} from './pages'
+import { archiveCodec, concat, encoded, key, scanMessage, varUint, type RecordEntry } from './scan'
 
 export {
   entryPathKey,
@@ -67,10 +64,6 @@ export interface FigPatchedArchiveInput {
 
 const VARIABLE_TYPES = new Set(['VARIABLE', 'VARIABLE_SET'])
 
-function key(guid: GUID | undefined): string | undefined {
-  return guid ? guidToString(guid) : undefined
-}
-
 function isGuidLike(value: object): value is GUID {
   return (
     'sessionID' in value &&
@@ -111,18 +104,6 @@ export function figArchiveRecordInfo(archive: {
     imageHashes: [...archive.imageHashes],
     documentId: key(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null
   }
-}
-
-/**
- * A record as merging sees it: its identity, place and type, with its contents either the bytes
- * the archive holds or a record to encode.
- */
-interface RecordEntry<Value> {
-  id: string | undefined
-  parent: string | undefined
-  type: string | undefined
-  parentIndex: NodeChange['parentIndex']
-  value: Value
 }
 
 function entryOf(record: NodeChange): RecordEntry<NodeChange> {
@@ -297,127 +278,6 @@ export function patchFigRecords(
   return mergeRecords(archive.map(entryOf), patch, (record) => record).map((entry) => entry.value)
 }
 
-type RecordHead = Omit<RecordEntry<Uint8Array>, 'value'> & {
-  guid?: GUID
-  /** Read only when asked for: what an instance shows, for finding where components are used. */
-  symbolData?: unknown
-}
-type EncodedPart =
-  | { kind: 'bytes'; bytes: Uint8Array }
-  | { kind: 'records' | 'blobs'; fieldId: number; type: string }
-
-/** The encoded message's fields in order, with its records and blobs located by byte range. */
-interface ScannedMessage {
-  parts: EncodedPart[]
-  records: Array<RecordHead & { value: Uint8Array }>
-  blobs: Uint8Array[]
-  hasBlobs: boolean
-}
-
-/** Reads a record's identity, place and type, and moves past everything else in it. */
-function scanRecord(
-  codec: RuntimeCodec,
-  record: CompiledDefinition,
-  bb: ByteBuffer,
-  readSymbolData: boolean
-): RecordHead {
-  const { schema } = codec
-  const head: RecordHead = {
-    id: undefined,
-    parent: undefined,
-    type: undefined,
-    parentIndex: undefined
-  }
-  for (let id = bb.readVarUint(); id !== 0; id = bb.readVarUint()) {
-    const field = record.byId[id]
-    if (!field) throw new Error('Attempted to parse invalid message')
-    const name = field.isArray ? '' : field.name
-    if (name === 'guid') {
-      head.guid = schema.read(field, bb) as GUID
-      head.id = key(head.guid)
-    } else if (name === 'parentIndex') {
-      const parentIndex = schema.read(field, bb) as NodeChange['parentIndex']
-      head.parentIndex = parentIndex
-      head.parent = key(parentIndex?.guid)
-    } else if (name === 'type') {
-      head.type = field.definition?.names[bb.readVarUint()]
-    } else if (name === 'symbolData' && readSymbolData) head.symbolData = schema.read(field, bb)
-    else schema.skip(field, bb)
-  }
-  return head
-}
-
-function scanMessage(
-  codec: RuntimeCodec,
-  data: Uint8Array,
-  readSymbolData = false
-): ScannedMessage {
-  const { schema } = codec
-  const fields = schema.definition('Message').byId
-  const bb = new ByteBuffer(data)
-  const scanned: ScannedMessage = { parts: [], records: [], blobs: [], hasBlobs: false }
-  for (;;) {
-    const start = bb.offset
-    const id = bb.readVarUint()
-    if (id === 0) break
-    const field = fields[id]
-    if (!field) throw new Error('Attempted to parse invalid message')
-    const isRecords = field.name === 'nodeChanges' && field.isArray
-    const isBlobs = field.name === 'blobs' && field.isArray
-    if (!isRecords && !isBlobs) {
-      schema.skip(field, bb)
-      scanned.parts.push({ kind: 'bytes', bytes: data.subarray(start, bb.offset) })
-      continue
-    }
-    const definition = field.definition
-    if (!definition) throw new Error(`Kiwi ${field.name} holds no messages`)
-    const type = definition.name
-    const element = { ...field, isArray: false }
-    for (let count = bb.readVarUint(); count > 0; count--) {
-      const begin = bb.offset
-      if (isRecords) {
-        const head = scanRecord(codec, definition, bb, readSymbolData)
-        scanned.records.push({ ...head, value: data.subarray(begin, bb.offset) })
-      } else {
-        schema.skip(element, bb)
-        scanned.blobs.push(data.subarray(begin, bb.offset))
-      }
-    }
-    scanned.hasBlobs ||= isBlobs
-    scanned.parts.push({ kind: isRecords ? 'records' : 'blobs', fieldId: id, type })
-  }
-  if (scanned.records.length === 0) throw new Error('No nodes found in .fig file')
-  return scanned
-}
-
-function archiveCodec(schemaDeflated: Uint8Array): RuntimeCodec {
-  return compileSchema(decodeBinarySchema(new ByteBuffer(inflateSync(schemaDeflated))))
-}
-
-function varUint(value: number): Uint8Array {
-  const bb = new ByteBuffer()
-  bb.writeVarUint(value)
-  return bb.toUint8Array().slice()
-}
-
-function encoded(codec: RuntimeCodec, type: string, value: unknown): Uint8Array {
-  const bb = new ByteBuffer()
-  codec.schema.encode(codec.schema.definition(type), value as RuntimeMessage, bb)
-  return bb.toUint8Array().slice()
-}
-
-function concat(chunks: readonly Uint8Array[]): Uint8Array {
-  let length = 0
-  for (const chunk of chunks) length += chunk.byteLength
-  const result = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return result
-}
-
 /**
  * The archive's message with the patch applied. Untouched records and blobs are copied as the
  * bytes they are and only written records are encoded, so the cost follows the edit.
@@ -490,120 +350,4 @@ export function patchFigArchive(
     compress,
     kind: input.kind ?? parts.kind
   })
-}
-
-/** The id of the nearest record of `type` from `id` up through its parents, itself included. */
-function nearestOfType(
-  byId: ReadonlyMap<string, NodeChange>,
-  id: string,
-  type: string
-): string | undefined {
-  const seen = new Set<string>()
-  for (let current = byId.get(id); current;) {
-    const currentId = key(current.guid)
-    if (!currentId || seen.has(currentId)) return undefined
-    seen.add(currentId)
-    if (current.type === type) return currentId
-    const parent = key(current.parentIndex?.guid)
-    current = parent ? byId.get(parent) : undefined
-  }
-  return undefined
-}
-
-function recordsById(records: readonly NodeChange[]): Map<string, NodeChange> {
-  const byId = new Map<string, NodeChange>()
-  for (const record of records) {
-    const id = key(record.guid)
-    if (id) byId.set(id, record)
-  }
-  return byId
-}
-
-/** The page each record is on, by its GUID, through its parents; undefined off every page. */
-export function figRecordPages(
-  records: readonly NodeChange[],
-  ids: readonly string[]
-): (string | undefined)[] {
-  const byId = recordsById(records)
-  return ids.map((id) => nearestOfType(byId, id, 'CANVAS'))
-}
-
-/**
- * The pages whose instances use these components, directly or through a component that nests
- * one of them. Their records carry overrides and sizes derived from the components.
- */
-export function figComponentUsePages(
-  records: readonly NodeChange[],
-  componentIds: readonly string[]
-): string[] {
-  const byId = recordsById(records)
-  const instancesOf = new Map<string, string[]>()
-  const use = (componentId: string | undefined, instanceId: string) => {
-    if (!componentId) return
-    const instances = instancesOf.get(componentId) ?? []
-    instances.push(instanceId)
-    instancesOf.set(componentId, instances)
-  }
-  for (const record of records) {
-    const id = key(record.guid)
-    if (!id || record.type !== 'INSTANCE') continue
-    use(key(symbolDataOf(record)?.symbolID), id)
-    for (const override of symbolOverridesOf(record)) use(key(override.overriddenSymbolID), id)
-  }
-  const nearest = (id: string, type: string) => nearestOfType(byId, id, type)
-  const pages = new Set<string>()
-  const visited = new Set<string>()
-  const pending = [...componentIds]
-  for (let componentId = pending.pop(); componentId !== undefined; componentId = pending.pop()) {
-    if (visited.has(componentId)) continue
-    visited.add(componentId)
-    for (const instanceId of instancesOf.get(componentId) ?? []) {
-      const page = nearest(instanceId, 'CANVAS')
-      if (page) pages.add(page)
-      const owner = nearest(instanceId, 'SYMBOL')
-      if (owner) pending.push(owner)
-    }
-  }
-  return [...pages]
-}
-
-/** An encoded archive's records with only the fields the page lookups read. */
-function scannedRecords(bytes: ArrayBuffer): NodeChange[] {
-  const parts = readFigArchiveParts(bytes)
-  const codec = archiveCodec(parts.schemaDeflated)
-  const scanned = scanMessage(codec, parts.dataRaw, true)
-  return scanned.records.map(
-    (entry) =>
-      ({
-        guid: entry.guid,
-        parentIndex: entry.parentIndex,
-        type: entry.type,
-        symbolData: entry.symbolData
-      }) as NodeChange
-  )
-}
-
-/** `figComponentUsePages` over an encoded archive, reading only what it needs of each record. */
-export function figArchiveComponentUsePages(
-  bytes: ArrayBuffer,
-  componentIds: readonly string[]
-): string[] {
-  return figComponentUsePages(scannedRecords(bytes), componentIds)
-}
-
-/** Each archive's records by GUID, scanned once: an archive's bytes are never written to. */
-const archiveRecordIndexes = new WeakMap<ArrayBuffer, Map<string, NodeChange>>()
-
-/** `figRecordPages` over an encoded archive, reading only what it needs of each record. */
-export function figArchiveRecordPages(
-  bytes: ArrayBuffer,
-  ids: readonly string[]
-): (string | undefined)[] {
-  let byId = archiveRecordIndexes.get(bytes)
-  if (!byId) {
-    byId = recordsById(scannedRecords(bytes))
-    archiveRecordIndexes.set(bytes, byId)
-  }
-  const index = byId
-  return ids.map((id) => nearestOfType(index, id, 'CANVAS'))
 }
