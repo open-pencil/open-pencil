@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
 
+import type { IconData } from '@open-pencil/core/icons'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -141,5 +142,64 @@ test("an edit made while a call's fonts load stays out of the call's undo step",
   expect(store.graph.getChildren(pageId)).toHaveLength(2)
   expect(store.undo.undo()).toBe('MCP: create_shape')
   expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+  expect(store.graph.getNode(card.id)?.x).toBe(0)
+})
+
+test("an edit made while a call downloads stays out of the call's undo step", async () => {
+  const insertIcon = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'insert_icon'),
+    'insert_icon'
+  )
+  const pageId = store.state.currentPageId
+  const card = store.graph.createNode('RECTANGLE', pageId, { width: 100, height: 70 })
+  const figma = makeFigmaFromStore(store, pageId)
+  const square: IconData = {
+    prefix: 'test',
+    name: 'square',
+    width: 24,
+    height: 24,
+    paths: [
+      {
+        vectorNetwork: {
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 24, y: 0 },
+            { x: 24, y: 24 }
+          ],
+          segments: [
+            { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+            { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+            { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+          ],
+          regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
+        },
+        fill: '#000000',
+        stroke: null,
+        strokeWidth: 0,
+        strokeCap: 'NONE',
+        strokeJoin: 'MITER'
+      }
+    ]
+  }
+  const downloaded = createDeferred<Map<string, IconData>>()
+  const download = spyOn(figma.icons, 'icons').mockReturnValue(downloaded.promise)
+
+  const call = runEditorTool({
+    store,
+    figma,
+    def: insertIcon,
+    args: { name: 'test:square' },
+    source: 'MCP'
+  })
+  while (download.mock.calls.length === 0) await Promise.resolve()
+  store.updateNodeWithUndo(card.id, { x: 25 }, 'Move')
+  downloaded.resolve(new Map([['test:square', square]]))
+  await call
+
+  expect(store.graph.getChildren(pageId)).toHaveLength(2)
+  expect(store.undo.undo()).toBe('MCP: insert_icon')
+  expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+  expect(store.graph.getNode(card.id)?.x).toBe(25)
+  expect(store.undo.undo()).toBe('Move')
   expect(store.graph.getNode(card.id)?.x).toBe(0)
 })

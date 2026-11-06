@@ -111,6 +111,36 @@ describe('recordEditAsync', () => {
     expect(editor.undo.canUndo).toBe(false)
   })
 
+  test('leaves what changes while it waits outside itself out of its step', async () => {
+    const { editor, pageId, card } = setup()
+    const other = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
+    const { id: collectionId } = editor.graph.createCollection('Tokens')
+    const gap = editor.graph.createVariable('gap', 'FLOAT', collectionId, 4)
+    const download = Promise.withResolvers<undefined>()
+
+    const edit = editor.recordEditAsync({ label: 'Agent: photo' }, async () => {
+      editor.graph.updateNode(card.id, { width: 120 })
+      await editor.graph.waitOutsideEdit(download.promise)
+      editor.graph.updateNode(card.id, { x: 40 })
+      editor.graph.updateNode(other.id, { y: 5 })
+    })
+    editor.recordEdit({ label: 'Move' }, () => {
+      editor.graph.updateNode(other.id, { x: 25 })
+      editor.graph.updateNode(card.id, { y: 8 })
+      const variable = editor.graph.variables.get(gap.id)
+      if (variable) variable.name = 'spacing'
+    })
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: photo')
+    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 8, width: 100 })
+    expect(editor.graph.getNode(other.id)).toMatchObject({ x: 25, y: 0 })
+    expect(editor.graph.variables.get(gap.id)?.name).toBe('spacing')
+    expect(editor.undo.undo()).toBe('Move')
+    expect(editor.graph.getNode(other.id)?.x).toBe(0)
+  })
+
   // Known gap: nothing tells whose write is whose across an await, so the open edit takes in a
   // write made elsewhere meanwhile, such as the user's or a collaborator's.
   test.failing('leaves an edit made elsewhere while it awaits out of its step', async () => {

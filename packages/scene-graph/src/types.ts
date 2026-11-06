@@ -40,6 +40,12 @@ export interface NodeChangeObserver {
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /**
+   * The edit being observed waits on something outside it (`SceneGraph.waitOutsideEdit`): until
+   * `resume`, nodes change for someone else's edit, not this one.
+   */
+  pause?: () => void
+  resume?: () => void
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'

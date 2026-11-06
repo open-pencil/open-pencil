@@ -248,6 +248,47 @@ function restoreRecords<T extends object>(
 }
 
 /**
+ * Takes in the changes someone else made to records while an edit waited: a record the edit had
+ * not changed yet starts from its new state, so the edit's step leaves the other change alone.
+ */
+function adoptRecordChanges<T>(
+  baseline: Map<string, T>,
+  atPause: ReadonlyMap<string, T>,
+  current: ReadonlyMap<string, T>
+): void {
+  for (const { id, after } of diffRecords(atPause, current)) {
+    if (!isEqual(baseline.get(id) ?? null, atPause.get(id) ?? null)) continue
+    if (after) baseline.set(id, after)
+    else baseline.delete(id)
+  }
+}
+
+/**
+ * `baseline`, a layer as it was before an edit, with the fields someone else changed on it while
+ * the edit waited, from `atPause` to `live`, wherever the edit itself had left them alone.
+ */
+function adoptLayerChanges(baseline: SceneNode, atPause: SceneNode, live: SceneNode): SceneNode {
+  const changes = diffFields(live.id, atPause, live)
+  if (!changes) return baseline
+  const adopted = { ...baseline }
+  for (const key of Object.keys(changes.after) as (keyof SceneNode)[]) {
+    if (!isEqual(baseline[key], atPause[key])) continue
+    if (changes.absent.after.includes(key)) Reflect.deleteProperty(adopted, key)
+    else Reflect.set(adopted, key, changes.after[key])
+  }
+  return adopted
+}
+
+/** The layers a recorded mutation touched, including the parents it moved layers between. */
+function touchedIds(impact: ReturnType<typeof createSceneMutationImpact>): Set<string> {
+  return new Set([
+    ...impact.changedNodeIds,
+    ...impact.previousParentIds,
+    ...impact.currentParentIds
+  ])
+}
+
+/**
  * Starts recording an edit made from `pageId`. Call the returned function once the edit is
  * done, also when it failed, to stop recording and get what the edit changed.
  *
@@ -256,6 +297,10 @@ function restoreRecords<T extends object>(
  * that writes in place only within one layer passes it as `layerId`: that layer, its descendants
  * and its ancestors are copied up front instead of the page, and any other layer the first time
  * the edit is about to change it.
+ *
+ * While the edit waits outside itself (`SceneGraph.waitOutsideEdit`), changes are someone else's:
+ * they stay out of the edit, and a layer or variable they changed that the edit had not starts
+ * from its new state.
  */
 export function captureDocumentChange(
   graph: SceneGraph,
@@ -276,10 +321,20 @@ export function captureDocumentChange(
   const variables = structuredClone(graph.variables)
   const collections = structuredClone(graph.variableCollections)
   const impact = createSceneMutationImpact()
-  const unbindEvents = recordSceneMutations(graph, impact)
+  let elsewhere: ReturnType<typeof createSceneMutationImpact> | null = null
+  let recordsAtPause: Pick<SceneGraph, 'variables' | 'variableCollections'> | null = null
+  const layersAtPause = new Map<string, SceneNode>()
+  const unbindEvents = recordSceneMutations(graph, impact, () => !elsewhere)
+  let stopElsewhere: () => void = () => undefined
   const unobserve = graph.observeNodeChanges({
-    created: (node) => created.add(node.id),
+    created: (node) => {
+      if (!elsewhere) created.add(node.id)
+    },
     before: (node) => {
+      if (elsewhere) {
+        if (!layersAtPause.has(node.id)) layersAtPause.set(node.id, captureNode(node))
+        return
+      }
       if (captured.has(node.id) || created.has(node.id)) return
       const page = pageOf(graph.nodes, node.id)
       if (page && !capturedPages.has(page)) {
@@ -287,18 +342,45 @@ export function captureDocumentChange(
         captureLayers(graph, page, captured)
       }
       if (!captured.has(node.id)) captured.set(node.id, captureNode(node))
+    },
+    pause: () => {
+      if (elsewhere) return
+      const other = createSceneMutationImpact()
+      elsewhere = other
+      stopElsewhere = recordSceneMutations(graph, other)
+      recordsAtPause = {
+        variables: structuredClone(graph.variables),
+        variableCollections: structuredClone(graph.variableCollections)
+      }
+    },
+    resume: () => {
+      if (!elsewhere || !recordsAtPause) return
+      stopElsewhere()
+      const own = touchedIds(impact)
+      for (const id of new Set([...touchedIds(elsewhere), ...layersAtPause.keys()])) {
+        const node = graph.getNode(id)
+        const baseline = captured.get(id)
+        const atPause = layersAtPause.get(id)
+        if (!own.has(id)) {
+          if (node) captured.set(id, captureNode(node))
+          else captured.delete(id)
+        } else if (node && baseline && atPause) {
+          captured.set(id, adoptLayerChanges(baseline, atPause, node))
+        }
+      }
+      layersAtPause.clear()
+      adoptRecordChanges(variables, recordsAtPause.variables, graph.variables)
+      adoptRecordChanges(collections, recordsAtPause.variableCollections, graph.variableCollections)
+      elsewhere = null
+      recordsAtPause = null
     }
   })
 
   return () => {
     unobserve()
     unbindEvents()
-    const ids = new Set([
-      ...impact.changedNodeIds,
-      ...impact.previousParentIds,
-      ...impact.currentParentIds
-    ])
-    return buildDocumentChange(graph, pageId, ids, captured, created, {
+    stopElsewhere()
+    return buildDocumentChange(graph, pageId, touchedIds(impact), captured, created, {
       variables: diffRecords(variables, graph.variables),
       collections: diffRecords(collections, graph.variableCollections)
     })

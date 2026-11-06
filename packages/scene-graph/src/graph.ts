@@ -72,6 +72,7 @@ export class SceneGraph {
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
+  private outsideWaits = 0
   private importedIdGenerator: (() => string) | undefined
   private layoutWrites: LayoutWrites | null = null
   positionPreviewVersion = 0
@@ -118,6 +119,24 @@ export class SceneGraph {
   observeNodeChanges(observer: NodeChangeObserver): () => void {
     this.changeObservers.add(observer)
     return () => this.changeObservers.delete(observer)
+  }
+
+  /**
+   * Waits for `promise`, such as a font or an image download an edit needs, outside the edit in
+   * progress: what changes meanwhile, such as the user's or a collaborator's edit, is not recorded
+   * as the waiting edit's. Only for code that writes nothing itself until the wait ends.
+   */
+  async waitOutsideEdit<T>(promise: Promise<T>): Promise<T> {
+    if (this.outsideWaits++ === 0) {
+      for (const observer of this.changeObservers) observer.pause?.()
+    }
+    try {
+      return await promise
+    } finally {
+      if (--this.outsideWaits === 0) {
+        for (const observer of this.changeObservers) observer.resume?.()
+      }
+    }
   }
 
   /** Tells `observeNodeChanges` observers that `node` is about to change. */
