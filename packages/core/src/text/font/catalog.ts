@@ -60,6 +60,11 @@ export class FamilyFaceCatalog {
     return [...this.hostFaces.keys()]
   }
 
+  /** The families `faces` has found faces for so far. */
+  foundFamilies(): string[] {
+    return [...this.found].filter(([, faces]) => faces?.length).map(([family]) => family)
+  }
+
   /** The faces `faces` found for a family, once it has; `undefined` before. */
   foundFaces(family: string): FamilyFace[] | null | undefined {
     return this.found.get(family)

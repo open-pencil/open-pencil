@@ -256,6 +256,11 @@ export class FontManager {
     return this.faces.offersFace(family, weight, italic)
   }
 
+  /** The families whose faces `familyFaces` has found so far. */
+  familiesWithFoundFaces(): string[] {
+    return this.faces.foundFamilies()
+  }
+
   /** Calls the listener whenever the faces found so far are forgotten. */
   onFamilyFacesReset(listener: () => void): () => void {
     return this.faces.onReset(listener)
