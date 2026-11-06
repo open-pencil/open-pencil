@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { creditsFor, meteredUsage } from '#cloud/ai-relay'
-import type { AIModel } from '#cloud/contract'
+import type { ChatModel } from '#cloud/contract'
 
-const model: AIModel = {
+const model: ChatModel = {
   id: 'model',
   label: 'Model',
   creditsPerMillionInputTokens: 3000,

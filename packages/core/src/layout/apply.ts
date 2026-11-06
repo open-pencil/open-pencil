@@ -2,7 +2,7 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { flipChanges, layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 
@@ -23,7 +23,7 @@ function preservesImportedHugCrossSize(
     )
 }
 
-type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>>
+type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'flipX' | 'flipY'>>
 
 /**
  * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
@@ -43,9 +43,9 @@ function writeLayoutGeometry(
   if (!node) return
   const from = before ?? { width: node.width, height: node.height }
   const changes: LayoutGeometry = {}
-  for (const key of ['x', 'y', 'width', 'height'] as const) {
+  for (const key of ['x', 'y', 'width', 'height', 'flipX', 'flipY'] as const) {
     const value = geometry[key]
-    if (value !== undefined && value !== node[key]) changes[key] = value
+    if (value !== undefined && value !== node[key]) Object.assign(changes, { [key]: value })
   }
   if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
   if (!CONSTRAINT_PARENT_TYPES.has(node.type)) return
@@ -95,17 +95,18 @@ function constrainChildren(
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
     const size = { width: child.width, height: child.height }
+    const { flipsX, flipsY, ...box } = layoutConstrainedChildRect(
+      child,
+      before,
+      frame,
+      child.horizontalConstraint,
+      child.verticalConstraint,
+      enforcedAspectRatio(child)
+    )
     writeLayoutGeometry(
       graph,
       child.id,
-      layoutConstrainedChildRect(
-        child,
-        before,
-        frame,
-        child.horizontalConstraint,
-        child.verticalConstraint,
-        enforcedAspectRatio(child)
-      ),
+      { ...box, ...flipChanges(child, child, flipsX, flipsY) },
       computeLayout,
       undefined,
       true

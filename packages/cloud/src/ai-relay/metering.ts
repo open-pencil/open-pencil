@@ -1,4 +1,4 @@
-import type { AIModel } from '#cloud/contract'
+import type { ChatModel } from '#cloud/contract'
 import * as v from 'valibot'
 
 export type TokenUsage = { inputTokens: number; outputTokens: number }
@@ -20,7 +20,7 @@ function usageOf(text: string): TokenUsage | null {
 }
 
 /** Credits a request costs, rounded up so a request is never free. */
-export function creditsFor(model: AIModel, usage: TokenUsage): number {
+export function creditsFor(model: ChatModel, usage: TokenUsage): number {
   return Math.ceil(
     (usage.inputTokens * model.creditsPerMillionInputTokens +
       usage.outputTokens * model.creditsPerMillionOutputTokens) /

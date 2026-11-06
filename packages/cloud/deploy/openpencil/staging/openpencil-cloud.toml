@@ -60,7 +60,7 @@ guest_presence = false
 enabled = true
 maximum_participants = 100
 
-[entitlements.ai]
+[entitlements.services]
 enabled = false
 
 # Server errors go to the OpenPencil PostHog project; the key is the POSTHOG_PROJECT_API_KEY secret.

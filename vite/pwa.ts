@@ -23,7 +23,9 @@ export function chunkFileNames({ moduleIds }: { moduleIds: string[] }) {
 
 export function openPencilPwaPlugin() {
   return VitePWA({
-    registerType: 'autoUpdate',
+    // A new version waits until the person reloads (`src/app/shell/updater/web.ts`): the page
+    // keeps its own version's files meanwhile, which a deploy may have removed from the server.
+    registerType: 'prompt',
     devOptions: { enabled: false },
     workbox: {
       maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,

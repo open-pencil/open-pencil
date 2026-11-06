@@ -105,5 +105,9 @@ export function createComponentSyncScheduler(
     pendingComponentSync.add(nodeId)
   }
 
-  return { scheduleComponentSync }
+  return {
+    scheduleComponentSync,
+    /** Instances are being brought in line with their components: results, not edits. */
+    isSyncingComponents: () => isFlushingComponentSync
+  }
 }

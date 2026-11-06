@@ -47,6 +47,7 @@ function pick(kind: ShapeWithTextType) {
     :tooltip="tools.shape"
     :selected="toolKind"
     :side="toolbarPopupSide(side)"
+    :tooltip-side="toolbarPopupSide(side)"
     :align="align"
     @select="pick"
   >

@@ -25,7 +25,9 @@ export const updatesMessageDefaults = {
   installFailed: params('Could not install the update: {error}'),
   restartFailed: params('Could not restart OpenPencil: {error}'),
   unavailable: 'Updates are not available yet. Publish a signed release with latest.json first.',
-  checkFailed: params('Could not check for updates: {error}')
+  checkFailed: params('Could not check for updates: {error}'),
+  webUpdateReady: 'A new version of OpenPencil is ready',
+  reload: 'Reload'
 } as const
 
 export const updatesMessages = i18n('updates', updatesMessageDefaults)

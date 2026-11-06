@@ -50,7 +50,7 @@ async function testApp() {
   const enabled = () =>
     new DatabaseEntitlementSource(runtime.database).boolean(
       { type: 'workspace', id: workspaceId },
-      CLOUD_FEATURE_KEYS.cloudAI
+      CLOUD_FEATURE_KEYS.cloudServices
     )
   return { runtime, workspaceId, put, enabled }
 }
@@ -62,7 +62,7 @@ describe('internal entitlements API', () => {
     const context = await testApp()
     try {
       const plan = (enabled: boolean, externalVersion: number) => ({
-        values: { ai: { enabled } },
+        values: { services: { enabled } },
         source: 'billing',
         externalVersion
       })
@@ -86,7 +86,11 @@ describe('internal entitlements API', () => {
   test('refuses callers without the service token', async () => {
     const context = await testApp()
     try {
-      const body = { values: { ai: { enabled: true } }, source: 'billing', externalVersion: 1 }
+      const body = {
+        values: { services: { enabled: true } },
+        source: 'billing',
+        externalVersion: 1
+      }
       expect((await context.put(context.workspaceId, body, 'x'.repeat(48))).status).toBe(401)
       expect(await context.enabled()).toBeNull()
     } finally {
