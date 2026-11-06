@@ -1,0 +1,1 @@
+- Exporting a frame no longer grows the image to cover content a mask hides, such as a list scrolled past the frame (#1847).
