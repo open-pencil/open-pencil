@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { toUint8Array } from 'js-base64'
 
