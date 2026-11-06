@@ -120,4 +120,38 @@ describe('set_image_fill tool', () => {
     }
     expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
+
+  test('strips a data URL prefix on image_data', () => {
+    const { figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+    const result = tool.execute(figma, {
+      id: node.id,
+      image_data: `data:image/png;base64,${PNG_MAGIC.toBase64()}`
+    }) as { imageHash: string; error?: string }
+    expect(result.error).toBeUndefined()
+    expect(result.imageHash).toBeTruthy()
+  })
+
+  test('unresolved image_path returns a clear error', () => {
+    const { figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+    const result = tool.execute(figma, {
+      id: node.id,
+      image_path: 'assets/photo.jpg'
+    }) as { error: string }
+    expect(result.error).toContain('not resolved')
+    expect(result.error).toContain('MCP')
+  })
 })
