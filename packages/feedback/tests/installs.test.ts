@@ -148,6 +148,21 @@ describe('install steps', () => {
     ])
   })
 
+  test('an app that starts later counts its returns from its own first day', () => {
+    const rows: StepCount[] = [
+      { day: '2026-10-14', app: 'desktop', step: '1', entered: 1, count: 3 },
+      { day: '2026-10-16', app: 'web', step: '1', entered: 1, count: 2 },
+      { day: '2026-10-17', app: 'web', step: '2', entered: 1, count: 2 }
+    ]
+
+    expect(countInstalls(rows, parseDate('2026-10-17')).at(-1)).toEqual({
+      day: '2026-10-17',
+      new: 0,
+      returning: 2,
+      replayed: 0
+    })
+  })
+
   test('each app has its own steps', () => {
     const rows: StepCount[] = [
       { day: '2026-10-14', app: 'web', step: '1', entered: 1, count: 5 },
