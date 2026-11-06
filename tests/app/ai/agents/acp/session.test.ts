@@ -24,6 +24,14 @@ const notResuming = expectDefined(
   ACP_AGENTS.find((agent) => !agent.resumesSessions),
   'an agent that does not resume sessions'
 )
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex agent'
+)
+const claude = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
+  'Claude agent'
+)
 
 const resumes: InitializeResponse = {
   protocolVersion: 1,
@@ -32,7 +40,7 @@ const resumes: InitializeResponse = {
 const request = { cwd: '/workspace', mcpServers: [], meta: OWN_TOOLS_ALLOWED }
 
 interface FakeConnectionOptions {
-  resumeError?: Error
+  resumeError?: unknown
 }
 
 function connection({ resumeError }: FakeConnectionOptions = {}) {
@@ -47,7 +55,7 @@ function connection({ resumeError }: FakeConnectionOptions = {}) {
     },
     async unstable_resumeSession(params: ResumeSessionRequest) {
       resumed.push(params)
-      if (resumeError) throw resumeError
+      if (resumeError !== undefined) throw resumeError
       return { models: { currentModelId: 'sonnet', availableModels: [] } }
     }
   }
@@ -109,6 +117,49 @@ test('a resume that needs sign-in keeps the sign-in error', async () => {
   await expect(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' })).rejects.toBe(
     authRequired
   )
+})
+
+test.each([
+  RequestError.internalError({ details: 'no rollout found for thread id saved' }),
+  { code: -32603, message: 'no rollout found for thread id saved' },
+  {
+    code: -32603,
+    message: 'Internal error',
+    data: { details: 'no rollout found for thread id saved' }
+  }
+])('a missing Codex rollout retires the saved session: %j', async (resumeError) => {
+  const fake = connection({ resumeError })
+  const failure = await openAgentSession(fake, codex, resumes, {
+    ...request,
+    resume: 'saved'
+  }).catch((cause: unknown) => cause)
+  expect(failure).toBeInstanceOf(AgentSessionResumeError)
+  expect(failure instanceof Error && failure.cause).toBe(resumeError)
+  expect(fake.created).toEqual([])
+})
+
+test.each([
+  RequestError.internalError(),
+  RequestError.internalError({ details: 'thread saved already has an active writer' }),
+  RequestError.internalError({ details: 'thread not loaded: saved' }),
+  RequestError.internalError({ details: ['no rollout found for thread id saved'] }),
+  RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
+  { code: -32000, message: 'no rollout found for thread id saved' },
+  { code: '-32603', message: 'no rollout found for thread id saved' }
+])('other Codex resume errors remain retryable: %j', async (error) => {
+  const fake = connection({ resumeError: error })
+  await expect(
+    openAgentSession(fake, codex, resumes, { ...request, resume: 'saved' })
+  ).rejects.toBe(error)
+  expect(fake.created).toEqual([])
+})
+
+test('Codex error wording does not classify another agent’s internal error', async () => {
+  const error = RequestError.internalError({ details: 'no rollout found for thread id saved' })
+  const fake = connection({ resumeError: error })
+  await expect(
+    openAgentSession(fake, claude, resumes, { ...request, resume: 'saved' })
+  ).rejects.toBe(error)
 })
 
 test.each([

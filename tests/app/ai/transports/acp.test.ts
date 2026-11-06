@@ -11,7 +11,7 @@ import {
 } from '@agentclientprotocol/sdk'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
@@ -23,12 +23,18 @@ const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
 )
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex agent'
+)
 
 interface FakeAgentOptions {
   /** False for an agent that runs but never answers a new session. */
   answersSessions?: boolean
   /** Refuses every resume, as for a session the agent no longer has. */
   resumeFails?: boolean
+  /** An adapter error that the real ACP connection serializes before the client receives it. */
+  resumeError?: Error
   /** A temporary refusal on the first resume, as when the old process still owns the session. */
   resumeBusy?: boolean
   /** True for an automation token that is never read, as with a credential prompt left open. */
@@ -46,6 +52,7 @@ interface FakeAgentOptions {
 function fakeAgents({
   answersSessions = true,
   resumeFails = false,
+  resumeError,
   resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
@@ -81,6 +88,7 @@ function fakeAgents({
       async unstable_resumeSession(params) {
         resumed.push(params)
         if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
+        if (resumeError) throw resumeError
         if (resumeBusy && resumed.length === 1)
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
@@ -194,11 +202,11 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number } = {}
+  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef } = {}
 ) {
   const sessions: (string | null)[] = []
   const created = new ACPChatTransport({
-    agentDef: resuming,
+    agentDef: options.agentDef ?? resuming,
     startup: agents.startup,
     resume: options.resume,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
@@ -256,29 +264,49 @@ test('a saved session the agent cannot continue is forgotten and no new session 
   ).toMatchObject({ errorCode: '-32002' })
 })
 
-test('a temporary resume refusal keeps the saved session and retry continues it', async () => {
-  await diagnostics.clear()
-  const agents = fakeAgents({ resumeBusy: true })
-  const { transport: chat, sessions } = transport(agents, { resume: 'saved' })
+test('a missing Codex rollout is forgotten after ACP wraps it as an internal error', async () => {
+  const agents = fakeAgents({ resumeError: new Error('no rollout found for thread id saved') })
+  const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef: codex })
   try {
     await expect(send(chat, 'next')).rejects.toMatchObject({
-      cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+      cause: { name: 'AgentSessionResumeError', cause: { code: -32603 } }
     })
-    expect(
-      (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')?.attributes
-    ).toMatchObject({ errorCode: '-32600' })
-    expect(sessions).toEqual([])
+    expect(sessions).toEqual([null])
+    expect(agents.created).toEqual([])
     expect(agents.prompts).toEqual([])
     expect(agents.kills()).toBe(1)
-
-    await send(chat, 'next', [message('user', 'earlier'), message('assistant', 'reply')])
-    expect(agents.resumed.map((request) => request.sessionId)).toEqual(['saved', 'saved'])
-    expect(agents.created).toEqual([])
-    expect(agents.prompts).toEqual(['next'])
   } finally {
     await chat.destroy()
   }
 })
+
+test.each([resuming, codex])(
+  'a temporary resume refusal keeps the saved session for $id',
+  async (agentDef) => {
+    await diagnostics.clear()
+    const agents = fakeAgents({ resumeBusy: true })
+    const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef })
+    try {
+      await expect(send(chat, 'next')).rejects.toMatchObject({
+        cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+      })
+      expect(
+        (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')
+          ?.attributes
+      ).toMatchObject({ errorCode: '-32600' })
+      expect(sessions).toEqual([])
+      expect(agents.prompts).toEqual([])
+      expect(agents.kills()).toBe(1)
+
+      await send(chat, 'next', [message('user', 'earlier'), message('assistant', 'reply')])
+      expect(agents.resumed.map((request) => request.sessionId)).toEqual(['saved', 'saved'])
+      expect(agents.created).toEqual([])
+      expect(agents.prompts).toEqual(['next'])
+    } finally {
+      await chat.destroy()
+    }
+  }
+)
 
 test('an agent that never answers while starting does not keep the message waiting', async () => {
   const agents = fakeAgents({ answersSessions: false })
