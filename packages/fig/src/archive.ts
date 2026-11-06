@@ -132,13 +132,9 @@ export function parseFigBuffer(
   }
 
   const metaBytes = archive['meta.json']
-  const images = Object.entries(archive)
-    .filter(([name]) => name.startsWith('images/') && name !== 'images/')
-    .map(([name, data]) => [name.slice('images/'.length), data] as [string, Uint8Array])
-
   return {
     ...decoded,
-    images,
+    images: archiveFolder(archive, 'images/'),
     thumbnailPNG: archive['thumbnail.png'] ?? null,
     metaJSON: Object.hasOwn(archive, 'meta.json') ? new TextDecoder().decode(metaBytes) : null
   }
@@ -153,8 +149,19 @@ export interface FigArchiveParts {
   /** A design file or a FigJam board, by the canvas's header. */
   kind: FigFileKind
   images: Array<[string, Uint8Array]>
+  /** Video clips, kept so a patched archive still holds the clips its video paints name. */
+  videos: Array<[string, Uint8Array]>
   thumbnailPNG: Uint8Array | null
   metaJSON: string | null
+}
+
+function archiveFolder(
+  archive: Unzipped,
+  folder: 'images/' | 'videos/'
+): Array<[string, Uint8Array]> {
+  return Object.entries(archive)
+    .filter(([name]) => name.startsWith(folder) && name !== folder)
+    .map(([name, data]) => [name.slice(folder.length), data])
 }
 
 function canvasParts(canvasData: Uint8Array) {
@@ -173,7 +180,7 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
   const chunks = parseFigKiwiChunks(bytes)
   if (chunks) {
     const thumbnailPNG = chunks.slice(2).find(isPNG) ?? null
-    return { ...canvasParts(bytes), images: [], thumbnailPNG, metaJSON: null }
+    return { ...canvasParts(bytes), images: [], videos: [], thumbnailPNG, metaJSON: null }
   }
   const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
   const canonical = findCanvasData(canvasArchive)
@@ -186,12 +193,10 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
     throw new Error(
       `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
     )
-  const images = Object.entries(archive)
-    .filter(([name]) => name.startsWith('images/') && name !== 'images/')
-    .map(([name, data]) => [name.slice('images/'.length), data] as [string, Uint8Array])
   return {
     ...canvasParts(canvasData),
-    images,
+    images: archiveFolder(archive, 'images/'),
+    videos: archiveFolder(archive, 'videos/'),
     thumbnailPNG: archive['thumbnail.png'] ?? null,
     metaJSON: Object.hasOwn(archive, 'meta.json')
       ? new TextDecoder().decode(archive['meta.json'])

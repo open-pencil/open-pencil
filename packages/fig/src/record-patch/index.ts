@@ -344,6 +344,7 @@ export function patchFigArchive(
     metaJSON: input.metaJSON,
     images: [
       ...parts.images.map(([name, data]) => ({ name: `images/${name}`, data })),
+      ...parts.videos.map(([name, data]) => ({ name: `videos/${name}`, data })),
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
     ],
     figKiwiVersion: parts.figKiwiVersion,

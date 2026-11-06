@@ -2,6 +2,7 @@ import { isEmptyObject, isEqual, omit, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import type { CollabEditor } from './editor'
@@ -214,10 +215,14 @@ export function createYjsGraphSync({
 
     const localYimages = getYimages()
     if (!localYimages) return
-    for (const fill of node.fills) {
-      if (!fill.imageHash || localYimages.has(fill.imageHash)) continue
-      const data = graph.images.get(fill.imageHash)
-      if (data && !shareImage?.(fill.imageHash, data)) localYimages.set(fill.imageHash, data)
+    for (const imageHash of drawnImageHashes(node)) {
+      if (localYimages.has(imageHash)) {
+        continue
+      }
+      const data = graph.images.get(imageHash)
+      if (data && !shareImage?.(imageHash, data)) {
+        localYimages.set(imageHash, data)
+      }
     }
   }
 
