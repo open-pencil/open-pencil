@@ -7,6 +7,7 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
+import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
 import { fillSizingFields } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -51,6 +52,8 @@ export interface Build {
   ctx: VarContext
   images: PenImages
   icons: PenIconSource | undefined
+  /** The family and style of each font the document bundles, by the name its text gives it. */
+  fonts: ReadonlyMap<string, FontFamilyStyle>
   /** Reusable nodes by their pen.dev ID. */
   components: Map<string, PenNode>
   /** The pen.dev fields each layer was built from, its instance's and overrides' merged in. */
@@ -299,7 +302,7 @@ export function applyPenProperties(node: SceneNode, pen: PenNode, build: Build):
   applyPadding(node, pen.padding, ctx)
 
   // Text without a width resizes to its content, which laying out the document measures.
-  if (isTextLike) applyTextProps(node, pen, ctx)
+  if (isTextLike) applyTextProps(node, pen, ctx, build.fonts)
 
   if (pen.type === 'icon') drawIconLayer(node, pen, build)
   if (pen.type === 'ellipse') node.arcData = ellipseArc(pen, ctx)
