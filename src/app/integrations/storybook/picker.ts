@@ -1,3 +1,5 @@
+import { open } from '@tauri-apps/plugin-dialog'
+import { readTextFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 
 import { IS_TAURI } from '@/constants'
@@ -10,13 +12,11 @@ export interface PickedComponentMapping {
 /** Only the file explicitly chosen here is read; no repository paths are probed. */
 export async function pickComponentMapping(): Promise<PickedComponentMapping | null> {
   if (IS_TAURI) {
-    const { open } = await import('@tauri-apps/plugin-dialog')
     const path = await open({
       multiple: false,
       filters: [{ name: 'Component mapping', extensions: ['json'] }]
     })
     if (typeof path !== 'string') return null
-    const { readTextFile } = await import('@tauri-apps/plugin-fs')
     return { path, text: await readTextFile(path) }
   }
   const dialog = useFileDialog({ accept: '.json,application/json', multiple: false, reset: true })

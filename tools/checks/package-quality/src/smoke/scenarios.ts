@@ -69,6 +69,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime failed')"
   },
   {
+    name: 'DOM/CSS Storybook mappings',
+    code: "const { parseComponentMappings } = await import('@open-pencil/dom-css/export/storybook/mapping'); const mappings = parseComponentMappings(JSON.stringify({ version: 1, storybook: { baseUrl: 'https://storybook.example.test/' }, components: [{ key: 'button', design: { file: 'components/Button.fig', id: '12:10' }, implementation: { import: 'components/Button.ts', export: 'Button' }, story: { id: 'components-button--default' } }] })); if (mappings.components[0]?.implementation.import !== 'components/Button.ts' || mappings.components[0]?.states.length !== 0) throw new Error('DOM/CSS Storybook mapping parse failed')"
+  },
+  {
     name: 'Oxlint plugin',
     code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
   },
