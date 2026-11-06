@@ -5,6 +5,7 @@ import { cloneRecord } from '../node-change/clone'
 import { claimedVariableMaps } from '../node-change/variable/bindings'
 import { declareVariableBindingUnits } from './bindings/variables'
 import { completeClearedStyleClaim } from './cleared-style'
+import { yieldToInheritedTextStyle } from './inherited-text-style'
 import type { PropertyLayer } from './layers'
 import {
   findSegment,
@@ -48,6 +49,7 @@ export function createPropertyClaims({
         return rank === undefined || rank >= ownerRank
       })
     )
+    yieldToInheritedTextStyle(target, retained, index.textStyle)
     if (Object.keys(retained).length === 0) return
     completeClearedStyleClaim(target, retained, index.sources.get(target.sourceId))
     declareVariableBindingUnits(target, retained)
