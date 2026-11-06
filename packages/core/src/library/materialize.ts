@@ -1,11 +1,11 @@
 import type { LibraryAssetSource, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { isLibraryComponentAsset } from './asset-keys'
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
+import { importLibraryResources, remapLibraryResources } from './resources'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 import { assetComponent } from './variants'
 
@@ -115,25 +115,6 @@ function markDefinitions(
   }
 }
 
-export function copyImages(
-  source: SceneGraph,
-  target: SceneGraph,
-  mappedIds: Map<string, string>
-): void {
-  const hashes = new Set<string>()
-  for (const sourceId of mappedIds.keys()) {
-    const node = source.getNode(sourceId)
-    const fills = [...(node?.fills ?? []), ...regionFills(node?.vectorNetwork ?? null)]
-    for (const fill of fills) {
-      if (fill.type === 'IMAGE' && fill.imageHash) hashes.add(fill.imageHash)
-    }
-  }
-  for (const hash of hashes) {
-    const image = source.images.get(hash)
-    if (image) target.images.set(hash, new Uint8Array(image))
-  }
-}
-
 export function materializeLibraryAsset(
   consumer: SceneGraph,
   revision: ComponentLibraryRevision,
@@ -168,7 +149,15 @@ export function materializeLibraryAsset(
     copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
   }
   markDefinitions(consumer, revision, mappedIds)
-  copyImages(revision.graph, consumer, mappedIds)
+  remapLibraryResources(
+    consumer,
+    mappedIds.values(),
+    importLibraryResources(
+      consumer,
+      revision,
+      [...mappedIds.keys()].flatMap((id) => revision.graph.getNode(id) ?? [])
+    )
+  )
 
   const rootId = mappedIds.get(descriptor.sourceId)
   const root = rootId ? consumer.getNode(rootId) : undefined

@@ -1,6 +1,8 @@
 import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
-import { remapStyleRunReferences } from '@open-pencil/scene-graph/text'
-import type { LayerDependencies } from '@open-pencil/scene-graph/transfer'
+import {
+  remappedResourceReferences,
+  type LayerDependencies
+} from '@open-pencil/scene-graph/transfer'
 import { mapVariableValueReferences } from '@open-pencil/scene-graph/variables'
 
 export interface ClipboardVariables {
@@ -92,27 +94,13 @@ export function remapClipboardVariableBindings(
   modeIds: ReadonlyMap<string, string> = new Map(),
   styleIds: ReadonlyMap<string, string> = new Map()
 ): void {
-  node.boundVariables = Object.fromEntries(
-    Object.entries(node.boundVariables).map(([field, id]) => [field, variables.get(id) ?? id])
+  Object.assign(
+    node,
+    remappedResourceReferences(node, {
+      variable: (id) => variables.get(id) ?? id,
+      collection: (id) => collections.get(id) ?? id,
+      mode: (id) => modeIds.get(id) ?? id,
+      style: (id) => styleIds.get(id) ?? id
+    })
   )
-  node.variableModes = Object.fromEntries(
-    Object.entries(node.variableModes).map(([id, mode]) => [
-      collections.get(id) ?? id,
-      modeIds.get(mode) ?? mode
-    ])
-  )
-  for (const key of [
-    'fillStyleId',
-    'strokeStyleId',
-    'textStyleId',
-    'effectStyleId',
-    'gridStyleId'
-  ] as const) {
-    const id = node[key]
-    if (id && styleIds.has(id)) node[key] = styleIds.get(id) ?? id
-  }
-  node.styleRuns = remapStyleRunReferences(node.styleRuns, {
-    variable: (id) => variables.get(id) ?? id,
-    style: (id) => styleIds.get(id) ?? id
-  })
 }

@@ -81,6 +81,8 @@ On later publications, unchecked changes remain pending. Unchanged assets keep t
 
 Open **Assets → Manage libraries** to enable a published library. Its components appear in the Assets panel alongside local components. Insert one by clicking it, using the keyboard, or dragging it onto the canvas.
 
+Inserting a component also brings the styles and variables it uses. They arrive as the library's read-only styles and collections, later inserts reuse them, and updating the library refreshes their values.
+
 Published definitions are read-only in consuming documents. Edit the source document and publish another revision to change a definition. Instances linked to those definitions remain editable through their component properties and overrides.
 
 ### Review and Accept Updates

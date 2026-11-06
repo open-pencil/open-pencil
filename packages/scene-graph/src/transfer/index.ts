@@ -17,3 +17,4 @@ export {
   variableDependencies,
   type LayerDependencies
 } from './dependencies'
+export { remappedResourceReferences, type ResourceReferences } from './resources'
