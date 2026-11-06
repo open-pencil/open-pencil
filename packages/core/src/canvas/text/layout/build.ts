@@ -16,13 +16,10 @@ import {
 } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import {
-  TextLayout,
-  type LineCapHeight,
-  type TextLayoutBlock,
-  type TextLayoutMarker
-} from '#core/canvas/text/layout'
+import { TextLayout } from '#core/canvas/text/layout'
+import type { TextLayoutBlock, TextLayoutMarker } from '#core/canvas/text/layout/block'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
+import type { LineCapHeight } from '#core/canvas/text/layout/vertical'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
   buildSkParagraph,
