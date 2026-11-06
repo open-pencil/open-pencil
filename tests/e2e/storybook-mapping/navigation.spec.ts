@@ -19,10 +19,54 @@ async function designFixture() {
     height: 40
   })
   graph.createNode('COMPONENT', page.id, { name: 'Renamed Button', width: 40, height: 40 })
+  const set = graph.createNode('COMPONENT_SET', page.id, { name: 'Saved component set' })
+  graph.createNode('COMPONENT', set.id, { name: 'Default' })
   const output = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', graph)
   if (typeof output.data === 'string') throw new Error('Expected a binary FIG archive')
-  return { data: output.data, id: node.id }
+  return { data: output.data, id: node.id, setId: set.id }
 }
+
+test('implementation story availability follows saved components, instances and selection changes', async () => {
+  const page = editor.page
+  const fixture = await designFixture()
+  await openMappedDesign(page, fixture.data, fixture.id)
+  const ids = await page.evaluate((setSourceId) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor not initialized')
+    const selected = [...store.state.selectedIds][0]
+    const component = store.graph.getNode(selected)
+    const set = [...store.graph.getAllNodes()].find((node) => node.source.id === setSourceId)
+    if (!component || !set) throw new Error('Saved components not found')
+    const page = store.state.currentPageId
+    const instance = store.graph.createNode('INSTANCE', page, { componentId: component.id })
+    const rectangle = store.graph.createNode('RECTANGLE', page)
+    const unsaved = store.graph.createNode('COMPONENT', page)
+    return {
+      component: component.id,
+      set: set.id,
+      instance: instance.id,
+      rectangle: rectangle.id,
+      unsaved: unsaved.id
+    }
+  }, fixture.setId)
+  for (const { selected, enabled } of [
+    { selected: [], enabled: false },
+    { selected: [ids.rectangle], enabled: false },
+    { selected: [ids.unsaved], enabled: false },
+    { selected: [ids.component], enabled: true },
+    { selected: [ids.component, ids.set], enabled: false },
+    { selected: [ids.set], enabled: true },
+    { selected: [ids.instance], enabled: true },
+    { selected: [ids.rectangle], enabled: false }
+  ]) {
+    await page.evaluate((selected) => window.openPencil?.getStore?.().select(selected), selected)
+    const menu = await openAppMenu(page, 'Edit')
+    const action = menu.getByRole('menuitem', { name: 'Open implementation story…', exact: true })
+    if (enabled) await expect(action).toBeEnabled()
+    else await expect(action).toBeDisabled()
+    await page.keyboard.press('Escape')
+  }
+})
 
 test('a picked developer mapping opens the implementation story through an explicit browser link', async () => {
   const page = editor.page

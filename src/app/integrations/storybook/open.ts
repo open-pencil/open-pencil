@@ -5,7 +5,6 @@ import {
   type ComponentMapping,
   type ComponentMappings
 } from '@open-pencil/dom-css/export'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { loadedFigFileName, matchesLoadedRevision } from '@/app/document/io/revision'
 import { getActiveEditorStore } from '@/app/editor/active-store'
@@ -15,11 +14,14 @@ import {
   pickComponentMapping,
   type PickedComponentMapping
 } from '@/app/integrations/storybook/picker'
+import {
+  implementationSelection,
+  type ImplementationSelectionStore
+} from '@/app/integrations/storybook/selection'
 import { openExternalLink, toast } from '@/app/shell/ui'
 import { IS_TAURI } from '@/constants'
 
-export interface ImplementationStore {
-  graph: SceneGraph
+export interface ImplementationStore extends ImplementationSelectionStore {
   state: { selectedIds: Set<string> }
   getSourceIdentity: () => { path: string | null }
   getStorageBinding: () => object | null
@@ -32,14 +34,6 @@ export interface ImplementationNavigation {
   isCurrent: () => boolean
   /** A browser offers a fresh explicit click after the asynchronous picker and validation. */
   open: (url: string, pinned: boolean) => void | Promise<void>
-}
-
-function selectedComponent(store: ImplementationStore): SceneNode | undefined {
-  if (store.state.selectedIds.size !== 1) return undefined
-  const id = store.state.selectedIds.values().next().value
-  const node = id ? store.graph.getNode(id) : undefined
-  if (node?.type !== 'INSTANCE') return node
-  return node.componentId ? store.graph.getNode(node.componentId) : undefined
 }
 
 /** Keep shared parser diagnostics as the cause, outside the localized user-facing message. */
@@ -84,33 +78,23 @@ export async function openImplementationStory(
   store: ImplementationStore,
   navigation: ImplementationNavigation
 ): Promise<void> {
-  const selected = [...store.state.selectedIds][0]
   const graph = store.graph
-  const component = selectedComponent(store)
-  if (
-    !component ||
-    !['COMPONENT', 'COMPONENT_SET'].includes(component.type) ||
-    !component.source.id
-  )
-    throw new Error(notificationMessages.get().implementationSelectionRequired)
-  const current = () =>
-    navigation.isCurrent() &&
-    store.graph === graph &&
-    store.state.selectedIds.size === 1 &&
-    store.state.selectedIds.has(selected)
+  const selection = implementationSelection(store)
+  if (!selection) throw new Error(notificationMessages.get().implementationSelectionRequired)
+  const { component, sourceId } = selection
+  const current = () => {
+    if (!navigation.isCurrent() || store.graph !== graph) return false
+    const next = implementationSelection(store)
+    return (
+      next?.node === selection.node && next.component === component && next.sourceId === sourceId
+    )
+  }
   const picked = await navigation.pick()
   if (!picked || !current()) return
   const config = readComponentMappings(picked.text)
   const fileName = loadedFigFileName(graph)
   if (!fileName) throw new Error(notificationMessages.get().implementationMappingReopenRequired)
-  const candidates = await mappedCandidates(
-    config,
-    picked,
-    store,
-    component.source.id,
-    fileName,
-    navigation
-  )
+  const candidates = await mappedCandidates(config, picked, store, sourceId, fileName, navigation)
   if (!current()) return
   if (candidates.length !== 1)
     throw new Error(
@@ -118,7 +102,7 @@ export async function openImplementationStory(
     )
   let mapping: ComponentMapping
   try {
-    mapping = findComponentMapping(config, candidates[0].design.file, component.source.id)
+    mapping = findComponentMapping(config, candidates[0].design.file, sourceId)
   } catch (cause) {
     throw new Error(notificationMessages.get().implementationMappingInvalid, { cause })
   }
@@ -133,7 +117,7 @@ export async function openImplementationStory(
   if (!current()) return
   if (revision && store.hasUnsavedChanges())
     throw new Error(notificationMessages.get().implementationDocumentChanged)
-  const state = mapping.states.find((item) => item.designId === component.source.id)
+  const state = mapping.states.find((item) => item.designId === sourceId)
   await navigation.open(implementationStoryURL(config, mapping, state), !!revision)
 }
 

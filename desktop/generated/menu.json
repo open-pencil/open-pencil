@@ -200,7 +200,8 @@
       },
       {
         "id": "selection.openImplementation",
-        "label": "Open implementation story…"
+        "label": "Open implementation story…",
+        "feature": "document"
       },
       {
         "type": "separator"
