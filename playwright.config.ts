@@ -101,6 +101,7 @@ export default defineConfig({
       timeout: 30_000,
       use: {
         baseURL: `http://localhost:${storybookPort}`,
+        testIdAttribute: 'data-test-id',
         viewport: { width: 800, height: 600 },
         deviceScaleFactor: 1,
         contextOptions: { reducedMotion: 'reduce' }

@@ -13,7 +13,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <canvas ref="surfaceRef" v-bind="$attrs" :style="{ cursor }" />
+  <canvas ref="surfaceRef" v-bind="$attrs" :style="cursor ? { cursor } : undefined" />
 </template>
 
 <script lang="ts">

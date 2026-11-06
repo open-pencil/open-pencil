@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -24,7 +24,18 @@ const card = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
   height: 100,
   fills: [{ type: 'SOLID', color: parseColor('#338cf2'), opacity: 1, visible: true }]
 })
+const title = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+  name: 'Title',
+  x: 220,
+  y: 60,
+  width: 160,
+  height: 24,
+  text: 'Hello',
+  fontSize: 18
+})
 provideEditor(editor)
+
+const started = ref(false)
 
 const selection = computed(() =>
   editor
@@ -38,12 +49,18 @@ const cardAt = computed(() => {
   const node = editor.graph.getNode(card.id)
   return node ? `${Math.round(node.x)},${Math.round(node.y)}` : ''
 })
+const titleText = computed(() => {
+  void editor.state.sceneVersion
+  return editor.graph.getNode(title.id)?.text ?? ''
+})
 </script>
 
 <template>
-  <CanvasRoot v-slot="{ ready }" :show-rulers="false" :input="input">
+  <CanvasRoot v-slot="{ ready }" :show-rulers="false" :input="input" @ready="started = true">
     <CanvasSurface class="block h-100 w-150" :data-ready="ready || undefined" />
   </CanvasRoot>
   <p class="mt-2 text-xs" data-test-id="selection">{{ selection || 'Nothing selected' }}</p>
   <p class="text-xs" data-test-id="card">Card at {{ cardAt }}</p>
+  <p class="text-xs" data-test-id="title">Title reads {{ titleText }}</p>
+  <p class="text-xs" data-test-id="status">{{ started ? 'Started' : 'Starting' }}</p>
 </template>
