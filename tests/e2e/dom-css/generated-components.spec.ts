@@ -463,6 +463,9 @@ async function serveComponent(
   )
   const server = await createServer({
     root: folder,
+    // These fixtures share the repository's package root with the running app.
+    // Each server must retain its own optimized dependencies instead of replacing the app's.
+    cacheDir: join(folder, '.vite'),
     configFile: false,
     logLevel: 'silent',
     plugins: [app.plugin()],
