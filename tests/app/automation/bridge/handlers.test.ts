@@ -272,9 +272,7 @@ describe('undo and redo', () => {
 
 // The stdio MCP server sends render JSX as written; these are what #830 lost on that path.
 describe('eval beside a tool call', () => {
-  // Known gap: eval does not take the document's edit lock that tool calls hold, so both record
-  // at once and each one's undo step takes in the other's change.
-  test.failing('waits for the call that holds the document and records its own step', async () => {
+  test('waits for the call that holds the document and records its own step', async () => {
     const tab = createTab()
     const { store } = tab
     const pageId = store.state.currentPageId

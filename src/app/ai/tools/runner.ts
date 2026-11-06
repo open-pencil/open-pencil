@@ -17,11 +17,11 @@ import {
   type Run
 } from '@/app/ai/reply/run'
 import { AUTOMATION_UNDO_LABEL, loadAtomicToolFonts } from '@/app/automation/execution/editor'
+import { acquireDocumentEdit } from '@/app/automation/execution/lock'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 
 import { recordToolChange } from './changes/capture'
-import { createMutex } from './mutex'
 
 /** The reply a call belongs to: its run, and the call's id in the reply's transcript. */
 export interface ReplyCall {
@@ -45,18 +45,6 @@ export interface EditorToolCall {
 }
 
 export const STOPPED_BEFORE_CALL = 'Stopped before this call ran; nothing was changed.'
-
-/** Each document's edits run one at a time, since whole-page snapshots must not interleave. */
-const editLocks = new WeakMap<EditorStore, () => Promise<() => void>>()
-
-function editLock(store: EditorStore): () => Promise<() => void> {
-  let lock = editLocks.get(store)
-  if (!lock) {
-    lock = createMutex()
-    editLocks.set(store, lock)
-  }
-  return lock
-}
 
 /**
  * The page a call writes to: a parent or a replaced layer on another page puts the new layers
@@ -167,7 +155,7 @@ export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
     return toolFailure(error)
   }
   const reply = call.reply ?? null
-  const release = await editLock(store)()
+  const release = await acquireDocumentEdit(store)
   // Whatever fails from here, the lock and the reply's count of running tools are released.
   let began = false
   try {
