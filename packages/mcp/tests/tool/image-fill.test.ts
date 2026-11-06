@@ -55,6 +55,14 @@ describe('resolveImageFillArgs', () => {
     ).rejects.toThrow(/truncated/)
   })
 
+  test('accepts line-wrapped base64 that is complete without whitespace', async () => {
+    const b64 = Buffer.from(PNG_MAGIC).toString('base64')
+    // Insert a newline so raw length % 4 === 1 for typical short payloads, but payload is valid.
+    const wrapped = `${b64.slice(0, 1)}\n${b64.slice(1)}`
+    const resolved = await resolveImageFillArgs({ id: '1:1', image_data: wrapped }, null)
+    expect(resolved.image_data).toBe(wrapped)
+  })
+
   test('requires MCP root for image_path', async () => {
     await expect(
       resolveImageFillArgs({ id: '1:1', image_path: 'plate.png' }, null)

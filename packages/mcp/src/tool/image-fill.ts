@@ -48,7 +48,8 @@ export async function resolveImageFillArgs(
       throw new Error('image_data is empty')
     }
     // Truncation in transit often leaves length % 4 === 1 and no padding.
-    if (imageData.length % 4 === 1) {
+    // Ignore whitespace so line-wrapped base64 is not false-positive rejected.
+    if (imageData.replace(/\s+/g, '').length % 4 === 1) {
       throw new Error(
         'image_data looks truncated (length mod 4 = 1). ' +
           'Pass image_path under the MCP root instead of inlining base64.'

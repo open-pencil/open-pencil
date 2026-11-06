@@ -9,8 +9,9 @@
 ### Fixed
 
 - `set_image_fill` strips a `data:image/...;base64,` prefix and returns a clearer error when base64 looks truncated, pointing agents at `image_path`.
-- Browser MCP RPC timeout raised from 20s to 60s so large image fills and exports are less likely to time out.
+- Browser MCP RPC timeout raised from 20s to 60s so large image fills and exports are less likely to time out; stdio bridge RPC timeout raised from 35s to 80s to stay above that path.
 - Inline MCP result / image content limit raised from ~900KB to 2MB; prefer `export_image` with `path` for larger QA exports.
+- `set_image_fill` truncation detection ignores whitespace so line-wrapped base64 is not false-positive rejected.
 
 ## 0.17.0-beta.2 — 2026-11-04
 
