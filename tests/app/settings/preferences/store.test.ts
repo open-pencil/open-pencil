@@ -112,4 +112,17 @@ describe('parseAppPreferences', () => {
       showResolved: true
     })
   })
+
+  test('keeps the toolbar edge and alignment, defaulting each to the bottom center', () => {
+    expect(
+      parseAppPreferences({ toolbarDock: { side: 'left', align: 'start' } }).toolbarDock
+    ).toEqual({ side: 'left', align: 'start' })
+    expect(
+      parseAppPreferences({ toolbarDock: { side: 'top', align: 'middle' } }).toolbarDock
+    ).toEqual({ side: 'top', align: 'center' })
+    expect(parseAppPreferences({ toolbarDock: 'left' }).toolbarDock).toEqual({
+      side: 'bottom',
+      align: 'center'
+    })
+  })
 })
