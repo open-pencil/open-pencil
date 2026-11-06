@@ -262,6 +262,30 @@ describe('penFormat.readDocument — assets', () => {
     expect(graph.getNode('literal')?.fills[0]?.type).toBe('IMAGE')
   })
 
+  test('does not read a percent-encoded drive or scheme', async () => {
+    const asked: string[] = []
+    await io.readDocument(
+      {
+        name: 'drive.pen',
+        data: penBytes([
+          {
+            id: 'drive',
+            type: 'rectangle',
+            width: 50,
+            height: 50,
+            fill: { type: 'image', url: 'C%3A/secret.png' }
+          }
+        ]),
+        readAsset: async (path) => {
+          asked.push(path)
+          return PNG
+        }
+      },
+      { icons: iconProvider([], []) }
+    )
+    expect(asked).toEqual([])
+  })
+
   test('does not read a percent-encoded path that leaves the document folder', async () => {
     const asked: string[] = []
     await io.readDocument(

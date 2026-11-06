@@ -251,7 +251,7 @@ type ReadFile = ReadDocumentInput['readAsset']
  * The file a document-relative image URL names: pen.dev writes it percent-encoded, as a URL, so a
  * document named `My Design.pen` names `My%20Design-assets/…`. Each step is decoded on its own and
  * a malformed escape stays as written; null when decoding would add a step, such as `%2F` or
- * `%2E%2E`, which the URL as written does not take.
+ * `%2E%2E`, or a scheme or drive such as `C%3A`, which the URL as written does not take.
  */
 function penImageFile(url: string): string | null {
   const steps = url.split('/')
@@ -263,7 +263,12 @@ function penImageFile(url: string): string | null {
     }
   })
   const added = decoded.some(
-    (step, index) => step !== steps[index] && (/[/\\]/.test(step) || step === '..' || step === '.')
+    (step, index) =>
+      step !== steps[index] &&
+      (/[/\\]/.test(step) ||
+        step === '..' ||
+        step === '.' ||
+        (index === 0 && /^[a-z][a-z0-9+.-]*:/i.test(step)))
   )
   return added ? null : decoded.join('/')
 }
