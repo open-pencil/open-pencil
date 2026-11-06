@@ -1,6 +1,7 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
@@ -57,12 +58,7 @@ function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
   const identify = (node: SceneNode): string => {
     const cached = known.get(node.id)
     if (cached) return cached
-    let owner: SceneNode | undefined
-    for (let id = node.parentId; id && !owner;) {
-      const parent = source.getNode(id)
-      if (parent?.type === 'INSTANCE') owner = parent
-      id = parent?.parentId ?? null
-    }
+    const owner = node.parentId ? findInstanceAncestor(source, node.parentId) : undefined
     const copied = node.componentId ? source.getNode(node.componentId) : undefined
     const identity =
       owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id)
