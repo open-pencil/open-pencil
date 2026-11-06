@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
 import { IORegistry, penFormat } from '@open-pencil/core/io'
 import { fontManager } from '@open-pencil/core/text'
@@ -56,11 +56,18 @@ describe('penFormat.readDocument — bundled fonts (#1759)', () => {
   })
 
   test('registers the bundled file under those names', async () => {
-    await read(
-      [{ name: 'Naskh', url: 'My%20Design-assets/NotoNaskhArabic-Regular.ttf' }],
-      ['Naskh']
-    )
-    expect(fontManager.loadedFontSource('Noto Naskh Arabic', 'Regular')).toBe('registered')
+    // Other tests register this font too, so the call itself is what shows this read made it.
+    const markLoaded = spyOn(fontManager, 'markLoaded')
+    try {
+      await read(
+        [{ name: 'Naskh', url: 'My%20Design-assets/NotoNaskhArabic-Regular.ttf' }],
+        ['Naskh']
+      )
+      const file = await fontFile('NotoNaskhArabic-Regular.ttf')
+      expect(markLoaded).toHaveBeenCalledWith('Noto Naskh Arabic', 'Regular', file.buffer)
+    } finally {
+      markLoaded.mockRestore()
+    }
   })
 
   test('keeps the name of a bundled font whose file cannot be read', async () => {
