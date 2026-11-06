@@ -200,6 +200,24 @@ function draws(node: SceneNode, reach: EffectReach): boolean {
   return node.visible && (reach === 'drawn' || node.opacity > 0)
 }
 
+const POINT: VisualBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+/** The region a node's layers can lie in and still cast a shadow or blur into `clip`. */
+function castingInto(
+  node: SceneNode,
+  clip: VisualBounds,
+  matrix: Mat3,
+  reach: EffectReach
+): VisualBounds {
+  const spread = withEffects(node, POINT, matrix, reach)
+  return {
+    minX: clip.minX - spread.maxX,
+    minY: clip.minY - spread.maxY,
+    maxX: clip.maxX - spread.minX,
+    maxY: clip.maxY - spread.minY
+  }
+}
+
 function clipped(bounds: VisualBounds | null, clip: VisualBounds | null): VisualBounds | null {
   return bounds && clip ? intersectVisualBounds(bounds, clip) : bounds
 }
@@ -212,7 +230,7 @@ function isVisibleMask(node: SceneNode): boolean {
  * What a node's children draw, held to `clip`. A run of masks draws nothing itself and holds the
  * siblings after it, up to the next mask, to what the run covers, as the canvas masks them
  * (`renderMaskedChildIds`). A mask's cover is taken with `drawn` reach, so no masked pixel falls
- * outside it.
+ * outside it; a mask that draws nothing, as `draws` counts it, covers nothing.
  */
 function drawnChildren(
   graph: SceneGraph,
@@ -235,7 +253,9 @@ function drawnChildren(
       getNodeLocalMatrix(projectedNode(child, options.preview))
     )
     if (isVisibleMask(child)) {
-      const region = drawnSubtree(graph, child, childMatrix, null, { ...options, reach: 'drawn' })
+      const region = draws(child, options.reach)
+        ? drawnSubtree(graph, child, childMatrix, null, { ...options, reach: 'drawn' })
+        : null
       cover = previousWasMask ? unionVisualBounds(cover, region) : region
       masked = true
       previousWasMask = true
@@ -269,7 +289,8 @@ function maskedClip(cover: VisualBounds | null, clip: VisualBounds | null): Visu
  * `clip`; `null` when nothing does. A node's effects act on everything it draws, its children's
  * included, as Figma casts a group's shadow from its layers. A container that clips its content
  * holds its children to its box; with `drawn` reach its box, counted for every layer, already
- * holds them.
+ * holds them. A node with effects lets in the layers whose shadow or blur can still land inside
+ * `clip`.
  */
 function drawnSubtree(
   graph: SceneGraph,
@@ -285,7 +306,9 @@ function drawnSubtree(
     const box = clipsChildren(node)
       ? mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: node.width, maxY: node.height })
       : null
-    const childClip = box && clip ? intersectVisualBounds(box, clip) : (box ?? clip)
+    const outerClip =
+      clip && node.effects.length > 0 ? castingInto(node, clip, matrix, reach) : clip
+    const childClip = box && outerClip ? intersectVisualBounds(box, outerClip) : (box ?? outerClip)
     if (!(box && !childClip)) {
       content = unionVisualBounds(content, drawnChildren(graph, node, matrix, childClip, options))
     }

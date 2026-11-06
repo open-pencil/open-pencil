@@ -264,13 +264,49 @@ describe('render bounds under a mask', () => {
   })
 
   test('layers below a mask stay whole and the next mask starts a new run', () => {
-    const below = rectangle(1000, 0, 10, 10)
+    const below = rectangle(990, 0, 10, 10)
     const firstMask = rectangle(1000, 0, 20, 20)
     const firstMasked = rectangle(1000, 0, 400, 20)
     const secondMask = rectangle(1100, 100, 20, 20)
     const secondMasked = rectangle(1000, 100, 400, 400)
     const group = masked([below, firstMask, firstMasked, secondMask, secondMasked], [1, 3])
-    expect(box(exportBounds(graph, [group.id]))).toEqual([1000, 0, 120, 120])
+    expect(box(exportBounds(graph, [group.id]))).toEqual([990, 0, 130, 120])
+  })
+
+  test('a fully transparent mask covers nothing, and the rest of its run still masks', () => {
+    const below = rectangle(2990, 0, 5, 5)
+    const transparentMask = rectangle(3000, 0, 200, 200)
+    const hidden = rectangle(3000, 0, 200, 200)
+    const alone = masked([below, transparentMask, hidden], [1])
+    transparentMask.opacity = 0
+    expect(box(exportBounds(graph, [alone.id]))).toEqual([2990, 0, 5, 5])
+
+    const clearMask = rectangle(3000, 1000, 200, 200)
+    const mask = rectangle(3000, 1000, 20, 20)
+    const held = masked([clearMask, mask, rectangle(3000, 1000, 200, 200)], [0, 1])
+    clearMask.opacity = 0
+    expect(box(exportBounds(graph, [held.id]))).toEqual([3000, 1000, 20, 20])
+  })
+
+  test('a shadow cast into a mask from layers outside it counts', () => {
+    const mask = rectangle(4000, 0, 100, 100)
+    const caster = figma.group([rectangle(4000, 200, 100, 100)], figma.currentPage)
+    caster.effects = [shadow(0, 0, { x: 0, y: -200 })]
+    const group = figma.group([mask, caster], figma.currentPage)
+    mask.isMask = true
+    expect(box(exportBounds(graph, [group.id]))).toEqual([4000, 0, 100, 100])
+  })
+
+  test('a shadowed group with a layer far outside a mask keeps to what it casts inside', () => {
+    const mask = rectangle(6000, 0, 400, 400)
+    const caster = figma.group(
+      [rectangle(6010, 10, 8, 8), rectangle(9000, 3000, 8, 8)],
+      figma.currentPage
+    )
+    caster.effects = [shadow(4, 0, { x: 0, y: 0 })]
+    const group = figma.group([mask, caster], figma.currentPage)
+    mask.isMask = true
+    expect(box(exportBounds(graph, [group.id]))).toEqual([6006, 6, 16, 16])
   })
 
   test('a hidden mask masks nothing', () => {
