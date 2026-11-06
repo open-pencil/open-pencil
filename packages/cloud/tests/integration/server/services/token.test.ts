@@ -5,16 +5,16 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
-  aiTokenClaimsSchema,
-  aiTokenSchema,
-  CLOUD_AI_JWKS_PATH,
-  CLOUD_AI_TOKEN_AUDIENCE
+  servicesTokenClaimsSchema,
+  servicesTokenSchema,
+  CLOUD_SERVICES_JWKS_PATH,
+  CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   CloudConfigError,
   createCloudApp,
-  loadAISigningKey,
+  loadServicesSigningKey,
   parseCloudServerConfig,
   StaticEntitlementSource,
   type CloudActor
@@ -56,13 +56,17 @@ async function signingKeyPEM() {
 async function testApp(options: {
   actor: CloudActor
   entitlements?: Record<string, boolean | number>
-  ai?: boolean
+  services?: boolean
 }) {
   const runtime = await createCloudTestDatabase()
   const config = parseCloudServerConfig(
-    options.ai === false
+    options.services === false
       ? baseConfig
-      : { ...baseConfig, aiEndpoint: 'https://ai.example.com', aiSigningKey: await signingKeyPEM() }
+      : {
+          ...baseConfig,
+          servicesEndpoint: 'https://services.example.com',
+          servicesSigningKey: await signingKeyPEM()
+        }
   )
   const workspaceId = crypto.randomUUID()
   await runtime.database
@@ -80,10 +84,10 @@ async function testApp(options: {
     objects: createMemoryObjectStore().store,
     resolveSession: async () => options.actor,
     entitlementSource: new StaticEntitlementSource(options.entitlements ?? {}),
-    aiSigningKey: await loadAISigningKey(config)
+    servicesSigningKey: await loadServicesSigningKey(config)
   })
   const requestToken = () =>
-    app.request('/api/ai/token', {
+    app.request('/api/services/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workspaceId })
@@ -91,27 +95,30 @@ async function testApp(options: {
   return { runtime, app, workspaceId, requestToken }
 }
 
-describe('AI service tokens', () => {
+describe('Service tokens', () => {
   test('a member of an entitled workspace gets a token the published keys verify', async () => {
     const context = await testApp({
       actor: member,
       entitlements: {
-        [CLOUD_FEATURE_KEYS.cloudAI]: true,
+        [CLOUD_FEATURE_KEYS.cloudServices]: true,
         [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: 5000
       }
     })
     try {
       const response = await context.requestToken()
       expect(response.status).toBe(200)
-      const { token, expiresAt } = await responseJSON(response, aiTokenSchema)
+      const { token, expiresAt } = await responseJSON(response, servicesTokenSchema)
 
-      const keys = await responseJSON(await context.app.request(CLOUD_AI_JWKS_PATH), jwksSchema)
+      const keys = await responseJSON(
+        await context.app.request(CLOUD_SERVICES_JWKS_PATH),
+        jwksSchema
+      )
       const { payload, protectedHeader } = await jwtVerify(token, createLocalJWKSet(keys), {
         issuer: 'http://localhost:8787',
-        audience: CLOUD_AI_TOKEN_AUDIENCE
+        audience: CLOUD_SERVICES_TOKEN_AUDIENCE
       })
       expect(protectedHeader.kid).toBe(keys.keys[0]?.kid)
-      expect(v.parse(aiTokenClaimsSchema, payload)).toMatchObject({
+      expect(v.parse(servicesTokenClaimsSchema, payload)).toMatchObject({
         sub: member.userId,
         workspaceId: context.workspaceId,
         monthlyCreditAllowance: 5000
@@ -131,11 +138,14 @@ describe('AI service tokens', () => {
     }
     const unlimited = await testApp({
       actor: member,
-      entitlements: { [CLOUD_FEATURE_KEYS.cloudAI]: true }
+      entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      const { token } = await responseJSON(await unlimited.requestToken(), aiTokenSchema)
-      const keys = await responseJSON(await unlimited.app.request(CLOUD_AI_JWKS_PATH), jwksSchema)
+      const { token } = await responseJSON(await unlimited.requestToken(), servicesTokenSchema)
+      const keys = await responseJSON(
+        await unlimited.app.request(CLOUD_SERVICES_JWKS_PATH),
+        jwksSchema
+      )
       const { payload } = await jwtVerify(token, createLocalJWKSet(keys))
       expect(payload.monthlyCreditAllowance).toBeNull()
     } finally {
@@ -146,7 +156,7 @@ describe('AI service tokens', () => {
   test('someone outside the workspace cannot tell it exists', async () => {
     const context = await testApp({
       actor: stranger,
-      entitlements: { [CLOUD_FEATURE_KEYS.cloudAI]: true }
+      entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
       expect((await context.requestToken()).status).toBe(404)
@@ -155,14 +165,14 @@ describe('AI service tokens', () => {
     }
   })
 
-  test('a deployment without an AI service publishes no keys and signs no tokens', async () => {
+  test('a deployment without services publishes no keys and signs no tokens', async () => {
     const context = await testApp({
       actor: member,
-      ai: false,
-      entitlements: { [CLOUD_FEATURE_KEYS.cloudAI]: true }
+      services: false,
+      entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      expect((await context.app.request(CLOUD_AI_JWKS_PATH)).status).toBe(404)
+      expect((await context.app.request(CLOUD_SERVICES_JWKS_PATH)).status).toBe(404)
       expect((await context.requestToken()).status).toBe(404)
     } finally {
       await context.runtime.close()
@@ -174,8 +184,8 @@ describe('AI service tokens', () => {
     try {
       const config = parseCloudServerConfig({
         ...baseConfig,
-        aiEndpoint: 'https://ai.example.com',
-        aiSigningKey: await signingKeyPEM()
+        servicesEndpoint: 'https://services.example.com',
+        servicesSigningKey: await signingKeyPEM()
       })
       expect(() =>
         createCloudApp({

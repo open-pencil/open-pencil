@@ -1,14 +1,14 @@
-import type { CloudAITokenSource } from '@open-pencil/cloud/client'
-import type { AIToken } from '@open-pencil/cloud/contract'
+import type { CloudServicesTokenSource } from '@open-pencil/cloud/client'
+import type { ServicesToken } from '@open-pencil/cloud/contract'
 
 /** A token this close to expiring is replaced, so a long request does not outlive it. */
 const REFRESH_MARGIN_MS = 60_000
 
 /** Keeps one workspace's AI token, signing a new one shortly before it expires. */
 export function createCloudAITokens(
-  request: () => Promise<AIToken>,
+  request: () => Promise<ServicesToken>,
   now: () => number = Date.now
-): CloudAITokenSource {
+): CloudServicesTokenSource {
   let current: { token: string; expiresAt: number } | null = null
   let pending: Promise<string> | null = null
   return {

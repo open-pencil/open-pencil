@@ -1,4 +1,4 @@
-import { aiCatalogSchema, type AICatalog } from '#cloud/contract'
+import { serviceCatalogSchema, type ServiceCatalog } from '#cloud/contract'
 import { httpURLSchema } from '#cloud/server/config/schema'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
@@ -18,7 +18,7 @@ export type AIRelayConfig = {
   /** An OpenAI-compatible API base URL, such as `https://openrouter.ai/api/v1`. */
   upstreamURL: string
   upstreamKey: string
-  catalog: AICatalog
+  catalog: ServiceCatalog
 }
 
 export class AIRelayConfigError extends Error {
@@ -79,7 +79,7 @@ function requiredSecret(environment: AIRelayEnvironment, name: string): string {
   return value
 }
 
-function catalogFrom(input: v.InferOutput<typeof aiRelayConfigSchema>['catalog']): AICatalog {
+function catalogFrom(input: v.InferOutput<typeof aiRelayConfigSchema>['catalog']): ServiceCatalog {
   const ids = new Set<string>()
   for (const model of input.models) {
     if (ids.has(model.id)) throw new AIRelayConfigError(`Model ${model.id} is listed twice`)
@@ -88,7 +88,7 @@ function catalogFrom(input: v.InferOutput<typeof aiRelayConfigSchema>['catalog']
   if (!ids.has(input.default_model)) {
     throw new AIRelayConfigError(`Default model ${input.default_model} is not in the catalog`)
   }
-  return v.parse(aiCatalogSchema, {
+  return v.parse(serviceCatalogSchema, {
     defaultModelID: input.default_model,
     models: input.models.map((model) => ({
       id: model.id,

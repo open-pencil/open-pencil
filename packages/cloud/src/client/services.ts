@@ -1,28 +1,28 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
-  aiCatalogSchema,
-  aiErrorSchema,
-  aiWalletSchema,
-  CLOUD_AI_API_PATHS,
-  type AICatalog,
-  type AIErrorCode,
-  type AIWallet
+  serviceCatalogSchema,
+  serviceErrorSchema,
+  creditWalletSchema,
+  CLOUD_SERVICES_API_PATHS,
+  type ServiceCatalog,
+  type ServiceErrorCode,
+  type CreditWallet
 } from '#cloud/contract'
 import * as v from 'valibot'
 
 /** Where a request gets the token it sends, and how it drops one the service refused. */
-export type CloudAITokenSource = {
+export type CloudServicesTokenSource = {
   token(): Promise<string>
   /** Forgets `token`, so the next call signs a new one. */
   invalidate(token: string): void
 }
 
-export class CloudAIError extends Error {
-  override readonly name = 'CloudAIError'
+export class CloudServiceError extends Error {
+  override readonly name = 'CloudServiceError'
 
   constructor(
     readonly status: number,
-    readonly code?: AIErrorCode
+    readonly code?: ServiceErrorCode
   ) {
     super(`OpenPencil AI request failed with HTTP ${status}`)
   }
@@ -39,7 +39,10 @@ function replayable(input: RequestInfo | URL, body: RequestInit['body']): boolea
  * by a key Cloud has since replaced, is dropped and a request that can be replayed is sent once
  * more with a new one.
  */
-export function cloudAIFetch(tokens: CloudAITokenSource, fetch: CloudFetch): CloudFetch {
+export function cloudServicesFetch(
+  tokens: CloudServicesTokenSource,
+  fetch: CloudFetch
+): CloudFetch {
   const send = async (input: RequestInfo | URL, init: RequestInit | undefined, token: string) => {
     const headers = new Headers(init?.headers)
     headers.set('Authorization', `Bearer ${token}`)
@@ -55,7 +58,7 @@ export function cloudAIFetch(tokens: CloudAITokenSource, fetch: CloudFetch): Clo
   }
 }
 
-const errorBodySchema = v.pipe(v.string(), v.parseJson(), aiErrorSchema)
+const errorBodySchema = v.pipe(v.string(), v.parseJson(), serviceErrorSchema)
 
 async function parsed<TSchema extends v.GenericSchema>(
   response: Response,
@@ -64,33 +67,42 @@ async function parsed<TSchema extends v.GenericSchema>(
   const text = await response.text()
   if (!response.ok) {
     const error = v.safeParse(errorBodySchema, text)
-    throw new CloudAIError(response.status, error.success ? error.output.error.code : undefined)
+    throw new CloudServiceError(
+      response.status,
+      error.success ? error.output.error.code : undefined
+    )
   }
   return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
 }
 
-export type CloudAIClientOptions = {
+export type CloudServicesClientOptions = {
   /** The service's endpoint, as Cloud's discovery names it. */
   endpoint: string
-  tokens: CloudAITokenSource
+  tokens: CloudServicesTokenSource
   fetch: CloudFetch
 }
 
-/** The AI service a Cloud advertises: its model API base URL, catalog, and the wallet. */
-export function createCloudAIClient(options: CloudAIClientOptions) {
+/** The services a Cloud advertises: the model API base URL, catalog, and the wallet. */
+export function createCloudServicesClient(options: CloudServicesClientOptions) {
   const endpoint = options.endpoint.replace(/\/+$/, '')
-  const fetch = cloudAIFetch(options.tokens, options.fetch)
+  const fetch = cloudServicesFetch(options.tokens, options.fetch)
   return {
     /** The base URL an OpenAI-compatible client sends chat completions below. */
-    modelBaseURL: `${endpoint}${CLOUD_AI_API_PATHS.base}`,
+    modelBaseURL: `${endpoint}${CLOUD_SERVICES_API_PATHS.base}`,
     fetch,
-    async catalog(): Promise<AICatalog> {
-      return parsed(await fetch(`${endpoint}${CLOUD_AI_API_PATHS.catalog}`), aiCatalogSchema)
+    async catalog(): Promise<ServiceCatalog> {
+      return parsed(
+        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.catalog}`),
+        serviceCatalogSchema
+      )
     },
-    async wallet(): Promise<AIWallet> {
-      return parsed(await fetch(`${endpoint}${CLOUD_AI_API_PATHS.wallet}`), aiWalletSchema)
+    async wallet(): Promise<CreditWallet> {
+      return parsed(
+        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.wallet}`),
+        creditWalletSchema
+      )
     }
   }
 }
 
-export type CloudAIClient = ReturnType<typeof createCloudAIClient>
+export type CloudServicesClient = ReturnType<typeof createCloudServicesClient>

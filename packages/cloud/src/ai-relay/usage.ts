@@ -1,4 +1,4 @@
-import type { AIUsagePage, AIWallet } from '#cloud/contract'
+import type { UsagePage, CreditWallet } from '#cloud/contract'
 import { fromDate, startOfMonth, toCalendarDate } from '@internationalized/date'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
@@ -60,7 +60,7 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
      * The workspace's single allowance bucket for the current month. A `null` allowance means
      * Cloud set none, and the relay does not limit spend.
      */
-    async wallet(workspaceId: string, allowance: number | null, now: Date): Promise<AIWallet> {
+    async wallet(workspaceId: string, allowance: number | null, now: Date): Promise<CreditWallet> {
       if (allowance === null) return { balance: null, buckets: [] }
       const remaining = Math.max(0, allowance - (await spent(workspaceId, now)))
       return {
@@ -70,7 +70,7 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
     },
 
     /** Newest first, across every member of the workspace. */
-    async page(workspaceId: string, cursor: string | undefined): Promise<AIUsagePage> {
+    async page(workspaceId: string, cursor: string | undefined): Promise<UsagePage> {
       let after: { createdAt: Date; id: string } | undefined
       if (cursor !== undefined) {
         const parsed = v.safeParse(cursorSchema, cursor)
