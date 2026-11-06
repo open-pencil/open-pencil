@@ -86,11 +86,63 @@ describe('DOM projection constraints', () => {
     })
   })
 
-  test('Left and right keep both edges and leave the size to them', () => {
-    const style = placed('STRETCH', 'STRETCH')
-    expect(style).toMatchObject({ left: '20px', right: '120px', top: '10px', bottom: '60px' })
-    expect(style.width).toBeUndefined()
-    expect(style.height).toBeUndefined()
+  test('Left and right keep both edges, with the size written out so images fill it too', () => {
+    expect(placed('STRETCH', 'STRETCH')).toMatchObject({
+      left: '20px',
+      width: 'calc(100% - 140px)',
+      top: '10px',
+      height: 'calc(100% - 70px)'
+    })
+  })
+
+  test('a parent with no size on an axis leaves its children at their start and size', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, { name: 'Card', width: 0, height: 100 })
+    graph.createNode('RECTANGLE', card.id, {
+      name: 'Bar',
+      x: 20,
+      width: 60,
+      height: 30,
+      horizontalConstraint: 'STRETCH'
+    })
+    const root = element(sceneNodeToDesignDocument(graph, card.id).children[0])
+    expect(element(root.children[0]).inlineStyle).toMatchObject({ left: '20px', width: '60px' })
+  })
+
+  test('offsets are measured inside the parent border, which a stroke does not take', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, {
+      name: 'Card',
+      width: 200,
+      height: 100,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          weight: 10,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE'
+        }
+      ]
+    })
+    graph.createNode('RECTANGLE', card.id, {
+      name: 'Bar',
+      x: 20,
+      y: 10,
+      width: 60,
+      height: 30,
+      horizontalConstraint: 'SCALE',
+      verticalConstraint: 'MAX'
+    })
+    const root = element(sceneNodeToDesignDocument(graph, card.id).children[0])
+    expect(element(root.children[0]).inlineStyle).toMatchObject({
+      left: '5.5556%',
+      width: '33.3333%',
+      bottom: '50px'
+    })
   })
 
   test('Scale keeps its share of the parent', () => {

@@ -1,6 +1,7 @@
 import type { ConstraintType, SceneNode } from '@open-pencil/scene-graph'
 
 import type { DesignStyleDeclaration } from '../types'
+import { borderWidths } from './css'
 
 const AXES = {
   width: { constraint: 'horizontalConstraint', start: 'left', end: 'right', at: 'x' },
@@ -12,21 +13,38 @@ type Axis = keyof typeof AXES
 const length = (value: number) => `${Number(value.toFixed(3))}px`
 const percent = (value: number) => `${Number((value * 100).toFixed(4))}%`
 
-function constraintOf(node: SceneNode, parent: SceneNode | undefined, axis: Axis): ConstraintType {
-  return parent ? node[AXES[axis].constraint] : 'MIN'
+/** A percentage of the containing block moved by a length, as `calc()` when it moves. */
+function shifted(base: string, by: number): string {
+  if (Number(by.toFixed(3)) === 0) return base
+  return `calc(${base} ${by < 0 ? '-' : '+'} ${length(Math.abs(by))})`
 }
 
 /**
- * Whether a placed layer's constraint sizes it along an axis: Left and Right leave the size to
- * both edges, and Scale sets its share of the parent, so neither takes a fixed size.
+ * A placed layer along one axis, measured in the box CSS places it in: inside the parent's
+ * border, which a stroke on the canvas does not take from its children. A parent with no size
+ * on the axis leaves its box to the page, so its children keep their start and size there.
+ */
+function placedAxis(node: SceneNode, parent: SceneNode | undefined, axis: Axis) {
+  const { constraint, start, end, at } = AXES[axis]
+  const border = parent ? borderWidths(parent) : undefined
+  const inset = border?.[start] ?? 0
+  const room = (parent?.[axis] ?? 0) - inset - (border?.[end] ?? 0)
+  const kind: ConstraintType = parent && room > 0 ? node[constraint] : 'MIN'
+  const before = node[at] - inset
+  return { kind, room, before, after: room - before - node[axis] }
+}
+
+/**
+ * Whether a placed layer's constraint sizes it along an axis: Left and Right and Scale both size
+ * it from the parent, so it takes no fixed size.
  */
 export function constraintSizes(
   node: SceneNode,
   parent: SceneNode | undefined,
   axis: Axis
 ): boolean {
-  const constraint = constraintOf(node, parent, axis)
-  return constraint === 'STRETCH' || (constraint === 'SCALE' && (parent?.[axis] ?? 0) > 0)
+  const { kind } = placedAxis(node, parent, axis)
+  return kind === 'STRETCH' || kind === 'SCALE'
 }
 
 /**
@@ -65,7 +83,8 @@ export function addPositioning(
  * Place a layer by its constraints, so it follows the parent when the page resizes it as the
  * canvas does (`resize.ts` in `@open-pencil/scene-graph`): Left and Top keep the start edge,
  * Right and Bottom the end edge, Center the offset from the centre, Left and Right both edges,
- * and Scale its share of the parent.
+ * and Scale its share of the parent. A stretched size is written out rather than left to both
+ * edges, which an image would not fill.
  */
 function addConstrainedPlacement(
   style: DesignStyleDeclaration,
@@ -73,23 +92,18 @@ function addConstrainedPlacement(
   parent: SceneNode | undefined
 ): void {
   for (const axis of ['width', 'height'] as const) {
-    const { start, end, at } = AXES[axis]
-    const constraint = constraintOf(node, parent, axis)
-    const parentSize = parent?.[axis] ?? 0
-    const before = node[at]
-    const after = parentSize - before - node[axis]
-    if (constraint === 'MAX') {
+    const { start, end } = AXES[axis]
+    const { kind, room, before, after } = placedAxis(node, parent, axis)
+    if (kind === 'MAX') {
       style[end] = length(after)
-    } else if (constraint === 'CENTER') {
-      const offset = before - parentSize / 2
-      style[start] =
-        offset === 0 ? '50%' : `calc(50% ${offset < 0 ? '-' : '+'} ${length(Math.abs(offset))})`
-    } else if (constraint === 'STRETCH') {
+    } else if (kind === 'CENTER') {
+      style[start] = shifted('50%', before - room / 2)
+    } else if (kind === 'STRETCH') {
       style[start] = length(before)
-      style[end] = length(after)
-    } else if (constraint === 'SCALE' && parentSize > 0) {
-      style[start] = percent(before / parentSize)
-      style[axis] = percent(node[axis] / parentSize)
+      style[axis] = shifted('100%', node[axis] - room)
+    } else if (kind === 'SCALE') {
+      style[start] = percent(before / room)
+      style[axis] = percent(node[axis] / room)
     } else {
       style[start] = length(before)
     }
