@@ -10,3 +10,9 @@ export {
   resolvedReferences,
   type ReferenceResolvers
 } from './copied'
+export {
+  layerDependencies,
+  layerImageHashes,
+  layerVariableIds,
+  type LayerDependencies
+} from './dependencies'
