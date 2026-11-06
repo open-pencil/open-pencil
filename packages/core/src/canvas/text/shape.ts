@@ -136,11 +136,11 @@ export function shapeText(
     const outlined = glyphs.every((glyph) => glyph.commands)
     return {
       glyphs: outlined ? glyphs : glyphs.map((glyph) => ({ ...glyph, commands: null })),
-      baselines: metrics.map((line) => ({
+      baselines: metrics.map((line, lineNumber) => ({
         firstCharacter: line.startIndex,
         endCharacter: Math.min(line.endIncludingNewline, text.length),
         position: { x: line.left, y: line.baseline + offsetY },
-        width: line.width,
+        width: paragraph.getLineGlyphsWidth(lineNumber),
         lineY: line.baseline - line.ascent + offsetY,
         lineHeight: line.height,
         lineAscent: line.ascent

@@ -1,7 +1,7 @@
 import type { LineMetrics } from 'canvaskit-wasm'
 
-import { toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
-import type { BlockPlacement } from '#core/canvas/text/layout/lines'
+import { spacedLineWidth, toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
+import type { PlacedBlocks } from '#core/canvas/text/layout/positions'
 
 export interface TextLines {
   lines: LineMetrics[]
@@ -10,14 +10,14 @@ export interface TextLines {
 
 export function collectTextLines(
   visible: readonly TextLayoutBlock[],
-  placementOf: (block: TextLayoutBlock) => BlockPlacement | undefined
+  placed: PlacedBlocks
 ): TextLines {
   const lines: LineMetrics[] = []
   const blockFirstLines: number[] = []
   for (const [blockIndex, block] of visible.entries()) {
     blockFirstLines.push(lines.length)
     const metrics = block.metrics
-    const placement = placementOf(block)
+    const placement = placed.placementOf(block)
     const boxes = placement?.boxes
     const blockEnd = block.start + block.length
     for (const [lineIndex, line] of metrics.entries()) {
@@ -40,8 +40,8 @@ export function collectTextLines(
           ? blockEnd + 1
           : toTextIndex(block, line.endIncludingNewline),
         isHardBreak: endsAtNewline || line.isHardBreak,
-        width: block.empty ? 0 : line.width - indent,
-        left: line.left + block.x + (block.rtl ? 0 : indent),
+        width: block.empty ? 0 : spacedLineWidth(block, line) - indent,
+        left: line.left + block.x + placed.lineShift(block, lineIndex) + (block.rtl ? 0 : indent),
         baseline: line.baseline + block.y + (placement?.offsets[lineIndex] ?? 0),
         lineNumber: lines.length
       })

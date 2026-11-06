@@ -1,5 +1,6 @@
-import type { Canvas } from 'canvaskit-wasm'
+import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 
+import type { LineBand } from '#core/canvas/text/layout/apart'
 import type { TextLayoutBlock } from '#core/canvas/text/layout/block'
 import { shapedLinesByLine, wholePixelShift, type LinePiece } from '#core/canvas/text/layout/lines'
 
@@ -11,6 +12,12 @@ interface BlockDrawing {
 
 /** Fractions of a pixel a text is drawn below its top at that keep their drawing. */
 const MAX_DRAWN_FRACTIONS = 4
+const OPEN_EDGE = 1e6
+
+export interface LinesApart {
+  bands: LineBand[]
+  pieces: LinePiece[]
+}
 
 type LineOffset = (block: TextLayoutBlock, index: number) => number
 
@@ -34,6 +41,8 @@ function markerShift(block: TextLayoutBlock, fraction: number): number {
  */
 export class TextDrawing {
   private readonly fractions = new Map<number, Map<TextLayoutBlock, BlockDrawing>>()
+
+  constructor(private readonly ck: CanvasKit) {}
 
   clear(): void {
     this.fractions.clear()
@@ -75,16 +84,29 @@ export class TextDrawing {
     y: number,
     visible: readonly TextLayoutBlock[],
     lineOffset: LineOffset,
-    piecesOf: (block: TextLayoutBlock) => LinePiece[] | null | undefined
+    apartOf: (block: TextLayoutBlock) => LinesApart | null
   ): void {
     const drawing = this.prepare(y, visible, lineOffset)
     for (const block of visible) {
       const drawn = drawing.get(block)
-      const pieces = piecesOf(block)
-      if (!pieces) {
-        canvas.drawParagraph(block.paragraph, x + block.x, y + block.y + firstShift(drawn, 0))
+      const apart = apartOf(block)
+      const top = y + block.y + firstShift(drawn, 0)
+      if (!apart) {
+        canvas.drawParagraph(block.paragraph, x + block.x, top)
       }
-      for (const piece of pieces ?? []) {
+      for (const band of apart?.bands ?? []) {
+        canvas.save()
+        const clip = Float32Array.of(
+          x - OPEN_EDGE,
+          top + (band.top ?? -OPEN_EDGE),
+          x + OPEN_EDGE,
+          top + (band.bottom ?? OPEN_EDGE)
+        )
+        canvas.clipRect(clip, this.ck.ClipOp.Intersect, true)
+        canvas.drawParagraph(block.paragraph, x + block.x + band.shift, top)
+        canvas.restore()
+      }
+      for (const piece of apart?.pieces ?? []) {
         const top = y + block.y + piece.y + firstShift(drawn, piece.line)
         canvas.drawParagraph(piece.paragraph, x + block.x + piece.x, top)
       }
