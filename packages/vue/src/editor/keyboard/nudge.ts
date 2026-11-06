@@ -43,8 +43,10 @@ export function bindNudgeKeys(
     if (isEditing(e) || store.state.editingTextId || heldBack(e)) return
     // The browser's own action for a key the editor reserves stays stopped, a preview's included.
     if (isReservedModShortcut(e)) e.preventDefault()
-    // A preview runs the design; only the keys that leave it work there.
-    if (resolveEditorProfile(store.state).shortcuts === 'view') return
+    // A preview runs the design; only the keys that leave it work there. Layers that may not
+    // change, as in a read-only document, stay where they are.
+    const profile = resolveEditorProfile(store.state)
+    if (profile.shortcuts === 'view' || profile.layerEdits === 'none') return
     if (e.metaKey || e.ctrlKey || e.altKey) return
 
     const delta = NUDGE_DELTAS[e.code]
@@ -52,9 +54,8 @@ export function bindNudgeKeys(
     if (overlayHoldsKeys(e, overlays)) return
 
     const [x, y] = delta
-    const { snapGrid } = resolveEditorProfile(store.state)
-    if (e.shiftKey && snapGrid > 1) {
-      const nudge = gridNudge(selectionOrigin(store), { x, y }, snapGrid)
+    if (e.shiftKey && profile.snapGrid > 1) {
+      const nudge = gridNudge(selectionOrigin(store), { x, y }, profile.snapGrid)
       store.nudgeSelected(nudge.x, nudge.y)
     } else {
       const step = e.shiftKey ? 10 : 1

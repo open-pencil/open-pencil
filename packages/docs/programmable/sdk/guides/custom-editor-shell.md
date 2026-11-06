@@ -123,6 +123,11 @@ editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
 // and continuing points with the pen are refused, and points select but do not drag.
 editor.setHostRestrictions({ pathEdits: 'handles' })
 
+// Layers stay as they are: nothing moves, resizes, restyles, or is added or deleted, by the
+// canvas, the keys, or the editor's actions, which throw a `FixedLayersError`; vector edit mode
+// still reshapes a path. Lift it while the host builds the document itself.
+editor.setHostRestrictions({ layerEdits: 'none' })
+
 // Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or
 // another layer leave it open. Every point shows its handles.
 editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })

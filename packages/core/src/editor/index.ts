@@ -4,7 +4,7 @@ export {
   ReadOnlyLibraryDefinitionError
 } from './capabilities'
 export type { NodeEditCapability } from './capabilities'
-export { ReadOnlyDocumentError } from './read-only'
+export { FixedLayersError, ReadOnlyDocumentError, RefusedEditError } from './read-only'
 export { DEFAULT_SNAPPING_PREFERENCES } from './preferences'
 export type { SnappingPreferences } from './preferences'
 export { createDocumentGraph } from './document-settings'
