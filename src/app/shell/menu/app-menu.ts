@@ -16,7 +16,7 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useI18n } from '@open-pencil/vue/i18n'
 import type {
@@ -74,17 +74,6 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   variables: IconVariables,
   'zoom-in': IconZoomIn,
   'zoom-out': IconZoomOut
-}
-
-function shortcutKeys(shortcut: string | undefined): string[] | undefined {
-  if (!shortcut) return undefined
-  const platform = shortcutPlatform()
-  return shortcut.split('+').map((key) => {
-    if (key === 'MOD') return platform === 'mac' ? '⌘' : 'Ctrl'
-    if (key === 'SHIFT') return platform === 'mac' ? '⇧' : 'Shift'
-    if (key === 'ALT') return platform === 'mac' ? '⌥' : 'Alt'
-    return key
-  })
 }
 
 function isVisible(entry: { target?: string; feature?: AppMenuFeature }): boolean {
@@ -384,7 +373,7 @@ export function useAppMenu() {
       label: entry.palette?.label ?? entry.label,
       icon: entry.palette?.icon ?? fallbackIcon,
       shortcut: entry.paletteShortcut
-        ? { keys: shortcutKeys(entry.paletteShortcut) ?? [] }
+        ? { keys: formatShortcutKeys(entry.paletteShortcut) }
         : undefined,
       description: entry.palette?.description,
       keywords: entry.palette?.keywords,

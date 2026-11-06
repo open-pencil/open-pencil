@@ -2,6 +2,7 @@ export { useEditorCommands } from './use'
 export { EDITOR_COMMAND_METADATA, editorCommandMetadata, editorCommandShortcuts } from './registry'
 export {
   formatShortcut,
+  formatShortcutKeys,
   parseShortcut,
   shortcutKeyName,
   shortcutKeys,

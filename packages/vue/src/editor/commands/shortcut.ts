@@ -118,6 +118,20 @@ function sortModifiers(modifiers: ShortcutModifier[], platform: ShortcutPlatform
 }
 
 /**
+ * One step of a token as this platform's key caps: `['⇧', '⌘', 'Z']` on macOS,
+ * `['Ctrl', 'Shift', 'Z']` elsewhere.
+ */
+export function formatShortcutKeys(combo: string, platform = shortcutPlatform()): string[] {
+  const parts = compact(combo.split('+'))
+  const modifiers = parts.filter(isModifier)
+  const keys = parts.filter((part) => !isModifier(part))
+  return [
+    ...sortModifiers(modifiers, platform).map((part) => MODIFIER_DISPLAY[platform][part]),
+    ...keys
+  ]
+}
+
+/**
  * A token as this platform prints it: `⇧⌘Z` on macOS, `Ctrl+Shift+Z` elsewhere. Text that is not
  * a token, such as the opacity keys' `1-9, 0`, prints as it is.
  */
@@ -126,18 +140,9 @@ export function formatShortcut(
   platform = shortcutPlatform()
 ): string | undefined {
   if (!shortcut) return undefined
-
+  const separator = platform === 'mac' ? '' : '+'
   return shortcut
     .split(' ')
-    .map((combo) => {
-      const parts = compact(combo.split('+'))
-      const modifiers = parts.filter(isModifier)
-      const keys = parts.filter((part) => !isModifier(part))
-      const formattedModifiers = sortModifiers(modifiers, platform).map(
-        (part) => MODIFIER_DISPLAY[platform][part]
-      )
-      const separator = platform === 'mac' ? '' : '+'
-      return [...formattedModifiers, ...keys].join(separator)
-    })
+    .map((combo) => formatShortcutKeys(combo, platform).join(separator))
     .join(' ')
 }

@@ -1,1 +1,2 @@
 - Opacity and zoom digit shortcuts work on layouts such as AZERTY, where the digit row needs Shift to type digits (#1844).
+- The command palette shows Control shortcuts as ⌃ and lists modifiers in macOS order, as menus do (#1844).

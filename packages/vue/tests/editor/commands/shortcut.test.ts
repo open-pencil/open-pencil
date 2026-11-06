@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import { EDITOR_COMMAND_METADATA, editorCommandShortcuts } from '#vue/editor/commands/registry'
-import type { EditorCommandId } from '#vue/editor/commands/types'
 import {
   formatShortcut,
+  formatShortcutKeys,
   parseShortcut,
   shortcutKeys,
   shortcutPlatform
 } from '#vue/editor/commands/shortcut'
+import type { EditorCommandId } from '#vue/editor/commands/types'
 
 describe('formatShortcut', () => {
   test('formats shortcuts for macOS', () => {
@@ -22,6 +23,12 @@ describe('formatShortcut', () => {
     expect(formatShortcut('MOD+SHIFT+H', 'windows')).toBe('Ctrl+Shift+H')
     expect(formatShortcut('MOD+ALT+K', 'linux')).toBe('Ctrl+Alt+K')
     expect(formatShortcut('SHIFT+A', 'linux')).toBe('Shift+A')
+  })
+
+  test('splits a shortcut into key caps in platform order', () => {
+    expect(formatShortcutKeys('MOD+ALT+K', 'mac')).toEqual(['⌥', '⌘', 'K'])
+    expect(formatShortcutKeys('CTRL+ALT+T', 'mac')).toEqual(['⌃', '⌥', 'T'])
+    expect(formatShortcutKeys('CTRL+SHIFT+Tab', 'windows')).toEqual(['Ctrl', 'Shift', 'Tab'])
   })
 
   test('detects platform from user agent', () => {
@@ -73,8 +80,8 @@ describe('editor command shortcuts', () => {
       (id): id is EditorCommandId => id !== 'selection.setOpacity'
     )
     for (const id of ids) {
-      for (const token of editorCommandShortcuts(id)) expect(() => shortcutKeys(token)).not.toThrow()
+      for (const token of editorCommandShortcuts(id))
+        expect(() => shortcutKeys(token)).not.toThrow()
     }
   })
 })
-
