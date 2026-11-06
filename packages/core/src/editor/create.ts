@@ -53,7 +53,7 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo, refusalFor } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
@@ -629,7 +629,7 @@ export function createEditor(options?: EditorOptions) {
     // Read-only documents, which refuse every action above that changes them
     ...readOnly
   }
-  return guardReadOnly(editor, readsOnly)
+  return guardEdits(editor, (action) => refusalFor(action, resolveEditorProfile(state)))
 }
 
 /**

@@ -152,6 +152,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'refreshVariables',
   'releaseGraphResources',
   'removeCanvasRenderer',
+  'reportPresented',
   'replaceGraph',
   'requestRefresh',
   'requestRender',
@@ -159,9 +160,36 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'runLayoutForNode',
   'setCanvasKit',
   'setNavigationPhase',
+  'setHostRestrictions',
   'setReadOnly',
   'setShaderRasterizer',
   'settleShaderFrames',
   'subscribeToGraph',
   'textSelectionChanged'
+])
+
+/**
+ * Editor actions that reshape a path in vector edit mode, which a host that keeps layers as they
+ * are (`layerEdits: 'none'`) still offers, together with undo and redo of what they did. How much
+ * of the path they may change is `pathEdits`' to say.
+ */
+export const PATH_EDIT_ACTIONS: ReadonlySet<string> = new Set([
+  'commitNodeEditChanges',
+  'enterNodeEditMode',
+  'nodeEditAddVertex',
+  'nodeEditAlignVertices',
+  'nodeEditBendHandle',
+  'nodeEditBreakAtVertex',
+  'nodeEditConnectEndpoints',
+  'nodeEditDeleteSelected',
+  'nodeEditPushHistory',
+  'nodeEditRedo',
+  'nodeEditRemoveVertex',
+  'nodeEditSelectVertex',
+  'nodeEditSetHandle',
+  'nodeEditUndo',
+  'nodeEditZeroVertexHandles',
+  'redoAction',
+  'setNodeEditNetwork',
+  'undoAction'
 ])

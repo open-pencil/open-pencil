@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
 import { ref, toRaw } from 'vue'
 
-import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { RefusedEditError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
 import { reportErrorAction } from '@/app/reports/state'
@@ -149,9 +149,9 @@ function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
 
-  // An edit to a read-only document does nothing, as in Figma, wherever it came from.
+  // An edit the document refuses, as a read-only one's, does nothing, as in Figma.
   useEventListener(window, 'error', (e) => {
-    if (e.error instanceof ReadOnlyDocumentError) {
+    if (e.error instanceof RefusedEditError) {
       e.preventDefault()
       return
     }
@@ -162,7 +162,7 @@ function setupGlobalErrorHandler() {
     )
   })
   useEventListener(window, 'unhandledrejection', (e) => {
-    if (e.reason instanceof ReadOnlyDocumentError) {
+    if (e.reason instanceof RefusedEditError) {
       e.preventDefault()
       return
     }

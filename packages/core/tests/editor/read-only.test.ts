@@ -63,6 +63,13 @@ describe('read-only documents', () => {
     expect(editor.getNode(rect.id)?.name).toBe('Rect')
   })
 
+  test('lets the canvas report the frames it draws', () => {
+    const { editor } = setup()
+    editor.setReadOnly(true)
+    const { renderVersion, sceneVersion } = editor.state
+    expect(() => editor.reportPresented({ renderVersion, sceneVersion })).not.toThrow()
+  })
+
   test('clears a rotation preview, which only shows on the canvas', () => {
     const { editor, rect } = setup()
     editor.setRotationPreview({ nodeId: rect.id, angle: 30 })

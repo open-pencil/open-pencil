@@ -1,29 +1,64 @@
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext, Tool } from '#core/editor/types'
-import { offeredTool, type EditorRestrictions } from '#core/editor/views'
+import { offeredTool, type EditorProfile, type EditorRestrictions } from '#core/editor/views'
 
-import { READ_ONLY_ACTIONS } from './actions'
+import { PATH_EDIT_ACTIONS, READ_ONLY_ACTIONS } from './actions'
+
+/**
+ * Raised by an edit the editor's restrictions refuse. Such an edit does nothing, as in Figma, so
+ * a front end that runs edits from keys or panels can let it pass silently.
+ */
+export class RefusedEditError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'RefusedEditError'
+  }
+}
 
 /** Raised by an edit to a document that is open read-only, in Figma's words for its own. */
-export class ReadOnlyDocumentError extends Error {
+export class ReadOnlyDocumentError extends RefusedEditError {
   constructor() {
     super("Can't edit the document in read-only mode")
     this.name = 'ReadOnlyDocumentError'
   }
 }
 
+/** Raised by an edit to a layer while the host keeps layers as they are (`layerEdits: 'none'`). */
+export class FixedLayersError extends RefusedEditError {
+  constructor() {
+    super("Can't change layers here; only paths can be reshaped")
+    this.name = 'FixedLayersError'
+  }
+}
+
 /**
- * Returns the editor with every action that changes the document refused while `isReadOnly`
- * holds, as it does while the editor's profile offers no edits; the actions in `READ_ONLY_ACTIONS` and the editor's getters pass through.
+ * The error an action is refused with, or null when it may run: while the profile offers no
+ * edits every action outside `READ_ONLY_ACTIONS` is refused, and while it offers no layer edits
+ * so is every one outside those and `PATH_EDIT_ACTIONS`.
  */
-export function guardReadOnly<T extends object>(editor: T, isReadOnly: () => boolean): T {
+export function refusalFor(action: string, profile: EditorProfile): RefusedEditError | null {
+  if (READ_ONLY_ACTIONS.has(action)) return null
+  if (!profile.edits) return new ReadOnlyDocumentError()
+  if (profile.layerEdits === 'none' && !PATH_EDIT_ACTIONS.has(action)) return new FixedLayersError()
+  return null
+}
+
+/**
+ * Returns the editor with every action its restrictions refuse throwing the refusal (see
+ * `refusalFor`); allowed actions and the editor's getters pass through.
+ */
+export function guardEdits<T extends object>(
+  editor: T,
+  refusal: (action: string) => RefusedEditError | null
+): T {
   const descriptors = Object.getOwnPropertyDescriptors(editor)
   for (const [name, descriptor] of Object.entries(descriptors)) {
     const action: unknown = descriptor.value
     if (typeof action !== 'function' || READ_ONLY_ACTIONS.has(name)) continue
     descriptor.value = (...args: unknown[]): unknown => {
-      if (isReadOnly()) throw new ReadOnlyDocumentError()
+      const refused = refusal(name)
+      if (refused) throw refused
       return Reflect.apply(action, undefined, args)
     }
   }
@@ -77,11 +112,11 @@ export function createReadOnlyActions(
 
   /**
    * Narrows what the editor offers, as a host that is not a general design tool does: only some
-   * tools, or path edits that move handles alone. Each restriction given replaces the one before;
-   * one left out stays. A tool no longer on offer gives way to Move.
+   * tools, path edits that move handles alone, or layers kept as they are. Each restriction given
+   * replaces the one before; one left out stays. A tool no longer on offer gives way to Move.
    */
   function setHostRestrictions(
-    restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits'>>
+    restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits' | 'layerEdits'>>
   ): void {
     ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
     if (restrictions.pathEdits === 'handles') {

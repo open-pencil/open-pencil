@@ -151,5 +151,7 @@ export function pressSelects(
   deep = false
 ): boolean {
   if (deep || !pressesSelection(hit, cx, cy, editor)) return true
-  return !resolveEditorProfile(editor.state).edits && insideSelectedFrame(hit, editor)
+  return (
+    resolveEditorProfile(editor.state).layerEdits === 'none' && insideSelectedFrame(hit, editor)
+  )
 }
