@@ -1,5 +1,5 @@
 import { readFile, realpath } from 'node:fs/promises'
-import { dirname, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -40,10 +40,16 @@ function documentAssetReader(filePath: string) {
   }
 }
 
+/** Whether `path` lies inside the folder `root`, which may be the filesystem root. */
+function isInside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
 /** The file at `path`, when it really lies inside `root`; null otherwise. */
 async function readWithin(root: string, path: string): Promise<Uint8Array | null> {
   const target = await realpath(path).catch(() => null)
-  if (!target?.startsWith(root + sep)) return null
+  if (!target || !isInside(root, target)) return null
   return new Uint8Array(await readFile(target))
 }
 
@@ -57,7 +63,7 @@ function documentImportReader(filePath: string) {
   return async (path: string): Promise<Uint8Array | null> => {
     const folder = await realpath(dirname(filePath))
     const cwd = await realpath(process.cwd())
-    const root = folder === cwd || folder.startsWith(cwd + sep) ? cwd : folder
+    const root = folder === cwd || isInside(cwd, folder) ? cwd : folder
     return readWithin(root, resolve(folder, path))
   }
 }

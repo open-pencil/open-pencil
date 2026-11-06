@@ -44,6 +44,36 @@ const screen = {
 }
 
 describe('penFormat.readDocument — imports', () => {
+  test('lays out the imported components it uses, on the internal page', async () => {
+    const { graph } = await io.readDocument({
+      name: 'screens/checkout.pen',
+      data: penBytes(screen),
+      readImport: host(
+        {
+          '../library/ui.lib.pen': {
+            children: [
+              {
+                id: 'button',
+                type: 'frame',
+                reusable: true,
+                layout: 'horizontal',
+                padding: 10,
+                children: [{ id: 'pill', type: 'frame', width: 40, height: 20 }]
+              }
+            ]
+          }
+        },
+        []
+      )
+    })
+    const button = getNodeOrThrow(graph, 'ui:button')
+    expect(graph.getNode(button.parentId ?? '')?.internalOnly).toBe(true)
+    expect([button.width, button.height]).toEqual([60, 40])
+    expect([getNodeOrThrow(graph, 'cta').width, getNodeOrThrow(graph, 'cta').height]).toEqual([
+      60, 40
+    ])
+  })
+
   test('reads imports through the host, by their path from the document', async () => {
     const asked: string[] = []
     const { graph } = await io.readDocument({

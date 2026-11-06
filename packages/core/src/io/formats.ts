@@ -391,7 +391,7 @@ export const penFormat: IOFormatAdapter<'pen'> = {
     ])
     // Its text takes fonts from variables and components too, so the fonts it uses are read
     // from a build without layout and prepared before the build that lays it out.
-    const unlaid = buildPenGraph(doc, { images, icons })
+    const unlaid = buildPenGraph(doc, { images, icons, imports })
     await prepareGraphFonts(
       unlaid,
       unlaid.getPages(true).map((page) => page.id)
@@ -401,10 +401,11 @@ export const penFormat: IOFormatAdapter<'pen'> = {
       images,
       icons,
       imports,
+      // The internal page too, which holds the imported components the document uses.
       layout: (target) =>
         layoutAuthoredNodes(
           target,
-          target.getPages().map((page) => page.id)
+          target.getPages(true).map((page) => page.id)
         )
     })
     return { graph, sourceFormat: 'pen' }
