@@ -161,11 +161,8 @@ export function sizeCanvas(
     canvas.style.marginTop = `${px(layout.marginTop) + top - contentTop}px`
   }
   rememberWrittenStyle(canvas)
-  if (onViewportResize) {
-    onViewportResize(width, height)
-  } else if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
-    editor.setViewportSize(width, height)
-  }
+  if (onViewportResize) onViewportResize(width, height)
+  else editor.setViewportSize(width, height)
 }
 
 export function makeGLSurface(

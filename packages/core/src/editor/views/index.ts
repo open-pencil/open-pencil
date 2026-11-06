@@ -5,5 +5,6 @@ export type {
   EditorProfile,
   EditorProfileInputs,
   EditorRestrictions,
+  LayerEdits,
   PathEdits
 } from './types'

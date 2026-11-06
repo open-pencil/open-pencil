@@ -20,16 +20,16 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
-  AINotEntitledError,
-  createAIRoutes,
-  createAITokenService,
-  importAISigningKey,
-  loadAISigningKey,
-  type AIRouteEnvironment,
-  type AISigningKey,
-  type AITokenService,
-  type AITokenServiceOptions
-} from './ai'
+  ServicesNotEntitledError,
+  createServicesRoutes,
+  createServicesTokenService,
+  importServicesSigningKey,
+  loadServicesSigningKey,
+  type ServicesRouteEnvironment,
+  type ServicesSigningKey,
+  type ServicesTokenService,
+  type ServicesTokenServiceOptions
+} from './services'
 export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  CloudAIError,
-  cloudAIFetch,
-  createCloudAIClient,
+  CloudServiceError,
+  cloudServicesFetch,
+  createCloudServicesClient,
   createCloudAPIClient
 } from '#cloud/client'
-import { CLOUD_AI_API_PATHS } from '#cloud/contract'
+import { CLOUD_SERVICES_API_PATHS } from '#cloud/contract'
 
 const workspaceId = '11111111-1111-4111-8111-111111111111'
 const catalog = {
@@ -50,11 +50,11 @@ describe('Cloud AI client', () => {
         return Response.json({ token: 'signed', expiresAt: '2026-10-21T12:10:00.000Z' })
       }
     })
-    expect(await client.requestAIToken(workspaceId)).toEqual({
+    expect(await client.requestServicesToken(workspaceId)).toEqual({
       token: 'signed',
       expiresAt: '2026-10-21T12:10:00.000Z'
     })
-    expect(requests[0]?.url).toBe('https://cloud.example.com/api/ai/token')
+    expect(requests[0]?.url).toBe('https://cloud.example.com/api/services/token')
     expect(requests[0]?.method).toBe('POST')
     expect(await requests[0]?.json()).toEqual({ workspaceId })
   })
@@ -62,7 +62,7 @@ describe('Cloud AI client', () => {
   test('sends the token, and once more with a new one when the service refuses it', async () => {
     const authorizations: (string | null)[] = []
     const issued = tokens('stale', 'fresh')
-    const client = createCloudAIClient({
+    const client = createCloudServicesClient({
       endpoint: 'https://ai.example.com/',
       tokens: issued.source,
       fetch: async (_input, init) => {
@@ -73,24 +73,24 @@ describe('Cloud AI client', () => {
           : Response.json({ error: { code: 'unauthorized' } }, { status: 401 })
       }
     })
-    expect(client.modelBaseURL).toBe(`https://ai.example.com${CLOUD_AI_API_PATHS.base}`)
+    expect(client.modelBaseURL).toBe(`https://ai.example.com${CLOUD_SERVICES_API_PATHS.base}`)
     expect(await client.catalog()).toEqual(catalog)
     expect(authorizations).toEqual(['Bearer stale', 'Bearer fresh'])
     expect(issued.invalidated).toEqual(['stale'])
   })
 
   test('reports the service error code, and retries a refused token only once', async () => {
-    const credits = createCloudAIClient({
+    const credits = createCloudServicesClient({
       endpoint: 'https://ai.example.com',
       tokens: tokens('token').source,
       fetch: async () => Response.json({ error: { code: 'insufficient_credits' } }, { status: 402 })
     })
     const failure = await credits.wallet().catch((error: unknown) => error)
-    expect(failure).toBeInstanceOf(CloudAIError)
+    expect(failure).toBeInstanceOf(CloudServiceError)
     expect(failure).toMatchObject({ status: 402, code: 'insufficient_credits' })
 
     let calls = 0
-    const refused = createCloudAIClient({
+    const refused = createCloudServicesClient({
       endpoint: 'https://ai.example.com',
       tokens: tokens('one', 'two', 'three').source,
       fetch: async () => {
@@ -104,7 +104,7 @@ describe('Cloud AI client', () => {
 
   test('does not resend a body it cannot replay', async () => {
     let calls = 0
-    const fetch = cloudAIFetch(tokens('one', 'two', 'three').source, async () => {
+    const fetch = cloudServicesFetch(tokens('one', 'two', 'three').source, async () => {
       calls++
       return new Response(null, { status: 401 })
     })

@@ -47,25 +47,23 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1200, height: 800 }),
 })
 
 editor.createShape('RECTANGLE', 100, 100, 200, 150)
-editor.zoomToFit()
 
 provideEditor(editor)
 </script>
 
 <template>
   <div class="h-screen">
-    <CanvasRoot>
+    <CanvasRoot @ready="editor.zoomToFit()">
       <CanvasSurface class="size-full" />
     </CanvasRoot>
   </div>
 </template>
 ```
 
-The fixed viewport size above is illustrative; a resizable shell should return its actual canvas container dimensions from `getViewportSize`. Pass reactive state for Vue controls, while keeping the Scene Graph itself framework-neutral.
+`CanvasRoot` draws the page and takes pointer input and typing: selecting, dragging, drawing with the active tool, panning and zooming, editing paths and text. Pass `:input="false"` for a canvas that only draws. Pass reactive state for Vue controls, while keeping the Scene Graph itself framework-neutral.
 
 ## Entry points
 

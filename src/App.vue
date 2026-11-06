@@ -20,6 +20,7 @@ import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { useRestartApprovals } from '@/app/shell/updater/approvals'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
+import { useWebUpdates } from '@/app/shell/updater/web'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import { CloudHosts } from '@/components/cloud/integration'
@@ -52,6 +53,7 @@ provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useRestartApprovals()
+useWebUpdates()
 startRecoverySession()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
