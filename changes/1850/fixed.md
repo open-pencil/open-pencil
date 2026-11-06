@@ -1,0 +1,1 @@
+- A `.pen` document's bundled fonts are read, so its text draws in them instead of being substituted, and `.fig` exports name the real family and style, such as Geist SemiBold (#1759).
