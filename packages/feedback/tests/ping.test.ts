@@ -142,7 +142,13 @@ describe('ping', () => {
   })
 
   test('refuses a step outside the list', async () => {
-    expect((await service.postJSON('/ping', { ...BUILD, pingDays: '147' })).status).toBe(400)
+    const ping = { ...BUILD, pingDays: '147', enteredStep: false }
+    expect((await service.postJSON('/ping', ping)).status).toBe(400)
+  })
+
+  test('refuses a step without whether the ping entered it, and the reverse', async () => {
+    expect((await service.postJSON('/ping', { ...BUILD, pingDays: '2' })).status).toBe(400)
+    expect((await service.postJSON('/ping', { ...BUILD, enteredStep: true })).status).toBe(400)
   })
 
   test('refuses a ping without the usage stats answer', async () => {

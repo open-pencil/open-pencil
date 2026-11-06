@@ -100,17 +100,26 @@ const buildEntries = {
 export const buildSchema = v.strictObject(buildEntries)
 export type Build = v.InferOutput<typeof buildSchema>
 
+/** The ping's fields, each described for the privacy page. */
+export const pingEntries = {
+  ...buildEntries,
+  usageStats: v.picklist(USAGE_STATS_ANSWERS),
+  pingDays: v.optional(v.picklist(PING_STEPS)),
+  enteredStep: v.optional(v.boolean())
+}
+
 /**
  * The daily anonymous ping: no identifier, only which build is running, how the install answered
  * the usage stats question, which counts the installs that declined, and the step of its days
  * with a ping. Versions before the steps send none.
  */
-export const pingSchema = v.strictObject({
-  ...buildEntries,
-  usageStats: v.picklist(USAGE_STATS_ANSWERS),
-  pingDays: v.optional(v.picklist(PING_STEPS)),
-  enteredStep: v.optional(v.boolean())
-})
+export const pingSchema = v.pipe(
+  v.strictObject(pingEntries),
+  v.check(
+    (ping) => (ping.pingDays === undefined) === (ping.enteredStep === undefined),
+    'A ping sends its step and whether it entered the step together, or neither.'
+  )
+)
 export type Ping = v.InferOutput<typeof pingSchema>
 
 const timestampSchema = v.pipe(v.string(), v.isoTimestamp())

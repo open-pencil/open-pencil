@@ -1,5 +1,5 @@
 import {
-  pingSchema,
+  pingEntries,
   REPORT_FILE_NAMES,
   reportSchema,
   usageEventSchema,
@@ -57,7 +57,7 @@ const EVENT_DESCRIPTIONS: {
   }
 }
 
-type PingField = keyof typeof pingSchema.entries
+type PingField = keyof typeof pingEntries
 
 const BUILD_FIELDS = [
   'version',
@@ -90,7 +90,7 @@ function valuesOf(schema: unknown): readonly string[] {
 }
 
 function describeField(name: PingField): FieldDescription {
-  return { name, description: PING_DESCRIPTIONS[name], values: valuesOf(pingSchema.entries[name]) }
+  return { name, description: PING_DESCRIPTIONS[name], values: valuesOf(pingEntries[name]) }
 }
 
 /** The build fields every ping and every usage batch carries. */

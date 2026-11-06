@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { countInstalls, type StepCount } from '#feedback/admin/installs'
+import { pingStepOf } from '#feedback/contract'
 import { parseDate } from '@internationalized/date'
 
 /** Desktop step counts as `[day, step, entered, count]`. */
@@ -62,6 +63,53 @@ describe('install steps', () => {
       returning: 5,
       replayed: 5
     })
+  })
+
+  test('entries too soon give a step nothing to pass on later', () => {
+    const rows = desktop([
+      // Step 2 entered on the same day as step 1, which no install can do.
+      ['2026-10-14', '1', 1, 5],
+      ['2026-10-14', '2', 1, 5],
+      // A day later the step-1 arrivals could have entered step 2, but nothing did; the next
+      // step still has no valid entries behind it.
+      ['2026-10-16', '3-4', 1, 5]
+    ])
+
+    expect(countInstalls(rows, parseDate('2026-10-16')).map((day) => day.replayed)).toEqual([
+      5, 0, 5
+    ])
+  })
+
+  test('an install pinging every day counts through every step, the last one without end', () => {
+    const first = parseDate('2026-01-01')
+    const days = 104
+    const rows: StepCount[] = Array.from({ length: days }, (_, index) => {
+      const { pingDays, enteredStep } = pingStepOf(index + 1)
+      return {
+        day: first.add({ days: index }).toString(),
+        app: 'desktop',
+        step: pingDays,
+        entered: enteredStep ? 1 : 0,
+        count: 1
+      }
+    })
+    // From its 65th day on, a copy of it replays the last step beside it.
+    for (let index = 64; index < days; index++) {
+      rows.push({
+        day: first.add({ days: index }).toString(),
+        app: 'desktop',
+        step: '65+',
+        entered: 0,
+        count: 1
+      })
+    }
+
+    const counted = countInstalls(rows, first.add({ days: days - 1 }))
+    expect(counted[0]).toEqual({ day: '2026-01-01', new: 1, returning: 0, replayed: 0 })
+    expect(counted.slice(1, 64).every((day) => day.returning === 1 && day.replayed === 0)).toBe(
+      true
+    )
+    expect(counted.slice(64).every((day) => day.returning === 1 && day.replayed === 1)).toBe(true)
   })
 
   test('a step nothing entered counts nothing, however long it runs', () => {

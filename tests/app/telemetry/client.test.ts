@@ -128,6 +128,29 @@ describe('daily ping', () => {
     expect(context.state.value).toMatchObject({ lastPingDay: '2026-10-12', pingDays: 1 })
   })
 
+  test('a check while a ping is pending waits for it instead of sending another', async () => {
+    const sent = createDeferred<boolean>()
+    let pings = 0
+    const context = setup({
+      send: {
+        ping: () => {
+          pings++
+          return sent.promise
+        },
+        ingest: async () => true
+      }
+    })
+
+    const first = context.client.sendDailyPing()
+    const second = context.client.sendDailyPing()
+    sent.resolve(true)
+    await Promise.all([first, second])
+    await context.client.sendDailyPing()
+
+    expect(pings).toBe(1)
+    expect(context.state.value).toMatchObject({ lastPingDay: '2026-10-12', pingDays: 1 })
+  })
+
   test('sends no ping when it is turned off while the build is being read', async () => {
     const build = createDeferred<Build>()
     const context = setup({ build: () => build.promise })

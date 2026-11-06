@@ -36,34 +36,38 @@ const STEP_INDEX = new Map<string, number>(PING_STEPS.map((step, index) => [step
  * through the steps in order, one day with a ping at a time, so three laws bound what the pings
  * of a step can be:
  *
- * - Installs entering a step by day `t` are at most those that entered the step before by day
- *   `t − w`, where `w` is that step's width: an install spends `w` days with a ping there first.
- *   Applied step by step, the bound only ever counts installs the first step saw arrive.
+ * - Installs entering a step by day `t` are at most those that entered it by day `t − 1` plus the
+ *   day's entries, and at most those that entered the step before by day `t − w`, where `w` is
+ *   that step's width: an install spends `w` days with a ping there first. Applied step by step,
+ *   the bound only ever counts installs the first step saw arrive, on days they could arrive.
  * - On any day, a step's pings are at most the installs that ever entered it: one ping a day each.
  * - Over all days, a step's pings are at most its width times the installs that entered it.
  *
  * A copy of a saved state replays the same step on every launch, so it soon exceeds what the step
  * before supplied; what exceeds a bound is `replayed`. Every bound holds for real installs, so the
- * returning count never drops below theirs. New installs have nothing before them to check.
+ * returning count summed up to any day never drops below theirs. A single day can: pings carry no
+ * identity, so copies that spend a step's budget first leave none for the installs they copied.
+ * New installs have nothing before them to check.
  */
 function countApp(rows: StepCount[], days: string[]): InstallDay[] {
   const steps = PING_STEPS.length
   const byDay = groupBy(rows, (row) => row.day)
-  const arrived = PING_STEPS.map(() => 0)
   const allowed: number[][] = []
   const used = PING_STEPS.map(() => 0)
   return days.map((day, index) => {
     const pings = PING_STEPS.map(() => 0)
+    const entered = PING_STEPS.map(() => 0)
     for (const row of byDay[day] ?? []) {
       const step = STEP_INDEX.get(row.step)
       if (step === undefined) continue
       pings[step] += row.count
-      if (row.entered) arrived[step] += row.count
+      if (row.entered) entered[step] += row.count
     }
-    const bound = arrived.map((count, step) => {
-      if (step === 0) return count
+    const bound = entered.map((count, step) => {
+      const entries = (allowed[index - 1]?.[step] ?? 0) + count
+      if (step === 0) return entries
       const before = allowed[index - WIDTHS[step - 1]]?.[step - 1] ?? 0
-      return Math.min(count, before)
+      return Math.min(entries, before)
     })
     allowed.push(bound)
     let returning = 0

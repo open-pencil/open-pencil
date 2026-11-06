@@ -77,9 +77,11 @@ const peak = computed(() => maxBy(fullDays.value, (day) => day.installs))
 // copy of a saved state can't raise it past what earlier steps supplied.
 const stepPings = (day: DailyInstalls) => day.new + day.returning + day.replayed
 const hasSteps = computed(() => snapshot.installs.some((day) => stepPings(day) > 0))
-const steppedDays = computed(() =>
-  snapshot.installs.filter((day) => isFull(day) && stepPings(day) > 0)
-)
+// Every full day from the first with step pings, quiet ones included.
+const steppedDays = computed(() => {
+  const first = snapshot.installs.findIndex((day) => stepPings(day) > 0)
+  return first === -1 ? [] : snapshot.installs.slice(first).filter(isFull)
+})
 const returning = computed(() => {
   const days = steppedDays.value
   if (!days.length) return undefined
