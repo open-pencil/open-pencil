@@ -227,6 +227,7 @@ function bendsAlone(es: NodeEditState, segmentIndex: number) {
   return (
     straight &&
     es.selectedVertexIndices.size === 0 &&
+    es.selectedRegions.size === 0 &&
     es.selectedSegmentIndices.size === 1 &&
     es.selectedSegmentIndices.has(segmentIndex)
   )
@@ -286,6 +287,7 @@ function insertPressedPoint(
   const point = split.network.vertices[split.newVertexIndex]
   es.selectedVertexIndices = new Set([split.newVertexIndex])
   es.selectedSegmentIndices = new Set()
+  es.selectedRegions = new Set()
   d.origPositions = new Map([[split.newVertexIndex, { x: point.x, y: point.y }]])
   return true
 }

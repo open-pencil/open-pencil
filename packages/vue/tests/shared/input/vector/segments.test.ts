@@ -326,6 +326,15 @@ describe('editing a path: dragging a straight segment', () => {
     ])
   })
 
+  test('a segment pressed with a picked region drags with it instead', () => {
+    setup()
+    const es = editor.getNodeEditState()
+    if (es) es.selectedRegions = new Set([0])
+    const drag = press(30, 0, true)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    expect(drag.insert).toBeUndefined()
+  })
+
   test('a click without a drag only selects it', () => {
     setup()
     const drag = press(30, 0)
