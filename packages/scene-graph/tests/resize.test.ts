@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { ConstraintType } from '@open-pencil/scene-graph'
-import { constrainedChildRect, scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
+import { SceneGraph, type ConstraintType } from '@open-pencil/scene-graph'
+import {
+  collectResizeDescendants,
+  computeConstrainedResizeChanges,
+  constrainedChildRect,
+  scaledGeometryChanges
+} from '@open-pencil/scene-graph/resize'
 
 // Live Figma, 2026-10-10: a locked 100×50 rectangle at 50,50 in a 200×200 frame.
 const child = { x: 50, y: 50, width: 100, height: 50 }
@@ -101,8 +106,34 @@ describe('constraints keep fractional boxes', () => {
     ])
   })
 
-  test('Left & right shrunk past zero takes the magnitude', () => {
-    expect(place('STRETCH', 'MIN', { width: 70, height: 100 })).toEqual([0.7, 3.75, 7.4, 16.5])
+  test('Left & right that would leave no size keeps the child as it was', () => {
+    const child = { x: 10, y: 10, width: 20, height: 16 }
+    expect(constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')).toEqual(
+      child
+    )
+    expect(
+      constrainedChildRect(child, frame, { width: 80.4, height: 100 }, 'STRETCH', 'MIN')
+    ).toEqual(child)
+  })
+
+  test('Left & right shrunk past zero turns the child over, its box running back from its edge', () => {
+    const child = { x: 10, y: 10, width: 20, height: 16 }
+    const flipped = constrainedChildRect(child, frame, { width: 70, height: 100 }, 'STRETCH', 'MIN')
+    expect(flipped).toEqual({ x: 0, y: 10, width: 10, height: 16, flipsX: true })
+    // Turned over, it stretches from that box: Figma's 0..10 grows to 0..40.
+    const { flipsX: _, ...box } = flipped
+    expect(constrainedChildRect(box, { width: 70, height: 100 }, frame, 'STRETCH', 'MIN')).toEqual({
+      x: 0,
+      y: 10,
+      width: 40,
+      height: 16
+    })
+    expect(
+      constrainedChildRect(child, frame, { width: 100, height: 79 }, 'MIN', 'STRETCH')
+    ).toEqual({ x: 10, y: 5, width: 20, height: 5, flipsY: true })
+    expect(
+      constrainedChildRect(child, frame, { width: 79, height: 100 }, 'STRETCH', 'MIN')
+    ).toEqual({ x: 9, y: 10, width: 1, height: 16, flipsX: true })
   })
 
   test('a run of resizes back to the start lands where it began', () => {
@@ -117,6 +148,63 @@ describe('constraints keep fractional boxes', () => {
         0.7, 3.75, 22.6, 16.5
       ])
     }
+  })
+})
+
+describe('resizing a frame across zero', () => {
+  function stretched() {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 100, height: 100 })
+    const vector = graph.createNode('VECTOR', frame.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 16,
+      horizontalConstraint: 'STRETCH',
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 20, y: 16 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: []
+      }
+    })
+    const resize = (from: number, to: number, originals = collectResizeDescendants(graph, frame.id)) => {
+      if (!originals) throw new Error('Expected the vector')
+      graph.updateNode(frame.id, { width: to })
+      const changes = computeConstrainedResizeChanges(
+        graph,
+        frame.id,
+        { width: from, height: 100 },
+        { width: to, height: 100 },
+        originals
+      )
+      for (const [id, change] of changes) graph.updateNode(id, change)
+    }
+    const node = () => graph.getNode(vector.id) ?? vector
+    return { graph, frame, resize, node }
+  }
+
+  test('a path keeps its shape when its width would reach zero', () => {
+    const { resize, node } = stretched()
+    resize(100, 80)
+    resize(80, 100)
+    expect(node()).toMatchObject({ x: 10, width: 40, flipX: false })
+    expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 40, y: 16 })
+  })
+
+  test('a drag turns the layer over once, from where it started', () => {
+    const { graph, frame, resize, node } = stretched()
+    const originals = collectResizeDescendants(graph, frame.id)
+    // Each frame of a drag places the layers from the snapshot taken as it began.
+    resize(100, 70, originals)
+    resize(100, 60, originals)
+    expect(node()).toMatchObject({ x: -10, width: 20, flipX: true })
+    resize(100, 120, originals)
+    expect(node()).toMatchObject({ x: 10, width: 40, flipX: false })
   })
 })
 

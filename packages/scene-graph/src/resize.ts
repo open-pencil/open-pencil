@@ -23,6 +23,8 @@ export type ResizeSnapshot = Pick<
   | 'y'
   | 'width'
   | 'height'
+  | 'flipX'
+  | 'flipY'
   | 'vectorNetwork'
   | 'fillGeometry'
   | 'strokeGeometry'
@@ -45,16 +47,19 @@ const CONSTRAINT_CONTAINER_TYPES = new Set([
   'BOOLEAN_OPERATION'
 ])
 
-type AxisPlacement = { position: number; size: number }
+type AxisPlacement = { position: number; size: number; flipped?: boolean }
+
+/** A child's box after its parent resizes, and the axes on which it turned over. */
+export type ConstrainedRect = Rect & { flipsX?: boolean; flipsY?: boolean }
 
 /**
  * Where a constraint places a child on one axis when its parent goes from `parentBefore` to
  * `parentAfter`, as Figma does (live-measured, #1060, #1816): Right and Left & right move or grow
  * it by the change in the parent's size rounded to whole pixels, Center by the change in its
  * rounded half, and Scale by the exact ratio. The child's own box is never rounded, so a resize
- * to the same size changes nothing and a run of resizes lands where one resize does. Left & right
- * shrunk past zero takes the magnitude, as Figma does. `scaleStep` snaps a scaled position to that
- * fraction of a pixel.
+ * to the same size changes nothing. Left & right that would leave no size keeps the axis as it
+ * was; past zero, the child turns over and its box runs back from the edge it was pinned to, as
+ * the layer is mirrored in Figma. `scaleStep` snaps a scaled position to that fraction of a pixel.
  */
 function constrainedAxis(
   position: number,
@@ -69,7 +74,12 @@ function constrainedAxis(
   if (constraint === 'CENTER') {
     return { position: position + Math.round(parentAfter / 2) - Math.round(parentBefore / 2), size }
   }
-  if (constraint === 'STRETCH') return { position, size: Math.abs(size + delta) }
+  if (constraint === 'STRETCH') {
+    const stretched = size + delta
+    if (stretched === 0) return { position, size }
+    if (stretched > 0) return { position, size: stretched }
+    return { position: position + stretched, size: -stretched, flipped: true }
+  }
   if (constraint === 'SCALE' && parentBefore > 0) {
     const scale = parentAfter / parentBefore
     const scaled = position * scale
@@ -131,7 +141,7 @@ type ChildRectPlacer = (
   horizontal: ConstraintType,
   vertical: ConstraintType,
   aspectRatio?: number | null
-) => Rect
+) => ConstrainedRect
 
 /** Places a child by its constraints, snapping a scaled position to `scaleStep` when it is set. */
 function childRectPlacer(scaleStep: number): ChildRectPlacer {
@@ -157,7 +167,10 @@ function childRectPlacer(scaleStep: number): ChildRectPlacer {
       vertical,
       aspectRatio
     )
-    return { x: x.position, y: y.position, width: x.size, height: y.size }
+    const rect: ConstrainedRect = { x: x.position, y: y.position, width: x.size, height: y.size }
+    if (x.flipped) rect.flipsX = true
+    if (y.flipped) rect.flipsY = true
+    return rect
   }
 }
 
@@ -225,6 +238,8 @@ export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     y: node.y,
     width: node.width,
     height: node.height,
+    flipX: node.flipX,
+    flipY: node.flipY,
     vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
     fillGeometry: copyGeometryPaths(node.fillGeometry),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
@@ -360,6 +375,24 @@ export function collectResizeDescendants(
   return snapshots.size > 0 ? snapshots : null
 }
 
+/**
+ * The flips a child takes when its constraints place it from `from`, written only where they
+ * differ from the ones it has now, so a drag that crosses back undoes its own turn.
+ */
+export function flipChanges(
+  from: Pick<SceneNode, 'flipX' | 'flipY'>,
+  current: Pick<SceneNode, 'flipX' | 'flipY'>,
+  flipsX = false,
+  flipsY = false
+): Partial<Pick<SceneNode, 'flipX' | 'flipY'>> {
+  const changes: Partial<Pick<SceneNode, 'flipX' | 'flipY'>> = {}
+  const flipX = from.flipX !== flipsX
+  const flipY = from.flipY !== flipsY
+  if (flipX !== current.flipX) changes.flipX = flipX
+  if (flipY !== current.flipY) changes.flipY = flipY
+  return changes
+}
+
 export function computeConstrainedResizeChanges(
   graph: ResizeGraph,
   rootId: string,
@@ -386,7 +419,7 @@ export function computeConstrainedResizeChanges(
         compute(childId, original, child)
         continue
       }
-      const rect = scalesChildren
+      const rect: ConstrainedRect = scalesChildren
         ? scaledChildRect(original, parentBefore, parentAfter)
         : constrainedChildRect(
             original,
@@ -396,13 +429,15 @@ export function computeConstrainedResizeChanges(
             child.verticalConstraint,
             enforcedAspectRatio(child)
           )
+      const { flipsX, flipsY, ...box } = rect
       const childChanges: Partial<SceneNode> = {
-        ...rect,
-        ...scaledGeometryChanges(original, original.width, original.height, rect.width, rect.height)
+        ...box,
+        ...flipChanges(original, child, flipsX, flipsY),
+        ...scaledGeometryChanges(original, original.width, original.height, box.width, box.height)
       }
       changes.set(childId, childChanges)
       // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
-      compute(childId, original, child.layoutMode === 'NONE' ? rect : child)
+      compute(childId, original, child.layoutMode === 'NONE' ? box : child)
     }
   }
 
