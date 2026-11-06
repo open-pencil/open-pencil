@@ -140,7 +140,7 @@ describe('selective library publication', () => {
       name: 'Library'
     })
     const retainedCard = next.manifest.assets.find((asset) => asset.key === 'card')
-    const retainedRoot = retainedCard ? next.graph.getNode(retainedCard.sourceNodeId) : null
+    const retainedRoot = retainedCard ? next.graph.getNode(retainedCard.sourceId) : null
     const nested = retainedRoot
       ? next.graph.getChildren(retainedRoot.id).find((node) => node.type === 'INSTANCE')
       : null

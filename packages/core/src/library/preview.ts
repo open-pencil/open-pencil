@@ -98,7 +98,7 @@ export function createLibraryUpdatePreview(
   const assetKey = libraryAssetKeyForComponent(consumer, currentComponent.id)
   if (!assetKey) throw new Error('Linked library asset not found')
   const descriptor = latest.manifest.assets.find((asset) => asset.key === assetKey)
-  const root = descriptor ? latest.graph.getNode(descriptor.sourceNodeId) : undefined
+  const root = descriptor ? latest.graph.getNode(descriptor.sourceId) : undefined
   const target = root ? assetComponent(latest.graph, root, currentComponent) : undefined
   if (!target) throw new Error('Updated library component not found')
   const updatedComponent = target.component

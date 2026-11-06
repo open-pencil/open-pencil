@@ -79,8 +79,22 @@ export function layerDependencies(
     }
   }
   for (const node of layers) visit(node)
+  const resolved = variableDependencies(graph, pending)
+  for (const id of resolved.collections) collections.add(id)
+  return { variables: resolved.variables, collections, styles: [...styles.values()], images }
+}
 
+/**
+ * These variables and every variable they alias, at any depth, with their collections and the
+ * collections a kept expression names a mode of.
+ */
+export function variableDependencies(
+  graph: SceneGraph,
+  ids: Iterable<string>
+): Pick<LayerDependencies, 'variables' | 'collections'> {
+  const pending = [...ids]
   const variables = new Set<string>()
+  const collections = new Set<string>()
   let modeCollections: Map<string, string> | undefined
   const collectionOfMode = (modeId: string): string | undefined => {
     modeCollections ??= new Map(
@@ -106,5 +120,5 @@ export function layerDependencies(
       }
     }
   }
-  return { variables, collections, styles: [...styles.values()], images }
+  return { variables, collections }
 }

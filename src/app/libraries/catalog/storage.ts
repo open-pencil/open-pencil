@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import {
+  COMPONENT_LIBRARY_SCHEMA_VERSION,
   createLibraryRevision,
   deserializeLibraryRevision,
   encodeStoredLibraryRevision,
@@ -117,7 +118,10 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     await this.#objects.putObject(
       manifestKey,
       textEncoder.encode(
-        JSON.stringify({ schemaVersion: 1, summary } satisfies StoredLibraryLatestManifest)
+        JSON.stringify({
+          schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,
+          summary
+        } satisfies StoredLibraryLatestManifest)
       ),
       'application/json',
       latest ? (latestValue.etag ? { ifMatch: latestValue.etag } : undefined) : { ifNoneMatch: '*' }

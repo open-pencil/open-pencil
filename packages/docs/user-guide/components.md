@@ -61,17 +61,19 @@ Behaviours are saved in `.fig` files and published with library components.
 
 ## Component Libraries
 
-A component library publishes reusable components as an immutable revision. Each published asset has stable library, asset, and revision identity, so different instances can remain on different revisions until you explicitly update them.
+A component library publishes reusable components, shared styles, and variable collections as an immutable revision. Each published asset has stable library, asset, and revision identity, so different instances can remain on different revisions until you explicitly update them.
 
 ### Publish a Library
 
-1. Create the components and component sets you want to share.
+1. Create the components, component sets, styles, and variables you want to share.
 2. Open **Assets**, then select **Manage libraries**.
 3. Select **Publish library**.
 4. Enter a stable library ID and display name. The library ID is locked after the first publication.
 5. Optionally search the change list and enter a revision description.
 6. Select the added, modified, renamed, or removed assets to include.
 7. Confirm the destination and select **Publish library**.
+
+A library publishes every style and variable collection the document defines, and each component carries the styles and variables it uses, including the variables those alias. A changed variable value is a change to its collection, not to the components that use it. Each published component and set includes a thumbnail.
 
 On later publications, unchecked changes remain pending. Unchanged assets keep their previous published definitions, and removed definitions remain available while documents still reference their historical revision.
 

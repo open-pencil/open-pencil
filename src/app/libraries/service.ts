@@ -1,10 +1,14 @@
 import { markRaw, shallowRef } from 'vue'
 
 import { reapplyInstanceComponentProperties } from '@open-pencil/core'
+import { renderNodesToImage, scaleToFit } from '@open-pencil/core/io/formats/raster'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
+  isLibraryComponentAsset,
+  LIBRARY_THUMBNAIL_SIZE,
   libraryUpdateImpact,
+  publishableLibraryAssets,
   libraryIdentityForComponent,
   planOutdatedLibraryInstances,
   planLibraryInstanceUpdates,
@@ -21,7 +25,8 @@ import {
   type LibraryUpdateImpact,
   type LibraryUpdateSummary,
   type PublishLibraryInput,
-  type LibraryAssetChange
+  type LibraryAssetChange,
+  type LibraryThumbnailRenderer
 } from '@open-pencil/core/library'
 import type {
   ComponentCatalog,
@@ -42,6 +47,18 @@ import {
 import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
 
 export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
+
+/** Draws published components with the editor's canvas renderer, once it has one. */
+function libraryThumbnailRenderer(editor: EditorStore): LibraryThumbnailRenderer | undefined {
+  const { renderer } = editor
+  if (!renderer) return undefined
+  return async (graph, pageId, nodeId) => {
+    const scale = scaleToFit(graph, [nodeId], LIBRARY_THUMBNAIL_SIZE)
+    return scale
+      ? renderNodesToImage(renderer.ck, renderer, graph, pageId, [nodeId], { scale, format: 'PNG' })
+      : null
+  }
+}
 
 export class LibraryService implements ComponentCatalog {
   readonly #catalog: LibraryCatalog
@@ -117,6 +134,7 @@ export class LibraryService implements ComponentCatalog {
       if (input.enabledOnly && !binding?.enabled) continue
       assets.push(
         ...revision.manifest.assets
+          .filter(isLibraryComponentAsset)
           .filter((asset) => !normalizedName || asset.name.toLowerCase().includes(normalizedName))
           .map((asset) => ({
             libraryId: summary.libraryId,
@@ -172,7 +190,7 @@ export class LibraryService implements ComponentCatalog {
       if (!binding.enabled) continue
       const revision = await this.#getRevision(binding.libraryId, binding.revisionId)
       assets.push(
-        ...revision.manifest.assets.map((asset) => ({
+        ...revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
           libraryId: binding.libraryId,
           libraryName: revision.manifest.name,
           revisionId: binding.revisionId,
@@ -517,11 +535,12 @@ export class LibraryService implements ComponentCatalog {
         libraryId: revision.manifest.libraryId,
         name: revision.manifest.name,
         graph: revision.graph,
-        assetNodeIds: revision.manifest.assets.map((asset) => asset.sourceNodeId),
+        assetIds: revision.manifest.assets.map((asset) => asset.sourceId),
         keepLayerIdentities: true,
         previousRevisionId: revision.manifest.previousRevisionId,
         description: revision.manifest.description,
-        publishedAt: revision.manifest.publishedAt
+        publishedAt: revision.manifest.publishedAt,
+        renderThumbnail: libraryThumbnailRenderer(editor)
       })
     } else {
       revision = await this.publish({
@@ -529,13 +548,10 @@ export class LibraryService implements ComponentCatalog {
         name: input.name,
         graph: editor.graph,
         description: input.description,
-        assetNodeIds: [...editor.graph.getAllNodes()]
-          .filter(
-            (node) =>
-              input.selectedAssetKeys.has(node.id) ||
-              input.selectedAssetKeys.has(node.componentKey ?? '')
-          )
-          .map((node) => node.id)
+        assetIds: publishableLibraryAssets(editor.graph)
+          .filter((asset) => input.selectedAssetKeys.has(asset.key))
+          .map((asset) => asset.sourceId),
+        renderThumbnail: libraryThumbnailRenderer(editor)
       })
     }
     writeSourceLibraryPublication(editor.graph, {
@@ -553,7 +569,7 @@ export class LibraryService implements ComponentCatalog {
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
-    ensureLibraryAssetKeys(input.graph, input.assetNodeIds)
+    ensureLibraryAssetKeys(input.graph, input.assetIds)
     const revision = await this.#catalog.publishRevision(input)
     this.#revisionCache.set(
       this.#revisionCacheKey(input.libraryId, revision.manifest.revisionId),

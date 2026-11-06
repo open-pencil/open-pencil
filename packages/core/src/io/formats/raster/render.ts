@@ -83,6 +83,14 @@ export function exportBounds(
   return bounds
 }
 
+/** The scale at which these layers' export bounds fit a square of `size` pixels. */
+export function scaleToFit(graph: SceneGraph, nodeIds: string[], size: number): number | null {
+  const bounds = exportBounds(graph, nodeIds)
+  if (!bounds) return null
+  const longest = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
+  return longest > 0 ? size / longest : null
+}
+
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
   const pixels = canvas.readPixels(0, 0, {
     alphaType: ck.AlphaType.Unpremul,

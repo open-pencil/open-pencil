@@ -1,8 +1,14 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  layerDependencies,
+  remapCopiedReferences,
+  variableDependencies
+} from '@open-pencil/scene-graph/transfer'
 
 import { diffLibraryManifests } from './diff'
 import { copyLibraryTree, libraryDependencyRoots } from './materialize'
 import { createLibraryRevision } from './revision'
+import { copyVariableTables } from './snapshot'
 import type {
   ComponentLibraryRevision,
   LibraryAssetChange,
@@ -12,7 +18,7 @@ import type {
 
 export interface SelectiveLibraryRevisionInput extends Omit<
   PublishLibraryInput,
-  'graph' | 'assetNodeIds' | 'libraryId' | 'previousRevisionId'
+  'graph' | 'assetIds' | 'libraryId' | 'previousRevisionId'
 > {
   previous: ComponentLibraryRevision
   sourceGraph: SceneGraph
@@ -33,30 +39,57 @@ export async function discoverPublishableLibraryChanges(
   return { current, changes: diffLibraryManifests(previous.manifest, current.manifest) }
 }
 
+interface CopiedAssets {
+  /** The copies of the node assets: components, sets, and styles. */
+  nodeIds: string[]
+  /** The variables and collections the assets need, by their revision IDs. */
+  variables: Set<string>
+  collections: Set<string>
+}
+
+/**
+ * Copies `assets` of `source` into `target`, with the components and styles they use, and the
+ * images those paint with. Variables are only gathered: which revision each collection comes from
+ * is decided once every asset is in.
+ */
 function copyAssets(
   target: SceneGraph,
   source: ComponentLibraryRevision,
   assets: LibraryAssetDescriptor[],
-  pageId: string,
-  mappedIds = new Map<string, string>()
-): string[] {
+  pageId: string
+): CopiedAssets {
+  const nodeAssets = assets.filter((asset) => asset.type !== 'VARIABLE_COLLECTION')
+  const mappedIds = new Map<string, string>()
   const roots = new Map(
-    assets.flatMap((asset) =>
+    nodeAssets.flatMap((asset) =>
       libraryDependencyRoots(source, asset).map((root) => [root.id, root] as const)
     )
   )
   for (const root of roots.values())
     copyLibraryTree(source.graph, target, root.id, pageId, mappedIds)
-  for (const [sourceId, targetId] of mappedIds) {
-    const sourceNode = source.graph.getNode(sourceId)
-    const componentId = sourceNode?.componentId ? mappedIds.get(sourceNode.componentId) : null
-    if (componentId) target.updateNode(targetId, { componentId })
+  const dependencies = layerDependencies(
+    source.graph,
+    [...mappedIds.keys()].flatMap((id) => source.graph.getNode(id) ?? [])
+  )
+  for (const style of dependencies.styles)
+    copyLibraryTree(source.graph, target, style.id, pageId, mappedIds)
+  remapCopiedReferences(target, mappedIds)
+  for (const hash of dependencies.images) {
+    const bytes = source.graph.images.get(hash)
+    if (bytes) target.images.set(hash, new Uint8Array(bytes))
   }
-  for (const [hash, bytes] of source.graph.images) target.images.set(hash, new Uint8Array(bytes))
-  return assets.flatMap((asset) => {
-    const id = mappedIds.get(asset.sourceNodeId)
-    return id ? [id] : []
-  })
+  const collections = assets.flatMap((asset) =>
+    asset.type === 'VARIABLE_COLLECTION' ? [asset.sourceId] : []
+  )
+  const published = variableDependencies(
+    source.graph,
+    collections.flatMap((id) => source.graph.variableCollections.get(id)?.variableIds ?? [])
+  )
+  return {
+    nodeIds: nodeAssets.flatMap((asset) => mappedIds.get(asset.sourceId) ?? []),
+    variables: new Set([...dependencies.variables, ...published.variables]),
+    collections: new Set([...dependencies.collections, ...published.collections, ...collections])
+  }
 }
 
 export async function createSelectiveLibraryRevision(
@@ -79,20 +112,34 @@ export async function createSelectiveLibraryRevision(
   )
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  const currentNodeIds = copyAssets(graph, current, currentAssets, page.id)
-  const currentKeys = new Set(currentAssets.map((asset) => asset.key))
-  const retainedWithoutCurrentDependencies = retainedAssets.filter(
-    (asset) => !currentKeys.has(asset.key)
+  const selected = copyAssets(graph, current, currentAssets, page.id)
+  const retained = copyAssets(graph, input.previous, retainedAssets, page.id)
+  // A collection whose change is not published stays as the previous revision has it.
+  const retainedCollections = new Set(
+    retainedAssets.flatMap((asset) =>
+      asset.type === 'VARIABLE_COLLECTION' ? [asset.sourceId] : []
+    )
   )
-  const assetNodeIds = [
-    ...currentNodeIds,
-    ...copyAssets(graph, input.previous, retainedWithoutCurrentDependencies, page.id)
-  ]
+  copyVariableTables(
+    graph,
+    new Set([...selected.variables, ...retained.variables]),
+    new Set([...selected.collections, ...retained.collections]),
+    (id) =>
+      retainedCollections.has(id)
+        ? [input.previous.graph, current.graph]
+        : [current.graph, input.previous.graph]
+  )
   return createLibraryRevision({
     libraryId: input.previous.manifest.libraryId,
     name: input.name,
     graph,
-    assetNodeIds,
+    assetIds: [
+      ...selected.nodeIds,
+      ...retained.nodeIds,
+      ...[...currentAssets, ...retainedAssets].flatMap((asset) =>
+        asset.type === 'VARIABLE_COLLECTION' ? [asset.sourceId] : []
+      )
+    ],
     keepLayerIdentities: true,
     previousRevisionId: input.previous.manifest.revisionId,
     description: input.description,

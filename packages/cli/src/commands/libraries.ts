@@ -2,7 +2,8 @@ import { extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { ensureLibraryAssetKeys } from '@open-pencil/core/library'
+import { headlessRenderNodes, scaleToFit } from '@open-pencil/core/io/formats/raster'
+import { ensureLibraryAssetKeys, LIBRARY_THUMBNAIL_SIZE } from '@open-pencil/core/library'
 
 import { bold, dim, fmtList, ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, writeFigDocument } from '#cli/headless'
@@ -72,7 +73,11 @@ const publish = defineCommand({
       name: args.name,
       graph,
       description: args.description,
-      previousRevisionId: args.previous || null
+      previousRevisionId: args.previous || null,
+      renderThumbnail: async (revisionGraph, pageId, nodeId) => {
+        const scale = scaleToFit(revisionGraph, [nodeId], LIBRARY_THUMBNAIL_SIZE)
+        return scale ? headlessRenderNodes(revisionGraph, pageId, [nodeId], { scale }) : null
+      }
     })
     // Only once published: a failed publication leaves the source as it was.
     if (args.write && assigned.length > 0) await writeFigDocument(graph, file)

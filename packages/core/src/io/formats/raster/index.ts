@@ -6,6 +6,7 @@ export {
   rasterSize,
   renderNodesToImage,
   renderThumbnail,
+  scaleToFit,
   thumbnailFrame,
   type RasterExportFormat,
   type ThumbnailFit,

@@ -55,7 +55,7 @@ function revisionRoot(revision: ComponentLibraryRevision, root: SceneNode): Scen
   const descriptor = revision.manifest.assets.find(
     (asset) => asset.key === source.identity.assetKey
   )
-  const id = descriptor?.sourceNodeId ?? source.sourceNodeId
+  const id = descriptor?.sourceId ?? source.sourceNodeId
   return id ? revision.graph.getNode(id) : undefined
 }
 

@@ -15,7 +15,11 @@ import {
 import type { GUID } from '@open-pencil/kiwi/fig'
 import { initCodec, type NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { derivedAssetKey, derivedAssetVersion } from '@open-pencil/scene-graph/asset-keys'
+import {
+  collectionAssetKey,
+  derivedAssetVersion,
+  variableAssetKey
+} from '@open-pencil/scene-graph/asset-keys'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import { randomInt } from '@open-pencil/scene-graph/random'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
@@ -80,7 +84,7 @@ function clipboardGraph(graph: SceneGraph): SceneGraph {
         ? collection
         : {
             ...collection,
-            key: derivedAssetKey(`collection:${id}`),
+            key: collectionAssetKey(collection),
             version: derivedAssetVersion(JSON.stringify(collection))
           }
     ])
@@ -92,7 +96,7 @@ function clipboardGraph(graph: SceneGraph): SceneGraph {
         ? variable
         : {
             ...variable,
-            key: derivedAssetKey(`variable:${id}`),
+            key: variableAssetKey(variable),
             version: derivedAssetVersion(JSON.stringify(variable))
           }
     ])

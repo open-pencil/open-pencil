@@ -14,5 +14,6 @@ export {
   layerDependencies,
   layerImageHashes,
   layerVariableIds,
+  variableDependencies,
   type LayerDependencies
 } from './dependencies'
