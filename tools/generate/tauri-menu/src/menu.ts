@@ -16,7 +16,7 @@ function isNativeVisible(entry: { target?: string }): boolean {
 function entryAccelerator(entry: AppMenuActionItem): string | undefined {
   const shortcut =
     entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
-  return entry.accelerator ?? shortcutTokenToAccelerator(shortcut)
+  return shortcutTokenToAccelerator(shortcut)
 }
 
 function cleanEntry(entry: AppMenuEntry): unknown | null {

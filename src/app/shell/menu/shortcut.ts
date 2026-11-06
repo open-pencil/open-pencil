@@ -1,4 +1,10 @@
-import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue/editor/commands'
+import {
+  editorCommandMetadata,
+  formatShortcut,
+  parseShortcut,
+  shortcutKeyName,
+  type ShortcutModifier
+} from '@open-pencil/vue/editor/commands'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
@@ -29,42 +35,21 @@ export function appMenuShortcut(id: string): string | undefined {
   return undefined
 }
 
-function normalizeShortcutToken(shortcut: string): string {
-  return shortcut === '⌫'
-    ? 'Backspace'
-    : shortcut.replaceAll('↩', 'Enter').replaceAll('⇞', 'PageUp').replaceAll('⇟', 'PageDown')
+const ACCELERATOR_MODIFIERS: Record<ShortcutModifier, string> = {
+  MOD: 'CmdOrCtrl',
+  CTRL: 'Ctrl',
+  ALT: 'Alt',
+  SHIFT: 'Shift',
+  META: 'Super'
 }
 
-/** A letter becomes its key code, which the keyboard registry matches by layout (`shortcutCode`). */
-export function shortcutTokenToTinykeys(shortcut: string | undefined): string | undefined {
-  return shortcut
-    ? normalizeShortcutToken(shortcut)
-        .replaceAll('MOD', '$mod')
-        .replaceAll('CTRL', 'Control')
-        .replaceAll('SHIFT', 'Shift')
-        .replaceAll('ALT', 'Alt')
-        .replace(/(^|\+)([A-Z])$/, '$1Key$2')
-    : undefined
-}
-
+/** A shortcut token as a native menu accelerator: `MOD+SHIFT+S` is `CmdOrCtrl+Shift+S`. */
 export function shortcutTokenToAccelerator(shortcut: string | undefined): string | undefined {
-  return shortcut
-    ? normalizeShortcutToken(shortcut)
-        .replaceAll('MOD', 'CmdOrCtrl')
-        .replaceAll('CTRL', 'Ctrl')
-        .replaceAll('SHIFT', 'Shift')
-        .replaceAll('ALT', 'Alt')
-    : undefined
+  if (!shortcut) return undefined
+  const { modifiers, key } = parseShortcut(shortcut)
+  return [...modifiers.map((part) => ACCELERATOR_MODIFIERS[part]), shortcutKeyName(key)].join('+')
 }
 
 export function appMenuShortcutLabel(id: string): string | undefined {
   return formatShortcut(appMenuShortcut(id))
-}
-
-export function appMenuTinykeysShortcut(id: string): string | undefined {
-  return shortcutTokenToTinykeys(appMenuShortcut(id))
-}
-
-export function appMenuAccelerator(id: string): string | undefined {
-  return shortcutTokenToAccelerator(appMenuShortcut(id))
 }

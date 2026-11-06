@@ -47,8 +47,8 @@ export interface AppMenuActionItem {
   type?: 'item'
   id: string
   label: string
+  /** The item's shortcut token (`formatShortcut`): its label, key, and native accelerator. */
   shortcut?: string
-  accelerator?: string
   command?: EditorCommandId
   checkbox?: boolean
   target?: AppMenuTarget

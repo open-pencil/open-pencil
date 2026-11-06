@@ -1,7 +1,8 @@
 import { createKeybindingsHandler, type KeyBindingMap } from 'tinykeys'
 
 import {
-  editorCommandMetadata,
+  editorCommandShortcuts,
+  shortcutKeys,
   useEditorCommands,
   type EditorCommandId
 } from '#vue/editor/commands'
@@ -21,8 +22,8 @@ export function useDocumentShortcuts(): (event: KeyboardEvent) => void {
   const { runCommand } = useEditorCommands()
   const bindings: KeyBindingMap = {}
   for (const command of DOCUMENT_COMMANDS) {
-    for (const keys of [editorCommandMetadata(command).keybinding ?? []].flat()) {
-      bindings[keys] = (event) => {
+    for (const token of editorCommandShortcuts(command)) {
+      bindings[shortcutKeys(token)] = (event) => {
         if (isEditing(event)) return
         event.preventDefault()
         runCommand(command)

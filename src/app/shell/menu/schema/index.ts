@@ -17,8 +17,7 @@ export type {
 const SETTINGS_MENU_ITEM = {
   id: 'settings',
   label: 'Settings…',
-  shortcut: 'MOD+,',
-  accelerator: 'CmdOrCtrl+,'
+  shortcut: 'MOD+,'
 } satisfies AppMenuActionItem
 
 export const APP_MENU_SCHEMA = [
@@ -101,8 +100,8 @@ export const APP_MENU_SCHEMA = [
       { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
       { id: 'close', feature: 'document', label: 'Close Tab', shortcut: 'MOD+W' },
       // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
-      { id: 'previous-tab', label: 'Select Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
-      { id: 'next-tab', label: 'Select Next Tab', accelerator: 'Ctrl+Tab' },
+      { id: 'previous-tab', label: 'Select Previous Tab', shortcut: 'CTRL+SHIFT+Tab' },
+      { id: 'next-tab', label: 'Select Next Tab', shortcut: 'CTRL+Tab' },
       // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
       { type: 'separator' },
       { ...SETTINGS_MENU_ITEM, handler: 'shell' }
@@ -317,7 +316,7 @@ export const APP_MENU_SCHEMA = [
       {
         id: 'dev-tools',
         label: 'Developer Tools',
-        accelerator: 'CmdOrCtrl+Alt+I',
+        shortcut: 'MOD+ALT+I',
         target: 'native'
       }
     ]
@@ -579,7 +578,7 @@ export const APP_MENU_SCHEMA = [
  * Custom entries in the macOS application menu.
  *
  * Placement stays in Rust because the OS-predefined items (About, Services, Hide)
- * sit between them. Only the labels and accelerators are shared here.
+ * sit between them. Only the labels and shortcuts are shared here.
  */
 export const APP_MENU_APP_ITEMS = [
   { id: 'about', label: 'About OpenPencil' },

@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { formatShortcut, shortcutPlatform } from '#vue/editor/commands/shortcut'
+import { EDITOR_COMMAND_METADATA, editorCommandShortcuts } from '#vue/editor/commands/registry'
+import type { EditorCommandId } from '#vue/editor/commands/types'
+import {
+  formatShortcut,
+  parseShortcut,
+  shortcutKeys,
+  shortcutPlatform
+} from '#vue/editor/commands/shortcut'
 
 describe('formatShortcut', () => {
   test('formats shortcuts for macOS', () => {
@@ -23,3 +30,51 @@ describe('formatShortcut', () => {
     expect(shortcutPlatform('Mozilla/5.0 (X11; Linux x86_64)')).toBe('linux')
   })
 })
+
+describe('shortcutKeys', () => {
+  test('binds letters by layout letter and punctuation by key position', () => {
+    expect(shortcutKeys('MOD+SHIFT+S')).toBe('$mod+Shift+KeyS')
+    expect(shortcutKeys('CTRL+ALT+T')).toBe('Control+Alt+KeyT')
+    expect(shortcutKeys("SHIFT+'")).toBe('Shift+Quote')
+    expect(shortcutKeys('MOD+\\')).toBe('$mod+Backslash')
+    expect(shortcutKeys('MOD+=')).toBe('$mod+Equal')
+    expect(shortcutKeys('-')).toBe('Minus')
+  })
+
+  test('binds key names and glyphs by name', () => {
+    expect(shortcutKeys('ALT+Delete')).toBe('Alt+Delete')
+    expect(shortcutKeys('⌫')).toBe('Backspace')
+    expect(shortcutKeys('MOD+ALT+↩')).toBe('$mod+Alt+Enter')
+    expect(shortcutKeys('SHIFT+⇥')).toBe('Shift+Tab')
+    expect(shortcutKeys('⇟')).toBe('PageDown')
+  })
+
+  test('binds a digit by its character or its key position', () => {
+    expect(shortcutKeys('5')).toBe('(5|Digit5)')
+    expect(shortcutKeys('SHIFT+1')).toBe('Shift+(1|Digit1)')
+  })
+
+  test('rejects tokens that are not modifiers and one key', () => {
+    expect(() => parseShortcut('HYPER+K')).toThrow()
+    expect(() => parseShortcut('MOD+')).toThrow()
+    expect(() => parseShortcut('SHIFT')).toThrow()
+  })
+})
+
+describe('editor command shortcuts', () => {
+  test('a command answers to its shortcut, then its aliases', () => {
+    expect(editorCommandShortcuts('edit.redo')).toEqual(['MOD+SHIFT+Z', 'MOD+Y'])
+    expect(editorCommandShortcuts('selection.wrapInSection')).toEqual([])
+  })
+
+  test('every bindable command shortcut is a valid token', () => {
+    // The opacity digits' shortcut only describes a range of keys for menus.
+    const ids = Object.keys(EDITOR_COMMAND_METADATA).filter(
+      (id): id is EditorCommandId => id !== 'selection.setOpacity'
+    )
+    for (const id of ids) {
+      for (const token of editorCommandShortcuts(id)) expect(() => shortcutKeys(token)).not.toThrow()
+    }
+  })
+})
+

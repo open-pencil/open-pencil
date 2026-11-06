@@ -1,98 +1,89 @@
 import type { EditorCommandId } from './types'
 
 export interface EditorCommandMetadata {
+  /** The command's shortcut token (`formatShortcut`), shown in menus and bound to the key. */
   shortcut?: string
-  keybinding?: string | string[]
+  /** More tokens that run the command, never shown. */
+  aliases?: string[]
   contextTestId?: string
 }
 
 export const EDITOR_COMMAND_METADATA = {
-  'edit.undo': { shortcut: 'MOD+Z', keybinding: '$mod+KeyZ' },
-  'edit.redo': { shortcut: 'MOD+SHIFT+Z', keybinding: ['$mod+Shift+KeyZ', '$mod+KeyY'] },
-  'selection.selectAll': { shortcut: 'MOD+A', keybinding: '$mod+KeyA' },
-  'selection.selectInverse': { shortcut: 'MOD+SHIFT+A', keybinding: '$mod+Shift+KeyA' },
+  'edit.undo': { shortcut: 'MOD+Z' },
+  'edit.redo': { shortcut: 'MOD+SHIFT+Z', aliases: ['MOD+Y'] },
+  'selection.selectAll': { shortcut: 'MOD+A' },
+  'selection.selectInverse': { shortcut: 'MOD+SHIFT+A' },
   // Enter also opens a vector's path or a text layer, so the app binds it with that.
   'selection.selectChildren': { shortcut: '↵' },
   'selection.selectParent': {
     shortcut: 'SHIFT+↵',
-    keybinding: ['Shift+Enter', 'Backslash']
+    aliases: ['\\']
   },
-  'selection.selectNextSibling': { shortcut: '⇥', keybinding: 'Tab' },
-  'selection.selectPreviousSibling': { shortcut: 'SHIFT+⇥', keybinding: 'Shift+Tab' },
+  'selection.selectNextSibling': { shortcut: '⇥' },
+  'selection.selectPreviousSibling': { shortcut: 'SHIFT+⇥' },
   'selection.duplicate': {
     shortcut: 'MOD+D',
-    keybinding: '$mod+KeyD',
     contextTestId: 'context-duplicate'
   },
   'selection.delete': { shortcut: '⌫', contextTestId: 'context-delete' },
-  'selection.group': { shortcut: 'MOD+G', keybinding: '$mod+KeyG', contextTestId: 'context-group' },
+  'selection.group': { shortcut: 'MOD+G', contextTestId: 'context-group' },
   'selection.frameSelection': {
     shortcut: 'MOD+ALT+G',
-    keybinding: '$mod+Alt+KeyG',
     contextTestId: 'context-frame-selection'
   },
   'selection.wrapInSection': {},
-  'selection.ungroup': { shortcut: 'MOD+SHIFT+G', keybinding: '$mod+Shift+KeyG' },
+  'selection.ungroup': { shortcut: 'MOD+SHIFT+G' },
   'selection.createComponent': {
     shortcut: 'MOD+ALT+K',
-    keybinding: '$mod+Alt+KeyK',
     contextTestId: 'context-create-component'
   },
-  'selection.createComponentSet': { shortcut: 'MOD+SHIFT+K', keybinding: '$mod+Shift+KeyK' },
-  'selection.detachInstance': { shortcut: 'MOD+ALT+B', keybinding: '$mod+Alt+KeyB' },
+  'selection.createComponentSet': { shortcut: 'MOD+SHIFT+K' },
+  'selection.detachInstance': { shortcut: 'MOD+ALT+B' },
   'selection.detachIcon': {},
   'selection.goToMainComponent': {},
   'selection.createInstance': {},
   'selection.createSlot': { contextTestId: 'context-create-slot' },
-  'selection.wrapInAutoLayout': { shortcut: 'SHIFT+A', keybinding: 'Shift+KeyA' },
+  'selection.wrapInAutoLayout': { shortcut: 'SHIFT+A' },
   'selection.toggleMask': {
     shortcut: 'MOD+ALT+M',
-    keybinding: ['Control+Meta+KeyM', '$mod+Alt+KeyM'],
+    aliases: ['CTRL+META+M'],
     contextTestId: 'context-toggle-mask'
   },
   'selection.bringForward': {
     shortcut: 'MOD+]',
-    keybinding: '$mod+BracketRight',
     contextTestId: 'context-bring-forward'
   },
   'selection.bringToFront': {
     shortcut: ']',
-    keybinding: 'BracketRight',
     contextTestId: 'context-bring-to-front'
   },
   'selection.sendBackward': {
     shortcut: 'MOD+[',
-    keybinding: '$mod+BracketLeft',
     contextTestId: 'context-send-backward'
   },
   'selection.sendToBack': {
     shortcut: '[',
-    keybinding: 'BracketLeft',
     contextTestId: 'context-send-to-back'
   },
   'selection.toggleVisibility': {
     shortcut: 'MOD+SHIFT+H',
-    keybinding: '$mod+Shift+KeyH',
     contextTestId: 'context-toggle-visibility'
   },
   'selection.toggleLock': {
     shortcut: 'MOD+SHIFT+L',
-    keybinding: '$mod+Shift+KeyL',
     contextTestId: 'context-toggle-lock'
   },
   'selection.flipHorizontal': {
     shortcut: 'SHIFT+H',
-    keybinding: 'Shift+KeyH',
     contextTestId: 'context-flip-horizontal'
   },
   'selection.flipVertical': {
     shortcut: 'SHIFT+V',
-    keybinding: 'Shift+KeyV',
     contextTestId: 'context-flip-vertical'
   },
-  'selection.distributeHorizontal': { shortcut: 'CTRL+ALT+H', keybinding: 'Control+Alt+KeyH' },
-  'selection.distributeVertical': { shortcut: 'CTRL+ALT+V', keybinding: 'Control+Alt+KeyV' },
-  'selection.tidyUp': { shortcut: 'CTRL+ALT+T', keybinding: 'Control+Alt+KeyT' },
+  'selection.distributeHorizontal': { shortcut: 'CTRL+ALT+H' },
+  'selection.distributeVertical': { shortcut: 'CTRL+ALT+V' },
+  'selection.tidyUp': { shortcut: 'CTRL+ALT+T' },
   'selection.packHorizontal': {},
   'selection.packVertical': {},
   'selection.arrangeSpread': {},
@@ -106,42 +97,43 @@ export const EDITOR_COMMAND_METADATA = {
   'selection.arrangeNetwork': {},
   'selection.booleanUnion': {
     shortcut: 'ALT+SHIFT+U',
-    keybinding: 'Alt+Shift+KeyU',
     contextTestId: 'context-boolean-union'
   },
   'selection.booleanSubtract': {
     shortcut: 'ALT+SHIFT+S',
-    keybinding: 'Alt+Shift+KeyS',
     contextTestId: 'context-boolean-subtract'
   },
   'selection.booleanIntersect': {
     shortcut: 'ALT+SHIFT+I',
-    keybinding: 'Alt+Shift+KeyI',
     contextTestId: 'context-boolean-intersect'
   },
   'selection.booleanExclude': {
     shortcut: 'ALT+SHIFT+E',
-    keybinding: 'Alt+Shift+KeyE',
     contextTestId: 'context-boolean-exclude'
   },
   'selection.flatten': {
     shortcut: 'ALT+SHIFT+F',
-    keybinding: 'Alt+Shift+KeyF',
     contextTestId: 'context-flatten'
   },
   'selection.outlineText': { contextTestId: 'context-outline-text' },
   'selection.outlineStroke': { contextTestId: 'context-outline-stroke' },
   'selection.moveToPage': {},
   'selection.setOpacity': { shortcut: '1-9, 0' },
-  'view.zoom100': { shortcut: 'MOD+0', keybinding: ['$mod+Digit0', 'Shift+Digit0'] },
-  'view.zoomFit': { shortcut: 'SHIFT+1', keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
-  'view.zoomSelection': { shortcut: 'SHIFT+2', keybinding: ['$mod+Digit2', 'Shift+Digit2'] },
-  'view.zoomNextFrame': { shortcut: 'N', keybinding: 'KeyN' },
-  'view.zoomPreviousFrame': { shortcut: 'SHIFT+N', keybinding: 'Shift+KeyN' },
-  'view.nextPage': { shortcut: '⇟', keybinding: 'PageDown' },
-  'view.previousPage': { shortcut: '⇞', keybinding: 'PageUp' }
+  'view.zoom100': { shortcut: 'MOD+0', aliases: ['SHIFT+0'] },
+  'view.zoomFit': { shortcut: 'SHIFT+1', aliases: ['MOD+1'] },
+  'view.zoomSelection': { shortcut: 'SHIFT+2', aliases: ['MOD+2'] },
+  'view.zoomNextFrame': { shortcut: 'N' },
+  'view.zoomPreviousFrame': { shortcut: 'SHIFT+N' },
+  'view.nextPage': { shortcut: '⇟' },
+  'view.previousPage': { shortcut: '⇞' }
 } satisfies Record<EditorCommandId, EditorCommandMetadata>
 
 export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {
   return EDITOR_COMMAND_METADATA[id]
+}
+
+/** Every token a command's key answers to: its shortcut, then its aliases. */
+export function editorCommandShortcuts(id: EditorCommandId): string[] {
+  const { shortcut, aliases = [] } = editorCommandMetadata(id)
+  return shortcut ? [shortcut, ...aliases] : aliases
 }

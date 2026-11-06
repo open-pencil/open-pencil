@@ -240,6 +240,6 @@ describe('tool registry', () => {
     const keys = Object.entries(TOOL_SHORTCUTS)
       .filter(([, tool]) => tool === 'EYEDROPPER')
       .map(([key]) => key)
-    expect(keys).toEqual(['KeyI'])
+    expect(keys).toEqual(['I'])
   })
 })

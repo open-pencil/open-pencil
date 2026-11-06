@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { hasMixedLatinAndCjk, placeholders, visibleTranslationText } from '../src/quality'
+import {
+  hasMixedLatinAndCjk,
+  hasShortcutText,
+  placeholders,
+  visibleTranslationText
+} from '../src/quality'
 
 describe('translation quality checks', () => {
   test('extracts and removes interpolation placeholders', () => {
@@ -21,5 +26,14 @@ describe('translation quality checks', () => {
     expect(hasMixedLatinAndCjk('画像 OpenPencil を表示')).toBe(true)
     expect(hasMixedLatinAndCjk('APIキーを更新')).toBe(true)
     expect(hasMixedLatinAndCjk('画像を表示')).toBe(false)
+  })
+
+  test('finds shortcuts spelled out in a message', () => {
+    expect(hasShortcutText('Agent lenken … Alt+Enter wartet')).toBe(true)
+    expect(hasShortcutText('Speichern mit Strg + S')).toBe(true)
+    expect(hasShortcutText('Press ⌘K to search')).toBe(true)
+    expect(hasShortcutText('Steer the agent… {shortcut} waits until it is done')).toBe(false)
+    expect(hasShortcutText('Enter a valid HTTP or HTTPS URL')).toBe(false)
+    expect(hasShortcutText('Shift the layer by 10')).toBe(false)
   })
 })

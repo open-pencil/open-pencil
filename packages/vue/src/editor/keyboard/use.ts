@@ -2,7 +2,7 @@ import { useActiveElement, useEventListener } from '@vueuse/core'
 import { createKeybindingsHandler } from 'tinykeys'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
-import { useEditorCommands } from '#vue/editor/commands'
+import { shortcutKeys, useEditorCommands } from '#vue/editor/commands'
 import { useEditor } from '#vue/editor/context'
 import { useOpenOverlays } from '#vue/lifecycle/overlays'
 
@@ -34,7 +34,7 @@ export interface EditorKeyboardOptions {
 }
 
 /**
- * Binds the editor's keyboard as OpenPencil binds it: the commands' keybindings, the profile's
+ * Binds the editor's keyboard as OpenPencil binds it: the commands' shortcuts, the profile's
  * tool keys, a held Space for the hand, arrow nudges, Delete, Enter, Escape, opacity digits, and
  * zoom, with the host's own `shortcuts` beside them; a host shortcut on a key the editor uses
  * replaces the editor's. Keys wait while a text field, an open dialog or menu, or text being
@@ -79,9 +79,14 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
   useEventListener(window, 'keydown', (event) => handle(shortcutEvent(event)), { capture: true })
 }
 
-/** One shortcut per key: a later one replaces an earlier one, as a host's replaces the editor's. */
+/**
+ * One shortcut per tinykeys binding: a later one replaces an earlier one, as a host's replaces
+ * the editor's.
+ */
 function byKey(shortcuts: readonly EditorShortcut[]): Map<string, EditorShortcut> {
   return new Map(
-    shortcuts.flatMap((shortcut) => [shortcut.keys].flat().map((key) => [key, shortcut]))
+    shortcuts.flatMap((shortcut) =>
+      [shortcut.keys].flat().map((token) => [shortcutKeys(token), shortcut])
+    )
   )
 }

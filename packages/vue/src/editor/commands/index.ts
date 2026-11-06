@@ -1,6 +1,12 @@
 export { useEditorCommands } from './use'
-export { EDITOR_COMMAND_METADATA, editorCommandMetadata } from './registry'
-export { formatShortcut, shortcutPlatform } from './shortcut'
+export { EDITOR_COMMAND_METADATA, editorCommandMetadata, editorCommandShortcuts } from './registry'
+export {
+  formatShortcut,
+  parseShortcut,
+  shortcutKeyName,
+  shortcutKeys,
+  shortcutPlatform
+} from './shortcut'
 export type { EditorCommandMetadata } from './registry'
-export type { ShortcutPlatform } from './shortcut'
+export type { ParsedShortcut, ShortcutModifier, ShortcutPlatform } from './shortcut'
 export type { EditorCommand, EditorCommandId } from './use'

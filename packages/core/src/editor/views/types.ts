@@ -60,7 +60,7 @@ export interface EditorProfile {
   tools: ReadonlySet<Tool> | null
   /** How much of a path vector edit mode may change: anything, or only its handles. */
   pathEdits: PathEdits
-  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  /** Which tool each key picks, by shortcut token (`R`, `SHIFT+S`). */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas

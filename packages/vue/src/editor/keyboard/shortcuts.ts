@@ -8,14 +8,14 @@ import {
 } from '@open-pencil/core'
 
 import {
-  editorCommandMetadata,
+  editorCommandShortcuts,
   type EditorCommandId,
   type useEditorCommands
 } from '#vue/editor/commands'
 
 import type { createEditorKeyActions } from './actions'
 
-/** A key binding: the tinykeys keys it answers to and what it runs. */
+/** A key binding: the shortcut tokens it answers to (`formatShortcut`) and what it runs. */
 export interface EditorShortcut {
   id: string
   keys: string | string[]
@@ -32,7 +32,7 @@ export interface EditorShortcut {
 
 const UNDO_REDO = new Set<EditorCommandId>(['edit.undo', 'edit.redo'])
 
-/** The editor commands a key runs directly, by their registered keybinding. */
+/** The editor commands a key runs directly, by their registered shortcuts. */
 const KEY_COMMANDS: readonly EditorCommandId[] = [
   'edit.undo',
   'edit.redo',
@@ -108,14 +108,16 @@ export function editorShortcuts(
     editor.applyZoom(delta, width / 2, height / 2)
   }
   const command = (id: EditorCommandId): EditorShortcut[] => {
-    const keys = editorCommandMetadata(id).keybinding
-    return keys ? [{ id, keys, run: () => runCommand(id), history: UNDO_REDO.has(id) }] : []
+    const keys = editorCommandShortcuts(id)
+    return keys.length > 0
+      ? [{ id, keys, run: () => runCommand(id), history: UNDO_REDO.has(id) }]
+      : []
   }
   const sibling = (
     id: 'selection.selectNextSibling' | 'selection.selectPreviousSibling'
   ): EditorShortcut => ({
     id,
-    keys: editorCommandMetadata(id).keybinding ?? [],
+    keys: editorCommandShortcuts(id),
     run: (event) => {
       if (isCanvasFocus(event)) runCommand(id)
     },
@@ -128,27 +130,39 @@ export function editorShortcuts(
     ...KEY_COMMANDS.flatMap(command),
     {
       id: 'zoom-in',
-      keys: ['$mod+Equal', '$mod+Shift+Equal'],
+      keys: ['MOD+=', 'MOD+SHIFT+='],
       run: zoomAtViewportCenter(-100),
       global: true
     },
-    { id: 'zoom-out', keys: '$mod+Minus', run: zoomAtViewportCenter(100), global: true },
-    { id: 'zoom-in-unmodified', keys: 'Shift+Equal', run: zoomAtViewportCenter(-100) },
-    { id: 'zoom-out-unmodified', keys: 'Minus', run: zoomAtViewportCenter(100) },
-    { id: 'toggle-auto-layout', keys: 'Shift+KeyA', run: () => actions.toggleAutoLayout() },
+    { id: 'zoom-out', keys: 'MOD+-', run: zoomAtViewportCenter(100), global: true },
+    { id: 'zoom-in-unmodified', keys: 'SHIFT+=', run: zoomAtViewportCenter(-100) },
+    { id: 'zoom-out-unmodified', keys: '-', run: zoomAtViewportCenter(100) },
+    {
+      id: 'toggle-auto-layout',
+      keys: editorCommandShortcuts('selection.wrapInAutoLayout'),
+      run: () => actions.toggleAutoLayout()
+    },
     // Figma's key, matched by key position since Shift turns ' into ".
     {
       id: 'toggle-pixel-grid',
-      keys: 'Shift+Quote',
+      keys: "SHIFT+'",
       run: () => {
         editor.state.showPixelGrid = editor.state.showPixelGrid === false
         editor.requestRepaint()
       }
     },
-    { id: 'delete-backspace', keys: 'Backspace', run: () => actions.smartDelete(false) },
+    {
+      id: 'delete-backspace',
+      keys: editorCommandShortcuts('selection.delete'),
+      run: () => actions.smartDelete(false)
+    },
     { id: 'delete', keys: 'Delete', run: () => actions.smartDelete(false) },
-    { id: 'delete-alt', keys: 'Alt+Delete', run: () => actions.smartDelete(true) },
-    { id: 'enter', keys: 'Enter', run: () => actions.confirmOrEditSelection() },
+    { id: 'delete-alt', keys: 'ALT+Delete', run: () => actions.smartDelete(true) },
+    {
+      id: 'enter',
+      keys: editorCommandShortcuts('selection.selectChildren'),
+      run: () => actions.confirmOrEditSelection()
+    },
     { id: 'escape', keys: 'Escape', run: () => actions.escapeOrDeselect(), view: true },
     sibling('selection.selectNextSibling'),
     sibling('selection.selectPreviousSibling'),

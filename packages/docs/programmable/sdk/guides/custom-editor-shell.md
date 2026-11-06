@@ -100,13 +100,13 @@ The fixed viewport dimensions above keep the example short. In a resizable shell
 
 ## Keyboard
 
-`useEditorKeyboard()` binds the editor's keys as OpenPencil does: each command's keybinding, the tool keys the profile offers, a held Space for the hand, arrow nudges, Delete, Enter and Escape for selections and paths, opacity digits, and zoom. Keys wait while a text field, an open dialog or menu, or text being edited has them, and undo and redo stop the browser's own. Call it in a component under `provideEditor`, and add the shell's own keys beside the editor's:
+`useEditorKeyboard()` binds the editor's keys as OpenPencil does: each command's shortcut, the tool keys the profile offers, a held Space for the hand, arrow nudges, Delete, Enter and Escape for selections and paths, opacity digits, and zoom. Keys wait while a text field, an open dialog or menu, or text being edited has them, and undo and redo stop the browser's own. Call it in a component under `provideEditor`, and add the shell's own keys beside the editor's. Keys are shortcut tokens such as `MOD+S` or `CTRL+SHIFT+Tab`, the same ones `formatShortcut` prints for menus and tooltips, so a key and its label come from one string:
 
 ```ts
 import { useEditorKeyboard } from '@open-pencil/vue/editor/keyboard'
 
 useEditorKeyboard({
-  shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => save() }],
+  shortcuts: [{ id: 'save', keys: 'MOD+S', run: () => save() }],
   // Runs once nothing in progress took Escape, before the selection clears; true if handled.
   onEscape: () => closeOpenPanel()
 })

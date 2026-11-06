@@ -3,6 +3,10 @@ import { useEditorKeyboard, type EditorShortcut } from '@open-pencil/vue/editor/
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
 import {
+  COPY_PROPERTIES_SHORTCUT,
+  PASTE_PROPERTIES_SHORTCUT
+} from '@/app/editor/canvas/menu/registry'
+import {
   copySelectionProperties,
   pasteClipboardProperties
 } from '@/app/editor/clipboard/properties'
@@ -10,52 +14,56 @@ import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import type { KeyboardShortcutOptions } from '@/app/shell/keyboard/types'
-import { appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
+import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { showsDocument } from '@/app/tabs'
 
 /** The app's keys beside the editor's: files, tabs, panels, and app-wide toggles. */
 function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
   const { store, actions } = options
-  const menuKeys = (id: string, fallback: string) => appMenuTinykeysShortcut(id) ?? fallback
+  const menuKeys = (id: string) => {
+    const shortcut = appMenuShortcut(id)
+    if (!shortcut) throw new Error(`Menu item '${id}' has no shortcut`)
+    return shortcut
+  }
   return [
     {
       id: 'copy-properties',
-      keys: '$mod+Alt+KeyC',
+      keys: COPY_PROPERTIES_SHORTCUT,
       run: () => void copySelectionProperties(store)
     },
     {
       id: 'paste-properties',
-      keys: '$mod+Alt+KeyV',
+      keys: PASTE_PROPERTIES_SHORTCUT,
       run: () => void pasteClipboardProperties(store)
     },
     {
       id: 'export-selection-png',
-      keys: menuKeys('export-selection', '$mod+Shift+KeyE'),
+      keys: menuKeys('export-selection'),
       run: () => actions.exportSelectionPNG()
     },
     {
       id: 'save-as',
-      keys: menuKeys('save-as', '$mod+Shift+KeyS'),
+      keys: menuKeys('save-as'),
       run: () => {
         if (showsDocument()) void store.saveFigFileAs()
       }
     },
     {
       id: 'save-version',
-      keys: menuKeys('save-version', '$mod+Alt+KeyS'),
+      keys: menuKeys('save-version'),
       run: () => {
         if (isCloudBinding(store.getStorageBinding())) openVersionDialog(store)
       }
     },
     {
       id: 'toggle-preview',
-      keys: menuKeys('toggle-preview', '$mod+Alt+Enter'),
+      keys: menuKeys('toggle-preview'),
       run: () => actions.togglePlay(),
       view: true
     },
     {
       id: 'toggle-rulers',
-      keys: 'Shift+KeyR',
+      keys: menuKeys('view-rulers'),
       run: () => {
         store.state.showRulers = !store.state.showRulers
         store.requestRepaint()
@@ -63,7 +71,7 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
     },
     {
       id: 'toggle-multiplayer-cursors',
-      keys: '$mod+Alt+Backslash',
+      keys: menuKeys('view-multiplayer-cursors'),
       run: () => {
         store.state.showRemoteCursors = !store.state.showRemoteCursors
         store.requestRepaint()
@@ -71,59 +79,58 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
     },
     {
       id: 'toggle-pixel-grid-snap',
-      keys: '$mod+Shift+Quote',
+      keys: menuKeys('snap-pixel-grid'),
       run: () => setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
     },
-    { id: 'toggle-ui', keys: menuKeys('toggle-ui', '$mod+Backslash'), run: actions.toggleUI },
-    // Matched by key position, since Shift turns \ into | on most layouts.
+    { id: 'toggle-ui', keys: menuKeys('toggle-ui'), run: actions.toggleUI },
     {
       id: 'split-right',
-      keys: '$mod+Shift+Backslash',
+      keys: menuKeys('view-split-right'),
       run: () => {
         if (store.visiblePaneCount.value < store.panes.maxVisiblePanes)
           store.splitPane(store.activePaneId.value, 'horizontal')
       }
     },
-    { id: 'toggle-ai', keys: '$mod+KeyJ', run: actions.toggleAI },
+    { id: 'toggle-ai', keys: 'MOD+J', run: actions.toggleAI },
     {
       id: 'toggle-comments',
-      keys: menuKeys('view-comments', 'Shift+KeyC'),
+      keys: menuKeys('view-comments'),
       run: () => useComments().toggleOnCanvas()
     },
     {
       id: 'open-settings',
-      keys: menuKeys('settings', '$mod+Comma'),
+      keys: menuKeys('settings'),
       run: () => openSettingsDialog(),
       global: true
     },
-    { id: 'close-tab', keys: menuKeys('close', '$mod+KeyW'), run: options.closeActiveTab },
-    { id: 'new-design', keys: menuKeys('new', '$mod+KeyN'), run: options.createTab },
-    { id: 'new-tab', keys: menuKeys('new-tab', '$mod+KeyT'), run: options.openNewFileTab },
+    { id: 'close-tab', keys: menuKeys('close'), run: options.closeActiveTab },
+    { id: 'new-design', keys: menuKeys('new'), run: options.createTab },
+    { id: 'new-tab', keys: menuKeys('new-tab'), run: options.openNewFileTab },
     {
       id: 'next-tab',
-      keys: 'Control+Tab',
+      keys: menuKeys('next-tab'),
       run: () => options.switchAdjacentTab(1),
       global: true
     },
     {
       id: 'previous-tab',
-      keys: 'Control+Shift+Tab',
+      keys: menuKeys('previous-tab'),
       run: () => options.switchAdjacentTab(-1),
       global: true
     },
     {
       id: 'rename-selection',
-      keys: menuKeys('selection.rename', '$mod+KeyR'),
+      keys: menuKeys('selection.rename'),
       run: () => requestRenameSelection(store)
     },
     {
       id: 'save',
-      keys: menuKeys('save', '$mod+KeyS'),
+      keys: menuKeys('save'),
       run: () => {
         if (showsDocument()) void store.saveFigFile()
       }
     },
-    { id: 'open-file', keys: menuKeys('open', '$mod+KeyO'), run: options.openFileDialog }
+    { id: 'open-file', keys: menuKeys('open'), run: options.openFileDialog }
   ]
 }
 

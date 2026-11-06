@@ -3,10 +3,11 @@ import { tinykeys } from 'tinykeys'
 import { onScopeDispose } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
+import { shortcutKeys } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
-import { appMenuShortcutLabel, appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import WorkspacePill from '@/components/editor/WorkspacePill.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -20,10 +21,10 @@ const store = useEditorStore()
 const { menu } = useI18n()
 const shortcut = appMenuShortcutLabel(PREVIEW_COMMAND) ?? ''
 
-const keys = appMenuTinykeysShortcut(PREVIEW_COMMAND)
-if (keys) {
+const token = appMenuShortcut(PREVIEW_COMMAND)
+if (token) {
   const unsubscribe = tinykeys(window, {
-    [keys]: (event) => {
+    [shortcutKeys(token)]: (event) => {
       if (getActiveEditorStoreOrNull() !== store) return
       event.preventDefault()
       store.togglePlay()

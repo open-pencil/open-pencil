@@ -166,7 +166,7 @@ describe('useEditorKeyboard', () => {
   test("runs the host's keys and its Escape first", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => ran.push('save') }],
+      shortcuts: [{ id: 'save', keys: 'MOD+S', run: () => ran.push('save') }],
       onEscape: () => {
         ran.push('escape')
         return true
