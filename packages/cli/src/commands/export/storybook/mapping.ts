@@ -162,18 +162,17 @@ export async function exportMappedReferences(
       if (!implementation)
         throw new Error(`Implementation for mapping ${mapping.key} was not resolved.`)
       const importPath = posixPath(relative(output, implementation))
-      references.push(
-        ...(await exportComponentReference(graph, {
-          config,
-          mapping,
-          revision,
-          implementationImport:
-            importPath.startsWith('./') || importPath.startsWith('../')
-              ? importPath
-              : `./${importPath}`,
-          renderDesignImage: options.designImages ? createDesignImageRenderer(graph) : undefined
-        }))
-      )
+      for (const reference of await exportComponentReference(graph, {
+        config,
+        mapping,
+        revision,
+        implementationImport:
+          importPath.startsWith('./') || importPath.startsWith('../')
+            ? importPath
+            : `./${importPath}`,
+        renderDesignImage: options.designImages ? createDesignImageRenderer(graph) : undefined
+      }))
+        references.push(reference)
     }
     // Reference-only mode owns a separate namespace; it cannot remove ordinary generated stories.
     const source = `mapping:${JSON.stringify([posixPath(relative(output, configPath)), posixPath(relative(output, canonical))])}`

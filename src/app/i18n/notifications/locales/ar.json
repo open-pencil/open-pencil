@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "تعذّر تهيئة المحادثة: {error}",
   "linkCopied": "تم نسخ الرابط إلى الحافظة.",
+  "implementationStoryReady": "قصة التنفيذ جاهزة.",
+  "implementationStoryUnpinned": "قصة التنفيذ جاهزة. هذا الربط غير مثبّت على مراجعة تصميم.",
+  "openImplementationStory": "فتح القصة",
   "clipboardMissingDesignData": "لا تحتوي الحافظة على بيانات تصميم.",
   "clipboardAccessBlocked": "الوصول إلى الحافظة محظور في سياق هذا المتصفح.",
   "copiedAs": "تم النسخ بصيغة {format}.",
