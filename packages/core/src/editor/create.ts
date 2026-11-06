@@ -53,7 +53,7 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
@@ -82,7 +82,7 @@ import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
-import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
+import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
 
@@ -91,9 +91,12 @@ export function createEditor(options?: EditorOptions) {
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
+  // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
+  const viewportSize = { width: 0, height: 0 }
   const _getViewportSize =
     options?.getViewportSize ??
     (() => {
+      if (viewportSize.width > 0 && viewportSize.height > 0) return { ...viewportSize }
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
@@ -358,8 +361,6 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
-  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
-  const readsOnly = () => !resolveEditorProfile(state).edits
   const vectorEdit = createVectorEditActions(ctx, {
     updateNodeWithUndo: nodes.updateNodeWithUndo,
     select: selection.select,
@@ -370,11 +371,15 @@ export function createEditor(options?: EditorOptions) {
     penCommit: shapes.penCommit,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
+  function endLayerEdits() {
+    nodes.flushNudge()
+    nodes.cancelNodePreviews()
+    if (state.editingTextId) text.commitTextEdit()
+  }
   const readOnly = createReadOnlyActions(ctx, {
+    endLayerEdits,
     endEdits: () => {
-      nodes.flushNudge()
-      nodes.cancelNodePreviews()
-      if (state.editingTextId) text.commitTextEdit()
+      endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
       shapes.penCancel()
       shapes.pencilCancel()
@@ -488,7 +493,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo: guardUndo(undo, readsOnly),
+    undo: guardUndo(undo, readOnly.historyRefusal),
     state,
 
     // Graph reads
@@ -522,6 +527,11 @@ export function createEditor(options?: EditorOptions) {
 
     /** The size of the canvas the editor draws into, in screen pixels. */
     getViewportSize: _getViewportSize,
+    /** Records the canvas's size in screen pixels, which zooming to fit and centring use. */
+    setViewportSize(width: number, height: number) {
+      viewportSize.width = width
+      viewportSize.height = height
+    },
 
     // Canvas and frame guides
     ...guides,
@@ -631,9 +641,9 @@ export function createEditor(options?: EditorOptions) {
     ...lintFixBridge,
 
     // Read-only documents, which refuse every action above that changes them
-    ...readOnly
+    ...readOnly.actions
   }
-  return guardReadOnly(editor, readsOnly)
+  return guardEdits(editor, readOnly.refusal)
 }
 
 /**

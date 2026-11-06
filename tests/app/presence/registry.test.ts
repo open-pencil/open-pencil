@@ -88,10 +88,11 @@ test('follows the page on screen', async () => {
   expect(store.state.presenceCursors).toHaveLength(1)
 })
 
-/** In app tests the viewport falls back to 1920 × 1080. */
+/** The canvas point at the middle of the viewport. */
 function centered(store: ReturnType<typeof createEditorStore>) {
   const { panX, panY, zoom } = store.state
-  return { x: (960 - panX) / zoom, y: (540 - panY) / zoom }
+  const { width, height } = store.getViewportSize()
+  return { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom }
 }
 
 test('following an agent takes the view to its page and keeps its cursor centered', async () => {

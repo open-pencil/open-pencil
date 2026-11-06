@@ -2,6 +2,8 @@ import { useActiveElement, useEventListener } from '@vueuse/core'
 import { createKeybindingsHandler } from 'tinykeys'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
+import { RefusedEditError } from '@open-pencil/core'
+
 import { shortcutKeys, useEditorCommands } from '#vue/editor/commands'
 import { useEditor } from '#vue/editor/context'
 import { useOpenOverlays } from '#vue/lifecycle/overlays'
@@ -70,13 +72,22 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
         key,
         (event: KeyboardEvent) => {
           if (!active() || !mayRun(event, shortcut)) return
-          shortcut.run(event)
+          runRefusable(() => shortcut.run(event))
           if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
         }
       ])
     )
   )
   useEventListener(window, 'keydown', (event) => handle(shortcutEvent(event)), { capture: true })
+}
+
+/** Runs a key's action; one the document refuses, as a read-only one does, does nothing. */
+function runRefusable(run: () => void) {
+  try {
+    run()
+  } catch (error) {
+    if (!(error instanceof RefusedEditError)) throw error
+  }
 }
 
 /**

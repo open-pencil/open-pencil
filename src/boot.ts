@@ -1,7 +1,7 @@
 import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
-import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { RefusedEditError } from '@open-pencil/core'
 import { diagnosticsMessages } from '@open-pencil/vue/i18n'
 import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
 import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
@@ -50,8 +50,8 @@ export async function boot(): Promise<void> {
   }
   // Component errors after boot reach only this handler, not the window; keep them diagnosable.
   app.config.errorHandler = (error, _instance, info) => {
-    // A panel's edit to a read-only document does nothing, as in Figma.
-    if (error instanceof ReadOnlyDocumentError) return
+    // A panel's edit the document refuses, as a read-only one does, does nothing, as in Figma.
+    if (error instanceof RefusedEditError) return
     recordRuntimeError(error, 'vue', info)
     console.error(error)
     // Official builds offer to report it; others keep it in the console and the diagnostics log.
