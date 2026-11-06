@@ -31,7 +31,7 @@ export function createEntitlementService(
         guestPresence,
         collaboration,
         revisionHistory,
-        cloudAI,
+        cloudServices,
         maximumFileBytes,
         maximumStorage,
         maximumParticipants,
@@ -44,7 +44,7 @@ export function createEntitlementService(
         policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.revisionHistory, false, context),
-        policy.boolean(CLOUD_FEATURE_KEYS.cloudAI, false, context),
+        policy.boolean(CLOUD_FEATURE_KEYS.cloudServices, false, context),
         policy.number(CLOUD_FEATURE_KEYS.maximumFileBytes, technicalMaximumFileBytes, context),
         policy.number(CLOUD_FEATURE_KEYS.maximumStorageBytes, Number.MAX_SAFE_INTEGER, context),
         policy.number(
@@ -65,7 +65,7 @@ export function createEntitlementService(
           guestPresence,
           collaboration,
           revisionHistory,
-          cloudAI
+          cloudServices
         },
         limits: {
           maximumFileBytes: Math.min(technicalMaximumFileBytes, maximumFileBytes),

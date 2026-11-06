@@ -1,14 +1,14 @@
 import { computed, shallowRef, watch, type Ref } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
-import type { AIWallet } from '@open-pencil/cloud/contract'
+import type { CloudServicesClient } from '@open-pencil/cloud/client'
+import type { CreditWallet } from '@open-pencil/cloud/contract'
 
 import { cloudAIClient, cloudAIIdentity } from '@/app/cloud/integration'
 
 /** The Home server's AI service as the balance reads it. */
 export interface CloudBalanceSource {
   identity: Readonly<Ref<string | null>>
-  client: (workspaceId: string) => Pick<CloudAIClient, 'wallet'> | null
+  client: (workspaceId: string) => Pick<CloudServicesClient, 'wallet'> | null
 }
 
 const HOME_CLOUD: CloudBalanceSource = { identity: cloudAIIdentity, client: cloudAIClient }
@@ -28,7 +28,7 @@ export function useCloudCreditBalance(
   { workspaceId, replying }: CloudBalanceOptions,
   source: CloudBalanceSource = HOME_CLOUD
 ) {
-  const wallet = shallowRef<AIWallet | null>(null)
+  const wallet = shallowRef<CreditWallet | null>(null)
   let request = 0
 
   async function refresh(): Promise<void> {

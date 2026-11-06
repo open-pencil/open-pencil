@@ -1,8 +1,8 @@
 import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
-  loadAISigningKey,
+  loadServicesSigningKey,
   parseCloudDeploymentTOML,
-  type AISigningKey,
+  type ServicesSigningKey,
   type CloudEnvironment,
   type CloudErrorReporter,
   type CloudServerConfig
@@ -27,7 +27,7 @@ export type CloudflareCloudEnvironment = CloudflareCloudBindings & Record<string
 
 export type PreparedCloudflareCloud = {
   config: CloudServerConfig
-  aiSigningKey: AISigningKey | undefined
+  servicesSigningKey: ServicesSigningKey | undefined
   /** Set when the deployment configures error tracking. */
   reportError: CloudErrorReporter | undefined
 }
@@ -43,7 +43,7 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
 }
 
 /**
- * Reads the deployment TOML once per isolate: its config and AI signing key stay the same for the
+ * Reads the deployment TOML once per isolate: its config and services signing key stay the same for the
  * Worker's lifetime. A failure is not kept, so the next request tries again.
  */
 export function cloudflareCloudSetup(source: string) {
@@ -56,7 +56,7 @@ export function cloudflareCloudSetup(source: string) {
       reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
       reportError = createPostHogErrorReporter(config, 'cloudflare')
-      return { config, aiSigningKey: await loadAISigningKey(config), reportError }
+      return { config, servicesSigningKey: await loadServicesSigningKey(config), reportError }
     })().catch((error: unknown) => {
       prepared = null
       throw error

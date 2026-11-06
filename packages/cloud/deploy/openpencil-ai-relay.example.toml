@@ -1,6 +1,6 @@
 # The OpenPencil AI relay: a minimal AI service for a self-hosted Cloud. It accepts tokens your Cloud
 # signs, forwards chat completions to one OpenAI-compatible upstream with one key, and holds each
-# workspace to the monthly credit allowance its Cloud entitlements grant. Point Cloud's `[ai]`
+# workspace to the monthly credit allowance its Cloud entitlements grant. Point Cloud's `[services]`
 # endpoint at it. Run it with `OPENPENCIL_AI_RELAY_CONFIG=<this file>`.
 schema_version = 1
 

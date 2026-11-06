@@ -91,11 +91,12 @@ retention_days = 30
 [email]
 transport = "none"
 
-# Add this table to offer an AI service to editors. Cloud never proxies models: it advertises the
+# Add this table to offer OpenPencil services (AI models and other paid capabilities) to editors.
+# Cloud never proxies them: it advertises the
 # endpoint and signs short-lived ES256 tokens the service verifies against /.well-known/jwks.json.
-# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_AI_SIGNING_KEY. Workspaces also need the
-# [entitlements.ai] enabled entitlement.
-# [ai]
+# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY. Workspaces also need the
+# [entitlements.services] enabled entitlement.
+# [services]
 # endpoint = "https://ai.example.com"
 # token_lifetime_minutes = 10
 
@@ -148,8 +149,8 @@ guest_presence = true
 enabled = true
 maximum_participants = 100
 
-# The AI service [ai] advertises. The allowance is credits per month, passed to the service in
+# The services [services] advertises. The allowance is credits per month, passed to the service in
 # every token; leave it out for no allowance.
-[entitlements.ai]
+[entitlements.services]
 enabled = false
 # monthly_credit_allowance = 10000

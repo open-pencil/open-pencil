@@ -334,19 +334,20 @@ Storage quota uses reservations: the upload locks the workspace's quota row, cou
 plus active reservations, reserves the requested bytes, and commits the verified size when the
 upload finishes. Cleanup releases reservations from abandoned uploads.
 
-## AI service and billing
+## Services and billing
 
-Cloud does not proxy models or keep credit balances. An `[ai]` table advertises a separate AI
-service in discovery, and `POST /api/ai/token` signs a short-lived ES256 token for a workspace
-member when the workspace has the `ai.enabled` entitlement. The token names the user, the
-workspace, and its `ai.monthly_credit_allowance`; the service verifies it against the keys at
-`/.well-known/jwks.json`, so it never reads Cloud's database. The contract editors and services
-share, including the service's catalog, wallet, and error codes, is `src/contract/ai.ts`; it has its
-own version so a service can change without a Cloud release. A `[billing]` table only advertises
-where people manage their plan.
+Cloud does not proxy models or other paid capabilities, and keeps no credit balances. A
+`[services]` table advertises a separate service in discovery, and `POST /api/services/token` signs
+a short-lived ES256 token for a workspace member when the workspace has the `services.enabled`
+entitlement. The token names the user, the workspace, and its `services.monthly_credit_allowance`;
+the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
+database. The contract editors and services share, including the service's catalog, wallet, and
+error codes, is `src/contract/services.ts`; it has its own version so a service can change without
+a Cloud release. AI models are the first capability; image generation and search join the same
+contract and the same credits. A `[billing]` table only advertises where people manage their plan.
 
-A service answers below its endpoint at the paths in `CLOUD_AI_API_PATHS`: model requests follow
-the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
+A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
+follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
 catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
 `src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
 forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
