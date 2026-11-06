@@ -85,10 +85,12 @@ const effectSchema = v.looseObject({
 })
 
 const sizeSchema = numSchema
+// A tuple takes a longer array and drops the rest, and a union keeps its first match: four values
+// go first, or the two-value tuple reads [top, right] and loses the bottom and left.
 const paddingSchema = v.union([
   numSchema,
-  v.tuple([numSchema, numSchema]),
-  v.tuple([numSchema, numSchema, numSchema, numSchema])
+  v.tuple([numSchema, numSchema, numSchema, numSchema]),
+  v.tuple([numSchema, numSchema])
 ])
 const cornerRadiusSchema = v.union([numSchema, v.array(numSchema)])
 

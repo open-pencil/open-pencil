@@ -28,7 +28,11 @@ const client: IconifyClient = {
     const found = names
       .filter((name) => name.includes(needle))
       .map((name) => `${lucide.prefix}:${name}`)
-    return { icons: found.slice(0, options?.limit ?? 64), total: found.length }
+    return {
+      icons: found.slice(0, options?.limit ?? 64),
+      total: found.length,
+      collections: { [lucide.prefix]: { name: 'Lucide', total: names.length, category: 'General' } }
+    }
   },
   async collections() {
     return [

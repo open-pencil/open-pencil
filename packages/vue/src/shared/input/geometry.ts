@@ -1,5 +1,9 @@
-import type { Editor } from '@open-pencil/core'
-import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
+import {
+  HANDLE_HIT_RADIUS,
+  LAYER_HIT_PAD,
+  ROTATION_HANDLE_DISTANCE
+} from '@open-pencil/core/constants'
 import {
   createSceneGeometry,
   isLineLike,
@@ -14,7 +18,7 @@ import {
   type TransformZone
 } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
 import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
@@ -48,35 +52,31 @@ export function canvasToLocalPoint(
   return { lx: point?.x ?? cx, ly: point?.y ?? cy }
 }
 
-export function hitTestInEditorScope(
+/**
+ * The layer a press selects, or with `deep` (⌘ or Ctrl held) the deepest layer under the point.
+ * Always found from the page: the selection and the entered container open their ancestors, so
+ * an entered container never limits where a click lands, as in Figma.
+ */
+export function hitTestLayerAt(
   cx: number,
   cy: number,
   deep: boolean,
   editor: Editor
 ): SceneNode | null {
-  const scopeId = editor.state.enteredContainerId
-
   const renderer = editor.renderer
   if (!renderer) return null
   const pad = LAYER_HIT_PAD / renderer.zoom
-  if (scopeId && !editor.graph.getNode(scopeId)) editor.state.enteredContainerId = null
-  const scope = editor.state.enteredContainerId ?? editor.state.currentPageId
+  const scope = editor.state.currentPageId
+  if (editor.state.enteredContainerId && !editor.graph.getNode(editor.state.enteredContainerId)) {
+    editor.state.enteredContainerId = null
+  }
   return deep
     ? editor.graph.hitTestDeep(cx, cy, scope, pad)
-    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, pad)
-}
-
-export function isInsideEditorContainerBounds(
-  cx: number,
-  cy: number,
-  containerId: string,
-  editor: Editor,
-  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
-): boolean {
-  const container = editor.graph.getNode(containerId)
-  if (!container) return false
-  const { lx, ly } = canvasToLocal(cx, cy, containerId)
-  return lx >= 0 && lx <= container.width && ly >= 0 && ly <= container.height
+    : editor.graph.hitTestSelectable(cx, cy, scope, editor.state.selectedIds, {
+        pad,
+        framesOpen: resolveEditorProfile(editor.state).framesOpen,
+        enteredId: editor.state.enteredContainerId
+      })
 }
 
 export function getScreenRect(
@@ -140,29 +140,36 @@ export function unrotate(
   }
 }
 
+const HANDLE_CURSOR_DIRECTIONS: Record<HandlePosition, [number, number]> = {
+  nw: [1, 1],
+  ne: [-1, 1],
+  se: [-1, -1],
+  sw: [1, -1],
+
+  n: [0, 1],
+  e: [1, 0],
+  s: [0, -1],
+  w: [-1, 0]
+}
+
+function cursorAngle(direction: Vector): number {
+  const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI
+  return (angle + 360) % 360
+}
+
 function getCursorAngleFromHandle(
   handle: HandlePosition,
   node: SceneNode,
   geometry: SceneGeometry
 ): number {
-  const map: Record<HandlePosition, [number, number]> = {
-    nw: [1, 1],
-    ne: [-1, 1],
-    se: [-1, -1],
-    sw: [1, -1],
+  const [bx, by] = HANDLE_CURSOR_DIRECTIONS[handle]
+  return cursorAngle(geometry.direction(node, { x: bx, y: by }))
+}
 
-    n: [0, 1],
-    e: [1, 0],
-    s: [0, -1],
-    w: [-1, 0]
-  }
-
-  const [bx, by] = map[handle]
-
-  const direction = geometry.direction(node, { x: bx, y: by })
-  const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI
-
-  return (angle + 360) % 360
+/** The resize cursor's angle for a handle of an axis-aligned box, such as a multi-selection's. */
+export function axisAlignedCursorAngle(handle: HandlePosition): number {
+  const [bx, by] = HANDLE_CURSOR_DIRECTIONS[handle]
+  return cursorAngle({ x: bx, y: by })
 }
 
 /** The resize or rotation zone of a selected layer under a canvas point, in its own frame. */
@@ -271,4 +278,26 @@ export function buildResizeCursor(angleDeg: number): string {
     )
     .replace('</svg>', '</g></svg>')
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+}
+
+/**
+ * Whether a canvas point takes the rotation of a multi-selection's box: its top handle, drawn
+ * `ROTATION_HANDLE_DISTANCE` screen pixels beyond the top edge, or the zone just outside a corner.
+ */
+export function hitTestBoxRotation(cx: number, cy: number, box: Rect, zoom: number): boolean {
+  if (!hasTransformHandles(box.width * zoom, box.height * zoom)) return false
+  const dx = cx - (box.x + box.width / 2)
+  const dy = cy - (box.y - ROTATION_HANDLE_DISTANCE / zoom)
+  const radius = HANDLE_HIT_RADIUS / zoom
+  if (dx * dx + dy * dy <= radius * radius) return true
+  return transformZoneAt({ x: cx, y: cy }, box, zoom)?.kind === 'rotate'
+}
+
+/** The rotation cursor outside a corner of a multi-selection's box, or null elsewhere. */
+export function boxRotationCursor(cx: number, cy: number, box: Rect, zoom: number): string | null {
+  const zone = transformZoneAt({ x: cx, y: cy }, box, zoom)
+  if (zone?.kind !== 'rotate') return null
+  const x = zone.corner === 'nw' || zone.corner === 'sw' ? -1 : 1
+  const y = zone.corner === 'nw' || zone.corner === 'ne' ? -1 : 1
+  return buildRotationCursor((Math.atan2(y, x) * 180) / Math.PI + 135)
 }

@@ -1,0 +1,1 @@
+- Saving from MCP or the CLI to a path that is not a `.fig` file, or a `.jam` file for a board, now fails before writing and names the `.fig` or `.jam` path to save to instead. Before, it wrote a Figma archive that could not be opened again.

@@ -77,7 +77,7 @@ function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNo
   }
 }
 
-interface ExpressionAstNode {
+export interface ExpressionAstNode {
   type?: string
   callee?: ExpressionAstNode
   name?: string
@@ -170,5 +170,6 @@ export {
   vueComponentSource,
   vueSfcDescriptor,
   vueTemplateAst,
+  walkExpressionAst,
   walkVueTemplateAst
 }

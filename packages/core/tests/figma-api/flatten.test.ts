@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 
 import { SkiaRenderer } from '#core/canvas'
@@ -50,6 +49,29 @@ describe('FigmaAPI renderer-backed flatten', () => {
     expect(raw?.height).toBe(50)
     expect(raw?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
     expect(api.getNodeById(first.id)).toBeNull()
+    surface.delete()
+  })
+
+  // The Plugin API takes layers from several parents; they stack in the order it is given them.
+  test('stacks layers from several parents in the order given', async () => {
+    const api = createAPI()
+    const { renderer, surface } = await createRenderer()
+    api.setRenderer(renderer)
+    const solid = (r: number, b: number) => ({ type: 'SOLID' as const, color: { r, g: 0, b } })
+    const frame = api.createFrame()
+    const inFrame = api.createRectangle()
+    frame.appendChild(inFrame)
+    inFrame.fills = [solid(1, 0)]
+    const onPage = api.createRectangle()
+    onPage.x = 200
+    onPage.fills = [solid(0, 1)]
+
+    const vector = api.flatten([inFrame, onPage], api.currentPage)
+    const regions = api.graph.getNode(vector.id)?.vectorNetwork?.regions
+    expect(regions?.map((region) => region.fills?.[0]?.color)).toEqual([
+      { r: 1, g: 0, b: 0, a: 1 },
+      { r: 0, g: 0, b: 1, a: 1 }
+    ])
     surface.delete()
   })
 })

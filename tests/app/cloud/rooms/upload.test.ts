@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
 
 import { CloudAPIError } from '@open-pencil/cloud/client'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { onceOnServer, shareRoomUploads, uploadStoredDocument } from '@/app/cloud/rooms/upload'
 import type { CollabAction, CollabActionReceiver } from '@/app/collab/transport/types'
@@ -11,9 +12,6 @@ import { createMemoryLocalCanvasStore, type LocalCanvasStore } from '@/app/stora
 import { resetLocalCanvasStoreForTests } from '@/app/storage/local-store/store'
 import { createMemoryOutbox, resetOutboxForTests } from '@/app/storage/sync'
 import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 /**
  * A room of tabs whose channel delivers to everyone else, or to one tab when named; `overheard`
  * delivers everything to everyone, as if a peer could read what was meant for another.

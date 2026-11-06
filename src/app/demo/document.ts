@@ -1,4 +1,5 @@
-import { yieldToUI } from '@/app/document/io/browser'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
+
 import type { EditorStore } from '@/app/editor/session'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import { createTab } from '@/app/tabs'
@@ -31,7 +32,7 @@ export async function openDemoDocument(store: EditorStore): Promise<void> {
   if (store.graph === blank) return
   followAppTheme(store, resolvedAppTheme)
   // Opening fits the whole page on the next frame; the first chapter comes after it.
-  await yieldToUI()
+  await nextFrame()
   if (store.graph.getNode(store.state.currentPageId)) showFirstChapter(store)
 }
 

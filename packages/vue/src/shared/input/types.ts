@@ -9,6 +9,7 @@ import type {
   TextPathData,
   VectorNetwork
 } from '@open-pencil/scene-graph'
+import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -127,8 +128,6 @@ export interface DragMove {
   keepParents?: boolean
   /** Control is held: auto layout frames take the layers as absolute-positioned children. */
   ignoreAutoLayout?: boolean
-  /** Selected instead if the press ends as a click without dragging. */
-  selectOnClick?: string
   /** Where Control drops layers among an auto layout frame's children. */
   absoluteInsertIndex?: number
 }
@@ -168,6 +167,29 @@ export interface DragResize {
   origSizing?: LayerSizing
   /** The sizing the latest step left, which the commit keeps. */
   appliedSizing?: LayerSizing
+  /** The layer's transform before the drag, taken on its first step: its handles work in it. */
+  origPlacement?: SelectionPlacement
+}
+
+/**
+ * A resize of a multi-selection from its bounds' handles, as Figma scales every selected layer:
+ * one layer resize per member, each re-placed in the resized bounds and committed as one step.
+ */
+export interface DragResizeSelection {
+  type: 'resize-selection'
+  handle: HandlePosition
+  /** The parent whose layers the box snaps to: the first selected layer's, as a move takes. */
+  parentId: string
+  startX: number
+  startY: number
+  /** The selection's box on the canvas when the drag started. */
+  origBounds: Rect
+  members: DragResizeMember[]
+}
+
+export interface DragResizeMember {
+  drag: DragResize
+  placement: SelectionPlacement
 }
 
 export interface DragMarquee {
@@ -176,6 +198,8 @@ export interface DragMarquee {
   startY: number
   /** The open frame or section the marquee started in, whose layers it selects. */
   containerId?: string
+  /** Whether a press without a drag selects the section it started in: only from no selection. */
+  selectsSection: boolean
 }
 
 export interface DragRotate {
@@ -186,6 +210,18 @@ export interface DragRotate {
   startAngle: number
   origRotation: number
   rotationDirection: 1 | -1
+}
+
+/**
+ * A rotation of a multi-selection about its bounds' center, as Figma turns a selection: every
+ * selected layer swings around the center and turns by the same angle.
+ */
+export interface DragRotateSelection {
+  type: 'rotate-selection'
+  centerX: number
+  centerY: number
+  startAngle: number
+  members: Array<{ nodeId: string; placement: SelectionPlacement }>
 }
 
 export interface DragPen {
@@ -301,9 +337,11 @@ export type DragState =
   | DragMove
   | DragPan
   | DragResize
+  | DragResizeSelection
   | DragStickyScale
   | DragMarquee
   | DragRotate
+  | DragRotateSelection
   | DragPen
   | DragPencil
   | DragTextSelect

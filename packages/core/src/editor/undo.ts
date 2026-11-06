@@ -10,10 +10,14 @@ import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 import { assertNodeEditable } from './capabilities'
 import {
-  captureDocumentChange as startDocumentChange,
   restoreDocumentChange as applyDocumentChangeToEditor,
   type DocumentChange
 } from './history/document-change'
+import {
+  recordEdit as recordEditIn,
+  recordEditAsync as recordEditAsyncIn,
+  type RecordEditOptions
+} from './history/edit'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
   restorePageFromSnapshot as restorePageSnapshot,
@@ -252,16 +256,18 @@ export function createUndoActions(ctx: EditorContext) {
     restorePageSnapshot(ctx, snapshot)
   }
 
-  /**
-   * Starts recording an edit made from a page, wherever in the document it lands; the returned
-   * function ends it with what changed.
-   */
-  function captureDocumentChange(pageId = ctx.state.currentPageId): () => DocumentChange {
-    return startDocumentChange(ctx.graph, pageId)
-  }
-
   function restoreDocumentChange(change: DocumentChange, side: 'before' | 'after') {
     applyDocumentChangeToEditor(ctx, change, side)
+  }
+
+  /** Runs a synchronous edit as one undo step of what it changed in the document. */
+  function recordEdit<T>(options: RecordEditOptions, run: () => T): T {
+    return recordEditIn(ctx, options, run)
+  }
+
+  /** Runs an edit that awaits before it finishes as one undo step, open until it ends. */
+  function recordEditAsync<T>(options: RecordEditOptions, run: () => Promise<T>): Promise<T> {
+    return recordEditAsyncIn(ctx, options, run)
   }
 
   function pushUndoEntry(entry: UndoEntry) {
@@ -285,7 +291,8 @@ export function createUndoActions(ctx: EditorContext) {
     redoAction,
     snapshotPage,
     restorePageFromSnapshot,
-    captureDocumentChange,
+    recordEdit,
+    recordEditAsync,
     restoreDocumentChange,
     pushUndoEntry,
     pushUndoStep

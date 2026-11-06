@@ -1,7 +1,8 @@
 import type { Effect, Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { ComponentProperty } from './component-properties'
+import type { ComponentProperty } from './components/properties'
+import type { LayerRef } from './refs'
 import type { DesignMode, DesignVariable } from './variables'
 
 export interface TreeNode {
@@ -19,14 +20,6 @@ function inlineFragments(children: (TreeNode | string)[]): (TreeNode | string)[]
   return children.flatMap((child) =>
     typeof child !== 'string' && child.type === FRAGMENT ? child.children : [child]
   )
-}
-
-/**
- * The text an element holds as children, such as a sticky note's body or a connector's label.
- * Elements among its children are not text and are skipped.
- */
-export function plainTextOf(tree: TreeNode): string {
-  return tree.children.filter((child): child is string => typeof child === 'string').join('')
 }
 
 export function isTreeNode(x: unknown): x is TreeNode {
@@ -175,6 +168,17 @@ export type StyleProps = {
   lineHeight?: number | `${number}%` | 'auto' | DesignVariable
   /** Pixels, or a percent of the font size such as `'5%'`. */
   letterSpacing?: number | `${number}%` | DesignVariable
+  /** OpenType features on or off by tag, as CSS's `font-feature-settings`: `{ tnum: true }`. */
+  fontFeatures?: Record<string, boolean>
+  /** Variable-font axis values by tag, as CSS's `font-variation-settings`: `{ wght: 650 }`. */
+  fontVariations?: Record<string, number>
+  /** The language the text is in, as a BCP 47 tag such as `de` or `sr-Latn`. */
+  lang?: string | null
+  /**
+   * Whether a variable font's optical size follows the font size (`auto`, the default) or takes
+   * the `opsz` in `fontVariations` (`none`), as CSS's `font-optical-sizing`.
+   */
+  fontOpticalSizing?: 'auto' | 'none'
   font?: string
   fontFamily?: string
   weight?: number | 'bold' | 'medium' | 'normal'
@@ -210,6 +214,14 @@ export type EllipseProps = {
   /** The hole as a share of the ellipse, from 0 (none) to 1. */
   innerRadius?: number
 }
+/** A `<Vector>`'s path, in SVG's syntax as `d` or as Figma's `vectorPaths`. */
+export type VectorProps = {
+  /** Path data as SVG writes it, filled under `fillRule`; an open subpath fills only without a stroke. */
+  d?: string
+  fillRule?: 'nonzero' | 'evenodd'
+  /** Paths with their own winding rules, as export writes them; `NONE` draws an open path. */
+  paths?: Array<{ windingRule: 'NONZERO' | 'EVENODD' | 'NONE'; data: string }>
+}
 export type TextProps = BaseProps
 
 /** A `<Span>`'s props: the character styles of `<Text>`, under the same names. */
@@ -226,6 +238,9 @@ export type SpanProps = Pick<
   | 'fills'
   | 'lineHeight'
   | 'letterSpacing'
+  | 'fontFeatures'
+  | 'fontVariations'
+  | 'lang'
 > & {
   key?: string | number
   style?: Record<string, unknown>
@@ -255,9 +270,12 @@ export type ComponentProps = BaseProps
 export type InstanceProps = NodeProps & {
   component?: string
   componentId?: string
-  of?: string | ComponentProperty<string>
+  of?: string | LayerRef | ComponentProperty<string | LayerRef>
   /** Show the instance's own properties on instances of the component it is in, as Figma does. */
   exposed?: boolean
   /** Values by property ID or name, or an exposed nested instance's values by its name. */
-  properties?: Record<string, string | boolean | number | Record<string, string | boolean | number>>
+  properties?: Record<
+    string,
+    string | boolean | number | LayerRef | Record<string, string | boolean | number>
+  >
 }

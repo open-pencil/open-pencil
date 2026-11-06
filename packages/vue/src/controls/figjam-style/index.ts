@@ -1,0 +1,1 @@
+export { useFigJamStyle } from './use'

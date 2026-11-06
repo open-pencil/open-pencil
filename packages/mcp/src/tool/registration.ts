@@ -242,15 +242,17 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     'save_file',
     {
       description: resolvedRoot
-        ? 'Save the current document to disk. If path is provided, it must be inside the configured MCP root.'
-        : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
+        ? 'Save the current document to a .fig file, or a .jam file for a board. If path is provided, it must be inside the configured MCP root.'
+        : 'Save the current document to a .fig file, or a .jam file for a board. Saves to the file the document is open from, and fails when it has none.',
       inputSchema: resolvedRoot
         ? v.strictObject({
             path: v.optional(
               v.pipe(
                 v.string(),
                 v.minLength(1),
-                v.description('Path for the .fig file, absolute or relative to the MCP root')
+                v.description(
+                  'Path for the .fig file, or .jam for a board, absolute or relative to the MCP root'
+                )
               )
             ),
             ...automationTargetSchema

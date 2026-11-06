@@ -1,6 +1,7 @@
-import { renderTree } from '@open-pencil/core/design-jsx'
+import { renderRoots } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { reconcileRenderedLayers, type TreeNode } from '@open-pencil/design-jsx'
+import { Fragment } from '@open-pencil/design-jsx/jsx-runtime'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -99,25 +100,28 @@ export async function previewDesignJSX(
   const before = store.snapshotPage()
   const selectionBefore = [...store.state.selectedIds]
   try {
-    const renderedIds: string[] = []
     const layers: DesignJSXLayerLine[] = []
     const onNode = (tree: TreeNode, node: { id: string }) => {
       if (tree.source) layers.push({ line: tree.source.line, type: tree.type, nodeId: node.id })
     }
-    for (const [index, root] of roots.entries()) {
+    const positions = roots.map((root, index) => {
       const origin = session.origins.at(index) ?? {
         x: session.fallbackOrigin.x + index * 24,
         y: session.fallbackOrigin.y + index * 24
       }
       // Code that places a root keeps it there; code that does not lands where the layer was.
-      const result = await renderTree(store.graph, root, {
-        parentId: session.targetParentId,
+      return {
         x: 'x' in root.props ? undefined : origin.x,
-        y: 'y' in root.props ? undefined : origin.y,
-        onNode
-      })
-      renderedIds.push(result.id)
-    }
+        y: 'y' in root.props ? undefined : origin.y
+      }
+    })
+    // One render, so roots reach each other: a connector joins a layer another root draws.
+    const results = await renderRoots(store.graph, Fragment({ children: roots }), {
+      parentId: session.targetParentId,
+      positions,
+      onNode
+    })
+    const renderedIds = results.map(({ id }) => id)
     const { rootIds, ids } = reconcileRenderedLayers(store.graph, session.rootIds, renderedIds)
     if (session.targetIndex >= 0) {
       for (const [index, id] of rootIds.entries()) {

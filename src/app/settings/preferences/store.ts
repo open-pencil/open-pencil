@@ -16,6 +16,9 @@ import { recentFilesLimitSchema } from '@/app/recent-files/schema'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
 import { accentPreferenceSchema, type AccentPreference } from '@/app/shell/accent/schema'
 
+export const INTERFACE_SCALES = [100, 110, 125, 150] as const
+export type InterfaceScale = (typeof INTERFACE_SCALES)[number]
+
 export const ANIMATION_PREFERENCES = ['system', 'off'] as const
 export type AnimationPreference = (typeof ANIMATION_PREFERENCES)[number]
 
@@ -26,8 +29,9 @@ export const CHANGE_PREVIEW_SIZES = ['off', 'small', 'medium', 'large'] as const
 /** How large the before/after images kept for each AI edit are; `off` keeps only the JSX diff. */
 export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 
-export const CANVAS_RENDERING_MODES = ['retained', 'tiled'] as const
-export type CanvasRenderingMode = (typeof CANVAS_RENDERING_MODES)[number]
+export const TOKEN_USAGE_DISPLAYS = ['hover', 'always', 'hidden'] as const
+/** When a reply shows the tokens it used: while hovered, always, or never. */
+export type TokenUsageDisplay = (typeof TOKEN_USAGE_DISPLAYS)[number]
 
 /** Multipliers for how far each wheel or pinch event zooms the canvas; 1 is Figma's rate. */
 export const ZOOM_SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2] as const
@@ -71,14 +75,36 @@ export interface SharingPreferences {
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
+/** When the donation question may show again, as a time in milliseconds; `null` before it was ever due. */
+export interface DonationPreferences {
+  promptAfter: number | null
+}
+
+/** Which events send a system notification while OpenPencil is out of view. */
+export interface NotificationPreferences {
+  /** An agent waits on a permission request. */
+  agentNeedsInput: boolean
+  /** An AI reply finished. */
+  agentFinished: boolean
+  /** An AI reply ended with an error. */
+  agentFailed: boolean
+}
+
 export interface AppPreferences {
-  appearance: { animations: AnimationPreference; accent: AccentPreference }
+  appearance: {
+    animations: AnimationPreference
+    accent: AccentPreference
+    interfaceScale: InterfaceScale
+  }
   chat: {
     reasoningDisplay: ReasoningDisplay
     maxAgentSteps: number
     changePreviewSize: ChangePreviewSize
     /** Whether the view follows our AI agents while they work. */
     followAgents: boolean
+    /** Whether a conversation is compacted when its context window fills up. */
+    compactAutomatically: boolean
+    tokenUsage: TokenUsageDisplay
   }
   files: { recentLimit: number }
   version: 1
@@ -91,9 +117,6 @@ export interface AppPreferences {
   navigation: {
     zoomSpeed: ZoomSpeed
   }
-  rendering: {
-    canvasMode: CanvasRenderingMode
-  }
   designCheck: DesignCheckPreferences
   comments: CommentPreferences
   toolbar: ToolbarLayout
@@ -101,15 +124,19 @@ export interface AppPreferences {
     aiSetup: AISetupState
   }
   sharing: SharingPreferences
+  donation: DonationPreferences
+  notifications: NotificationPreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
-  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT } },
+  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT }, interfaceScale: 100 },
   chat: {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
     changePreviewSize: 'medium',
-    followAgents: true
+    followAgents: true,
+    compactAutomatically: true,
+    tokenUsage: 'hover'
   },
   files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
   version: 1,
@@ -118,7 +145,6 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  rendering: { canvasMode: 'retained' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,
@@ -129,7 +155,9 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   },
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
   onboarding: { aiSetup: 'pending' },
-  sharing: { dailyPing: true, usageStats: 'unset' }
+  sharing: { dailyPing: true, usageStats: 'unset' },
+  donation: { promptAfter: null },
+  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -146,6 +174,7 @@ const snapping = defaults.editing.snapping
 /** Stored preferences, read field by field so one bad value keeps the rest. */
 const appPreferencesSchema = section({
   appearance: section({
+    interfaceScale: v.fallback(v.picklist(INTERFACE_SCALES), defaults.appearance.interfaceScale),
     animations: v.fallback(v.picklist(ANIMATION_PREFERENCES), defaults.appearance.animations),
     accent: v.fallback(accentPreferenceSchema, () => ({ ...DEFAULT_ACCENT }))
   }),
@@ -159,7 +188,9 @@ const appPreferencesSchema = section({
       v.picklist(CHANGE_PREVIEW_SIZES),
       defaults.chat.changePreviewSize
     ),
-    followAgents: v.fallback(v.boolean(), defaults.chat.followAgents)
+    followAgents: v.fallback(v.boolean(), defaults.chat.followAgents),
+    compactAutomatically: v.fallback(v.boolean(), defaults.chat.compactAutomatically),
+    tokenUsage: v.fallback(v.picklist(TOKEN_USAGE_DISPLAYS), defaults.chat.tokenUsage)
   }),
   files: section({
     recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
@@ -175,9 +206,6 @@ const appPreferencesSchema = section({
   }),
   navigation: section({
     zoomSpeed: v.fallback(v.picklist(ZOOM_SPEEDS), defaults.navigation.zoomSpeed)
-  }),
-  rendering: section({
-    canvasMode: v.fallback(v.picklist(CANVAS_RENDERING_MODES), defaults.rendering.canvasMode)
   }),
   designCheck: section({
     showOnCanvas: v.fallback(v.boolean(), defaults.designCheck.showOnCanvas),
@@ -215,6 +243,17 @@ const appPreferencesSchema = section({
   sharing: section({
     dailyPing: v.fallback(v.boolean(), defaults.sharing.dailyPing),
     usageStats: v.fallback(v.picklist(USAGE_STATS_CONSENTS), defaults.sharing.usageStats)
+  }),
+  donation: section({
+    promptAfter: v.fallback(
+      v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0))),
+      defaults.donation.promptAfter
+    )
+  }),
+  notifications: section({
+    agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
+    agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
+    agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
   })
 })
 
@@ -260,10 +299,17 @@ export function updateSharingPreferences(changes: Partial<SharingPreferences>): 
   }
 }
 
-export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void {
+export function updateDonationPreferences(changes: Partial<DonationPreferences>): void {
   appPreferences.value = {
     ...appPreferences.value,
-    rendering: { canvasMode }
+    donation: { ...appPreferences.value.donation, ...changes }
+  }
+}
+
+export function updateNotificationPreferences(changes: Partial<NotificationPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    notifications: { ...appPreferences.value.notifications, ...changes }
   }
 }
 
@@ -300,4 +346,11 @@ export function updateCommentPreferences(changes: Partial<CommentPreferences>): 
 
 export function updateToolbarLayout(toolbar: ToolbarLayout): void {
   appPreferences.value = { ...appPreferences.value, toolbar }
+}
+
+export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    appearance: { ...appPreferences.value.appearance, interfaceScale }
+  }
 }

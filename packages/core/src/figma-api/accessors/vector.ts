@@ -1,7 +1,7 @@
 import type {
-  GeometryPath,
   HandleMirroring,
   VectorNetwork as SceneVectorNetwork,
+  VectorRegion as SceneVectorRegion,
   VectorSegment,
   VectorVertex,
   WindingRule
@@ -11,7 +11,8 @@ import {
   mergeVectorNetworks,
   normalizeVectorNetwork,
   transformVectorNetwork,
-  validateVectorNetwork
+  validateVectorNetwork,
+  vectorNetworkPaths
 } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -23,9 +24,8 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
-import { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
+import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
-import { regenerateFillGeometry } from '#core/vector/fill-geometry'
 
 export interface FigmaVectorPath {
   readonly windingRule: WindingRule | 'NONE'
@@ -88,11 +88,20 @@ function normalizeInputNetwork(value: FigmaVectorNetwork): SceneVectorNetwork {
         y: segment.tangentEnd?.y ?? 0
       }
     })),
-    regions: regions.map((region) => ({
-      windingRule: region.windingRule,
-      loops: region.loops.map((loop) => [...loop])
-    }))
+    regions: regions.map(sceneRegion)
   })
+}
+
+/** A region as the network stores it, with paints of its own only when Figma's names them. */
+function sceneRegion(region: FigmaVectorRegion): SceneVectorRegion {
+  const scene: SceneVectorRegion = {
+    windingRule: region.windingRule,
+    loops: region.loops.map((loop) => [...loop])
+  }
+  if (region.fills !== undefined)
+    scene.fills = parseFigmaPaints(region.fills, 'set_vectorNetwork', 'vectorNetwork')
+  if (region.fillStyleId) scene.fillStyleId = region.fillStyleId
+  return scene
 }
 
 function validateRegionPaintMetadata(regions: readonly FigmaVectorRegion[]): void {
@@ -107,23 +116,11 @@ function validateRegionPaintMetadata(regions: readonly FigmaVectorRegion[]): voi
   }
 }
 
-function geometryForRegions(regions: readonly FigmaVectorRegion[]): GeometryPath[] {
-  if (!regions.some((region) => region.fills !== undefined || region.fillStyleId !== undefined)) {
-    return []
-  }
-  return regions.map((region) => ({
-    windingRule: region.windingRule,
-    commandsBlob: new Uint8Array(),
-    fills: parseFigmaPaints(region.fills ?? [], 'set_vectorNetwork', 'vectorNetwork'),
-    fillStyleId: region.fillStyleId ?? ''
-  }))
-}
-
+/** The network as the layer's path; its fill geometry rebuilds from it when next needed. */
 function setGeometry(
   target: ProxyThis,
   internals: NodeProxyInternals,
-  network: SceneVectorNetwork,
-  fillGeometry: GeometryPath[]
+  network: SceneVectorNetwork
 ): void {
   const node = raw(target, internals)
   const bounds = computeAccurateBounds(network)
@@ -131,8 +128,6 @@ function setGeometry(
   const normalized = hasGeometry
     ? transformVectorNetwork([1, 0, -bounds.x, 0, 1, -bounds.y, 0, 0, 1], network)
     : structuredClone(EMPTY_NETWORK)
-  const normalizedGeometry =
-    fillGeometry.length > 0 ? regenerateFillGeometry(normalized, fillGeometry) : []
 
   updateNode(target, internals, {
     x: hasGeometry ? node.x + bounds.x : node.x,
@@ -140,7 +135,7 @@ function setGeometry(
     width: hasGeometry ? bounds.width : 0,
     height: hasGeometry ? bounds.height : 0,
     vectorNetwork: normalized,
-    fillGeometry: normalizedGeometry,
+    fillGeometry: [],
     strokeGeometry: []
   })
 }
@@ -165,42 +160,8 @@ function assignVectorNetwork(
   if (errors.length > 0) throw new TypeError(`Invalid vectorNetwork: ${errors.join('; ')}`)
   validateRegionPaintMetadata(value.regions ?? [])
   const network = normalizeInputNetwork(value)
-  const fillGeometry = geometryForRegions(value.regions ?? [])
   prepareVectorDataEdit(target, internals, setter)
-  setGeometry(target, internals, network, fillGeometry)
-}
-
-function vectorPathsForNetwork(network: SceneVectorNetwork): FigmaVectorPath[] {
-  if (network.segments.length === 0) return []
-  const regions = (network as Partial<SceneVectorNetwork>).regions ?? []
-  if (regions.length === 0) {
-    return vectorNetworkToSVGPaths({ ...network, regions }, null).map((data) => ({
-      windingRule: 'NONE',
-      data
-    }))
-  }
-
-  const paths: FigmaVectorPath[] = []
-  const usedSegments = new Set<number>()
-  for (const region of regions) {
-    for (const loop of region.loops) for (const segmentIndex of loop) usedSegments.add(segmentIndex)
-    const data = vectorNetworkToSVGPaths({ ...network, regions: [region] }, null)[0]
-    if (data) paths.push({ windingRule: region.windingRule, data })
-  }
-
-  const remainingSegments = network.segments.filter((_, index) => !usedSegments.has(index))
-  if (remainingSegments.length > 0) {
-    const data = vectorNetworkToSVGPaths(
-      {
-        vertices: network.vertices,
-        segments: remainingSegments,
-        regions: []
-      },
-      null
-    )[0]
-    if (data) paths.push({ windingRule: 'NONE', data })
-  }
-  return paths
+  setGeometry(target, internals, network)
 }
 
 function readVectorPaths(
@@ -210,7 +171,7 @@ function readVectorPaths(
   const node = raw(target, internals)
   const paths =
     node.vectorNetwork && node.vectorNetwork.segments.length > 0
-      ? vectorPathsForNetwork(node.vectorNetwork)
+      ? vectorNetworkPaths(node.vectorNetwork)
       : node.fillGeometry.map((geometry) => ({
           windingRule: geometry.windingRule,
           data: geometryBlobToSVGPath(geometry.commandsBlob, null)
@@ -238,15 +199,15 @@ function readVectorNetwork(target: ProxyThis, internals: NodeProxyInternals): Fi
     })
   )
   const sourceRegions = (network as Partial<SceneVectorNetwork>).regions ?? []
-  const regions = sourceRegions.map((region, index) => {
-    const geometry = node.fillGeometry.at(index)
-    return Object.freeze({
+  // A region without paints of its own reads the layer's, as in Figma.
+  const regions = sourceRegions.map((region) =>
+    Object.freeze({
       windingRule: region.windingRule,
       loops: Object.freeze(region.loops.map((loop) => Object.freeze([...loop]))),
-      fillStyleId: geometry?.fillStyleId ?? '',
-      fills: Object.freeze((geometry?.fills ?? []).map((paint) => toFigmaPaint(paint)))
+      fillStyleId: region.fillStyleId ?? '',
+      fills: Object.freeze((region.fills ?? node.fills).map((paint) => toFigmaPaint(paint)))
     })
-  })
+  )
   return Object.freeze({
     vertices: Object.freeze(vertices),
     segments: Object.freeze(segments),
@@ -282,7 +243,7 @@ export function installVectorNodeProxyAccessors(
         if (!Array.isArray(value)) throw new TypeError('vectorPaths must be an array')
         const network = networkFromVectorPaths(value)
         prepareVectorDataEdit(this, internals, 'vectorPaths')
-        setGeometry(this, internals, network, [])
+        setGeometry(this, internals, network)
       },
       enumerable: true,
       configurable: true

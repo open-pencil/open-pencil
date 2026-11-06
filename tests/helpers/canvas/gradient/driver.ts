@@ -3,27 +3,20 @@ import type { Page } from '@playwright/test'
 import type * as Geometry from '@open-pencil/core/geometry'
 
 import type * as GradientScene from '#tests/helpers/canvas/gradient/scene'
+import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 
 type GradientType = Parameters<typeof GradientScene.createGradientScene>[2]
 
 /** Builds a gradient scene, opens its fill picker, and reads the gradient back. */
 export function gradientDriver(page: () => Page) {
+  const scenes = pageScene<typeof GradientScene>(page, '/tests/helpers/canvas/gradient/scene.ts')
   return {
     /** The gradient rectangle, selected, at 200% with its top-left 100 px into the canvas. */
     async show(type: GradientType) {
-      return page().evaluate(async (type) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        const fixtureURL = '/tests/helpers/canvas/gradient/scene.ts'
-        const scene: typeof GradientScene = await import(fixtureURL)
-        const { nodeId } = scene.createGradientScene(store.graph, store.state.currentPageId, type)
-        store.select([nodeId])
-        store.state.zoom = 2
-        store.state.panX = 100
-        store.state.panY = 100
-        store.requestRender()
-        return nodeId
-      }, type)
+      const { nodeId } = await scenes.build('createGradientScene', type)
+      await page().evaluate((id) => window.openPencil?.getStore?.().select([id]), nodeId)
+      await showView(page(), { zoom: 2, panX: 100, panY: 100 })
+      return nodeId
     },
 
     /** Canvas coordinates of a point in the layer's own pixels. */

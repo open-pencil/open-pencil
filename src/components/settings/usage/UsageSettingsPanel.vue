@@ -3,8 +3,12 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { useDiagnosticsSettings } from '@/app/diagnostics/settings'
 import { useUsageSettings } from '@/app/usage/settings/use'
+import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { diagnostics: diagnosticMessages, settings } = useI18n()
 
@@ -13,6 +17,7 @@ function formatTokenValue(value: number | null): string {
 }
 
 const { summary } = useUsageSettings()
+const { usageEnabled } = useDiagnosticsSettings()
 
 const totals = computed(() => {
   const messages = diagnosticMessages.value
@@ -33,22 +38,34 @@ const totals = computed(() => {
     <template #title>{{ settings.usage }}</template>
     <template #description>{{ diagnosticMessages.usageDescription }}</template>
 
+    <SettingsGroup>
+      <SettingsRow
+        as="label"
+        :label="diagnosticMessages.usageHistory"
+        :description="diagnosticMessages.usageHistoryDescription"
+        :modified="!usageEnabled"
+        @reset="usageEnabled = true"
+      >
+        <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
+      </SettingsRow>
+    </SettingsGroup>
+
     <div class="grid grid-cols-2 gap-2">
       <div v-for="total in totals" :key="total.label" class="rounded border border-border p-3">
-        <div class="text-[11px] text-muted">{{ total.label }}</div>
+        <div class="text-2xs text-muted">{{ total.label }}</div>
         <div class="mt-1 text-sm font-semibold text-surface">{{ total.value }}</div>
       </div>
     </div>
 
     <div class="flex flex-col gap-2">
       <h4 class="text-xs font-semibold text-surface">{{ diagnosticMessages.usageByModel }}</h4>
-      <div v-if="summary.models.length === 0" class="text-[11px] text-muted">
+      <div v-if="summary.models.length === 0" class="text-2xs text-muted">
         {{ diagnosticMessages.usageNoData }}
       </div>
       <div
         v-for="model in summary.models"
         :key="`${model.provider}-${model.model}`"
-        class="flex justify-between gap-3 text-[11px]"
+        class="flex justify-between gap-3 text-2xs"
       >
         <span class="min-w-0 truncate text-muted">{{ model.provider }} · {{ model.model }}</span>
         <span class="shrink-0 text-surface tabular-nums">
@@ -62,6 +79,6 @@ const totals = computed(() => {
       </div>
     </div>
 
-    <p class="text-[11px] text-muted">{{ diagnosticMessages.usageCacheNote }}</p>
+    <p class="text-2xs text-muted">{{ diagnosticMessages.usageCacheNote }}</p>
   </SettingsSection>
 </template>

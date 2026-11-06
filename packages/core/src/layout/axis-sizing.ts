@@ -39,26 +39,34 @@ export function asFlatLeaf(child: SceneNode, parent: SceneNode): SceneNode {
 }
 
 /**
- * The counter axis a frame hugs but keeps its size on, because every child in its flow fills
- * that axis and none has content of its own to hug, as Figma keeps it.
+ * The axes a frame hugs but keeps its size on, as Figma keeps them. With nothing in its flow,
+ * no visible layer that is not placed absolutely, it keeps every axis it hugs: a new frame keeps
+ * the size it was made at, and one that loses its last layer keeps the size it hugged to. On the
+ * counter axis it also keeps its size when every child in its flow fills that axis and none has
+ * content of its own to hug.
  */
-export function heldHugAxis(graph: SceneGraph, frame: SceneNode): 'width' | 'height' | null {
-  if (frame.counterAxisSizing !== 'HUG') return null
-  if (frame.layoutMode !== 'HORIZONTAL' && frame.layoutMode !== 'VERTICAL') return null
+export function heldHugAxes(graph: SceneGraph, frame: SceneNode): ('width' | 'height')[] {
+  if (frame.layoutMode !== 'HORIZONTAL' && frame.layoutMode !== 'VERTICAL') return []
+  const [primary, counter] =
+    frame.layoutMode === 'HORIZONTAL'
+      ? (['width', 'height'] as const)
+      : (['height', 'width'] as const)
+  const hugged = [
+    ...(frame.primaryAxisSizing === 'HUG' ? [primary] : []),
+    ...(frame.counterAxisSizing === 'HUG' ? [counter] : [])
+  ]
   const flow = graph
     .getChildren(frame.id)
     .filter((child) => child.visible && child.layoutPositioning !== 'ABSOLUTE')
-  const holds =
-    flow.length > 0 &&
-    flow.every(
-      (child) =>
-        child.layoutMode === 'NONE' &&
-        child.type !== 'TEXT' &&
-        (child.layoutAlignSelf === 'STRETCH' ||
-          (child.layoutAlignSelf === 'AUTO' && frame.counterAxisAlign === 'STRETCH'))
-    )
-  if (!holds) return null
-  return frame.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
+  if (flow.length === 0) return hugged
+  const filled = flow.every(
+    (child) =>
+      child.layoutMode === 'NONE' &&
+      child.type !== 'TEXT' &&
+      (child.layoutAlignSelf === 'STRETCH' ||
+        (child.layoutAlignSelf === 'AUTO' && frame.counterAxisAlign === 'STRETCH'))
+  )
+  return filled && frame.counterAxisSizing === 'HUG' ? [counter] : []
 }
 
 /** The fields that set how a layer sizes in its parent's layout. */

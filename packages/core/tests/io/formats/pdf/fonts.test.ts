@@ -3,9 +3,8 @@ import { toUint8Array } from 'js-base64'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import {
   cutFontInstances,
   embeddedFontAlias,
@@ -15,7 +14,7 @@ import {
 } from '#core/io/formats/pdf/fonts'
 import type { SVGFontRequest } from '#core/io/formats/svg'
 import { isVariableFont } from '#core/text/font/variation'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /** Records what jsPDF would be asked to register. */
 function pdfDoc() {

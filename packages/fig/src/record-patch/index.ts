@@ -2,7 +2,7 @@ import { inflateSync } from 'fflate'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigDataCompressor } from '@open-pencil/kiwi/fig/container'
+import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   ByteBuffer,
@@ -61,6 +61,8 @@ export interface FigPatchedArchiveInput {
   images: FigImageEntry[]
   /** The zstd level the document data is written at; the archive is read whatever it used. */
   compressionLevel?: number
+  /** A design file or a FigJam board; the archive's own kind when omitted. */
+  kind?: FigFileKind
 }
 
 const VARIABLE_TYPES = new Set(['VARIABLE', 'VARIABLE_SET'])
@@ -432,7 +434,7 @@ export function patchFigMessage(
   // Only the records an edit changed some fields of are decoded; the rest stay bytes.
   const decode = (bytes: Uint8Array): NodeChange => {
     if (recordsPart?.kind !== 'records') throw new Error('The archive has no records')
-    return schema.decode(schema.definition(recordsPart.type), new ByteBuffer(bytes)) as NodeChange
+    return schema.decode(schema.definition(recordsPart.type), new ByteBuffer(bytes))
   }
   const merged = mergeRecords(scanned.records, patch, decode)
   const blobs = (type: string) => [
@@ -485,8 +487,45 @@ export function patchFigArchive(
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
     ],
     figKiwiVersion: parts.figKiwiVersion,
-    compress
+    compress,
+    kind: input.kind ?? parts.kind
   })
+}
+
+/** The id of the nearest record of `type` from `id` up through its parents, itself included. */
+function nearestOfType(
+  byId: ReadonlyMap<string, NodeChange>,
+  id: string,
+  type: string
+): string | undefined {
+  const seen = new Set<string>()
+  for (let current = byId.get(id); current;) {
+    const currentId = key(current.guid)
+    if (!currentId || seen.has(currentId)) return undefined
+    seen.add(currentId)
+    if (current.type === type) return currentId
+    const parent = key(current.parentIndex?.guid)
+    current = parent ? byId.get(parent) : undefined
+  }
+  return undefined
+}
+
+function recordsById(records: readonly NodeChange[]): Map<string, NodeChange> {
+  const byId = new Map<string, NodeChange>()
+  for (const record of records) {
+    const id = key(record.guid)
+    if (id) byId.set(id, record)
+  }
+  return byId
+}
+
+/** The page each record is on, by its GUID, through its parents; undefined off every page. */
+export function figRecordPages(
+  records: readonly NodeChange[],
+  ids: readonly string[]
+): (string | undefined)[] {
+  const byId = recordsById(records)
+  return ids.map((id) => nearestOfType(byId, id, 'CANVAS'))
 }
 
 /**
@@ -497,7 +536,7 @@ export function figComponentUsePages(
   records: readonly NodeChange[],
   componentIds: readonly string[]
 ): string[] {
-  const byId = new Map<string, NodeChange>()
+  const byId = recordsById(records)
   const instancesOf = new Map<string, string[]>()
   const use = (componentId: string | undefined, instanceId: string) => {
     if (!componentId) return
@@ -507,24 +546,11 @@ export function figComponentUsePages(
   }
   for (const record of records) {
     const id = key(record.guid)
-    if (!id) continue
-    byId.set(id, record)
-    if (record.type !== 'INSTANCE') continue
+    if (!id || record.type !== 'INSTANCE') continue
     use(key(symbolDataOf(record)?.symbolID), id)
     for (const override of symbolOverridesOf(record)) use(key(override.overriddenSymbolID), id)
   }
-  const nearest = (id: string, type: string): string | undefined => {
-    const seen = new Set<string>()
-    for (let current = byId.get(id); current;) {
-      const currentId = key(current.guid)
-      if (!currentId || seen.has(currentId)) return undefined
-      seen.add(currentId)
-      if (current.type === type) return currentId
-      const parent = key(current.parentIndex?.guid)
-      current = parent ? byId.get(parent) : undefined
-    }
-    return undefined
-  }
+  const nearest = (id: string, type: string) => nearestOfType(byId, id, type)
   const pages = new Set<string>()
   const visited = new Set<string>()
   const pending = [...componentIds]
@@ -541,15 +567,12 @@ export function figComponentUsePages(
   return [...pages]
 }
 
-/** `figComponentUsePages` over an encoded archive, reading only what it needs of each record. */
-export function figArchiveComponentUsePages(
-  bytes: ArrayBuffer,
-  componentIds: readonly string[]
-): string[] {
+/** An encoded archive's records with only the fields the page lookups read. */
+function scannedRecords(bytes: ArrayBuffer): NodeChange[] {
   const parts = readFigArchiveParts(bytes)
   const codec = archiveCodec(parts.schemaDeflated)
   const scanned = scanMessage(codec, parts.dataRaw, true)
-  const records = scanned.records.map(
+  return scanned.records.map(
     (entry) =>
       ({
         guid: entry.guid,
@@ -558,5 +581,29 @@ export function figArchiveComponentUsePages(
         symbolData: entry.symbolData
       }) as NodeChange
   )
-  return figComponentUsePages(records, componentIds)
+}
+
+/** `figComponentUsePages` over an encoded archive, reading only what it needs of each record. */
+export function figArchiveComponentUsePages(
+  bytes: ArrayBuffer,
+  componentIds: readonly string[]
+): string[] {
+  return figComponentUsePages(scannedRecords(bytes), componentIds)
+}
+
+/** Each archive's records by GUID, scanned once: an archive's bytes are never written to. */
+const archiveRecordIndexes = new WeakMap<ArrayBuffer, Map<string, NodeChange>>()
+
+/** `figRecordPages` over an encoded archive, reading only what it needs of each record. */
+export function figArchiveRecordPages(
+  bytes: ArrayBuffer,
+  ids: readonly string[]
+): (string | undefined)[] {
+  let byId = archiveRecordIndexes.get(bytes)
+  if (!byId) {
+    byId = recordsById(scannedRecords(bytes))
+    archiveRecordIndexes.set(bytes, byId)
+  }
+  const index = byId
+  return ids.map((id) => nearestOfType(index, id, 'CANVAS'))
 }

@@ -10,6 +10,9 @@ const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, invers
  * Content-only revisions: viewport repainting, layout, loading a page's layers, and recovery
  * never mark a document changed or saved. Autosave and recovery follow the same revision.
  *
+ * Instances following their components after an edit or an undo are that change's results, not
+ * edits of their own.
+ *
  * A document whose history goes back to where it was saved, by undo or redo, is saved again,
  * unless something changed it outside the history since, such as a collaborator. An editor edit
  * records its step in the same task as the change, or, while text is being edited or an edit is
@@ -44,12 +47,14 @@ export function createDocumentChanges(editor: Editor) {
     outsideRevision = revision.value
   }
   const contentChanged = () => {
-    if (editor.graph.isApplyingImportedState || adopting > 0) return
+    if (editor.graph.isApplyingImportedState || editor.isSyncingComponents() || adopting > 0) {
+      return
+    }
     revision.value++
     contentRevision = revision.value
     const at = contentRevision
-    // Text editing and coalesced edits record their step when they end, not with each change.
-    if (editor.state.editingTextId !== null || editor.undo.isBatching) return
+    // Text editing, coalesced edits, and edits that await record their step when they end.
+    if (editor.state.editingTextId !== null || editor.undo.isRecording) return
     queueMicrotask(() => {
       if (historyRevision < at) outsideRevision = Math.max(outsideRevision, at)
     })

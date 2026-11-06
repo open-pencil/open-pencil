@@ -2,6 +2,7 @@ import type { ObjectStore, StoredObject } from '#cloud/server'
 
 export function createMemoryObjectStore() {
   const stored = new Map<string, StoredObject>()
+  const contents = new Map<string, Uint8Array>()
   const deletedKeys: string[] = []
   const store: ObjectStore = {
     capabilities: {
@@ -39,7 +40,20 @@ export function createMemoryObjectStore() {
     },
     async delete(key) {
       stored.delete(key)
+      contents.delete(key)
       deletedKeys.push(key)
+    },
+    async write({ key, bytes, contentType, checksum }) {
+      stored.set(key, {
+        byteSize: bytes.byteLength,
+        checksum,
+        checksumVerification: 'native',
+        contentType
+      })
+      contents.set(key, Uint8Array.from(bytes))
+    },
+    async read(key) {
+      return contents.get(key) ?? null
     }
   }
   return {

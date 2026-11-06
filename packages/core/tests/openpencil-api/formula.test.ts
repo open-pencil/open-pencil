@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'

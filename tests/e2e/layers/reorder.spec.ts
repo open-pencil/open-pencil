@@ -12,7 +12,7 @@ async function layerOrder(page: Page, parentId?: string) {
 }
 
 test('dragging layers reorders scene nodes', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -43,7 +43,7 @@ test('dragging layers reorders scene nodes', async ({ page }) => {
 })
 
 test('an auto layout lists and reorders its layers in flow order', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -71,7 +71,7 @@ test('an auto layout lists and reorders its layers in flow order', async ({ page
 })
 
 test('dragging a layer into a container expands it and shows the child', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

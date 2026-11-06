@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
@@ -77,6 +76,19 @@ flowchart TD
   G ~~~ A`
 
 describe('opening Mermaid files', () => {
+  test('a Markdown label draws its emphasis as ranges of its text', async () => {
+    const graph = await read('flowchart LR\n  a["`**Ship** _it_`"] -->|"`**go**`"| b')
+    const label = shapeWithTextLabel(graph, named(graph, 'Ship it'))
+    expect(label?.text).toBe('Ship it')
+    expect(label?.styleRuns).toEqual([
+      { start: 0, length: 4, style: { fontWeight: 700 } },
+      { start: 5, length: 2, style: { italic: true } }
+    ])
+    const edge = expectDefined(connectorSublayers(graph, connectors(graph)[0])?.label)
+    expect(edge.text).toBe('go')
+    expect(edge.styleRuns).toEqual([{ start: 0, length: 2, style: { fontWeight: 700 } }])
+  })
+
   test('takes .mmd and .mermaid files and refuses diagrams other than flowcharts', async () => {
     const format = expectDefined(io.getFormat('mermaid'))
     expect(format.matchesFile?.('flow.mmd')).toBe(true)

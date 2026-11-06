@@ -7,8 +7,8 @@ import IconPlay from '~icons/lucide/play'
 import IconRotateCcw from '~icons/lucide/rotate-ccw'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import ChatFollowAgentsToggle from '@/components/chat/ChatFollowAgentsToggle.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
-import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { useRecordedChat } from './useRecordedChat'
@@ -48,7 +48,7 @@ const { stop } = useIntersectionObserver(
       <icon-lucide-sparkles class="size-3.5 text-muted" aria-hidden="true" />
       AI
       <span class="ml-auto font-normal text-muted">{{ messages.stage.ai.recorded }}</span>
-      <FollowAgentsToggle :store="store" />
+      <ChatFollowAgentsToggle :store="store" />
     </header>
     <!-- The reasoning stays open: it is what explains the turn to a first-time visitor. -->
     <ChatTranscript :messages="transcript" :status="status" reasoning-display="expanded" />

@@ -2,7 +2,7 @@ import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { restingVariant } from '@open-pencil/scene-graph/components'
+import { defaultVariant } from '@open-pencil/scene-graph/components'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import type { StoryProp } from './module'
@@ -56,7 +56,7 @@ function componentSetGroup(
 ): StoryGroup {
   const definitions = set.componentPropertyDefinitions.filter((def) => def.type === 'VARIANT')
   // The variant at its default values opens the file as its Default story.
-  const first = restingVariant(graph, set)
+  const first = defaultVariant(graph, set)
   const components = graph
     .getChildren(set.id)
     .filter((child) => child.type === 'COMPONENT' && isExported(child))
@@ -79,7 +79,12 @@ function componentSetGroup(
       return {
         name: def.name,
         options,
-        control: { type: 'state', rest: args.states.rest, disabled: args.states.disabled }
+        control: {
+          type: 'state',
+          rest: args.states.rest,
+          disabled: args.states.disabled,
+          invalid: args.states.invalid
+        }
       }
     return { name: def.name, options }
   })

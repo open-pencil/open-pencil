@@ -4,12 +4,11 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 import { ref, shallowRef } from 'vue'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import { AgentSetupError } from '@/app/ai/agents/setup/readiness'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import type { EditorStore } from '@/app/editor/active-store'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 const messages = ref({
   openSettings: 'Open settings',
   requestFailed: 'Request failed',
@@ -93,6 +92,24 @@ describe('useChatSubmission', () => {
     } finally {
       revoke.mockRestore()
     }
+  })
+
+  test('shows a message as sending until the chat it waits for takes it in', async () => {
+    const connected = Promise.withResolvers<Chat<UIMessage> | null>()
+    const { chat } = submission(() => connected.promise)
+    const submitted = chat.submit(message)
+    expect(chat.sending.value).toEqual(message)
+    connected.resolve(fakeChat())
+    expect(await submitted).toBe(true)
+    expect(chat.sending.value).toBeNull()
+  })
+
+  test('stops showing a message that never reached the chat', async () => {
+    const { chat } = submission(async () => null)
+    const submitted = chat.submit(message)
+    expect(chat.sending.value).toEqual(message)
+    expect(await submitted).toBe(false)
+    expect(chat.sending.value).toBeNull()
   })
 })
 

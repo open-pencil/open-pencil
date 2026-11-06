@@ -6,32 +6,52 @@ function atLeast(value: number, min: number): number {
   return Math.sign(value || 1) * Math.max(Math.abs(value), min)
 }
 
+export type AspectDriver = 'width' | 'height'
+
+function isEdgeHandle(handle: HandlePosition): boolean {
+  return handle === 'n' || handle === 's' || handle === 'e' || handle === 'w'
+}
+
+/**
+ * The side that sizes a box kept at `aspect`: an edge handle's own axis, or for a corner the axis
+ * the pointer changed most, the width when both changed alike, as FigJam picks.
+ */
+export function aspectDriver(
+  handle: HandlePosition,
+  width: number,
+  height: number,
+  aspect: number
+): AspectDriver {
+  if (isEdgeHandle(handle)) return handle === 'e' || handle === 'w' ? 'width' : 'height'
+  return Math.abs(width) >= Math.abs(height) * aspect ? 'width' : 'height'
+}
+
 /**
  * Fits a dragged box to `aspect` (width over height), as Figma does: an edge handle sizes the
  * other axis around its centre, a corner handle follows the axis the pointer changed most and
  * keeps the opposite corner in place. The side that drives stays long enough for the other to
- * keep a whole pixel, so the box keeps its ratio at its smallest.
+ * keep a whole pixel, so the box keeps its ratio at its smallest. `driver` names the side that
+ * drives instead, and `follow` adjusts the size the other side gets, such as rounding it.
  */
 export function constrainToAspectRatio(
   handle: HandlePosition,
   origRect: Rect,
   width: number,
   height: number,
-  aspect: number
+  aspect: number,
+  driver: AspectDriver = aspectDriver(handle, width, height, aspect),
+  follow: (size: number) => number = (size) => size
 ): Rect {
   const minWidth = Math.max(1, aspect)
   const minHeight = Math.max(1, 1 / aspect)
   const isTop = handle === 'nw' || handle === 'n' || handle === 'ne'
-  const isEdge = handle === 'n' || handle === 's' || handle === 'e' || handle === 'w'
-  const widthDrives = isEdge
-    ? handle === 'e' || handle === 'w'
-    : Math.abs(width) > Math.abs(height) * aspect
-  if (widthDrives) {
+  const isEdge = isEdgeHandle(handle)
+  if (driver === 'width') {
     width = atLeast(width, minWidth)
-    height = (Math.abs(width) / aspect) * (isEdge ? 1 : Math.sign(height || 1))
+    height = follow(Math.abs(width) / aspect) * (isEdge ? 1 : Math.sign(height || 1))
   } else {
     height = atLeast(height, minHeight)
-    width = Math.abs(height) * aspect * (isEdge ? 1 : Math.sign(width || 1))
+    width = follow(Math.abs(height) * aspect) * (isEdge ? 1 : Math.sign(width || 1))
   }
 
   // Signed sizes: a handle dragged past the opposite edge lands the box on the far side.
@@ -43,7 +63,12 @@ export function constrainToAspectRatio(
   return { x, y, width, height }
 }
 
-export function calculateResizeRect(
+/**
+ * The box a handle drags `origRect` to, with signed sizes: a handle dragged past the opposite
+ * edge gives a negative width or height, with `x` and `y` where the box's left and top edges
+ * land, so the box comes out mirrored, as Figma flips a selection dragged through itself.
+ */
+export function signedResizeRect(
   handle: HandlePosition,
   origRect: Rect,
   dx: number,
@@ -71,6 +96,17 @@ export function calculateResizeRect(
   if (aspect !== null) {
     ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, aspect))
   }
+  return { x, y, width, height }
+}
+
+export function calculateResizeRect(
+  handle: HandlePosition,
+  origRect: Rect,
+  dx: number,
+  dy: number,
+  aspect: number | null
+): Rect {
+  let { x, y, width, height } = signedResizeRect(handle, origRect, dx, dy, aspect)
 
   if (width < 0) {
     x += width

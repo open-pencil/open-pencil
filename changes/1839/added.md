@@ -1,0 +1,1 @@
+- Hosts can keep layers as they are with `setHostRestrictions({ layerEdits: 'none' })`: the canvas, keys, and editor actions change no layer, while vector edit mode still reshapes paths (#1839).

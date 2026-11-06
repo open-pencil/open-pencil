@@ -1,7 +1,7 @@
 import { getWorldMatrix } from '../coordinate'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
-import type { Vector } from '../primitives'
+import { distanceToSegment } from '../outline/point'
 import type { SceneNode } from '../types'
 import { isStraight, pointAt, type ConnectorPiece } from './pieces'
 import { connectorSublayers } from './sublayers'
@@ -10,17 +10,6 @@ import { connectorSublayers } from './sublayers'
 const CONNECTOR_HIT_SLOP = 4
 /** Points sampled along a curved segment to measure distance to it. */
 const CURVE_SAMPLES = 24
-
-function distanceToSegment(p: Vector, a: Vector, b: Vector): number {
-  const dx = b.x - a.x
-  const dy = b.y - a.y
-  const lengthSquared = dx * dx + dy * dy
-  const t =
-    lengthSquared === 0
-      ? 0
-      : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSquared))
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
-}
 
 /**
  * Whether a canvas point lands on a connector's line: within half its stroke and a few units of

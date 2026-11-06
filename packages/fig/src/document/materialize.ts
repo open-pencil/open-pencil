@@ -16,6 +16,7 @@ import type {
 import {
   reconcileOccurrenceStructure,
   linkInstanceSourceChildren,
+  mapMaterializedComponentNodes,
   mapInstanceSourceChildren,
   type MaterializedComponentOccurrence
 } from '../instance-overrides/source-children'
@@ -23,6 +24,7 @@ import { nodeChangeToProps } from '../node-change'
 import { generatedFrameCodec } from '../node-change/generated/codecs'
 import { readNodeChangePluginData } from '../node-change/plugin-data'
 import { figArchiveRecordInfo, type FigArchiveRecordInfo } from '../record-patch'
+import { applyDocumentEffectBindings } from './bindings/effects'
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
 import type { BindingReferenceDiagnostic } from './bindings/references'
@@ -32,6 +34,7 @@ import {
   restoreComponentCheckpoint,
   type ComponentCheckpoint
 } from './component/checkpoint'
+import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
 import type { ComponentConstruction } from './components'
 import { loadPageTransaction } from './load-transaction'
@@ -82,6 +85,8 @@ export interface AssemblyState {
   savedSizeNodes: Set<string>
   /** Component property types by definition id, carried across page loads. */
   definitionTypes?: Map<string, string>
+  /** A variant's copies of its set's properties, read from its record by GUID. */
+  propertyCopies: (sourceId: string) => PropertyCopies
 }
 
 export interface FigSessionCheckpoint {
@@ -140,7 +145,8 @@ function restoreAssemblyState(
     components,
     sources: new Map(checkpoint.sources),
     componentIds: new Map(checkpoint.componentIds),
-    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds)
+    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
 }
 
@@ -155,6 +161,8 @@ export function createFigDocumentSession(
     ? restoreAssemblyState(resume, archive.reader, sessionOptions)
     : materializeReader(archive.reader, archive.blobs, sessionOptions)
   state.graph.figKiwiVersion = archive.figKiwiVersion
+  // A resumed session runs on the open graph, whose kind may have changed since it was read.
+  if (!resume) state.graph.documentKind = archive.kind
   state.graph.figSchemaDeflated = archive.figSchemaDeflated
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)
@@ -301,7 +309,8 @@ function createAssemblyState(
     sources: new Map(),
     components: new Map(),
     componentIds: new Map(),
-    savedSizeNodes: new Set()
+    savedSizeNodes: new Set(),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
   applyDocumentMetadata(graph, document)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
@@ -446,20 +455,34 @@ function materializeReaderInto(
     const parentId = sources.get(item.parentSourceId)
     if (!parentId) throw new Error(`Unmaterialized component parent ${item.parentSourceId}`)
     const existingNodes = new Map<InstanceOccurrence, SceneNode>()
+    /** Definitions an earlier step built inside this one: they keep the layers they have. */
+    const nested: Array<[InstanceOccurrence, MaterializedComponentOccurrence]> = []
     const collectExisting = (node: InstanceOccurrence): void => {
       const id = sources.get(node.sourceId)
       const existing = id ? graph.getNode(id) : undefined
       if (existing) existingNodes.set(node, existing)
-      if (node.mainComponentId === null) node.children.forEach(collectExisting)
+      // A definition deleted since it was built is built again, like any missing layer.
+      const component =
+        existing && node.properties.type === 'SYMBOL' ? components.get(node.sourceId) : undefined
+      if (component) nested.push([node, component])
+      else if (node.mainComponentId === null) node.children.forEach(collectExisting)
     }
     collectExisting(item.occurrence)
-    const materialized = materializeInstance(graph, parentId, item.occurrence, componentIds, {
+    const built = materializeInstance(graph, parentId, item.occurrence, componentIds, {
       blobs,
       sourceChildren: mapInstanceSourceChildren(item.occurrence, components),
       existingNodes,
       recordId
     })
-    rememberDerivedSizes(materialized.nodes)
+    rememberDerivedSizes(built.nodes)
+    // Linking and checkpoints address a nested definition's layers through this tree too.
+    const nodes = new Map(built.nodes)
+    for (const [node, component] of nested) {
+      for (const [occurrence, layer] of mapMaterializedComponentNodes(node, component)) {
+        nodes.set(occurrence, layer)
+      }
+    }
+    const materialized = { root: built.root, nodes }
     linkInstanceSourceChildren(item.occurrence, materialized, components)
     components.set(item.sourceId, { occurrence: item.occurrence, materialized })
     componentIds.set(item.sourceId, materialized.root.id)
@@ -496,13 +519,22 @@ function materializeReaderInto(
         populateInstances(child)
       const id = sources.get(child.sourceId)
       if (!id) throw new Error(`Missing assembled child ${child.sourceId}`)
-      ordered.push(id)
+      // A layer moved live to another parent stays there; this only orders what the parent holds.
+      if (graph.getNode(id)?.parentId === parentId) ordered.push(id)
     }
     const parent = graph.getNode(parentId)
     if (parent)
       parent.childIds = [...ordered, ...parent.childIds.filter((id) => !ordered.includes(id))]
   }
   for (const page of pages) populateInstances(page)
+  // Before instances sync, so they bind and assign the set properties their variants' copies
+  // stand for.
+  const componentSources = new Map([...componentIds].map(([source, node]) => [node, source]))
+  foldVariantPropertyCopies(
+    graph,
+    [...graph.nodes.values()].filter((node) => !existingNodeIds.has(node.id)),
+    (variant) => state.propertyCopies(componentSources.get(variant.id) ?? variant.id)
+  )
   for (const instanceId of resync) graph.syncInstance(instanceId)
   if (resync.size > 0) restoreDerivedSizes(graph, derivedSizes)
   // Records name other layers by GUID, so links wait until every layer of the pass exists,
@@ -529,6 +561,7 @@ function materializeReaderInto(
     resolveVariantPropertyValues(graph, materialized)
     applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
     applyDocumentPaintBindings(graph, materialized)
+    applyDocumentEffectBindings(graph, materialized)
     applyDocumentValueBindings(graph, materialized)
   })
   return state

@@ -21,7 +21,7 @@ import {
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { nodeChangeToProps } from '../convert'
-import { createFillPaints, createStrokePaints } from '../export/context'
+import { createFillPaints, createStrokePaints, exportedStyleReference } from '../export/context'
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from '../export/context'
 import type { GeneratedFrameCodec } from './codec'
 import { placement, shaped, sublayerRecord, textSublayer } from './entries'
@@ -389,7 +389,9 @@ function writeConnector(
     diffOnlyRemovals: []
   }
   const lineGeometry: KiwiNodeChange = {}
-  context.serializeGeometry(line, lineGeometry, context.blobs)
+  context.serializeGeometry(line, lineGeometry, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   // Figma places the label inside its plate; here they are siblings.
   labelDerived.transform = {
     m00: 1,

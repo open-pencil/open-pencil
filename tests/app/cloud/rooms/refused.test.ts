@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { nextTick } from 'vue'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+import { fetchStub } from '@open-pencil/test-support/fetch' /** A Cloud tab's store, recording what leaving its room did to it. */
+
 import {
   cloudRoomsRefused,
   leaveRefusedRoom,
@@ -15,10 +18,6 @@ import type { EditorStore } from '@/app/editor/session'
 import { closeTab, createTab } from '@/app/tabs'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
-import { asDouble } from '#tests/helpers/doubles'
-import { fetchStub } from '#tests/helpers/fetch'
-
-/** A Cloud tab's store, recording what leaving its room did to it. */
 function tab(options: { stored?: boolean } = {}) {
   const calls = { saves: 0, readOnly: [] as boolean[] }
   const store = asDouble<EditorStore>({

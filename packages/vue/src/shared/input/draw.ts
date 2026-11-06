@@ -6,6 +6,7 @@ import { generatedFrameText, SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-gra
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { findDrawParent } from '#vue/shared/input/drop-target'
+import { gridRounding } from '#vue/shared/input/snap'
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
 
@@ -32,7 +33,7 @@ function startDraw(
   const parentId = findDrawParent(cx, cy, type, editor)
   const toLocal = parentSpace(editor, parentId)
   // Figma rounds both corners of a drawn layer to whole pixels.
-  const snap = editor.state.snappingPreferences.pixelGrid ? Math.round : (value: number) => value
+  const snap = gridRounding(editor)
   const local = toLocal(cx, cy)
   const start = { x: snap(local.x), y: snap(local.y) }
   const nodeId = editor.createShape(type, start.x, start.y, 0, 0, parentId)

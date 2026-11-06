@@ -7,6 +7,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 
+import { pickerOutsideHandlers, type PickerKeepOpen } from './outside'
+
 export interface ColorPickerUI {
   content?: string
   swatch?: string
@@ -15,11 +17,14 @@ export interface ColorPickerUI {
 const {
   color,
   label = 'Edit color',
-  ui
+  ui,
+  keepOpen
 } = defineProps<{
   color: Color
   label?: string
   ui?: ColorPickerUI
+  /** Whether a press outside the picker should leave it open, such as one that samples the canvas. */
+  keepOpen?: PickerKeepOpen
 }>()
 
 const emit = defineEmits<{
@@ -29,15 +34,16 @@ const emit = defineEmits<{
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 
-function cancelFromEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-  emit('cancel')
-}
+const outside = pickerOutsideHandlers(() => keepOpen)
 </script>
 
 <template>
@@ -59,7 +65,9 @@ function cancelFromEscape(event: KeyboardEvent) {
         :side-offset="4"
         side="left"
         data-picker-content
-        @escape-key-down="cancelFromEscape"
+        @escape-key-down="emit('cancel')"
+        @pointer-down-outside="outside.onPointerDownOutside"
+        @focus-outside="outside.onFocusOutside"
       >
         <slot :color="color" />
       </PopoverContent>

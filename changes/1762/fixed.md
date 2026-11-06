@@ -1,0 +1,1 @@
+- `.pen` files keep a frame's bottom and left padding when they write it as four values; the bottom took the top's value and the left the right's, so a title with a bottom inset sat low (#1762).

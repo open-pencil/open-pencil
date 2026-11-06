@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
 import { createEditor } from '@open-pencil/core'
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
 import { materializeFigFragment } from '@open-pencil/fig'

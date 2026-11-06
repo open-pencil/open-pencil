@@ -8,7 +8,7 @@ export default {
     scroller: 'overflow-x-auto',
     table: 'w-full border-collapse text-left text-xs text-surface',
     header: 'border-b border-border',
-    head: 'h-8 px-3 align-middle text-[11px] font-medium whitespace-nowrap text-muted first:pl-4 last:pr-4',
+    head: 'h-8 px-3 align-middle text-2xs font-medium whitespace-nowrap text-muted first:pl-4 last:pr-4',
     // While newer rows load the old ones stay, a little faded, so the table never jumps.
     body: 'transition-opacity duration-150 data-refreshing:opacity-60 motion-reduce:transition-none',
     row: 'border-b border-border transition-colors duration-100 last:border-b-0 hover:bg-hover/40 motion-reduce:transition-none',
@@ -17,7 +17,7 @@ export default {
     /** A bar that pulses along the top edge while newer rows load. */
     refresh: 'pointer-events-none absolute inset-x-0 top-0 z-10',
     footer: 'border-t border-border px-4 py-1.5',
-    pagination: 'flex items-center justify-between gap-2 text-[11px] text-muted',
+    pagination: 'flex items-center justify-between gap-2 text-2xs text-muted',
     range: 'tabular-nums',
     pages: 'flex items-center gap-0.5'
   }

@@ -222,7 +222,9 @@ test('the View menu opens the variables dialog', async () => {
 
 /** The first mode's variable picker in the inspector. */
 function useVariable() {
-  return editor.page.getByTestId('token-inspector').getByTestId('variables-use-variable').first()
+  return editor.page
+    .getByTestId('token-inspector')
+    .getByRole('button', { name: 'Mode 1: Use a variable', exact: true })
 }
 
 test('a value points at another variable and detaches to what it showed', async () => {

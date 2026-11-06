@@ -11,8 +11,7 @@ import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { createStreamingJSXParser } from '@open-pencil/design-jsx'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
-
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 function setupToolTest() {
   const graph = new SceneGraph()
   return { graph, figma: new FigmaAPI(graph) }
@@ -168,6 +167,18 @@ describe('shared render/preview placement', () => {
     expect(staged.insertIndex).toBe(0)
     const page = getNodeOrThrow(setup.graph, setup.figma.currentPageId)
     expect(page.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['A', 'B', 'Board'])
+  })
+
+  it('stages an instance written before its component', async () => {
+    const setup = await fixture()
+    const staged = await compareToFinal(
+      setup,
+      '<><Instance name="Copy" of="Tile"/><Component name="Tile" w={40} h={40}/></>',
+      { insert_index: 0 }
+    )
+    const [copy, tile] = staged.renderedIds.map((id) => getNodeOrThrow(staged.graph, id))
+    expect(copy?.type).toBe('INSTANCE')
+    expect(copy?.componentId).toBe(tile?.id)
   })
 
   it('rejects nonexistent targets before mutating the document', async () => {

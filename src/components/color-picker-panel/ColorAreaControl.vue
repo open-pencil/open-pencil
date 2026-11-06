@@ -16,7 +16,7 @@ const ctx = useColorPickerPanelContext()
     @update:color="ctx.onRekaColorUpdate"
   >
     <ColorAreaArea
-      class="relative h-[140px] w-full cursor-crosshair overflow-hidden rounded"
+      class="relative h-35 w-full cursor-crosshair overflow-hidden rounded"
       :style="style"
     >
       <ColorAreaThumb

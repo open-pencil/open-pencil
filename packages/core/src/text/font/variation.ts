@@ -1,5 +1,5 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
+import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
 
 interface TableRange {
   offset: number
@@ -9,6 +9,10 @@ interface TableRange {
 const WINDOWS_PLATFORM = 3
 const MAC_PLATFORM = 1
 const ENGLISH_US = 0x409
+/** Windows names are UTF-16; Mac names are read in the Roman script, the one with a decoder. */
+const WINDOWS_NAMES = new TextDecoder('utf-16be')
+const MAC_ROMAN_NAMES = new TextDecoder('macintosh')
+const MAC_ROMAN = 0
 const NAME_HEADER_SIZE = 6
 const NAME_RECORD_SIZE = 12
 const FVAR_HEADER_SIZE = 16
@@ -52,10 +56,6 @@ function fixed(view: DataView, offset: number): number {
   return view.getInt32(offset) / 65536
 }
 
-function normalizeStyleName(style: string): string {
-  return style.toLowerCase().replace(/\s+/g, '')
-}
-
 function fontName(view: DataView, name: TableRange, nameId: number): string | null {
   const end = name.offset + name.length
   if (name.length < NAME_HEADER_SIZE) return null
@@ -73,13 +73,11 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
     if (start + length > end) continue
     const bytes = new Uint8Array(view.buffer, view.byteOffset + start, length)
     if (platform === WINDOWS_PLATFORM) {
-      let value = ''
-      for (let c = 0; c + 1 < length; c += 2)
-        value += String.fromCharCode((bytes[c] << 8) | bytes[c + 1])
+      const value = WINDOWS_NAMES.decode(bytes)
       if (language === ENGLISH_US) return value
       fallback ??= value
-    } else if (platform === MAC_PLATFORM) {
-      fallback ??= String.fromCharCode(...bytes)
+    } else if (platform === MAC_PLATFORM && view.getUint16(record + 2) === MAC_ROMAN) {
+      fallback ??= MAC_ROMAN_NAMES.decode(bytes)
     }
   }
   return fallback
@@ -146,10 +144,17 @@ export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
   return variationTable(data)?.axes ?? null
 }
 
-/** A named instance of a variable font, such as Inter's `Semi Bold`, with every axis' value. */
+/** A named instance of a variable font, such as Inter's `SemiBold`, with every axis' value. */
 export interface NamedInstance {
   name: string
   variations: FontVariation[]
+}
+
+/** Whether a variable font has a named instance of this name, spelled alike but for case and spaces. */
+export function hasNamedInstance(data: ArrayBuffer, style: string): boolean {
+  return namedInstances(data).some(
+    (instance) => styleSpelling(instance.name) === styleSpelling(style)
+  )
 }
 
 /** A variable font's named instances, in its order. */
@@ -177,11 +182,11 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
   const table = variationTable(data)
   if (!table) return null
   const { view, axes, instances, name } = table
-  const requested = normalizeStyleName(style)
+  const requested = styleSpelling(style)
   const instance = name
     ? instances.find((offset) => {
         const instanceName = fontName(view, name, view.getUint16(offset))
-        return instanceName !== null && normalizeStyleName(instanceName) === requested
+        return instanceName !== null && styleSpelling(instanceName) === requested
       })
     : undefined
   if (instance !== undefined) {

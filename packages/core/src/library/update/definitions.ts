@@ -3,9 +3,9 @@ import { countBy, groupBy } from 'es-toolkit/array'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import { instanceSwapPropertyIds, resolvedReferences } from '@open-pencil/scene-graph/transfer'
 
-import { componentSyncOrder } from '#core/editor/component-sync'
-import { instanceSwapPropertyIds, resolvedReferences } from '#core/library/copied-references'
+import { componentSyncOrder } from '#core/editor/components/sync'
 import {
   copyImages,
   copyLibraryTree,
@@ -284,6 +284,8 @@ export function updateLibraryDefinitions(
           component: (id, previous) => copyOf(id, previous, scope),
           // The layers an instance's overrides name are inside the component it draws.
           layer: (id, component) => tree.get(id) ?? copyOf(id, null, component),
+          // A connector inside a definition follows the layers of its own tree.
+          endpoint: (id) => tree.get(id) ?? id,
           variable
         },
         swapProperties

@@ -1,9 +1,11 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 
-import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { RefusedEditError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
+import { reportErrorAction } from '@/app/reports/state'
 import { isTauri } from '@/app/tauri/env'
 import type { ProgressAmount } from '@/components/ui/feedback/progress'
 import type { ToastVariant } from '@/components/ui/feedback/toast'
@@ -12,7 +14,8 @@ export type { ToastVariant } from '@/components/ui/feedback/toast'
 
 export interface ToastAction {
   label: string
-  run: () => void
+  /** Gets the toast it was clicked on, for actions that close it once their work is done. */
+  run: (toastId: number) => void
 }
 
 export interface Toast {
@@ -134,27 +137,38 @@ function remove(id: number) {
   toasts.value = toasts.value.filter((t) => t.id !== id)
 }
 
+/**
+ * Removes the toast once its action is done, unless a later message merged into it and brought
+ * an action of its own, which stays on offer.
+ */
+function removeOffer(id: number, action: ToastAction) {
+  toasts.value = toasts.value.filter((t) => t.id !== id || toRaw(t.action) !== action)
+}
+
 function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
 
-  // An edit to a read-only document does nothing, as in Figma, wherever it came from.
+  // An edit the document refuses, as a read-only one's, does nothing, as in Figma.
   useEventListener(window, 'error', (e) => {
-    if (e.error instanceof ReadOnlyDocumentError) {
+    if (e.error instanceof RefusedEditError) {
       e.preventDefault()
       return
     }
     recordRuntimeError(e.error ?? e.message, 'window')
-    error(e.message || 'An unexpected error occurred')
+    error(
+      e.message || 'An unexpected error occurred',
+      reportErrorAction(e.error ?? e.message, 'window')
+    )
   })
   useEventListener(window, 'unhandledrejection', (e) => {
-    if (e.reason instanceof ReadOnlyDocumentError) {
+    if (e.reason instanceof RefusedEditError) {
       e.preventDefault()
       return
     }
     recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
-    error(msg || 'An unexpected error occurred')
+    error(msg || 'An unexpected error occurred', reportErrorAction(e.reason, 'rejection'))
   })
 }
 
@@ -164,6 +178,7 @@ export const toast = {
   error,
   startProgress,
   remove,
+  removeOffer,
   toasts,
   setupGlobalErrorHandler,
   TOAST_DURATION,
@@ -173,7 +188,6 @@ export const toast = {
 export async function openExternalLink(url: string) {
   if (isTauri()) {
     // An app command, so native tests can read the address instead of opening a browser.
-    const { invoke } = await import('@tauri-apps/api/core')
     await invoke('open_external_url', { url })
   } else {
     window.open(url, '_blank')

@@ -3,19 +3,19 @@ import { uniq } from 'es-toolkit'
 import type { ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { characterFace } from '#core/canvas/text/placed'
-import { withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { populateFigPage } from '#core/io/formats/fig'
 import type { SVGCharacterEdges, SVGFallbackFace, SVGTextLayout } from '#core/io/formats/svg'
+import { withTextShaper } from '#core/io/shaping'
 import { computeAllLayouts } from '#core/layout'
 import { shownText } from '#core/text/case'
+import { characterFace } from '#core/text/character-face'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { ARABIC_CHARACTER } from '#core/text/fallbacks'
+import { fontManager } from '#core/text/font/manager'
 import type { DocumentFontStatus } from '#core/text/font/status'
-import { fontManager } from '#core/text/fonts'
 import { prepareGraphFonts } from '#core/text/prepare'
-import { collectGraphFontRequirements } from '#core/text/requirements'
+import { collectGraphFontRequirements } from '#core/text/requirements/collect'
 
 import type { PDFFontFace } from './fonts'
 import type { PDFPageSpec } from './plan'
@@ -30,7 +30,9 @@ export async function preparePDFFonts(
   specs: readonly PDFPageSpec[]
 ): Promise<DocumentFontStatus> {
   const nodeIds = specs.flatMap((spec) => spec.nodeIds)
-  return prepareGraphFonts(graph, nodeIds, await pdfWrittenCharacters(graph, nodeIds))
+  return prepareGraphFonts(graph, nodeIds, {
+    extraCharacters: await pdfWrittenCharacters(graph, nodeIds)
+  })
 }
 
 /**

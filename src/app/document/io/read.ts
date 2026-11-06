@@ -1,9 +1,10 @@
 import { filename } from 'pathe/utils'
 
-import type { Editor, EditorState } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
-import { yieldToUI } from '@/app/document/io/browser'
+import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
@@ -14,6 +15,8 @@ import { toast } from '@/app/shell/ui'
 
 type OpenDocumentState = EditorState & {
   documentName: string
+  /** Whether the side panels show, which a document opens with as its kind starts it. */
+  showUI: boolean
 }
 
 type ReloadDocumentState = EditorState & { documentName: string }
@@ -52,17 +55,27 @@ export function createOpenActions({
     let succeeded = false
     try {
       load.update({ phase: 'reading', detail: file.name })
-      await yieldToUI()
+      await nextFrame()
       load.update({ phase: 'decoding', detail: file.name })
       const imported = await readFigDocument(file, load.signal)
-      await yieldToUI()
+      await nextFrame()
       load.update({ phase: 'materializing', detail: file.name })
       await applyImportedDocument(editor, imported, load)
+      // Into a reused tab too, the document opens with the panels its kind starts with.
+      state.showUI = resolveEditorProfile(editor.state).panelsOpen
       state.documentName = filename(file.name) ?? file.name
       setDocumentSource(file.name, 'fig', handle, path)
       await fitCurrentPageToViewport()
       load.update({ phase: 'preparing-render', detail: state.documentName })
       editor.requestRender()
+      // The document is open by now: a canvas that cannot show it fails the render, not the read.
+      await preparationController
+        .waitForPresentation(load.id, editor.state)
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error)
+          load.fail({ code: 'render-failed', message, retryable: true })
+          toast.error(notificationMessages.get().operationFailed({ error: message }))
+        })
       succeeded = true
     } catch (e) {
       if (load.signal.aborted) return
@@ -83,7 +96,8 @@ export function createOpenActions({
         notificationMessages.get().openFileFailed({
           name: file.name,
           error: e instanceof Error ? e.message : String(e)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     } finally {
       if (succeeded) load.complete()
@@ -143,7 +157,8 @@ export function createReloadActions({
         notificationMessages.get().openFileFailed({
           name: state.documentName,
           error: error instanceof Error ? error.message : String(error)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     } finally {
       if (succeeded) load.complete()

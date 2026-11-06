@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
 
+import { dashEffect } from '#core/canvas/overlays/outline'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 
 import { getGuideScreenSegment } from './geometry'
@@ -37,7 +38,7 @@ function drawGuide(
   state: GuideVisualState = 'idle'
 ): void {
   const color = guideColor(state)
-  r.auxStroke.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.auxStroke.setColorComponents(color.r, color.g, color.b, color.a)
   const segment = getGuideScreenSegment(
     graph,
     owner,
@@ -67,12 +68,10 @@ function drawGuide(
   }
 
   if (!preview || owner.type === 'CANVAS') return
-  const dash = r.ck.PathEffect.MakeDash(GUIDE_DASH, 0)
-  r.auxStroke.setPathEffect(dash)
+  r.auxStroke.setPathEffect(dashEffect(r, GUIDE_DASH[0] ?? 0, GUIDE_DASH[1] ?? 0))
   if (axis === 'x') canvas.drawLine(segment.x1, 0, segment.x1, r.viewportHeight, r.auxStroke)
   else canvas.drawLine(0, segment.y1, r.viewportWidth, segment.y1, r.auxStroke)
   r.auxStroke.setPathEffect(null)
-  dash.delete()
 }
 
 export function drawGuides(

@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { createComponentSyncScheduler } from '#core/editor/component-sync'
+import { createComponentSyncScheduler } from '#core/editor/components/sync'
 
 function createGraph() {
   const graph = new SceneGraph()

@@ -1,1 +1,0 @@
-- Selects in Settings and in the share, workspace members, and statuses dialogs are as tall as the fields and buttons beside them.

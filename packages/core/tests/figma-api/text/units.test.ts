@@ -1,10 +1,12 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { lineHeightPixels, percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+
+beforeAll(() => registerTestFont())
 
 function text() {
   const graph = new SceneGraph()
@@ -64,7 +66,7 @@ describe('text units in the plugin API', () => {
       'in set_letterSpacing: Property "letterSpacing" failed validation: Required value missing at .value\nInvalid option: expected one of "PIXELS"|"PERCENT" at .unit'
     )
     expect(set('lineHeight', { unit: 'PIXELS', value: Number.NaN })).toThrow(
-      'in set_lineHeight: Property "lineHeight" failed validation: Expected number, received nan at .value'
+      'in set_lineHeight: Property "lineHeight" failed validation: Expected number, received NaN at .value'
     )
     expect(set('letterSpacing', { unit: 'RAW', value: 1 })).toThrow(
       'in set_letterSpacing: Property "letterSpacing" failed validation: Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'

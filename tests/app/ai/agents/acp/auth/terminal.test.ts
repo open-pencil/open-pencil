@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   findSignInURL,
@@ -8,7 +9,6 @@ import {
   stripTerminalCodes
 } from '@/app/ai/agents/acp/auth/terminal'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(clearTauriMocks)

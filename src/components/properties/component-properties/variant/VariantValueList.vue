@@ -117,7 +117,7 @@ function replace(value: string, replacement: string) {
         </IconButton>
       </div>
       <div v-if="replacing === value" class="flex flex-col gap-1 pl-5">
-        <span class="text-[11px] text-muted">{{ panels.moveVariantsTo({ value }) }}</span>
+        <span class="text-2xs text-muted">{{ panels.moveVariantsTo({ value }) }}</span>
         <AppSelect
           :label="panels.moveVariantsTo({ value })"
           :model-value="''"
@@ -126,7 +126,7 @@ function replace(value: string, replacement: string) {
           "
           @update:model-value="replace(value, $event)"
         />
-        <span v-if="conflict" role="alert" class="text-[11px] text-warning">
+        <span v-if="conflict" role="alert" class="text-2xs text-warning">
           {{ panels.duplicateVariantValues }}
         </span>
       </div>

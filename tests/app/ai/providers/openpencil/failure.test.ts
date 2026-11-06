@@ -14,7 +14,7 @@ async function modelFailure(status: number, body: unknown): Promise<unknown> {
     fetch: async () => Response.json(body, { status })
   })
   const { config, runtime } = cloudModelConfig(client, 'test/model')
-  const model = createLanguageModel(config, runtime)
+  const model = await createLanguageModel(config, runtime)
   if (typeof model === 'string') throw new Error('Expected a model instance')
   try {
     await model.doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })

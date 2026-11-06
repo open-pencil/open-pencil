@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '../helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { pageId, rect } from './helpers'
 
 describe('updateNode', () => {
@@ -183,6 +183,16 @@ describe('updateNode', () => {
     const afterUpdate = graph.getNode(textId)
     expect(afterUpdate).toBeDefined()
     expect(expectDefined(afterUpdate, 'updated node').textPicture).toBeNull()
+  })
+
+  test('a leading trim change drops the saved text drawing and layout', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', pageId(graph), { width: 100, height: 20 })
+    text.textPicture = new Uint8Array([1, 2, 3])
+    text.derivedLayout = { width: 100, height: 20 }
+    graph.updateNode(text.id, { leadingTrim: 'CAP_HEIGHT' })
+    const updated = expectDefined(graph.getNode(text.id), 'updated node')
+    expect([updated.textPicture, updated.derivedLayout]).toEqual([null, null])
   })
 
   test('derivedTextGlyphs are nulled when text rendering properties change on TEXT node', () => {

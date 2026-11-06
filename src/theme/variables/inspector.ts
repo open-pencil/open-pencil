@@ -3,10 +3,10 @@ export default {
   slots: {
     root: 'flex shrink-0 flex-col gap-4 overflow-y-auto p-4',
     section: 'flex flex-col gap-2',
-    title: 'text-[11px] font-semibold text-muted',
-    label: 'text-[11px] text-muted',
-    hint: 'text-[10px] text-muted',
-    error: 'text-[10px] text-error',
+    title: 'text-2xs font-semibold text-muted',
+    label: 'text-2xs text-muted',
+    hint: 'text-3xs text-muted',
+    error: 'text-3xs text-error',
     /** One mode's value, under the mode's name when there are several. */
     value: 'flex flex-col gap-1',
     /** The fixed `--` in front of a CSS name the user types. */
@@ -19,7 +19,7 @@ export default {
     /** One mode in the collection inspector: its name, when it applies, and the CSS it writes. */
     mode: 'flex flex-col gap-1.5 border-b border-border pb-3 last:border-b-0 last:pb-0',
     /** The CSS a mode is written under, wrapped rather than cut so it reads in full. */
-    modeCSS: 'font-mono text-[11px] break-all text-muted'
+    modeCSS: 'font-mono text-2xs break-all text-muted'
   },
   variants: {
     /** Beside the token list on desktop; the whole panel, behind a back button, on mobile. */

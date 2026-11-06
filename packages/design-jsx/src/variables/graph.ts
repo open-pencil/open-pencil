@@ -1,5 +1,4 @@
-import { isEqual } from 'es-toolkit'
-import { isPlainObject } from 'es-toolkit/predicate'
+import { isEqual, isPlainObject } from 'es-toolkit'
 
 import type {
   SceneGraph,

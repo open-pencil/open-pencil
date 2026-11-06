@@ -16,6 +16,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     transforming: false,
     measurementMode: 'off',
     editingTextId: null,
+    renamingLabelId: null,
     penState: null,
     penCursorX: null,
     penCursorY: null,
@@ -34,7 +35,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     nodeEditState: null,
     cursorCanvasX: null,
     cursorCanvasY: null,
-    play: null
+    canvasView: { id: 'edit' }
   }
 }
 
@@ -54,7 +55,8 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     connectorTarget: structuredClone(source.connectorTarget),
     pageColor: { ...source.pageColor },
     navigation: { ...source.navigation },
-    nodeEditState: structuredClone(source.nodeEditState)
+    nodeEditState: structuredClone(source.nodeEditState),
+    canvasView: { ...source.canvasView }
   }
 }
 

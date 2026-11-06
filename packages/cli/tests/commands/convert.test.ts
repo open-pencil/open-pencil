@@ -1,26 +1,16 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
-import { CLI_ENTRY } from '#cli-tests/helpers/paths'
-
 import { getTextMeasurer } from '@open-pencil/core/layout'
 
 import { loadDocument, measureDocumentText } from '#cli/headless'
 
 setDefaultTimeout(60_000)
-
-async function cli(args: string[]) {
-  const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], { stdout: 'pipe', stderr: 'pipe' })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: await proc.exited }
-}
-
 describe('convert CLI', () => {
   test('saves a .pen document with its text measured in its own fonts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'open-pencil-convert-'))
@@ -51,7 +41,7 @@ describe('convert CLI', () => {
         ]
       })
     )
-    expect((await cli(['convert', source, '-o', output])).exitCode).toBe(0)
+    expect((await runCLI(['convert', source, '-o', output])).exitCode).toBe(0)
 
     const graph = await loadDocument(output)
     const label = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
@@ -75,12 +65,12 @@ describe('convert CLI', () => {
         ]
       })
     )
-    const warned = await cli(['convert', source, '-o', join(dir, 'warned.fig')])
+    const warned = await runCLI(['convert', source, '-o', join(dir, 'warned.fig')])
     expect(warned.exitCode).toBe(0)
     expect(warned.stderr).toContain('Definitely Missing Font')
     expect(await Bun.file(join(dir, 'warned.fig')).exists()).toBe(true)
 
-    const strict = await cli([
+    const strict = await runCLI([
       'convert',
       source,
       '-o',
@@ -103,7 +93,7 @@ describe('convert CLI', () => {
         children: [{ id: 'card', type: 'rectangle', width: 300, height: 200, fill: '#111111' }]
       })
     )
-    expect((await cli(['convert', source, '-o', output])).exitCode).toBe(0)
+    expect((await runCLI(['convert', source, '-o', output])).exitCode).toBe(0)
 
     const { width, height } = figThumbnailSize(await readFile(output))
     expect(width / height).toBeCloseTo(300 / 200, 2)

@@ -1,6 +1,5 @@
 import type { ELK, ElkNode } from 'elkjs/lib/elk-api'
-
-import { IS_BROWSER } from '#core/constants'
+import { noop } from 'es-toolkit'
 
 /** A worker a runtime can stop counting as a reason to stay alive, as Bun's can. */
 interface Unreffable {
@@ -16,61 +15,94 @@ interface Engine {
   elk: ELK
   /** ELK's worker, when it has one the runtime would otherwise wait for. */
   worker: () => Unreffable | null
+  /** How ELK's worker failed, which elkjs does not report to the layouts it holds. */
+  error: Error | null
+  /** Rejects the layouts in flight. */
+  waiting: Set<(error: Error) => void>
 }
 
-let engine: Promise<Engine> | null = null
-/** Layouts in flight. */
-let running = 0
+/** Starts ELK's worker, or is `null` where a runtime has no workers and ELK runs in place. */
+export type StartElkWorker = (() => Worker) | null
 
 /**
- * Whether ELK's bundle would take this thread for a worker of its own, as it does wherever
- * `self` exists outside a page: in Bun, Deno, and Web Workers. It then answers messages instead
- * of laying out in place.
+ * ELK in a worker of its own, so a large diagram does not hold up the page, or in place. A
+ * worker that fails is dropped, so the next layout starts another.
  */
-function looksLikeWorker(): boolean {
-  return !IS_BROWSER && 'self' in globalThis
-}
+export function createElkLayout(startWorker: StartElkWorker): (graph: ElkNode) => Promise<ElkNode> {
+  let engine: Promise<Engine> | null = null
+  /** Layouts in flight. */
+  let running = 0
 
-async function load(): Promise<Engine> {
-  if (!looksLikeWorker()) {
-    const { default: BundledELK } = await import('elkjs/lib/elk.bundled.js')
-    return { elk: new BundledELK(), worker: () => null }
-  }
-  // There, ELK's worker script runs in a real worker.
-  const { default: WorkerELK } = await import('elkjs/lib/elk-api.js')
-  const script = import.meta.resolve('elkjs/lib/elk-worker.min.js')
-  let held: Unreffable | null = null
-  const elk = new WorkerELK({
-    workerFactory: () => {
-      const worker = new Worker(script)
-      held = unreffable(worker)
-      // An idle worker must not keep a script or command from finishing.
-      held?.unref()
-      return worker
+  /** Loads ELK; `drop` forgets it, so the next layout loads it again. */
+  async function load(drop: () => void): Promise<Engine> {
+    if (!startWorker) {
+      const { default: BundledELK } = await import('elkjs/lib/elk.bundled.js')
+      return { elk: new BundledELK(), worker: () => null, error: null, waiting: new Set() }
     }
-  })
-  return { elk, worker: () => held }
-}
+    const { default: WorkerELK } = await import('elkjs/lib/elk-api.js')
+    let held: Unreffable | null = null
+    const waiting = new Set<(error: Error) => void>()
+    const loaded: Engine = {
+      elk: new WorkerELK({
+        workerFactory: () => {
+          const worker = startWorker()
+          worker.addEventListener('error', (event) => {
+            worker.terminate()
+            drop()
+            loaded.error = new Error(`ELK's worker failed: ${event.message}`)
+            for (const reject of waiting) reject(loaded.error)
+            waiting.clear()
+          })
+          held = unreffable(worker)
+          // An idle worker must not keep a script or command from finishing.
+          held?.unref()
+          return worker
+        }
+      }),
+      worker: () => held,
+      error: null,
+      waiting
+    }
+    return loaded
+  }
 
-function elkEngine(): Promise<Engine> {
-  engine ??= load().catch((error: unknown) => {
-    engine = null
-    throw error
-  })
-  return engine
-}
+  function elkEngine(): Promise<Engine> {
+    if (engine) return engine
+    const loading: Promise<Engine> = load(() => {
+      if (engine === loading) engine = null
+    }).catch((error: unknown) => {
+      engine = null
+      throw error
+    })
+    engine = loading
+    return loading
+  }
 
-/**
- * Lays `graph` out with the Eclipse Layout Kernel, loaded on first use and kept for later
- * layouts. Its worker, where it has one, keeps the process alive only while a layout runs.
- */
-export async function layoutWithElk(graph: ElkNode): Promise<ElkNode> {
-  const { elk, worker } = await elkEngine()
-  const layout = elk.layout(graph)
-  if (running++ === 0) worker()?.ref()
-  try {
-    return await layout
-  } finally {
-    if (--running === 0) worker()?.unref()
+  /**
+   * Lays `graph` out with the Eclipse Layout Kernel, loaded on first use and kept for later
+   * layouts. Its worker, where it has one, keeps the process alive only while a layout runs.
+   */
+  return async (graph) => {
+    const { elk, worker, error, waiting } = await elkEngine()
+    if (error) throw error
+    let reject: (error: Error) => void = noop
+    const failed = new Promise<never>((_, rejectLayout) => {
+      reject = rejectLayout
+    })
+    waiting.add(reject)
+    if (running++ === 0) worker()?.ref()
+    try {
+      return await Promise.race([elk.layout(graph), failed])
+    } finally {
+      waiting.delete(reject)
+      if (--running === 0) worker()?.unref()
+    }
   }
 }
+
+/** Lays `graph` out with the Eclipse Layout Kernel (`createElkLayout`). */
+export const layoutWithElk = createElkLayout(
+  typeof Worker === 'undefined'
+    ? null
+    : () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })
+)

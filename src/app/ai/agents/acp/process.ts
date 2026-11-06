@@ -1,9 +1,18 @@
+import { Command } from '@tauri-apps/plugin-shell'
+
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 export type TauriChild = {
   write(data: number[]): Promise<void>
   kill(): Promise<void>
+}
+
+/** A started agent: its process, and the pipes the ACP connection reads and writes. */
+export interface ACPProcess {
+  child: TauriChild
+  input: WritableStream<Uint8Array>
+  output: ReadableStream<Uint8Array>
 }
 
 type ACPProcessOptions = {
@@ -20,8 +29,7 @@ export async function spawnACPProcess({
   logId,
   destroying,
   onUnexpectedClose
-}: ACPProcessOptions) {
-  const { Command } = await import('@tauri-apps/plugin-shell')
+}: ACPProcessOptions): Promise<ACPProcess> {
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',

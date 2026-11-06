@@ -13,7 +13,7 @@ import PortalSignIn from './PortalSignIn.vue'
 import PortalTwoFactor from './PortalTwoFactor.vue'
 
 const host = 'cloud.studio.example'
-const frame = (inner: string) => `<div class="h-[720px]">${inner}</div>`
+const frame = (inner: string) => `<div class="h-180">${inner}</div>`
 const components = {
   PortalDeviceApproval,
   PortalNotice,

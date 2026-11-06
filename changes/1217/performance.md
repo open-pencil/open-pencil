@@ -1,1 +1,0 @@
-- Large documents keep a bounded amount of vector path memory, and drawing vectors no longer leaks memory on every edit or frame.

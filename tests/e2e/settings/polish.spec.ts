@@ -54,13 +54,14 @@ test('external Settings requests respect a dirty editor', async ({ page }) => {
   await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="openrouter"]').click()
   const name = page.getByRole('textbox', { name: 'Name', exact: true })
   await name.fill('Keep this draft')
   const requestSection = () =>
     page.evaluate(async () => {
       const path = '/src/app/settings/dialog.ts'
       const { openSettingsDialog } = await import(path)
-      openSettingsDialog('media')
+      openSettingsDialog('services')
     })
   await requestSection()
   await expect(page.getByRole('alertdialog')).toBeVisible()

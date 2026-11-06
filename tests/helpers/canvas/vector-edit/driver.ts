@@ -1,21 +1,16 @@
 import type { Page } from '@playwright/test'
 
+import { pageScene } from '#tests/helpers/canvas/page-scene'
 import type * as VectorEditScene from '#tests/helpers/canvas/vector-edit/scene'
 
 /** Builds the component vector scene, selects its layers, and reads which path is open. */
 export function vectorEditDriver(page: () => Page) {
+  const scenes = pageScene<typeof VectorEditScene>(
+    page,
+    '/tests/helpers/canvas/vector-edit/scene.ts'
+  )
   return {
-    build() {
-      return page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
-        const fixtureURL = '/tests/helpers/canvas/vector-edit/scene.ts'
-        const scene: typeof VectorEditScene = await import(fixtureURL)
-        const ids = scene.createComponentVectorScene(store.graph, store.state.currentPageId)
-        store.requestRender()
-        return ids
-      })
-    },
+    build: () => scenes.build('createComponentVectorScene'),
 
     select(id: string) {
       return page().evaluate((nodeId) => window.openPencil?.getStore?.().select([nodeId]), id)

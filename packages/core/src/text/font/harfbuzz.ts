@@ -1,11 +1,11 @@
 import type * as HarfBuzzModule from 'harfbuzzjs'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
 import { IS_BROWSER } from '#core/constants'
-
-import { fontTableView } from './variation'
+import { servesRuntimeAsset, unservedRuntimeAssetMessage } from '#core/runtime-assets/served'
 
 export interface OutlineCommand {
   type: string
@@ -87,7 +87,17 @@ async function readSubsetModule(): Promise<ArrayBuffer> {
   const url = locator()
   if (IS_BROWSER || !url.startsWith('file:')) {
     const response = await fetch(url)
-    if (!response.ok) throw new Error(`HarfBuzz subsetter answered ${response.status}`)
+    if (!servesRuntimeAsset(response)) {
+      void response.body?.cancel()
+      throw new Error(
+        unservedRuntimeAssetMessage(
+          'harfbuzz-subset.wasm',
+          url,
+          response,
+          'setHarfBuzzSubsetLocator'
+        )
+      )
+    }
     return response.arrayBuffer()
   }
   const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
@@ -155,15 +165,29 @@ const outlineCache = new ResourceCache<number, readonly OutlineCommand[]>({
   maxWeight: 100_000,
   weight: (commands) => commands.length + 1
 })
+/** Glyph boxes any instance measured, in font units with y running up; `null` for no ink. */
+const boxCache = new ResourceCache<number, VisualBounds | null>({ maxEntries: 50_000 })
 let nextInstanceId = 0
+
+/**
+ * A copy of one of the face's tables as HarfBuzz finds it, in a file or a collection. HarfBuzz
+ * hands back a view of its memory, which the next call can move; the tables read this way are a
+ * few dozen bytes.
+ */
+export function harfBuzzTable(face: HarfBuzzModule.Face, tag: string): DataView | null {
+  const table = face.referenceTable(tag)
+  return table ? new DataView(table.slice().buffer) : null
+}
 
 /** A font file read by HarfBuzz, or `null` when HarfBuzz is not loaded or the file has no glyphs. */
 export function harfBuzzFont(bytes: ArrayBuffer): HarfBuzzFont | null {
   const hb = harfBuzz
-  const maxp = fontTableView(bytes, 'maxp')
-  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
-  if (!hb || glyphCount === 0) return null
+  if (!hb) return null
+  // The first face of a collection, the one CanvasKit draws.
   const face = new hb.Face(new hb.Blob(bytes))
+  const maxp = harfBuzzTable(face, 'maxp')
+  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
+  if (glyphCount === 0) return null
   return {
     hb,
     face,
@@ -215,6 +239,42 @@ function outlineDrawFuncs(hb: HarfBuzz): HarfBuzzModule.DrawFuncs {
   draw.setClosePathFunc((data) => commands(data).push({ type: 'Z' }))
   outlineDrawing = draw
   return draw
+}
+
+/**
+ * The box around `glyphId`'s outline in `instance`, as the font measures it at its axes, scaled
+ * from font units to `fontSize` with y running down from the baseline; `null` for a glyph that
+ * draws nothing.
+ */
+export function glyphBox(
+  parsed: HarfBuzzFont,
+  instance: HarfBuzzInstance,
+  glyphId: number,
+  fontSize: number
+): VisualBounds | null {
+  const key = instance.id + glyphId
+  let box = boxCache.get(key)
+  if (box === undefined) {
+    const extents = instance.font.glyphExtents(glyphId)
+    box =
+      extents && extents.width !== 0 && extents.height !== 0
+        ? {
+            minX: extents.xBearing,
+            minY: extents.yBearing + extents.height,
+            maxX: extents.xBearing + extents.width,
+            maxY: extents.yBearing
+          }
+        : null
+    boxCache.set(key, box)
+  }
+  if (!box) return null
+  const scale = fontSize / parsed.face.upem
+  return {
+    minX: box.minX * scale,
+    minY: -box.maxY * scale,
+    maxX: box.maxX * scale,
+    maxY: -box.minY * scale
+  }
 }
 
 /**
@@ -270,15 +330,48 @@ export function glyphCommands(
 
 let shapingBuffer: HarfBuzzModule.Buffer | null = null
 
-/** The glyphs HarfBuzz shapes `text` into with the font's default instance, and their positions. */
+/** An OpenType feature set on or off for shaping, by its lowercase tag ("liga", "tnum"). */
+export interface ShapingFeature {
+  tag: string
+  value: number
+  /** The code units of the text it applies to, from `start` up to `end`; all when left out. */
+  start?: number
+  end?: number
+}
+
+/**
+ * How text is shaped: at a variable font's instance, with features over the defaults, and in a
+ * direction and language, which HarfBuzz guesses from the text when they are left out.
+ */
+export interface ShapingOptions {
+  instance?: HarfBuzzInstance
+  features?: readonly ShapingFeature[]
+  rtl?: boolean
+  language?: string
+}
+
+/**
+ * The glyphs HarfBuzz shapes `text` into, and their positions: at the font's default instance
+ * and HarfBuzz's default features unless `options` sets others, as CanvasKit shapes a run.
+ */
 export function shapeText(
   parsed: HarfBuzzFont,
-  text: string
+  text: string,
+  options: ShapingOptions = {}
 ): ReturnType<HarfBuzzModule.Buffer['getGlyphInfosAndPositions']> {
   shapingBuffer ??= new parsed.hb.Buffer()
   shapingBuffer.reset()
   shapingBuffer.addText(text)
+  const { Direction, Feature } = parsed.hb
+  if (options.rtl !== undefined) {
+    shapingBuffer.setDirection(options.rtl ? Direction.RTL : Direction.LTR)
+  }
+  if (options.language) shapingBuffer.setLanguage(options.language)
   shapingBuffer.guessSegmentProperties()
-  parsed.hb.shape(parsed.font, shapingBuffer)
+  const features = options.features?.map(
+    ({ tag, value, start, end }) =>
+      new Feature(tag, value, start ?? Feature.GLOBAL_START, end ?? Feature.GLOBAL_END)
+  )
+  parsed.hb.shape(options.instance?.font ?? parsed.font, shapingBuffer, features)
   return shapingBuffer.getGlyphInfosAndPositions()
 }
