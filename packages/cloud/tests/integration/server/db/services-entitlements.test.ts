@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { moveEntitlements } from '#cloud/server/db/migrations/029_services_entitlements'
+import { down, up } from '#cloud/server/db/migrations/029_services_entitlements'
 
 describe('migration 029', () => {
   test('moves stored ai entitlements to services and leaves the rest alone', async () => {
@@ -31,19 +31,28 @@ describe('migration 029', () => {
         ])
         .execute()
 
-      await moveEntitlements(database, 'ai', 'services')
+      const stored = async () =>
+        Object.fromEntries(
+          (
+            await database
+              .selectFrom('workspaceEntitlement')
+              .select(['workspaceId', 'values'])
+              .execute()
+          ).map((row) => [row.workspaceId, row.values])
+        )
+      const before = await stored()
 
-      const rows = await database
-        .selectFrom('workspaceEntitlement')
-        .select(['workspaceId', 'values'])
-        .execute()
-      expect(Object.fromEntries(rows.map((row) => [row.workspaceId, row.values]))).toEqual({
+      await up(database)
+
+      expect(await stored()).toEqual({
         [withAI]: {
           sharing: { links: true },
           services: { enabled: true, monthlyCreditAllowance: 500 }
         },
         [without]: { sharing: { links: false } }
       })
+      await down(database)
+      expect(await stored()).toEqual(before)
     } finally {
       await runtime.close()
     }

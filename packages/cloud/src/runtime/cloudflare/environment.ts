@@ -43,7 +43,7 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
 }
 
 /**
- * Reads the deployment TOML once per isolate: its config and AI signing key stay the same for the
+ * Reads the deployment TOML once per isolate: its config and services signing key stay the same for the
  * Worker's lifetime. A failure is not kept, so the next request tries again.
  */
 export function cloudflareCloudSetup(source: string) {

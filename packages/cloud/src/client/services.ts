@@ -24,7 +24,7 @@ export class CloudServiceError extends Error {
     readonly status: number,
     readonly code?: ServiceErrorCode
   ) {
-    super(`OpenPencil AI request failed with HTTP ${status}`)
+    super(`OpenPencil services request failed with HTTP ${status}`)
   }
 }
 

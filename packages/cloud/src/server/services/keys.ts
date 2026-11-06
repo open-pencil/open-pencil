@@ -36,7 +36,7 @@ export async function loadServicesSigningKey(
   try {
     return await importServicesSigningKey(config.servicesSigningKey)
   } catch {
-    throw new CloudConfigError('AI signing key must be a PKCS #8 P-256 private key')
+    throw new CloudConfigError('Services signing key must be a PKCS #8 P-256 private key')
   }
 }
 

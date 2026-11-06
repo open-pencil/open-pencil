@@ -78,7 +78,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'Cloud contract',
-    code: "const { CLOUD_SERVICES_TOKEN_AUDIENCE, creditWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_SERVICES_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(creditWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
+    code: "const { CLOUD_SERVICES_TOKEN_AUDIENCE, creditWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_SERVICES_TOKEN_AUDIENCE !== 'openpencil-services' || !safeParse(creditWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
   },
   {
     name: 'XPath query',

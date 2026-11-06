@@ -1,25 +1,18 @@
 import type { CloudDatabase } from '#cloud/server/db/tables'
-import type { Kysely } from 'kysely'
-import * as v from 'valibot'
-
-const storedValuesSchema = v.looseObject({})
+import { sql, type Kysely } from 'kysely'
 
 /**
  * Moves each workspace's stored `ai` entitlements to `services`, which now names the AI service
- * together with the other paid services Cloud signs tokens for.
+ * together with the other paid services Cloud signs tokens for. One statement renames the key in
+ * place, so it reads no rows into memory and cannot overwrite a write that lands meanwhile.
  */
-export async function moveEntitlements(database: Kysely<CloudDatabase>, from: string, to: string) {
-  const rows = await database.selectFrom('workspaceEntitlement').selectAll().execute()
-  for (const row of rows) {
-    const parsed = v.safeParse(storedValuesSchema, row.values)
-    if (!parsed.success || !(from in parsed.output)) continue
-    const { [from]: moved, ...rest } = parsed.output
-    await database
-      .updateTable('workspaceEntitlement')
-      .set({ values: { ...rest, [to]: moved } })
-      .where('workspaceId', '=', row.workspaceId)
-      .execute()
-  }
+async function moveEntitlements(database: Kysely<CloudDatabase>, from: string, to: string) {
+  await sql`
+    update ${sql.table('workspaceEntitlement')}
+    set ${sql.ref('values')} =
+      (${sql.ref('values')} - ${from}::text) || jsonb_build_object(${to}::text, ${sql.ref('values')} -> ${from}::text)
+    where ${sql.ref('values')} ? ${from}::text
+  `.execute(database)
 }
 
 export async function up(database: Kysely<CloudDatabase>): Promise<void> {

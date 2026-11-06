@@ -8,7 +8,7 @@ async function pkcs8(algorithm: 'ES256' | 'ES384') {
   return exportPKCS8(privateKey)
 }
 
-describe('AI signing key', () => {
+describe('Services signing key', () => {
   test('a P-256 key loads with a thumbprint kid', async () => {
     const key = await loadServicesSigningKey({ servicesSigningKey: await pkcs8('ES256') })
     expect(key?.publicJWK).toMatchObject({ kty: 'EC', crv: 'P-256', alg: 'ES256', use: 'sig' })
