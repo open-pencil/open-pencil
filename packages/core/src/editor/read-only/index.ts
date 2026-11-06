@@ -39,8 +39,14 @@ export class FixedLayersError extends RefusedEditError {
  */
 export function refusalFor(action: string, profile: EditorProfile): RefusedEditError | null {
   if (READ_ONLY_ACTIONS.has(action)) return null
+  if (PATH_EDIT_ACTIONS.has(action)) return profile.edits ? null : new ReadOnlyDocumentError()
+  return layerEditRefusal(profile)
+}
+
+/** The error a change to layers is refused with, or null when the profile allows it. */
+export function layerEditRefusal(profile: EditorProfile): RefusedEditError | null {
   if (!profile.edits) return new ReadOnlyDocumentError()
-  if (profile.layerEdits === 'none' && !PATH_EDIT_ACTIONS.has(action)) return new FixedLayersError()
+  if (profile.layerEdits === 'none') return new FixedLayersError()
   return null
 }
 
