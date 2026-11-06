@@ -26,7 +26,13 @@ export interface ReadDocumentInput {
    * Reads a file a document names relative to itself, such as a `.pen` document's images; null
    * when it cannot. Hosts that know where the document lives pass it.
    */
-  readAsset?(path: string): Promise<Uint8Array | null>
+  readAsset?: (path: string) => Promise<Uint8Array | null>
+  /**
+   * Reads a document a document imports, such as a `.pen` library, or a file an imported document
+   * names, by its path relative to the document being read, which may lead out of its folder;
+   * null when it cannot. Without it, imports are left unresolved.
+   */
+  readImport?: (path: string) => Promise<Uint8Array | null>
 }
 
 export interface ReadDocumentResult {

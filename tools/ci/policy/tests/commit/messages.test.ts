@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { hasAICoauthor } from '#ci/commit-attribution'
+import { hasAICoauthor } from '#ci/commit/attribution'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 

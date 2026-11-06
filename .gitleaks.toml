@@ -10,7 +10,7 @@ paths = [
   '''(^|/)\.worktrees/''',
   '''(^|/)dist/''',
   '''(^|/)node_modules/''',
-  '''^desktop/target/''',
+  '''^target/''',
   '''^packages/[^/]+/dist/''',
   '''^packages/docs/\.vitepress/cache/''',
   '''^packages/cloud/dist-standalone/''',

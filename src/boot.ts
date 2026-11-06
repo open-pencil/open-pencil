@@ -58,11 +58,4 @@ export async function boot(): Promise<void> {
     const report = reportErrorAction(error, 'vue')
     if (report) toast.error(diagnosticsMessages.get().reportUnexpectedError, report)
   }
-
-  if (!IS_TAURI) {
-    void import('virtual:pwa-register').then(({ registerSW }) => {
-      registerSW({ immediate: true })
-      return undefined
-    })
-  }
 }

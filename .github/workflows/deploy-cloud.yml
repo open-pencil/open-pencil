@@ -27,14 +27,16 @@ jobs:
     env:
       DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
-      - uses: ./.github/actions/setup-playwright
+      - uses: ./.github/actions/setup/playwright
 
       # The Worker serves the editor and the portal as static assets. The editor names this
       # deployment as the official server and, like app.openpencil.dev, sends the daily ping.
@@ -42,7 +44,7 @@ jobs:
         env:
           VITE_OPENPENCIL_OFFICIAL_CLOUD_URL: ${{ vars.CLOUD_URL }}
           VITE_OPENPENCIL_FEEDBACK: "on"
-        run: bun run build:packages && bun run build:cloud
+        run: bun run build:cloud
 
       # wrangler builds the Worker without deploying it, so the bundle whose source map PostHog gets
       # is the one that ships, with the chunk ID its error reports carry.
@@ -81,14 +83,12 @@ jobs:
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
-        run: |
-          umask 077
-          jq -n '{BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-            GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET, S3_ACCESS_KEY_ID: env.S3_ACCESS_KEY_ID,
-            S3_SECRET_ACCESS_KEY: env.S3_SECRET_ACCESS_KEY,
-            POSTHOG_PROJECT_API_KEY: env.POSTHOG_PROJECT_API_KEY}' > "$RUNNER_TEMP/cloud-secrets.json"
+        run: >-
+          bun tools/ci/cloud-deploy/src/secrets.ts "$RUNNER_TEMP/cloud-secrets.json"
+          BETTER_AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET S3_ACCESS_KEY_ID
+          S3_SECRET_ACCESS_KEY POSTHOG_PROJECT_API_KEY
 
-      - uses: cloudflare/wrangler-action@v4
+      - uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -102,18 +102,5 @@ jobs:
       - name: Check the deployment
         env:
           CLOUD_URL: ${{ vars.CLOUD_URL }}
-        # Only a 200 counts: a redirect to a sign-in or access page would mean the Worker isn't there.
-        # Pages are asked for as a browser does; the API is not, so a missing route can't turn into
-        # the editor's page.
-        run: |
-          for path in /health /ready /.well-known/openpencil / /welcome /auth/sign-in; do
-            accept='application/json'
-            case "$path" in /|/welcome|/auth/*) accept='text/html' ;; esac
-            status=$(curl --silent --show-error --retry 10 --retry-all-errors --retry-delay 3 \
-              --header "Accept: $accept" \
-              --output /dev/null --write-out '%{http_code}' "$CLOUD_URL$path")
-            if [ "$status" != 200 ]; then
-              echo "::error::$path answered HTTP $status"
-              exit 1
-            fi
-          done
+        # Only a 200 counts, and pages are asked for as a browser does (tools/ci/cloud-deploy/src/health.ts).
+        run: bun tools/ci/cloud-deploy/src/health.ts "$CLOUD_URL"
