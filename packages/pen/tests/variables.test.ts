@@ -291,7 +291,8 @@ describe('parsePenFile — independent theme axes (#1829)', () => {
             ]
           },
           radius: { type: 'number', value: [{ value: 8, theme: { shape: 'round' } }] },
-          card: { type: 'color', value: '$surface' }
+          card: { type: 'color', value: '$surface' },
+          spacing: { type: 'number', value: '$gap' }
         },
         children
       } satisfies PenDocument)
@@ -329,7 +330,8 @@ describe('parsePenFile — independent theme axes (#1829)', () => {
             theme: { density: 'cozy' },
             layout: 'vertical',
             gap: '$gap',
-            fill: '$card'
+            fill: '$card',
+            children: [{ id: 'spaced', type: 'frame', layout: 'vertical', gap: '$spacing' }]
           }
         ]
       }
@@ -344,6 +346,11 @@ describe('parsePenFile — independent theme axes (#1829)', () => {
     expect(graph.getNode('outer')?.variableModes[density.id]).toBeUndefined()
     expect(modeName(density, 'inner')).toBe('cozy')
     expect(graph.getNode('inner')?.variableModes[mode.id]).toBeUndefined()
+    // `spacing` sits with the unthemed variables, in the `mode` collection, and aliases `gap` in
+    // the `density` one, so it resolves in the cozy density the inner layer set.
+    const spacing = [...graph.variables.values()].find((variable) => variable.name === 'spacing')
+    expect(spacing?.collectionId).toBe(mode.id)
+    expect(graph.getNode('spaced')?.itemSpacing).toBe(16)
     // The alias resolves in the dark mode the outer layer set.
     expect(graph.getNode('inner')).toMatchObject({
       itemSpacing: 16,
