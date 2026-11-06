@@ -1,6 +1,7 @@
 import { groupBy } from 'es-toolkit'
 import { dirname, join } from 'pathe'
 import { filename } from 'pathe/utils'
+import { decodePath } from 'ufo'
 
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { isDrawIOExportFileName } from '@open-pencil/drawio'
@@ -253,7 +254,9 @@ type ReadFile = ReadDocumentInput['readAsset']
  */
 async function loadPenImage(url: string, read: ReadFile): Promise<Uint8Array | null> {
   try {
-    if (!isDataURL(url)) return (await read?.(url)) ?? null
+    // pen.dev writes the path percent-encoded, as `My%20Design-assets/…`; the host keeps the
+    // read inside the folder it allows.
+    if (!isDataURL(url)) return (await read?.(decodePath(url))) ?? null
     // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
     return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
   } catch {
