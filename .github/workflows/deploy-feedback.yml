@@ -30,19 +30,23 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       - name: Typecheck and test against a local D1
         run: bun run test:feedback
 
       # Wrangler uploads dist-metrics/ as the Worker's static assets.
       - name: Build the metrics dashboard page
-        run: bun run build:packages && bun run build:metrics
+        run: bun run build:metrics
 
       # Migrations run before the new code, so it never queries a table that is not there yet.
-      - uses: cloudflare/wrangler-action@v4
+      - uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

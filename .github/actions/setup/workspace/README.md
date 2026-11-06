@@ -1,6 +1,9 @@
-# Bun workspace setup and release caching
+# Workspace setup and release caching
 
 This action installs the manifest-selected Bun version, restores its package download cache, and always runs `bun install`. It does not cache `node_modules` or skip frozen-lockfile installation on a cache hit.
+
+- `lfs: 'true'` pulls Git LFS files first, only those matching `lfs-include` when it is set.
+- `packages: 'true'` runs `bun run build:packages` after installing, once the HTML engine's WebAssembly cache is restored.
 
 - `cache-scope` separates independent workflow groups; the default is `workspace`.
 - Keys include the runner OS and host architecture, not the cross-compilation target, plus `bun.lock`. Fallbacks preserve scope, OS and architecture.
@@ -8,7 +11,7 @@ This action installs the manifest-selected Bun version, restores its package dow
 - The desktop matrix designates one writer per host platform. The macOS Intel cross-build and Windows ARM64 cross-build are readers; package publication also reads the desktop Linux cache. This assumes both macOS entries use the same host architecture, as configured with `macos-latest`; revisit writer selection if runner labels change.
 - Bun executable caching is disabled explicitly. Dependency caching remains enabled, avoiding a separate executable cache upload lifecycle.
 
-Rust release caching uses `desktop -> target`: `target` is relative to the Cargo workspace. The Rust action retains compiler/environment keys and the explicit target key; different target artifacts must not be mixed.
+Rust release caching uses `. -> target`: the repository root is the Cargo workspace, and `target` is relative to it. The Rust action retains compiler/environment keys and the explicit target key; different target artifacts must not be mixed.
 
 ## Limits
 

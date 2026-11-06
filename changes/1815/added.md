@@ -1,0 +1,1 @@
+- The desktop app carries the licenses of the npm packages and Rust crates it is built from, under `licenses/` in its bundle, and the web app serves those of its npm packages at `/THIRD-PARTY-NOTICES.md`.
