@@ -226,3 +226,57 @@ describe('render bounds as Figma measures them', () => {
     ).toEqual([3, -1, 18.66, 22.32])
   })
 })
+
+describe('render bounds under a mask', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const rectangle = (x: number, y: number, width: number, height: number) => {
+    const rect = figma.createRectangle()
+    rect.x = x
+    rect.y = y
+    rect.resize(width, height)
+    rect.fills = solid(1, 0, 0)
+    return rect
+  }
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+  const masked = (layers: Rectangle[], maskIndexes: number[]) => {
+    for (const index of maskIndexes) {
+      layers[index].isMask = true
+    }
+    return figma.group(layers, figma.currentPage)
+  }
+
+  test('a mask holds the layers above it to what it covers and draws nothing itself', () => {
+    const scrolled = masked([rectangle(10, 10, 100, 50), rectangle(20, -5000, 60, 6000)], [0])
+    expect(box(exportBounds(graph, [scrolled.id]))).toEqual([20, 10, 60, 50])
+  })
+
+  test('a frame exports its own size when a mask clips the content scrolled past it', () => {
+    const screen = figma.createFrame()
+    screen.x = 500
+    screen.resize(200, 100)
+    screen.fills = solid(1, 1, 1)
+    screen.clipsContent = false
+    const list = masked([rectangle(10, 10, 100, 50), rectangle(20, -5000, 60, 6000)], [0])
+    screen.appendChild(list)
+    expect(box(exportBounds(graph, [screen.id]))).toEqual([500, 0, 200, 100])
+  })
+
+  test('layers below a mask stay whole and the next mask starts a new run', () => {
+    const below = rectangle(1000, 0, 10, 10)
+    const firstMask = rectangle(1000, 0, 20, 20)
+    const firstMasked = rectangle(1000, 0, 400, 20)
+    const secondMask = rectangle(1100, 100, 20, 20)
+    const secondMasked = rectangle(1000, 100, 400, 400)
+    const group = masked([below, firstMask, firstMasked, secondMask, secondMasked], [1, 3])
+    expect(box(exportBounds(graph, [group.id]))).toEqual([1000, 0, 120, 120])
+  })
+
+  test('a hidden mask masks nothing', () => {
+    const group = masked([rectangle(2000, 0, 10, 10), rectangle(2000, 0, 100, 100)], [0])
+    const [mask] = group.children
+    mask.visible = false
+    expect(box(exportBounds(graph, [group.id]))).toEqual([2000, 0, 100, 100])
+  })
+})

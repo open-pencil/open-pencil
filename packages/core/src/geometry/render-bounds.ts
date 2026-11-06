@@ -204,6 +204,66 @@ function clipped(bounds: VisualBounds | null, clip: VisualBounds | null): Visual
   return bounds && clip ? intersectVisualBounds(bounds, clip) : bounds
 }
 
+function isVisibleMask(node: SceneNode): boolean {
+  return node.visible && node.isMask
+}
+
+/**
+ * What a node's children draw, held to `clip`. A run of masks draws nothing itself and holds the
+ * siblings after it, up to the next mask, to what the run covers, as the canvas masks them
+ * (`renderMaskedChildIds`). A mask's cover is taken with `drawn` reach, so no masked pixel falls
+ * outside it.
+ */
+function drawnChildren(
+  graph: SceneGraph,
+  node: SceneNode,
+  matrix: Mat3,
+  clip: VisualBounds | null,
+  options: RenderBoundsOptions
+): VisualBounds | null {
+  let content: VisualBounds | null = null
+  let masked = false
+  let cover: VisualBounds | null = null
+  let previousWasMask = false
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child) {
+      continue
+    }
+    const childMatrix = Matrix.multiply(
+      matrix,
+      getNodeLocalMatrix(projectedNode(child, options.preview))
+    )
+    if (isVisibleMask(child)) {
+      const region = drawnSubtree(graph, child, childMatrix, null, { ...options, reach: 'drawn' })
+      cover = previousWasMask ? unionVisualBounds(cover, region) : region
+      masked = true
+      previousWasMask = true
+      continue
+    }
+    previousWasMask = false
+    if (!draws(child, options.reach)) {
+      continue
+    }
+    const held = masked ? maskedClip(cover, clip) : clip
+    if (masked && !held) {
+      continue
+    }
+    const drawn = drawnSubtree(graph, child, childMatrix, held, options)
+    if (drawn) {
+      content = unionVisualBounds(content, drawn)
+    }
+  }
+  return content
+}
+
+function maskedClip(cover: VisualBounds | null, clip: VisualBounds | null): VisualBounds | null {
+  if (!cover) {
+    return null
+  }
+  return clip ? intersectVisualBounds(cover, clip) : cover
+}
+
 /**
  * What a node and its descendants draw, in the frame `matrix` maps the node's axes into, held to
  * `clip`; `null` when nothing does. A node's effects act on everything it draws, its children's
@@ -218,7 +278,7 @@ function drawnSubtree(
   clip: VisualBounds | null,
   options: RenderBoundsOptions
 ): VisualBounds | null {
-  const { reach, preview } = options
+  const { reach } = options
   const own = ownPaint(node, reach)
   let content = own && mapVisualBounds(matrix, own)
   if (!(reach === 'drawn' && clipsChildren(node))) {
@@ -227,13 +287,7 @@ function drawnSubtree(
       : null
     const childClip = box && clip ? intersectVisualBounds(box, clip) : (box ?? clip)
     if (!(box && !childClip)) {
-      for (const childId of node.childIds) {
-        const child = graph.getNode(childId)
-        if (!child || !draws(child, reach)) continue
-        const local = getNodeLocalMatrix(projectedNode(child, preview))
-        const drawn = drawnSubtree(graph, child, Matrix.multiply(matrix, local), childClip, options)
-        if (drawn) content = unionVisualBounds(content, drawn)
-      }
+      content = unionVisualBounds(content, drawnChildren(graph, node, matrix, childClip, options))
     }
   }
   const drawn = content && withEffects(node, content, matrix, reach)
