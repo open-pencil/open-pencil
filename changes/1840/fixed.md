@@ -1,1 +1,1 @@
-- A `.pen` document with many theme axes opens instead of hanging: each axis gets its own variable collection unless a variable combines it with others. (#1829)
+- A `.pen` document with many theme axes opens instead of hanging: each axis gets its own variable collection unless a variable combines it with others (#1829).
