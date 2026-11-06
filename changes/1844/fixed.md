@@ -1,0 +1,1 @@
+- Opacity and zoom digit shortcuts work on layouts such as AZERTY, where the digit row needs Shift to type digits (#1844).

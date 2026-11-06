@@ -1,0 +1,1 @@
+- SDK shortcuts are written as tokens such as `MOD+S`: `useEditorKeyboard` shortcut `keys` take tokens instead of tinykeys bindings, `EditorCommandMetadata.keybinding` is replaced by `aliases`, and `TOOL_SHORTCUTS` and editor profile `toolKeys` are keyed by tokens (`V`, `SHIFT+S`) instead of key codes (#1844).
