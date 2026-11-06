@@ -192,6 +192,27 @@ describe('selected-node preview projections', () => {
     }
   })
 
+  test('refreshes committed multi-selection edits together', async () => {
+    const fixture = setup()
+    const { editor, first, second, selection } = fixture
+    try {
+      editor.select([first.id, second.id])
+      const before = selection.nodes.value
+      const beforeFirst = before[0]
+      const beforeSecond = before[1]
+      editor.updateNodeWithUndo(first.id, { x: 40 })
+      expect(selection.nodes.value[0]).not.toBe(beforeFirst)
+      expect(selection.nodes.value[1]).toBe(beforeSecond)
+
+      editor.updateNodeWithUndo(second.id, { x: 70 })
+      await Promise.resolve()
+
+      expect(selection.nodes.value.map((node) => node.x)).toEqual([40, 70])
+    } finally {
+      fixture.dispose()
+    }
+  })
+
   test('tracks multi-selection, selection changes and preview cancellation', () => {
     const fixture = setup()
     const { editor, first, second, selection } = fixture

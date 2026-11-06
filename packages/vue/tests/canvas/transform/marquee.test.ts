@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 
-import { handleMarqueeMove } from '#vue/canvas/transform/marquee'
+import { finishMarquee, handleMarqueeMove } from '#vue/canvas/transform/marquee'
 
 let editor: Editor
 
@@ -10,15 +10,34 @@ afterEach(() => editor.dispose())
 
 function marquee(from: [number, number], to: [number, number], containerId?: string) {
   editor.clearSelection()
-  handleMarqueeMove(
-    editor,
-    { type: 'marquee', startX: from[0], startY: from[1], containerId, selectsSection: true },
-    ...to
-  )
+  const drag = {
+    type: 'marquee' as const,
+    startX: from[0],
+    startY: from[1],
+    containerId,
+    selectsSection: true
+  }
+  handleMarqueeMove(editor, drag, ...to)
+  finishMarquee(editor, drag)
   return [...editor.state.selectedIds]
 }
 
 describe('marquee selection', () => {
+  test('draws while dragging and selects on release', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', page, { width: 100, height: 100 })
+    const drag = { type: 'marquee' as const, startX: 0, startY: 0, selectsSection: true }
+
+    handleMarqueeMove(editor, drag, 200, 200)
+    expect([...editor.state.selectedIds]).toEqual([])
+    expect(editor.state.marquee).toEqual({ x: 0, y: 0, width: 200, height: 200 })
+
+    finishMarquee(editor, drag)
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+    expect(editor.state.marquee).toBeNull()
+  })
+
   test('on the page, encloses a rotated frame by its drawn bounds', () => {
     editor = createEditor()
     const page = editor.state.currentPageId

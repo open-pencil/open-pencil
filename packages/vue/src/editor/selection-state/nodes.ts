@@ -14,16 +14,18 @@ export interface SelectedNodeState {
   dispose: () => void
 }
 
+function selectedNodeAsShown(editor: Editor, node: SceneNode): SceneNode {
+  const style = editor.getTextSelectionStyle(node)
+  return style ? { ...node, ...style } : node
+}
+
 /**
  * The selected layers as the panel shows them: text has the style of its first character, or of
  * its selected characters while it is edited, which the panel then edits.
  */
 export function selectedNodesAsShown(editor: Editor): SceneNode[] {
   if (editor.state.editingTextId) void editor.state.textSelectionVersion
-  return editor.getSelectedNodes().map((node) => {
-    const style = editor.getTextSelectionStyle(node)
-    return style ? { ...node, ...style } : node
-  })
+  return editor.getSelectedNodes().map((node) => selectedNodeAsShown(editor, node))
 }
 
 /** Selected-node copies with property-level preview tracking; never proxies the graph. */
@@ -32,18 +34,45 @@ export function createSelectedNodeState(
   active?: Readonly<Ref<boolean>>
 ): SelectedNodeState {
   const revision = shallowRef(0)
-  const refresh = () => {
+  const projections = new Map<string, SceneNode>()
+  const dirty = new Set<string>()
+  let textStyleVersion = -1
+  const invalidateAll = () => {
+    projections.clear()
+    dirty.clear()
     revision.value++
   }
-  const refreshSelected = (id: string) => {
-    if (editor.state.selectedIds.has(id)) refresh()
+  /** Rebuilds only the changed selected layers, keeping the other projections and their readers. */
+  const refreshAfterEdit = (id: string) => {
+    if (active?.value === false || !editor.state.selectedIds.has(id)) return
+    dirty.add(id)
+    revision.value++
   }
   const nodes = computed<SceneNode[]>((previous) => {
     if (active?.value === false && previous) return previous
     void revision.value
-    void editor.state.sceneVersion
     void editor.state.currentPageId
-    return selectedNodesAsShown(editor).map((node) => shallowReactive(structuredClone(node)))
+    const ids = [...editor.state.selectedIds]
+    if (editor.state.editingTextId && editor.state.textSelectionVersion !== textStyleVersion) {
+      textStyleVersion = editor.state.textSelectionVersion
+      for (const id of ids) dirty.add(id)
+    }
+    for (const id of projections.keys())
+      if (!editor.state.selectedIds.has(id)) projections.delete(id)
+    return ids.flatMap((id) => {
+      const source = editor.graph.getNode(id)
+      if (!source) {
+        projections.delete(id)
+        return []
+      }
+      let projection = projections.get(id)
+      if (!projection || dirty.has(id)) {
+        projection = shallowReactive(structuredClone(selectedNodeAsShown(editor, source)))
+        projections.set(id, projection)
+        dirty.delete(id)
+      }
+      return [projection]
+    })
   })
   const byId = computed(() => new Map(nodes.value.map((node) => [node.id, node])))
   const node = computed(() => (nodes.value.length === 1 ? nodes.value[0] : null))
@@ -58,16 +87,16 @@ export function createSelectedNodeState(
     () => active?.value ?? true,
     (enabled, _previous, onCleanup) => {
       if (!enabled) return
-      refresh()
+      invalidateAll()
       onCleanup(editor.onEditorEvent('node:previewUpdated', updatePreview))
-      onCleanup(editor.onEditorEvent('node:updated', refreshSelected))
-      onCleanup(editor.onEditorEvent('selection:changed', refresh))
-      onCleanup(editor.onEditorEvent('graph:replaced', refresh))
-      onCleanup(editor.onEditorEvent('page:changed', refresh))
-      onCleanup(editor.onEditorEvent('node:created', refresh))
-      onCleanup(editor.onEditorEvent('node:deleted', refresh))
-      onCleanup(editor.onEditorEvent('node:reparented', refresh))
-      onCleanup(editor.onEditorEvent('node:reordered', refresh))
+      onCleanup(editor.onEditorEvent('node:updated', refreshAfterEdit))
+      onCleanup(editor.onEditorEvent('selection:changed', invalidateAll))
+      onCleanup(editor.onEditorEvent('graph:replaced', invalidateAll))
+      onCleanup(editor.onEditorEvent('page:changed', invalidateAll))
+      onCleanup(editor.onEditorEvent('node:created', invalidateAll))
+      onCleanup(editor.onEditorEvent('node:deleted', invalidateAll))
+      onCleanup(editor.onEditorEvent('node:reparented', invalidateAll))
+      onCleanup(editor.onEditorEvent('node:reordered', invalidateAll))
     },
     { flush: 'sync' }
   )

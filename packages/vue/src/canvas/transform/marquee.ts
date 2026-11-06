@@ -18,14 +18,7 @@ function encloses(outer: Rect, inner: Rect) {
   )
 }
 
-export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy: number) {
-  const marquee = {
-    x: Math.min(d.startX, cx),
-    y: Math.min(d.startY, cy),
-    width: Math.abs(cx - d.startX),
-    height: Math.abs(cy - d.startY)
-  }
-
+function marqueeHits(editor: Editor, d: DragMarquee, marquee: Rect): string[] {
   // Layers are compared by their canvas bounds, so rotated layers and containers match what is drawn.
   const scopeId = d.containerId ?? editor.state.enteredContainerId
   const hits: string[] = []
@@ -36,9 +29,21 @@ export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy
     const enclose = !scopeId && editor.graph.isOpenContainer(node.id)
     if (enclose ? encloses(marquee, bounds) : intersects(marquee, bounds)) hits.push(node.id)
   }
+  return hits
+}
 
-  editor.select(hits)
-  editor.setMarquee(marquee)
+/**
+ * Draws the marquee while the pointer moves. The selection is committed on release: updating it
+ * here rebuilds the property panel and layer tree on every pointer event, which makes a drag over
+ * many layers stutter.
+ */
+export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy: number) {
+  editor.setMarquee({
+    x: Math.min(d.startX, cx),
+    y: Math.min(d.startY, cy),
+    width: Math.abs(cx - d.startX),
+    height: Math.abs(cy - d.startY)
+  })
 }
 
 /**
@@ -49,8 +54,10 @@ export function finishMarquee(editor: Editor, d: DragMarquee) {
   const container = d.containerId ? editor.graph.getNode(d.containerId) : undefined
   const marquee = editor.state.marquee
   const zoom = editor.state.zoom
-  const dragged =
-    !!marquee && isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)
-  if (!dragged && d.selectsSection && container?.type === 'SECTION') editor.select([container.id])
+  if (!marquee || !isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)) {
+    if (d.selectsSection && container?.type === 'SECTION') editor.select([container.id])
+  } else {
+    editor.select(marqueeHits(editor, d, marquee))
+  }
   editor.setMarquee(null)
 }
