@@ -32,6 +32,8 @@ describe('translation quality checks', () => {
     expect(hasShortcutText('Agent lenken … Alt+Enter wartet')).toBe(true)
     expect(hasShortcutText('Speichern mit Strg + S')).toBe(true)
     expect(hasShortcutText('Press ⌘K to search')).toBe(true)
+    expect(hasShortcutText('Send with ctrl+enter')).toBe(true)
+    expect(hasShortcutText('Queue with Alt+{shortcut}')).toBe(true)
     expect(hasShortcutText('Steer the agent… {shortcut} waits until it is done')).toBe(false)
     expect(hasShortcutText('Enter a valid HTTP or HTTPS URL')).toBe(false)
     expect(hasShortcutText('Shift the layer by 10')).toBe(false)
