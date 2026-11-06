@@ -607,11 +607,17 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
   // A document that turns read-only mid-gesture drops the gesture and any open inline edit.
-  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
-    if (!readOnly) return
+  /** Abandons the gestures that change layers once layers may no longer change. */
+  function cancelLayerEdits() {
     valueEdit.cancel()
     canvasLabelEdit.cancel()
     cancelPointerInteraction()
+  }
+  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
+    if (readOnly) cancelLayerEdits()
+  })
+  const stopRestrictionsListener = editor.onEditorEvent('document:restrictions-changed', () => {
+    if (!editsLayers()) cancelLayerEdits()
   })
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
@@ -632,6 +638,7 @@ export function useCanvasInput(
     stopRotationListener()
     stopToolListener()
     stopReadOnlyListener()
+    stopRestrictionsListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
     // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.

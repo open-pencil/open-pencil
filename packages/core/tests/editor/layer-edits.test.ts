@@ -90,3 +90,54 @@ describe('layers the host keeps as they are', () => {
     expect(getNodeOrThrow(kept.graph, path.id).opacity).toBe(0.5)
   })
 })
+
+describe('history while layers are kept', () => {
+  test('undo and redo stop at the changes made before layers were fixed', () => {
+    const editor = createEditor()
+    const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      width: 40,
+      height: 40
+    })
+    editor.select([rect.id])
+    editor.setOpacity(0.5)
+    editor.setOpacity(0.25)
+    editor.undoAction()
+    editor.setHostRestrictions({ layerEdits: 'none' })
+
+    expect(() => editor.undoAction()).toThrow(FixedLayersError)
+    expect(() => editor.redoAction()).toThrow(FixedLayersError)
+    expect(() => editor.undo.undo()).toThrow(FixedLayersError)
+    expect(getNodeOrThrow(editor.graph, rect.id).opacity).toBe(0.5)
+
+    editor.setHostRestrictions({ layerEdits: 'all' })
+    editor.undoAction()
+    expect(getNodeOrThrow(editor.graph, rect.id).opacity).toBe(1)
+  })
+
+  test('undo and redo still step through what was done since', () => {
+    const { editor, path } = setup()
+    editor.enterNodeEditMode(path.id)
+    editor.nodeEditSetHandle(0, 'tangentStart', { x: 30, y: 40 })
+    editor.exitNodeEditMode(true)
+    const tangent = () => getNodeOrThrow(editor.graph, path.id).vectorNetwork?.segments[0]
+
+    editor.undoAction()
+    expect(tangent()?.tangentStart).toEqual({ x: 0, y: 0 })
+    expect(() => editor.undoAction()).not.toThrow()
+    editor.redoAction()
+    expect(tangent()?.tangentStart).toEqual({ x: 30, y: 40 })
+  })
+
+  test('fixing layers ends a nudge in progress', () => {
+    const editor = createEditor()
+    const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      width: 40,
+      height: 40
+    })
+    editor.select([rect.id])
+    editor.nudgeSelected(5, 0)
+    editor.setHostRestrictions({ layerEdits: 'none' })
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(5)
+    expect(() => editor.undoAction()).toThrow(FixedLayersError)
+  })
+})

@@ -53,7 +53,7 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardEdits, guardUndo, refusalFor } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
@@ -82,7 +82,7 @@ import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
-import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
+import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
 
@@ -355,8 +355,6 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
-  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
-  const readsOnly = () => !resolveEditorProfile(state).edits
   const vectorEdit = createVectorEditActions(ctx, {
     updateNodeWithUndo: nodes.updateNodeWithUndo,
     select: selection.select,
@@ -367,11 +365,15 @@ export function createEditor(options?: EditorOptions) {
     penCommit: shapes.penCommit,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
+  function endLayerEdits() {
+    nodes.flushNudge()
+    nodes.cancelNodePreviews()
+    if (state.editingTextId) text.commitTextEdit()
+  }
   const readOnly = createReadOnlyActions(ctx, {
+    endLayerEdits,
     endEdits: () => {
-      nodes.flushNudge()
-      nodes.cancelNodePreviews()
-      if (state.editingTextId) text.commitTextEdit()
+      endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
       shapes.penCancel()
       shapes.pencilCancel()
@@ -485,7 +487,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo: guardUndo(undo, readsOnly),
+    undo: guardUndo(undo, readOnly.historyRefusal),
     state,
 
     // Graph reads
@@ -627,9 +629,9 @@ export function createEditor(options?: EditorOptions) {
     ...lintFixBridge,
 
     // Read-only documents, which refuse every action above that changes them
-    ...readOnly
+    ...readOnly.actions
   }
-  return guardEdits(editor, (action) => refusalFor(action, resolveEditorProfile(state)))
+  return guardEdits(editor, readOnly.refusal)
 }
 
 /**

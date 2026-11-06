@@ -1,7 +1,12 @@
-import type { UndoManager } from '@open-pencil/scene-graph/undo'
+import type { UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext, Tool } from '#core/editor/types'
-import { offeredTool, type EditorProfile, type EditorRestrictions } from '#core/editor/views'
+import {
+  offeredTool,
+  resolveEditorProfile,
+  type EditorProfile,
+  type EditorRestrictions
+} from '#core/editor/views'
 
 import { PATH_EDIT_ACTIONS, READ_ONLY_ACTIONS } from './actions'
 
@@ -71,17 +76,23 @@ export function guardEdits<T extends object>(
   return Object.defineProperties({}, descriptors) as T
 }
 
+type HistoryStep = 'undo' | 'redo'
+
 /**
- * Returns the editor's undo history with undo and redo refused while `isReadOnly` holds, since
- * they change the document; batches and reads pass through for the gestures that open them.
+ * Returns the editor's undo history with undo and redo refused when `refusal` says so, since they
+ * change the document; batches and reads pass through for the gestures that open them.
  */
-export function guardUndo(undo: UndoManager, isReadOnly: () => boolean): UndoManager {
+export function guardUndo(
+  undo: UndoManager,
+  refusal: (step: HistoryStep) => RefusedEditError | null
+): UndoManager {
   return new Proxy(undo, {
     get(target, key) {
       const value: unknown = Reflect.get(target, key)
-      if ((key === 'undo' || key === 'redo') && isReadOnly()) {
+      const refused = key === 'undo' || key === 'redo' ? refusal(key) : null
+      if (refused) {
         return () => {
-          throw new ReadOnlyDocumentError()
+          throw refused
         }
       }
       return typeof value === 'function' ? value.bind(target) : value
@@ -93,6 +104,8 @@ export function guardUndo(undo: UndoManager, isReadOnly: () => boolean): UndoMan
 export interface RestrictionEnds {
   /** Ends every edit in progress, as a read-only document has none. */
   endEdits: () => void
+  /** Ends the edits in progress that change layers, such as a nudge or a text edit. */
+  endLayerEdits: () => void
   /** Ends a pen path continuing an existing layer, which handles-only paths do not allow. */
   endPathContinuation: () => void
   /** Picks a tool as the toolbar does, committing a pen path in progress when it is not the pen. */
@@ -101,8 +114,13 @@ export interface RestrictionEnds {
 
 export function createReadOnlyActions(
   ctx: EditorContext,
-  { endEdits, endPathContinuation, pickTool }: RestrictionEnds
+  { endEdits, endLayerEdits, endPathContinuation, pickTool }: RestrictionEnds
 ) {
+  /**
+   * The newest undo and redo steps when layers became fixed. Stepping back to them would change
+   * layers again, so undo and redo stop there, leaving only what was done since.
+   */
+  let fixedAt: Record<HistoryStep, UndoEntry | undefined> | null = null
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
@@ -124,7 +142,12 @@ export function createReadOnlyActions(
   function setHostRestrictions(
     restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits' | 'layerEdits'>>
   ): void {
+    const fixing =
+      restrictions.layerEdits === 'none' && ctx.state.hostRestrictions.layerEdits !== 'none'
+    if (fixing) endLayerEdits()
     ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
+    if (fixing) fixedAt = { undo: ctx.undo.peekUndo(), redo: ctx.undo.peekRedo() }
+    if (restrictions.layerEdits === 'all') fixedAt = null
     if (restrictions.pathEdits === 'handles') {
       // What was drawn stays; the path just stops growing, and regions stop taking the pointer.
       endPathContinuation()
@@ -133,8 +156,25 @@ export function createReadOnlyActions(
     // A tool no longer offered gives way to Move as a picked tool does, so a pen path in
     // progress is committed rather than left pending.
     pickTool(offeredTool(ctx.state, ctx.state.activeTool))
+    ctx.emitEditorEvent('document:restrictions-changed')
     ctx.requestRepaint()
   }
 
-  return { setReadOnly, setHostRestrictions }
+  /** Why undo or redo is refused: a read-only document, or a step from before layers were fixed. */
+  function historyRefusal(step: HistoryStep): RefusedEditError | null {
+    const profile = resolveEditorProfile(ctx.state)
+    if (!profile.edits) return new ReadOnlyDocumentError()
+    if (profile.layerEdits === 'all' || !fixedAt) return null
+    const next = step === 'undo' ? ctx.undo.peekUndo() : ctx.undo.peekRedo()
+    return next && next === fixedAt[step] ? new FixedLayersError() : null
+  }
+
+  /** Why an editor action is refused, if it is (`refusalFor`), undo and redo by their history. */
+  function refusal(action: string): RefusedEditError | null {
+    if (action === 'undoAction') return historyRefusal('undo')
+    if (action === 'redoAction') return historyRefusal('redo')
+    return refusalFor(action, resolveEditorProfile(ctx.state))
+  }
+
+  return { actions: { setReadOnly, setHostRestrictions }, refusal, historyRefusal }
 }

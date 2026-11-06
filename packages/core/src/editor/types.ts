@@ -236,6 +236,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
+  /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
+  'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
