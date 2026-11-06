@@ -9,6 +9,7 @@ import {
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { implementationSelection } from '@/app/integrations/storybook/selection'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
 import { runFocusedCommand } from '@/app/shell/commands/focused'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
@@ -38,16 +39,17 @@ const COMMAND_MENU_IDS = new Set<EditorCommandId>(
 
 /**
  * Greys out the desktop menu's command items while their command is unavailable, such as Group
- * with nothing selected, as the browser menu does. Item ids are their command ids.
+ * with nothing selected, as the browser menu does. Item ids are their command ids, plus Open
+ * implementation story while the selection has no saved component to link.
  */
 function watchNativeMenuDisabled(commands: Record<EditorCommandId, EditorCommand>) {
   // A joined key, so the watcher fires when the set changes rather than on every recompute.
-  const disabled = computed(() =>
-    [...COMMAND_MENU_IDS]
-      .filter((id) => !commands[id].enabled.value)
-      .sort()
-      .join('\n')
-  )
+  const disabled = computed(() => {
+    void store.state.sceneVersion
+    const ids: string[] = [...COMMAND_MENU_IDS].filter((id) => !commands[id].enabled.value)
+    if (!implementationSelection(store)) ids.push('selection.openImplementation')
+    return ids.sort().join('\n')
+  })
   watch(
     disabled,
     (key) => {

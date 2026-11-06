@@ -95,7 +95,7 @@ pub fn mapping_document_matches(mapping_path: String, relative: String, document
         parent.join(relative).canonicalize(),
         Path::new(&document).canonicalize(),
     ) {
-        (Ok(expected), Ok(actual)) => expected == actual,
+        (Ok(expected), Ok(actual)) => expected.starts_with(parent) && expected == actual,
         _ => false,
     }
 }
@@ -270,5 +270,37 @@ mod tests {
             "design/library.fig".into(),
             document.to_string_lossy().into_owned()
         ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mapping_document_symlinks_stay_inside_the_config_directory() {
+        let tree = TempTree::new("mapping-document-links");
+        let mapping = tree.file("project/openpencil.components.json");
+        let internal = tree.file("project/assets/library.fig");
+        let external = tree.file("another-checkout/design/library.fig");
+        let sibling = tree.file("project-other/design/library.fig");
+        std::fs::create_dir_all(tree.0.join("project/design")).expect("create design directory");
+        for (name, target) in [
+            ("inside", &internal),
+            ("outside", &external),
+            ("prefix", &sibling),
+        ] {
+            std::os::unix::fs::symlink(
+                target.parent().expect("document parent"),
+                tree.0.join("project/design").join(name),
+            )
+            .expect("link the design directory");
+        }
+        let check = |relative: &str, document: &Path| {
+            mapping_document_matches(
+                mapping.to_string_lossy().into_owned(),
+                relative.into(),
+                document.to_string_lossy().into_owned(),
+            )
+        };
+        assert!(check("design/inside/library.fig", &internal));
+        assert!(!check("design/outside/library.fig", &external));
+        assert!(!check("design/prefix/library.fig", &sibling));
     }
 }
