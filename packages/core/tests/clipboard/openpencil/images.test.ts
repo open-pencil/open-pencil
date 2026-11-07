@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import {
+  REGION_POSTER,
+  STROKE_IMAGE,
+  vectorWithStrokeAndRegionImages
+} from '#core-tests/helpers/clipboard'
 import { deflateSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
@@ -209,5 +214,14 @@ describe('clipboard roundtrip with images', () => {
     const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
     expect(clipboard.images.size).toBe(1)
     expect(clipboard.images.get(hash)).toEqual(bytes)
+  })
+
+  test('carries the images a stroke and a vector region draw', () => {
+    const { graph, vector } = vectorWithStrokeAndRegionImages()
+
+    const html = buildOpenPencilClipboardHTML([vector], graph)
+    const clipboard = expectDefined(parseOpenPencilClipboard(html), 'OpenPencil clipboard')
+
+    expect([...clipboard.images.keys()].sort()).toEqual([REGION_POSTER, STROKE_IMAGE])
   })
 })

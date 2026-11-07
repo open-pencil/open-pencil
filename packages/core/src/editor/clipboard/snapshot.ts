@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { referencedStyleIds } from '@open-pencil/scene-graph/shared-styles'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
@@ -29,10 +30,11 @@ export function captureClipboardSnapshot(
   const capturedNodes: SceneNode[] = []
   function capture(node: SceneNode): ClipboardNodeTree {
     capturedNodes.push(node)
-    for (const paint of node.fills) {
-      if (!paint.imageHash) continue
-      const bytes = graph.images.get(paint.imageHash)
-      if (bytes) images.set(paint.imageHash, bytes.slice())
+    for (const imageHash of drawnImageHashes(node)) {
+      const bytes = graph.images.get(imageHash)
+      if (bytes) {
+        images.set(imageHash, bytes.slice())
+      }
     }
     return { ...structuredClone(node), children: graph.getChildren(node.id).map(capture) }
   }
