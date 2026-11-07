@@ -2,17 +2,6 @@
 
 ## Unreleased
 
-### Added
-
-- MCP `set_image_fill` accepts `image_path` under `OPENPENCIL_MCP_ROOT`. The server reads the file and sends bytes to the app, so agents can place sharp photos without stuffing large base64 through MCP client tool args (which often truncate).
-
-### Fixed
-
-- `set_image_fill` strips a `data:image/...;base64,` prefix and returns a clearer error when base64 looks truncated, pointing agents at `image_path`.
-- Browser MCP RPC timeout raised from 20s to 60s so large image fills and exports are less likely to time out; stdio bridge RPC timeout raised from 35s to 80s to stay above that path.
-- Inline MCP result / image content limit raised from ~900KB to 2MB; prefer `export_image` with `path` for larger QA exports.
-- `set_image_fill` truncation detection ignores whitespace so line-wrapped base64 is not false-positive rejected.
-
 ## 0.17.0-beta.2 — 2026-11-04
 
 This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.2` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.

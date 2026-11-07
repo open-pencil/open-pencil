@@ -253,7 +253,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | Tool | Description |
 |------|-------------|
 | `set_fill` | Set fill color (hex) |
-| `set_image_fill` | Set an image fill. Prefer `image_path` under the MCP root for photos (avoids truncated base64); `image_data` is raw or data-URL base64 |
+| `set_image_fill` | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root |
 | `set_stroke` | Set stroke color, weight, alignment |
 | `set_effects` | Add shadow or blur effects |
 | `update_node` | Update position, size, opacity, corner radius, text, font |
