@@ -10,6 +10,6 @@ export default {
     signInActions: 'flex items-center gap-2',
     signInDetail: 'ml-1 text-muted',
     signedInIcon: 'size-3.5 shrink-0 text-success',
-    spinner: `size-3.5 shrink-0 ${motionStyles.spinner}`
+    spinner: ['size-3.5 shrink-0', motionStyles.spinner]
   }
 }

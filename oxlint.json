@@ -110,6 +110,7 @@
     "open-pencil/no-hardcoded-color-constants": "error",
     "open-pencil/no-unknown-tailwind-classes": "error",
     "open-pencil/no-px-tailwind-values": "error",
+    "open-pencil/no-interpolated-tailwind-classes": "error",
     "open-pencil/no-hand-rolled-color": "error",
     "open-pencil/no-raw-console-format": "off",
     "open-pencil/no-typeof-window-check": "error",
