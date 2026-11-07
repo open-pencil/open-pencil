@@ -12,10 +12,10 @@ import { handlePenNodeEditDown } from '#vue/shared/input/vector'
 
 type SetDrag = (drag: DragState) => void
 
-/** Whether a canvas point lies within the close threshold, in screen pixels, of the path's start. */
-function nearFirstVertex(cx: number, cy: number, first: Vector, editor: Editor) {
+/** Whether a canvas point lies within the close threshold, in screen pixels, of a path's point. */
+function nearVertex(cx: number, cy: number, vertex: Vector, editor: Editor) {
   const zoom = editor.renderer?.zoom ?? 1
-  return Math.hypot(cx - first.x, cy - first.y) < PEN_CLOSE_THRESHOLD / zoom
+  return Math.hypot(cx - vertex.x, cy - vertex.y) < PEN_CLOSE_THRESHOLD / zoom
 }
 
 /**
@@ -47,21 +47,32 @@ export function startPenInput(
     return true
   }
 
+  const press = { x: cx, y: cy }
   const penState = editor.state.penState
   if (penState && penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
     const first = penState.vertices[0]
-    if (nearFirstVertex(cx, cy, first, editor)) {
+    if (nearVertex(cx, cy, first, editor)) {
       editor.penSetPendingClose(true)
       editor.penSetClosingToFirst(true)
-      setDrag(createPenDrag(first.x, first.y, cx, cy))
+      setDrag(createPenDrag(first, press))
       cursorOverride.value = PEN_CURSOR
       return true
     }
   }
 
+  // A press back on the last point drags its outgoing handle out again and keeps the one into it,
+  // rather than stacking a point there (Figma).
+  const last = penState?.vertices.at(-1)
+  if (penState && last && nearVertex(cx, cy, last, editor)) {
+    editor.penSetPendingClose(false)
+    setDrag(createPenDrag(last, press, penState.segments.at(-1)?.tangentEnd ?? { x: 0, y: 0 }))
+    cursorOverride.value = PEN_CURSOR
+    return true
+  }
+
   editor.penSetPendingClose(false)
   editor.penAddVertex(point.x, point.y)
-  setDrag(createPenDrag(point.x, point.y, cx, cy))
+  setDrag(createPenDrag(point, press))
   cursorOverride.value = PEN_CURSOR
   return true
 }
@@ -77,7 +88,7 @@ export function updatePenHover(cx: number, cy: number, editor: Editor): boolean 
 
   const first = editor.state.penState.vertices[0]
   if (editor.state.penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
-    editor.penSetClosingToFirst(nearFirstVertex(cx, cy, first, editor))
+    editor.penSetClosingToFirst(nearVertex(cx, cy, first, editor))
   }
   editor.requestRepaint()
   return true

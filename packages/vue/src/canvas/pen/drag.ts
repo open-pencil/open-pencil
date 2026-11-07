@@ -10,29 +10,30 @@ type PenState = NonNullable<Editor['state']['penState']>
 type PenModifierMode = PenDragState['modifierMode']
 
 /**
- * A pen drag from the point at (`startX`, `startY`), pressed at (`pressX`, `pressY`): the press
- * can land beside the point it snaps to, and only movement from the press counts as a drag.
+ * A pen drag from the point at `start`, pressed at `press`: the press can land beside the point it
+ * snaps to, and only movement from the press counts as a drag. `incoming` is the handle into the
+ * point that the drag keeps, for a press back on the last point.
  */
 export function createPenDrag(
-  startX: number,
-  startY: number,
-  pressX = startX,
-  pressY = startY
+  start: Vector,
+  press: Vector,
+  incoming: Vector | null = null
 ): DragState {
   return {
     type: 'pen-drag',
-    startX,
-    startY,
-    pressX,
-    pressY,
+    startX: start.x,
+    startY: start.y,
+    pressX: press.x,
+    pressY: press.y,
+    incoming: incoming && { x: incoming.x, y: incoming.y },
     moved: false,
     modifierMode: 'default',
     frozenOppositeTangent: null,
     spaceDown: false,
     spaceStartX: 0,
     spaceStartY: 0,
-    knotStartX: startX,
-    knotStartY: startY
+    knotStartX: start.x,
+    knotStartY: start.y
   }
 }
 
@@ -117,6 +118,10 @@ function applyPenDragTangent(
     return
   }
 
+  if (d.incoming) {
+    editor.penSetDragTangent(tx, ty, { keepOpposite: true, oppositeTangent: d.incoming })
+    return
+  }
   editor.penSetDragTangent(tx, ty)
 }
 

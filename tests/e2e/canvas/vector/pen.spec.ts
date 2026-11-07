@@ -159,3 +159,42 @@ test('the pen closes with a click pressed beside the first point', async () => {
   })
   expect(closing).toEqual({ end: 0, into: 0 })
 })
+
+// Figma desktop 126: a press back on the last point, the start included, keeps the point and the
+// handle into it, and its drag sets the outgoing handle again.
+test('the pen drags the last point out again when it is pressed', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+  const drag = async (x: number, y: number, dx: number, dy: number) => {
+    await mouse.move(box.x + x, box.y + y)
+    await mouse.down()
+    await mouse.move(box.x + x + dx, box.y + y + dy, { steps: 6 })
+    await mouse.up()
+  }
+
+  await drag(100, 100, 60, 0)
+  await drag(100, 100, 0, 60)
+  await drag(300, 100, 60, 0)
+  await drag(300, 100, 0, 60)
+  await mouse.click(box.x + 300, box.y + 300)
+
+  const pen = await editor.page.evaluate(() => {
+    const state = window.openPencil?.getStore?.()?.state.penState
+    return {
+      points: state?.vertices.length,
+      // Mirrored zero handles are -0; the path is the same.
+      segments: state?.segments.map((s) =>
+        [s.tangentStart.x, s.tangentStart.y, s.tangentEnd.x, s.tangentEnd.y].map((n) => n + 0)
+      )
+    }
+  })
+  expect(pen).toEqual({
+    points: 3,
+    segments: [
+      [0, 60, -60, 0],
+      [0, 60, 0, 0]
+    ]
+  })
+})
