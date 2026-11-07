@@ -46,12 +46,16 @@ export function setFlowEdges(
   flow: readonly YogaNode[],
   direction: 'LTR' | 'RTL'
 ): void {
-  const sides = flowSides(frame, direction)
   const overlap = flow.length > 0 ? siblingOverlap(frame) : 0
   const padding = layoutPadding(frame)
-  padding[sides.trailing] += overlap
   const wraps = frame.layoutWrap === 'WRAP'
-  const margin = (side: Side) => (wraps ? 0 : shortfall(padding[side]))
+  const keepsNegativePadding = !wraps && Object.values(padding).some((length) => length < 0)
+  if (overlap === 0 && !keepsNegativePadding) {
+    return
+  }
+  const sides = flowSides(frame, direction)
+  padding[sides.trailing] += overlap
+  const margin = (side: Side) => (keepsNegativePadding ? shortfall(padding[side]) : 0)
   for (const side of Object.keys(PHYSICAL_EDGE) as Side[]) {
     yogaFrame.setPadding(PHYSICAL_EDGE[side], Math.max(0, padding[side]))
   }
