@@ -386,14 +386,15 @@ export function renderNode(
 
     r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
     const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
+    const lines = textLinesReach(node)
     canvas.saveLayer(
       r.effectLayerPaint,
       viewportLayerBounds(r, world(), blurPadding) ??
         r.ck.LTRBRect(
           -blurPadding,
-          -blurPadding,
+          lines.minY - blurPadding,
           node.width + blurPadding,
-          node.height + blurPadding
+          lines.maxY + blurPadding
         )
     )
   }

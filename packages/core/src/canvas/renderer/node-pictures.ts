@@ -2,6 +2,7 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+import { textLinesReach } from '@open-pencil/scene-graph/text'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
@@ -25,10 +26,17 @@ export function drawShapeThroughNodePicture(
   r.nodePictures.delete(node.id)
 
   // An outside stroke or an arrow head reaches past the shape, and its shadow reaches past that:
-  // both margins, so no part of the drawing lies outside the picture's bounds.
+  // both margins around the box and the text lines past it, so no part of the drawing lies
+  // outside the picture's bounds, which Skia drops a whole picture by.
   const margin =
     r.effectOverflow(node) + strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const bounds = r.ck.LTRBRect(-margin, -margin, node.width + margin, node.height + margin)
+  const lines = textLinesReach(node)
+  const bounds = r.ck.LTRBRect(
+    -margin,
+    lines.minY - margin,
+    node.width + margin,
+    lines.maxY + margin
+  )
   const recorder = new r.ck.PictureRecorder()
   try {
     const recCanvas = recorder.beginRecording(bounds)
