@@ -1,0 +1,1 @@
+- The pen keeps the last point's handle when it closes a path, and closes a path of two points, as in Figma (#1861).
