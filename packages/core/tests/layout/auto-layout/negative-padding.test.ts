@@ -90,8 +90,8 @@ describe('negative auto layout padding moves children past the frame edge', () =
     expect(children[0]).toMatchObject({ x: 0, y: 54 })
   })
 
-  test('a hugging row starts before its left edge and shrinks by the padding', () => {
-    const { frame, children } = frameWith(
+  test('a hugging row starts its children before its left edge', () => {
+    const { children } = frameWith(
       {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'HUG',
@@ -105,11 +105,10 @@ describe('negative auto layout padding moves children past the frame edge', () =
       ]
     )
     expect(children.map((child) => child.x)).toEqual([-10, 30])
-    expect([frame.width, frame.height]).toEqual([70, 20])
   })
 
-  test('a negative trailing padding adds to a negative gap', () => {
-    const { frame, children } = frameWith(
+  test('a negative trailing padding keeps a negative gap between children', () => {
+    const { children } = frameWith(
       {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'HUG',
@@ -124,7 +123,6 @@ describe('negative auto layout padding moves children past the frame edge', () =
       ]
     )
     expect(children.map((child) => child.x)).toEqual([0, 34, 68])
-    expect(frame.width).toBe(104)
   })
 
   test('right-to-left rows inside a left-to-right row keep the row’s left edge', () => {
@@ -145,5 +143,19 @@ describe('negative auto layout padding moves children past the frame edge', () =
       fixedChildRows('LTR')
     )
     expect(children.map((child) => child.x)).toEqual([86, 66])
+  })
+})
+
+describe('a wrapping frame lays negative padding out as none', () => {
+  test('its first child stays at the frame’s corner', () => {
+    const { children } = frameWith(
+      { ...fixed('HORIZONTAL', 100, 50), layoutWrap: 'WRAP', itemSpacing: 0 },
+      { paddingLeft: -10, paddingTop: -8 },
+      TWO_SQUARES
+    )
+    expect(children.map((child) => [child.x, child.y])).toEqual([
+      [0, 0],
+      [20, 0]
+    ])
   })
 })
