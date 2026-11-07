@@ -292,7 +292,7 @@ export function createLayoutActions({
   }
 
   function commitAxisSize(_axis: LayoutAxis, _value: number, _previous: number) {
-    if (panelSize.commit()) return
+    panelSize.commit()
     preview.commit()
   }
 

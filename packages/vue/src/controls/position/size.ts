@@ -46,14 +46,13 @@ export function usePanelSize(editor: Editor) {
     return current ?? []
   }
 
-  /** Commits the edit in progress; false when there was none. */
-  function commit(): boolean {
+  /** Commits the edit in progress, if any. */
+  function commit() {
     const current = take()
-    if (current.length === 0) return false
+    if (current.length === 0) return
     editor.undo.runBatch('Resize', () => {
       for (const edit of current) commitResizePreview(edit, editor)
     })
-    return true
   }
 
   function cancel() {

@@ -78,7 +78,8 @@ export function usePosition() {
   }
 
   function commitProp(key: NumericNodeProperty, value: number, previous: number) {
-    if (size.commit()) return
+    // A scrub can take both paths as the selection changes under it; each commits what it opened.
+    size.commit()
     _commitProp(nodes.value, key, value, previous)
   }
 
