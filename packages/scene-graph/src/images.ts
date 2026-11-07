@@ -75,9 +75,10 @@ export interface DataURL {
 }
 
 /**
- * The media type and bytes a `data:` URL carries, read as the Fetch standard reads one: a Base64
- * body is decoded and a percent-encoded one unescaped. Null for anything else, and for Base64 the
- * standard refuses, such as a body cut short in transit.
+ * The media type and bytes a `data:` URL carries: a Base64 body decoded, and a percent-encoded
+ * one unescaped as UTF-8 text, as SVG and other markup are written. Escapes of raw bytes that are
+ * not UTF-8 stay as written; a reader that must take any data URL, such as `.pen` loading, goes
+ * through `fetch`. Null for anything else, and for Base64 cut short in transit.
  */
 export function parseDataURL(url: string): DataURL | null {
   const match = /^\s*data:([^,]*),(.*?)\s*$/is.exec(url)

@@ -19,7 +19,6 @@ import {
   type PenImports
 } from '@open-pencil/pen'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
-import { parseDataURL } from '@open-pencil/scene-graph/images'
 
 import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
@@ -250,13 +249,17 @@ const PEN_ICON_SIZE = 24
 /** How the host reads a file a document names, by its path from the document being read. */
 type ReadFile = ReadDocumentInput['readAsset']
 
-/** A file's bytes, such as an image's or a font's, from a data URL or the host; null when neither has them. */
+/**
+ * A file's bytes, such as an image's or a font's: a data URL decoded by the platform's own URL handling, a file through the
+ * host; null when either fails.
+ */
 async function loadPenFile(url: string, read: ReadFile): Promise<Uint8Array | null> {
   try {
     // pen.dev writes the path percent-encoded, as `My%20Design-assets/…`; the host keeps the
     // read inside the folder it allows.
-    if (isDataURL(url)) return parseDataURL(url)?.bytes ?? null
-    return (await read?.(decodePath(url))) ?? null
+    if (!isDataURL(url)) return (await read?.(decodePath(url))) ?? null
+    // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
+    return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
   } catch {
     return null
   }
