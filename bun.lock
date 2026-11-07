@@ -691,7 +691,6 @@
         "nanoevents": "^9.1.0",
         "postcss-value-parser": "^4.2.0",
         "svgpath": "^2.6.0",
-        "ufo": "^1.6.4",
         "valibot": "^1.5.0",
       },
       "devDependencies": {

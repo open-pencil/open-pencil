@@ -2,7 +2,6 @@ import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
-import { decode } from 'ufo'
 
 import type { Matrix, Size } from './primitives'
 
@@ -76,9 +75,9 @@ export interface DataURL {
 
 /**
  * The media type and bytes a `data:` URL carries: a Base64 body decoded, and a percent-encoded
- * one unescaped as UTF-8 text, as SVG and other markup are written. Escapes of raw bytes that are
- * not UTF-8 stay as written; a reader that must take any data URL, such as `.pen` loading, goes
- * through `fetch`. Null for anything else, and for Base64 cut short in transit.
+ * one unescaped as UTF-8 text, as SVG and other markup are written. Null for anything else: Base64
+ * cut short in transit, and escapes that are not UTF-8, such as a binary image escaped byte by
+ * byte, which a reader that must take any data URL, such as `.pen` loading, gets from `fetch`.
  */
 export function parseDataURL(url: string): DataURL | null {
   const match = /^\s*data:([^,]*),(.*?)\s*$/is.exec(url)
@@ -87,7 +86,12 @@ export function parseDataURL(url: string): DataURL | null {
   const params = header.split(';').map((param) => param.trim())
   const base64 = params.length > 1 && params.at(-1)?.toLowerCase() === 'base64'
   const mimeType = params[0]?.toLowerCase() || 'text/plain'
-  const text = decode(body)
+  let text: string
+  try {
+    text = decodeURIComponent(body)
+  } catch {
+    return null
+  }
   if (!base64) return { mimeType, bytes: new TextEncoder().encode(text) }
   const compact = text.replace(/\s+/g, '')
   // Base64 one character past a whole group of four cannot be bytes: it was cut short.

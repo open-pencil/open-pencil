@@ -146,6 +146,11 @@ describe('parseDataURL', () => {
     expect(text('data:,caf%C3%A9')).toEqual({ mimeType: 'text/plain', text: 'café' })
   })
 
+  test('refuses escapes that are bytes rather than UTF-8 text', () => {
+    const escaped = Array.from(PNG, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')
+    expect(parseDataURL(`data:image/png,${escaped}`)).toBeNull()
+  })
+
   test('refuses Base64 cut short or not Base64 at all', () => {
     expect(parseDataURL('data:image/png;base64,iVBORw0KG')).toBeNull()
     expect(parseDataURL('data:image/png;base64,not*base64')).toBeNull()

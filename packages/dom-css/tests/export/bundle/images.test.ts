@@ -23,14 +23,15 @@ describe('extractImageAssets', () => {
     )
   })
 
-  test('keeps SVG, types without an extension, and undecodable data URLs inline', () => {
+  test('keeps SVG, types without an extension, and data URLs it cannot decode inline', () => {
     const svg = svgDataURL(
       '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
     )
     const base64SVG =
       'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4='
     const avif = imageDataURL(PIXEL).replace('image/png', 'image/avif')
-    const html = `<img src="${svg}"><img src="${base64SVG}"><img src="${avif}"><img src="data:image/png;base64,iVBORw0KG">`
+    const escaped = `data:image/png,${Array.from(PIXEL, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')}`
+    const html = `<img src="${svg}"><img src="${base64SVG}"><img src="${avif}"><img src="${escaped}"><img src="data:image/png;base64,iVBORw0KG">`
     expect(extractImageAssets(html, 'page.assets').files).toEqual([])
   })
 })
