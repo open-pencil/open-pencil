@@ -255,6 +255,38 @@ describe('useEditorKeyboard', () => {
     expect(editor.graph.getNode(rect)?.x).toBe(0)
   })
 
+  test('leaves layers the host keeps as they are, and still undoes a path edit', () => {
+    const editor = mountKeyboard()
+    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      width: 100,
+      height: 50,
+      vectorNetwork: structuredClone(TRIANGLE)
+    })
+    editor.select([vector.id])
+    editor.setHostRestrictions({ layerEdits: 'none' })
+    editor.enterNodeEditMode(vector.id, { keepOpen: true })
+    editor.nodeEditPushHistory()
+    editor.nodeEditSetHandle(0, 'tangentStart', { x: 20, y: 20 })
+
+    for (const [code, init] of [
+      ['Delete', { key: 'Delete' }],
+      ['Backspace', { key: 'Backspace' }],
+      ['KeyA', { shiftKey: true }],
+      ['KeyD', MOD],
+      ['Digit5', { key: '5' }],
+      ['ArrowRight', { key: 'ArrowRight' }]
+    ] as const) {
+      press(code, init)
+    }
+    const node = editor.graph.getNode(vector.id)
+    expect(node).toMatchObject({ parentId: editor.state.currentPageId, x: 0, opacity: 1 })
+    expect(editor.graph.getChildren(editor.state.currentPageId)).toHaveLength(1)
+    expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
+
+    press('KeyZ', MOD)
+    expect(editor.state.nodeEditState?.segments[0]?.tangentStart).toEqual({ x: 0, y: 0 })
+  })
+
   test("a preview leaves Space to its controls and still stops the browser's own Save", () => {
     const editor = mountKeyboard()
     editor.startPlay()

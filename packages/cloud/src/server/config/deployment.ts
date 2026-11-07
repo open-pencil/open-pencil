@@ -89,9 +89,13 @@ function workerConfig(config: CloudDeploymentConfig) {
 
 function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   return {
-    aiEndpoint: config.ai?.endpoint,
-    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
-    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
+    servicesEndpoint: config.services?.endpoint,
+    servicesSigningKey: config.services
+      ? requiredSecret(environment, config.services.signing_key)
+      : undefined,
+    servicesTokenLifetimeSeconds: config.services
+      ? config.services.token_lifetime_minutes * 60
+      : undefined,
     billingPortalURL: config.billing?.portal_url,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)

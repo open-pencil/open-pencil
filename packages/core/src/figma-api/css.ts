@@ -1,6 +1,7 @@
 import { sceneNodeToDesignDocument } from '@open-pencil/dom-css/export'
 
-import { graph, raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import { raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import { vectorElement } from '#core/io/formats/html/vectors'
 
@@ -13,7 +14,7 @@ export function installCSSAccessors(target: object, internals: NodeProxyInternal
   Object.defineProperty(target, 'getCSSAsync', {
     // Async, so a removed node rejects rather than throwing before a promise exists.
     async value(this: ProxyThis): Promise<Record<string, string>> {
-      const scene = graph(this, internals)
+      const scene = graphOf(this)
       const node = raw(this, internals)
       if (node.type === 'CANVAS' || node.id === scene.rootId) return {}
       // A script's edits that nothing read yet are laid out first, as Figma lays them out.

@@ -21,5 +21,7 @@
   "installFailed": "Nie udało się zainstalować aktualizacji: {error}",
   "restartFailed": "Nie udało się ponownie uruchomić OpenPencil: {error}",
   "unavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json.",
-  "checkFailed": "Nie udało się sprawdzić aktualizacji: {error}"
+  "checkFailed": "Nie udało się sprawdzić aktualizacji: {error}",
+  "webUpdateReady": "Nowa wersja OpenPencil jest gotowa",
+  "reload": "Odśwież"
 }

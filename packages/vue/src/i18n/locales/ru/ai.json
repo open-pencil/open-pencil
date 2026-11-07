@@ -78,7 +78,7 @@
   "attachImages": "Прикрепить изображения",
   "removeImageAttachment": "Удалить изображение {name}",
   "dropImagesToAttach": "Перетащите изображения, чтобы прикрепить",
-  "queueMessage": "Направьте агента… Alt+Enter дождётся, пока он закончит",
+  "queueMessage": "Направьте агента… {shortcut} дождётся, пока он закончит",
   "queuedSteer": "Отправится после текущего шага",
   "queuedFollowUp": "Отправится, когда агент закончит",
   "removeQueuedMessage": "Убрать ожидающее сообщение",

@@ -1,12 +1,12 @@
 import {
-  AI_ERROR_STATUS,
-  aiTokenClaimsSchema,
-  CLOUD_AI_API_PATHS,
-  CLOUD_AI_TOKEN_AUDIENCE,
-  parseAIUsageQuery,
-  type AIError,
-  type AIErrorCode,
-  type AITokenClaims
+  SERVICE_ERROR_STATUS,
+  servicesTokenClaimsSchema,
+  CLOUD_SERVICES_API_PATHS,
+  CLOUD_SERVICES_TOKEN_AUDIENCE,
+  parseUsageQuery,
+  type ServiceError,
+  type ServiceErrorCode,
+  type ServicesTokenClaims
 } from '#cloud/contract'
 import { validatedQuery } from '#cloud/server/validation'
 import { pick } from 'es-toolkit'
@@ -39,7 +39,7 @@ export type AIRelayServices = {
   upstreamTimeoutMs?: number
 }
 
-type AIRelayEnvironment = { Variables: { claims: AITokenClaims } }
+type AIRelayEnvironment = { Variables: { claims: ServicesTokenClaims } }
 
 const chatRequestSchema = v.looseObject({
   model: v.pipe(v.string(), v.minLength(1)),
@@ -77,10 +77,10 @@ const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * 60_000
 
 function aiError(
   context: Context,
-  code: AIErrorCode,
-  details: Omit<AIError['error'], 'code'> = {}
+  code: ServiceErrorCode,
+  details: Omit<ServiceError['error'], 'code'> = {}
 ) {
-  return context.json({ error: { code, ...details } }, AI_ERROR_STATUS[code])
+  return context.json({ error: { code, ...details } }, SERVICE_ERROR_STATUS[code])
 }
 
 /** Counts each workspace's model requests in flight, within one process. */
@@ -128,10 +128,10 @@ export function createAIRelayApp(services: AIRelayServices) {
     try {
       const { payload } = await jwtVerify(token, services.keys, {
         issuer: config.cloudURL,
-        audience: CLOUD_AI_TOKEN_AUDIENCE,
+        audience: CLOUD_SERVICES_TOKEN_AUDIENCE,
         algorithms: ['ES256']
       })
-      context.set('claims', v.parse(aiTokenClaimsSchema, payload))
+      context.set('claims', v.parse(servicesTokenClaimsSchema, payload))
     } catch {
       return aiError(context, 'unauthorized')
     }
@@ -148,15 +148,15 @@ export function createAIRelayApp(services: AIRelayServices) {
         maxAge: 600
       })
     )
-    .use(`${CLOUD_AI_API_PATHS.base}/*`, requireToken)
-    .get(CLOUD_AI_API_PATHS.catalog, (context) => context.json(config.catalog))
-    .get(CLOUD_AI_API_PATHS.wallet, async (context) => {
+    .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
+    .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
+    .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
       const claims = context.get('claims')
       return context.json(
         await usage.wallet(claims.workspaceId, claims.monthlyCreditAllowance, now())
       )
     })
-    .get(CLOUD_AI_API_PATHS.usage, validatedQuery(parseAIUsageQuery), async (context) => {
+    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
       try {
         return context.json(
           await usage.page(context.get('claims').workspaceId, context.req.valid('query').cursor)
@@ -169,7 +169,7 @@ export function createAIRelayApp(services: AIRelayServices) {
       }
     })
     .post(
-      CLOUD_AI_API_PATHS.chatCompletions,
+      CLOUD_SERVICES_API_PATHS.chatCompletions,
       // Counted as it streams in, so a body without Content-Length is bounded too.
       bodyLimit({
         maxSize: config.maximumRequestBytes,

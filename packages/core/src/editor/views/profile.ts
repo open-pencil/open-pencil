@@ -14,7 +14,8 @@ export const EDIT_VIEW: CanvasView = { id: 'edit' }
 export const NO_HOST_RESTRICTIONS: EditorRestrictions = {
   readOnly: false,
   tools: null,
-  pathEdits: 'all'
+  pathEdits: 'all',
+  layerEdits: 'all'
 }
 
 /** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
@@ -26,6 +27,7 @@ type DocumentBehaviour = Pick<
   | 'edits'
   | 'tools'
   | 'pathEdits'
+  | 'layerEdits'
   | 'toolKeys'
   | 'snapGrid'
   | 'dotGrid'
@@ -45,6 +47,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     edits: true,
     tools: null,
     pathEdits: 'all',
+    layerEdits: 'all',
     toolKeys: TOOL_SHORTCUTS,
     snapGrid: 1,
     dotGrid: null,
@@ -59,6 +62,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     edits: true,
     tools: BOARD_TOOLS,
     pathEdits: 'all',
+    layerEdits: 'all',
     toolKeys: BOARD_TOOL_SHORTCUTS,
     snapGrid: BOARD_GRID,
     dotGrid: BOARD_GRID,
@@ -118,7 +122,9 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
     toolKeys: tools
       ? pickBy(profile.toolKeys, (tool) => !!tool && tools.has(tool))
       : profile.toolKeys,
-    pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits
+    pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits,
+    layerEdits:
+      restrictions.readOnly || restrictions.layerEdits === 'none' ? 'none' : profile.layerEdits
   }
 }
 

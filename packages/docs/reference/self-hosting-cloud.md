@@ -120,10 +120,10 @@ Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and
 
 ## AI
 
-Cloud does not run models itself. It advertises an AI service and signs short-lived tokens that let workspace members use it, and the service holds each workspace to the credit allowance its entitlements grant. The repository's AI relay is a minimal service for this: it forwards chat completions to one OpenAI-compatible upstream, such as OpenRouter, with your key.
+Cloud does not run models itself. It advertises a service and signs short-lived tokens that let workspace members use it, and the service holds each workspace to the credit allowance its entitlements grant. The repository's AI relay is a minimal service for this: it forwards chat completions to one OpenAI-compatible upstream, such as OpenRouter, with your key.
 
-1. Create a P-256 signing key, `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, and pass the PEM in `OPENPENCIL_CLOUD_AI_SIGNING_KEY`. Cloud refuses to start with a key it cannot sign with.
-2. Add `[ai] endpoint` to the Cloud TOML with the relay's address, and enable `[entitlements.ai]`, optionally with a `monthly_credit_allowance`; without one, the relay does not limit spend. With entitlements from the database, set them per workspace with the `entitlements` command instead.
+1. Create a P-256 signing key, `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, and pass the PEM in `OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY`. Cloud refuses to start with a key it cannot sign with.
+2. Add `[services] endpoint` to the Cloud TOML with the relay's address, and enable `[entitlements.services]`, optionally with a `monthly_credit_allowance`; without one, the relay does not limit spend. With entitlements from the database, set them per workspace with the `entitlements` command instead.
 3. Copy [`openpencil-ai-relay.example.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/openpencil-ai-relay.example.toml), set `relay.cloud_url` to Cloud's `public_url`, `allowed_origins` to the browser editors, and list the models with their credit prices.
 4. Start it with `OPENPENCIL_AI_RELAY_CONFIG`, `OPENPENCIL_AI_RELAY_UPSTREAM_KEY`, and `DATABASE_URL` set: `node --env-file=.env dist-standalone/ai-relay.mjs`, or `openpencil-ai-relay` from the npm package. It listens on `PORT` (default `8788`) and can share Cloud's database, keeping its own tables and migration history.
 

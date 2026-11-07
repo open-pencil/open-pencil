@@ -4,7 +4,7 @@ import { watchEffect } from 'vue'
 
 import { useCanvasContext } from '#vue/canvas/context'
 
-const { canvasRef } = useCanvasContext()
+const { canvasRef, cursor } = useCanvasContext()
 const surfaceRef = templateRef<HTMLCanvasElement>('surfaceRef')
 
 watchEffect(() => {
@@ -13,7 +13,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <canvas ref="surfaceRef" v-bind="$attrs" />
+  <canvas ref="surfaceRef" v-bind="$attrs" :style="cursor ? { cursor } : undefined" />
 </template>
 
 <script lang="ts">

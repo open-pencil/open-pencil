@@ -282,6 +282,58 @@ test('dragging a vector point snaps to sibling bounds and clears guides on relea
   editor.canvas.assertNoErrors()
 })
 
+// Figma desktop 126: dragging a straight segment puts a point where it was pressed and drags it.
+test('dragging a straight segment bends it at a new point', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const zero = { x: 0, y: 0 }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 1,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: zero, tangentEnd: zero }],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+  })
+  await editor.canvas.waitForRender()
+
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  await editor.page.mouse.move(box.x + 130, box.y + 100)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + 130, box.y + 60, { steps: 8 })
+  await editor.page.mouse.up()
+
+  const path = await editor.page.evaluate(() => {
+    const editState = window.openPencil?.getStore?.().getNodeEditState()
+    return {
+      vertices: editState?.vertices.map(({ x, y }) => ({ x: Math.round(x), y: Math.round(y) })),
+      segments: editState?.segments.length,
+      selected: [...(editState?.selectedVertexIndices ?? [])]
+    }
+  })
+  expect(path).toEqual({
+    vertices: [
+      { x: 100, y: 100 },
+      { x: 200, y: 100 },
+      { x: 130, y: 60 }
+    ],
+    segments: 2,
+    selected: [2]
+  })
+  editor.canvas.assertNoErrors()
+})
+
 test('Enter opens a selected vector’s path, but not one an instance draws from its component', async () => {
   const scene = vectorEditDriver(() => editor.page)
   const ids = await scene.build()

@@ -10,6 +10,7 @@ import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 
 import { isToolExposed, type ToolDef } from './schema'
 
@@ -114,7 +115,7 @@ function captureNodeSnapshot(
 ): Record<string, unknown> | undefined {
   const targetId = args.id as string | undefined
   if (!targetId) return undefined
-  const raw = figma.graph.getNode(targetId)
+  const raw = graphOf(figma).getNode(targetId)
   if (!raw) return undefined
   return Object.fromEntries(Object.entries(structuredClone(raw)))
 }

@@ -4,8 +4,10 @@ import * as v from 'valibot'
 
 import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core'
 import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph/comments'
+import { TOOLBAR_ALIGNS, TOOLBAR_SIDES } from '@open-pencil/vue/primitives/Toolbar'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
+import { DEFAULT_TOOLBAR_DOCK, type ToolbarDock } from '@/app/editor/toolbar/dock'
 import {
   DEFAULT_TOOLBAR_LAYOUT,
   normalizeToolbarLayout,
@@ -120,6 +122,8 @@ export interface AppPreferences {
   designCheck: DesignCheckPreferences
   comments: CommentPreferences
   toolbar: ToolbarLayout
+  /** Where the desktop toolbar floats over the canvas. */
+  toolbarDock: ToolbarDock
   onboarding: {
     aiSetup: AISetupState
   }
@@ -154,6 +158,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     sort: 'newest'
   },
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
+  toolbarDock: { ...DEFAULT_TOOLBAR_DOCK },
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
@@ -237,6 +242,10 @@ const appPreferencesSchema = section({
     ),
     () => structuredClone(DEFAULT_TOOLBAR_LAYOUT)
   ),
+  toolbarDock: section({
+    side: v.fallback(v.picklist(TOOLBAR_SIDES), defaults.toolbarDock.side),
+    align: v.fallback(v.picklist(TOOLBAR_ALIGNS), defaults.toolbarDock.align)
+  }),
   onboarding: section({
     aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
   }),
@@ -346,6 +355,13 @@ export function updateCommentPreferences(changes: Partial<CommentPreferences>): 
 
 export function updateToolbarLayout(toolbar: ToolbarLayout): void {
   appPreferences.value = { ...appPreferences.value, toolbar }
+}
+
+export function updateToolbarDock(changes: Partial<ToolbarDock>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    toolbarDock: { ...appPreferences.value.toolbarDock, ...changes }
+  }
 }
 
 export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
