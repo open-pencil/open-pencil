@@ -1,6 +1,7 @@
 import type { SceneGraph } from '../graph'
+import { imagePaintHashes } from '../images'
 import { overriddenBindingField } from '../instances/overrides'
-import { referencedStyleIds } from '../shared-styles'
+import { referencedStyleIds, sharedStyleLayers } from '../shared-styles'
 import { styleRunReferences } from '../text/references'
 import type { SceneNode } from '../types'
 import { isUnsupportedVariableValue, variableValueReferences } from '../variables/value'
@@ -39,7 +40,7 @@ export function layerVariableIds(node: SceneNode): string[] {
  * characters.
  */
 export function layerImageHashes(node: SceneNode): string[] {
-  return [
+  return imagePaintHashes([
     ...node.fills,
     ...node.strokes,
     ...regionFills(node.vectorNetwork),
@@ -48,7 +49,7 @@ export function layerImageHashes(node: SceneNode): string[] {
       ...(run.style.fills ?? []),
       ...(run.style.textDecorationFills ?? [])
     ])
-  ].flatMap((paint) => (paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []))
+  ])
 }
 
 /**
@@ -65,14 +66,8 @@ export function layerDependencies(
   const styles = new Map<string, SceneNode>()
   const pending: string[] = []
   let styleLayers: Map<string, SceneNode> | undefined
-  const styleLayer = (id: string): SceneNode | undefined => {
-    styleLayers ??= new Map(
-      [...graph.getAllNodes()].flatMap((node) =>
-        node.sharedStyleType !== null && node.source.id ? [[node.source.id, node] as const] : []
-      )
-    )
-    return styleLayers.get(id)
-  }
+  const styleLayer = (id: string): SceneNode | undefined =>
+    (styleLayers ??= sharedStyleLayers(graph)).get(id)
   const visit = (node: SceneNode): void => {
     for (const hash of layerImageHashes(node)) images.add(hash)
     pending.push(...layerVariableIds(node))

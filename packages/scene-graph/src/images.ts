@@ -3,6 +3,7 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
 
 import type { Matrix, Size } from './primitives'
+import type { Fill } from './types'
 
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
@@ -86,4 +87,26 @@ export function coverImageTransform(
   const m00 = width / scale / imageWidth
   const m11 = height / scale / imageHeight
   return { m00, m01: 0, m02: (1 - m00) / 2, m10: 0, m11, m12: (1 - m11) / 2 }
+}
+
+/** The images `paints` show, by their hashes. */
+export function imagePaintHashes(paints: Iterable<Fill>): string[] {
+  return [...paints].flatMap((paint) =>
+    paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []
+  )
+}
+
+/**
+ * Copies the images `hashes` name from `from` into `to`, each as bytes of its own. An image is
+ * named by its content, so one `to` already holds stays.
+ */
+export function copyImages(
+  from: ReadonlyMap<string, Uint8Array>,
+  to: Map<string, Uint8Array>,
+  hashes: Iterable<string>
+): void {
+  for (const hash of hashes) {
+    const bytes = from.get(hash)
+    if (bytes && !to.has(hash)) to.set(hash, new Uint8Array(bytes))
+  }
 }

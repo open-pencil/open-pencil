@@ -7,7 +7,7 @@ import {
 import { collectionAssetKey, styleAssetKey } from '@open-pencil/scene-graph/asset-keys'
 
 import { assertLibraryAssetKey, isValidLibraryAssetKey } from './identity'
-import type { LibraryAssetDescriptor, LibraryComponentAssetType } from './types'
+import type { LibraryAssetDescriptor, LibraryAssetType, LibraryComponentAssetType } from './types'
 
 export interface AssetKeyAssignment {
   nodeId: string
@@ -126,33 +126,43 @@ export function libraryAssetKey(node: SceneNode): string {
 /** What a document can publish, as the publish dialog lists it before any revision exists. */
 export type PublishableLibraryAsset = Omit<LibraryAssetDescriptor, 'contentHash' | 'thumbnail'>
 
+function libraryLayerAssetType(node: SceneNode): LibraryAssetType {
+  if (node.sharedStyleType !== null) return 'STYLE'
+  return node.type === 'COMPONENT_SET' ? 'COMPONENT_SET' : 'COMPONENT'
+}
+
+/** What a library asset of a component, set, or style says of it, but for its content. */
+export function libraryLayerAsset(node: SceneNode): PublishableLibraryAsset {
+  return {
+    key: libraryAssetKey(node),
+    type: libraryLayerAssetType(node),
+    name: node.name,
+    description: node.symbolDescription,
+    sourceId: node.id
+  }
+}
+
+/** What a library asset of a variable collection says of it, but for its content. */
+export function libraryCollectionAsset(collection: VariableCollection): PublishableLibraryAsset {
+  return {
+    key: collectionAssetKey(collection),
+    type: 'VARIABLE_COLLECTION',
+    name: collection.name,
+    description: '',
+    sourceId: collection.id
+  }
+}
+
 /**
  * Every component, set, style, and collection the document can publish, under the keys a
  * revision gives them. Components without a key get one first (`ensureLibraryAssetKeys`).
  */
 export function publishableLibraryAssets(graph: SceneGraph): PublishableLibraryAsset[] {
   return [
-    ...publishableLibraryRoots(graph).map((node) => ({
-      key: libraryAssetKey(node),
-      type: node.type,
-      name: node.name,
-      description: node.symbolDescription,
-      sourceId: node.id
-    })),
-    ...publishableLibraryStyles(graph).map((node) => ({
-      key: libraryAssetKey(node),
-      type: 'STYLE' as const,
-      name: node.name,
-      description: node.symbolDescription,
-      sourceId: node.id
-    })),
-    ...publishableLibraryCollections(graph).map((collection) => ({
-      key: collectionAssetKey(collection),
-      type: 'VARIABLE_COLLECTION' as const,
-      name: collection.name,
-      description: '',
-      sourceId: collection.id
-    }))
+    ...[...publishableLibraryRoots(graph), ...publishableLibraryStyles(graph)].map(
+      libraryLayerAsset
+    ),
+    ...publishableLibraryCollections(graph).map(libraryCollectionAsset)
   ]
 }
 

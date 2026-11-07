@@ -1,14 +1,15 @@
 export { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 export {
   exportBounds,
+  fittedLayerRenderer,
   MAX_RASTER_PIXELS,
   oversizedRaster,
   rasterSize,
   renderNodesToImage,
   renderThumbnail,
-  scaleToFit,
   thumbnailFrame,
   type RasterExportFormat,
+  type ScaledLayerRender,
   type ThumbnailFit,
   type ThumbnailFrame,
   type ExportFormat

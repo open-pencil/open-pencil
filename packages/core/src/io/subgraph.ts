@@ -1,5 +1,10 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { layerDependencies, type LayerDependencies } from '@open-pencil/scene-graph/transfer'
+import { copyImages } from '@open-pencil/scene-graph/images'
+import {
+  copyVariableTables,
+  layerDependencies,
+  type LayerDependencies
+} from '@open-pencil/scene-graph/transfer'
 
 import type { ExportTarget } from './types'
 
@@ -98,22 +103,8 @@ function copyReferencedTables(
   graph: SceneGraph,
   { images, variables, collections }: LayerDependencies
 ): void {
-  for (const hash of images) {
-    const image = source.images.get(hash)
-    if (image) graph.images.set(hash, image)
-  }
-  for (const id of collections) {
-    const collection = source.variableCollections.get(id)
-    if (!collection) continue
-    graph.variableCollections.set(id, {
-      ...structuredClone(collection),
-      variableIds: collection.variableIds.filter((variableId) => variables.has(variableId))
-    })
-  }
-  for (const id of variables) {
-    const variable = source.variables.get(id)
-    if (variable) graph.variables.set(id, structuredClone(variable))
-  }
+  copyImages(source.images, graph.images, images)
+  copyVariableTables(graph, variables, collections, () => [source])
 }
 
 function depthOf(source: SceneGraph, node: ReturnType<SceneGraph['getNode']>): number {

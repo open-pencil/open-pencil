@@ -1,7 +1,7 @@
 import { markRaw, shallowRef } from 'vue'
 
 import { reapplyInstanceComponentProperties } from '@open-pencil/core'
-import { renderNodesToImage, scaleToFit } from '@open-pencil/core/io/formats/raster'
+import { fittedLayerRenderer, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
@@ -52,12 +52,11 @@ export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
 function libraryThumbnailRenderer(editor: EditorStore): LibraryThumbnailRenderer | undefined {
   const { renderer } = editor
   if (!renderer) return undefined
-  return async (graph, pageId, nodeId) => {
-    const scale = scaleToFit(graph, [nodeId], LIBRARY_THUMBNAIL_SIZE)
-    return scale
-      ? renderNodesToImage(renderer.ck, renderer, graph, pageId, [nodeId], { scale, format: 'PNG' })
-      : null
-  }
+  return fittedLayerRenderer(
+    (graph, pageId, nodeIds, { scale }) =>
+      renderNodesToImage(renderer.ck, renderer, graph, pageId, nodeIds, { scale, format: 'PNG' }),
+    LIBRARY_THUMBNAIL_SIZE
+  )
 }
 
 export class LibraryService implements ComponentCatalog {

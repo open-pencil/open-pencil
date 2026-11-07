@@ -84,11 +84,30 @@ export function exportBounds(
 }
 
 /** The scale at which these layers' export bounds fit a square of `size` pixels. */
-export function scaleToFit(graph: SceneGraph, nodeIds: string[], size: number): number | null {
+function scaleToFit(graph: SceneGraph, nodeIds: string[], size: number): number | null {
   const bounds = exportBounds(graph, nodeIds)
   if (!bounds) return null
   const longest = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
   return longest > 0 ? size / longest : null
+}
+
+/** Draws layers at a scale, as `headlessRenderNodes` and the editor's renderer do. */
+export type ScaledLayerRender = (
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: { scale: number }
+) => Promise<Uint8Array | null> | Uint8Array | null
+
+/** Draws a layer with `render` so that its longest side is `size` pixels. */
+export function fittedLayerRenderer(
+  render: ScaledLayerRender,
+  size: number
+): (graph: SceneGraph, pageId: string, nodeId: string) => Promise<Uint8Array | null> {
+  return async (graph, pageId, nodeId) => {
+    const scale = scaleToFit(graph, [nodeId], size)
+    return scale ? render(graph, pageId, [nodeId], { scale }) : null
+  }
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { headlessRenderNodes, scaleToFit } from '@open-pencil/core/io/formats/raster'
+import { fittedLayerRenderer, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
 import {
   createLibraryRevision,
   createSelectiveLibraryRevision,
@@ -157,10 +157,7 @@ describe('library revisions publish styles and variables', () => {
       name: 'DS',
       graph,
       publishedAt: plain.manifest.publishedAt,
-      renderThumbnail: async (revisionGraph, pageId, nodeId) => {
-        const scale = scaleToFit(revisionGraph, [nodeId], LIBRARY_THUMBNAIL_SIZE)
-        return scale ? headlessRenderNodes(revisionGraph, pageId, [nodeId], { scale }) : null
-      }
+      renderThumbnail: fittedLayerRenderer(headlessRenderNodes, LIBRARY_THUMBNAIL_SIZE)
     })
 
     expect(pictured.manifest.revisionId).toBe(plain.manifest.revisionId)

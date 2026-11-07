@@ -1,3 +1,5 @@
+import { isEmptyObject, isEqual } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
 import {
   collectionAssetKey,
@@ -6,8 +8,13 @@ import {
   variableAssetKey
 } from '@open-pencil/scene-graph/asset-keys'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { copyImages } from '@open-pencil/scene-graph/images'
 import { remapInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
-import { internalCanvas, newSharedStyleId } from '@open-pencil/scene-graph/shared-styles'
+import {
+  internalCanvas,
+  newSharedStyleId,
+  sharedStyleLayers
+} from '@open-pencil/scene-graph/shared-styles'
 import {
   layerDependencies,
   remappedResourceReferences,
@@ -102,9 +109,7 @@ function importStyle(
     graph.updateNode(existing.id, { ...fields, locked: true, librarySource })
     return existing
   }
-  const taken = [...graph.getAllNodes()].some(
-    (node) => node.sharedStyleType !== null && node.source.id === style.source.id
-  )
+  const taken = !!style.source.id && sharedStyleLayers(graph).has(style.source.id)
   const copy = graph.createNode(style.type, internalCanvas(graph).id, {
     ...cloneNodeProps(style, null),
     // Styles from Figma share IDs across files; a taken one gets the document a new one.
@@ -178,10 +183,7 @@ export function importLibraryResources(
     if (collection && !collection.variableIds.includes(copy.id))
       collection.variableIds.push(copy.id)
   }
-  for (const hash of dependencies.images) {
-    const bytes = source.images.get(hash)
-    if (bytes && !graph.images.has(hash)) graph.images.set(hash, new Uint8Array(bytes))
-  }
+  copyImages(source.images, graph.images, dependencies.images)
   const styleLayers: string[] = []
   for (const style of dependencies.styles) {
     const copy = importStyle(graph, revision, style)
@@ -202,14 +204,15 @@ export function remapLibraryResources(
   for (const id of ids) {
     const node = graph.getNode(id)
     if (!node) continue
-    graph.updateNode(id, {
-      ...remappedResourceReferences(node, references),
-      instanceOverrides: remapInstanceOverrideState(node.instanceOverrides, {
-        node: (layer) => layer,
-        variable: references.variable,
-        collection: references.collection
-      })
+    const changes = remappedResourceReferences(node, references)
+    const instanceOverrides = remapInstanceOverrideState(node.instanceOverrides, {
+      node: (layer) => layer,
+      variable: references.variable,
+      collection: references.collection
     })
+    if (!isEqual(instanceOverrides, node.instanceOverrides))
+      changes.instanceOverrides = instanceOverrides
+    if (!isEmptyObject(changes)) graph.updateNode(id, changes)
   }
 }
 

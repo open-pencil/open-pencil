@@ -1,14 +1,15 @@
-import { omit, uniq, uniqBy } from 'es-toolkit'
+import { omit, uniqBy } from 'es-toolkit'
 
 import { SceneGraph, type SceneNode, type VariableCollection } from '@open-pencil/scene-graph'
-import { collectionAssetKey } from '@open-pencil/scene-graph/asset-keys'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { copyImages } from '@open-pencil/scene-graph/images'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 import { ownsSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
 import {
+  copyVariableTables,
   layerDependencies,
   remapCopiedReferences,
   variableDependencies
@@ -16,12 +17,14 @@ import {
 
 import {
   libraryAssetKey,
+  libraryCollectionAsset,
+  libraryLayerAsset,
   publishableLibraryCollections,
   publishableLibraryRoots,
   publishableLibraryStyles
 } from './asset-keys'
 import { contentHash } from './hash'
-import type { LibraryAssetDescriptor, LibraryAssetType, PortableLibrarySnapshot } from './types'
+import type { LibraryAssetDescriptor, PortableLibrarySnapshot } from './types'
 
 const VOLATILE_NODE_FIELDS = new Set([
   'id',
@@ -113,43 +116,6 @@ function addSnapshotNode(
 }
 
 /**
- * Copies the variables `ids` and the collections `collectionIds` into `target`, IDs kept. Each
- * collection comes from the first of its `sources` that has it, and its variables with it; a
- * variable it lacks there comes from the next. A collection keeps only the variables copied.
- */
-export function copyVariableTables(
-  target: SceneGraph,
-  ids: ReadonlySet<string>,
-  collectionIds: Iterable<string>,
-  sources: (collectionId: string) => readonly SceneGraph[]
-): void {
-  for (const collectionId of collectionIds) {
-    const graphs = sources(collectionId)
-    const collection = graphs
-      .map((graph) => graph.variableCollections.get(collectionId))
-      .find((found) => found !== undefined)
-    if (!collection) continue
-    const members = uniq(
-      graphs.flatMap((graph) => graph.variableCollections.get(collectionId)?.variableIds ?? [])
-    ).filter((id) => ids.has(id))
-    target.variableCollections.set(collectionId, {
-      ...structuredClone(collection),
-      variableIds: members
-    })
-    const mode = graphs
-      .map((graph) => graph.activeMode.get(collectionId))
-      .find((found) => found !== undefined)
-    if (mode) target.activeMode.set(collectionId, mode)
-    for (const id of members) {
-      const variable = graphs
-        .map((graph) => graph.variables.get(id))
-        .find((found) => found !== undefined)
-      if (variable) target.variables.set(id, structuredClone(variable))
-    }
-  }
-}
-
-/**
  * A revision's graph: the published components with the components they use, the published
  * styles and the styles those use, and the variables, collections, and images all of them need.
  * `assetIds` limits what is published; every publishable component, style, and collection by
@@ -207,10 +173,7 @@ export function extractLibrarySnapshot(
     ]),
     () => [source]
   )
-  for (const hash of dependencies.images) {
-    const image = source.images.get(hash)
-    if (image) snapshot.images.set(hash, new Uint8Array(image))
-  }
+  copyImages(source.images, snapshot.images, dependencies.images)
   const mapped = (node: SceneNode): SceneNode[] => {
     const id = mappedIds.get(node.id)
     const copy = id ? snapshot.getNode(id) : undefined
@@ -307,11 +270,6 @@ export function canonicalLibraryNode(
   }
 }
 
-function assetType(node: SceneNode): LibraryAssetType {
-  if (node.sharedStyleType !== null) return 'STYLE'
-  return node.type === 'COMPONENT_SET' ? 'COMPONENT_SET' : 'COMPONENT'
-}
-
 /**
  * A collection as its content compares it: its modes and its variables in order, aliases and
  * modes named by their IDs, which a library's revisions share.
@@ -340,19 +298,11 @@ export async function describeSnapshotAssets(
   snapshot: PortableLibrarySnapshot
 ): Promise<LibraryAssetDescriptor[]> {
   const nodes = snapshot.assetRoots.map(async (node) => ({
-    key: libraryAssetKey(node),
-    type: assetType(node),
-    name: node.name,
-    description: node.symbolDescription,
-    sourceId: node.id,
+    ...libraryLayerAsset(node),
     contentHash: await contentHash(canonicalLibraryNode(snapshot.graph, node, new Set([node.id])))
   }))
   const collections = snapshot.collections.map(async (collection) => ({
-    key: collectionAssetKey(collection),
-    type: 'VARIABLE_COLLECTION' as const,
-    name: collection.name,
-    description: '',
-    sourceId: collection.id,
+    ...libraryCollectionAsset(collection),
     contentHash: await contentHash(canonicalLibraryCollection(snapshot.graph, collection))
   }))
   return Promise.all([...nodes, ...collections])

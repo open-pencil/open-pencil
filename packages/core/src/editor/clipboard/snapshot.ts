@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { copyImages } from '@open-pencil/scene-graph/images'
 import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
@@ -47,10 +48,7 @@ export function captureClipboardSnapshot(
   for (const node of nodes) visitReferences(node)
   const dependencies = layerDependencies(graph, capturedNodes)
   const images = new Map<string, Uint8Array>()
-  for (const hash of dependencies.images) {
-    const bytes = graph.images.get(hash)
-    if (bytes) images.set(hash, bytes.slice())
-  }
+  copyImages(graph.images, images, dependencies.images)
   return {
     sourceRootId: graph.rootId,
     componentDependencies: [...componentDependencies.values()],
