@@ -351,7 +351,23 @@ describe('AI relay', () => {
     // A Cloud not yet upgraded issues tokens without an account: they spend the workspace's own.
     const older = await context.token({ accountId: null })
     expect(await balance(older)).toBe(600)
-    expect((await context.complete(older, { model: MODEL })).status).toBe(200)
+    const answer = await context.complete(older, { model: MODEL })
+    expect(answer.status).toBe(200)
+    await answer.text()
+    // What such a token spends is recorded under no account, so it still counts once Cloud
+    // upgrades and tokens name the workspace's owner.
+    const recorded = async () =>
+      context.database
+        .selectFrom('aiRelayUsage')
+        .select('accountId')
+        .where('credits', '!=', 400)
+        .execute()
+    for (let attempt = 0; attempt < 100 && (await recorded()).length === 0; attempt++) {
+      await Bun.sleep(5)
+    }
+    expect(await recorded()).toEqual([{ accountId: null }])
+    expect(await balance(await context.token())).toBe(await balance(older))
+    expect(await balance(older)).toBeLessThan(600)
   })
 
   test('limits an account to its concurrent requests until metering settles', async () => {

@@ -115,7 +115,9 @@ async function handOverOwnership(
     .selectFrom('workspace')
     .select('ownerId')
     .where('id', '=', workspaceId)
-    .forUpdate()
+    // Changing the owner changes no key, so a reservation's foreign-key check on this row is
+    // never kept waiting behind it while the transfer waits for that reservation's lock.
+    .forNoKeyUpdate()
     .executeTakeFirstOrThrow()
   if (workspace.ownerId !== leavingUserId) return
   const successor = await database
