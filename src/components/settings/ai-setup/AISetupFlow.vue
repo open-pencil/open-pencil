@@ -24,10 +24,16 @@ import AISetupSkills from './AISetupSkills.vue'
 const {
   entry,
   offersTour = true,
+  tourOpening = false,
+  tourFailed = false,
   agentsAvailable = IS_TAURI
 } = defineProps<{
   entry: AISetupEntry
   offersTour?: boolean
+  /** The tour is loading after the person chose it. */
+  tourOpening?: boolean
+  /** The tour could not be opened; the person can try again. */
+  tourFailed?: boolean
   agentsAvailable?: boolean
 }>()
 const emit = defineEmits<{ close: []; advanced: []; tour: [] }>()
@@ -129,14 +135,25 @@ async function finish(): Promise<void> {
           <p :class="styles.introText()">{{ ai.aiSetupWelcomeAIDescription }}</p>
         </section>
         <section v-if="offersTour" :class="styles.tour()" data-test-id="ai-setup-tour">
-          <div>
+          <div :class="styles.tourText()">
             <h3 :class="styles.introHeading()">{{ ai.aiSetupWelcomeTourTitle }}</h3>
             <p :class="styles.introText()">{{ ai.aiSetupWelcomeTourDescription }}</p>
           </div>
-          <AppButton variant="outline" :class="styles.tourAction()" @click="emit('tour')">
+          <AppButton
+            variant="outline"
+            :class="styles.tourAction()"
+            :loading="tourOpening"
+            @click="emit('tour')"
+          >
             {{ ai.aiSetupTakeTour }}
           </AppButton>
         </section>
+        <AppAlert
+          v-if="offersTour && tourFailed"
+          tone="error"
+          :heading="ai.aiSetupTourFailed"
+          data-test-id="ai-setup-tour-failed"
+        />
       </template>
 
       <template v-else-if="phase === 'saved'">
