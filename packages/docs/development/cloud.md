@@ -166,10 +166,21 @@ sequenceDiagram
   B->>R: yjs-update (dropped)
 ```
 
-The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved in
-PostgreSQL by document and collaboration epoch, so a newcomer gets the document even when nobody
-else is online. Tickets are short-lived signed JWTs; the client presents a fresh one before the
-current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
+The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
+document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
+typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
+the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+documents' revisions, which a room's row names, so the database holds only the updates since the
+last one. A compaction records its file before writing it and points the room at it last, so a
+replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
+15 minutes old. A room reopens from its snapshot and the updates logged after it. Tickets are
+short-lived signed JWTs; the client presents a fresh one before the current one expires, and the
+relay closes a socket whose ticket lapsed or changed identity. It checks a ticket when it hears from
+the peer or sends it anything, not on a timer, so on Cloudflare an idle room's Durable Object
+hibernates while its sockets stay open: each socket keeps its peer as an attachment, and the object
+it wakes to resumes them and loads the room's document only once a message needs it. Presence alone
+wakes the object without loading the document.
 
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,
 which may not be lower. A larger frame, such as a big paste, the first editor's copy of a large
@@ -323,19 +334,20 @@ Storage quota uses reservations: the upload locks the workspace's quota row, cou
 plus active reservations, reserves the requested bytes, and commits the verified size when the
 upload finishes. Cleanup releases reservations from abandoned uploads.
 
-## AI service and billing
+## Services and billing
 
-Cloud does not proxy models or keep credit balances. An `[ai]` table advertises a separate AI
-service in discovery, and `POST /api/ai/token` signs a short-lived ES256 token for a workspace
-member when the workspace has the `ai.enabled` entitlement. The token names the user, the
-workspace, and its `ai.monthly_credit_allowance`; the service verifies it against the keys at
-`/.well-known/jwks.json`, so it never reads Cloud's database. The contract editors and services
-share, including the service's catalog, wallet, and error codes, is `src/contract/ai.ts`; it has its
-own version so a service can change without a Cloud release. A `[billing]` table only advertises
-where people manage their plan.
+Cloud does not proxy models or other paid capabilities, and keeps no credit balances. A
+`[services]` table advertises a separate service in discovery, and `POST /api/services/token` signs
+a short-lived ES256 token for a workspace member when the workspace has the `services.enabled`
+entitlement. The token names the user, the workspace, and its `services.monthly_credit_allowance`;
+the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
+database. The contract editors and services share, including the service's catalog, wallet, and
+error codes, is `src/contract/services.ts`; it has its own version so a service can change without
+a Cloud release. AI models are the first capability; image generation and search join the same
+contract and the same credits. A `[billing]` table only advertises where people manage their plan.
 
-A service answers below its endpoint at the paths in `CLOUD_AI_API_PATHS`: model requests follow
-the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
+A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
+follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
 catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
 `src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
 forwards completions to one upstream with one key, and keeps one usage row per settled request, so a

@@ -34,17 +34,16 @@ const emit = defineEmits<{
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 
 const outside = pickerOutsideHandlers(() => keepOpen)
-
-function cancelFromEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-  emit('cancel')
-}
 </script>
 
 <template>
@@ -66,7 +65,7 @@ function cancelFromEscape(event: KeyboardEvent) {
         :side-offset="4"
         side="left"
         data-picker-content
-        @escape-key-down="cancelFromEscape"
+        @escape-key-down="emit('cancel')"
         @pointer-down-outside="outside.onPointerDownOutside"
         @focus-outside="outside.onFocusOutside"
       >

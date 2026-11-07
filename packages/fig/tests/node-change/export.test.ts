@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import { componentPropDefsOf, componentPropRefsOf } from '#fig-tests/helpers/component-props'
 import { symbolDataOf } from '#fig/instance-overrides/types'
 import {
@@ -15,6 +14,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 describe('@open-pencil/fig SceneGraph export policy', () => {
   test('maps node types deterministically', () => {

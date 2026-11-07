@@ -1,7 +1,7 @@
 import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
+import type { CloudServicesClient } from '@open-pencil/cloud/client'
 import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
@@ -27,7 +27,7 @@ export const cloudAIAvailable = computed(() => false)
 export const cloudAIIdentity = computed<string | null>(() => null)
 export const cloudBillingURL = computed<string | null>(() => null)
 
-export function cloudAIClient(): CloudAIClient | null {
+export function cloudAIClient(): CloudServicesClient | null {
   return null
 }
 

@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { makeGraph, pageId, tw } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
+
+import { tw } from './helpers'
 
 describe('Tailwind JSX layout classes', () => {
   test('spacing uses v4 multiplier (px / 4)', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 16,
       height: 2
     })
@@ -15,8 +17,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('non-standard spacing falls back to arbitrary value', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 37,
       height: 100
     })
@@ -26,8 +28,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('1px uses w-px', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 1,
       height: 1
     })
@@ -37,8 +39,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('auto-layout frame → flex classes', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       name: 'Row',
       width: 400,
       height: 100,
@@ -61,8 +63,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('vertical auto-layout', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 320,
       height: 200,
       layoutMode: 'VERTICAL',
@@ -78,8 +80,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('asymmetric padding', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 100,
       height: 100,
       layoutMode: 'HORIZONTAL',
@@ -98,8 +100,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('justify and items alignment', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 100,
       height: 100,
       layoutMode: 'HORIZONTAL',
@@ -114,8 +116,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('grow emits grow class', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 400,
       height: 100,
       layoutMode: 'HORIZONTAL',
@@ -132,8 +134,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('wrap emits flex-wrap', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 400,
       height: 400,
       layoutMode: 'HORIZONTAL',
@@ -148,8 +150,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('grid layout → grid + grid-cols + grid-rows', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       name: 'Grid',
       width: 400,
       height: 300,
@@ -181,8 +183,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('grid with mixed tracks uses arbitrary value', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 600,
       height: 400,
       layoutMode: 'GRID',
@@ -201,8 +203,8 @@ describe('Tailwind JSX layout classes', () => {
   })
 
   test('grid child placement → col-start/row-start/col-span', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 400,
       height: 300,
       layoutMode: 'GRID',

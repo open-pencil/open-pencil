@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent, PopoverClose } from 'reka-ui'
+import { PopoverTrigger, PopoverPortal, PopoverContent, PopoverClose } from 'reka-ui'
 
 import type { Stroke } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 import StrokeDashControls from './StrokeDashControls.vue'
@@ -23,7 +24,7 @@ const styles = usePopoverUI({
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popupOpen">
+  <AppPopoverRoot v-model:open="popupOpen">
     <PopoverTrigger as-child>
       <AppButton :aria-label="panels.strokeSettings" data-property="stroke-settings">
         <icon-lucide-sliders-horizontal class="size-3.5" />
@@ -49,5 +50,5 @@ const styles = usePopoverUI({
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

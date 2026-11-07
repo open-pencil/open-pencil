@@ -23,7 +23,11 @@ import {
 import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
-import { inheritComponentPropertyDefinitions, inheritFromAncestors } from './property-inheritance'
+import {
+  inheritComponentPropertyDefinitions,
+  inheritFromAncestors,
+  linkedPropertyCopies
+} from './property-inheritance'
 import { vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
@@ -47,7 +51,10 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
-  'overrideKey'
+  'overrideKey',
+  // A variant's copies of its set's properties are read for every variant a page links, which
+  // would otherwise keep each variant's whole record decoded for the session.
+  'componentPropDefs'
 ] as const
 
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
@@ -329,6 +336,12 @@ function createScopedReader(
       return structuredClone(resources.map(whole))
     },
     bindingDiagnostics,
+    /** A record's copies of its set's properties, each by its own id to the set property's. */
+    propertyCopies(id: string): Map<string, string> {
+      // Headers carry the saved definitions, links included, so no whole record is decoded.
+      const header = index.sources.get(id)
+      return header ? linkedPropertyCopies(header) : new Map()
+    },
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
       const page = interpreter.page(id, options)

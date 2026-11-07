@@ -62,9 +62,9 @@ test('refuses a version built from another commit or ref', () => {
 test('refuses a version built by another workflow or repository', () => {
   const statement = published()
   statement.predicate.buildDefinition.externalParameters.workflow.path =
-    '.github/workflows/chromium.yml'
+    '.github/workflows/release-chromium.yml'
   expect(provenanceMismatches(statement, integrity, source)).toEqual([
-    'built by .github/workflows/chromium.yml'
+    'built by .github/workflows/release-chromium.yml'
   ])
 
   expect(

@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.17.0-beta.1",
+  "version": "0.17.0-beta.2",
   "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
@@ -29,7 +29,6 @@
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
-    "#cloud/server/ai": "./src/server/ai/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
@@ -47,6 +46,7 @@
     "#cloud/server/policy": "./src/server/policy/index.ts",
     "#cloud/server/quota": "./src/server/quota/index.ts",
     "#cloud/server/rate-limit": "./src/server/rate-limit/index.ts",
+    "#cloud/server/services": "./src/server/services/index.ts",
     "#cloud/server/sharing": "./src/server/sharing/index.ts",
     "#cloud/server/workspaces": "./src/server/workspaces/index.ts",
     "#cloud/*": "./src/*.ts",
@@ -106,7 +106,7 @@
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "entitlements": "bun src/runtime/node/entitlements/main.ts",
     "admin": "bun src/runtime/node/admin.ts",
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json"
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json && bunx tsc -p tsconfig.cloudflare.tests.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
@@ -145,6 +145,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261011.1",
     "@electric-sql/pglite": "0.4.1",
+    "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.21.0",

@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
 import { corePackagePath } from '#core-tests/helpers/paths'
-
 import { browserFaceDescriptors, facesFromStyles, nearestFamilyFace } from '@open-pencil/core/text'
 
 // Lora's faces as Figma desktop 126 lists them.

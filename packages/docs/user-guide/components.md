@@ -90,7 +90,7 @@ Open **Manage libraries → Updates** to discover newer revisions. Discovery doe
 - Instances on the current page
 - Instances across all pages
 
-OpenPencil preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
+Updating every instance of an asset redraws the document's copy of that component in place, so its instances keep their overrides — on layers the library renamed too, since each layer is matched to the library layer it copies — and lose only those on layers the library removed. Updating some instances of an asset moves just those to a copy of the newer definition, as does updating a component the library turned into another kind of layer, such as a set of variants; OpenPencil then preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
 
 ### Local, Storage, and Offline Use
 

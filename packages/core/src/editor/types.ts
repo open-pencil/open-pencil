@@ -19,16 +19,12 @@ import type { UndoManager } from '@open-pencil/scene-graph/undo'
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type {
-  MeasurementMode,
-  PresenceCursor,
-  RenderOverlays,
-  SelectionTheme
-} from '#core/canvas/renderer/types'
+import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { NodeEditState } from '#core/editor/vector/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -189,7 +185,8 @@ export interface EditorViewState {
   /** Bumped when the caret or selection of the text being edited moves, which changes nothing else. */
   textSelectionVersion: number
   enteredContainerId: string | null
-  nodeEditState?: RenderOverlays['nodeEditState'] | null
+  /** The vector path being edited point by point, or null outside vector edit mode. */
+  nodeEditState: NodeEditState | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
   /** What this canvas shows: the design being edited, or running as a preview. */
@@ -239,6 +236,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
+  /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
+  'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
@@ -269,6 +268,10 @@ export interface EditorOptions {
     signal?: AbortSignal
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
+  /**
+   * The canvas's size in screen pixels. Without it the editor uses the size the canvas last gave
+   * `setViewportSize`, and the window's before that.
+   */
   getViewportSize?: () => { width: number; height: number }
   /** The name of whoever is editing, which a sticky note they place is signed with. */
   getUserName?: () => string

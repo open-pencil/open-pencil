@@ -28,7 +28,10 @@ test('leaves overlays whose open is not a presence test', async () => {
       'src/components/List.vue': `${SCRIPT}<template><Disclosure v-for="group in groups" :open="expanded.includes(group.id)">{{ group.name }}</Disclosure></template>\n`,
       'src/components/Context.vue': `${SCRIPT}<template><ComboboxRoot :open="ctx.open">{{ ctx.label }}</ComboboxRoot></template>\n`,
       // Popovers close at once, so nothing draws after their state clears.
-      'src/components/Popover.vue': `${SCRIPT}<template><PopoverRoot :open="!!removing">{{ removing.name }}</PopoverRoot></template>\n`
+      'src/components/Popover.vue': `${SCRIPT}<template><PopoverRoot :open="!!removing">{{ removing.name }}</PopoverRoot></template>\n`,
+      // The app's wrappers close at once too, written either way.
+      'src/components/Wrapped.vue': `${SCRIPT}<template><AppPopoverRoot :open="!!removing">{{ removing.name }}</AppPopoverRoot></template>\n`,
+      'src/components/Kebab.vue': `${SCRIPT}<template><app-popover-root :open="!!removing">{{ removing.name }}</app-popover-root></template>\n`
     })
   ).toEqual([])
 })

@@ -94,7 +94,7 @@ export class CloudAIUnavailableError extends Error {
   }
 }
 
-function openPencilLanguageModel(resolved: ResolvedAIModelRole): LanguageModel {
+async function openPencilLanguageModel(resolved: ResolvedAIModelRole): Promise<LanguageModel> {
   const client = cloudAIClient(resolved.connection.cloudWorkspaceId ?? '')
   if (!client) throw new CloudAIUnavailableError()
   const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID)
@@ -124,7 +124,7 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   }
 
   if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
-    return { kind: 'direct', role: resolved, model: openPencilLanguageModel(resolved) }
+    return { kind: 'direct', role: resolved, model: await openPencilLanguageModel(resolved) }
   }
 
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)
@@ -138,7 +138,7 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
     kind: 'direct',
     role: resolved,
     minReasoningEffort: known?.minReasoningEffort,
-    model: createLanguageModel(
+    model: await createLanguageModel(
       {
         providerID: resolved.connection.providerID,
         apiKey,

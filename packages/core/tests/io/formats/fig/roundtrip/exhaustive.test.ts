@@ -4,7 +4,7 @@ import {
   expectSaveLoadedOnlyInternalPages,
   snapshotNodes
 } from '#core-tests/helpers/fig/save-contract'
-import { heavy } from '#core-tests/helpers/test-utils'
+import { heavy } from '@open-pencil/test-support/heavy'
 import { unzipSync } from 'fflate'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'

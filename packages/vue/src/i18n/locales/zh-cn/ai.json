@@ -78,7 +78,7 @@
   "attachImages": "附加图片",
   "removeImageAttachment": "移除图片 {name}",
   "dropImagesToAttach": "拖放图片以添加附件",
-  "queueMessage": "引导智能体… Alt+Enter 等它完成后再发送",
+  "queueMessage": "引导智能体… {shortcut} 等它完成后再发送",
   "queuedSteer": "当前步骤后发送",
   "queuedFollowUp": "智能体完成后发送",
   "removeQueuedMessage": "移除等待中的消息",

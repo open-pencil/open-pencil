@@ -112,19 +112,20 @@ describe('Cloud server configuration', () => {
     )
   })
 
-  test('requires HTTPS for the official AI service endpoint, whatever the scheme case', () => {
+  test('requires HTTPS for the official services endpoint, whatever the scheme case', () => {
     const official = {
       ...baseConfig,
       deployment: 'official',
-      aiSigningKey: 'signing-key-pem'
+      servicesSigningKey: 'signing-key-pem'
     }
-    for (const aiEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
-      expect(() => parseCloudServerConfig({ ...official, aiEndpoint })).toThrow(
-        'Official AI service endpoint must use HTTPS'
+    for (const servicesEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, servicesEndpoint })).toThrow(
+        'Official services endpoint must use HTTPS'
       )
     }
     expect(
-      parseCloudServerConfig({ ...official, aiEndpoint: 'HTTPS://ai.example.com' }).aiEndpoint
+      parseCloudServerConfig({ ...official, servicesEndpoint: 'HTTPS://ai.example.com' })
+        .servicesEndpoint
     ).toBe('HTTPS://ai.example.com')
   })
 

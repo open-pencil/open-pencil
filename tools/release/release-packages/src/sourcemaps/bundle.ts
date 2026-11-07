@@ -22,17 +22,24 @@ const CHUNK_ID_COMMENT = /\n\/\/# chunkId=\S+\s*$/
 const SOURCE_MAPPING_URL = /\/\/# sourceMappingURL=/
 
 /**
- * Checks that every chunk with a map carries the chunk ID PostHog matches stack frames by, and no
- * `sourceMappingURL`: the maps leave the build, so a browser must never be told to fetch them.
+ * Checks that every chunk with a map carries the chunk ID PostHog matches stack frames by. A build
+ * whose maps leave it must not link them, so a browser is never told to fetch them; one whose code
+ * is never served, such as a Worker, may keep them `linked`, since the link reaches nobody.
  */
-export async function assertInjectedChunks(dist: string, maps: string[]): Promise<void> {
+export async function assertInjectedChunks(
+  dist: string,
+  maps: string[],
+  options: { linked?: boolean } = {}
+): Promise<void> {
   if (maps.length === 0) {
     throw new Error(`No source maps in ${dist}; release builds need VITE_OPENPENCIL_FEEDBACK=on`)
   }
   for (const map of maps) {
     const chunk = map.slice(0, -'.map'.length)
     const code = await readFile(join(dist, chunk), 'utf8')
-    if (SOURCE_MAPPING_URL.test(code)) throw new Error(`${chunk} links its source map`)
+    if (!options.linked && SOURCE_MAPPING_URL.test(code)) {
+      throw new Error(`${chunk} links its source map`)
+    }
     if (!CHUNK_ID_COMMENT.test(code)) throw new Error(`${chunk} has no PostHog chunk ID`)
   }
 }

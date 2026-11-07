@@ -31,6 +31,7 @@
   "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}",
   "tokensLeftOut": "Nicht im Stylesheet enthalten: {names}.",
   "designTokensLeftOut": "Nicht in den Design-Tokens enthalten: {names}.",
+  "designTokensAmbiguous": "Diese Stile verweisen auf eine Variable, deren Pfad auch eine andere Sammlung hat, daher lesen andere Tools womöglich die falsche: {names}.",
   "designTokensImported": "{count} Design-Tokens importiert.",
   "unsupportedVariableExpressions": "OpenPencil kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}."
 }

@@ -1,1 +1,0 @@
-- In preview, a slider's range and a progress bar's indicator follow the value when they sit inside the track, as in the shadcn/ui kit's Slider (#1706).

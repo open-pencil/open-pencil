@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { graphOf } from '#core/figma-api/graph'
 
 function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
@@ -78,7 +79,7 @@ describe('geometry reads after edits', () => {
 
     // A script resizes the child and fails before its tool lays the edit out.
     child.resize(90, 20)
-    const next = new FigmaAPI(api.graph)
+    const next = new FigmaAPI(graphOf(api))
     expect(next.getNodeById(row.id)?.width).toBe(90)
   })
 
@@ -90,7 +91,7 @@ describe('geometry reads after edits', () => {
     expect(row.width).toBe(child.width)
 
     let updates = 0
-    const unbind = api.graph.onNodeEvents({ updated: () => updates++ })
+    const unbind = graphOf(api).onNodeEvents({ updated: () => updates++ })
     void row.width
     void child.x
     void row.absoluteTransform

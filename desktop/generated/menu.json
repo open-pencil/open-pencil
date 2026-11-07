@@ -176,6 +176,11 @@
         "feature": "document"
       },
       {
+        "id": "paste-as-layers",
+        "label": "Paste as layers",
+        "feature": "document"
+      },
+      {
         "id": "selection.duplicate",
         "label": "Duplicate",
         "accelerator": "CmdOrCtrl+D",
@@ -276,6 +281,7 @@
       {
         "id": "view-split-right",
         "label": "Split Right",
+        "accelerator": "CmdOrCtrl+Shift+\\",
         "feature": "document"
       },
       {

@@ -1,0 +1,1 @@
+- CLI exports and `absoluteRenderBounds` in headless runs size text by its glyphs, as the app does, and `exportAsync` on a layer that draws nothing returns a blank pixel for PNG and JPG and rejects SVG and PDF, as Figma does (#1812).

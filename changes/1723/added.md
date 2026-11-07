@@ -1,1 +1,0 @@
-- Scripts read a layer's `fillGeometry` and `strokeGeometry` and call `outlineStroke()` as in Figma, in the apps and in `open-pencil eval`.

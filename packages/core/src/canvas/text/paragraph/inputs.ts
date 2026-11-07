@@ -37,12 +37,14 @@ export const PARAGRAPH_INPUT_KEYS = [
   'hangingList',
   'textAutoResize',
   'width',
-  'height'
+  'height',
+  'minWidth',
+  'maxWidth'
 ] as const satisfies readonly (keyof SceneNode)[]
 
 export type ParagraphNode = Pick<SceneNode, (typeof PARAGRAPH_INPUT_KEYS)[number]>
 
-const BOX_SIZE_KEYS = new Set<keyof SceneNode>(['width', 'height'])
+const BOX_SIZE_KEYS = new Set<keyof SceneNode>(['width', 'height', 'minWidth', 'maxWidth'])
 
 /**
  * The paragraph inputs that decide how text shapes: which glyphs it needs and how big it is at a

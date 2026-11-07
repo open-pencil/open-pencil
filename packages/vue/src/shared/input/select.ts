@@ -1,4 +1,4 @@
-import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/vector'
+import { handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
@@ -10,6 +10,7 @@ import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
+import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
 import {
   createSelectionMoveDrag,
   pressSelects,
@@ -55,7 +56,7 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (!resolveEditorProfile(editor.state).edits) return false
+  if (resolveEditorProfile(editor.state).layerEdits === 'none') return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
@@ -68,7 +69,11 @@ function tryStartHandleDrag(
     setDrag(scaleDrag)
     return true
   }
-  const resizeDrag = tryStartResize(cx, cy, editor)
+  // A multi-selection resizes from its bounds' handles, the only ones it draws.
+  const resizeDrag =
+    editor.state.selectedIds.size > 1
+      ? tryStartSelectionResize(cx, cy, editor)
+      : tryStartResize(cx, cy, editor)
   if (resizeDrag) {
     setDrag(resizeDrag)
     return true
@@ -103,7 +108,7 @@ export function handleSelectDown(
   setDrag: (d: DragState) => void
 ) {
   // Node edit mode intercept
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     handleNodeEditDown(e, cx, cy, editor, setDrag)
     return
   }
@@ -123,8 +128,8 @@ export function handleSelectDown(
 
   selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
-  // A read-only document moves nothing.
-  if (!resolveEditorProfile(editor.state).edits) return
+  // A read-only document, or one whose layers the host keeps as they are, moves nothing.
+  if (resolveEditorProfile(editor.state).layerEdits === 'none') return
   if (selectionIsLocked(editor)) return
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.

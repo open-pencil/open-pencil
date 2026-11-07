@@ -1,6 +1,7 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
+import { isComponentSetRecord } from '../node-change/convert'
 import { componentDependencies, slotContentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
 import { styleDependencies } from './style-dependencies'
@@ -74,6 +75,33 @@ export function collectSceneDependencies(
   const slotContentReferences = new Set<string>()
   const missingSlotContentIds = new Set<string>()
   validatePageSelection(sources, pageIds)
+  // The other variants of a variant's set: switching an instance's variant, in the panel or in
+  // preview, needs the whole set, while the set's page, whose other layers examples of it use,
+  // does not come with it. A set on Figma's internal canvas is a copy of a library's, kept for
+  // the variants the file uses, so it stays as the file uses it. Each parent is looked at once;
+  // record headers leave out what marks a set, so its whole record is read then.
+  const lookedAt = new Set<string>()
+  const onInternalCanvas = (record: NodeChange): boolean => {
+    let current: NodeChange | undefined = record
+    const seen = new Set<string>()
+    while (current && current.type !== 'CANVAS') {
+      const parentId = parentIdOf(current)
+      if (parentId === undefined || seen.has(parentId)) return false
+      seen.add(parentId)
+      current = sources.get(parentId)
+    }
+    return current?.internalOnly === true
+  }
+  const setVariants = (node: NodeChange): string[] => {
+    const parentId = node.type === 'SYMBOL' ? parentIdOf(node) : undefined
+    if (parentId === undefined || lookedAt.has(parentId)) return []
+    lookedAt.add(parentId)
+    const parent = sources.get(parentId)
+    if (!parent || onInternalCanvas(parent) || !isComponentSetRecord(whole(parent))) return []
+    return (children.get(parentId) ?? []).flatMap((sibling) =>
+      sibling.type === 'SYMBOL' ? (idOf(sibling) ?? []) : []
+    )
+  }
   const pending = changes
     .filter(
       (node) =>
@@ -101,6 +129,7 @@ export function collectSceneDependencies(
     for (const content of slotContent) slotContentReferences.add(content)
     pending.push(
       ...(children.get(id) ?? []).flatMap((child) => idOf(child) ?? []),
+      ...setVariants(node),
       ...styleDependencies(record, resolveReference, availableIds),
       ...components,
       ...slotContent

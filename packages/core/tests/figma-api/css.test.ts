@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 import { renderNodesToHTML } from '#core/io/formats/html'
+import { graphOf } from '#core/figma-api/graph'
 
 const RED = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }] as const
 const BLUE = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }] as const
@@ -21,7 +21,7 @@ describe('getCSSAsync', () => {
     row.appendChild(figma.createRectangle())
 
     const css = await row.getCSSAsync()
-    const { html } = await renderNodesToHTML(figma.graph, [row.id])
+    const { html } = await renderNodesToHTML(graphOf(figma), [row.id])
 
     expect(Object.keys(css).length).toBeGreaterThan(0)
     for (const [property, value] of Object.entries(css)) {

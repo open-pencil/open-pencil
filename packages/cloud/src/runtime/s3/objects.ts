@@ -239,6 +239,32 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
 
     async delete(key) {
       await client.send(new DeleteObjectCommand({ Bucket: config.s3Bucket, Key: key }))
+    },
+
+    async write(input) {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: config.s3Bucket,
+          Key: input.key,
+          Body: input.bytes,
+          ContentType: input.contentType,
+          ChecksumSHA256: nativeSHA256 ? input.checksum : undefined,
+          Metadata: { [CHECKSUM_METADATA_KEY]: input.checksum },
+          ...encryption(config)
+        })
+      )
+    },
+
+    async read(key) {
+      try {
+        const object = await client.send(
+          new GetObjectCommand({ Bucket: config.s3Bucket, Key: key })
+        )
+        return object.Body ? await object.Body.transformToByteArray() : null
+      } catch (error) {
+        if (isNotFoundError(error)) return null
+        throw error
+      }
     }
   }
 }

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
+import { expectFills } from '@open-pencil/test-support/assert'
 import { createAPI, createStackHost } from '#core-tests/helpers/figma-api'
-
 import type { FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import { graphOf } from '#core/figma-api/graph'
 
 describe('createComponentFromNode', () => {
   test('converts frame to component', () => {
@@ -39,12 +39,12 @@ describe('createComponentFromNode', () => {
     frame.resize(200, 50)
     frame.cornerRadius = 8
     new OpenPencilAPI(api).bindVariable(frame, 'cornerRadius', variable)
-    api.graph.updateNode(frame.id, {
+    graphOf(api).updateNode(frame.id, {
       variableModes: { [collection.id]: collection.defaultModeId }
     })
 
     const comp = api.createComponentFromNode(frame)
-    const raw = api.graph.getNode(comp.id)
+    const raw = graphOf(api).getNode(comp.id)
 
     expect(raw?.boundVariables.cornerRadius).toBe(variable.id)
     expect(raw?.variableModes).toEqual({ [collection.id]: collection.defaultModeId })
@@ -59,7 +59,7 @@ describe('createComponentFromNode', () => {
     const child = api.createRectangle()
     child.resize(40, 20)
     frame.appendChild(child)
-    computeAllLayouts(api.graph, frame.id)
+    computeAllLayouts(graphOf(api), frame.id)
 
     const comp = api.createComponentFromNode(frame)
     const initialWidth = comp.width
@@ -68,7 +68,7 @@ describe('createComponentFromNode', () => {
     comp.paddingRight = 20
     comp.paddingTop = 10
     comp.paddingBottom = 10
-    computeAllLayouts(api.graph, comp.id)
+    computeAllLayouts(graphOf(api), comp.id)
 
     expect(comp.width).toBe(initialWidth + 40)
     expect(comp.height).toBe(initialHeight + 20)
@@ -81,7 +81,7 @@ describe('createComponentFromNode', () => {
     frame.counterAxisSizingMode = 'AUTO'
 
     const comp = api.createComponentFromNode(frame)
-    const raw = api.graph.getNode(comp.id)
+    const raw = graphOf(api).getNode(comp.id)
 
     expect(raw?.primaryAxisSizing).toBe('HUG')
     expect(raw?.counterAxisSizing).toBe('HUG')

@@ -93,6 +93,7 @@
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
     "open-pencil/no-overlay-content-from-open-state": "error",
+    "open-pencil/no-raw-overlay-roots-in-app": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
     "open-pencil/no-raw-svg-in-app-vue-templates": "error",
     "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
@@ -406,7 +407,7 @@
       "files": [
         "tests/e2e/perf/basic.spec.ts",
         "tests/e2e/viewport/zoom-pan.spec.ts",
-        "tests/engine/visual-*.ts"
+        "packages/core/tests/canvas/visual/*.ts"
       ],
       "rules": {
         "no-console": "off"

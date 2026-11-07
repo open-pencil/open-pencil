@@ -4,7 +4,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DialogClose,
   DialogTitle
@@ -28,6 +27,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogRoot, useDialogUI } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
@@ -387,7 +387,7 @@ async function insertSelectedAsset() {
           {{ group.pageName }}
         </h2>
         <div :class="assetView === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-0.5'">
-          <ContextMenuRoot v-for="asset in group.assets" :key="asset.id">
+          <AppContextMenuRoot v-for="asset in group.assets" :key="asset.id">
             <ContextMenuTrigger as-child>
               <div
                 role="button"
@@ -504,7 +504,7 @@ async function insertSelectedAsset() {
                 </MenuScrollArea>
               </ContextMenuContent>
             </ContextMenuPortal>
-          </ContextMenuRoot>
+          </AppContextMenuRoot>
         </div>
       </section>
 

@@ -34,7 +34,13 @@ import { lengthOrAuto, letterSpacingLength } from '#core/figma-api/accessors/tex
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
-import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
+import {
+  adjustRunsForDelete,
+  getStyleAt,
+  insertedStyleAt,
+  insertRunsWithStyle,
+  type InsertStyleSource
+} from '#core/text/style-runs'
 
 import { assertTextRange } from './style'
 
@@ -59,21 +65,9 @@ export function letterSpacingValue(value: unknown): TextLength {
   return letterSpacingLength('set_letterSpacing', value, 'letterSpacing')
 }
 
-/** Which neighbour inserted characters copy their style from, as Figma's `insertCharacters` takes it. */
-export type InsertStyleSource = 'BEFORE' | 'AFTER'
+export type { InsertStyleSource }
 
 const INSERT_STYLE_SOURCES = ['BEFORE', 'AFTER'] as const satisfies readonly InsertStyleSource[]
-
-/**
- * The style inserted characters take, as Figma gives it: the preceding character's for `BEFORE`
- * and the following one's for `AFTER`, or the closest character's at either end of the text.
- */
-function insertedStyle(node: SceneNode, start: number, useStyle: InsertStyleSource) {
-  if (node.text.length === 0) return {}
-  const preferred = useStyle === 'BEFORE' ? start - 1 : start
-  const index = Math.min(Math.max(preferred, 0), node.text.length - 1)
-  return getStyleAt(node.styleRuns, index)
-}
 
 /**
  * A text's style runs once its characters are replaced. Figma resets the styles applied to
@@ -108,7 +102,7 @@ export function insertCharacters(
     node.styleRuns,
     start,
     characters.length,
-    insertedStyle(node, start, useStyle)
+    insertedStyleAt(node.styleRuns, node.text.length, start, useStyle)
   )
   graph.updateNode(node.id, { text, textParagraphs, styleRuns })
   recordInstanceOverride(graph, node.id, ['text', 'textParagraphs', 'styleRuns'])

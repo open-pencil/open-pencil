@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
-
+import { graphOf } from '#core/figma-api/graph'
 interface SerializedNodeWithChildren {
   children?: unknown[]
 }
@@ -38,10 +38,10 @@ describe('serialization', () => {
       type: 'TEXT' as const,
       defaultValue: 'Hi'
     }
-    api.graph.updateNode(component.id, { componentPropertyDefinitions: [definition] })
+    graphOf(api).updateNode(component.id, { componentPropertyDefinitions: [definition] })
     const text = api.createText()
     component.appendChild(text)
-    api.graph.updateNode(text.id, {
+    graphOf(api).updateNode(text.id, {
       text: 'Hi',
       componentPropertyReferences: [{ propertyId: definition.id, field: 'TEXT' }]
     })
@@ -55,9 +55,9 @@ describe('serialization', () => {
       { propertyId: definition.id, field: 'TEXT' }
     ])
 
-    const instance = api.graph.createInstance(component.id, api.currentPageId)
+    const instance = graphOf(api).createInstance(component.id, api.currentPageId)
     if (!instance) throw new Error('Could not create a component instance')
-    api.graph.updateNode(instance.id, {
+    graphOf(api).updateNode(instance.id, {
       componentPropertyAssignments: { [definition.id]: 'Changed' }
     })
     expect(api.wrapNode(instance.id).toJSON()).toMatchObject({

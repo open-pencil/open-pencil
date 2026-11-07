@@ -68,6 +68,8 @@ export interface RoomSession {
   roomHasDocument(): boolean
   /** Follow peers answering this tab's state with theirs; returns the unsubscribe. */
   onSynced(handler: (peerId: string) => void): () => void
+  /** Follow peers leaving the room, the relay included; returns the unsubscribe. */
+  onPeerLeave(handler: (peerId: string) => void): () => void
   /** Follow the server saying the document's version history changed; returns the unsubscribe. */
   onVersionsChanged(handler: () => void): () => void
   /** The awareness states of everyone in the room, this tab included. */
@@ -337,6 +339,7 @@ export function openRoomSession({
     },
     roomHasDocument: () => readRoot(meta) !== undefined,
     onSynced: (handler) => connection.onSynced(handler),
+    onPeerLeave: (handler) => connection.onPeerLeave(handler),
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
     presence: () => awareness.getStates(),
     clientId: awareness.clientID,

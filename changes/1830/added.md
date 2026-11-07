@@ -1,0 +1,1 @@
+- MCP `set_image_fill` fills a layer from `image_path`, a file inside the MCP root, so a photo no longer goes through the call as Base64 a client can cut short; `image_data` also takes a data URL (#1830).

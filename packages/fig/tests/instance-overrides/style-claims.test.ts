@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeComponentClosure } from '#fig/instance-overrides/component-closure'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
@@ -10,6 +9,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('style claims read from a file survive edits to the component, as in Figma', () => {
   const changes: NodeChange[] = [

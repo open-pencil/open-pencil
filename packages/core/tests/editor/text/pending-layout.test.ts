@@ -6,7 +6,7 @@ import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#core-tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer
@@ -351,7 +351,8 @@ function editorSetup() {
     nodeFontReadiness: () => (measurable ? 'ready' : 'pending'),
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
-    invalidateNodePicture: noop
+    invalidateNodePicture: noop,
+    redrawNode: noop
   }
   editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], renderer as SkiaRenderer)
   const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {

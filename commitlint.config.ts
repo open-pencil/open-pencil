@@ -1,7 +1,7 @@
 import isIgnored from '@commitlint/is-ignored'
 import type { UserConfig } from '@commitlint/types'
 
-import { hasAICoauthor, noAICoauthors } from './tools/ci/policy/src/commit-attribution'
+import { hasAICoauthor, noAICoauthors } from './tools/ci/policy/src/commit/attribution'
 
 // `Release vX.Y.Z` or `Release vX.Y.Z-beta.N`, plus the ` (#N)` the merge queue's squash appends.
 const RELEASE_TITLE = /^Release v\d+\.\d+\.\d+(?:-beta\.[1-9]\d*)?(?: \(#\d+\))?$/
@@ -30,5 +30,7 @@ export default {
       (RELEASE_TITLE.test(message.split('\n')[0] ?? '') ||
         (process.env.COMMITLINT_PR_TITLE !== '1' && isIgnored(message)))
   ],
+  // In GitHub Actions, also an error annotation for each rejected message.
+  formatter: './tools/ci/policy/src/commit/annotations.ts',
   helpUrl: 'https://github.com/open-pencil/open-pencil/blob/master/CONTRIBUTING.md#commit-messages'
 } satisfies UserConfig

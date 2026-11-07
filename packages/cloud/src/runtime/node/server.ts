@@ -4,7 +4,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
   createCloudApp,
-  loadAISigningKey,
+  loadServicesSigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
   createCollaborationStateStore,
@@ -70,7 +70,7 @@ async function startConfiguredServer(
 ) {
   const { database } = await migratedNodeCloudDatabase(config)
   // Before any worker starts, so a key that cannot sign leaves nothing running.
-  const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
+  const servicesSigningKey = await loadServicesSigningKey(config).catch(async (error: unknown) => {
     await database.destroy()
     throw error
   })
@@ -92,7 +92,7 @@ async function startConfiguredServer(
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
-    store: createCollaborationStateStore(database),
+    store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
     onError: (message, error) =>
@@ -107,7 +107,7 @@ async function startConfiguredServer(
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    aiSigningKey,
+    servicesSigningKey,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),

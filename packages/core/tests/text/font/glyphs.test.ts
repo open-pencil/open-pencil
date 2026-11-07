@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
-
+import { corePackagePath } from '#core-tests/helpers/paths'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { fontManager } from '@open-pencil/core/text'
 
 import {
@@ -43,7 +43,7 @@ test('reads a font collection as its first face, as CanvasKit draws it', async (
   expect(glyphOutlineSourceSync('Collection Test', 'Regular')?.covers('中文')).toBe(true)
   const measured = measureTextWithFont('中文', 16, 'Collection Test', 'Regular')
   expect(measured).toEqual(measureTextWithFont('中文', 16, 'Collection Test Single', 'Regular'))
-  expect(measured?.height).toBeGreaterThan(0)
+  expect(measured?.lineHeight).toBeGreaterThan(0)
 })
 
 test('measures default advances whatever instance of a variable font was last outlined', async () => {

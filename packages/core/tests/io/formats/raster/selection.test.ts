@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const ck = await initCanvasKit()
 
@@ -207,4 +206,40 @@ test('selection export draws a selected layer once when its frame is selected to
 
   expect(pixelAt(10, 10)[3]).toBe(128)
   expect(pixelAt(30, 30)[3]).toBe(0)
+})
+
+// A layer exports as much as the frames around it show, as its render bounds take it, with
+// another layer selected beside it too.
+test('a clipped layer exported beside another stays clipped by its frame', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const frame = graph.createNode('FRAME', page.id, {
+    x: 0,
+    y: 0,
+    width: 40,
+    height: 40,
+    fills: [],
+    clipsContent: true,
+    cornerRadius: 0
+  })
+  const clipped = graph.createNode('RECTANGLE', frame.id, {
+    x: 20,
+    y: 20,
+    width: 40,
+    height: 40,
+    fills: solidFill(1, 0, 0)
+  })
+  // Out past the frame, so the export reaches over where the clipped layer would overflow.
+  const beside = graph.createNode('RECTANGLE', page.id, {
+    x: 70,
+    y: 70,
+    width: 10,
+    height: 10,
+    fills: solidFill(0, 0, 1)
+  })
+  const pixel = exportedRgba(graph, page.id, [clipped.id, beside.id])
+  // The export spans 20…80: the clipped layer shows up to the frame's edge at 40.
+  expect(pixel(10, 10)).toEqual([255, 0, 0, 255])
+  expect(pixel(30, 30)).toEqual([0, 0, 0, 0])
+  expect(pixel(55, 55)).toEqual([0, 0, 255, 255])
 })

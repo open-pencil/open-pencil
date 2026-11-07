@@ -1,5 +1,5 @@
+export { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 export {
-  computeContentBounds,
   exportBounds,
   MAX_RASTER_PIXELS,
   oversizedRaster,

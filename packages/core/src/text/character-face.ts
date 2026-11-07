@@ -1,9 +1,14 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 
 import { drawnFontVariations, loadedFace, paragraphSourceFamilies } from './font/families'
-import { glyphOutlineSourceSync, shardCovers, shardOutlineSources } from './font/glyphs'
+import {
+  glyphOutlineSourceSync,
+  shardCovers,
+  shardOutlineSources,
+  TYPICAL_CAP_HEIGHT_EMS
+} from './font/glyphs'
 import { fontManager } from './font/manager'
 import { textFontFace } from './requirements/collect'
 
@@ -22,7 +27,7 @@ function loadedStyle(
  * and the face the paragraph asks every family for, the one its own family has loaded, as
  * `drawnFontStyle` asks CanvasKit.
  */
-export function fontAt(node: SceneNode, index: number) {
+export function fontAt(node: FontNode, index: number) {
   const run = styleRunAt(node, index)
   const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const weight = run?.style.fontWeight ?? node.fontWeight
@@ -41,9 +46,24 @@ export function fontAt(node: SceneNode, index: number) {
   return { family, weight, italic, style, variations, drawn }
 }
 
+type FontNode = Pick<
+  SceneNode,
+  | 'styleRuns'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'fontWeight'
+  | 'italic'
+  | 'fontStyle'
+  | 'fontVariations'
+  | 'opticalSizeFromFontSize'
+>
+
 export type StyleRun = SceneNode['styleRuns'][number]
 
-export function styleRunAt(node: SceneNode, index: number): StyleRun | undefined {
+export function styleRunAt(
+  node: Pick<SceneNode, 'styleRuns'>,
+  index: number
+): StyleRun | undefined {
   return node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
 }
 
@@ -111,4 +131,22 @@ export function characterFace(node: SceneNode, text: string, index: number): Cha
 /** The family the paragraph draws the character at `index` of `text` in; see {@link characterFace}. */
 export function characterFamily(node: SceneNode, text: string, index: number): string | null {
   return characterFace(node, text, index)?.family ?? null
+}
+
+function capHeightAt(node: FontNode, index: number): number {
+  const fontSize = styleRunAt(node, index)?.style.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE)
+  const source = candidateSources(fontAt(node, index)).next()
+  return (source.done ? TYPICAL_CAP_HEIGHT_EMS : source.value.capHeight()) * fontSize
+}
+
+export function rangeCapHeight(node: FontNode, start: number, end: number): number {
+  let capHeight = capHeightAt(node, start)
+  for (const run of node.styleRuns) {
+    for (const index of [run.start, run.start + run.length]) {
+      if (index > start && index < end) {
+        capHeight = Math.max(capHeight, capHeightAt(node, index))
+      }
+    }
+  }
+  return capHeight
 }

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { graphOf } from '#core/figma-api/graph'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
-
-// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+import { createAPI } from '#core-tests/helpers/figma-api'// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
 
 describe('getTopLevelFrame', () => {
   test('is the container a layer sits in at the top of its page or section', () => {
@@ -45,7 +44,7 @@ describe('documentColorProfile', () => {
   test('is the document’s colour space, on the document alone', () => {
     const figma = createAPI()
     expect(figma.root.documentColorProfile).toBe('SRGB')
-    figma.graph.documentColorSpace = 'display-p3'
+    graphOf(figma).documentColorSpace = 'display-p3'
     expect(figma.root.documentColorProfile).toBe('DISPLAY_P3')
     expect('documentColorProfile' in figma.currentPage).toBe(false)
   })

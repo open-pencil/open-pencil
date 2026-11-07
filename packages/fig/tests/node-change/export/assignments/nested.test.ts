@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -8,6 +7,7 @@ import {
   applyComponentPropertyValue,
   componentPropertyDefinitions
 } from '@open-pencil/scene-graph/components'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 interface Assignment {
   defID?: unknown

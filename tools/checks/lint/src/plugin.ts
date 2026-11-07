@@ -3,7 +3,7 @@ import {
   noPxTailwindValuesRule,
   noUnknownTailwindClassesRule
 } from '#lint/rules/quality/tailwind-classes.ts'
-import { noOverlayContentFromOpenState } from '#lint/rules/vue/overlays.ts'
+import { noOverlayContentFromOpenState, noRawOverlayRootsInApp } from '#lint/rules/vue/overlays.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -356,6 +356,7 @@ const plugin = {
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
     'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
+    'no-raw-overlay-roots-in-app': noRawOverlayRootsInApp,
     'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
     'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
     'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,

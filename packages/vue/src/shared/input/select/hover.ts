@@ -3,6 +3,8 @@ import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
 
 import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
+  axisAlignedCursorAngle,
+  boxRotationCursor,
   MOVE_CURSOR,
   buildResizeCursor,
   cornerRotationCursor,
@@ -10,13 +12,21 @@ import {
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
 import { lineEndAt } from '#vue/shared/input/line/end'
+import {
+  selectionBox,
+  selectionResizeHandleAt,
+  selectionTakes
+} from '#vue/shared/input/resize/selection'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
 import { pressSelects } from '#vue/shared/input/select/move'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
-import { getNodeEditState } from '#vue/shared/input/vector'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
+  if (editor.state.selectedIds.size > 1) {
+    const handle = selectionResizeHandleAt(cx, cy, editor)
+    return handle ? buildResizeCursor(axisAlignedCursorAngle(handle)) : null
+  }
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     // As a press does: only a layer its handles resize or scale shows a resize cursor on them.
@@ -36,6 +46,11 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
 }
 
 function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
+  if (editor.state.selectedIds.size > 1) {
+    const box = selectionBox(editor)
+    if (!box || !selectionTakes(editor, layerRotates)) return null
+    return boxRotationCursor(cx, cy, box, editor.renderer?.zoom ?? 1)
+  }
   if (editor.state.selectedIds.size !== 1) return null
 
   const id = [...editor.state.selectedIds][0]
@@ -67,7 +82,7 @@ function updateHoveredNode(
 ) {
   // A label takes the hover before the layers under it, with or without ⌘, as it takes a press.
   const hit = hitTestLabel(cx, cy, fns) ?? fns.hitTestLayer(cx, cy, deep)
-  const editNodeId = getNodeEditState(editor)?.nodeId
+  const editNodeId = editor.getNodeEditState()?.nodeId
   // No outline on a layer a press would not select.
   const hovered =
     hit &&
@@ -87,19 +102,20 @@ export function updateHoverCursor(
   >,
   deep = false
 ): string | null {
-  if (getNodeEditState(editor)) {
+  if (editor.getNodeEditState()) {
     editor.setHoveredNode(null)
     return null
   }
 
   // As a press does: a line's ends, a connector's line handles, then resizing, then a label, then
   // rotation; a read-only document has none.
-  const cursor = !resolveEditorProfile(editor.state).edits
-    ? null
-    : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
-      connectorLineCursor(editor, cx, cy) ??
-      getResizeCursorForSelection(cx, cy, editor) ??
-      (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
+  const cursor =
+    resolveEditorProfile(editor.state).layerEdits === 'none'
+      ? null
+      : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
+        connectorLineCursor(editor, cx, cy) ??
+        getResizeCursorForSelection(cx, cy, editor) ??
+        (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
   updateHoveredNode(cx, cy, editor, fns, deep)
   return cursor
 }
