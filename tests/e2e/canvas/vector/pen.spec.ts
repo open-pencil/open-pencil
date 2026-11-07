@@ -61,3 +61,40 @@ test('the pen previews a continued path and lines the next point up with its ver
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('pen-continue-guide.png')
 })
+
+// Figma desktop 126: a press on the first point closes a path of two points, and the closing
+// segment leaves the last point along the handle dragged out of it.
+test('the pen closes a two-point path along the last handle', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.move(box.x + 300, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 300, box.y + 160, { steps: 6 })
+  await mouse.up()
+  await mouse.click(box.x + 100, box.y + 100)
+  await editor.canvas.waitForRender()
+
+  const path = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [id] = store?.state.selectedIds ?? []
+    const network = id ? store?.graph.getNode(id)?.vectorNetwork : undefined
+    return {
+      tool: store?.state.activeTool,
+      segments: network?.segments.map((s) => [s.start, s.end, s.tangentStart.x, s.tangentStart.y]),
+      regions: network?.regions.length
+    }
+  })
+  expect(path).toEqual({
+    tool: 'SELECT',
+    segments: [
+      [0, 1, 0, 0],
+      [1, 0, 0, 60]
+    ],
+    regions: 1
+  })
+  editor.canvas.assertNoErrors()
+})

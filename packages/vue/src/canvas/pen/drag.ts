@@ -1,4 +1,5 @@
 import type { Editor } from '@open-pencil/core'
+import { PEN_CLOSE_MIN_POINTS } from '@open-pencil/core/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { DragState } from '#vue/shared/input/types'
@@ -23,7 +24,7 @@ export function createPenDrag(startX: number, startY: number): DragState {
 }
 
 function getPenAnchor(penState: PenState): Vector {
-  const isClosing = !!penState.pendingClose && penState.vertices.length > 2
+  const isClosing = !!penState.pendingClose && penState.vertices.length >= PEN_CLOSE_MIN_POINTS
   const anchorIndex = isClosing ? 0 : penState.vertices.length - 1
   return penState.vertices[anchorIndex]
 }

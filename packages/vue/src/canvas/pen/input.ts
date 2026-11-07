@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { PEN_CLOSE_THRESHOLD } from '@open-pencil/core/constants'
+import { PEN_CLOSE_MIN_POINTS, PEN_CLOSE_THRESHOLD } from '@open-pencil/core/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPenDrag, handlePenDragMove } from '#vue/canvas/pen/drag'
@@ -48,7 +48,7 @@ export function startPenInput(
   }
 
   const penState = editor.state.penState
-  if (penState && penState.vertices.length > 2) {
+  if (penState && penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
     const first = penState.vertices[0]
     if (nearFirstVertex(cx, cy, first, editor)) {
       editor.penSetPendingClose(true)
@@ -76,7 +76,7 @@ export function updatePenHover(cx: number, cy: number, editor: Editor): boolean 
   editor.state.penCursorY = snap.point.y
 
   const first = editor.state.penState.vertices[0]
-  if (editor.state.penState.vertices.length > 2) {
+  if (editor.state.penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
     editor.penSetClosingToFirst(nearFirstVertex(cx, cy, first, editor))
   }
   editor.requestRepaint()

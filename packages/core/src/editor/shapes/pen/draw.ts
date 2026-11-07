@@ -8,7 +8,7 @@ import type {
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { BLACK } from '#core/constants'
+import { BLACK, PEN_CLOSE_MIN_POINTS } from '#core/constants'
 import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/vector'
 import type { EditorContext, ResumedPath } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
@@ -98,6 +98,13 @@ function continuedNetwork(
   return network
 }
 
+type PenState = NonNullable<EditorContext['state']['penState']>
+
+/** Whether the pen is closing the path onto its first point, which takes two points or more. */
+function closing(ps: PenState): boolean {
+  return !!ps.pendingClose && ps.vertices.length >= PEN_CLOSE_MIN_POINTS
+}
+
 export function createPenActions(
   ctx: EditorContext,
   createShape: CreateShape,
@@ -138,7 +145,7 @@ export function createPenActions(
     if (!ctx.state.penState) return
     const ps = ctx.state.penState
     let active = { x: tx, y: ty }
-    const isClosing = !!ps.pendingClose && ps.vertices.length > 2
+    const isClosing = closing(ps)
     const anchorIndex = isClosing ? 0 : ps.vertices.length - 1
     const lastSeg = ps.segments.length > 0 ? ps.segments[ps.segments.length - 1] : undefined
     const firstSeg = ps.segments.length > 0 ? ps.segments[0] : undefined
@@ -176,16 +183,25 @@ export function createPenActions(
     ctx.requestRender()
   }
 
-  function penSetPendingClose(closing: boolean) {
-    if (!ctx.state.penState) return
-    ctx.state.penState.pendingClose = closing
+  function penSetPendingClose(pending: boolean) {
+    const ps = ctx.state.penState
+    if (!ps) return
+    // The drag at the first point takes `dragTangent`; the last point's handle waits aside.
+    if (pending && !ps.pendingClose) {
+      ps.closeTangent = ps.dragTangent
+      ps.dragTangent = null
+    } else if (!pending && ps.pendingClose) {
+      ps.dragTangent = ps.closeTangent ?? null
+      ps.closeTangent = null
+    }
+    ps.pendingClose = pending
     ctx.requestRepaint()
   }
 
   function penSetKnotPosition(x: number, y: number) {
     if (!ctx.state.penState) return
     const ps = ctx.state.penState
-    const isClosing = !!ps.pendingClose && ps.vertices.length > 2
+    const isClosing = closing(ps)
     const anchorIndex = isClosing ? 0 : ps.vertices.length - 1
     ps.vertices[anchorIndex].x = x
     ps.vertices[anchorIndex].y = y
@@ -201,12 +217,12 @@ export function createPenActions(
       return
     }
 
-    if (closed && ps.pendingClose && ps.vertices.length > 2) {
+    if (closed && closing(ps)) {
       const prevIdx = ps.vertices.length - 1
       ps.segments.push({
         start: prevIdx,
         end: 0,
-        tangentStart: { x: 0, y: 0 },
+        tangentStart: ps.closeTangent ?? { x: 0, y: 0 },
         tangentEnd: ps.dragTangent ?? { x: 0, y: 0 }
       })
     }
