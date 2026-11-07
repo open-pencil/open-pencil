@@ -2,6 +2,8 @@
   "vectorization": "Vetorização de imagens",
   "vectorizationDescription": "Envie camadas de imagem para a Recraft, fal.ai ou QuiverAI e receba vetores editáveis. Podem ser cobradas tarifas do provedor.",
   "vectorizeProvider": "Serviço de vetorização",
+  "webSearch": "Busca na web",
+  "webSearchDescription": "Com sua própria chave da Exa, o agente de IA pode buscar na web em qualquer conversa, e a Exa cobra você diretamente em vez de usar créditos do Cloud.",
   "pexelsAPIKey": "Chave de API do Pexels (fotos de banco de imagens)",
   "unsplashAccessKey": "Chave de acesso do Unsplash",
   "stockPhotoToolOptional": "Opcional — para a ferramenta stock_photo",
