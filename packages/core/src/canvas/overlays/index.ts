@@ -4,7 +4,6 @@ export {
   drawHoverHighlight,
   drawNodeOutline,
   drawNodeSelection,
-  drawParentFrameOutlines,
   drawSelection
 } from './selection'
 export { drawAutoLayoutHover } from './auto-layout-hover'
