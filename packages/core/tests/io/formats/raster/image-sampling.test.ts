@@ -307,7 +307,7 @@ describe('raster export of an image at its own size off whole pixels', () => {
 
     const reexported = withRenderer(exportedNode, (renderer) => {
       exportedPixels(renderer, graph, exportedNode)
-      graph.updateNode(parentId, { x: 0.5 })
+      graph.updateNode(parentId, { x: 0.25 })
       renderer.invalidateNodePicture(parentId)
       return exportedPixels(renderer, graph, exportedNode)
     })
@@ -316,6 +316,7 @@ describe('raster export of an image at its own size off whole pixels', () => {
     )
 
     expect(reexported).toEqual(fresh)
+    expect(reexported).not.toEqual(pixels)
   })
 })
 
