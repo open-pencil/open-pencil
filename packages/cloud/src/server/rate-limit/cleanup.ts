@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import { INVITATION_BUDGET } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
 export function createRateLimitCleanupService(database: Kysely<CloudDatabase>) {
@@ -9,8 +10,15 @@ export function createRateLimitCleanupService(database: Kysely<CloudDatabase>) {
           .deleteFrom('apiRateLimit')
           .where('windowStartedAt', '<', before)
           .executeTakeFirst(),
-        // The invitation budget counts a day of sends, which the sweep passes `before` as.
-        database.deleteFrom('invitationSend').where('sentAt', '<', before).executeTakeFirst()
+        // Never a send the invitation budget still counts, whatever cutoff the sweep passes.
+        database
+          .deleteFrom('invitationSend')
+          .where(
+            'sentAt',
+            '<',
+            new Date(Math.min(before.getTime(), Date.now() - INVITATION_BUDGET.windowMs))
+          )
+          .executeTakeFirst()
       ])
       return Number(limits.numDeletedRows) + Number(invitations.numDeletedRows)
     }

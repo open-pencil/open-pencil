@@ -184,6 +184,46 @@ describe('resuming collaboration peers', () => {
     await hub.close()
   })
 
+  test('drops a message whose sender’s ticket lapsed while the room loaded', async () => {
+    const memory = memoryStateStore()
+    let release = () => undefined as void
+    const loaded = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const hub = hubOver({
+      ...memory.store,
+      async load(room) {
+        await loaded
+        return memory.store.load(room)
+      }
+    })
+    const state: RelayPeerState = {
+      peerId: crypto.randomUUID(),
+      authorization: {
+        roomId: `cloud:${documentId}:0`,
+        documentId,
+        roomEpoch: 0,
+        permission: 'edit',
+        principal: user('alice'),
+        expiresAt: Date.now() + 200
+      },
+      presenceClients: []
+    }
+    const resumed = connectTestClient((socket) => hub.resume(socket, state))
+    resumed.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncStep1,
+      target: RELAY_SERVER_PEER,
+      payload: Y.encodeStateVector(new Y.Doc())
+    })
+    await Bun.sleep(300)
+    release()
+    await until(() => resumed.closed !== null)
+    expect(resumed.closed?.code).toBe(RELAY_CLOSE.expired)
+    expect(resumed.messages(COLLAB_ACTIONS.syncReply)).toHaveLength(0)
+    await hub.close()
+  })
+
   test('refuses kept state that is not a peer', () => {
     expect(readRelayPeerState({ peerId: 'not-a-uuid' })).toBeNull()
     expect(readRelayPeerState(null)).toBeNull()

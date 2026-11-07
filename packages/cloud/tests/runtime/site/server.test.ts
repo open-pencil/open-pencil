@@ -134,7 +134,9 @@ describe('Cloud server', () => {
   test('hashes inline scripts in any case and with the line feeds a browser reads', async () => {
     const lf = fromUint8Array(sha256(new TextEncoder().encode('a()\nb()')))
     expect(
-      await inlineScriptHashes('<SCRIPT>a()\r\nb()</SCRIPT><script src="/x.js"></script>')
-    ).toEqual([lf])
+      await inlineScriptHashes(
+        '<SCRIPT>a()\r\nb()</SCRIPT><script src="/x.js"></script><script data-src="x">a()\nb()</script>'
+      )
+    ).toEqual([lf, lf])
   })
 })

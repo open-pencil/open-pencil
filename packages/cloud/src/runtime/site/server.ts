@@ -49,7 +49,7 @@ export function siteContentSecurityPolicy(inlineScriptHashes: readonly string[] 
  * match in any case, and line breaks are hashed as the HTML parser leaves them, as line feeds.
  */
 export async function inlineScriptHashes(html: string): Promise<string[]> {
-  const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
+  const scripts = [...html.matchAll(/<script(?![^>]*\ssrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
   return Promise.all(
     scripts.map(async ([, body = '']) => {
       const text = body.replace(/\r\n?/g, '\n')
