@@ -47,10 +47,21 @@ function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
   return deserializeLibraryRevision(parsed.output)
 }
 
-function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
-  const parsed = v.safeParse(latestManifestSchema, textDecoder.decode(bytes))
-  if (!parsed.success) throw new Error('Invalid component library manifest')
-  return parsed.output
+/** A manifest an earlier version wrote, whose revisions this one cannot read. */
+const earlierManifestSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ schemaVersion: v.pipe(v.number(), v.maxValue(COMPONENT_LIBRARY_SCHEMA_VERSION - 1)) })
+)
+
+/** The library a manifest points at, or `null` for one an earlier version published. */
+function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest | null {
+  const text = textDecoder.decode(bytes)
+  const parsed = v.safeParse(latestManifestSchema, text)
+  if (parsed.success) return parsed.output
+  // Such a library is left out until it is published again, which replaces it.
+  if (v.safeParse(earlierManifestSchema, text).success) return null
+  throw new Error('Invalid component library manifest')
 }
 
 export class StorageLibraryCatalog implements LibraryCatalog {
@@ -66,7 +77,8 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     const summaries: LibrarySummary[] = []
     for (const key of keys) {
       const bytes = await this.#objects.getObject(key)
-      if (bytes) summaries.push(decodeLatest(bytes).summary)
+      const latest = bytes ? decodeLatest(bytes) : null
+      if (latest) summaries.push(latest.summary)
     }
     return summaries.sort((left, right) => left.name.localeCompare(right.name))
   }
@@ -94,11 +106,13 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     const latestValue = this.#objects.getObjectValue
       ? await this.#objects.getObjectValue(manifestKey)
       : { bytes: await this.#objects.getObject(manifestKey), etag: null }
-    const latest = latestValue.bytes ? decodeLatest(latestValue.bytes).summary : null
+    const latest = latestValue.bytes ? (decodeLatest(latestValue.bytes)?.summary ?? null) : null
     if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
       throw new Error('Library revision conflict: latest revision has changed')
     }
-    if (latest && !latestValue.etag) {
+    // A manifest an earlier version wrote is replaced as a current one would be.
+    const existing = latestValue.bytes !== null
+    if (existing && !latestValue.etag) {
       throw new Error('Storage provider does not support conditional library publication')
     }
     const revision = await createLibraryRevision(input)
@@ -124,13 +138,13 @@ export class StorageLibraryCatalog implements LibraryCatalog {
         } satisfies StoredLibraryLatestManifest)
       ),
       'application/json',
-      latest ? (latestValue.etag ? { ifMatch: latestValue.etag } : undefined) : { ifNoneMatch: '*' }
+      existing && latestValue.etag ? { ifMatch: latestValue.etag } : { ifNoneMatch: '*' }
     )
     return revision
   }
 
   async #latest(libraryId: string): Promise<LibrarySummary | null> {
     const bytes = await this.#objects.getObject(latestKey(libraryId))
-    return bytes ? decodeLatest(bytes).summary : null
+    return bytes ? (decodeLatest(bytes)?.summary ?? null) : null
   }
 }
