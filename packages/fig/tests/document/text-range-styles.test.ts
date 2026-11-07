@@ -17,8 +17,10 @@ const MUTED = solid(MUTED_COLOR)
 const OUTDATED_PRIMARY = solid({ r: 0.9, g: 0.2, b: 0.2, a: 1 })
 const PRIMARY = solid(PRIMARY_COLOR)
 const OWN = solid({ r: 0.1, g: 0.8, b: 0.3, a: 1 })
+const ACCENT_COLOR: Color = { r: 0.9, g: 0.6, b: 0.1, a: 1 }
 const PRIMARY_LIBRARY_REF = { assetRef: { key: 'primary', version: '2:0' } }
 const HEADING_REF = { guid: guid(52) }
+const ACCENT_LOCAL_REF = { guid: guid(53) }
 const LABEL = 'Total 42'
 const LAST_TWO_CHARACTERS_STYLED = [0, 0, 0, 0, 0, 0, 1, 1]
 
@@ -45,10 +47,16 @@ const STYLES: NodeChange[] = [
     styleType: 'TEXT',
     fontSize: 32,
     fontName: { family: 'Inter', style: 'Bold', postscript: 'Inter-Bold' }
+  },
+  {
+    guid: guid(53),
+    type: 'RECTANGLE',
+    styleType: 'FILL',
+    fillPaints: solid(ACCENT_COLOR)
   }
 ]
 
-function importedTextWithRange(range: NodeChange): SceneNode {
+function importedText(characterStyleIDs: number[], styleOverrideTable: NodeChange[]): SceneNode {
   const { graph, sources } = materializeDocument([
     { guid: guid(0), type: 'DOCUMENT' },
     ...STYLES,
@@ -61,12 +69,16 @@ function importedTextWithRange(range: NodeChange): SceneNode {
       fillPaints: MUTED,
       textData: {
         characters: LABEL,
-        characterStyleIDs: LAST_TWO_CHARACTERS_STYLED,
-        styleOverrideTable: [{ styleID: 1, ...range }]
+        characterStyleIDs,
+        styleOverrideTable
       }
     }
   ])
   return expectDefined(graph.getNode(expectDefined(sources.get('1:4'), 'text id')), 'text')
+}
+
+function importedTextWithRange(range: NodeChange): SceneNode {
+  return importedText(LAST_TWO_CHARACTERS_STYLED, [{ styleID: 1, ...range }])
 }
 
 function styledRun(text: SceneNode) {
@@ -128,6 +140,25 @@ describe('text ranges that name a fill style', () => {
 
     expect(text.fills[0].color).toEqual(MUTED_COLOR)
     expect(runColor(text)).toEqual(PRIMARY_COLOR)
+  })
+
+  test('draw each in the style it names, local or from a library', () => {
+    const text = importedText(
+      [0, 0, 0, 0, 0, 0, 1, 2],
+      [
+        { styleID: 1, styleIdForFill: PRIMARY_LIBRARY_REF },
+        { styleID: 2, styleIdForFill: ACCENT_LOCAL_REF }
+      ]
+    )
+    const colors = text.styleRuns.map((run) => ({
+      start: run.start,
+      color: expectDefined(run.style.fills?.[0], 'run fill').color
+    }))
+
+    expect(colors).toEqual([
+      { start: 6, color: PRIMARY_COLOR },
+      { start: 7, color: ACCENT_COLOR }
+    ])
   })
 
   test('take the paints of the style over their own', () => {
