@@ -81,6 +81,15 @@ describe('opening the tour', () => {
     expect(documents().map((tab) => tab.id)).toEqual(before)
   })
 
+  test('keeps its tab when a page was added there before the failure', async () => {
+    const documents = () => getTabsSnapshot().filter((tab) => tab.kind === 'document')
+    const before = documents().length
+    // The page in view stays empty: only the document as a whole shows the edit.
+    stubDemoFetch(() => getActiveStore().addPage('Notes'), false)
+    await expect(openTour()).rejects.toThrow()
+    expect(documents()).toHaveLength(before + 1)
+  })
+
   test('keeps its tab when something was drawn there before the failure', async () => {
     const documents = () => getTabsSnapshot().filter((tab) => tab.kind === 'document')
     const before = documents().length

@@ -174,11 +174,23 @@ describe('color-contrast', () => {
         { start: 10, length: 5, style: { fontSize: 32 } }
       ]
     })
+    // Overlapping runs sum to ten characters but cover only the first ten, not the last two.
+    const overlapping = graph.createNode('TEXT', card.id, {
+      name: 'Overlapping runs',
+      text: 'Heading note',
+      fontSize: 14,
+      fontWeight: 400,
+      fills: grey,
+      styleRuns: [
+        { start: 0, length: 7, style: { fontSize: 32 } },
+        { start: 5, length: 5, style: { fontSize: 32 } }
+      ]
+    })
 
     const messages = lint(graph, 'color-contrast')
 
-    expect(messages.map((message) => message.nodeId)).toEqual([label.id, partly.id])
-    expect(messages.map((message) => message.data?.minRatio)).toEqual([4.5, 4.5])
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id, partly.id, overlapping.id])
+    expect(messages.map((message) => message.data?.minRatio)).toEqual([4.5, 4.5, 4.5])
   })
 
   test('does not use an ancestor fill when a filled sibling overlaps the text', () => {

@@ -89,7 +89,10 @@ export const WelcomeInTour: Story = { args: { entry: 'welcome', offersTour: fals
 export const WelcomeTourFailed: Story = {
   args: { entry: 'welcome', tourFailed: true },
   play: async () => {
-    await expect(page().getByRole('alert')).toHaveTextContent('The tour could not be opened.')
+    // Behaviour, not copy: the alert shows and the tour can be tried again.
+    await expect(page().getByRole('alert')).toBeVisible()
+    const tour = document.querySelector<HTMLElement>('[data-test-id="ai-setup-tour"]')
+    await expect(tour && within(tour).getByRole('button')).toBeEnabled()
   }
 }
 export const Goals: Story = {}

@@ -14,11 +14,15 @@ import { showFirstChapter } from './viewport'
 const DEMO_URL = '/demo.fig'
 const DEMO_FILE_NAME = 'Demo.fig'
 
-/** Nothing has been opened or drawn in the store since it showed `blank`. */
+/**
+ * Nothing has been opened or edited in the store since it showed `blank`: not on the page in
+ * view, and not elsewhere in the document, such as a page added or renamed.
+ */
 function untouched(store: EditorStore, blank: SceneGraph): boolean {
   return (
     store.graph === blank &&
     store.state.preparation === null &&
+    !store.hasUnsavedChanges() &&
     store.graph.getChildren(store.state.currentPageId).length === 0
   )
 }
