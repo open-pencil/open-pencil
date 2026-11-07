@@ -111,6 +111,8 @@
   "toolInput": "Entrée",
   "toolOutput": "Sortie",
   "toolDetails": "Détails de l’appel d’outil",
+  "webSearchSources": "Sources consultées",
+  "webSearchNothingFound": "La recherche n’a rien trouvé.",
   "toolSteps": "Étapes précédentes : {count}",
   "toolStepsFailed": "en échec : {count}",
   "showNodeOnCanvas": "Afficher {name} sur le canevas",

@@ -111,6 +111,8 @@
   "toolInput": "入力",
   "toolOutput": "出力",
   "toolDetails": "ツール呼び出しの詳細",
+  "webSearchSources": "情報源",
+  "webSearchNothingFound": "検索結果はありませんでした。",
   "toolSteps": "以前のステップ: {count}",
   "toolStepsFailed": "失敗: {count}",
   "showNodeOnCanvas": "{name} をキャンバスに表示",

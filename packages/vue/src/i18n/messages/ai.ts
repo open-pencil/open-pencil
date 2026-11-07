@@ -124,6 +124,8 @@ export const aiMessageDefaults = {
   toolInput: 'Input',
   toolOutput: 'Output',
   toolDetails: 'Tool call details',
+  webSearchSources: 'Sources',
+  webSearchNothingFound: 'The search found nothing.',
   toolSteps: params('Earlier steps: {count}'),
   toolStepsFailed: params('failed: {count}'),
   showNodeOnCanvas: params('Show {name} on canvas'),

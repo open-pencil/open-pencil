@@ -12,6 +12,12 @@ export {
   usagePageSchema,
   usageQuerySchema,
   creditWalletSchema,
+  searchPricingSchema,
+  searchRequestSchema,
+  searchResultSchema,
+  searchResponseSchema,
+  MAX_SEARCH_RESULTS,
+  MAX_SEARCH_QUERY_LENGTH,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_SERVICES_JWKS_PATH,
@@ -20,6 +26,7 @@ export {
   cloudBillingDiscoverySchema,
   createServicesTokenSchema,
   parseUsageQuery,
+  parseSearchRequest,
   parseCreateServicesToken,
   type ServiceCatalog,
   type CreditBucket,
@@ -32,9 +39,16 @@ export {
   type UsagePage,
   type UsageQuery,
   type CreditWallet,
+  type SearchPricing,
+  type SearchRequest,
+  type SearchRequestInput,
+  type SearchResult,
+  type SearchResponse,
   type CloudServicesDiscovery,
   type CloudBillingDiscovery,
-  type CreateServicesTokenInput
+  type CreateServicesTokenInput,
+  type CloudServicesAPI,
+  type CloudServicesSchema
 } from './services'
 export * from './admin'
 export {
