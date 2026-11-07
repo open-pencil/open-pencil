@@ -1,5 +1,5 @@
-import type { Hono } from 'hono'
-import type { BlankEnv, BlankInput } from 'hono/types'
+import type { Hono, TypedResponse } from 'hono'
+import type { BlankEnv, BlankInput, ToSchema } from 'hono/types'
 import * as v from 'valibot'
 
 /**
@@ -196,12 +196,13 @@ export const SERVICE_ERROR_STATUS = {
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
 
-/** A route that answers 200 with JSON, as Hono's schema types describe one. */
-type JSONRoute<Path extends string, Method extends string, Input, Output> = {
-  [P in Path]: {
-    [M in Method]: { input: Input; output: Output; outputFormat: 'json'; status: 200 }
-  }
-}
+/** A route's input, and the JSON it answers with a 200. */
+type JSONRoute<
+  Method extends string,
+  Path extends string,
+  Input extends BlankInput,
+  Output
+> = ToSchema<Method, Path, Input, TypedResponse<Output, 200, 'json'>>
 
 /**
  * Every route a service answers besides chat completions, which OpenAI-compatible clients call
@@ -209,16 +210,16 @@ type JSONRoute<Path extends string, Method extends string, Input, Output> = {
  * match it, so the two cannot drift apart.
  */
 export type CloudServicesSchema = JSONRoute<
+  'get',
   typeof CLOUD_SERVICES_API_PATHS.catalog,
-  '$get',
   BlankInput,
   ServiceCatalog
 > &
-  JSONRoute<typeof CLOUD_SERVICES_API_PATHS.wallet, '$get', BlankInput, CreditWallet> &
-  JSONRoute<typeof CLOUD_SERVICES_API_PATHS.usage, '$get', { query: UsageQuery }, UsagePage> &
+  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.wallet, BlankInput, CreditWallet> &
+  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.usage, { query: UsageQuery }, UsagePage> &
   JSONRoute<
+    'post',
     typeof CLOUD_SERVICES_API_PATHS.search,
-    '$post',
     { json: SearchRequestInput },
     SearchResponse
   >
