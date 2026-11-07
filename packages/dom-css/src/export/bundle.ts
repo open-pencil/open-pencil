@@ -1,8 +1,8 @@
 import type { CSSFontFaceRule } from '@acemir/cssom'
-import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { parseDataURL } from '@open-pencil/scene-graph/images'
 
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -298,17 +298,6 @@ async function fontFaceAssets(
   return { css: await fontFaceStylesheet(assets, { from: '' }), files: assets }
 }
 
-function dataImageParts(value: string): { mime: string; base64: string } | undefined {
-  if (!value.startsWith('data:image/')) return undefined
-  const marker = ';base64,'
-  const markerIndex = value.indexOf(marker)
-  if (markerIndex === -1) return undefined
-  const base64 = value.slice(markerIndex + marker.length)
-  // Documents can come from parsed HTML; an invalid payload stays inline rather than decoding to other bytes.
-  if (!isValid(base64)) return undefined
-  return { mime: value.slice('data:'.length, markerIndex), base64 }
-}
-
 function extensionForMime(mime: string): string {
   if (mime === 'image/jpeg') return 'jpg'
   if (mime === 'image/webp') return 'webp'
@@ -328,16 +317,17 @@ export function extractImageAssets(
   walkParseTree(fragment, (element) => {
     const src = element.attrs.find((attr) => attr.name === 'src')
     if (!src) return
-    const parts = dataImageParts(src.value)
-    if (!parts) return
+    // Documents can come from parsed HTML; a data URL that does not decode stays inline.
+    const image = parseDataURL(src.value)
+    if (!image?.mimeType.startsWith('image/')) return
     const cachedPath = sources.get(src.value)
     if (cachedPath) {
       src.value = cachedPath
       return
     }
-    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(parts.mime)}`
+    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(image.mimeType)}`
     sources.set(src.value, path)
-    files.push({ path, content: toUint8Array(parts.base64) })
+    files.push({ path, content: image.bytes })
     src.value = path
   })
   return { html: serialize(fragment), files }
