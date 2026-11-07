@@ -332,5 +332,11 @@ export async function writeToolOutput(
 ): Promise<MCPResult | null> {
   const content = FILE_OUTPUTS[toolName]?.(result)
   if (content == null) return null
-  return ok(await writeInsideRoot(filePath, root, content))
+  const written = await writeInsideRoot(filePath, root, content)
+  // A tool that cut its output short, as `get_jsx` does past its cap, says so in the file response
+  // too, so a client never takes the written fragment for the whole result.
+  if (result.truncated === true) {
+    return ok({ ...written, truncated: true, totalLength: result.totalLength })
+  }
+  return ok(written)
 }
