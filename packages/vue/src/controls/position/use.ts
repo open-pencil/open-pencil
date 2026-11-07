@@ -64,14 +64,14 @@ export function usePosition() {
 
   // Typed X, Y, and rotation become each node's own move or turn, as typing them in Figma does.
   function updateProp(key: NumericNodeProperty, value: number) {
+    // A size scrub whose resize was put back changes nothing more until it ends.
+    if ((key === 'width' || key === 'height') && size.isInterrupted()) return
     if (key === 'x' || key === 'y') {
       updateEach(nodes.value, key, (target) =>
         panelPositionChange(target, editor.graph, key, value)
       )
     } else if (key === 'rotation') {
       updateEach(nodes.value, key, (target) => panelRotationChange(target, editor.graph, value))
-    } else if ((key === 'width' || key === 'height') && size.isInterrupted()) {
-      return
     } else if (resizesLikeHandle(key)) {
       size.update(nodes.value, (start) => ({ ...start, [key]: value }))
     } else {
