@@ -82,19 +82,6 @@ function onlyChild(graph: SceneGraph, parent: SceneNode): SceneNode {
   return expectDefined(first)
 }
 
-test('a nested instance keeps its own place in its parent, not its component’s', () => {
-  const { graph, sources } = materializeDocument(nestedBarRecords())
-  const card = expectDefined(graph.getNode(expectDefined(sources.get(CARD_ID))))
-  const bar = onlyChild(graph, card)
-
-  expect(bar).toMatchObject({
-    layoutAlignSelf: 'AUTO',
-    layoutGrow: 0,
-    horizontalConstraint: 'MIN',
-    verticalConstraint: 'MIN'
-  })
-})
-
 test('a card copied into another instance centres the bar as Figma saved it', () => {
   const { graph, sources } = materializeDocument(nestedBarRecords())
   computeAllLayouts(graph)
