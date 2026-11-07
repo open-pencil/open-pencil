@@ -183,6 +183,7 @@ ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
 ja:media.unsplashKeyRejected
+ja:media.webSearchDescription
 ja:menu.copyAsJSX
 ja:menu.copyAsPNG
 ja:menu.copyAsSVG
@@ -410,6 +411,7 @@ zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
 zh-cn:media.unsplashKeyRejected
+zh-cn:media.webSearchDescription
 zh-cn:menu.copyAsJSX
 zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG

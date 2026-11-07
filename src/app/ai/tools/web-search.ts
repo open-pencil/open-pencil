@@ -12,8 +12,13 @@ import {
 
 export const WEB_SEARCH_TOOL_NAME = 'web_search'
 
-/** Runs one web search, which the chat's Cloud workspace pays for. */
+/** Runs one web search, paid for with Cloud credits or the person's own key. */
 export type WebSearch = (input: SearchRequestInput) => Promise<SearchResponse>
+
+/** A search the provider refused for a reason the model should pass on to the user. */
+export class WebSearchRefusedError extends Error {
+  override readonly name = 'WebSearchRefusedError'
+}
 
 /** What the model is told when the service refuses a search, so it can tell the user. */
 const REFUSALS: Partial<Record<ServiceErrorCode, string>> = {
@@ -29,15 +34,14 @@ const serviceErrorSchema = v.object({
   code: serviceErrorCodeSchema
 })
 
-/** The `web_search` tool, offered only when the chat's Cloud workspace has search. */
+/** The `web_search` tool, offered only when the chat has a way to search. */
 export function createWebSearchTool(search: WebSearch) {
   return {
     [WEB_SEARCH_TOOL_NAME]: tool({
       description:
         'Search the web for current facts, references, examples, or real copy a design needs. ' +
         'Returns pages with their title, URL, date, author, and an excerpt. Each search costs ' +
-        "the workspace's OpenPencil credits, so search only for what the conversation and " +
-        'document do not already answer.',
+        'money, so search only for what the conversation and document do not already answer.',
       inputSchema: valibotSchema(
         v.object({
           query: v.pipe(v.string(), v.description('What to look for, in natural language')),
@@ -56,6 +60,7 @@ export function createWebSearchTool(search: WebSearch) {
         try {
           return await search(input)
         } catch (error) {
+          if (error instanceof WebSearchRefusedError) return { error: error.message }
           const refused = v.safeParse(serviceErrorSchema, error)
           const refusal = refused.success ? REFUSALS[refused.output.code] : undefined
           if (refusal) return { error: refusal }

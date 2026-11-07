@@ -31,6 +31,13 @@ export default {
     compareDivider: 'bg-accent shadow-[0_0_0_1px_rgb(0_0_0/0.25)]',
     compareLabel:
       'pointer-events-none absolute top-1 rounded bg-black/55 px-1 py-px text-4xs font-medium text-white',
+    sources: 'space-y-2',
+    sourcesEmpty: 'text-muted',
+    source: 'min-w-0 space-y-0.5',
+    sourceTitle:
+      'block cursor-pointer truncate text-left text-2xs font-medium text-primary hover:underline focus-visible:underline',
+    sourceMeta: 'truncate text-muted',
+    sourceText: 'line-clamp-3 text-surface',
     group: 'rounded-lg border border-dashed border-border',
     groupTrigger:
       'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-2xs text-muted hover:bg-hover hover:text-surface',

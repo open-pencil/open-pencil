@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { IS_TAURI } from '@open-pencil/core/constants'
 import { useMediaMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
 
 import { vectorizeProviderID, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
-import { pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
+import { exaKeyStatus, pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
 import type { MediaSettingsService } from '@/app/settings/media/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -50,6 +51,20 @@ const vectorProvider = computed(() =>
             {{ service.name }}
             <template #description>{{
               service.status === 'configured' ? settings.configured : settings.notConfigured
+            }}</template>
+            <template #trailing
+              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+            /></template>
+          </AppActionRow>
+        </SettingsSection>
+        <!-- Exa refuses browsers, so only the desktop app can search with a key of its own. -->
+        <SettingsSection v-if="IS_TAURI">
+          <template #title>{{ media.webSearch }}</template>
+          <template #description>{{ media.webSearchDescription }}</template>
+          <AppActionRow data-web-search-settings @click="editing = 'exa'">
+            Exa
+            <template #description>{{
+              exaKeyStatus === 'configured' ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
               >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"

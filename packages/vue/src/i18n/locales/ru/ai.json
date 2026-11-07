@@ -111,6 +111,8 @@
   "toolInput": "Вход",
   "toolOutput": "Результат",
   "toolDetails": "Подробности вызова инструмента",
+  "webSearchSources": "Источники",
+  "webSearchNothingFound": "Поиск ничего не нашёл.",
   "toolSteps": "Предыдущие шаги: {count}",
   "toolStepsFailed": "с ошибкой: {count}",
   "showNodeOnCanvas": "Показать {name} на холсте",

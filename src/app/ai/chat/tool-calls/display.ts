@@ -2,6 +2,11 @@ import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 import { isValid } from 'js-base64'
+import * as v from 'valibot'
+
+import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/contract'
+
+import { WEB_SEARCH_TOOL_NAME } from '@/app/ai/tools/web-search'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
@@ -101,6 +106,13 @@ export function toolImage(part: ToolCallPart): string | null {
   if (typeof base64 !== 'string' || typeof mimeType !== 'string') return null
   if (!IMAGE_MEDIA_TYPES.has(mimeType) || !isValid(base64)) return null
   return `data:${mimeType};base64,${base64}`
+}
+
+/** The pages a `web_search` call found, to show as sources rather than JSON. */
+export function toolWebResults(part: ToolCallPart): SearchResult[] | null {
+  if (part.state !== 'output-available' || toolName(part) !== WEB_SEARCH_TOOL_NAME) return null
+  const found = v.safeParse(searchResponseSchema, part.output)
+  return found.success ? found.output.results : null
 }
 
 /** Output with large binary payloads elided, for display as JSON. */

@@ -18,8 +18,8 @@ import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/mod
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
-import { cloudWebSearch } from '@/app/ai/providers/openpencil/search'
 import { settleMessage } from '@/app/ai/reply/settle'
+import { chatWebSearch } from '@/app/ai/search'
 import { harnessSkills } from '@/app/ai/skills/harness'
 import { currentRun } from '@/app/ai/tools'
 import { ACPChatTransport, type AgentTurnUsage } from '@/app/ai/transports/acp'
@@ -252,7 +252,7 @@ export function createChatSessionManager({
       diagnosticContext,
       recorder: runRecorder,
       yieldWhen: hasSteeringMessage,
-      webSearch: await cloudWebSearch(runtime.role.connection)
+      webSearch: await chatWebSearch(runtime.role.connection)
     })
   }
 

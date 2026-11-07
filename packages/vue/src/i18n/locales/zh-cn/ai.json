@@ -111,6 +111,8 @@
   "toolInput": "输入",
   "toolOutput": "输出",
   "toolDetails": "工具调用详情",
+  "webSearchSources": "来源",
+  "webSearchNothingFound": "搜索没有找到任何结果。",
   "toolSteps": "之前的步骤：{count}",
   "toolStepsFailed": "失败：{count}",
   "showNodeOnCanvas": "在画布上显示 {name}",

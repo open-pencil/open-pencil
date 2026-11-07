@@ -57,6 +57,38 @@ const described = part({
   output: { id: '12:4', role: 'section', issues: ['Text overflows its frame'] }
 })
 
+const searched = part({
+  type: 'tool-web_search',
+  toolCallId: 'web-search',
+  state: 'output-available',
+  input: { query: 'SaaS pricing page best practices 2030', numResults: 3 },
+  output: {
+    results: [
+      {
+        url: 'https://www.example.com/blog/pricing-pages',
+        title: 'What makes a pricing page convert',
+        publishedAt: '2030-03-14T00:00:00.000Z',
+        author: 'Ada Lovelace',
+        text: 'Lead with the plan most teams choose, keep three tiers or fewer, and put the annual discount next to the toggle rather than in a footnote.'
+      },
+      {
+        url: 'https://design.example.org/patterns/pricing',
+        title: 'Pricing table patterns',
+        publishedAt: null,
+        author: null,
+        text: 'Comparison tables work when features differ in kind; when they differ only in limits, a single slider reads faster.'
+      },
+      {
+        url: 'https://news.example.net/2030/pricing-research',
+        title: '',
+        publishedAt: '2030-01-02T00:00:00.000Z',
+        author: null,
+        text: ''
+      }
+    ]
+  }
+})
+
 interface Args {
   parts: ToolCallPart[]
 }
@@ -81,3 +113,4 @@ export const Failed: Story = { args: { parts: [failed] } }
 export const LongRun: Story = {
   args: { parts: [described, rendered, failed, exported, { ...streaming, toolCallId: 'last' }] }
 }
+export const WebSearch: Story = { args: { parts: [searched] } }

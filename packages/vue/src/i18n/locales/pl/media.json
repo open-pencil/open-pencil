@@ -2,6 +2,8 @@
   "vectorization": "Wektoryzacja obrazów",
   "vectorizationDescription": "Wysyła warstwy obrazów do Recraft, fal.ai lub QuiverAI i zwraca edytowalne wektory. Mogą obowiązywać opłaty dostawcy.",
   "vectorizeProvider": "Usługa wektoryzacji",
+  "webSearch": "Wyszukiwanie w sieci",
+  "webSearchDescription": "Z własnym kluczem Exa agent AI może przeszukiwać sieć w każdym czacie, a Exa obciąża bezpośrednio Ciebie zamiast zużywać środki Cloud.",
   "pexelsAPIKey": "Klucz API Pexels",
   "unsplashAccessKey": "Klucz dostępu Unsplash",
   "stockPhotoToolOptional": "Opcjonalne — dane dostępowe dla narzędzia stock_photo",

@@ -7,6 +7,9 @@ export const mediaMessageDefaults = {
   vectorizationDescription:
     'Send image layers to Recraft, fal.ai, or QuiverAI and return editable vectors. Provider charges may apply.',
   vectorizeProvider: 'Vectorization service',
+  webSearch: 'Web search',
+  webSearchDescription:
+    'With your own Exa key, the AI agent can search the web in any chat, and Exa bills you instead of using Cloud credits.',
   pexelsAPIKey: 'Pexels API Key (stock photos)',
   unsplashAccessKey: 'Unsplash Access Key',
   stockPhotoToolOptional: 'Optional — for stock_photo tool',

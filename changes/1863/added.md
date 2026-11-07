@@ -1,1 +1,2 @@
-- With an OpenPencil Cloud model, the AI agent can search the web for current facts, references, and real copy, paid for with the workspace's credits.
+- With an OpenPencil Cloud model, the AI agent can search the web for current facts, references, and real copy, paid for with the workspace's credits. The pages it found show as sources in the chat.
+- In the desktop app, an Exa key under Settings › Search and images lets the AI agent search the web with any model, billed by Exa.
