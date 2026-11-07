@@ -10,16 +10,20 @@ export interface SharingState {
   installId: string | null
   /** UTC day of the last delivered ping, so an install pings once a day. */
   lastPingDay: string | null
+  /** How many days a ping was delivered on; only its step ever leaves the device. */
+  pingDays: number
 }
 
 const sharingStateSchema = v.object({
   installId: v.fallback(v.nullable(v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))), null),
-  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null)
+  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null),
+  // Installs from before the count start at zero, as if their first ping were the next one.
+  pingDays: v.fallback(v.pipe(v.number(), v.integer(), v.minValue(0)), 0)
 })
 
 export const sharingState = useLocalStorage<SharingState>(
   'open-pencil:sharing:v1',
-  { installId: null, lastPingDay: null },
+  { installId: null, lastPingDay: null, pingDays: 0 },
   {
     mergeDefaults: (stored) =>
       v.parse(

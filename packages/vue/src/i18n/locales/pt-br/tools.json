@@ -1,0 +1,20 @@
+{
+  "move": "Mover",
+  "frame": "Frame",
+  "section": "Seção",
+  "rectangle": "Retângulo",
+  "ellipse": "Elipse",
+  "line": "Linha",
+  "polygon": "Polígono",
+  "star": "Estrela",
+  "pen": "Caneta",
+  "pencil": "Lápis",
+  "text": "Texto",
+  "sticky": "Nota adesiva",
+  "shape": "Forma",
+  "connector": "Conector",
+  "hand": "Mão",
+  "comment": "Comentário",
+  "eyedropper": "Conta-gotas",
+  "eyedropperSample": "Capturar uma cor da tela"
+}
