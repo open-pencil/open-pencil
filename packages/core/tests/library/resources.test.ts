@@ -123,6 +123,21 @@ describe('inserting library components', () => {
     expect(consumer.resolveColorVariable(bound(consumer, componentId) ?? '')).toEqual(BLUE)
   })
 
+  test('moves to the revision once its components are updated, leaving out the styles it brought', async () => {
+    const { graph } = library()
+    const first = await publish(graph)
+    const consumer = new SceneGraph()
+    materializeLibraryAsset(consumer, first, 'button')
+    const button = [...graph.getAllNodes()].find((node) => node.componentKey === 'button')
+    graph.updateNode(button?.id ?? '', { strokeStyleId: null })
+    const next = await publish(graph, first.manifest.revisionId)
+
+    const update = updateLibraryDefinitions(consumer, next, { assetKeys: new Set(['button']) })
+
+    expect(update.behind).toEqual([])
+    expect(consumer.enabledLibraries.get('ds')?.revisionId).toBe(next.manifest.revisionId)
+  })
+
   test('sizes the instances of a component bound to a size token the update changes', async () => {
     const graph = new SceneGraph()
     const sizes = graph.createCollection('Sizes')

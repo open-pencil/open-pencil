@@ -39,11 +39,17 @@ interface DefinitionPair {
 }
 
 function definitionRoots(graph: SceneGraph, libraryId: string): SceneNode[] {
-  return graph
-    .getPages(true)
-    .filter((page) => page.internalOnly)
-    .flatMap((page) => graph.getChildren(page.id))
-    .filter((node) => node.librarySource?.identity.libraryId === libraryId)
+  return (
+    graph
+      .getPages(true)
+      .filter((page) => page.internalOnly)
+      .flatMap((page) => graph.getChildren(page.id))
+      // The library's styles sit beside its definitions and follow the components that use them.
+      .filter(
+        (node) =>
+          node.sharedStyleType === null && node.librarySource?.identity.libraryId === libraryId
+      )
+  )
 }
 
 /** The revision layer a definition draws: its asset's, or the layer it was copied from. */
