@@ -14,6 +14,7 @@ import { IS_BROWSER } from '@/constants'
 import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
+  leaveCloudRoom,
   leaveRefusedRoom,
   openCloudDocumentRoom,
   stopWithTab
@@ -98,12 +99,15 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
   const store = await openFileInNewTab(
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' })
   )
+  // The copy may open in a reused tab still in this link's room as a guest, whose ticket would
+  // hold it to the guest's permission; it joins again below with this one's.
+  leaveCloudRoom(store)
   if (resolution.principal.kind === 'user') await closeGuestTabsOf(link.shareId, store)
   else if (resolution.permission === 'view') {
     setGuestLinkTab(store, { link, canEditSignedIn: resolution.linkPermission === 'edit' })
   }
-  // A viewer without a room never hears the room make the tab read-only.
-  if (resolution.permission === 'view') store.setReadOnly(true)
+  // Without a room nothing else sets the permission, and a reused tab may have been view-only.
+  store.setReadOnly(resolution.permission === 'view')
   if (!discovery.capabilities.collaboration) return 'opened'
   const first = await client.getSharedCollaborationTicket(link.shareId, input)
   // The tab may have closed while the ticket was on its way.

@@ -12,7 +12,7 @@ import { createCanvasId } from '@/app/storage/id'
 import { getActiveStore, restoreRecoverySnapshot } from '@/app/tabs'
 import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
-import { openCloudConnect } from '../connect/flow'
+import { cloudConnectOpen, openCloudConnect } from '../connect/flow'
 import { cloudServers, isCloudSiteServer } from '../servers/store'
 import { cloudConnection, discoverCloudServer } from '../sessions/connection'
 import { cloudSignInRoute, redirectToCloudSignIn } from '../sessions/sign-in'
@@ -186,13 +186,14 @@ async function resumePendingDraft(returnedFrom: string | null): Promise<void> {
     if (kept) pendingDraft.value = JSON.stringify(draft)
     return
   }
-  if (action === 'save') await saveToCloud?.(getActiveStore(), draft.serverId)
+  // Startup and other links go on while the draft uploads; Save to reports its own failures.
+  if (action === 'save') void saveToCloud?.(getActiveStore(), draft.serverId).catch(() => undefined)
 }
 
 /**
  * Picks up drafts on their way to Cloud: one a sign-up or sign-in left with, now and once its
  * server is signed in later, as when the address is confirmed in another tab, and one whose
- * person signs in through the connect dialog.
+ * person signs in through the connect dialog while it is open.
  */
 export async function startCloudDrafts(options: {
   /** The server this tab left to sign in to, if it did. */
@@ -219,5 +220,11 @@ export async function startCloudDrafts(options: {
       void saveToCloud?.(store, serverId)
     }
   )
+  // Closing the connect dialog without signing in drops the draft, so signing in later for
+  // something else does not save it. A sign-in signs in before the dialog closes.
+  watch(cloudConnectOpen, (open) => {
+    if (open || !connecting.value) return
+    if (cloudConnection(connecting.value.serverId).state !== 'signed-in') connecting.value = null
+  })
   await resumePendingDraft(options.returnedFrom)
 }
