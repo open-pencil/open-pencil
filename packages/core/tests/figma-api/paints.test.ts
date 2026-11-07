@@ -449,6 +449,39 @@ describe('paint types', () => {
     rectangle.fills = [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
     expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBeUndefined()
   })
+
+  test('keeps each poster when two paints share a clip', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    const posters = ['d'.repeat(40), 'e'.repeat(40)]
+    graph.updateNode(rectangle.id, {
+      fills: posters.map((imageHash) => ({
+        type: 'VIDEO',
+        ...SCENE_PAINT,
+        imageHash,
+        videoHash: HASH
+      }))
+    })
+
+    rectangle.fills = rectangle.fills.map((paint) => ({ ...paint, opacity: 0.5 }))
+
+    expect(graph.getNode(rectangle.id)?.fills.map((paint) => paint.imageHash)).toEqual(posters)
+  })
+
+  test('keeps the poster when a script writes a paint style back', () => {
+    const { graph, figma } = api()
+    const style = figma.createPaintStyle()
+    const styleNode = () =>
+      [...graph.nodes.values()].find((node) => node.source.id === style.id && node.sharedStyleType)
+    const poster = 'f'.repeat(40)
+    graph.updateNode(styleNode()?.id ?? '', {
+      fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
+    })
+
+    style.paints = style.paints.map((paint) => ({ ...paint, opacity: 0.5 }))
+
+    expect(styleNode()?.fills[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
+  })
 })
 
 describe('a layer with paint styles', () => {

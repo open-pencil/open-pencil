@@ -8,7 +8,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 
 import { figmaFills } from '#core/figma-api/accessors/visual'
-import { parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
+import { keepVideoPosters, parseFigmaPaints, type FigmaPaint } from '#core/figma-api/paints'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 import { parseFigma } from '#core/figma-api/validation'
 import { figmaBoundVariables, setPaintBindings } from '#core/figma-api/variables/bindings'
@@ -147,7 +147,11 @@ export class FigmaPaintStyle extends FigmaBaseStyle {
 
   set paints(value: readonly FigmaPaint[]) {
     const node = this[NODE]('set_paints')
-    const fills = parseFigmaPaints(value, 'set_paints', 'paints')
+    const fills = keepVideoPosters(
+      parseFigmaPaints(value, 'set_paints', 'paints'),
+      node.fills,
+      this[HOST].graph
+    )
     this[HOST].graph.updateNode(node.id, { fills })
     // A paint bound to a variable keeps following it, as the style's consumers then do.
     setPaintBindings(this[HOST].graph, node, 'fills', value)
