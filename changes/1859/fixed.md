@@ -1,1 +1,1 @@
-- PNG, JPG and WebP exports copy an image placed at its own size on whole pixels pixel for pixel instead of slightly blurring it (#1859).
+- PNG, JPG and WebP exports no longer blur an image placed at its own size on whole pixels (#1859).
