@@ -217,6 +217,32 @@ describe('useEditorKeyboard', () => {
     input.remove()
   })
 
+  test('leaves keys pressed in an open menu to the menu, and takes them once it is closing', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'open')
+    menu.tabIndex = -1
+    dom.document.body.appendChild(menu)
+    const pressInMenu = () =>
+      menu.dispatchEvent(
+        new dom.KeyboardEvent('keydown', {
+          code: 'KeyR',
+          key: 'r',
+          bubbles: true,
+          cancelable: true
+        })
+      )
+
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('SELECT')
+
+    menu.setAttribute('data-state', 'closed')
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    menu.remove()
+  })
+
   test('a host key that replaces an editor key carries its own view and history rules', () => {
     const ran: string[] = []
     const editor = mountKeyboard({
