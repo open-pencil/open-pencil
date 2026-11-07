@@ -3,6 +3,7 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
 
 import type { Matrix, Size } from './primitives'
+import type { Fill, SceneNode } from './types'
 
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
@@ -86,4 +87,14 @@ export function coverImageTransform(
   const m00 = width / scale / imageWidth
   const m11 = height / scale / imageHeight
   return { m00, m01: 0, m02: (1 - m00) / 2, m10: 0, m11, m12: (1 - m11) / 2 }
+}
+
+/** The image a paint draws: an IMAGE paint's own, or the poster frame of a VIDEO paint. */
+export function drawnImageHash(paint: Pick<Fill, 'type' | 'imageHash'>): string | undefined {
+  return paint.type === 'IMAGE' || paint.type === 'VIDEO' ? paint.imageHash : undefined
+}
+
+/** The images a layer's fills and strokes draw, so a copy of the layer can carry them. */
+export function drawnImageHashes(node: Pick<SceneNode, 'fills' | 'strokes'>): string[] {
+  return [...node.fills, ...node.strokes].flatMap((paint) => drawnImageHash(paint) ?? [])
 }

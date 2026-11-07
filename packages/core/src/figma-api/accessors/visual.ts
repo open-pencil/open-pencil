@@ -12,7 +12,12 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
-import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import {
+  keepVideoPosters,
+  parseFigmaPaints,
+  toFigmaPaint,
+  type FigmaPaint
+} from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
 import {
   effectBindings,
@@ -60,7 +65,11 @@ function setFills(
   method: string
 ): void {
   const node = raw(target, internals)
-  const fills = parseFigmaPaints(value, method)
+  const fills = keepVideoPosters(
+    parseFigmaPaints(value, method),
+    node.fills,
+    graph(target, internals)
+  )
   updateNode(
     target,
     internals,
@@ -78,8 +87,13 @@ function setStrokes(
 ): void {
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
-  const { dashPattern } = raw(owner, internals)
-  const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
+  const { dashPattern, strokes: previous } = raw(owner, internals)
+  const parsed = keepVideoPosters(
+    parseFigmaPaints(value, method, 'strokes'),
+    previous,
+    graph(target, internals)
+  )
+  const strokes = parsed.map((paint): Stroke => ({
     ...paint,
     weight: geometry.weight,
     align: geometry.align,

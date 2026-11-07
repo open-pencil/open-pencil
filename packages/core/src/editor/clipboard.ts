@@ -4,6 +4,7 @@ import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
 import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -322,9 +323,9 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const fill of node.fills) {
-        if (fill.type === 'IMAGE' && fill.imageHash && !ctx.graph.images.has(fill.imageHash)) {
-          hashes.add(fill.imageHash)
+      for (const imageHash of drawnImageHashes(node)) {
+        if (!ctx.graph.images.has(imageHash)) {
+          hashes.add(imageHash)
         }
       }
     }

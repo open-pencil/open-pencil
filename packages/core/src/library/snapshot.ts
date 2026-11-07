@@ -1,6 +1,7 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
@@ -97,11 +98,7 @@ export function extractLibrarySnapshot(
   for (const imageHash of new Set(
     [...closure].flatMap((id) => {
       const node = source.getNode(id)
-      return node
-        ? node.fills.flatMap((paint) =>
-            paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []
-          )
-        : []
+      return node ? drawnImageHashes(node) : []
     })
   )) {
     const image = source.images.get(imageHash)

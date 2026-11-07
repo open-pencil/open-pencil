@@ -9,6 +9,7 @@ import {
   equilateralArrowPoints,
   triangleCapPoints
 } from '@open-pencil/scene-graph/arrow-caps'
+import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { setPaintBlendMode } from './blend'
@@ -279,7 +280,7 @@ export function applyStrokeShader(
     }
     return built
   }
-  if (stroke.type === 'IMAGE' && stroke.imageHash) {
+  if (drawnImageHash(stroke)) {
     let applied = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
       applied = applyImageFill(r, stroke, node, graph, paint) && applied

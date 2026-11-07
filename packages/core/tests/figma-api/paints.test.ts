@@ -390,6 +390,65 @@ describe('paint types', () => {
       }
     ])
   })
+
+  test('names the clip, apart from the poster frame a .fig video draws', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    const poster = 'b'.repeat(40)
+    const video: Fill = {
+      type: 'VIDEO',
+      ...SCENE_PAINT,
+      imageHash: poster,
+      videoHash: HASH,
+      imageScaleMode: 'FILL'
+    }
+    graph.updateNode(rectangle.id, {
+      fills: [video],
+      strokes: [{ ...video, weight: 1, align: 'INSIDE' }]
+    })
+    expect(rectangle.fills).toEqual([expect.objectContaining({ videoHash: HASH })])
+
+    const halfVideo = {
+      type: 'VIDEO' as const,
+      videoHash: HASH,
+      scaleMode: 'FILL' as const,
+      opacity: 0.5
+    }
+    rectangle.fills = [halfVideo]
+    rectangle.strokes = [halfVideo]
+
+    const node = graph.getNode(rectangle.id)
+    for (const paint of [node?.fills[0], node?.strokes[0]]) {
+      expect(paint).toMatchObject({ imageHash: poster, videoHash: HASH, opacity: 0.5 })
+    }
+  })
+
+  test('keeps the poster when a video paint moves to another layer', () => {
+    const { graph, figma } = api()
+    const source = figma.createRectangle()
+    const target = figma.createEllipse()
+    const poster = 'c'.repeat(40)
+    const video: Fill = { type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }
+    graph.updateNode(source.id, {
+      fills: [video],
+      strokes: [{ ...video, weight: 1, align: 'INSIDE' }]
+    })
+
+    target.fills = source.fills
+    target.strokes = source.strokes
+
+    const node = graph.getNode(target.id)
+    for (const paint of [node?.fills[0], node?.strokes[0]]) {
+      expect(paint).toMatchObject({ type: 'VIDEO', imageHash: poster, videoHash: HASH })
+    }
+  })
+
+  test('leaves a clip no layer has a poster for without one', () => {
+    const { graph, figma } = api()
+    const rectangle = figma.createRectangle()
+    rectangle.fills = [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
+    expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBeUndefined()
+  })
 })
 
 describe('a layer with paint styles', () => {

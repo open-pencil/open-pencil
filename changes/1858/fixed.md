@@ -1,0 +1,1 @@
+- Video fills and strokes from `.fig` files draw their poster frame instead of nothing, in the canvas and in PNG, JPG, WebP, SVG and PDF exports, and saving into the opened file keeps the video (#1858).

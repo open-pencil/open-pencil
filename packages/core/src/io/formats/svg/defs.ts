@@ -12,7 +12,7 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { drawnImageHash, imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { FontFaceRef } from '#core/text/font/faces'
@@ -189,8 +189,11 @@ function createImagePattern(
   node: SceneNode,
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
-  if (!fill.imageHash) return null
-  const data = ctx.graph.images.get(fill.imageHash)
+  const imageHash = drawnImageHash(fill)
+  if (!imageHash) {
+    return null
+  }
+  const data = ctx.graph.images.get(imageHash)
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
@@ -295,7 +298,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
     }
   }
 
-  if (fill.type === 'IMAGE') {
+  if (drawnImageHash(fill)) {
     const pattern = createImagePattern(fill, node, ctx)
     if (pattern) {
       ctx.defs.push(pattern.node)

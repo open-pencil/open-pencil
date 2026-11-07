@@ -1,6 +1,12 @@
 import * as v from 'valibot'
 
-import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@open-pencil/scene-graph'
+import type {
+  BlendMode,
+  Fill,
+  GradientTransform,
+  ImageScaleMode,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
@@ -280,7 +286,7 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
       ...base,
       color: { ...BLACK },
       imageScaleMode: paint.scaleMode,
-      ...(hash !== null && { imageHash: hash }),
+      ...(hash !== null && (paint.type === 'IMAGE' ? { imageHash: hash } : { videoHash: hash })),
       ...(imageTransform && { imageTransform }),
       ...(paint.rotation !== undefined && { imageRotation: paint.rotation }),
       ...(paint.scalingFactor !== undefined && { scale: paint.scalingFactor })
@@ -334,10 +340,57 @@ function figmaMediaPaint(paint: Fill, type: 'IMAGE' | 'VIDEO', base: ReadBase): 
     filters: { ...NO_FILTERS }
   }
   const transform = rows(crop ? paint.imageTransform : undefined)
-  const hash = paint.imageHash ?? null
   return type === 'IMAGE'
-    ? { type, ...media, imageTransform: transform, imageHash: hash }
-    : { type, ...media, videoTransform: transform, videoHash: hash }
+    ? { type, ...media, imageTransform: transform, imageHash: paint.imageHash ?? null }
+    : { type, ...media, videoTransform: transform, videoHash: paint.videoHash ?? null }
+}
+
+function* knownPaints(previous: readonly Fill[], sceneGraph: SceneGraph): Generator<Fill> {
+  yield* previous
+  for (const node of sceneGraph.nodes.values()) {
+    yield* node.fills
+    yield* node.strokes
+  }
+}
+
+function videoClips(paints: readonly Fill[]): Set<string> {
+  return new Set(
+    paints.flatMap((paint) => (paint.type === 'VIDEO' && paint.videoHash ? [paint.videoHash] : []))
+  )
+}
+
+function postersOf(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
+  const posters = new Map<string, string>()
+  for (const paint of paints) {
+    if (posters.size === clips.size) {
+      break
+    }
+    const clip = paint.type === 'VIDEO' ? paint.videoHash : undefined
+    if (clip && paint.imageHash && clips.has(clip) && !posters.has(clip)) {
+      posters.set(clip, paint.imageHash)
+    }
+  }
+  return posters
+}
+
+/**
+ * Figma's plugin API names only a video's clip, so a video paint written to any layer takes the
+ * poster that clip already has: the layer's own first, else any other layer's.
+ */
+export function keepVideoPosters<T extends Fill>(
+  paints: T[],
+  previous: readonly Fill[],
+  sceneGraph: SceneGraph
+): T[] {
+  const clips = videoClips(paints)
+  if (clips.size === 0) {
+    return paints
+  }
+  const posters = postersOf(clips, knownPaints(previous, sceneGraph))
+  return paints.map((paint) => {
+    const poster = paint.type === 'VIDEO' && paint.videoHash && posters.get(paint.videoHash)
+    return poster ? { ...paint, imageHash: poster } : paint
+  })
 }
 
 function figmaPatternPaint(paint: Fill, base: ReadBase): FigmaPaint {
