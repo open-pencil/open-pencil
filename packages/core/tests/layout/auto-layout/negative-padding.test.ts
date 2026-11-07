@@ -12,15 +12,17 @@ type Padding = Partial<
 function frameWith(
   layout: Partial<SceneNode>,
   padding: Padding,
-  childSizes: readonly (readonly [number, number])[]
+  childSizes: readonly (readonly [number, number])[],
+  childLayout: Partial<SceneNode> = {}
 ) {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
   const frame = figma.createFrame()
   const children = childSizes.map(([width, height]) => {
-    const child = figma.createRectangle()
+    const child = childLayout.layoutMode ? figma.createFrame() : figma.createRectangle()
     child.resize(width, height)
     frame.appendChild(child)
+    graph.updateNode(child.id, childLayout)
     return child
   })
   graph.updateNode(frame.id, { ...layout, ...padding })
@@ -41,6 +43,24 @@ function fixed(layoutMode: 'HORIZONTAL' | 'VERTICAL', width: number, height: num
     counterAxisSizing: 'FIXED'
   } satisfies Partial<SceneNode>
 }
+
+function fixedRow(layoutDirection: 'LTR' | 'RTL') {
+  return { ...fixed('HORIZONTAL', 100, 50), layoutDirection, itemSpacing: 0 }
+}
+
+function fixedChildRows(layoutDirection: 'LTR' | 'RTL') {
+  return {
+    layoutMode: 'HORIZONTAL',
+    layoutDirection,
+    primaryAxisSizing: 'FIXED',
+    counterAxisSizing: 'FIXED'
+  } satisfies Partial<SceneNode>
+}
+
+const TWO_SQUARES = [
+  [20, 20],
+  [20, 20]
+] as const
 
 describe('negative auto layout padding moves children past the frame edge', () => {
   test('a negative top pads a row’s cross axis above the frame', () => {
@@ -105,5 +125,25 @@ describe('negative auto layout padding moves children past the frame edge', () =
     )
     expect(children.map((child) => child.x)).toEqual([0, 34, 68])
     expect(frame.width).toBe(104)
+  })
+
+  test('right-to-left rows inside a left-to-right row keep the row’s left edge', () => {
+    const { children } = frameWith(
+      fixedRow('LTR'),
+      { paddingLeft: -10, paddingRight: -6 },
+      TWO_SQUARES,
+      fixedChildRows('RTL')
+    )
+    expect(children.map((child) => child.x)).toEqual([-10, 10])
+  })
+
+  test('left-to-right rows inside a right-to-left row keep the row’s right edge', () => {
+    const { children } = frameWith(
+      fixedRow('RTL'),
+      { paddingLeft: -10, paddingRight: -6 },
+      TWO_SQUARES,
+      fixedChildRows('LTR')
+    )
+    expect(children.map((child) => child.x)).toEqual([86, 66])
   })
 })

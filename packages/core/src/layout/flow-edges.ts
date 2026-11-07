@@ -19,29 +19,18 @@ interface FlowSides {
   trailing: Side
   crossStart: Side
   crossEnd: Side
-  leadingEdge: Edge
-  trailingEdge: Edge
 }
 
 function flowSides(frame: SceneNode, direction: 'LTR' | 'RTL'): FlowSides {
   if (frame.layoutMode !== 'HORIZONTAL') {
-    return {
-      leading: 'top',
-      trailing: 'bottom',
-      crossStart: 'left',
-      crossEnd: 'right',
-      leadingEdge: Edge.Top,
-      trailingEdge: Edge.Bottom
-    }
+    return { leading: 'top', trailing: 'bottom', crossStart: 'left', crossEnd: 'right' }
   }
   const rtl = direction === 'RTL'
   return {
     leading: rtl ? 'right' : 'left',
     trailing: rtl ? 'left' : 'right',
     crossStart: 'top',
-    crossEnd: 'bottom',
-    leadingEdge: Edge.Start,
-    trailingEdge: Edge.End
+    crossEnd: 'bottom'
   }
 }
 
@@ -49,8 +38,8 @@ function shortfall(length: number): number {
   return Math.min(0, length)
 }
 
-// Yoga lays negative padding and gaps out as none, so both become negative margins on the
-// children; a wrapping frame keeps no negative padding, as those margins would also merge its rows.
+// Yoga clamps negative padding and gaps, so they become negative child margins on physical edges
+// (a child reads logical edges in its own direction); a wrapping frame keeps its padding clamped.
 export function setFlowEdges(
   yogaFrame: YogaNode,
   frame: SceneNode,
@@ -71,7 +60,7 @@ export function setFlowEdges(
     const isLast = index === flow.length - 1
     child.setMargin(PHYSICAL_EDGE[sides.crossStart], margin(sides.crossStart))
     child.setMargin(PHYSICAL_EDGE[sides.crossEnd], margin(sides.crossEnd))
-    child.setMargin(sides.leadingEdge, isFirst ? margin(sides.leading) : 0)
-    child.setMargin(sides.trailingEdge, -overlap + (isLast ? margin(sides.trailing) : 0))
+    child.setMargin(PHYSICAL_EDGE[sides.leading], isFirst ? margin(sides.leading) : 0)
+    child.setMargin(PHYSICAL_EDGE[sides.trailing], -overlap + (isLast ? margin(sides.trailing) : 0))
   })
 }
