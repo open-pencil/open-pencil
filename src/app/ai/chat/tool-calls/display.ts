@@ -1,9 +1,7 @@
 import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
-import { isValid, toUint8Array } from 'js-base64'
-
-import { imageDataURL } from '@open-pencil/scene-graph/images'
+import { isValid } from 'js-base64'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
@@ -102,7 +100,7 @@ export function toolImage(part: ToolCallPart): string | null {
   const { base64, mimeType } = part.output
   if (typeof base64 !== 'string' || typeof mimeType !== 'string') return null
   if (!IMAGE_MEDIA_TYPES.has(mimeType) || !isValid(base64)) return null
-  return imageDataURL(toUint8Array(base64))
+  return `data:${mimeType};base64,${base64}`
 }
 
 /** Output with large binary payloads elided, for display as JSON. */
