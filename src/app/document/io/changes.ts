@@ -32,6 +32,8 @@ export function createDocumentChanges(editor: Editor) {
   /** The last content change, and the last one no history change accounted for. */
   let contentRevision = 0
   let outsideRevision = 0
+  /** The last change typed into text being edited, which only the text edit's own step settles. */
+  let typingRevision = 0
   let savedHistory: UndoEntry | undefined = editor.undo.peekUndo()
   /** The history at each captured revision, for a save that finishes after later edits. */
   const capturedHistory = new Map<number, UndoEntry | undefined>()
@@ -42,6 +44,7 @@ export function createDocumentChanges(editor: Editor) {
     if (revision.value === savedRevision.value) return false
     const saved = savedRevision.value
     if (outsideRevision > saved) return true
+    if (typingRevision > Math.max(historyRevision, saved)) return true
     if (contentRevision > Math.max(historyRevision, discardRevision, saved)) return true
     return editor.undo.peekUndo() !== savedHistory
   })
@@ -58,7 +61,11 @@ export function createDocumentChanges(editor: Editor) {
     contentRevision = revision.value
     const at = contentRevision
     // Text editing, coalesced edits, and edits that await record their step when they end.
-    if (editor.state.editingTextId !== null || editor.undo.isRecording) return
+    if (editor.undo.isRecording) return
+    if (editor.state.editingTextId !== null) {
+      typingRevision = at
+      return
+    }
     queueMicrotask(() => {
       if (historyRevision < at) outsideRevision = Math.max(outsideRevision, at)
     })
@@ -74,7 +81,8 @@ export function createDocumentChanges(editor: Editor) {
   }
   // An edit still open, such as an agent's call while the user cancels a drag, has changes no
   // step accounts for yet; its own step, or its own discard, settles them. A discard settles only
-  // changes made inside edits: one made outside them still waits for its task's step, if any.
+  // changes made inside edits: one made outside them still waits for its task's step, if any,
+  // and text being typed waits for the text edit's step.
   const editDiscarded = () => {
     if (editor.undo.isRecording) return
     revision.value++

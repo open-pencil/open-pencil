@@ -437,3 +437,15 @@ test('an edit that changes nothing does not hide a change made outside the histo
     editor.dispose()
   }
 })
+
+test('an edit that changes nothing while text is typed keeps the typing unsaved', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    // An agent's read-only script runs while the user is still typing, before the typing's step.
+    editor.state.editingTextId = id
+    editor.graph.updateNode(id, { name: 'Typing' })
+    await settle()
+    editor.recordEdit({ label: 'Agent: eval' }, () => undefined)
+    await settle()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+  })
+})

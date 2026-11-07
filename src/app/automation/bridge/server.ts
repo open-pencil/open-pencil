@@ -103,9 +103,11 @@ export function connectAutomation(
         }
         const msg = parsed.output
         if (msg.type === 'cancel') {
-          running
-            .get(msg.id)
-            ?.controller.abort(new Error('The MCP call timed out and was cancelled'))
+          // Only the connection a call came over can cancel it.
+          const call = running.get(msg.id)
+          if (call?.socket === socket) {
+            call.controller.abort(new Error('The MCP call timed out and was cancelled'))
+          }
           return
         }
         const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
@@ -115,7 +117,8 @@ export function connectAutomation(
           sessionSockets.set(session.session, sockets)
         }
         const controller = new AbortController()
-        running.set(msg.id, { controller, socket })
+        const call = { controller, socket }
+        running.set(msg.id, call)
         try {
           const result = await handleAutomationRequest(
             getStore(),
@@ -136,7 +139,7 @@ export function connectAutomation(
             })
           )
         } finally {
-          running.delete(msg.id)
+          if (running.get(msg.id) === call) running.delete(msg.id)
         }
       } catch (e) {
         console.warn('Failed to parse WebSocket message:', e)
