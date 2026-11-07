@@ -137,10 +137,7 @@ export function parseSearchRequest(input: unknown): SearchRequest {
 /** One page a search found, with the part of its text that answers the query. */
 export const searchResultSchema = v.object({
   // Only web pages: editors open it when clicked, so a `javascript:` URL must never pass.
-  url: v.pipe(
-    urlSchema,
-    v.check((url) => /^https?:\/\//i.test(url), 'A search result links to an HTTP(S) page')
-  ),
+  url: v.pipe(urlSchema, v.regex(/^https?:\/\//i, 'A search result links to an HTTP(S) page')),
   title: v.string(),
   publishedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
   author: v.nullable(v.string()),
