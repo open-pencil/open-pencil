@@ -53,7 +53,7 @@ export function startPenInput(
     if (nearFirstVertex(cx, cy, first, editor)) {
       editor.penSetPendingClose(true)
       editor.penSetClosingToFirst(true)
-      setDrag(createPenDrag(first.x, first.y))
+      setDrag(createPenDrag(first.x, first.y, cx, cy))
       cursorOverride.value = PEN_CURSOR
       return true
     }
@@ -61,7 +61,7 @@ export function startPenInput(
 
   editor.penSetPendingClose(false)
   editor.penAddVertex(point.x, point.y)
-  setDrag(createPenDrag(point.x, point.y))
+  setDrag(createPenDrag(point.x, point.y, cx, cy))
   cursorOverride.value = PEN_CURSOR
   return true
 }

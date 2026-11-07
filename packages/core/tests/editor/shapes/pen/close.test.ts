@@ -104,3 +104,22 @@ test('gives the last handle back to the next segment when the path does not clos
 
   expect(editor.state.penState?.segments.at(-1)?.tangentStart).toEqual({ x: 0, y: 50 })
 })
+
+test('closes along the last handle when asked to close without a press on the first point', () => {
+  editor = createEditor()
+  editor.setTool('PEN')
+  editor.penAddVertex(0, 0)
+  editor.penAddVertex(100, 0)
+  editor.penAddVertex(100, 100)
+  editor.penSetDragTangent(-30, 30)
+  editor.penCommit(true)
+
+  const { segments, regions } = closedPath()
+  expect(segments.map(({ start, end }) => [start, end])).toEqual([
+    [0, 1],
+    [1, 2],
+    [2, 0]
+  ])
+  expect(segments.at(-1)?.tangentStart).toEqual({ x: -30, y: 30 })
+  expect(regions).toBe(1)
+})

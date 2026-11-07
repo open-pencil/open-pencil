@@ -208,13 +208,16 @@ export function createPenActions(
       return
     }
 
-    if (closed && closing(ps)) {
-      const prevIdx = ps.vertices.length - 1
-      const drag = ps.dragTangent
+    if (closed && ps.vertices.length >= PEN_CLOSE_MIN_POINTS) {
+      // A press on the first point holds the last handle aside and the drag there in
+      // `dragTangent`; a close asked for without one leaves along the last handle, straight in.
+      const pending = closing(ps)
+      const out = pending ? ps.closeTangent : ps.dragTangent
+      const drag = pending ? ps.dragTangent : null
       ps.segments.push({
-        start: prevIdx,
+        start: ps.vertices.length - 1,
         end: 0,
-        tangentStart: ps.closeTangent ?? { x: 0, y: 0 },
+        tangentStart: out ? { ...out } : { x: 0, y: 0 },
         tangentEnd: drag ? { x: -drag.x, y: -drag.y } : { x: 0, y: 0 }
       })
     }

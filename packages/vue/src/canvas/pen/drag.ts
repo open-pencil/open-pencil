@@ -9,11 +9,22 @@ type PenDragState = Extract<DragState, { type: 'pen-drag' }>
 type PenState = NonNullable<Editor['state']['penState']>
 type PenModifierMode = PenDragState['modifierMode']
 
-export function createPenDrag(startX: number, startY: number): DragState {
+/**
+ * A pen drag from the point at (`startX`, `startY`), pressed at (`pressX`, `pressY`): the press
+ * can land beside the point it snaps to, and only movement from the press counts as a drag.
+ */
+export function createPenDrag(
+  startX: number,
+  startY: number,
+  pressX = startX,
+  pressY = startY
+): DragState {
   return {
     type: 'pen-drag',
     startX,
     startY,
+    pressX,
+    pressY,
     moved: false,
     modifierMode: 'default',
     frozenOppositeTangent: null,
@@ -128,7 +139,7 @@ export function handlePenDragMove(
   // A press that hasn't moved past the threshold is a click; a drag that has can bring the handle
   // all the way back to its point.
   const { zoom } = editor.state
-  d.moved ||= isPastPointerDragThreshold(d.startX * zoom, d.startY * zoom, cx * zoom, cy * zoom)
+  d.moved ||= isPastPointerDragThreshold(d.pressX * zoom, d.pressY * zoom, cx * zoom, cy * zoom)
   if (!d.moved) return
   const tx = cx - d.startX
   const ty = cy - d.startY

@@ -133,3 +133,29 @@ test('the pen drags a handle back to nothing', async () => {
   })
   expect(handles).toEqual({ out: 0, into: 0 })
 })
+
+// A press that lands beside the first point snaps to it; a pixel of movement after it is still a
+// click, so the closing segment comes in straight.
+test('the pen closes with a click pressed beside the first point', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.click(box.x + 300, box.y + 100)
+  await mouse.move(box.x + 105, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 106, box.y + 100)
+  await mouse.up()
+
+  const closing = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [id] = store?.state.selectedIds ?? []
+    const segment = id ? store?.graph.getNode(id)?.vectorNetwork?.segments.at(-1) : undefined
+    return (
+      segment && { end: segment.end, into: Math.hypot(segment.tangentEnd.x, segment.tangentEnd.y) }
+    )
+  })
+  expect(closing).toEqual({ end: 0, into: 0 })
+})

@@ -228,6 +228,9 @@ export interface DragPen {
   type: 'pen-drag'
   startX: number
   startY: number
+  /** Where the pointer went down, which the drag threshold is measured from. */
+  pressX: number
+  pressY: number
   /** Past the drag threshold: from then on the handle follows the pointer, back to zero too. */
   moved: boolean
   modifierMode: 'default' | 'continuous' | 'independent'
