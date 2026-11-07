@@ -185,6 +185,15 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  // Keeping a file without an account
+  draftHeading: 'Keep this file',
+  draftDescription: params<{ host: string }>(
+    'Sign up on {host} to keep it in the cloud and open it anywhere, or save it to this computer.'
+  ),
+  draftSignUp: 'Sign up and save',
+  draftSignIn: 'Sign in and save',
+  draftSaveOnDevice: 'Save to this computer',
+  draftKeepFailed: 'Couldn’t keep this file while you sign up. Save it to this computer instead.',
   statusGuestDetail: 'You’re viewing as a guest; your changes won’t reach anyone.',
   statusGuestCanEditDetail: 'You’re viewing as a guest. Sign in to edit this file.',
   signInToEdit: 'Sign in to edit',
