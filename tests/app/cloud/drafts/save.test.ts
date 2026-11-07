@@ -31,9 +31,9 @@ describe('a draft that left to sign up', () => {
     ).toBe('wait')
   })
 
-  test('is dropped after a day, leaving its copy to recover from Home', () => {
+  test('opens unsaved after a day, wherever the app starts', () => {
     expect(
-      pendingDraftAction(draft, { now: LEFT_AT + 25 * HOUR, signedIn: true, returnedFrom: 'cloud' })
-    ).toBe('drop')
+      pendingDraftAction(draft, { now: LEFT_AT + 25 * HOUR, signedIn: false, returnedFrom: null })
+    ).toBe('open')
   })
 })

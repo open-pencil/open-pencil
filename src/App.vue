@@ -73,7 +73,7 @@ onMounted(() => {
   onUnmounted(
     startCloud({
       leaveLinkAddress: () => router.isReady().then(() => router.replace('/')),
-      saveTo: openSaveTo
+      saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
     })
   )
 })

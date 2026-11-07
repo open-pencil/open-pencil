@@ -1,6 +1,5 @@
 import { ref } from 'vue'
 
-import type { EditorStore } from '@/app/editor/session'
 import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
 import { checkCloudAvailability } from '../availability'
@@ -12,7 +11,7 @@ import {
   reopenCloudDocumentLink,
   resumeCloudDocumentLink
 } from '../documents/link'
-import { resumeCloudDraftSave } from '../drafts/save'
+import { startCloudDrafts, type SaveToCloud } from '../drafts/save'
 import { resumeCloudInvitation } from '../invitations/flow'
 import {
   bindDesktopCloudLinks,
@@ -52,8 +51,8 @@ function opensWithCloudDocument(): boolean {
 export async function startCloudSessions(options: {
   /** Leaves a Cloud link's address, so its secret is not kept in history. */
   leaveLinkAddress(): Promise<unknown>
-  /** Save to, for a draft that left to sign up and is back. */
-  saveTo: (store: EditorStore) => Promise<void>
+  /** Save to, kept to one server, for a draft on its way to Cloud. */
+  saveTo: SaveToCloud
 }): Promise<void> {
   // Taken first, so a sign-in this tab leaves for below is the only one left pending.
   const pending = takePendingCloudSignIn()
@@ -80,7 +79,7 @@ export async function startCloudSessions(options: {
       forgetCloudDocumentLink()
       forgetCloudLink()
     }
-    await resumeCloudDraftSave({ returnedFrom: pending, saveTo: options.saveTo })
+    await startCloudDrafts({ returnedFrom: pending, saveTo: options.saveTo })
     // Later sign-ins, as in the connect dialog, open what they were for once they finish.
     resumeCloudDocumentLink()
     resumeCloudLink()

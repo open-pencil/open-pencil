@@ -55,6 +55,8 @@ function setGuestLinkTab(store: EditorStore, tab: CloudGuestLinkTab | null): voi
  * replaces the view-only one. They never save, so nothing is lost.
  */
 async function closeGuestTabsOf(shareId: string, except: EditorStore): Promise<void> {
+  // The signed-in copy may have opened in the guest's own tab, which stays, now signed in.
+  setGuestLinkTab(except, null)
   for (const [store, tab] of cloudGuestLinkTabs.value) {
     const open = getTabForStore(store)
     if (store === except || tab.link.shareId !== shareId || !open) continue

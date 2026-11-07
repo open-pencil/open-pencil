@@ -3,8 +3,7 @@
  * resolves this module to `./off`, which offers the same names and does nothing, so Cloud's code
  * stays out of that build; app code outside Cloud's folders imports Cloud only from here.
  */
-import type { EditorStore } from '@/app/editor/session'
-
+import type { SaveToCloud } from '../drafts/save'
 import { watchCloudRooms } from '../rooms/live'
 import { startCloudSessions } from '../sessions/startup'
 
@@ -38,7 +37,7 @@ export const CLOUD_INCLUDED: boolean = true
 /** Starts Cloud sign-ins, links, and live rooms; returns what stops the room watcher. */
 export function startCloud(options: {
   leaveLinkAddress(): Promise<unknown>
-  saveTo: (store: EditorStore) => Promise<void>
+  saveTo: SaveToCloud
 }): () => void {
   const stop = watchCloudRooms()
   void startCloudSessions(options)
