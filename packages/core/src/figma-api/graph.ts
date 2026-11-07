@@ -1,16 +1,20 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 /**
- * Where a `FigmaAPI` keeps its scene graph. The graph is OpenPencil's own and Figma's Plugin API
- * has no such field, so it stays off the object scripts see as `figma`.
+ * The scene graph behind each `FigmaAPI` and node proxy. It lives here rather than on the
+ * objects, so a script that walks `figma` or a node, symbols included, reaches no graph:
+ * Figma's Plugin API has none, and writing to it would skip the API's checks and events.
  */
-export const API_GRAPH = Symbol('graph')
+const graphs = new WeakMap<object, SceneGraph>()
 
-export interface GraphHost {
-  readonly [API_GRAPH]: SceneGraph
+/** Records the graph an API object or node proxy edits. */
+export function bindGraph(owner: object, graph: SceneGraph): void {
+  graphs.set(owner, graph)
 }
 
-/** The scene graph a `FigmaAPI` edits, for OpenPencil's own code such as tools. */
-export function graphOf(api: GraphHost): SceneGraph {
-  return api[API_GRAPH]
+/** The scene graph a `FigmaAPI` or node proxy edits, for OpenPencil's own code such as tools. */
+export function graphOf(owner: object): SceneGraph {
+  const graph = graphs.get(owner)
+  if (!graph) throw new Error('No scene graph is bound to this object')
+  return graph
 }

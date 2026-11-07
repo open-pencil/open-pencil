@@ -1,1 +1,1 @@
-- Scripts run through `eval` no longer reach the scene graph through `figma.graph` or `openpencil.figma`. SDK code that read `figma.graph` calls `graphOf(figma)` from `@open-pencil/core/figma-api` (#1860).
+- Scripts run through `eval` no longer reach the scene graph or raw layers through `figma`, `openpencil`, nodes, or styles. SDK code that read `figma.graph` calls `graphOf(figma)` from `@open-pencil/core/figma-api` (#1860).

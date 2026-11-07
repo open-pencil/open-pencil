@@ -42,7 +42,7 @@ import { flattenSceneNodes } from './flatten'
 import { loadFigmaFont } from './fonts/load'
 import type { FigmaFontNameInput } from './fonts/names'
 import { variationAxisTags } from './fonts/variations'
-import { API_GRAPH, type GraphHost } from './graph'
+import { bindGraph } from './graph'
 import * as images from './images'
 import type {
   FigmaBooleanOperationNode,
@@ -135,17 +135,17 @@ export type { FigmaVariationSettings } from './fonts/variations'
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.
-export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphHost {
-  readonly [API_GRAPH]: SceneGraph
-  private _currentPageId: string
+export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
+  readonly #graph: SceneGraph
+  #currentPageId: string
   /** Counts page switches, so a switch whose page loads after a later one does not undo it. */
   #pageSwitch = 0
-  private _selection: FigmaNodeProxy[] = []
-  private _nodeCache = new Map<string, FigmaNodeProxy>()
-  private _nodeTypes = new Map<string, string | undefined>()
-  private _pageProxies = new WeakSet<FigmaNodeProxy>()
-  private _renderer: SkiaRenderer | null = null
-  private _unbindRendererEvents: (() => void) | null = null
+  #selection: FigmaNodeProxy[] = []
+  #nodeCache = new Map<string, FigmaNodeProxy>()
+  #nodeTypes = new Map<string, string | undefined>()
+  #pageProxies = new WeakSet<FigmaNodeProxy>()
+  #renderer: SkiaRenderer | null = null
+  #unbindRendererEvents: (() => void) | null = null
   /** The interface theme new sections take their fill from, as in Figma. */
   theme: InterfaceTheme = 'light'
 
@@ -160,18 +160,19 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
-    this[API_GRAPH] = graph
+    this.#graph = graph
+    bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.loadPage)
       setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
     startPendingLayout(graph)
     const pages = graph.getPages()
-    this._currentPageId = pages[0]?.id ?? graph.rootId
+    this.#currentPageId = pages[0]?.id ?? graph.rootId
   }
 
   get renderer(): SkiaRenderer | null {
-    return this._renderer
+    return this.#renderer
   }
 
   /**
@@ -180,11 +181,11 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
    * lands inside a boolean operation, as the editor does for its renderers.
    */
   setRenderer(renderer: SkiaRenderer | null): void {
-    this._unbindRendererEvents?.()
-    this._unbindRendererEvents = null
-    this._renderer = renderer
+    this.#unbindRendererEvents?.()
+    this.#unbindRendererEvents = null
+    this.#renderer = renderer
     if (!renderer) return
-    const graph = this[API_GRAPH]
+    const graph = this.#graph
     const invalidate = (id: string | null | undefined) =>
       invalidateBooleanAncestors(graph, [renderer], id)
     // A layer's own paths are kept too, so an edit to its shape drops them, as the editor's do.
@@ -193,7 +194,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
       const { geometryCache } = rendererInvalidationForChanges(changes, { preview: false })
       if (geometryCache) renderer.invalidateVectorPath(id)
     }
-    this._unbindRendererEvents = graph.onNodeEvents({
+    this.#unbindRendererEvents = graph.onNodeEvents({
       created: (node) => invalidate(node.parentId),
       updated: (id, changes) => changed(id, changes),
       previewUpdated: (id, changes) => changed(id, changes),
@@ -210,57 +211,55 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
   }
 
   get groupFitOptions(): GroupFitOptions {
-    return groupFitOptions(this._renderer, this[API_GRAPH])
+    return groupFitOptions(this.#renderer, this.#graph)
   }
 
   get currentPageId(): string {
-    return this._currentPageId
+    return this.#currentPageId
   }
 
   wrapNode(id: string): FigmaNodeProxy {
-    const type = this[API_GRAPH].getNode(id)?.type
-    let proxy = this._nodeCache.get(id)
+    const type = this.#graph.getNode(id)?.type
+    let proxy = this.#nodeCache.get(id)
     // A node that changed type, such as a detached instance, gets the members of its new type.
-    if (!proxy || this._nodeTypes.get(id) !== type) {
-      proxy = new FigmaNodeProxy(id, this[API_GRAPH], this)
-      this._nodeCache.set(id, proxy)
-      this._nodeTypes.set(id, type)
+    if (!proxy || this.#nodeTypes.get(id) !== type) {
+      proxy = new FigmaNodeProxy(id, this.#graph, this)
+      this.#nodeCache.set(id, proxy)
+      this.#nodeTypes.set(id, type)
     }
     return proxy
   }
 
-  private _ensurePageProxy(
-    proxy: FigmaNodeProxy
-  ): FigmaNodeProxy & { selection: FigmaNodeProxy[] } {
-    if (!this._pageProxies.has(proxy)) {
+  #ensurePageProxy(proxy: FigmaNodeProxy): FigmaNodeProxy & { selection: FigmaNodeProxy[] } {
+    if (!this.#pageProxies.has(proxy)) {
       Object.defineProperty(proxy, 'selection', {
-        get: () => this._selection,
+        get: () => this.#selection,
         set: (nodes: FigmaNodeProxy[]) => {
-          this._selection = nodes
+          this.#selection = nodes
         },
         enumerable: true,
         configurable: true
       })
-      this._pageProxies.add(proxy)
+      this.#pageProxies.add(proxy)
     }
     return proxy as FigmaNodeProxy & { selection: FigmaNodeProxy[] }
   }
 
   get root(): FigmaNodeProxy {
-    return this.wrapNode(this[API_GRAPH].rootId)
+    return this.wrapNode(this.#graph.rootId)
   }
 
   get currentPage(): FigmaNodeProxy & { selection: FigmaNodeProxy[] } {
-    return this._ensurePageProxy(this.wrapNode(this._currentPageId))
+    return this.#ensurePageProxy(this.wrapNode(this.#currentPageId))
   }
 
   set currentPage(page: FigmaNodeProxy) {
     this.#pageSwitch++
-    this._currentPageId = page[INTERNAL_ID]
+    this.#currentPageId = page[INTERNAL_ID]
   }
 
   getNodeById(id: string): FigmaNodeProxy | null {
-    const node = this[API_GRAPH].getNode(id)
+    const node = this.#graph.getNode(id)
     return node ? this.wrapNode(id) : null
   }
 
@@ -284,16 +283,16 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
   // Scripts are not type-checked, so the call checks for a missing node as Figma does.
   setCurrentPageAsync(page: PageNode | FigmaNodeProxy | null | undefined): Promise<void> {
     if (page == null) throw new Error(`in setCurrentPageAsync: Expected node, got ${String(page)}`)
-    if (this._rawNode(page).type !== 'CANVAS') {
+    if (this.#rawNode(page).type !== 'CANVAS') {
       return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
     }
-    const pageId = this._nodeId(page)
+    const pageId = this.#nodeId(page)
     const pageSwitch = ++this.#pageSwitch
     return loadPage(this, pageId).then(() => {
       if (pageSwitch !== this.#pageSwitch) return undefined
-      if (this[API_GRAPH].getNode(pageId)?.type !== 'CANVAS')
+      if (this.#graph.getNode(pageId)?.type !== 'CANVAS')
         throw new Error('in setCurrentPageAsync: The page was removed while it loaded')
-      this._currentPageId = pageId
+      this.#currentPageId = pageId
       return undefined
     })
   }
@@ -301,50 +300,50 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
   // --- Node Creation ---
 
   /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
-  private _createNode(type: NodeType): FigmaNodeProxy {
+  #createNode(type: NodeType): FigmaNodeProxy {
     // A board's new sections are light under any interface theme, as the editor makes them.
-    const theme = layerTheme({ documentKind: this[API_GRAPH].documentKind, theme: this.theme })
+    const theme = layerTheme({ documentKind: this.#graph.documentKind, theme: this.theme })
     const defaults = newLayerDefaults(type, theme)
     // Figma's plugin API makes a line with no height, a 496 px section, and a hugging frame.
     if (type === 'LINE') defaults.height = 0
     if (type === 'SECTION') Object.assign(defaults, { width: 496, height: 496 })
     if (type === 'FRAME' || type === 'COMPONENT') defaults.primaryAxisSizing = 'HUG'
-    const node = this[API_GRAPH].createNode(type, this._currentPageId, defaults)
+    const node = this.#graph.createNode(type, this.#currentPageId, defaults)
     return this.wrapNode(node.id)
   }
 
   createFrame(): FigmaFrameNode {
-    return this._createNode('FRAME') as FigmaFrameNode
+    return this.#createNode('FRAME') as FigmaFrameNode
   }
 
   createRectangle(): FigmaRectangleNode {
-    return this._createNode('RECTANGLE') as FigmaRectangleNode
+    return this.#createNode('RECTANGLE') as FigmaRectangleNode
   }
 
   createEllipse(): FigmaEllipseNode {
-    return this._createNode('ELLIPSE') as FigmaEllipseNode
+    return this.#createNode('ELLIPSE') as FigmaEllipseNode
   }
 
   createText(): FigmaTextNode {
-    const text = this._createNode('TEXT') as FigmaTextNode
+    const text = this.#createNode('TEXT') as FigmaTextNode
     // Figma's plugin text starts empty at 12px and sizes itself to its content: no width, one
     // line tall.
-    const node = this[API_GRAPH].getNode(text.id)
+    const node = this.#graph.getNode(text.id)
     const defaults = { fontSize: 12, textAutoResize: 'WIDTH_AND_HEIGHT' as const, width: 0 }
-    this[API_GRAPH].updateNode(text.id, { ...defaults, ...textAutoResizeChanges(node, defaults) })
+    this.#graph.updateNode(text.id, { ...defaults, ...textAutoResizeChanges(node, defaults) })
     return text
   }
 
   createLine(): FigmaLineNode {
-    return this._createNode('LINE') as FigmaLineNode
+    return this.#createNode('LINE') as FigmaLineNode
   }
 
   createPolygon(): FigmaPolygonNode {
-    return this._createNode('POLYGON') as FigmaPolygonNode
+    return this.#createNode('POLYGON') as FigmaPolygonNode
   }
 
   createStar(): FigmaStarNode {
-    return this._createNode('STAR') as FigmaStarNode
+    return this.#createNode('STAR') as FigmaStarNode
   }
 
   createShapeWithText(): FigmaShapeWithTextNode {
@@ -352,13 +351,13 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
   }
 
   createVector(): FigmaVectorNode {
-    return this._createNode('VECTOR') as FigmaVectorNode
+    return this.#createNode('VECTOR') as FigmaVectorNode
   }
 
   /** The layers Figma makes from SVG markup, on the current page at its origin. */
   // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Figma Plugin API name.
   createNodeFromSvg(svg: string): FigmaFrameNode {
-    const node = createSVGNodes(this[API_GRAPH], this._currentPageId, svg, { keepEmpty: true })
+    const node = createSVGNodes(this.#graph, this.#currentPageId, svg, { keepEmpty: true })
     if (!node) throw new Error('in createNodeFromSvg: Failed to convert SVG file')
     return this.wrapNode(node.id) as FigmaFrameNode
   }
@@ -368,7 +367,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
    * 200 px right of it, with no start cap and an arrow at the end.
    */
   createConnector(): FigmaConnectorNode {
-    const node = createConnector(this[API_GRAPH], this._currentPageId, {
+    const node = createConnector(this.#graph, this.#currentPageId, {
       start: freeEndpoint(0, 0),
       end: freeEndpoint(200, 0),
       startCap: 'NONE',
@@ -378,28 +377,28 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
   }
 
   createComponent(): FigmaComponentNode {
-    return this._createNode('COMPONENT') as FigmaComponentNode
+    return this.#createNode('COMPONENT') as FigmaComponentNode
   }
 
   createSection(): FigmaSectionNode {
-    return this._createNode('SECTION') as FigmaSectionNode
+    return this.#createNode('SECTION') as FigmaSectionNode
   }
 
   createPage(): FigmaNodeProxy {
-    const page = this[API_GRAPH].addPage('Page')
-    setDefaultPageBackground(this[API_GRAPH], page, this.theme)
+    const page = this.#graph.addPage('Page')
+    setDefaultPageBackground(this.#graph, page, this.theme)
     return this.wrapNode(page.id)
   }
 
   // --- Grouping ---
 
-  private _nodeId(node: BaseNode | FigmaNodeProxy): string {
+  #nodeId(node: BaseNode | FigmaNodeProxy): string {
     return (node as BaseNode & { [INTERNAL_ID]: string })[INTERNAL_ID]
   }
 
-  private _rawNode(node: BaseNode | FigmaNodeProxy): CoreSceneNode {
-    const id = this._nodeId(node)
-    const raw = this[API_GRAPH].getNode(id)
+  #rawNode(node: BaseNode | FigmaNodeProxy): CoreSceneNode {
+    const id = this.#nodeId(node)
+    const raw = this.#graph.getNode(id)
     if (!raw) throw new Error(`Node ${id} not found`)
     return raw
   }
@@ -415,24 +414,24 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaGroupNode {
-    const parentId = this._nodeId(parent)
-    const members = nodes.map((node) => this._rawNode(node))
-    const groupNode = wrapNodes(this[API_GRAPH], 'GROUP', members, parentId, index)
+    const parentId = this.#nodeId(parent)
+    const members = nodes.map((node) => this.#rawNode(node))
+    const groupNode = wrapNodes(this.#graph, 'GROUP', members, parentId, index)
     return this.wrapNode(groupNode.id) as FigmaGroupNode
   }
 
   ungroup(node: FigmaNodeProxy): FigmaNodeProxy[]
   ungroup(node: SceneNode & ChildrenMixin): Array<SceneNode>
   ungroup(node: (SceneNode & ChildrenMixin) | FigmaNodeProxy): Array<SceneNode> | FigmaNodeProxy[] {
-    const children = ungroupNode(this[API_GRAPH], this._nodeId(node)) ?? []
+    const children = ungroupNode(this.#graph, this.#nodeId(node)) ?? []
     return children.map((id) => this.wrapNode(id))
   }
 
   createComponentFromNode(node: FigmaNodeProxy): FigmaNodeProxy {
-    const raw = this[API_GRAPH].getNode(node[INTERNAL_ID])
+    const raw = this.#graph.getNode(node[INTERNAL_ID])
     if (!raw) throw new Error('Node not found')
     return this.wrapNode(
-      componentFromNode(this[API_GRAPH], raw, raw.parentId ?? this._currentPageId).id
+      componentFromNode(this.#graph, raw, raw.parentId ?? this.#currentPageId).id
     )
   }
 
@@ -452,9 +451,9 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     index?: number
   ): FigmaComponentSetNode {
     const componentSet = combineComponentsAsVariants(
-      this[API_GRAPH],
-      nodes.map((node) => this._nodeId(node)),
-      this._nodeId(parent),
+      this.#graph,
+      nodes.map((node) => this.#nodeId(node)),
+      this.#nodeId(parent),
       index
     )
     return this.wrapNode(componentSet.id) as FigmaComponentSetNode
@@ -462,17 +461,17 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
 
   // --- Boolean Operations ---
 
-  private _booleanOperation(
+  #booleanOperation(
     operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE',
     nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
-    const parentId = this._nodeId(parent)
-    const members = nodes.map((node) => this._rawNode(node))
+    const parentId = this.#nodeId(parent)
+    const members = nodes.map((node) => this.#rawNode(node))
     const { node: group } = createBooleanOperation(
-      this[API_GRAPH],
+      this.#graph,
       members,
       parentId,
       operation,
@@ -498,7 +497,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
-    return this._booleanOperation('UNION', nodes, parent, index)
+    return this.#booleanOperation('UNION', nodes, parent, index)
   }
 
   subtract(
@@ -516,7 +515,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
-    return this._booleanOperation('SUBTRACT', nodes, parent, index)
+    return this.#booleanOperation('SUBTRACT', nodes, parent, index)
   }
 
   intersect(
@@ -534,7 +533,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
-    return this._booleanOperation('INTERSECT', nodes, parent, index)
+    return this.#booleanOperation('INTERSECT', nodes, parent, index)
   }
 
   exclude(
@@ -552,7 +551,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
-    return this._booleanOperation('EXCLUDE', nodes, parent, index)
+    return this.#booleanOperation('EXCLUDE', nodes, parent, index)
   }
 
   // --- Flatten ---
@@ -573,24 +572,24 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     index?: number
   ): FigmaVectorNode {
     if (nodes.length === 0) throw new Error('Need at least 1 node to flatten')
-    const parentId = this._nodeId(parent ?? this.currentPage)
+    const parentId = this.#nodeId(parent ?? this.currentPage)
     const sourceNodes: CoreSceneNode[] = []
     for (const node of nodes) {
-      const raw = this[API_GRAPH].getNode(this._nodeId(node))
+      const raw = this.#graph.getNode(this.#nodeId(node))
       if (!raw) throw new Error('Node not found')
       sourceNodes.push(raw)
     }
-    const vector = flattenSceneNodes(this[API_GRAPH], this._renderer, sourceNodes, parentId)
-    if (index != null) this[API_GRAPH].insertChildAt(vector.id, parentId, index)
+    const vector = flattenSceneNodes(this.#graph, this.#renderer, sourceNodes, parentId)
+    if (index != null) this.#graph.insertChildAt(vector.id, parentId, index)
     for (const node of nodes) {
-      this[API_GRAPH].deleteNode(this._nodeId(node))
+      this.#graph.deleteNode(this.#nodeId(node))
     }
     return this.wrapNode(vector.id) as FigmaVectorNode
   }
 
   // --- Viewport ---
 
-  private _viewport = { x: 0, y: 0, zoom: 1 }
+  #viewport = { x: 0, y: 0, zoom: 1 }
 
   get viewport(): {
     center: Vector
@@ -598,8 +597,8 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
     scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void
   } {
     return {
-      center: { x: this._viewport.x, y: this._viewport.y },
-      zoom: this._viewport.zoom,
+      center: { x: this.#viewport.x, y: this.#viewport.y },
+      zoom: this.#viewport.zoom,
       scrollAndZoomIntoView: (nodes) => {
         const b = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
         if (b.width === 0 && b.height === 0 && nodes.length === 0) return
@@ -610,26 +609,26 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
         const viewW = IS_BROWSER ? window.innerWidth : 1280
         const viewH = IS_BROWSER ? window.innerHeight : 720
         const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
-        this._viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
+        this.#viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
       }
     }
   }
 
   set viewport(v: { center: Vector; zoom: number }) {
-    this._viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
+    this.#viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
   }
 
   createImage(data: Uint8Array): Image {
-    return images.createImage(this[API_GRAPH], data)
+    return images.createImage(this.#graph, data)
   }
 
   getImageByHash(hash: string): Image | null {
-    return images.imageByHash(this[API_GRAPH], hash)
+    return images.imageByHash(this.#graph, hash)
   }
 
   /** Fetches the image at `src` through the host's `fetch` and stores it as `createImage` does. */
   createImageAsync(src: string): Promise<Image> {
-    return images.fetchImage(this[API_GRAPH], src, this.#fetch)
+    return images.fetchImage(this.#graph, src, this.#fetch)
   }
 
   // --- Stubs ---
@@ -684,7 +683,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost, GraphH
 
   /** Loads every page's layers, one page after another, as Figma does in dynamic-page mode. */
   async loadAllPagesAsync(): Promise<void> {
-    for (const page of this[API_GRAPH].getPages()) await loadPage(this, page.id)
+    for (const page of this.#graph.getPages()) await loadPage(this, page.id)
   }
 
   commitUndo(): void {

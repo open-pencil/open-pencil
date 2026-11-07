@@ -3,7 +3,7 @@ import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { internalCanvas, newSharedStyleId } from '@open-pencil/scene-graph/shared-styles'
 
 import { applyLayerChanges } from '#core/figma-api/accessor-utils'
-import { graphOf, type GraphHost } from '#core/figma-api/graph'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 
 import {
@@ -18,7 +18,7 @@ import {
 } from './handles'
 
 /** What the style methods need from `figma`. */
-interface StyleOwner extends GraphHost {
+interface StyleOwner {
   readonly groupFitOptions: GroupFitOptions
   wrapNode(id: string): FigmaNodeProxy
 }

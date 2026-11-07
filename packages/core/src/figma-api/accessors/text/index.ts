@@ -7,7 +7,6 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import {
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
@@ -15,6 +14,7 @@ import {
 } from '#core/figma-api/accessor-utils'
 import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import { graphOf } from '#core/figma-api/graph'
 import { atLeast } from '#core/figma-api/schema'
 import {
   getParagraphSpacing,
@@ -162,7 +162,7 @@ export function installTextNodeProxyAccessors(
       },
       set(this: ProxyThis, value: HyperlinkTarget | null) {
         const node = raw(this, internals)
-        const hyperlink = hyperlinkTarget('set_hyperlink', value, graph(this, internals), 'value')
+        const hyperlink = hyperlinkTarget('set_hyperlink', value, graphOf(this), 'value')
         const styleRuns = styleRunsWithPatch(node, 0, node.text.length, { hyperlink })
         updateNode(this, internals, { styleRuns })
       }
