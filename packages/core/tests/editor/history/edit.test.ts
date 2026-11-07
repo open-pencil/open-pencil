@@ -127,6 +127,7 @@ describe('recordEditAsync', () => {
     editor.recordEdit({ label: 'Move' }, () => {
       editor.graph.updateNode(other.id, { x: 25 })
       editor.graph.updateNode(card.id, { y: 8 })
+      editor.graph.willChangeVariable(gap.id)
       const variable = editor.graph.variables.get(gap.id)
       if (variable) variable.name = 'spacing'
     })
