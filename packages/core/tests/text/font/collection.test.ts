@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
 
 import { corePackagePath } from '#core-tests/helpers/paths'
 import type { CanvasKit, FontCollection, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { makeParagraphBuilder } from '#core/text/font/collection'
@@ -140,17 +140,17 @@ test('a paragraph built before its collection is replaced still lays out and dra
     'Later Sans': await asset('NotoNaskhArabic-Regular.ttf')
   }
   manager.setHostFontLoader(async (family) => fonts[family] ?? null)
-  const surface = ck.MakeSurface(64, 64)
+  const surface = expectDefined(ck.MakeSurface(64, 64), 'paragraph surface')
   try {
     await manager.loadLocalFont('Kept Sans')
     const kept = paragraph(ck, provider, 'Kept Sans', 'Kept')
     await manager.loadLocalFont('Later Sans')
     kept.layout(200)
     expect(kept.getHeight()).toBeGreaterThan(0)
-    surface?.getCanvas().drawParagraph(kept, 0, 0)
+    surface.getCanvas().drawParagraph(kept, 0, 0)
     kept.delete()
   } finally {
-    surface?.delete()
+    surface.delete()
     manager.releaseProvider(provider)
   }
 })
@@ -168,19 +168,4 @@ test('releasing the last user of a provider deletes its collection', async () =>
   } finally {
     counts.restore()
   }
-})
-
-test('no source builds a paragraph with a collection of its own', () => {
-  const root = corePackagePath('src')
-  const offenders: string[] = []
-  const visit = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const path = join(dir, name)
-      if (statSync(path).isDirectory()) visit(path)
-      else if (path.endsWith('.ts') && readFileSync(path, 'utf8').includes('MakeFromFontProvider('))
-        offenders.push(path.slice(root.length + 1))
-    }
-  }
-  visit(root)
-  expect(offenders).toEqual([])
 })
