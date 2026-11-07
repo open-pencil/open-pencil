@@ -298,12 +298,12 @@ async function fontFaceAssets(
   return { css: await fontFaceStylesheet(assets, { from: '' }), files: assets }
 }
 
-function extensionForMime(mime: string): string {
-  if (mime === 'image/jpeg') return 'jpg'
-  if (mime === 'image/webp') return 'webp'
-  if (mime === 'image/gif') return 'gif'
-  if (mime === 'image/svg+xml') return 'svg'
-  return 'png'
+/** The file extension of each raster type a bundle moves out of the page. */
+const IMAGE_EXTENSIONS: Partial<Record<string, string>> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp'
 }
 
 /** Inline images moved into files under `assetBasePath`, the HTML pointing at them. */
@@ -317,15 +317,18 @@ export function extractImageAssets(
   walkParseTree(fragment, (element) => {
     const src = element.attrs.find((attr) => attr.name === 'src')
     if (!src) return
-    // Documents can come from parsed HTML; a data URL that does not decode stays inline.
-    const image = parseDataURL(src.value)
-    if (!image?.mimeType.startsWith('image/')) return
     const cachedPath = sources.get(src.value)
     if (cachedPath) {
       src.value = cachedPath
       return
     }
-    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(image.mimeType)}`
+    // Documents can come from parsed HTML. Only a raster type a file extension names moves to a
+    // file: an SVG could run script when its file is opened on the site's origin, and the rest,
+    // such as a data URL that does not decode, stays inline.
+    const image = parseDataURL(src.value)
+    const extension = image && IMAGE_EXTENSIONS[image.mimeType]
+    if (!image || !extension) return
+    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extension}`
     sources.set(src.value, path)
     files.push({ path, content: image.bytes })
     src.value = path
