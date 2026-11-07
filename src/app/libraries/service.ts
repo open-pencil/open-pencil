@@ -50,6 +50,8 @@ export class LibraryService implements ComponentCatalog {
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
   readonly #watched = new WeakSet<EditorStore>()
+  /** Counts reads of a document's libraries, so one finishing after a newer one is dropped. */
+  #reads = 0
   readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
   #activeEditor: EditorStore | null = null
@@ -161,7 +163,10 @@ export class LibraryService implements ComponentCatalog {
   async refresh(editor: EditorStore): Promise<void> {
     this.#activeEditor = editor
     this.#watch(editor)
-    this.#summaries.value = await this.#catalog.listLibraries()
+    const read = ++this.#reads
+    const summaries = await this.#catalog.listLibraries()
+    if (read !== this.#reads) return
+    this.#summaries.value = summaries
     const assets: EnabledLibraryAsset[] = []
     for (const binding of editor.graph.enabledLibraries.values()) {
       if (!binding.enabled) continue
@@ -177,6 +182,7 @@ export class LibraryService implements ComponentCatalog {
         }))
       )
     }
+    if (read !== this.#reads) return
     this.#enabledAssets.value = assets
     await this.refreshUpdates(editor)
   }
@@ -197,6 +203,7 @@ export class LibraryService implements ComponentCatalog {
   }
 
   async refreshUpdates(editor: EditorStore): Promise<void> {
+    const read = ++this.#reads
     const summariesById = new Map(
       this.#summaries.value.map((summary) => [summary.libraryId, summary])
     )
@@ -224,6 +231,7 @@ export class LibraryService implements ComponentCatalog {
         impacts.set(binding.libraryId, libraryUpdateImpact(plans))
       }
     }
+    if (read !== this.#reads) return
     this.#updates.value = updates
     this.#updateImpacts.value = impacts
   }

@@ -76,7 +76,15 @@ async function updatable(
   const service = new LibraryService(catalog)
   await service.listLibraries()
   await service.refresh(editor)
-  return { graph, instance, componentId, editor, service, latest: latest.manifest.revisionId }
+  return {
+    graph,
+    instance,
+    componentId,
+    editor,
+    service,
+    catalog,
+    latest: latest.manifest.revisionId
+  }
 }
 
 describe('library service updates', () => {
@@ -302,4 +310,29 @@ test('a library change in a document in the background leaves the shown one’s 
 
   // Labels, not the stores: a failure would otherwise print two whole editors.
   expect(refreshed.map((store) => (store === editor ? 'shown' : 'background'))).toEqual(['shown'])
+})
+
+test('a read of the libraries that finishes after a newer one leaves the newer one’s state', async () => {
+  const { editor, catalog } = await updatable()
+  let release = () => {}
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let reads = 0
+  const listLibraries = catalog.listLibraries.bind(catalog)
+  catalog.listLibraries = async () => {
+    // The first read waits until the second has finished.
+    if (++reads === 1) await held
+    return listLibraries()
+  }
+  const service = new LibraryService(catalog)
+  const other = createEditorStore(new SceneGraph())
+
+  const stale = service.refresh(editor)
+  await service.refresh(other)
+  release()
+  await stale
+
+  expect(service.enabledAssets.value).toEqual([])
+  expect(service.updates.value).toEqual([])
 })
