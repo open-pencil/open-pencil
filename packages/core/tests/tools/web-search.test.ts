@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { setWebSearchProvider, WebSearchRefusedError } from '@open-pencil/core/tools'
-
 import { getTool, setupToolTest } from '#core-tests/helpers/tools'
+
+import { setWebSearchProvider, WebSearchRefusedError } from '@open-pencil/core/tools'
 
 const RESULT = {
   url: 'https://example.com/grids',
@@ -30,6 +30,11 @@ describe('web_search tool', () => {
     })
     expect(await search({ query: '  grid systems ' })).toEqual({ results: [RESULT] })
     expect(asked).toEqual([{ query: 'grid systems', numResults: 5 }])
+  })
+
+  test('returns no more results than the model asked for', async () => {
+    setWebSearchProvider({ search: async () => ({ results: [RESULT, RESULT, RESULT] }) })
+    expect(await search({ query: 'grids', numResults: 2 })).toEqual({ results: [RESULT, RESULT] })
   })
 
   test('tells the model how to set search up when there is no provider', async () => {

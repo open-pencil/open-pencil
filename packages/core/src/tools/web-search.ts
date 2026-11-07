@@ -71,7 +71,9 @@ export const webSearch = defineTool({
       }
     }
     try {
-      return await provider.search({ query: query.trim(), numResults })
+      const { results } = await provider.search({ query: query.trim(), numResults })
+      // The tool promises the model at most `numResults`, whatever a provider sends back.
+      return { results: results.slice(0, numResults) }
     } catch (error) {
       if (error instanceof WebSearchRefusedError) return { error: error.message }
       console.warn('Web search failed', error)
