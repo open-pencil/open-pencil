@@ -14,7 +14,7 @@ import {
   type SourceIndex
 } from '../instance-overrides/source-index'
 import { symbolOverridesOf } from '../instance-overrides/types'
-import { applyStyleRefsToFields } from '../node-change/style/refs'
+import { applyFillStyleRef, applyStyleRefsToFields } from '../node-change/style/refs'
 import {
   createBindingNormalizer,
   resolveDocumentBindingReferences,
@@ -106,9 +106,8 @@ function assetIds(records: readonly NodeChange[]): Map<string, string> {
 }
 
 /**
- * Gives a record the fields of the styles it names, as do its overrides, its text's ranges and its
- * vector's regions, whose style table entry may name a style without its paints: an instance's
- * override of a text range keeps only the fill style's reference.
+ * Gives a record the fields of the styles it names, as do its overrides and its vector's regions,
+ * whose style table entry may name a style without its paints.
  */
 function resolveStyleFields(
   styles: Parameters<typeof applyStyleRefsToFields>[0],
@@ -116,10 +115,21 @@ function resolveStyleFields(
   assets: ReadonlyMap<string, string>
 ): void {
   applyStyleRefsToFields(styles, node, assets)
-  for (const entry of node.textData?.styleOverrideTable ?? [])
-    applyStyleRefsToFields(styles, entry, assets)
+  paintUnpaintedTextRanges(styles, node, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
   for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
+}
+
+function paintUnpaintedTextRanges(
+  styles: Parameters<typeof applyFillStyleRef>[0],
+  node: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  for (const range of node.textData?.styleOverrideTable ?? []) {
+    if (range.fillPaints === undefined) {
+      applyFillStyleRef(styles, range, assets)
+    }
+  }
 }
 
 function isResource(record: NodeChange): boolean {
