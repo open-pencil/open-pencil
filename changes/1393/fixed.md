@@ -1,0 +1,1 @@
+- MCP's zoom-to-fit command now fits oversized selections to the viewport instead of leaving them clipped at 100%.
