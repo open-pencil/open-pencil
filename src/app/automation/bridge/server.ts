@@ -68,8 +68,11 @@ export function connectAutomation(
     automationFiles(automationURL, token)
   )
 
-  /** Calls still running, by request id, which the bridge cancels once it stops waiting. */
-  const running = new Map<string, AbortController>()
+  /**
+   * Calls still running, by request id, with the connection each came over. The bridge cancels
+   * one once it stops waiting, and a closed connection cancels its own: no one waits for them.
+   */
+  const running = new Map<string, { controller: AbortController; socket: WebSocket }>()
 
   function connect() {
     let socket: WebSocket
@@ -100,7 +103,9 @@ export function connectAutomation(
         }
         const msg = parsed.output
         if (msg.type === 'cancel') {
-          running.get(msg.id)?.abort(new Error('The MCP call timed out and was cancelled'))
+          running
+            .get(msg.id)
+            ?.controller.abort(new Error('The MCP call timed out and was cancelled'))
           return
         }
         const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
@@ -110,7 +115,7 @@ export function connectAutomation(
           sessionSockets.set(session.session, sockets)
         }
         const controller = new AbortController()
-        running.set(msg.id, controller)
+        running.set(msg.id, { controller, socket })
         try {
           const result = await handleAutomationRequest(
             getStore(),
@@ -140,6 +145,11 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
+      for (const call of running.values()) {
+        if (call.socket === socket) {
+          call.controller.abort(new Error('The MCP connection closed before the call finished'))
+        }
+      }
       // Sessions that reached the app only over this connection cannot any more, so their agents
       // leave; ones that also came another way, such as over a newer connection, stay.
       for (const [id, sockets] of sessionSockets) {

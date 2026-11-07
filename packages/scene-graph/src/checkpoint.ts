@@ -316,6 +316,7 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
       if (
         !before ||
         !after ||
+        before.id !== after.id ||
         before.collectionId !== after.collectionId ||
         before.type !== after.type
       )

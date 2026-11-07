@@ -41,6 +41,20 @@ export interface PhotoResult {
 type Download = { request: PhotoRequest; photo: StockPhotoResult; bytes: Uint8Array }
 
 /** Finds and downloads the photo `request` asks for, writing nothing. */
+/** Why `node` cannot take a photo, or `null` when it can. */
+function targetProblem(node: FigmaNodeProxy): string | null {
+  if (!STOCK_PHOTO_TARGET_TYPES.has(node.type)) {
+    return `"${node.name}" (${node.type}) is not a suitable stock photo target`
+  }
+  if (node.type === 'VECTOR' && (node.vectorNetwork.regions?.length ?? 0) === 0) {
+    return `"${node.name}" has no closed vector regions — use closed area geometry`
+  }
+  if (node.type !== 'BOOLEAN_OPERATION' && node.children.length > 0) {
+    return `"${node.name}" has children — use a leaf image placeholder`
+  }
+  return null
+}
+
 async function downloadPhoto(
   figma: FigmaAPI,
   provider: StockPhotoProvider,
@@ -48,24 +62,8 @@ async function downloadPhoto(
 ): Promise<Download | PhotoResult> {
   const node = figma.getNodeById(request.id)
   if (!node) return { id: request.id, error: 'Not found' }
-
-  if (!STOCK_PHOTO_TARGET_TYPES.has(node.type)) {
-    return {
-      id: request.id,
-      error: `"${node.name}" (${node.type}) is not a suitable stock photo target`
-    }
-  }
-
-  if (node.type === 'VECTOR' && (node.vectorNetwork.regions?.length ?? 0) === 0) {
-    return {
-      id: request.id,
-      error: `"${node.name}" has no closed vector regions — use closed area geometry`
-    }
-  }
-
-  if (node.type !== 'BOOLEAN_OPERATION' && node.children.length > 0) {
-    return { id: request.id, error: `"${node.name}" has children — use a leaf image placeholder` }
-  }
+  const problem = targetProblem(node)
+  if (problem) return { id: request.id, error: problem }
 
   const perPage = Math.min((request.index ?? 0) + 3, 15)
   const orientation = request.orientation ?? 'landscape'
@@ -109,12 +107,19 @@ export async function applyPhotos(
   const results = downloads.map((download): PhotoResult => {
     if (!('bytes' in download)) return download
     const { request, photo, bytes } = download
-    // Someone else may have removed the target while the photo downloaded.
+    // Someone else may have removed or changed the target while the photo downloaded.
     const node = figma.getNodeById(request.id)
     if (!node) return { id: request.id, error: 'Not found' }
-    node.fills = [
-      { type: 'IMAGE', imageHash: storeImage(graphOf(figma), bytes), scaleMode: 'FILL' }
-    ]
+    const problem = targetProblem(node)
+    if (problem) return { id: request.id, error: problem }
+    try {
+      node.fills = [
+        { type: 'IMAGE', imageHash: storeImage(graphOf(figma), bytes), scaleMode: 'FILL' }
+      ]
+    } catch (error) {
+      // One target that refuses its photo, such as a library's, leaves the others theirs.
+      return { id: request.id, error: error instanceof Error ? error.message : String(error) }
+    }
     applied.push(photo)
     return {
       id: node.id,

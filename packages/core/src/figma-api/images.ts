@@ -153,7 +153,7 @@ export async function fetchImage(api: object, value: unknown, fetch: ImageFetch)
     if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
     return readBounded(response)
   }
-  const data = await waitOutsideScript(api, download())
+  const data = await waitOutsideScript(api, download)
   const problem = imageProblem(data)
   if (problem) throw new Error(problem)
   const graph = graphOf(api)

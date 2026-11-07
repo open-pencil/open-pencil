@@ -147,6 +147,93 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(other.id)?.x).toBe(0)
   })
 
+  test('keeps what changes meanwhile in a record or layer it also changed', async () => {
+    const { editor, pageId, card } = setup()
+    const { id: collectionId } = editor.graph.createCollection('Tokens')
+    const gap = editor.graph.createVariable('gap', 'FLOAT', collectionId, 4)
+    const width = editor.graph.createVariable('width', 'FLOAT', collectionId, 100)
+    const height = editor.graph.createVariable('height', 'FLOAT', collectionId, 50)
+    const doomed = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
+    const download = Promise.withResolvers<undefined>()
+
+    const edit = editor.recordEditAsync({ label: 'Agent: tokens' }, async () => {
+      editor.graph.willChangeVariable(gap.id)
+      const variable = editor.graph.variables.get(gap.id)
+      if (variable) variable.name = 'spacing'
+      editor.graph.bindVariable(card.id, 'width', width.id)
+      editor.graph.updateNode(doomed.id, { x: 5 })
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+    editor.recordEdit({ label: 'User' }, () => {
+      editor.graph.willChangeVariable(gap.id)
+      const variable = editor.graph.variables.get(gap.id)
+      if (variable) variable.valuesByMode = { ...variable.valuesByMode, extra: 8 }
+      editor.graph.bindVariable(card.id, 'height', height.id)
+      editor.graph.deleteNode(doomed.id)
+    })
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: tokens')
+    expect(editor.graph.variables.get(gap.id)).toMatchObject({
+      name: 'gap',
+      valuesByMode: expect.objectContaining({ extra: 8 })
+    })
+    expect(editor.graph.getNode(card.id)?.boundVariables).toEqual({ height: height.id })
+    expect(editor.graph.getNode(doomed.id)).toBeUndefined()
+  })
+
+  test('waits outside itself while an earlier edit’s wait is still pending', async () => {
+    const { editor, pageId, card } = setup()
+    const other = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
+    const leftover = Promise.withResolvers<undefined>()
+    const download = Promise.withResolvers<undefined>()
+    // A script leaves a load unawaited; it is still pending when the next edit waits.
+    await editor.recordEditAsync({ label: 'Agent: first' }, async () => {
+      void editor.graph.waitOutsideEdit(leftover.promise)
+    })
+
+    const edit = editor.recordEditAsync({ label: 'Agent: second' }, async () => {
+      editor.graph.updateNode(card.id, { x: 40 })
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(other.id, { x: 25 }))
+    leftover.resolve(undefined)
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: second')
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.graph.getNode(other.id)?.x).toBe(25)
+  })
+
+  test('keeps an undo made while it waits out of its step', async () => {
+    const { editor, card } = setup()
+    const { id: collectionId } = editor.graph.createCollection('Tokens')
+    const gap = editor.graph.createVariable('gap', 'FLOAT', collectionId, 4)
+    editor.recordEdit({ label: 'Rename' }, () => {
+      editor.graph.willChangeVariable(gap.id)
+      const variable = editor.graph.variables.get(gap.id)
+      if (variable) variable.name = 'spacing'
+    })
+    const download = Promise.withResolvers<undefined>()
+
+    const edit = editor.recordEditAsync({ label: 'Agent: value' }, async () => {
+      editor.graph.willChangeVariable(gap.id)
+      const variable = editor.graph.variables.get(gap.id)
+      if (variable) variable.valuesByMode = { ...variable.valuesByMode, extra: 8 }
+      editor.graph.updateNode(card.id, { x: 40 })
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+    expect(editor.undo.undo()).toBe('Rename')
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: value')
+    expect(editor.graph.variables.get(gap.id)?.name).toBe('gap')
+    expect(editor.graph.variables.get(gap.id)?.valuesByMode).not.toHaveProperty('extra')
+  })
+
   // Known gap: nothing tells whose write is whose across an await, so the open edit takes in a
   // write made elsewhere meanwhile, such as the user's or a collaborator's.
   test.failing('leaves an edit made elsewhere while it awaits out of its step', async () => {

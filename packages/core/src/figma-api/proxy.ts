@@ -67,15 +67,15 @@ export function setPageHost(api: NodeProxyHost, host: PageHost): void {
 }
 
 export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
-  const load = pageHosts.get(api)?.load(pageId)
+  const host = pageHosts.get(api)
   // A page's layers load as the document was saved, which is no part of the script's edit.
-  return load ? waitOutsideScript(api, load) : Promise.resolve()
+  return host ? waitOutsideScript(api, () => host.load(pageId)) : Promise.resolve()
 }
 
 /** The page holding a layer not loaded yet, which loading that page brings in. */
 export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
-  const found = pageHosts.get(api)?.pageOfNode?.(nodeId)
-  return found ? waitOutsideScript(api, found) : Promise.resolve(null)
+  const find = pageHosts.get(api)?.pageOfNode
+  return find ? waitOutsideScript(api, () => find(nodeId)) : Promise.resolve(null)
 }
 
 export interface NodeProxyHost extends ExportHost {

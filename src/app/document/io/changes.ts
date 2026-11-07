@@ -27,6 +27,8 @@ export function createDocumentChanges(editor: Editor) {
   const savedRevision = ref(0)
   /** The revision of the last change to the history, which accounts for the changes before it. */
   let historyRevision = 0
+  /** The last edit or batch that ended without a step, undoing what it changed. */
+  let discardRevision = 0
   /** The last content change, and the last one no history change accounted for. */
   let contentRevision = 0
   let outsideRevision = 0
@@ -40,7 +42,7 @@ export function createDocumentChanges(editor: Editor) {
     if (revision.value === savedRevision.value) return false
     const saved = savedRevision.value
     if (outsideRevision > saved) return true
-    if (contentRevision > Math.max(historyRevision, saved)) return true
+    if (contentRevision > Math.max(historyRevision, discardRevision, saved)) return true
     return editor.undo.peekUndo() !== savedHistory
   })
 
@@ -71,9 +73,12 @@ export function createDocumentChanges(editor: Editor) {
     historyRevision = revision.value
   }
   // An edit still open, such as an agent's call while the user cancels a drag, has changes no
-  // step accounts for yet; its own step, or its own discard, settles them.
+  // step accounts for yet; its own step, or its own discard, settles them. A discard settles only
+  // changes made inside edits: one made outside them still waits for its task's step, if any.
   const editDiscarded = () => {
-    if (!editor.undo.isRecording) historyChanged()
+    if (editor.undo.isRecording) return
+    revision.value++
+    discardRevision = revision.value
   }
   const unsubscribers = [
     editor.onEditorEvent('node:created', contentChanged),

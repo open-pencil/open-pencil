@@ -134,9 +134,14 @@ export class UndoManager {
   }
 
   rollbackBatch(): void {
-    const batch = this.batches.pop()
+    const batch = this.batches.at(-1)
     if (!batch) return
-    for (const entry of batch.entries.toReversed()) entry.inverse()
+    // Still open while it rolls back, so what the rollback changes belongs to the batch.
+    try {
+      for (const entry of batch.entries.toReversed()) entry.inverse()
+    } finally {
+      this.batches.pop()
+    }
     this.onDiscard?.()
   }
 

@@ -421,3 +421,19 @@ test('a cancelled drag hides neither an edit still open nor one already made', a
     editor.dispose()
   }
 })
+
+test('an edit that changes nothing does not hide a change made outside the history', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const card = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, { x: 0 })
+    changes.markSaved()
+    editor.graph.updateNode(card.id, { x: 25 })
+    editor.recordEdit({ label: 'Read' }, () => undefined)
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})

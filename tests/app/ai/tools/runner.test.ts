@@ -61,6 +61,64 @@ test('a call cancelled while it waits for its turn edits nothing', async () => {
   expect(store.undo.peekUndo()).toBeUndefined()
 })
 
+test('a call cancelled while it runs is rolled back once it finishes', async () => {
+  const createShape = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+    'create_shape'
+  )
+  const pageId = store.state.currentPageId
+  const figma = makeFigmaFromStore(store, pageId)
+  const downloaded = createDeferred<undefined>()
+  const cancel = new AbortController()
+  const call = runEditorTool({
+    store,
+    figma,
+    def: {
+      ...createShape,
+      execute: async (api, args) => {
+        const result = createShape.execute(api, args)
+        await downloaded.promise
+        return result
+      }
+    },
+    args: { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 },
+    source: 'MCP',
+    signal: cancel.signal
+  })
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  })
+  cancel.abort(new Error('timed out'))
+  downloaded.resolve(undefined)
+
+  await expect(call).rejects.toThrow('timed out')
+  expect(store.graph.getChildren(pageId)).toEqual([])
+  expect(store.undo.peekUndo()).toBeUndefined()
+})
+
+test('the next call edits while an earlier one still loads its fonts', async () => {
+  const createShape = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+    'create_shape'
+  )
+  const pageId = store.state.currentPageId
+  const figma = makeFigmaFromStore(store, pageId)
+  const fontsLoaded = createDeferred<boolean>()
+  const ensure = spyOn(fonts, 'ensureGraphFonts').mockReturnValueOnce(fontsLoaded.promise)
+  const shape = { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+  try {
+    const first = runEditorTool({ store, figma, def: createShape, args: shape, source: 'MCP' })
+    const second = runEditorTool({ store, figma, def: createShape, args: shape, source: 'MCP' })
+
+    await second
+    expect(store.graph.getChildren(pageId)).toHaveLength(2)
+    fontsLoaded.resolve(false)
+    await first
+  } finally {
+    ensure.mockRestore()
+  }
+})
+
 test('undoing an asynchronous tool call returns the document to saved', async () => {
   const tool = (name: string) =>
     expectDefined(

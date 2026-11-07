@@ -66,13 +66,21 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
  */
 export function recordEdit<T>(ctx: EditorContext, options: RecordEditOptions, run: () => T): T {
   const finish = begin(ctx, options)
+  // Open while it runs, so its changes wait for its step rather than count as outside history.
+  const close = ctx.undo.openEdit()
   let failed = true
+  let discarded = false
   try {
     const result = run()
     failed = false
     return result
   } finally {
-    if (finish(failed)) ctx.undo.discardEdit()
+    try {
+      discarded = finish(failed)
+    } finally {
+      close()
+    }
+    if (discarded) ctx.undo.discardEdit()
   }
 }
 

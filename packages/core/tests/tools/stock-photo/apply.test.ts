@@ -321,3 +321,27 @@ describe("applyPhotos", () => {
     });
   }
 });
+
+test("leaves a target that gained children during the download, and fills the rest", async () => {
+  const { graph, page, figma } = setup();
+  const placeholder = graph.createNode("RECTANGLE", page.id, { width: 100, height: 100 });
+  const filled = graph.createNode("FRAME", page.id, { width: 100, height: 100 });
+  const provider = createProvider([]);
+  const search = provider.search.bind(provider);
+  provider.search = async (query, options) => {
+    const results = await search(query, options);
+    // Someone fills the frame with content while the photos download.
+    if (query === "frame") graph.createNode("RECTANGLE", filled.id);
+    return results;
+  };
+
+  const [photo, refused] = await applyPhotos(figma, provider, [
+    { id: placeholder.id, query: "rectangle" },
+    { id: filled.id, query: "frame" },
+  ]);
+
+  expect(photo.error).toBeUndefined();
+  expect(graph.getNode(placeholder.id)?.fills[0]?.type).toBe("IMAGE");
+  expect(refused.error).toBe(`"${filled.name}" has children — use a leaf image placeholder`);
+  expect(graph.getNode(filled.id)?.fills.some((fill) => fill.type === "IMAGE")).toBe(false);
+});

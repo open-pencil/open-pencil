@@ -27,7 +27,11 @@ export function makeFigmaFromStore(
       if (!(await store.preparePageNodes(id)))
         throw new Error(`Page "${id}" was closed before it finished loading`)
     },
-    pageOfNode: (id) => store.pageHoldingNode(id)
+    pageOfNode: (id) => store.pageHoldingNode(id),
+    // The font manager lists the installed families once the host has read them.
+    prepareFontList: async () => {
+      await listFonts()
+    }
   })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
@@ -50,11 +54,5 @@ export function makeFigmaFromStore(
   api.exportImage = async (nodeIds, opts) =>
     renderAutomationImage(store, nodeIds, { ...opts, pageId: opts.pageId ?? pageId })
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
-  // The font manager lists the installed families once the host has read them.
-  const listAvailableFonts = api.listAvailableFontsAsync.bind(api)
-  api.listAvailableFontsAsync = async () => {
-    await listFonts()
-    return listAvailableFonts()
-  }
   return api
 }

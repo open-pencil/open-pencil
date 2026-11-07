@@ -60,3 +60,45 @@ test('a cancelled script stops at the download it waits on', async () => {
     'timed out'
   )
 })
+
+test('a script cancelled right after asking for a download never starts it', async () => {
+  const editor = createEditor()
+  const cancel = new AbortController()
+  let fetched = 0
+  const figma = new FigmaAPI(editor.graph, {
+    fetch: () => {
+      fetched++
+      return Promise.withResolvers<Response>().promise
+    },
+    signal: cancel.signal
+  })
+
+  const image = figma.createImageAsync('https://example.com/photo.png')
+  cancel.abort(new Error('timed out'))
+
+  await expect(image).rejects.toThrow('timed out')
+  expect(fetched).toBe(0)
+})
+
+test('a page a script loads is no part of its undo step', async () => {
+  const editor = createEditor()
+  const second = editor.graph.addPage('Second')
+  // The host brings the page's saved layers in before its promise settles, as the editor does.
+  const figma = new FigmaAPI(editor.graph, {
+    loadPage: (pageId) => {
+      editor.graph.createNode('RECTANGLE', pageId, { name: 'Saved', width: 10, height: 10 })
+      return Promise.resolve()
+    }
+  })
+  const script = compileScript(`
+    const page = figma.getNodeById(${JSON.stringify(second.id)})
+    await page.loadAsync()
+    page.name = 'Renamed'
+  `)
+
+  await editor.recordEditAsync({ label: 'Agent: eval' }, () => script(figma))
+
+  expect(editor.undo.undo()).toBe('Agent: eval')
+  expect(editor.graph.getNode(second.id)?.name).toBe('Second')
+  expect(editor.graph.getChildren(second.id).map((node) => node.name)).toEqual(['Saved'])
+})

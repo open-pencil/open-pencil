@@ -103,8 +103,15 @@ async function recordReplyCall(
   if (figma.currentPageId !== viewPageId) await moveRunToPage(store, run, figma.currentPageId)
 }
 
-/** Runs an edit while its document's lock is held, and records it. */
-async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Promise<unknown> {
+/**
+ * Runs an edit while its document's lock is held, and records it. The lock is released once the
+ * step and the reply's record of it are in, before the edit's fonts load.
+ */
+async function editAndRecord(
+  call: EditorToolCall,
+  reply: ReplyCall | null,
+  release: () => void
+): Promise<unknown> {
   const { store, figma, def, args } = call
   const viewPageId = figma.currentPageId
   const pageId = writtenPageId(figma, args)
@@ -122,6 +129,18 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
       recorded.change = change
     }
   }
+  let settled = false
+  const settle = async () => {
+    if (settled) return
+    settled = true
+    try {
+      if (reply && recorded.change) {
+        await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)
+      }
+    } finally {
+      release()
+    }
+  }
   try {
     if (isAtomicTool(def)) {
       // An atomic tool records and commits its own step at once, from the layers it touched;
@@ -132,6 +151,7 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
         isLive: call.isLive,
         onRecorded: options.onRecorded
       })
+      await settle()
       await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
       return result
     }
@@ -147,16 +167,14 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
           failure.result = result
           throw new ToolAnsweredError()
         },
-        { isLive: call.isLive }
+        { isLive: call.isLive, signal: call.signal, afterStep: settle }
       )
     } catch (error) {
       if (error instanceof ToolAnsweredError) return failure.result
       throw error
     }
   } finally {
-    if (reply && recorded.change) {
-      await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)
-    }
+    await settle()
   }
 }
 
@@ -187,7 +205,7 @@ export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
       reply.run.beginTool()
       began = true
     }
-    return await editAndRecord(call, reply)
+    return await editAndRecord(call, reply, release)
   } finally {
     release()
     if (began) reply?.run.endTool()

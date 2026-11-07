@@ -43,6 +43,18 @@ export async function loadAtomicToolFonts(
   }
 }
 
+interface AgentEditOptions {
+  /** False once the edit's document closed, so a late layout is not drawn. */
+  isLive?: () => boolean
+  /** Aborts once the caller stops waiting; an edit cancelled before it commits is rolled back. */
+  signal?: AbortSignal
+  /**
+   * Runs once the step is recorded, before fonts load, such as releasing the document's lock so
+   * the next call need not wait for this one's fonts.
+   */
+  afterStep?: () => void | Promise<void>
+}
+
 /**
  * Runs an agent's edit as one undo step of what it wrote and the layout that follows, with no
  * wait between them. Loading the fonts its page draws text in and laying it out again come after
@@ -53,11 +65,15 @@ export async function recordAgentEdit<T>(
   store: EditorStore,
   options: RecordEditOptions & { pageId: string },
   run: () => T | Promise<T>,
-  { isLive }: { isLive?: () => boolean } = {}
+  { isLive, signal, afterStep }: AgentEditOptions = {}
 ): Promise<T> {
-  const { result, relayout } = await store.recordEditAsync(options, () =>
-    store.runMutationWithLayout(run, options.pageId)
-  )
+  const { result, relayout } = await store.recordEditAsync(options, async () => {
+    const edited = await store.runMutationWithLayout(run, options.pageId)
+    // Cancelled while it ran, such as by an MCP timeout during a download: nothing is committed.
+    signal?.throwIfAborted()
+    return edited
+  })
+  await afterStep?.()
   try {
     const page = store.graph.getNode(options.pageId)
     const loaded = page && (await ensureGraphFonts(store.graph, page.childIds, store.renderer))
@@ -75,7 +91,8 @@ export async function recordAgentEdit<T>(
  * Runs an agent's script as one undo step of what it changes anywhere in the document, so `undo`
  * reverts what it created, moved, or deleted on any page, and the variables it changed. It waits
  * for the document's other agent edits, as tool calls do, so neither records the other's changes;
- * cancelled while it waits, it never runs.
+ * cancelled while it waits, it never runs, and cancelled while it runs, it is rolled back. The
+ * next edit's turn comes once the step is recorded, not after its fonts load.
  */
 export async function executeWithDocumentUndo<T>(
   store: EditorStore,
@@ -84,10 +101,13 @@ export async function executeWithDocumentUndo<T>(
   run: () => Promise<T>,
   signal?: AbortSignal
 ): Promise<T> {
+  const graph = store.graph
   const release = await acquireDocumentEdit(store, signal)
   try {
     signal?.throwIfAborted()
-    return await recordAgentEdit(store, { label, pageId }, run)
+    // The script's API edits the document it was given; one reloaded meanwhile is another.
+    if (store.graph !== graph) throw new Error('The document was replaced before the script ran')
+    return await recordAgentEdit(store, { label, pageId }, run, { signal, afterStep: release })
   } finally {
     release()
   }

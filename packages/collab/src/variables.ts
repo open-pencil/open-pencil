@@ -159,6 +159,8 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
   yvariables.observeDeep(onVariables)
   ycollections.observeDeep(onCollections)
   const stopHistory = editor.onEditorEvent('history:changed', send)
+  // An edit rolled back may have sent its values with an earlier change; send what it restored.
+  const stopDiscard = editor.onEditorEvent('edit:discarded', send)
 
   return {
     share,
@@ -166,6 +168,7 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
       // An edit made just before leaving still reaches the room.
       send()
       stopHistory()
+      stopDiscard()
       yvariables.unobserveDeep(onVariables)
       ycollections.unobserveDeep(onCollections)
     }

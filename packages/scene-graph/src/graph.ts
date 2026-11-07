@@ -72,7 +72,8 @@ export class SceneGraph {
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
-  private outsideWaits = 0
+  /** How many waits outside the edit each recorder is paused for. */
+  private readonly outsideWaits = new Map<NodeChangeObserver, number>()
   private importedIdGenerator: (() => string) | undefined
   private layoutWrites: LayoutWrites | null = null
   positionPreviewVersion = 0
@@ -128,14 +129,26 @@ export class SceneGraph {
    * as the waiting edit's. Only for code that writes nothing itself until the wait ends.
    */
   async waitOutsideEdit<T>(promise: Promise<T>): Promise<T> {
-    if (this.outsideWaits++ === 0) {
-      for (const observer of this.changeObservers) observer.pause?.()
+    // Each wait pauses the recorders open when it starts, and only those: a recorder that opens
+    // while an earlier wait is still pending, such as a script's load left unawaited, pauses for
+    // its own waits and is not resumed by the earlier one.
+    const waiting = [...this.changeObservers]
+    for (const observer of waiting) {
+      const waits = this.outsideWaits.get(observer) ?? 0
+      if (waits === 0) observer.pause?.()
+      this.outsideWaits.set(observer, waits + 1)
     }
     try {
       return await promise
     } finally {
-      if (--this.outsideWaits === 0) {
-        for (const observer of this.changeObservers) observer.resume?.()
+      for (const observer of waiting) {
+        const waits = (this.outsideWaits.get(observer) ?? 1) - 1
+        if (waits > 0) {
+          this.outsideWaits.set(observer, waits)
+          continue
+        }
+        this.outsideWaits.delete(observer)
+        if (this.changeObservers.has(observer)) observer.resume?.()
       }
     }
   }

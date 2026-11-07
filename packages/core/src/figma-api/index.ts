@@ -100,6 +100,8 @@ export interface FigmaAPIOptions {
    * waits on, or starts, rejects with its reason. Code the script runs without waiting goes on.
    */
   signal?: AbortSignal
+  /** Reads the fonts the host has installed, before `listAvailableFontsAsync` lists them. */
+  prepareFontList?: () => Promise<void>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -164,6 +166,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
   readonly #fetch: images.ImageFetch
+  readonly #prepareFontList: (() => Promise<void>) | undefined
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
@@ -171,6 +174,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)
+    this.#prepareFontList = options.prepareFontList
     if (options.loadPage)
       setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
@@ -643,7 +647,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Loads the font so text measures and draws with it from then on; rejects as Figma does. */
   async loadFontAsync(fontName: FigmaFontNameInput): Promise<void> {
-    await waitOutsideScript(this, loadFigmaFont(fontName))
+    await waitOutsideScript(this, () => loadFigmaFont(fontName))
   }
 
   /**
@@ -663,7 +667,11 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Every face a script can set, by family; see {@link listFigmaFonts}. */
   listAvailableFontsAsync(): Promise<FigmaFont[]> {
-    return waitOutsideScript(this, listFigmaFonts())
+    const prepare = this.#prepareFontList
+    return waitOutsideScript(this, async () => {
+      await prepare?.()
+      return listFigmaFonts()
+    })
   }
 
   base64Encode(data: Uint8Array): string {

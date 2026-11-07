@@ -5,6 +5,7 @@ import { toRaw } from 'vue'
 
 import * as layoutModule from '@open-pencil/core/layout'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -12,6 +13,7 @@ import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { automationFiles } from '@/app/automation/bridge/server'
+import { acquireDocumentEdit } from '@/app/automation/execution/lock'
 import * as saveTargets from '@/app/document/io/save/targets'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
@@ -401,6 +403,27 @@ describe('a failed call', () => {
 
     expect(result).toEqual({ error: 'failed after the first shape' })
     expect(store.graph.getChildren(pageId)).toEqual([])
+    expect(store.undo.canUndo).toBe(false)
+  })
+})
+
+describe('a document replaced while a call waits', () => {
+  test('a script queued across a reload is refused rather than editing the old document', async () => {
+    const tab = createTab()
+    const { store } = tab
+    const release = await acquireDocumentEdit(store)
+    const script = request('eval', {
+      document_id: tab.id,
+      code: "figma.currentPage.name = 'Edited'"
+    })
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+
+    store.replaceGraph(new SceneGraph())
+    release()
+
+    await expect(script).rejects.toThrow('The document was replaced before the script ran')
     expect(store.undo.canUndo).toBe(false)
   })
 })
