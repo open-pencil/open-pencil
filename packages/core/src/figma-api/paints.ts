@@ -359,9 +359,15 @@ function videoClip(paint: Fill | undefined): string | undefined {
   return paint?.type === 'VIDEO' ? paint.videoHash : undefined
 }
 
-function posterInPlace(paint: Fill, previous: Fill | undefined): string | undefined {
-  const clip = videoClip(paint)
-  return clip && videoClip(previous) === clip ? previous?.imageHash : undefined
+function postersByClip(paints: readonly Fill[]): Map<string, string[]> {
+  const posters = new Map<string, string[]>()
+  for (const paint of paints) {
+    const clip = videoClip(paint)
+    if (clip && paint.imageHash) {
+      posters.set(clip, [...(posters.get(clip) ?? []), paint.imageHash])
+    }
+  }
+  return posters
 }
 
 function postersOf(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
@@ -380,17 +386,21 @@ function postersOf(clips: Set<string>, paints: Iterable<Fill>): Map<string, stri
 
 /**
  * Figma's plugin API names only a video's clip, so a video paint written to any layer takes the
- * poster that clip already has: the paint's own at the same place first, else the layer's, else
- * any other layer's.
+ * poster that clip already has: the layer's posters of that clip in order first, else the layer's
+ * first, else any other layer's.
  */
 export function keepVideoPosters<T extends Fill>(
   paints: T[],
   previous: readonly Fill[],
   sceneGraph: SceneGraph
 ): T[] {
-  const inPlace = paints.map((paint, index) => posterInPlace(paint, previous[index]))
+  const previousPosters = postersByClip(previous)
+  const inOrder = paints.map((paint) => {
+    const clip = videoClip(paint)
+    return clip ? previousPosters.get(clip)?.shift() : undefined
+  })
   const clips = new Set(
-    paints.flatMap((paint, index) => (inPlace[index] ? [] : (videoClip(paint) ?? [])))
+    paints.flatMap((paint, index) => (inOrder[index] ? [] : (videoClip(paint) ?? [])))
   )
   const posters =
     clips.size === 0
@@ -398,7 +408,7 @@ export function keepVideoPosters<T extends Fill>(
       : postersOf(clips, knownPaints(previous, sceneGraph))
   return paints.map((paint, index) => {
     const clip = videoClip(paint)
-    const poster = inPlace[index] ?? (clip && posters.get(clip))
+    const poster = inOrder[index] ?? (clip && posters.get(clip))
     return poster ? { ...paint, imageHash: poster } : paint
   })
 }

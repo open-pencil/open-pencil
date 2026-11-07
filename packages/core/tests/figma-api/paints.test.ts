@@ -450,28 +450,73 @@ describe('paint types', () => {
     expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBeUndefined()
   })
 
-  test('keeps each poster when two paints share a clip', () => {
-    const { graph, figma } = api()
-    const rectangle = figma.createRectangle()
+  describe('two paints sharing a clip with posters of their own', () => {
     const posters = ['d'.repeat(40), 'e'.repeat(40)]
-    graph.updateNode(rectangle.id, {
-      fills: posters.map((imageHash) => ({
-        type: 'VIDEO',
-        ...SCENE_PAINT,
-        imageHash,
-        videoHash: HASH
-      }))
-    })
-
+    const solid: Fill = { type: 'SOLID', ...SCENE_PAINT }
     const halfVideo = {
       type: 'VIDEO' as const,
       videoHash: HASH,
       scaleMode: 'FILL' as const,
       opacity: 0.5
     }
-    rectangle.fills = [halfVideo, halfVideo]
+    const red = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0 } }
 
-    expect(graph.getNode(rectangle.id)?.fills.map((paint) => paint.imageHash)).toEqual(posters)
+    function layerWithSharedClip(leading: Fill[] = []) {
+      const { graph, figma } = api()
+      const rectangle = figma.createRectangle()
+      graph.updateNode(rectangle.id, {
+        fills: [
+          ...leading,
+          ...posters.map(
+            (imageHash): Fill => ({ type: 'VIDEO', ...SCENE_PAINT, imageHash, videoHash: HASH })
+          )
+        ]
+      })
+      const writtenPosters = () => graph.getNode(rectangle.id)?.fills.map((paint) => paint.imageHash)
+      return { rectangle, writtenPosters }
+    }
+
+    test('keep them when written back', () => {
+      const { rectangle, writtenPosters } = layerWithSharedClip()
+      rectangle.fills = [halfVideo, halfVideo]
+      expect(writtenPosters()).toEqual(posters)
+    })
+
+    test('keep them when a paint is inserted before them', () => {
+      const { rectangle, writtenPosters } = layerWithSharedClip()
+      rectangle.fills = [red, halfVideo, halfVideo]
+      expect(writtenPosters()).toEqual([undefined, ...posters])
+    })
+
+    test('keep them when the paint before them is removed', () => {
+      const { rectangle, writtenPosters } = layerWithSharedClip([solid])
+      rectangle.fills = [halfVideo, halfVideo]
+      expect(writtenPosters()).toEqual(posters)
+    })
+  })
+
+  test('finds a poster only a vector region holds', () => {
+    const { graph, figma } = api()
+    const poster = 'a1'.repeat(20)
+    graph.createNode('VECTOR', graph.getPages()[0].id, {
+      fills: [],
+      vectorNetwork: {
+        vertices: [],
+        segments: [],
+        regions: [
+          {
+            windingRule: 'NONZERO',
+            loops: [],
+            fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
+          }
+        ]
+      }
+    })
+    const rectangle = figma.createRectangle()
+
+    rectangle.fills = [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
+
+    expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBe(poster)
   })
 
   test('keeps the poster when a script writes a paint style back', () => {
