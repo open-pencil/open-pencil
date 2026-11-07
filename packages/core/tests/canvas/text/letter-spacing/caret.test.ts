@@ -120,15 +120,22 @@ describe('the caret and selection keep their place against the glyphs in spaced 
   })
 
   test.each(rows)(
-    '%s, %s %s: each character’s selection is as wide as unaligned',
+    '%s, %s %s: each character’s selection is as wide as unaligned and moves with its line',
     (_, align, __, value, spacing) => {
       const layout = laidOut(boxed(value, align, spacing))
       const reference = laidOut(boxed(value, 'LEFT', spacing))
+      const moves = lineMoves(layout, reference, value.length)
+      const carets = caretXs(layout, value.length)
       const rects = charRects(layout, value.length)
       const referenceRects = charRects(reference, value.length)
       for (const [index, rect] of rects.entries()) {
-        expect(rect.width).toBeCloseTo(referenceRects[index].width, 2)
+        const referenceRect = referenceRects[index]
+        expect(rect.width).toBeCloseTo(referenceRect.width, 2)
         expect(rect.width).toBeGreaterThanOrEqual(0)
+        const move = moves.get(carets[index].top)
+        if (move !== undefined && rect.width > 0) {
+          expect(rect.left - referenceRect.left).toBeCloseTo(move, 2)
+        }
       }
       layout.delete()
       reference.delete()

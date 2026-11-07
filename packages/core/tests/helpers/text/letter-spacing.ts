@@ -10,7 +10,9 @@ import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { getCanvasKit } from '#core/canvaskit'
+import { shownSourceIndices, shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
+import { utf16IndicesByUtf8 } from '#core/text/utf8'
 
 export const EPSILON = 0.01
 export const UNBOUNDED = 1e5
@@ -69,6 +71,18 @@ export function spacingAt(props: Props, index: number): number {
   return textLengthPixels(run?.letterSpacing ?? props.letterSpacing ?? pixels(0), fontSize)
 }
 
+function casedText(props: Props): Pick<SceneNode, 'text' | 'textCase' | 'styleRuns'> {
+  return { text: props.text, textCase: props.textCase ?? 'ORIGINAL', styleRuns: props.styleRuns ?? [] }
+}
+
+function sourceIndex(props: Props, shownIndex: number): number {
+  return shownSourceIndices(casedText(props))[shownIndex] ?? props.text.length
+}
+
+function sourceIndexOfUtf8Offset(props: Props, offset: number): number {
+  return sourceIndex(props, utf16IndicesByUtf8(shownText(casedText(props)))(offset))
+}
+
 /** Where a shaped line's glyphs draw, without the spacing after its last one. */
 export function glyphSpan(props: Props, line: ShapedLine): { start: number; end: number } {
   let start = Infinity
@@ -84,7 +98,7 @@ export function glyphSpan(props: Props, line: ShapedLine): { start: number; end:
       lastOffset = run.offsets[glyphs - 1]
     }
   }
-  return { start, end: end - spacingAt(props, lastOffset) }
+  return { start, end: end - spacingAt(props, sourceIndexOfUtf8Offset(props, lastOffset)) }
 }
 
 /** Where a truncated line draws, its ellipsis set without letter spacing included. */
@@ -119,7 +133,8 @@ export function figmaLines(props: Props, layout: TextLayout): FigmaLine[] {
       !line.isHardBreak &&
       line.endExcludingWhitespaces < line.endIndex
     const last = line.endExcludingWhitespaces - 1
-    return { ...span, wrapsAtSpace, hungSpacing: wrapsAtSpace ? spacingAt(props, last) : 0 }
+    const hungSpacing = wrapsAtSpace ? spacingAt(props, sourceIndex(props, last)) : 0
+    return { ...span, wrapsAtSpace, hungSpacing }
   })
 }
 
@@ -196,8 +211,7 @@ export function lineCount(props: Props): number {
 
 export async function loadSpacedTextFonts(): Promise<void> {
   ck = await getCanvasKit()
-  provider = ck.TypefaceFontProvider.Make()
-  fontManager.attachProvider(ck, provider)
+  provider = fontManager.acquireProvider(ck)
   const bundled = async (path: string) =>
     expectDefined(await fontManager.fetchBundledFont(path), path)
   const variable = await bundled('/InterVariable.ttf')
@@ -213,6 +227,5 @@ export async function loadSpacedTextFonts(): Promise<void> {
 }
 
 export function releaseSpacedTextFonts(): void {
-  fontManager.detachProvider(provider)
-  provider.delete()
+  fontManager.releaseProvider(provider)
 }
