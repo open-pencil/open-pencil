@@ -20,6 +20,8 @@ const accepted = [
   "const url = 'data:image/png;base64,' + encoded",
   "line.startsWith('data: ')",
   "line.startsWith('data:')",
+  `log(\`  data: \${encodeURIComponent(name)}\`)`,
+  `const css = \`url("\\u00a0data:icons/\${encodeURIComponent(name)}")\``,
   `const link = \`https://example.com/\${encodeURIComponent(name)}\``,
   "const link = 'https://example.com/' + encodeURIComponent(name)"
 ]
