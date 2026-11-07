@@ -99,6 +99,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'applyZoom',
   'getViewportSize',
   'setViewportSize',
+  'getViewportChrome',
+  'setViewportChrome',
   'centerOn',
   'clearPageViewports',
   'commitPageSwitch',
