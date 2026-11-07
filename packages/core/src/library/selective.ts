@@ -93,6 +93,7 @@ export async function createSelectiveLibraryRevision(
     name: input.name,
     graph,
     assetNodeIds,
+    keepLayerIdentities: true,
     previousRevisionId: input.previous.manifest.revisionId,
     description: input.description,
     publishedAt: input.publishedAt

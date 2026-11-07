@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool } from '#core/tools/schema'
 
@@ -29,7 +30,7 @@ export const listFonts = defineTool({
     const page = figma.currentPage
     page.findAll((node) => {
       if (node.type === 'TEXT') {
-        const raw = figma.graph.getNode(node.id)
+        const raw = graphOf(figma).getNode(node.id)
         if (raw) {
           const key = raw.fontFamily
           if (!fonts.has(key)) fonts.set(key, new Set())
@@ -53,7 +54,7 @@ export const listFonts = defineTool({
 export const listAvailableFonts = defineTool({
   name: 'list_available_fonts',
   description:
-    'List font families the host can render (system fonts on desktop plus any bundled fonts). ' +
+    'List font families the host can render: installed, bundled, and online families. ' +
     'Use this to discover what fonts are available to set on a text node — distinct from list_fonts ' +
     'which only reports families currently used in the page.',
   execution: { kind: 'async', mutation: 'none' },

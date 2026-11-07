@@ -26,6 +26,9 @@ struct MenuEntry {
     id: Option<String>,
     label: Option<String>,
     accelerator: Option<String>,
+    /// The macOS accelerator where it differs from `accelerator`, as for Figma's distribute keys.
+    #[serde(rename = "macAccelerator")]
+    mac_accelerator: Option<String>,
     #[serde(default)]
     checkbox: bool,
     /// A feature the frontend turns on before the item shows (`set_native_menu_features`).
@@ -96,7 +99,14 @@ fn has_command_modifier(accelerator: &str) -> bool {
 /// commands need X11 automation that Wayland lacks, are left to the frontend's shortcuts, which
 /// skip text fields (`src/app/shell/keyboard/registry.ts`).
 fn native_accelerator(entry: &MenuEntry) -> Option<&str> {
-    let accelerator = entry.accelerator.as_deref()?;
+    let accelerator = if cfg!(target_os = "macos") {
+        entry
+            .mac_accelerator
+            .as_deref()
+            .or(entry.accelerator.as_deref())?
+    } else {
+        entry.accelerator.as_deref()?
+    };
     if cfg!(target_os = "linux") {
         let clipboard = matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
         if clipboard || !has_command_modifier(accelerator) {
@@ -635,6 +645,7 @@ mod tests {
             id: Some(id.to_owned()),
             label: Some(id.to_owned()),
             accelerator: Some(accelerator.to_owned()),
+            mac_accelerator: None,
             checkbox: false,
             feature: None,
             sub: Vec::new(),
@@ -667,6 +678,20 @@ mod tests {
             native_accelerator(&entry("edit.undo", "CmdOrCtrl+Z")),
             Some("CmdOrCtrl+Z")
         );
+    }
+
+    #[test]
+    fn registers_the_macos_accelerator_on_macos_only() {
+        let distribute = MenuEntry {
+            mac_accelerator: Some("Ctrl+Alt+V".to_owned()),
+            ..entry("selection.distributeVertical", "Alt+Shift+V")
+        };
+        let expected = if cfg!(target_os = "macos") {
+            "Ctrl+Alt+V"
+        } else {
+            "Alt+Shift+V"
+        };
+        assert_eq!(native_accelerator(&distribute), Some(expected));
     }
 
     #[cfg(not(target_os = "linux"))]

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 import { renderNodesToHTML } from '#core/io/formats/html'
+import { graphOf } from '#core/figma-api/graph'
 
 describe('tokens in HTML export', () => {
   test('a standalone page defines every token its layers use', async () => {
@@ -27,7 +28,7 @@ describe('tokens in HTML export', () => {
       bound('brand/accent', { r: 1, g: 0, b: 0 })
     ]
 
-    const { html } = await renderNodesToHTML(figma.graph, ids, { html: 'standalone' })
+    const { html } = await renderNodesToHTML(graphOf(figma), ids, { html: 'standalone' })
 
     expect(html).toContain('--color-brand-primary: #0080FF')
     expect(html).toContain('--color-brand-accent: #FF0000')

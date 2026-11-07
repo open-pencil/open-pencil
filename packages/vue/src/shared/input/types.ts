@@ -257,6 +257,11 @@ export interface DragEditNode {
    * with Shift takes it out of the selection.
    */
   click?: { part: 'segment' | 'region'; index: number; deselect: boolean }
+  /**
+   * A straight segment pressed on its own, and where: once the drag starts, a point goes there and
+   * the drag moves it instead, bending the segment, as in Figma.
+   */
+  insert?: { segment: number; x: number; y: number }
 }
 
 export interface DragEditHandle {

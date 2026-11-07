@@ -5,6 +5,7 @@ import * as v from 'valibot'
 import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 import { analysisLimitInputSchema } from './schema'
@@ -56,7 +57,7 @@ export const analyzeColors = defineTool({
 
     page.findAll((node) => {
       totalNodes++
-      const raw = figma.graph.getNode(node.id)
+      const raw = graphOf(figma).getNode(node.id)
       if (!raw) return false
 
       const boundVars = raw.boundVariables
@@ -64,7 +65,7 @@ export const analyzeColors = defineTool({
         const fill = raw.fills[i]
         if (fill.type === 'SOLID' && fill.visible) {
           const varId = boundVars[`fills/${i}/color`]
-          const variable = varId ? figma.graph.variables.get(varId) : undefined
+          const variable = varId ? graphOf(figma).variables.get(varId) : undefined
           trackColor(colorMap, fill.color, variable?.name ?? null)
         }
       }
@@ -72,7 +73,7 @@ export const analyzeColors = defineTool({
         const stroke = raw.strokes[i]
         if (stroke.visible) {
           const varId = boundVars[`strokes/${i}/color`]
-          const variable = varId ? figma.graph.variables.get(varId) : undefined
+          const variable = varId ? graphOf(figma).variables.get(varId) : undefined
           trackColor(colorMap, stroke.color, variable?.name ?? null)
         }
       }

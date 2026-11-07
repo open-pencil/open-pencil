@@ -1,5 +1,9 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
+import {
+  styleSpelling,
+  styleToWeight,
+  type FontFamilyStyle
+} from '@open-pencil/scene-graph/font-style'
 
 interface TableRange {
   offset: number
@@ -81,6 +85,25 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
     }
   }
   return fallback
+}
+
+const FAMILY_NAME = 1
+const SUBFAMILY_NAME = 2
+const TYPOGRAPHIC_FAMILY_NAME = 16
+const TYPOGRAPHIC_SUBFAMILY_NAME = 17
+
+/**
+ * The family and style a font file names itself with: its typographic names, which keep every
+ * weight in one family, else the legacy ones, which group at most four styles per family.
+ */
+export function fontFaceName(data: ArrayBuffer): FontFamilyStyle | null {
+  const view = new DataView(data)
+  const name = sfntTable(view, 'name')
+  if (!name) return null
+  const family = fontName(view, name, TYPOGRAPHIC_FAMILY_NAME) ?? fontName(view, name, FAMILY_NAME)
+  const style =
+    fontName(view, name, TYPOGRAPHIC_SUBFAMILY_NAME) ?? fontName(view, name, SUBFAMILY_NAME)
+  return family ? { family, style: style ?? 'Regular' } : null
 }
 
 /** A variation axis of a font: its tag, its range and default, and the name the font gives it. */
