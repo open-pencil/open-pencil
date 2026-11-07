@@ -1,17 +1,27 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { LibraryAssetIdentity, SceneGraph } from '@open-pencil/scene-graph'
 
-import { findLibraryDefinition } from './definitions'
-import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
-import type { LibraryInstanceUpdate } from './update'
+import { findLibraryDefinition } from '#core/library/definitions'
+import type { ComponentLibraryRevision, LibraryAssetDescriptor } from '#core/library/types'
+import { assetComponent } from '#core/library/variants'
+
+import type { LibraryInstanceUpdate } from './summary'
+
+/**
+ * The library asset a component belongs to: a variant's, keyed or not, is its set's, and any other
+ * component's its own, as a library publishes each component outside a set as an asset.
+ */
+export function libraryIdentityForComponent(
+  graph: SceneGraph,
+  componentId: string
+): LibraryAssetIdentity | null {
+  const component = graph.getNode(componentId)
+  const parent = component?.parentId ? graph.getNode(component.parentId) : undefined
+  const set = parent?.type === 'COMPONENT_SET' ? parent.librarySource?.identity : undefined
+  return set ?? component?.librarySource?.identity ?? null
+}
 
 export function libraryAssetKeyForComponent(graph: SceneGraph, componentId: string): string | null {
-  let node = graph.getNode(componentId)
-  while (node) {
-    const identity = node.librarySource?.identity
-    if (identity) return identity.assetKey
-    node = node.parentId ? graph.getNode(node.parentId) : undefined
-  }
-  return null
+  return libraryIdentityForComponent(graph, componentId)?.assetKey ?? null
 }
 
 function targetComponentId(
@@ -26,24 +36,9 @@ function targetComponentId(
     descriptor.key,
     revision.manifest.revisionId
   )
-  if (!root) return null
-  const candidates =
-    root.type === 'COMPONENT'
-      ? [root]
-      : graph.getChildren(root.id).filter((node) => node.type === 'COMPONENT')
   const previous = graph.getNode(previousComponentId)
-  if (!previous) return null
-  const exact = candidates.find((candidate) => {
-    const entries = Object.entries(previous.componentPropertyValues)
-    return (
-      entries.length === Object.keys(candidate.componentPropertyValues).length &&
-      entries.every(([name, value]) => candidate.componentPropertyValues[name] === value)
-    )
-  })
-  if (candidates.length === 0) return null
-  const fallback = [...candidates].sort((left, right) => left.y - right.y || left.x - right.x)[0]
-  const target = exact ?? fallback
-  return { id: target.id, fallback: !exact }
+  const target = root && previous ? assetComponent(graph, root, previous) : undefined
+  return target ? { id: target.component.id, fallback: target.fallback } : null
 }
 
 export function planOutdatedLibraryInstances(
@@ -58,10 +53,10 @@ export function planOutdatedLibraryInstances(
     if (instance.type !== 'INSTANCE' || !instance.componentId) continue
     if (instanceIds && !instanceIds.has(instance.id)) continue
     const component = graph.getNode(instance.componentId)
-    const identity = component?.librarySource?.identity
-    if (!identity || identity.libraryId !== revision.manifest.libraryId) continue
-    const assetKey = libraryAssetKeyForComponent(graph, component.id)
-    if (!assetKey || (assetKeys && !assetKeys.has(assetKey))) continue
+    const identity = component ? libraryIdentityForComponent(graph, component.id) : null
+    if (!component || identity?.libraryId !== revision.manifest.libraryId) continue
+    const { assetKey } = identity
+    if (assetKeys && !assetKeys.has(assetKey)) continue
     if (identity.revisionId === revision.manifest.revisionId) continue
     const descriptor = descriptors.get(assetKey)
     if (!descriptor) continue
