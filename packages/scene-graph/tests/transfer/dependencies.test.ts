@@ -80,6 +80,18 @@ describe('layerDependencies', () => {
     expect([...dependencies.collections]).toEqual([theme.id])
   })
 
+  test('counts images a text decoration paints with, on the layer and on its characters', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Link',
+      textDecoration: 'UNDERLINE',
+      textDecorationFills: [imagePaint('layer')],
+      styleRuns: [{ start: 0, length: 2, style: { textDecorationFills: [imagePaint('run')] } }]
+    })
+
+    expect([...layerDependencies(graph, [text]).images].sort()).toEqual(['layer', 'run'])
+  })
+
   test('includes the variables an instance binds through its overrides', () => {
     const graph = new SceneGraph()
     const tokens = graph.createCollection('Tokens')

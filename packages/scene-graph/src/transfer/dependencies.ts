@@ -34,13 +34,20 @@ export function layerVariableIds(node: SceneNode): string[] {
   ]
 }
 
-/** The images a layer paints with: its fills, strokes, vector regions, and characters. */
+/**
+ * The images a layer paints with: its fills, strokes, vector regions, text decorations, and
+ * characters.
+ */
 export function layerImageHashes(node: SceneNode): string[] {
   return [
     ...node.fills,
     ...node.strokes,
     ...regionFills(node.vectorNetwork),
-    ...node.styleRuns.flatMap((run) => run.style.fills ?? [])
+    ...node.textDecorationFills,
+    ...node.styleRuns.flatMap((run) => [
+      ...(run.style.fills ?? []),
+      ...(run.style.textDecorationFills ?? [])
+    ])
   ].flatMap((paint) => (paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []))
 }
 
