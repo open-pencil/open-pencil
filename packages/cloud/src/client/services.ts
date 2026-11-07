@@ -3,10 +3,13 @@ import {
   serviceCatalogSchema,
   serviceErrorSchema,
   creditWalletSchema,
+  searchResponseSchema,
   CLOUD_SERVICES_API_PATHS,
   type ServiceCatalog,
   type ServiceErrorCode,
-  type CreditWallet
+  type CreditWallet,
+  type SearchRequestInput,
+  type SearchResponse
 } from '#cloud/contract'
 import * as v from 'valibot'
 
@@ -82,7 +85,7 @@ export type CloudServicesClientOptions = {
   fetch: CloudFetch
 }
 
-/** The services a Cloud advertises: the model API base URL, catalog, and the wallet. */
+/** The services a Cloud advertises: the model API base URL, catalog, wallet, and search. */
 export function createCloudServicesClient(options: CloudServicesClientOptions) {
   const endpoint = options.endpoint.replace(/\/+$/, '')
   const fetch = cloudServicesFetch(options.tokens, options.fetch)
@@ -100,6 +103,17 @@ export function createCloudServicesClient(options: CloudServicesClientOptions) {
       return parsed(
         await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.wallet}`),
         creditWalletSchema
+      )
+    },
+    /** A web search, charged to the workspace; only when the catalog lists `search`. */
+    async search(input: SearchRequestInput): Promise<SearchResponse> {
+      return parsed(
+        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.search}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input)
+        }),
+        searchResponseSchema
       )
     }
   }

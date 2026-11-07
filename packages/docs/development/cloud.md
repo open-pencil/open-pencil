@@ -360,6 +360,13 @@ includes it, and a refusal for lack of credits says when the allowance renews. I
 chat completion fields, so a router's fallback or provider fields cannot run a model outside the
 catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
 
+Other capabilities are optional: a service lists each one it offers in its catalog with its price,
+and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
+`search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
+title, date, author, and an excerpt; the contract names no search engine. The editor offers the
+model a `web_search` tool only when the chat's model runs on the services and their catalog lists
+search, and each search is charged to the same workspace. The reference relay offers no search.
+
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP
 with a bearer token (`[internal_api]`) or a private transport of their own. Every write carries an
