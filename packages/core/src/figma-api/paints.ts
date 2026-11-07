@@ -353,6 +353,11 @@ function* knownPaints(previous: readonly Fill[], sceneGraph: SceneGraph): Genera
     yield* node.strokes
     yield* regionFills(node.vectorNetwork)
   }
+  for (const node of sceneGraph.nodes.values()) {
+    for (const run of node.styleRuns) {
+      yield* run.style.fills ?? []
+    }
+  }
 }
 
 function videoClip(paint: Fill | undefined): string | undefined {

@@ -519,6 +519,26 @@ describe('paint types', () => {
     expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBe(poster)
   })
 
+  test('finds a poster only a text range holds', () => {
+    const { graph, figma } = api()
+    const poster = 'b2'.repeat(20)
+    graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'clip',
+      styleRuns: [
+        {
+          start: 0,
+          length: 4,
+          style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }] }
+        }
+      ]
+    })
+    const rectangle = figma.createRectangle()
+
+    rectangle.fills = [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
+
+    expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBe(poster)
+  })
+
   test('keeps the poster when a script writes a paint style back', () => {
     const { graph, figma } = api()
     const style = figma.createPaintStyle()
