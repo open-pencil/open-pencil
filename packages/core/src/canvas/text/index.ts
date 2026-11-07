@@ -289,9 +289,12 @@ export function measureTextInkAsDrawn(
     : compute()
 }
 
-/** Offset that places laid-out text of `contentHeight` in the node box by vertical alignment. */
+/**
+ * Offset that places laid-out text of `contentHeight` in the node box by vertical alignment.
+ * Text taller than its box overflows on the side away from the alignment, as Figma lays it out.
+ */
 export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = Math.max(0, node.height - contentHeight)
+  const available = node.height - contentHeight
   if (node.textAlignVertical === 'CENTER') return available / 2
   if (node.textAlignVertical === 'BOTTOM') return available
   return 0

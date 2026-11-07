@@ -135,7 +135,12 @@ describe('text case and vertical alignment', () => {
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'TOP' }), 20)).toBe(0)
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'CENTER' }), 20)).toBe(40)
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'BOTTOM' }), 20)).toBe(80)
-    expect(textVerticalOffset(textNode({ height: 10, textAlignVertical: 'BOTTOM' }), 20)).toBe(0)
+  })
+
+  test('lets text taller than its box overflow away from its alignment', () => {
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'TOP' }), 20)).toBe(0)
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'CENTER' }), 20)).toBe(-4)
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'BOTTOM' }), 20)).toBe(-8)
   })
 })
 

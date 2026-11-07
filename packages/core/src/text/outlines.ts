@@ -262,9 +262,9 @@ function lineOffsetX(node: SceneNode, width: number): number {
 function verticalOffset(node: SceneNode, contentHeight: number): number {
   switch (node.textAlignVertical) {
     case 'CENTER':
-      return Math.max(0, (node.height - contentHeight) / 2)
+      return (node.height - contentHeight) / 2
     case 'BOTTOM':
-      return Math.max(0, node.height - contentHeight)
+      return node.height - contentHeight
     default:
       return 0
   }
