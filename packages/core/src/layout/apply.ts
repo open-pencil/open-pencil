@@ -64,6 +64,15 @@ function writeLayoutGeometry(
  */
 const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
 
+/**
+ * Records that a Hug frame's constrained children are placed for the size it has now. Undo and
+ * redo put back a frame's hugged size together with the places layout gave its children, so the
+ * next layout must move them from that size, not from the one it hugged to before.
+ */
+export function restoredHuggedSize(frame: SceneNode): void {
+  if (huggedSizes.has(frame)) huggedSizes.set(frame, { width: frame.width, height: frame.height })
+}
+
 function rememberPlacedSize(frame: SceneNode): void {
   const placed = huggedSizes.get(frame)
   if (!placed) {
