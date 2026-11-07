@@ -39,12 +39,12 @@ export class AIUsageCursorError extends Error {
 }
 
 export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
-  async function spent(workspaceId: string, now: Date): Promise<number> {
+  async function spent(accountId: string, now: Date): Promise<number> {
     const { start, end } = usagePeriod(now)
     const row = await database
       .selectFrom('aiRelayUsage')
       .select((query) => query.fn.sum<string | number | null>('credits').as('credits'))
-      .where('workspaceId', '=', workspaceId)
+      .where('accountId', '=', accountId)
       .where('createdAt', '>=', start)
       .where('createdAt', '<', end)
       .executeTakeFirst()
@@ -57,19 +57,23 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
     },
 
     /**
-     * The workspace's single allowance bucket for the current month. A `null` allowance means
-     * Cloud set none, and the relay does not limit spend.
+     * The account's single allowance bucket for the current month, which every workspace it owns
+     * spends from. A `null` allowance means Cloud set none, and the relay does not limit spend.
      */
-    async wallet(workspaceId: string, allowance: number | null, now: Date): Promise<CreditWallet> {
+    async wallet(accountId: string, allowance: number | null, now: Date): Promise<CreditWallet> {
       if (allowance === null) return { balance: null, buckets: [] }
-      const remaining = Math.max(0, allowance - (await spent(workspaceId, now)))
+      const remaining = Math.max(0, allowance - (await spent(accountId, now)))
       return {
         balance: remaining,
         buckets: [{ kind: 'allowance', remaining, expiresAt: usagePeriod(now).end.toISOString() }]
       }
     },
 
-    /** Newest first, across every member of the workspace. */
+    /**
+     * Newest first, across every member of the workspace. Only this workspace's requests are
+     * listed, though its owner's other workspaces spend the same credits: their members and
+     * models are theirs to see.
+     */
     async page(workspaceId: string, cursor: string | undefined): Promise<UsagePage> {
       let after: { createdAt: Date; id: string } | undefined
       if (cursor !== undefined) {

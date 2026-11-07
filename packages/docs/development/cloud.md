@@ -326,20 +326,29 @@ is kept, and what a numeric limit is. Links always work for people signed in to 
 share routes resolve the session, and a guest the server turns away gets `401` so the editor signs
 in and opens the link again. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
-every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
-are alternatives, not layers. Technical limits cap the file size and participant limits the source
-reports.
+every account, or per-account rows in the database that the `entitlements` command and the internal
+API set. The two are alternatives, not layers. Technical limits cap the file size and participant
+limits the source reports.
 
-Storage quota uses reservations: the upload locks the workspace's quota row, counts committed usage
-plus active reservations, reserves the requested bytes, and commits the verified size when the
-upload finishes. Cleanup releases reservations from abandoned uploads.
+Plans belong to accounts, not workspaces. Every workspace has an owner, its creator at first, and
+every question about a workspace or its documents is asked of the owner's plan
+(`workspacePolicyContext`), so a person's workspaces share one allowance however many they create.
+When the owner leaves the workspace or stops being an admin, it passes to the longest-standing other
+admin.
+
+Storage quota uses reservations: an upload takes a transaction lock on the workspace's owner, counts
+committed usage plus active reservations across every workspace that owner owns, reserves the
+requested bytes, and commits the verified size when the upload finishes. Usage is still recorded per
+workspace, and the entitlements endpoint reports the owner's total. Cleanup releases reservations
+from abandoned uploads.
 
 ## Services and billing
 
 Cloud does not proxy models or other paid capabilities, and keeps no credit balances. A
 `[services]` table advertises a separate service in discovery, and `POST /api/services/token` signs
-a short-lived ES256 token for a workspace member when the workspace has the `services.enabled`
-entitlement. The token names the user, the workspace, and its `services.monthly_credit_allowance`;
+a short-lived ES256 token for a workspace member when the workspace owner's plan has the
+`services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
+spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
 the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
 database. The contract editors and services share, including the service's catalog, wallet, and
 error codes, is `src/contract/services.ts`; it has its own version so a service can change without
@@ -350,8 +359,9 @@ A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`:
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
 catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
 `src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
-forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
-workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking
+forwards completions to one upstream with one key, and keeps one usage row per settled request, so an
+account's monthly spend is the sum of its rows across the workspaces it owns. The usage page lists
+one workspace's requests only, since the owner's other workspaces have other members. It reads usage from the upstream's answer, asking
 streams for it with `stream_options.include_usage`, and keeps reading after the editor disconnects
 so a request is still charged. It admits a request while credits remain and charges it afterwards,
 so in-flight requests can overdraw an allowance; the official service reserves credits instead. An
@@ -361,8 +371,9 @@ chat completion fields, so a router's fallback or provider fields cannot run a m
 catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
 
 Services that decide entitlements, such as billing, write them through the internal API rather than
-the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP
-with a bearer token (`[internal_api]`) or a private transport of their own. Every write carries an
+the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
+`PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
+private transport of their own. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.

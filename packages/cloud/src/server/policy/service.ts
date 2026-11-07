@@ -7,6 +7,7 @@ import type { Kysely } from 'kysely'
 
 import { CLOUD_FEATURE_KEYS } from './keys'
 import type { CloudPolicy } from './policy'
+import { workspacePolicyContext } from './workspace'
 
 export function createEntitlementService(
   database: Kysely<CloudDatabase>,
@@ -18,12 +19,12 @@ export function createEntitlementService(
   return {
     async workspace(userId: string, workspaceId: string): Promise<WorkspaceEntitlements> {
       if (!(await workspaceRole(database, userId, workspaceId))) throw new DocumentNotFoundError()
-      const context = {
-        targetingKey: workspaceId,
-        actorId: userId,
-        workspaceId,
-        deploymentMode: 'self-hosted' as const
-      }
+      const context = await workspacePolicyContext(
+        database,
+        { workspaceId },
+        { actorId: userId, deploymentMode: 'self-hosted' }
+      )
+      if (!context) throw new DocumentNotFoundError()
       const [
         links,
         guestView,

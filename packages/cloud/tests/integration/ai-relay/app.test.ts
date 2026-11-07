@@ -121,11 +121,16 @@ async function relay(
 
   const workspaceId = crypto.randomUUID()
   async function token(
-    claims: { monthlyCreditAllowance?: number | null; workspaceId?: string } = {},
+    claims: {
+      monthlyCreditAllowance?: number | null
+      workspaceId?: string
+      accountId?: string
+    } = {},
     options: { issuer?: string; signingKey?: CryptoKey } = {}
   ) {
     return new SignJWT({
       workspaceId: claims.workspaceId ?? workspaceId,
+      accountId: claims.accountId ?? 'owner-1',
       monthlyCreditAllowance:
         claims.monthlyCreditAllowance === undefined ? 1000 : claims.monthlyCreditAllowance
     })
@@ -277,7 +282,7 @@ describe('AI relay', () => {
     expect(wallet.balance).toBe(1000 - 18)
   })
 
-  test('refuses models outside the catalog and workspaces with no credits left', async () => {
+  test('refuses models outside the catalog and accounts with no credits left', async () => {
     const context = await relay(() =>
       Response.json({ choices: [], usage: { prompt_tokens: 1_000_000, completion_tokens: 0 } })
     )
@@ -300,8 +305,11 @@ describe('AI relay', () => {
     })
     expect(context.calls).toHaveLength(1)
 
-    // Another workspace, and one without an allowance, are unaffected.
-    const other = await context.token({ workspaceId: crypto.randomUUID() })
+    // The owner's other workspaces spend the same credits; another account's are unaffected, as
+    // is a token without an allowance.
+    const sibling = await context.token({ workspaceId: crypto.randomUUID() })
+    expect((await context.complete(sibling, { model: MODEL })).status).toBe(402)
+    const other = await context.token({ workspaceId: crypto.randomUUID(), accountId: 'owner-2' })
     expect((await context.complete(other, { model: MODEL })).status).toBe(200)
     const unlimited = await context.token({ monthlyCreditAllowance: null })
     const wallet = await responseJSON(
@@ -312,7 +320,7 @@ describe('AI relay', () => {
     expect((await context.complete(unlimited, { model: MODEL })).status).toBe(200)
   })
 
-  test('limits a workspace to its concurrent requests until metering settles', async () => {
+  test('limits an account to its concurrent requests until metering settles', async () => {
     let finish: (() => void) | undefined
     const context = await relay(
       () =>

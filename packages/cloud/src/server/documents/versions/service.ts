@@ -103,7 +103,13 @@ export function createDocumentVersionService(
     if (!document) throw new DocumentNotFoundError()
     return {
       document,
-      start: await historyStart(options.policy, deploymentMode, document.workspaceId, new Date())
+      start: await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        document.workspaceId,
+        new Date()
+      )
     }
   }
 

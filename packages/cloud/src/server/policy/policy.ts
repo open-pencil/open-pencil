@@ -57,6 +57,7 @@ function evaluationContext(context: CloudPolicyContext): EvaluationContext {
     targetingKey: context.targetingKey,
     deploymentMode: context.deploymentMode
   }
+  if (context.subjectType) evaluation.subjectType = context.subjectType
   if (context.actorId) evaluation.actorId = context.actorId
   if (context.workspaceId) evaluation.workspaceId = context.workspaceId
   if (context.organizationId) evaluation.organizationId = context.organizationId

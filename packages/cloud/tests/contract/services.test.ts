@@ -38,12 +38,13 @@ describe('Cloud services contract', () => {
     expect(() => parseCreateServicesToken({ workspaceId: 'personal' })).toThrow()
   })
 
-  test('token claims carry the workspace and its allowance for services', () => {
+  test('token claims carry the workspace, the account it spends, and its allowance', () => {
     const claims = {
       iss: 'https://cloud.example.com',
       aud: CLOUD_SERVICES_TOKEN_AUDIENCE,
       sub: 'user-1',
       workspaceId: crypto.randomUUID(),
+      accountId: 'owner-1',
       monthlyCreditAllowance: null,
       iat: 1,
       exp: 2

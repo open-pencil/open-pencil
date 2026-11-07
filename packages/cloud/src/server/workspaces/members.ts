@@ -101,6 +101,39 @@ function invitationContract(row: {
   }
 }
 
+/**
+ * Passes the workspace to its longest-standing other admin when its owner leaves or stops being
+ * an admin, so its limits come from someone still running it. The last-admin guard keeps one.
+ */
+async function handOverOwnership(
+  database: WorkspaceDatabase,
+  workspaceId: string,
+  leavingUserId: string
+): Promise<void> {
+  const workspace = await database
+    .selectFrom('workspace')
+    .select('ownerId')
+    .where('id', '=', workspaceId)
+    .forUpdate()
+    .executeTakeFirstOrThrow()
+  if (workspace.ownerId !== leavingUserId) return
+  const successor = await database
+    .selectFrom('workspaceMember')
+    .select('userId')
+    .where('workspaceId', '=', workspaceId)
+    .where('role', '=', 'admin')
+    .where('userId', '!=', leavingUserId)
+    .orderBy('createdAt')
+    .orderBy('userId')
+    .executeTakeFirst()
+  if (!successor) return
+  await database
+    .updateTable('workspace')
+    .set({ ownerId: successor.userId, updatedAt: new Date() })
+    .where('id', '=', workspaceId)
+    .execute()
+}
+
 async function adminCount(database: WorkspaceDatabase, workspaceId: string): Promise<number> {
   const rows = await database
     .selectFrom('workspaceMember')
@@ -364,6 +397,7 @@ export function createWorkspaceMemberService(
           .where('workspaceId', '=', workspaceId)
           .where('userId', '=', memberId)
           .execute()
+        if (role !== 'admin') await handOverOwnership(transaction, workspaceId, memberId)
       })
     },
 
@@ -391,7 +425,10 @@ export function createWorkspaceMemberService(
       })
     },
 
-    /** Removes a member, or lets someone leave; the last administrator cannot go. */
+    /**
+     * Removes a member, or lets someone leave; the last administrator cannot go, and an owner who
+     * goes leaves the workspace to the longest-standing other admin.
+     */
     async remove(userId: string, workspaceId: string, memberId: string): Promise<void> {
       if (memberId === userId) await membership(userId, workspaceId)
       else await requireAdmin(userId, workspaceId)
@@ -405,6 +442,7 @@ export function createWorkspaceMemberService(
           .where('workspaceId', '=', workspaceId)
           .where('userId', '=', memberId)
           .execute()
+        await handOverOwnership(transaction, workspaceId, memberId)
       })
     },
 

@@ -58,6 +58,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Deployment settings live in the schema-versioned TOML parsed by `src/server/config/deployment.ts`; environment variables only resolve `{ from_env }` secret references and never override the file (`tests/runtime/node/config.test.ts`).
 - Technical limits are ceilings that policy can tighten but never raise (`src/server/config/limits.ts`, `src/server/policy/`).
 - Feature and limit decisions go through the OpenFeature policy keys in `src/server/policy/keys.ts`; never branch on a plan name.
+- Plans belong to accounts: ask a workspace's or document's policy through `workspacePolicyContext`, which targets the workspace owner, never with the workspace as the target, so creating workspaces adds no allowance (`tests/integration/server/policy/service.test.ts`, `tests/integration/server/quota/storage.test.ts`).
 
 ## Tests
 

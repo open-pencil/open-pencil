@@ -3,10 +3,12 @@ import type { Kysely } from 'kysely'
 import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
 
 import * as usage from './migrations/001_usage'
+import * as accountUsage from './migrations/002_account_usage'
 import type { AIRelayDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
-  '001_usage': usage
+  '001_usage': usage,
+  '002_account_usage': accountUsage
 }
 
 class AIRelayMigrationProvider implements MigrationProvider {

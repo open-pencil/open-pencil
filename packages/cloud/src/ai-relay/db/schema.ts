@@ -4,6 +4,8 @@ import type { Insertable, Selectable } from 'kysely'
 export interface AIRelayUsageTable {
   id: string
   workspaceId: string
+  /** The account whose credits the request spent; null on rows from before accounts did. */
+  accountId: string | null
   userId: string
   modelId: string
   inputTokens: number

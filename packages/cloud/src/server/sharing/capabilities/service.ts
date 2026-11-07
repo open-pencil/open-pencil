@@ -10,6 +10,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely, UpdateObject } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
@@ -219,21 +220,14 @@ export function createCapabilityService(
         throw new DocumentShareInvalidError()
       }
       if (!actor && options.policy) {
-        const document = await database
-          .selectFrom('document')
-          .select('workspaceId')
-          .where('id', '=', row.documentId)
-          .executeTakeFirstOrThrow()
+        const context = await workspacePolicyContext(
+          database,
+          { documentId: row.documentId },
+          { deploymentMode: options.deploymentMode ?? 'self-hosted' }
+        )
         const featureKey =
           row.permission === 'edit' ? CLOUD_FEATURE_KEYS.guestEdit : CLOUD_FEATURE_KEYS.guestView
-        if (
-          !(await options.policy.boolean(featureKey, false, {
-            targetingKey: document.workspaceId,
-            workspaceId: document.workspaceId,
-            documentId: row.documentId,
-            deploymentMode: options.deploymentMode ?? 'self-hosted'
-          }))
-        ) {
+        if (!context || !(await options.policy.boolean(featureKey, false, context))) {
           // Guests are not let in here; people signed in to the server are.
           throw new DocumentShareSignInRequiredError()
         }

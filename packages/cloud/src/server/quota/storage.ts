@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import { lockForTransaction } from '#cloud/server/db/expressions'
 import type { Kysely, Transaction } from 'kysely'
 
 export class StorageQuotaExceededError extends Error {
@@ -13,36 +14,52 @@ export type StorageQuotaSnapshot = {
 type StorageDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
 export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
+  /**
+   * What the workspace's owner holds and has reserved across every workspace they own, which all
+   * draw from the owner's one allowance.
+   */
   async function snapshot(
     executor: StorageDatabase,
     workspaceId: string,
     now = new Date()
   ): Promise<StorageQuotaSnapshot> {
+    const owned = executor
+      .selectFrom('workspace')
+      .select('id')
+      .where(
+        'ownerId',
+        '=',
+        executor.selectFrom('workspace').select('ownerId').where('id', '=', workspaceId)
+      )
     const [usage, reservation] = await Promise.all([
       executor
         .selectFrom('workspaceStorageUsage')
-        .select('committedBytes')
-        .where('workspaceId', '=', workspaceId)
-        .executeTakeFirst(),
+        .select((expression) =>
+          expression.fn
+            .coalesce(expression.fn.sum('committedBytes'), expression.val(0))
+            .as('committedBytes')
+        )
+        .where('workspaceId', 'in', owned)
+        .executeTakeFirstOrThrow(),
       executor
         .selectFrom('uploadStorageReservation')
         .select((expression) =>
           expression.fn.coalesce(expression.fn.sum('bytes'), expression.val(0)).as('reservedBytes')
         )
-        .where('workspaceId', '=', workspaceId)
+        .where('workspaceId', 'in', owned)
         .where('committedAt', 'is', null)
         .where('releasedAt', 'is', null)
         .where('expiresAt', '>', now)
         .executeTakeFirstOrThrow()
     ])
     return {
-      committedBytes: Number(usage?.committedBytes ?? 0),
+      committedBytes: Number(usage.committedBytes),
       reservedBytes: Number(reservation.reservedBytes)
     }
   }
 
   async function reserve(
-    executor: StorageDatabase,
+    executor: Transaction<CloudDatabase>,
     input: {
       workspaceId: string
       uploadId: string
@@ -51,17 +68,18 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
       maximumBytes: number | null
     }
   ): Promise<void> {
+    const workspace = await executor
+      .selectFrom('workspace')
+      .select('ownerId')
+      .where('id', '=', input.workspaceId)
+      .executeTakeFirstOrThrow()
+    // The allowance spans the owner's workspaces, so the owner is what reservations queue on.
+    await lockForTransaction(executor, `storage-quota:${workspace.ownerId}`)
     await executor
       .insertInto('workspaceStorageUsage')
       .values({ workspaceId: input.workspaceId, committedBytes: 0 })
       .onConflict((conflict) => conflict.column('workspaceId').doNothing())
       .execute()
-    await executor
-      .selectFrom('workspaceStorageUsage')
-      .select('workspaceId')
-      .where('workspaceId', '=', input.workspaceId)
-      .forUpdate()
-      .executeTakeFirstOrThrow()
     const usage = await snapshot(executor, input.workspaceId)
     if (
       input.maximumBytes !== null &&

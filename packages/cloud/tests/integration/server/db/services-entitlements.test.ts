@@ -2,20 +2,27 @@ import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { down, up } from '#cloud/server/db/migrations/029_services_entitlements'
+import { down as beforeAccountPlans } from '#cloud/server/db/migrations/030_account_plans'
+
+/** The table 030 replaced with `accountEntitlement`, as 029 found it. */
+type LegacyEntitlements = {
+  workspaceEntitlement: { workspaceId: string; values: unknown; source: string }
+}
 
 describe('migration 029', () => {
   test('moves stored ai entitlements to services and leaves the rest alone', async () => {
     const runtime = await createCloudTestDatabase()
     try {
-      const { database } = runtime
       const [withAI, without] = [crypto.randomUUID(), crypto.randomUUID()]
-      await database
+      await runtime.database
         .insertInto('workspace')
         .values([
-          { id: withAI, name: 'Studio', slug: 'studio', createdBy: 'alice' },
-          { id: without, name: 'Lab', slug: 'lab', createdBy: 'alice' }
+          { id: withAI, name: 'Studio', slug: 'studio', createdBy: 'alice', ownerId: 'alice' },
+          { id: without, name: 'Lab', slug: 'lab', createdBy: 'alice', ownerId: 'alice' }
         ])
         .execute()
+      await beforeAccountPlans(runtime.database)
+      const database = runtime.database.withTables<LegacyEntitlements>()
       await database
         .insertInto('workspaceEntitlement')
         .values([
