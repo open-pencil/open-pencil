@@ -48,3 +48,36 @@ test('nested instances swapped to the same component keep identities of their ow
   expect(icons).toHaveLength(2)
   expect(new Set(icons.map((icon) => icon.libraryLayerId)).size).toBe(2)
 })
+
+test('instances an instance holds in its slot keep identities of their own', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const star = graph.createNode('COMPONENT', page, { name: 'Star', componentKey: 'star' })
+  const panel = graph.createNode('COMPONENT', page, {
+    name: 'Panel',
+    componentKey: 'panel',
+    componentPropertyDefinitions: [
+      { id: 'panel:content', name: 'Content', type: 'SLOT', defaultValue: '' }
+    ]
+  })
+  graph.createNode('FRAME', panel.id, {
+    name: 'Content',
+    componentPropertyReferences: [{ propertyId: 'panel:content', field: 'SLOT_CONTENT' }]
+  })
+  const toolbar = graph.createNode('COMPONENT', page, { name: 'Toolbar', componentKey: 'toolbar' })
+  const placed = graph.createInstance(panel.id, toolbar.id)
+  if (!placed) throw new Error('Expected the panel instance')
+  const [slot] = graph.getChildren(placed.id)
+  graph.createInstance(star.id, slot.id)
+  graph.createInstance(star.id, slot.id)
+  graph.updateNode(placed.id, { componentPropertyAssignments: { 'panel:content': '' } })
+
+  const revision = await createLibraryRevision({ libraryId: 'ds', name: 'DS', graph })
+
+  const definition = [...revision.graph.getAllNodes()].find((node) => node.name === 'Toolbar')
+  const [copy] = definition ? revision.graph.getChildren(definition.id) : []
+  const [frame] = copy ? revision.graph.getChildren(copy.id) : []
+  const stars = frame ? revision.graph.getChildren(frame.id) : []
+  expect(stars).toHaveLength(2)
+  expect(new Set(stars.map((node) => node.libraryLayerId)).size).toBe(2)
+})

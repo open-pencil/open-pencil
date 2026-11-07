@@ -4,6 +4,7 @@ import { standardStyleName } from '@open-pencil/scene-graph/font-style'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { ownsSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 import { existingAssetKey } from './asset-keys'
@@ -49,6 +50,16 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
   return ids
 }
 
+/** The component layer `node` copies into the instance `owner`, if it is a copy. */
+function copiedLayerId(source: SceneGraph, owner: SceneNode, node: SceneNode): string | undefined {
+  const scope = node.parentId ? slotScope(source, node.parentId) : undefined
+  // Content an instance's slot holds is the instance's own, not a copy of its component.
+  if (scope?.kind === 'slot' && ownsSlotContent(source, scope.frame, scope.propertyId))
+    return undefined
+  // A swapped nested instance names the component it shows; its owner records the layer it copies.
+  return copiedComponentLayerId(owner.instanceOverrides, owner.id, node)
+}
+
 /**
  * The identity each layer of `source` keeps across revisions: its id in the source document, or,
  * for a layer an instance copies from its component, which a document rebuilds on every load, the
@@ -60,10 +71,7 @@ function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
     const cached = known.get(node.id)
     if (cached) return cached
     const owner = node.parentId ? findInstanceAncestor(source, node.parentId) : undefined
-    // A swapped nested instance names the component it shows; its owner records the layer it copies.
-    const copiedId = owner
-      ? copiedComponentLayerId(owner.instanceOverrides, owner.id, node)
-      : node.componentId
+    const copiedId = owner ? copiedLayerId(source, owner, node) : undefined
     const copied = copiedId ? source.getNode(copiedId) : undefined
     const identity =
       owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id)
