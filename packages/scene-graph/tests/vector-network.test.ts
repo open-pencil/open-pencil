@@ -80,12 +80,13 @@ describe('vectorNetworkToSVGPaths()', () => {
       ],
       segments: [
         { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-        { start: 2, end: 1, tangentStart: { x: 0, y: 5 }, tangentEnd: { x: 0, y: 5 } }
+        { start: 2, end: 1, tangentStart: { x: 2, y: 5 }, tangentEnd: { x: 1, y: 3 } }
       ],
       regions: []
     })
-    // Each control point is its own vertex plus that vertex's tangent, whichever way it is traced.
-    expect(paths).toEqual(['M0 0L10 0C10 5 20 5 20 0'])
+    // Each control point is its own vertex plus that vertex's tangent, whichever way it is traced:
+    // from vertex 1 the first is (10, 0) + (1, 3), and the second is (20, 0) + (2, 5).
+    expect(paths).toEqual(['M0 0L10 0C11 3 22 5 20 0'])
   })
 
   test('curved segment', () => {

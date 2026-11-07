@@ -162,11 +162,23 @@ describe('color-contrast', () => {
         { start: 20, length: 5, style: { fontSize: 32 } }
       ]
     })
+    // Lengths of runs inside the text sum past it too, but characters 7 to 10 stay unstyled.
+    const partly = graph.createNode('TEXT', card.id, {
+      name: 'Run partly past the end',
+      text: 'Heading note',
+      fontSize: 14,
+      fontWeight: 400,
+      fills: grey,
+      styleRuns: [
+        { start: 0, length: 7, style: { fontSize: 32 } },
+        { start: 10, length: 5, style: { fontSize: 32 } }
+      ]
+    })
 
     const messages = lint(graph, 'color-contrast')
 
-    expect(messages.map((message) => message.nodeId)).toEqual([label.id])
-    expect(messages[0]?.data?.minRatio).toBe(4.5)
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id, partly.id])
+    expect(messages.map((message) => message.data?.minRatio)).toEqual([4.5, 4.5])
   })
 
   test('does not use an ancestor fill when a filled sibling overlaps the text', () => {
