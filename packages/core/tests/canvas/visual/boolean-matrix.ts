@@ -8,6 +8,7 @@ import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 
 import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 
 const CELL_W = 180
 const CELL_H = 150
@@ -46,8 +47,8 @@ function makePair(name: CaseName, x: number, y: number) {
   first.resize(82, 72)
   second.resize(82, 72)
 
-  const firstNode = expectDefined(api.graph.getNode(first.id), 'first node')
-  const secondNode = expectDefined(api.graph.getNode(second.id), 'second node')
+  const firstNode = expectDefined(graphOf(api).getNode(first.id), 'first node')
+  const secondNode = expectDefined(graphOf(api).getNode(second.id), 'second node')
 
   if (name === 'rounded') {
     first.cornerRadius = 18
@@ -122,9 +123,9 @@ for (let row = 0; row < cases.length; row++) {
   for (let column = 0; column < operations.length; column++) {
     const pair = makePair(cases[row], column * CELL_W, row * CELL_H)
     const booleanNode = applyOperation(operations[column], pair)
-    const node = expectDefined(pair.api.graph.getNode(booleanNode.id), 'boolean node')
+    const node = expectDefined(graphOf(pair.api).getNode(booleanNode.id), 'boolean node')
     setSolidFill(node, column)
-    renderer.renderNode(canvas, pair.api.graph, node.id, {})
+    renderer.renderNode(canvas, graphOf(pair.api), node.id, {})
   }
 }
 

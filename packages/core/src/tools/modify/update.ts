@@ -5,6 +5,7 @@ import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 /** The size of a layer and how auto layout or its text sizes it, which a resize may change. */
@@ -74,12 +75,12 @@ export const updateNode = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
-    assertNodeEditable(figma.graph, args.id)
+    assertNodeEditable(graphOf(figma), args.id)
     // Written to the layer directly, since the plugin setters need a loaded font; an edit to a
     // text style's field leaves the style, as the editor's updates do.
     const editTypography = (changes: Partial<SceneNode>) => {
-      const scene = figma.graph.getNode(args.id)
-      if (scene) figma.graph.updateNode(args.id, styleDetachmentChanges(scene, changes))
+      const scene = graphOf(figma).getNode(args.id)
+      if (scene) graphOf(figma).updateNode(args.id, styleDetachmentChanges(scene, changes))
     }
     const updated: string[] = []
     if (args.x !== undefined) {
@@ -109,17 +110,17 @@ export const updateNode = defineTool({
       updated.push('name')
     }
     if (args.text !== undefined) {
-      figma.graph.updateNode(node.id, { text: args.text })
+      graphOf(figma).updateNode(node.id, { text: args.text })
       updated.push('text')
     }
     if (args.text_direction !== undefined) {
-      figma.graph.updateNode(node.id, {
+      graphOf(figma).updateNode(node.id, {
         textDirection: args.text_direction
       })
       updated.push('textDirection')
     }
     if (args.flow_direction !== undefined) {
-      figma.graph.updateNode(node.id, {
+      graphOf(figma).updateNode(node.id, {
         layoutDirection: args.flow_direction
       })
       updated.push('layoutDirection')

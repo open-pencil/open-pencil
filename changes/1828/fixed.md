@@ -1,0 +1,1 @@
+- A `.pen` file keeps image fills whose paths are percent-encoded, such as assets beside a document whose name has spaces.

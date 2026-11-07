@@ -1,0 +1,1 @@
+- Resizing a frame or group no longer rounds the layers inside it to whole pixels; constraints move them by the rounded change in the frame's size, as in Figma (#1816).

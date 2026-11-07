@@ -5,6 +5,7 @@ import { solidFill } from '#core-tests/helpers/figma-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { graphOf } from '#core/figma-api/graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -287,7 +288,7 @@ describe('FigmaAPI stroke properties', () => {
     rect.strokeAlign = 'CENTER'
     rect.strokeTopWeight = 5
 
-    const raw = getNodeOrThrow(api.graph, rect.id)
+    const raw = getNodeOrThrow(graphOf(api), rect.id)
     expect(raw.independentStrokeWeights).toBe(true)
     expect(raw.borderTopWeight).toBe(5)
   })
@@ -295,7 +296,7 @@ describe('FigmaAPI stroke properties', () => {
   test('strokeBottomWeight getter returns borderBottomWeight', () => {
     const api = new FigmaAPI(new SceneGraph())
     const frame = api.createFrame()
-    api.graph.updateNode(frame.id, { borderBottomWeight: 7 })
+    graphOf(api).updateNode(frame.id, { borderBottomWeight: 7 })
     expect(frame.strokeBottomWeight).toBe(7)
   })
 
@@ -316,7 +317,7 @@ describe('FigmaAPI stroke properties', () => {
     rect.strokeAlign = 'CENTER'
     rect.strokeAlign = 'OUTSIDE'
 
-    const raw = getNodeOrThrow(api.graph, rect.id)
+    const raw = getNodeOrThrow(graphOf(api), rect.id)
     expect(raw.strokes[0].align).toBe('OUTSIDE')
   })
 
@@ -333,7 +334,7 @@ describe('FigmaAPI stroke properties', () => {
     expect(frame.strokeBottomWeight).toBe(3)
     expect(frame.strokeLeftWeight).toBe(4)
 
-    const raw = getNodeOrThrow(api.graph, frame.id)
+    const raw = getNodeOrThrow(graphOf(api), frame.id)
     expect(raw.independentStrokeWeights).toBe(true)
   })
 })

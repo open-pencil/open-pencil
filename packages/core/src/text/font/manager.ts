@@ -270,6 +270,11 @@ export class FontManager {
     return this.faces.offersFace(family, weight, italic)
   }
 
+  /** The families whose faces `familyFaces` has found so far. */
+  familiesWithFoundFaces(): string[] {
+    return this.faces.foundFamilies()
+  }
+
   /** Calls the listener whenever the faces found so far are forgotten. */
   onFamilyFacesReset(listener: () => void): () => void {
     return this.faces.onReset(listener)
@@ -336,7 +341,8 @@ export class FontManager {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
       }
     }
-    for (const font of fonts) byFamily.set(font.family, { family: font.family, source: 'local' })
+    for (const family of [...fonts.map((font) => font.family), ...this.faces.hostFamilies()])
+      byFamily.set(family, { family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
 

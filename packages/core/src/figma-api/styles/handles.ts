@@ -41,11 +41,33 @@ export type FigmaStyleConsumer = Omit<StyleConsumers, 'node'> & { node: FigmaNod
 
 const KEY = /^S:([0-9a-f]{40}),/
 
-// Internals keyed by symbols, so scripts reach only the members of Figma's styles.
-const HOST = Symbol('host')
-const NODE = Symbol('node')
-const LAYER = Symbol('layer')
-const RESTYLE = Symbol('restyle')
+// Each style's host, kept off the handle so scripts reach only the members of Figma's styles.
+const hosts = new WeakMap<FigmaBaseStyle, StyleHost>()
+
+function hostOf(style: FigmaBaseStyle): StyleHost {
+  const host = hosts.get(style)
+  if (!host) throw new Error(`The style with id "${style.id}" has no host`)
+  return host
+}
+
+/** The node holding the style's values, or Figma's refusal once the style is gone. */
+function styleNode(style: FigmaBaseStyle, method: string): SceneNode {
+  const type = STYLE_TYPES[style.type]
+  for (const node of hostOf(style).graph.getAllNodes())
+    if (node.sharedStyleType === type && node.source.id === style.id) return node
+  throw new Error(`in ${method}: The style with id "${style.id}" does not exist`)
+}
+
+/** The style's node as a layer, whose setters check and store its values. */
+function styleLayer(style: FigmaBaseStyle, method: string): FigmaNodeProxy {
+  return hostOf(style).wrapNode(styleNode(style, method).id)
+}
+
+/** Brings what uses the style up to its values, after they changed. */
+function restyle(style: FigmaBaseStyle): void {
+  const host = hostOf(style)
+  restyleUsers(host.graph, styleNode(style, 'restyle'), host.updateLayer)
+}
 
 /**
  * Figma's `BaseStyle`: a shared style the document holds, read and written through the node that
@@ -56,29 +78,10 @@ export abstract class FigmaBaseStyle {
   abstract readonly type: FigmaStyleType
   readonly remote = false
   readonly documentationLinks: readonly never[] = Object.freeze([])
-  readonly [HOST]: StyleHost
 
   constructor(host: StyleHost, id: string) {
-    this[HOST] = host
+    hosts.set(this, host)
     this.id = id
-  }
-
-  /** The node holding the style's values, or Figma's refusal once the style is gone. */
-  [NODE](method: string): SceneNode {
-    const type = STYLE_TYPES[this.type]
-    for (const node of this[HOST].graph.getAllNodes())
-      if (node.sharedStyleType === type && node.source.id === this.id) return node
-    throw new Error(`in ${method}: The style with id "${this.id}" does not exist`)
-  }
-
-  /** The style's node as a layer, whose setters check and store its values. */
-  [LAYER](method: string): FigmaNodeProxy {
-    return this[HOST].wrapNode(this[NODE](method).id)
-  }
-
-  /** Brings what uses the style up to its values, after they changed. */
-  [RESTYLE](): void {
-    restyleUsers(this[HOST].graph, this[NODE]('restyle'), this[HOST].updateLayer)
   }
 
   /** The variables the style's values use; only an effect style lists any. */
@@ -87,37 +90,37 @@ export abstract class FigmaBaseStyle {
   }
 
   get name(): string {
-    return this[NODE]('get_name').name
+    return styleNode(this, 'get_name').name
   }
 
   set name(value: string) {
-    const node = this[NODE]('set_name')
+    const node = styleNode(this, 'set_name')
     const name = parseFigma(v.string(), value, 'set_name', 'name')
-    this[HOST].graph.updateNode(node.id, { name })
+    hostOf(this).graph.updateNode(node.id, { name })
   }
 
   get description(): string {
-    return this[NODE]('get_description').symbolDescription
+    return styleNode(this, 'get_description').symbolDescription
   }
 
   /** Figma ignores a description that is not a string, without an error. */
   set description(value: string) {
-    const node = this[NODE]('set_description')
+    const node = styleNode(this, 'set_description')
     if (typeof value === 'string')
-      this[HOST].graph.updateNode(node.id, { symbolDescription: value })
+      hostOf(this).graph.updateNode(node.id, { symbolDescription: value })
   }
 
   /** The key a library publishes the style by: the hex part of a local style's ID. */
   get key(): string {
-    this[NODE]('get_key')
+    styleNode(this, 'get_key')
     return KEY.exec(this.id)?.[1] ?? ''
   }
 
   /** @deprecated Figma's synchronous form of `getStyleConsumersAsync`. */
   get consumers(): FigmaStyleConsumer[] {
-    return styleConsumers(this[HOST].graph, this[NODE]('get_consumers')).map(
+    return styleConsumers(hostOf(this).graph, styleNode(this, 'get_consumers')).map(
       ({ node, fields }) => ({
-        node: this[HOST].wrapNode(node.id),
+        node: hostOf(this).wrapNode(node.id),
         fields
       })
     )
@@ -130,10 +133,10 @@ export abstract class FigmaBaseStyle {
 
   /** Deletes the style; what used it keeps the values it gave, as in Figma. */
   remove(): void {
-    const style = this[NODE]('remove')
-    releaseUsers(this[HOST].graph, style, this[HOST].updateLayer)
-    this[HOST].graph.deleteNode(style.id)
-    this[HOST].forgetStyle(this.id)
+    const style = styleNode(this, 'remove')
+    releaseUsers(hostOf(this).graph, style, hostOf(this).updateLayer)
+    hostOf(this).graph.deleteNode(style.id)
+    hostOf(this).forgetStyle(this.id)
   }
 }
 
@@ -141,21 +144,21 @@ export class FigmaPaintStyle extends FigmaBaseStyle {
   readonly type = 'PAINT'
 
   get paints(): readonly FigmaPaint[] {
-    const node = this[NODE]('get_paints')
-    return Object.freeze(figmaFills(this[HOST].graph, node).map((paint) => Object.freeze(paint)))
+    const node = styleNode(this, 'get_paints')
+    return Object.freeze(figmaFills(hostOf(this).graph, node).map((paint) => Object.freeze(paint)))
   }
 
   set paints(value: readonly FigmaPaint[]) {
-    const node = this[NODE]('set_paints')
+    const node = styleNode(this, 'set_paints')
     const fills = keepVideoPosters(
       parseFigmaPaints(value, 'set_paints', 'paints'),
       node.fills,
-      this[HOST].graph
+      hostOf(this).graph
     )
-    this[HOST].graph.updateNode(node.id, { fills })
+    hostOf(this).graph.updateNode(node.id, { fills })
     // A paint bound to a variable keeps following it, as the style's consumers then do.
-    setPaintBindings(this[HOST].graph, node, 'fills', value)
-    this[RESTYLE]()
+    setPaintBindings(hostOf(this).graph, node, 'fills', value)
+    restyle(this)
   }
 }
 
@@ -163,17 +166,17 @@ export class FigmaEffectStyle extends FigmaBaseStyle {
   readonly type = 'EFFECT'
 
   get effects(): FigmaNodeProxy['effects'] {
-    return this[LAYER]('get_effects').effects
+    return styleLayer(this, 'get_effects').effects
   }
 
   set effects(value: FigmaNodeProxy['effects']) {
-    this[LAYER]('set_effects').effects = value
-    this[RESTYLE]()
+    styleLayer(this, 'set_effects').effects = value
+    restyle(this)
   }
 
   /** Every variable the style's effects use, each once, as a layer lists its own. */
   override get boundVariables(): Readonly<Record<string, readonly FigmaVariableAlias[]>> {
-    const { effects } = figmaBoundVariables(this[NODE]('get_boundVariables'))
+    const { effects } = figmaBoundVariables(styleNode(this, 'get_boundVariables'))
     const bound: Record<string, readonly FigmaVariableAlias[]> = {}
     if (Array.isArray(effects)) bound.effects = effects
     return Object.freeze(bound)
@@ -184,12 +187,12 @@ export class FigmaGridStyle extends FigmaBaseStyle {
   readonly type = 'GRID'
 
   get layoutGrids(): FigmaNodeProxy['layoutGrids'] {
-    return this[LAYER]('get_layoutGrids').layoutGrids
+    return styleLayer(this, 'get_layoutGrids').layoutGrids
   }
 
   set layoutGrids(value: FigmaNodeProxy['layoutGrids']) {
-    this[LAYER]('set_layoutGrids').layoutGrids = value
-    this[RESTYLE]()
+    styleLayer(this, 'set_layoutGrids').layoutGrids = value
+    restyle(this)
   }
 }
 
@@ -241,11 +244,11 @@ for (const property of TEXT_STYLE_PROPERTIES satisfies readonly TextStylePropert
   Object.defineProperty(FigmaTextStyle.prototype, property, {
     enumerable: true,
     get(this: FigmaTextStyle) {
-      return this[LAYER](`get_${property}`)[property]
+      return styleLayer(this, `get_${property}`)[property]
     },
     set(this: FigmaTextStyle, value: never) {
-      this[LAYER](`set_${property}`)[property] = value
-      this[RESTYLE]()
+      styleLayer(this, `set_${property}`)[property] = value
+      restyle(this)
     }
   })
 }

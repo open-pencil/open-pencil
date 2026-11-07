@@ -91,7 +91,7 @@ export const aiMessageDefaults = {
   attachImages: 'Attach images',
   removeImageAttachment: params('Remove image {name}'),
   dropImagesToAttach: 'Drop images to attach',
-  queueMessage: 'Steer the agent… Alt+Enter waits until it is done',
+  queueMessage: params('Steer the agent… {shortcut} waits until it is done'),
   queuedSteer: 'Sends after the current step',
   queuedFollowUp: 'Sends when the agent is done',
   removeQueuedMessage: 'Remove waiting message',

@@ -4,7 +4,6 @@ import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/sc
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
-  graph,
   raw,
   strokeOwner,
   updateNode,
@@ -12,6 +11,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+import { graphOf } from '#core/figma-api/graph'
 import {
   keepVideoPosters,
   parseFigmaPaints,
@@ -65,17 +65,13 @@ function setFills(
   method: string
 ): void {
   const node = raw(target, internals)
-  const fills = keepVideoPosters(
-    parseFigmaPaints(value, method),
-    node.fills,
-    graph(target, internals)
-  )
+  const fills = keepVideoPosters(parseFigmaPaints(value, method), node.fills, graphOf(target))
   updateNode(
     target,
     internals,
     node.type === 'TEXT' ? textStyleChanges(node, { fills }) : { fills }
   )
-  setPaintBindings(graph(target, internals), raw(target, internals), 'fills', value)
+  setPaintBindings(graphOf(target), raw(target, internals), 'fills', value)
 }
 
 /** Figma paints carry no geometry; a stroke takes the weight, alignment, and dashes the node keeps. */
@@ -91,7 +87,7 @@ function setStrokes(
   const parsed = keepVideoPosters(
     parseFigmaPaints(value, method, 'strokes'),
     previous,
-    graph(target, internals)
+    graphOf(target)
   )
   const strokes = parsed.map((paint): Stroke => ({
     ...paint,
@@ -105,7 +101,7 @@ function setStrokes(
     strokeAlign: geometry.align
   })
   updateNode(owner, internals, { strokes, strokeWeight: kept.weight, strokeAlign: kept.align })
-  setPaintBindings(graph(target, internals), raw(owner, internals), 'strokes', value)
+  setPaintBindings(graphOf(target), raw(owner, internals), 'strokes', value)
 }
 
 export function installVisualNodeProxyAccessors(
@@ -119,7 +115,7 @@ export function installVisualNodeProxyAccessors(
       // regions are; setting it fills them all.
       get(this: ProxyThis): readonly FigmaPaint[] | symbol {
         const node = raw(this, internals)
-        const sceneGraph = graph(this, internals)
+        const sceneGraph = graphOf(this)
         if (node.type === 'VECTOR') {
           // A region without paints of its own draws the layer's, its bound colors resolved.
           const layer = resolvedPaintBindings(sceneGraph, node).fills ?? node.fills
@@ -137,7 +133,7 @@ export function installVisualNodeProxyAccessors(
     strokes: {
       get(this: ProxyThis): readonly FigmaPaint[] {
         const owner = raw(strokeOwner(this, internals), internals)
-        return Object.freeze(figmaStrokes(graph(this, internals), owner))
+        return Object.freeze(figmaStrokes(graphOf(this), owner))
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
         setStrokes(this, internals, value, 'set_strokes')
@@ -163,7 +159,7 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
         updateNode(this, internals, { effects: parseFigmaEffects(value) })
-        setEffectBindings(graph(this, internals), raw(this, internals), value)
+        setEffectBindings(graphOf(this), raw(this, internals), value)
       }
     },
     // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.

@@ -8,8 +8,8 @@ export const workspaceEntitlementsSchema = v.object({
     guestPresence: v.boolean(),
     collaboration: v.boolean(),
     revisionHistory: v.boolean(),
-    // Optional so editors keep reading servers released before the AI service.
-    cloudAI: v.optional(v.boolean(), false)
+    // Optional so editors keep reading servers released before services.
+    cloudServices: v.optional(v.boolean(), false)
   }),
   limits: v.object({
     maximumFileBytes: v.pipe(v.number(), v.integer(), v.minValue(1)),

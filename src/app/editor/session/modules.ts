@@ -6,7 +6,6 @@ import { createSelectedNodeState } from '@open-pencil/vue/editor/selection-state
 
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'
-import type { ViewportSize } from '@/app/document/io/types'
 import { createDesignCheck } from '@/app/editor/design-check/session'
 import { createFlashActions } from '@/app/editor/flash'
 import { createMobileClipboardActions } from '@/app/editor/mobile-clipboard'
@@ -54,11 +53,10 @@ export function createEditorStoreModules(
   editor: Editor,
   state: AppEditorState,
   io: IORegistry,
-  viewportSize: ViewportSize,
   preparationController: EditorPreparationController
 ) {
   const flash = createFlashActions(editor, state)
-  const documentIO = createDocumentIOActions(editor, state, viewportSize, preparationController)
+  const documentIO = createDocumentIOActions(editor, state, preparationController)
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
   const profiler = createProfilerActions(editor)
@@ -77,8 +75,6 @@ export function createEditorStoreModules(
     openFigFile: documentIO.openFigFile,
     openDOMFile: documentIO.openDOMFile,
     importDOMText: documentIO.importDOMText,
-    setViewportSize: documentIO.setViewportSize,
-    getViewportSize: documentIO.getViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
     renameDocument: documentIO.renameDocument,

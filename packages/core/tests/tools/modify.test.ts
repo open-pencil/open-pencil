@@ -7,6 +7,7 @@ import { repoPath } from '@open-pencil/test-support/paths'
 
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { getTool, runTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
+import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 
 describe('set_fill', () => {
@@ -123,11 +124,11 @@ describe('update_node', () => {
   test("a font size edit leaves the text's text style and keeps its fill style", () => {
     const { figma } = setupToolTest()
     const text = figma.createText()
-    figma.graph.updateNode(text.id, { textStyleId: 'style:text', fillStyleId: 'style:fill' })
+    graphOf(figma).updateNode(text.id, { textStyleId: 'style:text', fillStyleId: 'style:fill' })
 
     getTool('update_node').execute(figma, { id: text.id, font_size: 20 })
 
-    expect(getNodeOrThrow(figma.graph, text.id)).toMatchObject({
+    expect(getNodeOrThrow(graphOf(figma), text.id)).toMatchObject({
       fontSize: 20,
       textStyleId: null,
       fillStyleId: 'style:fill'
