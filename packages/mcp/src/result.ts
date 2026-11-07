@@ -6,8 +6,7 @@ export type MCPContent =
 
 export type MCPResult = { content: MCPContent[]; isError?: boolean }
 
-/** Cap for JSON/text tool results and inline image content (not path-written exports). */
-export const MAX_RESULT_BYTES = 2_000_000
+export const MAX_RESULT_BYTES = 900_000
 
 export function resultTooLargeMessage(kind: string, bytes: number, hint: string): string {
   return `${kind} is too large (${Math.round(bytes / 1024)}KB, limit ${Math.round(

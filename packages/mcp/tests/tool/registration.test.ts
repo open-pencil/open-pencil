@@ -30,9 +30,13 @@ interface ToolResult {
   content: { type: string; text?: string }[]
 }
 
-/** An MCP server over a fresh root whose app answers each tool with `results[name]`. */
+/**
+ * An MCP server over a fresh root whose app answers each tool with `results[name]`, keeping the
+ * arguments each call reached the app with in `sent`.
+ */
 async function server(results: Record<string, unknown>) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
+  const sent: Record<string, unknown>[] = []
   const manager = createMCPSessionManager({
     serverVersion: '0.0.0',
     registerTools: (mcpServer, agentSession, onToolSettled) =>
@@ -42,7 +46,8 @@ async function server(results: Record<string, unknown>) {
         onToolSettled,
         mcpRoot: root,
         sendRPC: async (body) => {
-          const { args } = body as { args: { name: string } }
+          const { args } = body as { args: { name: string; args: Record<string, unknown> } }
+          sent.push(args.args)
           return { ok: true, result: results[args.name] }
         }
       })
@@ -79,7 +84,7 @@ async function server(results: Record<string, unknown>) {
     const message: unknown = JSON.parse(json)
     return (message as { result: ToolResult }).result
   }
-  return { root, call }
+  return { root, sent, call }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -112,72 +117,44 @@ describe('MCP tool file output', () => {
     expect(inline.content[0].type).toBe('text')
     expect(inline.content[0].text).toContain(result.base64)
   })
+})
 
-  test('set_image_fill resolves image_path into image_data before the app RPC', async () => {
-    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-    const root = await mkdtemp(join(tmpdir(), 'op-mcp-image-'))
-    cleanups.push(async () => {
-      await rm(root, { recursive: true, force: true })
-    })
-    await writeFile(join(root, 'plate.png'), png)
+describe('MCP tool file input', () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const filled = { id: '0:1', imageHash: 'hash', scaleMode: 'FILL' }
 
-    let forwarded: Record<string, unknown> | undefined
-    const manager = createMCPSessionManager({
-      serverVersion: '0.0.0',
-      registerTools: (mcpServer, agentSession, onToolSettled) =>
-        registerTools(mcpServer, {
-          policy: { allowEval: false, disabledTools: [], scope: 'document' },
-          agentSession,
-          onToolSettled,
-          mcpRoot: root,
-          sendRPC: async (body) => {
-            const { args } = body as { args: { name: string; args: Record<string, unknown> } }
-            if (args.name === 'set_image_fill') forwarded = args.args
-            return {
-              ok: true,
-              result: { id: '1:1', imageHash: 'hash', scaleMode: 'FILL' }
-            }
-          }
-        })
+  test('set_image_fill sends the app the bytes of image_path, read inside the root', async () => {
+    const { root, sent, call } = await server({ set_image_fill: filled })
+    await writeFile(join(root, 'photo.png'), png)
+
+    const result = await call('set_image_fill', { id: '0:1', image_path: 'photo.png' })
+    expect(result.isError).toBeFalsy()
+    expect(sent).toEqual([{ id: '0:1', image_data: fromUint8Array(png), scale_mode: 'FILL' }])
+  })
+
+  test('set_image_fill passes image_data through and refuses a file outside the root', async () => {
+    const { sent, call } = await server({ set_image_fill: filled })
+    const data = `data:image/png;base64,${fromUint8Array(png)}`
+    expect((await call('set_image_fill', { id: '0:1', image_data: data })).isError).toBeFalsy()
+    expect(sent).toEqual([{ id: '0:1', image_data: data, scale_mode: 'FILL' }])
+
+    const outside = await call('set_image_fill', { id: '0:1', image_path: '../photo.png' })
+    expect(outside.isError).toBe(true)
+    expect(sent).toHaveLength(1)
+  })
+
+  test('set_image_fill takes one of image_path and image_data', async () => {
+    const { root, sent, call } = await server({ set_image_fill: filled })
+    await writeFile(join(root, 'photo.png'), png)
+
+    const neither = await call('set_image_fill', { id: '0:1' })
+    expect(neither.content[0].text).toContain('Pass image_path or image_data')
+    const both = await call('set_image_fill', {
+      id: '0:1',
+      image_path: 'photo.png',
+      image_data: fromUint8Array(png)
     })
-    cleanups.push(async () => {
-      await manager.clear()
-    })
-    const connection = await manager.resolveTransport(undefined)
-    if ('error' in connection) throw new Error(connection.error)
-    const init = await connection.handleRequest(
-      request({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'initialize',
-        params: {
-          protocolVersion: '2025-06-18',
-          capabilities: {},
-          clientInfo: { name: 'test', version: '1' }
-        }
-      })
-    )
-    const sessionId = init.headers.get('mcp-session-id') ?? undefined
-    const response = await connection.handleRequest(
-      request(
-        {
-          jsonrpc: '2.0',
-          id: 2,
-          method: 'tools/call',
-          params: {
-            name: 'set_image_fill',
-            arguments: { id: '1:1', image_path: 'plate.png', scale_mode: 'FILL' }
-          }
-        },
-        sessionId
-      )
-    )
-    const text = await response.text()
-    const json = text.startsWith('{') ? text : (text.split('data: ')[1] ?? '')
-    const message = JSON.parse(json) as { result: ToolResult }
-    expect(message.result.isError).toBeFalsy()
-    expect(forwarded?.image_path).toBeUndefined()
-    expect(forwarded?.image_data).toBe(Buffer.from(png).toString('base64'))
-    expect(forwarded?.scale_mode).toBe('FILL')
+    expect(both.content[0].text).toContain('not both')
+    expect(sent).toEqual([])
   })
 })

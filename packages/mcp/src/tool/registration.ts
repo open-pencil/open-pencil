@@ -15,9 +15,9 @@ import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
-import { resolveImageFillArgs } from '#mcp/tool/image-fill'
 import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
 import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
@@ -154,7 +154,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       def.name,
       {
         description: def.description,
-        inputSchema: v.strictObject({ ...def.input.entries, ...automationTargetSchema })
+        inputSchema: v.strictObject({
+          ...(resolvedRoot ? withFileInput(def.name, def.input.entries) : def.input.entries),
+          ...automationTargetSchema
+        })
       },
       async (args: Record<string, unknown>, context) => {
         try {
@@ -164,17 +167,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           if (policy.scope === 'selection' && filePath !== null) {
             return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
           }
-          // Resolve photo paths on the server so agents never ship huge base64 through the client.
-          const resolvedToolArgs =
-            def.name === 'set_image_fill'
-              ? await resolveImageFillArgs(toolArgs, resolvedRoot)
-              : toolArgs
+          const appArgs = resolvedRoot
+            ? await readFileInput(def.name, toolArgs, resolvedRoot)
+            : toolArgs
           const result = await sendRPC({
             command: 'tool',
             args: {
               ...target,
               name: def.name,
-              args: resolvedToolArgs,
+              args: appArgs,
               agent: agent(context.mcpReq._meta),
               // A client limited to the selection says so, whatever the server's own scope.
               ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
