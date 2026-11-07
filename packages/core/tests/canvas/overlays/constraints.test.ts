@@ -37,6 +37,17 @@ describe('constraint indicator lines', () => {
     ])
   })
 
+  test('Center on one axis is a short line through the centre beside the other axis lines', () => {
+    expect(constraintSegments(box, parent, 'CENTER', 'MIN', 6)).toEqual([
+      [44, 20, 56, 20],
+      [50, 0, 50, 10]
+    ])
+    expect(constraintSegments(box, parent, 'MAX', 'CENTER', 6)).toEqual([
+      [70, 20, 100, 20],
+      [50, 14, 50, 26]
+    ])
+  })
+
   test('Scale draws nothing', () => {
     expect(constraintSegments(box, parent, 'SCALE', 'SCALE', 6)).toEqual([])
     expect(constraintSegments(box, parent, 'SCALE', 'MIN', 6)).toEqual([[50, 0, 50, 10]])
