@@ -179,8 +179,8 @@ test('a translucent bottom-aligned text mask reveals what lies under its lines a
     image.delete()
 
     // The first line's glyph fills frame rows 5 to 25, above the text's box at rows 30 to 60.
-    expect(alpha(10, 15)).toBeGreaterThan(0)
-    expect(alpha(10, 45)).toBeGreaterThan(0)
+    expect([alpha(10, 15), alpha(10, 45)]).toEqual([128, 128])
+    expect([alpha(10, 2), alpha(30, 15), alpha(30, 45), alpha(10, 70)]).toEqual([0, 0, 0, 0])
   } finally {
     surface.delete()
   }
