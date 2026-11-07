@@ -1,6 +1,7 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
+import { isValid, toUint8Array } from 'js-base64'
 
 import type { Matrix, Size } from './primitives'
 
@@ -64,6 +65,45 @@ export function imageHeader(data: Uint8Array): ImageHeader | null {
  */
 export function imageMimeType(data: Uint8Array): ImageMimeType {
   return imageHeader(data)?.type ?? 'image/png'
+}
+
+export interface DataURL {
+  /** The media type in lowercase, without parameters; `text/plain` when the URL names none. */
+  mimeType: string
+  bytes: Uint8Array
+}
+
+/** The bytes of a percent-encoded data URL body: each `%XX` is that byte, the rest is UTF-8. */
+function percentDecode(body: string): Uint8Array {
+  const encoder = new TextEncoder()
+  const bytes: number[] = []
+  for (const [index, part] of body.split(/(%[0-9a-f]{2})/i).entries()) {
+    // A split on a capture group puts each escape at an odd index.
+    if (index % 2 === 1) bytes.push(Number.parseInt(part.slice(1), 16))
+    else for (const byte of encoder.encode(part)) bytes.push(byte)
+  }
+  return new Uint8Array(bytes)
+}
+
+/**
+ * The media type and bytes a `data:` URL carries, read as the Fetch standard reads one: a Base64
+ * body is decoded and a percent-encoded one unescaped. Null for anything else, and for Base64 the
+ * standard refuses, such as a body cut short in transit.
+ */
+export function parseDataURL(url: string): DataURL | null {
+  const match = /^\s*data:([^,]*),(.*?)\s*$/is.exec(url)
+  if (!match) return null
+  const [, header = '', body = ''] = match
+  const params = header.split(';').map((param) => param.trim())
+  const base64 = params.length > 1 && params.at(-1)?.toLowerCase() === 'base64'
+  const mimeType = params[0]?.toLowerCase() || 'text/plain'
+  if (!base64) return { mimeType, bytes: percentDecode(body) }
+  // A photo's Base64 runs to megabytes and rarely holds an escape, so it skips the byte pass.
+  const decoded = body.includes('%') ? new TextDecoder().decode(percentDecode(body)) : body
+  const text = decoded.replace(/\s+/g, '')
+  // Base64 one character past a whole group of four cannot be bytes: it was cut short.
+  if (text.replace(/={1,2}$/, '').length % 4 === 1 || !isValid(text)) return null
+  return { mimeType, bytes: toUint8Array(text) }
 }
 
 /** An image's size in pixels, read from its header; null for bytes it cannot read. */

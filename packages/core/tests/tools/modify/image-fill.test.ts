@@ -121,8 +121,8 @@ describe('set_image_fill tool', () => {
     expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
 
-  test('strips a data URL prefix on image_data', () => {
-    const { figma } = setup()
+  test('reads image_data given as a data URL', () => {
+    const { graph, figma } = setup()
     const shape = expectDefined(
       ALL_TOOLS.find((t) => t.name === 'create_shape'),
       'create_shape tool'
@@ -133,12 +133,11 @@ describe('set_image_fill tool', () => {
     const result = tool.execute(figma, {
       id: node.id,
       image_data: `data:image/png;base64,${PNG_MAGIC.toBase64()}`
-    }) as { imageHash: string; error?: string }
-    expect(result.error).toBeUndefined()
-    expect(result.imageHash).toBeTruthy()
+    }) as { imageHash: string }
+    expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
 
-  test('unresolved image_path returns a clear error', () => {
+  test('refuses a data URL whose Base64 was cut short', () => {
     const { figma } = setup()
     const shape = expectDefined(
       ALL_TOOLS.find((t) => t.name === 'create_shape'),
@@ -149,9 +148,10 @@ describe('set_image_fill tool', () => {
     }
     const result = tool.execute(figma, {
       id: node.id,
-      image_path: 'assets/photo.jpg'
-    }) as { error: string }
-    expect(result.error).toContain('not resolved')
-    expect(result.error).toContain('MCP')
+      image_data: `data:image/png;base64,${PNG_MAGIC.toBase64().slice(0, 9)}`
+    }) as { error?: string }
+    expect(result.error).toBe('image_data is neither valid Base64 nor a data URL')
+    const fills = expectFills(expectDefined(figma.getNodeById(node.id), 'shape').fills)
+    expect(fills.map((fill) => fill.type)).not.toContain('IMAGE')
   })
 })
