@@ -6,8 +6,6 @@ import * as v from 'valibot'
 
 import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/contract'
 
-import { WEB_SEARCH_TOOL_NAME } from '@/app/ai/tools/web-search'
-
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
 
@@ -108,10 +106,21 @@ export function toolImage(part: ToolCallPart): string | null {
   return `data:${mimeType};base64,${base64}`
 }
 
+const searchOutputSchema = v.union([
+  searchResponseSchema,
+  // Through OpenPencil's MCP server, as an agent such as Claude Code receives it.
+  v.pipe(
+    v.object({ content: v.tuple([v.object({ type: v.literal('text'), text: v.string() })]) }),
+    v.transform((output) => output.content[0].text),
+    v.parseJson(),
+    searchResponseSchema
+  )
+])
+
 /** The pages a `web_search` call found, to show as sources rather than JSON. */
 export function toolWebResults(part: ToolCallPart): SearchResult[] | null {
-  if (part.state !== 'output-available' || toolName(part) !== WEB_SEARCH_TOOL_NAME) return null
-  const found = v.safeParse(searchResponseSchema, part.output)
+  if (part.state !== 'output-available' || toolName(part) !== 'web_search') return null
+  const found = v.safeParse(searchOutputSchema, part.output)
   return found.success ? found.output.results : null
 }
 

@@ -139,6 +139,13 @@ describe('tool call display', () => {
     expect(
       toolWebResults(call({ type: 'tool-get_jsx', state: 'output-available', output: { results } }))
     ).toBeNull()
+    // An agent such as Claude Code gets it from OpenPencil's MCP server as JSON text.
+    const throughMCP = call({
+      type: 'tool-mcp__open-pencil__web_search',
+      state: 'output-available',
+      output: { content: [{ type: 'text', text: JSON.stringify({ results }) }] }
+    })
+    expect(toolWebResults(throughMCP)).toEqual(results)
   })
 
   test('groups consecutive tool calls between other parts', () => {

@@ -19,7 +19,6 @@ import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
-import { chatWebSearch } from '@/app/ai/search'
 import { harnessSkills } from '@/app/ai/skills/harness'
 import { currentRun } from '@/app/ai/tools'
 import { ACPChatTransport, type AgentTurnUsage } from '@/app/ai/transports/acp'
@@ -251,8 +250,7 @@ export function createChatSessionManager({
       onError: captureProviderError,
       diagnosticContext,
       recorder: runRecorder,
-      yieldWhen: hasSteeringMessage,
-      webSearch: await chatWebSearch(runtime.role.connection)
+      yieldWhen: hasSteeringMessage
     })
   }
 

@@ -51,7 +51,7 @@ export const settingsMessageDefaults = {
   groupDataAndPrivacy: 'Data & privacy',
   editor: 'Editor',
   models: 'Models',
-  imageServices: 'Search and images',
+  integrations: 'Integrations',
   recentFiles: 'Recent files',
   recentFilesDescription: 'Choose how many files to keep in the recent list and Open Recent menu.',
   recentFilesLimit: 'Number of recent files',

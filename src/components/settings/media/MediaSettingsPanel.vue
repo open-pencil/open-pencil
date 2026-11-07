@@ -42,7 +42,7 @@ const vectorProvider = computed(() =>
     <SettingsPage>
       <div class="flex flex-col gap-6">
         <SettingsSection>
-          <template #title>{{ settings.media }}</template>
+          <template #title>{{ media.stockPhotos }}</template>
           <AppActionRow
             v-for="service in stockServices"
             :key="service.id"

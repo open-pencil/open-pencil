@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { WebSearchRefusedError } from '@open-pencil/core/tools'
+
 import { checkExaKey, exaWebSearch, type ExaFetch } from '@/app/ai/search/exa'
-import { WebSearchRefusedError } from '@/app/ai/tools/web-search'
 
 /** Exa answering every request with `answer`, recording what it was sent. */
 function exa(answer: () => Response) {
@@ -31,8 +32,8 @@ describe("searching with one's own Exa key", () => {
         ]
       })
     )
-    const search = exaWebSearch(key, service.fetch)
-    expect(await search({ query: 'grids', numResults: 3 })).toEqual({
+    const exaSearch = exaWebSearch(key, service.fetch)
+    expect(await exaSearch.search({ query: 'grids', numResults: 3 })).toEqual({
       results: [
         {
           url: 'https://example.com/grids',
@@ -55,9 +56,13 @@ describe("searching with one's own Exa key", () => {
 
   test('tells the model when Exa refuses the key or there is none', async () => {
     const refused = exaWebSearch(key, exa(() => new Response('', { status: 401 })).fetch)
-    await expect(refused({ query: 'grids' })).rejects.toBeInstanceOf(WebSearchRefusedError)
+    await expect(refused.search({ query: 'grids', numResults: 5 })).rejects.toBeInstanceOf(
+      WebSearchRefusedError
+    )
     const missing = exaWebSearch(async () => null, exa(() => Response.json({ results: [] })).fetch)
-    await expect(missing({ query: 'grids' })).rejects.toBeInstanceOf(WebSearchRefusedError)
+    await expect(missing.search({ query: 'grids', numResults: 5 })).rejects.toBeInstanceOf(
+      WebSearchRefusedError
+    )
   })
 
   test('checks a key with one search', async () => {

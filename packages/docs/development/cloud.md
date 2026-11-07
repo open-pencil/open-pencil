@@ -364,11 +364,12 @@ Other capabilities are optional: a service lists each one it offers in its catal
 and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
 `search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
 title, date, author, and an excerpt; the contract names no search engine. The editor offers the
-model a `web_search` tool when the chat's model runs on the services and their catalog lists
-search, and each search is charged to the same workspace. The reference relay offers no search. In
-the desktop app, an Exa key saved under Settings › Search and images is used instead, whatever the
-model, and Exa bills its owner; Exa refuses browsers' cross-origin requests, so the web app has no
-such setting.
+model OpenPencil's `web_search` tool, which also reaches agents through OpenPencil's MCP server.
+It searches the services when the Design model runs on them and their catalog lists search, charged
+to the same workspace; the reference relay offers no search. In the desktop app, an Exa key saved
+under Settings › Integrations is used instead, whatever the model, and Exa bills its owner; Exa
+refuses browsers' cross-origin requests, so the web app has no such setting. Without either, the
+tool tells the model how to set search up.
 
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP

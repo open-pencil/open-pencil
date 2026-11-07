@@ -1,10 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { CloudServiceError } from '@open-pencil/cloud/client'
 import type { ServiceCatalog, SearchResponse } from '@open-pencil/cloud/contract'
+import { WebSearchRefusedError } from '@open-pencil/core/tools'
 
 import { cloudWebSearch } from '@/app/ai/providers/openpencil/search'
 
 const catalog: ServiceCatalog = { models: [], defaultModelID: 'model' }
+const offered: ServiceCatalog = { ...catalog, search: { creditsPerRequest: 7 } }
 const response: SearchResponse = {
   results: [
     {
@@ -16,18 +19,22 @@ const response: SearchResponse = {
     }
   ]
 }
+const request = { query: 'grids', numResults: 5 }
 
-/** A Home server whose service has `offered` as its catalog, recording the workspaces asked for. */
-function services(offered: ServiceCatalog | Error) {
+/** A Home server whose service lists `listed` and answers searches with `answer`. */
+function services(
+  listed: ServiceCatalog | Error,
+  answer: () => Promise<SearchResponse> = async () => response
+) {
   const workspaces: string[] = []
   const client = (workspaceId: string) => {
     workspaces.push(workspaceId)
     return {
       catalog: async () => {
-        if (offered instanceof Error) throw offered
-        return offered
+        if (listed instanceof Error) throw listed
+        return listed
       },
-      search: async () => response
+      search: answer
     }
   }
   return { client, workspaces }
@@ -36,26 +43,38 @@ function services(offered: ServiceCatalog | Error) {
 const cloud = { providerID: 'openpencil' as const, cloudWorkspaceId: 'workspace-1' }
 
 describe('Cloud web search', () => {
-  test("searches through the chat's workspace when its catalog offers search", async () => {
-    const home = services({ ...catalog, search: { creditsPerRequest: 7 } })
-    const search = await cloudWebSearch(cloud, home.client)
-    expect(await search?.({ query: 'grids' })).toEqual(response)
+  test("searches through the Design model's workspace when its catalog offers search", async () => {
+    const home = services(offered)
+    const provider = await cloudWebSearch(cloud, home.client)
+    expect(await provider?.search(request)).toEqual(response)
     expect(home.workspaces).toEqual(['workspace-1'])
   })
 
-  test('offers no search when the catalog has none', async () => {
-    expect(await cloudWebSearch(cloud, services(catalog).client)).toBeUndefined()
+  test('has no search when the catalog lists none', async () => {
+    expect(await cloudWebSearch(cloud, services(catalog).client)).toBeNull()
   })
 
-  test('still offers search when the catalog cannot be read, for the service to answer', async () => {
-    const search = await cloudWebSearch(cloud, services(new Error('offline')).client)
-    expect(await search?.({ query: 'grids' })).toEqual(response)
+  test('keeps search when the catalog cannot be read, for the service to answer', async () => {
+    const provider = await cloudWebSearch(cloud, services(new Error('offline')).client)
+    expect(await provider?.search(request)).toEqual(response)
   })
 
-  test('offers no search for other providers or without a workspace', async () => {
-    const home = services({ ...catalog, search: { creditsPerRequest: 7 } })
-    expect(await cloudWebSearch({ providerID: 'openrouter' }, home.client)).toBeUndefined()
+  test('turns refusals the person can act on into messages for the model', async () => {
+    const provider = await cloudWebSearch(
+      cloud,
+      services(offered, async () => {
+        throw new CloudServiceError(402, 'insufficient_credits')
+      }).client
+    )
+    const refusal = await provider?.search(request).catch((error: unknown) => error)
+    expect(refusal).toBeInstanceOf(WebSearchRefusedError)
+    expect(refusal).toMatchObject({ message: expect.stringContaining('out of OpenPencil credits') })
+  })
+
+  test('has no Cloud search for other providers or without a workspace', async () => {
+    const home = services(offered)
+    expect(await cloudWebSearch({ providerID: 'openrouter' }, home.client)).toBeNull()
     expect(home.workspaces).toEqual([])
-    expect(await cloudWebSearch(cloud, () => null)).toBeUndefined()
+    expect(await cloudWebSearch(cloud, () => null)).toBeNull()
   })
 })

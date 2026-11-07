@@ -16,6 +16,7 @@ import {
   modelCredentialRevision
 } from '@/app/ai/models'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { refreshWebSearchProvider } from '@/app/ai/search'
 import { enabledSkills } from '@/app/ai/skills/library'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
@@ -145,6 +146,17 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     void refreshAIProviderStatus()
     markTransportDirty()
   })
-  // Saving or removing an Exa key changes how the chat searches the web.
-  watch(exaKeyStatus, markTransportDirty)
+  // `web_search` follows the saved Exa key and the Design model's Cloud workspace, for the chat
+  // and for agents reaching OpenPencil's tools.
+  watch(
+    () =>
+      [
+        exaKeyStatus.value,
+        cloudAIAvailable.value,
+        designModelConnection.value?.providerID,
+        designModelConnection.value?.cloudWorkspaceId
+      ] as const,
+    () => void refreshWebSearchProvider(designModelConnection.value ?? null),
+    { immediate: true }
+  )
 }

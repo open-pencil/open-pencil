@@ -39,7 +39,7 @@ useSettingsFormGuard({
   dirty,
   busy,
   cancel: () => emit('done'),
-  crumb: { parent: () => settings.value.media, title }
+  crumb: { parent: () => settings.value.integrations, title }
 })
 const keyLabel = computed(() =>
   service === 'unsplash' ? credentials.value.accessKey : credentials.value.apiKey

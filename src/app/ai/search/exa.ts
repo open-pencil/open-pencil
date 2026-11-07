@@ -1,9 +1,13 @@
 import * as v from 'valibot'
 
-import { searchResultSchema, type SearchResult } from '@open-pencil/cloud/contract'
-import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
+import { searchResultSchema } from '@open-pencil/cloud/contract'
+import {
+  WebSearchRefusedError,
+  type StockPhotoKeyCheck,
+  type WebSearchProvider,
+  type WebSearchResult
+} from '@open-pencil/core/tools'
 
-import { WebSearchRefusedError, type WebSearch } from '@/app/ai/tools/web-search'
 import { tauriFetch } from '@/app/tauri/http'
 
 const EXA_SEARCH_URL = 'https://api.exa.ai/search'
@@ -54,28 +58,30 @@ function askExa(fetch: ExaFetch, key: string, query: string, numResults: number)
 export function exaWebSearch(
   key: () => Promise<string | null>,
   fetch: ExaFetch = nativeFetch
-): WebSearch {
-  return async ({ query, numResults = 5 }) => {
-    const saved = await key()
-    if (!saved) throw new WebSearchRefusedError('The Exa key in Settings is missing.')
-    const response = await askExa(fetch, saved, query, numResults)
-    if (response.status === 401 || response.status === 403) {
-      throw new WebSearchRefusedError('Exa refused the key saved in Settings.')
+): WebSearchProvider {
+  return {
+    search: async ({ query, numResults }) => {
+      const saved = await key()
+      if (!saved) throw new WebSearchRefusedError('The Exa key in Settings is missing.')
+      const response = await askExa(fetch, saved, query, numResults)
+      if (response.status === 401 || response.status === 403) {
+        throw new WebSearchRefusedError('Exa refused the key saved in Settings.')
+      }
+      if (response.status === 429) throw new WebSearchRefusedError('Exa is rate limiting searches.')
+      if (!response.ok) throw new Error(`Exa answered HTTP ${response.status}`)
+      const parsed = v.safeParse(answerBodySchema, await response.text())
+      if (!parsed.success) throw new Error('Exa answered with an unexpected body')
+      const results: WebSearchResult[] = parsed.output.results
+        .map((result) => ({
+          url: result.url,
+          title: result.title ?? '',
+          publishedAt: timestamp(result.publishedDate),
+          author: result.author || null,
+          text: (result.highlights ?? []).join('\n\n')
+        }))
+        .filter((result) => v.is(searchResultSchema, result))
+      return { results }
     }
-    if (response.status === 429) throw new WebSearchRefusedError('Exa is rate limiting searches.')
-    if (!response.ok) throw new Error(`Exa answered HTTP ${response.status}`)
-    const parsed = v.safeParse(answerBodySchema, await response.text())
-    if (!parsed.success) throw new Error('Exa answered with an unexpected body')
-    const results: SearchResult[] = parsed.output.results
-      .map((result) => ({
-        url: result.url,
-        title: result.title ?? '',
-        publishedAt: timestamp(result.publishedDate),
-        author: result.author || null,
-        text: (result.highlights ?? []).join('\n\n')
-      }))
-      .filter((result) => v.is(searchResultSchema, result))
-    return { results }
   }
 }
 

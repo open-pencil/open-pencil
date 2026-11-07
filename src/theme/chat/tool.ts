@@ -7,7 +7,8 @@ export default {
     status:
       'flex size-4 shrink-0 items-center justify-center rounded-full data-[state=done]:bg-success/20 data-[state=done]:text-success data-[state=error]:bg-error/15 data-[state=error]:text-error data-[state=pending]:bg-accent/20 data-[state=pending]:text-primary',
     statusIcon: 'size-3',
-    name: 'shrink-0 text-2xs font-medium text-surface',
+    // A long title, such as an agent's own "Search …", truncates before the chevron does.
+    name: 'min-w-0 truncate text-2xs font-medium text-surface',
     summary: 'min-w-0 flex-1 truncate font-mono text-3xs text-muted',
     undone: 'inline-flex shrink-0 items-center gap-1 text-3xs text-muted',
     undoneIcon: 'size-3',
