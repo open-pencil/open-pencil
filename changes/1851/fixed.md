@@ -1,0 +1,1 @@
+- Layers scaled by their constraints in Hug frames and resized instances keep the exact ratio instead of snapping to 1/128 px, as in Figma.
