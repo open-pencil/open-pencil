@@ -114,9 +114,10 @@ test('a variable a pasted instance binds on a nested layer follows the paste int
 
   const pastedWidth = expectDefined([...target.variables.values()].find((v) => v.name === 'Width'))
   const pastedOuter = expectDefined([...target.getAllNodes()].find((node) => node.name === 'Outer'))
-  const bindings = [...pastedOuter.instanceOverrides.descendants.values()].map((fields) =>
-    fields.get(bindingOverrideField('width'))
-  )
+  const pastedNested = expectDefined(target.getChildren(pastedOuter.id)[0])
+  const binding = pastedOuter.instanceOverrides.descendants
+    .get(pastedNested.id)
+    ?.get(bindingOverrideField('width'))
   expect(pastedWidth.id).not.toBe(width.id)
-  expect(bindings).toEqual([pastedWidth.id])
+  expect(binding).toBe(pastedWidth.id)
 })
