@@ -210,6 +210,34 @@ export function createCapabilityService(
         .where('documentShare.id', '=', shareId)
         .where('documentShare.revokedAt', 'is', null)
         .where('document.deletedAt', 'is', null)
+        // A link stops working while whoever made it, or made the document, is banned, so what a
+        // banned person put up is no longer public.
+        .where((expression) =>
+          expression.not(
+            expression.exists(
+              expression
+                .selectFrom('user')
+                .select('user.id')
+                .where((user) =>
+                  user.or([
+                    user(
+                      user.cast('user.id', 'text'),
+                      '=',
+                      expression.ref('documentShare.createdBy')
+                    ),
+                    user(user.cast('user.id', 'text'), '=', expression.ref('document.createdBy'))
+                  ])
+                )
+                .where('user.banned', '=', true)
+                .where((user) =>
+                  user.or([
+                    user('user.banExpires', 'is', null),
+                    user('user.banExpires', '>', new Date())
+                  ])
+                )
+            )
+          )
+        )
         .executeTakeFirst()
       if (
         !row ||

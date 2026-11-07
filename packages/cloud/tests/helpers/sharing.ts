@@ -61,4 +61,21 @@ export async function assignOwnerUser(
     .execute()
 }
 
+/** Gives `userId` access to the seeded document the only way there is: an accepted invitation. */
+export async function grantByInvitation(
+  context: Awaited<ReturnType<typeof seedSharing>>,
+  user: { userId: string; email: string },
+  permission: 'view' | 'edit' = 'view'
+): Promise<void> {
+  const created = await context.sharing.createInvitation('owner', context.documentId, {
+    email: user.email,
+    permission
+  })
+  await context.sharing.acceptInvitation(
+    { userId: user.userId, name: user.userId, email: user.email },
+    created.invitation.id,
+    { token: created.token }
+  )
+}
+
 export { CLOUD_FEATURE_KEYS }

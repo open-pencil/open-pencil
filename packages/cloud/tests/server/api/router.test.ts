@@ -71,7 +71,6 @@ function services() {
       duplicate: notUsed
     },
     sharing: {
-      lookupUser: async () => null,
       userProfile: async () => null,
       listShares: async () => [],
       createShare: async () => {

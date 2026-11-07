@@ -89,11 +89,6 @@ export const acceptedInvitationSchema = v.variant('kind', [
 ])
 export type AcceptedInvitation = v.InferOutput<typeof acceptedInvitationSchema>
 
-export const lookupCloudUserSchema = v.object({
-  email: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email())
-})
-export type LookupCloudUserInput = v.InferOutput<typeof lookupCloudUserSchema>
-
 export const putDocumentGrantSchema = v.object({ permission: documentPermissionSchema })
 export type PutDocumentGrantInput = v.InferOutput<typeof putDocumentGrantSchema>
 
@@ -160,10 +155,6 @@ export function parseCreateInvitationContinuation(
   input: unknown
 ): CreateInvitationContinuationInput {
   return v.parse(createInvitationContinuationSchema, input)
-}
-
-export function parseLookupCloudUser(input: unknown): LookupCloudUserInput {
-  return v.parse(lookupCloudUserSchema, input)
 }
 
 export function parseCreateDocumentShare(input: unknown): CreateDocumentShareInput {

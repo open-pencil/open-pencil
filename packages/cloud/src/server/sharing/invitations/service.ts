@@ -11,7 +11,11 @@ import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
-import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import {
+  assertInvitationBudget,
+  type InvitationDelivery,
+  type InvitationOutbox
+} from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
@@ -126,6 +130,7 @@ export function createInvitationService(
       input: CreateDocumentInvitationInput
     ): Promise<{ invitation: DocumentInvitation; token: string }> {
       await requireSharingAccess(database, userId, documentId)
+      await assertInvitationBudget(database, { senderId: userId, email: input.email })
       const id = crypto.randomUUID()
       const token = randomHex(INVITATION_SECRET_BYTES)
       const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)

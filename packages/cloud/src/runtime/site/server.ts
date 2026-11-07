@@ -1,6 +1,7 @@
 import { CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
 import { cloudErrorHandler, withIndexingPolicy, type CloudErrorReporter } from '#cloud/server'
 import { Hono } from 'hono'
+import { fromUint8Array } from 'js-base64'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
 export type SiteFile = {
@@ -16,13 +17,59 @@ export type SiteFiles = (path: string, request: Request) => Promise<SiteFile | n
 const PORTAL_PAGE = '/cloud.html'
 const EDITOR_PAGE = '/index.html'
 
-const PAGE_HEADERS = {
-  'Content-Type': 'text/html; charset=utf-8',
-  'Cache-Control': 'no-cache',
-  // Desktop sign-in approval and the editor must never be framed by another site.
-  'Content-Security-Policy': "frame-ancestors 'none'",
-  'Referrer-Policy': 'no-referrer',
-  'X-Content-Type-Options': 'nosniff'
+/**
+ * What the site's pages may run: the site's own scripts, the inline scripts each page carries by
+ * their hashes, and Turnstile's on the portal, so an injected script tag or one from another host
+ * never runs. The editor compiles design JSX and code-tool snippets with `Function` and runs
+ * WebAssembly and workers from blobs, which the policy keeps; plugins and AI providers reach
+ * other hosts through `fetch`, which it leaves be. Desktop sign-in approval and the editor must
+ * never be framed by another site.
+ */
+export function siteContentSecurityPolicy(inlineScriptHashes: readonly string[] = []): string {
+  const inline = inlineScriptHashes.map((hash) => `'sha256-${hash}'`)
+  return [
+    [
+      'script-src',
+      "'self'",
+      ...inline,
+      "'unsafe-eval'",
+      "'wasm-unsafe-eval'",
+      'blob:',
+      'https://challenges.cloudflare.com'
+    ].join(' '),
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'"
+  ].join('; ')
+}
+
+/** The SHA-256 digests, in Base64, of a page's inline scripts, as a policy names them. */
+async function inlineScriptHashes(html: string): Promise<string[]> {
+  const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)]
+  return Promise.all(
+    scripts.map(async ([, body = '']) =>
+      fromUint8Array(
+        new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body)))
+      )
+    )
+  )
+}
+
+/** A page of the site, with the policy that lets exactly its own inline scripts run. */
+async function pageResponse(file: SiteFile): Promise<Response> {
+  const html = await new Response(file.body).text()
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'Content-Security-Policy': siteContentSecurityPolicy(await inlineScriptHashes(html)),
+      // Browsers take this only over HTTPS; a deployment on plain HTTP is unaffected.
+      'Strict-Transport-Security': 'max-age=31536000',
+      'Referrer-Policy': 'no-referrer',
+      'X-Content-Type-Options': 'nosniff'
+    }
+  })
 }
 
 export type CloudServerOptions = {
@@ -56,7 +103,7 @@ export function createCloudServer(
     const pages = CLOUD_PORTAL_PAGE_ROOTS.flatMap((root) => [root, `${root}/*`])
     server.on(['GET', 'HEAD'], pages, async (c) => {
       const page = await site(PORTAL_PAGE, c.req.raw)
-      return page ? c.body(page.body, 200, PAGE_HEADERS) : c.notFound()
+      return page ? pageResponse(page) : c.notFound()
     })
     server.on(['GET', 'HEAD'], '*', async (c, next) => {
       await next()
@@ -64,7 +111,7 @@ export function createCloudServer(
       const file = await site(c.req.path, c.req.raw)
       if (file) {
         c.res = file.type.startsWith('text/html')
-          ? new Response(file.body, { headers: PAGE_HEADERS })
+          ? await pageResponse(file)
           : new Response(file.body, {
               headers: {
                 'Content-Type': file.type,
@@ -76,7 +123,7 @@ export function createCloudServer(
       }
       if (!c.req.header('Accept')?.includes('text/html')) return
       const editor = await site(EDITOR_PAGE, c.req.raw)
-      if (editor) c.res = new Response(editor.body, { headers: PAGE_HEADERS })
+      if (editor) c.res = await pageResponse(editor)
     })
   }
   server.all('*', (c) => api.fetch(c.req.raw))

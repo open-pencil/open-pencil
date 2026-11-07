@@ -9,6 +9,41 @@ import {
 } from '#cloud/server'
 
 describe('document sharing capabilities integration', () => {
+  test('stops a link while its maker is banned', async () => {
+    const context = await seedSharing()
+    try {
+      const maker = crypto.randomUUID()
+      await context.runtime.database
+        .insertInto('user')
+        .values({ id: maker, name: 'Maker', email: 'maker@example.com', emailVerified: true })
+        .execute()
+      const capability = await context.sharing.createShare('owner', context.documentId, {
+        permission: 'view'
+      })
+      await context.runtime.database
+        .updateTable('documentShare')
+        .set({ createdBy: maker })
+        .where('id', '=', capability.share.id)
+        .execute()
+      const resolve = () =>
+        context.sharing.resolveShare(capability.share.id, { secret: capability.secret })
+      const ban = (banExpires: Date | null) =>
+        context.runtime.database
+          .updateTable('user')
+          .set({ banned: true, banExpires })
+          .where('id', '=', maker)
+          .execute()
+
+      await ban(null)
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
+      // A ban that ran out no longer holds the link back.
+      await ban(new Date(Date.now() - 1_000))
+      await expect(resolve()).resolves.toMatchObject({ documentId: context.documentId })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('creates hash-only capabilities and resolves user and guest principals', async () => {
     const context = await seedSharing()
     try {

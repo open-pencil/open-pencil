@@ -77,7 +77,7 @@
   "resetSentDescription": "Jeśli adres {email} ma tu konto, link do resetu jest już w drodze.",
   "deviceTitle": "Zalogować się w aplikacji OpenPencil?",
   "deviceDescription": "Aplikacja OpenPencil prosi o dostęp do Twojego konta {email}.",
-  "deviceCheckCode": "Sprawdź, czy aplikacja wyświetla ten kod",
+  "deviceEnterCode": "Wpisz kod wyświetlany w aplikacji",
   "deviceWarningTitle": "Zatwierdzaj tylko logowanie rozpoczęte przez Ciebie",
   "deviceWarningDescription": "Jeśli nie logujesz się właśnie do OpenPencil na komputerze, odrzuć tę prośbę.",
   "approve": "Zatwierdź",

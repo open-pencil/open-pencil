@@ -11,6 +11,7 @@ import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
+import { assertInvitationBudget } from '#cloud/server/invitations'
 import {
   invitationMatchesActor,
   invitationTokenIsActive,
@@ -183,6 +184,7 @@ export function createWorkspaceMemberService(
       )
       .executeTakeFirst()
     if (existing) throw new WorkspaceAlreadyMemberError()
+    await assertInvitationBudget(database, { senderId: userId, email: input.email })
     const inviter = await database
       .selectFrom('user')
       .select('name')

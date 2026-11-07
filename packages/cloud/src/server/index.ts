@@ -202,6 +202,8 @@ export {
   type SetWorkspaceEntitlementsInput
 } from './internal'
 export {
+  INVITATION_BUDGET,
+  InvitationLimitError,
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,

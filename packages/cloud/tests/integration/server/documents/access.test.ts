@@ -29,6 +29,30 @@ async function seedDocument() {
 }
 
 describe('document access resolution', () => {
+  test('gives a document’s maker no access once removed from its workspace', async () => {
+    const context = await seedDocument()
+    try {
+      await context.runtime.database
+        .updateTable('document')
+        .set({ createdBy: 'viewer' })
+        .where('id', '=', context.documentId)
+        .execute()
+      expect(
+        await resolveDocumentAccess(context.runtime.database, 'viewer', context.documentId)
+      ).toMatchObject({ permission: 'edit', sources: ['owner', 'workspace'] })
+
+      await context.runtime.database
+        .deleteFrom('workspaceMember')
+        .where('userId', '=', 'viewer')
+        .execute()
+      expect(
+        await resolveDocumentAccess(context.runtime.database, 'viewer', context.documentId)
+      ).toBeUndefined()
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('combines owner, workspace, and direct grant sources using strongest access', async () => {
     const context = await seedDocument()
     try {

@@ -46,7 +46,9 @@ export async function resolveDocumentAccess(
 
   const sources: DocumentAccessSource[] = []
   const candidates: DocumentPermission[] = []
-  const owner = document.createdBy === userId
+  // Making a document gives access only while its maker is in the workspace: someone removed
+  // from it keeps no way back in.
+  const owner = document.createdBy === userId && document.workspaceRole !== null
   if (owner) {
     sources.push('owner')
     candidates.push('edit')
@@ -75,8 +77,9 @@ export function canEditDocument(access: DocumentAccess): boolean {
 }
 
 /**
- * Removing a document belongs to its owner and its workspace's admins and editors. A direct grant
- * or an accepted invitation lets someone edit, never delete the owner's document.
+ * Removing a document belongs to its owner, while still in its workspace, and the workspace's
+ * admins and editors. A direct grant or an accepted invitation lets someone edit, never delete
+ * the owner's document.
  */
 export async function canDeleteDocument(
   database: AccessDatabase,
@@ -96,7 +99,7 @@ export async function canDeleteDocument(
     .executeTakeFirst()
   if (!document) return false
   return (
-    document.createdBy === userId ||
+    (document.createdBy === userId && document.workspaceRole !== null) ||
     document.workspaceRole === 'admin' ||
     document.workspaceRole === 'editor'
   )

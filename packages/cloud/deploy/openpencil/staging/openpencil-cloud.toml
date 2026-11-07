@@ -19,6 +19,12 @@ notification_emails = ["admin@openpencil.dev"]
 [authentication.email_password]
 enabled = false
 
+# Deployment administrators confirm a second step before the admin console opens.
+[authentication.mfa]
+required_for_admins = true
+totp = true
+recovery_codes = true
+
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
 addresses = []
