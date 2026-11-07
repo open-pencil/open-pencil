@@ -16,7 +16,8 @@ export const CLOUD_FEATURE_KEYS = {
 export type CloudPolicyContext = {
   /** Whose entitlements apply: an account by default for a workspace, its owner's. */
   targetingKey: string
-  subjectType?: 'workspace' | 'user' | 'organization' | 'deployment'
+  /** Required, so an account ID never reads as a workspace's and falls back to defaults. */
+  subjectType: 'workspace' | 'user' | 'organization' | 'deployment'
   actorId?: string
   workspaceId?: string
   organizationId?: string

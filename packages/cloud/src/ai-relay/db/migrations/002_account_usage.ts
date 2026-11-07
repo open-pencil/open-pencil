@@ -2,7 +2,8 @@ import type { Kysely } from 'kysely'
 
 /**
  * Credits are an account's, shared by every workspace it owns, so each settled request records
- * the account it spent. Rows from before carry none and no longer count toward any allowance.
+ * the account it spent. Rows from before carry none; they still count this month for requests
+ * from their own workspace (`spender` in `usage.ts`), since the relay cannot see who owns it.
  */
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema.alterTable('ai_relay_usage').addColumn('account_id', 'text').execute()

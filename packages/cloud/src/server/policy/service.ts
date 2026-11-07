@@ -56,6 +56,8 @@ export function createEntitlementService(
         policy.number(CLOUD_FEATURE_KEYS.monthlyCreditAllowance, -1, context),
         quota.snapshot(workspaceId)
       ])
+      // The workspace may have gone since its role was read; it has no usage to report then.
+      if (!usage) throw new DocumentNotFoundError()
       // Technical limits are ceilings: an entitlement can lower them but never raise them.
       const participants = Math.min(technicalMaximumParticipants, maximumParticipants)
       return {

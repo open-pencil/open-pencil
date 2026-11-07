@@ -75,7 +75,8 @@ async function testApp(options: {
       id: workspaceId,
       name: 'W',
       slug: `w-${workspaceId}`,
-      createdBy: 'owner',
+      // Made by the member, owned by someone else since: credits follow the owner.
+      createdBy: member.userId,
       ownerId: 'owner'
     })
     .execute()

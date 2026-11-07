@@ -35,8 +35,24 @@ export class DatabaseEntitlementSource implements EntitlementSource {
 }
 
 /** Each account's stored entitlements, which every workspace it owns takes. */
+const accountIdSchema = v.pipe(v.string(), v.uuid())
+
 export function createAccountEntitlementRepository(database: Kysely<CloudDatabase>) {
   return {
+    /**
+     * The account `userId` names, as the user table spells it, or null when there is none, so a
+     * plan is stored under the key policy reads, whatever case the caller wrote the ID in.
+     */
+    async account(userId: string): Promise<string | null> {
+      if (!v.is(accountIdSchema, userId)) return null
+      const user = await database
+        .selectFrom('user')
+        .select('id')
+        .where('id', '=', userId)
+        .executeTakeFirst()
+      return user?.id ?? null
+    },
+
     async get(userId: string) {
       return database
         .selectFrom('accountEntitlement')

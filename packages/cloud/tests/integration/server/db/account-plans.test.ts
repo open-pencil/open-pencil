@@ -8,6 +8,8 @@ type LegacyEntitlements = {
     workspaceId: string
     values: unknown
     source: string
+    revision?: number
+    externalVersion?: number | null
     updatedAt: Date
   }
 }
@@ -58,6 +60,8 @@ describe('migration 030', () => {
             workspaceId: kept,
             values: { storage: { maximumBytes: 2 } },
             source: 'billing',
+            revision: 7,
+            externalVersion: 42,
             updatedAt: new Date('2026-03-02T00:00:00Z')
           },
           {
@@ -88,12 +92,33 @@ describe('migration 030', () => {
       })
       const entitlements = await runtime.database
         .selectFrom('accountEntitlement')
-        .select(['userId', 'values', 'source'])
+        .select(['userId', 'values', 'source', 'revision', 'externalVersion', 'updatedAt'])
         .orderBy('userId')
         .execute()
-      expect(entitlements).toEqual([
-        { userId: 'alice', values: { storage: { maximumBytes: 2 } }, source: 'billing' },
-        { userId: 'carol', values: { storage: { maximumBytes: 3 } }, source: 'operator' }
+      // The billing version moves with the plan, so an older billing event cannot replace it.
+      expect(
+        entitlements.map((row) => ({
+          ...row,
+          externalVersion: row.externalVersion === null ? null : Number(row.externalVersion),
+          updatedAt: new Date(row.updatedAt).toISOString()
+        }))
+      ).toEqual([
+        {
+          userId: 'alice',
+          values: { storage: { maximumBytes: 2 } },
+          source: 'billing',
+          revision: 7,
+          externalVersion: 42,
+          updatedAt: '2026-03-02T00:00:00.000Z'
+        },
+        {
+          userId: 'carol',
+          values: { storage: { maximumBytes: 3 } },
+          source: 'operator',
+          revision: 1,
+          externalVersion: null,
+          updatedAt: '2026-03-01T00:00:00.000Z'
+        }
       ])
     } finally {
       await runtime.close()

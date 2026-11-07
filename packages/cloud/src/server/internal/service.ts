@@ -27,13 +27,9 @@ export function createInternalService(database: Kysely<CloudDatabase>) {
       input: SetAccountEntitlementsInput
     ): Promise<{ found: boolean; applied: boolean }> {
       const { values, source, externalVersion } = parseSetAccountEntitlements(input)
-      const user = await database
-        .selectFrom('user')
-        .select('id')
-        .where('id', '=', userId)
-        .executeTakeFirst()
-      if (!user) return { found: false, applied: false }
-      const { applied } = await entitlements.setVersioned(userId, values, source, externalVersion)
+      const account = await entitlements.account(userId)
+      if (!account) return { found: false, applied: false }
+      const { applied } = await entitlements.setVersioned(account, values, source, externalVersion)
       return { found: true, applied }
     }
   }

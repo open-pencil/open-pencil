@@ -124,13 +124,14 @@ async function relay(
     claims: {
       monthlyCreditAllowance?: number | null
       workspaceId?: string
-      accountId?: string
+      /** Null for a token from a Cloud before account plans, which names no account. */
+      accountId?: string | null
     } = {},
     options: { issuer?: string; signingKey?: CryptoKey } = {}
   ) {
     return new SignJWT({
       workspaceId: claims.workspaceId ?? workspaceId,
-      accountId: claims.accountId ?? 'owner-1',
+      ...(claims.accountId === null ? {} : { accountId: claims.accountId ?? 'owner-1' }),
       monthlyCreditAllowance:
         claims.monthlyCreditAllowance === undefined ? 1000 : claims.monthlyCreditAllowance
     })
@@ -152,7 +153,7 @@ async function relay(
       method: 'POST',
       body: JSON.stringify(body)
     })
-  return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId }
+  return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId, database }
 }
 
 describe('AI relay', () => {
@@ -318,6 +319,39 @@ describe('AI relay', () => {
     )
     expect(wallet).toEqual({ balance: null, buckets: [] })
     expect((await context.complete(unlimited, { model: MODEL })).status).toBe(200)
+  })
+
+  test('counts this month’s spend from before accounts, and takes tokens without one', async () => {
+    const context = await relay(() =>
+      Response.json({ choices: [], usage: { prompt_tokens: 1, completion_tokens: 0 } })
+    )
+    const balance = async (bearer: string) =>
+      (
+        await responseJSON(
+          await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+          creditWalletSchema
+        )
+      ).balance
+    // A request recorded before the upgrade, with no account, still counts for its workspace.
+    await context.database
+      .insertInto('aiRelayUsage')
+      .values({
+        id: crypto.randomUUID(),
+        workspaceId: context.workspaceId,
+        accountId: null,
+        userId: 'user-1',
+        modelId: MODEL,
+        inputTokens: 0,
+        outputTokens: 0,
+        credits: 400,
+        createdAt: new Date('2026-10-20T00:00:00Z')
+      })
+      .execute()
+    expect(await balance(await context.token())).toBe(600)
+    // A Cloud not yet upgraded issues tokens without an account: they spend the workspace's own.
+    const older = await context.token({ accountId: null })
+    expect(await balance(older)).toBe(600)
+    expect((await context.complete(older, { model: MODEL })).status).toBe(200)
   })
 
   test('limits an account to its concurrent requests until metering settles', async () => {

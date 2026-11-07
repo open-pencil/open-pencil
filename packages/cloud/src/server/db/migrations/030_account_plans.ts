@@ -1,5 +1,6 @@
 import { CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
-import { sql, type Kysely } from 'kysely'
+import type { CloudDatabase } from '#cloud/server/db/tables'
+import { sql, type CreateTableBuilder, type Kysely } from 'kysely'
 
 /**
  * Plans belong to accounts: every workspace has an owner, whose plan its limits come from, and
@@ -10,7 +11,27 @@ import { sql, type Kysely } from 'kysely'
  * longest-standing admin. An account that owned several workspaces with stored entitlements
  * keeps the most recently updated ones.
  */
-export async function up(database: Kysely<unknown>): Promise<void> {
+/** What a stored plan holds, keyed per account here and per workspace before. */
+function addEntitlementColumns<Table extends string, Column extends string>(
+  table: CreateTableBuilder<Table, Column>
+) {
+  return table
+    .addColumn('values', 'jsonb', (column) => column.notNull())
+    .addColumn('source', 'text', (column) => column.notNull())
+    .addColumn('revision', 'integer', (column) => column.notNull().defaultTo(1))
+    .addColumn('externalVersion', 'bigint')
+    .addColumn('updatedAt', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
+}
+
+/** The plan's fields as `alias` holds them, for copying a plan from one table to the other. */
+function entitlementFields(alias?: string) {
+  const names = ['values', 'source', 'revision', 'externalVersion', 'updatedAt']
+  return sql.join(names.map((name) => (alias ? sql.ref(`${alias}.${name}`) : sql.ref(name))))
+}
+
+export async function up(database: Kysely<CloudDatabase>): Promise<void> {
   await database.schema.alterTable('workspace').addColumn('ownerId', 'text').execute()
   await sql`
     update ${sql.table('workspace')} as w
@@ -39,26 +60,16 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .column('ownerId')
     .execute()
 
-  await database.schema
-    .createTable('accountEntitlement')
-    // Better Auth creates its tables after these migrations on a new database, so the account
-    // is named without a foreign key, as `userPicture` names its owner.
-    .addColumn('userId', 'text', (column) => column.primaryKey())
-    .addColumn('values', 'jsonb', (column) => column.notNull())
-    .addColumn('source', 'text', (column) => column.notNull())
-    .addColumn('revision', 'integer', (column) => column.notNull().defaultTo(1))
-    .addColumn('externalVersion', 'bigint')
-    .addColumn('updatedAt', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
-    .execute()
+  await addEntitlementColumns(
+    database.schema
+      .createTable('accountEntitlement')
+      // Better Auth creates its tables after these migrations on a new database, so the account
+      // is named without a foreign key, as `userPicture` names its owner.
+      .addColumn('userId', 'text', (column) => column.primaryKey())
+  ).execute()
   await sql`
-    insert into ${sql.table('accountEntitlement')}
-      (${sql.ref('userId')}, ${sql.ref('values')}, ${sql.ref('source')}, ${sql.ref('revision')},
-       ${sql.ref('externalVersion')}, ${sql.ref('updatedAt')})
-    select distinct on (w.${sql.ref('ownerId')})
-      w.${sql.ref('ownerId')}, e.${sql.ref('values')}, e.${sql.ref('source')}, e.${sql.ref('revision')},
-      e.${sql.ref('externalVersion')}, e.${sql.ref('updatedAt')}
+    insert into ${sql.table('accountEntitlement')} (${sql.ref('userId')}, ${entitlementFields()})
+    select distinct on (w.${sql.ref('ownerId')}) w.${sql.ref('ownerId')}, ${entitlementFields('e')}
     from ${sql.table('workspaceEntitlement')} as e
     join ${sql.table('workspace')} as w on w.${sql.ref('id')} = e.${sql.ref('workspaceId')}
     order by w.${sql.ref('ownerId')}, e.${sql.ref('updatedAt')} desc
@@ -66,26 +77,17 @@ export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema.dropTable('workspaceEntitlement').execute()
 }
 
-export async function down(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .createTable('workspaceEntitlement')
-    .addColumn('workspaceId', 'uuid', (column) =>
-      column.primaryKey().references('workspace.id').onDelete('cascade')
-    )
-    .addColumn('values', 'jsonb', (column) => column.notNull())
-    .addColumn('source', 'text', (column) => column.notNull())
-    .addColumn('revision', 'integer', (column) => column.notNull().defaultTo(1))
-    .addColumn('updatedAt', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
-    .addColumn('externalVersion', 'bigint')
-    .execute()
+export async function down(database: Kysely<CloudDatabase>): Promise<void> {
+  await addEntitlementColumns(
+    database.schema
+      .createTable('workspaceEntitlement')
+      .addColumn('workspaceId', 'uuid', (column) =>
+        column.primaryKey().references('workspace.id').onDelete('cascade')
+      )
+  ).execute()
   await sql`
-    insert into ${sql.table('workspaceEntitlement')}
-      (${sql.ref('workspaceId')}, ${sql.ref('values')}, ${sql.ref('source')}, ${sql.ref('revision')},
-       ${sql.ref('externalVersion')}, ${sql.ref('updatedAt')})
-    select w.${sql.ref('id')}, e.${sql.ref('values')}, e.${sql.ref('source')}, e.${sql.ref('revision')},
-      e.${sql.ref('externalVersion')}, e.${sql.ref('updatedAt')}
+    insert into ${sql.table('workspaceEntitlement')} (${sql.ref('workspaceId')}, ${entitlementFields()})
+    select w.${sql.ref('id')}, ${entitlementFields('e')}
     from ${sql.table('accountEntitlement')} as e
     join ${sql.table('workspace')} as w on w.${sql.ref('ownerId')} = e.${sql.ref('userId')}
   `.execute(database)

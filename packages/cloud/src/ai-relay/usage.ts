@@ -38,13 +38,29 @@ export class AIUsageCursorError extends Error {
   }
 }
 
+/**
+ * Who a request spends for: the account whose allowance it draws on, and the workspace it came
+ * from, whose requests recorded before accounts carry no account and still count this month.
+ */
+export type CreditSpender = { accountId: string; workspaceId: string }
+
+/** The spender a token names; a token without an account spends its workspace's allowance. */
+export function spender(claims: { accountId?: string; workspaceId: string }): CreditSpender {
+  return { accountId: claims.accountId ?? claims.workspaceId, workspaceId: claims.workspaceId }
+}
+
 export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
-  async function spent(accountId: string, now: Date): Promise<number> {
+  async function spent({ accountId, workspaceId }: CreditSpender, now: Date): Promise<number> {
     const { start, end } = usagePeriod(now)
     const row = await database
       .selectFrom('aiRelayUsage')
       .select((query) => query.fn.sum<string | number | null>('credits').as('credits'))
-      .where('accountId', '=', accountId)
+      .where((usage) =>
+        usage.or([
+          usage('accountId', '=', accountId),
+          usage.and([usage('accountId', 'is', null), usage('workspaceId', '=', workspaceId)])
+        ])
+      )
       .where('createdAt', '>=', start)
       .where('createdAt', '<', end)
       .executeTakeFirst()
@@ -60,9 +76,13 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
      * The account's single allowance bucket for the current month, which every workspace it owns
      * spends from. A `null` allowance means Cloud set none, and the relay does not limit spend.
      */
-    async wallet(accountId: string, allowance: number | null, now: Date): Promise<CreditWallet> {
+    async wallet(
+      spending: CreditSpender,
+      allowance: number | null,
+      now: Date
+    ): Promise<CreditWallet> {
       if (allowance === null) return { balance: null, buckets: [] }
-      const remaining = Math.max(0, allowance - (await spent(accountId, now)))
+      const remaining = Math.max(0, allowance - (await spent(spending, now)))
       return {
         balance: remaining,
         buckets: [{ kind: 'allowance', remaining, expiresAt: usagePeriod(now).end.toISOString() }]

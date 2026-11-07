@@ -20,7 +20,7 @@ import * as v from 'valibot'
 import type { AIRelayConfig } from './config'
 import type { AIRelayDatabase } from './db'
 import { creditsFor, meteredUsage } from './metering'
-import { AIUsageCursorError, createAIUsageStore } from './usage'
+import { AIUsageCursorError, createAIUsageStore, spender } from './usage'
 
 export type AIRelayServices = {
   config: AIRelayConfig
@@ -155,9 +155,7 @@ export function createAIRelayApp(services: AIRelayServices) {
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
       const claims = context.get('claims')
-      return context.json(
-        await usage.wallet(claims.accountId, claims.monthlyCreditAllowance, now())
-      )
+      return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))
     })
     .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
       try {
@@ -186,13 +184,13 @@ export function createAIRelayApp(services: AIRelayServices) {
         const request = pick(parsed.output, FORWARDED_FIELDS)
         const model = models.get(request.model)
         if (!model) return aiError(context, 'model_not_allowed')
-        const wallet = await usage.wallet(claims.accountId, claims.monthlyCreditAllowance, now())
+        const wallet = await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now())
         if (wallet.balance === 0) {
           return aiError(context, 'insufficient_credits', {
             resetsAt: wallet.buckets[0]?.expiresAt ?? undefined
           })
         }
-        const release = limiter.acquire(claims.accountId)
+        const release = limiter.acquire(spender(claims).accountId)
         if (!release) return aiError(context, 'rate_limited')
 
         const streamed = request.stream === true
@@ -234,7 +232,7 @@ export function createAIRelayApp(services: AIRelayServices) {
           await usage.record({
             id: crypto.randomUUID(),
             workspaceId: claims.workspaceId,
-            accountId: claims.accountId,
+            accountId: spender(claims).accountId,
             userId: claims.sub,
             modelId: model.id,
             inputTokens: tokens.inputTokens,

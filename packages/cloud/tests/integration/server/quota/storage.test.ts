@@ -26,7 +26,7 @@ async function seed() {
     return { workspaceId, documentId }
   }
   const { workspaceId, documentId: firstDocument } = await workspace('u')
-  async function upload(uploadId: string, documentId = firstDocument) {
+  async function upload(uploadId: string, documentId: string = firstDocument) {
     await runtime.database
       .insertInto('upload')
       .values({
@@ -171,6 +171,37 @@ describe('storage quota reservations', () => {
       })
       // Someone else's workspace has an allowance of its own.
       await reserve(stranger.workspaceId, stranger.documentId)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('lets one of two uploads at once into sibling workspaces take the last of the allowance', async () => {
+    const context = await seed()
+    try {
+      const quota = createStorageQuotaService(context.runtime.database)
+      const sibling = await context.workspace('u')
+      const first = await context.runtime.database
+        .selectFrom('document')
+        .select('id')
+        .where('workspaceId', '=', context.workspaceId)
+        .executeTakeFirstOrThrow()
+      const reserve = async (workspaceId: string, documentId: string) => {
+        const uploadId = crypto.randomUUID()
+        await context.upload(uploadId, documentId)
+        await quota.reserve({
+          workspaceId,
+          uploadId,
+          bytes: 60,
+          expiresAt: new Date(Date.now() + 60_000),
+          maximumBytes: 100
+        })
+      }
+      const results = await Promise.allSettled([
+        reserve(context.workspaceId, first.id),
+        reserve(sibling.workspaceId, sibling.documentId)
+      ])
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
     } finally {
       await context.runtime.close()
     }

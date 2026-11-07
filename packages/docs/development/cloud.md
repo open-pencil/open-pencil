@@ -350,7 +350,9 @@ a short-lived ES256 token for a workspace member when the workspace owner's plan
 `services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
 spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
 the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
-database. The contract editors and services share, including the service's catalog, wallet, and
+database. A token from a Cloud before account plans names no account, and the relay charges it to
+the workspace's own allowance, so the relay can upgrade first; usage recorded before the relay
+kept accounts still counts this month for requests from its workspace. The contract editors and services share, including the service's catalog, wallet, and
 error codes, is `src/contract/services.ts`; it has its own version so a service can change without
 a Cloud release. AI models are the first capability; image generation and search join the same
 contract and the same credits. A `[billing]` table only advertises where people manage their plan.

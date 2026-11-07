@@ -11,6 +11,7 @@ import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
+import { lockStorageAllowance } from '#cloud/server/quota/storage'
 import {
   invitationMatchesActor,
   invitationTokenIsActive,
@@ -19,7 +20,7 @@ import {
 import { dateString } from '#cloud/server/sharing/contracts'
 import { hashCapability } from '#cloud/server/sharing/crypto'
 import { findWorkspace, type WorkspaceDatabase } from '#cloud/server/workspaces/repository'
-import type { Kysely } from 'kysely'
+import type { Kysely, Transaction } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -106,7 +107,7 @@ function invitationContract(row: {
  * an admin, so its limits come from someone still running it. The last-admin guard keeps one.
  */
 async function handOverOwnership(
-  database: WorkspaceDatabase,
+  database: Transaction<CloudDatabase>,
   workspaceId: string,
   leavingUserId: string
 ): Promise<void> {
@@ -127,6 +128,10 @@ async function handOverOwnership(
     .orderBy('userId')
     .executeTakeFirst()
   if (!successor) return
+  // Reservations count this workspace under its owner's lock: hold both owners', in one order.
+  for (const owner of [leavingUserId, successor.userId].toSorted()) {
+    await lockStorageAllowance(database, owner)
+  }
   await database
     .updateTable('workspace')
     .set({ ownerId: successor.userId, updatedAt: new Date() })
