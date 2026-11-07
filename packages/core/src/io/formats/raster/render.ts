@@ -9,6 +9,7 @@ import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/g
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
+import type { SupersampledOutput } from '#core/canvas/images/state'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
@@ -130,18 +131,28 @@ function shouldTrimAlphaBounds(
   )
 }
 
+interface SurfaceTarget {
+  graph: SceneGraph
+  pageId: string
+  width: number
+  height: number
+  format: ExportFormat
+  quality: number
+  setup: (canvas: Canvas) => void
+  trimTransparent?: boolean
+}
+
+function supersampledOutput(canvas: Canvas, renderScale: number): SupersampledOutput {
+  const outputFromRender = Matrix.scaled(1 / renderScale, 1 / renderScale)
+  return { outputFromWorld: Matrix.multiply(outputFromRender, canvas.getTotalMatrix()) }
+}
+
 function renderToSurface(
   ck: CanvasKit,
   renderer: SkiaRenderer,
-  renderGraph: SceneGraph,
-  pageId: string,
-  width: number,
-  height: number,
-  format: ExportFormat,
-  quality: number,
-  setup: (canvas: Canvas) => void,
-  trimTransparent = false
+  target: SurfaceTarget
 ): Uint8Array<ArrayBuffer> | null {
+  const { graph, pageId, width, height, format, quality, setup, trimTransparent = false } = target
   const oversized = oversizedRaster(width, height)
   if (oversized) throw new RangeError(oversized)
   const renderScale =
@@ -165,11 +176,14 @@ function renderToSurface(
     return null
   }
 
+  const drawnFor = renderer.images.supersampledOutput
   try {
     const canvas = surface.getCanvas()
     canvas.scale(renderScale, renderScale)
     setup(canvas)
-    renderer.renderSceneToCanvas(canvas, renderGraph, pageId)
+    renderer.images.supersampledOutput =
+      renderScale > 1 ? supersampledOutput(canvas, renderScale) : null
+    renderer.renderSceneToCanvas(canvas, graph, pageId)
     surface.flush()
 
     const highResImage = surface.makeImageSnapshot()
@@ -226,6 +240,7 @@ function renderToSurface(
     ck.Free(downsamplePixels)
     return resultBytes
   } finally {
+    renderer.images.supersampledOutput = drawnFor
     surface.delete()
     ck.Free(pixels)
   }
@@ -370,22 +385,20 @@ export function renderNodesToImage(
   prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
-  return renderToSurface(
-    ck,
-    renderer,
-    extracted.graph,
-    extracted.pageId,
-    pixelW,
-    pixelH,
-    options.format,
+  return renderToSurface(ck, renderer, {
+    graph: extracted.graph,
+    pageId: extracted.pageId,
+    width: pixelW,
+    height: pixelH,
+    format: options.format,
     quality,
-    (canvas) => {
+    setup: (canvas) => {
       canvas.clear(ck.TRANSPARENT)
       canvas.scale(options.scale, options.scale)
       canvas.translate(-bounds.minX, -bounds.minY)
     },
-    options.trimTransparent
-  )
+    trimTransparent: options.trimTransparent
+  })
 }
 
 export interface ThumbnailFrame {
@@ -464,10 +477,18 @@ export function renderThumbnail(
   // The page's own background, which the editor's page colour matches only while it is open.
   const background = getPageColor(graph.getNode(pageId))
 
-  return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
-    canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
-    canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
-    canvas.scale(scale, scale)
+  return renderToSurface(ck, renderer, {
+    graph,
+    pageId,
+    width: pixelW,
+    height: pixelH,
+    format: 'PNG',
+    quality: 100,
+    setup: (canvas) => {
+      canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
+      canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
+      canvas.scale(scale, scale)
+    }
   })
 }
 
@@ -483,9 +504,17 @@ export function drawRegionToImage(
   const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
   const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
   if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null
-  return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
-    canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
-    canvas.scale(scale, scale)
-    canvas.translate(-bounds.minX, -bounds.minY)
+  return renderToSurface(ck, renderer, {
+    graph,
+    pageId,
+    width: pixelW,
+    height: pixelH,
+    format: 'PNG',
+    quality: 100,
+    setup: (canvas) => {
+      canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
+      canvas.scale(scale, scale)
+      canvas.translate(-bounds.minX, -bounds.minY)
+    }
   })
 }
