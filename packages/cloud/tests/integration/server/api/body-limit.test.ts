@@ -4,6 +4,11 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
+  CLOUD_MAX_DOCUMENT_IMAGES,
+  commitImageUploadsSchema,
+  commitUploadSchema
+} from '#cloud/contract'
+import {
   API_BODY_BYTES,
   createBetterAuthAdapter,
   createCloudApp,
@@ -61,5 +66,21 @@ describe('Cloud API request bodies', () => {
 
   test('take a body within it', async () => {
     expect((await postWorkspace('Studio')).status).toBe(201)
+  })
+
+  test('fit the largest bodies the contract allows, which list every image of a document', () => {
+    const checksum = `${'A'.repeat(43)}=`
+    const images = Array.from({ length: CLOUD_MAX_DOCUMENT_IMAGES }, (_, index) => index)
+    const commit = v.parse(commitUploadSchema, {
+      checksum,
+      name: 'n'.repeat(200),
+      images: images.map((index) => ({ name: `${index}`.padStart(128, 'i'), checksum }))
+    })
+    const imageUploads = v.parse(commitImageUploadsSchema, {
+      uploads: images.map(() => ({ uploadId: crypto.randomUUID(), checksum }))
+    })
+    for (const body of [commit, imageUploads]) {
+      expect(new TextEncoder().encode(JSON.stringify(body)).byteLength).toBeLessThan(API_BODY_BYTES)
+    }
   })
 })

@@ -9,12 +9,12 @@ import { loadNodeCloudServerConfig } from './config'
 
 /**
  * The deployment's database, migrated to this version before anything uses it. Migrations run
- * on a connection of their own without the query timeout, since one may rewrite a large table.
+ * on a connection of their own without the statement timeout, since one may rewrite a large table.
  */
 export async function migratedNodeCloudDatabase(config: CloudServerConfig) {
   const migrating = createPostgresCloudDatabase({
     connectionString: config.databaseURL,
-    queryTimeoutMs: null
+    statementTimeoutMs: null
   })
   try {
     const auth = createBetterAuthAdapter(config, migrating)

@@ -74,10 +74,11 @@ type Peer = RelayPeer
 
 /**
  * A room's document and the log its saves go to, loaded when a message first needs them, with an
- * upper bound on the document's size: what was saved plus every update since, measured again
- * once that bound reaches `maximumRoomBytes`.
+ * upper bound on the document's size: what was saved plus every update since. The bound is
+ * measured again only once it reaches `maximumRoomBytes` after something was deleted, since only
+ * a deletion can leave the document smaller than the bound.
  */
-type RoomContent = { document: Y.Doc; log: RoomLog; bytes: number }
+type RoomContent = { document: Y.Doc; log: RoomLog; bytes: number; deletedSinceMeasure: boolean }
 
 type Room = {
   id: string
@@ -163,7 +164,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     room.loading ??= openRoomLog(options.store, room.identity, logLimits).then(
       ({ document, log, savedBytes }) => {
         document.on('update', () => schedulePersist(room))
-        const content: RoomContent = { document, log, bytes: savedBytes }
+        // The saved log may hold deletions, so the first time the bound reaches the limit, it is
+        // measured.
+        const content: RoomContent = { document, log, bytes: savedBytes, deletedSinceMeasure: true }
+        document.on('afterTransaction', (transaction: Y.Transaction) => {
+          if (transaction.deleteSet.clients.size > 0) content.deletedSinceMeasure = true
+        })
         room.content = content
         return content
       },
@@ -217,7 +223,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         limit: maximumRoomBytes,
         compressed: namespace === COLLAB_ACTIONS.syncReply
       })
-      if (!update || !fits(content, update.byteLength)) {
+      if (!update || !fits(content, update)) {
         peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
         return false
       }
@@ -245,13 +251,19 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   /**
-   * Whether the room's document stays within its limit after an update of `bytes`. The bound
-   * only grows with updates, so the document is measured only once the bound reaches the limit.
+   * Whether the room's document stays within its limit after `update`. An update that adds no
+   * content, such as a deletion, only shrinks it, so it always fits. Otherwise the bound grows by
+   * the update; past the limit, the document is measured only if a deletion may have shrunk it
+   * since the last measure, so edits near the limit never encode the whole document each time.
    */
-  function fits(content: RoomContent, bytes: number): boolean {
-    if (content.bytes + bytes <= maximumRoomBytes) return true
-    content.bytes = Y.encodeStateAsUpdate(content.document).byteLength
-    return content.bytes + bytes <= maximumRoomBytes
+  function fits(content: RoomContent, update: Uint8Array): boolean {
+    const { from, to } = Y.parseUpdateMetaV2(update)
+    if ([...to].every(([client, clock]) => from.get(client) === clock)) return true
+    if (content.bytes + update.byteLength <= maximumRoomBytes) return true
+    if (!content.deletedSinceMeasure) return false
+    content.bytes = Y.encodeStateAsUpdateV2(content.document).byteLength
+    content.deletedSinceMeasure = false
+    return content.bytes + update.byteLength <= maximumRoomBytes
   }
 
   function handleServerMessage(

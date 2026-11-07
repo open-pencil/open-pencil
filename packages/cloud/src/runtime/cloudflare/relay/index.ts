@@ -59,7 +59,11 @@ function configuredRelay(
   documentId: string,
   onError: (message: string, error: unknown) => void
 ): CollaborationRelay {
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   return createCollaborationRelay({
     authSecret: config.authSecret,
     documentId,

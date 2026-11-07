@@ -130,11 +130,11 @@ export function withIndexingPolicy(
 }
 
 /**
- * The most an API request body may hold. Files go to the object store, never through the API, so
- * the largest body any route takes is a profile picture, whose own limit is tighter; anything past
- * this is refused before it is read.
+ * The most an API request body may hold. Files go to the object store, never through the API; the
+ * largest bodies list a document's images, up to `CLOUD_MAX_DOCUMENT_IMAGES` of them, which comes
+ * to about 2 MB, so this leaves room while refusing anything far past it before it is read.
  */
-export const API_BODY_BYTES = 1024 * 1024
+export const API_BODY_BYTES = 8 * 1024 * 1024
 
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)

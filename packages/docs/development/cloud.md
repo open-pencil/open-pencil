@@ -188,7 +188,7 @@ document, or a newcomer's sync reply, travels as fragments in a row that the rec
 The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
 admitted to one message, so only an editor can make it buffer more. A room's document may hold at
 most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
-update that would grow it past that is refused. A peer the relay turns away for good, for a
+update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
 ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.

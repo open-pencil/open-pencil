@@ -7,7 +7,7 @@ const config = await loadNodeCloudServerConfig(process.env)
 // A migration may rewrite a large table, which takes as long as it takes.
 const database = createPostgresCloudDatabase({
   connectionString: config.databaseURL,
-  queryTimeoutMs: null
+  statementTimeoutMs: null
 })
 try {
   const auth = createBetterAuthAdapter(config, database)
