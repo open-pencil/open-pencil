@@ -88,6 +88,7 @@ export interface RenderOverlays {
     oppositeDragTangent?: Vector | null
     closingToFirst: boolean
     pendingClose?: boolean
+    closeTangent?: Vector | null
     cursorX?: number
     cursorY?: number
   } | null

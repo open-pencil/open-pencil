@@ -61,3 +61,101 @@ test('the pen previews a continued path and lines the next point up with its ver
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('pen-continue-guide.png')
 })
+
+// Figma desktop 126: a press on the first point closes a path of two points; the closing segment
+// leaves the last point along the handle dragged out of it, and arrives along the mirror of a drag
+// at the first point, which points the way the path carries on.
+test('the pen closes a two-point path along the last handle and the closing drag', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.move(box.x + 300, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 300, box.y + 160, { steps: 6 })
+  await mouse.up()
+  await mouse.move(box.x + 100, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 100, box.y + 40, { steps: 6 })
+  await mouse.up()
+  await editor.canvas.waitForRender()
+
+  const path = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [id] = store?.state.selectedIds ?? []
+    const network = id ? store?.graph.getNode(id)?.vectorNetwork : undefined
+    return {
+      tool: store?.state.activeTool,
+      // Mirrored zero handles are -0; the path is the same.
+      segments: network?.segments.map((s) =>
+        [s.start, s.end, s.tangentStart.x, s.tangentStart.y, s.tangentEnd.x, s.tangentEnd.y].map(
+          (n) => n + 0
+        )
+      ),
+      regions: network?.regions.length
+    }
+  })
+  expect(path).toEqual({
+    tool: 'SELECT',
+    segments: [
+      [0, 1, 0, 0, 0, -60],
+      [1, 0, 0, 60, 0, 60]
+    ],
+    regions: 1
+  })
+  editor.canvas.assertNoErrors()
+})
+
+// A drag that comes back to its point leaves no handle, as one that never left; only a press that
+// never passed the drag threshold counts as a click.
+test('the pen drags a handle back to nothing', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.move(box.x + 300, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 360, box.y + 100, { steps: 6 })
+  await mouse.move(box.x + 300, box.y + 100, { steps: 6 })
+  await mouse.up()
+
+  const handles = await editor.page.evaluate(() => {
+    const pen = window.openPencil?.getStore?.()?.state.penState
+    const segment = pen?.segments[0]
+    return {
+      out: pen?.dragTangent ? Math.hypot(pen.dragTangent.x, pen.dragTangent.y) : null,
+      into: segment ? Math.hypot(segment.tangentEnd.x, segment.tangentEnd.y) : null
+    }
+  })
+  expect(handles).toEqual({ out: 0, into: 0 })
+})
+
+// A press that lands beside the first point snaps to it; a pixel of movement after it is still a
+// click, so the closing segment comes in straight.
+test('the pen closes with a click pressed beside the first point', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.click(box.x + 300, box.y + 100)
+  await mouse.move(box.x + 105, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 106, box.y + 100)
+  await mouse.up()
+
+  const closing = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [id] = store?.state.selectedIds ?? []
+    const segment = id ? store?.graph.getNode(id)?.vectorNetwork?.segments.at(-1) : undefined
+    return (
+      segment && { end: segment.end, into: Math.hypot(segment.tangentEnd.x, segment.tangentEnd.y) }
+    )
+  })
+  expect(closing).toEqual({ end: 0, into: 0 })
+})

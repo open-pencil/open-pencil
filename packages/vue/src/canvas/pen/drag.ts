@@ -1,17 +1,31 @@
 import type { Editor } from '@open-pencil/core'
+import { PEN_CLOSE_MIN_POINTS } from '@open-pencil/core/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragState } from '#vue/shared/input/types'
 
 type PenDragState = Extract<DragState, { type: 'pen-drag' }>
 type PenState = NonNullable<Editor['state']['penState']>
 type PenModifierMode = PenDragState['modifierMode']
 
-export function createPenDrag(startX: number, startY: number): DragState {
+/**
+ * A pen drag from the point at (`startX`, `startY`), pressed at (`pressX`, `pressY`): the press
+ * can land beside the point it snaps to, and only movement from the press counts as a drag.
+ */
+export function createPenDrag(
+  startX: number,
+  startY: number,
+  pressX = startX,
+  pressY = startY
+): DragState {
   return {
     type: 'pen-drag',
     startX,
     startY,
+    pressX,
+    pressY,
+    moved: false,
     modifierMode: 'default',
     frozenOppositeTangent: null,
     spaceDown: false,
@@ -23,7 +37,7 @@ export function createPenDrag(startX: number, startY: number): DragState {
 }
 
 function getPenAnchor(penState: PenState): Vector {
-  const isClosing = !!penState.pendingClose && penState.vertices.length > 2
+  const isClosing = !!penState.pendingClose && penState.vertices.length >= PEN_CLOSE_MIN_POINTS
   const anchorIndex = isClosing ? 0 : penState.vertices.length - 1
   return penState.vertices[anchorIndex]
 }
@@ -58,24 +72,15 @@ function applySpaceDragOffset(d: PenDragState, anchor: Vector) {
   d.startY += anchor.y - d.knotStartY
 }
 
-function getClosingOpposite(penState: PenState): Vector | null {
-  const firstSeg = penState.segments[0]
-  if (!penState.pendingClose) return null
-  if (firstSeg.start === 0) return firstSeg.tangentStart
-  if (firstSeg.end === 0) return firstSeg.tangentEnd
-  return null
-}
-
 function getModifierMode(event: MouseEvent): PenModifierMode {
   if (event.metaKey || event.ctrlKey) return 'continuous'
   if (event.altKey) return 'independent'
   return 'default'
 }
 
-function freezeOppositeTangent(penState: PenState, closingOpposite: Vector | null): Vector {
-  const lastSeg = penState.segments[penState.segments.length - 1]
-  if (closingOpposite) return { ...closingOpposite }
-  return { ...lastSeg.tangentEnd }
+function freezeOppositeTangent(penState: PenState): Vector | null {
+  const lastSeg = penState.segments.at(-1)
+  return lastSeg ? { ...lastSeg.tangentEnd } : null
 }
 
 function updateModifierMode(d: PenDragState, mode: PenModifierMode, penState: PenState) {
@@ -83,19 +88,17 @@ function updateModifierMode(d: PenDragState, mode: PenModifierMode, penState: Pe
   if (mode === 'default') {
     d.frozenOppositeTangent = null
   } else if (!d.frozenOppositeTangent) {
-    d.frozenOppositeTangent = freezeOppositeTangent(penState, getClosingOpposite(penState))
+    d.frozenOppositeTangent = freezeOppositeTangent(penState)
   }
   d.modifierMode = mode
 }
 
 function applyPenDragTangent(
   editor: Editor,
-  penState: PenState,
   d: PenDragState,
   tx: number,
   ty: number,
-  mode: PenModifierMode,
-  closingOpposite: Vector | null
+  mode: PenModifierMode
 ) {
   if (mode === 'continuous') {
     editor.penSetDragTangent(tx, ty, {
@@ -114,10 +117,7 @@ function applyPenDragTangent(
     return
   }
 
-  const options = penState.pendingClose
-    ? { keepOpposite: true, oppositeTangent: closingOpposite }
-    : undefined
-  editor.penSetDragTangent(tx, ty, options)
+  editor.penSetDragTangent(tx, ty)
 }
 
 export function handlePenDragMove(
@@ -136,11 +136,15 @@ export function handlePenDragMove(
 
   applySpaceDragOffset(d, anchor)
 
+  // A press that hasn't moved past the threshold is a click; a drag that has can bring the handle
+  // all the way back to its point.
+  const { zoom } = editor.state
+  d.moved ||= isPastPointerDragThreshold(d.pressX * zoom, d.pressY * zoom, cx * zoom, cy * zoom)
+  if (!d.moved) return
   const tx = cx - d.startX
   const ty = cy - d.startY
-  if (Math.hypot(tx, ty) <= 2) return
 
   const mode = getModifierMode(event)
   updateModifierMode(d, mode, penState)
-  applyPenDragTangent(editor, penState, d, tx, ty, mode, getClosingOpposite(penState))
+  applyPenDragTangent(editor, d, tx, ty, mode)
 }
