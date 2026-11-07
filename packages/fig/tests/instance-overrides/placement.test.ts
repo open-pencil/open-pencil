@@ -13,7 +13,10 @@ function childOf(parent: number, position: string) {
   return { parentIndex: { guid: guid(parent), position } }
 }
 
-function cardWithBar(barPlacement: Partial<NodeChange>): NodeChange[] {
+function cardWithBar(
+  barPlacement: Partial<NodeChange>,
+  instancePlacement: Partial<NodeChange>
+): NodeChange[] {
   return [
     { guid: guid(0), type: 'DOCUMENT' },
     { guid: guid(1), type: 'CANVAS', ...childOf(0, '!') },
@@ -32,13 +35,17 @@ function cardWithBar(barPlacement: Partial<NodeChange>): NodeChange[] {
       type: 'INSTANCE',
       ...childOf(3, '!'),
       size: { x: 86, y: 24 },
-      symbolData: { symbolID: guid(2) }
+      symbolData: { symbolID: guid(2) },
+      ...instancePlacement
     }
   ] as NodeChange[]
 }
 
-function barInCard(barPlacement: Partial<NodeChange>): SceneNode {
-  const { graph, sources } = materializeDocument(cardWithBar(barPlacement))
+function barInCard(
+  barPlacement: Partial<NodeChange>,
+  instancePlacement: Partial<NodeChange> = {}
+): SceneNode {
+  const { graph, sources } = materializeDocument(cardWithBar(barPlacement, instancePlacement))
   const card = expectDefined(graph.getNode(expectDefined(sources.get(CARD_ID))))
   return onlyChild(graph, card)
 }
@@ -68,4 +75,26 @@ test('an instance of a component placed absolutely in its own parent stays in fl
   const bar = barInCard({ stackPositioning: 'ABSOLUTE' })
 
   expect(bar.layoutPositioning).toBe('AUTO')
+})
+
+const STRETCHED_PLACEMENT = {
+  stackChildAlignSelf: 'STRETCH',
+  stackChildPrimaryGrow: 1,
+  horizontalConstraint: 'SCALE',
+  verticalConstraint: 'MAX'
+} satisfies Partial<NodeChange>
+
+test.each([
+  ['the same as its component’s', STRETCHED_PLACEMENT],
+  ['where its component has none', {}]
+])('an instance keeps the placement its own record writes, %s', (_, barPlacement) => {
+  const bar = barInCard(barPlacement, { ...STRETCHED_PLACEMENT, stackPositioning: 'ABSOLUTE' })
+
+  expect(bar).toMatchObject({
+    layoutAlignSelf: 'STRETCH',
+    layoutGrow: 1,
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'MAX',
+    layoutPositioning: 'ABSOLUTE'
+  })
 })
