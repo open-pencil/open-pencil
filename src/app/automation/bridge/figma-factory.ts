@@ -15,10 +15,12 @@ const imageFetch = IS_TAURI
 
 export function makeFigmaFromStore(
   store: EditorStore,
-  pageId = store.state.currentPageId
+  pageId = store.state.currentPageId,
+  signal?: AbortSignal
 ): FigmaAPI {
   const api = new FigmaAPI(store.graph, {
     fetch: imageFetch,
+    signal,
     // A page not yet visited has no layers until the editor prepares it, as it does a page it
     // switches to: with its fonts and layout.
     loadPage: async (id) => {

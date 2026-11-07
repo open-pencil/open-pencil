@@ -53,10 +53,10 @@ test('a call cancelled while it waits for its turn edits nothing', async () => {
     signal: cancel.signal
   })
   cancel.abort()
-  held.resolve(undefined)
-
-  await first
+  // It stops at once, without waiting for its turn.
   await expect(queued).rejects.toThrow()
+  held.resolve(undefined)
+  await first
   expect(store.graph.getChildren(pageId)).toEqual([])
   expect(store.undo.peekUndo()).toBeUndefined()
 })

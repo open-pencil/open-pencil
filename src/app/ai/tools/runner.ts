@@ -148,11 +148,11 @@ export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
     return toolFailure(error)
   }
   const reply = call.reply ?? null
-  const release = await acquireDocumentEdit(store)
+  // Cancelled while waiting for its turn, as a WebMCP or MCP call can be: nothing is edited.
+  const release = await acquireDocumentEdit(store, call.signal)
   // Whatever fails from here, the lock and the reply's count of running tools are released.
   let began = false
   try {
-    // Cancelled while waiting for its turn, as a WebMCP call can be: nothing is edited.
     call.signal?.throwIfAborted()
     // Stopped while waiting for its turn: the reply is over, so nothing more is edited.
     if (reply && !reply.run.active) return { error: STOPPED_BEFORE_CALL }

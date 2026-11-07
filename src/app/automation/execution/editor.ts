@@ -74,16 +74,19 @@ export async function recordAgentEdit<T>(
 /**
  * Runs an agent's script as one undo step of what it changes anywhere in the document, so `undo`
  * reverts what it created, moved, or deleted on any page, and the variables it changed. It waits
- * for the document's other agent edits, as tool calls do, so neither records the other's changes.
+ * for the document's other agent edits, as tool calls do, so neither records the other's changes;
+ * cancelled while it waits, it never runs.
  */
 export async function executeWithDocumentUndo<T>(
   store: EditorStore,
   pageId: string,
   label: string,
-  run: () => Promise<T>
+  run: () => Promise<T>,
+  signal?: AbortSignal
 ): Promise<T> {
-  const release = await acquireDocumentEdit(store)
+  const release = await acquireDocumentEdit(store, signal)
   try {
+    signal?.throwIfAborted()
     return await recordAgentEdit(store, { label, pageId }, run)
   } finally {
     release()

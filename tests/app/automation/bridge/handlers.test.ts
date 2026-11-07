@@ -316,6 +316,41 @@ describe('eval beside a tool call', () => {
     expect(store.undo.undo()).toBe('MCP: create_shape')
     expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
   })
+  test('a call cancelled while it waits for the document never runs', async () => {
+    const tab = createTab()
+    const { store } = tab
+    const pageId = store.state.currentPageId
+    const card = store.graph.createNode('FRAME', pageId, { name: 'Card', width: 200, height: 200 })
+    // A script holds the document's lock until the test lets it finish.
+    const held = createDeferred<undefined>()
+    Reflect.set(globalThis, '__holdDocument', held.promise)
+    const holder = request('eval', { document_id: tab.id, code: 'await globalThis.__holdDocument' })
+    const cancel = new AbortController()
+    const rename = handleRequest(
+      store,
+      'eval',
+      {
+        document_id: tab.id,
+        code: "figma.currentPage.findOne((node) => node.name === 'Card').name = 'Renamed'"
+      },
+      cancel.signal
+    )
+    const next = request('eval', {
+      document_id: tab.id,
+      code: "figma.currentPage.findOne((node) => node.name === 'Card').visible = false"
+    })
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+
+    cancel.abort(new Error('timed out'))
+    await expect(rename).rejects.toThrow('timed out')
+    held.resolve(undefined)
+    await Promise.all([holder, next])
+    Reflect.deleteProperty(globalThis, '__holdDocument')
+
+    expect(store.graph.getNode(card.id)).toMatchObject({ name: 'Card', visible: false })
+  })
 })
 
 describe('render JSX', () => {

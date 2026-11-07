@@ -9,6 +9,7 @@ import {
   type ImageMimeType
 } from '@open-pencil/scene-graph/images'
 
+import { graphOf } from '#core/figma-api/graph'
 import { invalid, parseFigma, received } from '#core/figma-api/validation'
 import { waitOutsideScript } from '#core/figma-api/waits'
 
@@ -137,11 +138,7 @@ async function readBounded(response: Response): Promise<Uint8Array> {
  * proxy takes only HTTP(S). Figma's own server fetches the rest, so its messages name only the
  * status.
  */
-export async function fetchImage(
-  graph: SceneGraph,
-  value: unknown,
-  fetch: ImageFetch
-): Promise<Image> {
+export async function fetchImage(api: object, value: unknown, fetch: ImageFetch): Promise<Image> {
   const src = parseFigma(v.string(), value, 'createImageAsync', 'createImageAsync')
   const scheme = protocol(src)
   if (scheme !== 'http:' && scheme !== 'https:' && scheme !== 'data:') {
@@ -156,8 +153,9 @@ export async function fetchImage(
     if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
     return readBounded(response)
   }
-  const data = await waitOutsideScript(graph, download())
+  const data = await waitOutsideScript(api, download())
   const problem = imageProblem(data)
   if (problem) throw new Error(problem)
+  const graph = graphOf(api)
   return figmaImage(graph, storeImage(graph, data))
 }

@@ -37,3 +37,26 @@ test('a script’s download leaves out of its undo step what the user does meanw
   expect(editor.undo.undo()).toBe('Move')
   expect(editor.graph.getNode(other.id)?.x).toBe(0)
 })
+
+test('a cancelled script stops at the download it waits on', async () => {
+  const editor = createEditor()
+  const download = Promise.withResolvers<Response>()
+  const cancel = new AbortController()
+  const figma = new FigmaAPI(editor.graph, { fetch: () => download.promise, signal: cancel.signal })
+  const script = compileScript(`
+    await figma.createImageAsync('https://example.com/photo.png')
+    figma.currentPage.name = 'Reached'
+  `)
+
+  const run = script(figma)
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  })
+  cancel.abort(new Error('timed out'))
+
+  await expect(run).rejects.toThrow('timed out')
+  expect(figma.currentPage.name).not.toBe('Reached')
+  await expect(figma.loadFontAsync({ family: 'Inter', style: 'Regular' })).rejects.toThrow(
+    'timed out'
+  )
+})

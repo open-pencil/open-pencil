@@ -15,16 +15,22 @@ import { createAutomationCommandHandlers } from '@/app/automation/bridge/handler
 import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 
-/** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
-const automationRequestSchema = v.pipe(
+/**
+ * Requests from the MCP bridge, and its cancellation of one it stopped waiting for; other
+ * message types (such as the register prompt) are ignored.
+ */
+const automationMessageSchema = v.pipe(
   v.string(),
   v.parseJson(),
-  v.object({
-    type: v.literal('request'),
-    id: v.pipe(v.string(), v.nonEmpty()),
-    command: v.string(),
-    args: v.optional(v.unknown())
-  })
+  v.variant('type', [
+    v.object({
+      type: v.literal('request'),
+      id: v.pipe(v.string(), v.nonEmpty()),
+      command: v.string(),
+      args: v.optional(v.unknown())
+    }),
+    v.object({ type: v.literal('cancel'), id: v.pipe(v.string(), v.nonEmpty()) })
+  ])
 )
 
 /**
@@ -62,9 +68,8 @@ export function connectAutomation(
     automationFiles(automationURL, token)
   )
 
-  async function handleRequest(_id: string, command: string, args: unknown): Promise<unknown> {
-    return handleAutomationRequest(getStore(), command, args)
-  }
+  /** Calls still running, by request id, which the bridge cancels once it stops waiting. */
+  const running = new Map<string, AbortController>()
 
   function connect() {
     let socket: WebSocket
@@ -87,21 +92,32 @@ export function connectAutomation(
 
     socket.onmessage = async (event) => {
       try {
-        const parsed = v.safeParse(automationRequestSchema, event.data)
+        const parsed = v.safeParse(automationMessageSchema, event.data)
         if (!parsed.success) {
           if (parsed.issues.some((issue) => issue.type === 'parse_json'))
             console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))
           return
         }
         const msg = parsed.output
+        if (msg.type === 'cancel') {
+          running.get(msg.id)?.abort(new Error('The MCP call timed out and was cancelled'))
+          return
+        }
         const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
         if (session) {
           const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
           sockets.add(socket)
           sessionSockets.set(session.session, sockets)
         }
+        const controller = new AbortController()
+        running.set(msg.id, controller)
         try {
-          const result = await handleRequest(msg.id, msg.command, msg.args)
+          const result = await handleAutomationRequest(
+            getStore(),
+            msg.command,
+            msg.args,
+            controller.signal
+          )
           if (socket.readyState !== WebSocket.OPEN) return
           socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
@@ -114,6 +130,8 @@ export function connectAutomation(
               error: e instanceof Error ? e.message : String(e)
             })
           )
+        } finally {
+          running.delete(msg.id)
         }
       } catch (e) {
         console.warn('Failed to parse WebSocket message:', e)
