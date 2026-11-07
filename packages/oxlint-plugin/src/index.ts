@@ -6,6 +6,7 @@ import {
 } from '#oxlint-plugin/rules/imports'
 import { noMixedCaseAcronymIdentifiers } from '#oxlint-plugin/rules/naming'
 import { noHandRolledBase64Rule } from '#oxlint-plugin/rules/quality/base64'
+import { noHandRolledDataURLRule } from '#oxlint-plugin/rules/quality/data-url'
 import { preferEsToolkitRule } from '#oxlint-plugin/rules/quality/es-toolkit'
 import { noUnvalidatedJSONParseRule } from '#oxlint-plugin/rules/quality/json-parse'
 import { noModuleMockingRule } from '#oxlint-plugin/rules/quality/module-mocking'
@@ -58,6 +59,7 @@ const plugin = definePlugin({
     'no-function-alias-imports': noFunctionAliasImports,
     'no-function-type': noFunctionType,
     'no-hand-rolled-base64': noHandRolledBase64Rule,
+    'no-hand-rolled-data-url': noHandRolledDataURLRule,
     'no-import-type-annotations': noImportTypeAnnotations,
     'no-math-random': noMathRandom,
     'no-mixed-case-acronym-identifiers': noMixedCaseAcronymIdentifiers,

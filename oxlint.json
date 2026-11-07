@@ -426,6 +426,12 @@
       }
     },
     {
+      "files": ["packages/scene-graph/src/images.ts"],
+      "rules": {
+        "open-pencil/no-hand-rolled-data-url": "off"
+      }
+    },
+    {
       "files": ["packages/scene-graph/src/index.ts"],
       "rules": {
         "open-pencil/no-direct-graph-emitter-subscriptions": "off"
