@@ -79,6 +79,7 @@ import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
 import { combineComponentsAsVariants } from './variants'
+import { waitOutsideScript } from './waits'
 
 const noop = () => undefined
 
@@ -636,7 +637,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Loads the font so text measures and draws with it from then on; rejects as Figma does. */
   async loadFontAsync(fontName: FigmaFontNameInput): Promise<void> {
-    await loadFigmaFont(fontName)
+    await waitOutsideScript(this.#graph, loadFigmaFont(fontName))
   }
 
   /**
@@ -656,7 +657,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Every face a script can set, by family; see {@link listFigmaFonts}. */
   listAvailableFontsAsync(): Promise<FigmaFont[]> {
-    return listFigmaFonts()
+    return waitOutsideScript(this.#graph, listFigmaFonts())
   }
 
   base64Encode(data: Uint8Array): string {

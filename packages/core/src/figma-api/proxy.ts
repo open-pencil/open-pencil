@@ -28,7 +28,7 @@ import { installDevStatusAccessors } from './dev-status'
 import { installExportAccessors } from './export/accessors'
 import type { ExportHost } from './export/render'
 import { installGeometryAccessors } from './geometry/accessors'
-import { bindGraph } from './graph'
+import { bindGraph, graphOf } from './graph'
 import { FigmaNodeMembers } from './members'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
@@ -41,6 +41,7 @@ import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slo
 import * as TextProxy from './text'
 import { containerTransform, setContainerTransform } from './transform'
 import * as Traversal from './traversal'
+import { waitOutsideScript } from './waits'
 
 const MIXED = Symbol('mixed')
 
@@ -66,12 +67,15 @@ export function setPageHost(api: NodeProxyHost, host: PageHost): void {
 }
 
 export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
-  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+  const load = pageHosts.get(api)?.load(pageId)
+  // A page's layers load as the document was saved, which is no part of the script's edit.
+  return load ? waitOutsideScript(graphOf(api), load) : Promise.resolve()
 }
 
 /** The page holding a layer not loaded yet, which loading that page brings in. */
 export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
-  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
+  const found = pageHosts.get(api)?.pageOfNode?.(nodeId)
+  return found ? waitOutsideScript(graphOf(api), found) : Promise.resolve(null)
 }
 
 export interface NodeProxyHost extends ExportHost {

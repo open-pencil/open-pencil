@@ -10,6 +10,7 @@ import {
 } from '@open-pencil/scene-graph/images'
 
 import { invalid, parseFigma, received } from '#core/figma-api/validation'
+import { waitOutsideScript } from '#core/figma-api/waits'
 
 /** How a host fetches the URLs `figma.createImageAsync` loads. */
 export type ImageFetch = (input: string, init?: RequestInit) => Promise<Response>
@@ -147,12 +148,15 @@ export async function fetchImage(
     throw new Error('createImageAsync requires an absolute URL (http:// or https://) or a data URI')
   }
   const load = scheme === 'data:' ? globalThis.fetch : fetch
-  const response = await load(src).catch((error: unknown) => {
-    const reason = error instanceof Error ? error.message : String(error)
-    throw new Error(`Unable to fetch image: ${reason}`)
-  })
-  if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
-  const data = await readBounded(response)
+  const download = async () => {
+    const response = await load(src).catch((error: unknown) => {
+      const reason = error instanceof Error ? error.message : String(error)
+      throw new Error(`Unable to fetch image: ${reason}`)
+    })
+    if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)
+    return readBounded(response)
+  }
+  const data = await waitOutsideScript(graph, download())
   const problem = imageProblem(data)
   if (problem) throw new Error(problem)
   return figmaImage(graph, storeImage(graph, data))
