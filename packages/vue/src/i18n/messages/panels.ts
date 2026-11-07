@@ -53,7 +53,8 @@ export const panelMessageDefaults = {
   libraryUpdateImpact: params('{affected} affected instances · {fallback} variant fallbacks'),
   publishLibrary: 'Publish library',
   publishingLibrary: 'Publishing…',
-  publishLibraryHelp: 'Publish this file’s components, styles, and variables as an immutable revision.',
+  publishLibraryHelp:
+    'Publish this file’s components, styles, and variables as an immutable revision.',
   libraryId: 'Library ID',
   libraryName: 'Library name',
   revisionDescription: 'Revision description',
