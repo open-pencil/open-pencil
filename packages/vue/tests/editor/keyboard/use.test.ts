@@ -243,6 +243,30 @@ describe('useEditorKeyboard', () => {
     menu.remove()
   })
 
+  test('keeps a key it takes from the item of a closing menu, which would act on it too', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'closed')
+    const item = dom.document.createElement('div')
+    item.setAttribute('role', 'menuitem')
+    menu.appendChild(item)
+    dom.document.body.appendChild(menu)
+    const itemKeys: string[] = []
+    item.addEventListener('keydown', (event) => itemKeys.push(event.key))
+    const pressInItem = (code: string, key: string) =>
+      item.dispatchEvent(
+        new dom.KeyboardEvent('keydown', { code, key, bubbles: true, cancelable: true })
+      )
+
+    pressInItem('KeyR', 'r')
+    pressInItem('KeyQ', 'q')
+
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    expect(itemKeys).toEqual(['q'])
+    menu.remove()
+  })
+
   test('a host key that replaces an editor key carries its own view and history rules', () => {
     const ran: string[] = []
     const editor = mountKeyboard({
