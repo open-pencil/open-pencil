@@ -1,5 +1,7 @@
 import { inject, provide, type InjectionKey } from 'vue'
 
+import type { Editor } from '@open-pencil/core'
+
 /**
  * Draws one fresh frame of a shader. The source is a WebGPU canvas that keeps the frame only
  * until the current task ends, so it is drawn from at once, never kept.
@@ -40,14 +42,42 @@ function createShaderFrames(): ShaderFrames {
   }
 }
 
-/** The frames this canvas plays, offered to the islands drawn over it. Call during setup. */
-export function provideShaderFrames(): ShaderFrames {
-  const frames = createShaderFrames()
-  provide(SHADER_FRAMES_KEY, frames)
-  return frames
+/**
+ * Every frame any canvas of an editor plays, for islands mounted outside a canvas, such as an SDK
+ * app placing `PlayIslands` beside `CanvasRoot` rather than inside it.
+ */
+const editorHubs = new WeakMap<Editor, ShaderFrames>()
+
+function editorFrames(editor: Editor): ShaderFrames {
+  let hub = editorHubs.get(editor)
+  if (!hub) {
+    hub = createShaderFrames()
+    editorHubs.set(editor, hub)
+  }
+  return hub
 }
 
-/** The frames of the canvas this component is drawn over, or none outside a playing canvas. */
-export function useShaderFrames(): ShaderFrames | null {
-  return inject(SHADER_FRAMES_KEY, null)
+/**
+ * Where this canvas publishes the frames it plays: to the islands drawn over it, which it offers
+ * them to, and to islands of the same editor that no canvas holds. Call during setup.
+ */
+export function provideShaderFrames(editor: Editor): ShaderFrames {
+  const own = createShaderFrames()
+  const shared = editorFrames(editor)
+  provide(SHADER_FRAMES_KEY, own)
+  return {
+    listen: own.listen,
+    publish(image, source) {
+      own.publish(image, source)
+      shared.publish(image, source)
+    }
+  }
+}
+
+/**
+ * The frames an island draws from: the canvas it is drawn over, or, outside any canvas, every
+ * canvas of its editor.
+ */
+export function useShaderFrames(editor: Editor): ShaderFrames {
+  return inject(SHADER_FRAMES_KEY, null) ?? editorFrames(editor)
 }

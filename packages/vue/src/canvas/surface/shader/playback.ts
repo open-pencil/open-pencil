@@ -95,7 +95,7 @@ export function useShaderPlayback(options: {
   markDirty: () => void
 }) {
   const { editor, getRenderer, getView, getViewport, markDirty } = options
-  const frames = provideShaderFrames()
+  const frames = provideShaderFrames(editor)
   const players = new Map<string, Player>()
   /** Players starting at a new size beside the ones they replace, by image. */
   const replacing = new Map<string, Player>()

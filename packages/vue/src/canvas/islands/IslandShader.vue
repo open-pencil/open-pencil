@@ -3,6 +3,7 @@ import { useElementSize } from '@vueuse/core'
 import { onScopeDispose, useTemplateRef, watch } from 'vue'
 
 import { useShaderFrames } from '#vue/canvas/surface/shader/frames'
+import { useEditor } from '#vue/editor/context'
 
 /**
  * A shader fill behind an island layer's content: the still frame the document keeps, and over
@@ -19,8 +20,8 @@ const { image, frame } = defineProps<{
 const host = useTemplateRef<HTMLElement>('host')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const { width, height } = useElementSize(host)
-// The frames of the canvas this island is drawn over; without one, the still frame stays.
-const frames = useShaderFrames()
+// The frames of the canvas this island is drawn over, or of its editor outside any canvas.
+const frames = useShaderFrames(useEditor())
 
 function draw(source: CanvasImageSource) {
   const target = canvas.value
@@ -44,7 +45,7 @@ watch(
     // Another shader's last frame would cover this one's still frame until it draws.
     const target = canvas.value
     target?.getContext('2d')?.clearRect(0, 0, target.width, target.height)
-    stop = frames?.listen(value, draw) ?? null
+    stop = frames.listen(value, draw)
   },
   { immediate: true }
 )
