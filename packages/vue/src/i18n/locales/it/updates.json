@@ -23,5 +23,8 @@
   "unavailable": "Gli aggiornamenti non sono ancora disponibili. Pubblica prima una release firmata con latest.json.",
   "checkFailed": "Impossibile controllare gli aggiornamenti: {error}",
   "webUpdateReady": "È pronta una nuova versione di OpenPencil",
-  "reload": "Ricarica"
+  "reload": "Ricarica",
+  "settingsSection": "Aggiornamenti",
+  "checkOnStartup": "Controlla gli aggiornamenti all’avvio",
+  "checkOnStartupDescription": "Cerca una nuova versione poco dopo l’apertura dell’app desktop. «Controlla aggiornamenti…» nel menu funziona anche quando questo è disattivato."
 }
