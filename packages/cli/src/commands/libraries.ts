@@ -2,11 +2,21 @@ import { extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
+import { reapplyInstanceComponentProperties } from '@open-pencil/core'
+import { flushPendingLayout, startPendingLayout } from '@open-pencil/core/figma-api'
 import { ensureLibraryAssetKeys } from '@open-pencil/core/library'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 
-import { bold, dim, fmtList, ok, printError } from '#cli/format'
-import { loadDocument, populateWholeDocument, writeFigDocument } from '#cli/headless'
+import { bold, dim, fmtList, kv, ok, printError } from '#cli/format'
+import {
+  documentWriteOptions,
+  loadDocument,
+  measureTextHeadlessly,
+  populateWholeDocument,
+  writeFigDocument
+} from '#cli/headless'
 import { FileSystemLibraryCatalog } from '#cli/library/catalog'
+import { updateLibraryFromSource } from '#cli/library/update'
 
 const list = defineCommand({
   meta: { description: 'List component libraries in a filesystem catalog' },
@@ -94,7 +104,76 @@ const publish = defineCommand({
   }
 })
 
+const update = defineCommand({
+  meta: {
+    description:
+      "Update a document's library components to the revision the library's source file makes"
+  },
+  args: {
+    file: { type: 'positional', description: 'Document .fig file', required: true },
+    source: { type: 'string', description: "The library's source .fig file", required: true },
+    id: { type: 'string', description: "Library ID (default: the document's only library)" },
+    'variables-by-name': {
+      type: 'boolean',
+      description: "Bind the library's layers to the document's variables with the same names"
+    },
+    ...documentWriteOptions,
+    json: { type: 'boolean', description: 'Output as JSON' }
+  },
+  async run({ args }) {
+    const file = resolve(args.file)
+    const graph = await loadDocument(file)
+    populateWholeDocument(graph)
+    const source = await loadDocument(resolve(args.source))
+    populateWholeDocument(source)
+    await measureTextHeadlessly()
+    // What the update changes is laid out again, so its text is measured in the document's fonts.
+    await prepareGraphFonts(
+      graph,
+      graph.getPages(true).map((page) => page.id)
+    )
+    // As `eval` does: the edits that follow are recorded, so only their layouts are redone.
+    startPendingLayout(graph)
+    const result = await updateLibraryFromSource(graph, source, {
+      libraryId: args.id,
+      variablesByName: args['variables-by-name']
+    })
+    for (const instanceId of result.updatedInstances) {
+      reapplyInstanceComponentProperties({ graph }, instanceId)
+    }
+    let output: string | null = null
+    if (args.output) output = resolve(args.output)
+    else if (args.write) output = file
+    const written = output !== null && result.used && !result.current
+    if (output && written) {
+      flushPendingLayout(graph)
+      await writeFigDocument(graph, output)
+    }
+    if (args.json) {
+      console.log(JSON.stringify({ ...result, written: written ? output : null }, null, 2))
+      return
+    }
+    if (!result.used) {
+      console.log(dim(`The document does not use ${result.libraryId}; nothing to update.`))
+      return
+    }
+    if (result.current) {
+      console.log(ok(`${result.libraryId} is already at revision ${result.revisionId}`))
+      return
+    }
+    console.log(ok(`Updated ${result.libraryId} to revision ${result.revisionId}`))
+    console.log(kv('Definitions updated', String(result.updatedDefinitions.length)))
+    console.log(kv('Instances swapped', String(result.updatedInstances.length)))
+    console.log(kv('Definitions added', String(result.materialized)))
+    console.log(kv('Definitions removed', String(result.removedDefinitions)))
+    if (result.unmatchedVariables.length > 0)
+      console.log(kv('Variables with no match', result.unmatchedVariables.join(', ')))
+    if (!written)
+      console.log(dim('Nothing written: pass --write or --output to save the document.'))
+  }
+})
+
 export default defineCommand({
-  meta: { description: 'Manage component library catalogs' },
-  subCommands: { list, publish }
+  meta: { description: 'Manage component libraries' },
+  subCommands: { list, publish, update }
 })

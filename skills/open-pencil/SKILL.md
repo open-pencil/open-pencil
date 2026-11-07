@@ -67,6 +67,7 @@ Common commands:
 - `lint` — consistency, structure, and accessibility checks
 - `formats` — supported document/export formats
 - `eval` — execute JavaScript with the Figma Plugin API
+- `libraries` — list and publish component libraries, and update a document's library components from the library's source file
 - `tool` — list, describe, and call any MCP tool from the shell, in app or headless mode
 - `documents` — list, open, create, save, close, and activate documents in the running app
 - `undo` / `redo` — step back through your own (automation) changes in the running app
@@ -169,6 +170,9 @@ openpencil eval design.fig -o modified.fig -c '...'
 
 # Read code from stdin
 echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig --stdin
+
+# After the library changes, update its components in the document, keeping overrides
+openpencil libraries update screen.fig --source design-system.fig --variables-by-name -w
 
 # Style part of a text, and read how it is styled
 openpencil eval design.fig -w -c '

@@ -176,6 +176,23 @@ openpencil eval [file] [options]
 | `--json` | | Output as JSON |
 | `--quiet` | `-q` | Suppress output |
 
+## libraries update
+
+Bring a document's library components to the revision the library's source file makes. Each definition the document holds is redrawn in place, so its instances follow it and keep their overrides; one the new revision draws as another kind of layer is copied in anew for its instances to swap to, and definitions nothing uses any more are removed. A document already at that revision, or that does not use the library, is left as it is. With `--variables-by-name`, the library variables the document has no namesake for are listed.
+
+```sh
+openpencil libraries update <file> --source <library.fig> [options]
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--source` | | The library's source `.fig` file |
+| `--id` | | Library ID; required when the document uses several libraries |
+| `--variables-by-name` | | Bind the library's layers to the document's variables with the same names |
+| `--write` | `-w` | Write changes back to the input file |
+| `--output` | `-o` | Write to a different file |
+| `--json` | | Output as JSON |
+
 ## analyze colors
 
 Analyze color palette usage across the document.
