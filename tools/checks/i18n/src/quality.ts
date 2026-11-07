@@ -18,7 +18,7 @@ export function hasMixedLatinAndCjk(value: string): boolean {
 
 /** A modifier joined to a key (`Alt+Enter`, `Strg+S`) or a modifier glyph (`⌘`, `⌥`). */
 const SHORTCUT_TEXT_PATTERN =
-  /\b(?:Ctrl|Control|Strg|Alt|Option|Shift|Maj|Umschalt|Cmd|Command|Win|Super)\s*\+\s*\S|[⌘⌥⇧⌃]/iu
+  /\b(?:MOD|Ctrl|Control|Strg|Alt|Option|Shift|Maj|Umschalt|Cmd|Command|Win|Super)\s*\+\s*\S|[⌘⌥⇧⌃]/iu
 
 /**
  * Whether a message spells out a keyboard shortcut. Shortcuts are tokens formatted for the
