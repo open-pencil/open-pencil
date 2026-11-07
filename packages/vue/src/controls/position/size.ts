@@ -28,6 +28,8 @@ export function sizesLayersInside(node: SceneNode): boolean {
  */
 export function usePanelSize(editor: Editor) {
   let edits: DragResize[] | null = null
+  /** The document the edit began in; one loaded over it ends the edit without touching either. */
+  let graph: Editor['graph'] | null = null
   let stopWatching: (() => void)[] = []
 
   // As a node preview does, an edit whose selection, page, or document goes away is put back.
@@ -43,8 +45,10 @@ export function usePanelSize(editor: Editor) {
   }
 
   function update(nodes: readonly SceneNode[], size: (start: Rect) => Size) {
+    if (edits && graph !== editor.graph) take()
     if (!edits) {
       edits = nodes.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+      graph = editor.graph
       watch(edits)
     }
     for (const edit of edits) {
@@ -56,9 +60,11 @@ export function usePanelSize(editor: Editor) {
     editor.requestRepaint()
   }
 
+  /** Ends the edit, handing back its resizes while they still belong to the open document. */
   function take() {
-    const current = edits
+    const current = graph === editor.graph ? edits : null
     edits = null
+    graph = null
     for (const stop of stopWatching) stop()
     stopWatching = []
     return current ?? []

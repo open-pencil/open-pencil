@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { computed, effectScope } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { createLayoutActions } from '#vue/controls/layout/helpers'
 
@@ -94,6 +94,27 @@ describe('a typed width or height', () => {
       ])
       actions.commitAxisSize('width', 150, 100)
       expect(frame.width).toBe(100)
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
+  test('a document loaded mid-edit is left as it loaded', () => {
+    const { editor, frame, actions, scope } = setup()
+    try {
+      actions.updateAxisSize('width', 150)
+      // The same ids in the new document, as reopening a saved copy gives.
+      const copy = new SceneGraph()
+      for (const node of editor.graph.getAllNodes()) copy.nodes.set(node.id, structuredClone(node))
+      const loadedFrame = copy.getNode(frame.id)
+      if (!loadedFrame) throw new Error('Expected the frame in the copy')
+      editor.replaceGraph(copy)
+      expect(loadedFrame.width).toBe(150)
+      actions.cancelPreview()
+      actions.commitAxisSize('width', 150, 100)
+      expect(loadedFrame.width).toBe(150)
       expect(editor.undo.canUndo).toBe(false)
     } finally {
       scope.stop()
