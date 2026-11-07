@@ -1,7 +1,8 @@
+import type { HotkeyPlatform } from '@tanstack/hotkeys'
 import { mapValues } from 'es-toolkit/object'
 
 import { TOOL_SHORTCUTS, type Tool } from '@open-pencil/core'
-import { formatShortcut, type ShortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { formatShortcut, isShortcut } from '@open-pencil/vue/editor/commands'
 
 /** Every tool, each without a key until the profile's key map gives it one. */
 const UNKEYED: Readonly<Record<Tool, string>> = {
@@ -30,7 +31,7 @@ const UNKEYED: Readonly<Record<Tool, string>> = {
  */
 export function toolShortcutLabels(
   toolKeys: Readonly<Partial<Record<string, Tool>>> = TOOL_SHORTCUTS,
-  platform?: ShortcutPlatform
+  platform?: HotkeyPlatform
 ): Readonly<Record<Tool, string>> {
   const keys = new Map<Tool, string>()
   for (const [shortcut, tool] of Object.entries(toolKeys)) {
@@ -38,7 +39,7 @@ export function toolShortcutLabels(
   }
   return mapValues(UNKEYED, (_, tool) => {
     const key = keys.get(tool)
-    return key ? (formatShortcut(key, platform) ?? '') : ''
+    return key && isShortcut(key) ? (formatShortcut(key, platform) ?? '') : ''
   })
 }
 

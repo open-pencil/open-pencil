@@ -62,7 +62,7 @@
       {
         "id": "save-version",
         "label": "Save to Version History…",
-        "accelerator": "Alt+CmdOrCtrl+S",
+        "accelerator": "CmdOrCtrl+Alt+S",
         "feature": "cloud-document"
       },
       {
@@ -317,7 +317,7 @@
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
-        "accelerator": "Alt+CmdOrCtrl+\\",
+        "accelerator": "CmdOrCtrl+Alt+\\",
         "checkbox": true,
         "feature": "document"
       },

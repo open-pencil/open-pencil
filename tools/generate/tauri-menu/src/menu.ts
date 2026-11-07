@@ -4,7 +4,7 @@ import { editorCommandMetadata } from '@open-pencil/vue/editor/commands'
 
 import { APP_MENU_APP_ITEMS, APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
-import { shortcutTokenToAccelerator } from '@/app/shell/menu/shortcut'
+import { shortcutToAccelerator } from '@/app/shell/menu/shortcut'
 
 export const MENU_PATH = 'desktop/generated/menu.json'
 export const APP_MENU_PATH = 'desktop/generated/app-menu.json'
@@ -16,7 +16,7 @@ function isNativeVisible(entry: { target?: string }): boolean {
 function entryAccelerator(entry: AppMenuActionItem): string | undefined {
   const shortcut =
     entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
-  return shortcutTokenToAccelerator(shortcut)
+  return shortcutToAccelerator(shortcut)
 }
 
 function cleanEntry(entry: AppMenuEntry): unknown | null {

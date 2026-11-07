@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { tinykeys } from 'tinykeys'
-import { onScopeDispose } from 'vue'
+import { matchesKeyboardEvent } from '@tanstack/hotkeys'
+import { useEventListener } from '@vueuse/core'
 
 import { resolveEditorProfile } from '@open-pencil/core'
-import { shortcutKeys } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
@@ -21,17 +20,13 @@ const store = useEditorStore()
 const { menu } = useI18n()
 const shortcut = appMenuShortcutLabel(PREVIEW_COMMAND) ?? ''
 
-const token = appMenuShortcut(PREVIEW_COMMAND)
-if (token) {
-  const unsubscribe = tinykeys(window, {
-    [shortcutKeys(token)]: (event) => {
-      if (getActiveEditorStoreOrNull() !== store) return
-      event.preventDefault()
-      store.togglePlay()
-    }
-  })
-  onScopeDispose(unsubscribe)
-}
+const previewKey = appMenuShortcut(PREVIEW_COMMAND)
+useEventListener(window, 'keydown', (event) => {
+  if (!previewKey || !matchesKeyboardEvent(event, previewKey)) return
+  if (getActiveEditorStoreOrNull() !== store) return
+  event.preventDefault()
+  store.togglePlay()
+})
 </script>
 
 <template>

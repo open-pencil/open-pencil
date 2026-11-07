@@ -1,3 +1,4 @@
+import type { HotkeyChord } from '@tanstack/hotkeys'
 import { uniq } from 'es-toolkit'
 
 import {
@@ -9,16 +10,17 @@ import {
 
 import {
   editorCommandShortcuts,
+  isShortcut,
   type EditorCommandId,
   type useEditorCommands
 } from '#vue/editor/commands'
 
 import type { createEditorKeyActions } from './actions'
 
-/** A key binding: the shortcut tokens it answers to (`formatShortcut`) and what it runs. */
+/** A key binding: the shortcuts it answers to (`formatShortcut`) and what it runs. */
 export interface EditorShortcut {
   id: string
-  keys: string | string[]
+  keys: HotkeyChord | readonly HotkeyChord[]
   run: (event: KeyboardEvent) => void
   /** Whether the browser's own action for the key is stopped; by default always. */
   preventDefault?: (event: KeyboardEvent) => boolean
@@ -82,19 +84,26 @@ function isCanvasFocus(event: KeyboardEvent) {
 export function toolShortcuts(editor: Editor, beforePick: () => void): EditorShortcut[] {
   const toolFor = (code: string) => resolveEditorProfile(editor.state).toolKeys[code]
   const codes = uniq([...Object.keys(TOOL_SHORTCUTS), ...Object.keys(BOARD_TOOL_SHORTCUTS)])
-  return codes.map((code) => ({
-    id: `tool-${code}`,
-    keys: code,
-    run: () => {
-      const tool = toolFor(code)
-      if (!tool) return
-      beforePick()
-      // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
-      if (tool === 'SHAPE_WITH_TEXT') editor.setShapeWithTextKind('SQUARE')
-      editor.setTool(tool)
-    },
-    preventDefault: () => toolFor(code) !== undefined
-  }))
+  return codes.map((code) => {
+    if (!isShortcut(code)) throw new Error(`Tool key '${code}' is not a shortcut`)
+    return toolShortcut(code)
+  })
+
+  function toolShortcut(code: HotkeyChord): EditorShortcut {
+    return {
+      id: `tool-${code}`,
+      keys: code,
+      run: () => {
+        const tool = toolFor(code)
+        if (!tool) return
+        beforePick()
+        // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
+        if (tool === 'SHAPE_WITH_TEXT') editor.setShapeWithTextKind('SQUARE')
+        editor.setTool(tool)
+      },
+      preventDefault: () => toolFor(code) !== undefined
+    }
+  }
 }
 
 /** The editor's own keys, besides tool keys, the held Space hand, and nudging. */
@@ -130,12 +139,12 @@ export function editorShortcuts(
     ...KEY_COMMANDS.flatMap(command),
     {
       id: 'zoom-in',
-      keys: ['MOD+=', 'MOD+SHIFT+='],
+      keys: ['Mod+=', 'Mod+Shift+='],
       run: zoomAtViewportCenter(-100),
       global: true
     },
-    { id: 'zoom-out', keys: 'MOD+-', run: zoomAtViewportCenter(100), global: true },
-    { id: 'zoom-in-unmodified', keys: 'SHIFT+=', run: zoomAtViewportCenter(-100) },
+    { id: 'zoom-out', keys: 'Mod+-', run: zoomAtViewportCenter(100), global: true },
+    { id: 'zoom-in-unmodified', keys: 'Shift+=', run: zoomAtViewportCenter(-100) },
     { id: 'zoom-out-unmodified', keys: '-', run: zoomAtViewportCenter(100) },
     {
       id: 'toggle-auto-layout',
@@ -145,7 +154,7 @@ export function editorShortcuts(
     // Figma's key, matched by key position since Shift turns ' into ".
     {
       id: 'toggle-pixel-grid',
-      keys: "SHIFT+'",
+      keys: "Shift+'",
       run: () => {
         editor.state.showPixelGrid = editor.state.showPixelGrid === false
         editor.requestRepaint()
@@ -157,7 +166,7 @@ export function editorShortcuts(
       run: () => actions.smartDelete(false)
     },
     { id: 'delete', keys: 'Delete', run: () => actions.smartDelete(false) },
-    { id: 'delete-alt', keys: 'ALT+Delete', run: () => actions.smartDelete(true) },
+    { id: 'delete-alt', keys: 'Alt+Delete', run: () => actions.smartDelete(true) },
     {
       id: 'enter',
       keys: editorCommandShortcuts('selection.selectChildren'),
@@ -166,13 +175,15 @@ export function editorShortcuts(
     { id: 'escape', keys: 'Escape', run: () => actions.escapeOrDeselect(), view: true },
     sibling('selection.selectNextSibling'),
     sibling('selection.selectPreviousSibling'),
-    ...['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit): EditorShortcut => ({
-      id: `selection-opacity-${digit}`,
-      keys: digit,
-      run: (event) => {
-        if (bare(event)) actions.opacityDigit(digit)
-      },
-      preventDefault: bare
-    }))
+    ...(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const).map(
+      (digit): EditorShortcut => ({
+        id: `selection-opacity-${digit}`,
+        keys: digit,
+        run: (event) => {
+          if (bare(event)) actions.opacityDigit(digit)
+        },
+        preventDefault: bare
+      })
+    )
   ]
 }

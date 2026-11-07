@@ -1,17 +1,24 @@
+import {
+  detectPlatform,
+  matchesKeyboardEvent,
+  normalizeHotkey,
+  parseHotkey,
+  type HotkeyPlatform,
+  type ParsedHotkeyChord
+} from '@tanstack/hotkeys'
 import { useActiveElement, useEventListener } from '@vueuse/core'
-import { createKeybindingsHandler } from 'tinykeys'
+import { sortBy } from 'es-toolkit'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 
 import { RefusedEditError } from '@open-pencil/core'
 
-import { shortcutKeys, useEditorCommands } from '#vue/editor/commands'
+import { useEditorCommands } from '#vue/editor/commands'
 import { useEditor } from '#vue/editor/context'
 import { useOpenOverlays } from '#vue/lifecycle/overlays'
 
 import { createEditorKeyActions } from './actions'
 import { isInputElement } from './focus'
 import { createShortcutGuard } from './guard'
-import { shortcutEvent } from './layout'
 import { bindNudgeKeys } from './nudge'
 import { editorShortcuts, toolShortcuts, type EditorShortcut } from './shortcuts'
 import { bindSpaceHandTool } from './space-hand'
@@ -61,24 +68,25 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
   bindNudgeKeys(editor, overlays, (event) => !active() || !!options.ignore?.(event))
 
   const mayRun = createShortcutGuard({ editor, overlays, inputFocused, ignore: options.ignore })
-  const shortcuts = byKey([
+  const platform = detectPlatform()
+  const bindings = keyBindings(platform, [
     ...toolShortcuts(editor, () => spaceHand.resetToolBeforeSpace()),
     ...editorShortcuts(editor, runCommand, actions),
     ...(options.shortcuts ?? [])
   ])
-  const handle = createKeybindingsHandler(
-    Object.fromEntries(
-      [...shortcuts].map(([key, shortcut]) => [
-        key,
-        (event: KeyboardEvent) => {
-          if (!active() || !mayRun(event, shortcut)) return
-          runRefusable(() => shortcut.run(event))
-          if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
-        }
-      ])
-    )
+  useEventListener(
+    window,
+    'keydown',
+    (event) => {
+      const shortcut = bindings.find(({ chord }) =>
+        matchesKeyboardEvent(event, chord, platform)
+      )?.shortcut
+      if (!shortcut || !active() || !mayRun(event, shortcut)) return
+      runRefusable(() => shortcut.run(event))
+      if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
+    },
+    { capture: true }
   )
-  useEventListener(window, 'keydown', (event) => handle(shortcutEvent(event)), { capture: true })
 }
 
 /** Runs a key's action; one the document refuses, as a read-only one does, does nothing. */
@@ -90,14 +98,25 @@ function runRefusable(run: () => void) {
   }
 }
 
+interface KeyBinding {
+  chord: ParsedHotkeyChord
+  shortcut: EditorShortcut
+}
+
 /**
- * One shortcut per tinykeys binding: a later one replaces an earlier one, as a host's replaces
- * the editor's.
+ * One shortcut per chord, a later one replacing an earlier one as a host's replaces the editor's,
+ * with the chords holding more modifiers first. A key typed with Shift, as AZERTY types its
+ * digits, also matches the chord without it, so `Shift+1` must be tried before `1`.
  */
-function byKey(shortcuts: readonly EditorShortcut[]): Map<string, EditorShortcut> {
-  return new Map(
+function keyBindings(platform: HotkeyPlatform, shortcuts: readonly EditorShortcut[]): KeyBinding[] {
+  const byChord = new Map(
     shortcuts.flatMap((shortcut) =>
-      [shortcut.keys].flat().map((token) => [shortcutKeys(token), shortcut])
+      [shortcut.keys].flat().map((key) => [normalizeHotkey(key, platform), shortcut] as const)
     )
   )
+  const bindings = [...byChord].map(([key, shortcut]) => ({
+    chord: parseHotkey(key, platform),
+    shortcut
+  }))
+  return sortBy(bindings, [({ chord }) => -chord.modifiers.length])
 }

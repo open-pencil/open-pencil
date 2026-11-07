@@ -4,84 +4,66 @@ import { EDITOR_COMMAND_METADATA, editorCommandShortcuts } from '#vue/editor/com
 import {
   formatShortcut,
   formatShortcutKeys,
-  parseShortcut,
-  shortcutKeys,
-  shortcutPlatform
+  isShortcut,
+  parseShortcut
 } from '#vue/editor/commands/shortcut'
 import type { EditorCommandId } from '#vue/editor/commands/types'
 
 describe('formatShortcut', () => {
-  test('formats shortcuts for macOS', () => {
-    expect(formatShortcut('MOD+D', 'mac')).toBe('⌘D')
-    expect(formatShortcut('MOD+SHIFT+H', 'mac')).toBe('⇧⌘H')
-    expect(formatShortcut('MOD+ALT+K', 'mac')).toBe('⌥⌘K')
-    expect(formatShortcut('SHIFT+A', 'mac')).toBe('⇧A')
+  test('prints symbols in macOS order on a Mac', () => {
+    expect(formatShortcut('Mod+D', 'mac')).toBe('⌘D')
+    expect(formatShortcut('Mod+Shift+H', 'mac')).toBe('⇧⌘H')
+    expect(formatShortcut('Mod+Alt+K', 'mac')).toBe('⌥⌘K')
+    expect(formatShortcut('Control+Alt+T', 'mac')).toBe('⌃⌥T')
+    expect(formatShortcut('Mod+Alt+Enter', 'mac')).toBe('⌥⌘↵')
   })
 
-  test('formats shortcuts for Windows and Linux', () => {
-    expect(formatShortcut('MOD+D', 'windows')).toBe('Ctrl+D')
-    expect(formatShortcut('MOD+SHIFT+H', 'windows')).toBe('Ctrl+Shift+H')
-    expect(formatShortcut('MOD+ALT+K', 'linux')).toBe('Ctrl+Alt+K')
-    expect(formatShortcut('SHIFT+A', 'linux')).toBe('Shift+A')
+  test('prints modifier and key names elsewhere', () => {
+    expect(formatShortcut('Mod+Shift+H', 'windows')).toBe('Ctrl+Shift+H')
+    expect(formatShortcut('Control+Shift+Tab', 'windows')).toBe('Ctrl+Shift+Tab')
+    expect(formatShortcut('Mod+Alt+Enter', 'linux')).toBe('Ctrl+Alt+Enter')
+    expect(formatShortcut('Control+Meta+M', 'linux')).toBe('Ctrl+Super+M')
   })
 
-  test('splits a shortcut into key caps in platform order', () => {
-    expect(formatShortcutKeys('MOD+ALT+K', 'mac')).toEqual(['⌥', '⌘', 'K'])
-    expect(formatShortcutKeys('CTRL+ALT+T', 'mac')).toEqual(['⌃', '⌥', 'T'])
-    expect(formatShortcutKeys('CTRL+SHIFT+Tab', 'windows')).toEqual(['Ctrl', 'Shift', 'Tab'])
-  })
-
-  test('detects platform from user agent', () => {
-    expect(shortcutPlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')).toBe('mac')
-    expect(shortcutPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('windows')
-    expect(shortcutPlatform('Mozilla/5.0 (X11; Linux x86_64)')).toBe('linux')
+  test('splits a shortcut into key caps', () => {
+    expect(formatShortcutKeys('Mod+Alt+K', 'mac')).toEqual(['⌥', '⌘', 'K'])
+    expect(formatShortcutKeys('Control+Shift+Tab', 'windows')).toEqual(['Ctrl', 'Shift', 'Tab'])
   })
 })
 
-describe('shortcutKeys', () => {
-  test('binds letters by layout letter and punctuation by key position', () => {
-    expect(shortcutKeys('MOD+SHIFT+S')).toBe('$mod+Shift+KeyS')
-    expect(shortcutKeys('CTRL+ALT+T')).toBe('Control+Alt+KeyT')
-    expect(shortcutKeys("SHIFT+'")).toBe('Shift+Quote')
-    expect(shortcutKeys('MOD+\\')).toBe('$mod+Backslash')
-    expect(shortcutKeys('MOD+=')).toBe('$mod+Equal')
-    expect(shortcutKeys('-')).toBe('Minus')
+describe('parseShortcut', () => {
+  test('keeps Mod apart from Control and Meta', () => {
+    expect(parseShortcut('Mod+Alt+S')).toEqual({
+      mod: true,
+      ctrl: false,
+      alt: true,
+      shift: false,
+      meta: false,
+      key: 'S'
+    })
+    expect(parseShortcut('Control+Meta+M')).toMatchObject({ mod: false, ctrl: true, meta: true })
+    expect(parseShortcut('Control+Tab')).toMatchObject({ mod: false, ctrl: true, key: 'Tab' })
+    expect(parseShortcut('Mod+\\')).toMatchObject({ mod: true, key: '\\' })
   })
+})
 
-  test('binds key names and glyphs by name', () => {
-    expect(shortcutKeys('ALT+Delete')).toBe('Alt+Delete')
-    expect(shortcutKeys('⌫')).toBe('Backspace')
-    expect(shortcutKeys('MOD+ALT+↩')).toBe('$mod+Alt+Enter')
-    expect(shortcutKeys('SHIFT+⇥')).toBe('Shift+Tab')
-    expect(shortcutKeys('⇟')).toBe('PageDown')
-  })
-
-  test('binds a digit by its character or its key position', () => {
-    expect(shortcutKeys('5')).toBe('(5|Digit5)')
-    expect(shortcutKeys('SHIFT+1')).toBe('Shift+(1|Digit1)')
-  })
-
-  test('rejects tokens that are not modifiers and one key', () => {
-    expect(() => parseShortcut('HYPER+K')).toThrow()
-    expect(() => parseShortcut('MOD+')).toThrow()
-    expect(() => parseShortcut('SHIFT')).toThrow()
+describe('isShortcut', () => {
+  test('takes known modifiers and keys only', () => {
+    expect(isShortcut('Shift+S')).toBe(true)
+    expect(isShortcut('Hyper+K')).toBe(false)
+    expect(isShortcut('Mod+Enterr')).toBe(false)
   })
 })
 
 describe('editor command shortcuts', () => {
   test('a command answers to its shortcut, then its aliases', () => {
-    expect(editorCommandShortcuts('edit.redo')).toEqual(['MOD+SHIFT+Z', 'MOD+Y'])
+    expect(editorCommandShortcuts('edit.redo')).toEqual(['Mod+Shift+Z', 'Mod+Y'])
     expect(editorCommandShortcuts('selection.wrapInSection')).toEqual([])
   })
 
-  test('every bindable command shortcut is a valid token', () => {
-    // The opacity digits' shortcut only describes a range of keys for menus.
-    const ids = Object.keys(EDITOR_COMMAND_METADATA).filter(
-      (id): id is EditorCommandId => id !== 'selection.setOpacity'
-    )
-    for (const id of ids) {
-      for (const token of editorCommandShortcuts(id))
-        expect(() => shortcutKeys(token)).not.toThrow()
+  test('every command shortcut names known keys', () => {
+    for (const id of Object.keys(EDITOR_COMMAND_METADATA) as EditorCommandId[]) {
+      for (const shortcut of editorCommandShortcuts(id)) expect(isShortcut(shortcut)).toBe(true)
     }
   })
 })

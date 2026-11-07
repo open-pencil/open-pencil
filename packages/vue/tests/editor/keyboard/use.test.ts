@@ -1,11 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
+import { detectPlatform } from '@tanstack/hotkeys'
 import { Window } from 'happy-dom'
 import { defineComponent, h } from 'vue'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
-
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 
 import { provideEditor } from '#vue/editor/context'
@@ -24,10 +24,10 @@ const DOM_GLOBALS = [
   'HTMLButtonElement',
   'HTMLCanvasElement'
 ] as const
-/** tinykeys' `$mod`, from the platform it read when it loaded: Meta on Apple, Control elsewhere. */
-const MOD = /Mac|iPod|iPhone|iPad/.test(globalThis.navigator?.platform ?? '')
-  ? { metaKey: true }
-  : { ctrlKey: true }
+/** `Mod` on the platform the keyboard detects in the test window: Meta on Apple, Control elsewhere. */
+function mod() {
+  return detectPlatform() === 'mac' ? { metaKey: true } : { ctrlKey: true }
+}
 const saved = new Map<string, PropertyDescriptor | undefined>()
 let dom: Window
 
@@ -92,7 +92,7 @@ function press(
 ): boolean {
   const event = new dom.KeyboardEvent(type, {
     code,
-    key: init.key ?? code.replace(/^Key/, '').toLowerCase(),
+    key: init.key ?? (code.startsWith('Key') ? code.slice(3).toLowerCase() : code),
     bubbles: true,
     cancelable: true,
     ...init
@@ -140,8 +140,33 @@ describe('useEditorKeyboard', () => {
     editor.createShape('RECTANGLE', 0, 0, 40, 40)
     const drawn = () => editor.graph.getChildren(editor.state.currentPageId).length
     expect(drawn()).toBe(1)
-    expect(press('KeyZ', MOD)).toBe(true)
+    expect(press('KeyZ', mod())).toBe(true)
     expect(drawn()).toBe(0)
+  })
+
+  test('takes Mod+Z from a layout whose Z key types no Latin letter, and the Z AZERTY prints', () => {
+    const editor = mountKeyboard()
+    const drawn = () => editor.graph.getChildren(editor.state.currentPageId).length
+    editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    press('KeyZ', { key: 'я', ...mod() })
+    expect(drawn()).toBe(0)
+    editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    // AZERTY prints Z where QWERTY has W.
+    press('KeyW', { key: 'z', ...mod() })
+    expect(drawn()).toBe(0)
+  })
+
+  test('reads the digit row by position where it types symbols, as on AZERTY', () => {
+    const editor = mountKeyboard()
+    const id = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([id])
+    press('Digit5', { key: '(' })
+    expect(editor.graph.getNode(id)?.opacity).toBe(0.5)
+    const zoom = editor.state.zoom
+    // Shift types the digit itself there; Shift+1 still zooms to fit rather than setting opacity.
+    press('Digit1', { key: '1', shiftKey: true })
+    expect(editor.graph.getNode(id)?.opacity).toBe(0.5)
+    expect(editor.state.zoom).not.toBe(zoom)
   })
 
   test('Enter and Escape open and leave a path, and leave a kept-open one open', () => {
@@ -166,7 +191,7 @@ describe('useEditorKeyboard', () => {
   test("runs the host's keys and its Escape first", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'save', keys: 'MOD+S', run: () => ran.push('save') }],
+      shortcuts: [{ id: 'save', keys: 'Mod+S', run: () => ran.push('save') }],
       onEscape: () => {
         ran.push('escape')
         return true
@@ -174,7 +199,7 @@ describe('useEditorKeyboard', () => {
     })
     const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
     editor.select([rect])
-    press('KeyS', MOD)
+    press('KeyS', mod())
     press('Escape')
     expect(ran).toEqual(['save', 'escape'])
     expect(editor.state.selectedIds.has(rect)).toBe(true)
@@ -221,14 +246,16 @@ describe('useEditorKeyboard', () => {
     const editor = mountKeyboard()
     editor.setReadOnly(true)
     const before = editor.state.zoom
-    press('Equal', { key: '=', ...MOD })
+    press('Equal', { key: '=', ...mod() })
     expect(editor.state.zoom).toBeGreaterThan(before)
   })
 
   test('a global host key replaces the editor key of the same name', () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'host-delete', keys: 'Delete', run: () => ran.push('delete'), global: true }]
+      shortcuts: [
+        { id: 'host-delete', keys: 'Delete', run: () => ran.push('delete'), global: true }
+      ]
     })
     const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
     editor.select([rect])
@@ -272,7 +299,7 @@ describe('useEditorKeyboard', () => {
       ['Delete', { key: 'Delete' }],
       ['Backspace', { key: 'Backspace' }],
       ['KeyA', { shiftKey: true }],
-      ['KeyD', MOD],
+      ['KeyD', mod()],
       ['Digit5', { key: '5' }],
       ['ArrowRight', { key: 'ArrowRight' }]
     ] as const) {
@@ -283,7 +310,7 @@ describe('useEditorKeyboard', () => {
     expect(editor.graph.getChildren(editor.state.currentPageId)).toHaveLength(1)
     expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
 
-    press('KeyZ', MOD)
+    press('KeyZ', mod())
     expect(editor.state.nodeEditState?.segments[0]?.tangentStart).toEqual({ x: 0, y: 0 })
   })
 
@@ -292,6 +319,6 @@ describe('useEditorKeyboard', () => {
     editor.startPlay()
     expect(press('Space', { key: ' ' })).toBe(false)
     expect(editor.state.activeTool).toBe('SELECT')
-    expect(press('KeyS', MOD)).toBe(true)
+    expect(press('KeyS', mod())).toBe(true)
   })
 })

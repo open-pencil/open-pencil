@@ -75,7 +75,7 @@ export interface EditorProfile {
    * scrubbing, and guide editing. None while the document is read-only.
    */
   layerEdits: LayerEdits
-  /** Which tool each key picks, by shortcut token (`R`, `SHIFT+S`). */
+  /** Which tool each key picks, by shortcut (`R`, `Shift+S`), as TanStack Hotkeys spells it. */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas

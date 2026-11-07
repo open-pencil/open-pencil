@@ -48,7 +48,7 @@ import type {
   AppMenuIcon
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
 import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
@@ -324,10 +324,10 @@ export function useAppMenu() {
 
     if (entry.command) {
       return {
-        ...commandMenuItem(entry.command, appMenuShortcutLabel(entry.id)),
+        ...commandMenuItem(entry.command, appMenuShortcut(entry.id)),
         menuId: entry.id,
         palette: resolvePalette(entry),
-        paletteShortcut: entry.shortcut
+        paletteShortcut: appMenuShortcut(entry.id)
       }
     }
 

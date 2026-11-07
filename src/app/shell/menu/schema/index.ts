@@ -17,7 +17,7 @@ export type {
 const SETTINGS_MENU_ITEM = {
   id: 'settings',
   label: 'Settings…',
-  shortcut: 'MOD+,'
+  shortcut: 'Mod+,'
 } satisfies AppMenuActionItem
 
 export const APP_MENU_SCHEMA = [
@@ -25,9 +25,9 @@ export const APP_MENU_SCHEMA = [
     label: 'File',
     paletteIcon: 'file',
     items: [
-      { id: 'new', label: 'New Design', shortcut: 'MOD+N' },
-      { id: 'new-tab', label: 'New Tab', shortcut: 'MOD+T' },
-      { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
+      { id: 'new', label: 'New Design', shortcut: 'Mod+N' },
+      { id: 'new-tab', label: 'New Tab', shortcut: 'Mod+T' },
+      { id: 'open', label: 'Open…', shortcut: 'Mod+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
       { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
       {
@@ -51,13 +51,13 @@ export const APP_MENU_SCHEMA = [
         palette: { keywords: ['donate', 'donation', 'sponsor', 'fund', 'tip'] }
       },
       { type: 'separator' },
-      { id: 'save', feature: 'document', label: 'Save', shortcut: 'MOD+S' },
-      { id: 'save-as', feature: 'document', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
+      { id: 'save', feature: 'document', label: 'Save', shortcut: 'Mod+S' },
+      { id: 'save-as', feature: 'document', label: 'Save As…', shortcut: 'Mod+Shift+S' },
       { id: 'save-to', feature: 'document', label: 'Save To…' },
       {
         id: 'save-version',
         label: 'Save to Version History…',
-        shortcut: 'ALT+MOD+S',
+        shortcut: 'Mod+Alt+S',
         feature: 'cloud-document'
       },
       { id: 'version-history', label: 'Show Version History', feature: 'cloud-document' },
@@ -67,7 +67,7 @@ export const APP_MENU_SCHEMA = [
         feature: 'document',
         label: 'Export Selection',
         palette: { icon: 'download' },
-        shortcut: 'MOD+SHIFT+E',
+        shortcut: 'Mod+Shift+E',
         sub: [
           {
             id: 'export-png',
@@ -98,10 +98,10 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
-      { id: 'close', feature: 'document', label: 'Close Tab', shortcut: 'MOD+W' },
+      { id: 'close', feature: 'document', label: 'Close Tab', shortcut: 'Mod+W' },
       // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
-      { id: 'previous-tab', label: 'Select Previous Tab', shortcut: 'CTRL+SHIFT+Tab' },
-      { id: 'next-tab', label: 'Select Next Tab', shortcut: 'CTRL+Tab' },
+      { id: 'previous-tab', label: 'Select Previous Tab', shortcut: 'Control+Shift+Tab' },
+      { id: 'next-tab', label: 'Select Next Tab', shortcut: 'Control+Tab' },
       // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
       { type: 'separator' },
       { ...SETTINGS_MENU_ITEM, handler: 'shell' }
@@ -124,14 +124,14 @@ export const APP_MENU_SCHEMA = [
         command: 'edit.redo'
       },
       { type: 'separator' },
-      { id: 'copy', label: 'Copy', shortcut: 'MOD+C' },
-      { id: 'cut', label: 'Cut', shortcut: 'MOD+X' },
-      { id: 'paste', label: 'Paste', shortcut: 'MOD+V' },
+      { id: 'copy', label: 'Copy', shortcut: 'Mod+C' },
+      { id: 'cut', label: 'Cut', shortcut: 'Mod+X' },
+      { id: 'paste', label: 'Paste', shortcut: 'Mod+V' },
       {
         id: 'paste-to-replace',
         feature: 'document',
         label: 'Paste to replace',
-        shortcut: 'MOD+SHIFT+R'
+        shortcut: 'Mod+Shift+R'
       },
       {
         id: 'paste-as-layers',
@@ -154,7 +154,7 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.rename',
         feature: 'document',
         label: 'Rename Selection…',
-        shortcut: 'MOD+R'
+        shortcut: 'Mod+R'
       },
       { type: 'separator' },
       {
@@ -193,8 +193,8 @@ export const APP_MENU_SCHEMA = [
         label: 'Zoom to Selection',
         command: 'view.zoomSelection'
       },
-      { id: 'zoom-in', feature: 'document', label: 'Zoom In', shortcut: 'MOD+=' },
-      { id: 'zoom-out', feature: 'document', label: 'Zoom Out', shortcut: 'MOD+-' },
+      { id: 'zoom-in', feature: 'document', label: 'Zoom In', shortcut: 'Mod+=' },
+      { id: 'zoom-out', feature: 'document', label: 'Zoom Out', shortcut: 'Mod+-' },
       { type: 'separator' },
       {
         id: 'view.zoomPreviousFrame',
@@ -221,7 +221,7 @@ export const APP_MENU_SCHEMA = [
         id: 'view-split-right',
         feature: 'document',
         label: 'Split Right',
-        shortcut: 'MOD+SHIFT+\\'
+        shortcut: 'Mod+Shift+\\'
       },
       { id: 'view-split-down', feature: 'document', label: 'Split Down' },
       { type: 'separator' },
@@ -240,7 +240,7 @@ export const APP_MENU_SCHEMA = [
         feature: 'document',
         label: 'Rulers',
         checkbox: true,
-        shortcut: 'SHIFT+R'
+        shortcut: 'Shift+R'
       },
       // Figma's View › Pixel grid, shown once zoomed in far enough.
       {
@@ -248,14 +248,14 @@ export const APP_MENU_SCHEMA = [
         feature: 'document',
         label: 'Pixel Grid',
         checkbox: true,
-        shortcut: "SHIFT+'"
+        shortcut: "Shift+'"
       },
       {
         id: 'view-multiplayer-cursors',
         feature: 'document',
         label: 'Multiplayer Cursors',
         checkbox: true,
-        shortcut: 'ALT+MOD+\\'
+        shortcut: 'Mod+Alt+\\'
       },
       {
         id: 'view-design-issues',
@@ -269,7 +269,7 @@ export const APP_MENU_SCHEMA = [
         feature: 'document',
         label: 'Comments',
         checkbox: true,
-        shortcut: 'SHIFT+C'
+        shortcut: 'Shift+C'
       },
       { type: 'separator' },
       {
@@ -303,20 +303,20 @@ export const APP_MENU_SCHEMA = [
             id: 'snap-pixel-grid',
             label: 'Snap to Pixel Grid',
             checkbox: true,
-            shortcut: "MOD+SHIFT+'",
+            shortcut: "Mod+Shift+'",
             handler: 'shell'
           }
         ]
       },
       { type: 'separator' },
-      { id: 'toggle-ui', feature: 'document', label: 'Toggle UI', shortcut: 'MOD+\\' },
-      { id: 'toggle-preview', feature: 'document', label: 'Preview', shortcut: 'MOD+ALT+↩' },
+      { id: 'toggle-ui', feature: 'document', label: 'Toggle UI', shortcut: 'Mod+\\' },
+      { id: 'toggle-preview', feature: 'document', label: 'Preview', shortcut: 'Mod+Alt+Enter' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {
         id: 'dev-tools',
         label: 'Developer Tools',
-        shortcut: 'MOD+ALT+I',
+        shortcut: 'Mod+Alt+I',
         target: 'native'
       }
     ]
@@ -480,9 +480,9 @@ export const APP_MENU_SCHEMA = [
     feature: 'document',
     paletteIcon: 'type',
     items: [
-      { id: 'text.bold', label: 'Bold', shortcut: 'MOD+B' },
-      { id: 'text.italic', label: 'Italic', shortcut: 'MOD+I' },
-      { id: 'text.underline', label: 'Underline', shortcut: 'MOD+U' }
+      { id: 'text.bold', label: 'Bold', shortcut: 'Mod+B' },
+      { id: 'text.italic', label: 'Italic', shortcut: 'Mod+I' },
+      { id: 'text.underline', label: 'Underline', shortcut: 'Mod+U' }
     ]
   },
   {
@@ -496,13 +496,13 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.wrapInAutoLayout'
       },
       { type: 'separator' },
-      { id: 'arrange.align-left', label: 'Align Left', shortcut: 'ALT+A' },
-      { id: 'arrange.align-center', label: 'Align Center', shortcut: 'ALT+H' },
-      { id: 'arrange.align-right', label: 'Align Right', shortcut: 'ALT+D' },
+      { id: 'arrange.align-left', label: 'Align Left', shortcut: 'Alt+A' },
+      { id: 'arrange.align-center', label: 'Align Center', shortcut: 'Alt+H' },
+      { id: 'arrange.align-right', label: 'Align Right', shortcut: 'Alt+D' },
       { type: 'separator' },
-      { id: 'arrange.align-top', label: 'Align Top', shortcut: 'ALT+W' },
-      { id: 'arrange.align-middle', label: 'Align Middle', shortcut: 'ALT+V' },
-      { id: 'arrange.align-bottom', label: 'Align Bottom', shortcut: 'ALT+S' },
+      { id: 'arrange.align-top', label: 'Align Top', shortcut: 'Alt+W' },
+      { id: 'arrange.align-middle', label: 'Align Middle', shortcut: 'Alt+V' },
+      { id: 'arrange.align-bottom', label: 'Align Bottom', shortcut: 'Alt+S' },
       { type: 'separator' },
       {
         id: 'selection.distributeHorizontal',
@@ -584,5 +584,5 @@ export const APP_MENU_APP_ITEMS = [
   { id: 'about', label: 'About OpenPencil' },
   { id: 'check-updates', label: 'Check for Updates…' },
   SETTINGS_MENU_ITEM,
-  { id: 'quit', label: 'Quit OpenPencil', shortcut: 'MOD+Q' }
+  { id: 'quit', label: 'Quit OpenPencil', shortcut: 'Mod+Q' }
 ] satisfies AppMenuActionItem[]

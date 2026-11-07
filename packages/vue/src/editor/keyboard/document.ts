@@ -1,14 +1,12 @@
-import { createKeybindingsHandler, type KeyBindingMap } from 'tinykeys'
+import { matchesKeyboardEvent } from '@tanstack/hotkeys'
 
 import {
   editorCommandShortcuts,
-  shortcutKeys,
   useEditorCommands,
   type EditorCommandId
 } from '#vue/editor/commands'
 
 import { isEditing } from './focus'
-import { shortcutEvent } from './layout'
 
 const DOCUMENT_COMMANDS = ['edit.undo', 'edit.redo'] as const satisfies EditorCommandId[]
 
@@ -20,16 +18,13 @@ const DOCUMENT_COMMANDS = ['edit.undo', 'edit.redo'] as const satisfies EditorCo
  */
 export function useDocumentShortcuts(): (event: KeyboardEvent) => void {
   const { runCommand } = useEditorCommands()
-  const bindings: KeyBindingMap = {}
-  for (const command of DOCUMENT_COMMANDS) {
-    for (const token of editorCommandShortcuts(command)) {
-      bindings[shortcutKeys(token)] = (event) => {
-        if (isEditing(event)) return
-        event.preventDefault()
-        runCommand(command)
-      }
-    }
+  return (event) => {
+    if (isEditing(event)) return
+    const command = DOCUMENT_COMMANDS.find((id) =>
+      editorCommandShortcuts(id).some((shortcut) => matchesKeyboardEvent(event, shortcut))
+    )
+    if (!command) return
+    event.preventDefault()
+    runCommand(command)
   }
-  const handler = createKeybindingsHandler(bindings)
-  return (event) => handler(shortcutEvent(event))
 }

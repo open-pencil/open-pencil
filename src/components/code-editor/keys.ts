@@ -1,23 +1,17 @@
-import {
-  parseShortcut,
-  shortcutKeyName,
-  type ShortcutModifier
-} from '@open-pencil/vue/editor/commands'
+import type { HotkeyChord } from '@tanstack/hotkeys'
+import { compact } from 'es-toolkit'
 
-const CODEMIRROR_MODIFIERS: Record<ShortcutModifier, string> = {
-  MOD: 'Mod',
-  CTRL: 'Ctrl',
-  ALT: 'Alt',
-  SHIFT: 'Shift',
-  META: 'Meta'
-}
+import { parseShortcut } from '@open-pencil/vue/editor/commands'
 
-/** A shortcut token as a CodeMirror key: `ALT+Enter` is `Alt-Enter`, `MOD+Z` is `Mod-z`. */
-export function codeMirrorKey(token: string): string {
-  const { modifiers, key } = parseShortcut(token)
-  const name = shortcutKeyName(key)
-  return [
-    ...modifiers.map((part) => CODEMIRROR_MODIFIERS[part]),
-    /^[A-Z]$/.test(name) ? name.toLowerCase() : name
-  ].join('-')
+/** A shortcut as a CodeMirror key: `Alt+Enter` is `Alt-Enter`, `Mod+Z` is `Mod-z`. */
+export function codeMirrorKey(shortcut: HotkeyChord): string {
+  const { mod, ctrl, alt, shift, meta, key } = parseShortcut(shortcut)
+  return compact([
+    mod && 'Mod',
+    ctrl && 'Ctrl',
+    alt && 'Alt',
+    shift && 'Shift',
+    meta && 'Meta',
+    /^[A-Z]$/.test(key) ? key.toLowerCase() : key
+  ]).join('-')
 }
