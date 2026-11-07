@@ -4,7 +4,11 @@ import { computeAllLayouts } from '#core/layout'
 
 const isComponent = (node: SceneNode) => node.type === 'COMPONENT'
 
-function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
+/**
+ * The components to sync after `seeds` changed, each before the components that hold its
+ * instances, so a copy of an instance syncs from a component already synced.
+ */
+export function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
   const dependents = new Map<string, Set<string>>()
   const discover = (id: string): void => {
     if (dependents.has(id)) return
@@ -105,5 +109,9 @@ export function createComponentSyncScheduler(
     pendingComponentSync.add(nodeId)
   }
 
-  return { scheduleComponentSync }
+  return {
+    scheduleComponentSync,
+    /** Instances are being brought in line with their components: results, not edits. */
+    isSyncingComponents: () => isFlushingComponentSync
+  }
 }

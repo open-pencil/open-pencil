@@ -9,6 +9,25 @@ const NODE_IDENTITY_ERROR = 'Atomic tools must not change node hierarchy or iden
 const VARIABLE_IDENTITY_ERROR = 'Atomic tools must not change variable identity'
 const DOCUMENT_ERROR = 'Atomic tools must not change collections, assets or document metadata'
 
+/** Throws when an edit replaced a variable or changed its identity, collection, or type. */
+function assertVariableIdentity(
+  graph: SceneGraph,
+  saved: ReadonlyMap<string, Variable>,
+  refs: ReadonlyMap<string, Variable>
+): void {
+  for (const [id, before] of saved) {
+    const after = graph.variables.get(id)
+    if (
+      !after ||
+      after !== refs.get(id) ||
+      before.id !== after.id ||
+      before.collectionId !== after.collectionId ||
+      before.type !== after.type
+    )
+      throw new Error(VARIABLE_IDENTITY_ERROR)
+  }
+}
+
 /** Capture rollback state without changing graph or surviving object identities. */
 export function captureGraphCheckpoint(graph: SceneGraph) {
   const nodeRefs = new Map(graph.nodes)
@@ -49,17 +68,7 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
         throw new Error(NODE_IDENTITY_ERROR)
       }
     }
-    for (const [id, before] of snapshot.variables) {
-      const after = graph.variables.get(id)
-      if (
-        !after ||
-        after !== variableRefs.get(id) ||
-        before.id !== after.id ||
-        before.collectionId !== after.collectionId ||
-        before.type !== after.type
-      )
-        throw new Error(VARIABLE_IDENTITY_ERROR)
-    }
+    assertVariableIdentity(graph, snapshot.variables, variableRefs)
     assertDocumentUnchanged()
   }
 
@@ -89,6 +98,9 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     restoreMap(graph.instanceIndex, structuredClone(snapshot.instanceIndex))
     restoreMap(graph.enabledLibraries, structuredClone(snapshot.enabledLibraries))
     restoreMap(graph.images, images)
+    graph.connectorIds.clear()
+    for (const node of graph.nodes.values())
+      if (node.type === 'CONNECTOR') graph.connectorIds.add(node.id)
     graph.rootId = snapshot.rootId
     graph.figKiwiVersion = snapshot.figKiwiVersion
     graph.figSchemaDeflated = structuredClone(snapshot.figSchemaDeflated)
@@ -259,17 +271,7 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
 
   function assertPropertiesOnly() {
     assertNodes()
-    for (const [id, before] of saved.variables) {
-      const after = graph.variables.get(id)
-      if (
-        !after ||
-        after !== variableRefs.get(id) ||
-        before.id !== after.id ||
-        before.collectionId !== after.collectionId ||
-        before.type !== after.type
-      )
-        throw new Error(VARIABLE_IDENTITY_ERROR)
-    }
+    assertVariableIdentity(graph, saved.variables, variableRefs)
     if (
       !isEqual(saved.variableCollections, graph.variableCollections) ||
       !isEqual(saved.activeMode, graph.activeMode) ||

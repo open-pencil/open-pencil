@@ -9,8 +9,8 @@ export const CLOUD_FEATURE_KEYS = {
   maximumFileBytes: 'cloud.documents.maximum-file-bytes',
   maximumStorageBytes: 'cloud.storage.maximum-bytes',
   maximumParticipants: 'cloud.collaboration.maximum-participants',
-  cloudAI: 'cloud.ai.enabled',
-  monthlyCreditAllowance: 'cloud.ai.monthly-credit-allowance'
+  cloudServices: 'cloud.services.enabled',
+  monthlyCreditAllowance: 'cloud.services.monthly-credit-allowance'
 } as const
 
 export type CloudPolicyContext = {

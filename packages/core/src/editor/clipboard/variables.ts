@@ -1,11 +1,10 @@
 import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
 import { remapInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
-import { remapStyleRunReferences, styleRunReferences } from '@open-pencil/scene-graph/text'
 import {
-  isUnsupportedVariableValue,
-  mapVariableValueReferences,
-  variableValueReferences
-} from '@open-pencil/scene-graph/variables'
+  remappedResourceReferences,
+  type LayerDependencies
+} from '@open-pencil/scene-graph/transfer'
+import { mapVariableValueReferences } from '@open-pencil/scene-graph/variables'
 
 export interface ClipboardVariables {
   activeModes: Array<[string, string]>
@@ -13,44 +12,24 @@ export interface ClipboardVariables {
   collections: VariableCollection[]
 }
 
+/** The variables and collections a copy depends on, with the modes its source shows them in. */
 export function captureClipboardVariables(
   graph: SceneGraph,
-  nodes: SceneNode[]
+  dependencies: LayerDependencies
 ): ClipboardVariables {
-  const variables = new Map<string, Variable>()
-  const collections = new Map<string, VariableCollection>()
-  function capture(collection: VariableCollection | undefined) {
-    if (collection && !collections.has(collection.id))
-      collections.set(collection.id, structuredClone(collection))
-  }
-  function visit(id: string) {
-    if (variables.has(id)) return
+  const variables = [...dependencies.variables].flatMap((id) => {
     const variable = graph.variables.get(id)
-    if (!variable) return
-    variables.set(id, structuredClone(variable))
-    capture(graph.variableCollections.get(variable.collectionId))
-    for (const value of Object.values(variable.valuesByMode)) {
-      for (const reference of variableValueReferences(value)) visit(reference)
-      // A kept expression can name a mode of a collection none of its aliases reach.
-      if (isUnsupportedVariableValue(value))
-        for (const modeId of value.modes)
-          capture(
-            [...graph.variableCollections.values()].find((collection) =>
-              collection.modes.some((mode) => mode.modeId === modeId)
-            )
-          )
-    }
-  }
-  for (const node of nodes) {
-    for (const id of Object.values(node.boundVariables)) visit(id)
-    for (const id of styleRunReferences(node.styleRuns).variables) visit(id)
-  }
-  const activeModes: Array<[string, string]> = []
-  for (const collectionId of collections.keys()) {
-    const modeId = graph.activeMode.get(collectionId)
-    if (modeId) activeModes.push([collectionId, modeId])
-  }
-  return { activeModes, variables: [...variables.values()], collections: [...collections.values()] }
+    return variable ? [structuredClone(variable)] : []
+  })
+  const collections = [...dependencies.collections].flatMap((id) => {
+    const collection = graph.variableCollections.get(id)
+    return collection ? [structuredClone(collection)] : []
+  })
+  const activeModes = collections.flatMap((collection): Array<[string, string]> => {
+    const modeId = graph.activeMode.get(collection.id)
+    return modeId ? [[collection.id, modeId]] : []
+  })
+  return { activeModes, variables, collections }
 }
 
 export function importClipboardVariables(graph: SceneGraph, dependencies: ClipboardVariables) {
@@ -116,33 +95,20 @@ export function remapClipboardVariableBindings(
   modeIds: ReadonlyMap<string, string> = new Map(),
   styleIds: ReadonlyMap<string, string> = new Map()
 ): void {
-  node.boundVariables = Object.fromEntries(
-    Object.entries(node.boundVariables).map(([field, id]) => [field, variables.get(id) ?? id])
+  const variable = (id: string) => variables.get(id) ?? id
+  const collection = (id: string) => collections.get(id) ?? id
+  Object.assign(
+    node,
+    remappedResourceReferences(node, {
+      variable,
+      collection,
+      mode: (id) => modeIds.get(id) ?? id,
+      style: (id) => styleIds.get(id) ?? id
+    })
   )
-  node.variableModes = Object.fromEntries(
-    Object.entries(node.variableModes).map(([id, mode]) => [
-      collections.get(id) ?? id,
-      modeIds.get(mode) ?? mode
-    ])
-  )
-  for (const key of [
-    'fillStyleId',
-    'strokeStyleId',
-    'textStyleId',
-    'effectStyleId',
-    'gridStyleId'
-  ] as const) {
-    const id = node[key]
-    if (id && styleIds.has(id)) node[key] = styleIds.get(id) ?? id
-  }
-  const remapVariable = (id: string) => variables.get(id) ?? id
   node.instanceOverrides = remapInstanceOverrideState(node.instanceOverrides, {
     node: (id) => id,
-    variable: remapVariable,
-    collection: (id) => collections.get(id) ?? id
-  })
-  node.styleRuns = remapStyleRunReferences(node.styleRuns, {
-    variable: remapVariable,
-    style: (id) => styleIds.get(id) ?? id
+    variable,
+    collection
   })
 }

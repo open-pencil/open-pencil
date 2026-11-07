@@ -90,5 +90,7 @@
   "showVersionHistory": "Versionsverlauf anzeigen",
   "saveToVersionHistory": "Im Versionsverlauf speichern…",
   "reportProblem": "Problem melden…",
-  "supportOpenPencil": "OpenPencil unterstützen…"
+  "supportOpenPencil": "OpenPencil unterstützen…",
+  "newBoard": "Neues Board",
+  "toggleAIChat": "KI-Chat umschalten"
 }

@@ -1,6 +1,7 @@
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { toolNumber, defineTool } from '#core/tools/schema'
@@ -75,7 +76,7 @@ export const exportSVG = defineTool({
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids)
+    const svg = await renderNodesToLaidOutSVG(graphOf(figma), pageId, ids)
     if (!svg) return { error: 'No visible nodes to export' }
     return { svg }
   }
@@ -122,14 +123,14 @@ export const exportPDF = defineTool({
       import('#core/io/formats/pdf/prepare')
     ])
     try {
-      if (args.mode === 'pages') readPDFPages(figma.graph, args.page_ids)
-      const specs = planPDFPages(figma.graph, {
+      if (args.mode === 'pages') readPDFPages(graphOf(figma), args.page_ids)
+      const specs = planPDFPages(graphOf(figma), {
         mode: args.mode,
         ids: args.ids,
         pageIds: args.page_ids,
         currentPageId: figma.currentPageId
       })
-      const result = await exportPDFDocument(figma.graph, specs, {
+      const result = await exportPDFDocument(graphOf(figma), specs, {
         embedFonts: args.embed_fonts,
         layOutPages: args.mode === 'pages'
       })

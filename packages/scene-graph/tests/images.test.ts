@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { toUint8Array } from 'js-base64'
+import { fromUint8Array, toUint8Array } from 'js-base64'
 
 import {
   computeImageHash,
@@ -8,7 +8,8 @@ import {
   imageHeader,
   imageMimeType,
   imageSize,
-  isSVGFile
+  isSVGFile,
+  parseDataURL
 } from '@open-pencil/scene-graph/images'
 
 describe('computeImageHash', () => {
@@ -112,5 +113,45 @@ describe('isSVGFile', () => {
     expect(isSVGFile({ name: 'icon', type: 'image/svg+xml' })).toBe(true)
     expect(isSVGFile({ name: 'Icon.SVG', type: '' })).toBe(true)
     expect(isSVGFile({ name: 'icon.svg', type: 'image/png' })).toBe(false)
+  })
+})
+
+describe('parseDataURL', () => {
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const text = (url: string) => {
+    const parsed = parseDataURL(url)
+    return parsed && { mimeType: parsed.mimeType, text: new TextDecoder().decode(parsed.bytes) }
+  }
+
+  test('decodes a Base64 body with its media type', () => {
+    const parsed = parseDataURL(`data:image/png;base64,${fromUint8Array(PNG)}`)
+    expect(parsed?.mimeType).toBe('image/png')
+    expect(parsed?.bytes).toEqual(PNG)
+  })
+
+  test('reads the scheme, type, and encoding without regard to case or line breaks', () => {
+    const base64 = fromUint8Array(PNG)
+    const parsed = parseDataURL(`DATA:Image/PNG;charset=x;BASE64,${base64.slice(0, 5)}\n${base64.slice(5)}`)
+    expect(parsed?.mimeType).toBe('image/png')
+    expect(parsed?.bytes).toEqual(PNG)
+  })
+
+  test('unescapes a percent-encoded body', () => {
+    expect(text('data:image/svg+xml,%3Csvg%2F%3E')).toEqual({
+      mimeType: 'image/svg+xml',
+      text: '<svg/>'
+    })
+    expect(text('data:,caf%C3%A9')).toEqual({ mimeType: 'text/plain', text: 'café' })
+  })
+
+  test('refuses Base64 cut short or not Base64 at all', () => {
+    expect(parseDataURL('data:image/png;base64,iVBORw0KG')).toBeNull()
+    expect(parseDataURL('data:image/png;base64,not*base64')).toBeNull()
+  })
+
+  test('refuses anything that is not a data URL', () => {
+    expect(parseDataURL(fromUint8Array(PNG))).toBeNull()
+    expect(parseDataURL('https://example.com/a.png')).toBeNull()
+    expect(parseDataURL('data:image/png;base64')).toBeNull()
   })
 })

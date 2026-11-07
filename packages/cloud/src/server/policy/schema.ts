@@ -28,7 +28,7 @@ export const staticEntitlementsSchema = v.object({
     }),
     {}
   ),
-  ai: v.optional(
+  services: v.optional(
     v.object({
       enabled: v.optional(v.boolean()),
       monthlyCreditAllowance: v.optional(nonNegativeIntegerSchema)
@@ -60,7 +60,7 @@ export const staticEntitlementsTOMLSchema = v.strictObject({
       maximum_participants: v.optional(positiveIntegerSchema)
     })
   ),
-  ai: v.optional(
+  services: v.optional(
     v.strictObject({
       enabled: v.optional(v.boolean()),
       monthly_credit_allowance: v.optional(nonNegativeIntegerSchema)

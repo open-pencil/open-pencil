@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { STATUS_NODE_TYPES } from '@open-pencil/scene-graph/statuses'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool, toolFailure } from '#core/tools/schema'
 
@@ -17,7 +18,7 @@ export const getStatuses = defineTool({
   }),
   execute: (figma, { status }) => {
     const api = new OpenPencilAPI(figma)
-    const { graph } = figma
+    const graph = graphOf(figma)
     const layers = [...graph.getAllNodes()].flatMap((node) => {
       if (!STATUS_NODE_TYPES.has(node.type) || !node.status) return []
       const name = api.getStatus(node.id)

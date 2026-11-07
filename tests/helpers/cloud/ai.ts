@@ -6,7 +6,7 @@ import {
   migrateAIRelayDatabase,
   parseAIRelayConfig
 } from '#cloud/ai-relay'
-import { CLOUD_AI_CONTRACT_VERSION, CLOUD_AI_TOKEN_AUDIENCE } from '#cloud/contract'
+import { CLOUD_SERVICES_CONTRACT_VERSION, CLOUD_SERVICES_TOKEN_AUDIENCE } from '#cloud/contract'
 import { PGlite } from '@electric-sql/pglite'
 import type { Page, Route } from '@playwright/test'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
@@ -138,7 +138,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
   const now = new Date().toISOString()
   const discovery = {
     ...cloudDiscoveryFixture(CLOUD),
-    ai: { endpoint: AI, contractVersion: CLOUD_AI_CONTRACT_VERSION },
+    services: { endpoint: AI, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION },
     ...(options.billingURL ? { billing: { portalURL: options.billingURL } } : {})
   }
   const cloud: Record<string, () => unknown | Promise<unknown>> = {
@@ -169,7 +169,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
           guestPresence: true,
           collaboration: true,
           revisionHistory: true,
-          cloudAI: true
+          cloudServices: true
         },
         limits: {
           maximumFileBytes: 100_000_000,
@@ -180,7 +180,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
         usage: { committedStorageBytes: 0, reservedStorageBytes: 0 }
       }
     }),
-    'POST /api/ai/token': async () => {
+    'POST /api/services/token': async () => {
       const expiresAt = new Date(Date.now() + 10 * 60_000)
       const token = await new SignJWT({
         workspaceId: WORKSPACE_ID,
@@ -188,7 +188,7 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
       })
         .setProtectedHeader({ alg: 'ES256', kid: 'cloud' })
         .setIssuer(CLOUD)
-        .setAudience(CLOUD_AI_TOKEN_AUDIENCE)
+        .setAudience(CLOUD_SERVICES_TOKEN_AUDIENCE)
         .setSubject(ACCOUNT.id)
         .setIssuedAt()
         .setExpirationTime(expiresAt)

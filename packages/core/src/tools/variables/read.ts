@@ -3,12 +3,13 @@ import * as v from 'valibot'
 import type { VariableType } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 /** The document's variables as tools report them, of one type or all. */
 function documentVariables(figma: FigmaAPI, type?: VariableType) {
   return figma.variables.getLocalVariables(type).flatMap((variable) => {
-    const record = figma.graph.variables.get(variable.id)
+    const record = graphOf(figma).variables.get(variable.id)
     return record ? [record] : []
   })
 }
@@ -39,7 +40,7 @@ export const getVariable = defineTool({
     id: v.pipe(v.string(), v.description('Variable ID'))
   }),
   execute: (figma, { id }) => {
-    const variable = figma.graph.variables.get(id)
+    const variable = graphOf(figma).variables.get(id)
     if (!variable) return { error: `Variable "${id}" not found` }
     return variable
   }

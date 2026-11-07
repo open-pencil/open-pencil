@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import type { LibraryAssetChange } from '@open-pencil/core/library'
 import {
   ensureLibraryAssetKeys,
-  publishableLibraryRoots,
+  publishableLibraryAssets,
   readSourceLibraryPublication
 } from '@open-pencil/core/library'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -63,21 +63,10 @@ watch(publishLibraryDialogOpen, async (open) => {
       const discovered = await service.discoverPublicationChanges(editor)
       changes.value = discovered.changes
     } else {
-      const roots = publishableLibraryRoots(editor.graph)
-      ensureLibraryAssetKeys(
-        editor.graph,
-        roots.map((node) => node.id)
-      )
-      changes.value = roots.map((node) => ({
+      ensureLibraryAssetKeys(editor.graph)
+      changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
         kind: 'added' as const,
-        asset: {
-          key: node.componentKey ?? node.id,
-          name: node.name,
-          description: '',
-          type: node.type,
-          sourceNodeId: node.id,
-          contentHash: ''
-        }
+        asset: { ...asset, contentHash: '' }
       }))
     }
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
@@ -202,6 +191,11 @@ async function publish() {
             >
               <icon-lucide-layout-template
                 v-if="change.asset.type === 'COMPONENT_SET'"
+                class="size-4"
+              />
+              <icon-lucide-palette v-else-if="change.asset.type === 'STYLE'" class="size-4" />
+              <icon-lucide-braces
+                v-else-if="change.asset.type === 'VARIABLE_COLLECTION'"
                 class="size-4"
               />
               <icon-lucide-component v-else class="size-4" />

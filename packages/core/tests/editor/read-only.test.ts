@@ -61,6 +61,15 @@ describe('read-only documents', () => {
     editor.pan(10, 10)
     expect(editor.copySelectionAsText([rect.id])).toBe('Rect')
     expect(editor.getNode(rect.id)?.name).toBe('Rect')
+    // The unsaved-changes tracker asks this on every node event, read-only or not.
+    expect(editor.isSyncingComponents()).toBe(false)
+  })
+
+  test('lets the canvas report the frames it draws', () => {
+    const { editor } = setup()
+    editor.setReadOnly(true)
+    const { renderVersion, sceneVersion } = editor.state
+    expect(() => editor.reportPresented({ renderVersion, sceneVersion })).not.toThrow()
   })
 
   test('clears a rotation preview, which only shows on the canvas', () => {

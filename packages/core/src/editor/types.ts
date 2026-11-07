@@ -157,6 +157,11 @@ export interface EditorViewState {
     dragTangent: Vector | null
     oppositeDragTangent: Vector | null
     pendingClose?: boolean
+    /**
+     * The last point's outgoing handle while the pen closes the path: the closing segment starts
+     * with it, and `dragTangent` holds the drag at the first point.
+     */
+    closeTangent?: Vector | null
     closingToFirst: boolean
     resumingNodeId?: string
     resumedPath?: ResumedPath
@@ -236,6 +241,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
+  /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
+  'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
@@ -266,6 +273,10 @@ export interface EditorOptions {
     signal?: AbortSignal
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
+  /**
+   * The canvas's size in screen pixels. Without it the editor uses the size the canvas last gave
+   * `setViewportSize`, and the window's before that.
+   */
   getViewportSize?: () => { width: number; height: number }
   /** The name of whoever is editing, which a sticky note they place is signed with. */
   getUserName?: () => string
