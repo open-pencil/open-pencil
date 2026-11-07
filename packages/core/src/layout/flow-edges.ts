@@ -46,7 +46,7 @@ export function setFlowEdges(
   flow: readonly YogaNode[],
   direction: 'LTR' | 'RTL'
 ): void {
-  const overlap = flow.length > 0 ? siblingOverlap(frame) : 0
+  const overlap = flow.length > 1 ? siblingOverlap(frame) : 0
   const padding = layoutPadding(frame)
   const wraps = frame.layoutWrap === 'WRAP'
   const keepsNegativePadding = !wraps && Object.values(padding).some((length) => length < 0)

@@ -81,6 +81,15 @@ describe('negative auto layout padding moves children past the frame edge', () =
     expect(children[0]).toMatchObject({ x: 0, y: 4 })
   })
 
+  test('a row aligned to its bottom sits past a negative bottom padding', () => {
+    const { children } = frameWith(
+      { ...fixed('HORIZONTAL', 64, 64), counterAxisAlign: 'MAX' },
+      { paddingBottom: -32 },
+      [[24, 24]]
+    )
+    expect(children[0]).toMatchObject({ x: 0, y: 72 })
+  })
+
   test('a column aligned to its end sits past a negative bottom padding', () => {
     const { children } = frameWith(
       { ...fixed('VERTICAL', 64, 64), primaryAxisAlign: 'MAX', counterAxisAlign: 'CENTER' },
@@ -123,6 +132,21 @@ describe('negative auto layout padding moves children past the frame edge', () =
       ]
     )
     expect(children.map((child) => child.x)).toEqual([0, 34, 68])
+  })
+
+  test('a negative gap leaves a hugging row with one child as wide as no gap does', () => {
+    const row = (itemSpacing: number) =>
+      frameWith(
+        {
+          layoutMode: 'HORIZONTAL',
+          primaryAxisSizing: 'HUG',
+          counterAxisSizing: 'HUG',
+          itemSpacing
+        },
+        { paddingRight: -1 },
+        [[4, 4]]
+      ).frame.width
+    expect(row(-6)).toBe(row(0))
   })
 
   test('right-to-left rows inside a left-to-right row keep the row’s left edge', () => {
