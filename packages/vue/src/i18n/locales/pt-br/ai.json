@@ -78,7 +78,7 @@
   "attachImages": "Anexar imagens",
   "removeImageAttachment": "Remover imagem {name}",
   "dropImagesToAttach": "Solte as imagens para anexar",
-  "queueMessage": "Direcione o agente… Alt+Enter aguarda até ele terminar",
+  "queueMessage": "Direcione o agente… {shortcut} aguarda até ele terminar",
   "queuedSteer": "Enviada após o passo atual",
   "queuedFollowUp": "Enviada quando o agente terminar",
   "removeQueuedMessage": "Remover mensagem em espera",
