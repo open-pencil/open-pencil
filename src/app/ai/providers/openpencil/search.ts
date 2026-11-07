@@ -10,7 +10,9 @@ type SearchClient = (workspaceId: string) => Pick<CloudServicesClient, 'catalog'
 
 /**
  * Web search for a chat on Cloud's services, charged to the workspace that pays for its model, when
- * the service's catalog offers it. Other providers have no search.
+ * the service's catalog offers it. A catalog that cannot be read leaves search offered, so a
+ * passing failure does not take it away for the rest of the chat; a service without search then
+ * answers `capability_unavailable`, which the tool reports. Other providers have no search.
  */
 export async function cloudWebSearch(
   connection: Pick<AIModelConnection, 'providerID' | 'cloudWorkspaceId'>,
@@ -19,12 +21,11 @@ export async function cloudWebSearch(
   if (connection.providerID !== OPENPENCIL_AI_PROVIDER) return undefined
   const services = client(connection.cloudWorkspaceId ?? '')
   if (!services) return undefined
+  const search: WebSearch = (input) => services.search(input)
   try {
-    const catalog = await services.catalog()
-    return catalog.search ? (input) => services.search(input) : undefined
+    return (await services.catalog()).search ? search : undefined
   } catch (error) {
-    // The chat still works without search; the model is just not offered it.
     console.warn('Could not read the OpenPencil services catalog', error)
-    return undefined
+    return search
   }
 }

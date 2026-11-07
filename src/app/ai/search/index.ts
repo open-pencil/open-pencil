@@ -14,6 +14,16 @@ import { exaWebSearch } from './exa'
 export async function chatWebSearch(
   connection: Pick<AIModelConnection, 'providerID' | 'cloudWorkspaceId'>
 ): Promise<WebSearch | undefined> {
-  if (IS_TAURI && (await resolveExaKey())) return exaWebSearch(resolveExaKey)
+  if (IS_TAURI) {
+    let saved: string | null
+    try {
+      saved = await resolveExaKey()
+    } catch (error) {
+      // No search rather than Cloud's: a key may be saved, and Cloud would bill someone else.
+      console.warn('Could not read the Exa key', error)
+      return undefined
+    }
+    if (saved) return exaWebSearch(resolveExaKey)
+  }
   return cloudWebSearch(connection)
 }

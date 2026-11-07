@@ -7,6 +7,7 @@ import {
   parseCloudDiscovery,
   parseCreateServicesToken,
   parseSearchRequest,
+  searchResultSchema,
   serviceCatalogSchema,
   workspaceEntitlementsSchema,
   MAX_SEARCH_RESULTS
@@ -73,6 +74,14 @@ describe('Cloud services contract', () => {
     )
     expect(() => parseSearchRequest({ query: '   ' })).toThrow()
     expect(() => parseSearchRequest({ query: 'grids', numResults: 11 })).toThrow()
+  })
+
+  test('a search result links only to a web page, which editors open when clicked', () => {
+    const result = { title: 'Grids', publishedAt: null, author: null, text: '' }
+    expect(v.is(searchResultSchema, { ...result, url: 'https://example.com/grids' })).toBe(true)
+    const script = ['javascript', 'alert(1)'].join(':')
+    expect(v.is(searchResultSchema, { ...result, url: script })).toBe(false)
+    expect(v.is(searchResultSchema, { ...result, url: 'data:text/html,hi' })).toBe(false)
   })
 })
 

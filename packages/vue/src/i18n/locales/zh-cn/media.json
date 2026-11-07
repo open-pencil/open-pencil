@@ -3,7 +3,7 @@
   "vectorizationDescription": "将图像图层发送到 Recraft、fal.ai 或 QuiverAI，并返回可编辑的矢量。服务商可能收费。",
   "vectorizeProvider": "矢量化服务",
   "webSearch": "网页搜索",
-  "webSearchDescription": "使用你自己的 Exa 密钥，AI 代理可以在任何对话中搜索网页，费用由 Exa 直接向你收取，而不是使用 Cloud 额度。",
+  "webSearchDescription": "使用你自己的 Exa 密钥，AI 代理可以通过任何直接连接的模型搜索网页，费用由 Exa 直接向你收取，而不是使用 Cloud 额度。外部代理使用它们自己的工具。",
   "pexelsAPIKey": "Pexels API 密钥（图库照片）",
   "unsplashAccessKey": "Unsplash 访问密钥",
   "stockPhotoToolOptional": "可选，用于 stock_photo 工具",

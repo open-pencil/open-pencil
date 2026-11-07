@@ -3,7 +3,7 @@
   "vectorizationDescription": "Invia i livelli immagine a Recraft, fal.ai o QuiverAI e restituisce vettori modificabili. Potrebbero essere applicati costi.",
   "vectorizeProvider": "Servizio di vettorializzazione",
   "webSearch": "Ricerca web",
-  "webSearchDescription": "Con la tua chiave Exa, l’agente IA può cercare sul web in qualsiasi chat, ed Exa addebita a te invece di usare i crediti Cloud.",
+  "webSearchDescription": "Con la tua chiave Exa, l’agente IA può cercare sul web con qualsiasi modello a cui si collega direttamente, ed Exa addebita a te invece di usare i crediti Cloud. Gli agenti esterni mantengono i propri strumenti.",
   "pexelsAPIKey": "Chiave API Pexels",
   "unsplashAccessKey": "Chiave di accesso Unsplash",
   "stockPhotoToolOptional": "Facoltativo — abilita lo strumento foto stock",

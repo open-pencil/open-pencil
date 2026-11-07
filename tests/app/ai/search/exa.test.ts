@@ -46,7 +46,11 @@ describe("searching with one's own Exa key", () => {
     const [request] = service.requests
     expect(request?.url).toBe('https://api.exa.ai/search')
     expect(new Headers(request?.init.headers).get('x-api-key')).toBe('exa-key')
-    expect(JSON.parse(String(request?.init.body))).toMatchObject({ query: 'grids', numResults: 3 })
+    expect(JSON.parse(String(request?.init.body))).toMatchObject({
+      query: 'grids',
+      numResults: 3,
+      contents: { highlights: { maxCharacters: 2_000 } }
+    })
   })
 
   test('tells the model when Exa refuses the key or there is none', async () => {

@@ -3,7 +3,7 @@
   "vectorizationDescription": "Sendet Bildebenen an Recraft, fal.ai oder QuiverAI und gibt bearbeitbare Vektoren zurück. Es können Anbietergebühren anfallen.",
   "vectorizeProvider": "Vektorisierungsdienst",
   "webSearch": "Websuche",
-  "webSearchDescription": "Mit deinem eigenen Exa-Schlüssel kann der KI-Agent in jedem Chat im Web suchen, und Exa rechnet direkt mit dir ab, statt Cloud-Guthaben zu verbrauchen.",
+  "webSearchDescription": "Mit deinem eigenen Exa-Schlüssel kann der KI-Agent mit jedem direkt angebundenen Modell im Web suchen, und Exa rechnet direkt mit dir ab, statt Cloud-Guthaben zu verbrauchen. Externe Agenten behalten ihre eigenen Werkzeuge.",
   "pexelsAPIKey": "Pexels-API-Schlüssel",
   "unsplashAccessKey": "Unsplash-Zugriffsschlüssel",
   "stockPhotoToolOptional": "Optional — Zugangsdaten für das stock_photo-Werkzeug",

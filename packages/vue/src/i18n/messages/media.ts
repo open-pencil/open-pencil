@@ -9,7 +9,7 @@ export const mediaMessageDefaults = {
   vectorizeProvider: 'Vectorization service',
   webSearch: 'Web search',
   webSearchDescription:
-    'With your own Exa key, the AI agent can search the web in any chat, and Exa bills you instead of using Cloud credits.',
+    'With your own Exa key, the AI agent can search the web with any model it reaches directly, and Exa bills you instead of using Cloud credits. External agents keep their own tools.',
   pexelsAPIKey: 'Pexels API Key (stock photos)',
   unsplashAccessKey: 'Unsplash Access Key',
   stockPhotoToolOptional: 'Optional — for stock_photo tool',

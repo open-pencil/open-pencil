@@ -117,9 +117,11 @@ export type UsageEntry = v.InferOutput<typeof usageEntrySchema>
 
 /** The most results one search returns. */
 export const MAX_SEARCH_RESULTS = 10
+/** The longest query a search takes, in characters. */
+export const MAX_SEARCH_QUERY_LENGTH = 1_000
 
 export const searchRequestSchema = v.object({
-  query: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(1_000)),
+  query: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(MAX_SEARCH_QUERY_LENGTH)),
   numResults: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_SEARCH_RESULTS)),
     5
@@ -134,7 +136,11 @@ export function parseSearchRequest(input: unknown): SearchRequest {
 
 /** One page a search found, with the part of its text that answers the query. */
 export const searchResultSchema = v.object({
-  url: urlSchema,
+  // Only web pages: editors open it when clicked, so a `javascript:` URL must never pass.
+  url: v.pipe(
+    urlSchema,
+    v.check((url) => /^https?:\/\//i.test(url), 'A search result links to an HTTP(S) page')
+  ),
   title: v.string(),
   publishedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
   author: v.nullable(v.string()),

@@ -43,9 +43,13 @@ describe('Cloud web search', () => {
     expect(home.workspaces).toEqual(['workspace-1'])
   })
 
-  test('offers no search when the catalog has none or cannot be read', async () => {
+  test('offers no search when the catalog has none', async () => {
     expect(await cloudWebSearch(cloud, services(catalog).client)).toBeUndefined()
-    expect(await cloudWebSearch(cloud, services(new Error('offline')).client)).toBeUndefined()
+  })
+
+  test('still offers search when the catalog cannot be read, for the service to answer', async () => {
+    const search = await cloudWebSearch(cloud, services(new Error('offline')).client)
+    expect(await search?.({ query: 'grids' })).toEqual(response)
   })
 
   test('offers no search for other providers or without a workspace', async () => {

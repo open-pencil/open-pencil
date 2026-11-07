@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import * as v from 'valibot'
 
 import {
+  MAX_SEARCH_QUERY_LENGTH,
   MAX_SEARCH_RESULTS,
   serviceErrorCodeSchema,
   type SearchRequestInput,
@@ -44,7 +45,14 @@ export function createWebSearchTool(search: WebSearch) {
         'money, so search only for what the conversation and document do not already answer.',
       inputSchema: valibotSchema(
         v.object({
-          query: v.pipe(v.string(), v.description('What to look for, in natural language')),
+          query: v.pipe(
+            v.string(),
+            v.minLength(1),
+            v.maxLength(MAX_SEARCH_QUERY_LENGTH),
+            v.description(
+              `What to look for, in natural language, up to ${MAX_SEARCH_QUERY_LENGTH} characters`
+            )
+          ),
           numResults: v.optional(
             v.pipe(
               v.number(),

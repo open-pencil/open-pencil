@@ -20,8 +20,9 @@ import { enabledSkills } from '@/app/ai/skills/library'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
 import {
-  refreshMediaCredentials,
-  credentialPersistenceRevision
+  credentialPersistenceRevision,
+  exaKeyStatus,
+  refreshMediaCredentials
 } from '@/app/settings/credentials/media'
 import {
   hasLegacyCredential,
@@ -144,4 +145,6 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     void refreshAIProviderStatus()
     markTransportDirty()
   })
+  // Saving or removing an Exa key changes how the chat searches the web.
+  watch(exaKeyStatus, markTransportDirty)
 }
