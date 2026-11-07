@@ -73,7 +73,8 @@ const searched = part({
       },
       {
         url: 'https://design.example.org/patterns/pricing',
-        title: 'Pricing table patterns',
+        title:
+          'Pricing table patterns: a complete guide to comparing plans, tiers and features that users love',
         publishedAt: null,
         author: null,
         text: 'Comparison tables work when features differ in kind; when they differ only in limits, a single slider reads faster.'
