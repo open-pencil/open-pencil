@@ -27,12 +27,12 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
-import { chatToolTheme } from './ui'
+import { chatToolCardTheme } from './ui'
 
 /** `undone`: the user undid the call's edit, by Undo or the chat's Revert. */
 const { part, undone = false } = defineProps<{ part: ToolCallPart; undone?: boolean }>()
 const { ai } = useI18n()
-const ui = chatToolTheme()
+const ui = chatToolCardTheme()
 
 const state = computed(() => toolCallState(part))
 const name = computed(() => toolDisplayName(part))
