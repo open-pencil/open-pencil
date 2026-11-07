@@ -1,0 +1,1 @@
+- Opening `.fig` documents uses less memory by preparing only the active page and capping the tile cache at 384 MiB.
