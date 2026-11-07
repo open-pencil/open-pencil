@@ -13,7 +13,8 @@ import {
 } from '#vue/canvas/surface/shader/frames'
 
 const IMAGE = 'image-hash'
-const FRAME = { width: 1, height: 1 } as unknown as CanvasImageSource
+/** A frame to hand around: listeners here only count frames, never draw them. */
+const FRAME: ImageBitmap = { width: 1, height: 1, close: () => undefined }
 
 /**
  * Two canvases of one editor, each with an island over it, and an island beside them that no
