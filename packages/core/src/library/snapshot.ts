@@ -2,6 +2,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
@@ -59,7 +60,11 @@ function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
     const cached = known.get(node.id)
     if (cached) return cached
     const owner = node.parentId ? findInstanceAncestor(source, node.parentId) : undefined
-    const copied = node.componentId ? source.getNode(node.componentId) : undefined
+    // A swapped nested instance names the component it shows; its owner records the layer it copies.
+    const copiedId = owner
+      ? copiedComponentLayerId(owner.instanceOverrides, owner.id, node)
+      : node.componentId
+    const copied = copiedId ? source.getNode(copiedId) : undefined
     const identity =
       owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id)
     known.set(node.id, identity)
