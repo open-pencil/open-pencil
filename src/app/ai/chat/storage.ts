@@ -1,8 +1,6 @@
 import { isEqual } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
-
 import {
   designCustomAPIType,
   designCustomBaseURL,
@@ -28,6 +26,7 @@ import {
   initializeCredentialMigration
 } from '@/app/settings/credentials/migration'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
 export const providerID = designProviderID
 export const modelID = designModelID
@@ -45,9 +44,9 @@ export const isHarnessProvider = computed(() => providerID.value === 'harness:pi
 export const isAgentProvider = computed(() => isACPProvider.value || isHarnessProvider.value)
 
 export const isConfigured = computed(() => {
-  if (isACPProvider.value) return IS_TAURI
+  if (isACPProvider.value) return canRunHostProcesses()
   // Pi can use the CLI's own sign-in, so a key is optional.
-  if (isHarnessProvider.value) return IS_TAURI
+  if (isHarnessProvider.value) return canRunHostProcesses()
   // Cloud's AI service needs no key: the Home server's sign-in and a workspace stand in for one.
   if (providerID.value === OPENPENCIL_AI_PROVIDER) {
     return cloudAIAvailable.value && Boolean(designModelConnection.value?.cloudWorkspaceId)

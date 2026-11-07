@@ -293,6 +293,8 @@ export const aiMessageDefaults = {
   aiSetupAccessAgentsDescription:
     'Use your existing subscription. The agent chooses its own model.',
   aiSetupAccessAgentsDesktop: 'Coding agents are available in the OpenPencil desktop app.',
+  aiSetupAccessAgentsSandboxed:
+    'This install of OpenPencil can’t start coding agents. The download from GitHub can.',
   modelProviderSetUp: 'Set up',
   aiSetupAccessAPI: 'API accounts',
   aiSetupAccessServer: 'Local model or company server',
@@ -375,6 +377,7 @@ export const aiMessageDefaults = {
   aiSetupPiSignIn:
     'To sign in to a provider or pick a default model, run pi in a terminal and type /login or /model.',
   aiSetupGetDesktop: 'Get the desktop app',
+  aiSetupGetDownload: 'Download from GitHub',
   aiSetupMeteredNote:
     'OpenRouter gives you models from several vendors with one account and one key.',
   aiSetupSkillsTitle: 'Skills from your coding agents',
