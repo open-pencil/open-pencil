@@ -159,3 +159,48 @@ test('syncing a component keeps a bound number its instance overrides', () => {
   expect(synced.width).toBe(60)
   expect(synced.opacity).toBe(0.3)
 })
+
+// Figma (desktop, 2026-11-07): a copy in an instance resized to 113.3×57.1, then synced after its
+// component's layer changes, scales by the exact ratio; one Left & right stretched past zero in a
+// 70-wide instance stays turned over.
+test('syncing places copies by their constraints, exactly, and keeps them turned over', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const box = graph.createNode('COMPONENT', page, { name: 'Box', width: 100, height: 50 })
+  const dot = graph.createNode('RECTANGLE', box.id, {
+    x: 0.7,
+    y: 3.75,
+    width: 22.6,
+    height: 16.5,
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE'
+  })
+  const bar = graph.createNode('RECTANGLE', box.id, {
+    x: 10,
+    y: 30,
+    width: 20,
+    height: 10,
+    horizontalConstraint: 'STRETCH'
+  })
+  const resized = (width: number, height: number) => {
+    const instance = must(graph.createInstance(box.id, page), 'instance')
+    for (const field of ['width', 'height'])
+      setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, field)
+    graph.updateNode(instance.id, { width, height })
+    return instance
+  }
+  const scaled = resized(113.3, 57.1)
+  const narrow = resized(70, 57.1)
+
+  graph.updateNode(dot.id, { x: 1.3, width: 22.9 })
+  graph.updateNode(bar.id, { y: 31 })
+  graph.syncInstances(box.id)
+
+  const round = (value: number) => Math.round(value * 1e4) / 1e4
+  const dotCopy = must(graph.getChildren(scaled.id)[0], 'dot copy')
+  expect([dotCopy.x, dotCopy.y, dotCopy.width, dotCopy.height].map(round)).toEqual([
+    1.4729, 4.2825, 25.9457, 18.843
+  ])
+  const barCopy = must(graph.getChildren(narrow.id)[1], 'bar copy')
+  expect(barCopy).toMatchObject({ x: 0, y: 31, width: 10, height: 10, flipX: true })
+})

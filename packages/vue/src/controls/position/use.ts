@@ -10,6 +10,7 @@ import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
+import { sizesLayersInside, usePanelSize } from '#vue/controls/position/size'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useEditor } from '#vue/editor/context'
 
@@ -56,6 +57,10 @@ export function usePosition() {
     commitProp: _commitProp,
     cancelProp: _cancelProp
   } = usePropScrub(editor)
+  const size = usePanelSize(editor)
+  /** A size that moves layers inside goes through the resize a handle makes. */
+  const resizesLikeHandle = (key: NumericNodeProperty): key is 'width' | 'height' =>
+    (key === 'width' || key === 'height') && nodes.value.every(sizesLayersInside)
 
   // Typed X, Y, and rotation become each node's own move or turn, as typing them in Figma does.
   function updateProp(key: NumericNodeProperty, value: number) {
@@ -65,16 +70,21 @@ export function usePosition() {
       )
     } else if (key === 'rotation') {
       updateEach(nodes.value, key, (target) => panelRotationChange(target, editor.graph, value))
+    } else if (resizesLikeHandle(key)) {
+      size.update(nodes.value, (start) => ({ ...start, [key]: value }))
     } else {
       _updateProp(nodes.value, key, value)
     }
   }
 
   function commitProp(key: NumericNodeProperty, value: number, previous: number) {
+    // A scrub can take both paths as the selection changes under it; each commits what it opened.
+    size.commit()
     _commitProp(nodes.value, key, value, previous)
   }
 
   function cancelProp(key: NumericNodeProperty) {
+    size.cancel()
     _cancelProp(nodes.value, key)
   }
 
