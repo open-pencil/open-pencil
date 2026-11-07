@@ -463,7 +463,13 @@ describe('paint types', () => {
       }))
     })
 
-    rectangle.fills = rectangle.fills.map((paint) => ({ ...paint, opacity: 0.5 }))
+    const halfVideo = {
+      type: 'VIDEO' as const,
+      videoHash: HASH,
+      scaleMode: 'FILL' as const,
+      opacity: 0.5
+    }
+    rectangle.fills = [halfVideo, halfVideo]
 
     expect(graph.getNode(rectangle.id)?.fills.map((paint) => paint.imageHash)).toEqual(posters)
   })
