@@ -87,3 +87,36 @@ test('a mode a pasted instance pins on a nested layer follows its collection int
     { entries: [{ variableSetID: { guid: sizes.guid }, variableModeID: wide?.id }] }
   ])
 })
+
+test('a variable a pasted instance binds on a nested layer follows the paste into another file', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const sizes = graph.createCollection('Sizes')
+  const width = graph.createVariable('Width', 'FLOAT', sizes.id, 64)
+  const leaf = graph.createNode('COMPONENT', page, { name: 'Leaf' })
+  const card = graph.createNode('COMPONENT', page, { name: 'Card' })
+  graph.createInstance(leaf.id, card.id, { name: 'Nested' })
+  const outer = expectDefined(graph.createInstance(card.id, page, { name: 'Outer' }))
+  const nested = expectDefined(graph.getChildren(outer.id)[0])
+  setInstanceOverride(
+    outer.instanceOverrides,
+    outer.id,
+    nested.id,
+    bindingOverrideField('width'),
+    width.id
+  )
+  const editor = createEditor({ graph })
+  editor.select([outer.id])
+  const copy = await editor.prepareCopy()
+  const target = new SceneGraph()
+
+  await createEditor({ graph: target }).pasteSnapshot(expectDefined(copy.snapshot))
+
+  const pastedWidth = expectDefined([...target.variables.values()].find((v) => v.name === 'Width'))
+  const pastedOuter = expectDefined([...target.getAllNodes()].find((node) => node.name === 'Outer'))
+  const bindings = [...pastedOuter.instanceOverrides.descendants.values()].map((fields) =>
+    fields.get(bindingOverrideField('width'))
+  )
+  expect(pastedWidth.id).not.toBe(width.id)
+  expect(bindings).toEqual([pastedWidth.id])
+})
