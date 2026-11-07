@@ -19,6 +19,7 @@ import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
@@ -27,6 +28,7 @@ import type {
 import { openTour } from '@/app/demo/document'
 import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
+import { implementationSelection } from '@/app/integrations/storybook/selection'
 import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
@@ -97,6 +99,7 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
+  const hasImplementationSelection = useSceneComputed(() => !!implementationSelection(store))
   const {
     commands,
     menuItem: commandMenuItem,
@@ -130,6 +133,7 @@ export function useAppMenu() {
     'paste-to-replace': 'pasteToReplace',
     'paste-as-layers': 'pasteAsLayers',
     'selection.rename': 'renameSelection',
+    'selection.openImplementation': 'openImplementationStory',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
     language: 'language',
@@ -288,6 +292,8 @@ export function useAppMenu() {
 
   function disabled(item: AppMenuActionItem): boolean | undefined {
     switch (item.id) {
+      case 'selection.openImplementation':
+        return !hasImplementationSelection.value
       case 'view-split-right':
       case 'view-split-down':
         return store.visiblePaneCount.value >= store.panes.maxVisiblePanes

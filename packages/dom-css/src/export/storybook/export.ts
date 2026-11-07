@@ -353,6 +353,24 @@ async function storyTokens(graph: SceneGraph, folder: string): Promise<ExportHTM
   return css ? [{ path: `${folder}/tokens.css`, content: css }] : []
 }
 
+/** Render the variants a story module references, using its collision-safe image names. */
+async function storyImages(
+  group: StoryGroup,
+  file: string,
+  names: string[],
+  render: ExportStorybookOptions['renderDesignImage']
+): Promise<ExportHTMLFile[]> {
+  if (!render) return []
+  const images: ExportHTMLFile[] = []
+  for (const [index, variant] of group.variants.slice(0, names.length).entries()) {
+    images.push({
+      path: `${file}.design/${names[index]}.png`,
+      content: await render(variant.node.id)
+    })
+  }
+  return images
+}
+
 /**
  * Generate one CSF3 `.stories.ts` file per component or component set, plus a
  * `<Name>.design/` folder of variant images when `renderDesignImage` is given.
@@ -386,6 +404,17 @@ export async function exportStorybook(
       const generated = await generate(component, { styling: options.styling })
       for (const item of generated.files) add(page, item.path, item.content)
       const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
+      // Controls and play can show states no single variant represents, so keep every image
+      // explicitly labelled instead of claiming the resting variant matches the live story.
+      const imageFiles = await storyImages(
+        group,
+        file,
+        storyNames(group),
+        options.renderDesignImage
+      )
+      for (const image of imageFiles) add(page, image.path, image.content)
+      const images = imageFiles.map((image) => image.path)
+      const imageNames = new Set<string>()
       add(
         page,
         `${file}.stories.ts`,
@@ -398,9 +427,15 @@ export async function exportStorybook(
           generated,
           // A gallery lays out static variants; a generated component's stories are its states.
           single: mode === 'single',
-          design: design.flatMap((entry) =>
-            entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
-          )
+          images,
+          design: [
+            ...design,
+            ...images.map((_, variant): StoryDesign => ({
+              type: 'image',
+              variant,
+              name: `Design: ${claimName(group.variants[variant]?.node.name ?? group.name, imageNames, { separator: ' ' })}`
+            }))
+          ]
         })
       )
       continue
@@ -408,12 +443,9 @@ export async function exportStorybook(
 
     // Only the stories a file keeps get design images; a gallery or Default alone keeps one.
     const names = storyNames(group).slice(0, mode === 'variants' ? undefined : 1)
-    const render = options.renderDesignImage
-    const images = render ? names.map((name) => `${file}.design/${name}.png`) : []
-    if (render) {
-      for (const [i, variant] of group.variants.slice(0, names.length).entries())
-        add(page, images[i] ?? '', await render(variant.node.id))
-    }
+    const imageFiles = await storyImages(group, file, names, options.renderDesignImage)
+    for (const image of imageFiles) add(page, image.path, image.content)
+    const images = imageFiles.map((image) => image.path)
     const context = {
       ...options,
       graph,

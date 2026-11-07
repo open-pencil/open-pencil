@@ -1,8 +1,10 @@
+import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
 import { pasteClipboardAsLayers } from '@/app/editor/clipboard/paste/web'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
+import { requestOpenImplementationStory } from '@/app/integrations/storybook/open'
 import { onCanvasSelection } from '@/app/shell/commands/focused'
 
 export function createSelectionMenuActions(store: EditorStore) {
@@ -12,6 +14,9 @@ export function createSelectionMenuActions(store: EditorStore) {
     paste: () => void executeClipboardCommand(store, 'paste'),
     'paste-to-replace': onCanvasSelection(() => void pasteClipboardToReplace(store)),
     'paste-as-layers': onCanvasSelection(() => void pasteClipboardAsLayers(store)),
+    'selection.openImplementation': onCanvasSelection(() =>
+      requestOpenImplementationStory(getActiveEditorStore())
+    ),
     'selection.rename': onCanvasSelection(() => requestRenameSelection(store))
   }
 }

@@ -57,6 +57,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@open-pencil/emit": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/test-support": "workspace:*",

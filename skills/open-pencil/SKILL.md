@@ -120,12 +120,16 @@ openpencil export design.fig -f jsx -o component.jsx
 openpencil export design.fig -f jsx --style tailwind -o component.tsx
 openpencil export design.pen -f storybook -o src/stories --watch  # stories + design images per component, re-exported on save
 openpencil export 'src/**/*.pen' -f storybook --beside  # stories next to each design file
+openpencil export design.fig -f storybook --mapping-info  # persisted component/property IDs and file revision
+openpencil export design.fig -f storybook --mapping openpencil.components.json -o src/design-references
 openpencil export design.fig --thumbnail --width 1920 --height 1080
 openpencil export --page "Components" -o components.png
 
 openpencil convert design.fig -o design.pen
 openpencil formats
 ```
+
+For developer-owned Storybook components, create the mapping config using the [component mapping guide](https://openpencil.dev/programmable/cli/exporting#link-an-existing-implementation). Inspect saved targets with `--mapping-info`; runtime handles for generated instance copies or unsaved layers are not mapping targets. Mapping export requires `.fig` and writes typed references and design images while preserving the implementation and stories. Rerun it after saved design changes; mapping mode does not support `--watch`.
 
 ### Analyze and lint
 

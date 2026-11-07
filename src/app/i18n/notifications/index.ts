@@ -7,6 +7,22 @@ import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue/i18
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),
   linkCopied: 'Link copied to clipboard.',
+  implementationStoryReady: 'Implementation story ready.',
+  implementationStoryUnpinned:
+    'Implementation story ready. This mapping is not pinned to a design revision.',
+  openImplementationStory: 'Open story',
+  implementationSelectionRequired:
+    'Select one component or component instance from a saved .fig document.',
+  implementationMappingReopenRequired:
+    'Reopen the saved .fig document before choosing its implementation mapping.',
+  implementationMappingInvalid:
+    'The component mapping is invalid. Check its format and remove duplicate associations.',
+  implementationMappingCount: params(
+    'Expected one implementation mapping for this document and saved component; found {count}.'
+  ),
+  implementationMappingRevisionMismatch:
+    'Design revision does not match, or this document has edits. Reopen the saved .fig and update its mapping.',
+  implementationDocumentChanged: 'The document changed while checking its revision.',
   clipboardMissingDesignData: 'Clipboard does not contain design data.',
   clipboardAccessBlocked: 'Clipboard access is blocked in this browser context.',
   copiedAs: params('Copied as {format}.'),
@@ -43,6 +59,17 @@ export const notificationMessageDefaults = {
   deepLinkPickerDismissed: 'Link cancelled: no file was chosen.',
   deepLinkCancelled: params('Link cancelled: expected a file ending in “{file}”.'),
   deepLinkNodeNotFound: params('Node “{node}” was not found in “{file}”.'),
+  deepLinkFileAmbiguous: params(
+    'Several open or chosen documents match {file}. Close other checkouts or choose one file.'
+  ),
+  persistedIdentityUnavailable: 'This editor cannot resolve persisted design identities.',
+  persistedIdentityRevisionMismatch:
+    'Design revision does not match, or this document has edits. Reopen the saved .fig and update the mapping or reference.',
+  persistedIdentityAmbiguous:
+    'Several layers carry this persisted design identity. Repair the document before following the link.',
+  persistedIdentityNotFound: params(
+    'Persisted design identity {id} was not found in this document.'
+  ),
   openQueuedFilesFailed: params('Could not open the files handed to OpenPencil: {error}')
 } as const
 
