@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { createShapeWithText, shapeWithTextKindFields } from '@open-pencil/scene-graph/generated'
 import {
   isShapeWithTextType,
@@ -11,6 +11,7 @@ import { newLayerDefaults } from '#core/editor/shapes/defaults'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, prepareFollowedFieldEdit, raw, updateNode } from './accessor-utils'
+import { graphOf, type GraphHost } from './graph'
 
 /** `value` as a kind for `node`, refused in the words Figma's plugin API refuses it with. */
 function checkedShapeType(node: SceneNode, value: unknown): ShapeWithTextType {
@@ -30,12 +31,10 @@ function checkedShapeType(node: SceneNode, value: unknown): ShapeWithTextType {
  * A new, empty shape with text on the API's current page, as FigJam's plugin API creates it: an
  * ellipse 176 px square, painted as the shape tool paints a new shape. Measured in FigJam.
  */
-export function newShapeWithText(api: {
-  graph: SceneGraph
-  currentPageId: string
-  theme: InterfaceTheme
-}): SceneNode {
-  return createShapeWithText(api.graph, api.currentPageId, {
+export function newShapeWithText(
+  api: GraphHost & { currentPageId: string; theme: InterfaceTheme }
+): SceneNode {
+  return createShapeWithText(graphOf(api), api.currentPageId, {
     ...newLayerDefaults('SHAPE_WITH_TEXT', api.theme),
     shapeWithTextType: 'ELLIPSE'
   })

@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { gradientTransformRows, linearGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { graphOf } from '#core/figma-api/graph'
 import { storeImage } from '#core/figma-api/images'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
@@ -124,7 +125,7 @@ export const setImageFill = defineTool({
     if (!node) return { error: `Node "${id}" not found` }
     if (!isValid(image_data)) return { error: 'image_data is not valid Base64' }
     const bytes = toUint8Array(image_data)
-    const imageHash = storeImage(figma.graph, bytes)
+    const imageHash = storeImage(graphOf(figma), bytes)
     const mode = scale_mode
     node.fills = [{ type: 'IMAGE', imageHash, scaleMode: mode }]
     return { id, imageHash, scaleMode: mode }

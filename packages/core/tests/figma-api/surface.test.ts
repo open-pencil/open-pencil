@@ -7,6 +7,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api/index'
 import { FIGMA_API_HOST_MEMBERS, SERIALIZATION_MEMBERS } from '#core/figma-api/surface'
+import { compileScript } from '#core/tools/analyze/eval/wrap'
 
 // `compatibility.ts` checks the declared types; this checks what a script can actually reach,
 // including members installed on prototypes, against the names Figma's typings declare.
@@ -55,6 +56,13 @@ describe('the scripting surface is Figma’s Plugin API', () => {
 
   test('figma has no members beyond the listed host members', () => {
     expect(beyondFigma(figma, figmaMembers('PluginAPI'), FIGMA_API_HOST_MEMBERS)).toEqual([])
+  })
+
+  test('a script reaches no scene graph through figma or openpencil', async () => {
+    const reached = await compileScript(
+      'return [figma.graph, openpencil.figma, openpencil.graph, Object.keys(openpencil)]'
+    )(figma)
+    expect(reached).toEqual([undefined, undefined, undefined, []])
   })
 
   test('nodes have only the members of Figma’s node types', () => {

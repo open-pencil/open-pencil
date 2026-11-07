@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { defineTool } from '#core/tools/schema'
 
@@ -29,7 +30,7 @@ export const listFonts = defineTool({
     const page = figma.currentPage
     page.findAll((node) => {
       if (node.type === 'TEXT') {
-        const raw = figma.graph.getNode(node.id)
+        const raw = graphOf(figma).getNode(node.id)
         if (raw) {
           const key = raw.fontFamily
           if (!fonts.has(key)) fonts.set(key, new Set())
