@@ -10,10 +10,10 @@ import type {
   ShapedLine
 } from 'canvaskit-wasm'
 
-import { lineBands } from '#core/canvas/text/layout/apart'
+import { lineBands, lineBoxBands } from '#core/canvas/text/layout/apart'
 import {
+  blockLineNumber,
   paragraphBlock,
-  toLineLookup,
   type TextLayoutBlock,
   type TextLayoutMarker
 } from '#core/canvas/text/layout/block'
@@ -23,6 +23,8 @@ import {
   holdsGlyphs,
   trailingSpacing,
   UNSPACED_LINES,
+  type BlockAllowances,
+  type BlockWidth,
   type FittedBlock,
   type FittedLines,
   type LineFitting
@@ -55,12 +57,12 @@ import {
 interface ShiftsApart {
   shifts: number[]
   drawn: boolean
-  drawing?: LinesApart | null
+  drawing?: LinesApart
 }
 
 interface SettledAllowance {
   boxWidth: number
-  allowance: number
+  allowances: BlockAllowances
 }
 
 /** Box widths whose settled allowance a layout keeps, as auto width alternates two. */
@@ -82,7 +84,7 @@ export class TextLayout {
   private visible: readonly TextLayoutBlock[]
   private fits: readonly FittedBlock[] = []
   private settled: SettledAllowance[] = []
-  private laidOutWidth = 0
+  private laidOutWidth: BlockWidth = () => 0
   /** The text's height when layout placed its lines itself. */
   private placedHeight: number | null = null
 
@@ -117,7 +119,7 @@ export class TextLayout {
     if (this.joinLinesApart(fitted)) {
       fitted = this.fit(boxWidth)
     }
-    this.settle(boxWidth, fitted.allowance)
+    this.settle(boxWidth, fitted.allowances)
     this.laidOutWidth = fitted.width
     this.fits = fitted.fits
     for (const [order, fit] of fitted.fits.entries()) {
@@ -136,14 +138,14 @@ export class TextLayout {
     this.height = this.measureHeight()
   }
 
-  private readonly layoutVisible = (width: number): readonly TextLayoutBlock[] => {
+  private readonly layoutVisible = (width: BlockWidth): readonly TextLayoutBlock[] => {
     this.layoutBlocks(width)
     return this.visible
   }
 
   private fit(boxWidth: number): FittedLines {
-    return fitLines(this.fitting, boxWidth, this.layoutVisible, {
-      settled: this.settled.find((entry) => entry.boxWidth === boxWidth)?.allowance,
+    return fitLines(this.ck, this.fitting, boxWidth, this.layoutVisible, {
+      settled: this.settled.find((entry) => entry.boxWidth === boxWidth)?.allowances,
       joined: this.blocks.some((block) => block.joiners.count > 0)
     })
   }
@@ -166,21 +168,25 @@ export class TextLayout {
   private join(block: TextLayoutBlock, join: NonNullable<TextLayoutBlock['join']>): void {
     const joinedBlock = join(this.caps.get(block) ?? this.maxLines)
     block.paragraph.delete()
+    if ('blocks' in joinedBlock) {
+      this.blocks.splice(this.blocks.indexOf(block), 1, ...joinedBlock.blocks)
+      return
+    }
     Object.assign(block, joinedBlock)
     block.join = undefined
     block.tailShifts.clear()
   }
 
-  private settle(boxWidth: number, allowance: number): void {
+  private settle(boxWidth: number, allowances: BlockAllowances): void {
     const known = this.settled.find((entry) => entry.boxWidth === boxWidth)
     if (known) {
-      known.allowance = allowance
+      known.allowances = allowances
       return
     }
     if (this.settled.length >= SETTLED_WIDTHS) {
       this.settled.shift()
     }
-    this.settled.push({ boxWidth, allowance })
+    this.settled.push({ boxWidth, allowances })
   }
 
   private shiftLines(block: TextLayoutBlock, fit: FittedBlock): void {
@@ -192,11 +198,7 @@ export class TextLayout {
     if (allSame(apart)) {
       return
     }
-    if (!fit.inkedApart) {
-      this.apart.set(block, { shifts: apart, drawn: false })
-    } else if (block.lines?.build) {
-      this.apart.set(block, { shifts: apart, drawn: true })
-    }
+    this.apart.set(block, { shifts: apart, drawn: fit.inkedApart })
   }
 
   private readonly lineShift: LineShift = (block, index) =>
@@ -205,7 +207,7 @@ export class TextLayout {
   private readonly blockLineShifts = (block: TextLayoutBlock): readonly number[] =>
     this.apart.get(block)?.shifts ?? block.metrics.map(() => 0)
 
-  private layoutBlocks(width: number): void {
+  private layoutBlocks(width: BlockWidth): void {
     let y = 0
     let lines = 0
     this.truncated = false
@@ -218,7 +220,7 @@ export class TextLayout {
         this.truncated = true
         continue
       }
-      block.paragraph.layout(Math.max(1, width - block.inset))
+      block.paragraph.layout(Math.max(1, width(block) - block.inset))
       block.metrics = block.paragraph.getLineMetrics()
       // A block capped for a narrower layout gets its lines back when there is room for them.
       const cap = this.caps.get(block) ?? this.maxLines ?? Infinity
@@ -230,7 +232,7 @@ export class TextLayout {
         block.tailShifts.clear()
         this.caps.set(block, remaining)
         this.capHeights?.clear()
-        block.paragraph.layout(Math.max(1, width - block.inset))
+        block.paragraph.layout(Math.max(1, width(block) - block.inset))
         block.metrics = block.paragraph.getLineMetrics()
       }
       if (block.paragraph.didExceedMaxLines()) this.truncated = true
@@ -274,7 +276,7 @@ export class TextLayout {
    * Places lines as Figma does when they differ in height, keeping the paragraph's placement
    * otherwise (`placeLines`).
    */
-  private placeLines(width: number): void {
+  private placeLines(width: BlockWidth): void {
     const placed = placeLines(this.ck, this.visibleBlocks(), width, this.blockLineShifts)
     if (!placed) return
     for (const [block, { y, ...placement }] of placed.blocks) {
@@ -325,15 +327,17 @@ export class TextLayout {
     return apart.drawing
   }
 
-  private drawApart(block: TextLayoutBlock, shifts: readonly number[]): LinesApart | null {
+  private drawApart(block: TextLayoutBlock, shifts: readonly number[]): LinesApart {
     const shaped = shapedLinesByLine(block.paragraph)
     const bands = lineBands(this.ck, shifts, shaped)
     if (bands) {
       return { bands, pieces: [] }
     }
     const moves = { x: shifts, y: shifts.map(() => 0) }
-    const pieces = buildPieces(block, this.laidOutWidth, moves, { shaped })
-    return pieces && { bands: [], pieces }
+    const pieces = buildPieces(block, this.laidOutWidth(block), moves, { shaped })
+    return pieces
+      ? { bands: [], pieces }
+      : { bands: lineBoxBands(shifts, block.metrics), pieces: [] }
   }
 
   private collectLines(): void {
@@ -399,7 +403,7 @@ export class TextLayout {
     const found = this.blockAt(index)
     if (!found) return -1
     const { block, order } = found
-    const local = block.empty ? 0 : block.paragraph.getLineNumberAt(toLineLookup(block, index))
+    const local = block.empty ? 0 : blockLineNumber(block, index)
     const isLast = order === this.lineOffsets.length - 1
     if (local < 0) {
       if (isLast) return local

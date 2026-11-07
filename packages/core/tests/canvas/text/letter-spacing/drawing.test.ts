@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
   ALIGNS,
   canvasKit,
+  expectFigmaLines,
   figmaLines,
   figmaLineStart,
   laidOut,
@@ -17,6 +18,7 @@ import {
 import type { Canvas, ShapedLine } from 'canvaskit-wasm'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 beforeAll(loadSpacedTextFonts)
 afterAll(releaseSpacedTextFonts)
@@ -97,7 +99,15 @@ function drawGlyphs(canvas: Canvas, lines: readonly ShapedLine[], shifts: readon
   paint.delete()
 }
 
+const LENGTHENED_BY_CASE: Props = {
+  text: 'Straße Straße Straße Straße Straße',
+  textCase: 'UPPER',
+  letterSpacing: pixels(8),
+  styleRuns: [{ start: 14, length: 20, style: { letterSpacing: pixels(1) } }]
+}
+
 const BOXES: Case[] = [
+  { label: 'upper case that lengthens a word, 8px then 1px', props: LENGTHENED_BY_CASE },
   { label: '3px', props: { text: SENTENCE, letterSpacing: pixels(3) } },
   {
     label: '3px, lines closer than their fonts',
@@ -203,4 +213,54 @@ describe('every line is drawn once, where Figma aligns it', () => {
       layout.delete()
     }
   )
+})
+
+describe('lines moved apart without pieces of their own', () => {
+  interface DrawCall {
+    x: number
+    top: number
+    bottom: number
+  }
+
+  function recordedDraws(draw: (canvas: Canvas) => void): DrawCall[] {
+    const calls: DrawCall[] = []
+    const open = { top: -Infinity, bottom: Infinity }
+    let clip = open
+    draw(
+      asDouble<Canvas>({
+        save: () => undefined,
+        restore: () => {
+          clip = open
+        },
+        clipRect: (rect: Float32Array) => {
+          clip = { top: rect[1], bottom: rect[3] }
+        },
+        drawParagraph: (_: unknown, x: number) => {
+          calls.push({ x, ...clip })
+        }
+      })
+    )
+    return calls
+  }
+
+  test.each([
+    ['line height 100%', percent(100)],
+    ['lines overlapping, 50%', percent(50)]
+  ] as const)('%s: each line is drawn where Figma aligns it and layout says', (_, lineHeight) => {
+    const box = boxed({ ...LENGTHENED_BY_CASE, lineHeight }, 'RIGHT')
+    const layout = laidOut(box)
+    expectFigmaLines('RIGHT', figmaLines(box, layout), WIDTH)
+    const calls = recordedDraws((canvas) => layout.draw(canvas, 0, 0))
+    const [block] = layout.blocks
+    for (const [index, line] of layout.getLineMetrics().entries()) {
+      const own = block.metrics[index]
+      const middle = own.baseline - own.ascent / 2
+      const call = expectDefined(
+        calls.find(({ top, bottom }) => middle >= top && middle < bottom),
+        `line ${index} drawn`
+      )
+      expect(call.x).toBeCloseTo(line.left - own.left, 2)
+    }
+    layout.delete()
+  })
 })

@@ -1,4 +1,4 @@
-import type { CanvasKit, ShapedLine } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics, ShapedLine } from 'canvaskit-wasm'
 
 import { allSame, type ShapedLines } from '#core/canvas/text/layout/lines'
 
@@ -71,6 +71,23 @@ export function lineBands(
     const edge = (above.bottom + below.top) / 2
     bands[index - 1].bottom = edge
     bands[index].top = edge
+  }
+  return bands
+}
+
+// Where glyph ink is too close and no piece can be laid out, the cut follows the line boxes.
+export function lineBoxBands(shifts: readonly number[], lines: readonly LineMetrics[]): LineBand[] {
+  const bands: LineBand[] = []
+  let lineTop = 0
+  for (const [index, shift] of shifts.entries()) {
+    const last = bands.at(-1)
+    if (!last || !allSame([last.shift, shift])) {
+      if (last) {
+        last.bottom = lineTop
+      }
+      bands.push({ shift, top: last ? lineTop : null, bottom: null })
+    }
+    lineTop += lines[index]?.height ?? 0
   }
   return bands
 }

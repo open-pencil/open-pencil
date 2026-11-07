@@ -275,3 +275,31 @@ describe('a click on the empty line a first-line indent makes', () => {
     }
   })
 })
+
+describe('the line a text index is on', () => {
+  const lineHolding = (layout: TextLayout, index: number) =>
+    layout.getLineMetrics().findIndex((line) => index < line.endIncludingNewline)
+
+  test.each([
+    ['é\nz', 'LEFT'],
+    ['шрифт и\nтекст и ещё раз текст', 'CENTER'],
+    ['a\u2028b and more words here', 'RIGHT'],
+    ['Settings and more options for everyone 👍 here\nnext', 'CENTER']
+  ] as const)('%j, %s: is the line holding it, in UTF-16 indices', (value, align) => {
+    const layout = laidOut(boxed(value, align, percent(6)))
+    for (let index = 0; index < value.length; index++) {
+      expect(layout.getLineNumberAt(index)).toBe(lineHolding(layout, index))
+    }
+    layout.delete()
+  })
+
+  test('matches Skia’s own lookup in ASCII text, where UTF-8 and UTF-16 agree', () => {
+    const value = 'Settings and more options for everyone\nin the team today and more'
+    const layout = laidOut(boxed(value, 'LEFT', pixels(0)))
+    const [block] = layout.blocks
+    for (let index = 0; index <= value.length + 1; index++) {
+      expect(layout.getLineNumberAt(index)).toBe(block.paragraph.getLineNumberAt(index))
+    }
+    layout.delete()
+  })
+})

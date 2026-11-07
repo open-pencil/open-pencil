@@ -3,11 +3,13 @@ import { sumBy } from 'es-toolkit'
 import type { CharacterStyleOverride, StyleRun, TextLength } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
+import type { StyledRange } from '#core/canvas/text/paragraph/runs'
+
 // Skia's `Run::isCursiveScript`: runs in these scripts get no letter spacing.
 const UNSPACED_SCRIPT =
   /[\p{Script=Arabic}\p{Script=Hanifi_Rohingya}\p{Script=Mandaic}\p{Script=Mongolian}\p{Script=Nko}\p{Script=Phags_Pa}\p{Script=Syriac}]/u
 const SCRIPT_OF_NEIGHBOURS = /^[\p{Script=Common}\p{Script=Inherited}]$/u
-const OWN_RUN = /^[\p{Nd}\n]$/u
+const OWN_RUN = /^[\p{Nd}\n\v\f\r\u0085\u2028\u2029]$/u
 const WHITESPACE = /\s/u
 
 export interface LineSpacing {
@@ -26,28 +28,29 @@ export interface SpacedText {
   text: string
   letterSpacing: TextLength
   fontSize: number
-  styleRuns: readonly StyleRun[]
+  styleRuns: readonly StyledRange[]
   sourceLength: number
   sourceIndex: (index: number) => number
 }
 
-function characterAt(text: string, index: number): string {
-  const code = text.codePointAt(index) ?? 0
-  return String.fromCodePoint(code)
-}
-
-// Shaping puts punctuation and marks in the run of the letters before them, digits in their own.
-function inUnspacedRun(text: string, index: number): boolean {
-  for (let at = index; at >= 0; at--) {
-    const character = characterAt(text, at)
+// Punctuation and marks join the letters' run; digits and text after a hard break get their own.
+function unspacedRuns(text: string): Uint8Array {
+  const unspaced = new Uint8Array(text.length)
+  let inUnspacedRun = false
+  let index = 0
+  while (index < text.length) {
+    const code = text.codePointAt(index) ?? 0
+    const character = String.fromCodePoint(code)
     if (OWN_RUN.test(character)) {
-      return false
+      inUnspacedRun = false
+    } else if (!SCRIPT_OF_NEIGHBOURS.test(character)) {
+      inUnspacedRun = UNSPACED_SCRIPT.test(character)
     }
-    if (!SCRIPT_OF_NEIGHBOURS.test(character)) {
-      return UNSPACED_SCRIPT.test(character)
-    }
+    const next = index + character.length
+    unspaced.fill(inUnspacedRun ? 1 : 0, index, next)
+    index = next
   }
-  return false
+  return unspaced
 }
 
 export function lineSpacing(spaced: SpacedText): LineSpacing {
@@ -60,9 +63,9 @@ export function lineSpacing(spaced: SpacedText): LineSpacing {
       style?.fontSize ?? spaced.fontSize
     )
   const runs = spaced.styleRuns
-    .map((run) => ({
-      start: Math.max(0, run.start),
-      end: Math.min(spaced.sourceLength, run.start + run.length),
+    .map(({ start, end, run }) => ({
+      start,
+      end: Math.min(spaced.sourceLength, end),
       spacing: spacingOf(run.style)
     }))
     .filter((run) => run.end > run.start)
@@ -82,7 +85,8 @@ export function lineSpacing(spaced: SpacedText): LineSpacing {
   if (!UNSPACED_SCRIPT.test(spaced.text)) {
     return { after: styled, least: Math.min(...used), most: Math.max(...used) }
   }
-  const after = (index: number) => (inUnspacedRun(spaced.text, index) ? 0 : styled(index))
+  const unspaced = unspacedRuns(spaced.text)
+  const after = (index: number) => (unspaced[index] === 1 ? 0 : styled(index))
   return { after, ...lineEndSpacings(spaced.text, after) }
 }
 
@@ -94,7 +98,8 @@ function evenSpacing(text: string, spacing: number): LineSpacing {
   if (!UNSPACED_SCRIPT.test(text)) {
     return { after, least: spacing, most: spacing }
   }
-  const scripted = (index: number) => (inUnspacedRun(text, index) ? 0 : spacing)
+  const unspaced = unspacedRuns(text)
+  const scripted = (index: number) => (unspaced[index] === 1 ? 0 : spacing)
   return { after: scripted, ...lineEndSpacings(text, scripted) }
 }
 

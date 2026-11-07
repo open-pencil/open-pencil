@@ -134,7 +134,8 @@ interface CharacterBox {
   right: number
 }
 
-// Skia's own hit test reads a joiner's step back as glyphs out of order.
+// Skia's own hit test reads a joiner's step back as glyphs out of order; a right-to-left last
+// word stands left of the joiner, where Skia's own hit test still holds.
 function lineEndBoxes(ck: CanvasKit, block: TextLayoutBlock, line: number): CharacterBox[] {
   const metrics = block.metrics.at(line)
   const tail =
@@ -149,7 +150,7 @@ function lineEndBoxes(ck: CanvasKit, block: TextLayoutBlock, line: number): Char
   const shift = joinerTailShift(ck, block, tail)
   const tailStart = block.start + tail.at
   const lastGlyph = block.paragraph.getGlyphInfoAt(toParagraphIndex(block, tailStart) - 1)
-  if (!lastGlyph) {
+  if (lastGlyph?.dir !== ck.TextDirection.LTR) {
     return []
   }
   const boxes: CharacterBox[] = [

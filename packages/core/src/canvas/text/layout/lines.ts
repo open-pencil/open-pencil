@@ -320,7 +320,7 @@ export interface PlacedLines<Block> {
 export function placeLines<Block extends LineBlock>(
   ck: CanvasKit,
   blocks: readonly Block[],
-  width: number,
+  width: (block: Block) => number,
   lineShifts: (block: Block) => readonly number[]
 ): PlacedLines<Block> | null {
   const metrics = blocks.map((block) => block.metrics)
@@ -360,7 +360,9 @@ export function placeLines<Block extends LineBlock>(
     const y = blockBaselines[0] - lines[0].baseline
     const offsets = lines.map((line, lineIndex) => blockBaselines[lineIndex] - y - line.baseline)
     const apart = !allSame(offsets)
-    const pieces = apart ? buildPieces(block, width, { x: lineShifts(block), y: offsets }) : null
+    const pieces = apart
+      ? buildPieces(block, width(block), { x: lineShifts(block), y: offsets })
+      : null
     placed.set(block, {
       y,
       height: blockBaselines[end] - blockBoxes[end].ascent + blockBoxes[end].height - y,

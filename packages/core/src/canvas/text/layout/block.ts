@@ -32,7 +32,7 @@ export interface TextLayoutBlock {
   utf8Lead: number
   leadWidth: number
   joiners: JoinerIndex
-  join?: (maxLines: number | undefined) => JoinedBlock
+  join?: (maxLines: number | undefined) => JoinedBlock | SplitBlock
   tailShifts: Map<Joiner, number>
   /** Laid out from a space, standing for a paragraph with no characters. */
   empty: boolean
@@ -55,6 +55,10 @@ export interface TextLayoutBlock {
 }
 
 export type JoinedBlock = Pick<TextLayoutBlock, 'paragraph' | 'rebuild' | 'joiners' | 'lines'>
+
+export interface SplitBlock {
+  blocks: TextLayoutBlock[]
+}
 
 export type BlockBuild = JoinedBlock & Pick<TextLayoutBlock, 'join'>
 
@@ -141,10 +145,24 @@ export function paragraphLength(
   return block.lead + block.length + block.joiners.count
 }
 
-// Skia's getLineNumberAt reads its index as UTF-8, and has always been given the UTF-16 one.
-export function toLineLookup(block: TextLayoutBlock, index: number): number {
-  const unjoined = index - block.start + block.lead
-  return block.utf8Lead + block.joiners.characterOffset(unjoined - block.utf8Lead, 'utf8')
+// Skia's getLineNumberAt reads a UTF-8 index; line metrics count UTF-16 units, as text indices do.
+export function blockLineNumber(block: TextLayoutBlock, index: number): number {
+  const at = toCharacterIndex(block, index)
+  const lines = block.metrics
+  if (at >= paragraphLength(block) || at >= (lines.at(-1)?.endIncludingNewline ?? 0)) {
+    return -1
+  }
+  let low = 0
+  let high = lines.length - 1
+  while (low < high) {
+    const middle = (low + high) >>> 1
+    if (at < lines[middle].endIncludingNewline) {
+      high = middle
+    } else {
+      low = middle + 1
+    }
+  }
+  return low
 }
 
 export function isJoinerIndex(block: TextLayoutBlock, index: number): boolean {

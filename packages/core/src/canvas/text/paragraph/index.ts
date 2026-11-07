@@ -22,6 +22,7 @@ import {
   type ParagraphBuildOptions
 } from '#core/canvas/text/paint'
 import { JOINER, type Joiner } from '#core/canvas/text/paragraph/joiners'
+import { styledRanges } from '#core/canvas/text/paragraph/runs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
@@ -229,24 +230,6 @@ function joinedTextAdder(
   }
 }
 
-function isHighSurrogate(code: number): boolean {
-  return code >= 0xd800 && code <= 0xdbff
-}
-
-function isLowSurrogate(code: number): boolean {
-  return code >= 0xdc00 && code <= 0xdfff
-}
-
-// Skia would replace each half of a split surrogate pair.
-function codePointBoundary(text: string, index: number): number {
-  const splitsPair =
-    index > 0 &&
-    index < text.length &&
-    isLowSurrogate(text.charCodeAt(index)) &&
-    isHighSurrogate(text.charCodeAt(index - 1))
-  return splitsPair ? index + 1 : index
-}
-
 function addStyledRuns(
   r: TextRenderer,
   builder: ParagraphBuilder,
@@ -260,12 +243,7 @@ function addStyledRuns(
   const text = node.text
   let pos = 0
 
-  for (const run of node.styleRuns) {
-    const start = Math.max(pos, codePointBoundary(text, run.start))
-    const end = codePointBoundary(text, run.start + run.length)
-    if (end <= start) {
-      continue
-    }
+  for (const { start, end, run } of styledRanges(text, node.styleRuns)) {
     if (pos < start) {
       addText(pos, start, base.style)
     }

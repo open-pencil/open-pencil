@@ -1,6 +1,6 @@
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import type { BlockBuild, JoinedBlock } from '#core/canvas/text/layout/block'
+import type { BlockBuild, JoinedBlock, SplitBlock } from '#core/canvas/text/layout/block'
 import { UNSPACED_LINES, type LineFitting } from '#core/canvas/text/layout/fit'
 import {
   isUnspaced,
@@ -15,6 +15,7 @@ import {
 } from '#core/canvas/text/paragraph'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { lineEndJoiners, type Joiner } from '#core/canvas/text/paragraph/joiners'
+import { styledRanges } from '#core/canvas/text/paragraph/runs'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
 
@@ -26,7 +27,8 @@ export function firstBuild(
   spacing: LineSpacing,
   joiners: readonly Joiner[],
   plain: () => JoinedBlock,
-  join: (maxLines?: number) => JoinedBlock
+  join: (maxLines?: number) => JoinedBlock,
+  joinLater: (maxLines?: number) => JoinedBlock | SplitBlock = join
 ): BlockBuild {
   if (joiners.length === 0) {
     return plain()
@@ -35,7 +37,7 @@ export function firstBuild(
     return join()
   }
   const built: BlockBuild = plain()
-  built.join = join
+  built.join = joinLater
   return built
 }
 
@@ -59,10 +61,7 @@ export function textJoiners(
   end: number
 ): Joiner[] {
   const alignsEnds = fitting.align === 'Center' || fitting.align === 'Right'
-  if (!alignsEnds || fitting.rtl || isUnspaced(fitting.spacing)) {
-    return []
-  }
-  if (shownText(node).length !== node.text.length) {
+  if (!alignsEnds || fitting.rtl || !fitting.keepsCharacterIndices || isUnspaced(fitting.spacing)) {
     return []
   }
   return lineEndJoiners(node.text.slice(start, end), (index) =>
@@ -75,11 +74,12 @@ export function lineFitting(node: ParagraphNode): LineFitting {
   if (!spacesLetters(node.letterSpacing, fontSize, node.styleRuns)) {
     return UNSPACED_LINES
   }
+  const shown = shownText(node)
   const spacing = lineSpacing({
-    text: shownText(node),
+    text: shown,
     letterSpacing: node.letterSpacing,
     fontSize,
-    styleRuns: node.styleRuns,
+    styleRuns: styledRanges(node.text, node.styleRuns),
     sourceLength: node.text.length,
     sourceIndex: shownToSourceIndex(node)
   })
@@ -87,7 +87,8 @@ export function lineFitting(node: ParagraphNode): LineFitting {
     spacing,
     align: paragraphTextAlign(node),
     rtl: resolveNodeTextDirection(node) === 'RTL',
-    truncatesWithEllipsis: buildTruncateOpts(node).ellipsis !== undefined
+    truncatesWithEllipsis: buildTruncateOpts(node).ellipsis !== undefined,
+    keepsCharacterIndices: shown.length === node.text.length
   }
 }
 

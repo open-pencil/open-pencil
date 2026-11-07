@@ -1,4 +1,4 @@
-import type { LineMetrics } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics } from 'canvaskit-wasm'
 
 import { isJoinerIndex, toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
 import {
@@ -15,13 +15,15 @@ export interface LineFitting {
   align: ParagraphTextAlign
   rtl: boolean
   truncatesWithEllipsis: boolean
+  keepsCharacterIndices: boolean
 }
 
 export const UNSPACED_LINES: LineFitting = {
   spacing: NO_LINE_SPACING,
   align: 'Left',
   rtl: false,
-  truncatesWithEllipsis: false
+  truncatesWithEllipsis: false,
+  keepsCharacterIndices: true
 }
 
 interface LineSpan {
@@ -41,8 +43,8 @@ export interface FittedBlock {
 }
 
 export interface FittedLines {
-  width: number
-  allowance: number
+  width: BlockWidth
+  allowances: BlockAllowances
   visible: readonly TextLayoutBlock[]
   fits: readonly FittedBlock[]
 }
@@ -86,7 +88,15 @@ function wrapsAtSpace(
 }
 
 // Skia counts the ellipsis in the last kept box, not the width; getShapedLines would leak memory.
-function ellipsisLineEnd(line: LineMetrics, block: TextLayoutBlock): number {
+function ellipsisLineEnd(
+  ck: CanvasKit,
+  fitting: LineFitting,
+  line: LineMetrics,
+  block: TextLayoutBlock
+): number {
+  if (fitting.rtl) {
+    return rightToLeftLineEnd(ck, fitting, line, block)
+  }
   const last = Math.max(line.startIndex, line.endIndex - 1)
   const lastEnd = boxEnd(block, last) ?? line.left + line.width
   const joined = last > line.startIndex && isJoinerIndex(block, last)
@@ -98,12 +108,37 @@ function boxEnd(block: TextLayoutBlock, index: number): number | undefined {
   return block.paragraph.getGlyphInfoAt(index)?.graphemeLayoutBounds[2]
 }
 
+// Right-to-left text ends at its first glyph, past the spacing after it; the ellipsis is at its left.
+function rightToLeftLineEnd(
+  ck: CanvasKit,
+  fitting: LineFitting,
+  line: LineMetrics,
+  block: TextLayoutBlock
+): number {
+  const boxes = block.paragraph.getRectsForRange(
+    line.startIndex,
+    line.endIndex,
+    ck.RectHeightStyle.Tight,
+    ck.RectWidthStyle.Tight
+  )
+  let end = line.left + line.width
+  for (const { rect } of boxes) {
+    end = Math.max(end, rect[2])
+  }
+  return end - fitting.spacing.after(toTextIndex(block, line.startIndex))
+}
+
 // Skia counts the line break on the empty line after a text's last break as that line's content.
 export function holdsGlyphs(line: LineMetrics): boolean {
   return line.endExcludingWhitespaces > line.startIndex && line.width !== 0
 }
 
-function lineSpan(fitting: LineFitting, block: TextLayoutBlock, index: number): LineSpan {
+function lineSpan(
+  ck: CanvasKit,
+  fitting: LineFitting,
+  block: TextLayoutBlock,
+  index: number
+): LineSpan {
   const line = block.metrics[index]
   const start = line.left
   const end = line.left + line.width
@@ -111,7 +146,7 @@ function lineSpan(fitting: LineFitting, block: TextLayoutBlock, index: number): 
     return { start, end, glyphEnd: end, hungSpacing: 0, inked: false }
   }
   if (endsInEllipsis(fitting, block, index)) {
-    const glyphEnd = ellipsisLineEnd(line, block)
+    const glyphEnd = ellipsisLineEnd(ck, fitting, line, block)
     return { start, end: glyphEnd, glyphEnd, hungSpacing: 0, inked: true }
   }
   const trailing = trailingSpacing(fitting, block, index)
@@ -119,8 +154,8 @@ function lineSpan(fitting: LineFitting, block: TextLayoutBlock, index: number): 
   return { start, end, glyphEnd: end - trailing, hungSpacing, inked: true }
 }
 
-function blockSpans(fitting: LineFitting, block: TextLayoutBlock): LineSpan[] {
-  return block.metrics.map((_, index) => lineSpan(fitting, block, index))
+function blockSpans(ck: CanvasKit, fitting: LineFitting, block: TextLayoutBlock): LineSpan[] {
+  return block.metrics.map((_, index) => lineSpan(ck, fitting, block, index))
 }
 
 function lineShift(fitting: LineFitting, span: LineSpan, available: number): number {
@@ -171,20 +206,6 @@ function blockAllowanceLimit(
   return limit
 }
 
-function textAllowanceLimit(
-  fitting: LineFitting,
-  visible: readonly TextLayoutBlock[],
-  spans: readonly LineSpan[][],
-  boxWidth: number,
-  allowance: number
-): number {
-  let limit = Infinity
-  for (const [index, block] of visible.entries()) {
-    limit = Math.min(limit, blockAllowanceLimit(fitting, block, spans[index], boxWidth, allowance))
-  }
-  return limit
-}
-
 function nextAllowance(limit: number, allowance: number, floor: number, layouts: number): number {
   if (layouts >= MAX_LAYOUTS - 1) {
     return floor
@@ -225,6 +246,7 @@ function fittedBlock(
 }
 
 function fittedOneLine(
+  ck: CanvasKit,
   fitting: LineFitting,
   block: TextLayoutBlock,
   boxWidth: number
@@ -232,7 +254,7 @@ function fittedOneLine(
   if (block.metrics.length !== 1) {
     return null
   }
-  const span = lineSpan(fitting, block, 0)
+  const span = lineSpan(ck, fitting, block, 0)
   const available = boxWidth - block.inset
   const overflows = span.inked && glyphWidth(span) - available > OVERFLOW_TOLERANCE
   if (overflows) {
@@ -248,33 +270,51 @@ function fittedOneLine(
   }
 }
 
+export type BlockAllowances = ReadonlyMap<TextLayoutBlock, number>
+
+export type BlockWidth = (block: TextLayoutBlock) => number
+
 export function fitLines(
+  ck: CanvasKit,
   fitting: LineFitting,
   boxWidth: number,
-  layoutBlocks: (width: number) => readonly TextLayoutBlock[],
-  { settled, joined }: { settled?: number; joined: boolean }
+  layoutBlocks: (width: BlockWidth) => readonly TextLayoutBlock[],
+  { settled, joined }: { settled?: BlockAllowances; joined: boolean }
 ): FittedLines {
   if (isUnspaced(fitting.spacing)) {
-    return { width: boxWidth, allowance: 0, visible: layoutBlocks(boxWidth), fits: [] }
+    const width = () => boxWidth
+    return { width, allowances: new Map(), visible: layoutBlocks(width), fits: [] }
   }
   const floor = Math.min(fitting.spacing.least, 0)
   const widest = joined ? Math.max(fitting.spacing.most, 0) : fitting.spacing.most
-  let allowance = settled ?? widest
+  const allowances = new Map(settled)
+  const allowanceOf = (block: TextLayoutBlock) => allowances.get(block) ?? widest
+  const width = (block: TextLayoutBlock) => boxWidth + allowanceOf(block)
   for (let layouts = 1; ; layouts++) {
-    const visible = layoutBlocks(boxWidth + allowance)
-    const oneLine = visible.length === 1 ? fittedOneLine(fitting, visible[0], boxWidth) : null
-    if (oneLine) {
-      return { width: boxWidth + allowance, allowance, visible, fits: [oneLine] }
+    const visible = layoutBlocks(width)
+    for (const block of visible) {
+      allowances.set(block, allowanceOf(block))
     }
-    const spans = visible.map((block) => blockSpans(fitting, block))
-    const limit = textAllowanceLimit(fitting, visible, spans, boxWidth, allowance)
-    if (limit >= allowance || allowance <= floor) {
+    const oneLine = visible.length === 1 ? fittedOneLine(ck, fitting, visible[0], boxWidth) : null
+    if (oneLine) {
+      return { width, allowances, visible, fits: [oneLine] }
+    }
+    const spans = visible.map((block) => blockSpans(ck, fitting, block))
+    let narrowed = false
+    for (const [index, block] of visible.entries()) {
+      const allowance = allowanceOf(block)
+      const limit = blockAllowanceLimit(fitting, block, spans[index], boxWidth, allowance)
+      if (limit < allowance && allowance > floor) {
+        allowances.set(block, nextAllowance(limit, allowance, floor, layouts))
+        narrowed = true
+      }
+    }
+    if (!narrowed) {
       const fits = visible.map((block, index) =>
         fittedBlock(fitting, block, spans[index], boxWidth)
       )
-      return { width: boxWidth + allowance, allowance, visible, fits }
+      return { width, allowances, visible, fits }
     }
-    allowance = nextAllowance(limit, allowance, floor, layouts)
   }
 }
 

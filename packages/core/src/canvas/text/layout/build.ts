@@ -17,8 +17,10 @@ import {
   paragraphBlock,
   type BlockBuild,
   type JoinedBlock,
+  type SplitBlock,
   type TextLayoutBlock
 } from '#core/canvas/text/layout/block'
+import type { LineFitting } from '#core/canvas/text/layout/fit'
 import {
   firstBuild,
   likelyWraps,
@@ -142,17 +144,20 @@ function paragraphLines(
   }
 }
 
+function joinsInBlocksOnceJoined(node: ParagraphNode, joiners: readonly Joiner[]): boolean {
+  return (
+    joiners.length > BLOCKS_PAST_JOINED_PARAGRAPHS &&
+    node.styleRuns.length === 0 &&
+    node.textTruncation !== 'ENDING'
+  )
+}
+
 function joinsInBlocks(
   node: ParagraphNode,
   spacing: LineSpacing,
   joiners: readonly Joiner[]
 ): boolean {
-  return (
-    joiners.length > BLOCKS_PAST_JOINED_PARAGRAPHS &&
-    node.styleRuns.length === 0 &&
-    node.textTruncation !== 'ENDING' &&
-    likelyWraps(node, spacing, joiners)
-  )
+  return joinsInBlocksOnceJoined(node, joiners) && likelyWraps(node, spacing, joiners)
 }
 
 /** Whether the text lays out paragraph by paragraph rather than as one native paragraph. */
@@ -204,6 +209,25 @@ function buildBlocks(
   options: ParagraphBuildOptions,
   paragraphsPerBlock = 1
 ): TextLayout {
+  const fitting = lineFitting(node)
+  const blocks = buildBlockList(r, node, color, options, { fitting, paragraphsPerBlock })
+  const maxLines = buildTruncateOpts(node).maxLines
+  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node), fitting)
+}
+
+interface BlockListOptions {
+  fitting: LineFitting
+  paragraphsPerBlock: number
+  joined?: boolean
+}
+
+function buildBlockList(
+  r: TextRenderer,
+  node: ParagraphNode,
+  color: Float32Array | undefined,
+  options: ParagraphBuildOptions,
+  { fitting, paragraphsPerBlock, joined = false }: BlockListOptions
+): TextLayoutBlock[] {
   const shown = shownText(node)
   const sources = textParagraphRanges(node.text)
   const groups = paragraphGroups(node.text, sources, paragraphsPerBlock)
@@ -215,7 +239,8 @@ function buildBlocks(
   )
   const digits = topLevelNumberDigits([...items.values()])
   const rtl = resolveNodeTextDirection(node) === 'RTL'
-  const fitting = lineFitting(node)
+  const groupDirection =
+    paragraphsPerBlock > 1 ? resolveNodeTextDirection(node) : node.textDirection
   const truncation = buildTruncateOpts(node)
   const maxLines = truncation.maxLines
   // Each paragraph starts one byte, its newline, after the one before it ends.
@@ -225,6 +250,12 @@ function buildBlocks(
     utf8Starts.push(utf8Offset)
     utf8Offset += utf8Length(shown.slice(range.start, range.end)) + 1
   }
+
+  const firstBlockBuild = (
+    joiners: readonly Joiner[],
+    plain: () => JoinedBlock,
+    join: () => JoinedBlock
+  ): BlockBuild => (joined ? join() : firstBuild(node, fitting.spacing, joiners, plain, join))
 
   const blocks: TextLayoutBlock[] = []
   try {
@@ -239,7 +270,7 @@ function buildBlocks(
     }
     throw error
   }
-  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node), fitting)
+  return blocks
 
   function buildBlock(order: number, index: number, start: number, end: number): TextLayoutBlock {
     const shownRange: TextParagraphRange = shownRanges[order]
@@ -251,7 +282,8 @@ function buildBlocks(
       text: empty ? ' ' : node.text.slice(start, end),
       styleRuns: empty
         ? sliceStyleRuns(node.styleRuns, start, start + 1)
-        : sliceStyleRuns(node.styleRuns, start, end)
+        : sliceStyleRuns(node.styleRuns, start, end),
+      textDirection: groupDirection
     }
     const paragraphIndent = paragraphSpacingAt(node, index, 'paragraphIndent')
     const firstLineIndent =
@@ -294,7 +326,7 @@ function buildBlocks(
     const marker = item && list ? buildMarker(r, node, item, list, color, options) : null
     let built: BlockBuild
     try {
-      built = firstBuild(node, fitting.spacing, joiners, plain, join)
+      built = firstBlockBuild(joiners, plain, join)
     } catch (error) {
       marker?.paragraph.delete()
       throw error
@@ -387,6 +419,16 @@ function createTextLayout(
       lines: paragraphLines(r, node, color, options, { joiners, index })
     }
   }
+  const joinLater = (): JoinedBlock | SplitBlock =>
+    joinsInBlocksOnceJoined(node, joiners)
+      ? {
+          blocks: buildBlockList(r, node, color, options, {
+            fitting,
+            paragraphsPerBlock: JOINED_PARAGRAPHS_PER_BLOCK,
+            joined: true
+          })
+        }
+      : join()
   const plain = (): JoinedBlock => ({
     paragraph: buildSkParagraph(r, node, color, options),
     joiners: JoinerIndex.EMPTY,
@@ -394,7 +436,7 @@ function createTextLayout(
   })
   const block = paragraphBlock(
     shownText(node).length,
-    firstBuild(node, fitting.spacing, joiners, plain, join)
+    firstBuild(node, fitting.spacing, joiners, plain, join, joinLater)
   )
   return new TextLayout(r.ck, [block], undefined, trimmedCapHeight(node), fitting)
 }
