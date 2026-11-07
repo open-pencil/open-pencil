@@ -67,7 +67,7 @@ useEventListener(window, 'pageshow', (event) => {
 onMounted(() => {
   toast.setupGlobalErrorHandler()
   void offerCrashReports()
-  scheduleStartupUpdateCheck(updates)
+  void scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
   onUnmounted(
     startCloud({ leaveLinkAddress: () => router.isReady().then(() => router.replace('/')) })
