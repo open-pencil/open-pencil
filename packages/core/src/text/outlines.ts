@@ -3,6 +3,7 @@ import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
+import { textVerticalOffset } from '#core/canvas/text'
 import { drawnFontVariations } from '#core/text/font/families'
 import {
   fontHasGlyphSync,
@@ -259,17 +260,6 @@ function lineOffsetX(node: SceneNode, width: number): number {
   }
 }
 
-function verticalOffset(node: SceneNode, contentHeight: number): number {
-  switch (node.textAlignVertical) {
-    case 'CENTER':
-      return (node.height - contentHeight) / 2
-    case 'BOTTOM':
-      return node.height - contentHeight
-    default:
-      return 0
-  }
-}
-
 function lineGlyphs(
   node: SceneNode,
   line: TextLine,
@@ -306,7 +296,7 @@ export function textNodeToOutlineLayout(node: SceneNode): TextOutlineLayout | nu
   const lines = textLines(node)
   const lineH = lineHeight(node)
   const contentHeight = lines.length * lineH
-  const yOffset = verticalOffset(node, contentHeight)
+  const yOffset = textVerticalOffset(node, contentHeight)
   const glyphs: TextOutlineGlyph[] = []
   let maxWidth = 0
 
