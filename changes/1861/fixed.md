@@ -1,1 +1,1 @@
-- The pen keeps the last point's handle when it closes a path, closes along the mirror of a drag on the closing press, and closes a path of two points, as in Figma (#1861).
+- The pen keeps the last point's handle when it closes a path, closes along the mirror of a drag on the closing press, closes a path of two points, and lets a drag bring a handle back to its point, as in Figma (#1861).
