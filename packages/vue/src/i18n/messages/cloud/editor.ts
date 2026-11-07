@@ -147,6 +147,8 @@ export const cloudMessageDefaults = {
   shareAnyoneWithLink: 'Anyone with the link',
   shareLinkDetail: 'Anyone who has the link can open this file without signing in.',
   shareLinkSignInDetail: 'Anyone who has the link can open this file after signing in here.',
+  shareLinkGuestViewDetail:
+    'Anyone who has the link can view this file without signing in, and edit it after signing in here.',
   shareRestrictedDetail: 'Only the people and workspace above can open this file.',
   shareRestrictedNoLinksDetail:
     'Only the people and workspace above can open this file. Links are turned off for this workspace.',
@@ -183,6 +185,9 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  statusGuestDetail: 'You’re viewing as a guest; your changes won’t reach anyone.',
+  statusGuestCanEditDetail: 'You’re viewing as a guest. Sign in to edit this file.',
+  signInToEdit: 'Sign in to edit',
   statusNotLive: 'Not editing live',
   statusNotLiveDetail:
     'The server ended this tab’s live session, so edits no longer pass between it and others. Rejoin to see the latest version.',

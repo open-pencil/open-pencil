@@ -34,7 +34,10 @@ export type ResolvedSharePrincipal =
 
 export type ResolvedDocumentShare = {
   documentId: string
+  /** What this person may do: the link's permission, or view for a guest who may not edit. */
   permission: DocumentPermission
+  /** What the link lets someone signed in to the server do. */
+  linkPermission: DocumentPermission
   principal: ResolvedSharePrincipal
   roomEpoch: number
 }
@@ -49,6 +52,37 @@ export function createCapabilityService(
   options: CapabilityServiceOptions
 ) {
   const sharingPolicy = createSharingPolicy(database, options)
+
+  /**
+   * What a guest may do through a link: edit only where guests may edit, otherwise view where
+   * guests may view, so an edit link still shows the document to someone not signed in. `null`
+   * means the guest signs in first. Without a policy, guests get the link's own permission.
+   */
+  async function guestPermission(
+    documentId: string,
+    linkPermission: DocumentPermission
+  ): Promise<DocumentPermission | null> {
+    const policy = options.policy
+    if (!policy) return linkPermission
+    const document = await database
+      .selectFrom('document')
+      .select('workspaceId')
+      .where('id', '=', documentId)
+      .executeTakeFirstOrThrow()
+    const context = {
+      targetingKey: document.workspaceId,
+      workspaceId: document.workspaceId,
+      documentId,
+      deploymentMode: options.deploymentMode ?? 'self-hosted'
+    }
+    if (
+      linkPermission === 'edit' &&
+      (await policy.boolean(CLOUD_FEATURE_KEYS.guestEdit, false, context))
+    ) {
+      return 'edit'
+    }
+    return (await policy.boolean(CLOUD_FEATURE_KEYS.guestView, false, context)) ? 'view' : null
+  }
 
   async function updateActiveShare(
     userId: string,
@@ -218,25 +252,12 @@ export function createCapabilityService(
       ) {
         throw new DocumentShareInvalidError()
       }
-      if (!actor && options.policy) {
-        const document = await database
-          .selectFrom('document')
-          .select('workspaceId')
-          .where('id', '=', row.documentId)
-          .executeTakeFirstOrThrow()
-        const featureKey =
-          row.permission === 'edit' ? CLOUD_FEATURE_KEYS.guestEdit : CLOUD_FEATURE_KEYS.guestView
-        if (
-          !(await options.policy.boolean(featureKey, false, {
-            targetingKey: document.workspaceId,
-            workspaceId: document.workspaceId,
-            documentId: row.documentId,
-            deploymentMode: options.deploymentMode ?? 'self-hosted'
-          }))
-        ) {
-          // Guests are not let in here; people signed in to the server are.
-          throw new DocumentShareSignInRequiredError()
-        }
+      const permission = actor
+        ? row.permission
+        : await guestPermission(row.documentId, row.permission)
+      if (!permission) {
+        // Guests are not let in here; people signed in to the server are.
+        throw new DocumentShareSignInRequiredError()
       }
       await database
         .updateTable('documentShare')
@@ -245,7 +266,8 @@ export function createCapabilityService(
         .execute()
       return {
         documentId: row.documentId,
-        permission: row.permission,
+        permission,
+        linkPermission: row.permission,
         principal: actor
           ? { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email }
           : {

@@ -72,7 +72,7 @@ The server migrates the database before it accepts requests and listens on `PORT
 
 The server serves the editor at its own address. Visitors who are not signed in get a welcome page there first, where they sign in or use the editor without an account. Signed-in people whose account may use the server get the editor, already connected to it; an account waiting for approval gets a page that says so. Invitation and share links open the editor too.
 
-For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server.
+For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server. With `guest_view` on and `guest_edit` off, as the shipped configurations have it, a guest opens an edit link view-only and signs in to edit.
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
