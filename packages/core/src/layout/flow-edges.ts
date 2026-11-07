@@ -1,0 +1,77 @@
+import { Edge, type Node as YogaNode } from 'yoga-layout'
+
+import type { SceneNode } from '@open-pencil/scene-graph'
+
+import { siblingOverlap } from './item-spacing'
+import { layoutPadding } from './yoga-helpers'
+
+type Side = 'top' | 'right' | 'bottom' | 'left'
+
+const PHYSICAL_EDGE: Record<Side, Edge> = {
+  top: Edge.Top,
+  right: Edge.Right,
+  bottom: Edge.Bottom,
+  left: Edge.Left
+}
+
+interface FlowSides {
+  leading: Side
+  trailing: Side
+  crossStart: Side
+  crossEnd: Side
+  leadingEdge: Edge
+  trailingEdge: Edge
+}
+
+function flowSides(frame: SceneNode, direction: 'LTR' | 'RTL'): FlowSides {
+  if (frame.layoutMode !== 'HORIZONTAL') {
+    return {
+      leading: 'top',
+      trailing: 'bottom',
+      crossStart: 'left',
+      crossEnd: 'right',
+      leadingEdge: Edge.Top,
+      trailingEdge: Edge.Bottom
+    }
+  }
+  const rtl = direction === 'RTL'
+  return {
+    leading: rtl ? 'right' : 'left',
+    trailing: rtl ? 'left' : 'right',
+    crossStart: 'top',
+    crossEnd: 'bottom',
+    leadingEdge: Edge.Start,
+    trailingEdge: Edge.End
+  }
+}
+
+function shortfall(length: number): number {
+  return Math.min(0, length)
+}
+
+// Yoga lays negative padding and gaps out as none, so both become negative margins on the
+// children; a wrapping frame keeps no negative padding, as those margins would also merge its rows.
+export function setFlowEdges(
+  yogaFrame: YogaNode,
+  frame: SceneNode,
+  flow: readonly YogaNode[],
+  direction: 'LTR' | 'RTL'
+): void {
+  const sides = flowSides(frame, direction)
+  const overlap = flow.length > 0 ? siblingOverlap(frame) : 0
+  const padding = layoutPadding(frame)
+  padding[sides.trailing] += overlap
+  const wraps = frame.layoutWrap === 'WRAP'
+  const margin = (side: Side) => (wraps ? 0 : shortfall(padding[side]))
+  for (const side of Object.keys(PHYSICAL_EDGE) as Side[]) {
+    yogaFrame.setPadding(PHYSICAL_EDGE[side], Math.max(0, padding[side]))
+  }
+  flow.forEach((child, index) => {
+    const isFirst = index === 0
+    const isLast = index === flow.length - 1
+    child.setMargin(PHYSICAL_EDGE[sides.crossStart], margin(sides.crossStart))
+    child.setMargin(PHYSICAL_EDGE[sides.crossEnd], margin(sides.crossEnd))
+    child.setMargin(sides.leadingEdge, isFirst ? margin(sides.leading) : 0)
+    child.setMargin(sides.trailingEdge, -overlap + (isLast ? margin(sides.trailing) : 0))
+  })
+}

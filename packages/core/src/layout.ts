@@ -2,7 +2,6 @@ import {
   Align,
   Direction,
   Display,
-  Edge,
   FlexDirection,
   Gutter,
   MeasureMode,
@@ -25,8 +24,9 @@ import {
 } from './layout/axis-sizing'
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
+import { setFlowEdges } from './layout/flow-edges'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { primaryAxisGap, siblingOverlap } from './layout/item-spacing'
+import { primaryAxisGap } from './layout/item-spacing'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
@@ -59,7 +59,6 @@ import {
   mapGridTrack,
   mapJustify,
   parentStretchedAxis,
-  layoutPadding,
   setLayoutPadding
 } from './layout/yoga-helpers'
 
@@ -216,12 +215,7 @@ function insertFlexChildren(
   graph: SceneGraph,
   direction: 'LTR' | 'RTL'
 ): void {
-  // Each in-flow child gives up the overlap after it, and the frame takes it back as trailing
-  // padding: a row then fits as many children as Figma's sum of sizes and negative gaps allows,
-  // every row starts at the frame's edge, and a hugging frame ends at its last child.
-  const overlap = siblingOverlap(parent)
-  const horizontal = parent.layoutMode === 'HORIZONTAL'
-  let hasInFlowChild = false
+  const flow: YogaNode[] = []
   for (const node of graph.getChildren(parent.id)) {
     const child = asLaidOutIn(graph, node, parent)
     const yogaChild = createYogaNode()
@@ -232,18 +226,12 @@ function insertFlexChildren(
       yogaChild.setDisplay(Display.None)
     } else {
       configureInFlowChild(yogaChild, child, parent, graph, direction)
-      if (overlap > 0) yogaChild.setMargin(horizontal ? Edge.End : Edge.Bottom, -overlap)
-      hasInFlowChild = true
+      flow.push(yogaChild)
     }
 
     yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
   }
-  if (overlap > 0 && hasInFlowChild) {
-    const padding = layoutPadding(parent)
-    if (!horizontal) yogaParent.setPadding(Edge.Bottom, padding.bottom + overlap)
-    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, padding.left + overlap)
-    else yogaParent.setPadding(Edge.Right, padding.right + overlap)
-  }
+  setFlowEdges(yogaParent, parent, flow, direction)
 }
 
 function configureInFlowChild(
