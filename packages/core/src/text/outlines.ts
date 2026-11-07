@@ -1,9 +1,12 @@
 import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import {
+  lineHeightPixels,
+  textLengthPixels,
+  textVerticalOffset
+} from '@open-pencil/scene-graph/text'
 
-import { textVerticalOffset } from '#core/canvas/text'
 import { drawnFontVariations } from '#core/text/font/families'
 import {
   fontHasGlyphSync,

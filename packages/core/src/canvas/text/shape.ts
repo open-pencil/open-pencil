@@ -2,8 +2,9 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
-import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
+import { buildParagraph } from '#core/canvas/text'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { characterFamily } from '#core/text/character-face'

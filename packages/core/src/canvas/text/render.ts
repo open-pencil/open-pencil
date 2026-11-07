@@ -1,9 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { textVerticalOffset, withTextParagraph } from '#core/canvas/text'
+import { withTextParagraph } from '#core/canvas/text'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { mayHoldEmoji } from '#core/text/emoji'

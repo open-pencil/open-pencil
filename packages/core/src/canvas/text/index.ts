@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
@@ -287,15 +288,4 @@ export function measureTextInkAsDrawn(
   return r.textPreparationCache
     ? r.textPreparationCache.ink(node, key, fontManager.generation(), r.fontProvider, compute)
     : compute()
-}
-
-/**
- * Offset that places laid-out text of `contentHeight` in the node box by vertical alignment.
- * Text taller than its box overflows on the side away from the alignment, as Figma lays it out.
- */
-export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = node.height - contentHeight
-  if (node.textAlignVertical === 'CENTER') return available / 2
-  if (node.textAlignVertical === 'BOTTOM') return available
-  return 0
 }
