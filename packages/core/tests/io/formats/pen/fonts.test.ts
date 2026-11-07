@@ -15,6 +15,7 @@ async function read(fonts: { name: string; url: string }[], families: string[]) 
   const files = new Map([
     ['My Design-assets/Inter-SemiBold.ttf', await fontFile('Inter-SemiBold.ttf')],
     ['My Design-assets/NotoNaskhArabic-Regular.ttf', await fontFile('NotoNaskhArabic-Regular.ttf')],
+    ['My Design-assets/InterVariable-Italic.ttf', await fontFile('InterVariable-Italic.ttf')],
     [
       'My Design-assets/InterVariable-Faces.woff2',
       await fontFile('InterVariable-Faces.woff2', 'tests/fixtures/fonts')
@@ -88,6 +89,27 @@ describe('penFormat.readDocument — bundled fonts (#1759)', () => {
       const call = markLoaded.mock.calls.find(([family]) => family === 'Inter Variable')
       // An sfnt with TrueType outlines, not the `wOF2` file it came as.
       expect(new DataView(expectDefined(call, 'registration')[2]).getUint32(0)).toBe(0x00010000)
+    } finally {
+      markLoaded.mockRestore()
+    }
+  })
+
+  test('registers an italic under the style key text draws it with', async () => {
+    const markLoaded = spyOn(fontManager, 'markLoaded')
+    try {
+      const { graph } = await read(
+        [{ name: 'Inter-Italic', url: 'My%20Design-assets/InterVariable-Italic.ttf' }],
+        ['Inter-Italic']
+      )
+      expect(getNodeOrThrow(graph, 't0')).toMatchObject({
+        fontFamily: 'Inter Variable',
+        fontStyle: 'Italic',
+        italic: true
+      })
+      expect(markLoaded.mock.calls.map(([family, style]) => [family, style])).toContainEqual([
+        'Inter Variable',
+        'Regular Italic'
+      ])
     } finally {
       markLoaded.mockRestore()
     }

@@ -1,5 +1,9 @@
 import type { PenFont } from '@open-pencil/pen'
-import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
+import {
+  faceStyleKey,
+  parseFontStyle,
+  type FontFamilyStyle
+} from '@open-pencil/scene-graph/font-style'
 
 import { fontManager } from '#core/text/font/manager'
 import { fontFaceName } from '#core/text/font/variation'
@@ -25,7 +29,11 @@ export async function loadPenFonts(
         const data = await sfntFont(bytes.slice().buffer)
         const face = fontFaceName(data)
         if (!face) return
-        await fontManager.markLoaded(face.family, face.style, data)
+        // Under the key drawing asks for, which spells `Italic` as `Regular Italic`; the text
+        // keeps the file's own style name, which exports carry.
+        const { weight, italic } = parseFontStyle(face.style)
+        const key = faceStyleKey({ fontWeight: weight, italic, fontStyle: face.style })
+        await fontManager.markLoaded(face.family, key, data)
         faces.set(name, face)
       } catch (error) {
         // Its text stays in the font it names, substituted as a missing font is.
