@@ -16,7 +16,7 @@ import {
   type ShaderPreset
 } from '@open-pencil/scene-graph/shaders'
 
-import { shaderFrames } from '#vue/canvas/surface/shader/frames'
+import { provideShaderFrames } from '#vue/canvas/surface/shader/frames'
 import { canDrawShaders } from '#vue/canvas/surface/shader/rasterizer'
 
 /** The longest side a playing shader is drawn at, however large it is on screen. */
@@ -95,7 +95,7 @@ export function useShaderPlayback(options: {
   markDirty: () => void
 }) {
   const { editor, getRenderer, getView, getViewport, markDirty } = options
-  const frames = shaderFrames(editor)
+  const frames = provideShaderFrames()
   const players = new Map<string, Player>()
   /** Players starting at a new size beside the ones they replace, by image. */
   const replacing = new Map<string, Player>()

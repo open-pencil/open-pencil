@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import { inject, provide, type InjectionKey } from 'vue'
 
 /**
  * Draws one fresh frame of a shader. The source is a WebGPU canvas that keeps the frame only
@@ -7,23 +7,24 @@ import type { Editor } from '@open-pencil/core'
 export type ShaderFrameListener = (source: CanvasImageSource) => void
 
 /**
- * Where the canvas's shader playback hands each frame it draws, by the image its paint shows,
- * to anything else that shows that shader: preview's islands draw their shader layers from it,
- * so every shader on the page has one player whatever shows it.
+ * Where a canvas's shader playback hands each frame it draws, by the image its paint shows, to
+ * anything else on that canvas that shows that shader: preview's islands draw their shader
+ * layers from it, so every shader on the page has one player whatever shows it.
  */
 export interface ShaderFrames {
   listen(image: string, listener: ShaderFrameListener): () => void
   publish(image: string, source: CanvasImageSource): void
 }
 
-const hubs = new WeakMap<Editor, ShaderFrames>()
+/**
+ * One canvas's frames. Split panes each play their own shaders at their own size, so a hub
+ * per editor would let one pane's islands draw the other pane's frames.
+ */
+const SHADER_FRAMES_KEY: InjectionKey<ShaderFrames> = Symbol('shader-frames')
 
-/** The shader frames of `editor`'s documents, shared by its canvases and islands. */
-export function shaderFrames(editor: Editor): ShaderFrames {
-  let hub = hubs.get(editor)
-  if (hub) return hub
+function createShaderFrames(): ShaderFrames {
   const listeners = new Map<string, Set<ShaderFrameListener>>()
-  hub = {
+  return {
     listen(image, listener) {
       const set = listeners.get(image) ?? new Set()
       set.add(listener)
@@ -37,6 +38,16 @@ export function shaderFrames(editor: Editor): ShaderFrames {
       for (const listener of listeners.get(image) ?? []) listener(source)
     }
   }
-  hubs.set(editor, hub)
-  return hub
+}
+
+/** The frames this canvas plays, offered to the islands drawn over it. Call during setup. */
+export function provideShaderFrames(): ShaderFrames {
+  const frames = createShaderFrames()
+  provide(SHADER_FRAMES_KEY, frames)
+  return frames
+}
+
+/** The frames of the canvas this component is drawn over, or none outside a playing canvas. */
+export function useShaderFrames(): ShaderFrames | null {
+  return inject(SHADER_FRAMES_KEY, null)
 }
