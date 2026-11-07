@@ -66,7 +66,7 @@ export function provideShaderFrames(editor: Editor): ShaderFrames {
   const shared = editorFrames(editor)
   provide(SHADER_FRAMES_KEY, own)
   return {
-    listen: own.listen,
+    listen: (image, listener) => own.listen(image, listener),
     publish(image, source) {
       own.publish(image, source)
       shared.publish(image, source)
