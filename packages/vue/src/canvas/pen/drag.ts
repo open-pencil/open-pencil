@@ -2,6 +2,7 @@ import type { Editor } from '@open-pencil/core'
 import { PEN_CLOSE_MIN_POINTS } from '@open-pencil/core/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragState } from '#vue/shared/input/types'
 
 type PenDragState = Extract<DragState, { type: 'pen-drag' }>
@@ -13,6 +14,7 @@ export function createPenDrag(startX: number, startY: number): DragState {
     type: 'pen-drag',
     startX,
     startY,
+    moved: false,
     modifierMode: 'default',
     frozenOppositeTangent: null,
     spaceDown: false,
@@ -123,9 +125,13 @@ export function handlePenDragMove(
 
   applySpaceDragOffset(d, anchor)
 
+  // A press that hasn't moved past the threshold is a click; a drag that has can bring the handle
+  // all the way back to its point.
+  const { zoom } = editor.state
+  d.moved ||= isPastPointerDragThreshold(d.startX * zoom, d.startY * zoom, cx * zoom, cy * zoom)
+  if (!d.moved) return
   const tx = cx - d.startX
   const ty = cy - d.startY
-  if (Math.hypot(tx, ty) <= 2) return
 
   const mode = getModifierMode(event)
   updateModifierMode(d, mode, penState)

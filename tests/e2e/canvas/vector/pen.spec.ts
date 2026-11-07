@@ -107,3 +107,29 @@ test('the pen closes a two-point path along the last handle and the closing drag
   })
   editor.canvas.assertNoErrors()
 })
+
+// A drag that comes back to its point leaves no handle, as one that never left; only a press that
+// never passed the drag threshold counts as a click.
+test('the pen drags a handle back to nothing', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const mouse = editor.page.mouse
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.move(box.x + 300, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 360, box.y + 100, { steps: 6 })
+  await mouse.move(box.x + 300, box.y + 100, { steps: 6 })
+  await mouse.up()
+
+  const handles = await editor.page.evaluate(() => {
+    const pen = window.openPencil?.getStore?.()?.state.penState
+    const segment = pen?.segments[0]
+    return {
+      out: pen?.dragTangent ? Math.hypot(pen.dragTangent.x, pen.dragTangent.y) : null,
+      into: segment ? Math.hypot(segment.tangentEnd.x, segment.tangentEnd.y) : null
+    }
+  })
+  expect(handles).toEqual({ out: 0, into: 0 })
+})

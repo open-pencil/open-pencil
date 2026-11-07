@@ -228,6 +228,8 @@ export interface DragPen {
   type: 'pen-drag'
   startX: number
   startY: number
+  /** Past the drag threshold: from then on the handle follows the pointer, back to zero too. */
+  moved: boolean
   modifierMode: 'default' | 'continuous' | 'independent'
   frozenOppositeTangent: Vector | null
   spaceDown: boolean
