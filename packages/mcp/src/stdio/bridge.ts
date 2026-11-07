@@ -14,8 +14,8 @@ type StdioRPCBridgeOptions = {
   onReconnect?: () => void
 }
 
-// 35s gives a 5s margin over the worst case (10s app wait + 20s RPC timeout = 30s)
-const RPC_TIMEOUT = 35_000
+// Headroom over worst case: 10s app wait + 60s browser RPC + response transfer.
+const RPC_TIMEOUT = 80_000
 const DISCONNECTED_MESSAGE =
   'OpenPencil app is not connected. ' +
   'STOP and tell the user: "The OpenPencil desktop app is not running or no document is open. ' +

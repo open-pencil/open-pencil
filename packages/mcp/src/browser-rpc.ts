@@ -7,7 +7,8 @@ import { isAuthorized } from '#mcp/auth'
 import type { RPCJSONObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
 
-const RPC_TIMEOUT = 20_000
+// Image fills and large exports ride this RPC; keep headroom above stdio's 35s bridge.
+const RPC_TIMEOUT = 60_000
 const APP_WAIT_TIMEOUT = 10_000
 
 const APP_NOT_CONNECTED_MESSAGE =

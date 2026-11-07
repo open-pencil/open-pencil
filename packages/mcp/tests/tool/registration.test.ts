@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -111,5 +111,73 @@ describe('MCP tool file output', () => {
     const inline = await call('export_pdf', {})
     expect(inline.content[0].type).toBe('text')
     expect(inline.content[0].text).toContain(result.base64)
+  })
+
+  test('set_image_fill resolves image_path into image_data before the app RPC', async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const root = await mkdtemp(join(tmpdir(), 'op-mcp-image-'))
+    cleanups.push(async () => {
+      await rm(root, { recursive: true, force: true })
+    })
+    await writeFile(join(root, 'plate.png'), png)
+
+    let forwarded: Record<string, unknown> | undefined
+    const manager = createMCPSessionManager({
+      serverVersion: '0.0.0',
+      registerTools: (mcpServer, agentSession, onToolSettled) =>
+        registerTools(mcpServer, {
+          policy: { allowEval: false, disabledTools: [], scope: 'document' },
+          agentSession,
+          onToolSettled,
+          mcpRoot: root,
+          sendRPC: async (body) => {
+            const { args } = body as { args: { name: string; args: Record<string, unknown> } }
+            if (args.name === 'set_image_fill') forwarded = args.args
+            return {
+              ok: true,
+              result: { id: '1:1', imageHash: 'hash', scaleMode: 'FILL' }
+            }
+          }
+        })
+    })
+    cleanups.push(async () => {
+      await manager.clear()
+    })
+    const connection = await manager.resolveTransport(undefined)
+    if ('error' in connection) throw new Error(connection.error)
+    const init = await connection.handleRequest(
+      request({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-06-18',
+          capabilities: {},
+          clientInfo: { name: 'test', version: '1' }
+        }
+      })
+    )
+    const sessionId = init.headers.get('mcp-session-id') ?? undefined
+    const response = await connection.handleRequest(
+      request(
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'set_image_fill',
+            arguments: { id: '1:1', image_path: 'plate.png', scale_mode: 'FILL' }
+          }
+        },
+        sessionId
+      )
+    )
+    const text = await response.text()
+    const json = text.startsWith('{') ? text : (text.split('data: ')[1] ?? '')
+    const message = JSON.parse(json) as { result: ToolResult }
+    expect(message.result.isError).toBeFalsy()
+    expect(forwarded?.image_path).toBeUndefined()
+    expect(forwarded?.image_data).toBe(Buffer.from(png).toString('base64'))
+    expect(forwarded?.scale_mode).toBe('FILL')
   })
 })
