@@ -32,6 +32,11 @@ import {
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { encodeWebPModelImage } from '@/app/ai/tools/model-image'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import {
+  createWebSearchTool,
+  WEB_SEARCH_TOOL_NAME,
+  type WebSearch
+} from '@/app/ai/tools/web-search'
 import { recordModelStepCompleted } from '@/app/diagnostics/events'
 import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
@@ -59,6 +64,8 @@ export type ToolLoopTransportOptions = {
   yieldWhen?: () => boolean
   /** The model's context limits, for compacting between steps; the Design model's by default. */
   contextLimits?: () => Promise<ContextLimits | null>
+  /** Web search the model is offered as `web_search`; none when unset. */
+  webSearch?: WebSearch
 }
 
 function callSettings(
@@ -93,7 +100,8 @@ export function createToolLoopTransport({
   recorder,
   skills = appSkillLibrary,
   yieldWhen = () => false,
-  contextLimits
+  contextLimits,
+  webSearch
 }: ToolLoopTransportOptions) {
   const tools: AITools = {
     ...createAITools(
@@ -101,7 +109,8 @@ export function createToolLoopTransport({
       diagnosticContext,
       providerTakesWebPImages(providerID) ? encodeWebPModelImage : undefined
     ),
-    ...createSkillTools(() => offeredSkills)
+    ...createSkillTools(() => offeredSkills),
+    ...(webSearch ? createWebSearchTool(webSearch) : {})
   }
   // Read again for each message, so skills installed or switched off since apply to the next one.
   // Only skills the model may load: one the user runs by name stays out of the listing and tools.
@@ -138,6 +147,7 @@ export function createToolLoopTransport({
         enabledAIToolDefinitions(aiToolOverrides.value).map((tool) => tool.name)
       )
       if (offeredSkills.length > 0) for (const name of SKILL_TOOL_NAMES) enabledNames.add(name)
+      if (webSearch) enabledNames.add(WEB_SEARCH_TOOL_NAME)
       preview.clear()
       // Keep the full catalog for validating history; offer only enabled tools to this request.
       const offered = Object.fromEntries(

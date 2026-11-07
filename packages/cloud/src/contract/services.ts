@@ -22,7 +22,8 @@ export const CLOUD_SERVICES_API_PATHS = {
   chatCompletions: '/v1/chat/completions',
   catalog: '/v1/catalog',
   wallet: '/v1/wallet',
-  usage: '/v1/usage'
+  usage: '/v1/usage',
+  search: '/v1/search'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -74,9 +75,14 @@ export const chatModelSchema = v.object({
 })
 export type ChatModel = v.InferOutput<typeof chatModelSchema>
 
+/** What one web search costs; a service without search leaves it out of its catalog. */
+export const searchPricingSchema = v.object({ creditsPerRequest: creditsSchema })
+export type SearchPricing = v.InferOutput<typeof searchPricingSchema>
+
 export const serviceCatalogSchema = v.object({
   models: v.array(chatModelSchema),
-  defaultModelID: v.pipe(v.string(), v.minLength(1))
+  defaultModelID: v.pipe(v.string(), v.minLength(1)),
+  search: v.optional(searchPricingSchema)
 })
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
 
@@ -109,6 +115,36 @@ export const usageEntrySchema = v.object({
 })
 export type UsageEntry = v.InferOutput<typeof usageEntrySchema>
 
+/** The most results one search returns. */
+export const MAX_SEARCH_RESULTS = 10
+
+export const searchRequestSchema = v.object({
+  query: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(1_000)),
+  numResults: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_SEARCH_RESULTS)),
+    5
+  )
+})
+export type SearchRequestInput = v.InferInput<typeof searchRequestSchema>
+export type SearchRequest = v.InferOutput<typeof searchRequestSchema>
+
+export function parseSearchRequest(input: unknown): SearchRequest {
+  return v.parse(searchRequestSchema, input)
+}
+
+/** One page a search found, with the part of its text that answers the query. */
+export const searchResultSchema = v.object({
+  url: urlSchema,
+  title: v.string(),
+  publishedAt: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+  author: v.nullable(v.string()),
+  text: v.string()
+})
+export type SearchResult = v.InferOutput<typeof searchResultSchema>
+
+export const searchResponseSchema = v.object({ results: v.array(searchResultSchema) })
+export type SearchResponse = v.InferOutput<typeof searchResponseSchema>
+
 export const usageQuerySchema = v.object({
   cursor: v.optional(v.pipe(v.string(), v.minLength(1)))
 })
@@ -126,9 +162,11 @@ export type UsagePage = v.InferOutput<typeof usagePageSchema>
 
 /** Errors a service answers with, beside the upstream provider's own. */
 export const serviceErrorCodeSchema = v.picklist([
+  'invalid_request',
   'unauthorized',
   'insufficient_credits',
   'model_not_allowed',
+  'capability_unavailable',
   'rate_limited'
 ])
 export type ServiceErrorCode = v.InferOutput<typeof serviceErrorCodeSchema>
@@ -144,8 +182,11 @@ export const serviceErrorSchema = v.object({
 export type ServiceError = v.InferOutput<typeof serviceErrorSchema>
 
 export const SERVICE_ERROR_STATUS = {
+  invalid_request: 400,
   unauthorized: 401,
   insufficient_credits: 402,
   model_not_allowed: 403,
+  /** A capability, such as search, the service does not offer. */
+  capability_unavailable: 404,
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
