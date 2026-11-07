@@ -18,6 +18,7 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import { recentDocumentKind, type RecentDocument } from '@/app/recent-files'
+import { isRecentFileOpenCancellation } from '@/app/recent-files/open-errors'
 import {
   matchingRecentFiles,
   openRecentDocument,
@@ -189,6 +190,7 @@ async function openRecent(document: RecentDocument): Promise<void> {
     const listed = storageWorkspace.lastRefreshedAt.value ? storageDocuments.value : undefined
     await openRecentDocument(document, listed)
   } catch (error) {
+    if (isRecentFileOpenCancellation(error)) return
     openError.value = error instanceof Error ? error.message : String(error)
   }
 }
@@ -198,6 +200,7 @@ async function openStorageDocument(document: StorageDocument): Promise<void> {
   try {
     await openStorageDocumentInNewTab(document)
   } catch (error) {
+    if (isRecentFileOpenCancellation(error)) return
     openError.value = error instanceof Error ? error.message : String(error)
   }
 }
