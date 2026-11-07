@@ -1,8 +1,11 @@
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import type * as BoundSizeScene from '#tests/helpers/canvas/bound-size/scene'
+import { pageScene } from '#tests/helpers/canvas/page-scene'
+import { selectNode } from '#tests/helpers/components/properties'
 import { propertyField } from '#tests/helpers/properties'
-import { getSelectedNode } from '#tests/helpers/store'
+import { getNodeById, getSelectedNode } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
 
@@ -119,52 +122,28 @@ test('NumberField exposes mixed state through canonical data attributes', async 
 })
 
 test('an untouched bound size sends nothing, and the next layer still takes a typed size', async () => {
-  const ids = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('Editor unavailable')
-    const page = store.state.currentPageId
-    const collection = store.graph.createCollection('Sizes')
-    // A fractional size: the field shows 100, the variable holds 100.4.
-    const variable = store.graph.createVariable('Card width', 'FLOAT', collection.id, 100.4)
-    const remote = store.graph.createNode('COMPONENT', page, { x: 300, width: 100, height: 50 })
-    store.graph.createNode('RECTANGLE', remote.id, {
-      width: 20,
-      height: 10,
-      horizontalConstraint: 'STRETCH'
-    })
-    store.bindVariable(remote.id, 'width', variable.id)
-    store.graph.updateNode(remote.id, {
-      librarySource: {
-        identity: { libraryId: 'design-system', assetKey: 'card', revisionId: 'r1' },
-        sourceNodeId: 'source',
-        readOnly: true
-      }
-    })
-    const frame = store.graph.createNode('FRAME', page, { x: 300, y: 200, width: 100, height: 50 })
-    const bar = store.graph.createNode('RECTANGLE', frame.id, {
-      width: 20,
-      height: 10,
-      horizontalConstraint: 'STRETCH'
-    })
-    store.select([remote.id])
-    return { frame: frame.id, bar: bar.id }
-  })
+  const ids = await pageScene<typeof BoundSizeScene>(
+    () => editor.page,
+    '/tests/helpers/canvas/bound-size/scene.ts'
+  ).build('createBoundSizeScene')
   const width = () => editor.page.getByRole('spinbutton', { name: 'Width', exact: true })
+  const widthOf = async (id: string) => (await getNodeById(editor.page, id))?.width
+
+  await selectNode(editor.page, ids.remote)
+  // The panel gives the field the rounded width, 100; the bound field begins from 100.4.
+  await expect(width()).toHaveAttribute('aria-valuenow', '100.4')
   await width().focus()
   await expect(propertyField(editor.page, 'width')).toHaveAttribute('data-editing')
   await width().blur()
   await expect(propertyField(editor.page, 'width')).not.toHaveAttribute('data-editing')
+  expect(await widthOf(ids.remote)).toBe(100.4)
 
-  await editor.page.evaluate((id) => window.openPencil?.getStore?.().select([id]), ids.frame)
+  await selectNode(editor.page, ids.frame)
   await expect(width()).toHaveAttribute('aria-valuenow', '100')
   await width().focus()
   await width().fill('150')
   await width().press('Enter')
   await editor.canvas.waitForRender()
-  const sizes = await editor.page.evaluate((ids) => {
-    const graph = window.openPencil?.getStore?.().graph
-    return [graph?.getNode(ids.frame)?.width, graph?.getNode(ids.bar)?.width]
-  }, ids)
-  expect(sizes).toEqual([150, 70])
+  expect([await widthOf(ids.frame), await widthOf(ids.bar)]).toEqual([150, 70])
   editor.canvas.assertNoErrors()
 })
