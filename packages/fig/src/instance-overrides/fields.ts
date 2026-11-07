@@ -180,8 +180,9 @@ export const COMPONENT_IDENTITY_FIELDS = [
 ] as const
 
 /**
- * How a layer sits in its parent. Figma writes it on every instance record and leaves defaults
- * out, so a missing field means the default, never the component's own place.
+ * How a layer sits in its parent. Figma writes these on an instance record whenever they differ
+ * from the default, even when they equal the component's, so a missing one is the default: in
+ * saved files, 54 resized nested instances that omit grow, of a growing component, did not grow.
  */
 export const PARENT_PLACEMENT_FIELDS = [
   'stackChildAlignSelf',
