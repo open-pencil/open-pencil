@@ -63,9 +63,11 @@ function copiedLayerId(source: SceneGraph, owner: SceneNode, node: SceneNode): s
 /**
  * The identity each layer of `source` keeps across revisions: its id in the source document, or,
  * for a layer an instance copies from its component, which a document rebuilds on every load, the
- * identities of the instance and of the component layer it copies.
+ * identities of the instance and of the component layer it copies. With `keepCarried`, a layer
+ * copied from a revision keeps the identity it carries; in any other document an instance copy
+ * carries its component's, which is not its own.
  */
-function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
+function layerIdentities(source: SceneGraph, keepCarried: boolean): (node: SceneNode) => string {
   const known = new Map<string, string>()
   const identify = (node: SceneNode): string => {
     const cached = known.get(node.id)
@@ -73,8 +75,10 @@ function layerIdentities(source: SceneGraph): (node: SceneNode) => string {
     const owner = node.parentId ? findInstanceAncestor(source, node.parentId) : undefined
     const copiedId = owner ? copiedLayerId(source, owner, node) : undefined
     const copied = copiedId ? source.getNode(copiedId) : undefined
+    const kept = keepCarried ? node.libraryLayerId : null
     const identity =
-      owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id)
+      kept ??
+      (owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id))
     known.set(node.id, identity)
     return identity
   }
@@ -104,7 +108,8 @@ function addSnapshotNode(
 
 export function extractLibrarySnapshot(
   source: SceneGraph,
-  assetNodeIds?: string[]
+  assetNodeIds?: string[],
+  keepLayerIdentities = false
 ): PortableLibrarySnapshot {
   const roots = (assetNodeIds ?? [...source.getAllNodes()].map((node) => node.id))
     .map((id) => source.getNode(id))
@@ -126,7 +131,7 @@ export function extractLibrarySnapshot(
     .filter((node): node is SceneNode =>
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
-  const identify = layerIdentities(source)
+  const identify = layerIdentities(source, keepLayerIdentities)
   for (const root of closureRoots)
     addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
   for (const [sourceId, targetId] of mappedIds)

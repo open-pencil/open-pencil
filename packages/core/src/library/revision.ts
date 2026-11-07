@@ -12,7 +12,11 @@ export async function createLibraryRevision(
   input: PublishLibraryInput
 ): Promise<ComponentLibraryRevision> {
   assertLibraryId(input.libraryId)
-  const snapshot = extractLibrarySnapshot(input.graph, input.assetNodeIds)
+  const snapshot = extractLibrarySnapshot(
+    input.graph,
+    input.assetNodeIds,
+    input.keepLayerIdentities
+  )
   const assets = await describeSnapshotAssets(snapshot)
   const revisionId = await contentHash({
     schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,

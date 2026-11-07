@@ -510,6 +510,7 @@ export class LibraryService implements ComponentCatalog {
         name: revision.manifest.name,
         graph: revision.graph,
         assetNodeIds: revision.manifest.assets.map((asset) => asset.sourceNodeId),
+        keepLayerIdentities: true,
         previousRevisionId: revision.manifest.previousRevisionId,
         description: revision.manifest.description,
         publishedAt: revision.manifest.publishedAt
