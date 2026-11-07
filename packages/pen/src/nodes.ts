@@ -133,6 +133,11 @@ function applyAutoLayout(
     node.primaryAxisSizing = own(widthSizing)
     node.counterAxisSizing = own(heightSizing)
   }
+  // pen.dev keeps `gap` between children under `space_between`, as CSS does; auto layout drops it.
+  // A hugging frame has no free space to spread, so packing it from the start lays it out the same.
+  if (node.primaryAxisAlign === 'SPACE_BETWEEN' && node.primaryAxisSizing === 'HUG') {
+    node.primaryAxisAlign = 'MIN'
+  }
 }
 
 const PLACEMENT_FIELDS = ['x', 'y', 'rotation', 'flipX', 'flipY'] as const
