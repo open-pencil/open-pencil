@@ -171,12 +171,13 @@ function renderMaskNodeContent(
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
     const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
+    const lines = textLinesReach(node)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
     canvas.saveLayer(
       r.opacityPaint,
-      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+      r.ck.LTRBRect(-padding, lines.minY - padding, node.width + padding, lines.maxY + padding)
     )
     r.opacityPaint.setImageFilter(null)
   }

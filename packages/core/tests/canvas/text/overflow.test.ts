@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { getCanvasKit } from '#core/canvaskit'
@@ -121,4 +121,67 @@ test('a blurred bottom-aligned text draws the lines above its box', () => {
   // The first line's glyph fills rows -25 to -5, above the 30 px box.
   expect(alpha(10, blurRows + 15)).toBeGreaterThan(0)
   expect(alpha(10, blurRows + 45)).toBeGreaterThan(0)
+})
+
+// Figma 126 masks with a bottom-aligned text's lines above its box, also through its opacity.
+test('a translucent bottom-aligned text mask reveals what lies under its lines above its box', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const frame = graph.createNode('FRAME', page.id, { width: 40, height: 90, fills: [] })
+  graph.createNode('TEXT', frame.id, {
+    y: 30,
+    width: 40,
+    height: 30,
+    text: 'ab',
+    fontFamily: '__MissingFont__',
+    textAutoResize: 'NONE',
+    textAlignVertical: 'BOTTOM',
+    isMask: true,
+    opacity: 0.5,
+    fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+    derivedTextGlyphs: [-5, 25].map((y) => ({
+      commandsBlob: squareCommandsBlob(),
+      x: 0,
+      y,
+      fontSize: 20,
+      firstCharacter: 0,
+      advance: 20
+    })),
+    derivedTextHeight: 60
+  })
+  graph.createNode('RECTANGLE', frame.id, {
+    width: 40,
+    height: 90,
+    fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+  })
+  const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  renderer.nodeFontReadiness = () => 'exhausted'
+
+  try {
+    const png = expectDefined(
+      renderNodesToImage(ck, renderer, graph, page.id, [frame.id], { scale: 1, format: 'PNG' }),
+      'png'
+    )
+    const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
+    const width = image.width()
+    const pixels = expectDefined(
+      image.readPixels(0, 0, {
+        alphaType: ck.AlphaType.Unpremul,
+        colorType: ck.ColorType.RGBA_8888,
+        colorSpace: ck.ColorSpace.SRGB,
+        width,
+        height: image.height()
+      }),
+      'pixels'
+    )
+    const alpha = (x: number, y: number) => pixels[(y * width + x) * 4 + 3]
+    image.delete()
+
+    // The first line's glyph fills frame rows 5 to 25, above the text's box at rows 30 to 60.
+    expect(alpha(10, 15)).toBeGreaterThan(0)
+    expect(alpha(10, 45)).toBeGreaterThan(0)
+  } finally {
+    surface.delete()
+  }
 })
