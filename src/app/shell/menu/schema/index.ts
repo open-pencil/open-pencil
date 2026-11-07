@@ -26,6 +26,7 @@ export const APP_MENU_SCHEMA = [
     paletteIcon: 'file',
     items: [
       { id: 'new', label: 'New Design', shortcut: 'Mod+N' },
+      { id: 'new-board', label: 'New Board' },
       { id: 'new-tab', label: 'New Tab', shortcut: 'Mod+T' },
       { id: 'open', label: 'Open…', shortcut: 'Mod+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
@@ -137,6 +138,18 @@ export const APP_MENU_SCHEMA = [
         id: 'paste-as-layers',
         feature: 'document',
         label: 'Paste as layers'
+      },
+      {
+        id: 'copy-properties',
+        feature: 'document',
+        label: 'Copy Properties',
+        shortcut: 'Mod+Alt+C'
+      },
+      {
+        id: 'paste-properties',
+        feature: 'document',
+        label: 'Paste Properties',
+        shortcut: 'Mod+Alt+V'
       },
       {
         id: 'selection.duplicate',
@@ -310,6 +323,13 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'toggle-ui', feature: 'document', label: 'Toggle UI', shortcut: 'Mod+\\' },
+      {
+        id: 'toggle-ai',
+        feature: 'document',
+        label: 'Toggle AI Chat',
+        shortcut: 'Mod+J',
+        palette: { keywords: ['assistant', 'agent', 'chat', 'prompt'] }
+      },
       { id: 'toggle-preview', feature: 'document', label: 'Preview', shortcut: 'Mod+Alt+Enter' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
@@ -335,6 +355,11 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.frameSelection',
         label: 'Frame Selection',
         command: 'selection.frameSelection'
+      },
+      {
+        id: 'selection.wrapInSection',
+        label: 'Wrap in New Section',
+        command: 'selection.wrapInSection'
       },
       {
         id: 'selection.ungroup',

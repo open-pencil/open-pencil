@@ -90,5 +90,7 @@
   "showVersionHistory": "显示版本历史",
   "saveToVersionHistory": "保存到版本历史…",
   "reportProblem": "报告问题…",
-  "supportOpenPencil": "支持 OpenPencil…"
+  "supportOpenPencil": "支持 OpenPencil…",
+  "newBoard": "新建白板",
+  "toggleAIChat": "切换 AI 聊天"
 }
