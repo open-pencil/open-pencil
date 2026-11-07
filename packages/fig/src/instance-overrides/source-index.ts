@@ -78,6 +78,15 @@ export function readOverrideKey(value: unknown): GUID | undefined {
   return isUnsetGuid(key) ? undefined : key
 }
 
+/** A component and its override key both address the root of an instance's expansion. */
+export function componentKeys(index: SourceIndex, guid: GUID | undefined): GUID[] {
+  if (!guid) {
+    return []
+  }
+  const key = readOverrideKey(index.sources.get(guidToString(guid))?.overrideKey)
+  return key ? [guid, key] : [guid]
+}
+
 /** A path segment addresses a record by GUID or by its stable override key. */
 export function recordMatches(record: NodeChange, guid: GUID): boolean {
   return sameGuid(record.guid, guid) || sameGuid(readOverrideKey(record.overrideKey), guid)
