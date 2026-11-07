@@ -7,7 +7,6 @@ import {
   vectorNetworkPaths,
   vectorNetworkToSVGPaths
 } from '@open-pencil/scene-graph/vector-network'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 function lineNetwork(x: number): VectorNetwork {
   return {
@@ -69,6 +68,24 @@ describe('vectorNetworkToSVGPaths()', () => {
     expect(paths).toHaveLength(1)
     expect(paths[0]).toContain('M0 0')
     expect(paths[0]).toContain('L100 100')
+  })
+
+  test('a curve traced end to start keeps its control points on the same side', () => {
+    // The second segment runs from vertex 2 to vertex 1, so the chain traces it backwards.
+    const paths = vectorNetworkToSVGPaths({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 2, end: 1, tangentStart: { x: 0, y: 5 }, tangentEnd: { x: 0, y: 5 } }
+      ],
+      regions: []
+    })
+    // Each control point is its own vertex plus that vertex's tangent, whichever way it is traced.
+    expect(paths).toEqual(['M0 0L10 0C10 5 20 5 20 0'])
   })
 
   test('curved segment', () => {
