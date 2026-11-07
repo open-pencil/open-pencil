@@ -177,4 +177,80 @@ describe('library service updates', () => {
     expect(graph.getNode(instance.id)?.width).toBe(120)
     expect(graph.getChildren(instance.id)[0]?.text).toBe('Hello')
   })
+
+  test('moves the document onto the revision when the group it applies is the only change', async () => {
+    const library = source(80, 'Old')
+    library.createNode('COMPONENT', library.getPages()[0].id, {
+      name: 'Badge',
+      componentKey: 'badge'
+    })
+    const catalog = new MemoryLibraryCatalog()
+    const first = await catalog.publishRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: library
+    })
+    const button = [...library.getAllNodes()].find((node) => node.componentKey === 'button')
+    if (!button) throw new Error('Expected the button')
+    widen(library, button)
+    const latest = await catalog.publishRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: library,
+      previousRevisionId: first.manifest.revisionId
+    })
+    const graph = new SceneGraph()
+    for (const key of ['button', 'badge']) {
+      const { componentId } = materializeLibraryAsset(graph, first, key)
+      graph.createInstance(componentId, graph.getPages()[0].id)
+    }
+    const editor = createEditorStore(graph)
+    const service = new LibraryService(catalog)
+    await service.listLibraries()
+    await service.refresh(editor)
+
+    const groups = await service.getUpdateGroups(editor)
+    expect(groups.map((group) => group.assetKey)).toEqual(['button'])
+    await service.applyUpdateGroups(editor, groups)
+
+    expect(graph.enabledLibraries.get('library')?.revisionId).toBe(latest.manifest.revisionId)
+  })
+
+  test('leaves the document as it was when an update of some assets cannot be drawn', async () => {
+    const library = new SceneGraph()
+    const page = library.getPages()[0].id
+    const a = library.createNode('COMPONENT', page, { name: 'A', componentKey: 'a' })
+    const b = library.createNode('COMPONENT', page, { name: 'B', componentKey: 'b' })
+    const nested = library.createInstance(b.id, a.id)
+    const catalog = new MemoryLibraryCatalog()
+    const first = await catalog.publishRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: library
+    })
+    // The library turns the dependency around: B now uses A, and A no longer uses B.
+    if (nested) library.deleteNode(nested.id)
+    library.createInstance(a.id, b.id)
+    await catalog.publishRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: library,
+      previousRevisionId: first.manifest.revisionId
+    })
+    const graph = new SceneGraph()
+    for (const key of ['a', 'b']) {
+      const { componentId } = materializeLibraryAsset(graph, first, key)
+      graph.createInstance(componentId, graph.getPages()[0].id)
+    }
+    const editor = createEditorStore(graph)
+    const service = new LibraryService(catalog)
+    await service.listLibraries()
+    await service.refresh(editor)
+    const before = [...graph.nodes.keys()].sort()
+
+    const groups = (await service.getUpdateGroups(editor)).filter((group) => group.assetKey === 'b')
+    await expect(service.applyUpdateGroups(editor, groups)).rejects.toThrow()
+
+    expect([...graph.nodes.keys()].sort()).toEqual(before)
+  })
 })

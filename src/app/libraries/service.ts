@@ -337,6 +337,35 @@ export class LibraryService implements ComponentCatalog {
   }
 
   /**
+   * `assetKeys` and every other definition `latest` would only move along: an asset whose content
+   * it leaves as the document's revision has it, and a component other assets use, which has no
+   * update of its own. Redrawing those too lets the document reach `latest` once no asset with a
+   * change is left out.
+   */
+  async #withUnchanged(
+    editor: EditorStore,
+    latest: ComponentLibraryRevision,
+    assetKeys: ReadonlySet<string>
+  ): Promise<Set<string>> {
+    const keys = new Set(assetKeys)
+    const hashes = new Map(latest.manifest.assets.map((asset) => [asset.key, asset.contentHash]))
+    for (const node of editor.graph.getAllNodes()) {
+      const identity = node.librarySource?.identity
+      if (identity?.libraryId !== latest.manifest.libraryId || keys.has(identity.assetKey)) continue
+      if (identity.revisionId === latest.manifest.revisionId) continue
+      const hash = hashes.get(identity.assetKey)
+      if (hash === undefined) {
+        keys.add(identity.assetKey)
+        continue
+      }
+      const previous = await this.#getRevision(identity.libraryId, identity.revisionId)
+      const asset = previous.manifest.assets.find((entry) => entry.key === identity.assetKey)
+      if (asset?.contentHash === hash) keys.add(identity.assetKey)
+    }
+    return keys
+  }
+
+  /**
    * Redraws the document's definitions of each library, or only those of the given assets, at the
    * library's latest revision in place, so every instance, and every copy of one inside a
    * component, keeps its overrides. Undo puts the document back as it was, and redo as the update
@@ -348,22 +377,34 @@ export class LibraryService implements ComponentCatalog {
     label: string
   ): Promise<void> {
     const updates: { revision: ComponentLibraryRevision; assetKeys?: ReadonlySet<string> }[] = []
-    for (const [libraryId, assetKeys] of libraries)
-      updates.push({ revision: await this.#getRevision(libraryId), assetKeys })
+    for (const [libraryId, assetKeys] of libraries) {
+      const revision = await this.#getRevision(libraryId)
+      updates.push({
+        revision,
+        assetKeys: assetKeys && (await this.#withUnchanged(editor, revision, assetKeys))
+      })
+    }
     if (updates.length === 0) return
     const before = captureGraphCheckpoint(editor.graph)
-    editor.updateEnabledLibraries(() => {
-      for (const { revision, assetKeys } of updates) {
-        const update = updateLibraryDefinitions(editor.graph, revision, { assetKeys })
-        if (update.replaced.length > 0) this.#replaceDefinitions(editor, revision, update)
-      }
-    })
-    const after = captureGraphCheckpoint(editor.graph)
-    editor.requestRender()
     const restore = (checkpoint: typeof before) => () => {
       checkpoint.restore()
       editor.refreshDocumentSettings()
     }
+    try {
+      editor.updateEnabledLibraries(() => {
+        for (const { revision, assetKeys } of updates) {
+          const update = updateLibraryDefinitions(editor.graph, revision, { assetKeys })
+          if (update.replaced.length > 0) this.#replaceDefinitions(editor, revision, update)
+        }
+      })
+    } catch (error) {
+      // An update that cannot be drawn, such as one leaving two components using each other,
+      // must not leave half of it behind.
+      restore(before)()
+      throw error
+    }
+    const after = captureGraphCheckpoint(editor.graph)
+    editor.requestRender()
     editor.pushUndoEntry({ label, forward: restore(after), inverse: restore(before) })
     await this.refresh(editor)
   }
