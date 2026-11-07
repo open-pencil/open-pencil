@@ -122,4 +122,27 @@ describe('inserting library components', () => {
     expect(consumer.variableCollections.size).toBe(2)
     expect(consumer.resolveColorVariable(bound(consumer, componentId) ?? '')).toEqual(BLUE)
   })
+
+  test('sizes the instances of a component bound to a size token the update changes', async () => {
+    const graph = new SceneGraph()
+    const sizes = graph.createCollection('Sizes')
+    const wide = graph.createVariable('wide', 'FLOAT', sizes.id, 120)
+    const button = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+      name: 'Button',
+      componentKey: 'button',
+      width: 120,
+      height: 40
+    })
+    graph.bindVariable(button.id, 'width', wide.id)
+    const first = await publish(graph)
+    const consumer = new SceneGraph()
+    const { componentId } = materializeLibraryAsset(consumer, first, 'button')
+    const instance = consumer.createInstance(componentId, consumer.getPages()[0].id)
+    graph.variables.set(wide.id, { ...wide, valuesByMode: { [sizes.defaultModeId]: 200 } })
+
+    updateLibraryDefinitions(consumer, await publish(graph, first.manifest.revisionId))
+
+    expect(consumer.getNode(componentId)?.width).toBe(200)
+    expect(consumer.getNode(instance?.id ?? '')?.width).toBe(200)
+  })
 })

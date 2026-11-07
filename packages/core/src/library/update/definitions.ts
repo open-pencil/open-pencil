@@ -11,7 +11,7 @@ import {
   getInternalLibraryPage,
   libraryDefinitionSource
 } from '#core/library/materialize'
-import { importLibraryResources, remapLibraryResources } from '#core/library/resources'
+import { applyLibraryResources } from '#core/library/resources'
 import type { ComponentLibraryRevision } from '#core/library/types'
 
 export interface LibraryDefinitionUpdateOptions {
@@ -305,14 +305,11 @@ export function updateLibraryDefinitions(
     })
   }
 
-  remapLibraryResources(
+  applyLibraryResources(
     graph,
     pairs.map(({ target }) => target.id),
-    importLibraryResources(
-      graph,
-      revision,
-      pairs.map(({ source }) => source)
-    )
+    revision,
+    pairs.map(({ source }) => source)
   )
   // The document uses the revision once no definition it holds is left behind.
   if (result.behind.length === 0 && result.replaced.length === 0)

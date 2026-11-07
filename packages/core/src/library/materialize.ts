@@ -5,7 +5,7 @@ import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 import { isLibraryComponentAsset } from './asset-keys'
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
-import { importLibraryResources, remapLibraryResources } from './resources'
+import { applyLibraryResources } from './resources'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 import { assetComponent } from './variants'
 
@@ -149,14 +149,11 @@ export function materializeLibraryAsset(
     copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
   }
   markDefinitions(consumer, revision, mappedIds)
-  remapLibraryResources(
+  applyLibraryResources(
     consumer,
     mappedIds.values(),
-    importLibraryResources(
-      consumer,
-      revision,
-      [...mappedIds.keys()].flatMap((id) => revision.graph.getNode(id) ?? [])
-    )
+    revision,
+    [...mappedIds.keys()].flatMap((id) => revision.graph.getNode(id) ?? [])
   )
 
   const rootId = mappedIds.get(descriptor.sourceId)

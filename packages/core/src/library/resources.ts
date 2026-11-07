@@ -15,6 +15,8 @@ import {
 } from '@open-pencil/scene-graph/transfer'
 import { mapVariableValueReferences } from '@open-pencil/scene-graph/variables'
 
+import { reconcileVariableLayouts } from '#core/layout/variables'
+
 import type { ComponentLibraryRevision } from './types'
 
 /** A revision's variables, collections, modes, and styles, as the document now names them. */
@@ -123,7 +125,7 @@ export function importLibraryResources(
   graph: SceneGraph,
   revision: ComponentLibraryRevision,
   layers: Iterable<SceneNode>
-): LibraryResourceReferences & { styleLayers: string[] } {
+): LibraryResourceReferences & { styleLayers: string[]; variables: string[] } {
   const source = revision.graph
   const dependencies = layerDependencies(source, layers)
   const collections = new Map<string, string>()
@@ -188,7 +190,7 @@ export function importLibraryResources(
   }
   // A style binds variables and names other styles by the revision's IDs until it is remapped.
   remapLibraryResources(graph, styleLayers, references)
-  return { ...references, styleLayers }
+  return { ...references, styleLayers, variables: [...variables.values()] }
 }
 
 /** Points `ids` at the document's copies of the revision's variables, modes, and styles. */
@@ -209,4 +211,20 @@ export function remapLibraryResources(
       })
     })
   }
+}
+
+/**
+ * Brings what `layers` of `revision` use into `graph` and points `ids`, their copies there, at
+ * it. Layers bound to a variable whose value the revision changed take the new value, and the
+ * layout it changes, as editing the variable would give them.
+ */
+export function applyLibraryResources(
+  graph: SceneGraph,
+  ids: Iterable<string>,
+  revision: ComponentLibraryRevision,
+  layers: Iterable<SceneNode>
+): void {
+  const imported = importLibraryResources(graph, revision, layers)
+  remapLibraryResources(graph, ids, imported)
+  reconcileVariableLayouts(graph, { variables: imported.variables })
 }
