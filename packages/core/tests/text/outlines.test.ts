@@ -107,4 +107,22 @@ describe('textNodeToOutlineLayout', () => {
       )
     ).toBe(2)
   })
+
+  test('places a line taller than its box past the side away from its alignment', () => {
+    const baseline = (textAlignVertical: SceneNode['textAlignVertical']) =>
+      textNodeToOutlineLayout(
+        text({
+          text: 'H',
+          fontSize: 16,
+          height: 12,
+          lineHeight: { value: 20, unit: 'PIXELS' },
+          textAutoResize: 'NONE',
+          textAlignVertical
+        })
+      )?.glyphs[0]?.y
+
+    expect(baseline('TOP')).toBe(20)
+    expect(baseline('CENTER')).toBe(16)
+    expect(baseline('BOTTOM')).toBe(12)
+  })
 })
