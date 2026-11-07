@@ -47,7 +47,10 @@ export function usePanelSize(editor: Editor) {
   function update(nodes: readonly SceneNode[], size: (start: Rect) => Size) {
     if (edits && graph !== editor.graph) take()
     if (!edits) {
-      edits = nodes.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+      // A panel can still hold layers of a document that was loaded over; those are not resized.
+      const live = nodes.filter((node) => editor.graph.getNode(node.id) === node)
+      if (live.length === 0) return
+      edits = live.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
       graph = editor.graph
       watch(edits)
     }

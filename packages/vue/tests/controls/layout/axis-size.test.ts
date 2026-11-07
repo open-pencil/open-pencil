@@ -102,7 +102,7 @@ describe('a typed width or height', () => {
   })
 
   test('a document loaded mid-edit is left as it loaded', () => {
-    const { editor, frame, actions, scope } = setup()
+    const { editor, frame, stretched, actions, scope } = setup()
     try {
       actions.updateAxisSize('width', 150)
       // The same ids in the new document, as reopening a saved copy gives.
@@ -112,9 +112,13 @@ describe('a typed width or height', () => {
       if (!loadedFrame) throw new Error('Expected the frame in the copy')
       editor.replaceGraph(copy)
       expect(loadedFrame.width).toBe(150)
+      // The panel still holds the old frame and sends it once more before it lets go.
+      const loadedChild = copy.getNode(stretched.id)
+      actions.updateAxisSize('width', 90)
+      expect([loadedFrame.width, loadedChild?.width]).toEqual([150, 72.6])
       actions.cancelPreview()
-      actions.commitAxisSize('width', 150, 100)
-      expect(loadedFrame.width).toBe(150)
+      actions.commitAxisSize('width', 90, 100)
+      expect([loadedFrame.width, loadedChild?.width]).toEqual([150, 72.6])
       expect(editor.undo.canUndo).toBe(false)
     } finally {
       scope.stop()
