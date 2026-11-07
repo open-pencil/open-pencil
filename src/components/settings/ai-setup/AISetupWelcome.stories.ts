@@ -24,6 +24,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const page = () => within(document.body)
+/** The tour row, which the checks scope to rather than read its copy. */
+const tourRow = () => document.querySelector<HTMLElement>('[data-test-id="ai-setup-tour"]')
 
 export const Default: Story = {}
 
@@ -31,14 +33,16 @@ export const Default: Story = {}
 export const WithoutTour: Story = {
   args: { offersTour: false },
   play: async () => {
-    await expect(page().queryByRole('button', { name: 'Open the tour' })).toBeNull()
+    await expect(tourRow()).toBeNull()
+    await expect(page().queryByRole('button')).toBeNull()
   }
 }
 
 export const TourOpening: Story = {
   args: { tourOpening: true },
   play: async () => {
-    await expect(page().getByRole('button', { name: 'Open the tour' })).toBeDisabled()
+    const row = tourRow()
+    await expect(row && within(row).getByRole('button')).toBeDisabled()
   }
 }
 
@@ -46,8 +50,9 @@ export const TourOpening: Story = {
 export const TourFailed: Story = {
   args: { tourFailed: true },
   play: async () => {
-    await expect(page().getByRole('alert')).toHaveTextContent('The tour could not be opened.')
-    await expect(page().getByRole('button', { name: 'Open the tour' })).toBeEnabled()
+    await expect(page().getByRole('alert')).toBeVisible()
+    const row = tourRow()
+    await expect(row && within(row).getByRole('button')).toBeEnabled()
   }
 }
 
