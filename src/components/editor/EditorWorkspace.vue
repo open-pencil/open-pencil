@@ -48,7 +48,7 @@ const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
 /** Whether the AI chat floats over the canvas while the panels are hidden; Toggle AI chat opens it too. */
-const floatingChat = floatingChatOpen
+const floatingChat = floatingChatOpen(store)
 const interfaceScale = computed(interfaceScaleFactor)
 const workspace = useTemplateRef('workspace')
 const { width: workspaceWidth } = useElementSize(() => {

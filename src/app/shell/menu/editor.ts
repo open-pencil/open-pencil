@@ -1,11 +1,12 @@
 import { invoke } from '@tauri-apps/api/core'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 
 import {
   useEditorCommands,
   type EditorCommand,
   type EditorCommandId
 } from '@open-pencil/vue/editor/commands'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
@@ -73,6 +74,7 @@ export function useEditorMenu() {
   watchNativeMenuFeatures()
 
   const { setTheme } = useAppTheme()
+  const { isMobile } = useViewportKind()
   const { commands, runCommand } = useEditorCommands()
   watchNativeMenuDisabled(commands)
 
@@ -109,8 +111,7 @@ export function useEditorMenu() {
       store.state.autosaveEnabled = !store.state.autosaveEnabled
     },
     ...createSelectionMenuActions(store),
-    // The desktop menu runs only in the desktop window, never at phone width.
-    ...createSharedEditorMenuActions(setTheme, ref(false))
+    ...createSharedEditorMenuActions(setTheme, isMobile)
   }
 
   useNativeMenuEvents((id) => {
