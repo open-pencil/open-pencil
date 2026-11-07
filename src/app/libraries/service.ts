@@ -48,6 +48,7 @@ export class LibraryService implements ComponentCatalog {
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
+  readonly #watched = new WeakSet<EditorStore>()
   readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
   #activeEditor: EditorStore | null = null
@@ -158,6 +159,7 @@ export class LibraryService implements ComponentCatalog {
 
   async refresh(editor: EditorStore): Promise<void> {
     this.#activeEditor = editor
+    this.#watch(editor)
     this.#summaries.value = await this.#catalog.listLibraries()
     const assets: EnabledLibraryAsset[] = []
     for (const binding of editor.graph.enabledLibraries.values()) {
@@ -176,6 +178,19 @@ export class LibraryService implements ComponentCatalog {
     }
     this.#enabledAssets.value = assets
     await this.refreshUpdates(editor)
+  }
+
+  /**
+   * Keeps what the service holds of `editor`'s libraries current when they change outside it, as
+   * undo and redo of an update change them; an insert would otherwise take the revision undone.
+   */
+  #watch(editor: EditorStore): void {
+    if (this.#watched.has(editor)) return
+    this.#watched.add(editor)
+    editor.onEditorEvent('document:libraries-changed', () => {
+      // A read that fails here is reported by the next one the manager makes.
+      this.refresh(editor).catch(() => undefined)
+    })
   }
 
   async refreshUpdates(editor: EditorStore): Promise<void> {

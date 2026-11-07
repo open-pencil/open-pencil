@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { until } from '@vueuse/core'
+
 import { materializeLibraryAsset, MemoryLibraryCatalog } from '@open-pencil/core/library'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
@@ -93,6 +95,24 @@ describe('library service updates', () => {
     editor.undo.redo()
     expect(graph.getNode(instance.id)?.width).toBe(120)
     expect(graph.getChildren(instance.id)[0]?.text).toBe('Hello')
+  })
+
+  test('offers an update again once it is undone, and none once it is redone', async () => {
+    const { editor, service, latest } = await updatable()
+    const offered = () => service.updates.value.map((update) => update.libraryId)
+    const inserted = () => service.enabledAssets.value.map((asset) => asset.revisionId)
+
+    await service.applyUpdate(editor, 'library')
+    expect(offered()).toEqual([])
+
+    editor.undo.undo()
+    await until(service.updates).toMatch((updates) => updates.length > 0)
+    expect(offered()).toEqual(['library'])
+    expect(inserted()).not.toContain(latest)
+
+    editor.undo.redo()
+    await until(service.updates).toMatch((updates) => updates.length === 0)
+    expect(inserted()).toEqual([latest])
   })
 
   test('redoes an update as it left the document, so the layers it added keep their IDs', async () => {
@@ -246,11 +266,18 @@ describe('library service updates', () => {
     const service = new LibraryService(catalog)
     await service.listLibraries()
     await service.refresh(editor)
-    const before = [...graph.nodes.keys()].sort()
+    const state = () => ({
+      nodes: [...graph.nodes.values()].map((node) => structuredClone(node)),
+      libraries: structuredClone(graph.enabledLibraries)
+    })
+    const before = state()
 
     const groups = (await service.getUpdateGroups(editor)).filter((group) => group.assetKey === 'b')
-    await expect(service.applyUpdateGroups(editor, groups)).rejects.toThrow()
+    await expect(service.applyUpdateGroups(editor, groups)).rejects.toThrow(
+      'Cyclic component synchronization dependency'
+    )
 
-    expect([...graph.nodes.keys()].sort()).toEqual(before)
+    expect(state()).toEqual(before)
+    expect(editor.undo.canUndo).toBe(false)
   })
 })
