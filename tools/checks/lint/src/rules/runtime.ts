@@ -131,6 +131,30 @@ const noZoomInSceneDrawing = {
   }
 } satisfies RuleDefinition
 
+const noPerParagraphFontCollection = {
+  meta: {
+    docs: {
+      description:
+        'Disallow ParagraphBuilder.MakeFromFontProvider, which makes a font collection for every paragraph; build through makeParagraphBuilder'
+    }
+  },
+  create(context) {
+    if (!normalizedFilename(context).includes('/src/')) return {}
+
+    return {
+      MemberExpression(node) {
+        if (node.computed || node.property.type !== 'Identifier') return
+        if (node.property.name !== 'MakeFromFontProvider') return
+        context.report({
+          node,
+          message:
+            "Build paragraphs with makeParagraphBuilder from '#core/text/font/collection': MakeFromFontProvider makes a font collection for every paragraph, and each keeps a copy of a variable font's instance."
+        })
+      }
+    }
+  }
+} satisfies RuleDefinition
+
 const noDirectGraphEmitterSubscriptions = {
   meta: {
     docs: {
@@ -315,6 +339,7 @@ export {
   noDirectStorageAccess,
   noCoreBrowserGlobals,
   noZoomInSceneDrawing,
+  noPerParagraphFontCollection,
   noDirectGraphEmitterSubscriptions,
   noOnUnmountedInCompositionRoots,
   noComposableStateWrappers,
