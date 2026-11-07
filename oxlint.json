@@ -122,7 +122,6 @@
     "open-pencil/no-local-json-object-aliases": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-zoom-in-scene-drawing": "error",
-    "open-pencil/no-per-paragraph-font-collection": "error",
     "open-pencil/no-direct-open-pencil-window-internals": "error",
     "open-pencil/no-direct-open-pencil-browser-store": "error",
     "open-pencil/max-composition-root-lines": [
