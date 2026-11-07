@@ -61,6 +61,8 @@ const emit = defineEmits<{
   update: [fill: Fill]
   updateShader: [preset: ShaderPreset]
   openChange: [open: boolean]
+  /** Ends the edit so far as one step, which a later Escape no longer takes back. */
+  commit: []
   cancel: []
 }>()
 const { open: popupOpen, portalActive } = useRetainedPopup(
@@ -187,6 +189,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
             :fill="root.fill"
             :layer-size="layerSize"
             @update="emit('update', $event)"
+            @commit="emit('commit')"
           />
         </PopoverContent>
       </PopoverPortal>

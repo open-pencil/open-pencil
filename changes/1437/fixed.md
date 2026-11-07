@@ -1,0 +1,1 @@
+- Pressing Escape to close the fill or stroke picker keeps a new image, an image scale mode, or a quarter turn chosen in it, instead of removing it; Escape still puts back a dragged colour or gradient.
