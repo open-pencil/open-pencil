@@ -488,7 +488,7 @@ function convertDerivedText(
   const layoutSize = nc.derivedTextData?.layoutSize
   return {
     derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
-    derivedTextHeight: savedLinesHeight(nc),
+    derivedTextHeight: sizesToLines(nc) ? null : savedLinesHeight(nc),
     derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
       nc.derivedTextData,
       blobs,
@@ -497,15 +497,24 @@ function convertDerivedText(
   }
 }
 
+/** Whether a text's box grows to its lines, which then never run past it. */
+function sizesToLines(nc: NodeChange): boolean {
+  return nc.textAutoResize === 'HEIGHT' || nc.textAutoResize === 'WIDTH_AND_HEIGHT'
+}
+
 /**
- * How far the lines Figma saved reach: the bottom of the last one. Figma's layout size is the box
- * of a fixed-size text even when its lines draw past it, so the lines themselves tell.
+ * How tall the lines Figma saved are, from the top of the first to the bottom of the last. Figma's
+ * layout size is the box of a fixed-size text even when its lines draw past it, above it as well
+ * as below, so the lines themselves tell.
  */
 function savedLinesHeight(nc: NodeChange): number | null {
-  const bottoms = (nc.derivedTextData?.baselines ?? []).map(
-    (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
-  )
-  return bottoms.length > 0 ? Math.max(...bottoms) : null
+  const baselines = nc.derivedTextData?.baselines ?? []
+  if (baselines.length === 0) {
+    return null
+  }
+  const tops = baselines.map((line) => line.lineY ?? line.position.y - line.lineAscent)
+  const bottoms = baselines.map((line, index) => tops[index] + line.lineHeight)
+  return Math.max(...bottoms) - Math.min(...tops)
 }
 
 function convertLayoutPadding(
