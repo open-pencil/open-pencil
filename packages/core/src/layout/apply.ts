@@ -2,7 +2,7 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { flipChanges, layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { constrainedChildRect, flipChanges } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 
@@ -95,7 +95,7 @@ function constrainChildren(
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
     const size = { width: child.width, height: child.height }
-    const { flipsX, flipsY, ...box } = layoutConstrainedChildRect(
+    const { flipsX, flipsY, ...box } = constrainedChildRect(
       child,
       before,
       frame,
