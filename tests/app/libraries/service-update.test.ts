@@ -6,7 +6,8 @@ import { materializeLibraryAsset, MemoryLibraryCatalog } from '@open-pencil/core
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
-import { createEditorStore } from '@/app/editor/session'
+import { setActiveEditorStore } from '@/app/editor/active-store'
+import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { LibraryService } from '@/app/libraries/service'
 
 function source(width: number, label: string) {
@@ -99,6 +100,7 @@ describe('library service updates', () => {
 
   test('offers an update again once it is undone, and none once it is redone', async () => {
     const { editor, service, latest } = await updatable()
+    setActiveEditorStore(editor)
     const offered = () => service.updates.value.map((update) => update.libraryId)
     const inserted = () => service.enabledAssets.value.map((asset) => asset.revisionId)
 
@@ -280,4 +282,24 @@ describe('library service updates', () => {
     expect(state()).toEqual(before)
     expect(editor.undo.canUndo).toBe(false)
   })
+})
+
+test('a library change in a document in the background leaves the shown one’s state', async () => {
+  const { editor, service } = await updatable()
+  const background = createEditorStore(new SceneGraph())
+  await service.refresh(background)
+  await service.refresh(editor)
+  setActiveEditorStore(editor)
+  const refreshed: EditorStore[] = []
+  const refresh = service.refresh.bind(service)
+  service.refresh = (store) => {
+    refreshed.push(store)
+    return refresh(store)
+  }
+
+  background.refreshDocumentSettings()
+  editor.refreshDocumentSettings()
+
+  // Labels, not the stores: a failure would otherwise print two whole editors.
+  expect(refreshed.map((store) => (store === editor ? 'shown' : 'background'))).toEqual(['shown'])
 })

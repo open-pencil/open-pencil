@@ -30,6 +30,7 @@ import type {
 } from '@open-pencil/core/tools'
 import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
+import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
 import { RoutedLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/routed'
@@ -183,11 +184,13 @@ export class LibraryService implements ComponentCatalog {
   /**
    * Keeps what the service holds of `editor`'s libraries current when they change outside it, as
    * undo and redo of an update change them; an insert would otherwise take the revision undone.
+   * The service shows one document, so a tab in the background does not replace it.
    */
   #watch(editor: EditorStore): void {
     if (this.#watched.has(editor)) return
     this.#watched.add(editor)
     editor.onEditorEvent('document:libraries-changed', () => {
+      if (editor !== getActiveEditorStoreOrNull()) return
       // A read that fails here is reported by the next one the manager makes.
       this.refresh(editor).catch(() => undefined)
     })
