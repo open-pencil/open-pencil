@@ -327,7 +327,8 @@ type KeysOfUnion<T> = T extends unknown ? keyof T : never
 type None<Names extends PropertyKey> = Record<Names, never>
 
 /** `figma` members Figma's Plugin API does not have. */
-const _figmaExtras: None<Exclude<keyof FigmaAPI, keyof PluginAPI | HostMembers>> = {}
+const _figmaExtras: None<Exclude<Extract<keyof FigmaAPI, string>, keyof PluginAPI | HostMembers>> =
+  {}
 /** Listed host members that no longer exist. */
 const _figmaGoneListings: None<Exclude<HostMembers, keyof FigmaAPI>> = {}
 /** Listed host members that are Figma's after all. */

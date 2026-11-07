@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 export const listPages = defineTool({
@@ -29,7 +30,7 @@ export const switchPage = defineTool({
   execute: async (figma, { page }) => {
     const target =
       figma.root.children.find((candidate) => candidate.name === page) ?? figma.getNodeById(page)
-    if (!target || figma.graph.getNode(target.id)?.type !== 'CANVAS')
+    if (!target || graphOf(figma).getNode(target.id)?.type !== 'CANVAS')
       return { error: `Page "${page}" not found` }
     // A page not yet visited has its layers loaded first, so the calls after see them.
     await figma.setCurrentPageAsync(target)

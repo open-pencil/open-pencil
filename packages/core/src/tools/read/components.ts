@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { getComponentCatalog } from '#core/tools/component-catalog'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -33,7 +34,7 @@ async function listLibraryComponents(
   figma: FigmaAPI,
   args: { name?: string; library_id?: string }
 ): Promise<LibraryComponentResult[]> {
-  const catalog = getComponentCatalog(figma.graph)
+  const catalog = getComponentCatalog(graphOf(figma))
   if (!catalog) return []
   const assets = await catalog.listComponents({
     name: args.name,
@@ -94,7 +95,7 @@ export const getComponents = defineTool({
           if (documentComponents.length >= limit) return false
           if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
           if (nameFilter && !node.name.toLowerCase().includes(nameFilter)) return false
-          const componentPropertyDefinitions = figma.graph.getNode(
+          const componentPropertyDefinitions = graphOf(figma).getNode(
             node.id
           )?.componentPropertyDefinitions
           documentComponents.push({

@@ -8,6 +8,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { graphOf } from '#core/figma-api/graph'
 
 
 beforeAll(() => registerTestFont())
@@ -172,14 +173,14 @@ describe('setting fills on an instance descendant', () => {
     icon.resize(16, 16)
 
     const instance = icon.createInstance()
-    const vector = api.graph.createNode('VECTOR', instance.id, { width: 16, height: 16 })
-    api.graph.updateNode(vector.id, { componentId: icon.id })
+    const vector = graphOf(api).createNode('VECTOR', instance.id, { width: 16, height: 16 })
+    graphOf(api).updateNode(vector.id, { componentId: icon.id })
 
     const vectorProxy = api.getNodeById(vector.id)
     if (!vectorProxy) throw new Error('vector proxy not found')
     vectorProxy.fills = [solidFill({ r: 0, g: 0, b: 1, a: 1 })]
 
-    const raw = api.graph.getNode(instance.id)
+    const raw = graphOf(api).getNode(instance.id)
     expect(
       getInstanceOverride(
         raw?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
@@ -204,7 +205,7 @@ describe('setting fills on an instance descendant', () => {
 
     expect(
       getInstanceOverride(
-        api.graph.getNode(instance.id)?.instanceOverrides ?? {
+        graphOf(api).getNode(instance.id)?.instanceOverrides ?? {
           self: new Map(),
           descendants: new Map()
         },
@@ -215,7 +216,7 @@ describe('setting fills on an instance descendant', () => {
     ).toBe(true)
 
     text.characters = 'Updated default'
-    api.graph.syncInstances(component.id)
+    graphOf(api).syncInstances(component.id)
 
     expect(instanceText.characters).toBe('Custom')
   })
@@ -224,7 +225,7 @@ describe('setting fills on an instance descendant', () => {
     const frame = api.createFrame()
     frame.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
 
-    const raw = api.graph.getNode(frame.id)
+    const raw = graphOf(api).getNode(frame.id)
     expect(raw?.instanceOverrides.self.size ?? 0).toBe(0)
   })
 })

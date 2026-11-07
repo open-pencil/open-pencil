@@ -1,4 +1,5 @@
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { storeImage } from '#core/figma-api/images'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 
@@ -86,7 +87,7 @@ export async function applyPhoto(
     return { id: req.id, error: `Download: ${err instanceof Error ? err.message : String(err)}` }
   }
 
-  const imageHash = storeImage(figma.graph, imageBytes)
+  const imageHash = storeImage(graphOf(figma), imageBytes)
   node.fills = [{ type: 'IMAGE', imageHash, scaleMode: 'FILL' }]
   // A missed report does not undo the photo the document already shows.
   await provider.reportUse?.(photo).catch(() => undefined)
