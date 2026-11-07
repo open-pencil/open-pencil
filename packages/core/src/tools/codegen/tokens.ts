@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
 import type { DesignTokenFile } from '#core/io/formats/design-tokens'
 import { defineTool } from '#core/tools/schema'
 
@@ -76,10 +77,10 @@ export const designToTokens = defineTool({
     if (args.format === 'dtcg') {
       const { designTokenIssueMessage, exportDesignTokens } =
         await import('#core/io/formats/design-tokens')
-      const { files, issues } = exportDesignTokens(figma.graph)
+      const { files, issues } = exportDesignTokens(graphOf(figma))
       return { files, issues: issues.map(designTokenIssueMessage) }
     }
-    const { css, tokenCount, issues } = await exportTokenStylesheet(figma.graph, {
+    const { css, tokenCount, issues } = await exportTokenStylesheet(graphOf(figma), {
       ...args,
       format: args.format
     })
@@ -111,12 +112,12 @@ export const importDesignTokens = defineTool({
     const tokens = await import('#core/io/formats/design-tokens')
     const bundle = tokens.readDesignTokens(args.files)
     const options = {
-      ...tokens.defaultTokenImportOptions(figma.graph, bundle),
+      ...tokens.defaultTokenImportOptions(graphOf(figma), bundle),
       addMissing: args.add_missing,
       styles: args.styles
     }
-    const plan = tokens.planTokenImport(figma.graph, bundle, options)
-    tokens.importTokensIntoGraph(figma.graph, figma.currentPageId, plan)
+    const plan = tokens.planTokenImport(graphOf(figma), bundle, options)
+    tokens.importTokensIntoGraph(graphOf(figma), figma.currentPageId, plan)
     return {
       ...plan.counts,
       collections: plan.collections.map((collection) => collection.name),

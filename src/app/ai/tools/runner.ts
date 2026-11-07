@@ -1,5 +1,6 @@
 import { executeAtomicTool, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { graphOf } from '@open-pencil/core/figma-api'
 import {
   isAtomicTool,
   toolChangesDocument,
@@ -66,7 +67,7 @@ function writtenPageId(figma: FigmaAPI, args: Record<string, unknown>): string {
   const nodeId = args.replace_id ?? args.parent_id
   const page =
     typeof nodeId === 'string'
-      ? figma.graph.closest(nodeId, (node) => node.type === 'CANVAS')
+      ? graphOf(figma).closest(nodeId, (node) => node.type === 'CANVAS')
       : undefined
   return page?.id ?? figma.currentPageId
 }

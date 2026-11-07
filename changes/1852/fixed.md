@@ -1,0 +1,1 @@
+- ⌘J opens the AI chat while the panels are hidden, as on a board (#1852).

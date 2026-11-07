@@ -1,7 +1,10 @@
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { ownsSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 import { existingAssetKey } from './asset-keys'
@@ -21,7 +24,8 @@ const VOLATILE_NODE_FIELDS = new Set([
   'derivedTextGlyphs',
   'derivedTextHeight',
   'derivedLayout',
-  'librarySource'
+  'librarySource',
+  'libraryLayerId'
 ])
 
 function assetKey(node: SceneNode): string {
@@ -46,28 +50,66 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
   return ids
 }
 
+/** The component layer `node` copies into the instance `owner`, if it is a copy. */
+function copiedLayerId(source: SceneGraph, owner: SceneNode, node: SceneNode): string | undefined {
+  const scope = node.parentId ? slotScope(source, node.parentId) : undefined
+  // Content an instance's slot holds is the instance's own, not a copy of its component.
+  if (scope?.kind === 'slot' && ownsSlotContent(source, scope.frame, scope.propertyId))
+    return undefined
+  // A swapped nested instance names the component it shows; its owner records the layer it copies.
+  return copiedComponentLayerId(owner.instanceOverrides, owner.id, node)
+}
+
+/**
+ * The identity each layer of `source` keeps across revisions: its id in the source document, or,
+ * for a layer an instance copies from its component, which a document rebuilds on every load, the
+ * identities of the instance and of the component layer it copies. With `keepCarried`, a layer
+ * copied from a revision keeps the identity it carries; in any other document an instance copy
+ * carries its component's, which is not its own.
+ */
+function layerIdentities(source: SceneGraph, keepCarried: boolean): (node: SceneNode) => string {
+  const known = new Map<string, string>()
+  const identify = (node: SceneNode): string => {
+    const cached = known.get(node.id)
+    if (cached) return cached
+    const owner = node.parentId ? findInstanceAncestor(source, node.parentId) : undefined
+    const copiedId = owner ? copiedLayerId(source, owner, node) : undefined
+    const copied = copiedId ? source.getNode(copiedId) : undefined
+    const kept = keepCarried ? node.libraryLayerId : null
+    const identity =
+      kept ??
+      (owner && copied ? `${identify(owner)}/${identify(copied)}` : (node.source.id ?? node.id))
+    known.set(node.id, identity)
+    return identity
+  }
+  return identify
+}
+
 function addSnapshotNode(
   source: SceneGraph,
   target: SceneGraph,
   sourceId: string,
   targetParentId: string,
-  mappedIds: Map<string, string>
+  mappedIds: Map<string, string>,
+  identify: (node: SceneNode) => string
 ): void {
   const node = source.getNode(sourceId)
   if (!node) return
   const created = target.createNode(node.type, targetParentId, {
     ...cloneNodeProps(node, node.componentId),
     // A behaviour or other plugin content belongs to the asset; where it came from does not.
-    pluginData: contentPluginData(node.pluginData)
+    pluginData: contentPluginData(node.pluginData),
+    libraryLayerId: identify(node)
   })
   mappedIds.set(sourceId, created.id)
   for (const childId of node.childIds)
-    addSnapshotNode(source, target, childId, created.id, mappedIds)
+    addSnapshotNode(source, target, childId, created.id, mappedIds, identify)
 }
 
 export function extractLibrarySnapshot(
   source: SceneGraph,
-  assetNodeIds?: string[]
+  assetNodeIds?: string[],
+  keepLayerIdentities = false
 ): PortableLibrarySnapshot {
   const roots = (assetNodeIds ?? [...source.getAllNodes()].map((node) => node.id))
     .map((id) => source.getNode(id))
@@ -89,7 +131,9 @@ export function extractLibrarySnapshot(
     .filter((node): node is SceneNode =>
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
-  for (const root of closureRoots) addSnapshotNode(source, snapshot, root.id, page.id, mappedIds)
+  const identify = layerIdentities(source, keepLayerIdentities)
+  for (const root of closureRoots)
+    addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
   for (const [sourceId, targetId] of mappedIds)
     if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
   remapCopiedReferences(snapshot, mappedIds)

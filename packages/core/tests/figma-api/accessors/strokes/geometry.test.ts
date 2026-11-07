@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { graphOf } from '#core/figma-api/graph'
 
 // Recorded with the same script in Figma desktop 126: stroke weight and alignment belong to the
 // node, so they last without strokes and a stroke added later takes them.
@@ -87,14 +88,14 @@ describe('plugin API stroke geometry', () => {
     const rect = figma.createRectangle()
     Reflect.set(rect, 'strokes', red)
     rect.dashPattern = [4, 2]
-    expect(figma.graph.getNode(rect.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
+    expect(graphOf(figma).getNode(rect.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
       [4, 2]
     ])
     const later = figma.createRectangle()
     later.dashPattern = [6, 3]
     Reflect.set(later, 'strokes', red)
     expect(later.dashPattern).toEqual([6, 3])
-    expect(figma.graph.getNode(later.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
+    expect(graphOf(figma).getNode(later.id)?.strokes.map((stroke) => stroke.dashPattern)).toEqual([
       [6, 3]
     ])
   })

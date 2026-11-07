@@ -157,6 +157,11 @@ export interface EditorViewState {
     dragTangent: Vector | null
     oppositeDragTangent: Vector | null
     pendingClose?: boolean
+    /**
+     * The last point's outgoing handle while the pen closes the path: the closing segment starts
+     * with it, and `dragTangent` holds the drag at the first point.
+     */
+    closeTangent?: Vector | null
     closingToFirst: boolean
     resumingNodeId?: string
     resumedPath?: ResumedPath

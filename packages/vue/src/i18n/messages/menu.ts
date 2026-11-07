@@ -9,6 +9,7 @@ export const menuMessageDefaults = {
   text: 'Text',
 
   new: 'New design',
+  newBoard: 'New board',
   newTab: 'New tab',
   open: 'Open…',
   openTour: 'Open the Tour',
@@ -66,6 +67,7 @@ export const menuMessageDefaults = {
   back: 'Back',
   toggleUI: 'Toggle UI',
   togglePreview: 'Preview',
+  toggleAIChat: 'Toggle AI chat',
 
   bold: 'Bold',
   italic: 'Italic',
