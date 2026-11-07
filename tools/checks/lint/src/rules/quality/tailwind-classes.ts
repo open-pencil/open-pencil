@@ -287,16 +287,19 @@ export const noInterpolatedTailwindClassesRule = defineRule({
   create(context) {
     const file = normalizedFilename(context)
     const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
-    let helperDepth = 0
+    // Whether each enclosing call is a class helper, innermost last. Arguments to other calls,
+    // such as the CSS values a theme module hands `EditorView.theme`, are not class lists.
+    const calls: boolean[] = []
     return {
       CallExpression(node) {
-        if (isClassHelperCall(node)) helperDepth++
+        calls.push(isClassHelperCall(node))
       },
-      'CallExpression:exit'(node: ESTree.CallExpression) {
-        if (isClassHelperCall(node)) helperDepth--
+      'CallExpression:exit'() {
+        calls.pop()
       },
       TemplateLiteral(node) {
-        if (!themeModule && helperDepth === 0) return
+        const innermost = calls.at(-1)
+        if (innermost === false || (innermost === undefined && !themeModule)) return
         if (node.expressions.length === 0 || node.parent?.type === 'TaggedTemplateExpression')
           return
         if (!isClassString(node)) return
