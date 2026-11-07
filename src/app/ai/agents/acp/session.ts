@@ -41,6 +41,22 @@ function canResume(agentDef: ACPAgentDef, initialized: InitializeResponse): bool
   )
 }
 
+function isMissingSession(error: unknown, agent: ACPAgentID): boolean {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return false
+  if (error.code === -32002) return true
+  if (agent !== 'codex' || error.code !== -32603) return false
+
+  // Codex can pass a missing rollout through as an internal error. The ACP SDK
+  // puts the original message in data.details when it wraps that error.
+  const message = 'message' in error ? error.message : undefined
+  const data = 'data' in error ? error.data : undefined
+  const details =
+    typeof data === 'object' && data !== null && 'details' in data ? data.details : undefined
+  return [message, details].some(
+    (text) => typeof text === 'string' && text.includes('no rollout found for thread id')
+  )
+}
+
 /** The agent cannot continue the saved session, which a new session would not know. */
 export class AgentSessionResumeError extends Error {
   constructor(agentDef: ACPAgentDef, cause?: unknown) {
@@ -81,7 +97,8 @@ export async function openAgentSession(
     })
     return { sessionId: resume, model: result.models?.currentModelId ?? null, resumed: true }
   } catch (e) {
-    if (isAuthRequiredError(e)) throw e
-    throw new AgentSessionResumeError(agentDef, e)
+    // Retire confirmed missing sessions; locks, connection failures, and sign-in can be retried.
+    if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
+    throw e
   }
 }

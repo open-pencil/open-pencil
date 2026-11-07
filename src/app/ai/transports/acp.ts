@@ -125,7 +125,11 @@ function missingCommandMessage(agentDef?: ACPAgentDef): string {
 }
 
 export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
-  const msg = e instanceof Error ? e.message : String(e)
+  // ACP can reject with the decoded JSON-RPC error object instead of an Error instance.
+  const msg =
+    typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string'
+      ? e.message
+      : String(e)
   if (
     msg.includes('ECONNREFUSED') ||
     msg.includes('fetch failed') ||
@@ -159,8 +163,10 @@ function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
 }
 
 function startupError(error: unknown, agentDef: ACPAgentDef): Error {
-  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
-  return new Error(formatConnectionError(error, agentDef))
+  const original =
+    error instanceof AgentSessionResumeError && error.cause !== undefined ? error.cause : error
+  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(original) })
+  return new Error(formatConnectionError(error, agentDef), { cause: error })
 }
 
 export function buildCrashChunks(
@@ -398,7 +404,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       if (e instanceof AgentNotInstalledError) throw e
       const message = e instanceof Error ? e.message : String(e)
       if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
     }
     const { child, input, output } = process
     const stream = ndJsonStream(input, output)

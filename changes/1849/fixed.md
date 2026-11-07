@@ -1,0 +1,1 @@
+- Saved Claude Code and Codex conversations remain resumable after temporary session failures and development reloads.
