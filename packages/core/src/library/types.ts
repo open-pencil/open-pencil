@@ -38,6 +38,11 @@ export interface PublishLibraryInput {
   previousRevisionId?: string | null
   assetNodeIds?: string[]
   publishedAt?: string
+  /**
+   * The graph holds layers copied from revisions, as a selective publication's does, so each
+   * keeps the layer identity it carries and updates pair it with the layer it was.
+   */
+  keepLayerIdentities?: boolean
 }
 
 export interface LibrarySummary {
