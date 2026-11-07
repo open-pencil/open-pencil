@@ -9,7 +9,6 @@ import { guid } from '@open-pencil/test-support/fig/guid'
 
 const MUTED_COLOR: Color = { r: 0.5, g: 0.5, b: 0.5, a: 1 }
 const PRIMARY_COLOR: Color = { r: 0.2, g: 0.4, b: 0.9, a: 1 }
-const OWN_COLOR: Color = { r: 0.1, g: 0.8, b: 0.3, a: 1 }
 
 const solid = (color: Color): NonNullable<NodeChange['fillPaints']> => [
   { type: 'SOLID', color, opacity: 1, visible: true }
@@ -17,7 +16,7 @@ const solid = (color: Color): NonNullable<NodeChange['fillPaints']> => [
 const MUTED = solid(MUTED_COLOR)
 const OUTDATED_PRIMARY = solid({ r: 0.9, g: 0.2, b: 0.2, a: 1 })
 const PRIMARY = solid(PRIMARY_COLOR)
-const OWN = solid(OWN_COLOR)
+const OWN = solid({ r: 0.1, g: 0.8, b: 0.3, a: 1 })
 const PRIMARY_LIBRARY_REF = { assetRef: { key: 'primary', version: '2:0' } }
 const HEADING_REF = { guid: guid(52) }
 const LABEL = 'Total 42'
@@ -25,20 +24,20 @@ const LAST_TWO_CHARACTERS_STYLED = [0, 0, 0, 0, 0, 0, 1, 1]
 
 const STYLES: NodeChange[] = [
   {
-    guid: guid(50),
-    type: 'RECTANGLE',
-    styleType: 'FILL',
-    key: 'primary',
-    version: '1:0',
-    fillPaints: OUTDATED_PRIMARY
-  },
-  {
     guid: guid(51),
     type: 'RECTANGLE',
     styleType: 'FILL',
     key: 'primary',
     version: '2:0',
     fillPaints: PRIMARY
+  },
+  {
+    guid: guid(50),
+    type: 'RECTANGLE',
+    styleType: 'FILL',
+    key: 'primary',
+    version: '1:0',
+    fillPaints: OUTDATED_PRIMARY
   },
   {
     guid: guid(52),
@@ -131,10 +130,10 @@ describe('text ranges that name a fill style', () => {
     expect(runColor(text)).toEqual(PRIMARY_COLOR)
   })
 
-  test('keep paints of their own', () => {
+  test('take the paints of the style over their own', () => {
     const text = importedTextWithRange({ styleIdForFill: PRIMARY_LIBRARY_REF, fillPaints: OWN })
 
-    expect(runColor(text)).toEqual(OWN_COLOR)
+    expect(runColor(text)).toEqual(PRIMARY_COLOR)
   })
 })
 
