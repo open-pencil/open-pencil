@@ -190,8 +190,8 @@ export const cloudMessageDefaults = {
   draftDescription: params<{ host: string }>(
     'Sign up on {host} to keep it in the cloud and open it anywhere, or save it to this computer.'
   ),
-  draftSignUp: 'Sign up and save',
-  draftSignIn: 'Sign in and save',
+  draftSignUp: 'Sign up',
+  draftSignIn: 'Sign in',
   draftSaveOnDevice: 'Save to this computer',
   draftKeepFailed: 'Couldn’t keep this file while you sign up. Save it to this computer instead.',
   statusGuestDetail: 'You’re viewing as a guest; your changes won’t reach anyone.',
