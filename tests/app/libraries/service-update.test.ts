@@ -9,6 +9,7 @@ import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { LibraryService } from '@/app/libraries/service'
+import { createDeferred } from '@/app/runtime/deferred'
 
 function source(width: number, label: string) {
   const graph = new SceneGraph()
@@ -314,15 +315,12 @@ test('a library change in a document in the background leaves the shown one’s 
 
 test('a read of the libraries that finishes after a newer one leaves the newer one’s state', async () => {
   const { editor, catalog } = await updatable()
-  let release = () => {}
-  const held = new Promise<void>((resolve) => {
-    release = resolve
-  })
+  const held = createDeferred<undefined>()
   let reads = 0
   const listLibraries = catalog.listLibraries.bind(catalog)
   catalog.listLibraries = async () => {
     // The first read waits until the second has finished.
-    if (++reads === 1) await held
+    if (++reads === 1) await held.promise
     return listLibraries()
   }
   const service = new LibraryService(catalog)
@@ -330,7 +328,7 @@ test('a read of the libraries that finishes after a newer one leaves the newer o
 
   const stale = service.refresh(editor)
   await service.refresh(other)
-  release()
+  held.resolve(undefined)
   await stale
 
   expect(service.enabledAssets.value).toEqual([])
