@@ -179,6 +179,33 @@ describe('clipboard roundtrip with images', () => {
     expect(expectDefined(parsed, 'OpenPencil clipboard').images.size).toBe(0)
   })
 
+  test('includes the images strokes paint with', () => {
+    const graph = new SceneGraph()
+    const bytes = new Uint8Array([7, 7, 7])
+    const hash = storeImageBytes(graph, bytes)
+    const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+      strokes: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash,
+          imageScaleMode: 'FILL',
+          weight: 4,
+          align: 'INSIDE'
+        }
+      ]
+    })
+
+    const clipboard = expectDefined(
+      parseOpenPencilClipboard(buildOpenPencilClipboardHTML([node], graph)),
+      'OpenPencil clipboard'
+    )
+
+    expect(clipboard.images.get(hash)).toEqual(bytes)
+  })
+
   test('child node image hashes are collected', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

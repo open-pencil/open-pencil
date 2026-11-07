@@ -1,0 +1,1 @@
+- `buildOpenPencilClipboardHTML` carries the images a layer's strokes, vector regions, and text decorations paint with, where it carried only fill images (#1867).

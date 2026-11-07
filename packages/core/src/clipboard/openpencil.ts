@@ -17,6 +17,7 @@ import {
   type InstanceOverrideState
 } from '@open-pencil/scene-graph/instances/overrides'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
 
 import type { ClipboardSnapshot } from '#core/editor/clipboard/copy'
 
@@ -188,9 +189,7 @@ function collectImageHashes(nodes: SceneNode[], graph: SceneGraph): Set<string> 
   const hashes = new Set<string>()
   function walk(nodeList: SceneNode[]) {
     for (const node of nodeList) {
-      for (const fill of node.fills) {
-        if (fill.imageHash) hashes.add(fill.imageHash)
-      }
+      for (const hash of layerImageHashes(node)) hashes.add(hash)
       walk(graph.getChildren(node.id))
     }
   }
