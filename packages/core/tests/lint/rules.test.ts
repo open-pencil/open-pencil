@@ -144,6 +144,31 @@ describe('color-contrast', () => {
     expect(messages[0]?.data?.minRatio).toBe(4.5)
   })
 
+  test('keeps the base style for characters that only runs past the text end seem to cover', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const card = graph.createNode('FRAME', pageId, { name: 'Card', fills: solid(WHITE) })
+    // 3.2:1 against white: enough for large text, not for the small base style.
+    const grey = solid({ r: 0.55, g: 0.55, b: 0.55, a: 1 })
+    const label = graph.createNode('TEXT', card.id, {
+      name: 'Large start, small rest',
+      text: 'Heading note',
+      fontSize: 14,
+      fontWeight: 400,
+      fills: grey,
+      // Lengths sum to the text length, but the second run lies beyond it.
+      styleRuns: [
+        { start: 0, length: 7, style: { fontSize: 32 } },
+        { start: 20, length: 5, style: { fontSize: 32 } }
+      ]
+    })
+
+    const messages = lint(graph, 'color-contrast')
+
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id])
+    expect(messages[0]?.data?.minRatio).toBe(4.5)
+  })
+
   test('does not use an ancestor fill when a filled sibling overlaps the text', () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
@@ -295,7 +320,7 @@ describe('color-contrast over layers under the text', () => {
     expect(messages[0]?.data?.background).toBe('#E8ECEB')
   })
 
-  test('applies a layer\'s opacity after compositing its fills', () => {
+  test("applies a layer's opacity after compositing its fills", () => {
     // Black over white at half opacity is mid gray, not each fill at half strength.
     const fills = [...solid(WHITE), ...solid(BLACK)]
     const { graph, text } = card({ fills, opacity: 0.5 }, solid(WHITE))
