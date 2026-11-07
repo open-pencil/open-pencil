@@ -244,6 +244,7 @@
   "aiSetupWelcomeTourTitle": "参观导览",
   "aiSetupWelcomeTourDescription": "一个简短的文件，依次介绍组件与插槽、可用的控件、模式、着色器、代码和检查，每部分都有卡片告诉你可以尝试什么。",
   "aiSetupTakeTour": "打开导览",
+  "aiSetupTourFailed": "无法打开导览。请重试，或稍后从菜单中打开。",
   "aiSetupStart": "设置 AI",
   "aiSetupSkip": "开始设计",
   "aiSetupProgress": "第 {current} 步，共 {total} 步",

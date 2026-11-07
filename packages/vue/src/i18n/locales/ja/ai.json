@@ -244,6 +244,7 @@
   "aiSetupWelcomeTourTitle": "ツアーを見る",
   "aiSetupWelcomeTourDescription": "コンポーネントとスロット、動くコントロール、モード、シェーダー、コード、チェックを順に紹介する短いファイルです。各パートのカードに試すことが書かれています。",
   "aiSetupTakeTour": "ツアーを開く",
+  "aiSetupTourFailed": "ツアーを開けませんでした。もう一度試すか、後でメニューから開いてください。",
   "aiSetupStart": "AI を設定",
   "aiSetupSkip": "デザインを始める",
   "aiSetupProgress": "ステップ {current}/{total}",

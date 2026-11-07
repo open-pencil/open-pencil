@@ -244,6 +244,7 @@
   "aiSetupWelcomeTourTitle": "Fai il tour",
   "aiSetupWelcomeTourDescription": "Un breve file che mostra componenti e slot, controlli funzionanti, modalità, shader, codice e lint, con una scheda per ogni parte che dice cosa provare.",
   "aiSetupTakeTour": "Apri il tour",
+  "aiSetupTourFailed": "Impossibile aprire il tour. Riprova, oppure aprilo più tardi dal menu.",
   "aiSetupStart": "Configura l’IA",
   "aiSetupSkip": "Inizia a progettare",
   "aiSetupProgress": "Passo {current} di {total}",

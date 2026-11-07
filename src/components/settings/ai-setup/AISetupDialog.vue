@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import {
   aiSetupDialogOpen,
   aiSetupEntry,
@@ -20,12 +22,27 @@ function openAdvancedSettings(): void {
   openSettingsDialog('ai')
 }
 
-/** The tour opens in a tab of its own; AI stays one click away in Settings. */
-function takeTour(): void {
-  closeAISetup()
-  openTour().catch((error: unknown) => {
+const tourOpening = ref(false)
+const tourFailed = ref(false)
+
+/**
+ * The tour opens in a tab of its own; AI stays one click away in Settings. The dialog closes,
+ * which marks the welcome done, only once the tour is open: a failure stays in front of the
+ * person with a way to try again.
+ */
+async function takeTour(): Promise<void> {
+  if (tourOpening.value) return
+  tourOpening.value = true
+  tourFailed.value = false
+  try {
+    await openTour()
+    closeAISetup()
+  } catch (error) {
     console.error('[Tour] Could not open the tour:', error)
-  })
+    tourFailed.value = true
+  } finally {
+    tourOpening.value = false
+  }
 }
 </script>
 
@@ -39,9 +56,11 @@ function takeTour(): void {
     <AISetupFlow
       :entry="aiSetupEntry"
       :offers-tour="aiSetupOffersTour"
+      :tour-opening="tourOpening"
+      :tour-failed="tourFailed"
       @close="closeAISetup"
       @advanced="openAdvancedSettings"
-      @tour="takeTour"
+      @tour="void takeTour()"
     />
   </AppDialogRoot>
 </template>

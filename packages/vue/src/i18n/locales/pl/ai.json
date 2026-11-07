@@ -244,6 +244,7 @@
   "aiSetupWelcomeTourTitle": "Zobacz przewodnik",
   "aiSetupWelcomeTourDescription": "Krótki plik, który pokazuje komponenty i sloty, działające kontrolki, tryby, shadery, kod i lint, z kartą przy każdej części mówiącą, co wypróbować.",
   "aiSetupTakeTour": "Otwórz przewodnik",
+  "aiSetupTourFailed": "Nie udało się otworzyć przewodnika. Spróbuj ponownie lub otwórz go później z menu.",
   "aiSetupStart": "Skonfiguruj AI",
   "aiSetupSkip": "Zacznij projektować",
   "aiSetupProgress": "Krok {current} z {total}",

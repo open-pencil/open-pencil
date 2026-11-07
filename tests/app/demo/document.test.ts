@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
-import { openDemoDocument } from '@/app/demo/document'
+import { openDemoDocument, openTour } from '@/app/demo/document'
 import { createEditorStore } from '@/app/editor/session'
+import { getActiveStore, getTabsSnapshot } from '@/app/tabs'
 
 const originalFetch = globalThis.fetch
 
@@ -44,5 +45,27 @@ describe('opening the demo', () => {
     const store = createEditorStore()
     stubDemoFetch(undefined, false)
     await expect(openDemoDocument(store)).rejects.toThrow('The demo document is unavailable (404)')
+  })
+})
+
+describe('opening the tour', () => {
+  test('closes its blank tab again when the tour fails to load', async () => {
+    const documents = () => getTabsSnapshot().filter((tab) => tab.kind === 'document')
+    const before = documents().map((tab) => tab.id)
+    stubDemoFetch(undefined, false)
+    await expect(openTour()).rejects.toThrow('The demo document is unavailable (404)')
+    // Closing the last document shows Home, which is not a document tab.
+    expect(documents().map((tab) => tab.id)).toEqual(before)
+  })
+
+  test('keeps its tab when something was drawn there before the failure', async () => {
+    const documents = () => getTabsSnapshot().filter((tab) => tab.kind === 'document')
+    const before = documents().length
+    stubDemoFetch(() => {
+      const store = getActiveStore()
+      store.graph.createNode('RECTANGLE', store.state.currentPageId, { width: 10, height: 10 })
+    }, false)
+    await expect(openTour()).rejects.toThrow()
+    expect(documents()).toHaveLength(before + 1)
   })
 })

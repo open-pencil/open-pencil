@@ -244,6 +244,7 @@
   "aiSetupWelcomeTourTitle": "Rundgang",
   "aiSetupWelcomeTourDescription": "Eine kurze Datei führt durch Komponenten und Slots, funktionierende Steuerelemente, Modi, Shader, Code und Lint – mit einer Karte, die jeweils sagt, was du ausprobieren kannst.",
   "aiSetupTakeTour": "Rundgang öffnen",
+  "aiSetupTourFailed": "Die Tour konnte nicht geöffnet werden. Versuche es erneut oder öffne sie später über das Menü.",
   "aiSetupStart": "KI einrichten",
   "aiSetupSkip": "Mit dem Gestalten beginnen",
   "aiSetupProgress": "Schritt {current} von {total}",
