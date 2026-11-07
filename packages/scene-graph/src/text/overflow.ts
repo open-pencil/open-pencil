@@ -1,7 +1,10 @@
+import type { VisualBounds } from '../geometry'
 import type { SceneNode } from '../types'
 
 type TextBoxNode = Pick<SceneNode, 'height' | 'textAlignVertical'>
-type TextBoundsNode = Pick<SceneNode, 'type' | 'height' | 'derivedTextHeight'>
+type TextBoundsNode = TextBoxNode & Pick<SceneNode, 'type' | 'derivedTextHeight'>
+
+export type TextLinesReach = Pick<VisualBounds, 'minY' | 'maxY'>
 
 /**
  * Where the top of laid-out lines `contentHeight` tall sits in a text's box, by its vertical
@@ -20,10 +23,16 @@ export function textVerticalOffset(node: TextBoxNode, contentHeight: number): nu
 }
 
 /**
- * How far a text's lines reach below its box: a fixed-size box does not clip them, as in Figma,
- * and the renderer starts them at its top.
+ * The rows a text draws its lines over, in its own axes: its box, grown by the lines a fixed-size
+ * box lets run past it above or below, as in Figma.
  */
-export function textLinesOverflow(node: TextBoundsNode): number {
-  if (node.type !== 'TEXT' || !node.derivedTextHeight) return 0
-  return Math.max(0, node.derivedTextHeight - node.height)
+export function textLinesReach(node: TextBoundsNode): TextLinesReach {
+  if (node.type !== 'TEXT' || !node.derivedTextHeight) {
+    return { minY: 0, maxY: node.height }
+  }
+  const linesTop = textVerticalOffset(node, node.derivedTextHeight)
+  return {
+    minY: Math.min(0, linesTop),
+    maxY: Math.max(node.height, linesTop + node.derivedTextHeight)
+  }
 }

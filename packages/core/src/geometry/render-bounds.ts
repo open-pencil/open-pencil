@@ -10,7 +10,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+import { textLinesReach } from '@open-pencil/scene-graph/text'
 
 import { mayHoldEmoji } from '#core/text/emoji'
 import { measureTextInk } from '#core/text/ink'
@@ -93,11 +93,12 @@ function paints(node: SceneNode): boolean {
 function ownShape(node: SceneNode): VisualBounds | null {
   const ink = measureTextInk(node)
   if (ink !== undefined) return ink
+  const lines = textLinesReach(node)
   return {
     minX: 0,
-    minY: 0,
+    minY: lines.minY,
     maxX: node.width,
-    maxY: node.height + textLinesOverflow(node) + textDecorationOverflow(node)
+    maxY: lines.maxY + textDecorationOverflow(node)
   }
 }
 
