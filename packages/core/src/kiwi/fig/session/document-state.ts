@@ -1,7 +1,8 @@
 import {
   createFigDocumentSession,
   figCheckpointRecords,
-  type FigSessionCheckpoint
+  type FigSessionCheckpoint,
+  type SavedVariant
 } from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -169,10 +170,11 @@ export function releaseReaderRecovery(graph: SceneGraph): void {
   states.delete(graph)
 }
 
-export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
-  const state = states.get(graph)
-  if (!state) throw new Error('No reader recovery state')
-  if (state.complete) return false
+/** The live session, opened on this thread from the checkpoint once a worker has stopped loading. */
+function liveReaderSession(
+  graph: SceneGraph,
+  state: ReaderState
+): ReturnType<typeof createFigDocumentSession> {
   if (!state.session) {
     if (!state.checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
     state.session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
@@ -180,12 +182,61 @@ export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
       checkpoint: state.checkpoint
     })
   }
-  const page = state.session.pages.find((page) => state.session?.graphPageId(page.id) === pageId)
+  return state.session
+}
+
+export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
+  const state = states.get(graph)
+  if (!state) throw new Error('No reader recovery state')
+  if (state.complete) return false
+  const session = liveReaderSession(graph, state)
+  const page = session.pages.find((page) => session.graphPageId(page.id) === pageId)
   if (!page) throw new Error(`Unknown graph page ${pageId}`)
-  const session = state.session
   const populated = !session.loadedPageIds.has(page.id)
   // The layers come from the opened file, as they do through the population worker's delta.
   graph.applyImportedStateDuring(() => session.loadPage(page.id))
   releaseLoadedReader(state)
   return populated
+}
+
+/**
+ * Every variant of a component set the file holds, in saved order, when the graph lacks some: a
+ * library set copied into the file keeps only the variants its instances use until another is
+ * asked for. Empty when every variant is built.
+ */
+export function savedReaderVariants(graph: SceneGraph, setId: string): readonly SavedVariant[] {
+  const state = states.get(graph)
+  if (!state || state.complete) {
+    return []
+  }
+  if (state.session) {
+    return state.session.savedVariants(setId)
+  }
+  return state.checkpoint?.savedVariants?.find(([layerId]) => layerId === setId)?.[1] ?? []
+}
+
+/**
+ * Build variants `savedReaderVariants` names, from the opened file, as a page load would.
+ * Returns whether they are built: none is when one of them needs a layer the user deleted. When
+ * `accept` throws once they are built, the load is undone and the error rethrown.
+ */
+export function loadReaderVariants(
+  graph: SceneGraph,
+  variantIds: readonly string[],
+  accept?: () => void
+): boolean {
+  const state = states.get(graph)
+  if (!state || state.complete) {
+    return false
+  }
+  const session = liveReaderSession(graph, state)
+  return graph.applyImportedStateDuring(() => session.loadComponents(variantIds, accept))
+}
+
+/** `loadReaderVariants` for one variant, returning its layer once built. */
+export function loadReaderVariant(graph: SceneGraph, variantId: string): string | undefined {
+  if (!loadReaderVariants(graph, [variantId])) {
+    return undefined
+  }
+  return states.get(graph)?.session?.layerOf(variantId)
 }

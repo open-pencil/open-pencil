@@ -61,7 +61,9 @@ export function collectSceneDependencies(
   pageIds: ReadonlySet<string> | undefined,
   index: SourceIndex,
   /** The whole record for one of `changes`, when they are headers that leave fields out. */
-  whole: (record: NodeChange) => NodeChange = (record) => record
+  whole: (record: NodeChange) => NodeChange = (record) => record,
+  /** Records read with what they depend on besides the pages, such as a variant built on demand. */
+  rootIds: readonly string[] = []
 ): SceneDependencyClosure {
   const resolveReference = createResourceResolver(changes)
   const { sources, children } = index
@@ -109,6 +111,7 @@ export function collectSceneDependencies(
         (pageIds ? pageIds.has(idOf(node) ?? '') : node.internalOnly !== true)
     )
     .flatMap((node) => idOf(node) ?? [])
+  pending.push(...rootIds)
   while (pending.length) {
     const id = pending.pop()
     if (!id || contentIds.has(id)) continue

@@ -1,7 +1,7 @@
 import type { EditorContext } from '#core/editor/types'
 
 import {
-  assertComponentSetEditable,
+  prepareComponentSetEdit,
   captureVariantSnapshot,
   recordSnapshotChange,
   setVariantValues
@@ -13,6 +13,7 @@ import {
   variantValues,
   type VariantMutationResult
 } from './model'
+import { variantPropertyValues } from './saved'
 
 export function addVariantValue(
   ctx: EditorContext,
@@ -20,15 +21,17 @@ export function addVariantValue(
   propertyId: string,
   value: string
 ): boolean {
-  assertComponentSetEditable(ctx, setId)
   const set = getComponentSet(ctx.graph, setId)
   const definition = set?.componentPropertyDefinitions.find(
     (item) => item.id === propertyId && item.type === 'VARIANT'
   )
   const normalized = value.trim()
-  const options = getVariantOptions(ctx.graph, setId, propertyId)
+  if (!set || !definition || !normalized) return false
+  if (variantPropertyValues(ctx.graph, setId, propertyId).includes(normalized)) return false
+  if (!prepareComponentSetEdit(ctx, setId)) return false
   const before = captureVariantSnapshot(ctx, setId)
-  if (!set || !definition || !before || !normalized || options.includes(normalized)) return false
+  if (!before) return false
+  const options = getVariantOptions(ctx.graph, setId, propertyId)
   ctx.graph.updateNode(setId, {
     componentPropertyDefinitions: set.componentPropertyDefinitions.map((item) =>
       item.id === propertyId ? { ...item, variantOptions: [...options, normalized] } : item
@@ -46,14 +49,17 @@ export function removeVariantValue(
   value: string,
   replacement?: string
 ): VariantMutationResult {
-  assertComponentSetEditable(ctx, setId)
   const set = getComponentSet(ctx.graph, setId)
   const definition = set?.componentPropertyDefinitions.find(
     (item) => item.id === propertyId && item.type === 'VARIANT'
   )
+  if (!set || !definition) return { kind: 'invalid' }
+  if (!variantPropertyValues(ctx.graph, setId, propertyId).includes(value))
+    return { kind: 'invalid' }
+  if (!prepareComponentSetEdit(ctx, setId)) return { kind: 'invalid' }
   const before = captureVariantSnapshot(ctx, setId)
+  if (!before) return { kind: 'invalid' }
   const options = getVariantOptions(ctx.graph, setId, propertyId)
-  if (!set || !definition || !before || !options.includes(value)) return { kind: 'invalid' }
   const remaining = options.filter((option) => option !== value)
   const variants = getComponentSetVariants(ctx.graph, setId)
   const affected = variants.filter(

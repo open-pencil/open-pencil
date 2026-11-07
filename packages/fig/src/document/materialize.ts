@@ -35,9 +35,11 @@ import {
   type ComponentCheckpoint
 } from './component/checkpoint'
 import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
+import { createSavedVariants, type SavedVariant } from './component/set-variants'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
 import type { ComponentConstruction } from './components'
-import { loadPageTransaction } from './load-transaction'
+import type { SceneDependencyClosure } from './dependency-closure'
+import { keepContainerOrder, loadPageTransaction } from './load-transaction'
 import { applyDocumentMetadata } from './metadata'
 import { createArchiveDocumentReader, createDocumentReader } from './read'
 import {
@@ -97,6 +99,8 @@ export interface FigSessionCheckpoint {
   savedSizeNodeIds: string[]
   loadedPageIds: string[]
   components: Array<[string, ComponentCheckpoint]>
+  /** Saved variants, by the set's layer, of the sets with variants no load has built. */
+  savedVariants?: Array<[string, SavedVariant[]]>
 }
 
 /**
@@ -167,6 +171,45 @@ export function createFigDocumentSession(
   const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   const edits = watchGraphEdits(state.graph, resume !== undefined)
   let recordInfo: FigArchiveRecordInfo | undefined
+  const savedVariants = createSavedVariants({
+    sets: () => archive.reader.componentSetVariants,
+    layerOf: () => state.sources,
+    isBuilt: (id) => state.components.has(id),
+    header: (id) => archive.reader.recordHeader(id)
+  })
+  const isDeleted = (layerId: string | undefined): boolean =>
+    layerId !== undefined && !state.graph.getNode(layerId)
+  /**
+   * A layer the user deleted stays deleted: nothing that nests one of its components, or that
+   * would sit inside it, is built from the file.
+   */
+  const needsDeletedLayer = ({ contentIds, ancestorIds }: SceneDependencyClosure): boolean =>
+    [...contentIds].some((sourceId) => isDeleted(state.componentIds.get(sourceId))) ||
+    [...ancestorIds].some((sourceId) => isDeleted(state.sources.get(sourceId)))
+  /**
+   * All or none: the components' joint dependencies are checked before any of them is built, and
+   * the load is undone when `accept`, run once they are built, throws.
+   */
+  const loadComponents = (
+    ids: readonly string[],
+    accept: () => void = () => undefined
+  ): boolean => {
+    const pending = ids.filter((id) => !state.components.has(id))
+    if (pending.length === 0) {
+      return true
+    }
+    const reader = archive.reader.selectComponents(pending)
+    if (needsDeletedLayer(reader.dependencyClosure)) {
+      return false
+    }
+    loadPageTransaction(state, reader.dependencyClosure, () => {
+      keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
+        materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
+      )
+      accept()
+    })
+    return true
+  }
   return {
     checkpoint(): FigSessionCheckpoint {
       return structuredClone({
@@ -178,9 +221,24 @@ export function createFigDocumentSession(
         components: [...state.components].map(([id, component]) => [
           id,
           checkpointComponent(component)
-        ])
+        ]),
+        savedVariants: savedVariants.bySetLayer()
       } satisfies FigSessionCheckpoint)
     },
+    /** The saved variants of the set a layer is, when a load has left some of them unbuilt. */
+    savedVariants(setLayerId: string): readonly SavedVariant[] {
+      return savedVariants.ofSetLayer(setLayerId)
+    },
+    layerOf(sourceId: string): string | undefined {
+      return state.sources.get(sourceId)
+    },
+    /**
+     * Build components the pages left out, such as variants no instance uses, with what they
+     * depend on. Layers already in the graph keep their order; the new ones take their saved
+     * places among them. Returns whether they are built: none is when one of them needs a layer
+     * the user deleted.
+     */
+    loadComponents,
     graph: state.graph,
     graphPageId(sourcePageId: string): string | undefined {
       return archive.reader.pages.some((page) => page.id === sourcePageId)
@@ -201,13 +259,22 @@ export function createFigDocumentSession(
     loadPage(id: string, onProgress?: () => void): void {
       if (loaded.has(id)) return
       const reader = archive.reader.selectPages(new Set([id]))
-      loadPageTransaction(state, reader.dependencyClosure, () => {
-        materializeReader(reader, archive.blobs, sessionOptions, state, {
-          edited: edits.edited,
-          onProgress
+      const { contentIds, ancestorIds } = reader.dependencyClosure
+      // On the internal canvas a switch may have built variants of a set before its page loads.
+      const internalOnly = archive.reader.pages.find((page) => page.id === id)?.internalOnly
+      if (internalOnly && needsDeletedLayer(reader.dependencyClosure)) {
+        throw new Error(`Page ${id} nests a component that was deleted after the file opened`)
+      }
+      const keptContainers = internalOnly ? [...contentIds, ...ancestorIds] : []
+      loadPageTransaction(state, reader.dependencyClosure, () =>
+        keepContainerOrder(state, reader, keptContainers, () => {
+          materializeReader(reader, archive.blobs, sessionOptions, state, {
+            edited: edits.edited,
+            onProgress
+          })
+          loaded.add(id)
         })
-        loaded.add(id)
-      })
+      )
     },
     get loadedPageIds(): ReadonlySet<string> {
       return new Set(loaded)
@@ -401,6 +468,22 @@ function materializeReader(
   )
 }
 
+/** The instances a definition holds itself, not those inside its instances or nested definitions. */
+function definitionInstances(
+  occurrence: InstanceOccurrence,
+  nodes: ReadonlyMap<InstanceOccurrence, SceneNode>
+): string[] {
+  return occurrence.children.flatMap((child) => {
+    if (child.properties.type === 'SYMBOL') {
+      return []
+    }
+    if (child.mainComponentId === null) {
+      return definitionInstances(child, nodes)
+    }
+    return nodes.get(child)?.id ?? []
+  })
+}
+
 function materializeReaderInto(
   pages: InstanceOccurrence[],
   plan: ComponentConstruction[],
@@ -449,9 +532,14 @@ function materializeReaderInto(
     for (const child of occurrence.children) createShells(child, node.id)
   }
   for (const page of pages) createShells(page, graph.rootId)
-  for (const item of plan) {
-    onProgress?.()
-    if (components.has(item.sourceId)) continue
+  /**
+   * Instances a load into an edited graph must sync with their components, which may have
+   * changed live since the file loaded. Only this load's new instances: syncing a whole
+   * component would copy its sizes over the sizes Figma derived for instances placed earlier.
+   */
+  const resync = new Set<string>()
+  const buildComponent = (item: ComponentConstruction): void => {
+    if (edited) reconcileOccurrenceStructure(item.occurrence, graph, components)
     const parentId = sources.get(item.parentSourceId)
     if (!parentId) throw new Error(`Unmaterialized component parent ${item.parentSourceId}`)
     const existingNodes = new Map<InstanceOccurrence, SceneNode>()
@@ -475,6 +563,10 @@ function materializeReaderInto(
       recordId
     })
     rememberDerivedSizes(built.nodes)
+    if (edited) {
+      reconcileLiveComponentEdits(graph, built)
+      for (const id of definitionInstances(item.occurrence, built.nodes)) resync.add(id)
+    }
     // Linking and checkpoints address a nested definition's layers through this tree too.
     const nodes = new Map(built.nodes)
     for (const [node, component] of nested) {
@@ -488,12 +580,10 @@ function materializeReaderInto(
     componentIds.set(item.sourceId, materialized.root.id)
     sources.set(item.sourceId, materialized.root.id)
   }
-  /**
-   * Instances a load into an edited graph must sync with their components, which may have
-   * changed live since the file loaded. Only this page's new instances: syncing a whole component would copy its
-   * sizes over the sizes Figma derived for instances earlier pages already placed.
-   */
-  const resync = new Set<string>()
+  for (const item of plan) {
+    onProgress?.()
+    if (!components.has(item.sourceId)) buildComponent(item)
+  }
   const populateInstances = (occurrence: InstanceOccurrence): void => {
     if (occurrence.properties.type === 'SYMBOL') return
     const parentId = sources.get(occurrence.sourceId)

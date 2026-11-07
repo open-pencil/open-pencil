@@ -56,3 +56,54 @@ export function loadPageTransaction(
     }
   })
 }
+
+/**
+ * The layers a load added, each placed before the first layer that follows it in saved order;
+ * the layers that were there keep the order they had.
+ */
+function mergeSavedOrder(
+  previous: readonly string[],
+  current: readonly string[],
+  saved: readonly string[]
+): string[] {
+  const rank = new Map(saved.map((id, index) => [id, index]))
+  const present = new Set(current)
+  const earlier = new Set(previous)
+  const kept = previous.filter((id) => present.has(id))
+  for (const id of current) {
+    if (earlier.has(id)) {
+      continue
+    }
+    const own = rank.get(id) ?? Number.POSITIVE_INFINITY
+    const next = kept.findIndex((existing) => (rank.get(existing) ?? -1) > own)
+    kept.splice(next === -1 ? kept.length : next, 0, id)
+  }
+  return kept
+}
+
+/**
+ * Run a load that adds layers to containers earlier loads built: those keep the order they had,
+ * and each new layer takes its saved place among them.
+ */
+export function keepContainerOrder(
+  state: AssemblyState,
+  reader: { savedChildIds: (sourceId: string) => readonly string[] },
+  containerIds: Iterable<string>,
+  load: () => void
+): void {
+  const containers = [...new Set(containerIds)].flatMap((sourceId) => {
+    const layer = state.graph.getNode(state.sources.get(sourceId) ?? '')
+    return layer && layer.childIds.length > 0
+      ? [{ sourceId, layer, previous: [...layer.childIds] }]
+      : []
+  })
+  load()
+  for (const { sourceId, layer, previous } of containers) {
+    const saved = reader
+      .savedChildIds(sourceId)
+      .flatMap((childId) => state.sources.get(childId) ?? [])
+    if (saved.length > 0) {
+      layer.childIds = mergeSavedOrder(previous, layer.childIds, saved)
+    }
+  }
+}
