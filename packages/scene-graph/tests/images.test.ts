@@ -5,11 +5,13 @@ import { fromUint8Array, toUint8Array } from 'js-base64'
 import {
   computeImageHash,
   coverImageTransform,
+  imageDataURL,
   imageHeader,
   imageMimeType,
   imageSize,
   isSVGFile,
-  parseDataURL
+  parseDataURL,
+  svgDataURL
 } from '@open-pencil/scene-graph/images'
 
 describe('computeImageHash', () => {
@@ -124,7 +126,7 @@ describe('parseDataURL', () => {
   }
 
   test('decodes a Base64 body with its media type', () => {
-    const parsed = parseDataURL(`data:image/png;base64,${fromUint8Array(PNG)}`)
+    const parsed = parseDataURL(imageDataURL(PNG))
     expect(parsed?.mimeType).toBe('image/png')
     expect(parsed?.bytes).toEqual(PNG)
   })
@@ -153,5 +155,18 @@ describe('parseDataURL', () => {
     expect(parseDataURL(fromUint8Array(PNG))).toBeNull()
     expect(parseDataURL('https://example.com/a.png')).toBeNull()
     expect(parseDataURL('data:image/png;base64')).toBeNull()
+  })
+})
+
+describe('imageDataURL and svgDataURL', () => {
+  test('write data URLs parseDataURL reads back', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1#"/></svg>'
+    const parsedSVG = parseDataURL(svgDataURL(svg))
+    expect(parsedSVG?.mimeType).toBe('image/svg+xml')
+    expect(new TextDecoder().decode(parsedSVG?.bytes)).toBe(svg)
+
+    const parsedJPEG = parseDataURL(imageDataURL(JPEG))
+    expect(parsedJPEG?.mimeType).toBe('image/jpeg')
+    expect(parsedJPEG?.bytes).toEqual(JPEG)
   })
 })

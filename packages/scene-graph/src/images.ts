@@ -1,7 +1,7 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
-import { isValid, toUint8Array } from 'js-base64'
+import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import { decode } from 'ufo'
 
 import type { Matrix, Size } from './primitives'
@@ -92,6 +92,16 @@ export function parseDataURL(url: string): DataURL | null {
   // Base64 one character past a whole group of four cannot be bytes: it was cut short.
   if (compact.replace(/={1,2}$/, '').length % 4 === 1 || !isValid(compact)) return null
   return { mimeType, bytes: toUint8Array(compact) }
+}
+
+/** Encoded image bytes as a Base64 data URL of the type their header names. */
+export function imageDataURL(data: Uint8Array): string {
+  return `data:${imageMimeType(data)};base64,${fromUint8Array(data)}`
+}
+
+/** SVG markup as a percent-encoded data URL, as CSS `url()` and `<img src>` take one. */
+export function svgDataURL(svg: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /** An image's size in pixels, read from its header; null for bytes it cannot read. */
