@@ -33,9 +33,14 @@ describe('Cloud server configuration', () => {
   })
 
   test('requires administrator MFA on an official deployment', () => {
-    expect(() => parseCloudServerConfig({ ...baseConfig, deployment: 'official' })).toThrow(
-      'requires MFA for deployment administrators'
-    )
+    for (const config of [
+      { deployment: 'official' },
+      { deployment: 'official', totpEnabled: true }
+    ]) {
+      expect(() => parseCloudServerConfig({ ...baseConfig, ...config })).toThrow(
+        'requires MFA for deployment administrators'
+      )
+    }
     expect(parseCloudServerConfig({ ...baseConfig, ...officialMFA }).deployment).toBe('official')
   })
 

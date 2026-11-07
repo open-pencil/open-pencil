@@ -9,7 +9,7 @@ import {
 } from '#cloud/server'
 
 describe('document sharing capabilities integration', () => {
-  test('stops a link while its maker is banned', async () => {
+  test('stops a link while its maker or its document’s maker is banned', async () => {
     const context = await seedSharing()
     try {
       const maker = crypto.randomUUID()
@@ -36,9 +36,25 @@ describe('document sharing capabilities integration', () => {
 
       await ban(null)
       await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
-      // A ban that ran out no longer holds the link back.
+      // A ban that runs out later still holds; one that ran out no longer does.
+      await ban(new Date(Date.now() + 60_000))
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
       await ban(new Date(Date.now() - 1_000))
       await expect(resolve()).resolves.toMatchObject({ documentId: context.documentId })
+
+      // The document's maker counts too, whoever made the link.
+      await context.runtime.database
+        .updateTable('documentShare')
+        .set({ createdBy: 'owner' })
+        .where('id', '=', capability.share.id)
+        .execute()
+      await context.runtime.database
+        .updateTable('document')
+        .set({ createdBy: maker })
+        .where('id', '=', context.documentId)
+        .execute()
+      await ban(null)
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
     } finally {
       await context.runtime.close()
     }

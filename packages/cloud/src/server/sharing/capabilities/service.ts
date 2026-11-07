@@ -11,6 +11,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, UpdateObject } from 'kysely'
+import * as v from 'valibot'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -21,6 +22,27 @@ import { DocumentShareInvalidError, DocumentShareSignInRequiredError } from '../
 import { createSharingPolicy } from '../policy'
 
 const SHARE_SECRET_BYTES = 24
+
+/** An account ID as the user table keys it; other IDs in `createdBy` name no account. */
+const accountIdSchema = v.pipe(v.string(), v.uuid())
+
+/**
+ * Whether any of these people is banned, for a ban that has not run out. A link stops working
+ * while whoever made it, or made its document, is banned, so what a banned person put up is no
+ * longer public. The IDs are matched as the user table keys them, so the lookup uses its index.
+ */
+async function anyBanned(database: Kysely<CloudDatabase>, userIds: string[]): Promise<boolean> {
+  const accounts = userIds.filter((id) => v.is(accountIdSchema, id))
+  if (accounts.length === 0) return false
+  const banned = await database
+    .selectFrom('user')
+    .select('id')
+    .where('id', 'in', accounts)
+    .where('banned', '=', true)
+    .where((user) => user.or([user('banExpires', 'is', null), user('banExpires', '>', new Date())]))
+    .executeTakeFirst()
+  return banned !== undefined
+}
 
 export type DocumentShareCapability = {
   share: DocumentShare
@@ -205,44 +227,19 @@ export function createCapabilityService(
           'documentShare.permission',
           'documentShare.secretHash',
           'documentShare.roomEpoch',
-          'documentShare.expiresAt'
+          'documentShare.expiresAt',
+          'documentShare.createdBy as linkMaker',
+          'document.createdBy as documentMaker'
         ])
         .where('documentShare.id', '=', shareId)
         .where('documentShare.revokedAt', 'is', null)
         .where('document.deletedAt', 'is', null)
-        // A link stops working while whoever made it, or made the document, is banned, so what a
-        // banned person put up is no longer public.
-        .where((expression) =>
-          expression.not(
-            expression.exists(
-              expression
-                .selectFrom('user')
-                .select('user.id')
-                .where((user) =>
-                  user.or([
-                    user(
-                      user.cast('user.id', 'text'),
-                      '=',
-                      expression.ref('documentShare.createdBy')
-                    ),
-                    user(user.cast('user.id', 'text'), '=', expression.ref('document.createdBy'))
-                  ])
-                )
-                .where('user.banned', '=', true)
-                .where((user) =>
-                  user.or([
-                    user('user.banExpires', 'is', null),
-                    user('user.banExpires', '>', new Date())
-                  ])
-                )
-            )
-          )
-        )
         .executeTakeFirst()
       if (
         !row ||
         !capabilityHashMatches(row.secretHash, input.secret) ||
-        (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now())
+        (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now()) ||
+        (await anyBanned(database, [row.linkMaker, row.documentMaker]))
       ) {
         throw new DocumentShareInvalidError()
       }

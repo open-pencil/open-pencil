@@ -6,6 +6,7 @@ import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   createCloudApp,
   createBetterAuthAdapter,
+  INVITATION_BUDGET,
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
@@ -172,6 +173,38 @@ describe('workspace members', () => {
       expect(bobLeaves.status).toBe(204)
       const again = await as(people.bob)(`/api/workspaces/${workspaceId}/members`)
       expect(again.status).toBe(404)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('answers 429 past the recipient’s daily budget, which deleting the workspace keeps', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const create = async (name: string) =>
+        (
+          await responseJSON(
+            await as(people.alice)('/api/workspaces', { method: 'POST', json: { name } }),
+            v.object({ workspace: v.object({ id: v.string() }) })
+          )
+        ).workspace.id
+      const invite = (workspaceId: string) =>
+        as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
+          method: 'POST',
+          json: { email: 'target@example.com', role: 'viewer' }
+        })
+      const first = await create('First')
+      for (let sent = 0; sent < INVITATION_BUDGET.perRecipient; sent++) {
+        expect((await invite(first)).status).toBe(201)
+      }
+      const refused = await invite(first)
+      expect(refused.status).toBe(429)
+      expect(await refused.json()).toEqual({ error: { code: 'rate_limited' } })
+
+      expect(
+        (await as(people.alice)(`/api/workspaces/${first}`, { method: 'DELETE' })).status
+      ).toBeLessThan(300)
+      expect((await invite(await create('Second'))).status).toBe(429)
     } finally {
       await runtime.close()
     }

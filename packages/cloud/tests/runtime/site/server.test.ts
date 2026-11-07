@@ -2,6 +2,7 @@ import { describe, expect, spyOn, test } from 'bun:test'
 
 import {
   createCloudServer,
+  inlineScriptHashes,
   siteContentSecurityPolicy,
   type SiteFiles
 } from '#cloud/runtime/site/server'
@@ -117,5 +118,23 @@ describe('Cloud server', () => {
     } finally {
       logged.mockRestore()
     }
+  })
+
+  test('lets only the site’s own scripts run, never frames or plugins', () => {
+    const directives = siteContentSecurityPolicy(['abc']).split('; ')
+    expect(directives).toContain(
+      "script-src 'self' 'sha256-abc' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
+    )
+    expect(directives).toContain("worker-src 'self' blob:")
+    expect(directives).toContain("object-src 'none'")
+    expect(directives).toContain("base-uri 'self'")
+    expect(directives).toContain("frame-ancestors 'none'")
+  })
+
+  test('hashes inline scripts in any case and with the line feeds a browser reads', async () => {
+    const lf = fromUint8Array(sha256(new TextEncoder().encode('a()\nb()')))
+    expect(
+      await inlineScriptHashes('<SCRIPT>a()\r\nb()</SCRIPT><script src="/x.js"></script>')
+    ).toEqual([lf])
   })
 })

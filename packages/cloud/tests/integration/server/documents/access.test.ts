@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { createDocumentService, DocumentForbiddenError, resolveDocumentAccess } from '#cloud/server'
+import { canDeleteDocument } from '#cloud/server/documents/access'
 
 async function seedDocument() {
   const runtime = await createCloudTestDatabase()
@@ -48,6 +49,21 @@ describe('document access resolution', () => {
       expect(
         await resolveDocumentAccess(context.runtime.database, 'viewer', context.documentId)
       ).toBeUndefined()
+
+      // An edit grant lets them edit again, never delete what they once made.
+      await context.runtime.database
+        .insertInto('documentGrant')
+        .values({
+          id: crypto.randomUUID(),
+          documentId: context.documentId,
+          userId: 'viewer',
+          permission: 'edit',
+          createdBy: 'owner'
+        })
+        .execute()
+      expect(await canDeleteDocument(context.runtime.database, 'viewer', context.documentId)).toBe(
+        false
+      )
     } finally {
       await context.runtime.close()
     }

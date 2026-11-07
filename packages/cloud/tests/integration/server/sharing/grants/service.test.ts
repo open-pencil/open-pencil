@@ -15,6 +15,13 @@ describe('document sharing grants integration', () => {
       expect(await context.sharing.listGrants('owner', context.documentId)).toHaveLength(1)
       await context.sharing.revokeGrant('owner', context.documentId, 'outside-user')
       expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
+      // A revoked grant stays revoked: changing it gives nothing back.
+      await expect(
+        context.sharing.putGrant('owner', context.documentId, 'outside-user', {
+          permission: 'view'
+        })
+      ).rejects.toBeInstanceOf(DocumentNotFoundError)
+      expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
       // Revoking access advances the epoch, so tickets and room keys issued before stop working.
       expect(
         await context.runtime.database

@@ -12,7 +12,7 @@ import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import {
-  assertInvitationBudget,
+  spendInvitationBudget,
   type InvitationDelivery,
   type InvitationOutbox
 } from '#cloud/server/invitations'
@@ -130,7 +130,6 @@ export function createInvitationService(
       input: CreateDocumentInvitationInput
     ): Promise<{ invitation: DocumentInvitation; token: string }> {
       await requireSharingAccess(database, userId, documentId)
-      await assertInvitationBudget(database, { senderId: userId, email: input.email })
       const id = crypto.randomUUID()
       const token = randomHex(INVITATION_SECRET_BYTES)
       const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
@@ -166,6 +165,7 @@ export function createInvitationService(
             }
           : null
       const row = await database.transaction().execute(async (transaction) => {
+        await spendInvitationBudget(transaction, { senderId: userId, email: input.email })
         const inserted = await transaction
           .insertInto('documentInvitation')
           .values({

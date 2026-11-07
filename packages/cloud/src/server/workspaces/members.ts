@@ -11,7 +11,7 @@ import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
-import { assertInvitationBudget } from '#cloud/server/invitations'
+import { spendInvitationBudget } from '#cloud/server/invitations'
 import {
   invitationMatchesActor,
   invitationTokenIsActive,
@@ -184,7 +184,6 @@ export function createWorkspaceMemberService(
       )
       .executeTakeFirst()
     if (existing) throw new WorkspaceAlreadyMemberError()
-    await assertInvitationBudget(database, { senderId: userId, email: input.email })
     const inviter = await database
       .selectFrom('user')
       .select('name')
@@ -195,6 +194,7 @@ export function createWorkspaceMemberService(
     const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
     const url = acceptanceURL(id, token)
     const row = await database.transaction().execute(async (transaction) => {
+      await spendInvitationBudget(transaction, { senderId: userId, email: input.email })
       await transaction
         .updateTable('workspaceInvitation')
         .set({ revokedAt: new Date() })

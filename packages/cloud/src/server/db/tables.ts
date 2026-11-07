@@ -351,6 +351,14 @@ export interface AuthSchemaVersionTable {
   updatedAt: TimestampColumn
 }
 
+/** One invitation sent, for the daily invitation budget; see `src/server/invitations/budget.ts`. */
+export interface InvitationSendTable {
+  id: string
+  senderId: string
+  emailNormalized: string
+  sentAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -384,6 +392,7 @@ export interface CloudDatabase {
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
+  invitationSend: InvitationSendTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

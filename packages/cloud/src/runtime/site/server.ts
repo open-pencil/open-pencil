@@ -44,15 +44,18 @@ export function siteContentSecurityPolicy(inlineScriptHashes: readonly string[] 
   ].join('; ')
 }
 
-/** The SHA-256 digests, in Base64, of a page's inline scripts, as a policy names them. */
-async function inlineScriptHashes(html: string): Promise<string[]> {
-  const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)]
+/**
+ * The SHA-256 digests, in Base64, of a page's inline scripts, as a policy names them. Tag names
+ * match in any case, and line breaks are hashed as the HTML parser leaves them, as line feeds.
+ */
+export async function inlineScriptHashes(html: string): Promise<string[]> {
+  const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
   return Promise.all(
-    scripts.map(async ([, body = '']) =>
-      fromUint8Array(
-        new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body)))
-      )
-    )
+    scripts.map(async ([, body = '']) => {
+      const text = body.replace(/\r\n?/g, '\n')
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+      return fromUint8Array(new Uint8Array(digest))
+    })
   )
 }
 
