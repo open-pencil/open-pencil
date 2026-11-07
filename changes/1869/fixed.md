@@ -1,0 +1,1 @@
+- HTML import keeps an SVG `<img>` data URL as the image source instead of an empty image fill, and HTML bundle export also moves percent-encoded image data URLs into files (#1869).
