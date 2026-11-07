@@ -1,8 +1,12 @@
 import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import {
+  reconcileVariableBindings,
+  resolvedPaintBindings
+} from '@open-pencil/scene-graph/variables'
 
 function must<T>(value: T | null | undefined, what: string): T {
   if (value === null || value === undefined) throw new Error(`Missing ${what}`)
@@ -158,4 +162,33 @@ test('syncing a component keeps a bound number its instance overrides', () => {
   const synced = must(graph.getNode(instance.id), 'synced instance')
   expect(synced.width).toBe(60)
   expect(synced.opacity).toBe(0.3)
+})
+
+test('syncing an outer instance keeps the literal fill it sets on a nested layer unbound', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const collection = graph.createCollection('Theme')
+  const gray = { r: 0.5, g: 0.5, b: 0.5, a: 1 }
+  const tone = graph.createVariable('Gray', 'COLOR', collection.id, gray)
+  const inner = graph.createNode('COMPONENT', page, { name: 'Inner' })
+  const shape = graph.createNode('RECTANGLE', inner.id, {
+    name: 'Shape',
+    fills: [colorToFill(gray)]
+  })
+  graph.bindVariable(shape.id, 'fills/0/color', tone.id)
+  const outer = graph.createNode('COMPONENT', page, { name: 'Outer' })
+  must(graph.createInstance(inner.id, outer.id), 'inner in outer')
+  const placed = must(graph.createInstance(outer.id, page), 'placed outer')
+  const nested = () =>
+    must(graph.getChildren(must(graph.getChildren(placed.id)[0], 'nested inner').id)[0], 'shape')
+  const literal = [colorToFill({ r: 0.1, g: 0.2, b: 0.3, a: 1 })]
+  // The outer instance claims the shape's fills; the shape itself binds nothing.
+  graph.updateNode(nested().id, { fills: literal, boundVariables: {} })
+  setInstanceOverride(placed.instanceOverrides, placed.id, nested().id, 'fills', literal)
+
+  graph.syncInstance(placed.id)
+
+  expect(nested().boundVariables).toEqual({})
+  expect(resolvedPaintBindings(graph, nested()).fills).toBeUndefined()
+  expect(nested().fills[0].color).toEqual(literal[0].color)
 })
