@@ -1,0 +1,1 @@
+- SDK shortcuts are TanStack Hotkeys chords such as `Mod+S`: `useEditorKeyboard` shortcut `keys` take chords instead of tinykeys bindings, `EditorCommandMetadata.keybinding` is replaced by `aliases`, `TOOL_SHORTCUTS` and editor profile `toolKeys` are keyed by chords (`V`, `Shift+S`) instead of key codes, and `shortcutCode` and `shortcutEvent` are removed (#1844).
