@@ -17,12 +17,19 @@ beforeAll(async () => {
 
 const POSTER = 'video-poster-frame'
 const CLIP = 'a'.repeat(40)
+const SIZE = 20
 const GREEN = [0, 255, 0, 255]
-const RED = { r: 1, g: 0, b: 0, a: 1 }
+const BLUE = [0, 0, 255, 255]
+const RED = [255, 0, 0, 255]
 
 function posterBytes(): Uint8Array {
-  const surface = expectDefined(ck.MakeSurface(4, 4), 'poster surface')
-  surface.getCanvas().clear(ck.GREEN)
+  const surface = expectDefined(ck.MakeSurface(40, 20), 'poster surface')
+  const canvas = surface.getCanvas()
+  canvas.clear(ck.GREEN)
+  const blue = new ck.Paint()
+  blue.setColor(ck.BLUE)
+  canvas.drawRect(ck.XYWHRect(25, 0, 15, 20), blue)
+  blue.delete()
   const image = surface.makeImageSnapshot()
   const bytes = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'poster PNG')
   image.delete()
@@ -46,16 +53,16 @@ function pixelsOverRedSquare(
   const graph = new SceneGraph()
   graph.images.set(POSTER, posterBytes())
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
-    width: 20,
-    height: 20,
+    width: SIZE,
+    height: SIZE,
     fills: []
   })
   graph.createNode('RECTANGLE', frame.id, {
-    width: 20,
-    height: 20,
-    fills: [{ type: 'SOLID', color: RED, opacity: 1, visible: true }]
+    width: SIZE,
+    height: SIZE,
+    fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
   })
-  graph.createNode('RECTANGLE', frame.id, { width: 20, height: 20, fills: [], ...paints })
+  graph.createNode('RECTANGLE', frame.id, { width: SIZE, height: SIZE, fills: [], ...paints })
   const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   try {
@@ -72,31 +79,47 @@ function pixelsOverRedSquare(
         alphaType: ck.AlphaType.Unpremul,
         colorType: ck.ColorType.RGBA_8888,
         colorSpace: ck.ColorSpace.SRGB,
-        width: 20,
-        height: 20
+        width: SIZE,
+        height: SIZE
       })
     )
     image.delete()
     return (x: number, y: number) =>
-      Array.from(pixels.subarray((y * 20 + x) * 4, (y * 20 + x) * 4 + 4))
+      Array.from(pixels.subarray((y * SIZE + x) * 4, (y * SIZE + x) * 4 + 4))
   } finally {
     renderer.destroy()
   }
 }
 
 describe('video paints', () => {
-  test('a video fill draws its poster frame over the layers under it', () => {
+  test('a filling video covers the layer with its poster, cropped to the middle', () => {
     const pixel = pixelsOverRedSquare({ fills: [video] })
 
-    expect(pixel(10, 10)).toEqual(GREEN)
-    expect(pixel(0, 19)).toEqual(GREEN)
+    expect([pixel(2, 2), pixel(13, 17)]).toEqual([GREEN, GREEN])
+    expect([pixel(17, 2), pixel(18, 17)]).toEqual([BLUE, BLUE])
   })
 
-  test('a video stroke draws its poster frame', () => {
+  test('a fitting video letterboxes its poster over the layers under it', () => {
+    const pixel = pixelsOverRedSquare({ fills: [{ ...video, imageScaleMode: 'FIT' }] })
+
+    expect([pixel(10, 1), pixel(10, 18)]).toEqual([RED, RED])
+    expect([pixel(2, 10), pixel(17, 10)]).toEqual([GREEN, BLUE])
+  })
+
+  test('a cropped video draws the window its transform picks', () => {
+    const rightHalf = { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 1, m12: 0 }
+    const pixel = pixelsOverRedSquare({
+      fills: [{ ...video, imageScaleMode: 'CROP', imageTransform: rightHalf }]
+    })
+
+    expect([pixel(2, 2), pixel(7, 17)]).toEqual([GREEN, BLUE])
+  })
+
+  test('a video stroke draws its poster where the stroke is', () => {
     const stroke: Stroke = { ...video, weight: 4, align: 'INSIDE' }
     const pixel = pixelsOverRedSquare({ strokes: [stroke], strokeWeight: 4, strokeAlign: 'INSIDE' })
 
-    expect(pixel(1, 10)).toEqual(GREEN)
-    expect(pixel(10, 10)).toEqual([255, 0, 0, 255])
+    expect([pixel(1, 10), pixel(18, 10)]).toEqual([GREEN, BLUE])
+    expect(pixel(10, 10)).toEqual(RED)
   })
 })
