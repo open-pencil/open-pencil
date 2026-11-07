@@ -1,6 +1,6 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 
-import type { Editor } from '@open-pencil/core'
+import { getNodeEditCapability, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { layerResizes } from '@open-pencil/scene-graph/generated'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -50,6 +50,12 @@ export function usePanelSize(editor: Editor) {
     ]
   }
 
+  function resizesEditable(edit: DragResize): boolean {
+    return [edit.nodeId, ...(edit.origChildren?.keys() ?? [])].every(
+      (id) => getNodeEditCapability(editor.graph, id).editable
+    )
+  }
+
   function update(nodes: readonly SceneNode[], size: (start: Rect) => Size) {
     if (interrupted) return
     if (edits && graph !== editor.graph) take()
@@ -61,7 +67,14 @@ export function usePanelSize(editor: Editor) {
         return current ? [current] : []
       })
       if (live.length === 0) return
-      edits = live.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+      const started = live.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+      // A read-only library layer, or one inside a layer being resized, refuses the whole edit
+      // before anything is previewed, as the commit would refuse it after.
+      if (!started.every((edit) => resizesEditable(edit))) {
+        interrupted = true
+        return
+      }
+      edits = started
       graph = editor.graph
       watch(edits)
     }

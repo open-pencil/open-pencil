@@ -139,6 +139,40 @@ describe('a typed width or height', () => {
     }
   })
 
+  test('a read-only library layer refuses the size before anything moves', () => {
+    const editor = createEditor()
+    let scope: ReturnType<typeof effectScope> | undefined
+    try {
+      const page = editor.state.currentPageId
+      const remote = editor.graph.createNode('COMPONENT', page, {
+        width: 100,
+        height: 50,
+        librarySource: {
+          identity: { libraryId: 'design-system', assetKey: 'card', revisionId: 'r1' },
+          sourceNodeId: 'source',
+          readOnly: true
+        }
+      })
+      const inner = editor.graph.createNode('RECTANGLE', remote.id, {
+        x: 10,
+        width: 20,
+        height: 10,
+        horizontalConstraint: 'STRETCH'
+      })
+      const panel = panelActions(editor, remote.id)
+      scope = panel.scope
+      panel.actions.updateAxisSize('width', 150)
+      panel.actions.updateAxisSize('width', 160)
+      expect([remote.width, inner.width]).toEqual([100, 20])
+      panel.actions.commitAxisSize('width', 160, 100)
+      expect([remote.width, inner.width]).toEqual([100, 20])
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope?.stop()
+      editor.dispose()
+    }
+  })
+
   test('an instance turns its Left & right layer over past zero, as in Figma', () => {
     const editor = createEditor()
     let scope: ReturnType<typeof effectScope> | undefined
