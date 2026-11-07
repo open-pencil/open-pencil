@@ -234,8 +234,8 @@ export interface LineMoves {
 }
 
 export interface LineRange {
-  from: number
-  to: number
+  firstLine: number
+  endLine: number
 }
 
 export type ShapedLines = ReadonlyArray<ShapedLine | undefined>
@@ -255,7 +255,7 @@ export function buildPieces(
   width: number,
   moves: LineMoves,
   {
-    range = { from: 0, to: block.metrics.length },
+    range = { firstLine: 0, endLine: block.metrics.length },
     shaped = shapedLinesByLine(block.paragraph),
     grouped = true
   }: PieceOptions = {}
@@ -266,11 +266,11 @@ export function buildPieces(
   const truncated = block.paragraph.didExceedMaxLines()
   const textEnd = paragraphLength(block)
   const pieces: LinePiece[] = []
-  let from = range.from
-  while (from < range.to) {
+  let from = range.firstLine
+  while (from < range.endLine) {
     let to = from + 1
     if (grouped) {
-      while (to < range.to && movesAlike(moves, from, to)) {
+      while (to < range.endLine && movesAlike(moves, from, to)) {
         to++
       }
     }
