@@ -4,6 +4,11 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 
+import {
+  assetIdsByKey,
+  createTextStyleLookup,
+  type TextStyleLookup
+} from '../node-change/style/lookup'
 import { findWithinBoundary, type TreeShape } from './tree'
 
 /** Archive records indexed by GUID, with children in saved order. */
@@ -14,6 +19,7 @@ export interface SourceIndex {
 
 export interface InterpreterIndex extends SourceIndex {
   readonly variables: DocumentVariables
+  readonly textStyle: TextStyleLookup
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
@@ -62,7 +68,12 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
 }
 
 export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
-  return { ...createSourceIndex(changes), variables: createDocumentVariables(changes) }
+  const index = createSourceIndex(changes)
+  return {
+    ...index,
+    variables: createDocumentVariables(changes),
+    textStyle: createTextStyleLookup(index.sources, assetIdsByKey(changes))
+  }
 }
 
 export function sameGuid(left: GUID | undefined, right: GUID): boolean {
