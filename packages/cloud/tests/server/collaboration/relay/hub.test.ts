@@ -539,6 +539,32 @@ describe('collaboration relay', () => {
     expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
   })
 
+  test('turns away an editor whose update would grow the room past its limit', async () => {
+    const { relay: hub } = relay({ maximumRoomBytes: 4_096 })
+    const alice = await join(hub)
+    const send = () =>
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: edit('x'.repeat(1_000))
+      })
+    for (let index = 0; index < 4; index++) send()
+    expect(alice.closed).toBeNull()
+    send()
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
+
+    const bob = await join(hub, { permission: 'view' })
+    bob.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncStep1,
+      target: RELAY_SERVER_PEER,
+      payload: Y.encodeStateVector(new Y.Doc())
+    })
+    const [reply] = bob.messages(COLLAB_ACTIONS.syncReply)
+    expect(textOf(reply?.payload ?? new Uint8Array())).toHaveLength(4_000)
+  })
+
   test('closes peers that send malformed document updates', async () => {
     const { relay: hub } = relay()
     const alice = await join(hub)

@@ -61,6 +61,7 @@ import { createServicesTokenService, type ServicesSigningKey } from '#cloud/serv
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
@@ -127,6 +128,13 @@ export function withIndexingPolicy(
     headers
   })
 }
+
+/**
+ * The most an API request body may hold. Files go to the object store, never through the API, so
+ * the largest body any route takes is a profile picture, whose own limit is tighter; anything past
+ * this is refused before it is read.
+ */
+export const API_BODY_BYTES = 1024 * 1024
 
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
@@ -316,6 +324,13 @@ export function createCloudApp(services: CloudServices) {
     .onError(cloudErrorHandler(services.reportError))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use(
+      '/api/*',
+      bodyLimit({
+        maxSize: API_BODY_BYTES,
+        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
+      })
+    )
     .use('*', async (context, next) => {
       await next()
       if (shouldPreventIndexing(context.req.path, services.config.indexingPolicy)) {

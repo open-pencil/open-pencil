@@ -58,6 +58,7 @@ export {
   type PublicCloudAPI
 } from './api'
 export {
+  API_BODY_BYTES,
   createCloudApp,
   shouldPreventIndexing,
   withIndexingPolicy,
