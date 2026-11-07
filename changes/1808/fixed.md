@@ -1,0 +1,2 @@
+- A layer with a layer blur or opacity keeps its drop shadows and the children that reach past its box. A rotated or flipped layer with a layer blur, or a rotated, flipped or shadowed mask, is no longer cut to its unrotated box, and a shadow's faint edge is no longer cut at a tile's edge (#1808).
+- PDF pages, draw.io images, page thumbnails and visual diffs hold a drop shadow or a layer blur as far as the canvas draws it, about 1.3 times its radius for an opaque shadow, where they cut it at its radius (#1808).

@@ -92,7 +92,11 @@ export function resolveLabelFontCoverage(
 }
 
 export function syncFontGeneration(r: SkiaRenderer): void {
-  r.fontGeneration = fontManager.generation()
+  const generation = fontManager.generation()
+  if (generation !== r.fontGeneration) {
+    r.renderedBounds.clear()
+  }
+  r.fontGeneration = generation
 }
 
 export function trackFontDemand(r: SkiaRenderer, node: SceneNode, key: string): void {

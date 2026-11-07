@@ -239,6 +239,57 @@ export function blurSigma(radius: number): number {
   return drawnBlurRadius(radius) * BLUR_SIGMA_PER_RADIUS
 }
 
+/** Skia's Gaussian kernels end at 3 sigma. */
+const KERNEL_SIGMAS = 3
+
+/**
+ * How far past what it blurs a blur of `radius` leaves ink on screen: where Skia's kernel ends,
+ * and one more pixel holds its rounding.
+ */
+export function blurReach(radius: number): number {
+  const sigma = blurSigma(radius)
+  return sigma > 0 ? Math.ceil(KERNEL_SIGMAS * sigma) + 1 : 0
+}
+
+/**
+ * The distance, in sigmas, past a straight edge blurred by a Gaussian at which the edge's share
+ * drops to `share`: the inverse of the normal tail Q, by Abramowitz and Stegun 26.2.23, which is
+ * within 0.00045 of it.
+ */
+function gaussianTailDistance(share: number): number {
+  if (share <= 0) {
+    return Number.POSITIVE_INFINITY
+  }
+  if (share >= 0.5) {
+    return 0
+  }
+  const s = Math.sqrt(-2 * Math.log(share))
+  return (
+    s -
+    (2.515517 + 0.802853 * s + 0.010328 * s * s) /
+      (1 + 1.432788 * s + 0.189269 * s * s + 0.001308 * s * s * s)
+  )
+}
+
+const COLOR_LEVELS = 255
+
+/**
+ * How far past its shape a drop shadow of `radius` and colour alpha `alpha` leaves ink on
+ * screen. Skia blurs the shape into an 8-bit mask and scales it by `alpha`, so a mask level shows
+ * once `alpha` times it rounds to a level: an opaque or half-opaque shadow shows its faintest
+ * level, out to where the kernel ends, and a fainter one ends sooner. Measured on CPU raster, the
+ * ink ends at 3.0 sigma for alpha 1 and 0.5, 2.4 for 0.25, and 2.1 for 0.1.
+ */
+export function shadowReach(radius: number, alpha: number): number {
+  const sigma = blurSigma(radius)
+  const faintestShownLevel = Math.ceil(0.5 / Math.max(alpha, 1 / COLOR_LEVELS))
+  const sigmas = Math.min(
+    KERNEL_SIGMAS,
+    gaussianTailDistance((faintestShownLevel - 1) / COLOR_LEVELS)
+  )
+  return Math.ceil(sigmas * sigma) + 1
+}
+
 /** The Figma blur radius that draws a Gaussian of `sigma`, the inverse of `blurSigma`. */
 export function blurRadiusForSigma(sigma: number): number {
   return Math.max(0, sigma) / BLUR_SIGMA_PER_RADIUS

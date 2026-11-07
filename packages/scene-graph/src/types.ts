@@ -40,6 +40,8 @@ export interface NodeChangeObserver {
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /** A node is about to take a preview's changes, which no history keeps. */
+  previewed?: (node: SceneNode) => void
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'

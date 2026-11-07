@@ -266,13 +266,15 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       source: createDefaultSourceMetadata()
     })
     const graph: Partial<SceneGraph> = {
-      getNode: mock(() => node)
+      getNode: mock(() => node),
+      observeNodeChanges: mock(() => () => true),
+      positionPreviewVersion: 0
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     // Figma draws a blur radius as a Gaussian of 0.43 × radius.
     expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(4.3))
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
-    expect(r.ck.LTRBRect).toHaveBeenCalledWith(-20, -20, 120, 120)
+    expect(r.ck.LTRBRect).toHaveBeenCalledWith(-14, -14, 114, 114)
   })
 
   test('handles FOREGROUND_BLUR in renderNode', () => {
@@ -302,11 +304,13 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       source: createDefaultSourceMetadata()
     })
     const graph: Partial<SceneGraph> = {
-      getNode: mock(() => node)
+      getNode: mock(() => node),
+      observeNodeChanges: mock(() => () => true),
+      positionPreviewVersion: 0
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(8.6))
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
-    expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)
+    expect(r.ck.LTRBRect).toHaveBeenCalledWith(-27, -27, 127, 127)
   })
 })

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { shadowReach } from '@open-pencil/scene-graph/geometry'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'
@@ -193,4 +194,32 @@ test('asks a web font for the forms jsPDF writes Arabic letters in', async () =>
       Object.fromEntries(providers.map((provider) => [provider, true]))
     )
   }
+})
+
+test('sizes a page to hold a drop shadow as far as it is drawn', async () => {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const square = graph.createNode('RECTANGLE', pageId, {
+    name: 'Shadowed',
+    width: 40,
+    height: 40,
+    fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        radius: 10,
+        spread: 0,
+        offset: { x: 0, y: 0 },
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        visible: true,
+        blendMode: 'NORMAL',
+        showShadowBehindNode: false
+      }
+    ]
+  })
+  const result = await exportPDFDocument(graph, [{ pageId, nodeIds: [square.id], label: 'Shadowed' }], {
+    embedFonts: false
+  })
+  const side = 40 + 2 * shadowReach(10, 1)
+  expect(result?.pages).toEqual([{ label: 'Shadowed', width: side, height: side }])
 })

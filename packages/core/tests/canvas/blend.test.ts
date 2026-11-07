@@ -6,6 +6,7 @@ import { SceneGraph, type BlendMode, type Fill, type SceneNode } from '@open-pen
 import { figmaBlendModeToSkia } from '#core/canvas/blend'
 
 import { renderNode, renderSection } from '#core/canvas/scene'
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { asCanvas, asCanvasKit, asRenderer } from './helpers'
 
 const SIZE = 40
@@ -214,6 +215,7 @@ function createRenderer(overrides: Partial<SkiaRenderer> = {}) {
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
+    renderedBounds: new RenderedBoundsCache(),
     effectLayerPaint: {
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),
