@@ -111,6 +111,22 @@ function releaseLoadedReader(state: ReaderState): void {
   state.complete = true
 }
 
+export function restoreSiblingOrder(
+  graph: SceneGraph,
+  childOrder: ReadonlyMap<string, string[]>
+): void {
+  for (const page of graph.getPages(true)) {
+    const before = childOrder.get(page.id)
+    if (!before) continue
+    const original = new Set(before)
+    const remaining = new Set(page.childIds)
+    page.childIds = [
+      ...before.filter((id) => remaining.has(id)),
+      ...page.childIds.filter((id) => !original.has(id))
+    ]
+  }
+}
+
 /**
  * Load the pages the editor never shows, such as Figma's internal canvas, into the document's own
  * graph, so a save no longer opens a second session to read them into its copy. Their layers
@@ -121,12 +137,14 @@ export function populateFigInternalPages(graph: SceneGraph): boolean {
   const state = states.get(graph)
   const session = state?.session
   if (!state || !session) return false
+  const childOrder = new Map(graph.getPages(true).map((page) => [page.id, [...page.childIds]]))
   let changed = false
   for (const page of session.pages) {
     if (!page.internalOnly || session.loadedPageIds.has(page.id)) continue
     graph.applyImportedStateDuring(() => session.loadPage(page.id))
     changed = true
   }
+  restoreSiblingOrder(graph, childOrder)
   releaseLoadedReader(state)
   return changed
 }
@@ -150,6 +168,7 @@ export function populateReaderExport(source: SceneGraph, target: SceneGraph): bo
   if (live?.pages.every((page) => live.loadedPageIds.has(page.id))) return false
   const checkpoint = live?.checkpoint() ?? state.checkpoint
   if (!checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
+  const childOrder = new Map(target.getPages(true).map((page) => [page.id, [...page.childIds]]))
   const session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
     graph: target,
     checkpoint
@@ -157,6 +176,9 @@ export function populateReaderExport(source: SceneGraph, target: SceneGraph): bo
   // Export must include internal content too, not just the dependency closure needed
   // for visible pages. Loading happens on the isolated target, never the live graph.
   for (const page of session.pages) session.loadPage(page.id)
+  // Loading can reorder definitions by dependency. Keep the copy's existing sibling order and
+  // append only newly loaded nodes, so the export preserves the saved order.
+  restoreSiblingOrder(target, childOrder)
   return true
 }
 

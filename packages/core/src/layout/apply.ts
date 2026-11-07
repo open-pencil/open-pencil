@@ -192,10 +192,20 @@ function computedChildPosition(
   return child.derivedLayout?.[axis] ?? computed
 }
 
-function preservesStaleImportedTextSize(child: SceneNode, axis: 'width' | 'height'): boolean {
+function preservesImportedTextSize(
+  graph: SceneGraph,
+  child: SceneNode,
+  axis: 'width' | 'height'
+): boolean {
+  if (child.type !== 'TEXT' || child.source.editedFields.length > 0) return false
+  if (child.source.format === null && child.source.orderKey !== null) {
+    for (let ancestor = child.parentId ? graph.getNode(child.parentId) : undefined; ancestor;) {
+      if (ancestor.type === 'INSTANCE') return true
+      ancestor = ancestor.parentId ? graph.getNode(ancestor.parentId) : undefined
+    }
+  }
   const derivedSize = child.derivedLayout?.[axis]
   return (
-    child.type === 'TEXT' &&
     child.source.format === 'fig' &&
     derivedSize !== undefined &&
     Math.abs(child[axis] - derivedSize) > 0.001
@@ -203,6 +213,7 @@ function preservesStaleImportedTextSize(child: SceneNode, axis: 'width' | 'heigh
 }
 
 function computedChildSize(
+  graph: SceneGraph,
   child: SceneNode,
   yogaChild: YogaNode,
   axis: 'width' | 'height',
@@ -211,7 +222,7 @@ function computedChildSize(
 ): number {
   if (
     preservesImportedFrameGeometry ||
-    (keepsSaved && preservesStaleImportedTextSize(child, axis))
+    (keepsSaved && preservesImportedTextSize(graph, child, axis))
   ) {
     return child[axis]
   }
@@ -245,6 +256,7 @@ function updateChildFromYoga(
       x: computedChildPosition(child, yogaChild, 'x', preservesImportedPosition, keepsSaved),
       y: computedChildPosition(child, yogaChild, 'y', preservesImportedPosition, keepsSaved),
       width: computedChildSize(
+        graph,
         child,
         yogaChild,
         'width',
@@ -252,6 +264,7 @@ function updateChildFromYoga(
         keepsSaved
       ),
       height: computedChildSize(
+        graph,
         child,
         yogaChild,
         'height',
