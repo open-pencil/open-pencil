@@ -16,7 +16,7 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useI18n } from '@open-pencil/vue/i18n'
 import type {
@@ -48,7 +48,7 @@ import type {
   AppMenuIcon
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
 import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
@@ -74,17 +74,6 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   variables: IconVariables,
   'zoom-in': IconZoomIn,
   'zoom-out': IconZoomOut
-}
-
-function shortcutKeys(shortcut: string | undefined): string[] | undefined {
-  if (!shortcut) return undefined
-  const platform = shortcutPlatform()
-  return shortcut.split('+').map((key) => {
-    if (key === 'MOD') return platform === 'mac' ? '⌘' : 'Ctrl'
-    if (key === 'SHIFT') return platform === 'mac' ? '⇧' : 'Shift'
-    if (key === 'ALT') return platform === 'mac' ? '⌥' : 'Alt'
-    return key
-  })
 }
 
 function isVisible(entry: { target?: string; feature?: AppMenuFeature }): boolean {
@@ -335,10 +324,10 @@ export function useAppMenu() {
 
     if (entry.command) {
       return {
-        ...commandMenuItem(entry.command, appMenuShortcutLabel(entry.id)),
+        ...commandMenuItem(entry.command, appMenuShortcut(entry.id)),
         menuId: entry.id,
         palette: resolvePalette(entry),
-        paletteShortcut: entry.shortcut
+        paletteShortcut: appMenuShortcut(entry.id)
       }
     }
 
@@ -384,7 +373,7 @@ export function useAppMenu() {
       label: entry.palette?.label ?? entry.label,
       icon: entry.palette?.icon ?? fallbackIcon,
       shortcut: entry.paletteShortcut
-        ? { keys: shortcutKeys(entry.paletteShortcut) ?? [] }
+        ? { keys: formatShortcutKeys(entry.paletteShortcut) }
         : undefined,
       description: entry.palette?.description,
       keywords: entry.palette?.keywords,

@@ -1,3 +1,5 @@
+import type { HotkeyChord } from '@tanstack/hotkeys'
+
 import type { TestId } from '@open-pencil/vue/testing'
 
 export type CanvasContextActionId =
@@ -23,13 +25,15 @@ export type CanvasContextLabelKey =
 export type CanvasContextActionMeta = {
   id: CanvasContextActionId
   labelKey: CanvasContextLabelKey
-  shortcut?: string
+  shortcut?: HotkeyChord
   testId?: TestId
 }
 
 export const CANVAS_COPY_AS_GROUP_TEST_ID = 'context-copy-paste-as' satisfies TestId
 export const CANVAS_VECTORIZE_TEST_ID = 'context-vectorize' satisfies TestId
-export const COPY_AS_PNG_SHORTCUT = 'MOD+SHIFT+C'
+export const COPY_AS_PNG_SHORTCUT: HotkeyChord = 'Mod+Shift+C'
+export const COPY_PROPERTIES_SHORTCUT: HotkeyChord = 'Mod+Alt+C'
+export const PASTE_PROPERTIES_SHORTCUT: HotkeyChord = 'Mod+Alt+V'
 
 export const CANVAS_COPY_AS_ACTIONS = [
   { id: 'copy-as-text', labelKey: 'copyAsText' },
@@ -45,13 +49,13 @@ export const CANVAS_PROPERTIES_ACTIONS = [
   {
     id: 'copy-properties',
     labelKey: 'copyProperties',
-    shortcut: 'MOD+ALT+C',
+    shortcut: COPY_PROPERTIES_SHORTCUT,
     testId: 'context-copy-properties'
   },
   {
     id: 'paste-properties',
     labelKey: 'pasteProperties',
-    shortcut: 'MOD+ALT+V',
+    shortcut: PASTE_PROPERTIES_SHORTCUT,
     testId: 'context-paste-properties'
   }
 ] satisfies CanvasContextActionMeta[]
