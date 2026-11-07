@@ -16,8 +16,8 @@ let port: MessagePort | undefined
 /** How often a page load reports that it is still advancing. */
 const PROGRESS_INTERVAL_MS = 1000
 
-function respond(message: FigSessionResponse): void {
-  port?.postMessage(message)
+function respond(message: FigSessionResponse, transfer: Transferable[] = []): void {
+  port?.postMessage(message, transfer)
 }
 
 function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): void {
@@ -114,24 +114,26 @@ self.onmessage = async (event: MessageEvent<FigSessionOpenRequest>) => {
   port = request.port
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
   port.start()
-  // The worker copies the archive itself, so the main thread sends the file once.
-  const archiveBytes = request.buffer.slice(0)
   try {
     await loadFigDataDecompressor()
     const opened = openReaderSession(request.buffer, request.options?.populate)
     const archiveInfo = opened.session.archiveRecordInfo()
-    archive = createFigArchiveOperations(archiveBytes, () => archiveInfo)
+    archive = createFigArchiveOperations(request.buffer, () => archiveInfo)
     respond({ type: 'page-manifest', pages: opened.pages })
-    session =
+    const keepsSession =
       request.options?.populate === 'first-page' || request.options?.populate === 'none'
-        ? opened
-        : undefined
-    respond({
-      type: 'graph',
-      graph: serializeSceneGraph(opened.graph),
-      checkpoint: opened.checkpoint(),
-      archiveInfo
-    })
+    session = keepsSession ? opened : undefined
+    const mainThreadArchive = keepsSession ? request.buffer.slice(0) : undefined
+    respond(
+      {
+        type: 'graph',
+        graph: serializeSceneGraph(opened.graph),
+        checkpoint: opened.checkpoint(),
+        archiveInfo,
+        archive: mainThreadArchive
+      },
+      mainThreadArchive ? [mainThreadArchive] : []
+    )
   } catch (error) {
     respond({ type: 'graph', error: error instanceof Error ? error.message : String(error) })
   }
