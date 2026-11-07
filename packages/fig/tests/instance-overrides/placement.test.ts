@@ -98,3 +98,24 @@ test.each([
     layoutPositioning: 'ABSOLUTE'
   })
 })
+
+test('an instance keeps the placement its own record writes over a different one of its component', () => {
+  const bar = barInCard(
+    { ...STRETCHED_PLACEMENT, stackPositioning: 'ABSOLUTE' },
+    {
+      stackChildAlignSelf: 'AUTO',
+      stackChildPrimaryGrow: 0,
+      horizontalConstraint: 'CENTER',
+      verticalConstraint: 'STRETCH',
+      stackPositioning: 'AUTO'
+    }
+  )
+
+  expect(bar).toMatchObject({
+    layoutAlignSelf: 'AUTO',
+    layoutGrow: 0,
+    horizontalConstraint: 'CENTER',
+    verticalConstraint: 'STRETCH',
+    layoutPositioning: 'AUTO'
+  })
+})
