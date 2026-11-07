@@ -32,9 +32,11 @@ export default {
     compareDivider: 'bg-accent shadow-[0_0_0_1px_rgb(0_0_0/0.25)]',
     compareLabel:
       'pointer-events-none absolute top-1 rounded bg-black/55 px-1 py-px text-4xs font-medium text-white',
-    sources: 'space-y-2',
-    sourcesEmpty: 'text-muted',
-    source: 'min-w-0 space-y-0.5',
+    // Framed like the JSON viewer it replaces, with the same 16rem cap.
+    sources:
+      'max-h-64 divide-y divide-border overflow-y-auto rounded border border-border bg-panel scrollbar-thin',
+    sourcesEmpty: 'rounded border border-border bg-panel px-2 py-1.5 text-muted',
+    source: 'min-w-0 space-y-0.5 px-2 py-1.5',
     sourceTitle:
       'block cursor-pointer truncate text-left text-2xs font-medium text-primary hover:underline focus-visible:underline',
     sourceMeta: 'truncate text-muted',
