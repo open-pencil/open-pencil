@@ -1,3 +1,5 @@
+import type { Hono } from 'hono'
+import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
 
 /**
@@ -193,3 +195,32 @@ export const SERVICE_ERROR_STATUS = {
   capability_unavailable: 404,
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
+
+/** A route that answers 200 with JSON, as Hono's schema types describe one. */
+type JSONRoute<Path extends string, Method extends string, Input, Output> = {
+  [P in Path]: {
+    [M in Method]: { input: Input; output: Output; outputFormat: 'json'; status: 200 }
+  }
+}
+
+/**
+ * Every route a service answers besides chat completions, which OpenAI-compatible clients call
+ * themselves. Editors build a typed client from it with Hono's `hc`; a service's own app must
+ * match it, so the two cannot drift apart.
+ */
+export type CloudServicesSchema = JSONRoute<
+  typeof CLOUD_SERVICES_API_PATHS.catalog,
+  '$get',
+  BlankInput,
+  ServiceCatalog
+> &
+  JSONRoute<typeof CLOUD_SERVICES_API_PATHS.wallet, '$get', BlankInput, CreditWallet> &
+  JSONRoute<typeof CLOUD_SERVICES_API_PATHS.usage, '$get', { query: UsageQuery }, UsagePage> &
+  JSONRoute<
+    typeof CLOUD_SERVICES_API_PATHS.search,
+    '$post',
+    { json: SearchRequestInput },
+    SearchResponse
+  >
+
+export type CloudServicesAPI = Hono<BlankEnv, CloudServicesSchema>

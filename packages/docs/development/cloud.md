@@ -348,7 +348,10 @@ contract and the same credits. A `[billing]` table only advertises where people 
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
+catalog, wallet, and usage pages are the contract's own. `CloudServicesSchema` types those routes as
+Hono does, so the client calls them through `hc` and still parses each answer, since a service is
+deployed apart from the editor; a service built with Hono can check its app against the same type.
+The reference service is the AI relay in
 `src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
 forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
 workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking

@@ -46,7 +46,9 @@ export {
   type SearchResponse,
   type CloudServicesDiscovery,
   type CloudBillingDiscovery,
-  type CreateServicesTokenInput
+  type CreateServicesTokenInput,
+  type CloudServicesAPI,
+  type CloudServicesSchema
 } from './services'
 export * from './admin'
 export {

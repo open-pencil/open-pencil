@@ -9,8 +9,10 @@ import {
   type ServiceErrorCode,
   type CreditWallet,
   type SearchRequestInput,
-  type SearchResponse
+  type SearchResponse,
+  type CloudServicesAPI
 } from '#cloud/contract'
+import { hc } from 'hono/client'
 import * as v from 'valibot'
 
 /** Where a request gets the token it sends, and how it drops one the service refused. */
@@ -64,7 +66,7 @@ export function cloudServicesFetch(
 const errorBodySchema = v.pipe(v.string(), v.parseJson(), serviceErrorSchema)
 
 async function parsed<TSchema extends v.GenericSchema>(
-  response: Response,
+  response: Pick<Response, 'ok' | 'status' | 'text'>,
   schema: TSchema
 ): Promise<v.InferOutput<TSchema>> {
   const text = await response.text()
@@ -89,32 +91,21 @@ export type CloudServicesClientOptions = {
 export function createCloudServicesClient(options: CloudServicesClientOptions) {
   const endpoint = options.endpoint.replace(/\/+$/, '')
   const fetch = cloudServicesFetch(options.tokens, options.fetch)
+  // Answers are parsed rather than trusted: the service is deployed apart from this client.
+  const { v1 } = hc<CloudServicesAPI>(endpoint, { fetch })
   return {
     /** The base URL an OpenAI-compatible client sends chat completions below. */
     modelBaseURL: `${endpoint}${CLOUD_SERVICES_API_PATHS.base}`,
     fetch,
     async catalog(): Promise<ServiceCatalog> {
-      return parsed(
-        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.catalog}`),
-        serviceCatalogSchema
-      )
+      return parsed(await v1.catalog.$get(), serviceCatalogSchema)
     },
     async wallet(): Promise<CreditWallet> {
-      return parsed(
-        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.wallet}`),
-        creditWalletSchema
-      )
+      return parsed(await v1.wallet.$get(), creditWalletSchema)
     },
     /** A web search, charged to the workspace; only when the catalog lists `search`. */
     async search(input: SearchRequestInput): Promise<SearchResponse> {
-      return parsed(
-        await fetch(`${endpoint}${CLOUD_SERVICES_API_PATHS.search}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input)
-        }),
-        searchResponseSchema
-      )
+      return parsed(await v1.search.$post({ json: input }), searchResponseSchema)
     }
   }
 }
