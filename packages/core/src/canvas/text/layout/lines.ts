@@ -2,6 +2,9 @@ import type { CanvasKit, LineMetrics, Paragraph, ShapedLine } from 'canvaskit-wa
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { paragraphLength } from '#core/canvas/text/layout/block'
+import type { JoinerIndex } from '#core/canvas/text/paragraph/joiners'
+
 /** A stretch of a paragraph's characters set at one line height, `null` for auto. */
 export interface LineHeightRun {
   start: number
@@ -29,6 +32,7 @@ interface LineBlock {
   lines?: TextLayoutBlockLines
   lead: number
   length: number
+  joiners: JoinerIndex
   inset: number
   spaceBefore: number
   y: number
@@ -143,7 +147,11 @@ export function figmaLineBox(
 /** Whether all `values` are the same, to within the precision lines are placed with. */
 export function allSame(values: readonly number[]): boolean {
   const first = values.at(0)
-  return first === undefined || values.every((value) => Math.abs(value - first) < LINE_EPSILON)
+  return first === undefined || values.every((value) => samePosition(value, first))
+}
+
+export function samePosition(a: number, b: number): boolean {
+  return Math.abs(a - b) < LINE_EPSILON
 }
 
 /** Each block's lines as Figma sets them, or `null` when one cannot be measured. */
@@ -220,29 +228,52 @@ function pieceShift(
   return shift && { ...shift, agrees: own.length }
 }
 
-/**
- * The block's lines as paragraphs of their own, one for each run of lines that move by the
- * same offset, or one per line when not `grouped`, placed so their glyphs land where the
- * block's paragraph has them, moved by that offset. `null` when lines cannot be laid out
- * apart from the others.
- */
-function buildPieces(
+export interface LineMoves {
+  x: readonly number[]
+  y: readonly number[]
+}
+
+export interface LineRange {
+  from: number
+  to: number
+}
+
+export type ShapedLines = ReadonlyArray<ShapedLine | undefined>
+
+interface PieceOptions {
+  range?: LineRange
+  shaped?: ShapedLines
+  grouped?: boolean
+}
+
+function movesAlike(moves: LineMoves, line: number, other: number): boolean {
+  return allSame([moves.x[line], moves.x[other]]) && allSame([moves.y[line], moves.y[other]])
+}
+
+export function buildPieces(
   block: LineBlock,
   width: number,
-  offsets: readonly number[],
-  grouped = true
+  moves: LineMoves,
+  {
+    range = { from: 0, to: block.metrics.length },
+    shaped = shapedLinesByLine(block.paragraph),
+    grouped = true
+  }: PieceOptions = {}
 ): LinePiece[] | null {
   const build = block.lines?.build
   if (!build) return null
   const lines = block.paragraph.getLineMetrics()
-  const shaped = shapedLinesByLine(block.paragraph)
   const truncated = block.paragraph.didExceedMaxLines()
-  const textEnd = block.lead + block.length
+  const textEnd = paragraphLength(block)
   const pieces: LinePiece[] = []
-  let from = 0
-  while (from < lines.length) {
+  let from = range.from
+  while (from < range.to) {
     let to = from + 1
-    if (grouped) while (to < lines.length && allSame([offsets[from], offsets[to]])) to++
+    if (grouped) {
+      while (to < range.to && movesAlike(moves, from, to)) {
+        to++
+      }
+    }
     const start = lines[from].startIndex
     const end = to === lines.length ? textEnd : lines[to - 1].endIndex
     // Empty lines draw nothing.
@@ -259,9 +290,14 @@ function buildPieces(
       paragraph.delete()
       for (const piece of pieces) piece.paragraph.delete()
       // Lines that lay out or snap apart are drawn one by one.
-      return grouped ? buildPieces(block, width, offsets, false) : null
+      return grouped ? buildPieces(block, width, moves, { range, shaped, grouped: false }) : null
     }
-    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from], line: from })
+    pieces.push({
+      paragraph,
+      x: shift.x + moves.x[from],
+      y: shift.y + moves.y[from],
+      line: from
+    })
     from = to
   }
   return pieces
@@ -284,7 +320,8 @@ export interface PlacedLines<Block> {
 export function placeLines<Block extends LineBlock>(
   ck: CanvasKit,
   blocks: readonly Block[],
-  width: number
+  width: number,
+  lineShifts: (block: Block) => readonly number[]
 ): PlacedLines<Block> | null {
   const metrics = blocks.map((block) => block.metrics)
   // A single line has none to be spaced from.
@@ -323,7 +360,7 @@ export function placeLines<Block extends LineBlock>(
     const y = blockBaselines[0] - lines[0].baseline
     const offsets = lines.map((line, lineIndex) => blockBaselines[lineIndex] - y - line.baseline)
     const apart = !allSame(offsets)
-    const pieces = apart ? buildPieces(block, width, offsets) : null
+    const pieces = apart ? buildPieces(block, width, { x: lineShifts(block), y: offsets }) : null
     placed.set(block, {
       y,
       height: blockBaselines[end] - blockBoxes[end].ascent + blockBoxes[end].height - y,

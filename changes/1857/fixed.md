@@ -1,0 +1,1 @@
+- Letter-spaced text fits and aligns as in Figma: the spacing after the last letter no longer adds an ellipsis or an extra line break, left-aligned lines start at the box edge, and right-aligned and centred lines line up with the box (#1857).

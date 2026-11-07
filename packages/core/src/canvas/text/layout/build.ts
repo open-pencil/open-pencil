@@ -1,5 +1,3 @@
-import type { Paragraph } from 'canvaskit-wasm'
-
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
@@ -16,13 +14,24 @@ import {
 } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
+import { TextLayout } from '#core/canvas/text/layout'
 import {
-  TextLayout,
-  type LineCapHeight,
+  paragraphBlock,
+  type BlockBuild,
+  type JoinedBlock,
   type TextLayoutBlock,
   type TextLayoutMarker
-} from '#core/canvas/text/layout'
+} from '#core/canvas/text/layout/block'
+import {
+  firstBuild,
+  likelyWraps,
+  lineFitting,
+  shownToSourceIndex,
+  textJoiners
+} from '#core/canvas/text/layout/joining'
+import type { LineSpacing } from '#core/canvas/text/layout/letter-spacing'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
+import type { LineCapHeight } from '#core/canvas/text/layout/vertical'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
   buildSkParagraph,
@@ -31,10 +40,11 @@ import {
   type ParagraphBlockOptions
 } from '#core/canvas/text/paragraph'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
+import { JoinerIndex, sliceJoiners, type Joiner } from '#core/canvas/text/paragraph/joiners'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
-import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
+import { shownText } from '#core/text/case'
 import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { textFontFace } from '#core/text/requirements/collect'
@@ -51,6 +61,10 @@ const LIST_DIGIT_GLYPH_ID = 48
 const FALLBACK_DIGIT_EMS = 0.6
 /** The placeholder a first-line indent puts before the text takes one UTF-16 unit, three bytes. */
 const PLACEHOLDER_UTF8_LENGTH = 3
+// Each native paragraph costs a fixed native layout; measured, blocks pay off past 200 joiners.
+const BLOCKS_PAST_JOINED_PARAGRAPHS = 200
+const JOINED_PARAGRAPHS_PER_BLOCK = 128
+const CARRIAGE_RETURN = '\r'
 
 function styleAt(runs: readonly StyleRun[], index: number): CharacterStyleOverride | undefined {
   return runs.find((run) => index >= run.start && index < run.start + run.length)?.style
@@ -104,11 +118,16 @@ function paragraphLines(
   node: ParagraphNode,
   color: Float32Array | undefined,
   options: ParagraphBuildOptions,
-  firstLineIndent = 0
+  {
+    firstLineIndent = 0,
+    joiners = [],
+    index = JoinerIndex.EMPTY
+  }: { firstLineIndent?: number; joiners?: readonly Joiner[]; index?: JoinerIndex } = {}
 ): TextLayoutBlockLines | undefined {
   // Lines are cut by character index, which the text's case must keep.
   if (shownText(node).length !== node.text.length) return undefined
   const lead = firstLineIndent > 0 ? 1 : 0
+  const textAt = (at: number) => Math.max(0, index.textOffset(at - lead))
   const ellipsis = buildTruncateOpts(node).ellipsis
   // A justified line is stretched only with text after it: lines are laid out with the rest
   // of the paragraph and cut, as truncated last lines are.
@@ -117,11 +136,16 @@ function paragraphLines(
     if (truncated) return { maxLines: lines, ellipsis }
     return justified ? { maxLines: lines } : {}
   }
+  const atParagraph = (at: number) => lead + index.paragraphOffset(at - lead)
+  const runs = lineHeightRuns(node, lead)
   return {
-    heights: lineHeightRuns(node, lead),
+    heights:
+      index.count === 0
+        ? runs
+        : runs.map((run) => ({ ...run, start: atParagraph(run.start), end: atParagraph(run.end) })),
     build: (start, end, lines, truncated) => {
-      const from = Math.max(0, start - lead)
-      const to = justified ? node.text.length : end - lead
+      const from = textAt(start)
+      const to = justified ? node.text.length : textAt(end)
       const line: ParagraphNode = {
         ...node,
         text: node.text.slice(from, to),
@@ -129,10 +153,24 @@ function paragraphLines(
       }
       return buildSkParagraph(r, line, color, options, {
         firstLineIndent: start === 0 ? firstLineIndent : 0,
-        truncation: lineTruncation(lines, truncated)
+        truncation: lineTruncation(lines, truncated),
+        joiners: sliceJoiners(joiners, from, to)
       })
     }
   }
+}
+
+function joinsInBlocks(
+  node: ParagraphNode,
+  spacing: LineSpacing,
+  joiners: readonly Joiner[]
+): boolean {
+  return (
+    joiners.length > BLOCKS_PAST_JOINED_PARAGRAPHS &&
+    node.styleRuns.length === 0 &&
+    node.textTruncation !== 'ENDING' &&
+    likelyWraps(node, spacing, joiners)
+  )
 }
 
 /** Whether the text lays out paragraph by paragraph rather than as one native paragraph. */
@@ -226,24 +264,29 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
 }
 
 /**
- * Text with lists, paragraph spacing, or a first-line indent, laid out one paragraph per
- * native paragraph: Skia has no hanging indent, so each list item lays out at the width its
- * indent leaves, beside a marker of its own.
+ * Text laid out as several native paragraphs: one per paragraph for lists, paragraph spacing,
+ * or a first-line indent, since Skia has no hanging indent; groups of paragraphs for a long
+ * joined text, since Skia's joiners cost more the more of them one paragraph holds.
  */
 function buildBlocks(
   r: TextRenderer,
   node: ParagraphNode,
   color: Float32Array | undefined,
-  options: ParagraphBuildOptions
+  options: ParagraphBuildOptions,
+  paragraphsPerBlock = 1
 ): TextLayout {
   const shown = shownText(node)
   const sources = textParagraphRanges(node.text)
-  const shownRanges = textParagraphRanges(shown)
+  const groups = paragraphGroups(node.text, sources, paragraphsPerBlock)
+  const blockSources = groups.map((group) => spannedRange(sources, group))
+  const shownParagraphs = textParagraphRanges(shown)
+  const shownRanges = groups.map((group) => spannedRange(shownParagraphs, group))
   const items = new Map(
     textListItems(node.text, node.textParagraphs).map((item) => [item.paragraph, item])
   )
   const digits = topLevelNumberDigits([...items.values()])
   const rtl = resolveNodeTextDirection(node) === 'RTL'
+  const fitting = lineFitting(node)
   const truncation = buildTruncateOpts(node)
   const maxLines = truncation.maxLines
   // Each paragraph starts one byte, its newline, after the one before it ends.
@@ -256,8 +299,8 @@ function buildBlocks(
 
   const blocks: TextLayoutBlock[] = []
   try {
-    for (const [index, { start, end }] of sources.entries()) {
-      blocks.push(buildBlock(index, start, end))
+    for (const [order, { start, end }] of blockSources.entries()) {
+      blocks.push(buildBlock(order, groups[order].first, start, end))
     }
   } catch (error) {
     // Native paragraphs built before the failure are not garbage collected.
@@ -267,10 +310,10 @@ function buildBlocks(
     }
     throw error
   }
-  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node))
+  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node), fitting)
 
-  function buildBlock(index: number, start: number, end: number): TextLayoutBlock {
-    const shownRange: TextParagraphRange = shownRanges[index]
+  function buildBlock(order: number, index: number, start: number, end: number): TextLayoutBlock {
+    const shownRange: TextParagraphRange = shownRanges[order]
     const item = items.get(index)
     const paragraphStyle = paragraphStyleAt(node.textParagraphs, index)
     const empty = end === start
@@ -284,9 +327,35 @@ function buildBlocks(
     const paragraphIndent = paragraphSpacingAt(node, index, 'paragraphIndent')
     const firstLineIndent =
       paragraphStyle.listType === 'NONE' && paragraphIndent > 0 ? paragraphIndent : 0
-    const blockOptions = (lines?: number): ParagraphBlockOptions => ({
+    const joiners = empty ? [] : textJoiners(node, fitting, start, end)
+    const blockOptions = (
+      lines: number | undefined,
+      joined: readonly Joiner[]
+    ): ParagraphBlockOptions => ({
       firstLineIndent,
-      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis }
+      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis },
+      joiners: joined
+    })
+    const build = (lines: number | undefined, joined: readonly Joiner[] = []) =>
+      buildSkParagraph(r, blockNode, color, options, blockOptions(lines, joined))
+    const join = (lines = maxLines): JoinedBlock => {
+      const joinerIndex = JoinerIndex.of(blockNode.text, joiners)
+      return {
+        paragraph: build(lines, joiners),
+        rebuild: maxLines === undefined ? undefined : (capped) => build(capped, joiners),
+        joiners: joinerIndex,
+        lines: paragraphLines(r, blockNode, color, options, {
+          firstLineIndent,
+          joiners,
+          index: joinerIndex
+        })
+      }
+    }
+    const plain = (): JoinedBlock => ({
+      paragraph: build(maxLines),
+      rebuild: maxLines === undefined ? undefined : (lines) => build(lines),
+      joiners: JoinerIndex.EMPTY,
+      lines: paragraphLines(r, blockNode, color, options, { firstLineIndent })
     })
     const betweenItems =
       index > 0 &&
@@ -294,26 +363,24 @@ function buildBlocks(
       paragraphStyle.listType !== 'NONE'
     const list = item ? listStyle(node, sources[item.groupStart].start) : null
     const marker = item && list ? buildMarker(r, node, item, list, color, options) : null
-    let paragraph: Paragraph
+    let built: BlockBuild
     try {
-      paragraph = buildSkParagraph(r, blockNode, color, options, blockOptions(maxLines))
+      built = firstBuild(node, fitting.spacing, joiners, plain, join)
     } catch (error) {
       marker?.paragraph.delete()
       throw error
     }
     return {
-      paragraph,
-      rebuild:
-        maxLines === undefined
-          ? undefined
-          : (lines) => buildSkParagraph(r, blockNode, color, options, blockOptions(lines)),
+      ...built,
       start: shownRange.start,
-      utf8Start: utf8Starts[index],
+      utf8Start: utf8Starts[order],
       length: shownRange.end - shownRange.start,
       lead: firstLineIndent > 0 ? 1 : 0,
       utf8Lead: firstLineIndent > 0 ? PLACEHOLDER_UTF8_LENGTH : 0,
       leadWidth: firstLineIndent,
+      tailShifts: new Map(),
       empty,
+      endsAtSeam: paragraphsPerBlock > 1 && order < groups.length - 1,
       inset: item && list ? listInset(node, item, list, digits) : 0,
       rtl,
       // The space after a paragraph is its own: the paragraph before sets the space before.
@@ -322,13 +389,51 @@ function buildBlocks(
           ? 0
           : paragraphSpacingAt(node, index - 1, betweenItems ? 'listSpacing' : 'paragraphSpacing'),
       marker,
-      lines: paragraphLines(r, blockNode, color, options, firstLineIndent),
       x: 0,
       y: 0,
       visible: true,
       metrics: []
     }
   }
+}
+
+interface ParagraphGroup {
+  first: number
+  last: number
+}
+
+function spannedRange(
+  ranges: readonly TextParagraphRange[],
+  { first, last }: ParagraphGroup
+): TextParagraphRange {
+  return { start: ranges[first].start, end: ranges[last].end }
+}
+
+/**
+ * Paragraphs `size` at a time, never split beside an empty paragraph or after a carriage
+ * return, whose box and caret a native paragraph's end would move.
+ */
+function paragraphGroups(
+  text: string,
+  ranges: readonly TextParagraphRange[],
+  size: number
+): ParagraphGroup[] {
+  if (size === 1) {
+    return ranges.map((_, index) => ({ first: index, last: index }))
+  }
+  const splitsBetween = (range: TextParagraphRange, next: TextParagraphRange) =>
+    range.end > range.start && next.end > next.start && text[range.end - 1] !== CARRIAGE_RETURN
+  const groups: ParagraphGroup[] = []
+  let first = 0
+  for (const [index, range] of ranges.entries()) {
+    const next = ranges.at(index + 1)
+    const full = index + 1 - first >= size
+    if (!next || (full && splitsBetween(range, next))) {
+      groups.push({ first, last: index })
+      first = index + 1
+    }
+  }
+  return groups
 }
 
 /**
@@ -378,15 +483,32 @@ function createTextLayout(
   color: Float32Array | undefined,
   options: ParagraphBuildOptions
 ): TextLayout {
-  return needsParagraphLayout(node)
-    ? buildBlocks(r, node, color, options)
-    : TextLayout.ofParagraph(
-        r.ck,
-        buildSkParagraph(r, node, color, options),
-        shownText(node).length,
-        paragraphLines(r, node, color, options),
-        trimmedCapHeight(node)
-      )
+  if (needsParagraphLayout(node)) {
+    return buildBlocks(r, node, color, options)
+  }
+  const fitting = lineFitting(node)
+  const joiners = textJoiners(node, fitting, 0, node.text.length)
+  if (joinsInBlocks(node, fitting.spacing, joiners)) {
+    return buildBlocks(r, node, color, options, JOINED_PARAGRAPHS_PER_BLOCK)
+  }
+  const join = (): JoinedBlock => {
+    const index = JoinerIndex.of(node.text, joiners)
+    return {
+      paragraph: buildSkParagraph(r, node, color, options, { joiners }),
+      joiners: index,
+      lines: paragraphLines(r, node, color, options, { joiners, index })
+    }
+  }
+  const plain = (): JoinedBlock => ({
+    paragraph: buildSkParagraph(r, node, color, options),
+    joiners: JoinerIndex.EMPTY,
+    lines: paragraphLines(r, node, color, options)
+  })
+  const block = paragraphBlock(
+    shownText(node).length,
+    firstBuild(node, fitting.spacing, joiners, plain, join)
+  )
+  return new TextLayout(r.ck, [block], undefined, trimmedCapHeight(node), fitting)
 }
 
 function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
@@ -398,17 +520,6 @@ function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
     const sourceStart = sourceIndex(start)
     const sourceEnd = end > start ? sourceIndex(end - 1) + 1 : sourceStart
     return rangeCapHeight(node, sourceStart, sourceEnd)
-  }
-}
-
-function shownToSourceIndex(node: ParagraphNode): (shownIndex: number) => number {
-  if (textCaseSegments(node).every((segment) => segment.textCase === 'ORIGINAL')) {
-    return (shownIndex) => Math.min(shownIndex, node.text.length)
-  }
-  let indices: number[] | undefined
-  return (shownIndex) => {
-    indices ??= shownSourceIndices(node)
-    return indices[shownIndex] ?? node.text.length
   }
 }
 
