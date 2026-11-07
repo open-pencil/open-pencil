@@ -1,8 +1,8 @@
 import { defineRule } from '@oxlint/plugins'
 import type { ESTree } from '@oxlint/plugins'
 
-/** The start of a data URL, bare or inside CSS `url()`. */
-const DATA_URL_START = /^(?:url\(["']?)?data:/i
+/** The start of a data URL, bare or inside CSS `url()`, after any spaces. */
+const DATA_URL_START = /^\s*(?:url\(\s*["']?\s*)?data:/i
 const ENCODERS = new Set(['fromUint8Array', 'encodeURIComponent'])
 
 function isEncoderCall(node: ESTree.Node): boolean {

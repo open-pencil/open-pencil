@@ -11,6 +11,8 @@ const rejected = [
   `const css = \`url("data:image/svg+xml,\${encodeURIComponent(svg)}") 12 12, auto\``,
   "const url = 'data:image/png;base64,' + fromUint8Array(bytes)",
   "const url = 'data:' + mime + ';base64,' + fromUint8Array(bytes)",
+  `const css = \`url( "data:image/svg+xml,\${encodeURIComponent(svg)}")\``,
+  `const src = \` data:image/png;base64,\${fromUint8Array(bytes)}\``,
   "value.startsWith('data:image/')"
 ]
 const accepted = [
