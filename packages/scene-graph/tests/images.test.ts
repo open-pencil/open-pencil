@@ -38,7 +38,7 @@ describe('coverImageTransform', () => {
   })
 })
 
-// 37 × 21 images, encoded by Pillow.
+// 37 × 21 images, encoded by Pillow, and AVIF by avifenc.
 const IMAGES = [
   [
     'PNG',
@@ -55,6 +55,11 @@ const IMAGES = [
     'lossy WebP',
     'image/webp',
     'UklGRk4AAABXRUJQVlA4IEIAAACQAwCdASolABUAPm02l0ikIyIhJWgAgA2JZwDPkoB+AAAr98NwAP7wm0P/5BcsLrka//yA/5Af8gP/498Ql180AAA='
+  ],
+  [
+    'AVIF',
+    'image/avif',
+    'AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOltZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAHmlsb2MAAAAARAAAAQABAAAAAQAAAQ0AAAAaAAAAKGlpbmYAAAAAAAEAAAAaaW5mZQIAAAAAAQAAYXYwMUNvbG9yAAAAAGhpcHJwAAAASWlwY28AAAAUaXNwZQAAAAAAAAAlAAAAFQAAAA5waXhpAAAAAAEIAAAADGF2MUOBABwAAAAAE2NvbHJuY2x4AAEAAgAGgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAIm1kYXQSAAoGGBUkowqAMg4f8P/xQOlFjYHjUiqlgA=='
   ]
 ] as const
 
@@ -133,7 +138,9 @@ describe('parseDataURL', () => {
 
   test('reads the scheme, type, and encoding without regard to case or line breaks', () => {
     const base64 = fromUint8Array(PNG)
-    const parsed = parseDataURL(`DATA:Image/PNG;charset=x;BASE64,${base64.slice(0, 5)}\n${base64.slice(5)}`)
+    const parsed = parseDataURL(
+      `DATA:Image/PNG;charset=x;BASE64,${base64.slice(0, 5)}\n${base64.slice(5)}`
+    )
     expect(parsed?.mimeType).toBe('image/png')
     expect(parsed?.bytes).toEqual(PNG)
   })
@@ -144,6 +151,11 @@ describe('parseDataURL', () => {
       text: '<svg/>'
     })
     expect(text('data:,caf%C3%A9')).toEqual({ mimeType: 'text/plain', text: 'café' })
+  })
+
+  test('keeps a percent sign that starts no escape', () => {
+    expect(text('data:text/plain,100% done')).toEqual({ mimeType: 'text/plain', text: '100% done' })
+    expect(text('data:image/svg+xml,<svg width="100%"/>')?.text).toBe('<svg width="100%"/>')
   })
 
   test('refuses escapes that are bytes rather than UTF-8 text', () => {

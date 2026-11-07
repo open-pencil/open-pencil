@@ -1,1 +1,1 @@
-- HTML import keeps an SVG `<img>` data URL as the image source instead of an empty image fill, and HTML bundle export keeps SVG images inline instead of writing `.svg` files that could run script when opened from the site (#1869).
+- HTML import keeps an SVG `<img>` data URL as the image source instead of an empty image fill, and HTML bundle export keeps SVG images inline instead of writing `.svg` files that could run script when opened from the site, and writes AVIF images to `.avif` files instead of `.png` (#1869).

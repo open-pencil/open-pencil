@@ -14,14 +14,15 @@ export function computeImageHash(data: Uint8Array): string {
   return bytesToHex(sha1(data))
 }
 
-export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'
+export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'image/avif'
 
 /** The image types documents store, by the name `image-size` gives each format. */
 const IMAGE_MIME_TYPES: Partial<Record<string, ImageMimeType>> = {
   png: 'image/png',
   jpg: 'image/jpeg',
   gif: 'image/gif',
-  webp: 'image/webp'
+  webp: 'image/webp',
+  avif: 'image/avif'
 }
 
 /** The raster types a dropped or pasted file can be imported as an image fill from. */
@@ -45,7 +46,7 @@ export interface ImageHeader extends Size {
 }
 
 /**
- * The type and size of a PNG, JPEG, GIF, or WebP, read from its header by `image-size`; null for
+ * The type and size of a PNG, JPEG, GIF, WebP, or AVIF, read from its header by `image-size`; null for
  * bytes it cannot read and for other formats.
  */
 export function imageHeader(data: Uint8Array): ImageHeader | null {
@@ -88,7 +89,8 @@ export function parseDataURL(url: string): DataURL | null {
   const mimeType = params[0]?.toLowerCase() || 'text/plain'
   let text: string
   try {
-    text = decodeURIComponent(body)
+    // A `%` that starts no escape is a literal percent sign, as in `width="100%"`.
+    text = decodeURIComponent(body.replace(/%(?![\da-f]{2})/gi, '%25'))
   } catch {
     return null
   }

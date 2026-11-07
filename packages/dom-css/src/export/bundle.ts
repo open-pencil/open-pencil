@@ -303,7 +303,8 @@ const IMAGE_EXTENSIONS: Partial<Record<string, string>> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/gif': 'gif',
-  'image/webp': 'webp'
+  'image/webp': 'webp',
+  'image/avif': 'avif'
 }
 
 /** Inline images moved into files under `assetBasePath`, the HTML pointing at them. */
