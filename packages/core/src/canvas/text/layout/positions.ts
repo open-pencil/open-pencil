@@ -134,8 +134,7 @@ interface CharacterBox {
   right: number
 }
 
-// Skia's own hit test reads a joiner's step back as glyphs out of order; a right-to-left last
-// word stands left of the joiner, where Skia's own hit test still holds.
+// Skia's hit test misreads a joiner's step back, except for a right-to-left last word left of it.
 function lineEndBoxes(ck: CanvasKit, block: TextLayoutBlock, line: number): CharacterBox[] {
   const metrics = block.metrics.at(line)
   const tail =

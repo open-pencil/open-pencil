@@ -75,7 +75,6 @@ export function lineBands(
   return bands
 }
 
-// Where glyph ink is too close and no piece can be laid out, the cut follows the line boxes.
 export function lineBoxBands(shifts: readonly number[], lines: readonly LineMetrics[]): LineBand[] {
   const bands: LineBand[] = []
   let lineTop = 0

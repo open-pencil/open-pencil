@@ -37,7 +37,7 @@ function glyphsAndWidth(props: Props): { glyphs: number; width: number } {
 }
 
 describe('the spacing after a line’s last character is the one Skia shapes', () => {
-  test.each(['\n', '\r', '\u2028', '\u2029'])(
+  test.each(['\n', '\v', '\f', '\r', '\u0085', '\u2028', '\u2029'])(
     'punctuation after %j that follows arabic keeps its spacing',
     (separator) => {
       const { glyphs, width } = glyphsAndWidth({
