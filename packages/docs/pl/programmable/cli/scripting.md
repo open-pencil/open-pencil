@@ -102,7 +102,7 @@ Najczęściej używane właściwości można odczytywać i zapisywać przez poś
 - `figma.mixed`
 - `figma.createImage(data)`
 - `figma.loadFontAsync(fontName)` wczytuje czcionkę; jak w Figmie, zmiana tekstu, jego rozmiaru lub czcionki wymaga wcześniejszego wczytania używanych czcionek
-- `figma.listAvailableFontsAsync()` zwraca wszystkie style rodzin zainstalowanych i wbudowanych, a rodzin online po wczytaniu jednej z ich czcionek; rodzina online, o którą jeszcze nie pytano, ma tylko styl `Regular`
+- `figma.listAvailableFontsAsync()` zwraca wszystkie style rodzin zainstalowanych i wbudowanych, a rodzin online po wczytaniu jednej z ich czcionek; rodzina online, o którą jeszcze nie pytano, jest podana tylko jako `Regular`
 - `figma.notify(message)` zapisuje ostrzeżenie w trybie bez interfejsu
 - `figma.viewport`
 
