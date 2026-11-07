@@ -70,6 +70,8 @@ export function usePosition() {
       )
     } else if (key === 'rotation') {
       updateEach(nodes.value, key, (target) => panelRotationChange(target, editor.graph, value))
+    } else if ((key === 'width' || key === 'height') && size.isInterrupted()) {
+      return
     } else if (resizesLikeHandle(key)) {
       size.update(nodes.value, (start) => ({ ...start, [key]: value }))
     } else {

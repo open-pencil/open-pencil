@@ -264,6 +264,8 @@ export function createLayoutActions({
   function updateAxisSize(axis: LayoutAxis, value: number) {
     const n = node.value
     if (!n) return
+    // A scrub whose edit was put back changes nothing more until it ends, as a node preview does.
+    if (panelSize.isInterrupted()) return
     const ratio = enforcedAspectRatio(n)
     if (sizesLayersInside(n)) {
       panelSize.update([n], (start) =>

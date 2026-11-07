@@ -31,24 +31,35 @@ export function usePanelSize(editor: Editor) {
   /** The document the edit began in; one loaded over it ends the edit without touching either. */
   let graph: Editor['graph'] | null = null
   let stopWatching: (() => void)[] = []
+  /** Set when the edit was put back under the field; the rest of that scrub changes nothing. */
+  let interrupted = false
 
   // As a node preview does, an edit whose selection, page, or document goes away is put back.
   function watch(current: readonly DragResize[]) {
+    const interrupt = () => {
+      cancel()
+      interrupted = true
+    }
     stopWatching = [
       ...(['selection:changed', 'page:changed', 'graph:replaced'] as const).map((event) =>
-        editor.onEditorEvent(event, cancel)
+        editor.onEditorEvent(event, interrupt)
       ),
       editor.onEditorEvent('node:deleted', (id) => {
-        if (current.some((edit) => edit.nodeId === id || edit.origChildren?.has(id))) cancel()
+        if (current.some((edit) => edit.nodeId === id || edit.origChildren?.has(id))) interrupt()
       })
     ]
   }
 
   function update(nodes: readonly SceneNode[], size: (start: Rect) => Size) {
+    if (interrupted) return
     if (edits && graph !== editor.graph) take()
     if (!edits) {
-      // A panel can still hold layers of a document that was loaded over; those are not resized.
-      const live = nodes.filter((node) => editor.graph.getNode(node.id) === node)
+      // The panel holds copies of the selection; each resize starts from the layer's own state in
+      // the open document. A scrub a reload interrupted changes nothing more (see `interrupted`).
+      const live = nodes.flatMap((node) => {
+        const current = editor.graph.getNode(node.id)
+        return current ? [current] : []
+      })
       if (live.length === 0) return
       edits = live.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
       graph = editor.graph
@@ -73,8 +84,9 @@ export function usePanelSize(editor: Editor) {
     return current ?? []
   }
 
-  /** Commits the edit in progress, if any. */
+  /** Commits the edit in progress, if any, and ends the scrub. */
   function commit() {
+    interrupted = false
     const current = take()
     if (current.length === 0) return
     editor.undo.runBatch('Resize', () => {
@@ -83,11 +95,12 @@ export function usePanelSize(editor: Editor) {
   }
 
   function cancel() {
+    interrupted = false
     const current = take()
     for (const edit of current) cancelResizePreview(edit, editor)
     if (current.length > 0) editor.requestRepaint()
   }
 
   tryOnScopeDispose(cancel)
-  return { update, commit, cancel }
+  return { update, commit, cancel, isInterrupted: () => interrupted }
 }

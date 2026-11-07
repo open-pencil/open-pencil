@@ -1,11 +1,24 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computed, effectScope } from 'vue'
+import { effectScope } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { createLayoutActions } from '#vue/controls/layout/helpers'
+import { createSelectedNodeState } from '#vue/editor/selection-state/nodes'
+
+/** Layout actions fed as the panel feeds them: copies of the selection, not graph nodes. */
+function panelActions(editor: ReturnType<typeof createEditor>, id: string) {
+  editor.select([id])
+  const scope = effectScope()
+  const actions = scope.run(() => {
+    const selected = createSelectedNodeState(editor)
+    return createLayoutActions({ editor, node: selected.node })
+  })
+  if (!actions) throw new Error('Expected layout actions')
+  return { actions, scope }
+}
 
 // Figma (desktop, 2026-11-07): typing W into the panel places the layers inside by their
 // constraints, as a handle drag or resize() does.
@@ -28,11 +41,7 @@ describe('a typed width or height', () => {
       height: 10,
       horizontalConstraint: 'SCALE'
     })
-    const scope = effectScope()
-    const actions = scope.run(() =>
-      createLayoutActions({ editor, node: computed<SceneNode | null>(() => frame) })
-    )
-    if (!actions) throw new Error('Expected layout actions')
+    const { actions, scope } = panelActions(editor, frame.id)
     const box = (node: SceneNode) => [node.x, node.y, node.width, node.height]
     return { editor, frame, stretched, scaled, actions, box, scope }
   }
@@ -92,7 +101,11 @@ describe('a typed width or height', () => {
         [0, 0, 100, 100],
         [0.7, 3.75, 22.6, 16.5]
       ])
-      actions.commitAxisSize('width', 150, 100)
+      // The rest of that scrub reaches the newly selected layer, and leaves it be.
+      actions.updateAxisSize('width', 160)
+      expect(box(stretched)).toEqual([0.7, 3.75, 22.6, 16.5])
+      actions.commitAxisSize('width', 160, 100)
+      expect(box(stretched)).toEqual([0.7, 3.75, 22.6, 16.5])
       expect(frame.width).toBe(100)
       expect(editor.undo.canUndo).toBe(false)
     } finally {
@@ -128,7 +141,7 @@ describe('a typed width or height', () => {
 
   test('an instance turns its Left & right layer over past zero, as in Figma', () => {
     const editor = createEditor()
-    const scope = effectScope()
+    let scope: ReturnType<typeof effectScope> | undefined
     try {
       const page = editor.state.currentPageId
       const card = editor.graph.createNode('COMPONENT', page, { width: 100, height: 50 })
@@ -141,15 +154,14 @@ describe('a typed width or height', () => {
       })
       const instance = editor.graph.createInstance(card.id, page)
       if (!instance) throw new Error('Expected an instance')
-      const actions = scope.run(() =>
-        createLayoutActions({ editor, node: computed<SceneNode | null>(() => instance) })
-      )
-      actions?.updateAxisSize('width', 70)
-      actions?.commitAxisSize('width', 70, 100)
+      const panel = panelActions(editor, instance.id)
+      scope = panel.scope
+      panel.actions.updateAxisSize('width', 70)
+      panel.actions.commitAxisSize('width', 70, 100)
       const bar = editor.graph.getChildren(instance.id)[0]
       expect(bar).toMatchObject({ x: 0, width: 10, flipX: true })
     } finally {
-      scope.stop()
+      scope?.stop()
       editor.dispose()
     }
   })
