@@ -148,3 +148,41 @@ describe('no-px-tailwind-values', () => {
     )
   })
 })
+
+describe('no-interpolated-tailwind-classes', () => {
+  const interpolatedRule = 'no-interpolated-tailwind-classes'
+
+  test('rejects class lists interpolated in themes and class helpers', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/spinner.ts': `const spin = 'animate-spin'\nexport default { slots: { spinner: \`size-3.5 \${spin}\` } }\n`,
+          'src/components/variants.ts': `import { tv } from 'tailwind-variants'\nconst spin = 'animate-spin'\nexport const ui = tv({ base: \`size-3.5 \${spin}\` })\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics.map((item) => item.filename?.split('/').pop()).toSorted()).toEqual([
+      'spinner.ts',
+      'variants.ts'
+    ])
+  })
+
+  test('accepts arrays, plain template strings, and interpolation outside class lists', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/array.ts':
+            "const spin = 'animate-spin'\nexport default { slots: { spinner: ['size-3.5', spin] } }\n",
+          'src/theme/plain.ts': 'export default { slots: { root: `size-3.5 shrink-0` } }\n',
+          'src/theme/variant-key.ts': `const size = 'sm'\nexport default { slots: { root: 'flex' }, defaultVariants: { size: \`\${size}\` } }\n`,
+          'src/components/key.ts': `const id = 'a'\nexport const key = \`\${id}:b\`\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics).toEqual([])
+  })
+})
