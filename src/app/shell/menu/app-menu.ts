@@ -18,6 +18,7 @@ import IconZoomOut from '~icons/lucide/zoom-out'
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 import type {
   CommandPaletteGroup,
@@ -51,7 +52,14 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
+import {
+  closeTab,
+  activeTab,
+  createDocumentTab,
+  createTab,
+  openNewFileTab,
+  switchAdjacentTab
+} from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -105,9 +113,11 @@ export function useAppMenu() {
   } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
+  const { isMobile } = useViewportKind()
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-board': 'newBoard',
     'new-tab': 'newTab',
     open: 'open',
     'open-tour': 'openTour',
@@ -129,6 +139,8 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'paste-as-layers': 'pasteAsLayers',
+    'copy-properties': 'copyProperties',
+    'paste-properties': 'pasteProperties',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
@@ -148,6 +160,7 @@ export function useAppMenu() {
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
     'toggle-preview': 'togglePreview',
+    'toggle-ai': 'toggleAIChat',
     theme: 'theme',
     'theme-light': 'themeLight',
     'theme-dark': 'themeDark',
@@ -183,6 +196,7 @@ export function useAppMenu() {
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
+    'new-board': () => createDocumentTab('board'),
     'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
     'open-tour': () => {
@@ -205,7 +219,7 @@ export function useAppMenu() {
     'export-pptx': () => exportSelection('pptx'),
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
-    ...createSharedEditorMenuActions(setTheme)
+    ...createSharedEditorMenuActions(setTheme, isMobile)
   }
 
   function itemAction(item: AppMenuActionItem): (() => void) | undefined {
@@ -291,6 +305,9 @@ export function useAppMenu() {
       case 'view-split-right':
       case 'view-split-down':
         return store.visiblePaneCount.value >= store.panes.maxVisiblePanes
+      case 'copy-properties':
+      case 'paste-properties':
+        return store.state.selectedIds.size === 0
       default:
         return undefined
     }

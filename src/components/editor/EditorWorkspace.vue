@@ -10,6 +10,7 @@ import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { floatingChatOpen } from '@/app/ai/chat/panel'
 import { provideTabEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { interfaceScaleFactor } from '@/app/shell/interface-scale'
@@ -46,8 +47,8 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
-/** Whether the AI chat floats over the canvas shown alone; the right panel holds it otherwise. */
-const floatingChat = ref(false)
+/** Whether the AI chat floats over the canvas while the panels are hidden; Toggle AI chat opens it too. */
+const floatingChat = floatingChatOpen
 const interfaceScale = computed(interfaceScaleFactor)
 const workspace = useTemplateRef('workspace')
 const { width: workspaceWidth } = useElementSize(() => {
