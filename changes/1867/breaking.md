@@ -1,0 +1,1 @@
+- Libraries use schema version 2: library catalogs published by earlier versions no longer load and need publishing again. In `@open-pencil/core/library`, `PublishLibraryInput.assetNodeIds` is now `assetIds` and `LibraryAssetDescriptor.sourceNodeId` is now `sourceId` (#1867).
