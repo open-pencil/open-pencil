@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectRoot, SelectTrigger } from 'reka-ui'
+import { SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { MixedValue } from '@open-pencil/vue/controls/node-props'
@@ -10,6 +10,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import NumberField from '@/components/inputs/NumberField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
+import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 
 /**
  * One axis of a variable font. Optical size reads Auto while it follows the font size, as line
@@ -57,7 +58,7 @@ const tagIcon = computed(() =>
       ><span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span></template
     >
     <template v-if="opticalSize" #suffix>
-      <SelectRoot
+      <AppSelectRoot
         v-model:open="popupOpen"
         :model-value="automatic ? 'AUTO' : 'FIXED'"
         @update:model-value="emit('update:opticalSizeAuto', $event === 'AUTO')"
@@ -74,7 +75,7 @@ const tagIcon = computed(() =>
           <AppSelectItem value="AUTO">{{ panels.auto }}</AppSelectItem>
           <AppSelectItem value="FIXED">{{ panels.sizingFixed }}</AppSelectItem>
         </AppSelectContent>
-      </SelectRoot>
+      </AppSelectRoot>
     </template>
   </NumberField>
 </template>

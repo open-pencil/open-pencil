@@ -3,6 +3,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
+import { withTextInkMeasurer } from '#core/text/ink'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
@@ -76,13 +77,18 @@ export async function headlessRenderNodes(
   renderer.nodePaths.clear()
   renderer.invalidateAllPictures()
   await renderer.prepareForExport(graph, pageId, nodeIds)
-  return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
-    scale: options.scale ?? 1,
-    format: options.format ?? 'PNG',
-    quality: options.quality,
-    trimTransparent: options.trimTransparent,
-    useAbsoluteBounds: options.useAbsoluteBounds
-  })
+  // An export takes a text by its ink, as Figma's do.
+  return withTextInkMeasurer(
+    (node) => renderer.measureTextInk(node),
+    () =>
+      renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
+        scale: options.scale ?? 1,
+        format: options.format ?? 'PNG',
+        quality: options.quality,
+        trimTransparent: options.trimTransparent,
+        useAbsoluteBounds: options.useAbsoluteBounds
+      })
+  )
 }
 
 export async function headlessRenderThumbnail(
@@ -96,5 +102,8 @@ export async function headlessRenderThumbnail(
   renderer.nodePaths.clear()
   renderer.invalidateAllPictures()
   await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
-  return renderThumbnail(ck, renderer, graph, pageId, width, height)
+  return withTextInkMeasurer(
+    (node) => renderer.measureTextInk(node),
+    () => renderThumbnail(ck, renderer, graph, pageId, width, height)
+  )
 }

@@ -3,7 +3,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
@@ -13,6 +12,7 @@ import {
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -40,7 +40,7 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 </script>
 
 <template>
-  <ContextMenuRoot>
+  <AppContextMenuRoot>
     <ContextMenuTrigger as-child>
       <slot />
     </ContextMenuTrigger>
@@ -104,5 +104,5 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
         </MenuScrollArea>
       </ContextMenuContent>
     </ContextMenuPortal>
-  </ContextMenuRoot>
+  </AppContextMenuRoot>
 </template>

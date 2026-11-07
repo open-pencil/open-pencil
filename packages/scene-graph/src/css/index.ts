@@ -8,10 +8,14 @@ export {
 } from './layout'
 export { parseCSSShadows } from './shadows'
 export {
+  CSS_GENERIC_FONT_FAMILIES,
+  cssFontFamilyName,
+  parseCSSFontFamilies,
   parseCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight,
-  resolveCSSFontFamily
+  resolveCSSFontFamily,
+  type CSSFontFamily
 } from './text'
 export {
   parseCSSTransform,

@@ -1,0 +1,33 @@
+import { shortcutCode } from './layout'
+
+const RESERVED_MOD_CODES = new Set([
+  'Backslash',
+  'BracketLeft',
+  'BracketRight',
+  'Digit0',
+  'Digit1',
+  'Digit2',
+  'KeyA',
+  'KeyB',
+  'KeyD',
+  'KeyE',
+  'KeyG',
+  'KeyH',
+  'KeyJ',
+  'KeyK',
+  'KeyL',
+  'KeyN',
+  'KeyO',
+  'KeyS',
+  'KeyT',
+  'KeyW',
+  'KeyY',
+  'KeyZ'
+])
+
+export function isReservedModShortcut(e: KeyboardEvent): boolean {
+  if (!(e.metaKey || e.ctrlKey)) return false
+  const code = shortcutCode(e)
+  if (e.altKey) return code === 'KeyB' || code === 'KeyK'
+  return RESERVED_MOD_CODES.has(code)
+}

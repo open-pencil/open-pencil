@@ -7,7 +7,6 @@ import {
   MenubarItemIndicator,
   MenubarMenu,
   MenubarPortal,
-  MenubarRoot,
   MenubarSeparator,
   MenubarSub,
   MenubarSubContent,
@@ -43,6 +42,7 @@ import BrandMark from '@/components/brand/BrandMark.vue'
 import { CloudDocumentStatusHost } from '@/components/cloud/integration'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
+import AppMenubarRoot from '@/components/ui/menu/AppMenubarRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -119,7 +119,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         :data-overflow-start="overflowStart || undefined"
         :data-overflow-end="overflowEnd || undefined"
       >
-        <MenubarRoot class="flex w-max items-center gap-0.5">
+        <AppMenubarRoot class="flex w-max items-center gap-0.5">
           <MenubarMenu v-for="menu in topMenus" :key="menu.label">
             <MenubarTrigger
               v-test-id="`menubar-${menu.label.toLowerCase()}`"
@@ -200,7 +200,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
               </MenubarContent>
             </MenubarPortal>
           </MenubarMenu>
-        </MenubarRoot>
+        </AppMenubarRoot>
       </div>
       <!-- Sits beside the hidden menus; it keeps its width when it switches sides, so the bar's overflow never flips back.
            Pointer affordance only: arrow keys already move through the menus and scroll them into view. -->

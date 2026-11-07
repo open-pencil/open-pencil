@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -17,6 +17,7 @@ import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedroppe
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
 import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -62,10 +63,14 @@ const emit = defineEmits<{
   openChange: [open: boolean]
   cancel: []
 }>()
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
@@ -74,16 +79,15 @@ const { panels } = useI18n()
 /** Dragging a gradient handle or sampling a color on the canvas leaves the picker open. */
 const keepPickerOpen = useEyedropperKeepOpen(() => keepOpen)
 const outside = pickerOutsideHandlers(() => keepPickerOpen)
-
-function cancelFromEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-  emit('cancel')
-}
 </script>
 
 <template>
   <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
-    <PopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
+    <AppPopoverRoot
+      v-model:open="popupOpen"
+      overlay-kind="picker"
+      @update:open="emit('openChange', $event)"
+    >
       <PopoverTrigger as-child>
         <button
           type="button"
@@ -106,7 +110,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           :side-offset="4"
           side="left"
           data-picker-content
-          @escape-key-down="cancelFromEscape"
+          @escape-key-down="emit('cancel')"
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >
@@ -186,6 +190,6 @@ function cancelFromEscape(event: KeyboardEvent) {
           />
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </FillRoot>
 </template>

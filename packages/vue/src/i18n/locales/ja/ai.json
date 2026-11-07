@@ -78,7 +78,7 @@
   "attachImages": "画像を添付",
   "removeImageAttachment": "画像 {name} を削除",
   "dropImagesToAttach": "ドロップして画像を添付",
-  "queueMessage": "エージェントに指示… Alt+Enter で完了を待って送信",
+  "queueMessage": "エージェントに指示… {shortcut} で完了を待って送信",
   "queuedSteer": "現在のステップの後に送信",
   "queuedFollowUp": "エージェントの完了後に送信",
   "removeQueuedMessage": "待機中のメッセージを削除",

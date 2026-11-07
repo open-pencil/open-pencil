@@ -217,7 +217,13 @@ export const APP_MENU_SCHEMA = [
       },
       { id: 'view.nextPage', feature: 'document', label: 'Next Page', command: 'view.nextPage' },
       { type: 'separator' },
-      { id: 'view-split-right', feature: 'document', label: 'Split Right' },
+      // Free in Figma; beside ⌘\ (Toggle UI).
+      {
+        id: 'view-split-right',
+        feature: 'document',
+        label: 'Split Right',
+        shortcut: 'MOD+SHIFT+\\'
+      },
       { id: 'view-split-down', feature: 'document', label: 'Split Down' },
       { type: 'separator' },
       {

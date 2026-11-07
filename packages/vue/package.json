@@ -244,6 +244,11 @@
       "import": "./dist/editor/inline-rename/index.js",
       "default": "./dist/editor/inline-rename/index.js"
     },
+    "./editor/keyboard": {
+      "types": "./dist/editor/keyboard/index.d.ts",
+      "import": "./dist/editor/keyboard/index.js",
+      "default": "./dist/editor/keyboard/index.js"
+    },
     "./editor/menu-model": {
       "types": "./dist/editor/menu-model/index.d.ts",
       "import": "./dist/editor/menu-model/index.js",
@@ -278,6 +283,11 @@
       "types": "./dist/internal/scene-computed/index.d.ts",
       "import": "./dist/internal/scene-computed/index.js",
       "default": "./dist/internal/scene-computed/index.js"
+    },
+    "./lifecycle/overlays": {
+      "types": "./dist/lifecycle/overlays/index.d.ts",
+      "import": "./dist/lifecycle/overlays/index.js",
+      "default": "./dist/lifecycle/overlays/index.js"
     },
     "./lifecycle/retention": {
       "types": "./dist/lifecycle/retention/index.d.ts",
@@ -399,6 +409,11 @@
       "import": "./dist/shared/font-status/index.js",
       "default": "./dist/shared/font-status/index.js"
     },
+    "./shared/frame": {
+      "types": "./dist/shared/frame.d.ts",
+      "import": "./dist/shared/frame.js",
+      "default": "./dist/shared/frame.js"
+    },
     "./shared/input": {
       "types": "./dist/shared/input/index.d.ts",
       "import": "./dist/shared/input/index.js",
@@ -463,10 +478,12 @@
     "nanostores": "^1.5.4",
     "reka-ui": "^2.10.5",
     "shaders": "4.0.4",
+    "tinykeys": "^3.1.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {
     "@open-pencil/test-support": "workspace:*",
+    "happy-dom": "^20.14.6",
     "tsdown": "^0.22.14",
     "unplugin-raw": "^0.7.0",
     "unplugin-vue": "^7.2.0"

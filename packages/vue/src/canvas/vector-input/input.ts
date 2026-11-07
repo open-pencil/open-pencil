@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { editsHandlesOnly, type Editor } from '@open-pencil/core'
 
 import { handleBendHandleMove, resolveBendTargetHandle } from '#vue/canvas/vector-input/bend'
 import type { DragState } from '#vue/shared/input/types'
@@ -31,9 +31,10 @@ export function updateNodeEditHover(editor: Editor, cx: number, cy: number): boo
     state.hoveredHandleInfo = null
     editor.requestRepaint()
   }
-  // The region under the pointer is hatched, as in Figma, unless a handle is under it.
+  // The region under the pointer is hatched, as in Figma, unless a handle is under it or regions
+  // take no press because only handles may change.
   const es = editor.getNodeEditState()
-  const region = hit ? null : hitTestEditRegion(editor, cx, cy)
+  const region = hit || editsHandlesOnly(editor.state) ? null : hitTestEditRegion(editor, cx, cy)
   if (es && (es.hoveredRegion ?? null) !== region) {
     es.hoveredRegion = region
     editor.requestRepaint()

@@ -1,4 +1,3 @@
-import { createAIRoutes, type AITokenService } from '#cloud/server/ai'
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
@@ -14,6 +13,7 @@ import {
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
+import { createServicesRoutes, type ServicesTokenService } from '#cloud/server/services'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
   createDocumentSharingRoutes,
@@ -35,8 +35,8 @@ export type CloudAPIServices = {
   sharing: DocumentSharingService
   resolveSession?: CloudSessionResolver
   entitlements?: EntitlementService
-  /** Signs AI service tokens; without it the deployment has no AI service. */
-  aiTokens?: AITokenService
+  /** Signs service tokens; without it the deployment offers no services. */
+  servicesTokens?: ServicesTokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
 }
@@ -67,8 +67,8 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
     .get('/session', (context) => context.json({ user: context.get('actor') }))
     .route(
       '/',
-      createAIRoutes(
-        services.aiTokens,
+      createServicesRoutes(
+        services.servicesTokens,
         services.database && services.rateLimitSecret
           ? { database: services.database, secret: services.rateLimitSecret }
           : undefined

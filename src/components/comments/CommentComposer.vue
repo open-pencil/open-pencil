@@ -3,6 +3,7 @@ import { useTextareaAutosize } from '@vueuse/core'
 import { computed, nextTick, useTemplateRef } from 'vue'
 
 import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
+import { shortcutCode } from '@open-pencil/vue/editor/keyboard'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -11,7 +12,6 @@ import {
   formatComment,
   type CommentEdit
 } from '@/app/comments/format'
-import { shortcutCode } from '@/app/shell/keyboard/layout'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { comments } from './ui'

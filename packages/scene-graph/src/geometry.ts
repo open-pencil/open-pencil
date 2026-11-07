@@ -95,15 +95,18 @@ function includeRect(bounds: BoundsAccumulator, rect: Rect): void {
   includePoint(bounds, rect.x + rect.width, rect.y + rect.height)
 }
 
+/** `bounds` as a rect at its top-left corner. */
+export function visualBoundsToRect(bounds: VisualBounds): Rect {
+  return {
+    x: bounds.minX,
+    y: bounds.minY,
+    width: bounds.maxX - bounds.minX,
+    height: bounds.maxY - bounds.minY
+  }
+}
+
 function boundsToRect(bounds: BoundsAccumulator): Rect {
-  return bounds.minX === Infinity
-    ? { x: 0, y: 0, width: 0, height: 0 }
-    : {
-        x: bounds.minX,
-        y: bounds.minY,
-        width: bounds.maxX - bounds.minX,
-        height: bounds.maxY - bounds.minY
-      }
+  return bounds.minX === Infinity ? { x: 0, y: 0, width: 0, height: 0 } : visualBoundsToRect(bounds)
 }
 
 export function computeBounds(items: Iterable<Rect>): Rect {

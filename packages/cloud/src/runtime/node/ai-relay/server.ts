@@ -8,7 +8,7 @@ import {
   parseAIRelayTOML,
   type AIRelayEnvironment
 } from '#cloud/ai-relay'
-import { CLOUD_AI_JWKS_PATH } from '#cloud/contract'
+import { CLOUD_SERVICES_JWKS_PATH } from '#cloud/contract'
 import { createRemoteJWKSet } from 'jose'
 import { PostgresDialect } from 'kysely'
 import { Pool } from 'pg'
@@ -41,7 +41,7 @@ export async function startNodeAIRelay(options: NodeAIRelayOptions = {}) {
   const app = createAIRelayApp({
     config,
     database,
-    keys: createRemoteJWKSet(new URL(CLOUD_AI_JWKS_PATH, config.cloudURL)),
+    keys: createRemoteJWKSet(new URL(CLOUD_SERVICES_JWKS_PATH, config.cloudURL)),
     waitUntil: (promise) => {
       metering.add(promise)
       void promise.finally(() => metering.delete(promise))

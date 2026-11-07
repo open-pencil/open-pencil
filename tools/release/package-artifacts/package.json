@@ -1,5 +1,6 @@
 {
   "name": "@open-pencil/package-artifacts-tools",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "imports": {
@@ -8,7 +9,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./tarball": "./src/tarball.ts",
-    "./workspace": "./src/workspace/root.ts"
+    "./workspace": "./src/workspace/root.ts",
+    "./tsdown": "./src/tsdown.ts"
   },
   "scripts": {
     "test": "bun test tests"
@@ -20,6 +22,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
-    "nanotar": "^0.3.0"
+    "nanotar": "^0.3.0",
+    "tsdown": "^0.22.14"
   }
 }

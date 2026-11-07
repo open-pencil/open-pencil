@@ -1,14 +1,17 @@
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
+import { pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
+import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
 import { ckImageFormat } from './pixels'
@@ -54,16 +57,23 @@ function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: s
 }
 
 /**
- * What an export of `nodeIds` covers: everything they draw, or with `useAbsoluteBounds` their
- * boxes alone; null when nothing is visible.
+ * What an export of `nodeIds` covers: what they draw as Figma's render bounds take it, clipped by
+ * the frames around them, or with `useAbsoluteBounds` their boxes alone; null when nothing is
+ * visible.
  */
 export function exportBounds(
   graph: SceneGraph,
   nodeIds: string[],
   useAbsoluteBounds = false
 ): VisualBounds | null {
-  if (!useAbsoluteBounds) return computeContentBounds(graph, nodeIds)
   let bounds: VisualBounds | null = null
+  if (!useAbsoluteBounds) {
+    for (const id of nodeIds) {
+      const node = graph.getNode(id)
+      if (node) bounds = unionVisualBounds(bounds, absoluteRenderBounds(graph, node))
+    }
+    return bounds
+  }
   for (const id of nodeIds) {
     const node = graph.getNode(id)
     if (!node?.visible) continue
@@ -251,16 +261,65 @@ export function prepareSelectionRenderGraph(
   page.childIds = inPaintOrder(source, pageId, nodeIds).filter(
     (nodeId) => renderGraph.getNode(nodeId) !== undefined
   )
-  for (const nodeId of page.childIds) {
+  for (const [index, nodeId] of page.childIds.entries()) {
     const node = renderGraph.getNode(nodeId)
     const sourceNode = source.getNode(nodeId)
     if (!node || !sourceNode) continue
     if (sourceNode.parentId === pageId) continue
-    const world = getWorldMatrix(sourceNode, source)
-    node.parentId = pageId
-    applyWorldTransform(node, world)
+    // The frames that clip the layer clip it in the export too, as Figma exports it: each stands
+    // in empty, with its transform, size, and corners.
+    let parent: SceneNode = page
+    let parentWorld = Matrix.identity()
+    for (const frame of clippingAncestors(source, sourceNode)) {
+      const world = getWorldMatrix(frame, source)
+      const clip = renderGraph.createNode('FRAME', parent.id, {
+        name: frame.name,
+        width: frame.width,
+        height: frame.height,
+        clipsContent: true,
+        fills: [],
+        strokes: [],
+        effects: [],
+        ...pick(frame, CORNER_FIELDS)
+      })
+      applyWorldTransform(clip, relativeTo(parentWorld, world))
+      parent.childIds = parent === page ? withNodeAt(page.childIds, index, clip.id) : [clip.id]
+      parent = clip
+      parentWorld = world
+    }
+    node.parentId = parent.id
+    if (parent !== page) parent.childIds = [node.id]
+    applyWorldTransform(node, relativeTo(parentWorld, getWorldMatrix(sourceNode, source)))
   }
   renderGraph.clearAbsPosCache()
+}
+
+/** The frames that clip `node`, outermost first. */
+function clippingAncestors(graph: SceneGraph, node: SceneNode): SceneNode[] {
+  const frames: SceneNode[] = []
+  for (let parent = node.parentId ? graph.getNode(node.parentId) : undefined; parent;) {
+    if (
+      parent.clipsContent &&
+      (parent.type === 'FRAME' || parent.type === 'COMPONENT' || parent.type === 'INSTANCE')
+    ) {
+      frames.unshift(parent)
+    }
+    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
+  }
+  return frames
+}
+
+/** `ids` with `id` at `index` in place of what stood there, and not at the end, where it was added. */
+function withNodeAt(ids: string[], index: number, id: string): string[] {
+  const placed = ids.filter((existing) => existing !== id)
+  placed[index] = id
+  return placed
+}
+
+/** `world` as a transform under a parent whose world transform is `parentWorld`. */
+function relativeTo(parentWorld: Mat3, world: Mat3): Mat3 {
+  const inverse = Matrix.invert(parentWorld)
+  return inverse ? Matrix.multiply(inverse, world) : world
 }
 
 function applyWorldTransform(node: SceneNode, matrix: Mat3): void {

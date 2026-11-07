@@ -45,12 +45,6 @@ export function snapDerivedGlyphBaseline(y: number): number {
   return Math.round(y)
 }
 
-export function shouldUseHardDerivedGlyphCoverage(
-  node: Pick<SceneNode, 'fontSize' | 'fontWeight'>
-): boolean {
-  return node.fontSize === 20 && node.fontWeight === 400
-}
-
 /**
  * Path-text glyphs carry non-zero Figma `Glyph.rotation` (radians). Used to
  * disable axis-aligned assumptions (baseline snap, underline decorations).
@@ -367,8 +361,6 @@ export function drawDerivedText(
   // A gradient spans the layer, so its glyphs are moved into layer space rather than drawn
   // under an em-scaled canvas that would stretch the gradient by the font size.
   const paintsLayerSpace = fill !== undefined && fill.type !== 'SOLID'
-  const hardCoverage = shouldUseHardDerivedGlyphCoverage(node)
-  if (hardCoverage) r.fillPaint.setAntiAlias(false)
   const runPaints = new StyleRunPaints(r.fillPaint)
   try {
     for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
@@ -388,7 +380,6 @@ export function drawDerivedText(
     }
   } finally {
     runPaints.delete()
-    if (hardCoverage) r.fillPaint.setAntiAlias(true)
   }
 
   // Decorations follow horizontal lines; path text has none.

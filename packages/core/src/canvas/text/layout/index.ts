@@ -25,6 +25,14 @@ interface BlockDrawing {
   marker: number
 }
 
+/** Fractions of a pixel a text is drawn below its top at that keep their drawing. */
+const MAX_DRAWN_FRACTIONS = 4
+
+/** The shift of the first line from `line` on that draws glyphs. */
+function firstShift(drawn: BlockDrawing | undefined, line: number): number {
+  return drawn?.lines.slice(line).find((shift) => shift !== null) ?? 0
+}
+
 /** A list item's number or bullet, laid out on its own. */
 export interface TextLayoutMarker {
   paragraph: Paragraph
@@ -90,8 +98,11 @@ export class TextLayout {
   private lineOffsets: number[] = []
   private truncated = false
   private readonly placements = new Map<TextLayoutBlock, BlockPlacement>()
-  /** How each block is drawn, worked out on the first draw after a layout (`prepareDrawing`). */
-  private drawing: Map<TextLayoutBlock, BlockDrawing> | null = null
+  /**
+   * How each block is drawn below a top of a given fraction of a pixel, worked out on the first
+   * draw there after a layout (`prepareDrawing`).
+   */
+  private readonly drawing = new Map<number, Map<TextLayoutBlock, BlockDrawing>>()
   /** The text's height when layout placed its lines itself. */
   private placedHeight: number | null = null
 
@@ -196,7 +207,7 @@ export class TextLayout {
       for (const piece of placement.pieces ?? []) piece.paragraph.delete()
     }
     this.placements.clear()
-    this.drawing = null
+    this.drawing.clear()
     this.placedHeight = null
     this.height = null
   }
@@ -591,45 +602,50 @@ export class TextLayout {
   }
 
   /**
-   * Works out how far each block's lines and marker move when drawn, so every baseline lands on
-   * the whole pixel its exact one rounds to. Lines a paragraph or piece draws together step by
+   * Works out how far each block's lines and marker move when the text is drawn `top` down, so
+   * every baseline lands on the whole pixel of the box its exact one rounds to, as Figma draws it,
+   * a vertical alignment's offset included. Lines a paragraph or piece draws together step by
    * whole pixels both as it draws them and as they are placed, so they move as one.
    */
-  private prepareDrawing(): Map<TextLayoutBlock, BlockDrawing> {
-    if (this.drawing) return this.drawing
+  private prepareDrawing(top: number): Map<TextLayoutBlock, BlockDrawing> {
+    const fraction = top - Math.floor(top)
+    const cached = this.drawing.get(fraction)
+    if (cached) return cached
     const drawing = new Map<TextLayoutBlock, BlockDrawing>()
     for (const block of this.visibleBlocks()) {
       const shaped = shapedLinesByLine(block.paragraph)
       const lines = block.metrics.map((line, index) => {
         const drawn = shaped[index]
         if (!drawn || drawn.runs.length === 0) return null
-        const top = block.y + this.lineOffset(block, index)
-        return wholePixelShift(top, line.baseline, drawn.baseline)
+        const lineTop = fraction + block.y + this.lineOffset(block, index)
+        return wholePixelShift(lineTop, line.baseline, drawn.baseline)
       })
-      drawing.set(block, { lines, marker: this.markerShift(block) })
+      drawing.set(block, { lines, marker: this.markerShift(block, fraction) })
     }
-    this.drawing = drawing
+    if (this.drawing.size >= MAX_DRAWN_FRACTIONS) this.drawing.clear()
+    this.drawing.set(fraction, drawing)
     return drawing
   }
 
-  private markerShift(block: TextLayoutBlock): number {
+  private markerShift(block: TextLayoutBlock, fraction: number): number {
     const marker = block.marker
     const line = marker?.paragraph.getLineMetrics().at(0)
     const drawn = marker ? shapedLinesByLine(marker.paragraph).at(0) : undefined
-    return marker && line && drawn ? wholePixelShift(marker.y, line.baseline, drawn.baseline) : 0
+    if (!marker || !line || !drawn) return 0
+    return wholePixelShift(fraction + marker.y, line.baseline, drawn.baseline)
   }
 
   /** Draws the text with every baseline on a whole pixel of its box, as Figma does. */
   draw(canvas: Canvas, x: number, y: number): void {
-    const drawing = this.prepareDrawing()
+    const drawing = this.prepareDrawing(y)
     for (const block of this.visibleBlocks()) {
       const drawn = drawing.get(block)
-      // The shift of the first line from `line` on that draws glyphs.
-      const shift = (line: number) => drawn?.lines.slice(line).find((value) => value !== null) ?? 0
       const pieces = this.placements.get(block)?.pieces
-      if (!pieces) canvas.drawParagraph(block.paragraph, x + block.x, y + block.y + shift(0))
+      if (!pieces) {
+        canvas.drawParagraph(block.paragraph, x + block.x, y + block.y + firstShift(drawn, 0))
+      }
       for (const piece of pieces ?? []) {
-        const top = y + block.y + piece.y + shift(piece.line)
+        const top = y + block.y + piece.y + firstShift(drawn, piece.line)
         canvas.drawParagraph(piece.paragraph, x + block.x + piece.x, top)
       }
       const marker = block.marker

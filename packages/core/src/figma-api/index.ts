@@ -39,6 +39,7 @@ import { fontManager } from '#core/text/font/manager'
 
 import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
+import { listFigmaFonts } from './fonts/list'
 import { loadFigmaFont } from './fonts/load'
 import type { FigmaFontNameInput } from './fonts/names'
 import { variationAxisTags } from './fonts/variations'
@@ -650,10 +651,9 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     return variation ? variationAxisTags(variation.axes) : null
   }
 
-  async listAvailableFontsAsync(): Promise<FigmaFont[]> {
-    // Default: pure browser / test contexts have no enumeration surface.
-    // Desktop hosts override this to return system + bundled fonts.
-    return []
+  /** Every face a script can set, by family; see {@link listFigmaFonts}. */
+  listAvailableFontsAsync(): Promise<FigmaFont[]> {
+    return listFigmaFonts()
   }
 
   base64Encode(data: Uint8Array): string {

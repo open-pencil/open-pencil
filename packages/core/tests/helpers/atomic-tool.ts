@@ -1,4 +1,9 @@
-import { EDIT_VIEW, type DocumentChange, type EditorProfileInputs } from '@open-pencil/core'
+import {
+  EDIT_VIEW,
+  NO_HOST_RESTRICTIONS,
+  type DocumentChange,
+  type EditorProfileInputs
+} from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -19,7 +24,7 @@ export function setup() {
   const state: EditorProfileInputs = {
     documentKind: 'design',
     canvasView: EDIT_VIEW,
-    hostRestrictions: { readOnly: false }
+    hostRestrictions: NO_HOST_RESTRICTIONS
   }
   const laidOut: string[] = []
   const editor = {

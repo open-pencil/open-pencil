@@ -53,9 +53,12 @@ export function wholePixelShift(top: number, baseline: number, drawn: number): n
   return Math.round(top + baseline) - top - drawn
 }
 
-/** Where a glyph on an exact `baseline` is drawn, for a box drawn `top` down: on a whole pixel. */
-export function drawnBaseline(baseline: number, top: number): number {
-  return top + Math.round(baseline - top)
+/**
+ * Where a glyph on an exact `baseline` of the box is drawn: on the whole pixel of the box it
+ * rounds to, a vertical alignment's offset included, as Figma draws text (Figma desktop 126).
+ */
+export function drawnBaseline(baseline: number): number {
+  return Math.round(baseline)
 }
 
 /** Where a block's lines go when they do not stack as its paragraph has them. */

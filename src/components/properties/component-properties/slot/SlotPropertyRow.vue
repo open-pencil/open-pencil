@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 
@@ -11,6 +10,7 @@ import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue/controls/sl
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -72,7 +72,7 @@ const item = menuItem({ justify: 'start' })
           <slot name="thumbnail" :id="id" />
         </template>
       </AddInstancesPopover>
-      <DropdownMenuRoot>
+      <AppDropdownMenuRoot>
         <DropdownMenuTrigger as-child>
           <IconButton :label="panels.slotActions({ name })">
             <icon-lucide-ellipsis class="size-3.5" />
@@ -96,7 +96,7 @@ const item = menuItem({ justify: 'start' })
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </div>
     <div v-if="limits.length" class="flex">
       <SlotLimitsPopover :limits="limits" @select-layers="emit('selectLayers')" />
