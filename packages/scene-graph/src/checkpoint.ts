@@ -98,6 +98,9 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     restoreMap(graph.instanceIndex, structuredClone(snapshot.instanceIndex))
     restoreMap(graph.enabledLibraries, structuredClone(snapshot.enabledLibraries))
     restoreMap(graph.images, images)
+    graph.connectorIds.clear()
+    for (const node of graph.nodes.values())
+      if (node.type === 'CONNECTOR') graph.connectorIds.add(node.id)
     graph.rootId = snapshot.rootId
     graph.figKiwiVersion = snapshot.figKiwiVersion
     graph.figSchemaDeflated = structuredClone(snapshot.figSchemaDeflated)

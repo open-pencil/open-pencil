@@ -3,9 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import {
   createLibraryRevision,
   createSelectiveLibraryRevision,
-  discoverPublishableLibraryChanges
+  discoverPublishableLibraryChanges,
+  MemoryLibraryCatalog
 } from '@open-pencil/core/library'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+
+import { createEditorStore } from '@/app/editor/session'
+import { LibraryService } from '@/app/libraries/service'
 
 function source(buttonWidth: number, includeCard = true) {
   const graph = new SceneGraph()
@@ -155,5 +159,73 @@ describe('selective library publication', () => {
         name: 'Library'
       })
     ).rejects.toThrow('No library changes selected')
+  })
+})
+
+/** A library whose button holds a label and an icon instance, beside a card. */
+function iconLibrary() {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const icon = graph.createNode('COMPONENT', page, { name: 'Icon', componentKey: 'icon' })
+  graph.createNode('RECTANGLE', icon.id, { name: 'Glyph' })
+  const button = graph.createNode('COMPONENT', page, {
+    name: 'Button',
+    componentKey: 'button',
+    width: 80
+  })
+  graph.createNode('TEXT', button.id, { name: 'Label', text: 'Go' })
+  graph.createInstance(icon.id, button.id)
+  graph.createNode('COMPONENT', page, { name: 'Card', componentKey: 'card', width: 200 })
+  return { graph, button }
+}
+
+/** The library layer identities of the button's layers in `revision`, by layer name. */
+function buttonLayerIds(revision: Awaited<ReturnType<typeof createLibraryRevision>>) {
+  const button = [...revision.graph.getAllNodes()].find(
+    (node) => node.type === 'COMPONENT' && node.name === 'Button'
+  )
+  const ids: string[] = []
+  const visit = (node: SceneNode) => {
+    ids.push(`${node.name}=${node.libraryLayerId}`)
+    for (const child of revision.graph.getChildren(node.id)) visit(child)
+  }
+  if (button) visit(button)
+  return ids
+}
+
+describe('selective library publication keeps layer identities', () => {
+  test('in the revision it makes', async () => {
+    const { graph, button } = iconLibrary()
+    const previous = await createLibraryRevision({ libraryId: 'library', name: 'Library', graph })
+    graph.updateNode(button.id, { width: 120 })
+
+    const revision = await createSelectiveLibraryRevision({
+      previous,
+      sourceGraph: graph,
+      selectedAssetKeys: new Set(['button']),
+      name: 'Library'
+    })
+
+    expect(buttonLayerIds(revision)).toEqual(buttonLayerIds(previous))
+  })
+
+  test('in the revision the library service publishes', async () => {
+    const { graph, button } = iconLibrary()
+    const editor = createEditorStore(graph)
+    const service = new LibraryService(new MemoryLibraryCatalog())
+    const input = { libraryId: 'library', name: 'Library' }
+    const previous = await service.publishSelected(editor, {
+      ...input,
+      selectedAssetKeys: new Set(['icon', 'button', 'card'])
+    })
+    graph.updateNode(button.id, { width: 120 })
+
+    const revision = await service.publishSelected(editor, {
+      ...input,
+      selectedAssetKeys: new Set(['button'])
+    })
+
+    expect(revision.manifest.previousRevisionId).toBe(previous.manifest.revisionId)
+    expect(buttonLayerIds(revision)).toEqual(buttonLayerIds(previous))
   })
 })

@@ -4,6 +4,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 import {
@@ -411,8 +412,8 @@ export const analyzeOverlaps = defineTool({
     const page = page_id
       ? figma.getNodeById(page_id)
       : figma.root.children.find((candidate) => candidate.name === pageName)
-    if (page && figma.graph.getNode(page.id)?.type === 'CANVAS') await page.loadAsync()
-    return computeOverlaps(figma.graph, {
+    if (page && graphOf(figma).getNode(page.id)?.type === 'CANVAS') await page.loadAsync()
+    return computeOverlaps(graphOf(figma), {
       ...(args as AnalyzeOverlapsArgs),
       page: pageName,
       page_id

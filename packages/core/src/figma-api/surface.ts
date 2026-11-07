@@ -6,7 +6,6 @@
 
 /** Members a host or tool wires up on `figma`, which scripts do not write against. */
 export const FIGMA_API_HOST_MEMBERS = [
-  'graph',
   'wrapNode',
   'currentPageId',
   'groupFitOptions',

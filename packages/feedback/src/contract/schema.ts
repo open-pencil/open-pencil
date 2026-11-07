@@ -8,7 +8,7 @@ export const PLATFORMS = ['macos', 'windows', 'linux', 'ios', 'android', 'unknow
 export const ARCHITECTURES = ['arm64', 'x64', 'unknown'] as const
 export const APP_KINDS = ['desktop', 'web'] as const
 export const BROWSERS = ['chrome', 'edge', 'opera', 'firefox', 'safari', 'unknown'] as const
-export const LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
+export const LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'pt-BR', 'ru', 'zh-CN'] as const
 export const DOCUMENT_FORMATS = [
   'fig',
   'pen',

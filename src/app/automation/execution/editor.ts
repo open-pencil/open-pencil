@@ -1,4 +1,5 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { graphOf } from '@open-pencil/core/figma-api'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
@@ -25,10 +26,10 @@ export async function loadAtomicToolFonts(
   options: { isLive?: () => boolean } = {}
 ): Promise<void> {
   const targetId = typeof args.id === 'string' ? args.id : figma.currentPageId
-  if (figma.graph.getNode(targetId)?.type === 'TEXT') {
+  if (graphOf(figma).getNode(targetId)?.type === 'TEXT') {
     try {
-      await ensureGraphFonts(figma.graph, [targetId], store.renderer)
-      if (store.graph === figma.graph && options.isLive?.() !== false) {
+      await ensureGraphFonts(graphOf(figma), [targetId], store.renderer)
+      if (store.graph === graphOf(figma) && options.isLive?.() !== false) {
         store.runLayoutForNode(targetId)
         store.requestRender()
       }

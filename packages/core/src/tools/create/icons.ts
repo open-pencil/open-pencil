@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
 
+import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { placeIcon } from '#core/icons'
 import { toolNumber, defineTool } from '#core/tools/schema'
@@ -85,14 +86,14 @@ export const insertIcon = defineTool({
     const notFound: string[] = []
 
     const parentId = args.parent_id ?? figma.currentPage.id
-    prepareSlotInsertion(figma.graph, parentId, 'insert_icon')
+    prepareSlotInsertion(graphOf(figma), parentId, 'insert_icon')
     for (const name of names) {
       const icon = icons.get(name)
       if (!icon || icon.paths.length === 0) {
         notFound.push(name)
         continue
       }
-      const frame = placeIcon(figma.graph, parentId, icon, { size, color: parsedColor })
+      const frame = placeIcon(graphOf(figma), parentId, icon, { size, color: parsedColor })
       inserted.push({ id: frame.id, name: frame.name, icon: name })
     }
 
