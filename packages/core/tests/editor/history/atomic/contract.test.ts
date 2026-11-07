@@ -93,7 +93,12 @@ function build() {
     editor,
     figma,
     graph,
-    variables: { color: color.id, size: size.id, mode: collection.defaultModeId },
+    variables: {
+      collection: collection.id,
+      color: color.id,
+      size: size.id,
+      mode: collection.defaultModeId
+    },
     targets: { plain, 'in an instance': inInstance }
   }
 }
@@ -108,6 +113,11 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     variable_id: f.variables.size
   }),
   set_variable: (_t, f) => ({ id: f.variables.color, mode: f.variables.mode, value: '#00ff00' }),
+  set_variable_mode: (t, f) => ({
+    ids: [t.frame],
+    collection: f.variables.collection,
+    mode: f.variables.mode
+  }),
   unbind_variable: (t) => ({ node_id: t.rect, field: 'opacity' }),
   set_text: (t) => ({ id: t.text, text: 'Changed text' }),
   set_font: (t) => ({ id: t.text, family: 'Inter', style: 'Regular', size: 20 }),

@@ -87,9 +87,11 @@ import {
   findVariables,
   getCollection,
   getVariable,
+  getVariableModes,
   listCollections,
   listVariables,
   setVariable,
+  setVariableMode,
   unbindVariable
 } from '#core/tools/variables'
 import {
@@ -191,6 +193,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   deleteVariable,
   bindVariable,
   unbindVariable,
+  setVariableMode,
+  getVariableModes,
   getCollection,
   createCollection,
   deleteCollection,
