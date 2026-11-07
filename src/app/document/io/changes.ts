@@ -18,7 +18,9 @@ const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, invers
  * records its step in the same task as the change, or, while text is being edited or an edit is
  * being coalesced, such as a picker drag, when that edit ends. A change no step follows within
  * its task, with neither of those open, is one made outside the history; one an open edit makes
- * waits for that edit's step, and keeps the document unsaved if the edit records none.
+ * waits for that edit's step. An edit or batch that ends without one, rolled back, cancelled, or
+ * changing nothing, undid what it changed, so the document is as the history says once no other
+ * edit is still open.
  */
 export function createDocumentChanges(editor: Editor) {
   const revision = ref(0)
@@ -68,6 +70,11 @@ export function createDocumentChanges(editor: Editor) {
     revision.value++
     historyRevision = revision.value
   }
+  // An edit still open, such as an agent's call while the user cancels a drag, has changes no
+  // step accounts for yet; its own step, or its own discard, settles them.
+  const editDiscarded = () => {
+    if (!editor.undo.isRecording) historyChanged()
+  }
   const unsubscribers = [
     editor.onEditorEvent('node:created', contentChanged),
     editor.onEditorEvent('node:updated', updated),
@@ -75,7 +82,8 @@ export function createDocumentChanges(editor: Editor) {
     editor.onEditorEvent('node:reparented', contentChanged),
     editor.onEditorEvent('node:reordered', contentChanged),
     editor.onEditorEvent('graph:replaced', changed),
-    editor.onEditorEvent('history:changed', historyChanged)
+    editor.onEditorEvent('history:changed', historyChanged),
+    editor.onEditorEvent('edit:discarded', editDiscarded)
   ]
 
   function capture() {

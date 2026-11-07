@@ -30,16 +30,22 @@ export interface RecordEditOptions {
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const pageId = options.pageId ?? ctx.state.currentPageId
   const finish = captureDocumentChange(ctx.graph, pageId)
-  return (failed: boolean) => {
+  /** Ends the edit; true when it left no step, rolled back or changing nothing. */
+  return (failed: boolean): boolean => {
     const change = finish()
     // A failed edit leaves nothing half done: what it changed goes back, and no step is left.
     if (failed) {
       if (!isEmptyDocumentChange(change)) restoreDocumentChange(ctx, change, 'before')
       options.onRecorded?.(emptyDocumentChange(pageId))
-      return
+      return true
+    }
+    // An edit that records its own step, such as an atomic tool's, reports its own outcome.
+    if (options.push === false) {
+      options.onRecorded?.(change)
+      return false
     }
     // An edit that changed nothing, such as a read-only script, leaves no empty step behind.
-    if (options.push !== false && !isEmptyDocumentChange(change)) {
+    if (!isEmptyDocumentChange(change)) {
       const entry = {
         label: options.label,
         forward: () => restoreDocumentChange(ctx, change, 'after'),
@@ -49,6 +55,7 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
       else ctx.undo.push(entry)
     }
     options.onRecorded?.(change)
+    return isEmptyDocumentChange(change)
   }
 }
 
@@ -65,7 +72,7 @@ export function recordEdit<T>(ctx: EditorContext, options: RecordEditOptions, ru
     failed = false
     return result
   } finally {
-    finish(failed)
+    if (finish(failed)) ctx.undo.discardEdit()
   }
 }
 
@@ -87,15 +94,18 @@ export async function recordEditAsync<T>(
   const finish = begin(ctx, { ...options, ownStep: true })
   const close = ctx.undo.openEdit()
   let failed = true
+  let discarded = false
   try {
     const result = await run()
     failed = false
     return result
   } finally {
     try {
-      finish(failed)
+      discarded = finish(failed)
     } finally {
       close()
     }
+    // Reported once the edit has closed, so the unsaved state sees whether another is open.
+    if (discarded) ctx.undo.discardEdit()
   }
 }

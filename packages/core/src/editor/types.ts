@@ -241,6 +241,11 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
+  /**
+   * An edit or batch ended without a step, rolled back or changing nothing, so what it changed
+   * meanwhile is undone. The history is unchanged.
+   */
+  'edit:discarded': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
