@@ -44,7 +44,6 @@ An `extends` path resolves from the file that declares it, so a configuration in
 | `no-unvalidated-json-parse`  | Validate parsed JSON with a schema, `v.safeParse(v.pipe(v.string(), v.parseJson(), Schema), text)`, instead of asserting a type on `JSON.parse` or `.json()`.                 |
 | `valibot-schema-conventions` | Name module-level Valibot schemas `<name>Schema` and export them only from a `schema.ts`, or from a directory in `schemaModules`. `{ "placement": false }` checks names only. |
 | `no-hand-rolled-base64`      | Use `js-base64` instead of `atob`, `btoa`, or `Buffer` Base64 conversions.                                                                                                    |
-| `no-hand-rolled-data-url` | Use `imageDataURL`, `svgDataURL`, and `parseDataURL` from `@open-pencil/scene-graph/images` instead of building or matching data URLs by hand. |
 | `prefer-es-toolkit`          | Use `es-toolkit`'s `uniq` and `compact` instead of `Set` round trips and `filter(Boolean)`.                                                                                   |
 | `no-reduce-accumulator-copy` | Do not copy the accumulator on every `reduce` step.                                                                                                                           |
 | `no-raw-sql`                 | Use Kysely's typed query builder instead of `sql` templates. Turn it off for migrations and reviewed helpers.                                                                 |
