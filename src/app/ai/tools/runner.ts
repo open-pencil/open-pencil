@@ -26,6 +26,18 @@ import type { EditorStore } from '@/app/editor/active-store'
 
 import { recordToolChange } from './changes/capture'
 
+/** Ends a recorded edit whose tool answered with an error, so the edit is rolled back. */
+class ToolAnsweredError extends Error {
+  constructor() {
+    super('The tool answered with an error')
+    this.name = 'ToolAnsweredError'
+  }
+}
+
+function isToolError(result: unknown): boolean {
+  return typeof result === 'object' && result !== null && 'error' in result
+}
+
 /** The reply a call belongs to: its run, and the call's id in the reply's transcript. */
 export interface ReplyCall {
   run: Run
@@ -123,9 +135,24 @@ async function editAndRecord(call: EditorToolCall, reply: ReplyCall | null): Pro
       await loadAtomicToolFonts(store, figma, args, { isLive: call.isLive })
       return result
     }
-    return await recordAgentEdit(store, options, () => def.execute(figma, args), {
-      isLive: call.isLive
-    })
+    // A tool that answers with an error, as atomic tools' failures do, is rolled back too.
+    const failure: { result?: unknown } = {}
+    try {
+      return await recordAgentEdit(
+        store,
+        options,
+        async () => {
+          const result = await def.execute(figma, args)
+          if (!isToolError(result)) return result
+          failure.result = result
+          throw new ToolAnsweredError()
+        },
+        { isLive: call.isLive }
+      )
+    } catch (error) {
+      if (error instanceof ToolAnsweredError) return failure.result
+      throw error
+    }
   } finally {
     if (reply && recorded.change) {
       await recordReplyCall(call, reply, recorded.change, undoBefore, viewPageId)

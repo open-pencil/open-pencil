@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
 
 function setup() {
   const editor = createEditor()
@@ -41,18 +41,22 @@ describe('recordEdit', () => {
     expect(editor.undo.undo()).toBe('Arrange')
   })
 
-  test('records what an edit did before it threw', () => {
-    const { editor, card } = setup()
+  test('rolls back an edit that threw part way and leaves no step', () => {
+    const { editor, pageId, card } = setup()
+    let recorded: DocumentChange | undefined
 
     expect(() =>
-      editor.recordEdit({ label: 'Script' }, () => {
+      editor.recordEdit({ label: 'Script', onRecorded: (change) => (recorded = change) }, () => {
         editor.graph.updateNode(card.id, { x: 40 })
+        editor.graph.createNode('FRAME', pageId, { name: 'Half done' })
         throw new Error('failed part way')
       })
     ).toThrow('failed part way')
 
-    expect(editor.undo.undo()).toBe('Script')
     expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+    expect(editor.undo.canUndo).toBe(false)
+    expect(recorded && isEmptyDocumentChange(recorded)).toBe(true)
   })
 
   test('leaves no step for an edit that changed nothing, and still reports it', () => {
@@ -85,8 +89,9 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(card.id)?.x).toBe(0)
   })
 
-  test('closes the edit and keeps its changes undoable when it rejects', async () => {
+  test('closes the edit and rolls it back when it rejects', async () => {
     const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { y: 5 }))
 
     const edit = editor.recordEditAsync({ label: 'Agent: eval' }, async () => {
       await Promise.resolve()
@@ -96,8 +101,8 @@ describe('recordEditAsync', () => {
 
     await expect(edit).rejects.toThrow('script failed')
     expect(editor.undo.isRecording).toBe(false)
-    expect(editor.undo.undo()).toBe('Agent: eval')
-    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 5 })
+    expect(editor.undo.undo()).toBe('Move')
   })
 
   test('does not record a step for an edit that records its own', async () => {

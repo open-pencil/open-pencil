@@ -353,6 +353,58 @@ describe('eval beside a tool call', () => {
   })
 })
 
+describe('a failed call', () => {
+  test('a script that throws part way leaves the document as it was', async () => {
+    const tab = createTab()
+    const { store } = tab
+    const pageId = store.state.currentPageId
+    const card = store.graph.createNode('FRAME', pageId, { name: 'Card', width: 200, height: 200 })
+
+    await expect(
+      request('eval', {
+        document_id: tab.id,
+        code: `
+          figma.currentPage.findOne((node) => node.name === 'Card').name = 'Renamed'
+          figma.currentPage.appendChild(figma.createRectangle())
+          throw new Error('failed part way')
+        `
+      })
+    ).rejects.toThrow('failed part way')
+
+    expect(store.graph.getNode(card.id)?.name).toBe('Card')
+    expect(store.graph.getChildren(pageId).map((node) => node.id)).toEqual([card.id])
+    expect(store.undo.canUndo).toBe(false)
+  })
+
+  test('a tool that answers with an error after writing leaves the document as it was', async () => {
+    const tab = createTab()
+    const { store } = tab
+    const pageId = store.state.currentPageId
+    const createShape = expectDefined(
+      ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+      'create_shape'
+    )
+
+    const result = await runEditorTool({
+      store,
+      figma: makeFigmaFromStore(store, pageId),
+      def: {
+        ...createShape,
+        execute: (figma, args) => {
+          createShape.execute(figma, args)
+          return { error: 'failed after the first shape' }
+        }
+      },
+      args: { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 },
+      source: 'MCP'
+    })
+
+    expect(result).toEqual({ error: 'failed after the first shape' })
+    expect(store.graph.getChildren(pageId)).toEqual([])
+    expect(store.undo.canUndo).toBe(false)
+  })
+})
+
 describe('render JSX', () => {
   function render(tabId: string, args: Record<string, unknown>) {
     return request('tool', { document_id: tabId, name: 'render', args })

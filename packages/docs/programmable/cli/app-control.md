@@ -55,7 +55,7 @@ When there is nothing to undo or redo, the command says so and `result.applied` 
 
 The editor has one history, shared by you and every automation client, so **Edit → Undo** in the app steps back through any change, newest first. Automation is narrower: `undo` and `redo` only act on a step that the CLI or MCP made, and only while it is the newest one. If the newest change was made in the editor, the command fails and leaves it alone, so an agent can't revert your work. They also fail while the document is in vector edit mode, whose history belongs to the editing session.
 
-Each CLI or MCP command that edits the document is one undo step of everything it changed, on any page. While a command waits on a download, such as a font, image, or page load, what you do in the editor stays out of its step. An `eval` script's own `fetch` calls and timers are the exception: an edit you make while a script waits on one lands in the script's step.
+Each CLI or MCP command that edits the document is one undo step of everything it changed, on any page. While a command waits on a download, such as a font, image, or page load, what you do in the editor stays out of its step. An `eval` script's own `fetch` calls and timers are the exception: an edit you make while a script waits on one lands in the script's step. A command that fails is rolled back and leaves no undo step.
 
 ## Settings
 
