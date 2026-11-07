@@ -28,9 +28,25 @@ export function sizesLayersInside(node: SceneNode): boolean {
  */
 export function usePanelSize(editor: Editor) {
   let edits: DragResize[] | null = null
+  let stopWatching: (() => void)[] = []
+
+  // As a node preview does, an edit whose selection, page, or document goes away is put back.
+  function watch(current: readonly DragResize[]) {
+    stopWatching = [
+      ...(['selection:changed', 'page:changed', 'graph:replaced'] as const).map((event) =>
+        editor.onEditorEvent(event, cancel)
+      ),
+      editor.onEditorEvent('node:deleted', (id) => {
+        if (current.some((edit) => edit.nodeId === id || edit.origChildren?.has(id))) cancel()
+      })
+    ]
+  }
 
   function update(nodes: readonly SceneNode[], size: (start: Rect) => Size) {
-    edits ??= nodes.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+    if (!edits) {
+      edits = nodes.map((node) => createResizeDrag(node, 'se', 0, 0, editor))
+      watch(edits)
+    }
     for (const edit of edits) {
       const node = editor.graph.getNode(edit.nodeId)
       if (!node) continue
@@ -43,6 +59,8 @@ export function usePanelSize(editor: Editor) {
   function take() {
     const current = edits
     edits = null
+    for (const stop of stopWatching) stop()
+    stopWatching = []
     return current ?? []
   }
 

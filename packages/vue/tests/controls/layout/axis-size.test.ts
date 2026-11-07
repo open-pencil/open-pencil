@@ -82,6 +82,25 @@ describe('a typed width or height', () => {
     }
   })
 
+  test('a selection change puts an unfinished size back, as other previews do', () => {
+    const { editor, frame, stretched, actions, box, scope } = setup()
+    try {
+      actions.updateAxisSize('width', 150)
+      expect(stretched.width).toBe(72.6)
+      editor.select([stretched.id])
+      expect([box(frame), box(stretched)]).toEqual([
+        [0, 0, 100, 100],
+        [0.7, 3.75, 22.6, 16.5]
+      ])
+      actions.commitAxisSize('width', 150, 100)
+      expect(frame.width).toBe(100)
+      expect(editor.undo.canUndo).toBe(false)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
   test('an instance turns its Left & right layer over past zero, as in Figma', () => {
     const editor = createEditor()
     const scope = effectScope()
