@@ -1,0 +1,1 @@
+- With an OpenPencil Cloud model, the AI agent can search the web for current facts, references, and real copy, paid for with the workspace's credits.
