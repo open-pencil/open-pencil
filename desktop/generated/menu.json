@@ -632,12 +632,14 @@
       {
         "id": "selection.distributeHorizontal",
         "label": "Distribute Horizontal Spacing",
-        "accelerator": "Ctrl+Alt+H"
+        "accelerator": "Alt+Shift+H",
+        "macAccelerator": "Ctrl+Alt+H"
       },
       {
         "id": "selection.distributeVertical",
         "label": "Distribute Vertical Spacing",
-        "accelerator": "Ctrl+Alt+V"
+        "accelerator": "Alt+Shift+V",
+        "macAccelerator": "Ctrl+Alt+V"
       },
       {
         "type": "separator"
@@ -645,7 +647,8 @@
       {
         "id": "selection.tidyUp",
         "label": "Tidy Up",
-        "accelerator": "Ctrl+Alt+T"
+        "accelerator": "Ctrl+Alt+Shift+T",
+        "macAccelerator": "Ctrl+Alt+T"
       },
       {
         "id": "selection.packHorizontal",

@@ -1,3 +1,4 @@
+import type { HotkeyPlatform } from '@tanstack/hotkeys'
 import { compact } from 'es-toolkit/array'
 
 import { editorCommandMetadata } from '@open-pencil/vue/editor/commands'
@@ -13,10 +14,20 @@ function isNativeVisible(entry: { target?: string }): boolean {
   return entry.target !== 'browser'
 }
 
-function entryAccelerator(entry: AppMenuActionItem): string | undefined {
+function entryAccelerator(
+  entry: AppMenuActionItem,
+  platform: HotkeyPlatform = 'windows'
+): string | undefined {
   const shortcut =
-    entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
+    entry.shortcut ??
+    (entry.command ? editorCommandMetadata(entry.command, platform).shortcut : undefined)
   return shortcutToAccelerator(shortcut)
+}
+
+/** The macOS accelerator, written only where it differs, as for Figma's distribute keys. */
+function macAccelerator(entry: AppMenuActionItem): string | undefined {
+  const mac = entryAccelerator(entry, 'mac')
+  return mac === entryAccelerator(entry) ? undefined : mac
 }
 
 function cleanEntry(entry: AppMenuEntry): unknown | null {
@@ -26,6 +37,7 @@ function cleanEntry(entry: AppMenuEntry): unknown | null {
     id: entry.id,
     label: entry.label,
     accelerator: entryAccelerator(entry),
+    macAccelerator: macAccelerator(entry),
     checkbox: entry.checkbox,
     feature: entry.feature,
     sub: entry.sub ? compact(entry.sub.map(cleanEntry)) : undefined

@@ -1,2 +1,3 @@
 - Opacity and zoom digit shortcuts work on layouts such as AZERTY, where the digit row types symbols (#1844).
 - The command palette shows the shortcuts of editor commands such as Duplicate and Tidy Up, writes Control as ⌃, and lists modifiers in macOS order, as menus do (#1844).
+- On Windows and Linux, Distribute Spacing and Tidy Up use Figma's keys, Alt+Shift+H, Alt+Shift+V, and Ctrl+Alt+Shift+T, so Ctrl+Alt+V only pastes properties instead of also distributing (#1844).

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { EDITOR_COMMAND_METADATA, editorCommandShortcuts } from '#vue/editor/commands/registry'
+import {
+  EDITOR_COMMAND_METADATA,
+  editorCommandMetadata,
+  editorCommandShortcuts
+} from '#vue/editor/commands/registry'
 import {
   formatShortcut,
   formatShortcutKeys,
@@ -61,9 +65,20 @@ describe('editor command shortcuts', () => {
     expect(editorCommandShortcuts('selection.wrapInSection')).toEqual([])
   })
 
+  test('takes Figma’s keys per platform where they differ', () => {
+    expect(editorCommandShortcuts('selection.distributeVertical', 'mac')).toEqual(['Control+Alt+V'])
+    expect(editorCommandShortcuts('selection.distributeVertical', 'windows')).toEqual([
+      'Alt+Shift+V'
+    ])
+    expect(editorCommandMetadata('selection.tidyUp', 'linux').shortcut).toBe('Control+Alt+Shift+T')
+  })
+
   test('every command shortcut names known keys', () => {
     for (const id of Object.keys(EDITOR_COMMAND_METADATA) as EditorCommandId[]) {
-      for (const shortcut of editorCommandShortcuts(id)) expect(isShortcut(shortcut)).toBe(true)
+      for (const platform of ['mac', 'windows'] as const) {
+        for (const shortcut of editorCommandShortcuts(id, platform))
+          expect(isShortcut(shortcut)).toBe(true)
+      }
     }
   })
 })

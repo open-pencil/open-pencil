@@ -1,13 +1,23 @@
-import type { HotkeyChord } from '@tanstack/hotkeys'
+import { detectPlatform, type HotkeyChord, type HotkeyPlatform } from '@tanstack/hotkeys'
 
 import type { EditorCommandId } from './types'
 
+/** A shortcut Figma gives a different key on macOS than on Windows and Linux. */
+export interface PlatformShortcut {
+  mac: HotkeyChord
+  other: HotkeyChord
+}
+
 export interface EditorCommandMetadata {
-  /** The command's shortcut (`formatShortcut`), shown in menus and bound to the key. */
+  /** The command's shortcut on this platform (`formatShortcut`), shown in menus and bound. */
   shortcut?: HotkeyChord
   /** More shortcuts that run the command, never shown. */
   aliases?: HotkeyChord[]
   contextTestId?: string
+}
+
+interface EditorCommandEntry extends Omit<EditorCommandMetadata, 'shortcut'> {
+  shortcut?: HotkeyChord | PlatformShortcut
 }
 
 export const EDITOR_COMMAND_METADATA = {
@@ -83,9 +93,14 @@ export const EDITOR_COMMAND_METADATA = {
     shortcut: 'Shift+V',
     contextTestId: 'context-flip-vertical'
   },
-  'selection.distributeHorizontal': { shortcut: 'Control+Alt+H' },
-  'selection.distributeVertical': { shortcut: 'Control+Alt+V' },
-  'selection.tidyUp': { shortcut: 'Control+Alt+T' },
+  // Figma's keys; elsewhere Ctrl+Alt+V pastes properties.
+  'selection.distributeHorizontal': {
+    shortcut: { mac: 'Control+Alt+H', other: 'Alt+Shift+H' }
+  },
+  'selection.distributeVertical': {
+    shortcut: { mac: 'Control+Alt+V', other: 'Alt+Shift+V' }
+  },
+  'selection.tidyUp': { shortcut: { mac: 'Control+Alt+T', other: 'Control+Alt+Shift+T' } },
   'selection.packHorizontal': {},
   'selection.packVertical': {},
   'selection.arrangeSpread': {},
@@ -128,14 +143,24 @@ export const EDITOR_COMMAND_METADATA = {
   'view.zoomPreviousFrame': { shortcut: 'Shift+N' },
   'view.nextPage': { shortcut: 'PageDown' },
   'view.previousPage': { shortcut: 'PageUp' }
-} satisfies Record<EditorCommandId, EditorCommandMetadata>
+} satisfies Record<EditorCommandId, EditorCommandEntry>
 
-export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {
-  return EDITOR_COMMAND_METADATA[id]
+/** A command's metadata, its shortcut picked for `platform`. */
+export function editorCommandMetadata(
+  id: EditorCommandId,
+  platform: HotkeyPlatform = detectPlatform()
+): EditorCommandMetadata {
+  const entry: EditorCommandEntry = EDITOR_COMMAND_METADATA[id]
+  const { shortcut } = entry
+  if (shortcut === undefined || typeof shortcut === 'string') return { ...entry, shortcut }
+  return { ...entry, shortcut: platform === 'mac' ? shortcut.mac : shortcut.other }
 }
 
-/** Every token a command's key answers to: its shortcut, then its aliases. */
-export function editorCommandShortcuts(id: EditorCommandId): HotkeyChord[] {
-  const { shortcut, aliases = [] } = editorCommandMetadata(id)
+/** Every shortcut a command's key answers to on `platform`: its shortcut, then its aliases. */
+export function editorCommandShortcuts(
+  id: EditorCommandId,
+  platform: HotkeyPlatform = detectPlatform()
+): HotkeyChord[] {
+  const { shortcut, aliases = [] } = editorCommandMetadata(id, platform)
   return shortcut ? [shortcut, ...aliases] : aliases
 }
