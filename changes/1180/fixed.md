@@ -1,0 +1,1 @@
+- The web editor reloads once when a feature's code can no longer be fetched after an update, instead of staying broken until the tab is reloaded by hand.
