@@ -102,7 +102,7 @@ function addSnapshotNode(
   const created = target.createNode(node.type, targetParentId, {
     // A file's layers name no component as an empty one; only a link makes the layer a copy,
     // which would drop the source a style is known by.
-    ...cloneNodeProps(node, node.componentId || null),
+    ...cloneNodeProps(node, node.componentId),
     // A behaviour or other plugin content belongs to the asset; where it came from does not.
     pluginData: contentPluginData(node.pluginData),
     libraryLayerId: identify(node)
