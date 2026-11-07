@@ -178,3 +178,21 @@ export const COMPONENT_IDENTITY_FIELDS = [
   'componentPropDefs',
   'overrideKey'
 ] as const
+
+/**
+ * How a layer sits in its parent. Figma writes it on every instance record and leaves defaults
+ * out, so a missing field means the default, never the component's own place.
+ */
+export const PARENT_PLACEMENT_FIELDS = [
+  'stackChildAlignSelf',
+  'stackChildPrimaryGrow',
+  'stackPositioning',
+  'horizontalConstraint',
+  'verticalConstraint'
+] as const
+
+/** A component's fields an instance occurrence never takes from it. */
+export const UNINHERITED_COMPONENT_FIELDS = [
+  ...COMPONENT_IDENTITY_FIELDS,
+  ...PARENT_PLACEMENT_FIELDS
+] as const

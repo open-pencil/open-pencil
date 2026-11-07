@@ -19,7 +19,7 @@ import {
 } from './bindings/variables'
 import { completeClearedStyleClaim } from './cleared-style'
 import { applyDerivedEntry } from './derived-symbol-data'
-import { COMPONENT_IDENTITY_FIELDS } from './fields'
+import { UNINHERITED_COMPONENT_FIELDS } from './fields'
 import {
   ownerAssignedProperties,
   ownLayers,
@@ -554,8 +554,8 @@ function interpretRoot(
       overrideKey: readOverrideKey(source.overrideKey),
       // The record is the top layer of its own root: its fields are placed state.
       properties: {
-        // The component's look carries over; its identity does not.
-        ...(base && omit(base.properties, COMPONENT_IDENTITY_FIELDS)),
+        // The component's look carries over; its identity and its place in its own parent do not.
+        ...(base && omit(base.properties, UNINHERITED_COMPONENT_FIELDS)),
         ...placed,
         ...(effective && source.symbolData
           ? { symbolData: { ...source.symbolData, symbolID: effective } }
