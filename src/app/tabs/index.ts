@@ -4,9 +4,7 @@ import { shallowRef, computed, triggerRef } from 'vue'
 
 import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { prepareGraphFonts } from '@open-pencil/core/text'
+import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 import { nextFrame, nextShownFrame } from '@open-pencil/vue/shared/frame'
 
@@ -24,7 +22,6 @@ import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
-import { loadFont } from '@/app/editor/fonts'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
@@ -325,23 +322,6 @@ async function discardFailedRecovery(store: EditorStore): Promise<void> {
   })
 }
 
-async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
-  const imported = await readFigDocument(file, signal)
-  const firstPageId = imported.getPages()[0]?.id
-  // Each page is laid out once its text's fonts are prepared, never in a face it would lose.
-  const layOut = async (pageId: string) => {
-    await prepareGraphFonts(imported, [pageId], { loadFont, signal })
-    imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
-  }
-  if (firstPageId) await layOut(firstPageId)
-  const thumbnailPageId = figThumbnailPageId(imported.getPages())
-  if (thumbnailPageId && thumbnailPageId !== firstPageId) {
-    populateFigPage(imported, thumbnailPageId)
-    await layOut(thumbnailPageId)
-  }
-  return imported
-}
-
 async function showImportedGraph(
   store: EditorStore,
   graph: SceneGraph,
@@ -349,7 +329,9 @@ async function showImportedGraph(
   load?: DocumentLoadSession
 ): Promise<void> {
   load?.update({ phase: 'materializing', detail: store.state.documentName })
-  await applyImportedDocument(store, graph, load)
+  // The page this tab will show is prepared by switchPage below. Preparing the first page in a
+  // staging editor would load its fonts twice, and an inactive Cover page stays lazy until used.
+  await applyImportedDocument(store, graph, load, { prepare: false })
   load?.signal.throwIfAborted()
   await prepare?.()
   load?.signal.throwIfAborted()
@@ -377,7 +359,8 @@ async function showImportedGraph(
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
   // A document without a page has no cover, so it never waits for a renderer.
-  if (!figThumbnailPageId(store.graph.getPages())) return
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId || thumbnailPageId !== store.state.currentPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
@@ -443,7 +426,7 @@ async function showStorageDocument(
   const bytes = given ?? (await readStorageDocument(binding, document, load))
   const file = figFile(bytes, document.name)
   load.update({ phase: 'decoding', detail: document.name })
-  const imported = await readFigForTab(file, load.signal)
+  const imported = await readFigDocument(file, load.signal)
   await showImportedGraph(
     store,
     imported,
@@ -461,7 +444,7 @@ export function readFigBytes(
   name: string,
   signal?: AbortSignal
 ): Promise<SceneGraph> {
-  return readFigForTab(figFile(bytes, name), signal)
+  return readFigDocument(figFile(bytes, name), signal)
 }
 
 /**
@@ -610,7 +593,7 @@ export async function openFileInNewTab(
     let sourceFormat: string
     if (isFig) {
       load.update({ phase: 'decoding', detail: file.name })
-      imported = await readFigForTab(file, load.signal)
+      imported = await readFigDocument(file, load.signal)
       sourceFormat = 'fig'
     } else {
       const result = await io.readDocument(
@@ -687,7 +670,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
       type: 'application/octet-stream'
     })
     load.update({ phase: 'decoding', detail: snapshot.documentName })
-    const imported = await readFigForTab(file, load.signal)
+    const imported = await readFigDocument(file, load.signal)
 
     await showImportedGraph(
       store,

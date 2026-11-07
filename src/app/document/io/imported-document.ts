@@ -7,28 +7,33 @@ import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/edito
 export async function applyImportedDocument(
   editor: Editor,
   imported: SceneGraph,
-  load?: DocumentLoadSession
+  load?: DocumentLoadSession,
+  { prepare = true }: { prepare?: boolean } = {}
 ) {
-  const firstPage = imported.getPages()[0] as SceneNode | undefined
-  const pageId = firstPage?.id ?? imported.rootId
-  const stagingEditor = createEditor({
-    graph: imported,
-    loadFont,
-    skipInitialGraphSetup: true
-  })
-  try {
-    load?.update({ phase: 'populating-page', detail: firstPage?.name ?? null })
-    const prepared = await stagingEditor.preparePage(pageId, {
-      signal: load?.signal,
-      onProgress: (progress) => load?.update(progress)
+  if (prepare) {
+    const firstPage = imported.getPages()[0] as SceneNode | undefined
+    const pageId = firstPage?.id ?? imported.rootId
+    const stagingEditor = createEditor({
+      graph: imported,
+      loadFont,
+      skipInitialGraphSetup: true
     })
+    try {
+      load?.update({ phase: 'populating-page', detail: firstPage?.name ?? null })
+      const prepared = await stagingEditor.preparePage(pageId, {
+        signal: load?.signal,
+        onProgress: (progress) => load?.update(progress)
+      })
+      load?.signal.throwIfAborted()
+      if (!prepared) throw new Error('Imported page preparation was superseded')
+    } finally {
+      stagingEditor.dispose()
+    }
+  } else {
     load?.signal.throwIfAborted()
-    if (!prepared) throw new Error('Imported page preparation was superseded')
-
-    editor.replaceGraph(imported)
-    editor.undo.clear()
-    editor.clearSelection()
-  } finally {
-    stagingEditor.dispose()
   }
+
+  editor.replaceGraph(imported)
+  editor.undo.clear()
+  editor.clearSelection()
 }

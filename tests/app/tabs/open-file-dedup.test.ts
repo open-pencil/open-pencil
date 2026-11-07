@@ -254,6 +254,17 @@ describe('openFileInNewTab deduplication', () => {
     ).toBe('home')
   })
 
+  test('keeps a nonactive cover page lazy while opening the first page', async () => {
+    const graph = new SceneGraph()
+    graph.addPage('Cover')
+    ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(graph)
+    const populate = vi.spyOn(figModule, 'populateFigPage')
+
+    await settleFileOpen(openFileInNewTab(new File([], 'cover.fig'), undefined, '/tmp/cover.fig'))
+
+    expect(populate).not.toHaveBeenCalled()
+  })
+
   test('closes the tab a file opened from Home got when it fails, leaving Home as it was', async () => {
     ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('read failed')
