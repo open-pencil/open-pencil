@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 
 import {
   DOCUMENT_FORMATS,
+  pingStepOf,
   USAGE_BATCH_LIMIT,
   type DocumentFormat,
   type Build,
@@ -50,11 +51,21 @@ export function createSharingClient(options: SharingClientOptions) {
     return options.state.value.installId
   }
 
+  let pinging: Promise<void> | undefined
+
   /**
    * Sends today's anonymous ping unless this install already did, the person turned it off, or
-   * the build or environment sends nothing. A failed ping is retried on the next check.
+   * the build or environment sends nothing. A failed ping is retried on the next check; a check
+   * while one is pending waits for it, so a slow ping never reports the same day twice.
    */
-  async function sendDailyPing(): Promise<void> {
+  function sendDailyPing(): Promise<void> {
+    pinging ??= pingOnce().finally(() => {
+      pinging = undefined
+    })
+    return pinging
+  }
+
+  async function pingOnce(): Promise<void> {
     if (!options.enabled || !options.preferences().dailyPing) return
     const day = now().toISOString().slice(0, 10)
     if (options.state.value.lastPingDay === day) return
@@ -63,9 +74,10 @@ export function createSharingClient(options: SharingClientOptions) {
     // The person may have turned the ping off while the checks above were pending.
     const { dailyPing, usageStats } = options.preferences()
     if (!dailyPing) return
-    const ping: Ping = { ...build, usageStats }
+    const pingDays = options.state.value.pingDays + 1
+    const ping: Ping = { ...build, usageStats, ...pingStepOf(pingDays) }
     if (await options.send.ping(ping)) {
-      options.state.value = { ...options.state.value, lastPingDay: day }
+      options.state.value = { ...options.state.value, lastPingDay: day, pingDays }
     }
   }
 
