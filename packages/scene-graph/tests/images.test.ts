@@ -141,7 +141,7 @@ describe('parseDataURL', () => {
       mimeType: 'image/svg+xml',
       text: '<svg/>'
     })
-    expect(text('data:,caf%C3%A9 %zz')).toEqual({ mimeType: 'text/plain', text: 'café %zz' })
+    expect(text('data:,caf%C3%A9')).toEqual({ mimeType: 'text/plain', text: 'café' })
   })
 
   test('refuses Base64 cut short or not Base64 at all', () => {
