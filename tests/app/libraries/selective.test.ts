@@ -229,3 +229,36 @@ describe('selective library publication keeps layer identities', () => {
     expect(buttonLayerIds(revision)).toEqual(buttonLayerIds(previous))
   })
 })
+
+test('a republished style replaces the version a kept component uses', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const paint = (r: number) => [
+    { type: 'SOLID' as const, color: { r, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+  ]
+  const style = graph.createNode('RECTANGLE', page, {
+    name: 'Surface',
+    sharedStyleType: 'FILL',
+    fills: paint(1)
+  })
+  style.source.id = 'S:surface,'
+  graph.createNode('COMPONENT', page, {
+    name: 'Card',
+    componentKey: 'card',
+    fillStyleId: 'S:surface,'
+  })
+  const previous = await createLibraryRevision({ libraryId: 'library', name: 'Library', graph })
+  graph.updateNode(style.id, { fills: paint(0.5) })
+  const { changes } = await discoverPublishableLibraryChanges(previous, graph)
+  const styleKey = changes.find((change) => change.asset.type === 'STYLE')?.asset.key ?? ''
+
+  const revision = await createSelectiveLibraryRevision({
+    previous,
+    sourceGraph: graph,
+    selectedAssetKeys: new Set([styleKey]),
+    name: 'Library'
+  })
+
+  const styles = [...revision.graph.getAllNodes()].filter((node) => node.sharedStyleType)
+  expect(styles.map((node) => node.fills[0]?.color.r)).toEqual([0.5])
+})

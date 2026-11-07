@@ -3,6 +3,7 @@ import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 
+import { isLibraryComponentAsset } from './asset-keys'
 import { libraryDependencyRoots } from './materialize'
 import type { ComponentLibraryRevision } from './types'
 import { libraryAssetKeyForComponent } from './update/instances'
@@ -105,9 +106,9 @@ export function createLibraryUpdatePreview(
 
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  const latestRoots = latest.manifest.assets.flatMap((descriptor) =>
-    libraryDependencyRoots(latest, descriptor)
-  )
+  const latestRoots = latest.manifest.assets
+    .filter(isLibraryComponentAsset)
+    .flatMap((descriptor) => libraryDependencyRoots(latest, descriptor))
   const currentRoots = consumerDependencyRoots(consumer, currentComponent)
   const currentMapped = copyPreviewDefinitions(consumer, graph, currentRoots, page.id)
   const currentComponentId = currentMapped.get(currentComponent.id)

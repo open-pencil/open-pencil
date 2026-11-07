@@ -80,6 +80,19 @@ describe('library revisions publish styles and variables', () => {
     expect(style?.key).toMatch(/^[0-9a-f]{40}$/)
   })
 
+  test('leave out a style layer no layer can link to', async () => {
+    const { graph, style } = designSystem()
+    graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+      name: 'Loose',
+      sharedStyleType: 'FILL'
+    })
+
+    const revision = await createLibraryRevision({ libraryId: 'ds', name: 'DS', graph })
+
+    const styles = revision.manifest.assets.filter((asset) => asset.type === 'STYLE')
+    expect(styles.map((asset) => asset.name)).toEqual([style.name])
+  })
+
   test('keep the ID a style read from a file is linked by', async () => {
     await initCodec()
     const file = await parseFigFile(

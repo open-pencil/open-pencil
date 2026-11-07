@@ -71,8 +71,16 @@ function copyAssets(
     source.graph,
     [...mappedIds.keys()].flatMap((id) => source.graph.getNode(id) ?? [])
   )
+  // A style the target already holds, as a republished one is, keeps that version: layers name
+  // styles by ID, so a second copy would leave which one they use to chance.
+  const held = new Set(
+    [...target.getAllNodes()].flatMap((node) =>
+      node.sharedStyleType !== null && node.source.id ? [node.source.id] : []
+    )
+  )
   for (const style of dependencies.styles)
-    copyLibraryTree(source.graph, target, style.id, pageId, mappedIds)
+    if (!style.source.id || !held.has(style.source.id))
+      copyLibraryTree(source.graph, target, style.id, pageId, mappedIds)
   remapCopiedReferences(target, mappedIds)
   for (const hash of dependencies.images) {
     const bytes = source.graph.images.get(hash)
@@ -143,6 +151,7 @@ export async function createSelectiveLibraryRevision(
     keepLayerIdentities: true,
     previousRevisionId: input.previous.manifest.revisionId,
     description: input.description,
-    publishedAt: input.publishedAt
+    publishedAt: input.publishedAt,
+    renderThumbnail: input.renderThumbnail
   })
 }

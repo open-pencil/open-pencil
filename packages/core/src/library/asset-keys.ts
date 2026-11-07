@@ -45,7 +45,8 @@ export function publishableLibraryRoots(
 /** The document's own shared styles; a style a library brought in stays that library's. */
 export function publishableLibraryStyles(graph: SceneGraph): SceneNode[] {
   return [...graph.getAllNodes()].filter(
-    (node) => node.sharedStyleType !== null && !node.librarySource?.readOnly
+    // A style is known by its source ID, as `getSharedStyles` lists them; layers link it by that.
+    (node) => node.sharedStyleType !== null && !!node.source.id && !node.librarySource?.readOnly
   )
 }
 
