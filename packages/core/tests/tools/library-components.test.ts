@@ -31,7 +31,7 @@ function catalog() {
             type: 'COMPONENT' as const,
             name: 'Button',
             description: 'Reusable action',
-            sourceNodeId: 'source',
+            sourceId: 'source',
             contentHash: 'hash'
           }
         }

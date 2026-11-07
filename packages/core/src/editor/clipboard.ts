@@ -4,11 +4,10 @@ import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
 import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
 
@@ -26,11 +25,7 @@ import {
   requestedPasteTarget,
   resolvePasteTarget
 } from './clipboard/paste/target'
-import {
-  clipboardPlacement,
-  createClipboardPlacementActions,
-  type ClipboardPlacement
-} from './clipboard/placement'
+import { createClipboardPlacementActions, type ClipboardPlacement } from './clipboard/placement'
 import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
@@ -179,23 +174,6 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
-    const openPencil = parseOpenPencilClipboard(html)
-    if (openPencil) {
-      // One undo step for the paste and any slot it claims.
-      const created = ctx.undo.runBatch('Paste', () =>
-        pasteOpenPencilNodes(
-          openPencil.nodes,
-          clipboardPlacement(ctx.graph, openPencil.nodes),
-          openPencil.images,
-          [],
-          cursorPos,
-          options
-        )
-      )
-      await fontActions.loadFontsForNodes(created)
-      return
-    }
-
     const figma = await parseFigmaClipboard(html)
     if (figma?.assetType === 'STYLE_PROPERTIES') return
     if (figma) {
@@ -323,7 +301,7 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const imageHash of drawnImageHashes(node)) {
+      for (const imageHash of layerImageHashes(node)) {
         if (!ctx.graph.images.has(imageHash)) {
           hashes.add(imageHash)
         }

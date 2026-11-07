@@ -6,8 +6,10 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { findAssetPage } from '@/components/assets-panel/page'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_THUMBNAIL_RENDER_SCALE } from '@/constants'
 
-const { nodeId, alt, size } = defineProps<{
-  nodeId: string
+// A library asset arrives drawn: its revision carries a PNG, as no layer here draws it.
+const { nodeId, png, alt, size } = defineProps<{
+  nodeId?: string
+  png?: Uint8Array
   alt: string
   size: number
 }>()
@@ -22,7 +24,11 @@ let requestId = 0
 
 async function updatePreview() {
   const currentRequest = ++requestId
-  const node = editor.graph.getNode(nodeId)
+  if (png) {
+    previewBlob.value = new Blob([new Uint8Array(png)], { type: 'image/png' })
+    return
+  }
+  const node = nodeId ? editor.graph.getNode(nodeId) : undefined
   if (!node) {
     previewBlob.value = null
     return
@@ -32,7 +38,7 @@ async function updatePreview() {
   const scale = (size * ASSET_THUMBNAIL_RENDER_SCALE) / maxDimension
   try {
     const data = await editor.renderExportImage(
-      [nodeId],
+      [node.id],
       scale,
       'PNG',
       findAssetPage(node, editor.graph)?.id ?? editor.state.currentPageId
@@ -45,8 +51,8 @@ async function updatePreview() {
 }
 
 watch(
-  () => [nodeId, size, editor.state.sceneVersion, isVisible.value],
-  ([, , , visible]) => {
+  () => [nodeId, png, size, editor.state.sceneVersion, isVisible.value],
+  ([, , , , visible]) => {
     if (visible) void updatePreview()
   },
   { immediate: true, flush: 'post' }

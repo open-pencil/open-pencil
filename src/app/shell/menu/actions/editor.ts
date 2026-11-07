@@ -1,6 +1,13 @@
+import type { Ref } from 'vue'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { toggleChatPanel } from '@/app/ai/chat/panel'
 import { useEditorStore } from '@/app/editor/active-store'
+import {
+  copySelectionProperties,
+  pasteClipboardProperties
+} from '@/app/editor/clipboard/properties'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import {
   setCommentsOnCanvas,
@@ -55,9 +62,12 @@ export function toggleSelectedTextUnderline(): void {
 }
 
 export function createSharedEditorMenuActions(
-  setTheme: (theme: 'light' | 'dark' | 'auto') => void
+  setTheme: (theme: 'light' | 'dark' | 'auto') => void,
+  isMobile: Ref<boolean>
 ) {
   return {
+    'copy-properties': onCanvasSelection(() => void copySelectionProperties(store)),
+    'paste-properties': onCanvasSelection(() => void pasteClipboardProperties(store)),
     'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
     'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),
     'view-split-right': () => store.splitPane(store.activePaneId.value, 'horizontal'),
@@ -87,6 +97,7 @@ export function createSharedEditorMenuActions(
       store.state.showUI = !store.state.showUI
     },
     'toggle-preview': () => store.togglePlay(),
+    'toggle-ai': () => toggleChatPanel(store, isMobile.value),
     'insert-icon': () => {
       store.state.iconPickerOpen = true
     },

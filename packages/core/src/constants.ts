@@ -284,6 +284,8 @@ export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 
 export const PEN_CLOSE_THRESHOLD = 8
+/** Points a pen path needs before a press on its first point closes it: two make a closed shape, as in Figma. */
+export const PEN_CLOSE_MIN_POINTS = 2
 /**
  * Screen pixels a pencil sample may stray from the line through its neighbours before the curve
  * keeps it, so a stroke drawn zoomed in keeps more detail.

@@ -228,6 +228,16 @@ export interface DragPen {
   type: 'pen-drag'
   startX: number
   startY: number
+  /** Where the pointer went down, which the drag threshold is measured from. */
+  pressX: number
+  pressY: number
+  /**
+   * The handle into the point that the drag keeps: set when the press went back to the last point,
+   * whose outgoing handle alone the drag sets again (Figma). Null when the drag mirrors into it.
+   */
+  incoming: Vector | null
+  /** Past the drag threshold: from then on the handle follows the pointer, back to zero too. */
+  moved: boolean
   modifierMode: 'default' | 'continuous' | 'independent'
   frozenOppositeTangent: Vector | null
   spaceDown: boolean

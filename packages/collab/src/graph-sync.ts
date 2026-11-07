@@ -2,8 +2,8 @@ import { isEmptyObject, isEqual, omit, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
 
 import type { CollabEditor } from './editor'
 import { decodeNodeFromYjs, DOCUMENT_NODE_FIELDS, syncEncodedNodeToYMap } from './node-codec'
@@ -215,7 +215,7 @@ export function createYjsGraphSync({
 
     const localYimages = getYimages()
     if (!localYimages) return
-    for (const imageHash of drawnImageHashes(node)) {
+    for (const imageHash of layerImageHashes(node)) {
       if (localYimages.has(imageHash)) {
         continue
       }

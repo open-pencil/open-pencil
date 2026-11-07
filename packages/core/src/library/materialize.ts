@@ -1,10 +1,11 @@
 import type { LibraryAssetSource, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
-import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
+import { isLibraryComponentAsset } from './asset-keys'
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
+import { applyLibraryResources } from './resources'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 import { assetComponent } from './variants'
 
@@ -31,7 +32,7 @@ export function libraryDependencyRoots(
   revision: ComponentLibraryRevision,
   descriptor: LibraryAssetDescriptor
 ): SceneNode[] {
-  const root = revision.graph.getNode(descriptor.sourceNodeId)
+  const root = revision.graph.getNode(descriptor.sourceId)
   if (!root) throw new Error(`Library asset source is missing: ${descriptor.key}`)
   const roots = new Map([[root.id, root]])
   const visited = new Set<string>()
@@ -79,7 +80,7 @@ export function libraryDefinitionSource(
   revision: ComponentLibraryRevision,
   sourceId: string
 ): LibraryAssetSource | null {
-  const descriptor = revision.manifest.assets.find((asset) => asset.sourceNodeId === sourceId)
+  const descriptor = revision.manifest.assets.find((asset) => asset.sourceId === sourceId)
   const source = revision.graph.getNode(sourceId)
   const assetKey =
     descriptor?.key ??
@@ -114,27 +115,6 @@ function markDefinitions(
   }
 }
 
-export function copyImages(
-  source: SceneGraph,
-  target: SceneGraph,
-  mappedIds: Map<string, string>
-): void {
-  const hashes = new Set<string>()
-  for (const sourceId of mappedIds.keys()) {
-    const node = source.getNode(sourceId)
-    if (!node) {
-      continue
-    }
-    for (const imageHash of drawnImageHashes(node)) {
-      hashes.add(imageHash)
-    }
-  }
-  for (const hash of hashes) {
-    const image = source.images.get(hash)
-    if (image) target.images.set(hash, new Uint8Array(image))
-  }
-}
-
 export function materializeLibraryAsset(
   consumer: SceneGraph,
   revision: ComponentLibraryRevision,
@@ -159,15 +139,24 @@ export function materializeLibraryAsset(
   const descriptor = revision.manifest.assets.find((asset) => asset.key === assetKey)
   if (!descriptor)
     throw new Error(`Library asset not found: ${libraryAssetIdentityKey(libraryId, assetKey)}`)
+  if (!isLibraryComponentAsset(descriptor))
+    throw new Error(
+      `Library asset is not a component: ${libraryAssetIdentityKey(libraryId, assetKey)}`
+    )
   const page = getInternalLibraryPage(consumer)
   const mappedIds = new Map<string, string>()
   for (const root of libraryDependencyRoots(revision, descriptor)) {
     copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
   }
   markDefinitions(consumer, revision, mappedIds)
-  copyImages(revision.graph, consumer, mappedIds)
+  applyLibraryResources(
+    consumer,
+    mappedIds.values(),
+    revision,
+    [...mappedIds.keys()].flatMap((id) => revision.graph.getNode(id) ?? [])
+  )
 
-  const rootId = mappedIds.get(descriptor.sourceNodeId)
+  const rootId = mappedIds.get(descriptor.sourceId)
   const root = rootId ? consumer.getNode(rootId) : undefined
   if (!root) throw new Error(`Failed to materialize library asset: ${assetKey}`)
   const component = assetComponent(consumer, root)?.component

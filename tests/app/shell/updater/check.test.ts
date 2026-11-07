@@ -1,9 +1,19 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import {
+  appPreferences,
+  DEFAULT_APP_PREFERENCES,
+  updateStartupUpdateCheck
+} from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
-import { checkForAppUpdate } from '@/app/shell/updater/check'
+import {
+  checkForAppUpdate,
+  resetStartupUpdateCheckForTests,
+  scheduleStartupUpdateCheck,
+  STARTUP_UPDATE_CHECK_DELAY_MS
+} from '@/app/shell/updater/check'
 import { UPDATER_WINDOW_LABEL, UPDATER_WINDOW_URL } from '@/app/shell/updater/window'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -19,9 +29,21 @@ const AVAILABLE_UPDATE = {
   rawJson: '{}'
 }
 
+function restorePreferences(): void {
+  appPreferences.value = structuredClone(DEFAULT_APP_PREFERENCES)
+}
+
+beforeEach(() => {
+  restorePreferences()
+  resetStartupUpdateCheckForTests()
+})
+
 afterEach(async () => {
+  jest.useRealTimers()
   await clearTauriMocks()
   for (const entry of toast.toasts.value) toast.remove(entry.id)
+  restorePreferences()
+  resetStartupUpdateCheckForTests()
 })
 
 describe('checkForAppUpdate', () => {
@@ -95,5 +117,56 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([
       messages.value.checkFailed({ error: 'offline' })
     ])
+  })
+})
+
+describe('scheduleStartupUpdateCheck', () => {
+  test('checks silently once the launch delay has passed', async () => {
+    const calls: string[] = []
+    await mockTauriIPC((cmd) => {
+      calls.push(cmd)
+      return null
+    })
+    jest.useFakeTimers()
+
+    const pending = scheduleStartupUpdateCheck(messages)
+    jest.advanceTimersByTime(STARTUP_UPDATE_CHECK_DELAY_MS - 1)
+    await Promise.resolve()
+    expect(calls).toEqual([])
+
+    jest.advanceTimersByTime(1)
+    await pending
+    expect(calls).toEqual(['plugin:updater|check'])
+    expect(toast.toasts.value).toEqual([])
+  })
+
+  test('skips the request when startup checks are turned off before it runs', async () => {
+    const calls: string[] = []
+    await mockTauriIPC((cmd) => {
+      calls.push(cmd)
+      return null
+    })
+    jest.useFakeTimers()
+
+    const pending = scheduleStartupUpdateCheck(messages)
+    updateStartupUpdateCheck(false)
+    jest.advanceTimersByTime(STARTUP_UPDATE_CHECK_DELAY_MS)
+    await pending
+
+    expect(calls).toEqual([])
+  })
+
+  test('still checks from the menu when startup checks are off', async () => {
+    const calls: string[] = []
+    await mockTauriIPC((cmd) => {
+      calls.push(cmd)
+      return null
+    })
+    updateStartupUpdateCheck(false)
+
+    await checkForAppUpdate({ messages })
+
+    expect(calls).toEqual(['plugin:updater|check'])
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
   })
 })

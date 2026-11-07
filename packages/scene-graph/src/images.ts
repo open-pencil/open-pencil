@@ -5,8 +5,7 @@ import { isValid, toUint8Array } from 'js-base64'
 import { decode } from 'ufo'
 
 import type { Matrix, Size } from './primitives'
-import type { Fill, SceneNode } from './types'
-import { regionFills } from './vector-network'
+import type { Fill } from './types'
 
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
@@ -123,11 +122,22 @@ export function drawnImageHash(paint: Pick<Fill, 'type' | 'imageHash'>): string 
   return paint.type === 'IMAGE' || paint.type === 'VIDEO' ? paint.imageHash : undefined
 }
 
-/** The images a layer's fills, strokes and vector regions draw, so a copy can carry them. */
-export function drawnImageHashes(
-  node: Pick<SceneNode, 'fills' | 'strokes' | 'vectorNetwork'>
-): string[] {
-  return [...node.fills, ...node.strokes, ...regionFills(node.vectorNetwork)].flatMap(
-    (paint) => drawnImageHash(paint) ?? []
-  )
+/** The images `paints` show, by their hashes: a VIDEO paint shows its poster frame. */
+export function imagePaintHashes(paints: Iterable<Fill>): string[] {
+  return [...paints].flatMap((paint) => drawnImageHash(paint) ?? [])
+}
+
+/**
+ * Copies the images `hashes` name from `from` into `to`, each as bytes of its own. An image is
+ * named by its content, so one `to` already holds stays.
+ */
+export function copyImages(
+  from: ReadonlyMap<string, Uint8Array>,
+  to: Map<string, Uint8Array>,
+  hashes: Iterable<string>
+): void {
+  for (const hash of hashes) {
+    const bytes = from.get(hash)
+    if (bytes && !to.has(hash)) to.set(hash, new Uint8Array(bytes))
+  }
 }
