@@ -1,8 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
-import { drawnImageHash, drawnImageHashes } from '@open-pencil/scene-graph/images'
+import { drawnImageHashes } from '@open-pencil/scene-graph/images'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
@@ -114,10 +113,7 @@ function copyImages(source: SceneGraph, target: SceneGraph, mappedIds: Map<strin
     if (!node) {
       continue
     }
-    const regionImages = regionFills(node.vectorNetwork).flatMap(
-      (fill) => drawnImageHash(fill) ?? []
-    )
-    for (const imageHash of [...drawnImageHashes(node), ...regionImages]) {
+    for (const imageHash of drawnImageHashes(node)) {
       hashes.add(imageHash)
     }
   }

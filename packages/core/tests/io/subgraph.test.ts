@@ -128,6 +128,38 @@ describe('export subgraph extraction', () => {
     expect([...extracted.graph.images.keys()].sort()).toEqual(['stroke-image', 'video-poster'])
   })
 
+  test('selection export carries the poster only a vector region draws', () => {
+    const graph = new SceneGraph()
+    graph.images.set('region-poster', new Uint8Array([1]))
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      fills: [],
+      vectorNetwork: {
+        vertices: [],
+        segments: [],
+        regions: [
+          {
+            windingRule: 'NONZERO',
+            loops: [],
+            fills: [
+              {
+                type: 'VIDEO',
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                opacity: 1,
+                visible: true,
+                imageHash: 'region-poster',
+                videoHash: 'a'.repeat(40)
+              }
+            ]
+          }
+        ]
+      }
+    })
+
+    const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: [vector.id] })
+
+    expect([...extracted.graph.images.keys()]).toEqual(['region-poster'])
+  })
+
   test('fig page export preserves valid instance component references without serializing instance children', async () => {
     await initCodec()
     const graph = new SceneGraph()

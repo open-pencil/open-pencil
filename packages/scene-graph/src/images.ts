@@ -4,6 +4,7 @@ import { imageSize as readImageHeader } from 'image-size'
 
 import type { Matrix, Size } from './primitives'
 import type { Fill, SceneNode } from './types'
+import { regionFills } from './vector-network'
 
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
@@ -94,7 +95,11 @@ export function drawnImageHash(paint: Pick<Fill, 'type' | 'imageHash'>): string 
   return paint.type === 'IMAGE' || paint.type === 'VIDEO' ? paint.imageHash : undefined
 }
 
-/** The images a layer's fills and strokes draw, so a copy of the layer can carry them. */
-export function drawnImageHashes(node: Pick<SceneNode, 'fills' | 'strokes'>): string[] {
-  return [...node.fills, ...node.strokes].flatMap((paint) => drawnImageHash(paint) ?? [])
+/** The images a layer's fills, strokes and vector regions draw, so a copy can carry them. */
+export function drawnImageHashes(
+  node: Pick<SceneNode, 'fills' | 'strokes' | 'vectorNetwork'>
+): string[] {
+  return [...node.fills, ...node.strokes, ...regionFills(node.vectorNetwork)].flatMap(
+    (paint) => drawnImageHash(paint) ?? []
+  )
 }
