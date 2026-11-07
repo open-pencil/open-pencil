@@ -138,7 +138,7 @@ describe('text ranges that name a fill style', () => {
 })
 
 describe('text ranges that name a text style', () => {
-  test('keep their own decoration and size', () => {
+  test('keep their own fields, since ranges take only fill styles so far', () => {
     const text = importedTextWithRange({
       styleIdForText: HEADING_REF,
       textDecoration: 'UNDERLINE',
