@@ -60,10 +60,10 @@ function buildCursorPath(
 
   if (penState.pendingClose && vertices.length >= PEN_CLOSE_MIN_POINTS) {
     // Closing preview: last -> first, leaving the last point along its own handle and arriving
-    // along the drag at the first point.
+    // along the mirror of the drag at the first point.
     const lastVertex = vertices[vertices.length - 1]
     const out = penState.closeTangent ?? { x: 0, y: 0 }
-    const into = dragTangent ?? { x: 0, y: 0 }
+    const into = dragTangent ? { x: -dragTangent.x, y: -dragTangent.y } : { x: 0, y: 0 }
     const path = new r.ck.PathBuilder()
     const last = toScreen(lastVertex.x, lastVertex.y)
     const cp1 = toScreen(lastVertex.x + out.x, lastVertex.y + out.y)

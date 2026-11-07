@@ -39,23 +39,6 @@ function projectTangentToAxis(active: Vector, opposite: Vector): Vector {
   return { x: dir.x * len, y: dir.y * len }
 }
 
-function applyAnchorTangent(
-  tangent: Vector,
-  isClosing: boolean,
-  firstSeg: VectorSegment | undefined,
-  lastSeg: VectorSegment | undefined
-): void {
-  if (isClosing) {
-    if (!firstSeg) return
-    if (firstSeg.start === 0) firstSeg.tangentStart = { x: tangent.x, y: tangent.y }
-    else if (firstSeg.end === 0) firstSeg.tangentEnd = { x: tangent.x, y: tangent.y }
-    return
-  }
-  if (lastSeg) {
-    lastSeg.tangentEnd = { x: tangent.x, y: tangent.y }
-  }
-}
-
 /**
  * The network a continued path commits: the one it came from, with the pen's chain written back
  * over the part it walked and the new points and segments added, so branches the pen didn't walk
@@ -142,13 +125,16 @@ export function createPenActions(
   }
 
   function penSetDragTangent(tx: number, ty: number, options?: PenDragOptions) {
-    if (!ctx.state.penState) return
     const ps = ctx.state.penState
+    if (!ps) return
+    if (closing(ps)) {
+      setClosingDrag(ps, { x: tx, y: ty }, options)
+      ctx.requestRender()
+      return
+    }
     let active = { x: tx, y: ty }
-    const isClosing = closing(ps)
-    const anchorIndex = isClosing ? 0 : ps.vertices.length - 1
-    const lastSeg = ps.segments.length > 0 ? ps.segments[ps.segments.length - 1] : undefined
-    const firstSeg = ps.segments.length > 0 ? ps.segments[0] : undefined
+    const anchor = ps.vertices[ps.vertices.length - 1]
+    const lastSeg = ps.segments.at(-1)
     const opposite =
       options?.oppositeTangent ??
       ps.oppositeDragTangent ??
@@ -159,22 +145,27 @@ export function createPenActions(
     }
 
     ps.dragTangent = active
-    const keepOpposite = options?.keepOpposite ?? isClosing
-    if (keepOpposite) {
-      ps.oppositeDragTangent = { x: opposite.x, y: opposite.y }
-      applyAnchorTangent(opposite, isClosing, firstSeg, lastSeg)
-      if (options?.constrainToOpposite) {
-        ps.vertices[anchorIndex].handleMirroring = 'ANGLE'
-      } else {
-        ps.vertices[anchorIndex].handleMirroring = 'NONE'
-      }
-    } else {
-      const symmetric = { x: -active.x, y: -active.y }
-      ps.oppositeDragTangent = symmetric
-      applyAnchorTangent(symmetric, isClosing, firstSeg, lastSeg)
-      ps.vertices[anchorIndex].handleMirroring = 'ANGLE_AND_LENGTH'
-    }
+    const kept = options?.keepOpposite ? opposite : { x: -active.x, y: -active.y }
+    ps.oppositeDragTangent = { x: kept.x, y: kept.y }
+    if (lastSeg) lastSeg.tangentEnd = { x: kept.x, y: kept.y }
+    if (!options?.keepOpposite) anchor.handleMirroring = 'ANGLE_AND_LENGTH'
+    else anchor.handleMirroring = options.constrainToOpposite ? 'ANGLE' : 'NONE'
     ctx.requestRender()
+  }
+
+  /**
+   * A drag on the closing press points the way the path carries on past its first point, as a drag
+   * on any other point does: the closing segment arrives along its mirror, and the first segment
+   * keeps the handle it left with (Figma). Held ⌘ keeps the two handles in line.
+   */
+  function setClosingDrag(ps: PenState, drag: Vector, options?: PenDragOptions) {
+    const first = ps.vertices[0]
+    const leaving = ps.segments.find((segment) => segment.start === 0)?.tangentStart
+    let into = { x: -drag.x, y: -drag.y }
+    if (options?.constrainToOpposite && leaving) into = projectTangentToAxis(into, leaving)
+    ps.dragTangent = { x: -into.x, y: -into.y }
+    ps.oppositeDragTangent = into
+    first.handleMirroring = options?.constrainToOpposite ? 'ANGLE' : 'NONE'
   }
 
   function penSetClosingToFirst(closing: boolean) {
@@ -219,11 +210,12 @@ export function createPenActions(
 
     if (closed && closing(ps)) {
       const prevIdx = ps.vertices.length - 1
+      const drag = ps.dragTangent
       ps.segments.push({
         start: prevIdx,
         end: 0,
         tangentStart: ps.closeTangent ?? { x: 0, y: 0 },
-        tangentEnd: ps.dragTangent ?? { x: 0, y: 0 }
+        tangentEnd: drag ? { x: -drag.x, y: -drag.y } : { x: 0, y: 0 }
       })
     }
 

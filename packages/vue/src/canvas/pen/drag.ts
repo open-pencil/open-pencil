@@ -59,24 +59,15 @@ function applySpaceDragOffset(d: PenDragState, anchor: Vector) {
   d.startY += anchor.y - d.knotStartY
 }
 
-function getClosingOpposite(penState: PenState): Vector | null {
-  const firstSeg = penState.segments[0]
-  if (!penState.pendingClose) return null
-  if (firstSeg.start === 0) return firstSeg.tangentStart
-  if (firstSeg.end === 0) return firstSeg.tangentEnd
-  return null
-}
-
 function getModifierMode(event: MouseEvent): PenModifierMode {
   if (event.metaKey || event.ctrlKey) return 'continuous'
   if (event.altKey) return 'independent'
   return 'default'
 }
 
-function freezeOppositeTangent(penState: PenState, closingOpposite: Vector | null): Vector {
-  const lastSeg = penState.segments[penState.segments.length - 1]
-  if (closingOpposite) return { ...closingOpposite }
-  return { ...lastSeg.tangentEnd }
+function freezeOppositeTangent(penState: PenState): Vector | null {
+  const lastSeg = penState.segments.at(-1)
+  return lastSeg ? { ...lastSeg.tangentEnd } : null
 }
 
 function updateModifierMode(d: PenDragState, mode: PenModifierMode, penState: PenState) {
@@ -84,19 +75,17 @@ function updateModifierMode(d: PenDragState, mode: PenModifierMode, penState: Pe
   if (mode === 'default') {
     d.frozenOppositeTangent = null
   } else if (!d.frozenOppositeTangent) {
-    d.frozenOppositeTangent = freezeOppositeTangent(penState, getClosingOpposite(penState))
+    d.frozenOppositeTangent = freezeOppositeTangent(penState)
   }
   d.modifierMode = mode
 }
 
 function applyPenDragTangent(
   editor: Editor,
-  penState: PenState,
   d: PenDragState,
   tx: number,
   ty: number,
-  mode: PenModifierMode,
-  closingOpposite: Vector | null
+  mode: PenModifierMode
 ) {
   if (mode === 'continuous') {
     editor.penSetDragTangent(tx, ty, {
@@ -115,10 +104,7 @@ function applyPenDragTangent(
     return
   }
 
-  const options = penState.pendingClose
-    ? { keepOpposite: true, oppositeTangent: closingOpposite }
-    : undefined
-  editor.penSetDragTangent(tx, ty, options)
+  editor.penSetDragTangent(tx, ty)
 }
 
 export function handlePenDragMove(
@@ -143,5 +129,5 @@ export function handlePenDragMove(
 
   const mode = getModifierMode(event)
   updateModifierMode(d, mode, penState)
-  applyPenDragTangent(editor, penState, d, tx, ty, mode, getClosingOpposite(penState))
+  applyPenDragTangent(editor, d, tx, ty, mode)
 }
