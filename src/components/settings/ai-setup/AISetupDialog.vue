@@ -28,15 +28,15 @@ const tourFailed = ref(false)
 /**
  * The tour opens in a tab of its own; AI stays one click away in Settings. The dialog closes,
  * which marks the welcome done, only once the tour is open: a failure stays in front of the
- * person with a way to try again.
+ * person with a way to try again, and a tour that a paste or a drawing in its tab stopped
+ * leaves the welcome as it was.
  */
 async function takeTour(): Promise<void> {
   if (tourOpening.value) return
   tourOpening.value = true
   tourFailed.value = false
   try {
-    await openTour()
-    closeAISetup()
+    if (await openTour()) closeAISetup()
   } catch (error) {
     console.error('[Tour] Could not open the tour:', error)
     tourFailed.value = true

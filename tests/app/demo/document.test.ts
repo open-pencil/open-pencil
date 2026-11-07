@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { openDemoDocument, openTour } from '@/app/demo/document'
 import { createEditorStore } from '@/app/editor/session'
 import { getActiveStore, getTabsSnapshot } from '@/app/tabs'
@@ -17,16 +19,36 @@ function stubDemoFetch(meanwhile: () => void = () => undefined, ok = true) {
   )
 }
 
+const savedFrames = {
+  request: globalThis.requestAnimationFrame,
+  cancel: globalThis.cancelAnimationFrame
+}
+
+/** Animation frames that arrive at once, as a shown page draws them. */
+function drawFramesAtOnce() {
+  globalThis.requestAnimationFrame = (callback) => {
+    queueMicrotask(() => callback(0))
+    return 1
+  }
+  globalThis.cancelAnimationFrame = () => undefined
+}
+
 afterEach(() => {
   globalThis.fetch = originalFetch
+  globalThis.requestAnimationFrame = savedFrames.request
+  globalThis.cancelAnimationFrame = savedFrames.cancel
 })
 
 describe('opening the demo', () => {
   test('opens the bundled file in a tab that is still blank', async () => {
     const store = createEditorStore()
-    const open = spyOn(store, 'openFigFile').mockResolvedValue(undefined)
+    // Opening a file replaces the tab's graph, which is how the demo knows it opened.
+    const open = spyOn(store, 'openFigFile').mockImplementation(async () => {
+      store.replaceGraph(new SceneGraph())
+    })
+    drawFramesAtOnce()
     stubDemoFetch()
-    await openDemoDocument(store)
+    expect(await openDemoDocument(store)).toBe(true)
     expect(open).toHaveBeenCalledTimes(1)
     expect(open.mock.calls[0]?.[0].name).toBe('Demo.fig')
   })
@@ -37,7 +59,8 @@ describe('opening the demo', () => {
     stubDemoFetch(() => {
       store.graph.createNode('RECTANGLE', store.state.currentPageId, { width: 10, height: 10 })
     })
-    await openDemoDocument(store)
+    // The caller learns the demo did not open, so a welcome offering it stays.
+    expect(await openDemoDocument(store)).toBe(false)
     expect(open).not.toHaveBeenCalled()
   })
 
