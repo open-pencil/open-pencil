@@ -358,12 +358,52 @@ export function buildIconData(
   }
 }
 
-function transformStrokeScale(transform: string | null | undefined): number {
-  if (!transform || transform === 'none') return 1
+type SVGPath = ReturnType<typeof svgpath>
 
+/**
+ * Descendant transform, then the viewBox (origin, then scale), then the root `<svg>` transform.
+ * The same order places both the path and the stroke's unit axes.
+ */
+function placeSVGPath(
+  path: SVGPath,
+  pathTransform: string | null | undefined,
+  originX: number,
+  originY: number,
+  scaleX: number,
+  scaleY: number,
+  root: string | null
+): SVGPath {
+  let placed = path
+  if (pathTransform && pathTransform !== 'none') placed = placed.transform(pathTransform)
+  if (originX !== 0 || originY !== 0) placed = placed.translate(-originX, -originY)
+  if (scaleX !== 1 || scaleY !== 1) placed = placed.scale(scaleX, scaleY)
+  if (root) placed = placed.transform(root)
+  return placed
+}
+
+/**
+ * The shorter axis of the placement transform.
+ * Multiplying each transform's shorter axis counts a shrink twice when a later scale stretches
+ * that same axis: `scale(0.5 1)` inside a viewBox that doubles x is not a thinner stroke.
+ */
+function placedStrokeScale(
+  pathTransform: string | null | undefined,
+  originX: number,
+  originY: number,
+  scaleX: number,
+  scaleY: number,
+  root: string | null
+): number {
   const points: Vector[] = []
-  svgpath('M0 0 L1 0 M0 0 L0 1')
-    .transform(transform)
+  placeSVGPath(
+    svgpath('M0 0 L1 0 M0 0 L0 1'),
+    pathTransform,
+    originX,
+    originY,
+    scaleX,
+    scaleY,
+    root
+  )
     .abs()
     .iterate((segment) => {
       if (segment[0] === 'M' || segment[0] === 'L') {
@@ -393,14 +433,15 @@ export function scalePathInfos(
 ): IconData['paths'] {
   const root = rootTransform && rootTransform !== 'none' ? rootTransform : null
   return pathInfos.map((path) => {
-    let transformedPath = svgpath(path.d)
-    if (path.transform && path.transform !== 'none') {
-      transformedPath = transformedPath.transform(path.transform)
-    }
-    if (originX !== 0 || originY !== 0)
-      transformedPath = transformedPath.translate(-originX, -originY)
-    if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
-    if (root) transformedPath = transformedPath.transform(root)
+    const transformedPath = placeSVGPath(
+      svgpath(path.d),
+      path.transform,
+      originX,
+      originY,
+      scaleX,
+      scaleY,
+      root
+    )
     // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
     // arc's own end can put it on its start, and a degenerate arc draws nothing.
     const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
@@ -415,9 +456,7 @@ export function scalePathInfos(
       stroke,
       strokeWidth:
         path.strokeWidth *
-        transformStrokeScale(path.transform) *
-        transformStrokeScale(root) *
-        Math.min(scaleX, scaleY),
+        placedStrokeScale(path.transform, originX, originY, scaleX, scaleY, root),
       strokeCap: path.strokeCap,
       strokeJoin: path.strokeJoin
     }

@@ -1,1 +1,2 @@
 - Inline SVG in design JSX honors a viewBox that does not start at zero, so artwork drawn at that origin sits at the icon's corner instead of being offset or clipped.
+- Inline SVG strokes use the shorter axis of the combined viewBox and element scales, so scales on different axes no longer shrink a stroke those scales cancel out.

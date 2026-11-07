@@ -9,7 +9,7 @@ import {
   initCanvasKit,
   renderNodesToImage
 } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -21,11 +21,17 @@ function icon(viewBox: string, x: number, y: number, size = 100) {
   return `<svg viewBox="${viewBox}" size={${size}}><rect x={${x}} y={${y}} width={20} height={20} /></svg>`
 }
 
-async function rectVertices(jsx: string): Promise<Vector[]> {
+async function iconVector(jsx: string): Promise<SceneNode> {
   const graph = new SceneGraph()
   const [frame] = await renderJSX(graph, jsx)
-  const vector = graph.getChildren(frame.id).find((node) => node.type === 'VECTOR')
-  return expectDefined(vector, 'vector').vectorNetwork?.vertices.map(({ x, y }) => ({ x, y })) ?? []
+  return expectDefined(
+    graph.getChildren(frame.id).find((node) => node.type === 'VECTOR'),
+    'vector'
+  )
+}
+
+async function rectVertices(jsx: string): Promise<Vector[]> {
+  return (await iconVector(jsx)).vectorNetwork?.vertices.map(({ x, y }) => ({ x, y })) ?? []
 }
 
 describe('inline SVG viewBox origin', () => {
@@ -135,5 +141,19 @@ describe('inline SVG viewBox origin', () => {
     } finally {
       renderer.destroy()
     }
+  })
+
+  test('keeps a stroke at the shorter axis of composed non-uniform scales', async () => {
+    // 100px viewport, viewBox 0 0 50 100 stretches x by 2 (preserveAspectRatio none).
+    // Child scale(0.5 1), that stretch, and root scale(2 1) compose to scale(2 1).
+    // A 4-unit stroke stays 4px. Multiplying each transform's shorter axis makes it 2px.
+    const jsx =
+      '<svg viewBox="0 0 50 100" size={100} transform="scale(2 1)"><line x1={0} y1={0} x2={10} y2={0} stroke="black" strokeWidth={4} transform="scale(0.5 1)" /></svg>'
+    const vector = await iconVector(jsx)
+    expect(vector.vectorNetwork?.vertices.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 0, y: 0 },
+      { x: 20, y: 0 }
+    ])
+    expect(expectDefined(vector.strokes[0], 'stroke').weight).toBe(4)
   })
 })
