@@ -292,10 +292,3 @@ async function writeFigmaClipboardHTML(
   embedClipboardImages(nodeChanges, blobs, graph.images)
   return encodeFigmaClipboard(nodeChanges, blobs, randomInt(), assetType)
 }
-
-export {
-  buildOpenPencilClipboardHTML,
-  parseOpenPencilClipboard,
-  type OpenPencilClipboardData,
-  type TextPictureBuilder
-} from './clipboard/openpencil'
