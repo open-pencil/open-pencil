@@ -6,7 +6,13 @@ import { BOARD_GRID } from '#core/constants'
 import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
-import type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './types'
+import type {
+  CanvasView,
+  EditorProfile,
+  EditorProfileInputs,
+  EditorRestrictions,
+  LayerEdits
+} from './types'
 
 export const EDIT_VIEW: CanvasView = { id: 'edit' }
 
@@ -123,9 +129,17 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
       ? pickBy(profile.toolKeys, (tool) => !!tool && tools.has(tool))
       : profile.toolKeys,
     pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits,
-    layerEdits:
-      restrictions.readOnly || restrictions.layerEdits === 'none' ? 'none' : profile.layerEdits
+    layerEdits: restrictions.readOnly
+      ? 'none'
+      : narrowerLayerEdits(profile.layerEdits, restrictions.layerEdits)
   }
+}
+
+const LAYER_EDITS: readonly LayerEdits[] = ['all', 'move', 'none']
+
+/** The narrower of two layer edit levels. */
+function narrowerLayerEdits(a: LayerEdits, b: LayerEdits): LayerEdits {
+  return LAYER_EDITS.indexOf(a) > LAYER_EDITS.indexOf(b) ? a : b
 }
 
 /**

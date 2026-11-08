@@ -47,6 +47,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'pageSwitchCount',
   'previewRenameSelected',
   // Recording only: what the edit runs is refused or allowed on its own.
+  'asHost',
   'recordEdit',
   'recordEditAsync',
   'resolveColorVariable',
@@ -196,3 +197,22 @@ export const PATH_EDIT_ACTIONS: ReadonlySet<string> = new Set([
   'setNodeEditNetwork',
   'undoAction'
 ])
+
+/**
+ * Editor actions that move layers within their parents, which a host that lets layers only move
+ * (`layerEdits: 'move'`) still offers, together with undo and redo of what they did.
+ */
+export const MOVE_ACTIONS: ReadonlySet<string> = new Set([
+  'commitMove',
+  'commitMoveWithReparent',
+  'fitEnclosingGroups',
+  'nudgeSelected',
+  'redoAction',
+  'undoAction'
+])
+
+/**
+ * Editor actions that update any field of a layer, which a host that lets layers only move still
+ * offers for a layer's position alone: a drag writes its final position through them.
+ */
+export const POSITION_ACTIONS: ReadonlySet<string> = new Set(['updateNode', 'updateNodeWithUndo'])
