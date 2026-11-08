@@ -8,12 +8,12 @@ import type { EditorState, Tool } from '#core/editor/types'
 export type PathEdits = 'all' | 'handles'
 
 /**
- * Whether layers may change: anything, or none of them, so nothing is moved, resized, restyled,
- * renamed, added, or deleted, while vector edit mode still reshapes a path as far as `PathEdits`
- * lets it. A host that hands the player one path to reshape, as a lettering game does, offers
- * none.
+ * Whether layers may change: anything; only where they are, so layers move within their parents
+ * and nothing is resized, rotated, restyled, renamed, added, or deleted, as a game whose pieces
+ * are dragged into place offers; or none of them, while vector edit mode still reshapes a path as
+ * far as `PathEdits` lets it, as a lettering game that hands the player one path offers.
  */
-export type LayerEdits = 'all' | 'none'
+export type LayerEdits = 'all' | 'move' | 'none'
 
 /**
  * What the host takes away from every view, whatever the canvas shows. A restriction only ever

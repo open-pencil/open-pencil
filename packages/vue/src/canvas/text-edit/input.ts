@@ -168,7 +168,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (editor.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
-    const readOnly = resolveEditorProfile(editor.state).layerEdits === 'none'
+    const readOnly = resolveEditorProfile(editor.state).layerEdits !== 'all'
     if (!readOnly && startLabelRename(cx, cy)) return
 
     const selectedId =

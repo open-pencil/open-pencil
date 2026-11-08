@@ -565,7 +565,8 @@ export function useCanvasInput(
     if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    drag.value.keepParents = held
+    // Where layers only move, they stay in their parents whatever the key.
+    drag.value.keepParents = held || profile().layerEdits === 'move'
     if (held) editor.setDropTarget(null)
   }
   useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
