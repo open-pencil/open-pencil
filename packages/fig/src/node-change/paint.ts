@@ -4,13 +4,14 @@ import type {
   Fill,
   Stroke,
   Effect,
+  GlassEffectParams,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
   StrokeCap,
   StrokeJoin
 } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+import { BLACK, UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
@@ -198,6 +199,18 @@ export function convertEffects(effects?: KiwiEffect[]): Effect[] {
     spread: e.spread ?? 0,
     visible: e.visible ?? true,
     blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
-    showShadowBehindNode: e.showShadowBehindNode ?? true
+    showShadowBehindNode: e.showShadowBehindNode ?? true,
+    ...(e.type === 'GLASS' ? { glass: convertGlass(e) } : {})
   }))
+}
+
+/** A glass effect's lens from the archive's names for its fields (`refractionRadius` is depth). */
+function convertGlass(e: KiwiEffect): GlassEffectParams {
+  return {
+    refraction: e.refractionIntensity ?? UNSET_GLASS.refraction,
+    depth: e.refractionRadius ?? UNSET_GLASS.depth,
+    lightAngle: e.specularAngle ?? UNSET_GLASS.lightAngle,
+    lightIntensity: e.specularIntensity ?? UNSET_GLASS.lightIntensity,
+    dispersion: e.chromaticAberration ?? UNSET_GLASS.dispersion
+  }
 }

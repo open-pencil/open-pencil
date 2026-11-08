@@ -10,7 +10,12 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+import {
+  fillsGainingGlass,
+  parseFigmaEffects,
+  toFigmaEffect,
+  type FigmaEffect
+} from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
@@ -148,7 +153,10 @@ export function installVisualNodeProxyAccessors(
         return Object.freeze(figmaEffects(raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
-        updateNode(this, internals, { effects: parseFigmaEffects(value) })
+        const node = raw(this, internals)
+        const effects = parseFigmaEffects(value)
+        const fills = fillsGainingGlass(node.effects, effects, node.fills)
+        updateNode(this, internals, fills ? { effects, fills } : { effects })
         setEffectBindings(graphOf(this), raw(this, internals), value)
       }
     },

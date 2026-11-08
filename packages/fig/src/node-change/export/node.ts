@@ -796,7 +796,8 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
   'INNER_SHADOW',
   'LAYER_BLUR',
   'BACKGROUND_BLUR',
-  'FOREGROUND_BLUR'
+  'FOREGROUND_BLUR',
+  'GLASS'
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {
