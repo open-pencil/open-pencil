@@ -26,6 +26,7 @@ import {
 } from '@/app/ai/chat/storage'
 import { designModelProfile } from '@/app/ai/models'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
+import { pageAsksBeforeLeaving } from '@/app/document/close/exit'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import {
   pexelsKeyStatus,
@@ -60,16 +61,22 @@ registerAIChatEffects(chatSession.markTransportDirty)
 
 // Stop the reply and save the conversation before the page goes. Vite awaits its listeners before
 // a development reload; `pagehide` cannot wait, so other reloads save what they can.
+async function disposeBeforeViteReload() {
+  // An unsaved document makes the reload ask first, and a user who stays keeps a working chat;
+  // one who leaves gets the `pagehide` save.
+  if (pageAsksBeforeLeaving()) return
+  await history.dispose()
+}
 if (import.meta.hot) {
   /* eslint-disable typescript-eslint/no-misused-promises -- Vite's client awaits custom event listeners (vite/dist/client/client.mjs, notifyListeners). */
   import.meta.hot.on('vite:beforeFullReload', async ({ path }) => {
     // Vite announces an edit to another HTML page, such as `updater.html`, to every page but
     // reloads only that one; the editor is always `index.html`, so it keeps running.
     if (path?.endsWith('.html') && path !== '/index.html') return
-    await history.dispose()
+    await disposeBeforeViteReload()
   })
   // Vite reloads the page whenever its server comes back.
-  import.meta.hot.on('vite:ws:disconnect', history.dispose)
+  import.meta.hot.on('vite:ws:disconnect', disposeBeforeViteReload)
   /* eslint-enable typescript-eslint/no-misused-promises */
 }
 if (IS_BROWSER) {
