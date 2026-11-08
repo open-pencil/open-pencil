@@ -1,6 +1,5 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { isEqual } from 'es-toolkit/predicate'
 import { deflateSync } from 'fflate'
 
@@ -22,6 +21,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {
@@ -533,6 +533,18 @@ describe('writing an edited document into its archive', () => {
     const moved = await open(panelDark)
     moved.reparentNode(layerNamed(moved, 'Holder').id, layerNamed(moved, 'Panel').id)
     expect(fillOf(await exportFigFile(moved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    // The old parent changes mode too, so only its saved mode shows the moved layer changed.
+    const left = await open(panelDark)
+    const inner = left.createNode('FRAME', layerNamed(left, 'Holder').id, { name: 'Inner' })
+    left.reparentNode(layerNamed(left, 'On page').id, inner.id)
+    left.updateNode(layerNamed(left, 'Holder').id, { variableModes: { [collection.id]: lightId } })
+    left.updateNode(left.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    const saved = await open(await exportFigFile(left))
+    expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    saved.updateNode(layerNamed(saved, 'Holder').id, { variableModes: { [collection.id]: darkId } })
+    saved.reparentNode(layerNamed(saved, 'Inner').id, saved.getPages()[0].id)
+    expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {

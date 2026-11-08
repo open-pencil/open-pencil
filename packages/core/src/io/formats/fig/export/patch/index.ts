@@ -176,20 +176,31 @@ function addModeChangeUsers(graph: SceneGraph, add: (id: string) => unknown): vo
     if (!node) continue
     if (before.parentId === node.parentId && isEqual(before.variableModes, node.variableModes))
       continue
-    const modeBefore = (collectionId: string) =>
-      before.variableModes[collectionId] ||
-      (before.parentId && graph.getNode(before.parentId)
-        ? getNodeVariableModeId(graph, before.parentId, collectionId)
-        : graph.variableCollections.get(collectionId)?.defaultModeId)
     const changed = new Set(
       [...collectionsBoundIn(graph, [id])].filter(
         (collectionId) =>
-          modeBefore(collectionId) !== getNodeVariableModeId(graph, id, collectionId)
+          savedModeId(graph, baseline.before, before, collectionId) !==
+          getNodeVariableModeId(graph, id, collectionId)
       )
     )
     if (changed.size === 0) continue
     for (const layer of layersResolvingCollections(graph, [id], changed)) add(layer.id)
   }
+}
+
+/** The mode a layer had when the archive was saved, read up the ancestors it had then. */
+function savedModeId(
+  graph: SceneGraph,
+  saved: ReadonlyMap<string, SceneNode>,
+  layer: SceneNode,
+  collectionId: string
+): string | undefined {
+  for (let node: SceneNode | undefined = layer; node;) {
+    const modeId = node.variableModes[collectionId]
+    if (modeId) return modeId
+    node = node.parentId ? (saved.get(node.parentId) ?? graph.getNode(node.parentId)) : undefined
+  }
+  return graph.variableCollections.get(collectionId)?.defaultModeId
 }
 
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
