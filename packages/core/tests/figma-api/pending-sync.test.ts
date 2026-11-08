@@ -93,3 +93,21 @@ describe('instance reads after component edits', () => {
     expect(flushes).toBeGreaterThan(before)
   })
 })
+
+test('a sync that fails is tried again at the next read', () => {
+  const graph = new SceneGraph()
+  const api = new FigmaAPI(graph)
+  const component = api.createComponent()
+  const shape = api.createRectangle()
+  component.appendChild(shape)
+  const instance = component.createInstance()
+  const sync = graph.syncInstancesTogether.bind(graph)
+  graph.syncInstancesTogether = () => {
+    throw new Error('sync failed')
+  }
+  shape.fills = [solidFill(green)]
+  expect(() => instance.children[0].fills).toThrow('sync failed')
+
+  graph.syncInstancesTogether = sync
+  expect(instance.children[0].fills).toMatchObject([{ color: { r: 0, g: 1, b: 0 } }])
+})

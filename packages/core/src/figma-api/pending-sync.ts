@@ -31,11 +31,17 @@ export function startPendingComponentSync(graph: SceneGraph, flush?: () => void)
   )
   syncByGraph.set(graph, () => {
     if (syncing || impact.changedNodeIds.size === 0) return
-    const ids = [...impact.changedNodeIds, ...impact.previousParentIds]
+    const changed = [...impact.changedNodeIds]
+    const leftParents = [...impact.previousParentIds]
     for (const recorded of Object.values(impact)) recorded.clear()
     syncing = true
     try {
-      syncComponentsHolding(graph, ids)
+      syncComponentsHolding(graph, [...changed, ...leftParents])
+    } catch (error) {
+      // The edits are still unsynced, so the next read tries again, as pending layout does.
+      for (const id of changed) impact.changedNodeIds.add(id)
+      for (const id of leftParents) impact.previousParentIds.add(id)
+      throw error
     } finally {
       syncing = false
     }

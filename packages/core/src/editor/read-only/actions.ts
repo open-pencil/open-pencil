@@ -12,6 +12,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
+  // Applies component edits already made to their instances; it makes none of its own.
   'flushComponentSync',
   'getChildren',
   'getCollection',
