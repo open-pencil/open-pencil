@@ -269,9 +269,10 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with a content security policy that runs only the site's own
-scripts, each page's inline scripts by their hashes, and Turnstile, and with `frame-ancestors
-'none'`, so the approval page cannot be framed. The desktop approval page never shows the code it
+`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
+The pages carry no inline script for it to allow: a build loads the boot splash's script from its
+own file. The desktop approval page never shows the code it
 was opened with: the person types the code the app shows, so a link someone else sent cannot be
 approved in one click. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404

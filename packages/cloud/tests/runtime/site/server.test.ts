@@ -2,20 +2,13 @@ import { describe, expect, spyOn, test } from 'bun:test'
 
 import {
   createCloudServer,
-  inlineScriptHashes,
-  siteContentSecurityPolicy,
+  SITE_CONTENT_SECURITY_POLICY,
   type SiteFiles
 } from '#cloud/runtime/site/server'
 import type { CloudErrorContext } from '#cloud/server'
-import { sha256 } from '@noble/hashes/sha2.js'
-import { fromUint8Array } from 'js-base64'
-
-/** The inline script a page runs before it draws, which the policy names by its hash. */
-const THEME = 'document.documentElement.dataset.theme = "dark"'
-const themeHash = fromUint8Array(sha256(new TextEncoder().encode(THEME)))
 
 const files: Record<string, string> = {
-  '/cloud.html': `<!doctype html><title>Portal</title><script>${THEME}</script>`,
+  '/cloud.html': '<!doctype html><title>Portal</title>',
   '/index.html': '<!doctype html><title>Editor</title>',
   '/assets/cloud-abc.js': 'export {}',
   '/favicon.svg': '<svg/>'
@@ -47,8 +40,7 @@ describe('Cloud server', () => {
   test('serves the portal at portal paths, never framed and never cached', async () => {
     const page = await request('/auth/device?user_code=ABCD')
     expect(await page.text()).toContain('Portal')
-    expect(page.headers.get('Content-Security-Policy')).toBe(siteContentSecurityPolicy([themeHash]))
-    expect(page.headers.get('Content-Security-Policy')).toContain(`'sha256-${themeHash}'`)
+    expect(page.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
     expect(page.headers.get('Strict-Transport-Security')).toBe('max-age=31536000')
     expect(page.headers.get('Cache-Control')).toBe('no-cache')
     expect((await request('/account')).status).toBe(200)
@@ -59,7 +51,7 @@ describe('Cloud server', () => {
     for (const path of ['/', '/demo', '/documents/abc', '/share/abc']) {
       const page = await navigate(path)
       expect(await page.text()).toContain('Editor')
-      expect(page.headers.get('Content-Security-Policy')).toBe(siteContentSecurityPolicy())
+      expect(page.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
       expect(page.headers.get('Cache-Control')).toBe('no-cache')
     }
   })
@@ -121,22 +113,13 @@ describe('Cloud server', () => {
   })
 
   test('lets only the site’s own scripts run, never frames or plugins', () => {
-    const directives = siteContentSecurityPolicy(['abc']).split('; ')
+    const directives = SITE_CONTENT_SECURITY_POLICY.split('; ')
     expect(directives).toContain(
-      "script-src 'self' 'sha256-abc' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
+      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
     )
     expect(directives).toContain("worker-src 'self' blob:")
     expect(directives).toContain("object-src 'none'")
     expect(directives).toContain("base-uri 'self'")
     expect(directives).toContain("frame-ancestors 'none'")
-  })
-
-  test('hashes inline scripts in any case and with the line feeds a browser reads', async () => {
-    const lf = fromUint8Array(sha256(new TextEncoder().encode('a()\nb()')))
-    expect(
-      await inlineScriptHashes(
-        '<SCRIPT>a()\r\nb()</SCRIPT><script src="/x.js"></script><script data-src="x">a()\nb()</script>'
-      )
-    ).toEqual([lf, lf])
   })
 })
