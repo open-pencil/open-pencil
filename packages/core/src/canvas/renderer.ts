@@ -46,6 +46,7 @@ import {
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import { createTextCaches } from './text/caches'
+import { savedTextInk } from './text/ink'
 import { TextPreparationCache } from './text/preparation/cache'
 export type {
   MeasurementMode,
@@ -671,7 +672,9 @@ export class SkiaRenderer {
 
   /** Where `node`'s glyphs draw ink in its box, as `measureTextInkAsDrawn` finds it. */
   measureTextInk(node: SceneNode): VisualBounds | null | undefined {
-    return RenderText.measureTextInkAsDrawn(this, node)
+    return TextRender.drawsOnlySavedGlyphs(this, node)
+      ? savedTextInk(this, node)
+      : RenderText.measureTextInkAsDrawn(this, node)
   }
 
   measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {

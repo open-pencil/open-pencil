@@ -15,6 +15,7 @@ import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
@@ -153,7 +154,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       def.name,
       {
         description: def.description,
-        inputSchema: v.strictObject({ ...def.input.entries, ...automationTargetSchema })
+        inputSchema: v.strictObject({
+          ...(resolvedRoot ? withFileInput(def.name, def.input.entries) : def.input.entries),
+          ...automationTargetSchema
+        })
       },
       async (args: Record<string, unknown>, context) => {
         try {
@@ -163,12 +167,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           if (policy.scope === 'selection' && filePath !== null) {
             return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
           }
+          const appArgs = resolvedRoot
+            ? await readFileInput(def.name, toolArgs, resolvedRoot)
+            : toolArgs
           const result = await sendRPC({
             command: 'tool',
             args: {
               ...target,
               name: def.name,
-              args: toolArgs,
+              args: appArgs,
               agent: agent(context.mcpReq._meta),
               // A client limited to the selection says so, whatever the server's own scope.
               ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
@@ -242,15 +249,17 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     'save_file',
     {
       description: resolvedRoot
-        ? 'Save the current document to disk. If path is provided, it must be inside the configured MCP root.'
-        : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
+        ? 'Save the current document to a .fig file, or a .jam file for a board. If path is provided, it must be inside the configured MCP root.'
+        : 'Save the current document to a .fig file, or a .jam file for a board. Saves to the file the document is open from, and fails when it has none.',
       inputSchema: resolvedRoot
         ? v.strictObject({
             path: v.optional(
               v.pipe(
                 v.string(),
                 v.minLength(1),
-                v.description('Path for the .fig file, absolute or relative to the MCP root')
+                v.description(
+                  'Path for the .fig file, or .jam for a board, absolute or relative to the MCP root'
+                )
               )
             ),
             ...automationTargetSchema

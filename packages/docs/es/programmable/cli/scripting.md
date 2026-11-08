@@ -105,7 +105,7 @@ Las propiedades habituales se leen y modifican mediante el objeto correspondient
 - `figma.mixed`
 - `figma.createImage(data)`
 - `figma.loadFontAsync(fontName)` — carga la fuente; como en Figma, cambiar el texto, su tamaño o su fuente exige cargar antes las fuentes que usa;
-- `figma.listAvailableFontsAsync()` — devuelve las fuentes del sistema;
+- `figma.listAvailableFontsAsync()` — devuelve cada estilo de las familias instaladas e incluidas, y de las familias en línea una vez cargada una de sus fuentes; una familia en línea aún no consultada aparece solo como `Regular`;
 - `figma.notify(message)` — escribe un aviso cuando no hay interfaz;
 - `figma.viewport`.
 

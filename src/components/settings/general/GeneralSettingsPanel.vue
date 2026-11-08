@@ -23,6 +23,7 @@ import CredentialSettingsSection from '@/components/settings/credentials/Credent
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import SupportSettingsSection from '@/components/settings/general/SupportSettingsSection.vue'
+import UpdatesSettingsSection from '@/components/settings/general/UpdatesSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -192,6 +193,8 @@ const interfaceScaleOptions = computed(() => {
         </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
+
+    <UpdatesSettingsSection />
 
     <CredentialSettingsSection />
 

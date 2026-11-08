@@ -5,6 +5,7 @@ import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { graphOf } from '#core/figma-api/graph'
 
 // Measured with the same scripts in Figma's plugin API (Figma desktop 126).
 
@@ -367,7 +368,7 @@ test('a style made by a script is saved with the file and the layers that use it
   const rectangle = figma.createRectangle()
   rectangle.name = 'Card'
   await rectangle.setFillStyleIdAsync(style.id)
-  const saved = await exportFigFile(figma.graph)
+  const saved = await exportFigFile(graphOf(figma))
   const reopened = await parseFigFile(saved.slice().buffer)
   const [found] = getSharedStyles(reopened, 'fill')
   expect(found?.name).toBe('Brand/Primary')

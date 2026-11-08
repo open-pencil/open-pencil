@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot
-} from 'reka-ui'
+import { ContextMenuPortal, ContextMenuTrigger, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucideAlignHorizontalSpaceBetween from '~icons/lucide/align-horizontal-space-between'
 import IconLucideAlignVerticalSpaceBetween from '~icons/lucide/align-vertical-space-between'
@@ -53,6 +46,8 @@ import PreparationOverlay from '@/components/preparation/canvas/PreparationOverl
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
@@ -302,7 +297,7 @@ const cursor = computed(() =>
 </script>
 
 <template>
-  <ContextMenuRoot :modal="false">
+  <AppContextMenuRoot :modal="false">
     <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
@@ -354,7 +349,7 @@ const cursor = computed(() =>
           :hidden="!!drag || !!canvasLabelEdit"
           @rename-section="renameSelectedSection"
         />
-        <PopoverRoot :open="!!autoLayoutValueEdit">
+        <AppPopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>
             <PopoverContent
               v-if="autoLayoutValueEdit && valueEditorReference"
@@ -389,7 +384,7 @@ const cursor = computed(() =>
               </NumberField>
             </PopoverContent>
           </PopoverPortal>
-        </PopoverRoot>
+        </AppPopoverRoot>
         <FollowFrame
           v-if="isActivePane && followView.label.value"
           :followed="followView.label.value"
@@ -406,5 +401,5 @@ const cursor = computed(() =>
     <ContextMenuPortal>
       <CanvasMenu />
     </ContextMenuPortal>
-  </ContextMenuRoot>
+  </AppContextMenuRoot>
 </template>

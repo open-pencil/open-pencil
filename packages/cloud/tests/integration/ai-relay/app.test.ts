@@ -9,12 +9,12 @@ import {
   type AIRelayConfigInput
 } from '#cloud/ai-relay'
 import {
-  aiCatalogSchema,
-  aiErrorSchema,
-  aiUsagePageSchema,
-  aiWalletSchema,
-  CLOUD_AI_API_PATHS,
-  CLOUD_AI_TOKEN_AUDIENCE
+  serviceCatalogSchema,
+  serviceErrorSchema,
+  usagePageSchema,
+  creditWalletSchema,
+  CLOUD_SERVICES_API_PATHS,
+  CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
 import { PGlite } from '@electric-sql/pglite'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
@@ -131,7 +131,7 @@ async function relay(
     })
       .setProtectedHeader({ alg: 'ES256', kid: 'cloud' })
       .setIssuer(options.issuer ?? CLOUD)
-      .setAudience(CLOUD_AI_TOKEN_AUDIENCE)
+      .setAudience(CLOUD_SERVICES_TOKEN_AUDIENCE)
       .setSubject('user-1')
       .setIssuedAt()
       .setExpirationTime('10m')
@@ -143,7 +143,7 @@ async function relay(
       headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' }
     })
   const complete = async (bearer: string, body: Record<string, unknown>) =>
-    request(CLOUD_AI_API_PATHS.chatCompletions, bearer, {
+    request(CLOUD_SERVICES_API_PATHS.chatCompletions, bearer, {
       method: 'POST',
       body: JSON.stringify(body)
     })
@@ -155,23 +155,23 @@ describe('AI relay', () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')
     const refused = [
-      await context.app.request(CLOUD_AI_API_PATHS.catalog),
-      await context.request(CLOUD_AI_API_PATHS.catalog, 'not-a-token'),
+      await context.app.request(CLOUD_SERVICES_API_PATHS.catalog),
+      await context.request(CLOUD_SERVICES_API_PATHS.catalog, 'not-a-token'),
       await context.request(
-        CLOUD_AI_API_PATHS.catalog,
+        CLOUD_SERVICES_API_PATHS.catalog,
         await context.token({}, { issuer: 'https://other.example.com' })
       ),
       await context.request(
-        CLOUD_AI_API_PATHS.catalog,
+        CLOUD_SERVICES_API_PATHS.catalog,
         await context.token({}, { signingKey: otherKey })
       )
     ]
     for (const response of refused) {
       expect(response.status).toBe(401)
-      expect((await responseJSON(response, aiErrorSchema)).error.code).toBe('unauthorized')
+      expect((await responseJSON(response, serviceErrorSchema)).error.code).toBe('unauthorized')
     }
-    const catalog = await context.request(CLOUD_AI_API_PATHS.catalog, await context.token())
-    expect((await responseJSON(catalog, aiCatalogSchema)).defaultModelID).toBe(MODEL)
+    const catalog = await context.request(CLOUD_SERVICES_API_PATHS.catalog, await context.token())
+    expect((await responseJSON(catalog, serviceCatalogSchema)).defaultModelID).toBe(MODEL)
   })
 
   test('proxies a completion with the upstream key and charges its usage', async () => {
@@ -200,16 +200,16 @@ describe('AI relay', () => {
 
     // 100k input tokens at 3,000 and 10k output tokens at 15,000 credits per million.
     const wallet = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.wallet, bearer),
-      aiWalletSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+      creditWalletSchema
     )
     expect(wallet).toEqual({
       balance: 550,
       buckets: [{ kind: 'allowance', remaining: 550, expiresAt: '2026-11-01T00:00:00.000Z' }]
     })
     const usage = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.usage, bearer),
-      aiUsagePageSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      usagePageSchema
     )
     expect(usage.entries).toMatchObject([
       { kind: 'model', modelID: MODEL, userId: 'user-1', credits: 450 }
@@ -229,8 +229,8 @@ describe('AI relay', () => {
 
     expect(context.backgroundErrors).toHaveLength(1)
     const usage = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.usage, bearer),
-      aiUsagePageSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      usagePageSchema
     )
     expect(usage.entries).toEqual([])
   })
@@ -271,8 +271,8 @@ describe('AI relay', () => {
     recordCharge?.()
     expect(await text).toContain('"content":"Hi"')
     const wallet = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.wallet, bearer),
-      aiWalletSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+      creditWalletSchema
     )
     expect(wallet.balance).toBe(1000 - 18)
   })
@@ -283,7 +283,9 @@ describe('AI relay', () => {
     )
     const notAllowed = await context.complete(await context.token(), { model: 'other/model' })
     expect(notAllowed.status).toBe(403)
-    expect((await responseJSON(notAllowed, aiErrorSchema)).error.code).toBe('model_not_allowed')
+    expect((await responseJSON(notAllowed, serviceErrorSchema)).error.code).toBe(
+      'model_not_allowed'
+    )
 
     // The first request is admitted with credits left and overdraws the allowance.
     const bearer = await context.token()
@@ -292,7 +294,7 @@ describe('AI relay', () => {
     const exhausted = await context.complete(bearer, { model: MODEL })
     expect(exhausted.status).toBe(402)
     // It says when the allowance renews, so the editor need not guess the relay's period.
-    expect((await responseJSON(exhausted, aiErrorSchema)).error).toEqual({
+    expect((await responseJSON(exhausted, serviceErrorSchema)).error).toEqual({
       code: 'insufficient_credits',
       resetsAt: '2026-11-01T00:00:00.000Z'
     })
@@ -303,8 +305,8 @@ describe('AI relay', () => {
     expect((await context.complete(other, { model: MODEL })).status).toBe(200)
     const unlimited = await context.token({ monthlyCreditAllowance: null })
     const wallet = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.wallet, unlimited),
-      aiWalletSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.wallet, unlimited),
+      creditWalletSchema
     )
     expect(wallet).toEqual({ balance: null, buckets: [] })
     expect((await context.complete(unlimited, { model: MODEL })).status).toBe(200)
@@ -330,7 +332,7 @@ describe('AI relay', () => {
     expect(first.status).toBe(200)
     const second = await context.complete(bearer, { model: MODEL })
     expect(second.status).toBe(429)
-    expect((await responseJSON(second, aiErrorSchema)).error.code).toBe('rate_limited')
+    expect((await responseJSON(second, serviceErrorSchema)).error.code).toBe('rate_limited')
     finish?.()
     await first.text()
     await Promise.all(context.settled)
@@ -353,7 +355,7 @@ describe('AI relay', () => {
   test('answers browsers only from allowed origins', async () => {
     const context = await relay()
     const preflight = (origin: string) =>
-      context.app.request(CLOUD_AI_API_PATHS.chatCompletions, {
+      context.app.request(CLOUD_SERVICES_API_PATHS.chatCompletions, {
         method: 'OPTIONS',
         headers: {
           Origin: origin,
@@ -379,17 +381,17 @@ describe('AI relay', () => {
       await Promise.all(context.settled.splice(0))
     }
     const first = await responseJSON(
-      await context.request(CLOUD_AI_API_PATHS.usage, bearer),
-      aiUsagePageSchema
+      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      usagePageSchema
     )
     expect(first.entries).toHaveLength(50)
     expect(first.next).not.toBeNull()
     const second = await responseJSON(
       await context.request(
-        `${CLOUD_AI_API_PATHS.usage}?cursor=${encodeURIComponent(first.next ?? '')}`,
+        `${CLOUD_SERVICES_API_PATHS.usage}?cursor=${encodeURIComponent(first.next ?? '')}`,
         bearer
       ),
-      aiUsagePageSchema
+      usagePageSchema
     )
     expect(second.entries).toHaveLength(1)
     expect(second.next).toBeNull()
@@ -397,7 +399,7 @@ describe('AI relay', () => {
     expect(seen.size).toBe(51)
     for (const cursor of ['12.not-an-id', `99999999999999999.${crypto.randomUUID()}`]) {
       expect(
-        (await context.request(`${CLOUD_AI_API_PATHS.usage}?cursor=${cursor}`, bearer)).status
+        (await context.request(`${CLOUD_SERVICES_API_PATHS.usage}?cursor=${cursor}`, bearer)).status
       ).toBe(400)
     }
   })
@@ -429,7 +431,7 @@ describe('AI relay', () => {
     const oversized = new TextEncoder().encode(
       JSON.stringify({ model: MODEL, messages: [{ role: 'user', content: 'x'.repeat(4096) }] })
     )
-    const response = await context.request(CLOUD_AI_API_PATHS.chatCompletions, bearer, {
+    const response = await context.request(CLOUD_SERVICES_API_PATHS.chatCompletions, bearer, {
       method: 'POST',
       body: new ReadableStream({
         start(controller) {

@@ -1,6 +1,6 @@
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { openTour } from '@/app/demo/document'
+import { openTourFromMenu } from '@/app/demo/document'
 import { requestAppExit } from '@/app/document/close/exit'
 import { donate } from '@/app/donation'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
@@ -58,9 +58,7 @@ export function useShellMenu() {
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
   const actions: Partial<Record<string, () => void>> = {
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
+    'open-tour': openTourFromMenu,
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'report-problem': () => openReportDialog(),

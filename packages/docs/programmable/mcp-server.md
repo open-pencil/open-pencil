@@ -197,7 +197,7 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `undo` | Undo the newest change made through MCP or the CLI |
 | `redo` | Redo the newest change undone through MCP or the CLI |
 
-The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
+The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call, and each `eval` script, is one undo step of everything it changed, on any page. Edits made while a call waits on a download, such as a font, image, or page load, stay out of its step; a script's own `fetch` and timers are not covered, so an edit made while a script waits on them joins the script's step. A call the app has not answered after 20 seconds fails with a timeout and is cancelled in the app: one still waiting for its turn at the document never runs, and a script stops at the next font, image, or page load it waits on. A call that fails or is cancelled is rolled back: the document is left as it was, and no undo step is recorded.
 
 ### Settings
 
@@ -253,6 +253,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | Tool | Description |
 |------|-------------|
 | `set_fill` | Set fill color (hex) |
+| `set_image_fill` | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root |
 | `set_stroke` | Set stroke color, weight, alignment |
 | `set_effects` | Add shadow or blur effects |
 | `update_node` | Update position, size, opacity, corner radius, text, font |

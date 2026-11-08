@@ -10,6 +10,7 @@ import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { floatingChatOpen } from '@/app/ai/chat/panel'
 import { provideTabEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { interfaceScaleFactor } from '@/app/shell/interface-scale'
@@ -46,8 +47,8 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
-/** Whether the AI chat floats over the canvas shown alone; the right panel holds it otherwise. */
-const floatingChat = ref(false)
+/** Whether the AI chat floats over the canvas while the panels are hidden; Toggle AI chat opens it too. */
+const floatingChat = floatingChatOpen(store)
 const interfaceScale = computed(interfaceScaleFactor)
 const workspace = useTemplateRef('workspace')
 const { width: workspaceWidth } = useElementSize(() => {
@@ -112,6 +113,8 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
  * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
  * canvas-only layout; split view keeps the panels for the other panes.
  */
+// The view being worked in runs its design, which the Play button shows pressed.
+const previewing = computed(() => resolveEditorProfile(store.state).live !== null)
 const canvasAlone = computed(
   () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
 )
@@ -237,7 +240,9 @@ const { pending: roomPending } = useRoomActions()
               })
             "
             data-test-id="editor-start-preview"
-            @click="store.startPlay()"
+            toggle
+            :active="previewing"
+            @click="store.togglePlay()"
           >
             <icon-lucide-play class="size-3.5" />
           </IconButton>

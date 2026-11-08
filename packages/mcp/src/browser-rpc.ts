@@ -18,6 +18,11 @@ type BrowserRPCBridgeOptions = {
   onConnectionChange: () => void
   /** How long an RPC waits for the app to register before failing with APP_NOT_CONNECTED. Defaults to 10 s. */
   appWaitTimeoutMs?: number
+  /**
+   * How long an RPC waits for the app's answer. On timeout the app is told to cancel the call, so
+   * a call still waiting for its turn never runs. Defaults to 20 s.
+   */
+  rpcTimeoutMs?: number
 }
 
 type ConnectionListener = (connected: boolean) => void
@@ -85,7 +90,8 @@ function createSettler<T>(resolve: (value: T) => void, reject: (error: Error) =>
 export function createBrowserRPCBridge({
   authToken,
   onConnectionChange,
-  appWaitTimeoutMs = APP_WAIT_TIMEOUT
+  appWaitTimeoutMs = APP_WAIT_TIMEOUT,
+  rpcTimeoutMs = RPC_TIMEOUT
 }: BrowserRPCBridgeOptions) {
   const pending = new Map<string, PendingRequest>()
   const clients = new Set<WebSocket>()
@@ -202,8 +208,10 @@ export function createBrowserRPCBridge({
         const settle = createSettler(resolve, reject)
         const timer = setTimeout(() => {
           pending.delete(id)
-          settle.reject(new Error(`RPC timeout (${Math.round(RPC_TIMEOUT / 1000)}s)`))
-        }, RPC_TIMEOUT)
+          // The caller has its answer; the app stops the call rather than finish it unseen.
+          sendJSON(ws, { type: 'cancel', id })
+          settle.reject(new Error(`RPC timeout (${Math.round(rpcTimeoutMs / 1000)}s)`))
+        }, rpcTimeoutMs)
         pending.set(id, { resolve: settle.resolve, reject: settle.reject, timer })
         try {
           ws.send(JSON.stringify({ ...body, type: 'request', id }))
@@ -254,7 +262,7 @@ export function createBrowserRPCBridge({
     browserRegistered = true
     if (previousBrowserWs && previousBrowserWs !== ws) {
       // Reject in-flight requests to the old browser. Without this, pending
-      // requests sit in the pending map until RPC_TIMEOUT (20s), because
+      // requests sit in the pending map until the RPC timeout (20s), because
       // handleClose for the old socket returns early (browserWs is already
       // set to the new socket, so browserWs !== previousBrowserWs).
       rejectAllPending('Browser reconnected')

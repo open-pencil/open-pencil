@@ -72,6 +72,8 @@ export class SceneGraph {
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
+  /** How many waits outside the edit each recorder is paused for. */
+  private readonly outsideWaits = new Map<NodeChangeObserver, number>()
   private importedIdGenerator: (() => string) | undefined
   private layoutWrites: LayoutWrites | null = null
   positionPreviewVersion = 0
@@ -110,20 +112,65 @@ export class SceneGraph {
   }
 
   /**
-   * Tells `observer` about each node an edit adds and, before it changes, each node it is about
-   * to change, so a recorder can keep the node as it was. Unlike node events these are never
-   * buffered. Graph methods report the nodes they change; code that writes into a node directly
-   * reports it with `willChangeNode` first.
+   * Tells `observer` about each node an edit adds and, before it changes, each node, variable,
+   * and collection it is about to change, so a recorder can keep it as it was. Unlike node events
+   * these are never buffered. Graph methods report what they change; code that writes into a
+   * node, variable, or collection directly reports it with `willChangeNode`,
+   * `willChangeVariable`, or `willChangeCollection` first.
    */
   observeNodeChanges(observer: NodeChangeObserver): () => void {
     this.changeObservers.add(observer)
     return () => this.changeObservers.delete(observer)
   }
 
+  /**
+   * Waits for `promise`, such as a font or an image download an edit needs, outside the edit in
+   * progress: what changes meanwhile, such as the user's or a collaborator's edit, is not recorded
+   * as the waiting edit's. Only for code that writes nothing itself until the wait ends.
+   */
+  async waitOutsideEdit<T>(promise: Promise<T>): Promise<T> {
+    // Each wait pauses the recorders open when it starts, and only those: a recorder that opens
+    // while an earlier wait is still pending, such as a script's load left unawaited, pauses for
+    // its own waits and is not resumed by the earlier one.
+    const waiting = [...this.changeObservers]
+    for (const observer of waiting) {
+      const waits = this.outsideWaits.get(observer) ?? 0
+      if (waits === 0) observer.pause?.()
+      this.outsideWaits.set(observer, waits + 1)
+    }
+    try {
+      return await promise
+    } finally {
+      for (const observer of waiting) {
+        const waits = (this.outsideWaits.get(observer) ?? 1) - 1
+        if (waits > 0) {
+          this.outsideWaits.set(observer, waits)
+          continue
+        }
+        this.outsideWaits.delete(observer)
+        if (this.changeObservers.has(observer)) observer.resume?.()
+      }
+    }
+  }
+
   /** Tells `observeNodeChanges` observers that `node` is about to change. */
   willChangeNode(node: SceneNode | undefined): void {
     if (!node) return
     for (const observer of this.changeObservers) observer.before(node)
+  }
+
+  /**
+   * Tells `observeNodeChanges` observers that the variable `id` is about to change, be added, or
+   * be removed. Graph methods report the variables they change; code that writes into one
+   * directly reports it first.
+   */
+  willChangeVariable(id: string): void {
+    for (const observer of this.changeObservers) observer.beforeRecord?.('variable', id)
+  }
+
+  /** As `willChangeVariable`, for the collection `id`. */
+  willChangeCollection(id: string): void {
+    for (const observer of this.changeObservers) observer.beforeRecord?.('collection', id)
   }
 
   countDescendants(nodeId: string): number {

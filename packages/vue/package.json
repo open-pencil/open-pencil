@@ -244,6 +244,11 @@
       "import": "./dist/editor/inline-rename/index.js",
       "default": "./dist/editor/inline-rename/index.js"
     },
+    "./editor/keyboard": {
+      "types": "./dist/editor/keyboard/index.d.ts",
+      "import": "./dist/editor/keyboard/index.js",
+      "default": "./dist/editor/keyboard/index.js"
+    },
     "./editor/menu-model": {
       "types": "./dist/editor/menu-model/index.d.ts",
       "import": "./dist/editor/menu-model/index.js",
@@ -467,6 +472,7 @@
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@tanstack/hotkeys": "^0.24.0",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",
     "fuse.js": "^7.5.0",
@@ -477,6 +483,7 @@
   },
   "devDependencies": {
     "@open-pencil/test-support": "workspace:*",
+    "happy-dom": "^20.14.6",
     "tsdown": "^0.22.14",
     "unplugin-raw": "^0.7.0",
     "unplugin-vue": "^7.2.0"

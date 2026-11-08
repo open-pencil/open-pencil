@@ -34,7 +34,8 @@ commands, email, storage, backups, and upgrades are covered in the
 (`packages/docs/reference/self-hosting-cloud.md`). The example files it refers to are here:
 [`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml) and [`.env.example`](./.env.example).
 [`Dockerfile`](./Dockerfile) builds the published image, `ghcr.io/open-pencil/cloud`, from the
-repository root, and [`compose.self-hosted.yml`](./compose.self-hosted.yml) runs it on one machine
+repository root once the HTML engine's WebAssembly module is built there (`bun run --filter
+@open-pencil/html-engine build:wasm`, which needs Rust), and [`compose.self-hosted.yml`](./compose.self-hosted.yml) runs it on one machine
 with [`self-hosted/openpencil-cloud.toml`](./self-hosted/openpencil-cloud.toml).
 
 ## End-to-end tests

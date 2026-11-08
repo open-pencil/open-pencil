@@ -30,7 +30,8 @@ import {
 } from './variable/bindings'
 import { effectBindingsFromKiwi } from './variable/effects'
 
-const { boundVariables, exportSettings, librarySource, textPathBox } = OPEN_PENCIL_PLUGIN_DATA
+const { boundVariables, exportSettings, libraryLayer, librarySource, textPathBox } =
+  OPEN_PENCIL_PLUGIN_DATA
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -207,8 +208,13 @@ export function extractLibrarySource(nc: NodeChange): SceneNode['librarySource']
   return readNodeChangePluginData(nc, librarySource) ?? null
 }
 
+export function extractLibraryLayerId(nc: NodeChange): SceneNode['libraryLayerId'] {
+  return readNodeChangePluginData(nc, libraryLayer) ?? null
+}
+
 export function applyLibrarySourcePluginData(node: SceneNode): void {
   node.pluginData = withPluginData(node.pluginData, librarySource, node.librarySource ?? undefined)
+  node.pluginData = withPluginData(node.pluginData, libraryLayer, node.libraryLayerId ?? undefined)
 }
 
 export function extractPluginRelaunchData(nc: NodeChange): PluginRelaunchDataEntry[] {

@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import IconChevronDown from '~icons/lucide/chevron-down'
@@ -22,6 +21,7 @@ import {
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -43,7 +43,7 @@ const itemCls = menuItem({ justify: 'between' })
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="popupOpen">
+  <AppDropdownMenuRoot v-model:open="popupOpen">
     <Tip :label="commands.booleanOperations">
       <DropdownMenuTrigger as-child>
         <button
@@ -77,5 +77,5 @@ const itemCls = menuItem({ justify: 'between' })
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

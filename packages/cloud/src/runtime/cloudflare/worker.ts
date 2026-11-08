@@ -162,7 +162,7 @@ export function createCloudflareCloud(configSource: string) {
           invitationOutbox: transport ? createInvitationOutbox(email) : undefined,
           transactionalEmail: email,
           enrollment,
-          aiSigningKey: prepared.aiSigningKey,
+          servicesSigningKey: prepared.servicesSigningKey,
           relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
           onDocumentRestored: (documentId) =>
             runInBackground(relayFor(c.env, documentId).startOver(documentId)),

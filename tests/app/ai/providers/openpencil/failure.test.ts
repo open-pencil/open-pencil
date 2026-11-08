@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createCloudAIClient } from '@open-pencil/cloud/client'
+import { createCloudServicesClient } from '@open-pencil/cloud/client'
 
 import { createLanguageModel } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
@@ -8,7 +8,7 @@ import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
 
 /** What a model request fails with when the service answers `status` with `body`. */
 async function modelFailure(status: number, body: unknown): Promise<unknown> {
-  const client = createCloudAIClient({
+  const client = createCloudServicesClient({
     endpoint: 'https://ai.example.com',
     tokens: { token: async () => 'cloud-token', invalidate: () => undefined },
     fetch: async () => Response.json(body, { status })

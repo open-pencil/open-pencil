@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import {
+  drawDerivedText,
   hasRotatedDerivedGlyphs,
-  shouldUseHardDerivedGlyphCoverage,
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
@@ -33,24 +33,72 @@ function useDerivedGlyphFallback(renderer: SkiaRenderer): void {
   renderer.nodeFontReadiness = () => 'exhausted'
 }
 
-function squareCommandsBlob(): Uint8Array {
-  const blob = new Uint8Array(1 + 4 * 9 + 1)
+/** A saved glyph outline: move to the first point, lines through the rest, in em units. */
+function outlineCommandsBlob(points: readonly (readonly [number, number])[]): Uint8Array {
+  const blob = new Uint8Array(points.length * 9 + 1)
   const view = new DataView(blob.buffer)
-  let offset = 0
-  const commands = [
-    { command: 1, x: 0, y: 0 },
-    { command: 2, x: 1, y: 0 },
-    { command: 2, x: 1, y: 1 },
-    { command: 2, x: 0, y: 1 }
-  ]
-  for (const { command, x, y } of commands) {
-    blob[offset] = command
-    view.setFloat32(offset + 1, x, true)
-    view.setFloat32(offset + 5, y, true)
-    offset += 9
+  for (const [index, [x, y]] of points.entries()) {
+    blob[index * 9] = index === 0 ? 1 : 2
+    view.setFloat32(index * 9 + 1, x, true)
+    view.setFloat32(index * 9 + 5, y, true)
   }
-  blob[offset] = 0
   return blob
+}
+
+function squareCommandsBlob(): Uint8Array {
+  return outlineCommandsBlob([
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1]
+  ])
+}
+
+/** The alpha of every pixel of one triangular saved glyph, drawn at `scale`. */
+function savedGlyphAlphas(node: { fontSize: number; fontWeight: number }, scale: number) {
+  const graph = new SceneGraph()
+  const side = 24
+  const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+    ...node,
+    text: 'A',
+    width: side,
+    height: side,
+    derivedTextGlyphs: [
+      {
+        commandsBlob: outlineCommandsBlob([
+          [0, 0],
+          [1, 0],
+          [0, 1]
+        ]),
+        x: 2,
+        y: 22,
+        fontSize: node.fontSize,
+        firstCharacter: 0
+      }
+    ]
+  })
+  const surface = expectDefined(ck.MakeSurface(side * scale, side * scale), 'surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  try {
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.TRANSPARENT)
+    canvas.scale(scale, scale)
+    renderer.fillPaint.setColor(ck.BLACK)
+    expect(drawDerivedText(renderer, canvas, text)).toBeTrue()
+    const pixels = expectDefined(
+      canvas.readPixels(0, 0, {
+        alphaType: ck.AlphaType.Unpremul,
+        colorType: ck.ColorType.RGBA_8888,
+        colorSpace: ck.ColorSpace.SRGB,
+        width: side * scale,
+        height: side * scale
+      }),
+      'pixels'
+    )
+    return pixels.filter((_, index) => index % 4 === 3)
+  } finally {
+    renderer.destroy()
+  }
 }
 
 describe('derived text rendering', () => {
@@ -148,11 +196,20 @@ describe('derived text rendering', () => {
     expect(snapDerivedGlyphBaseline(17.81818199157715)).toBe(18)
   })
 
-  test('uses hard source coverage only for regular 20px derived glyphs', () => {
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 400 })).toBeTrue()
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 600 })).toBeFalse()
-    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 14, fontWeight: 500 })).toBeFalse()
-  })
+  // Figma antialiases saved glyphs at every size; 20px regular text used to be drawn aliased.
+  test.each([
+    [20, 400, 1],
+    [20, 400, 5],
+    [18, 400, 1],
+    [20, 600, 1]
+  ])(
+    'antialiases the edges of %dpx weight %d saved glyphs at scale %d',
+    (fontSize, fontWeight, scale) => {
+      const alphas = savedGlyphAlphas({ fontSize, fontWeight }, scale)
+      const partial = alphas.filter((alpha) => alpha > 0 && alpha < 255)
+      expect(partial.length).toBeGreaterThan(fontSize * scale * 0.5)
+    }
+  )
 
   test('draws Figma-derived glyphs even when the font is unavailable', async () => {
     const graph = new SceneGraph()

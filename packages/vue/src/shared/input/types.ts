@@ -228,6 +228,16 @@ export interface DragPen {
   type: 'pen-drag'
   startX: number
   startY: number
+  /** Where the pointer went down, which the drag threshold is measured from. */
+  pressX: number
+  pressY: number
+  /**
+   * The handle into the point that the drag keeps: set when the press went back to the last point,
+   * whose outgoing handle alone the drag sets again (Figma). Null when the drag mirrors into it.
+   */
+  incoming: Vector | null
+  /** Past the drag threshold: from then on the handle follows the pointer, back to zero too. */
+  moved: boolean
   modifierMode: 'default' | 'continuous' | 'independent'
   frozenOppositeTangent: Vector | null
   spaceDown: boolean
@@ -257,6 +267,11 @@ export interface DragEditNode {
    * with Shift takes it out of the selection.
    */
   click?: { part: 'segment' | 'region'; index: number; deselect: boolean }
+  /**
+   * A straight segment pressed on its own, and where: once the drag starts, a point goes there and
+   * the drag moves it instead, bending the segment, as in Figma.
+   */
+  insert?: { segment: number; x: number; y: number }
 }
 
 export interface DragEditHandle {

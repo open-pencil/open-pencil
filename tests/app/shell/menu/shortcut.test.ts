@@ -1,36 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  appMenuAccelerator,
-  appMenuShortcut,
-  shortcutTokenToAccelerator,
-  shortcutTokenToTinykeys
-} from '@/app/shell/menu/shortcut'
+import { appMenuShortcut, shortcutToAccelerator } from '@/app/shell/menu/shortcut'
 
-describe('app menu shortcut conversion', () => {
-  test('looks up canonical shortcut tokens from the menu schema', () => {
-    expect(appMenuShortcut('save-as')).toBe('MOD+SHIFT+S')
-    expect(appMenuShortcut('selection.createComponent')).toBe('MOD+ALT+K')
+describe('app menu shortcuts', () => {
+  test('looks up shortcuts from the menu schema and editor commands', () => {
+    expect(appMenuShortcut('save-as')).toBe('Mod+Shift+S')
+    expect(appMenuShortcut('selection.createComponent')).toBe('Mod+Alt+K')
   })
 
-  test('converts shortcut tokens to tinykeys bindings', () => {
-    expect(shortcutTokenToTinykeys('MOD+SHIFT+S')).toBe('$mod+Shift+KeyS')
-    expect(shortcutTokenToTinykeys('ALT+Delete')).toBe('Alt+Delete')
-    expect(shortcutTokenToTinykeys('⌫')).toBe('Backspace')
-    expect(shortcutTokenToTinykeys('CTRL+ALT+T')).toBe('Control+Alt+KeyT')
-  })
-
-  test('converts shortcut tokens to native accelerators', () => {
-    expect(shortcutTokenToAccelerator('MOD+SHIFT+S')).toBe('CmdOrCtrl+Shift+S')
-    expect(shortcutTokenToAccelerator('ALT+A')).toBe('Alt+A')
-    expect(shortcutTokenToAccelerator('⌫')).toBe('Backspace')
-    expect(shortcutTokenToAccelerator('⇞')).toBe('PageUp')
-    expect(shortcutTokenToAccelerator('⇟')).toBe('PageDown')
-  })
-
-  test('derives native accelerators from menu ids', () => {
-    expect(appMenuAccelerator('save-as')).toBe('CmdOrCtrl+Shift+S')
-    expect(appMenuAccelerator('selection.delete')).toBe('Backspace')
-    expect(appMenuAccelerator('selection.tidyUp')).toBe('Ctrl+Alt+T')
+  test('converts shortcuts to native accelerators', () => {
+    expect(shortcutToAccelerator('Mod+Shift+S')).toBe('CmdOrCtrl+Shift+S')
+    expect(shortcutToAccelerator('Alt+A')).toBe('Alt+A')
+    expect(shortcutToAccelerator('Control+Shift+Tab')).toBe('Ctrl+Shift+Tab')
+    expect(shortcutToAccelerator('Control+Meta+M')).toBe('Ctrl+Super+M')
+    expect(shortcutToAccelerator('Mod+Alt+Enter')).toBe('CmdOrCtrl+Alt+Enter')
+    expect(shortcutToAccelerator('Backspace')).toBe('Backspace')
+    expect(shortcutToAccelerator('PageDown')).toBe('PageDown')
   })
 })

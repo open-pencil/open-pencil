@@ -183,6 +183,7 @@ ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
 ja:media.unsplashKeyRejected
+ja:media.webSearchDescription
 ja:menu.copyAsJSX
 ja:menu.copyAsPNG
 ja:menu.copyAsSVG
@@ -194,6 +195,7 @@ ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.supportOpenPencil
+ja:menu.toggleAIChat
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
@@ -223,6 +225,7 @@ ja:updates.restartFailed
 ja:updates.restartToFinish
 ja:updates.unavailable
 ja:updates.upToDate
+ja:updates.webUpdateReady
 zh-cn:ai.aiSetupAccessAPI
 zh-cn:ai.aiSetupAccessAgentsDesktop
 zh-cn:ai.aiSetupAccessChatGPT
@@ -409,6 +412,7 @@ zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
 zh-cn:media.unsplashKeyRejected
+zh-cn:media.webSearchDescription
 zh-cn:menu.copyAsJSX
 zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG
@@ -420,6 +424,7 @@ zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:menu.supportOpenPencil
+zh-cn:menu.toggleAIChat
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl
@@ -444,6 +449,7 @@ zh-cn:updates.restartFailed
 zh-cn:updates.restartToFinish
 zh-cn:updates.unavailable
 zh-cn:updates.upToDate
+zh-cn:updates.webUpdateReady
 zh-cn:variables.copyAsCSS
 zh-cn:variables.copyAsTailwindTheme
 ja:variables.cssName
@@ -599,8 +605,6 @@ zh-cn:ai.skillErrorNoDescription
 zh-cn:ai.skillErrorNoName
 ja:ai.skillsTrustDescription
 zh-cn:ai.skillsTrustDescription
-zh-cn:ai.queueMessage
-ja:ai.queueMessage
 ja:ai.skillsDescription
 ja:ai.notificationsHint
 ja:ai.notificationsAllowHint

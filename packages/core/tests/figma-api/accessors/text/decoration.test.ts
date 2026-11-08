@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+import { graphOf } from '#core/figma-api/graph'
 beforeAll(async () => {
   await registerTestFont('Inter')
 })
@@ -112,7 +113,7 @@ describe('a text’s leading trim', () => {
     expect(node.leadingTrim).toBe('NONE')
     node.leadingTrim = 'CAP_HEIGHT'
     expect(node.leadingTrim).toBe('CAP_HEIGHT')
-    expect(figma.graph.getNode(node.id)?.leadingTrim).toBe('CAP_HEIGHT')
+    expect(graphOf(figma).getNode(node.id)?.leadingTrim).toBe('CAP_HEIGHT')
     expect(() => (node.leadingTrim = 'X' as never)).toThrow(
       'in set_leadingTrim: Property "leadingTrim" failed validation: Invalid option: expected one of "CAP_HEIGHT"|"NONE"'
     )
@@ -124,7 +125,7 @@ describe('a text’s OpenType features', () => {
     const { figma, node } = await text()
     expect<unknown>(node.openTypeFeatures).toEqual({})
     expect(Object.isFrozen(node.openTypeFeatures)).toBe(true)
-    figma.graph.updateNode(node.id, { fontFeatures: [{ tag: 'CALT', enabled: false }] })
+    graphOf(figma).updateNode(node.id, { fontFeatures: [{ tag: 'CALT', enabled: false }] })
     expect<unknown>(node.openTypeFeatures).toEqual({ CALT: false })
     ;(node as { openTypeFeatures: unknown }).openTypeFeatures = { LIGA: false }
     expect<unknown>(node.openTypeFeatures).toEqual({ CALT: false })

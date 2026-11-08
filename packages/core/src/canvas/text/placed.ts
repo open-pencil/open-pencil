@@ -21,6 +21,7 @@ import { laidOutText } from '#core/text/keycap'
 import { utf16IndicesByUtf8 } from '#core/text/utf8'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
+type ShapedLine = ReturnType<Paragraph['getShapedLines']>[number]
 
 /** A glyph of laid-out text where the renderer draws it, with the font its outline comes from. */
 export interface LaidOutGlyph {
@@ -29,6 +30,11 @@ export interface LaidOutGlyph {
   x: number
   /** The baseline of its line. */
   y: number
+  /**
+   * How far below `y` CanvasKit drew it, as it places a mark over or under its base. Saved glyphs
+   * leave it out: their underlines group glyphs into lines by `y`.
+   */
+  markShift: number
   fontSize: number
   /** The character it draws, left out for a list marker. */
   firstCharacter?: number
@@ -162,16 +168,17 @@ function runOutline(
   node: SceneNode,
   shaped: string,
   run: GlyphRun,
-  characterAt: (offset: number) => number,
-  sourceAt: (index: number) => number
+  indices: RunIndices
 ): RunOutline | null {
+  const { characterAt, sourceAt } = indices
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
-  const start = Math.min(...offsets)
-  const end = Math.max(...offsets)
+  const glyphOffsets = offsets.slice(0, run.glyphs.length)
+  const start = Math.min(...glyphOffsets)
+  const end = runEnd(offsets, run.glyphs.length, indices.lineBoundaries)
   // A glyph covers the characters up to the next greater offset in the run, whatever its
   // direction; the sorted offsets give that once for every glyph.
-  const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
+  const boundaries = uniq([...glyphOffsets, end]).sort((a, b) => a - b)
   const nextBoundary = new Map(
     boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
   )
@@ -259,6 +266,43 @@ function ellipsisSource(
   return null
 }
 
+interface RunIndices {
+  characterAt: (offset: number) => number
+  sourceAt: (index: number) => number
+  /** Where each run of the line starts, and where the line ends, in the shown text. */
+  lineBoundaries: readonly number[]
+}
+
+/**
+ * Where a run's characters end. CanvasKit gives a run one offset past its glyphs: its end when
+ * it runs left to right, but not when it runs right to left, so such a run ends where the next
+ * run of its line starts, or where the line ends.
+ */
+function runEnd(
+  offsets: readonly number[],
+  glyphCount: number,
+  lineBoundaries: readonly number[]
+): number {
+  const lastStart = Math.max(...offsets.slice(0, glyphCount))
+  const trailing = offsets.at(glyphCount)
+  if (trailing !== undefined && trailing > lastStart) {
+    return trailing
+  }
+  return lineBoundaries.find((boundary) => boundary > lastStart) ?? lastStart
+}
+
+/** The line's own end comes from its metrics: CanvasKit derives `textRange` from the same offsets. */
+function lineRunBoundaries(
+  line: ShapedLine,
+  lineEnd: number,
+  characterAt: (offset: number) => number
+): number[] {
+  const runStarts = line.runs.map((run) =>
+    Math.min(...Array.from(run.offsets.slice(0, run.glyphs.length), characterAt))
+  )
+  return [...runStarts, lineEnd].sort((a, b) => a - b)
+}
+
 /**
  * The outline of a run of a line, and whether the run is the ellipsis that ends truncated text.
  * The last run of truncated text that no font confirms may be an ellipsis, which keeps its glyph
@@ -269,12 +313,12 @@ function lineRunOutline(
   shaped: string,
   run: GlyphRun,
   endsTruncated: boolean,
-  indices: { characterAt: (offset: number) => number; sourceAt: (index: number) => number }
+  indices: RunIndices
 ): { outline: RunOutline | null; ellipsis: boolean } {
   const { characterAt, sourceAt } = indices
   const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
   if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
-  const outline = runOutline(node, shaped, run, characterAt, sourceAt)
+  const outline = runOutline(node, shaped, run, indices)
   return { outline: endsTruncated && outline?.glyphs ? null : outline, ellipsis: false }
 }
 
@@ -323,6 +367,7 @@ function reshapedGlyphs(
       id: glyph.id,
       x: x + glyph.xOffset * run.size,
       y: y - glyph.yOffset * run.size,
+      markShift: 0,
       fontSize: run.size,
       firstCharacter: outline.start + glyph.cluster,
       advance,
@@ -350,6 +395,7 @@ function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[]
           id: run.glyphs[index],
           x: marker.x + x,
           y: marker.y + baseline + offsetY,
+          markShift: 0,
           fontSize: run.size,
           advance: run.positions[(index + 1) * 2] - x,
           lineLeft: marker.x,
@@ -384,14 +430,16 @@ export function laidOutGlyphs(
   for (const [lineIndex, line] of lines.entries()) {
     const marker = markers.get(lineIndex)
     if (marker) glyphs.push(...markerGlyphs(marker, offsetY))
-    const { left, baseline } = metrics[lineIndex]
+    const { left, baseline, endIndex } = metrics[lineIndex]
+    const lineBoundaries = lineRunBoundaries(line, endIndex, characterAt)
     const lastLine = lineIndex === lines.length - 1
     for (const [runIndex, run] of line.runs.entries()) {
       const endsTruncated =
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
       const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
         characterAt,
-        sourceAt
+        sourceAt,
+        lineBoundaries
       })
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
@@ -405,6 +453,7 @@ export function laidOutGlyphs(
           id: outline?.glyphs?.[index].id ?? run.glyphs[index],
           x,
           y,
+          markShift: run.positions[index * 2 + 1] - line.baseline,
           fontSize: run.size,
           // The ellipsis truncation adds draws no character, as Figma saves it.
           firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),

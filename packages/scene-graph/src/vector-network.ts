@@ -352,8 +352,10 @@ function segmentToSVG(
 ): string {
   const start = forward ? vertices[seg.start] : vertices[seg.end]
   const end = forward ? vertices[seg.end] : vertices[seg.start]
-  const ts = forward ? seg.tangentStart : { x: -seg.tangentEnd.x, y: -seg.tangentEnd.y }
-  const te = forward ? seg.tangentEnd : { x: -seg.tangentStart.x, y: -seg.tangentStart.y }
+  // Tangents are relative to their own vertex (`segmentToAbsolute`), so tracing a segment end to
+  // start swaps them but keeps their sign: each control point stays beside its vertex.
+  const ts = forward ? seg.tangentStart : seg.tangentEnd
+  const te = forward ? seg.tangentEnd : seg.tangentStart
 
   const isStraight =
     Math.abs(ts.x) < 0.001 &&
