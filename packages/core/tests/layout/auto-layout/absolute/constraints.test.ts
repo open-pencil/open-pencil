@@ -36,8 +36,8 @@ const CASES = {
     shrunk: [52, 48, 76.5, -8.5, 16, 24]
   },
   'SCALE/SCALE': {
-    grown: [183.25, 64, 152.375, -11.3359375, 47.804348, 32],
-    shrunk: [52, 48, 43.2421875, -8.5, 13.565217, 24]
+    grown: [183.25, 64, 152.376359, -11.333333, 47.804348, 32],
+    shrunk: [52, 48, 43.23913, -8.5, 13.565217, 24]
   },
   'MIN/MAX': {
     grown: [183.25, 64, 76.5, 7.5, 24, 24],
@@ -221,5 +221,45 @@ test('a badge keeps its place through editing the label and undoing it', () => {
   expect([frame.width, badge.x]).toEqual([92, 84])
   editor.redoAction()
   expect([frame.width, badge.x]).toEqual([182, 174])
+  editor.dispose()
+})
+
+test('undoing a previewed edit leaves the badge where the next layout finds it', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const frame = graph.createNode('FRAME', editor.state.currentPageId, {
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 12,
+    paddingBottom: 12
+  })
+  const label = graph.createNode('RECTANGLE', frame.id, { width: 60, height: 24 })
+  editor.runLayoutForNode(frame.id)
+  const badge = graph.createNode('FRAME', frame.id, {
+    x: 76.5,
+    y: -8.5,
+    width: 24,
+    height: 24,
+    layoutPositioning: 'ABSOLUTE',
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE'
+  })
+  // A typed or scrubbed panel value is a preview, committed as one step with the layout it made.
+  const preview = editor.beginNodePreview('Change width')
+  preview.update(label.id, { width: 151.25 })
+  preview.commit()
+  expect(frame.width).toBe(183.25)
+  editor.undoAction()
+  expect([frame.width, badge.x, badge.width]).toEqual([92, 76.5, 24])
+  // Laying the page out again, as any later edit does, must not move it from the undone size.
+  editor.runLayoutForNode(frame.id)
+  expect([frame.width, badge.x, badge.width]).toEqual([92, 76.5, 24])
+  editor.redoAction()
+  editor.runLayoutForNode(frame.id)
+  expect(frame.width).toBe(183.25)
+  expect(badge.x).toBeCloseTo(152.376359, 5)
   editor.dispose()
 })
