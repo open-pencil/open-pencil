@@ -1,4 +1,5 @@
 import type { ClientSideConnection, InitializeResponse, McpServer } from '@agentclientprotocol/sdk'
+import * as v from 'valibot'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
@@ -23,9 +24,30 @@ export interface OpenedAgentSession {
 
 type SessionConnection = Pick<ClientSideConnection, 'newSession' | 'unstable_resumeSession'>
 
+/** A JSON-RPC error, which ACP can reject with as a decoded object instead of an `Error`. */
+const acpErrorSchema = v.object({ code: v.number(), message: v.string() })
 /** ACP's `auth_required` error, which an agent returns for a session before sign-in. */
+const authRequiredSchema = v.object({ code: v.literal(-32000) })
+/** ACP's `resource_not_found` error, for a session the agent no longer has. */
+const resourceNotFoundSchema = v.object({ code: v.literal(-32002) })
+/**
+ * Codex reports a missing persisted thread as an internal error, and the ACP SDK moves the
+ * original message to `data.details` when it wraps one.
+ */
+const noRollout = v.pipe(v.string(), v.includes('no rollout found for thread id'))
+const codexMissingRolloutSchema = v.union([
+  v.object({ code: v.literal(-32603), message: noRollout }),
+  v.object({ code: v.literal(-32603), data: v.object({ details: noRollout }) })
+])
+
+/** The message of an `Error` or of a decoded ACP error, or the value as text. */
+export function acpErrorMessage(e: unknown): string {
+  if (e instanceof Error || v.is(acpErrorSchema, e)) return e.message
+  return String(e)
+}
+
 export function isAuthRequiredError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'code' in e && e.code === -32000
+  return v.is(authRequiredSchema, e)
 }
 
 /** The ACP agent a provider runs, when OpenPencil continues that agent's saved sessions. */
@@ -41,20 +63,10 @@ function canResume(agentDef: ACPAgentDef, initialized: InitializeResponse): bool
   )
 }
 
+/** Whether the agent confirms it no longer has the session; anything else may be retried. */
 function isMissingSession(error: unknown, agent: ACPAgentID): boolean {
-  if (typeof error !== 'object' || error === null || !('code' in error)) return false
-  if (error.code === -32002) return true
-  if (agent !== 'codex' || error.code !== -32603) return false
-
-  // Codex can pass a missing rollout through as an internal error. The ACP SDK
-  // puts the original message in data.details when it wraps that error.
-  const message = 'message' in error ? error.message : undefined
-  const data = 'data' in error ? error.data : undefined
-  const details =
-    typeof data === 'object' && data !== null && 'details' in data ? data.details : undefined
-  return [message, details].some(
-    (text) => typeof text === 'string' && text.includes('no rollout found for thread id')
-  )
+  if (v.is(resourceNotFoundSchema, error)) return true
+  return agent === 'codex' && v.is(codexMissingRolloutSchema, error)
 }
 
 /** The agent cannot continue the saved session, which a new session would not know. */

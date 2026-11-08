@@ -21,6 +21,7 @@ import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
+  acpErrorMessage,
   isAuthRequiredError,
   openAgentSession
 } from '@/app/ai/agents/acp/session'
@@ -125,11 +126,7 @@ function missingCommandMessage(agentDef?: ACPAgentDef): string {
 }
 
 export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
-  // ACP can reject with the decoded JSON-RPC error object instead of an Error instance.
-  const msg =
-    typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string'
-      ? e.message
-      : String(e)
+  const msg = acpErrorMessage(e)
   if (
     msg.includes('ECONNREFUSED') ||
     msg.includes('fetch failed') ||
@@ -402,7 +399,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
-      const message = e instanceof Error ? e.message : String(e)
+      const message = acpErrorMessage(e)
       if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
       throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
     }
