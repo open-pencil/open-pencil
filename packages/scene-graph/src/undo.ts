@@ -5,14 +5,17 @@ export interface UndoEntry {
   coalesceKey?: string
 }
 
-/** Why committed history changed: a new step, undo, redo, or clearing it. */
-export type HistoryChange = 'record' | 'undo' | 'redo' | 'clear'
+/**
+ * Why committed history changed: a new step, a change joining the newest step, undo, redo, or
+ * clearing it.
+ */
+export type HistoryChange = 'record' | 'join' | 'undo' | 'redo' | 'clear'
 
 export interface UndoManagerOptions {
   limit?: number
   /**
-   * Called after recording, undoing, redoing, or clearing committed history, with which, and with
-   * the step recorded for `'record'`.
+   * Called after recording, joining, undoing, redoing, or clearing committed history, with which,
+   * and with the step recorded or joined for `'record'` and `'join'`.
    */
   onChange?: (change: HistoryChange, step?: UndoEntry) => void
   /**
@@ -204,6 +207,7 @@ export class UndoManager {
       entry.inverse()
       inverse()
     }
+    this.onChange?.('join', last)
     return true
   }
 

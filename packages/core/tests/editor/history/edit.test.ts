@@ -72,14 +72,19 @@ describe('recordEdit', () => {
     expect(editor.graph.getNode(card.id)?.x).toBe(37)
   })
 
-  test('history:changed passes the step it recorded', () => {
+  test('history:changed passes the step it recorded or joined', () => {
     const { editor, card } = setup()
     const seen: unknown[] = []
     editor.onEditorEvent('history:changed', (change, step) => seen.push([change, step?.label]))
     editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    editor.recordEdit({ label: 'Snap', joinStep: editor.undo.peekUndo() }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
     editor.undo.undo()
+    // The joined change is reported too, so collaboration and saving follow it.
     expect(seen).toEqual([
       ['record', 'Move'],
+      ['join', 'Move'],
       ['undo', undefined]
     ])
   })

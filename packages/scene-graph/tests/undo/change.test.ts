@@ -2,13 +2,13 @@ import { expect, test } from 'bun:test'
 
 import { UndoManager, type HistoryChange } from '@open-pencil/scene-graph/undo'
 
-test('history says why it changed, and nothing when a step only joins another', () => {
+test('history says why it changed', () => {
   const changes: HistoryChange[] = []
   const recorded: (string | undefined)[] = []
   const undo = new UndoManager({
     onChange: (change, step) => {
       changes.push(change)
-      if (change === 'record') recorded.push(step?.label)
+      if (change === 'record' || change === 'join') recorded.push(step?.label)
     }
   })
   const noop = () => undefined
@@ -18,6 +18,6 @@ test('history says why it changed, and nothing when a step only joins another', 
   undo.undo()
   undo.redo()
   undo.clear()
-  expect(changes).toEqual(['record', 'record', 'undo', 'redo', 'clear'])
-  expect(recorded).toEqual(['Move', 'Nudge'])
+  expect(changes).toEqual(['record', 'join', 'record', 'undo', 'redo', 'clear'])
+  expect(recorded).toEqual(['Move', 'Move', 'Nudge'])
 })

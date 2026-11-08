@@ -257,7 +257,10 @@ export function createConnectorRouting(ctx: EditorContext) {
     )
   }
 
-  ctx.onEditorEvent('history:changed', recordCarriedEnds)
+  // A change joining a step, its own included, records no new move to carry ends with.
+  ctx.onEditorEvent('history:changed', (change) => {
+    if (change !== 'join') recordCarriedEnds()
+  })
   ctx.onEditorEvent('graph:replaced', (graph) => {
     unrecorded.clear()
     routeShownPage(graph, ctx.state.currentPageId)

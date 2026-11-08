@@ -247,10 +247,10 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   /**
-   * Committed history changed: a new step was recorded, with the step, or undo, redo, or clearing
-   * ran. A host that responds to the person's edits responds to `'record'`, joining its response
-   * to the step (`recordEdit`'s `joinStep`); undo and redo bring back a document that was already
-   * responded to.
+   * Committed history changed: a new step was recorded, with the step; a change joined it
+   * (`'join'`); or undo, redo, or clearing ran. A host that responds to the person's edits
+   * responds to `'record'`, joining its response to the step (`recordEdit`'s `joinStep`); undo and
+   * redo bring back a document that was already responded to.
    */
   'history:changed': (change: HistoryChange, step?: UndoEntry) => void
   /**
