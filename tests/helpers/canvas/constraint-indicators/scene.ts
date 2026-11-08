@@ -31,3 +31,48 @@ export function createConstrainedLayerScene(
   })
   return { frame: frame.id, rectangle: rectangle.id }
 }
+
+/**
+ * A frame holding a group of two rectangles, the first pinned Right & Bottom and the second with
+ * `second` on both axes, as in the Figma probe for #1835.
+ */
+export function createConstrainedGroupScene(
+  graph: SceneGraph,
+  pageId: string,
+  second: ConstraintType
+) {
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'Frame',
+    x: 160,
+    y: 140,
+    width: 360,
+    height: 240,
+    fills: [solid(1, 1, 1)]
+  })
+  const group = graph.createNode('GROUP', frame.id, {
+    name: 'Group',
+    x: 80,
+    y: 60,
+    width: 170,
+    height: 110
+  })
+  const first = graph.createNode('RECTANGLE', group.id, {
+    name: 'First',
+    width: 60,
+    height: 40,
+    horizontalConstraint: 'MAX',
+    verticalConstraint: 'MAX',
+    fills: [solid(0.42, 0.78, 0.58)]
+  })
+  graph.createNode('RECTANGLE', group.id, {
+    name: 'Second',
+    x: 120,
+    y: 70,
+    width: 50,
+    height: 40,
+    horizontalConstraint: second,
+    verticalConstraint: second,
+    fills: [solid(0.36, 0.52, 0.92)]
+  })
+  return { frame: frame.id, group: group.id, first: first.id }
+}

@@ -263,3 +263,60 @@ test('undoing a previewed edit leaves the badge where the next layout finds it',
   expect(badge.x).toBeCloseTo(152.376359, 5)
   editor.dispose()
 })
+
+// Figma desktop, 2026-11-08: two layers grouped and taken out of the flow of the Hug button, both
+// with the constraints of the case. A group owns no constraints, so its layers keep theirs.
+describe('a group that ignores auto layout', () => {
+  function badgeGroup(figma: FigmaAPI, horizontal: ConstraintName, vertical: ConstraintName) {
+    const { frame, label } = button(figma)
+    const a = figma.createRectangle()
+    a.resize(10, 10)
+    const b = figma.createRectangle()
+    b.resize(14, 14)
+    for (const layer of [a, b]) {
+      frame.appendChild(layer)
+      layer.layoutPositioning = 'ABSOLUTE'
+      layer.constraints = { horizontal, vertical }
+    }
+    a.x = 70
+    a.y = -6
+    b.x = 80
+    b.y = -2
+    const group = figma.group([a, b], frame)
+    group.layoutPositioning = 'ABSOLUTE'
+    group.x = 70
+    group.y = -6
+    const read = () => [group.x, group.y, group.width, group.height]
+    return { frame, label, read }
+  }
+
+  test('stays where it is as its Hug frame grows and shrinks', () => {
+    for (const name of ['MAX/MIN', 'CENTER/CENTER', 'STRETCH/STRETCH', 'SCALE/SCALE'] as const) {
+      const figma = new FigmaAPI(new SceneGraph())
+      const [horizontal, vertical] = name.split('/') as [ConstraintName, ConstraintName]
+      const { frame, label, read } = badgeGroup(figma, horizontal, vertical)
+      label.resize(151.25, 40)
+      expect([frame.width, frame.height, ...read()]).toEqual([183.25, 64, 70, -6, 24, 18])
+      label.resize(20, 24)
+      expect([frame.width, frame.height, ...read()]).toEqual([52, 48, 70, -6, 24, 18])
+    }
+  })
+
+  test('has its layers follow their constraints as its fixed frame is resized', () => {
+    const cases = {
+      'MAX/MIN': [170, -6, 24, 18],
+      'CENTER/CENTER': [120, 4, 24, 18],
+      'STRETCH/STRETCH': [70, -6, 124, 38],
+      'SCALE/SCALE': [146.08696, -8.5, 50.086945, 25.5]
+    } as const
+    for (const [name, expected] of Object.entries(cases)) {
+      const figma = new FigmaAPI(new SceneGraph())
+      const [horizontal, vertical] = name.split('/') as [ConstraintName, ConstraintName]
+      const { frame, read } = badgeGroup(figma, horizontal, vertical)
+      frame.layoutSizingHorizontal = 'FIXED'
+      frame.layoutSizingVertical = 'FIXED'
+      frame.resize(192, 68)
+      read().forEach((value, i) => expect(value).toBeCloseTo(expected[i], 4))
+    }
+  })
+})

@@ -1,8 +1,12 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
 import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  constraintFrame,
+  constraintLayers,
+  sharedConstraint
+} from '@open-pencil/scene-graph/constraints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { isConstraintEligible } from '@open-pencil/scene-graph/resize'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { RotationPreview } from '#core/geometry'
@@ -16,7 +20,7 @@ type Segment = readonly [x1: number, y1: number, x2: number, y2: number]
 
 /** The indicator lines of one axis, given the layer's span and its parent's extent on that axis. */
 function axisSegments(
-  constraint: ConstraintType,
+  constraint: ConstraintType | null,
   start: number,
   end: number,
   extent: number
@@ -31,12 +35,15 @@ function axisSegments(
   return segments
 }
 
-/** Every indicator line of `box` in a parent of `width` × `height`, in the parent's space. */
+/**
+ * Every indicator line of `box` in a frame of `width` × `height`, in the frame's space; an axis
+ * whose layers differ, given as null, has none.
+ */
 export function constraintSegments(
   box: Rect,
   parent: Pick<SceneNode, 'width' | 'height'>,
-  horizontal: ConstraintType,
-  vertical: ConstraintType
+  horizontal: ConstraintType | null,
+  vertical: ConstraintType | null
 ): Segment[] {
   const midX = box.x + box.width / 2
   const midY = box.y + box.height / 2
@@ -49,10 +56,11 @@ export function constraintSegments(
 }
 
 /**
- * A single selected layer's constraints as Figma shows them, in its parent's space: a dashed line
- * from the middle of each pinned side to the parent's matching edge (both for Left & Right or Top &
+ * A single selected layer's constraints as Figma shows them, in its frame's space: a dashed line
+ * from the middle of each pinned side to the frame's matching edge (both for Left & Right or Top &
  * Bottom), one across the middle half of the layer along a centred axis, and nothing for Scale.
- * Only layers whose constraints the Design panel offers have them.
+ * A layer in groups pins to the frame around them; a group or boolean shows the constraints its
+ * layers share, from its own box, as in Figma (live, #1835).
  */
 export function drawConstraintIndicators(
   r: SkiaRenderer,
@@ -61,20 +69,20 @@ export function drawConstraintIndicators(
   node: SceneNode,
   preview?: RotationPreview | null
 ): void {
-  if (!node.parentId || !isConstraintEligible(graph, node)) return
-  const parent = graph.getNode(node.parentId)
-  if (!parent) return
+  const frame = constraintFrame(graph, node)
+  if (!frame) return
+  const layers = constraintLayers(graph, node)
   const geometry = r.sceneGeometry(graph, preview)
-  const box = geometry.boundsInParent(node, parent.id)
+  const box = geometry.boundsInParent(node, frame.id)
   const segments = constraintSegments(
     box,
-    parent,
-    node.horizontalConstraint,
-    node.verticalConstraint
+    frame,
+    sharedConstraint(layers, 'horizontalConstraint'),
+    sharedConstraint(layers, 'verticalConstraint')
   )
   if (segments.length === 0) return
   const stroke = { color: r.outlineColor(node, graph), dash: INDICATOR_DASH }
-  inNodeSpace(r, canvas, geometry, parent, () =>
+  inNodeSpace(r, canvas, geometry, frame, () =>
     withScreenStroke(r, stroke, (paint: Paint) => {
       for (const [x1, y1, x2, y2] of segments) canvas.drawLine(x1, y1, x2, y2, paint)
     })

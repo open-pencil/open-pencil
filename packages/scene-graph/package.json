@@ -80,6 +80,12 @@
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
     },
+    "./constraints": {
+      "types": "./dist/constraints.d.ts",
+      "bun": "./src/constraints.ts",
+      "import": "./dist/constraints.js",
+      "default": "./dist/constraints.js"
+    },
     "./coordinate": {
       "types": "./dist/coordinate.d.ts",
       "bun": "./src/coordinate.ts",
