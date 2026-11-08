@@ -137,3 +137,21 @@ test('undo brings back a path dropped while drawing', () => {
   expect(points()).toHaveLength(2)
   expect(editor.state.activeTool).toBe('PEN')
 })
+
+test('a press taken back leaves no step, and redo keeps what it had', () => {
+  press(0, 0)
+  press(100, 0)
+  editor.undoAction()
+  press(100, 100, [20, 0])
+  editor.penCancelPress()
+  expect(points()).toEqual([[0, 0]])
+
+  editor.redoAction()
+  expect(points()).toEqual([
+    [0, 0],
+    [100, 0]
+  ])
+  editor.undoAction()
+  editor.undoAction()
+  expect(editor.state.penState).toBeNull()
+})

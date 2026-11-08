@@ -12,6 +12,8 @@ export interface PenHistory {
    * yet carries on, so a host may start a press before the action that places its point.
    */
   begin(): void
+  /** Puts the path back as it was before the press in progress, with no step. */
+  cancel(): void
   /**
    * Ends the path with `run` as one step. A press on the first point that closes it belongs to
    * that step, so undo takes back the close in one go.
@@ -60,6 +62,10 @@ export function createPenHistory(ctx: EditorContext): PenHistory {
     stopSettling = ctx.undo.onBeforeHistory(settle)
   }
 
+  function cancel() {
+    if (pending) restore(pending.before)
+  }
+
   function end(label: string, run: () => void) {
     const closing = !!ctx.state.penState?.pendingClose
     if (!closing) settle()
@@ -82,5 +88,5 @@ export function createPenHistory(ctx: EditorContext): PenHistory {
     })
   }
 
-  return { begin, end }
+  return { begin, cancel, end }
 }

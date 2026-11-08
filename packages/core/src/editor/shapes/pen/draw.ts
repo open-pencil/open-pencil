@@ -106,6 +106,14 @@ export function createPenActions(
     history.begin()
   }
 
+  /**
+   * Takes back the press in progress, the point it placed and its drag, leaving no undo step or
+   * redo: a host that refuses the point, such as one off a shape being traced, puts it back so.
+   */
+  function penCancelPress() {
+    history.cancel()
+  }
+
   function penAddVertex(x: number, y: number) {
     history.begin()
     if (!ctx.state.penState) {
@@ -310,6 +318,7 @@ export function createPenActions(
 
   return {
     penPushHistory,
+    penCancelPress,
     penAddVertex,
     penSetDragTangent,
     penSetClosingToFirst,

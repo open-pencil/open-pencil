@@ -141,6 +141,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'flushNudge',
   'nodeEditCancelDrag',
   'penCancel',
+  'penCancelPress',
   'pencilCancel',
 
   // Canvas, layout, and document lifecycle
