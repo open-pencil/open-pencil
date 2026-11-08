@@ -38,9 +38,9 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
 import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
-import { createFileMenuActions } from '@/app/shell/menu/files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -52,7 +52,6 @@ import type {
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -177,16 +176,11 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    ...createFileMenuActions(),
+    ...createTabMenuActions(),
     'open-tour': openTourFromMenu,
     ...createSaveMenuActions(store),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
-    close: () => {
-      if (activeTab.value) void closeTab(activeTab.value.id)
-    },
-    'previous-tab': () => switchAdjacentTab(-1),
-    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'report-problem': () => openReportDialog(),

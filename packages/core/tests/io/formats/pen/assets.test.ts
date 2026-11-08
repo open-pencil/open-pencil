@@ -132,6 +132,8 @@ describe('penFormat.readDocument — assets', () => {
 
   test('decodes data URLs as URLs, without the host', async () => {
     const encoded = fromUint8Array(PNG)
+    // Escapes that are bytes, not UTF-8 text, as a binary image's percent-encoded body is.
+    const escaped = Array.from(PNG, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')
     const { graph } = await io.readDocument(
       {
         name: 'inline.pen',
@@ -147,6 +149,11 @@ describe('penFormat.readDocument — assets', () => {
             fill: { type: 'image', url: `DATA:image/png;name=a.png;base64,${encoded}` }
           },
           {
+            id: 'escaped',
+            type: 'rectangle',
+            fill: { type: 'image', url: `data:image/png,${escaped}` }
+          },
+          {
             id: 'broken',
             type: 'rectangle',
             fill: { type: 'image', url: 'data:image/png;base64,!!!' }
@@ -156,6 +163,8 @@ describe('penFormat.readDocument — assets', () => {
       { icons: iconProvider([], []) }
     )
     expect(graph.getNode('plain')?.fills[0]?.type).toBe('IMAGE')
+    const escapedHash = graph.getNode('escaped')?.fills[0]?.imageHash
+    expect(escapedHash ? graph.images.get(escapedHash) : undefined).toEqual(PNG)
     expect(graph.getNode('named')?.fills[0]?.type).toBe('IMAGE')
     expect(graph.getNode('broken')?.fills).toEqual([])
   })
