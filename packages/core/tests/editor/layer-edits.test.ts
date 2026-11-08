@@ -9,6 +9,7 @@ import {
   resolveEditorProfile
 } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
@@ -227,7 +228,7 @@ describe('layers the host lets only move', () => {
     const pageId = editor.state.currentPageId
     editor.updateNode(a.id, { x: 30 })
     // A caller's map carries more than a position; undo puts back the position alone.
-    editor.commitMove(new Map([[a.id, { x: 0, y: 0, opacity: 0.2 } as { x: number; y: number }]]))
+    editor.commitMove(new Map([[a.id, { x: 0, y: 0, opacity: 0.2 } as Vector]]))
     editor.undoAction()
     expect(getNodeOrThrow(editor.graph, a.id)).toMatchObject({ x: 0, opacity: 1 })
 
