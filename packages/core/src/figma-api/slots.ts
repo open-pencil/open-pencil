@@ -14,8 +14,10 @@ import {
   type SlotLimitViolation
 } from '@open-pencil/scene-graph/slots'
 
+import { graphOf } from '#core/figma-api/graph'
+
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { assertProxyEditable, graph, nodeId, raw } from './accessor-utils'
+import { assertProxyEditable, nodeId, raw } from './accessor-utils'
 import type { NodeProxyHost } from './proxy'
 
 /** Figma's slot limits, where an unset count reads as null. */
@@ -114,7 +116,7 @@ function host(target: ProxyThis, internals: NodeProxyInternals): NodeProxyHost {
 
 /** The instance slot a proxy is, if it is the frame of one. */
 function instanceSlot(target: ProxyThis, internals: NodeProxyInternals) {
-  const scope = slotScope(graph(target, internals), nodeId(target, internals))
+  const scope = slotScope(graphOf(target), nodeId(target, internals))
   return scope.kind === 'slot' && scope.frame.id === nodeId(target, internals) ? scope : undefined
 }
 
@@ -128,7 +130,7 @@ export function installSlotAccessors(prototype: object, internals: NodeProxyInte
         if (component.type !== 'COMPONENT')
           throw new Error('createSlot() can only be called on components')
         assertProxyEditable(this, internals)
-        const g = graph(this, internals)
+        const g = graphOf(this)
         const frame = g.createNode('FRAME', component.id, { name: 'Slot' })
         const definition = createSlotProperty(g, frame.id, createComponentPropertyId())
         if (!definition) throw new Error('Failed to create slot')
@@ -142,7 +144,7 @@ export function installSlotAccessors(prototype: object, internals: NodeProxyInte
           throw new Error('resetSlot() can only be called on slots')
         assertProxyEditable(this, internals)
         const scope = instanceSlot(this, internals)
-        if (scope) resetSlotContent(graph(this, internals), scope)
+        if (scope) resetSlotContent(graphOf(this), scope)
       }
     },
     limitViolations: {
@@ -151,7 +153,7 @@ export function installSlotAccessors(prototype: object, internals: NodeProxyInte
       get(this: ProxyThis): SlotLimitViolation[] {
         const scope = instanceSlot(this, internals)
         if (!scope) return []
-        const g = graph(this, internals)
+        const g = graphOf(this)
         const definition = componentPropertyDefinitions(g, scope.instance).find(
           (item) => item.id === scope.propertyId
         )

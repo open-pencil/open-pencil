@@ -1,0 +1,1 @@
+- The daily ping also reports how many days the install has pinged, as a doubling step (1, 2, 3–4, 5–8, and so on) rather than the number itself, so returning installs can be told apart from copies of one saved state.

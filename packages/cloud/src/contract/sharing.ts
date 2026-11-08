@@ -53,7 +53,10 @@ export function parseRequestSharedImageLinks(input: unknown): RequestSharedImage
 
 export const resolvedDocumentShareSchema = v.object({
   documentId: v.pipe(v.string(), v.uuid()),
+  /** What this person may do; a guest on an edit link may only view where guests may not edit. */
   permission: documentPermissionSchema,
+  /** What the link lets someone signed in to the server do. */
+  linkPermission: documentPermissionSchema,
   principal: collaborationPrincipalSchema,
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0))
 })

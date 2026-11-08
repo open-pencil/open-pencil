@@ -2,7 +2,7 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { flipChanges, layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { constrainedChildRect, flipChanges } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 
@@ -64,6 +64,15 @@ function writeLayoutGeometry(
  */
 const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
 
+/**
+ * Records that a Hug frame's constrained children are placed for the size it has now. Undo and
+ * redo put back a frame's hugged size together with the places layout gave its children, so the
+ * next layout must move them from that size, not from the one it hugged to before.
+ */
+export function restoredHuggedSize(frame: SceneNode): void {
+  if (huggedSizes.has(frame)) huggedSizes.set(frame, { width: frame.width, height: frame.height })
+}
+
 function rememberPlacedSize(frame: SceneNode): void {
   const placed = huggedSizes.get(frame)
   if (!placed) {
@@ -95,7 +104,7 @@ function constrainChildren(
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
     const size = { width: child.width, height: child.height }
-    const { flipsX, flipsY, ...box } = layoutConstrainedChildRect(
+    const { flipsX, flipsY, ...box } = constrainedChildRect(
       child,
       before,
       frame,

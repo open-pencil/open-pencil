@@ -13,9 +13,10 @@ import {
   MenubarSubTrigger,
   MenubarTrigger
 } from 'reka-ui'
-import { useTemplateRef, watch } from 'vue'
+import { shallowRef, useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
+import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { vTestId } from '@open-pencil/vue/testing'
 
@@ -69,6 +70,23 @@ const menubar = useTemplateRef<HTMLElement>('menubar')
 const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar, {
   smooth: animationsEnabled
 })
+
+/**
+ * A chosen command runs once its menu has closed and returned focus to its button, as a native
+ * menu's does; run sooner, a popover it opens, such as Insert Icon's picker, would take that
+ * returning focus as focus outside and close.
+ */
+const chosen = shallowRef<MenuEntry | null>(null)
+
+function chooseMenuAction(entry: MenuEntry) {
+  chosen.value = entry
+}
+
+function runChosenAction() {
+  const entry = chosen.value
+  chosen.value = null
+  if (entry) runMenuAction(entry)
+}
 </script>
 
 <template>
@@ -129,7 +147,12 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
             </MenubarTrigger>
 
             <MenubarPortal>
-              <MenubarContent :side-offset="4" align="start" :class="mainMenuCls.content">
+              <MenubarContent
+                :side-offset="4"
+                align="start"
+                :class="mainMenuCls.content"
+                @close-auto-focus="runChosenAction"
+              >
                 <MenuScrollArea>
                   <template v-for="(item, i) in menu.items" :key="i">
                     <MenubarSeparator v-if="isMenuSeparator(item)" :class="menuCls.separator" />
@@ -161,7 +184,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                                 v-else
                                 :class="menuCls.item"
                                 :disabled="menuDisabled(sub)"
-                                @select="runMenuAction(sub)"
+                                @select="chooseMenuAction(sub)"
                               >
                                 <span class="flex-1">{{ menuLabel(sub) }}</span>
                                 <AppShortcutText v-if="menuShortcut(sub)">{{
@@ -188,7 +211,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
                       v-else
                       :class="menuCls.item"
                       :disabled="menuDisabled(item)"
-                      @select="runMenuAction(item)"
+                      @select="chooseMenuAction(item)"
                     >
                       <span class="flex-1">{{ menuLabel(item) }}</span>
                       <AppShortcutText v-if="menuShortcut(item)">{{

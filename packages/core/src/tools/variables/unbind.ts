@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
@@ -26,7 +27,7 @@ export const unbindVariable = defineTool({
   }),
   execute: (figma, args) => {
     // Access raw scene node for boundVariables (not exposed on the proxy)
-    const rawNode = figma.graph.getNode(args.node_id)
+    const rawNode = graphOf(figma).getNode(args.node_id)
     if (!rawNode) return { error: `Node "${args.node_id}" not found` }
     const boundValue = rawNode.boundVariables[args.field]
     if (!boundValue) {

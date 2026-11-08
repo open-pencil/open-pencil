@@ -1,3 +1,5 @@
+import type { HotkeyChord } from '@tanstack/hotkeys'
+
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
@@ -47,8 +49,8 @@ export interface AppMenuActionItem {
   type?: 'item'
   id: string
   label: string
-  shortcut?: string
-  accelerator?: string
+  /** The item's shortcut (`formatShortcut`): its label, key, and native accelerator. */
+  shortcut?: HotkeyChord
   command?: EditorCommandId
   checkbox?: boolean
   target?: AppMenuTarget

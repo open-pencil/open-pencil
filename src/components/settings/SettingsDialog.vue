@@ -4,11 +4,11 @@ import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
 import IconActivity from '~icons/lucide/activity'
 import IconBell from '~icons/lucide/bell'
+import IconBlocks from '~icons/lucide/blocks'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
 import IconDatabase from '~icons/lucide/database'
-import IconImage from '~icons/lucide/image'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPlug from '~icons/lucide/plug'
 import IconSettings from '~icons/lucide/settings'
@@ -93,7 +93,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'ai', label: settings.value.models, icon: IconSparkles },
       { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
-      { value: 'services', label: settings.value.imageServices, icon: IconImage },
+      { value: 'services', label: settings.value.integrations, icon: IconBlocks },
       { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
     ]

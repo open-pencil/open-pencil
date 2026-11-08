@@ -1,3 +1,4 @@
+import type { HotkeyChord } from '@tanstack/hotkeys'
 import { uniq } from 'es-toolkit'
 
 import {
@@ -8,19 +9,24 @@ import {
 } from '@open-pencil/core'
 
 import {
-  editorCommandMetadata,
+  editorCommandShortcuts,
+  isShortcut,
   type EditorCommandId,
   type useEditorCommands
 } from '#vue/editor/commands'
 
 import type { createEditorKeyActions } from './actions'
 
-/** A key binding: the tinykeys keys it answers to and what it runs. */
+/** A key binding: the shortcuts it answers to (`formatShortcut`) and what it runs. */
 export interface EditorShortcut {
   id: string
-  keys: string | string[]
+  keys: HotkeyChord | readonly HotkeyChord[]
   run: (event: KeyboardEvent) => void
-  /** Whether the browser's own action for the key is stopped; by default always. */
+  /**
+   * Whether the key was the editor's, so the browser's own action is stopped and a closing menu
+   * that still has focus does not act on it too; by default always. Return false when the key
+   * did nothing, as an unbound tool key does.
+   */
   preventDefault?: (event: KeyboardEvent) => boolean
   /** Runs wherever focus is, in a text field or with a dialog open, as app-wide keys do. */
   global?: boolean
@@ -32,7 +38,7 @@ export interface EditorShortcut {
 
 const UNDO_REDO = new Set<EditorCommandId>(['edit.undo', 'edit.redo'])
 
-/** The editor commands a key runs directly, by their registered keybinding. */
+/** The editor commands a key runs directly, by their registered shortcuts. */
 const KEY_COMMANDS: readonly EditorCommandId[] = [
   'edit.undo',
   'edit.redo',
@@ -82,19 +88,26 @@ function isCanvasFocus(event: KeyboardEvent) {
 export function toolShortcuts(editor: Editor, beforePick: () => void): EditorShortcut[] {
   const toolFor = (code: string) => resolveEditorProfile(editor.state).toolKeys[code]
   const codes = uniq([...Object.keys(TOOL_SHORTCUTS), ...Object.keys(BOARD_TOOL_SHORTCUTS)])
-  return codes.map((code) => ({
-    id: `tool-${code}`,
-    keys: code,
-    run: () => {
-      const tool = toolFor(code)
-      if (!tool) return
-      beforePick()
-      // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
-      if (tool === 'SHAPE_WITH_TEXT') editor.setShapeWithTextKind('SQUARE')
-      editor.setTool(tool)
-    },
-    preventDefault: () => toolFor(code) !== undefined
-  }))
+  return codes.map((code) => {
+    if (!isShortcut(code)) throw new Error(`Tool key '${code}' is not a shortcut`)
+    return toolShortcut(code)
+  })
+
+  function toolShortcut(code: HotkeyChord): EditorShortcut {
+    return {
+      id: `tool-${code}`,
+      keys: code,
+      run: () => {
+        const tool = toolFor(code)
+        if (!tool) return
+        beforePick()
+        // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
+        if (tool === 'SHAPE_WITH_TEXT') editor.setShapeWithTextKind('SQUARE')
+        editor.setTool(tool)
+      },
+      preventDefault: () => toolFor(code) !== undefined
+    }
+  }
 }
 
 /** The editor's own keys, besides tool keys, the held Space hand, and nudging. */
@@ -108,14 +121,16 @@ export function editorShortcuts(
     editor.applyZoom(delta, width / 2, height / 2)
   }
   const command = (id: EditorCommandId): EditorShortcut[] => {
-    const keys = editorCommandMetadata(id).keybinding
-    return keys ? [{ id, keys, run: () => runCommand(id), history: UNDO_REDO.has(id) }] : []
+    const keys = editorCommandShortcuts(id)
+    return keys.length > 0
+      ? [{ id, keys, run: () => runCommand(id), history: UNDO_REDO.has(id) }]
+      : []
   }
   const sibling = (
     id: 'selection.selectNextSibling' | 'selection.selectPreviousSibling'
   ): EditorShortcut => ({
     id,
-    keys: editorCommandMetadata(id).keybinding ?? [],
+    keys: editorCommandShortcuts(id),
     run: (event) => {
       if (isCanvasFocus(event)) runCommand(id)
     },
@@ -128,37 +143,51 @@ export function editorShortcuts(
     ...KEY_COMMANDS.flatMap(command),
     {
       id: 'zoom-in',
-      keys: ['$mod+Equal', '$mod+Shift+Equal'],
+      keys: ['Mod+=', 'Mod+Shift+='],
       run: zoomAtViewportCenter(-100),
       global: true
     },
-    { id: 'zoom-out', keys: '$mod+Minus', run: zoomAtViewportCenter(100), global: true },
-    { id: 'zoom-in-unmodified', keys: 'Shift+Equal', run: zoomAtViewportCenter(-100) },
-    { id: 'zoom-out-unmodified', keys: 'Minus', run: zoomAtViewportCenter(100) },
-    { id: 'toggle-auto-layout', keys: 'Shift+KeyA', run: () => actions.toggleAutoLayout() },
+    { id: 'zoom-out', keys: 'Mod+-', run: zoomAtViewportCenter(100), global: true },
+    { id: 'zoom-in-unmodified', keys: 'Shift+=', run: zoomAtViewportCenter(-100) },
+    { id: 'zoom-out-unmodified', keys: '-', run: zoomAtViewportCenter(100) },
+    {
+      id: 'toggle-auto-layout',
+      keys: editorCommandShortcuts('selection.wrapInAutoLayout'),
+      run: () => actions.toggleAutoLayout()
+    },
     // Figma's key, matched by key position since Shift turns ' into ".
     {
       id: 'toggle-pixel-grid',
-      keys: 'Shift+Quote',
+      keys: "Shift+'",
       run: () => {
         editor.state.showPixelGrid = editor.state.showPixelGrid === false
         editor.requestRepaint()
       }
     },
-    { id: 'delete-backspace', keys: 'Backspace', run: () => actions.smartDelete(false) },
+    {
+      id: 'delete-backspace',
+      keys: editorCommandShortcuts('selection.delete'),
+      run: () => actions.smartDelete(false)
+    },
     { id: 'delete', keys: 'Delete', run: () => actions.smartDelete(false) },
     { id: 'delete-alt', keys: 'Alt+Delete', run: () => actions.smartDelete(true) },
-    { id: 'enter', keys: 'Enter', run: () => actions.confirmOrEditSelection() },
+    {
+      id: 'enter',
+      keys: editorCommandShortcuts('selection.selectChildren'),
+      run: () => actions.confirmOrEditSelection()
+    },
     { id: 'escape', keys: 'Escape', run: () => actions.escapeOrDeselect(), view: true },
     sibling('selection.selectNextSibling'),
     sibling('selection.selectPreviousSibling'),
-    ...['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit): EditorShortcut => ({
-      id: `selection-opacity-${digit}`,
-      keys: digit,
-      run: (event) => {
-        if (bare(event)) actions.opacityDigit(digit)
-      },
-      preventDefault: bare
-    }))
+    ...(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const).map(
+      (digit): EditorShortcut => ({
+        id: `selection-opacity-${digit}`,
+        keys: digit,
+        run: (event) => {
+          if (bare(event)) actions.opacityDigit(digit)
+        },
+        preventDefault: bare
+      })
+    )
   ]
 }

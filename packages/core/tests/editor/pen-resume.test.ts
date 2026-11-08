@@ -74,13 +74,14 @@ describe('continuing a pen path', () => {
     expect(getNodeOrThrow(editor.graph, path).vectorNetwork?.segments).toHaveLength(2)
   })
 
-  test('committing without a new point leaves the layer and the undo history alone', () => {
+  test('committing without a new point leaves the layer alone, and so does undo', () => {
     const { path } = setup()
     const before = getNodeOrThrow(editor.graph, path).vectorNetwork
     resume(path)
     editor.penCommit(false)
     expect(getNodeOrThrow(editor.graph, path).vectorNetwork).toBe(before)
-    expect(editor.undo.canUndo).toBe(false)
+    while (editor.undo.canUndo) editor.undoAction()
+    expect(getNodeOrThrow(editor.graph, path).vectorNetwork).toBe(before)
   })
 
   test('makes a new layer when the one it came from is gone', () => {

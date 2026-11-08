@@ -21,6 +21,7 @@ import { toast } from '@/app/shell/ui'
 import { useRestartApprovals } from '@/app/shell/updater/approvals'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { useWebUpdates } from '@/app/shell/updater/web'
+import { openSaveTo } from '@/app/storage/save-to/session'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import { CloudHosts } from '@/components/cloud/integration'
@@ -67,10 +68,13 @@ useEventListener(window, 'pageshow', (event) => {
 onMounted(() => {
   toast.setupGlobalErrorHandler()
   void offerCrashReports()
-  scheduleStartupUpdateCheck(updates)
+  void scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
   onUnmounted(
-    startCloud({ leaveLinkAddress: () => router.isReady().then(() => router.replace('/')) })
+    startCloud({
+      leaveLinkAddress: () => router.isReady().then(() => router.replace('/')),
+      saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
+    })
   )
 })
 </script>

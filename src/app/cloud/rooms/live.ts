@@ -452,7 +452,7 @@ export function uploadCloudDocument(store: EditorStore): Promise<boolean> {
 const restarting = new WeakSet<EditorStore>()
 
 /** Takes the tab out of its room, leaving the document it shows as it is. */
-function leaveCloudRoom(store: EditorStore): void {
+export function leaveCloudRoom(store: EditorStore): void {
   const live = liveRooms.get(store)
   live?.stopWatching()
   live?.room.stop()

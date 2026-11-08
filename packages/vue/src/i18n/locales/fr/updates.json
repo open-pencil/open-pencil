@@ -23,5 +23,8 @@
   "unavailable": "Les mises à jour ne sont pas encore disponibles. Publiez d’abord une version signée avec latest.json.",
   "checkFailed": "Impossible de rechercher des mises à jour : {error}",
   "webUpdateReady": "Une nouvelle version d’OpenPencil est prête",
-  "reload": "Recharger"
+  "reload": "Recharger",
+  "settingsSection": "Mises à jour",
+  "checkOnStartup": "Rechercher des mises à jour au démarrage",
+  "checkOnStartupDescription": "Cherche une nouvelle version peu après l’ouverture de l’application de bureau. « Rechercher des mises à jour… » dans le menu fonctionne encore lorsque ceci est désactivé."
 }

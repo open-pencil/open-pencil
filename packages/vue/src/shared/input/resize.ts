@@ -411,6 +411,8 @@ function restoreResizePreview(d: DragResize, editor: Editor) {
       y: orig.y,
       width: orig.width,
       height: orig.height,
+      flipX: orig.flipX,
+      flipY: orig.flipY,
       vectorNetwork: orig.vectorNetwork,
       fillGeometry: orig.fillGeometry,
       strokeGeometry: orig.strokeGeometry,
@@ -525,7 +527,12 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
     for (const [childId, original] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, snapshotResizeFinal(child, original.strokeGeometry.length > 0))
+      // Constraints turn a layer over when its frame shrinks it past zero.
+      finalChildren.set(childId, {
+        ...snapshotResizeFinal(child, original.strokeGeometry.length > 0),
+        flipX: child.flipX,
+        flipY: child.flipY
+      })
     }
     restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,

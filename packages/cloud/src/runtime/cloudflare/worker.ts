@@ -60,7 +60,11 @@ function cloudServices(
   const reporter = keptAlive(prepared.reportError, context)
   const reportError = (message: string, error: unknown, source: CloudErrorSource) =>
     reportCloudError(reporter, message, error, { source })
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   const objects = createS3ObjectStore(config)
   const transport = emailTransport(prepared, env)
   const queued = createTransactionalEmailService(database, {

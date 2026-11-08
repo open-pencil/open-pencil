@@ -17,4 +17,4 @@ export {
   readPenFile,
   type PenReadOptions
 } from './read'
-export type { PenDocument, PenNode, PenOverride } from './schema'
+export type { PenDocument, PenFont, PenNode, PenOverride } from './schema'
