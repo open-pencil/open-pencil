@@ -74,4 +74,17 @@ describe('the tour in the app theme', () => {
     await nextTick()
     expect(setMode).not.toHaveBeenCalled()
   })
+
+  test('stops following when the tab’s store is disposed', async () => {
+    const { store } = tour()
+    const appTheme = ref<'dark' | 'light'>('dark')
+    store.runInScope(() => followAppTheme(store, appTheme))
+    const setMode = spyOn(store, 'setActiveMode')
+
+    store.dispose()
+    appTheme.value = 'light'
+    await nextTick()
+
+    expect(setMode).not.toHaveBeenCalled()
+  })
 })

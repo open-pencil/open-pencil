@@ -89,7 +89,10 @@ export { createDefaultEditorState } from './state'
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
-  const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
+  const undo = new UndoManager({
+    onChange: () => emitEditorEvent('history:changed'),
+    onDiscard: () => emitEditorEvent('edit:discarded')
+  })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
   // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
   const viewportSize = { width: 0, height: 0 }

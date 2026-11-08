@@ -350,7 +350,10 @@ contract and the same credits. A `[billing]` table only advertises where people 
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
+catalog, wallet, and usage pages are the contract's own. `CloudServicesSchema` types those routes as
+Hono does, so the client calls them through `hc` and still parses each answer, since a service is
+deployed apart from the editor; a service built with Hono can check its app against the same type.
+The reference service is the AI relay in
 `src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
 forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
 workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking
@@ -361,6 +364,17 @@ answer ends only after its charge is recorded, so the wallet the editor reads on
 includes it, and a refusal for lack of credits says when the allowance renews. It forwards only
 chat completion fields, so a router's fallback or provider fields cannot run a model outside the
 catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
+
+Other capabilities are optional: a service lists each one it offers in its catalog with its price,
+and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
+`search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
+title, date, author, and an excerpt; the contract names no search engine. The editor offers the
+model OpenPencil's `web_search` tool, which also reaches agents through OpenPencil's MCP server.
+It searches the services when the Design model runs on them and their catalog lists search, charged
+to the same workspace; the reference relay offers no search. In the desktop app, an Exa key saved
+under Settings › Integrations is used instead, whatever the model, and Exa bills its owner; Exa
+refuses browsers' cross-origin requests, so the web app has no such setting. Without either, the
+tool tells the model how to set search up.
 
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP

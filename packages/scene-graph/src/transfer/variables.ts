@@ -1,3 +1,6 @@
+import { uniq } from 'es-toolkit'
+
+import type { SceneGraph } from '../graph'
 import type { Variable, VariableCollection, VariableValue } from '../types'
 import { mapVariableValueReferences } from '../variables/value'
 import { requireTransferReference as mapped } from './references'
@@ -79,5 +82,39 @@ export function prepareVariableTransfer(
         ])
       )
     }))
+  }
+}
+
+/**
+ * Copies the variables `ids` and the collections `collectionIds` into `target`, IDs kept, with the
+ * mode each collection shows. Each collection comes from the first of its `sources` that has it,
+ * and its variables with it; a variable it lacks there comes from the next. A collection keeps
+ * only the variables copied.
+ */
+export function copyVariableTables(
+  target: SceneGraph,
+  ids: ReadonlySet<string>,
+  collectionIds: Iterable<string>,
+  sources: (collectionId: string) => readonly SceneGraph[]
+): void {
+  for (const collectionId of collectionIds) {
+    const graphs = sources(collectionId)
+    const first = <T>(read: (graph: SceneGraph) => T | undefined): T | undefined =>
+      graphs.map(read).find((found) => found !== undefined)
+    const collection = first((graph) => graph.variableCollections.get(collectionId))
+    if (!collection) continue
+    const members = uniq(
+      graphs.flatMap((graph) => graph.variableCollections.get(collectionId)?.variableIds ?? [])
+    ).filter((id) => ids.has(id))
+    target.variableCollections.set(collectionId, {
+      ...structuredClone(collection),
+      variableIds: members
+    })
+    const mode = first((graph) => graph.activeMode.get(collectionId))
+    if (mode) target.activeMode.set(collectionId, mode)
+    for (const id of members) {
+      const variable = first((graph) => graph.variables.get(id))
+      if (variable) target.variables.set(id, structuredClone(variable))
+    }
   }
 }

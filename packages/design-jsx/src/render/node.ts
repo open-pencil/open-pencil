@@ -98,7 +98,7 @@ async function renderIconNode<Artwork>(
   if (!iconName) throw new Error('<Icon> requires a name prop (e.g. name="lucide:heart")')
 
   const size = (props.size as number | undefined) ?? 24
-  const artwork = await services.icon(iconName, size)
+  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
   return placeArtwork(services, graph, artwork, props, size, parentId)
 }

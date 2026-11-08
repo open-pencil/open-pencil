@@ -221,6 +221,7 @@ describe('document changes', () => {
     })
     roundTrip(editor, () => {
       const faded = editor.graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+      editor.graph.willChangeVariable(brand.id)
       brand.name = 'Primary'
       editor.graph.bindVariable(title.id, 'opacity', faded.id)
     })

@@ -8,7 +8,7 @@ import type {
 import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { BLACK } from '#core/constants'
+import { BLACK, PEN_CLOSE_MIN_POINTS } from '#core/constants'
 import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/vector'
 import type { EditorContext, ResumedPath } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
@@ -37,23 +37,6 @@ function projectTangentToAxis(active: Vector, opposite: Vector): Vector {
   const dir = { x: axis.x / axisLen, y: axis.y / axisLen }
   const len = Math.max(0, active.x * dir.x + active.y * dir.y)
   return { x: dir.x * len, y: dir.y * len }
-}
-
-function applyAnchorTangent(
-  tangent: Vector,
-  isClosing: boolean,
-  firstSeg: VectorSegment | undefined,
-  lastSeg: VectorSegment | undefined
-): void {
-  if (isClosing) {
-    if (!firstSeg) return
-    if (firstSeg.start === 0) firstSeg.tangentStart = { x: tangent.x, y: tangent.y }
-    else if (firstSeg.end === 0) firstSeg.tangentEnd = { x: tangent.x, y: tangent.y }
-    return
-  }
-  if (lastSeg) {
-    lastSeg.tangentEnd = { x: tangent.x, y: tangent.y }
-  }
 }
 
 /**
@@ -98,6 +81,13 @@ function continuedNetwork(
   return network
 }
 
+type PenState = NonNullable<EditorContext['state']['penState']>
+
+/** Whether the pen is closing the path onto its first point, which takes two points or more. */
+function closing(ps: PenState): boolean {
+  return !!ps.pendingClose && ps.vertices.length >= PEN_CLOSE_MIN_POINTS
+}
+
 export function createPenActions(
   ctx: EditorContext,
   createShape: CreateShape,
@@ -135,13 +125,16 @@ export function createPenActions(
   }
 
   function penSetDragTangent(tx: number, ty: number, options?: PenDragOptions) {
-    if (!ctx.state.penState) return
     const ps = ctx.state.penState
+    if (!ps) return
+    if (closing(ps)) {
+      setClosingDrag(ps, { x: tx, y: ty }, options)
+      ctx.requestRender()
+      return
+    }
     let active = { x: tx, y: ty }
-    const isClosing = !!ps.pendingClose && ps.vertices.length > 2
-    const anchorIndex = isClosing ? 0 : ps.vertices.length - 1
-    const lastSeg = ps.segments.length > 0 ? ps.segments[ps.segments.length - 1] : undefined
-    const firstSeg = ps.segments.length > 0 ? ps.segments[0] : undefined
+    const anchor = ps.vertices[ps.vertices.length - 1]
+    const lastSeg = ps.segments.at(-1)
     const opposite =
       options?.oppositeTangent ??
       ps.oppositeDragTangent ??
@@ -152,22 +145,27 @@ export function createPenActions(
     }
 
     ps.dragTangent = active
-    const keepOpposite = options?.keepOpposite ?? isClosing
-    if (keepOpposite) {
-      ps.oppositeDragTangent = { x: opposite.x, y: opposite.y }
-      applyAnchorTangent(opposite, isClosing, firstSeg, lastSeg)
-      if (options?.constrainToOpposite) {
-        ps.vertices[anchorIndex].handleMirroring = 'ANGLE'
-      } else {
-        ps.vertices[anchorIndex].handleMirroring = 'NONE'
-      }
-    } else {
-      const symmetric = { x: -active.x, y: -active.y }
-      ps.oppositeDragTangent = symmetric
-      applyAnchorTangent(symmetric, isClosing, firstSeg, lastSeg)
-      ps.vertices[anchorIndex].handleMirroring = 'ANGLE_AND_LENGTH'
-    }
+    const kept = options?.keepOpposite ? opposite : { x: -active.x, y: -active.y }
+    ps.oppositeDragTangent = { x: kept.x, y: kept.y }
+    if (lastSeg) lastSeg.tangentEnd = { x: kept.x, y: kept.y }
+    if (!options?.keepOpposite) anchor.handleMirroring = 'ANGLE_AND_LENGTH'
+    else anchor.handleMirroring = options.constrainToOpposite ? 'ANGLE' : 'NONE'
     ctx.requestRender()
+  }
+
+  /**
+   * A drag on the closing press points the way the path carries on past its first point, as a drag
+   * on any other point does: the closing segment arrives along its mirror, and the first segment
+   * keeps the handle it left with (Figma). Held ⌘ keeps the two handles in line.
+   */
+  function setClosingDrag(ps: PenState, drag: Vector, options?: PenDragOptions) {
+    const first = ps.vertices[0]
+    const leaving = ps.segments.find((segment) => segment.start === 0)?.tangentStart
+    let into = { x: -drag.x, y: -drag.y }
+    if (options?.constrainToOpposite && leaving) into = projectTangentToAxis(into, leaving)
+    ps.dragTangent = { x: -into.x, y: -into.y }
+    ps.oppositeDragTangent = into
+    first.handleMirroring = options?.constrainToOpposite ? 'ANGLE' : 'NONE'
   }
 
   function penSetClosingToFirst(closing: boolean) {
@@ -176,16 +174,25 @@ export function createPenActions(
     ctx.requestRender()
   }
 
-  function penSetPendingClose(closing: boolean) {
-    if (!ctx.state.penState) return
-    ctx.state.penState.pendingClose = closing
+  function penSetPendingClose(pending: boolean) {
+    const ps = ctx.state.penState
+    if (!ps) return
+    // The drag at the first point takes `dragTangent`; the last point's handle waits aside.
+    if (pending && !ps.pendingClose) {
+      ps.closeTangent = ps.dragTangent
+      ps.dragTangent = null
+    } else if (!pending && ps.pendingClose) {
+      ps.dragTangent = ps.closeTangent ?? null
+      ps.closeTangent = null
+    }
+    ps.pendingClose = pending
     ctx.requestRepaint()
   }
 
   function penSetKnotPosition(x: number, y: number) {
     if (!ctx.state.penState) return
     const ps = ctx.state.penState
-    const isClosing = !!ps.pendingClose && ps.vertices.length > 2
+    const isClosing = closing(ps)
     const anchorIndex = isClosing ? 0 : ps.vertices.length - 1
     ps.vertices[anchorIndex].x = x
     ps.vertices[anchorIndex].y = y
@@ -201,13 +208,17 @@ export function createPenActions(
       return
     }
 
-    if (closed && ps.pendingClose && ps.vertices.length > 2) {
-      const prevIdx = ps.vertices.length - 1
+    if (closed && ps.vertices.length >= PEN_CLOSE_MIN_POINTS) {
+      // A press on the first point holds the last handle aside and the drag there in
+      // `dragTangent`; a close asked for without one leaves along the last handle, straight in.
+      const pending = closing(ps)
+      const out = pending ? ps.closeTangent : ps.dragTangent
+      const drag = pending ? ps.dragTangent : null
       ps.segments.push({
-        start: prevIdx,
+        start: ps.vertices.length - 1,
         end: 0,
-        tangentStart: { x: 0, y: 0 },
-        tangentEnd: ps.dragTangent ?? { x: 0, y: 0 }
+        tangentStart: out ? { ...out } : { x: 0, y: 0 },
+        tangentEnd: drag ? { x: -drag.x, y: -drag.y } : { x: 0, y: 0 }
       })
     }
 

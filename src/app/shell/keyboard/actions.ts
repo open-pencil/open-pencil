@@ -1,18 +1,15 @@
-import type { Ref } from 'vue'
-
 import type { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
-import type { PropertiesTab } from '@/app/ai/chat/panel'
+import { toggleChatPanel } from '@/app/ai/chat/panel'
 import type { EditorStore } from '@/app/editor/active-store'
 
 type KeyboardActionsOptions = {
   store: EditorStore
-  activeTab: Ref<PropertiesTab>
   isMobile: ReturnType<typeof useViewportKind>['isMobile']
 }
 
 /** What the app's own keys do: its panels, preview, and export. */
-export function createKeyboardActions({ store, activeTab, isMobile }: KeyboardActionsOptions) {
+export function createKeyboardActions({ store, isMobile }: KeyboardActionsOptions) {
   function toggleUI() {
     store.state.showUI = !store.state.showUI
   }
@@ -22,14 +19,7 @@ export function createKeyboardActions({ store, activeTab, isMobile }: KeyboardAc
   }
 
   function toggleAI() {
-    if (isMobile.value) {
-      store.state.activeRibbonTab = store.state.activeRibbonTab === 'ai' ? 'panels' : 'ai'
-      if (store.state.mobileDrawerSnap === 'closed') {
-        store.state.mobileDrawerSnap = 'half'
-      }
-    } else {
-      activeTab.value = activeTab.value === 'ai' ? 'design' : 'ai'
-    }
+    toggleChatPanel(store, isMobile.value)
   }
 
   function exportSelectionPNG() {

@@ -6,7 +6,11 @@ import {
   CLOUD_PROTOCOL_VERSION,
   parseCloudDiscovery,
   parseCreateServicesToken,
-  workspaceEntitlementsSchema
+  parseSearchRequest,
+  searchResultSchema,
+  serviceCatalogSchema,
+  workspaceEntitlementsSchema,
+  MAX_SEARCH_RESULTS
 } from '#cloud/contract'
 import * as v from 'valibot'
 
@@ -50,6 +54,34 @@ describe('Cloud services contract', () => {
     }
     expect(v.parse(servicesTokenClaimsSchema, claims)).toEqual(claims)
     expect(v.is(servicesTokenClaimsSchema, { ...claims, aud: 'other' })).toBe(false)
+  })
+
+  test('a catalog lists search only when the service offers it', () => {
+    const catalog = { models: [], defaultModelID: 'model' }
+    expect(v.parse(serviceCatalogSchema, catalog).search).toBeUndefined()
+    expect(
+      v.parse(serviceCatalogSchema, { ...catalog, search: { creditsPerRequest: 7 } }).search
+    ).toEqual({ creditsPerRequest: 7 })
+  })
+
+  test('a search asks for a trimmed query and at most ten results, five by default', () => {
+    expect(parseSearchRequest({ query: '  design systems ' })).toEqual({
+      query: 'design systems',
+      numResults: 5
+    })
+    expect(parseSearchRequest({ query: 'grids', numResults: MAX_SEARCH_RESULTS }).numResults).toBe(
+      MAX_SEARCH_RESULTS
+    )
+    expect(() => parseSearchRequest({ query: '   ' })).toThrow()
+    expect(() => parseSearchRequest({ query: 'grids', numResults: 11 })).toThrow()
+  })
+
+  test('a search result links only to a web page, which editors open when clicked', () => {
+    const result = { title: 'Grids', publishedAt: null, author: null, text: '' }
+    expect(v.is(searchResultSchema, { ...result, url: 'https://example.com/grids' })).toBe(true)
+    const script = ['javascript', 'alert(1)'].join(':')
+    expect(v.is(searchResultSchema, { ...result, url: script })).toBe(false)
+    expect(v.is(searchResultSchema, { ...result, url: 'data:text/html,hi' })).toBe(false)
   })
 })
 

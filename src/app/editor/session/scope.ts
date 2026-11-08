@@ -1,5 +1,13 @@
 import { effectScope } from 'vue'
 
+export interface ScopedStore {
+  /**
+   * Run `fn` in the store's effect scope, so watchers it starts stop when the store disposes.
+   * For effects started after the store exists, such as after an `await`, which no scope holds.
+   */
+  runInScope<T>(fn: () => T): T | undefined
+}
+
 /**
  * Wraps a store factory so each store runs in an effect scope of its own, stopped by `dispose`.
  * Effects a store creates inside a component's setup would otherwise join that component's
@@ -7,7 +15,7 @@ import { effectScope } from 'vue'
  */
 export function scopedStoreFactory<Args extends unknown[], Store extends { dispose(): void }>(
   build: (...args: Args) => Store
-): (...args: Args) => Store {
+): (...args: Args) => Store & ScopedStore {
   return (...args) => {
     const scope = effectScope(true)
     let store: Store | undefined
@@ -23,6 +31,8 @@ export function scopedStoreFactory<Args extends unknown[], Store extends { dispo
       dispose()
       scope.stop()
     }
-    return store
+    // A disposed store runs nothing: its scope no longer collects effects to stop.
+    const runInScope = <T>(fn: () => T): T | undefined => (scope.active ? scope.run(fn) : undefined)
+    return Object.assign(store, { runInScope })
   }
 }

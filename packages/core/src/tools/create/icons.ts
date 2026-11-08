@@ -77,7 +77,7 @@ export const insertIcon = defineTool({
 
     let icons
     try {
-      icons = await figma.icons.icons(names, size)
+      icons = await graphOf(figma).waitOutsideEdit(figma.icons.icons(names, size))
     } catch (e) {
       return { error: (e as Error).message }
     }
