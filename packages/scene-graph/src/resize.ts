@@ -345,6 +345,35 @@ export function scaledGeometryChanges(
   return changes
 }
 
+/** Copies of the geometry a resize may change, as the snapshot held it before the resize. */
+function snapshotGeometry(orig: ResizeSnapshot): Partial<SceneNode> {
+  return {
+    vectorNetwork: orig.vectorNetwork ? cloneVectorNetwork(orig.vectorNetwork) : null,
+    fillGeometry: copyGeometryPaths(orig.fillGeometry),
+    strokeGeometry: copyGeometryPaths(orig.strokeGeometry),
+    derivedTextGlyphs: copyDerivedGlyphs(orig.derivedTextGlyphs),
+    strokes: copyStrokes(orig.strokes),
+    textPathBox: orig.textPathBox ? { ...orig.textPathBox } : null
+  }
+}
+
+/**
+ * A child's geometry for its constrained `box`, scaled from the snapshot. Back at its snapshot
+ * size after an earlier frame of the same drag scaled it, the child takes its snapshot geometry
+ * again, as nothing else would undo that scaling.
+ */
+function constrainedGeometryChanges(
+  orig: ResizeSnapshot,
+  current: Pick<SceneNode, 'width' | 'height'>,
+  box: Pick<Rect, 'width' | 'height'>
+): Partial<SceneNode> {
+  const atSnapshotSize = box.width === orig.width && box.height === orig.height
+  if (!atSnapshotSize)
+    return scaledGeometryChanges(orig, orig.width, orig.height, box.width, box.height)
+  const wasScaled = current.width !== orig.width || current.height !== orig.height
+  return wasScaled ? snapshotGeometry(orig) : {}
+}
+
 export function collectResizeDescendants(
   graph: ResizeGraph,
   rootId: string
@@ -426,7 +455,7 @@ export function computeConstrainedResizeChanges(
       const childChanges: Partial<SceneNode> = {
         ...box,
         ...flipChanges(original, child, flipsX, flipsY),
-        ...scaledGeometryChanges(original, original.width, original.height, box.width, box.height)
+        ...constrainedGeometryChanges(original, child, box)
       }
       changes.set(childId, childChanges)
       // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.

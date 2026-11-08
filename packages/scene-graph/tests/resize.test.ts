@@ -200,6 +200,15 @@ describe('resizing a frame across zero', () => {
     expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 40, y: 16 })
   })
 
+  test('a drag back to the starting size puts the path back as it started', () => {
+    const { graph, frame, resize, node } = stretched()
+    const originals = collectResizeDescendants(graph, frame.id)
+    resize(100, 200, originals)
+    resize(100, 100, originals)
+    expect(node()).toMatchObject({ x: 10, width: 20 })
+    expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 20, y: 16 })
+  })
+
   test('a drag turns the layer over once, from where it started', () => {
     const { graph, frame, resize, node } = stretched()
     const originals = collectResizeDescendants(graph, frame.id)
