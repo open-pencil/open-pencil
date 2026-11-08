@@ -125,6 +125,27 @@ function accessAvailable(providerID: string, options: PlanOptions): boolean {
   return true
 }
 
+/**
+ * What is configured now, without the models this app cannot run: an agent where no host process
+ * may start, or a subscription in the browser. Chat refuses those, so setup treats their roles as
+ * unconfigured and plans them again rather than keep them.
+ */
+export function usableCurrentModels(
+  current: CurrentOnboardingModels,
+  options: Omit<PlanOptions, 'current'>
+): CurrentOnboardingModels {
+  function usable<Role extends PlannedRole>(role: Role): Role | null {
+    return role && role !== 'design' && !accessAvailable(role.providerID, options) ? null : role
+  }
+  return {
+    configured: current.configured,
+    design: usable(current.design),
+    vision: usable(current.vision),
+    review: usable(current.review),
+    fast: usable(current.fast)
+  }
+}
+
 function isAgentModel(model: PlannedModel | null): boolean {
   return Boolean(model && isOnboardingAgent(model.providerID))
 }
@@ -289,7 +310,7 @@ function roleModels(plan: Omit<OnboardingPlan, 'connections'>): PlannedModel[] {
  */
 export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions): OnboardingPlan {
   const access = availableAccess(answers, options)
-  const current = options.current ?? NO_CURRENT
+  const current = usableCurrentModels(options.current ?? NO_CURRENT, options)
   const design = answers.goals.includes('design')
     ? planDesign(answers, access, current.design)
     : current.design

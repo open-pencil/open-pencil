@@ -6,7 +6,8 @@ import {
   roleChoiceKey,
   roleOptions,
   type OnboardingAnswers,
-  type OnboardingPlan
+  type OnboardingPlan,
+  usableCurrentModels
 } from '@/app/ai/models/settings/onboarding/plan'
 
 import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
@@ -165,6 +166,30 @@ describe('planOnboarding with configured models', () => {
     capabilities: ['tools' as const, 'vision' as const],
     profileId: 'model-glm' as const
   }
+
+  const codex = {
+    providerID: 'acp:codex' as const,
+    modelID: '',
+    name: 'Codex',
+    capabilities: [],
+    profileId: 'model-codex' as const
+  }
+
+  test('does not keep a configured agent design model where agents cannot run', () => {
+    const current = { configured: true, design: codex, vision: null, review: null, fast: null }
+    // Not asked about design: the agent is still dropped, so setup cannot finish on it.
+    const kept = planOnboarding(answers({ goals: ['vision'], access: [] }), { ...browser, current })
+    expect(kept.design).toBeNull()
+    // Asked about design with another account: that account takes the role.
+    const replaced = planOnboarding(answers({ access: ['openai'] }), { ...browser, current })
+    expect(replaced.design).toMatchObject({ providerID: 'openai' })
+  })
+
+  test('drops configured models this app cannot run, and only those', () => {
+    const current = { configured: true, design: codex, vision: opus, review: null, fast: null }
+    expect(usableCurrentModels(current, browser)).toEqual({ ...current, design: null })
+    expect(usableCurrentModels(current, desktop)).toEqual(current)
+  })
 
   test('keeps a configured design model while its access is still selected', () => {
     const plan = planOnboarding(answers({ access: ['anthropic'] }), {
