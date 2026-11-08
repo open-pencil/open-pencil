@@ -1,0 +1,1 @@
+- SVG export clips a rounded frame's children to its rounded corners, instead of to a square box (#1916).
