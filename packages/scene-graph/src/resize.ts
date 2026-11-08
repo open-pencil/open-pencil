@@ -38,11 +38,32 @@ interface ResizeGraph {
   getNode(id: string): SceneNode | undefined
 }
 
-const CONSTRAINT_CONTAINER_TYPES = new Set([
+/** Containers whose children keep their place by their own constraints. */
+const CONSTRAINT_PARENT_TYPES = new Set<SceneNode['type']>([
   'FRAME',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE',
+  'INSTANCE'
+])
+
+/**
+ * Whether `node` follows its own constraints when its parent resizes, so the Design panel offers
+ * them and the canvas shows them: any layer but a group, in a frame, component, or instance, unless
+ * that parent's auto layout places it.
+ */
+export function isConstraintEligible(graph: ResizeGraph, node: SceneNode): boolean {
+  if (node.type === 'GROUP' || !node.parentId) return false
+  const parent = graph.getNode(node.parentId)
+  if (!parent || !CONSTRAINT_PARENT_TYPES.has(parent.type)) return false
+  return parent.layoutMode === 'NONE' || node.layoutPositioning === 'ABSOLUTE'
+}
+
+/**
+ * Containers whose resize moves their children: the constraint parents, plus groups and boolean
+ * operations, which scale them.
+ */
+const CONSTRAINT_CONTAINER_TYPES = new Set<SceneNode['type']>([
+  ...CONSTRAINT_PARENT_TYPES,
   'GROUP',
   'BOOLEAN_OPERATION'
 ])

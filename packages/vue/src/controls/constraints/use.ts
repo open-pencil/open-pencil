@@ -1,9 +1,9 @@
 import { computed } from 'vue'
 
 import type { ConstraintType, SceneNode } from '@open-pencil/scene-graph'
+import { isConstraintEligible } from '@open-pencil/scene-graph/resize'
 
 import {
-  isConstraintEligible,
   toggleConstraintPin,
   type ConstraintAxis,
   type ConstraintEdge,

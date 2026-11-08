@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  getAxisAlignedBoundsInParent,
   getAxisAlignedWorldBounds,
   getNodeLocalMatrix,
   getNodeRotationOrigin,
@@ -31,6 +32,7 @@ export function viewportMatrix(viewport: ViewportTransform) {
 export function createSceneGeometry(graph: SceneGraph, preview?: RotationPreview | null) {
   const node = (source: SceneNode) => projectedNode(source, preview)
   const reader = {
+    rootId: graph.rootId,
     getNode(id: string) {
       const source = graph.getNode(id)
       return source ? node(source) : undefined
@@ -86,6 +88,9 @@ export function createSceneGeometry(graph: SceneGraph, preview?: RotationPreview
     toScreen: (source: SceneNode, point: Vector, viewport: ViewportTransform) =>
       Matrix.mapPoint(screenMatrix(source, viewport), point),
     bounds: (source: SceneNode) => getAxisAlignedWorldBounds(node(source), reader),
+    /** The axis-aligned box of `source` in the axes of its ancestor `parentId`. */
+    boundsInParent: (source: SceneNode, parentId: string) =>
+      getAxisAlignedBoundsInParent([node(source)], parentId, reader),
     handles: (source: SceneNode, rect?: Rect) => getWorldHandles(node(source), reader, rect),
     direction(source: SceneNode, vector: Vector): Vector {
       const m = worldMatrix(source)
