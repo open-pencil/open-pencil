@@ -132,8 +132,8 @@ function appendShapePath(
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
-    fill: normalizeSVGPaint(presentation.fill),
-    stroke: normalizeSVGPaint(presentation.stroke),
+    fill: normalizeSVGPaint(presentation.fill, presentation.color),
+    stroke: normalizeSVGPaint(presentation.stroke, presentation.color),
     strokeWidth: Number.isFinite(strokeWidth) ? strokeWidth : 1,
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
