@@ -34,10 +34,10 @@ const resourceNotFoundSchema = v.object({ code: v.literal(-32002) })
  * Codex reports a missing persisted thread as an internal error, and the ACP SDK moves the
  * original message to `data.details` when it wraps one.
  */
-const noRollout = v.pipe(v.string(), v.includes('no rollout found for thread id'))
+const noRolloutSchema = v.pipe(v.string(), v.includes('no rollout found for thread id'))
 const codexMissingRolloutSchema = v.union([
-  v.object({ code: v.literal(-32603), message: noRollout }),
-  v.object({ code: v.literal(-32603), data: v.object({ details: noRollout }) })
+  v.object({ code: v.literal(-32603), message: noRolloutSchema }),
+  v.object({ code: v.literal(-32603), data: v.object({ details: noRolloutSchema }) })
 ])
 
 /** The message of an `Error` or of a decoded ACP error, or the value as text. */

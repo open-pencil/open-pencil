@@ -36,15 +36,14 @@ export function createAgentChildren(stored: Ref<unknown>) {
   /** Starts an agent process, which the next page stops if this page leaves it running. */
   async function spawn<O extends IOPayload>(command: Command<O>): Promise<Child> {
     await stopLeftovers()
-    let pid: number | null = null
-    let closed = false
-    command.on('close', () => {
-      closed = true
-      if (pid !== null) stored.value = pids().filter((other) => other !== pid)
-    })
     const child = await command.spawn()
-    pid = child.pid
-    if (!closed) stored.value = [...pids(), pid]
+    const { pid } = child
+    stored.value = [...pids(), pid]
+    // A process that exits before this listener is added stays listed, and the next page's kill
+    // finds nothing to stop.
+    command.on('close', () => {
+      stored.value = pids().filter((other) => other !== pid)
+    })
     return child
   }
 

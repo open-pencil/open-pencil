@@ -162,11 +162,14 @@ test.each([
   RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
   RequestError.internalError(),
   new Error('Connection closed')
-])('an unconfirmed resume failure offers a retry and keeps the agent’s error: %s', async (error) => {
-  const fake = connection({ resumeError: error })
-  await expectRetry(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' }), error)
-  expect(fake.created).toEqual([])
-})
+])(
+  'an unconfirmed resume failure offers a retry and keeps the agent’s error: %s',
+  async (error) => {
+    const fake = connection({ resumeError: error })
+    await expectRetry(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' }), error)
+    expect(fake.created).toEqual([])
+  }
+)
 
 /** A failure the conversation can retry, which names both ways on and keeps what the agent said. */
 async function expectRetry(opening: Promise<unknown>, error: unknown) {
