@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
@@ -15,7 +17,12 @@ import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
-import { layersUsingVariables } from '@open-pencil/scene-graph/variables'
+import {
+  collectionsBoundIn,
+  getNodeVariableModeId,
+  layersResolvingCollections,
+  layersUsingVariables
+} from '@open-pencil/scene-graph/variables'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
@@ -28,7 +35,11 @@ import {
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
-import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive/changes'
+import {
+  archiveBaseline,
+  archiveChanges,
+  type ArchiveChangeSummary
+} from '#core/kiwi/fig/session/archive/changes'
 import {
   isReaderPagePending,
   populateFigPage,
@@ -153,6 +164,34 @@ function addVariableUsers(
     if (Object.keys(node.variableModes).length > 0) add(node.id)
 }
 
+/**
+ * A layer whose mode for a collection changed, set on it or met where it moved to, changes the
+ * values its layers resolve from that collection, and their records carry those values.
+ */
+function addModeChangeUsers(graph: SceneGraph, add: (id: string) => unknown): void {
+  const baseline = archiveBaseline(graph)
+  if (!baseline) return
+  for (const [id, before] of baseline.before) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    if (before.parentId === node.parentId && isEqual(before.variableModes, node.variableModes))
+      continue
+    const modeBefore = (collectionId: string) =>
+      before.variableModes[collectionId] ||
+      (before.parentId && graph.getNode(before.parentId)
+        ? getNodeVariableModeId(graph, before.parentId, collectionId)
+        : graph.variableCollections.get(collectionId)?.defaultModeId)
+    const changed = new Set(
+      [...collectionsBoundIn(graph, [id])].filter(
+        (collectionId) =>
+          modeBefore(collectionId) !== getNodeVariableModeId(graph, id, collectionId)
+      )
+    )
+    if (changed.size === 0) continue
+    for (const layer of layersResolvingCollections(graph, [id], changed)) add(layer.id)
+  }
+}
+
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
 function siblingPositions(graph: SceneGraph, records: Set<string>): Map<string, string> {
   const orderKeys = new Map<string, string>()
@@ -208,6 +247,7 @@ function planRecords(
   }
   for (const id of changes.touched) add(id)
   addSetVariants(graph, changes, add)
+  addModeChangeUsers(graph, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)

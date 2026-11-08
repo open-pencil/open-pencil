@@ -491,6 +491,50 @@ describe('writing an edited document into its archive', () => {
     expect(await pageModes(cleared)).toEqual({})
   })
 
+  test('rewrites bound layers below a page or frame whose mode changes', async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const collection = source.createCollection('Theme')
+    const lightId = collection.defaultModeId
+    const darkId = expectDefined(source.createMode(collection.id, 'Dark'), 'dark mode')
+    const surface = source.createVariable('surface', 'COLOR', collection.id)
+    surface.valuesByMode[lightId] = { r: 1, g: 1, b: 1, a: 1 }
+    surface.valuesByMode[darkId] = { r: 0, g: 0, b: 0, a: 1 }
+    const page = source.getPages()[0]
+    const frame = source.createNode('FRAME', page.id, { name: 'Panel' })
+    const holder = source.createNode('FRAME', page.id, { name: 'Holder' })
+    for (const [name, parentId] of [
+      ['On page', holder.id],
+      ['In panel', frame.id]
+    ]) {
+      const card = source.createNode('RECTANGLE', parentId, {
+        name,
+        fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+      })
+      source.bindVariable(card.id, 'fills/0/color', surface.id)
+    }
+    const bytes = await exportFigFile(source)
+    const fillOf = (saved: Uint8Array, name: string) =>
+      [...recordsOf(saved).values()].find((record) => record.name === name)?.fillPaints?.[0]?.color
+
+    const graph = await open(bytes)
+    graph.updateNode(layerNamed(graph, 'Panel').id, { variableModes: { [collection.id]: darkId } })
+    const panelDark = await exportFigFile(graph)
+    expect(fillOf(panelDark, 'In panel')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(fillOf(panelDark, 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+
+    const reopened = await open(panelDark)
+    reopened.updateNode(reopened.getPages()[0].id, {
+      variableModes: { [collection.id]: darkId }
+    })
+    const pageDark = await exportFigFile(reopened)
+    expect(fillOf(pageDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    const moved = await open(panelDark)
+    moved.reparentNode(layerNamed(moved, 'Holder').id, layerNamed(moved, 'Panel').id)
+    expect(fillOf(await exportFigFile(moved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+  })
+
   test('rewrites the variables when one changes', async () => {
     const { patched } = await exportBothWays((graph) => {
       const [variable] = graph.variables.values()

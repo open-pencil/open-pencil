@@ -307,6 +307,27 @@ export function layersUsingVariables(graph: SceneGraph, ids: Iterable<string>): 
   )
 }
 
+/**
+ * The layers in these subtrees that resolve a variable of these collections, binding it or a
+ * variable that aliases it, so a mode change for the collections can change what they show.
+ */
+export function layersResolvingCollections(
+  graph: SceneGraph,
+  roots: Iterable<string>,
+  collectionIds: ReadonlySet<string>
+): SceneNode[] {
+  const inCollections = [...graph.variables.values()].filter((variable) =>
+    collectionIds.has(variable.collectionId)
+  )
+  const variables = variablesResolvingThrough(
+    graph,
+    inCollections.map((variable) => variable.id)
+  )
+  return subtreeNodes(graph, roots).filter((node) =>
+    boundVariableIds(node).some((id) => variables.has(id))
+  )
+}
+
 function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterable<SceneNode> {
   if (!scope) return graph.getAllNodes()
   if ('subtrees' in scope) return subtreeNodes(graph, scope.subtrees)
