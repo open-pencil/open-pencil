@@ -120,10 +120,10 @@ export const AccessInSandboxedPackage: Story = {
     await next()
     await expect(page().getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible()
     await expect(page().queryByRole('checkbox', { name: 'Claude Code' })).toBeNull()
-    await expect(
-      page().getByText(/This install of OpenPencil can.t start coding agents/)
-    ).toBeVisible()
-    await expect(page().getByRole('link', { name: /Download from GitHub/ })).toBeVisible()
+    // The notice says this install cannot start agents, not that only the desktop app can.
+    const notice = document.querySelector<HTMLElement>('[data-agents-unavailable]')
+    await expect(notice).toHaveAttribute('data-agents-unavailable', 'sandboxed')
+    await expect(notice && within(notice).getByRole('link')).toBeVisible()
   }
 }
 

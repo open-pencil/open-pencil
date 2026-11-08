@@ -18,7 +18,10 @@ const ai = useAIMessages()
 </script>
 
 <template>
-  <AppAlert :heading="sandboxed ? ai.aiSetupAccessAgentsSandboxed : ai.aiSetupAccessAgentsDesktop">
+  <AppAlert
+    :heading="sandboxed ? ai.aiSetupAccessAgentsSandboxed : ai.aiSetupAccessAgentsDesktop"
+    :data-agents-unavailable="sandboxed ? 'sandboxed' : 'browser'"
+  >
     <template #actions>
       <SettingsLink :href="DESKTOP_DOWNLOAD_URL">
         {{ sandboxed ? ai.aiSetupGetDownload : ai.aiSetupGetDesktop }}
