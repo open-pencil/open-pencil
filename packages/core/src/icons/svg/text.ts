@@ -59,7 +59,7 @@ function textRun(text: string, presentation: PresentationAttributes): SVGTextRun
   const spacing = Number.parseFloat(presentation.letterSpacing)
   return {
     text,
-    fill: normalizeSVGPaint(presentation.fill),
+    fill: normalizeSVGPaint(presentation.fill, presentation.color),
     fillOpacity: opacityValue(presentation.fillOpacity),
     fontFamily: fontFamily(presentation.fontFamily),
     fontSize: Number.isFinite(size) && size > 0 ? size : DEFAULT_FONT_SIZE,
