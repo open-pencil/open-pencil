@@ -1,15 +1,13 @@
-import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { IconOptions, IconPaint } from '@open-pencil/scene-graph/icons'
 
+/** One path of an icon, in the icon's box, with the paints SVG import gives it. */
 export interface IconPath {
   vectorNetwork: VectorNetwork
-  fill: string | null
-  /** How opaque the fill is, as for a symbol's secondary layers; opaque when left out. */
-  fillOpacity?: number
-  stroke: string | null
-  strokeWidth: number
-  strokeCap: string
-  strokeJoin: string
+  fills: Fill[]
+  strokes: Stroke[]
+  /** The paints drawn in `currentColor`, which take the icon's color when it is placed. */
+  tint: IconPaint[]
 }
 
 export interface IconData {

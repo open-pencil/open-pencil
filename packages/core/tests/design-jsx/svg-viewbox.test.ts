@@ -30,8 +30,16 @@ async function iconVector(jsx: string): Promise<SceneNode> {
   )
 }
 
+/** The vector's vertices in its frame, where it sits at its own bounds. */
+function placedVertices(vector: SceneNode): Vector[] {
+  return (vector.vectorNetwork?.vertices ?? []).map(({ x, y }) => ({
+    x: vector.x + x,
+    y: vector.y + y
+  }))
+}
+
 async function rectVertices(jsx: string): Promise<Vector[]> {
-  return (await iconVector(jsx)).vectorNetwork?.vertices.map(({ x, y }) => ({ x, y })) ?? []
+  return placedVertices(await iconVector(jsx))
 }
 
 describe('inline SVG viewBox origin', () => {
@@ -173,7 +181,7 @@ describe('inline SVG viewBox origin', () => {
     const jsx =
       '<svg viewBox="0 0 50 100" size={100} preserveAspectRatio="none" transform="scale(2 1)"><line x1={0} y1={0} x2={10} y2={0} stroke="black" strokeWidth={4} transform="scale(0.5 1)" /></svg>'
     const vector = await iconVector(jsx)
-    expect(vector.vectorNetwork?.vertices.map(({ x, y }) => ({ x, y }))).toEqual([
+    expect(placedVertices(vector)).toEqual([
       { x: -50, y: 0 },
       { x: -30, y: 0 }
     ])

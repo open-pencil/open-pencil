@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 
 const BLACK = parseColor('#000000')
 const OUTLINE = '<path fill="none" stroke="currentColor" stroke-width="2" d="M4 4h16v16H4z"/>'
@@ -74,7 +74,8 @@ describe('icon glyphs', () => {
   test('resizing scales the glyph with its frame', () => {
     const { graph, frame } = placed(OUTLINE)
     resize(graph, frame.id, 48, 48)
-    expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 48, height: 48 })
+    // The outline's 16px square at 4, 4 doubles with the frame.
+    expect(graph.getChildren(frame.id)[0]).toMatchObject({ x: 8, y: 8, width: 32, height: 32 })
   })
 
   test('moving a point, adding a path, or changing a color of its own is an edit', () => {
@@ -137,7 +138,13 @@ describe('icon glyphs', () => {
       buildIconData({ body: OUTLINE, width: 24, height: 24 }, 'test', 'other', 20)
     )
 
-    expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 40, height: 20 })
+    // Built at 20, the outline's square spans 3.33 to 16.67 (paths keep two decimals), then
+    // stretches twice as wide.
+    const path = graph.getChildren(frame.id)[0]
+    expect(path?.x).toBeCloseTo(20 / 3, 1)
+    expect(path?.y).toBeCloseTo(10 / 3, 1)
+    expect(path?.width).toBeCloseTo(80 / 3, 1)
+    expect(path?.height).toBeCloseTo(40 / 3, 1)
     expect(modified()).toBe(false)
   })
 

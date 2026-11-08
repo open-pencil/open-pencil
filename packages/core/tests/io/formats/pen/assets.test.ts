@@ -8,6 +8,8 @@ import { readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
+import { tintedIconPath } from '#core/icons/artwork'
+
 // A 2 × 1 PNG.
 const PNG = toUint8Array(
   'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAADElEQVR4nGP8zwACAAYIAQFazwZIAAAAAElFTkSuQmCC'
@@ -26,16 +28,7 @@ function iconProvider(available: string[], requested: IconRequest[]): IconProvid
       name: iconName,
       width: size,
       height: size,
-      paths: [
-        {
-          vectorNetwork: parseSVGPath(`M0 0H${size}V${size}Z`),
-          fill: 'currentColor',
-          stroke: null,
-          strokeWidth: 0,
-          strokeCap: 'butt',
-          strokeJoin: 'miter'
-        }
-      ],
+      paths: [tintedIconPath(parseSVGPath(`M0 0H${size}V${size}Z`))],
       ...(options ? { options } : {})
     }
   }

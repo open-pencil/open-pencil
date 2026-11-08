@@ -2,14 +2,14 @@ import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
-import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
+import { svgIconPaths } from '#core/icons/artwork'
+import { extractSVGContent, extractSVGContentFromElements } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { layoutAuthoredNodes } from '#core/layout'
 import { markdownText } from '#core/text/markdown'
 import { prepareGraphFonts } from '#core/text/prepare'
 import { computeAccurateBounds } from '#core/vector/curve-math'
-import { resolveSVGViewportMapping } from '#core/vector/vectorize/svg/transform'
 
 /** The set inline SVG artwork is reported in, which no icon provider has. */
 const INLINE_SVG = 'svg'
@@ -21,20 +21,20 @@ function stringProp(value: unknown): string | null {
 /** Inline SVG through the same path pipeline as Iconify icons, placed as SVG import places it. */
 function svgIconData({ body, elements, props }: SVGSource, box: Size): IconData | null {
   // Children may arrive as parsed SVG elements rather than markup; both use the same shapes.
-  let pathInfos = body.trim() ? extractPaths(body) : []
-  if (pathInfos.length === 0) pathInfos = extractPathsFromElements(elements, props)
-  if (pathInfos.length === 0) return null
+  let content = body.trim() ? extractSVGContent(body) : null
+  if (!content?.paths.length) content = extractSVGContentFromElements(elements, props)
   const space = parseSVGViewBoxValue(stringProp(props.viewBox)) ?? { x: 0, y: 0, ...box }
-  const viewport = resolveSVGViewportMapping(space, box, {
+  const paths = svgIconPaths(content, space, box, {
     preserveAspectRatio: stringProp(props.preserveAspectRatio),
     transform: stringProp(props.transform)
   })
+  if (paths.length === 0) return null
   return {
     prefix: INLINE_SVG,
     name: stringProp(props.name) ?? 'custom',
     width: box.width,
     height: box.height,
-    paths: scalePathInfos(pathInfos, viewport)
+    paths
   }
 }
 

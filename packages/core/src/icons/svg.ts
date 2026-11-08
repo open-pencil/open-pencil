@@ -1,15 +1,7 @@
-import { iconToSVG, type IconifyIcon } from '@iconify/utils'
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-
 import { parseSVGFragment } from '#core/io/formats/svg/document'
-import {
-  placeSVGPath,
-  resolveSVGViewportMapping,
-  svgStrokeScale,
-  type SVGViewportMapping
-} from '#core/vector/vectorize/svg/transform'
+import { parseSVGGradients, type SVGGradients } from '#core/vector/vectorize/svg/gradients'
 
 import {
   combinedTransform,
@@ -23,13 +15,7 @@ import {
 } from './svg/presentation'
 import { elementLayer, type Scope, type Traversal } from './svg/scope'
 import { textInfo } from './svg/text'
-import type {
-  IconData,
-  IconPathInfo,
-  SVGClipPathRegion,
-  SVGElementLayer,
-  SVGTextInfo
-} from './types'
+import type { IconPathInfo, SVGClipPathRegion, SVGElementLayer, SVGTextInfo } from './types'
 
 interface SVGElementInput {
   type: string
@@ -280,11 +266,14 @@ function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGE
   parent.appendChild(element)
 }
 
-/** The shapes and text an SVG draws, in drawing order. */
+/** The shapes and text an SVG draws, in drawing order, and the gradients they paint with. */
 export interface SVGContent {
   paths: IconPathInfo[]
   texts: SVGTextInfo[]
+  gradients: SVGGradients
 }
+
+const NO_CONTENT: SVGContent = { paths: [], texts: [], gradients: new Map() }
 
 /** The one `<svg>` inside the wrapper root, which is the artwork's own outermost `<svg>`. */
 function outermostSVG(root: Element): Element | null {
@@ -321,23 +310,25 @@ function collectDocument(root: Element): SVGContent {
     traversal,
     paths
   )
-  return { paths, texts: traversal.texts }
+  return { paths, texts: traversal.texts, gradients: parseSVGGradients(root) }
 }
 
-export function extractPathsFromElements(
+/** The content of SVG shapes given as parsed elements, such as design JSX `<svg>` children. */
+export function extractSVGContentFromElements(
   elements: readonly SVGElementInput[],
   rootProps: Readonly<Record<string, unknown>> = {}
-): IconPathInfo[] {
+): SVGContent {
   const svgDocument = new DOMImplementation().createDocument(SVG_NAMESPACE, 'svg')
   const root = svgDocument.documentElement
-  if (!root) return []
+  if (!root) return NO_CONTENT
   appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
-  return collectDocument(root).paths.filter(isSVGPathShown)
+  return collectDocument(root)
 }
 
+/** The content of SVG markup, a whole `<svg>` or the shapes inside one. */
 export function extractSVGContent(svgBody: string): SVGContent {
   const root = parseSVGFragment(svgBody)?.documentElement
-  return root ? collectDocument(root) : { paths: [], texts: [] }
+  return root ? collectDocument(root) : NO_CONTENT
 }
 
 /** Whether a shape shows: a hidden element hides everything in it, as a hidden layer does. */
@@ -348,58 +339,4 @@ export function isSVGPathShown(path: Pick<IconPathInfo, 'elements'>): boolean {
 /** The shapes an SVG shows, for drawing it as one icon rather than importing its layers. */
 export function extractPaths(svgBody: string): IconPathInfo[] {
   return extractSVGContent(svgBody).paths.filter(isSVGPathShown)
-}
-
-/**
- * An Iconify icon at `size`. Iconify's own rendering applies its box, defaulting to 16, and any
- * turn or flip, before the shapes are placed in the icon box as SVG import places them.
- */
-export function buildIconData(
-  icon: IconifyIcon,
-  prefix: string,
-  iconName: string,
-  size: number
-): IconData {
-  const rendered = iconToSVG(icon)
-  const [x, y, width, height] = rendered.viewBox
-
-  return {
-    prefix,
-    name: iconName,
-    width: size,
-    height: size,
-    paths: scalePathInfos(
-      extractPaths(rendered.body),
-      resolveSVGViewportMapping({ x, y, width, height }, { width: size, height: size })
-    )
-  }
-}
-
-/**
- * Place extracted SVG path info into IconData paths through the viewport mapping that SVG import
- * uses (shared by buildIconData and design-jsx `<svg>`).
- */
-export function scalePathInfos(
-  pathInfos: IconPathInfo[],
-  viewport: SVGViewportMapping
-): IconData['paths'] {
-  return pathInfos.map((path) => {
-    const transformedPath = placeSVGPath(path.d, path.transform, viewport)
-    // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
-    // arc's own end can put it on its start, and a degenerate arc draws nothing.
-    const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
-    const fill = normalizeSVGPaint(path.fill)
-    const stroke = normalizeSVGPaint(path.stroke)
-    return {
-      // A stroke would also trace the closing edge of an open subpath in the fill region.
-      vectorNetwork: parseSVGPath(scaledD, path.fillRule, {
-        includeOpenRegions: fill !== null && stroke === null
-      }),
-      fill,
-      stroke,
-      strokeWidth: path.strokeWidth * svgStrokeScale(path.transform, viewport),
-      strokeCap: path.strokeCap,
-      strokeJoin: path.strokeJoin
-    }
-  })
 }
