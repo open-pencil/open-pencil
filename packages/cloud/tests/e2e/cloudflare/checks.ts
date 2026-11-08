@@ -120,7 +120,8 @@ async function seed(database: ReturnType<typeof createPostgresCloudDatabase>) {
       id: workspaceId,
       name: 'Workers',
       slug: `workers-${workspaceId}`,
-      createdBy: 'owner'
+      createdBy: 'owner',
+      ownerId: 'owner'
     })
     .execute()
   await database

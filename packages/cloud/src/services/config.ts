@@ -3,9 +3,9 @@ import { httpURLSchema } from '#cloud/server/config/schema'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
-export type AIRelayEnvironment = Readonly<Record<string, string | undefined>>
+export type ServicesEnvironment = Readonly<Record<string, string | undefined>>
 
-export type AIRelayConfig = {
+export type ServicesConfig = {
   /** The Cloud whose tokens the relay accepts: their issuer, and where its keys are published. */
   cloudURL: string
   /** Browser origins allowed to call the relay; the desktop editor is not subject to CORS. */
@@ -21,16 +21,16 @@ export type AIRelayConfig = {
   catalog: ServiceCatalog
 }
 
-export class AIRelayConfigError extends Error {
+export class ServicesConfigError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'AIRelayConfigError'
+    this.name = 'ServicesConfigError'
   }
 }
 
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
-  upstreamKey: 'OPENPENCIL_AI_RELAY_UPSTREAM_KEY'
+  upstreamKey: 'OPENPENCIL_SERVICES_UPSTREAM_KEY'
 } as const
 
 const textSchema = v.pipe(v.string(), v.trim(), v.minLength(1))
@@ -49,7 +49,7 @@ const modelSchema = v.object({
   tools: v.optional(v.boolean(), true)
 })
 
-const aiRelayConfigSchema = v.object({
+const servicesConfigSchema = v.object({
   schema_version: v.literal(1),
   relay: v.object({
     cloud_url: httpURLSchema,
@@ -71,22 +71,22 @@ const aiRelayConfigSchema = v.object({
   })
 })
 
-export type AIRelayConfigInput = v.InferInput<typeof aiRelayConfigSchema>
+export type ServicesConfigInput = v.InferInput<typeof servicesConfigSchema>
 
-function requiredSecret(environment: AIRelayEnvironment, name: string): string {
+function requiredSecret(environment: ServicesEnvironment, name: string): string {
   const value = environment[name]
-  if (!value) throw new AIRelayConfigError(`Required secret binding is unavailable: ${name}`)
+  if (!value) throw new ServicesConfigError(`Required secret binding is unavailable: ${name}`)
   return value
 }
 
-function catalogFrom(input: v.InferOutput<typeof aiRelayConfigSchema>['catalog']): ServiceCatalog {
+function catalogFrom(input: v.InferOutput<typeof servicesConfigSchema>['catalog']): ServiceCatalog {
   const ids = new Set<string>()
   for (const model of input.models) {
-    if (ids.has(model.id)) throw new AIRelayConfigError(`Model ${model.id} is listed twice`)
+    if (ids.has(model.id)) throw new ServicesConfigError(`Model ${model.id} is listed twice`)
     ids.add(model.id)
   }
   if (!ids.has(input.default_model)) {
-    throw new AIRelayConfigError(`Default model ${input.default_model} is not in the catalog`)
+    throw new ServicesConfigError(`Default model ${input.default_model} is not in the catalog`)
   }
   return v.parse(serviceCatalogSchema, {
     defaultModelID: input.default_model,
@@ -101,8 +101,11 @@ function catalogFrom(input: v.InferOutput<typeof aiRelayConfigSchema>['catalog']
   })
 }
 
-export function parseAIRelayConfig(input: unknown, environment: AIRelayEnvironment): AIRelayConfig {
-  const config = v.parse(aiRelayConfigSchema, input)
+export function parseServicesConfig(
+  input: unknown,
+  environment: ServicesEnvironment
+): ServicesConfig {
+  const config = v.parse(servicesConfigSchema, input)
   return {
     cloudURL: new URL(config.relay.cloud_url).origin,
     allowedOrigins: config.relay.allowed_origins.map((origin) => new URL(origin).origin),
@@ -115,6 +118,9 @@ export function parseAIRelayConfig(input: unknown, environment: AIRelayEnvironme
   }
 }
 
-export function parseAIRelayTOML(source: string, environment: AIRelayEnvironment): AIRelayConfig {
-  return parseAIRelayConfig(parseTOML(source), environment)
+export function parseServicesTOML(
+  source: string,
+  environment: ServicesEnvironment
+): ServicesConfig {
+  return parseServicesConfig(parseTOML(source), environment)
 }

@@ -51,6 +51,8 @@ export interface WorkspaceTable {
   name: string
   slug: string
   createdBy: string
+  /** Whose plan the workspace's limits come from; see `migrations/030_account_plans.ts`. */
+  ownerId: string
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }
@@ -264,8 +266,8 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
-export interface WorkspaceEntitlementTable {
-  workspaceId: string
+export interface AccountEntitlementTable {
+  userId: string
   values: unknown
   source: string
   revision: Generated<number>
@@ -387,7 +389,7 @@ export interface CloudDatabase {
   documentRoomSnapshot: DocumentRoomSnapshotTable
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
-  workspaceEntitlement: WorkspaceEntitlementTable
+  accountEntitlement: AccountEntitlementTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable

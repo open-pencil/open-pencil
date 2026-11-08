@@ -210,6 +210,59 @@ describe('workspace members', () => {
     }
   })
 
+  test('passes the workspace to the longest-standing other admin when its owner goes', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const created = await responseJSON(
+        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const workspaceId = created.workspace.id
+      await runtime.database
+        .insertInto('workspaceMember')
+        .values([
+          {
+            workspaceId,
+            userId: people.carol.userId,
+            role: 'admin',
+            createdAt: new Date('2026-02-01T00:00:00Z')
+          },
+          {
+            workspaceId,
+            userId: people.bob.userId,
+            role: 'admin',
+            createdAt: new Date('2026-01-01T00:00:00Z')
+          }
+        ])
+        .execute()
+      const owner = async () =>
+        (
+          await runtime.database
+            .selectFrom('workspace')
+            .select('ownerId')
+            .where('id', '=', workspaceId)
+            .executeTakeFirstOrThrow()
+        ).ownerId
+      expect(await owner()).toBe(people.alice.userId)
+
+      const aliceLeaves = await as(people.alice)(
+        `/api/workspaces/${workspaceId}/members/${people.alice.userId}`,
+        { method: 'DELETE' }
+      )
+      expect(aliceLeaves.status).toBe(204)
+      expect(await owner()).toBe(people.bob.userId)
+
+      const bobSteppedDown = await as(people.carol)(
+        `/api/workspaces/${workspaceId}/members/${people.bob.userId}`,
+        { method: 'PATCH', json: { role: 'editor' } }
+      )
+      expect(bobSteppedDown.status).toBe(204)
+      expect(await owner()).toBe(people.carol.userId)
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('replaces an earlier invitation to the same address and lets an administrator withdraw it', async () => {
     const { runtime, as } = await testApp()
     try {

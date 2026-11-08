@@ -4,7 +4,12 @@ import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { buildIconData, extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
+import {
+  buildIconData,
+  extractPaths,
+  extractPathsFromElements,
+  scalePathInfos
+} from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { resolveSVGViewportMapping } from '#core/vector/vectorize/svg/transform'
 
@@ -92,6 +97,24 @@ describe('SVG XML parsing', () => {
     expect(nonUniform?.strokeWidth).toBe(6)
   })
 
+  test('reads currentColor in any case as the tint an icon color fills', () => {
+    const [path] = extractPaths('<path fill="currentcolor" stroke="CurrentColor" d="M0 0h4v4H0z"/>')
+
+    expect(path).toMatchObject({ fill: 'currentColor', stroke: 'currentColor' })
+  })
+
+  test('paints currentColor in the color an element sets or inherits, as browsers do', () => {
+    const paths = extractPaths(
+      '<g color="#f00"><path fill="currentColor" d="M0 0h1v1H0z"/>' +
+        '<g style="color: #00f" fill="currentColor"><path d="M0 0h1v1H0z"/></g>' +
+        '<path d="M0 0h1v1H0z"/></g>'
+    )
+
+    // The second fill is inherited as currentColor and takes its own element's color; a path
+    // with no fill keeps the host's color, as SVG's initial fill is not currentColor.
+    expect(paths.map((path) => path.fill)).toEqual(['#f00', '#00f', 'currentColor'])
+  })
+
   test('does not interpret attribute-like path text as markup', () => {
     const paths = extractPaths(`<path d="M0 0L10 10" data-note="fill='red' stroke='blue'"/>`)
 
@@ -157,7 +180,12 @@ function roundedHandle(
 
 describe('buildIconData', () => {
   test('fits an icon of another aspect ratio centered, as the browser draws its SVG', () => {
-    const icon = buildIconData({ body: '<path d="M0 0H32V16H0Z"/>' }, 'test', 'wide', 32, 16, 16)
+    const icon = buildIconData(
+      { body: '<path d="M0 0H32V16H0Z"/>', width: 32, height: 16 },
+      'test',
+      'wide',
+      16
+    )
     const vertices = icon.paths[0]?.vectorNetwork.vertices.map(({ x, y }) => ({ x, y }))
     expect(vertices).toEqual([
       { x: 0, y: 4 },

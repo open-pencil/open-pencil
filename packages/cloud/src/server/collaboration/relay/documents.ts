@@ -1,6 +1,7 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely } from 'kysely'
 
 import type { CollaborationRelayOptions } from './hub'
@@ -13,18 +14,9 @@ export function relayDocumentLookups(
 ): Pick<CollaborationRelayOptions, 'maximumParticipants' | 'currentRoomEpoch'> {
   return {
     async maximumParticipants(documentId) {
-      const document = await database
-        .selectFrom('document')
-        .select('workspaceId')
-        .where('id', '=', documentId)
-        .executeTakeFirst()
-      if (!document) return 0
-      const limit = await policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, -1, {
-        targetingKey: document.workspaceId,
-        workspaceId: document.workspaceId,
-        documentId,
-        deploymentMode
-      })
+      const context = await workspacePolicyContext(database, { documentId }, { deploymentMode })
+      if (!context) return 0
+      const limit = await policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, -1, context)
       return limit < 0 ? null : limit
     },
     async currentRoomEpoch(documentId) {

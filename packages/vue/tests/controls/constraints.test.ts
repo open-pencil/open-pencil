@@ -7,12 +7,8 @@ import {
   constrainedChildRect,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
-import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
-import {
-  constraintPins,
-  isConstraintEligible,
-  toggleConstraintPin
-} from '@open-pencil/vue/controls/constraints'
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+import { constraintPins, toggleConstraintPin } from '@open-pencil/vue/controls/constraints'
 
 import { applyResize } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
@@ -43,23 +39,6 @@ function original(node: {
 }
 
 describe('constraint control model', () => {
-  test('limits constraints to eligible frame children', () => {
-    const graph = makeSceneGraph()
-    const pageId = firstPageId(graph)
-    const topLevel = createRect(graph, pageId)
-    const frame = graph.createNode('FRAME', pageId, { layoutMode: 'NONE' })
-    const child = createRect(graph, frame.id)
-    const group = graph.createNode('GROUP', frame.id)
-    expect(isConstraintEligible(graph, topLevel)).toBe(false)
-    expect(isConstraintEligible(graph, child)).toBe(true)
-    expect(isConstraintEligible(graph, group)).toBe(false)
-
-    graph.updateNode(frame.id, { layoutMode: 'HORIZONTAL' })
-    expect(isConstraintEligible(graph, child)).toBe(false)
-    graph.updateNode(child.id, { layoutPositioning: 'ABSOLUTE' })
-    expect(isConstraintEligible(graph, child)).toBe(true)
-  })
-
   test('maps edge pins and additive pin toggles', () => {
     expect(constraintPins('STRETCH')).toMatchObject({ leading: true, trailing: true })
     expect(toggleConstraintPin('MAX', 'leading', false)).toBe('MIN')

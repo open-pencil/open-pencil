@@ -228,7 +228,7 @@
       "name": "@open-pencil/cloud",
       "version": "0.17.0-beta.2",
       "bin": {
-        "openpencil-ai-relay": "./dist/bin/ai-relay.mjs",
+        "openpencil-services": "./dist/bin/services.mjs",
         "openpencil-cloud": "./dist/bin/server.mjs",
       },
       "dependencies": {

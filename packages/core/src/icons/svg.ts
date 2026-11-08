@@ -1,4 +1,4 @@
-import { iconToSVG } from '@iconify/utils'
+import { iconToSVG, type IconifyIcon } from '@iconify/utils'
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -25,7 +25,6 @@ import { elementLayer, type Scope, type Traversal } from './svg/scope'
 import { textInfo } from './svg/text'
 import type {
   IconData,
-  IconifyIconEntry,
   IconPathInfo,
   SVGClipPathRegion,
   SVGElementLayer,
@@ -133,8 +132,8 @@ function appendShapePath(
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
-    fill: normalizeSVGPaint(presentation.fill),
-    stroke: normalizeSVGPaint(presentation.stroke),
+    fill: normalizeSVGPaint(presentation.fill, presentation.color),
+    stroke: normalizeSVGPaint(presentation.stroke, presentation.color),
     strokeWidth: Number.isFinite(strokeWidth) ? strokeWidth : 1,
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
@@ -351,19 +350,17 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
   return extractSVGContent(svgBody).paths.filter(isSVGPathShown)
 }
 
+/**
+ * An Iconify icon at `size`. Iconify's own rendering applies its box, defaulting to 16, and any
+ * turn or flip, before the shapes are placed in the icon box as SVG import places them.
+ */
 export function buildIconData(
-  iconEntry: IconifyIconEntry,
+  icon: IconifyIcon,
   prefix: string,
   iconName: string,
-  defaultW: number,
-  defaultH: number,
   size: number
 ): IconData {
-  const rendered = iconToSVG({
-    body: iconEntry.body,
-    width: iconEntry.width ?? defaultW,
-    height: iconEntry.height ?? defaultH
-  })
+  const rendered = iconToSVG(icon)
   const [x, y, width, height] = rendered.viewBox
 
   return {

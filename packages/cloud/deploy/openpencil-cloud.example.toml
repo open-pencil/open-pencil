@@ -104,9 +104,9 @@ transport = "none"
 # [billing]
 # portal_url = "https://billing.example.com"
 
-# Add this table to let services such as billing set workspace entitlements over HTTP at
-# PUT /api/internal/workspaces/<id>/entitlements. The bearer token defaults to
-# OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
+# Add this table to let services such as billing set an account's entitlements, which every
+# workspace it owns takes, over HTTP at PUT /api/internal/accounts/<user id>/entitlements. The
+# bearer token defaults to OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
 # [internal_api]
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
