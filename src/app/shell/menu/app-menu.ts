@@ -25,7 +25,7 @@ import type {
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
-import { openTour } from '@/app/demo/document'
+import { openTourFromMenu } from '@/app/demo/document'
 import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openReportDialog } from '@/app/reports/state'
@@ -188,9 +188,7 @@ export function useAppMenu() {
     'new-board': () => createDocumentTab('board'),
     'new-tab': () => openNewFileTab(),
     open: () => void openFileDialog(),
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
+    'open-tour': openTourFromMenu,
     ...createSaveMenuActions(store),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),

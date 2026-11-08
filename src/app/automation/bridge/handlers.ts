@@ -26,9 +26,14 @@ import {
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
 
-type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
+type FigmaFactory = (store: EditorStore, pageId?: string, signal?: AbortSignal) => FigmaAPI
 
-type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
+/** Runs a command; `signal` aborts once the caller stops waiting, as an MCP timeout does. */
+type CommandHandler = (
+  target: AutomationTarget,
+  args: unknown,
+  signal?: AbortSignal
+) => Promise<unknown>
 
 export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?: AutomationFiles) {
   const handleEval = createAutomationEvalHandler(makeFigma)
@@ -55,14 +60,16 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
   async function handleTargetCommand(
     target: AutomationTarget,
     command: string,
-    args: UnknownRecord
+    args: UnknownRecord,
+    signal?: AbortSignal
   ): Promise<unknown> {
     if (!(await target.store.preparePageNodes(target.pageId))) {
       throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
     }
+    signal?.throwIfAborted()
     const handler = commandHandlers[command]
     const result = handler
-      ? await handler(target, args)
+      ? await handler(target, args, signal)
       : await handleRPCFallback(target, command, args)
     return responseWithTarget(result, target)
   }
@@ -70,7 +77,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
   async function handleRequest(
     store: EditorStore,
     command: string,
-    args: unknown
+    args: unknown,
+    signal?: AbortSignal
   ): Promise<unknown> {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
@@ -95,7 +103,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
 
     const rawArgs = isUnknownRecord(args) ? args : {}
     const target = resolveAutomationTarget(store, rawArgs)
-    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs))
+    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs), signal)
   }
 
   return { handleRequest, handleTargetCommand }

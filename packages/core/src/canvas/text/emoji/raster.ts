@@ -1,6 +1,7 @@
 import type { CanvasKit, Image, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { NOTO_COLOR_EMOJI_FAMILY } from '#core/text/emoji'
+import { makeParagraphBuilder } from '#core/text/font/collection'
 
 /** Emoji are drawn from square images this many pixels wide, as Figma draws its own. */
 export const EMOJI_IMAGE_SIZE = 160
@@ -57,7 +58,7 @@ export function rasterizeNotoEmoji(
       color: ck.BLACK
     }
   })
-  const builder = ck.ParagraphBuilder.MakeFromFontProvider(style, provider)
+  const builder = makeParagraphBuilder(ck, style, provider)
   try {
     builder.addText(text)
     const paragraph = builder.build()

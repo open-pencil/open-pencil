@@ -102,6 +102,20 @@ describe('parseAppPreferences', () => {
     }
   })
 
+  test('checks for updates on startup unless that switch is stored off', () => {
+    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true })
+    expect(parseAppPreferences({}).updates.checkOnStartup).toBe(true)
+    const storedOff = parseAppPreferences({
+      updates: { checkOnStartup: false },
+      recovery: { enabled: false }
+    })
+    expect(storedOff.updates.checkOnStartup).toBe(false)
+    expect(storedOff.recovery.enabled).toBe(false)
+    for (const checkOnStartup of [undefined, null, 'false', 0, 1]) {
+      expect(parseAppPreferences({ updates: { checkOnStartup } }).updates.checkOnStartup).toBe(true)
+    }
+  })
+
   test('keeps comment view choices and drops an unknown sort order', () => {
     const { comments } = parseAppPreferences({
       comments: { showOnCanvas: false, showResolved: true, sort: 'loudest' }
