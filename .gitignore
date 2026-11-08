@@ -107,5 +107,5 @@ desktop/swift/*/.build/
 /target
 packages/html-engine/wasm/
 
-# The release .deb a snap is packed from (snap/snapcraft.yaml)
-/snap/local/*.deb
+# The release .deb a snap is packed from (packaging/snap/snapcraft.yaml)
+/packaging/snap/*.deb

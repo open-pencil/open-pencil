@@ -1,24 +1,12 @@
+# Packs the release .deb, built for the snap's architecture and copied here as openpencil.deb.
+# Run `snapcraft pack` in this folder; packaging/AGENTS.md has the rules.
 name: openpencil
-title: OpenPencil
-summary: Open-source design editor that opens and saves Figma files
-description: |
-  OpenPencil is an open-source design editor for interfaces. It opens and saves
-  Figma .fig files, lays out with auto layout and grids, and works with
-  components, variables, and prototypes. AI can edit the canvas and review
-  designs through the AI models and subscriptions you already use.
-
-  This package runs in the snap sandbox: it updates through the Snap Store and
-  does not start coding agents installed on this computer. The download from
-  GitHub can.
 base: core24
+# Version from the .deb; title, summary, description, license, and links from the AppStream
+# metainfo it installs (desktop/linux/net.dannote.open-pencil.metainfo.xml).
 adopt-info: openpencil
 grade: stable
 confinement: strict
-license: MIT
-website: https://openpencil.dev
-source-code: https://github.com/open-pencil/open-pencil
-issues: https://github.com/open-pencil/open-pencil/issues
-contact: https://github.com/open-pencil/open-pencil/issues
 
 platforms:
   amd64:
@@ -51,15 +39,14 @@ slots:
 
 parts:
   openpencil:
-    # The release .deb, built for the snap's architecture and copied here first:
-    # `cp OpenPencil_*.deb snap/local/openpencil.deb`.
-    plugin: dump
-    source: snap/local/openpencil.deb
-    source-type: deb
-    build-packages: [jq]
+    plugin: nil
+    source: .
+    parse-info: [usr/share/metainfo/net.dannote.open-pencil.metainfo.xml]
     override-build: |
-      craftctl default
-      craftctl set version="$(jq -r .version "$CRAFT_PROJECT_DIR/desktop/tauri.conf.json")"
+      dpkg-deb -x openpencil.deb "$CRAFT_PART_INSTALL"
+      craftctl set version="$(dpkg-deb -f openpencil.deb Version)"
       # Snap desktop files name their icon by path inside the snap.
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/128x128/apps/OpenPencil.png|' \
         "$CRAFT_PART_INSTALL/usr/share/applications/OpenPencil.desktop"
+    prime:
+      - -openpencil.deb
