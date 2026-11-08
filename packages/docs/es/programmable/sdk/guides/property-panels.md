@@ -41,17 +41,24 @@ La aplicación de OpenPencil muestra el nombre de la variable en morado cuando e
 
 ```vue
 <script setup lang="ts">
+import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { usePosition } from '@open-pencil/vue/controls/position'
 
-const { x, y, width, height, updateProp, commitProp } = usePosition()
+const { panelProp, updateProp } = usePosition()
+const x = panelProp('x')
+const y = panelProp('y')
+const width = panelProp('width')
+const height = panelProp('height')
+// A multi-selection whose layers differ shows an empty field.
+const shown = (value: number | typeof MIXED) => (value === MIXED ? '' : value)
 </script>
 
 <template>
   <div class="grid grid-cols-2 gap-2">
-    <input :value="x" @input="updateProp('x', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="y" @input="updateProp('y', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="width" @input="updateProp('width', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="height" @input="updateProp('height', Number(($event.target as HTMLInputElement).value))" />
+    <input :value="shown(x)" @input="updateProp('x', Number(($event.target as HTMLInputElement).value))" />
+    <input :value="shown(y)" @input="updateProp('y', Number(($event.target as HTMLInputElement).value))" />
+    <input :value="shown(width)" @input="updateProp('width', Number(($event.target as HTMLInputElement).value))" />
+    <input :value="shown(height)" @input="updateProp('height', Number(($event.target as HTMLInputElement).value))" />
   </div>
 </template>
 ```
