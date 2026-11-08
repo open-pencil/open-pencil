@@ -51,7 +51,7 @@ type GraphScope =
   | 'importedState'
   | 'layout'
   | 'derivedLayout'
-  | 'variableResults'
+  | 'componentDerived'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
@@ -73,7 +73,7 @@ export class SceneGraph {
     importedState: 0,
     layout: 0,
     derivedLayout: 0,
-    variableResults: 0
+    componentDerived: 0
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
@@ -533,16 +533,16 @@ export class SceneGraph {
   }
 
   /**
-   * Runs `fn` as what new variable values write into the layers using them, such as bound paints
-   * they refresh. These change the document as edits do, but they are no edit of the components
-   * holding those layers for instances to follow: every layer using a variable refreshes itself.
+   * Runs `fn` as values a copy takes from its component, such as the bound paints of a layer an
+   * instance copies, refreshed for it. Source metadata is preserved, and a save leaves them to the
+   * component rather than writing them as edits of the copy.
    */
-  applyVariableResultsDuring(fn: () => void): void {
-    this.withScope('variableResults', fn)
+  applyComponentDerivedDuring(fn: () => void): void {
+    this.withScope('componentDerived', () => this.preserveSourceMetadataDuring(fn))
   }
 
-  get isApplyingVariableResults(): boolean {
-    return this.scopeDepths.variableResults > 0
+  get isApplyingComponentDerived(): boolean {
+    return this.scopeDepths.componentDerived > 0
   }
 
   get isApplyingDerivedLayout(): boolean {
@@ -840,6 +840,8 @@ export class SceneGraph {
     // Copies point at one another, as a paste's do: an instance at a component cloned with it,
     // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
     remapCopiedReferences(this, ids)
+    // A copy placed in other modes than its source shows its bound paints there, as a move does.
+    if (clone) Variables.refreshMovedBoundPaints(this, clone.id, this.nodes.get(sourceId)?.parentId)
     return clone
   }
 
@@ -858,6 +860,7 @@ export class SceneGraph {
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
+    Variables.copyAppliedBoundPaints(src, clone)
     if (src.status) markSourceFieldsEdited(clone, ['status'])
     ids.set(src.id, clone.id)
 

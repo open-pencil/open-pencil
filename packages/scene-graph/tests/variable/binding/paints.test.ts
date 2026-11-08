@@ -2,7 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import {
+  copiesComponentPaints,
+  reconcileVariableBindings
+} from '@open-pencil/scene-graph/variables'
 
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const HALF_BLUE: Color = { r: 0, g: 0, b: 1, a: 0.5 }
@@ -147,5 +150,32 @@ describe('bound paints', () => {
     expect(read()).toEqual({ ...RED, a: 0.3 })
     setValue(tone.id, light, GREEN)
     expect(read()).toEqual(GREEN)
+  })
+
+  test('a copy keeps an edited paint until its color changes, and shows it in its own modes', () => {
+    const { graph, page, collection, frame, rect, tone, light, dark, setValue, edit } = theme()
+    edit(0.4)
+    const copy = graph.cloneTree(rect.id, frame.id)
+    if (!copy) throw new Error('copy')
+    const read = (node = copy) => ({ ...node.fills[0].color, a: node.fills[0].opacity })
+    // A reconcile reaching the copy while its variable's color is unchanged leaves the edit.
+    reconcileVariableBindings(graph, { subtrees: [frame.id] })
+    expect(read()).toEqual({ ...RED, a: 0.4 })
+    setValue(tone.id, light, GREEN)
+    expect(read()).toEqual(GREEN)
+
+    edit(0.4)
+    const darkFrame = graph.createNode('FRAME', page, { variableModes: { [collection.id]: dark } })
+    const placed = graph.cloneTree(rect.id, darkFrame.id)
+    if (!placed) throw new Error('placed')
+    expect(read(placed)).toEqual(HALF_BLUE)
+  })
+
+  test('the check for paints a copy follows stops on a parent cycle', () => {
+    const graph = new SceneGraph()
+    const first = graph.createNode('FRAME', graph.getPages()[0].id)
+    const second = graph.createNode('FRAME', first.id)
+    graph.updateNode(first.id, { parentId: second.id })
+    expect(copiesComponentPaints(graph, second, 'fills')).toBe(false)
   })
 })

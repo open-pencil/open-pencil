@@ -15,7 +15,11 @@ import {
   isNumericVariableBindingField,
   paintBindingTarget
 } from '../variables/fields'
-import { applyBoundPaintColorsIn, keepCopyBoundPaints } from '../variables/paints'
+import {
+  applyBoundPaintColorsIn,
+  copyAppliedBoundPaints,
+  keepCopyBoundPaints
+} from '../variables/paints'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -273,10 +277,12 @@ export function cloneChildInCoordinates(
 ): SceneNode {
   const componentScale =
     (src.componentScale * targetParent.componentScale) / sourceParent.componentScale
-  return graph.createNode(src.type, targetParent.id, {
+  const clone = graph.createNode(src.type, targetParent.id, {
     ...cloneNodeProps(sourceInTargetCoordinates(src, componentScale), src.id, mode),
     componentScale
   })
+  copyAppliedBoundPaints(src, clone)
+  return clone
 }
 
 export function cloneChildrenWithMapping(

@@ -5,6 +5,7 @@ import type { Color } from '../primitives'
 import type { Fill, SceneNode, Stroke } from '../types'
 import { paintBindingTarget, type PaintBindingList } from './fields'
 import { collectionsResolving, getNodeVariableModeId } from './resolution'
+import { subtreeNodes } from './subtree'
 
 /**
  * Figma keeps a bound paint's color and opacity as a cache of its variable: it draws and reads
@@ -68,6 +69,15 @@ function lastApplied(node: SceneNode, bound: BoundPaint, paint: Fill): Color {
   return entry?.variableId === bound.variableId ? entry.color : paintColor(paint)
 }
 
+/**
+ * A layer copied from another keeps the colors its bindings last applied there, so the copy's
+ * paints, edits included, stay as they are until their variables' colors for it change.
+ */
+export function copyAppliedBoundPaints(source: SceneNode, copy: SceneNode): void {
+  const entries = appliedColors.get(source)
+  if (entries) appliedColors.set(copy, new Map(entries))
+}
+
 function recordApplied(node: SceneNode, bound: BoundPaint, color: Color): void {
   let entries = appliedColors.get(node)
   if (!entries) {
@@ -100,15 +110,13 @@ export function copiesComponentPaints(
   node: SceneNode,
   list: PaintBindingList
 ): boolean {
-  let copied = false
-  for (let current: SceneNode | undefined = node; current;) {
-    if (current.type === 'INSTANCE') {
-      if (hasInstanceOverride(current.instanceOverrides, current.id, node.id, list)) return false
-      copied = true
-    }
-    current = current.parentId ? graph.nodes.get(current.parentId) : undefined
-  }
-  return copied
+  const walk = { copied: false }
+  const overriding = graph.closest(node.id, (current) => {
+    if (current.type !== 'INSTANCE') return false
+    walk.copied = true
+    return hasInstanceOverride(current.instanceOverrides, current.id, node.id, list)
+  })
+  return walk.copied && !overriding
 }
 
 /**
@@ -120,7 +128,7 @@ function writePaints(graph: SceneGraph, node: SceneNode, changes: PaintLists): v
     (list) => !changes[list] || copiesComponentPaints(graph, node, list)
   )
   const write = () => graph.updateNode(node.id, changes)
-  if (derived) graph.preserveSourceMetadataDuring(write)
+  if (derived) graph.applyComponentDerivedDuring(write)
   else write()
 }
 
@@ -175,7 +183,7 @@ export function applyBoundPaintColor(graph: SceneGraph, node: SceneNode, field: 
  * than whatever its component's paints hold.
  */
 export function applyBoundPaintColorsIn(graph: SceneGraph, rootId: string): void {
-  for (const node of subtree(graph, rootId))
+  for (const node of subtreeNodes(graph, [rootId]))
     if (hasBoundPaints(node)) refresh(graph, node, ALL_FORCED)
 }
 
@@ -193,18 +201,6 @@ export function recordWrittenBoundPaints(
     const color = graph.resolveColorVariableForNode(node.id, bound.variableId)
     if (color) recordApplied(node, bound, color)
   }
-}
-
-function subtree(graph: SceneGraph, rootId: string): SceneNode[] {
-  const nodes: SceneNode[] = []
-  const pending = [rootId]
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    const node = graph.nodes.get(id)
-    if (!node) continue
-    nodes.push(node)
-    pending.push(...node.childIds)
-  }
-  return nodes
 }
 
 /**
@@ -239,7 +235,7 @@ export function refreshMovedBoundPaints(
     }
     return found
   }
-  for (const node of subtree(graph, nodeId)) {
+  for (const node of subtreeNodes(graph, [nodeId])) {
     if (boundPaints(node).some((bound) => reachesChanged(bound.variableId)))
       refresh(graph, node, NONE_FORCED)
   }

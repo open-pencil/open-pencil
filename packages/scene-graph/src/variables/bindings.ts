@@ -14,6 +14,7 @@ import {
 } from './fields'
 import { refreshBoundPaints } from './paints'
 import { collectionsResolving } from './resolution'
+import { subtreeNodes } from './subtree'
 import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
 export {
@@ -228,18 +229,6 @@ export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<strin
   return found
 }
 
-function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneNode[] {
-  const nodes: SceneNode[] = []
-  const pending = [...roots]
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    const node = graph.getNode(id)
-    if (!node) continue
-    nodes.push(node)
-    pending.push(...node.childIds)
-  }
-  return nodes
-}
-
 /**
  * The collections whose variables the layers in these subtrees resolve: those they bind, and
  * those the bound variables alias, so a mode set on the subtrees can change what they show.
@@ -308,12 +297,7 @@ export function reconcileVariableBindingUpdates(
 ): Map<string, Partial<SceneNode>> {
   const relaid = new Map<string, Partial<SceneNode>>()
   const nodes = [...scopedNodes(graph, scope)]
-  // A variable's new value refreshes the paints of every layer using it, each by itself.
-  const refreshPaints = () => {
-    for (const node of nodes) refreshBoundPaints(graph, node)
-  }
-  if (scope && 'variables' in scope) graph.applyVariableResultsDuring(refreshPaints)
-  else refreshPaints()
+  for (const node of nodes) refreshBoundPaints(graph, node)
   for (const node of nodes) {
     const layoutUpdates = {
       ...resolvedNumericBindings(graph, node),
