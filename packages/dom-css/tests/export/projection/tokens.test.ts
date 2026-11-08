@@ -93,10 +93,11 @@ describe('token references in design-to-code', () => {
     expect(child(projected, 1).inlineStyle?.['background-color']).toBe('#94C4FC')
   })
 
-  test('starts an exported node in the modes the editor is showing', () => {
+  test('starts an exported node in the modes its page sets', () => {
     const graph = designSystem()
-    graph.setActiveMode('theme', 'dark')
-    const frame = card(graph, graph.getPages()[0].id, BLUE_300)
+    const page = graph.getPages()[0].id
+    graph.updateNode(page, { variableModes: { theme: 'dark' } })
+    const frame = card(graph, page, BLUE_300)
 
     const projected = element(graph, frame.id)
 

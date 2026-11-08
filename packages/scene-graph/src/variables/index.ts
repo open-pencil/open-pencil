@@ -76,9 +76,6 @@ export function removeVariable(graph: SceneGraph, id: string): void {
 export function addCollection(graph: SceneGraph, collection: VariableCollection): void {
   graph.willChangeCollection(collection.id)
   graph.variableCollections.set(collection.id, collection)
-  if (!graph.activeMode.has(collection.id)) {
-    graph.activeMode.set(collection.id, collection.defaultModeId)
-  }
 }
 
 function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
@@ -145,11 +142,6 @@ export function removeCollection(graph: SceneGraph, id: string): void {
   }
   graph.willChangeCollection(id)
   graph.variableCollections.delete(id)
-  graph.activeMode.delete(id)
-}
-
-export function setActiveMode(graph: SceneGraph, collectionId: string, modeId: string): void {
-  graph.activeMode.set(collectionId, modeId)
 }
 
 export function addMode(
@@ -201,9 +193,6 @@ export function removeMode(graph: SceneGraph, collectionId: string, modeId: stri
     if (!variable) continue
     graph.willChangeVariable(varId)
     variable.valuesByMode = omit(variable.valuesByMode, [modeId])
-  }
-  if (graph.activeMode.get(collectionId) === modeId) {
-    graph.activeMode.set(collectionId, collection.defaultModeId)
   }
 }
 

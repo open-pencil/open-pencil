@@ -117,7 +117,7 @@ describe('preview islands', () => {
     expect(editor.state.canvasView).toEqual({ id: 'play', revision: 2 })
   })
 
-  test('a copy paints bound colors in the mode the canvas is showing, not as they were saved', () => {
+  test('a copy paints bound colors in the mode its page is in, not as they were saved', () => {
     const { graph, card } = switchCard()
     const collection = graph.createCollection('Theme')
     const dark = collection.defaultModeId
@@ -133,7 +133,8 @@ describe('preview islands', () => {
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, opacity: 1, visible: true }]
     })
     graph.bindVariable(card.id, 'fills/0/color', surface.id)
-    graph.setActiveMode(collection.id, 'light')
+    const pageId = graph.pageOf(card.id) ?? ''
+    graph.updateNode(pageId, { variableModes: { [collection.id]: 'light' } })
 
     const shown = resolvePlayState(graph, card.id, new Map())
 

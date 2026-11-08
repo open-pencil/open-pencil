@@ -41,11 +41,8 @@ interface SettingsSnapshot {
   libraries: Array<[string, EnabledLibraryBinding]>
 }
 
-/** The variable collections and the modes the document shows them in. */
-interface CollectionsSnapshot {
-  collections: Array<[string, VariableCollection]>
-  activeMode: Array<[string, string]>
-}
+/** The variable collections, with their modes. */
+type CollectionsSnapshot = Array<[string, VariableCollection]>
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
@@ -58,10 +55,7 @@ function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
 }
 
 function collectionsSnapshot(graph: SceneGraph): CollectionsSnapshot {
-  return structuredClone({
-    collections: [...graph.variableCollections],
-    activeMode: [...graph.activeMode]
-  })
+  return structuredClone([...graph.variableCollections])
 }
 
 function resourceIdsOf(graph: SceneGraph): Set<string> {

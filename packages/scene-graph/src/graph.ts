@@ -42,7 +42,6 @@ import type {
   VariableLiteral
 } from './types'
 import * as Variables from './variables'
-import type { VariableModeFallback } from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 /** Scopes that graph methods check while a caller's callback runs; scopes nest. */
@@ -53,7 +52,6 @@ export class SceneGraph {
   images = new Map<string, Uint8Array>()
   variables = new Map<string, Variable>()
   variableCollections = new Map<string, VariableCollection>()
-  activeMode = new Map<string, string>()
   rootId: string
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
@@ -266,16 +264,8 @@ export class SceneGraph {
     Variables.removeCollection(this, id)
   }
 
-  getActiveModeId(collectionId: string): string {
-    return Variables.getActiveModeId(this, collectionId)
-  }
-
   getNodeVariableModeId(nodeId: string, collectionId: string): string {
     return Variables.getNodeVariableModeId(this, nodeId, collectionId)
-  }
-
-  setActiveMode(collectionId: string, modeId: string): void {
-    Variables.setActiveMode(this, collectionId, modeId)
   }
 
   addMode(collectionId: string, modeId: string, name: string, sourceMode?: string): void {
@@ -310,36 +300,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariable(this, variableId)
   }
 
-  resolveColorVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): Color | undefined {
-    return Variables.resolveColorVariableForNode(this, nodeId, variableId, fallback)
+  resolveColorVariableForNode(nodeId: string, variableId: string): Color | undefined {
+    return Variables.resolveColorVariableForNode(this, nodeId, variableId)
   }
 
-  resolveNumberVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): number | undefined {
-    return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
+  resolveNumberVariableForNode(nodeId: string, variableId: string): number | undefined {
+    return Variables.resolveNumberVariableForNode(this, nodeId, variableId)
   }
 
-  resolveVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): VariableLiteral | undefined {
-    return Variables.resolveVariableForNode(this, nodeId, variableId, fallback)
+  resolveVariableForNode(nodeId: string, variableId: string): VariableLiteral | undefined {
+    return Variables.resolveVariableForNode(this, nodeId, variableId)
   }
 
-  resolveStringVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): string | undefined {
-    return Variables.resolveStringVariableForNode(this, nodeId, variableId, fallback)
+  resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {
+    return Variables.resolveStringVariableForNode(this, nodeId, variableId)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
