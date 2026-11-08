@@ -134,15 +134,17 @@ export function usableCurrentModels(
   current: CurrentOnboardingModels,
   options: Omit<PlanOptions, 'current'>
 ): CurrentOnboardingModels {
-  function usable<Role extends PlannedRole>(role: Role): Role | null {
-    return role && role !== 'design' && !accessAvailable(role.providerID, options) ? null : role
-  }
+  const unusable = (role: PlannedRole) =>
+    !!role && role !== 'design' && !accessAvailable(role.providerID, options)
+  // Review and fast keep a configured none, so an unusable model there falls back to following
+  // the design model, the planner's own default, which it replaces when design cannot take it.
+  const reviewOrFast = (role: PlannedRole): PlannedRole => (unusable(role) ? 'design' : role)
   return {
     configured: current.configured,
-    design: usable(current.design),
-    vision: usable(current.vision),
-    review: usable(current.review),
-    fast: usable(current.fast)
+    design: unusable(current.design) ? null : current.design,
+    vision: unusable(current.vision) ? null : current.vision,
+    review: reviewOrFast(current.review),
+    fast: reviewOrFast(current.fast)
   }
 }
 

@@ -191,6 +191,21 @@ describe('planOnboarding with configured models', () => {
     expect(usableCurrentModels(current, desktop)).toEqual(current)
   })
 
+  test('plans review and fast again for a subscription the browser cannot use', () => {
+    const chatgpt = {
+      providerID: 'chatgpt' as const,
+      modelID: defaultModel('chatgpt'),
+      name: 'ChatGPT',
+      capabilities: ['tools' as const],
+      profileId: 'model-chatgpt' as const
+    }
+    // A configured none stays none; an unusable model is planned like an unconfigured role.
+    const current = { configured: true, design: opus, vision: null, review: chatgpt, fast: null }
+    const plan = planOnboarding(answers({ access: ['anthropic'] }), { ...browser, current })
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBeNull()
+  })
+
   test('keeps a configured design model while its access is still selected', () => {
     const plan = planOnboarding(answers({ access: ['anthropic'] }), {
       ...desktop,
