@@ -1,42 +1,40 @@
 import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
+import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { layoutAuthoredNodes } from '#core/layout'
 import { markdownText } from '#core/text/markdown'
 import { prepareGraphFonts } from '#core/text/prepare'
 import { computeAccurateBounds } from '#core/vector/curve-math'
-
-function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
-  if (!viewBox) return { w: 0, h: 0 }
-  const parts = viewBox
-    .trim()
-    .split(/[\s,]+/)
-    .map(Number)
-  return { w: parts[2] ?? 0, h: parts[3] ?? 0 }
-}
+import { resolveSVGViewportMapping } from '#core/vector/vectorize/svg/transform'
 
 /** The set inline SVG artwork is reported in, which no icon provider has. */
 const INLINE_SVG = 'svg'
 
-/** Inline SVG through the same path pipeline as Iconify icons, scaled from its viewBox. */
-function svgIconData({ body, elements, props }: SVGSource, size: number): IconData | null {
+function stringProp(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+/** Inline SVG through the same path pipeline as Iconify icons, placed as SVG import places it. */
+function svgIconData({ body, elements, props }: SVGSource, box: Size): IconData | null {
   // Children may arrive as parsed SVG elements rather than markup; both use the same shapes.
   let pathInfos = body.trim() ? extractPaths(body) : []
   if (pathInfos.length === 0) pathInfos = extractPathsFromElements(elements, props)
   if (pathInfos.length === 0) return null
-  const viewBox = parseViewBox(props.viewBox as string | undefined)
+  const space = parseSVGViewBoxValue(stringProp(props.viewBox)) ?? { x: 0, y: 0, ...box }
+  const viewport = resolveSVGViewportMapping(space, box, {
+    preserveAspectRatio: stringProp(props.preserveAspectRatio),
+    transform: stringProp(props.transform)
+  })
   return {
     prefix: INLINE_SVG,
-    name: (props.name as string | undefined) ?? 'custom',
-    width: size,
-    height: size,
-    paths: scalePathInfos(
-      pathInfos,
-      viewBox.w > 0 ? size / viewBox.w : 1,
-      viewBox.h > 0 ? size / viewBox.h : 1
-    )
+    name: stringProp(props.name) ?? 'custom',
+    width: box.width,
+    height: box.height,
+    paths: scalePathInfos(pathInfos, viewport)
   }
 }
 
