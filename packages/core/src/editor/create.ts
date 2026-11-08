@@ -375,6 +375,7 @@ export function createEditor(options?: EditorOptions) {
   })
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
+    penPushHistory: shapes.penPushHistory,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
   function endLayerEdits() {
