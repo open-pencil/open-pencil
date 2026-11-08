@@ -10,7 +10,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
-import type { AgentSessionLink } from '@/app/ai/chat/history/types'
+import type { AgentSessionLink, ConversationStore } from '@/app/ai/chat/history/types'
 import { createDeferred } from '@/app/runtime/deferred'
 function editor(): ChatDocumentEditor {
   const id = crypto.randomUUID()
@@ -310,6 +310,56 @@ test('disposing for a reload stops and saves the chat before releasing its agent
   expect(reopened.current.value?.id).toBe(id)
   expect(reopened.continuesAgentSession.value).toBe(true)
   expect(reopened.agentReadOnly.value).toBe(false)
+})
+
+test('a disposal whose save failed saves on the next call, and no chat starts in between', async () => {
+  const active = editor()
+  const real = createConversationStore()
+  let failing = false
+  const store: ConversationStore = {
+    ...real,
+    write: async (conversation) => {
+      if (failing) throw new Error('Storage is unavailable')
+      await real.write(conversation)
+    }
+  }
+  const chat = reactive({
+    messages: [savedMessage],
+    status: 'ready' as ChatStatus,
+    stop: async () => undefined
+  })
+  let resets = 0
+  let starts = 0
+  const history = createConversationHistory(
+    {
+      getEditor: () => active,
+      ensureChat: async () => {
+        starts++
+        return chat
+      },
+      resetChat: async () => {
+        resets++
+      },
+      profileId: () => null,
+      backend: () => 'acp' as const,
+      resumingAgent: () => 'codex' as const
+    },
+    store
+  )
+  await history.ensureChat()
+  const id = expectDefined(history.current.value, 'conversation').id
+  const before = { resets, starts }
+
+  failing = true
+  await expect(history.dispose()).rejects.toThrow('Storage is unavailable')
+  expect(resets).toBe(before.resets)
+  expect(await history.ensureChat()).toBeNull()
+
+  failing = false
+  await history.dispose()
+  expect(resets).toBe(before.resets + 1)
+  expect(starts).toBe(before.starts)
+  expect((await real.read(id))?.messages[0]?.message).toEqual(savedMessage)
 })
 
 test('a saved agent conversation continues in its session with the agent that resumes it', async () => {
