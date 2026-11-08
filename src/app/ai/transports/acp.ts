@@ -21,6 +21,7 @@ import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
+  AgentSessionRetryError,
   acpErrorMessage,
   isAuthRequiredError,
   openAgentSession
@@ -160,8 +161,12 @@ function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
 }
 
 function startupError(error: unknown, agentDef: ACPAgentDef): Error {
+  // Diagnostics record what the agent answered, not the conversation's reading of it.
   const original =
-    error instanceof AgentSessionResumeError && error.cause !== undefined ? error.cause : error
+    (error instanceof AgentSessionResumeError || error instanceof AgentSessionRetryError) &&
+    error.cause !== undefined
+      ? error.cause
+      : error
   recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(original) })
   return new Error(formatConnectionError(error, agentDef), { cause: error })
 }

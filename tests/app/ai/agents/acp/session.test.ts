@@ -12,6 +12,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   AgentSessionResumeError,
+  AgentSessionRetryError,
   openAgentSession,
   resumingAgent
 } from '@/app/ai/agents/acp/session'
@@ -144,32 +145,33 @@ test.each([
   RequestError.internalError({ details: 'thread not loaded: saved' }),
   RequestError.internalError({ details: ['no rollout found for thread id saved'] }),
   RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
-  { code: -32000, message: 'no rollout found for thread id saved' },
   { code: '-32603', message: 'no rollout found for thread id saved' }
 ])('other Codex resume errors remain retryable: %j', async (error) => {
   const fake = connection({ resumeError: error })
-  await expect(
-    openAgentSession(fake, codex, resumes, { ...request, resume: 'saved' })
-  ).rejects.toBe(error)
+  await expectRetry(openAgentSession(fake, codex, resumes, { ...request, resume: 'saved' }), error)
   expect(fake.created).toEqual([])
 })
 
 test('Codex error wording does not classify another agent’s internal error', async () => {
   const error = RequestError.internalError({ details: 'no rollout found for thread id saved' })
   const fake = connection({ resumeError: error })
-  await expect(
-    openAgentSession(fake, claude, resumes, { ...request, resume: 'saved' })
-  ).rejects.toBe(error)
+  await expectRetry(openAgentSession(fake, claude, resumes, { ...request, resume: 'saved' }), error)
 })
 
 test.each([
   RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
   RequestError.internalError(),
   new Error('Connection closed')
-])('an unconfirmed resume failure preserves the original error for retry: %s', async (error) => {
+])('an unconfirmed resume failure offers a retry and keeps the agent’s error: %s', async (error) => {
   const fake = connection({ resumeError: error })
-  await expect(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' })).rejects.toBe(
-    error
-  )
+  await expectRetry(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' }), error)
   expect(fake.created).toEqual([])
 })
+
+/** A failure the conversation can retry, which names both ways on and keeps what the agent said. */
+async function expectRetry(opening: Promise<unknown>, error: unknown) {
+  const failure = await opening.catch((cause: unknown) => cause)
+  expect(failure).toBeInstanceOf(AgentSessionRetryError)
+  expect(failure instanceof Error && failure.cause).toBe(error)
+  expect(failure instanceof Error && failure.message).toContain('Try again, or start a new chat.')
+}

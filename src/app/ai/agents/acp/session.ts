@@ -81,6 +81,20 @@ export class AgentSessionResumeError extends Error {
 }
 
 /**
+ * The agent did not continue the saved session this time, as when another process still holds it.
+ * The conversation keeps the session, so sending again or a new chat are both open.
+ */
+export class AgentSessionRetryError extends Error {
+  constructor(agentDef: ACPAgentDef, cause: unknown) {
+    super(
+      `${agentDef.name} could not continue this conversation's session. Try again, or start a new chat. ${agentDef.name} reported: ${acpErrorMessage(cause)}`,
+      { cause }
+    )
+    this.name = 'AgentSessionRetryError'
+  }
+}
+
+/**
  * Starts the agent's session, or continues the saved one through `session/resume`, which keeps
  * the agent's context without replaying the transcript the chat already shows.
  */
@@ -109,8 +123,9 @@ export async function openAgentSession(
     })
     return { sessionId: resume, model: result.models?.currentModelId ?? null, resumed: true }
   } catch (e) {
-    // Retire confirmed missing sessions; locks, connection failures, and sign-in can be retried.
+    // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
     if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
-    throw e
+    if (isAuthRequiredError(e)) throw e
+    throw new AgentSessionRetryError(agentDef, e)
   }
 }

@@ -288,7 +288,11 @@ test.each([resuming, codex])(
     const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef })
     try {
       await expect(send(chat, 'next')).rejects.toMatchObject({
-        cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+        message: expect.stringContaining('Try again, or start a new chat.'),
+        cause: {
+          name: 'AgentSessionRetryError',
+          cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+        }
       })
       expect(
         (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')
