@@ -14,6 +14,11 @@ export interface UndoManagerOptions {
    * rolled back, or an edit reported with `discardEdit`. History is unchanged, so `onChange` is not.
    */
   onDiscard?: () => void
+  /**
+   * Runs an undo or a redo, which the editor runs outside edits in progress
+   * (`SceneGraph.runOutsideEdits`), so an agent's edit open meanwhile does not record it.
+   */
+  runReplay?: (replay: () => void) => void
 }
 
 interface UndoBatch {
@@ -35,11 +40,13 @@ export class UndoManager {
   private readonly limit: number
   private readonly onChange: (() => void) | undefined
   private readonly onDiscard: (() => void) | undefined
+  private readonly runReplay: (replay: () => void) => void
 
   constructor(options: UndoManagerOptions = {}) {
     this.limit = options.limit ?? DEFAULT_HISTORY_LIMIT
     this.onChange = options.onChange
     this.onDiscard = options.onDiscard
+    this.runReplay = options.runReplay ?? ((replay) => replay())
   }
 
   apply(entry: UndoEntry): void {
@@ -197,7 +204,7 @@ export class UndoManager {
   private replay(step: () => void) {
     this.replaying++
     try {
-      step()
+      this.runReplay(step)
     } finally {
       this.replaying--
     }

@@ -71,9 +71,7 @@ describe('an agent editing a shared document', () => {
     })
   })
 
-  // A known gap: only the API's own waits (fonts, images, pages) keep others' edits out of a
-  // script's step. A script's own `fetch` or timer does not.
-  test('a collaborator’s edit made while a script waits on its own fetch is undone with the script', async () => {
+  test('a collaborator’s edit made while a script waits on its own fetch stays out of its step', async () => {
     await withRoom(async ({ host, guest, settle, ids }) => {
       const response = Promise.withResolvers<undefined>()
       const edit = host.recordEditAsync({ label: 'Agent: eval' }, async () => {
@@ -82,6 +80,7 @@ describe('an agent editing a shared document', () => {
       })
       await settle()
       guest.recordEdit({ label: 'Move' }, () => guest.graph.updateNode(ids.card, { y: 30 }))
+      guest.updateVariableValue(ids.brand, ids.light, GREEN)
       await settle()
       response.resolve(undefined)
       await edit
@@ -89,7 +88,44 @@ describe('an agent editing a shared document', () => {
       expect(host.undo.undo()).toBe('Agent: eval')
       await settle()
       for (const store of [host, guest]) {
-        expect(cardOf(store, ids.card)).toMatchObject({ x: 0, y: 0 })
+        expect(cardOf(store, ids.card)).toMatchObject({ x: 0, y: 30 })
+        expect(lightBrand(store, ids.brand, ids.light)).toEqual(GREEN)
+      }
+    })
+  })
+
+  test('undoing an agent’s frame keeps the layer a collaborator put into it', async () => {
+    await withRoom(async ({ host, guest, settle }) => {
+      const pageId = host.state.currentPageId
+      const response = Promise.withResolvers<undefined>()
+      let frameId = ''
+      const edit = host.recordEditAsync({ label: 'Agent: eval' }, async () => {
+        const frame = host.graph.createNode('FRAME', pageId, {
+          x: 100,
+          y: 50,
+          width: 200,
+          height: 200
+        })
+        frameId = frame.id
+        await response.promise
+      })
+      await settle()
+      const note = guest.recordEdit({ label: 'Add note' }, () =>
+        guest.graph.createNode('RECTANGLE', frameId, { x: 10, y: 20, width: 5, height: 5 })
+      )
+      await settle()
+      response.resolve(undefined)
+      await edit
+
+      expect(host.undo.undo()).toBe('Agent: eval')
+      await settle()
+      for (const store of [host, guest]) {
+        expect(store.graph.getNode(frameId)).toBeUndefined()
+        expect(getNodeOrThrow(store.graph, note.id)).toMatchObject({
+          parentId: pageId,
+          x: 110,
+          y: 70
+        })
       }
     })
   })

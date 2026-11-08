@@ -148,7 +148,8 @@ export function registerYjsObservers({
     if (getSuppressYjsEvents()) return
     setSuppressGraphSync(true)
     try {
-      applyYjsToGraph(events)
+      // A collaborator's change is never an edit in progress here, such as an agent's.
+      editor.graph.runOutsideEdits(() => applyYjsToGraph(events))
       editor.requestRender()
     } catch (error) {
       logCollabSyncError('Failed to apply remote graph changes', error)
