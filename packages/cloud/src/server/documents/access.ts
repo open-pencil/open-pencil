@@ -1,27 +1,26 @@
-import type {
-  DocumentAccess,
-  DocumentAccessSource,
-  DocumentPermission,
-  WorkspaceRole
-} from '#cloud/contract'
-import { workspaceRoleCan } from '#cloud/server/auth/workspace-access'
+import type { DocumentAccess, DocumentAccessSource, DocumentPermission } from '#cloud/contract'
+import {
+  documentRoleCan,
+  GRANT_DOCUMENT_ROLE,
+  workspaceRoleCan,
+  type AccessRequest
+} from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
-import { maxBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 export type AccessDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
-const PERMISSION_WEIGHT: Record<DocumentPermission, number> = { view: 1, edit: 2 }
-
-function workspacePermission(role: WorkspaceRole): DocumentPermission {
-  return workspaceRoleCan(role, { document: ['edit'] }) ? 'edit' : 'view'
+type DocumentAccessGrant = {
+  source: DocumentAccessSource
+  can: (request: AccessRequest) => boolean
 }
 
-export async function resolveDocumentAccess(
+/** Everything that gives a user access to a document, each checked against its role table. */
+async function documentAccessGrants(
   database: AccessDatabase,
   userId: string,
   documentId: string
-): Promise<DocumentAccess | undefined> {
+): Promise<DocumentAccessGrant[]> {
   const document = await database
     .selectFrom('document')
     .leftJoin('workspaceMember', (join) =>
@@ -43,32 +42,41 @@ export async function resolveDocumentAccess(
     .where('document.id', '=', documentId)
     .where('document.deletedAt', 'is', null)
     .executeTakeFirst()
-  if (!document) return undefined
+  if (!document) return []
 
-  const sources: DocumentAccessSource[] = []
-  const candidates: DocumentPermission[] = []
-  const owner = document.createdBy === userId
-  if (owner) {
-    sources.push('owner')
-    candidates.push('edit')
+  const grants: DocumentAccessGrant[] = []
+  if (document.createdBy === userId) {
+    grants.push({ source: 'owner', can: (request) => documentRoleCan('owner', request) })
   }
-  if (document.workspaceRole) {
-    sources.push('workspace')
-    candidates.push(workspacePermission(document.workspaceRole))
+  const { workspaceRole, grantPermission } = document
+  if (workspaceRole) {
+    grants.push({ source: 'workspace', can: (request) => workspaceRoleCan(workspaceRole, request) })
   }
-  if (document.grantPermission) {
-    sources.push('direct-grant')
-    candidates.push(document.grantPermission)
+  if (grantPermission) {
+    const role = GRANT_DOCUMENT_ROLE[grantPermission]
+    grants.push({ source: 'direct-grant', can: (request) => documentRoleCan(role, request) })
   }
-  const permission = maxBy(candidates, (candidate) => PERMISSION_WEIGHT[candidate])
-  if (!permission) return undefined
-  const workspaceCanManage =
-    document.workspaceRole !== null &&
-    workspaceRoleCan(document.workspaceRole, { document: ['share'] })
+  return grants
+}
+
+function grantsAllow(grants: DocumentAccessGrant[], request: AccessRequest): boolean {
+  return grants.some((grant) => grant.can(request))
+}
+
+export async function resolveDocumentAccess(
+  database: AccessDatabase,
+  userId: string,
+  documentId: string
+): Promise<DocumentAccess | undefined> {
+  const grants = await documentAccessGrants(database, userId, documentId)
+  if (!grantsAllow(grants, { document: ['read'] })) return undefined
+  const permission: DocumentPermission = grantsAllow(grants, { document: ['edit'] })
+    ? 'edit'
+    : 'view'
   return {
     permission,
-    canManageSharing: owner || workspaceCanManage || document.grantPermission === 'edit',
-    sources
+    canManageSharing: grantsAllow(grants, { document: ['share'] }),
+    sources: grants.map((grant) => grant.source)
   }
 }
 
@@ -76,30 +84,12 @@ export function canEditDocument(access: DocumentAccess): boolean {
   return access.permission === 'edit'
 }
 
-/**
- * Removing a document belongs to its owner and its workspace's admins and editors. A direct grant
- * or an accepted invitation lets someone edit, never delete the owner's document.
- */
+/** Whether the user may delete the document; `documentRoles` and `workspaceRoles` decide who. */
 export async function canDeleteDocument(
   database: AccessDatabase,
   userId: string,
   documentId: string
 ): Promise<boolean> {
-  const document = await database
-    .selectFrom('document')
-    .leftJoin('workspaceMember', (join) =>
-      join
-        .onRef('workspaceMember.workspaceId', '=', 'document.workspaceId')
-        .on('workspaceMember.userId', '=', userId)
-    )
-    .select(['document.createdBy', 'workspaceMember.role as workspaceRole'])
-    .where('document.id', '=', documentId)
-    .where('document.deletedAt', 'is', null)
-    .executeTakeFirst()
-  if (!document) return false
-  return (
-    document.createdBy === userId ||
-    (document.workspaceRole !== null &&
-      workspaceRoleCan(document.workspaceRole, { document: ['delete'] }))
-  )
+  const grants = await documentAccessGrants(database, userId, documentId)
+  return grantsAllow(grants, { document: ['delete'] })
 }

@@ -9,7 +9,7 @@ import type {
   RequestImageUploadsInput,
   SharedDocument
 } from '#cloud/contract'
-import { workspaceRoleCan } from '#cloud/server/auth/workspace-access'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
 import type { CloudDatabase } from '#cloud/server/db'
 import {

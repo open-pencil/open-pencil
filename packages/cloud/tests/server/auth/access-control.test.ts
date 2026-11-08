@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { workspaceRoleCan } from '#cloud/server'
+import { documentRoleCan, workspaceRoleCan } from '#cloud/server'
 
 describe('workspace roles', () => {
   test('admins run the workspace and its documents', () => {
@@ -24,5 +24,22 @@ describe('workspace roles', () => {
     expect(workspaceRoleCan('viewer', { workspace: ['read'], document: ['read'] })).toBe(true)
     expect(workspaceRoleCan('viewer', { document: ['create'] })).toBe(false)
     expect(workspaceRoleCan('viewer', { document: ['edit'] })).toBe(false)
+  })
+})
+
+describe('document roles', () => {
+  test('owners may delete their document', () => {
+    expect(documentRoleCan('owner', { document: ['edit', 'share', 'delete'] })).toBe(true)
+  })
+
+  test('an edit grant edits and shares, never deletes', () => {
+    expect(documentRoleCan('editor', { document: ['edit', 'share'] })).toBe(true)
+    expect(documentRoleCan('editor', { document: ['delete'] })).toBe(false)
+  })
+
+  test('a view grant only reads', () => {
+    expect(documentRoleCan('viewer', { document: ['read'] })).toBe(true)
+    expect(documentRoleCan('viewer', { document: ['edit'] })).toBe(false)
+    expect(documentRoleCan('viewer', { document: ['share'] })).toBe(false)
   })
 })
