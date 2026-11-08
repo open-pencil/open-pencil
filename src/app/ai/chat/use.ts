@@ -1,3 +1,5 @@
+import { useEventListener } from '@vueuse/core'
+
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { resumingAgent } from '@/app/ai/agents/acp/session'
@@ -56,14 +58,19 @@ const history = createConversationHistory({
 
 registerAIChatEffects(chatSession.markTransportDirty)
 
+// Stop the reply and save the conversation before the page goes. Vite awaits its listeners before
+// a development reload; `pagehide` cannot wait, so other reloads save what they can.
 if (import.meta.hot) {
-  // Vite waits for these callbacks before replacing the module or reloading the page.
-  // Tauri's shell children otherwise survive the WebView and keep agent sessions locked.
-  /* eslint-disable typescript-eslint/no-misused-promises -- Vite awaits these callbacks despite their void return types. */
-  import.meta.hot.dispose(history.dispose)
+  /* eslint-disable typescript-eslint/no-misused-promises -- Vite's client awaits custom event listeners (vite/dist/client/client.mjs, notifyListeners). */
   import.meta.hot.on('vite:beforeFullReload', history.dispose)
   import.meta.hot.on('vite:ws:disconnect', history.dispose)
   /* eslint-enable typescript-eslint/no-misused-promises */
+}
+if (IS_BROWSER) {
+  useEventListener(window, 'pagehide', (event) => {
+    // A page kept for back navigation comes back with its chat.
+    if (!event.persisted) void history.dispose()
+  })
 }
 
 if (IS_BROWSER) {
