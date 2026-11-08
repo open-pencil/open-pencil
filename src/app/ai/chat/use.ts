@@ -62,7 +62,13 @@ registerAIChatEffects(chatSession.markTransportDirty)
 // a development reload; `pagehide` cannot wait, so other reloads save what they can.
 if (import.meta.hot) {
   /* eslint-disable typescript-eslint/no-misused-promises -- Vite's client awaits custom event listeners (vite/dist/client/client.mjs, notifyListeners). */
-  import.meta.hot.on('vite:beforeFullReload', history.dispose)
+  import.meta.hot.on('vite:beforeFullReload', async ({ path }) => {
+    // Vite announces an edit to another HTML page, such as `updater.html`, to every page but
+    // reloads only that one; the editor is always `index.html`, so it keeps running.
+    if (path?.endsWith('.html') && path !== '/index.html') return
+    await history.dispose()
+  })
+  // Vite reloads the page whenever its server comes back.
   import.meta.hot.on('vite:ws:disconnect', history.dispose)
   /* eslint-enable typescript-eslint/no-misused-promises */
 }
