@@ -186,7 +186,7 @@ describe('resuming collaboration peers', () => {
 
   test('drops a message whose sender’s ticket lapsed while the room loaded', async () => {
     const memory = memoryStateStore()
-    let release = () => undefined as void
+    let release: (() => void) | undefined
     const loaded = new Promise<void>((resolve) => {
       release = resolve
     })
@@ -217,7 +217,7 @@ describe('resuming collaboration peers', () => {
       payload: Y.encodeStateVector(new Y.Doc())
     })
     await Bun.sleep(300)
-    release()
+    release?.()
     await until(() => resumed.closed !== null)
     expect(resumed.closed?.code).toBe(RELAY_CLOSE.expired)
     expect(resumed.messages(COLLAB_ACTIONS.syncReply)).toHaveLength(0)
