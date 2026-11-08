@@ -308,6 +308,33 @@ describe('collaboration relay', () => {
     expect((await joining).closed?.code).toBe(RELAY_CLOSE.restored)
   })
 
+  test('turns away a peer whose room was still opening when the document was taken down', async () => {
+    const state = memoryStateStore()
+    let takenDown = false
+    let releaseLoad: (() => void) | undefined
+    const { relay: hub } = relay({
+      store: {
+        ...state.store,
+        async load(identity) {
+          if (!releaseLoad) {
+            await new Promise<void>((resolve) => {
+              releaseLoad = resolve
+            })
+          }
+          return state.store.load(identity)
+        }
+      },
+      maximumParticipants: async () => (takenDown ? 0 : null)
+    })
+    const joining = join(hub)
+    await until(() => releaseLoad !== undefined)
+    takenDown = true
+    hub.closeDocument(documentId)
+    releaseLoad?.()
+
+    expect((await joining).closed?.code).toBe(RELAY_CLOSE.roomFull)
+  })
+
   test('admits a newcomer to the live room when the last peer leaves while it is checked', async () => {
     let releaseLimit: (() => void) | undefined
     let checks = 0

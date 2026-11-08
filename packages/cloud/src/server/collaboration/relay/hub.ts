@@ -405,13 +405,15 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     socket: RelaySocket,
     authorization: RelayAuthorization
   ): Promise<Peer | null> {
-    const limit = await options.maximumParticipants?.(authorization.documentId)
     let room: Room
+    let limit: number | null | undefined
     let epoch: number | null | undefined
-    // The room's last peer may have left while it opened, or a restore ended it; a closed room
-    // takes no newcomers. The epoch is read once the room is open, so a restore cannot slip between.
+    // The room's last peer may have left while it opened, or a restore or takedown ended it; a
+    // closed room takes no newcomers. The limit and epoch are read once the room is open, so
+    // neither a restore nor a takedown can slip between.
     do {
       room = await openRoom(authorization)
+      limit = await options.maximumParticipants?.(authorization.documentId)
       epoch = await options.currentRoomEpoch?.(authorization.documentId)
     } while (rooms.get(room.id) !== room)
     if (epoch != null && authorization.roomEpoch < epoch) {
