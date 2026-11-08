@@ -3,7 +3,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { UpdateNodeWithUndo } from '#core/editor/shapes/pen/draw'
-import type { NodeEditHandles, VectorHandleField } from '#core/vector/handle-selection'
+import type { ShownHandles, VectorHandleField } from '#core/vector/handle-selection'
 
 /** How a host opens a path for editing. */
 export interface NodeEditOptions {
@@ -14,8 +14,11 @@ export interface NodeEditOptions {
    * game whose canvas is the one path being shaped keeps it open.
    */
   keepOpen?: boolean
-  /** Which points show their handles; by default those near the selection, as in Figma. */
-  handles?: NodeEditHandles
+  /**
+   * Which points show their handles; by default those near the selection, as in Figma. Which
+   * handles may move is `pathEdits`' to say.
+   */
+  showHandles?: ShownHandles
 }
 
 /** How the host leaves vector edit mode. */

@@ -50,6 +50,7 @@ export type {
   EditorProfile,
   EditorProfileInputs,
   EditorRestrictions,
+  LayerEdits,
   PathEdits
 } from './views'
 export type { ShaderRasterizer } from './shaders/types'
