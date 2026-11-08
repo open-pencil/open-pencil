@@ -29,7 +29,7 @@ type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
-const { settings } = useI18n()
+const { settings, panels } = useI18n()
 
 const headerRef = ref<HTMLElement | null>(null)
 
@@ -183,7 +183,9 @@ const drawerTransition = useMotionTransition({
           <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
             <PagesPanel />
             <div class="border-t border-border" />
-            <header class="shrink-0 px-3 py-2 text-2xs font-semibold text-muted">Layers</header>
+            <header class="shrink-0 px-3 py-2 text-2xs font-semibold text-muted">
+              {{ panels.layers }}
+            </header>
             <LayerTree class="min-h-0 flex-1" />
           </div>
         </TabsContent>

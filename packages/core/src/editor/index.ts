@@ -4,7 +4,7 @@ export {
   ReadOnlyLibraryDefinitionError
 } from './capabilities'
 export type { NodeEditCapability } from './capabilities'
-export { ReadOnlyDocumentError } from './read-only'
+export { FixedLayersError, ReadOnlyDocumentError, RefusedEditError } from './read-only'
 export { DEFAULT_SNAPPING_PREFERENCES } from './preferences'
 export type { SnappingPreferences } from './preferences'
 export { createDocumentGraph } from './document-settings'
@@ -27,6 +27,7 @@ export {
   pickEditorViewState
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
+export { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
 export { executeAtomicTool, type AtomicToolOptions } from './history/atomic-tool'
 export { isEmptyDocumentChange, type DocumentChange } from './history/document-change'
 export type { RecordEditOptions } from './history/edit'

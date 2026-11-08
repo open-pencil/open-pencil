@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { svgDataURL } from '@open-pencil/scene-graph/images'
+
 /**
  * An icon drawn in the text color: its SVG markup serves as a mask, so it never runs as
  * markup in the page. Blank until the markup arrives, rather than a filled square.
  */
 const { svg } = defineProps<{ svg?: string | null }>()
-const style = computed(() =>
-  svg ? { '--icon-preview': `url("data:image/svg+xml,${encodeURIComponent(svg)}")` } : undefined
-)
+const style = computed(() => (svg ? { '--icon-preview': `url("${svgDataURL(svg)}")` } : undefined))
 </script>
 
 <template>

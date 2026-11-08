@@ -24,6 +24,8 @@ import { fontManager, prepareGraphFonts, WEB_FONT_PROVIDER_IDS } from '@open-pen
 import { parsePenDocument } from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { iconSetSchema } from '#core/icons/schema'
+
 // pen.dev's own exports of every frame in probes.pen, recorded with the fonts and icons they draw
 // by `bun tools/generate/visual-oracles/src/cli.ts compare pen`.
 const ORACLES = join(FIXTURES, 'pen-oracles')
@@ -41,17 +43,6 @@ const manifestSchema = v.pipe(
         note: v.optional(v.string())
       })
     )
-  })
-)
-
-const iconSetSchema = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.looseObject({
-    prefix: v.string(),
-    width: v.optional(v.number()),
-    height: v.optional(v.number()),
-    icons: v.record(v.string(), v.looseObject({ body: v.string() }))
   })
 )
 

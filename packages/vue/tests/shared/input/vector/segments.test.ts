@@ -293,3 +293,99 @@ describe('editing a path: pressing a selected segment', () => {
     expect(editor.getNodeEditState()?.vertices.map((vertex) => vertex.y)).toEqual([-20, -20, 80])
   })
 })
+
+// Figma desktop 126: dragging a straight segment puts a point where it was pressed and drags that
+// point; a curved segment moves whole.
+describe('editing a path: dragging a straight segment', () => {
+  function release(drag: DragState | null) {
+    handleNodeEditPointerUp(ref(drag), editor)
+  }
+
+  function points() {
+    return editor.getNodeEditState()?.vertices.map(({ x, y }) => [x, y])
+  }
+
+  test('a drag bends it at a new point where it was pressed', () => {
+    setup()
+    const drag = press(30, 0)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    handleNodeEditMove(drag, 30, -20, editor, false, false, false, true)
+    release(drag)
+    expect(points()).toEqual([
+      [0, 0],
+      [100, 0],
+      [100, 100],
+      [30, -20]
+    ])
+    expect(selected()).toEqual([3])
+    expect(selectedSegments()).toEqual([])
+    expect(editor.getNodeEditState()?.segments.map(({ start, end }) => [start, end])).toEqual([
+      [0, 3],
+      [1, 2],
+      [3, 1]
+    ])
+  })
+
+  test('a segment Shift-pressed with a picked region drags with it instead of bending', () => {
+    setup()
+    const es = editor.getNodeEditState()
+    if (!es) throw new Error('expected edit mode')
+    // Close the path into a triangle with one region, picked with its points then Shift-deselected.
+    editor.setNodeEditNetwork(es, {
+      vertices: es.vertices,
+      segments: [...es.segments, { start: 2, end: 0, tangentStart: zero, tangentEnd: zero }],
+      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
+    })
+    es.selectedRegions = new Set([0])
+    es.selectedVertexIndices = new Set()
+    const drag = press(30, 0, true)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    handleNodeEditMove(drag, 30, -20, editor, false, false, false, true)
+    release(drag)
+    expect(points()).toEqual([
+      [0, -20],
+      [100, -20],
+      [100, 100]
+    ])
+    expect(es.selectedRegions).toEqual(new Set([0]))
+  })
+
+  test('a click without a drag only selects it', () => {
+    setup()
+    const drag = press(30, 0)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    handleNodeEditMove(drag, 30.5, 0.5, editor, false, false, false, true)
+    release(drag)
+    expect(points()).toHaveLength(3)
+    expect(selectedSegments()).toEqual([0])
+  })
+
+  test('a curved segment moves whole', () => {
+    setup()
+    const es = editor.getNodeEditState()
+    if (es) es.segments[0] = { ...es.segments[0], tangentStart: { x: 20, y: 0 } }
+    const drag = press(50, 0)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    handleNodeEditMove(drag, 50, -20, editor, false, false, false, true)
+    release(drag)
+    expect(points()).toEqual([
+      [0, -20],
+      [100, -20],
+      [100, 100]
+    ])
+  })
+
+  test('undo takes the new point and the drag back together', () => {
+    setup()
+    const drag = press(30, 0)
+    if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
+    handleNodeEditMove(drag, 30, -20, editor, false, false, false, true)
+    release(drag)
+    editor.undoAction()
+    expect(points()).toEqual([
+      [0, 0],
+      [100, 0],
+      [100, 100]
+    ])
+  })
+})

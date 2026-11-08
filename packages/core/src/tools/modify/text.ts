@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontName, FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import type { FigmaVariationSettings } from '#core/figma-api/fonts/variations'
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { textMarkdownChanges } from '#core/openpencil-api/nodes'
 import { collectNodeFontFaces } from '#core/text/requirements/collect'
@@ -18,7 +19,7 @@ import {
 
 /** The fonts a text layer uses, which an edit that lays it out again needs loaded. */
 export function textFonts(figma: FigmaAPI, id: string): FigmaFontNameInput[] {
-  const node = figma.graph.getNode(id)
+  const node = graphOf(figma).getNode(id)
   return node ? collectNodeFontFaces(node) : []
 }
 
@@ -34,7 +35,7 @@ export const setText = defineTool({
     markdown: v.optional(v.pipe(v.boolean(), v.description('Read the text as Markdown')))
   }),
   fonts: (figma, { id, text, markdown }) => {
-    const node = figma.graph.getNode(id)
+    const node = graphOf(figma).getNode(id)
     if (!markdown || node?.type !== 'TEXT') return textFonts(figma, id)
     return collectNodeFontFaces({ ...node, ...textMarkdownChanges(node, text) })
   },

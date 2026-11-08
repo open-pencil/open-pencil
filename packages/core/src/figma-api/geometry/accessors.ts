@@ -4,7 +4,8 @@ import type { VectorPath } from '@open-pencil/scene-graph/vector-network'
 import type { SkiaRenderer } from '#core/canvas'
 import { fillGeometryPaths, strokeGeometryPath } from '#core/canvas/geometry'
 import { outlineStrokeLayer } from '#core/canvas/outline-stroke'
-import { graph, raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import { raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { findPageId } from '#core/io/subgraph'
@@ -58,8 +59,8 @@ export function installGeometryAccessors(
     get(this: ProxyThis): readonly VectorPath[] {
       const r = renderer(this, internals, 'get_fillGeometry')
       // A script's edits that nothing read yet are laid out first, as Figma lays them out.
-      flushPendingLayout(graph(this, internals))
-      const paths = fillGeometryPaths(r, graph(this, internals), raw(this, internals))
+      flushPendingLayout(graphOf(this))
+      const paths = fillGeometryPaths(r, graphOf(this), raw(this, internals))
       try {
         return frozenPaths(figmaVectorPaths(r.ck, paths))
       } finally {
@@ -70,8 +71,8 @@ export function installGeometryAccessors(
   Object.defineProperty(target, 'strokeGeometry', {
     get(this: ProxyThis): readonly VectorPath[] {
       const r = renderer(this, internals, 'get_strokeGeometry')
-      flushPendingLayout(graph(this, internals))
-      const path = strokeGeometryPath(r, graph(this, internals), raw(this, internals))
+      flushPendingLayout(graphOf(this))
+      const path = strokeGeometryPath(r, graphOf(this), raw(this, internals))
       if (!path) return frozenPaths([])
       try {
         // Figma reports a stroke as one path that fills its band, whatever the shape's own rule.
@@ -86,7 +87,7 @@ export function installGeometryAccessors(
   Object.defineProperty(target, 'outlineStroke', {
     value(this: ProxyThis): FigmaNodeProxy | null {
       const r = renderer(this, internals, 'outlineStroke')
-      const scene = graph(this, internals)
+      const scene = graphOf(this)
       flushPendingLayout(scene)
       const node = raw(this, internals)
       const outlined = outlineStrokeLayer(r, node, scene)

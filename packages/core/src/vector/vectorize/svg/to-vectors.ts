@@ -32,7 +32,9 @@ import {
   type SVGViewportMapping,
   applySVGTransformToPath,
   mapSVGPathToViewport,
-  resolveSVGViewportMapping
+  resolveSVGViewportMapping,
+  svgStrokeScale,
+  svgViewportAttributes
 } from './transform'
 
 function parseSVGCoordinateSpace(svg: string): Rect {
@@ -124,13 +126,13 @@ export function svgToVectorPaths(
 
   const defaultColor = options?.defaultColor ?? '#000000'
   const gradients = parseSVGGradients(svgText)
+  const attributes = svgViewportAttributes(svgText)
+  // Vectorizer output is stretched over the image it replaces, whatever its own aspect ratio.
   const viewport = resolveSVGViewportMapping(
-    svgText,
     space,
     bounds,
-    options?.preserveAspectRatio ?? false
+    options?.preserveAspectRatio ? attributes : { ...attributes, preserveAspectRatio: 'none' }
   )
-  const strokeScale = Math.min(viewport.scaleX, viewport.scaleY)
 
   const vectorized: VectorizedPath[] = []
   const clipCache: ClipCache = new WeakMap()
@@ -140,7 +142,7 @@ export function svgToVectorPaths(
     const pathData = applySVGTransformToPath(path.d, transform)
     const scaledD = mapSVGPathToViewport(pathData, viewport)
     const solidFills = resolveFill(path, defaultColor)
-    const strokes = resolveStrokes(path, defaultColor, strokeScale)
+    const strokes = resolveStrokes(path, defaultColor, svgStrokeScale(transform, viewport))
     // A stroke would also trace the closing edge of an open subpath in the fill region.
     const network = parseSVGPath(scaledD, fillRule, {
       includeOpenRegions: solidFills.length > 0 && strokes.length === 0

@@ -1,20 +1,22 @@
 import {
   createAdminAuditService,
+  createAdminDocumentService,
   createAdminEmailService,
   createAdminOperationsService,
+  createAdminReportService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
   type EnrollmentService
 } from '#cloud/admin'
 import {
-  CLOUD_AI_JWKS_PATH,
+  CLOUD_API_MAX_BODY_BYTES,
+  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
 import { createAccountRoutes } from '#cloud/server/account/routes'
-import { createAITokenService, type AISigningKey } from '#cloud/server/ai'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -58,9 +60,12 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createDocumentReportService } from '#cloud/server/reports'
+import { createServicesTokenService, type ServicesSigningKey } from '#cloud/server/services'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
@@ -77,8 +82,8 @@ export type CloudServices = {
   enrollment?: EnrollmentService
   entitlementSource?: EntitlementSource
   policy?: CloudPolicy
-  /** The imported `aiSigningKey`, required when the config names one. See `loadAISigningKey`. */
-  aiSigningKey?: AISigningKey
+  /** The imported `servicesSigningKey`, required when the config names one. See `loadServicesSigningKey`. */
+  servicesSigningKey?: ServicesSigningKey
   /**
    * Where clients reach this runtime's collaboration relay. Without one, Cloud rooms fall back to
    * peer-to-peer and writes are not enforced by the server.
@@ -86,6 +91,8 @@ export type CloudServices = {
   relayURL?: string
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
+  /** Ends a taken-down document's live rooms, saving them for when it is restored. */
+  onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Reports errors no route handled, when the deployment configures error tracking. */
@@ -171,7 +178,11 @@ export function createCloudApp(services: CloudServices) {
           : undefined
       }),
       audit: createAdminAuditService(services.database),
-      operations: createAdminOperationsService(services.database, services.config)
+      operations: createAdminOperationsService(services.database, services.config),
+      documents: createAdminDocumentService(services.database, {
+        closeRooms: services.onDocumentTakenDown
+      }),
+      reports: createAdminReportService(services.database)
     },
     allowedOrigins,
     {
@@ -220,17 +231,17 @@ export function createCloudApp(services: CloudServices) {
     policy,
     deploymentMode: services.config.deployment
   })
-  if (services.config.aiSigningKey && !services.aiSigningKey) {
-    throw new CloudConfigError('The AI service needs the signing key imported by loadAISigningKey')
+  if (services.config.servicesSigningKey && !services.servicesSigningKey) {
+    throw new CloudConfigError('Services need the signing key imported by loadServicesSigningKey')
   }
-  const aiTokens = services.aiSigningKey
-    ? createAITokenService({
+  const servicesTokens = services.servicesSigningKey
+    ? createServicesTokenService({
         database: services.database,
         policy,
         deploymentMode: services.config.deployment,
         issuer: new URL(services.config.publicURL).origin,
-        signingKey: services.aiSigningKey,
-        lifetimeSeconds: services.config.aiTokenLifetimeSeconds
+        signingKey: services.servicesSigningKey,
+        lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
       })
     : undefined
 
@@ -280,6 +291,12 @@ export function createCloudApp(services: CloudServices) {
     requireActiveSession,
     authenticatedMutationLimiter
   })
+  const reports = createDocumentReportService(services.database, {
+    sharing,
+    email: services.transactionalEmail,
+    adminRecipients: services.config.enrollmentAdminNotificationEmails,
+    publicURL: services.config.publicURL
+  })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
     database: services.database,
@@ -287,8 +304,9 @@ export function createCloudApp(services: CloudServices) {
     documents,
     versions,
     entitlements,
-    aiTokens,
+    servicesTokens,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -299,6 +317,7 @@ export function createCloudApp(services: CloudServices) {
     versions,
     entitlements,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -316,6 +335,13 @@ export function createCloudApp(services: CloudServices) {
     .onError(cloudErrorHandler(services.reportError))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use(
+      '/api/*',
+      bodyLimit({
+        maxSize: CLOUD_API_MAX_BODY_BYTES,
+        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
+      })
+    )
     .use('*', async (context, next) => {
       await next()
       if (shouldPreventIndexing(context.req.path, services.config.indexingPolicy)) {
@@ -358,8 +384,8 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .get(CLOUD_AI_JWKS_PATH, async (context) =>
-      aiTokens ? context.json(aiTokens.jwks()) : context.notFound()
+    .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
+      servicesTokens ? context.json(servicesTokens.jwks()) : context.notFound()
     )
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', accountRoutes)

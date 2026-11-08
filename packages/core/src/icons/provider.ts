@@ -1,11 +1,11 @@
-import { iconToHTML, iconToSVG } from '@iconify/utils'
+import { getIconData, iconToHTML, iconToSVG, type IconifyIcon } from '@iconify/utils'
 import { chunk } from 'es-toolkit'
 
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 import { createIconifyAPIClient } from './api'
 import { buildIconData } from './svg'
-import type { IconCollection, IconData, IconifyIconEntry, IconSearchResult } from './types'
+import type { IconCollection, IconData, IconSearchResult } from './types'
 
 export interface IconSearchOptions {
   limit?: number
@@ -50,15 +50,13 @@ export function parseIconName(name: string): { prefix: string; iconName: string 
 /** Names per request, so the query string of a long list stays well within URL limits. */
 const NAMES_PER_REQUEST = 100
 
-/** An icon's body and box, with the set's default box filled in. */
-type IconEntry = Required<IconifyIconEntry>
-
 /**
  * Icons from the Iconify API, fetched one request per set and cached by name, so search
  * previews and placed icons share what was loaded.
  */
 export function createIconifyProvider(client = createIconifyAPIClient()): IconProvider {
-  const entries = new Map<string, IconEntry>()
+  /** Icons with their aliases and the set's defaults resolved, as Iconify draws them. */
+  const entries = new Map<string, IconifyIcon>()
   const built = new Map<string, IconData>()
   // Shared answers; a failed one is dropped so the next call asks again.
   let catalogue: Promise<IconCollection[]> | null = null
@@ -77,18 +75,11 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
   async function request(prefix: string, iconNames: string[]): Promise<void> {
     const collection = await client.fetchCollection(prefix, iconNames)
     for (const iconName of iconNames) {
-      const parent = collection.aliases?.[iconName]?.parent
-      const entry = collection.icons[iconName] ?? (parent ? collection.icons[parent] : undefined)
+      // An alias may flip, turn, or resize its parent; a set may give every icon a box.
+      const icon = getIconData(collection, iconName)
       const name = `${prefix}:${iconName}`
-      if (!entry) {
-        absent.add(name)
-        continue
-      }
-      entries.set(name, {
-        body: entry.body,
-        width: entry.width ?? collection.width ?? 24,
-        height: entry.height ?? collection.height ?? 24
-      })
+      if (icon) entries.set(name, icon)
+      else absent.add(name)
     }
   }
 
@@ -136,9 +127,7 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         const parsed = parseIconName(name)
         if (!entry || !parsed) continue
         const key = `${name}@${size}`
-        const icon =
-          built.get(key) ??
-          buildIconData(entry, parsed.prefix, parsed.iconName, entry.width, entry.height, size)
+        const icon = built.get(key) ?? buildIconData(entry, parsed.prefix, parsed.iconName, size)
         built.set(key, icon)
         found.set(name, icon)
       }

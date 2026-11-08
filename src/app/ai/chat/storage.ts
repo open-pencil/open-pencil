@@ -1,8 +1,6 @@
 import { isEqual } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
-
 import {
   designCustomAPIType,
   designCustomBaseURL,
@@ -16,18 +14,21 @@ import {
   modelCredentialRevision
 } from '@/app/ai/models'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { refreshWebSearchProvider } from '@/app/ai/search'
 import { enabledSkills } from '@/app/ai/skills/library'
 import { cloudAIAvailable } from '@/app/cloud/integration'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
 import {
-  refreshMediaCredentials,
-  credentialPersistenceRevision
+  credentialPersistenceRevision,
+  exaKeyStatus,
+  refreshMediaCredentials
 } from '@/app/settings/credentials/media'
 import {
   hasLegacyCredential,
   initializeCredentialMigration
 } from '@/app/settings/credentials/migration'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
 export const providerID = designProviderID
 export const modelID = designModelID
@@ -45,9 +46,9 @@ export const isHarnessProvider = computed(() => providerID.value === 'harness:pi
 export const isAgentProvider = computed(() => isACPProvider.value || isHarnessProvider.value)
 
 export const isConfigured = computed(() => {
-  if (isACPProvider.value) return IS_TAURI
+  if (isACPProvider.value) return canRunHostProcesses()
   // Pi can use the CLI's own sign-in, so a key is optional.
-  if (isHarnessProvider.value) return IS_TAURI
+  if (isHarnessProvider.value) return canRunHostProcesses()
   // Cloud's AI service needs no key: the Home server's sign-in and a workspace stand in for one.
   if (providerID.value === OPENPENCIL_AI_PROVIDER) {
     return cloudAIAvailable.value && Boolean(designModelConnection.value?.cloudWorkspaceId)
@@ -144,4 +145,17 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     void refreshAIProviderStatus()
     markTransportDirty()
   })
+  // `web_search` follows the saved Exa key and the Design model's Cloud workspace, for the chat
+  // and for agents reaching OpenPencil's tools.
+  watch(
+    () =>
+      [
+        exaKeyStatus.value,
+        cloudAIAvailable.value,
+        designModelConnection.value?.providerID,
+        designModelConnection.value?.cloudWorkspaceId
+      ] as const,
+    () => void refreshWebSearchProvider(designModelConnection.value ?? null),
+    { immediate: true }
+  )
 }

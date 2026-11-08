@@ -25,6 +25,8 @@ export interface AppPickerProps {
   selected?: string
   /** Tooltip on the trigger; wraps the popover trigger so both reach the same element. */
   tooltip?: string
+  /** Where the trigger's tooltip opens; the list's own `side` does not move it. */
+  tooltipSide?: 'left' | 'right' | 'top' | 'bottom'
   density?: 'compact' | 'comfortable'
   /**
    * `grid` shows each item's thumbnail alone, eight to a row, with the highlighted item's label
@@ -109,6 +111,7 @@ const {
   closeLabel,
   selected,
   tooltip,
+  tooltipSide = 'top',
   density = 'comfortable',
   layout = 'list',
   hasMore = false,
@@ -207,7 +210,7 @@ function select(value: AcceptableValue) {
 
 <template>
   <PopoverRoot v-model:open="open">
-    <Tip v-if="slots.trigger" as-child :label="tooltip" :disabled="!tooltip">
+    <Tip v-if="slots.trigger" as-child :side="tooltipSide" :label="tooltip" :disabled="!tooltip">
       <PopoverTrigger as-child>
         <slot name="trigger" />
       </PopoverTrigger>

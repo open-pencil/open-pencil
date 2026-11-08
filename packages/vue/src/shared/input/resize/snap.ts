@@ -141,6 +141,40 @@ function canvasHandle(handle: HandlePosition, world: Mat3): HandlePosition {
   return world[4] < 0 ? FLIPPED_HANDLE[across] : across
 }
 
+/** Whether drags land on whole pixels: Snap to pixel grid is on, in a design rather than a board. */
+export function roundsToPixels(editor: Editor): boolean {
+  const state = optionalEditorState(editor)
+  return (
+    state !== undefined &&
+    state.snappingPreferences.pixelGrid &&
+    resolveEditorProfile(state).pixelGrid
+  )
+}
+
+/**
+ * The box with whole-pixel sides, as Figma rounds a layer a handle resizes: the edges a handle
+ * moves give way and the ones it leaves stay, so a fractional position survives; a side the handle
+ * does not move rounds too, from its top or left edge.
+ */
+function wholePixelSize(
+  handle: HandlePosition,
+  rect: Rect,
+  axes: { x: boolean; y: boolean }
+): Rect {
+  let { x, y, width, height } = rect
+  if (axes.x) {
+    const rounded = Math.max(1, Math.round(width))
+    if (movesLeft(handle)) x += width - rounded
+    width = rounded
+  }
+  if (axes.y) {
+    const rounded = Math.max(1, Math.round(height))
+    if (movesTop(handle)) y += height - rounded
+    height = rounded
+  }
+  return { x, y, width, height }
+}
+
 export function applyResizeSnap(
   drag: ResizeSnapTarget,
   rect: Rect,
@@ -179,7 +213,13 @@ export function applyResizeSnap(
 
   // Only the axes the handle moves snap, so only their guides show.
   state.snapGuides = snap.guides.filter((guide) => (guide.axis === 'x' ? horizontal : vertical))
-  return applyEdgeDelta(drag.handle, rect, dx, dy)
+  if (!roundsToPixels(editor)) return applyEdgeDelta(drag.handle, rect, dx, dy)
+  // An edge that meets another layer or a guide lands on it; otherwise the pixel grid rounds the
+  // layer's size rather than its edge, as in Figma, which only a guide on that axis marks.
+  const meetsX = horizontal && state.snapGuides.some((guide) => guide.axis === 'x')
+  const meetsY = vertical && state.snapGuides.some((guide) => guide.axis === 'y')
+  const snapped = applyEdgeDelta(drag.handle, rect, meetsX ? dx : 0, meetsY ? dy : 0)
+  return wholePixelSize(drag.handle, snapped, { x: !meetsX, y: !meetsY })
 }
 
 /** What a multi-selection's box snaps against: its layers, and the parent whose layers it meets. */

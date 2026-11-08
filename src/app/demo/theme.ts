@@ -1,4 +1,4 @@
-import { watch, type WatchSource } from 'vue'
+import { getCurrentScope, onScopeDispose, watch, type WatchSource } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -48,7 +48,8 @@ export function applyTourTheme(editor: TourThemeEditor, theme: AppTheme): void {
 
 /**
  * Keep the tour in the app's theme while it is open: now, and whenever the theme changes,
- * until the tab shows another document. Returns a function that stops following.
+ * until the tab shows another document or the effect scope it runs in stops, as a store's does
+ * when its tab closes. Returns a function that stops following.
  */
 export function followAppTheme(editor: TourThemeEditor, theme: WatchSource<AppTheme>) {
   const stopWatching = watch(theme, (value) => applyTourTheme(editor, value), { immediate: true })
@@ -57,5 +58,6 @@ export function followAppTheme(editor: TourThemeEditor, theme: WatchSource<AppTh
     stopWatching()
     stopListening()
   }
+  if (getCurrentScope()) onScopeDispose(stop)
   return stop
 }

@@ -8,6 +8,14 @@ import type { EditorState, Tool } from '#core/editor/types'
 export type PathEdits = 'all' | 'handles'
 
 /**
+ * Whether layers may change: anything, or none of them, so nothing is moved, resized, restyled,
+ * renamed, added, or deleted, while vector edit mode still reshapes a path as far as `PathEdits`
+ * lets it. A host that hands the player one path to reshape, as a lettering game does, offers
+ * none.
+ */
+export type LayerEdits = 'all' | 'none'
+
+/**
  * What the host takes away from every view, whatever the canvas shows. A restriction only ever
  * takes away from what the document's kind and the view offer.
  */
@@ -21,6 +29,8 @@ export interface EditorRestrictions {
   tools: ReadonlySet<Tool> | null
   /** How much of a path vector edit mode may change. */
   pathEdits: PathEdits
+  /** Whether layers may change outside vector edit mode. */
+  layerEdits: LayerEdits
 }
 
 /**
@@ -60,7 +70,12 @@ export interface EditorProfile {
   tools: ReadonlySet<Tool> | null
   /** How much of a path vector edit mode may change: anything, or only its handles. */
   pathEdits: PathEdits
-  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  /**
+   * Whether layers may change: the canvas's edit handles, layer drags, text editing, value
+   * scrubbing, and guide editing. None while the document is read-only.
+   */
+  layerEdits: LayerEdits
+  /** Which tool each key picks, by shortcut (`R`, `Shift+S`), as TanStack Hotkeys spells it. */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas

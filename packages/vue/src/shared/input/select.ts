@@ -56,7 +56,7 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (!resolveEditorProfile(editor.state).edits) return false
+  if (resolveEditorProfile(editor.state).layerEdits === 'none') return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
@@ -128,8 +128,8 @@ export function handleSelectDown(
 
   selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
-  // A read-only document moves nothing.
-  if (!resolveEditorProfile(editor.state).edits) return
+  // A read-only document, or one whose layers the host keeps as they are, moves nothing.
+  if (resolveEditorProfile(editor.state).layerEdits === 'none') return
   if (selectionIsLocked(editor)) return
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.

@@ -1,5 +1,3 @@
-import { fromUint8Array } from 'js-base64'
-
 import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
@@ -12,7 +10,7 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { FontFaceRef } from '#core/text/font/faces'
@@ -194,9 +192,6 @@ function createImagePattern(
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
-  const base64 = fromUint8Array(data)
-  const mime = imageMimeType(data)
-
   return {
     id,
     node: svg(
@@ -208,7 +203,7 @@ function createImagePattern(
         height: 1
       },
       svg('image', {
-        href: `data:${mime};base64,${base64}`,
+        href: imageDataURL(data),
         width: node.width,
         height: node.height,
         preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'

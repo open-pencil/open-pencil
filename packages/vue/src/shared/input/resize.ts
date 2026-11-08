@@ -120,6 +120,8 @@ function resizedPlacement(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
+  // A handle pressed and released without moving leaves the layer as it was, as in Figma.
+  if (cx === d.startX && cy === d.startY) return placeInResizedFrame(placement, origRect, origRect)
   const { x: dx, y: dy } = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
   const signed = signedResizeRect(d.handle, origRect, dx, dy, aspect)
   if (signed.width < 0 || signed.height < 0) {
@@ -411,6 +413,8 @@ function restoreResizePreview(d: DragResize, editor: Editor) {
       y: orig.y,
       width: orig.width,
       height: orig.height,
+      flipX: orig.flipX,
+      flipY: orig.flipY,
       vectorNetwork: orig.vectorNetwork,
       fillGeometry: orig.fillGeometry,
       strokeGeometry: orig.strokeGeometry,
@@ -525,7 +529,12 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
     for (const [childId, original] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, snapshotResizeFinal(child, original.strokeGeometry.length > 0))
+      // Constraints turn a layer over when its frame shrinks it past zero.
+      finalChildren.set(childId, {
+        ...snapshotResizeFinal(child, original.strokeGeometry.length > 0),
+        flipX: child.flipX,
+        flipY: child.flipY
+      })
     }
     restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,

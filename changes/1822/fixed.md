@@ -1,0 +1,1 @@
+- Undoing an edit inside a component back to the last save marks the document saved again (#1822).

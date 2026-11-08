@@ -1,0 +1,1 @@
+- Undoing a nudge back to the saved state clears the unsaved indicator, and a collaborator's change that arrives during an edit keeps the document unsaved after undoing back (#1910).

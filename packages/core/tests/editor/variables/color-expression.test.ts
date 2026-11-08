@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 
 import { resolveFillColor } from '#core/canvas/renderer/colors'
 import {
@@ -48,7 +49,7 @@ test('100 instances repaint derived colors on a token edit, undo, and redo', () 
   editor.undo.redo()
   for (const node of instances) expect(colorOf(node).b).toBe(1)
 
-  const clipboard = captureClipboardVariables(graph, [component])
+  const clipboard = captureClipboardVariables(graph, layerDependencies(graph, [component]))
   expect(clipboard.variables).toHaveLength(2)
   const destination = new SceneGraph()
   const transfer = importClipboardVariables(destination, clipboard)

@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 
 import {
+  panelNumber,
   panelPosition,
   panelPositionChange,
   panelRotation,
@@ -10,14 +11,15 @@ import type { NumericNodeProperty, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
+import { usePanelSize } from '#vue/controls/panel-size/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useEditor } from '#vue/editor/context'
 
+type PanelProp = 'x' | 'y' | 'rotation' | 'width' | 'height'
+
 /**
- * Returns position-related state and actions for the current selection.
- *
- * This composable is designed for property panels that edit x/y, size,
- * rotation, alignment, flipping, and multi-node transforms.
+ * The selection's X, Y, rotation, width, and height as the Design panel shows and edits them, and
+ * its align, flip, rotate, and Ignore auto layout actions.
  */
 export function usePosition() {
   const editor = useEditor()
@@ -29,13 +31,14 @@ export function usePosition() {
 
   // X, Y, and rotation read as Figma's panel shows them: the turned layer's box on the canvas and
   // its counterclockwise angle; see `panelPosition` and `panelRotation`.
-  function shown(target: SceneNode, key: 'x' | 'y' | 'rotation'): number {
-    if (key === 'rotation') return Math.round(panelRotation(target, editor.graph))
-    return Math.round(panelPosition(target, editor.graph)[key])
+  function shown(target: SceneNode, key: PanelProp): number {
+    if (key === 'rotation') return panelNumber(panelRotation(target, editor.graph))
+    if (key === 'x' || key === 'y') return panelNumber(panelPosition(target, editor.graph)[key])
+    return panelNumber(target[key])
   }
 
-  /** The shown value of every selected node, or MIXED when they differ. */
-  function panelProp(key: 'x' | 'y' | 'rotation') {
+  /** The value the panel shows for the selection, or MIXED when its layers show different ones. */
+  function panelProp(key: PanelProp) {
     return computed<MixedValue<number>>(() => {
       const values = nodes.value.map((target) => shown(target, key))
       if (values.length === 0) return 0
@@ -44,38 +47,35 @@ export function usePosition() {
     })
   }
 
-  const x = computed(() => (node.value ? shown(node.value, 'x') : 0))
-  const y = computed(() => (node.value ? shown(node.value, 'y') : 0))
-  const width = computed(() => node.value?.width ?? 0)
-  const height = computed(() => node.value?.height ?? 0)
-  const rotation = computed(() => (node.value ? shown(node.value, 'rotation') : 0))
-
-  const {
-    updateProp: _updateProp,
-    updateEach,
-    commitProp: _commitProp,
-    cancelProp: _cancelProp
-  } = usePropScrub(editor)
+  const scrub = usePropScrub(editor)
+  const size = usePanelSize(editor)
 
   // Typed X, Y, and rotation become each node's own move or turn, as typing them in Figma does.
   function updateProp(key: NumericNodeProperty, value: number) {
     if (key === 'x' || key === 'y') {
-      updateEach(nodes.value, key, (target) =>
+      scrub.updateEach(nodes.value, key, (target) =>
         panelPositionChange(target, editor.graph, key, value)
       )
     } else if (key === 'rotation') {
-      updateEach(nodes.value, key, (target) => panelRotationChange(target, editor.graph, value))
+      scrub.updateEach(nodes.value, key, (target) =>
+        panelRotationChange(target, editor.graph, value)
+      )
+    } else if (key === 'width' || key === 'height') {
+      size.update(nodes.value, { [key]: value }, () => scrub.updateProp(nodes.value, key, value))
     } else {
-      _updateProp(nodes.value, key, value)
+      scrub.updateProp(nodes.value, key, value)
     }
   }
 
+  // A size edit may have gone through either path; each commits or cancels only what it opened.
   function commitProp(key: NumericNodeProperty, value: number, previous: number) {
-    _commitProp(nodes.value, key, value, previous)
+    size.commit()
+    scrub.commitProp(nodes.value, key, value, previous)
   }
 
   function cancelProp(key: NumericNodeProperty) {
-    _cancelProp(nodes.value, key)
+    size.cancel()
+    scrub.cancelProp(nodes.value, key)
   }
 
   /** Whether every selected layer sits in an auto layout, where it can ignore that layout. */
@@ -119,11 +119,6 @@ export function usePosition() {
     prop,
     panelProp,
     ids,
-    x,
-    y,
-    width,
-    height,
-    rotation,
     rotates,
     inAutoLayout,
     ignoresAutoLayout,

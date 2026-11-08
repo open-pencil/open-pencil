@@ -17,7 +17,8 @@ async function deletedDocument() {
       id: workspaceId,
       name: 'Cleanup',
       slug: `cleanup-${crypto.randomUUID()}`,
-      createdBy: 'alice'
+      createdBy: 'alice',
+      ownerId: 'alice'
     })
     .execute()
   await runtime.database

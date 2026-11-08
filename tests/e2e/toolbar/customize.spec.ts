@@ -72,3 +72,75 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   await expect(page.getByTestId(toolbarToolTestId('PEN'))).toBeVisible()
   canvas.assertNoErrors()
 })
+
+/** Picks a place from the toolbar's context menu: an edge, or an alignment along it. */
+async function dockFromMenu(page: Page, group: 'Position' | 'Alignment', name: string) {
+  await page.getByTestId('toolbar').click({ button: 'right' })
+  await page
+    .getByRole('group', { name: group })
+    .getByRole('menuitemradio', { name, exact: true })
+    .click()
+}
+
+test('the toolbar docks to any edge and end from its menu and Settings, and stays there', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const toolbar = page.getByTestId('toolbar')
+
+  await dockFromMenu(page, 'Position', 'Left')
+  await expect(toolbar).toHaveAttribute('aria-orientation', 'vertical')
+  // Along a vertical edge the alignments read Top, Middle, Bottom.
+  await dockFromMenu(page, 'Alignment', 'Top')
+
+  const expectTopLeft = async () => {
+    const bar = await toolbar.boundingBox()
+    const viewport = page.viewportSize()
+    if (!bar || !viewport) throw new Error('toolbar is not laid out')
+    expect(bar.height).toBeGreaterThan(bar.width)
+    expect(bar.x + bar.width).toBeLessThan(viewport.width / 2)
+    expect(bar.y).toBeLessThan(viewport.height / 3)
+    // The shapes menu opens toward the canvas, to the right of its trigger.
+    const trigger = page.getByTestId(toolbarFlyoutTestId('RECTANGLE'))
+    await trigger.click()
+    const item = await page.getByTestId(toolbarFlyoutItemTestId('ELLIPSE')).boundingBox()
+    const triggerBox = await trigger.boundingBox()
+    if (!item || !triggerBox) throw new Error('flyout is not laid out')
+    expect(item.x).toBeGreaterThanOrEqual(triggerBox.x + triggerBox.width)
+    await page.keyboard.press('Escape')
+  }
+  await expectTopLeft()
+
+  await page.reload()
+  await canvas.waitForInit()
+  await expectTopLeft()
+
+  await toolbar.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Customize toolbar…' }).click()
+  const position = page.getByTestId('settings-toolbar-position')
+  const alignment = page.getByTestId('settings-toolbar-alignment')
+  await expect(position.getByRole('button', { name: 'Left' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await expect(alignment.getByRole('button', { name: 'Top' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await position.getByRole('button', { name: 'Top' }).click()
+  // Along a horizontal edge the same alignment reads Left.
+  await expect(alignment.getByRole('button', { name: 'Left' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await page.getByRole('button', { name: 'Reset to default' }).click()
+  await expect(alignment.getByRole('button', { name: 'Center' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await page.getByTestId('app-settings-done').click()
+  await expect(toolbar).toHaveAttribute('aria-orientation', 'horizontal')
+  canvas.assertNoErrors()
+})

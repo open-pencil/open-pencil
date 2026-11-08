@@ -53,7 +53,7 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
@@ -81,22 +81,31 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
-import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
+import { createViewportActions, DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
+import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
 
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
-  const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
+  const undo = new UndoManager({
+    onChange: () => emitEditorEvent('history:changed'),
+    onDiscard: () => emitEditorEvent('edit:discarded'),
+    runReplay: (replay) => _graph.runOutsideEdits(replay)
+  })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
+  // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
+  const viewportSize = { width: 0, height: 0 }
   const _getViewportSize =
     options?.getViewportSize ??
     (() => {
+      if (viewportSize.width > 0 && viewportSize.height > 0) return { ...viewportSize }
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
+  // Floating UI over the canvas edges, which fits keep clear of; the host reports where it sits.
+  let viewportChrome: ViewportInsets = { ...DEFAULT_VIEWPORT_CHROME }
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
@@ -250,7 +259,10 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
+  const { scheduleComponentSync, isSyncingComponents } = createComponentSyncScheduler(
+    () => _graph,
+    requestRender
+  )
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -284,6 +296,7 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    getViewportChrome: () => viewportChrome,
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
@@ -355,8 +368,6 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
-  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
-  const readsOnly = () => !resolveEditorProfile(state).edits
   const vectorEdit = createVectorEditActions(ctx, {
     updateNodeWithUndo: nodes.updateNodeWithUndo,
     select: selection.select,
@@ -365,13 +376,18 @@ export function createEditor(options?: EditorOptions) {
   })
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
+    penPushHistory: shapes.penPushHistory,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
+  function endLayerEdits() {
+    nodes.flushNudge()
+    nodes.cancelNodePreviews()
+    if (state.editingTextId) text.commitTextEdit()
+  }
   const readOnly = createReadOnlyActions(ctx, {
+    endLayerEdits,
     endEdits: () => {
-      nodes.flushNudge()
-      nodes.cancelNodePreviews()
-      if (state.editingTextId) text.commitTextEdit()
+      endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
       shapes.penCancel()
       shapes.pencilCancel()
@@ -485,7 +501,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo: guardUndo(undo, readsOnly),
+    undo: guardUndo(undo, readOnly.historyRefusal),
     state,
 
     // Graph reads
@@ -496,6 +512,7 @@ export function createEditor(options?: EditorOptions) {
     // Lifecycle
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
+    isSyncingComponents,
     requestRender,
     requestRefresh,
     textSelectionChanged,
@@ -518,6 +535,20 @@ export function createEditor(options?: EditorOptions) {
 
     /** The size of the canvas the editor draws into, in screen pixels. */
     getViewportSize: _getViewportSize,
+    /** Records the canvas's size in screen pixels, which zooming to fit and centring use. */
+    setViewportSize(width: number, height: number) {
+      viewportSize.width = width
+      viewportSize.height = height
+    },
+    /** Floating UI over each canvas edge, in screen pixels, that zooming to fit keeps clear of. */
+    getViewportChrome: () => ({ ...viewportChrome }),
+    /**
+     * Records the floating UI over each canvas edge, such as a toolbar docked there, which zooming
+     * to fit and a page's first view keep clear of; Figma's bottom toolbar until a host reports.
+     */
+    setViewportChrome(chrome: ViewportInsets) {
+      viewportChrome = { ...chrome }
+    },
 
     // Canvas and frame guides
     ...guides,
@@ -627,9 +658,9 @@ export function createEditor(options?: EditorOptions) {
     ...lintFixBridge,
 
     // Read-only documents, which refuse every action above that changes them
-    ...readOnly
+    ...readOnly.actions
   }
-  return guardReadOnly(editor, readsOnly)
+  return guardEdits(editor, readOnly.refusal)
 }
 
 /**
