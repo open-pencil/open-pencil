@@ -562,6 +562,7 @@ describe('writing an edited document into its archive', () => {
     const defaults = await open(bytes)
     populateFigInternalPages(defaults)
     setDefaultMode(defaults, collection.id, darkId)
+    reconcileVariableLayouts(defaults, { variables: [surface.id] })
     const defaultDark = await exportFigFile(defaults)
     expect(fillOf(defaultDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
     expect(fillOf(defaultDark, 'Internal')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
@@ -589,13 +590,17 @@ describe('writing an edited document into its archive', () => {
       reconcileVariableLayouts(graph, { variables: [brand.id] })
     }
     setBrand({ r: 1, g: 0, b: 0, a: 1 })
+    expect(layerNamed(graph, 'Card').fills[0].color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
     setBrand({ r: 0, g: 0, b: 1, a: 1 })
     // Each change refreshed the paint, discarding its edit, as Figma does.
-    expect(layerNamed(graph, 'Card').fills[0].opacity).toBe(1)
+    expect(layerNamed(graph, 'Card').fills[0]).toMatchObject({
+      color: { r: 0, g: 0, b: 1, a: 1 },
+      opacity: 1
+    })
 
     const saved = [...recordsOf(await exportFigFile(graph)).values()]
     const record = expectDefined(saved.find((entry) => entry.name === 'Card'))
-    expect(record.fillPaints?.[0]?.opacity).toBe(1)
+    expect(record.fillPaints?.[0]).toMatchObject({ color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {
