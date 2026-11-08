@@ -24,12 +24,25 @@ interface SVGElementInput {
 }
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+/** The SVG attributes behind the camelCase props JSX spells them with, for each one SVG import reads. */
 const JSX_ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
   className: 'class',
+  clipPath: 'clip-path',
+  fillOpacity: 'fill-opacity',
   fillRule: 'fill-rule',
+  fontFamily: 'font-family',
+  fontSize: 'font-size',
+  fontStyle: 'font-style',
+  fontWeight: 'font-weight',
+  letterSpacing: 'letter-spacing',
+  stopColor: 'stop-color',
+  stopOpacity: 'stop-opacity',
   strokeLinecap: 'stroke-linecap',
   strokeLinejoin: 'stroke-linejoin',
+  strokeOpacity: 'stroke-opacity',
   strokeWidth: 'stroke-width',
+  textAnchor: 'text-anchor',
+  textDecoration: 'text-decoration',
   xlinkHref: 'xlink:href'
 }
 

@@ -188,3 +188,18 @@ describe('inline SVG viewBox origin', () => {
     expect(expectDefined(vector.strokes[0], 'stroke').weight).toBe(4)
   })
 })
+
+describe('inline SVG paints', () => {
+  test('take gradient stops and opacities spelled as JSX props', async () => {
+    const vector = await iconVector(
+      `<svg viewBox="0 0 10 10" size={10}><defs><linearGradient id="g"><stop offset="0" stopColor="#ff0000" stopOpacity="0.5" /><stop offset="1" stopColor="#0000ff" /></linearGradient></defs><rect width={10} height={10} fill="url(#g)" fillOpacity="0.8" /></svg>`
+    )
+    const [fill] = vector.fills
+    expect(fill?.type).toBe('GRADIENT_LINEAR')
+    expect(fill?.opacity).toBeCloseTo(0.8)
+    expect(fill?.gradientStops?.map(({ color }) => [color.r, color.b, color.a])).toEqual([
+      [1, 0, 0.5],
+      [0, 1, 1]
+    ])
+  })
+})
