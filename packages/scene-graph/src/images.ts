@@ -1,8 +1,7 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
-import { isValid, toUint8Array } from 'js-base64'
-import { decode } from 'ufo'
+import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { Matrix, Size } from './primitives'
 import type { Fill } from './types'
@@ -16,14 +15,15 @@ export function computeImageHash(data: Uint8Array): string {
   return bytesToHex(sha1(data))
 }
 
-export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'
+export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'image/avif'
 
 /** The image types documents store, by the name `image-size` gives each format. */
 const IMAGE_MIME_TYPES: Partial<Record<string, ImageMimeType>> = {
   png: 'image/png',
   jpg: 'image/jpeg',
   gif: 'image/gif',
-  webp: 'image/webp'
+  webp: 'image/webp',
+  avif: 'image/avif'
 }
 
 /** The raster types a dropped or pasted file can be imported as an image fill from. */
@@ -47,7 +47,7 @@ export interface ImageHeader extends Size {
 }
 
 /**
- * The type and size of a PNG, JPEG, GIF, or WebP, read from its header by `image-size`; null for
+ * The type and size of a PNG, JPEG, GIF, WebP, or AVIF, read from its header by `image-size`; null for
  * bytes it cannot read and for other formats.
  */
 export function imageHeader(data: Uint8Array): ImageHeader | null {
@@ -76,9 +76,10 @@ export interface DataURL {
 }
 
 /**
- * The media type and bytes a `data:` URL carries, read as the Fetch standard reads one: a Base64
- * body is decoded and a percent-encoded one unescaped. Null for anything else, and for Base64 the
- * standard refuses, such as a body cut short in transit.
+ * The media type and bytes a `data:` URL carries: a Base64 body decoded, and a percent-encoded
+ * one unescaped as UTF-8 text, as SVG and other markup are written. Null for anything else: Base64
+ * cut short in transit, and escapes that are not UTF-8, such as a binary image escaped byte by
+ * byte, which a reader that must take any data URL, such as `.pen` loading, gets from `fetch`.
  */
 export function parseDataURL(url: string): DataURL | null {
   const match = /^\s*data:([^,]*),(.*?)\s*$/is.exec(url)
@@ -87,12 +88,28 @@ export function parseDataURL(url: string): DataURL | null {
   const params = header.split(';').map((param) => param.trim())
   const base64 = params.length > 1 && params.at(-1)?.toLowerCase() === 'base64'
   const mimeType = params[0]?.toLowerCase() || 'text/plain'
-  const text = decode(body)
+  let text: string
+  try {
+    // A `%` that starts no escape is a literal percent sign, as in `width="100%"`.
+    text = decodeURIComponent(body.replace(/%(?![\da-f]{2})/gi, '%25'))
+  } catch {
+    return null
+  }
   if (!base64) return { mimeType, bytes: new TextEncoder().encode(text) }
   const compact = text.replace(/\s+/g, '')
   // Base64 one character past a whole group of four cannot be bytes: it was cut short.
   if (compact.replace(/={1,2}$/, '').length % 4 === 1 || !isValid(compact)) return null
   return { mimeType, bytes: toUint8Array(compact) }
+}
+
+/** Encoded image bytes as a Base64 data URL of the type their header names. */
+export function imageDataURL(data: Uint8Array): string {
+  return `data:${imageMimeType(data)};base64,${fromUint8Array(data)}`
+}
+
+/** SVG markup as a percent-encoded data URL, as CSS `url()` and `<img src>` take one. */
+export function svgDataURL(svg: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /** An image's size in pixels, read from its header; null for bytes it cannot read. */

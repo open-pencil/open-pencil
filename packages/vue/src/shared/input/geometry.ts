@@ -18,6 +18,7 @@ import {
   type TransformZone
 } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import moveCursorSVG from '#vue/shared/assets/cursors/move.svg?raw'
@@ -25,7 +26,7 @@ import resizeCursorSVG from '#vue/shared/assets/cursors/resize.svg?raw'
 import rotateCursorSVG from '#vue/shared/assets/cursors/rotate.svg?raw'
 
 /** Figma's four-way cursor over a handle that moves a point, such as a line's end. */
-export const MOVE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(moveCursorSVG)}") 12 12, auto`
+export const MOVE_CURSOR = `url("${svgDataURL(moveCursorSVG)}") 12 12, auto`
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
@@ -250,7 +251,7 @@ export function buildRotationCursor(angleDeg: number): string {
       )
       .replace('</svg>', '</g></svg>')
   }
-  cached = `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+  cached = `url("${svgDataURL(svg)}") 12 12, auto`
   rotationCursorCache.set(key, cached)
   return cached
 }
@@ -277,7 +278,7 @@ export function buildResizeCursor(angleDeg: number): string {
       `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`
     )
     .replace('</svg>', '</g></svg>')
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+  return `url("${svgDataURL(svg)}") 12 12, auto`
 }
 
 /**
