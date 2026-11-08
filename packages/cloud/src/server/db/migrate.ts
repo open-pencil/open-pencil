@@ -1,11 +1,21 @@
 import type { Kysely } from 'kysely'
 import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
 
-import * as baseline from './migrations/001_baseline'
+import * as accounts from './migrations/001_accounts'
+import * as workspaces from './migrations/002_workspaces'
+import * as storage from './migrations/003_storage'
+import * as documents from './migrations/004_documents'
+import * as sharing from './migrations/005_sharing'
+import * as operations from './migrations/006_operations'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
-  '001_baseline': baseline
+  '001_accounts': accounts,
+  '002_workspaces': workspaces,
+  '003_storage': storage,
+  '004_documents': documents,
+  '005_sharing': sharing,
+  '006_operations': operations
 }
 
 class CloudMigrationProvider implements MigrationProvider {
