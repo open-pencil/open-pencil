@@ -21,6 +21,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { setDefaultMode } from '@open-pencil/scene-graph/variables'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
@@ -545,6 +546,11 @@ describe('writing an edited document into its archive', () => {
     saved.updateNode(layerNamed(saved, 'Holder').id, { variableModes: { [collection.id]: darkId } })
     saved.reparentNode(layerNamed(saved, 'Inner').id, saved.getPages()[0].id)
     expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    // A new default mode reaches layers with no mode of their own.
+    const defaults = await open(bytes)
+    setDefaultMode(defaults, collection.id, darkId)
+    expect(fillOf(await exportFigFile(defaults), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {

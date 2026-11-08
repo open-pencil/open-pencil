@@ -162,6 +162,19 @@ function addVariableUsers(
   if (!changes.collectionsChanged) return
   for (const node of graph.nodes.values())
     if (Object.keys(node.variableModes).length > 0) add(node.id)
+  // A new default mode changes what layers with no mode of their own resolve.
+  const saved = new Map(archiveBaseline(graph)?.collections)
+  const defaultsChanged = new Set(
+    [...graph.variableCollections.values()]
+      .filter((collection) => {
+        const before = saved.get(collection.id)
+        return before !== undefined && before.defaultModeId !== collection.defaultModeId
+      })
+      .map((collection) => collection.id)
+  )
+  if (defaultsChanged.size === 0) return
+  const pages = graph.getPages().map((page) => page.id)
+  for (const layer of layersResolvingCollections(graph, pages, defaultsChanged)) add(layer.id)
 }
 
 /**
