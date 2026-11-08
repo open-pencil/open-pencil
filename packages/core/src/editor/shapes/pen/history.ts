@@ -28,15 +28,16 @@ export function createPenHistory(ctx: EditorContext): PenHistory {
   // Undo and redo act on the newest point, so a press waiting to be recorded is recorded first.
   let stopSettling: (() => void) | null = null
 
-  // A host may keep the editor's state reactive, whose proxies structuredClone refuses.
-  const snapshot = (): PenSnapshot => cloneDeep(ctx.state.penState)
+  const snapshot = (): PenSnapshot =>
+    // eslint-disable-next-line unicorn/prefer-structured-clone -- a host may keep the editor's state reactive, whose proxies structuredClone refuses.
+    cloneDeep(ctx.state.penState)
   const same = (a: PenSnapshot, b: PenSnapshot) => JSON.stringify(a) === JSON.stringify(b)
 
   function restore(path: PenSnapshot) {
     pending = null
     stopSettling?.()
     stopSettling = null
-    ctx.state.penState = cloneDeep(path)
+    ctx.state.penState = structuredClone(path)
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null
     if (path) ctx.setActiveTool('PEN')
