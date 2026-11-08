@@ -590,7 +590,10 @@ describe('writing an edited document into its archive', () => {
       reconcileVariableLayouts(graph, { variables: [brand.id] })
     }
     setBrand({ r: 1, g: 0, b: 0, a: 1 })
-    expect(layerNamed(graph, 'Card').fills[0].color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(layerNamed(graph, 'Card').fills[0]).toMatchObject({
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1
+    })
     setBrand({ r: 0, g: 0, b: 1, a: 1 })
     // Each change refreshed the paint, discarding its edit, as Figma does.
     expect(layerNamed(graph, 'Card').fills[0]).toMatchObject({
