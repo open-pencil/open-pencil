@@ -1,4 +1,4 @@
-import { sql, type Expression, type Transaction } from 'kysely'
+import { sql, type Expression, type Kysely, type Transaction } from 'kysely'
 
 import type { CloudDatabase } from './tables'
 
@@ -24,4 +24,31 @@ export async function lockForTransaction(
   key: string
 ): Promise<void> {
   await sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`.execute(transaction)
+}
+
+/**
+ * Renames `from` to `to` with its primary key, when `from` exists and `to` does not, as a table
+ * kept outside migrations needs before the migrator that keeps it runs, such as a migration
+ * history renamed with its owner. Running it again, or from two processes at once, changes nothing.
+ */
+export async function renameTableOnce<Database>(
+  database: Kysely<Database>,
+  from: string,
+  to: string
+): Promise<void> {
+  await sql`
+    do $$
+    begin
+      if to_regclass(${sql.lit(from)}) is not null and to_regclass(${sql.lit(to)}) is null then
+        execute format('alter table %I rename to %I', ${sql.lit(from)}, ${sql.lit(to)});
+        execute format(
+          'alter table %I rename constraint %I to %I',
+          ${sql.lit(to)},
+          ${sql.lit(`${from}_pkey`)},
+          ${sql.lit(`${to}_pkey`)}
+        );
+      end if;
+    end
+    $$
+  `.execute(database)
 }

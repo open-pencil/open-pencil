@@ -350,8 +350,8 @@ a short-lived ES256 token for a workspace member when the workspace owner's plan
 `services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
 spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
 the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
-database. A token from a Cloud before account plans names no account, and the relay charges it to
-the workspace's own allowance, so the relay can upgrade first; usage recorded before the relay
+database. A token from a Cloud before account plans names no account, and the services server charges it to
+the workspace's own allowance, so the services server can upgrade first; usage recorded before it
 kept accounts still counts this month for requests from its workspace. The contract editors and services share, including the service's catalog, wallet, and
 error codes, is `src/contract/services.ts`; it has its own version so a service can change without
 a Cloud release. AI models are the first capability; image generation and search join the same
@@ -359,8 +359,8 @@ contract and the same credits. A `[billing]` table only advertises where people 
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
-`src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
+catalog, wallet, and usage pages are the contract's own. The reference service is the services server in
+`src/services`, run by `src/runtime/node/services`: it verifies tokens against Cloud's keys,
 forwards completions to one upstream with one key, and keeps one usage row per settled request, so an
 account's monthly spend is the sum of its rows across the workspaces it owns. The usage page lists
 one workspace's requests only, since the owner's other workspaces have other members. It reads usage from the upstream's answer, asking
@@ -370,7 +370,7 @@ so in-flight requests can overdraw an allowance; the official service reserves c
 answer ends only after its charge is recorded, so the wallet the editor reads once a reply ends
 includes it, and a refusal for lack of credits says when the allowance renews. It forwards only
 chat completion fields, so a router's fallback or provider fields cannot run a model outside the
-catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
+catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the services server ends it.
 
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at

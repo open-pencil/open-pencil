@@ -3,7 +3,7 @@ import { fromDate, startOfMonth, toCalendarDate } from '@internationalized/date'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import type { AIRelayDatabase, NewAIRelayUsage } from './db'
+import type { ServicesDatabase, NewServicesUsage } from './db'
 
 const USAGE_PAGE_SIZE = 50
 
@@ -31,10 +31,10 @@ function encodeCursor(createdAt: Date, id: string): string {
   return `${createdAt.getTime()}.${id}`
 }
 
-export class AIUsageCursorError extends Error {
+export class ServicesUsageCursorError extends Error {
   constructor() {
     super('Invalid usage cursor')
-    this.name = 'AIUsageCursorError'
+    this.name = 'ServicesUsageCursorError'
   }
 }
 
@@ -49,11 +49,11 @@ export function spender(claims: { accountId?: string; workspaceId: string }): Cr
   return { accountId: claims.accountId ?? claims.workspaceId, workspaceId: claims.workspaceId }
 }
 
-export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
+export function createServicesUsageStore(database: Kysely<ServicesDatabase>) {
   async function spent({ accountId, workspaceId }: CreditSpender, now: Date): Promise<number> {
     const { start, end } = usagePeriod(now)
     const row = await database
-      .selectFrom('aiRelayUsage')
+      .selectFrom('servicesUsage')
       .select((query) => query.fn.sum<string | number | null>('credits').as('credits'))
       .where((usage) =>
         usage.or([
@@ -68,8 +68,8 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
   }
 
   return {
-    async record(usage: NewAIRelayUsage): Promise<void> {
-      await database.insertInto('aiRelayUsage').values(usage).execute()
+    async record(usage: NewServicesUsage): Promise<void> {
+      await database.insertInto('servicesUsage').values(usage).execute()
     },
 
     /**
@@ -98,11 +98,11 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
       let after: { createdAt: Date; id: string } | undefined
       if (cursor !== undefined) {
         const parsed = v.safeParse(cursorSchema, cursor)
-        if (!parsed.success) throw new AIUsageCursorError()
+        if (!parsed.success) throw new ServicesUsageCursorError()
         after = parsed.output
       }
       let query = database
-        .selectFrom('aiRelayUsage')
+        .selectFrom('servicesUsage')
         .select(['id', 'createdAt', 'modelId', 'userId', 'credits'])
         .where('workspaceId', '=', workspaceId)
       if (after) {
@@ -136,4 +136,4 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
   }
 }
 
-export type AIUsageStore = ReturnType<typeof createAIUsageStore>
+export type ServicesUsageStore = ReturnType<typeof createServicesUsageStore>

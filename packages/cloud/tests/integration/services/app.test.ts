@@ -2,13 +2,6 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
-  createAIRelayApp,
-  createAIRelayDatabase,
-  migrateAIRelayDatabase,
-  parseAIRelayConfig,
-  type AIRelayConfigInput
-} from '#cloud/ai-relay'
-import {
   serviceCatalogSchema,
   serviceErrorSchema,
   usagePageSchema,
@@ -16,6 +9,13 @@ import {
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
+import {
+  createServicesApp,
+  createServicesDatabase,
+  migrateServicesDatabase,
+  parseServicesConfig,
+  type ServicesConfigInput
+} from '#cloud/services'
 import { PGlite } from '@electric-sql/pglite'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { InsertQueryNode, type KyselyPlugin, type QueryId } from 'kysely'
@@ -27,7 +27,7 @@ const APP = 'https://app.example.com'
 const MODEL = 'anthropic/claude-sonnet-5-5'
 const NOW = new Date('2026-10-21T12:00:00Z')
 
-const configInput: AIRelayConfigInput = {
+const configInput: ServicesConfigInput = {
   schema_version: 1,
   relay: { cloud_url: CLOUD, allowed_origins: [APP], max_concurrent_requests: 1 },
   upstream: { base_url: 'https://upstream.example.com/api/v1' },
@@ -81,24 +81,24 @@ async function relay(
   options: { upstreamTimeoutMs?: number; maxRequestBytes?: number; chargeGate?: Promise<void> } = {}
 ) {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
-  const database = createAIRelayDatabase(new PGliteDialect(pglite))
+  const database = createServicesDatabase(new PGliteDialect(pglite))
   closers.push(() => database.destroy())
-  await migrateAIRelayDatabase(database)
+  await migrateServicesDatabase(database)
 
   const { privateKey, publicKey } = await generateKeyPair('ES256')
   const keys = createLocalJWKSet({ keys: [{ ...(await exportJWK(publicKey)), kid: 'cloud' }] })
   const calls: UpstreamCall[] = []
   const settled: Promise<unknown>[] = []
   const backgroundErrors: unknown[] = []
-  const app = createAIRelayApp({
-    config: parseAIRelayConfig(
+  const app = createServicesApp({
+    config: parseServicesConfig(
       {
         ...configInput,
         relay: { ...configInput.relay, max_request_bytes: options.maxRequestBytes }
       },
       {
         DATABASE_URL: 'postgresql://unused',
-        OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
+        OPENPENCIL_SERVICES_UPSTREAM_KEY: 'upstream-key'
       }
     ),
     database: options.chargeGate ? database.withPlugin(holdInserts(options.chargeGate)) : database,
@@ -156,7 +156,7 @@ async function relay(
   return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId, database }
 }
 
-describe('AI relay', () => {
+describe('Services server', () => {
   test('refuses requests without a token Cloud signed for this service', async () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')
@@ -334,7 +334,7 @@ describe('AI relay', () => {
       ).balance
     // A request recorded before the upgrade, with no account, still counts for its workspace.
     await context.database
-      .insertInto('aiRelayUsage')
+      .insertInto('servicesUsage')
       .values({
         id: crypto.randomUUID(),
         workspaceId: context.workspaceId,
@@ -358,7 +358,7 @@ describe('AI relay', () => {
     // upgrades and tokens name the workspace's owner.
     const recorded = async () =>
       context.database
-        .selectFrom('aiRelayUsage')
+        .selectFrom('servicesUsage')
         .select('accountId')
         .where('credits', '!=', 400)
         .execute()

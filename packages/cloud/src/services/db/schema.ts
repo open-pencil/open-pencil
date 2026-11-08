@@ -1,7 +1,7 @@
 import type { TimestampColumn } from '#cloud/server/db/tables'
 import type { Insertable, Selectable } from 'kysely'
 
-export interface AIRelayUsageTable {
+export interface ServicesUsageTable {
   id: string
   workspaceId: string
   /** The account whose credits the request spent; null on rows from before accounts did. */
@@ -14,9 +14,9 @@ export interface AIRelayUsageTable {
   createdAt: TimestampColumn
 }
 
-export interface AIRelayDatabase {
-  aiRelayUsage: AIRelayUsageTable
+export interface ServicesDatabase {
+  servicesUsage: ServicesUsageTable
 }
 
-export type AIRelayUsage = Selectable<AIRelayUsageTable>
-export type NewAIRelayUsage = Insertable<AIRelayUsageTable>
+export type ServicesUsage = Selectable<ServicesUsageTable>
+export type NewServicesUsage = Insertable<ServicesUsageTable>
