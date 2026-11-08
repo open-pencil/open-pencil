@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, type Color, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import {
   reconcileVariableBindings,
