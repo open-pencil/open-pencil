@@ -1,11 +1,14 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
+import { deflateSync } from 'fflate'
+
 import { FigmaAPI, flushPendingLayout } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile, readFigFile } from '@open-pencil/core/io/formats/fig'
 import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
 import { prepareGraphFonts } from '@open-pencil/core/text'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { getCompiledSchema, getSchemaBytes, initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { runsHeavyTests } from '@open-pencil/test-support/heavy'
@@ -50,6 +53,69 @@ test('a hug instance keeps the height its own text laid it out to when reopened'
   const reopenedInstance = [...reopened.getAllNodes()].find((node) => node.type === 'INSTANCE')
   expect(reopenedInstance?.height).toBe(120)
   expect(reopened.getChildren(expectDefined(reopenedInstance, 'instance').id)[0]?.height).toBe(80)
+})
+
+test('instance text the file saved no size for is measured, not kept at the default size', async () => {
+  await initCodec()
+  const graph = new SceneGraph()
+  const [page] = graph.getPages()
+  const component = graph.createNode('COMPONENT', page.id, {
+    name: 'Tag',
+    width: 120,
+    height: 20,
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG'
+  })
+  graph.createNode('TEXT', component.id, {
+    name: 'Name',
+    text: 'A long tag name',
+    width: 120,
+    height: 20,
+    textAutoResize: 'WIDTH_AND_HEIGHT'
+  })
+  graph.createInstance(component.id, page.id, { x: 300 })
+  const parsed = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+  // A file that saved no size for the text: no record size, no lines, none derived for the instance.
+  for (const record of parsed.nodeChanges) {
+    if (record.type === 'TEXT') {
+      delete record.size
+      delete record.derivedTextData
+    }
+    if (record.type === 'INSTANCE') delete record.derivedSymbolData
+  }
+  const kiwi = getCompiledSchema().encodeMessage({
+    type: 'NODE_CHANGES',
+    sessionID: 0,
+    ackID: 0,
+    nodeChanges: parsed.nodeChanges
+  })
+  const bytes = compressFigDataSync(
+    deflateSync(getSchemaBytes()),
+    kiwi,
+    expectDefined(parsed.thumbnailPNG, 'thumbnail'),
+    parsed.metaJSON ?? '{}',
+    []
+  )
+  const reopened = await parseFigFile(bytes.slice().buffer as ArrayBuffer)
+  const nodes = [...reopened.getAllNodes()]
+  const instance = expectDefined(
+    nodes.find((node) => node.type === 'INSTANCE'),
+    'instance'
+  )
+  const text = expectDefined(reopened.getChildren(instance.id)[0], 'instance text')
+  const definition = expectDefined(reopened.getNode(text.componentId ?? ''), 'component text')
+  expect(text.source.format).toBeNull()
+  expect(text.source.orderKey).not.toBeNull()
+  expect([text.derivedLayout, definition.derivedLayout]).toEqual([null, null])
+  expect({ width: text.width, height: text.height }).toEqual({ width: 100, height: 100 })
+  const uninstall = installTextMeasurer(() => ({ width: 64, height: 18 }))
+  try {
+    computeAllLayouts(reopened)
+    expect({ width: text.width, height: text.height }).toEqual({ width: 64, height: 18 })
+  } finally {
+    uninstall()
+  }
 })
 
 test.if(runsHeavyTests)(

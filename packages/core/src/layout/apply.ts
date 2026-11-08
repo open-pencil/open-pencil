@@ -192,13 +192,38 @@ function computedChildPosition(
   return child.derivedLayout?.[axis] ?? computed
 }
 
+/** Text read with an instance, which layout reads too when the file saved no size for it. */
+function isInstanceText(node: SceneNode): boolean {
+  return node.type === 'TEXT' && node.source.format === null && node.source.orderKey !== null
+}
+
+/** Whether Figma laid out `node`'s text: the file saved its derived size along `axis` or lines. */
+function savedTextLayout(node: SceneNode | undefined, axis: 'width' | 'height'): boolean {
+  return (
+    node !== undefined &&
+    (node.derivedLayout?.[axis] !== undefined ||
+      node.derivedTextHeight !== null ||
+      (node.derivedTextGlyphs?.length ?? 0) > 0)
+  )
+}
+
+/**
+ * Whether instance text has a size the file saved, its own or that of the component layer it
+ * copies. A record without one gives the layer a default size that only measuring replaces.
+ */
+function hasSavedTextSize(graph: SceneGraph, text: SceneNode, axis: 'width' | 'height'): boolean {
+  const component = text.componentId ? graph.getNode(text.componentId) : undefined
+  return savedTextLayout(text, axis) || savedTextLayout(component, axis)
+}
+
 function preservesImportedTextSize(
   graph: SceneGraph,
   child: SceneNode,
   axis: 'width' | 'height'
 ): boolean {
   if (child.type !== 'TEXT' || child.source.editedFields.length > 0) return false
-  if (child.source.format === null && child.source.orderKey !== null) {
+  // Text in an instance keeps the size the file saved for it while its frame keeps its layout.
+  if (isInstanceText(child) && hasSavedTextSize(graph, child, axis)) {
     for (let ancestor = child.parentId ? graph.getNode(child.parentId) : undefined; ancestor;) {
       if (ancestor.type === 'INSTANCE') return true
       ancestor = ancestor.parentId ? graph.getNode(ancestor.parentId) : undefined
