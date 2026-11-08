@@ -25,6 +25,7 @@ import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { NodeEditState } from '#core/editor/vector/types'
+import type { ViewportInsets } from '#core/editor/viewport'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -306,6 +307,8 @@ export interface EditorContext {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages: FigmaClipboardImageResolver | null
   getViewportSize: () => { width: number; height: number }
+  /** Screen pixels of floating UI over each canvas edge, which fitted layers keep clear of. */
+  getViewportChrome: () => ViewportInsets
   getUserName: () => string
   icons: IconProvider
   getCk: () => CanvasKit | null

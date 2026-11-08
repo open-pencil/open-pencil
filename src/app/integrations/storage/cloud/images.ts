@@ -2,7 +2,11 @@ import { limitAsync } from 'es-toolkit'
 import { unzipSync, zipSync, type Zippable } from 'fflate'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
-import { CLOUD_IMAGE_NAME_PATTERN, type ObjectUploadTarget } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_API_MAX_BODY_BYTES,
+  CLOUD_IMAGE_NAME_PATTERN,
+  type ObjectUploadTarget
+} from '@open-pencil/cloud/contract'
 
 import { putCloudObject, type CloudObjectTransfer } from './upload'
 
@@ -10,6 +14,27 @@ import { putCloudObject, type CloudObjectTransfer } from './upload'
 const IMAGE_ENTRY_PREFIX = 'images/'
 const ZIP_SIGNATURE = [0x50, 0x4b, 0x03, 0x04]
 const IMAGE_UPLOAD_CONCURRENCY = 4
+/** How much of a request one image commit may fill: each upload brings its parts' ETags. */
+const IMAGE_COMMIT_BYTES = CLOUD_API_MAX_BODY_BYTES / 2
+
+/** Uploads in commits that each stay under `IMAGE_COMMIT_BYTES` once sent. */
+export function imageCommitBatches<T>(uploads: readonly T[]): T[][] {
+  const batches: T[][] = []
+  let batch: T[] = []
+  let bytes = 0
+  for (const upload of uploads) {
+    const size = new TextEncoder().encode(JSON.stringify(upload)).byteLength + 1
+    if (batch.length > 0 && bytes + size > IMAGE_COMMIT_BYTES) {
+      batches.push(batch)
+      batch = []
+      bytes = 0
+    }
+    batch.push(upload)
+    bytes += size
+  }
+  if (batch.length > 0) batches.push(batch)
+  return batches
+}
 
 /** An image a `.fig` archive holds, as Cloud stores it apart from the file. */
 export type CloudDocumentImage = { name: string; bytes: Uint8Array }
@@ -81,6 +106,8 @@ export async function uploadCloudImages(input: {
       return { uploadId: offer.uploadId, checksum: offer.checksum, multipart }
     })
   )
-  // One commit for every image, however many a save adds.
-  await input.cloud.commitImageUploads(input.documentId, uploaded)
+  // As few commits as fit the server's body limit, in turn, however many images a save adds.
+  for (const batch of imageCommitBatches(uploaded)) {
+    await input.cloud.commitImageUploads(input.documentId, batch)
+  }
 }

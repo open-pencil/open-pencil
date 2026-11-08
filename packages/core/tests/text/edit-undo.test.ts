@@ -50,6 +50,7 @@ function setup() {
     getCk: () => null,
     loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
+    getViewportChrome: () => ({ left: 0, right: 0, top: 0, bottom: 0 }),
     icons: iconify,
     subscribeToGraph: () => undefined,
     resolveFigmaClipboardImages: null,
