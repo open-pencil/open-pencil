@@ -108,9 +108,9 @@ describe('constraints keep fractional boxes', () => {
 
   test('Left & right that would leave no size keeps the child as it was', () => {
     const child = { x: 10, y: 10, width: 20, height: 16 }
-    expect(constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')).toEqual(
-      child
-    )
+    expect(
+      constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')
+    ).toEqual(child)
     expect(
       constrainedChildRect(child, frame, { width: 80.4, height: 100 }, 'STRETCH', 'MIN')
     ).toEqual(child)
@@ -166,13 +166,15 @@ describe('resizing a frame across zero', () => {
           { x: 0, y: 0 },
           { x: 20, y: 16 }
         ],
-        segments: [
-          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
-        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
         regions: []
       }
     })
-    const resize = (from: number, to: number, originals = collectResizeDescendants(graph, frame.id)) => {
+    const resize = (
+      from: number,
+      to: number,
+      originals = collectResizeDescendants(graph, frame.id)
+    ) => {
       if (!originals) throw new Error('Expected the vector')
       graph.updateNode(frame.id, { width: to })
       const changes = computeConstrainedResizeChanges(
@@ -194,6 +196,49 @@ describe('resizing a frame across zero', () => {
     resize(80, 100)
     expect(node()).toMatchObject({ x: 10, width: 40, flipX: false })
     expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 40, y: 16 })
+  })
+
+  test('a drag back to the starting size puts the path back as it started', () => {
+    const { graph, frame, resize, node } = stretched()
+    const originals = collectResizeDescendants(graph, frame.id)
+    resize(100, 200, originals)
+    resize(100, 100, originals)
+    expect(node()).toMatchObject({ x: 10, width: 20 })
+    expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 20, y: 16 })
+  })
+
+  test('a flat line back at its length takes its path back, whatever its flat side became', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 100, height: 100 })
+    const line = graph.createNode('VECTOR', frame.id, {
+      x: 10,
+      y: 10,
+      width: 10,
+      height: 0,
+      horizontalConstraint: 'STRETCH',
+      verticalConstraint: 'STRETCH',
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    })
+    const originals = collectResizeDescendants(graph, frame.id)
+    if (!originals) throw new Error('Expected the line')
+    const resize = (width: number, height: number) => {
+      graph.updateNode(frame.id, { width, height })
+      const before = { width: 100, height: 100 }
+      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height }, originals)
+      for (const [id, change] of changes) graph.updateNode(id, change)
+    }
+    resize(110, 110)
+    resize(100, 120)
+    const node = graph.getNode(line.id)
+    expect(node).toMatchObject({ width: 10, height: 20 })
+    expect(node?.vectorNetwork?.vertices[1]).toEqual({ x: 10, y: 0 })
   })
 
   test('a drag turns the layer over once, from where it started', () => {
@@ -236,6 +281,14 @@ describe('saved stroke outlines through a resize', () => {
   test('go where a path can draw the stroke again, and stay where only the outline can', () => {
     expect(scaledGeometryChanges(vector(1), 10, 10, 20, 10).strokeGeometry).toEqual([])
     expect(scaledGeometryChanges(vector(0), 10, 10, 20, 10).strokeGeometry).toHaveLength(1)
+  })
+
+  test('a flat line scales along its length, its zero side left as it is', () => {
+    const vertices = scaledGeometryChanges(vector(1), 10, 0, 30, 0).vectorNetwork?.vertices
+    expect(vertices?.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 0, y: 0 },
+      { x: 30, y: 0 }
+    ])
   })
 })
 

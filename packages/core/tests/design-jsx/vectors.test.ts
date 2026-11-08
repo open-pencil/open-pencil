@@ -130,8 +130,10 @@ describe('<Vector> export', () => {
     const vectors = (id: string) => graph.getChildren(id).filter((child) => child.type === 'VECTOR')
     expect(vectors(result.id).map(pathsOf)).toEqual(vectors(source.id).map(pathsOf))
     expect(vectors(result.id)).toHaveLength(1)
+    // The vector sits at the triangle's bounds, as pasted SVG places it.
+    expect(vectors(result.id)[0]).toMatchObject({ x: 2, y: 2, width: 20, height: 20 })
     expect(pathsOf(vectors(result.id)[0])).toEqual([
-      { windingRule: 'NONZERO', data: 'M12 2L22 22L2 22L12 2Z' }
+      { windingRule: 'NONZERO', data: 'M10 0L20 20L0 20L10 0Z' }
     ])
   })
 })

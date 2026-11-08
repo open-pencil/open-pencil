@@ -231,11 +231,9 @@ test("an edit made while a call downloads stays out of the call's undo step", as
           ],
           regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
         },
-        fill: '#000000',
-        stroke: null,
-        strokeWidth: 0,
-        strokeCap: 'NONE',
-        strokeJoin: 'MITER'
+        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+        strokes: [],
+        tint: []
       }
     ]
   }

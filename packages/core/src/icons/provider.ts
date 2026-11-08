@@ -4,7 +4,7 @@ import { chunk } from 'es-toolkit'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 import { createIconifyAPIClient } from './api'
-import { buildIconData } from './svg'
+import { buildIconData } from './artwork'
 import type { IconCollection, IconData, IconSearchResult } from './types'
 
 export interface IconSearchOptions {
