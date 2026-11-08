@@ -9,8 +9,8 @@ import {
   computeConstrainedResizeChanges
 } from '@open-pencil/scene-graph/resize'
 
-import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/artwork'
+import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 
 const BLACK = parseColor('#000000')
 const OUTLINE = '<path fill="none" stroke="currentColor" stroke-width="2" d="M4 4h16v16H4z"/>'
@@ -76,6 +76,27 @@ describe('icon glyphs', () => {
     resize(graph, frame.id, 48, 48)
     // The outline's 16px square at 4, 4 doubles with the frame.
     expect(graph.getChildren(frame.id)[0]).toMatchObject({ x: 8, y: 8, width: 32, height: 32 })
+  })
+
+  test('a flat path, such as a minus sign, stretches with its icon when resized or swapped', () => {
+    const MINUS = '<path fill="none" stroke="currentColor" stroke-width="2" d="M5 12h14"/>'
+    const { graph, frame } = placed(MINUS)
+    const line = () => {
+      const path = graph.getChildren(frame.id)[0]
+      const ends = path?.vectorNetwork?.vertices.map((vertex) => (path.x ?? 0) + vertex.x)
+      return { height: path?.height, ends }
+    }
+    expect(line()).toEqual({ height: 0, ends: [5, 19] })
+
+    resize(graph, frame.id, 48, 48)
+    expect(line()).toEqual({ height: 0, ends: [10, 38] })
+
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: MINUS, width: 24, height: 24 }, 'test', 'minus', 48)
+    )
+    expect(line()).toEqual({ height: 0, ends: [10, 38] })
   })
 
   test('moving a point, adding a path, or changing a color of its own is an edit', () => {

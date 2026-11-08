@@ -183,6 +183,11 @@ export function scaledChildRect(
   return constrainedChildRect(child, parentBefore, parentAfter, 'SCALE', 'SCALE')
 }
 
+/** How much a side grows; a flat side, as a straight line's, has nothing to scale along it. */
+function sideScale(original: number, size: number): number {
+  return original > 0 ? size / original : 1
+}
+
 export function scaleVectorNetworkForResize(
   vectorNetwork: VectorNetwork | null,
   originalWidth: number,
@@ -192,9 +197,8 @@ export function scaleVectorNetworkForResize(
 ): VectorNetwork | null {
   if (!vectorNetwork || (originalWidth <= 0 && originalHeight <= 0)) return null
 
-  // A flat side, as a straight line's, has nothing to scale along it.
-  const scaleX = originalWidth > 0 ? width / originalWidth : 1
-  const scaleY = originalHeight > 0 ? height / originalHeight : 1
+  const scaleX = sideScale(originalWidth, width)
+  const scaleY = sideScale(originalHeight, height)
   if (scaleX === 1 && scaleY === 1) return null
 
   return {
@@ -288,9 +292,10 @@ export function scaledGeometryChanges(
   width: number,
   height: number
 ): Partial<SceneNode> {
-  if (origWidth <= 0 || origHeight <= 0) return {}
-  const sx = width / origWidth
-  const sy = height / origHeight
+  if (origWidth <= 0 && origHeight <= 0) return {}
+  // A straight line's other side still scales.
+  const sx = sideScale(origWidth, width)
+  const sy = sideScale(origHeight, height)
   if (sx === 1 && sy === 1) return {}
 
   const changes: Partial<SceneNode> = {}

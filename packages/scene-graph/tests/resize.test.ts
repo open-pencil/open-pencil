@@ -110,9 +110,9 @@ describe('constraints keep fractional boxes', () => {
 
   test('Left & right that would leave no size keeps the child as it was', () => {
     const child = { x: 10, y: 10, width: 20, height: 16 }
-    expect(constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')).toEqual(
-      child
-    )
+    expect(
+      constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')
+    ).toEqual(child)
     expect(
       constrainedChildRect(child, frame, { width: 80.4, height: 100 }, 'STRETCH', 'MIN')
     ).toEqual(child)
@@ -168,13 +168,15 @@ describe('resizing a frame across zero', () => {
           { x: 0, y: 0 },
           { x: 20, y: 16 }
         ],
-        segments: [
-          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
-        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
         regions: []
       }
     })
-    const resize = (from: number, to: number, originals = collectResizeDescendants(graph, frame.id)) => {
+    const resize = (
+      from: number,
+      to: number,
+      originals = collectResizeDescendants(graph, frame.id)
+    ) => {
       if (!originals) throw new Error('Expected the vector')
       graph.updateNode(frame.id, { width: to })
       const changes = computeConstrainedResizeChanges(
@@ -238,6 +240,14 @@ describe('saved stroke outlines through a resize', () => {
   test('go where a path can draw the stroke again, and stay where only the outline can', () => {
     expect(scaledGeometryChanges(vector(1), 10, 10, 20, 10).strokeGeometry).toEqual([])
     expect(scaledGeometryChanges(vector(0), 10, 10, 20, 10).strokeGeometry).toHaveLength(1)
+  })
+
+  test('a flat line scales along its length, its zero side left as it is', () => {
+    const vertices = scaledGeometryChanges(vector(1), 10, 0, 30, 0).vectorNetwork?.vertices
+    expect(vertices?.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 0, y: 0 },
+      { x: 30, y: 0 }
+    ])
   })
 })
 
