@@ -10,6 +10,7 @@ import {
   relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
+import { randomIndex } from '@open-pencil/scene-graph/random'
 
 import { createActionRegistry } from './actions'
 import type { CollabRoomTransport, JoinCollabRoom } from './types'
@@ -62,8 +63,14 @@ const FINAL_CLOSE_CODES = new Set<number>([
   RELAY_CLOSE.protocol
 ])
 
-function defaultReconnectDelay(attempt: number): number {
-  return Math.min(MAXIMUM_RECONNECT_MS, 1000 * 2 ** attempt)
+/**
+ * How long to wait before reconnection attempt `attempt`: a doubling step up to 30 seconds, of
+ * which a random half is waited, so the peers a deploy dropped together do not return together.
+ */
+export function relayReconnectDelay(attempt: number): number {
+  const step = Math.min(MAXIMUM_RECONNECT_MS, 1000 * 2 ** attempt)
+  const half = Math.floor(step / 2)
+  return step - half + randomIndex(half + 1)
 }
 
 /**
@@ -76,7 +83,7 @@ export function createCloudRelayJoin(options: CloudRelayOptions): JoinCollabRoom
 
 function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabRoomTransport {
   const createSocket = options.createSocket ?? ((url: string) => new WebSocket(url))
-  const reconnectDelay = options.reconnectDelayMs ?? defaultReconnectDelay
+  const reconnectDelay = options.reconnectDelayMs ?? relayReconnectDelay
   const report =
     options.onError ?? ((message, error) => console.error(`[Collab] ${message}`, error))
   const actions = createActionRegistry((namespace, payload, target) => {
