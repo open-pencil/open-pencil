@@ -17,7 +17,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
-import { diagnostics } from '@/app/diagnostics'
+import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
@@ -205,14 +205,16 @@ function transport(
   options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef } = {}
 ) {
   const sessions: (string | null)[] = []
+  const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
     agentDef: options.agentDef ?? resuming,
     startup: agents.startup,
     resume: options.resume,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
-    onSession: (id) => sessions.push(id)
+    onSession: (id) => sessions.push(id),
+    onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions }
+  return { transport: created, sessions, agentErrors }
 }
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
@@ -362,6 +364,38 @@ test('a session is not saved when its first prompt fails before the agent takes 
   expect(reply).toContainEqual(expect.objectContaining({ type: 'error' }))
   expect(reply).toContainEqual({ type: 'finish', finishReason: 'error' })
   expect(sessions).toEqual([])
+  await chat.destroy()
+})
+
+test('the chat shows what the agent answered, and diagnostics keep only its code', async () => {
+  const agents = fakeAgents({ resumeBusy: true })
+  const { transport: chat, agentErrors } = transport(agents, { resume: 'saved' })
+  try {
+    await expect(send(chat, 'next')).rejects.toThrow('Session in use')
+    expect(agentErrors).toHaveLength(1)
+    expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+      errorCode: '-32600',
+      message: null,
+      stack: null
+    })
+  } finally {
+    await chat.destroy()
+  }
+})
+
+test("a failed prompt shows the agent's answer, and diagnostics keep only its code", async () => {
+  const agents = fakeAgents({ turn: 'refused' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = await send(chat, 'first')
+  expect(reply).toContainEqual({
+    type: 'error',
+    errorText: 'Internal error'
+  })
+  expect(agentErrors).toHaveLength(1)
+  expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+    errorCode: '-32603',
+    message: null
+  })
   await chat.destroy()
 })
 
