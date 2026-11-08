@@ -26,7 +26,7 @@
 
 ```json
 {
-  "canvaskit-wasm": "^0.41.1",
+  "@open-pencil/canvaskit": "^0.1.0",
   "vue": "^3.5.41",
   "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
   "nanoevents": "^9.1.0",

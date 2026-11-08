@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {

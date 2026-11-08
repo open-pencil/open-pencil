@@ -8,7 +8,7 @@ description: Подключение @open-pencil/vue, создание реда�
 ## Установка
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
 SDK находится в монорепозитории OpenPencil и опубликован как пакет `@open-pencil/vue`.

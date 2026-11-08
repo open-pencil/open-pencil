@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'

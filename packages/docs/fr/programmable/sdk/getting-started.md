@@ -8,7 +8,7 @@ description: Connectez @open-pencil/vue, créez un éditeur et configurez la zon
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
 Le SDK se trouve dans le monorepo OpenPencil et est publié sous forme de package `@open-pencil/vue`.

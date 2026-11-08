@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Path } from 'canvaskit-wasm'
+import type { Path } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 

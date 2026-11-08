@@ -201,6 +201,7 @@
   "dependencies": {
     "@figma/plugin-typings": "^1.140.0",
     "@iconify/utils": "^3.1.4",
+    "@open-pencil/canvaskit": "^0.1.0",
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/drawio": "workspace:*",
@@ -214,7 +215,6 @@
     "@valibot/to-json-schema": "^1.8.0",
     "@xmldom/xmldom": "^0.9.12",
     "acorn": "^8.18.0",
-    "canvaskit-wasm": "^0.41.1",
     "culori": "^4.0.2",
     "destr": "^2.0.5",
     "diff": "^8.0.4",

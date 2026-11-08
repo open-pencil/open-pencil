@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 

@@ -8,10 +8,10 @@ description: Set up @open-pencil/vue with createEditor, provideEditor, and a can
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue @open-pencil/canvaskit
 ```
 
-The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. Check the installed package's peer requirements when using an older release.
+The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `@open-pencil/canvaskit ^0.1.0`. Check the installed package's peer requirements when using an older release.
 
 ```ts
 import { createEditor } from '@open-pencil/core'
@@ -40,7 +40,7 @@ With another bundler, serve these files and point Core at them before the canvas
 
 | File | Comes from | Point Core at it with |
 | --- | --- | --- |
-| `canvaskit.wasm` | `canvaskit-wasm/bin/full/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
+| `canvaskit.wasm` | `@open-pencil/canvaskit/bin/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
 | Bundled fonts (`*.ttf`, `*.woff2`) | `@open-pencil/core/assets/` | `fontManager.setBundledFontLocator` from `@open-pencil/core/text` |
 | `harfbuzz-subset.wasm` | `harfbuzzjs/dist/` | `setHarfBuzzSubsetLocator` from `@open-pencil/core/text` |
 

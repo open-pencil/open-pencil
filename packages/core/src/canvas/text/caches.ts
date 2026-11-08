@@ -1,4 +1,4 @@
-import type { Image, Path } from 'canvaskit-wasm'
+import type { Image, Path } from '@open-pencil/canvaskit'
 
 import type { ResourceCache } from '#core/cache/resource'
 import type { SavedDecorationCache } from '#core/text/decorations'

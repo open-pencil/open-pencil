@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { figArchiveMetaJSON } from '@open-pencil/fig'
 import {
   buildComponentPropIndex,

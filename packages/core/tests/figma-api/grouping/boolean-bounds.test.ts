@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import type { Surface } from 'canvaskit-wasm'
+import type { Surface } from '@open-pencil/canvaskit'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'

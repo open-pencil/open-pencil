@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
-import type { Surface } from 'canvaskit-wasm'
+import type { Surface } from '@open-pencil/canvaskit'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'

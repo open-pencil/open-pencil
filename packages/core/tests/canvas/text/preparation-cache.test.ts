@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'

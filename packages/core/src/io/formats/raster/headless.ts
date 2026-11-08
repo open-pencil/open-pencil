@@ -1,4 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -23,8 +23,8 @@ export function initCanvasKit(): Promise<CanvasKit> {
 }
 
 async function loadCanvasKit(): Promise<CanvasKit> {
-  const CanvasKitInit = (await import('canvaskit-wasm/full')).default
-  const ckURL = import.meta.resolve('canvaskit-wasm/full')
+  const CanvasKitInit = (await import('@open-pencil/canvaskit')).default
+  const ckURL = import.meta.resolve('@open-pencil/canvaskit')
   return CanvasKitInit({ locateFile: (file: string) => new URL(file, ckURL).href })
 }
 

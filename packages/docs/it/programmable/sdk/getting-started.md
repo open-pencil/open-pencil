@@ -8,7 +8,7 @@ description: Collega @open-pencil/vue, crea un editor e configura l'area di lavo
 ## Installazione
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
 L'SDK si trova nel monorepo OpenPencil ed è pubblicato come pacchetto `@open-pencil/vue`.

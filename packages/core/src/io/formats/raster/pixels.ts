@@ -1,4 +1,4 @@
-import type { CanvasKit, EncodedImageFormat } from 'canvaskit-wasm'
+import type { CanvasKit, EncodedImageFormat } from '@open-pencil/canvaskit'
 
 import type { ExportFormat, RasterExportFormat } from './render'
 

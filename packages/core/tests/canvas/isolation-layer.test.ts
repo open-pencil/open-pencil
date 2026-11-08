@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Canvas } from 'canvaskit-wasm'
+import type { Canvas } from '@open-pencil/canvaskit'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'

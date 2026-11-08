@@ -8,7 +8,7 @@ description: Conecta @open-pencil/vue, crea un editor y configura el lienzo.
 ## Instalación
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
 El SDK se encuentra en el monorepo de OpenPencil y se publica como paquete `@open-pencil/vue`.

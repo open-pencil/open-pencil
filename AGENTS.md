@@ -94,7 +94,7 @@ Before using an unfamiliar dependency API or writing a replacement, inspect exis
 | Motion (use the Vue section) | https://motion.dev/llms.txt                                                                    |
 | Valibot                      | https://valibot.dev/llms.txt                                                                   |
 | es-toolkit                   | https://es-toolkit.dev/llms.txt                                                                |
-| CanvasKit                    | https://skia.org/docs/user/modules/canvaskit/ and installed `canvaskit-wasm/types/index.d.ts`. |
+| CanvasKit                    | https://skia.org/docs/user/modules/canvaskit/ and installed `@open-pencil/canvaskit/types/index.d.ts`. |
 
 VueUse serves HTML at its `llms.txt` URL; Tailwind CSS and Skia have no verified index. If an index disappears or returns HTML, fall back to official API documentation, not guessed methods or unofficial generated indexes.
 

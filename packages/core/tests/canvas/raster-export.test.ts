@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
+import type { Canvas } from '@open-pencil/canvaskit'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'

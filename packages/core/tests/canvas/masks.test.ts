@@ -3,7 +3,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type MaskType, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Canvas, InputRect, Paint } from 'canvaskit-wasm'
+import type { Canvas, InputRect, Paint } from '@open-pencil/canvaskit'
 
 import { renderNode } from '#core/canvas/scene'
 import { asCanvas, asRenderer } from './helpers'

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from '@open-pencil/canvaskit'
 
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'

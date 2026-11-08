@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type {
   VectorVertex,
   VectorSegment,

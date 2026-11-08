@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import type { CanvasKit, Paragraph, ParagraphBuilder, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, Paragraph, ParagraphBuilder, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { expectDefined } from '@open-pencil/test-support/assert'

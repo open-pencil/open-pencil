@@ -1,5 +1,4 @@
-import type { Blender, BlendMode as SkBlendMode, CanvasKit, Paint } from 'canvaskit-wasm'
-
+import type { Blender, BlendMode as SkBlendMode, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type { BlendMode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from './renderer'

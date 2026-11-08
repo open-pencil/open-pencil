@@ -321,7 +321,7 @@ const noEditorImportsInCloudPortal = createImportRule(
   (sourceRel, specifier, resolved) => {
     if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
     const editorOnly =
-      specifier.startsWith('canvaskit-wasm') ||
+      specifier.startsWith('@open-pencil/canvaskit') ||
       EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
     if (!editorOnly) return null
     return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'

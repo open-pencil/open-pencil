@@ -8,7 +8,7 @@ description: Binden Sie @open-pencil/vue ein, erstellen Sie einen Editor und ric
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
 Das SDK befindet sich im OpenPencil-Monorepo und wird als Paket `@open-pencil/vue` veröffentlicht.
