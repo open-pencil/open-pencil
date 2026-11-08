@@ -4,6 +4,7 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 
 /** What copying a layer of `source` puts on the clipboard, as in-app paste reads it. */
@@ -232,7 +233,10 @@ describe('paste to replace', () => {
       height: 20,
       rotation: 30
     })
-    const html = await buildFigmaClipboardHTML([rectangle], source)
+    const html = expectDefined(
+      await buildFigmaClipboardHTML([rectangle], source),
+      'Figma clipboard HTML'
+    )
     const editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
       x: 50,
