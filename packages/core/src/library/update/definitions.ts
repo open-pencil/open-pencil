@@ -290,6 +290,8 @@ export function updateLibraryDefinitions(
           layer: (id, component) => tree.get(id) ?? copyOf(id, null, component),
           // A connector inside a definition follows the layers of its own tree.
           endpoint: (id) => tree.get(id) ?? id,
+          // So does a text link, since the document lacks the revision's layers.
+          link: (id) => tree.get(id) ?? id,
           // Variables are the revision's until the resources below are brought in.
           variable: (id) => id
         },

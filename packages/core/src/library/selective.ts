@@ -84,7 +84,7 @@ function copyAssets(
   for (const style of dependencies.styles)
     if (!style.source.id || !held.has(style.source.id))
       copyLibraryTree(source.graph, target, style.id, pageId, mappedIds)
-  remapCopiedReferences(target, mappedIds)
+  remapCopiedReferences(target, mappedIds, { followTextLinks: true })
   copyImages(source.graph.images, target.images, dependencies.images)
   const collections = collectionIds(assets)
   const published = variableDependencies(
