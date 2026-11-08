@@ -74,6 +74,7 @@ export class SceneGraph {
   private readonly changeObservers = new Set<NodeChangeObserver>()
   /** How many waits outside the edit each recorder is paused for. */
   private readonly outsideWaits = new Map<NodeChangeObserver, number>()
+  private outsideWrites = 0
   private importedIdGenerator: (() => string) | undefined
   private layoutWrites: LayoutWrites | null = null
   positionPreviewVersion = 0
@@ -143,11 +144,18 @@ export class SceneGraph {
    */
   runOutsideEdits<T>(write: () => T): T {
     const resume = this.pauseOpenEdits()
+    this.outsideWrites++
     try {
       return write()
     } finally {
+      this.outsideWrites--
       resume()
     }
+  }
+
+  /** Whether a write run with `runOutsideEdits`, such as a collaborator's change, is in progress. */
+  get isWritingOutsideEdits(): boolean {
+    return this.outsideWrites > 0
   }
 
   /**
