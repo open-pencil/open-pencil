@@ -52,3 +52,30 @@ test('publishes committed batches and coalescing but not pending or rolled-back 
     editor.dispose()
   }
 })
+
+test('an edit or batch that ends without a step is published as discarded, not as history', () => {
+  const editor = createEditor()
+  const events: string[] = []
+  const offs = [
+    editor.onEditorEvent('history:changed', () => events.push('history')),
+    editor.onEditorEvent('edit:discarded', () => events.push('discarded'))
+  ]
+  const card = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, { width: 10 })
+  try {
+    editor.undo.beginBatch('Drag')
+    editor.undo.record(entry)
+    editor.undo.rollbackBatch()
+    expect(() =>
+      editor.recordEdit({ label: 'Script' }, () => {
+        editor.graph.updateNode(card.id, { x: 40 })
+        throw new Error('failed')
+      })
+    ).toThrow('failed')
+    editor.recordEdit({ label: 'Read' }, () => undefined)
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 40 }))
+    expect(events).toEqual(['discarded', 'discarded', 'discarded', 'history'])
+  } finally {
+    for (const off of offs) off()
+    editor.dispose()
+  }
+})

@@ -1,19 +1,21 @@
 import { useLocalStorage } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 
 import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
+import type { EditorStore } from '@/app/editor/session'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
-import { getTabForStore, openFileInNewTab } from '@/app/tabs'
+import { allTabs, closeTab, getTabForStore, openFileInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
 import { rememberShareLinkTab } from '../reports/tabs'
 import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
+  leaveCloudRoom,
   leaveRefusedRoom,
   openCloudDocumentRoom,
   stopWithTab
@@ -46,6 +48,42 @@ export function cloudGuestId(): string {
   return guestId.value
 }
 
+/** A tab a guest views from a link, and whether signing in would let them edit it. */
+export type CloudGuestLinkTab = { link: CloudShareLink; canEditSignedIn: boolean }
+
+/** Tabs viewing a link without an account, for the status beside the name. */
+export const cloudGuestLinkTabs = shallowRef<ReadonlyMap<EditorStore, CloudGuestLinkTab>>(new Map())
+
+function setGuestLinkTab(store: EditorStore, tab: CloudGuestLinkTab | null): void {
+  const next = new Map(cloudGuestLinkTabs.value)
+  if (tab) {
+    if (!next.has(store)) {
+      const stopWatching = watch(allTabs, () => {
+        if (getTabForStore(store)) return
+        stopWatching()
+        setGuestLinkTab(store, null)
+      })
+    }
+    next.set(store, tab)
+  } else next.delete(store)
+  cloudGuestLinkTabs.value = next
+}
+
+/**
+ * Closes the guest tabs of a link once it opened again with an account, so the signed-in tab
+ * replaces the view-only one. They never save, so nothing is lost.
+ */
+async function closeGuestTabsOf(shareId: string, except: EditorStore): Promise<void> {
+  // The signed-in copy may have opened in the guest's own tab, which stays, now signed in.
+  setGuestLinkTab(except, null)
+  for (const [store, tab] of cloudGuestLinkTabs.value) {
+    const open = getTabForStore(store)
+    if (store === except || tab.link.shareId !== shareId || !open) continue
+    setGuestLinkTab(store, null)
+    await closeTab(open.id, 'discard')
+  }
+}
+
 /**
  * Opens a document someone shared by link: its latest revision in a tab of its own, then its
  * room with the link's permission. The tab is a copy that never saves to the server; edits reach
@@ -67,13 +105,22 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
     if (error instanceof CloudAPIError && error.status === 401) return 'sign-in'
     throw error
   }
-  const { document } = shared
+  const { document, resolution } = shared
   const bytes = await downloadCloudDocument(document, (input, init) => storageFetch(input, init))
   const name = document.document.name
   const store = await openFileInNewTab(
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' })
   )
   rememberShareLinkTab(store, link)
+  // The copy may open in a reused tab still in this link's room as a guest, whose ticket would
+  // hold it to the guest's permission; it joins again below with this one's.
+  leaveCloudRoom(store)
+  if (resolution.principal.kind === 'user') await closeGuestTabsOf(link.shareId, store)
+  else if (resolution.permission === 'view') {
+    setGuestLinkTab(store, { link, canEditSignedIn: resolution.linkPermission === 'edit' })
+  }
+  // Without a room nothing else sets the permission, and a reused tab may have been view-only.
+  store.setReadOnly(resolution.permission === 'view')
   if (!discovery.capabilities.collaboration) return 'opened'
   const first = await client.getSharedCollaborationTicket(link.shareId, input)
   // The tab may have closed while the ticket was on its way.

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import { IS_TAURI, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
+import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
 
 import {
   checkAgentAuth,
@@ -13,6 +13,7 @@ import { startTerminalSignIn, type TerminalSignIn } from '@/app/ai/agents/acp/au
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
 /** What setup knows about the account a coding agent uses. */
 export interface AgentAccount {
@@ -183,7 +184,8 @@ const chatTools: ToolsProbe = {
 }
 
 export const agentAccounts = createAgentAccounts({
-  enabled: IS_TAURI,
+  // Checking and signing in both start the agent on the host.
+  enabled: canRunHostProcesses(),
   check: (agent) => checkAgentAuth(agent, { tools: chatTools }),
   signInWithAgent: (agent, methodId, signal) => signInWithAgent(agent, methodId, signal),
   startTerminalSignIn

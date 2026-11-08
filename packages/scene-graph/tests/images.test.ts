@@ -5,11 +5,13 @@ import { fromUint8Array, toUint8Array } from 'js-base64'
 import {
   computeImageHash,
   coverImageTransform,
+  imageDataURL,
   imageHeader,
   imageMimeType,
   imageSize,
   isSVGFile,
-  parseDataURL
+  parseDataURL,
+  svgDataURL
 } from '@open-pencil/scene-graph/images'
 
 describe('computeImageHash', () => {
@@ -36,7 +38,7 @@ describe('coverImageTransform', () => {
   })
 })
 
-// 37 × 21 images, encoded by Pillow.
+// 37 × 21 images, encoded by Pillow, and AVIF by avifenc.
 const IMAGES = [
   [
     'PNG',
@@ -53,6 +55,11 @@ const IMAGES = [
     'lossy WebP',
     'image/webp',
     'UklGRk4AAABXRUJQVlA4IEIAAACQAwCdASolABUAPm02l0ikIyIhJWgAgA2JZwDPkoB+AAAr98NwAP7wm0P/5BcsLrka//yA/5Af8gP/498Ql180AAA='
+  ],
+  [
+    'AVIF',
+    'image/avif',
+    'AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOltZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAHmlsb2MAAAAARAAAAQABAAAAAQAAAQ0AAAAaAAAAKGlpbmYAAAAAAAEAAAAaaW5mZQIAAAAAAQAAYXYwMUNvbG9yAAAAAGhpcHJwAAAASWlwY28AAAAUaXNwZQAAAAAAAAAlAAAAFQAAAA5waXhpAAAAAAEIAAAADGF2MUOBABwAAAAAE2NvbHJuY2x4AAEAAgAGgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAIm1kYXQSAAoGGBUkowqAMg4f8P/xQOlFjYHjUiqlgA=='
   ]
 ] as const
 
@@ -124,14 +131,16 @@ describe('parseDataURL', () => {
   }
 
   test('decodes a Base64 body with its media type', () => {
-    const parsed = parseDataURL(`data:image/png;base64,${fromUint8Array(PNG)}`)
+    const parsed = parseDataURL(imageDataURL(PNG))
     expect(parsed?.mimeType).toBe('image/png')
     expect(parsed?.bytes).toEqual(PNG)
   })
 
   test('reads the scheme, type, and encoding without regard to case or line breaks', () => {
     const base64 = fromUint8Array(PNG)
-    const parsed = parseDataURL(`DATA:Image/PNG;charset=x;BASE64,${base64.slice(0, 5)}\n${base64.slice(5)}`)
+    const parsed = parseDataURL(
+      `DATA:Image/PNG;charset=x;BASE64,${base64.slice(0, 5)}\n${base64.slice(5)}`
+    )
     expect(parsed?.mimeType).toBe('image/png')
     expect(parsed?.bytes).toEqual(PNG)
   })
@@ -144,6 +153,16 @@ describe('parseDataURL', () => {
     expect(text('data:,caf%C3%A9')).toEqual({ mimeType: 'text/plain', text: 'café' })
   })
 
+  test('keeps a percent sign that starts no escape', () => {
+    expect(text('data:text/plain,100% done')).toEqual({ mimeType: 'text/plain', text: '100% done' })
+    expect(text('data:image/svg+xml,<svg width="100%"/>')?.text).toBe('<svg width="100%"/>')
+  })
+
+  test('refuses escapes that are bytes rather than UTF-8 text', () => {
+    const escaped = Array.from(PNG, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')
+    expect(parseDataURL(`data:image/png,${escaped}`)).toBeNull()
+  })
+
   test('refuses Base64 cut short or not Base64 at all', () => {
     expect(parseDataURL('data:image/png;base64,iVBORw0KG')).toBeNull()
     expect(parseDataURL('data:image/png;base64,not*base64')).toBeNull()
@@ -153,5 +172,18 @@ describe('parseDataURL', () => {
     expect(parseDataURL(fromUint8Array(PNG))).toBeNull()
     expect(parseDataURL('https://example.com/a.png')).toBeNull()
     expect(parseDataURL('data:image/png;base64')).toBeNull()
+  })
+})
+
+describe('imageDataURL and svgDataURL', () => {
+  test('write data URLs parseDataURL reads back', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1#"/></svg>'
+    const parsedSVG = parseDataURL(svgDataURL(svg))
+    expect(parsedSVG?.mimeType).toBe('image/svg+xml')
+    expect(new TextDecoder().decode(parsedSVG?.bytes)).toBe(svg)
+
+    const parsedJPEG = parseDataURL(imageDataURL(JPEG))
+    expect(parsedJPEG?.mimeType).toBe('image/jpeg')
+    expect(parsedJPEG?.bytes).toEqual(JPEG)
   })
 })

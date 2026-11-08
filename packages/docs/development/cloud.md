@@ -185,9 +185,11 @@ wakes the object without loading the document.
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,
 which may not be lower. A larger frame, such as a big paste, the first editor's copy of a large
 document, or a newcomer's sync reply, travels as fragments in a row that the receiver joins again.
-The relay joins an editor's fragments up to 256 MiB and holds viewers and peers not yet admitted to
-one message, so only an editor can make it buffer more. A peer the relay turns away for good, for
-a ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
+The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
+admitted to one message, so only an editor can make it buffer more. A room's document may hold at
+most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
+update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
+ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
 
@@ -341,7 +343,8 @@ OpenFeature answers concrete questions such as whether links work, whether guest
 follow a link without signing in, may view or edit through one, or whether full revision history
 is kept, and what a numeric limit is. Links always work for people signed in to the server: the
 share routes resolve the session, and a guest the server turns away gets `401` so the editor signs
-in and opens the link again. Its provider reads one entitlement
+in and opens the link again. A guest who may view but not edit opens an edit link view-only; the
+resolution names the link's own permission as well, so the editor offers signing in to edit. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
 are alternatives, not layers. Technical limits cap the file size and participant limits the source

@@ -1,0 +1,1 @@
+- In `@open-pencil/core`, vector edit mode no longer has a history of its own: `nodeEditUndo` and `nodeEditRedo` are removed, as are `NodeEditState.history`, `future`, and `futureBaseline`; use `undoAction` and `redoAction`. Entering and leaving a path are now undo steps. The new `penPushHistory` starts a pen press and `penCancelPress` takes one back (#1894).

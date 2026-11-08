@@ -55,7 +55,9 @@ test('leaves a branched path whole when the pen adds nothing', () => {
   editor.penCommit(false)
 
   expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
-  expect(editor.undo.canUndo).toBe(false)
+  // Undo takes back the pen's own steps and leaves the layer's path alone.
+  while (editor.undo.canUndo) editor.undo.undo()
+  expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
 })
 
 test('keeps the branches the pen did not walk when it adds a point', () => {
@@ -95,7 +97,8 @@ test('a new piece with one point leaves the path as it was', () => {
   editor.penCommit(false)
 
   expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
-  expect(editor.undo.canUndo).toBe(false)
+  while (editor.undo.canUndo) editor.undo.undo()
+  expect(editor.graph.getNode(id)?.vectorNetwork).toEqual(T)
 })
 
 /** A read-only library component holding a copy of the T, as a library's own layers are. */

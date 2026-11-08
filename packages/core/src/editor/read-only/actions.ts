@@ -99,6 +99,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'applyZoom',
   'getViewportSize',
   'setViewportSize',
+  'getViewportChrome',
+  'setViewportChrome',
   'centerOn',
   'clearPageViewports',
   'commitPageSwitch',
@@ -141,6 +143,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'flushNudge',
   'nodeEditCancelDrag',
   'penCancel',
+  'penCancelPress',
   'pencilCancel',
 
   // Canvas, layout, and document lifecycle
@@ -185,11 +188,9 @@ export const PATH_EDIT_ACTIONS: ReadonlySet<string> = new Set([
   'nodeEditConnectEndpoints',
   'nodeEditDeleteSelected',
   'nodeEditPushHistory',
-  'nodeEditRedo',
   'nodeEditRemoveVertex',
   'nodeEditSelectVertex',
   'nodeEditSetHandle',
-  'nodeEditUndo',
   'nodeEditZeroVertexHandles',
   'redoAction',
   'setNodeEditNetwork',

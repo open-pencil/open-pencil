@@ -236,6 +236,28 @@ describe('openFileInNewTab deduplication', () => {
     resetRecoveryStoreForTests()
   })
 
+  test('opens a file beside a restored Untitled copy, never over it', async () => {
+    resetRecoveryStoreForTests(createMemoryRecoveryStore())
+    await getRecoveryStore().write({
+      id: 'draft',
+      sessionId: 'left-to-sign-up',
+      documentName: 'Untitled',
+      figBytes: new Uint8Array([1])
+    })
+    await settleFileOpen(restoreRecoverySnapshot('draft'))
+    const draft = getActiveStore()
+    const count = tabCount()
+
+    await settleFileOpen(
+      openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/after-draft.fig')
+    )
+
+    expect(tabCount()).toBe(count + 1)
+    expect(getActiveStore() === draft).toBe(false)
+    expect(draft.getRecoveryId()).toBe('draft')
+    resetRecoveryStoreForTests()
+  })
+
   test('opens a file from Home in a tab of its own, leaving Home as it is', async () => {
     const home = createHomeTab()
     const count = tabCount()

@@ -1,11 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 
-import {
-  ACP_AGENTS,
-  IS_TAURI,
-  type ACPAgentDef,
-  type ACPAgentID
-} from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
 
 import {
   HARNESS_EXECUTABLE,
@@ -14,6 +9,7 @@ import {
 } from '@/app/ai/agents/pi/companion'
 import { MCP_EXECUTABLE, MCP_INSTALL_TARGET, MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { restartMCPRuntime } from '@/app/automation/mcp/runtime'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import {
@@ -303,7 +299,7 @@ export function createAgentDiscovery(options: {
 }
 
 export const agentDiscovery = createAgentDiscovery({
-  enabled: IS_TAURI,
+  enabled: canRunHostProcesses(),
   lookup: lookupAgents,
   install: installAgentAdapter,
   installBridge: installCanvasBridge,

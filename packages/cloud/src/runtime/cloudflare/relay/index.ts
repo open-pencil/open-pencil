@@ -26,6 +26,13 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
 
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
+/**
+ * The most a room's document may hold on Cloudflare. A Durable Object has 128 MB of memory for
+ * the document, the update joining it, and the snapshot written from it, so a room past this is
+ * turned away and its editors save without one.
+ */
+export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 32 * 1024 * 1024
+
 /** The document's relay object. */
 export function relayFor(env: CloudflareCloudEnvironment, documentId: string) {
   return env.RELAY.get(env.RELAY.idFromName(documentId))
@@ -52,12 +59,17 @@ function configuredRelay(
   documentId: string,
   onError: (message: string, error: unknown) => void
 ): CollaborationRelay {
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   return createCollaborationRelay({
     authSecret: config.authSecret,
     documentId,
     store: createCollaborationStateStore(database, createS3ObjectStore(config)),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
+    maximumRoomBytes: CLOUDFLARE_MAXIMUM_ROOM_BYTES,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
     onError,
     ...relayDocumentLookups(

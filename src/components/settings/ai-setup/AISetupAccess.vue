@@ -14,16 +14,21 @@ import {
   ONBOARDING_SUBSCRIPTIONS,
   type OnboardingAccess
 } from '@/app/ai/models/settings/onboarding/plan'
-import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
-import { DESKTOP_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/ai-setup/access'
 
-const { agentsAvailable, detections = {} } = defineProps<{
+import AgentsUnavailableNotice from './AgentsUnavailableNotice.vue'
+
+const {
+  agentsAvailable,
+  subscriptionsAvailable = agentsAvailable,
+  detections = {}
+} = defineProps<{
   agentsAvailable: boolean
+  /** Subscription sign-in needs the desktop app but no host process. */
+  subscriptionsAvailable?: boolean
   /** What setup found of each agent on this computer. */
   detections?: Partial<Record<OnboardingAccess, AgentDetection>>
 }>()
@@ -72,13 +77,10 @@ function toggle(providerID: OnboardingAccess, checked: boolean): void {
         <template #icon><ProviderLogo :provider="agent" /></template>
       </AppCheckboxCard>
     </template>
-    <AppAlert v-else :heading="ai.aiSetupAccessAgentsDesktop">
-      <template #actions>
-        <SettingsLink :href="DESKTOP_DOWNLOAD_URL">{{ ai.aiSetupGetDesktop }}</SettingsLink>
-      </template>
-    </AppAlert>
+    <!-- Subscriptions need only the desktop app, so offering them means this is a desktop install. -->
+    <AgentsUnavailableNotice v-else :sandboxed="subscriptionsAvailable" />
   </section>
-  <section v-if="agentsAvailable" :class="styles.group()">
+  <section v-if="subscriptionsAvailable" :class="styles.group()">
     <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessSubscriptions }}</h3>
     <AppCheckboxCard
       v-for="subscription in ONBOARDING_SUBSCRIPTIONS"

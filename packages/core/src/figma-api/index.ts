@@ -79,6 +79,7 @@ import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
 import { combineComponentsAsVariants } from './variants'
+import { cancelScriptWaits, waitOutsideScript } from './waits'
 
 const noop = () => undefined
 
@@ -94,6 +95,13 @@ export interface FigmaAPIOptions {
   loadPage?: (pageId: string) => Promise<void>
   /** The page holding a layer not loaded yet, which `getNodeByIdAsync` loads to find it. */
   pageOfNode?: (nodeId: string) => Promise<string | null>
+  /**
+   * Cancels the script using this API: once it aborts, a font, image, or page load the script
+   * waits on, or starts, rejects with its reason. Code the script runs without waiting goes on.
+   */
+  signal?: AbortSignal
+  /** Reads the fonts the host has installed, before `listAvailableFontsAsync` lists them. */
+  prepareFontList?: () => Promise<void>
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -158,12 +166,15 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
   readonly #fetch: images.ImageFetch
+  readonly #prepareFontList: (() => Promise<void>) | undefined
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
     this.#graph = graph
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
+    if (options.signal) cancelScriptWaits(this, options.signal)
+    this.#prepareFontList = options.prepareFontList
     if (options.loadPage)
       setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
@@ -629,14 +640,14 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Fetches the image at `src` through the host's `fetch` and stores it as `createImage` does. */
   createImageAsync(src: string): Promise<Image> {
-    return images.fetchImage(this.#graph, src, this.#fetch)
+    return images.fetchImage(this, src, this.#fetch)
   }
 
   // --- Stubs ---
 
   /** Loads the font so text measures and draws with it from then on; rejects as Figma does. */
   async loadFontAsync(fontName: FigmaFontNameInput): Promise<void> {
-    await loadFigmaFont(fontName)
+    await waitOutsideScript(this, () => loadFigmaFont(fontName))
   }
 
   /**
@@ -656,7 +667,11 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
 
   /** Every face a script can set, by family; see {@link listFigmaFonts}. */
   listAvailableFontsAsync(): Promise<FigmaFont[]> {
-    return listFigmaFonts()
+    const prepare = this.#prepareFontList
+    return waitOutsideScript(this, async () => {
+      await prepare?.()
+      return listFigmaFonts()
+    })
   }
 
   base64Encode(data: Uint8Array): string {

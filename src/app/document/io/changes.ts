@@ -18,16 +18,22 @@ const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, invers
  * records its step in the same task as the change, or, while text is being edited or an edit is
  * being coalesced, such as a picker drag, when that edit ends. A change no step follows within
  * its task, with neither of those open, is one made outside the history; one an open edit makes
- * waits for that edit's step, and keeps the document unsaved if the edit records none.
+ * waits for that edit's step. An edit or batch that ends without one, rolled back, cancelled, or
+ * changing nothing, undid what it changed, so the document is as the history says once no other
+ * edit is still open.
  */
 export function createDocumentChanges(editor: Editor) {
   const revision = ref(0)
   const savedRevision = ref(0)
   /** The revision of the last change to the history, which accounts for the changes before it. */
   let historyRevision = 0
+  /** The last edit or batch that ended without a step, undoing what it changed. */
+  let discardRevision = 0
   /** The last content change, and the last one no history change accounted for. */
   let contentRevision = 0
   let outsideRevision = 0
+  /** The last change typed into text being edited, which only the text edit's own step settles. */
+  let typingRevision = 0
   let savedHistory: UndoEntry | undefined = editor.undo.peekUndo()
   /** The history at each captured revision, for a save that finishes after later edits. */
   const capturedHistory = new Map<number, UndoEntry | undefined>()
@@ -38,7 +44,8 @@ export function createDocumentChanges(editor: Editor) {
     if (revision.value === savedRevision.value) return false
     const saved = savedRevision.value
     if (outsideRevision > saved) return true
-    if (contentRevision > Math.max(historyRevision, saved)) return true
+    if (typingRevision > Math.max(historyRevision, saved)) return true
+    if (contentRevision > Math.max(historyRevision, discardRevision, saved)) return true
     return editor.undo.peekUndo() !== savedHistory
   })
 
@@ -54,7 +61,11 @@ export function createDocumentChanges(editor: Editor) {
     contentRevision = revision.value
     const at = contentRevision
     // Text editing, coalesced edits, and edits that await record their step when they end.
-    if (editor.state.editingTextId !== null || editor.undo.isRecording) return
+    if (editor.undo.isRecording) return
+    if (editor.state.editingTextId !== null) {
+      typingRevision = at
+      return
+    }
     queueMicrotask(() => {
       if (historyRevision < at) outsideRevision = Math.max(outsideRevision, at)
     })
@@ -68,6 +79,15 @@ export function createDocumentChanges(editor: Editor) {
     revision.value++
     historyRevision = revision.value
   }
+  // An edit still open, such as an agent's call while the user cancels a drag, has changes no
+  // step accounts for yet; its own step, or its own discard, settles them. A discard settles only
+  // changes made inside edits: one made outside them still waits for its task's step, if any,
+  // and text being typed waits for the text edit's step.
+  const editDiscarded = () => {
+    if (editor.undo.isRecording) return
+    revision.value++
+    discardRevision = revision.value
+  }
   const unsubscribers = [
     editor.onEditorEvent('node:created', contentChanged),
     editor.onEditorEvent('node:updated', updated),
@@ -75,7 +95,8 @@ export function createDocumentChanges(editor: Editor) {
     editor.onEditorEvent('node:reparented', contentChanged),
     editor.onEditorEvent('node:reordered', contentChanged),
     editor.onEditorEvent('graph:replaced', changed),
-    editor.onEditorEvent('history:changed', historyChanged)
+    editor.onEditorEvent('history:changed', historyChanged),
+    editor.onEditorEvent('edit:discarded', editDiscarded)
   ]
 
   function capture() {
