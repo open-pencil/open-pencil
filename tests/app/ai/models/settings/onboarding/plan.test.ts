@@ -13,6 +13,8 @@ import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
+/** A sandboxed desktop package: no host processes, but subscription sign-in still works. */
+const sandboxed = { agentsAvailable: false, subscriptionsAvailable: true }
 
 function answers(overrides: Partial<OnboardingAnswers>): OnboardingAnswers {
   return { goals: ['design'], access: [], spending: 'existing', ...overrides }
@@ -23,6 +25,12 @@ function plannedModelID(choice: OnboardingPlan['fast']): string {
 }
 
 describe('planOnboarding', () => {
+  test('a sandboxed package keeps the ChatGPT subscription but not agents', () => {
+    const plan = planOnboarding(answers({ access: ['acp:codex', 'chatgpt'] }), sandboxed)
+    expect(plan.design).toMatchObject({ providerID: 'chatgpt', modelID: defaultModel('chatgpt') })
+    expect(plan.connections).toEqual(['chatgpt'])
+  })
+
   test('uses an agent the person already has for design', () => {
     const plan = planOnboarding(answers({ access: ['acp:codex'] }), desktop)
     expect(plan.design).toMatchObject({ providerID: 'acp:codex', modelID: '' })

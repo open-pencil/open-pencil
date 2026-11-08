@@ -71,6 +71,20 @@ export function createVariableActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
+  /** A variable to write into, reported to the graph as about to change. */
+  function changingVariable(id: string): Variable | undefined {
+    const variable = ctx.graph.variables.get(id)
+    if (variable) ctx.graph.willChangeVariable(id)
+    return variable
+  }
+
+  /** A collection to write into, reported to the graph as about to change. */
+  function changingCollection(id: string): VariableCollection | undefined {
+    const collection = ctx.graph.variableCollections.get(id)
+    if (collection) ctx.graph.willChangeCollection(id)
+    return collection
+  }
+
   /** Every variable in a collection, the ones a change to its modes can reach. */
   function collectionScope(collectionId: string): BindingScope {
     return { variables: [...(ctx.graph.variableCollections.get(collectionId)?.variableIds ?? [])] }
@@ -116,16 +130,17 @@ export function createVariableActions(ctx: EditorContext) {
     const collection = ctx.graph.variableCollections.get(id)
     if (!collection) return
     const prevName = collection.name
+    ctx.graph.willChangeCollection(id)
     collection.name = newName
     ctx.undo.push({
       label: 'Rename collection',
       forward: () => {
-        const c = ctx.graph.variableCollections.get(id)
+        const c = changingCollection(id)
         if (c) c.name = newName
         ctx.requestRefresh()
       },
       inverse: () => {
-        const c = ctx.graph.variableCollections.get(id)
+        const c = changingCollection(id)
         if (c) c.name = prevName
         ctx.requestRefresh()
       }
@@ -214,7 +229,7 @@ export function createVariableActions(ctx: EditorContext) {
 
   /** Puts a collection's variables in `order`; ids it does not hold are ignored. */
   function placeVariables(collectionId: string, order: readonly string[]) {
-    const collection = ctx.graph.variableCollections.get(collectionId)
+    const collection = changingCollection(collectionId)
     if (!collection) return
     const held = new Set(collection.variableIds)
     const placed = order.filter((id) => held.has(id))
@@ -276,16 +291,17 @@ export function createVariableActions(ctx: EditorContext) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
     const prevName = variable.name
+    ctx.graph.willChangeVariable(id)
     variable.name = newName
     ctx.undo.push({
       label: 'Rename variable',
       forward: () => {
-        const v = ctx.graph.variables.get(id)
+        const v = changingVariable(id)
         if (v) v.name = newName
         ctx.requestRefresh()
       },
       inverse: () => {
-        const v = ctx.graph.variables.get(id)
+        const v = changingVariable(id)
         if (v) v.name = prevName
         ctx.requestRefresh()
       }
@@ -340,14 +356,14 @@ export function createVariableActions(ctx: EditorContext) {
       },
       inverse: () => {
         ctx.graph.addMode(collectionId, modeId, savedMode.name)
-        const col = ctx.graph.variableCollections.get(collectionId)
+        const col = changingCollection(collectionId)
         if (col) {
           col.modes = col.modes
             .filter((m) => m.modeId !== modeId)
             .toSpliced(modeIndex, 0, structuredClone(savedMode))
         }
         for (const [varId, value] of valueSnapshots) {
-          const v = ctx.graph.variables.get(varId)
+          const v = changingVariable(varId)
           if (v) v.valuesByMode[modeId] = structuredClone(value)
         }
         if (wasDefault) ctx.graph.setDefaultMode(collectionId, modeId)
@@ -393,7 +409,7 @@ export function createVariableActions(ctx: EditorContext) {
       inverse: () => {
         // Setting a default moves it first; undo restores the column order too. Look the
         // collection up again: undoing its removal in between restores a copy.
-        const current = ctx.graph.variableCollections.get(collectionId)
+        const current = changingCollection(collectionId)
         if (current) {
           current.modes = structuredClone(prevModes)
           current.defaultModeId = prevDefault
@@ -450,7 +466,7 @@ export function createVariableActions(ctx: EditorContext) {
       expression: tokenExpressionForValue(previous.expression, value)
     }
     const apply = (entry: ModeEntry) => {
-      const target = ctx.graph.variables.get(id)
+      const target = changingVariable(id)
       if (target) setModeEntry(target, modeId, entry)
       refreshVariables({ variables: [id] })
     }
@@ -470,7 +486,7 @@ export function createVariableActions(ctx: EditorContext) {
     const previous = tokenFields(variable)
     const next = structuredClone(patch)
     const apply = (values: Partial<VariableTokenFields>) => {
-      const target = ctx.graph.variables.get(id)
+      const target = changingVariable(id)
       if (!target) return
       const { description, ...fields } = structuredClone(values)
       // A cleared field is removed, not kept as a key set to `undefined`.
@@ -503,9 +519,9 @@ export function createVariableActions(ctx: EditorContext) {
     const next = condition?.trim() || undefined
     if (next === previous) return
     const apply = (value: string | undefined) => {
-      const target = ctx.graph.variableCollections
-        .get(collectionId)
-        ?.modes.find((candidate) => candidate.modeId === modeId)
+      const target = changingCollection(collectionId)?.modes.find(
+        (candidate) => candidate.modeId === modeId
+      )
       if (target) target.condition = value
       ctx.requestRefresh()
     }
@@ -528,7 +544,7 @@ export function createVariableActions(ctx: EditorContext) {
     const next = name?.trim() || undefined
     if (next === previous || (next !== undefined && !isModeAttributeName(next))) return
     const apply = (value: string | undefined) => {
-      const target = ctx.graph.variableCollections.get(collectionId)
+      const target = changingCollection(collectionId)
       if (target) target.modeAttribute = value
       ctx.requestRefresh()
     }

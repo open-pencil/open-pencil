@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
 import { useUpdateMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -9,12 +8,15 @@ import {
   DEFAULT_APP_PREFERENCES,
   updateStartupUpdateCheck
 } from '@/app/settings/preferences/store'
+import { canSelfUpdate } from '@/app/tauri/capabilities'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const updates = useUpdateMessages()
+// A package whose store delivers updates has no built-in check to switch.
+const offered = canSelfUpdate()
 const defaultCheckOnStartup = DEFAULT_APP_PREFERENCES.updates.checkOnStartup
 const checkOnStartup = computed({
   get: () => appPreferences.value.updates.checkOnStartup,
@@ -23,7 +25,7 @@ const checkOnStartup = computed({
 </script>
 
 <template>
-  <SettingsSection v-if="IS_TAURI" data-test-id="settings-updates">
+  <SettingsSection v-if="offered" data-test-id="settings-updates">
     <template #title>{{ updates.settingsSection }}</template>
     <SettingsGroup>
       <SettingsRow

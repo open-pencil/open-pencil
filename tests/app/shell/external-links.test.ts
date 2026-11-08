@@ -25,19 +25,31 @@ describe('openExternalLink', () => {
   test('calls window.open with _blank target for OpenRouter key URL', async () => {
     await openExternalLink('https://openrouter.ai/keys')
 
-    expect(mockOpen).toHaveBeenCalledWith('https://openrouter.ai/keys', '_blank')
+    expect(mockOpen).toHaveBeenCalledWith(
+      'https://openrouter.ai/keys',
+      '_blank',
+      'noopener,noreferrer'
+    )
   })
 
   test('calls window.open with _blank target for Anthropic key URL', async () => {
     await openExternalLink('https://console.anthropic.com/settings/keys')
 
-    expect(mockOpen).toHaveBeenCalledWith('https://console.anthropic.com/settings/keys', '_blank')
+    expect(mockOpen).toHaveBeenCalledWith(
+      'https://console.anthropic.com/settings/keys',
+      '_blank',
+      'noopener,noreferrer'
+    )
   })
 
   test('passes arbitrary URL unchanged', async () => {
     await openExternalLink('https://example.com/docs')
 
-    expect(mockOpen).toHaveBeenCalledWith('https://example.com/docs', '_blank')
+    expect(mockOpen).toHaveBeenCalledWith(
+      'https://example.com/docs',
+      '_blank',
+      'noopener,noreferrer'
+    )
   })
 
   test('opens links through the app command when running in Tauri', async () => {

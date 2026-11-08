@@ -281,7 +281,7 @@ export async function arrangeLayers(
     y: Math.min(...top.map((node) => node.y))
   }
   const before = readFrom(graph, pageId, nodes, groups)
-  const arrangement = await arrangeBoxes(input)
+  const arrangement = await graph.waitOutsideEdit(arrangeBoxes(input))
   // Someone may have moved or removed a layer while the layout ran; its result is stale then.
   if (readFrom(graph, pageId, nodes, groups) !== before) {
     throw new Error('The layers changed while they were being arranged; nothing was moved')

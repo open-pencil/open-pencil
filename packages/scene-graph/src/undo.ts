@@ -9,6 +9,11 @@ export interface UndoManagerOptions {
   limit?: number
   /** Called after recording, undoing, redoing, or clearing committed history. */
   onChange?: () => void
+  /**
+   * Called when an edit ends without a step, its changes undone or amounting to nothing: a batch
+   * rolled back, or an edit reported with `discardEdit`. History is unchanged, so `onChange` is not.
+   */
+  onDiscard?: () => void
 }
 
 interface UndoBatch {
@@ -29,10 +34,12 @@ export class UndoManager {
   private readonly settlers = new Set<() => void>()
   private readonly limit: number
   private readonly onChange: (() => void) | undefined
+  private readonly onDiscard: (() => void) | undefined
 
   constructor(options: UndoManagerOptions = {}) {
     this.limit = options.limit ?? DEFAULT_HISTORY_LIMIT
     this.onChange = options.onChange
+    this.onDiscard = options.onDiscard
   }
 
   apply(entry: UndoEntry): void {
@@ -127,9 +134,23 @@ export class UndoManager {
   }
 
   rollbackBatch(): void {
-    const batch = this.batches.pop()
+    const batch = this.batches.at(-1)
     if (!batch) return
-    for (const entry of batch.entries.toReversed()) entry.inverse()
+    // Still open while it rolls back, so what the rollback changes belongs to the batch.
+    try {
+      for (const entry of batch.entries.toReversed()) entry.inverse()
+    } finally {
+      this.batches.pop()
+    }
+    this.onDiscard?.()
+  }
+
+  /**
+   * Reports an edit that ended without a step, rolled back or changing nothing, as a rolled-back
+   * batch does. Called once the edit has closed, so `isRecording` tells whether another is open.
+   */
+  discardEdit(): void {
+    this.onDiscard?.()
   }
 
   /** Abandon provisional history without replaying it or changing committed undo/redo entries. */

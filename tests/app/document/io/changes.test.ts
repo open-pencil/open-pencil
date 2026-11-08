@@ -355,3 +355,97 @@ test('instances following an undone component edit leave the document saved', as
     editor.dispose()
   }
 })
+
+test('a failed edit or a cancelled drag leaves a saved document saved', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const page = editor.state.currentPageId
+    const card = editor.graph.createNode('RECTANGLE', page, { x: 0, width: 10, height: 10 })
+    changes.markSaved()
+
+    await expect(
+      editor.recordEditAsync({ label: 'Agent: eval' }, async () => {
+        editor.graph.updateNode(card.id, { x: 40 })
+        await Promise.resolve()
+        throw new Error('failed part way')
+      })
+    ).rejects.toThrow('failed part way')
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+
+    editor.undo.beginBatch('Drag')
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 25 }))
+    editor.undo.rollbackBatch()
+    await Promise.resolve()
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
+
+test('a cancelled drag hides neither an edit still open nor one already made', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const page = editor.state.currentPageId
+    const card = editor.graph.createNode('RECTANGLE', page, { x: 0, width: 10, height: 10 })
+    const other = editor.graph.createNode('RECTANGLE', page, { x: 0, width: 10, height: 10 })
+    changes.markSaved()
+    const download = Promise.withResolvers<undefined>()
+    const agent = editor.recordEditAsync({ label: 'Agent: render' }, async () => {
+      editor.graph.updateNode(card.id, { x: 40 })
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+
+    editor.undo.beginBatch('Drag')
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(other.id, { x: 25 }))
+    editor.undo.rollbackBatch()
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+
+    download.resolve(undefined)
+    await agent
+    expect(changes.hasUnsavedChanges()).toBe(true)
+    editor.undo.beginBatch('Drag')
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(other.id, { x: 25 }))
+    editor.undo.rollbackBatch()
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+    editor.undo.undo()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
+
+test('an edit that changes nothing does not hide a change made outside the history', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const card = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, { x: 0 })
+    changes.markSaved()
+    editor.graph.updateNode(card.id, { x: 25 })
+    editor.recordEdit({ label: 'Read' }, () => undefined)
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
+
+test('an edit that changes nothing while text is typed keeps the typing unsaved', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    // An agent's read-only script runs while the user is still typing, before the typing's step.
+    editor.state.editingTextId = id
+    editor.graph.updateNode(id, { name: 'Typing' })
+    await settle()
+    editor.recordEdit({ label: 'Agent: eval' }, () => undefined)
+    await settle()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+  })
+})

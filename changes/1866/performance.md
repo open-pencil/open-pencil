@@ -1,0 +1,1 @@
+- Recording an edit copies only what it changes rather than its page and every variable, so an edit on a large page records in a few milliseconds instead of up to a hundred or more (#1866).

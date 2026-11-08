@@ -5,6 +5,8 @@ import { join } from 'node:path'
 
 import { fromUint8Array } from 'js-base64'
 
+import { imageDataURL } from '@open-pencil/scene-graph/images'
+
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { registerTools } from '#mcp/tool/registration'
 
@@ -134,7 +136,7 @@ describe('MCP tool file input', () => {
 
   test('set_image_fill passes image_data through and refuses a file outside the root', async () => {
     const { sent, call } = await server({ set_image_fill: filled })
-    const data = `data:image/png;base64,${fromUint8Array(png)}`
+    const data = imageDataURL(png)
     expect((await call('set_image_fill', { id: '0:1', image_data: data })).isError).toBeFalsy()
     expect(sent).toEqual([{ id: '0:1', image_data: data, scale_mode: 'FILL' }])
 

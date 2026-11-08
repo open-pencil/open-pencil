@@ -28,6 +28,7 @@ import type { NodeEditState } from '#core/editor/vector/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
+import type { MutationWithLayout } from '#core/layout/mutations'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -245,6 +246,11 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
+  /**
+   * An edit or batch ended without a step, rolled back or changing nothing, so what it changed
+   * meanwhile is undone. The history is unchanged.
+   */
+  'edit:discarded': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
@@ -323,8 +329,7 @@ export interface EditorContext {
   runLayoutForNode: (id: string) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
-    fallbackId?: string,
-    beforeLayout?: (result: T) => Promise<void> | void
-  ) => Promise<T>
+    fallbackId?: string
+  ) => Promise<MutationWithLayout<T>>
   subscribeToGraph: () => void
 }
