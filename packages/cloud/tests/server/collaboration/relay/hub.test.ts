@@ -590,6 +590,27 @@ describe('collaboration relay', () => {
     expect(alice.closed).toBeNull()
   })
 
+  test('counts deletions of what the room never received against its limit', async () => {
+    const { relay: hub } = relay({ maximumRoomBytes: 512 })
+    const alice = await join(hub)
+    // A document the room never saw: deleting from it leaves deletions the room must keep.
+    const ghost = new Y.Doc()
+    const text = ghost.getText('t')
+    text.insert(0, 'x'.repeat(1_000))
+    for (let sent = 0; sent < 500 && alice.closed === null; sent++) {
+      text.delete(sent % 2 === 0 ? 0 : text.length - 1, 1)
+      // Everything the ghost deleted, and none of its content.
+      const deletions = Y.diffUpdateV2(Y.encodeStateAsUpdateV2(ghost), Y.encodeStateVector(ghost))
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: deletions
+      })
+    }
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
+  })
+
   test('closes peers that send malformed document updates', async () => {
     const { relay: hub } = relay()
     const alice = await join(hub)

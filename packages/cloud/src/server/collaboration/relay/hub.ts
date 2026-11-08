@@ -95,6 +95,18 @@ type Room = {
 
 export type CollaborationRelay = ReturnType<typeof createCollaborationRelay>
 
+/** Whether `update` adds nothing and deletes only content `document` already holds. */
+function deletesOnlyKnown(document: Y.Doc, update: Uint8Array): boolean {
+  const { from, to } = Y.parseUpdateMetaV2(update)
+  if (![...to].every(([client, clock]) => from.get(client) === clock)) return false
+  const { ds } = Y.decodeUpdateV2(update)
+  for (const [client, deletions] of ds.clients) {
+    const held = Y.getState(document.store, client)
+    if (deletions.some((deletion) => deletion.clock + deletion.len > held)) return false
+  }
+  return true
+}
+
 /**
  * A runtime-neutral relay for collaboration rooms. It forwards room messages between peers and
  * joins every room as a peer itself: it holds the room's document, answers sync requests from
@@ -251,14 +263,14 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   /**
-   * Whether the room's document stays within its limit after `update`. An update that adds no
-   * content, such as a deletion, only shrinks it, so it always fits. Otherwise the bound grows by
+   * Whether the room's document stays within its limit after `update`. An update that only
+   * deletes what the room holds shrinks it, so it always fits; one that deletes what the room has
+   * not received waits in the document, so it counts like any other. Otherwise the bound grows by
    * the update; past the limit, the document is measured only if a deletion may have shrunk it
    * since the last measure, so edits near the limit never encode the whole document each time.
    */
   function fits(content: RoomContent, update: Uint8Array): boolean {
-    const { from, to } = Y.parseUpdateMetaV2(update)
-    if ([...to].every(([client, clock]) => from.get(client) === clock)) return true
+    if (deletesOnlyKnown(content.document, update)) return true
     if (content.bytes + update.byteLength <= maximumRoomBytes) return true
     if (!content.deletedSinceMeasure) return false
     content.bytes = Y.encodeStateAsUpdateV2(content.document).byteLength

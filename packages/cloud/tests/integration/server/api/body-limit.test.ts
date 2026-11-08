@@ -4,12 +4,12 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
+  CLOUD_API_MAX_BODY_BYTES,
   CLOUD_MAX_DOCUMENT_IMAGES,
   commitImageUploadsSchema,
   commitUploadSchema
 } from '#cloud/contract'
 import {
-  API_BODY_BYTES,
   createBetterAuthAdapter,
   createCloudApp,
   parseCloudServerConfig,
@@ -54,7 +54,7 @@ async function postWorkspace(name: string) {
 
 describe('Cloud API request bodies', () => {
   test('refuse a body past the API limit before reading it', async () => {
-    const response = await postWorkspace('x'.repeat(API_BODY_BYTES))
+    const response = await postWorkspace('x'.repeat(CLOUD_API_MAX_BODY_BYTES))
     expect(response.status).toBe(413)
     expect(
       await responseJSON(
@@ -80,7 +80,9 @@ describe('Cloud API request bodies', () => {
       uploads: images.map(() => ({ uploadId: crypto.randomUUID(), checksum }))
     })
     for (const body of [commit, imageUploads]) {
-      expect(new TextEncoder().encode(JSON.stringify(body)).byteLength).toBeLessThan(API_BODY_BYTES)
+      expect(new TextEncoder().encode(JSON.stringify(body)).byteLength).toBeLessThan(
+        CLOUD_API_MAX_BODY_BYTES
+      )
     }
   })
 })

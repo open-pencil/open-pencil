@@ -1,1 +1,1 @@
-- Cloud collaboration rooms refuse an edit that would grow the document past 256 MiB, or 32 MiB on Cloudflare, instead of crashing the room; the editor then saves on its own. Cloud API requests are limited to 8 MiB, and on Node the database cancels queries that run past 30 seconds.
+- Cloud collaboration rooms refuse an edit that would grow the document past 256 MiB, or 32 MiB on Cloudflare, instead of crashing the room; the editor then saves on its own.

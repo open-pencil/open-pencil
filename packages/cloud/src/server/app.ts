@@ -8,6 +8,7 @@ import {
   type EnrollmentService
 } from '#cloud/admin'
 import {
+  CLOUD_API_MAX_BODY_BYTES,
   CLOUD_SERVICES_JWKS_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
@@ -128,13 +129,6 @@ export function withIndexingPolicy(
     headers
   })
 }
-
-/**
- * The most an API request body may hold. Files go to the object store, never through the API; the
- * largest bodies list a document's images, up to `CLOUD_MAX_DOCUMENT_IMAGES` of them, which comes
- * to about 2 MB, so this leaves room while refusing anything far past it before it is read.
- */
-export const API_BODY_BYTES = 8 * 1024 * 1024
 
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
@@ -327,7 +321,7 @@ export function createCloudApp(services: CloudServices) {
     .use(
       '/api/*',
       bodyLimit({
-        maxSize: API_BODY_BYTES,
+        maxSize: CLOUD_API_MAX_BODY_BYTES,
         onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
       })
     )
