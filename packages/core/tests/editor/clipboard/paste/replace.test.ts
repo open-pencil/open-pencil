@@ -1,10 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
-import { buildOpenPencilClipboardHTML } from '@open-pencil/core/clipboard'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 
-function copiedRectangleHTML(name = 'Pasted') {
+/** What copying a layer of `source` puts on the clipboard, as in-app paste reads it. */
+async function copied(source: Editor, id: string) {
+  source.select([id])
+  const { snapshot } = await source.prepareCopy()
+  if (!snapshot) throw new Error('Missing snapshot')
+  return snapshot
+}
+
+async function copiedRectangle(name = 'Pasted') {
   const source = createEditor()
   const sourcePageId = source.state.currentPageId
   const pasted = source.graph.createNode('RECTANGLE', sourcePageId, {
@@ -14,10 +21,10 @@ function copiedRectangleHTML(name = 'Pasted') {
     width: 20,
     height: 20
   })
-  return buildOpenPencilClipboardHTML([pasted], source.graph)
+  return copied(source, pasted.id)
 }
 
-function copiedFrameHTML() {
+async function copiedFrame() {
   const source = createEditor()
   const sourcePageId = source.state.currentPageId
   const frame = source.graph.createNode('FRAME', sourcePageId, {
@@ -34,7 +41,7 @@ function copiedFrameHTML() {
     width: 10,
     height: 12
   })
-  return buildOpenPencilClipboardHTML([frame], source.graph)
+  return copied(source, frame.id)
 }
 
 function canvasBox(editor: Editor, id: string) {
@@ -63,14 +70,14 @@ function createTarget(editor: Editor, parentId = editor.state.currentPageId) {
 }
 
 describe('paste to replace', () => {
-  test('replaces selected nodes with pasted OpenPencil nodes', async () => {
-    const html = copiedRectangleHTML()
+  test('replaces selected nodes with pasted layers', async () => {
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = createTarget(editor)
 
     editor.select([target.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
 
     expect(editor.graph.getNode(target.id)).toBeUndefined()
     const [createdId] = [...editor.state.selectedIds]
@@ -82,13 +89,13 @@ describe('paste to replace', () => {
   })
 
   test('undo and redo preserve replaced and pasted subtrees', async () => {
-    const html = copiedRectangleHTML()
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = createTarget(editor)
 
     editor.select([target.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
     const [createdId] = [...editor.state.selectedIds]
 
     editor.undo.undo()
@@ -105,7 +112,7 @@ describe('paste to replace', () => {
   })
 
   test('falls back to regular paste when all selected targets are locked', async () => {
-    const html = copiedRectangleHTML()
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = editor.graph.createNode('ELLIPSE', pageId, {
@@ -118,7 +125,7 @@ describe('paste to replace', () => {
     })
 
     editor.select([target.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
 
     expect(editor.graph.getNode(target.id)?.parentId).toBe(pageId)
     const [createdId] = [...editor.state.selectedIds]
@@ -127,7 +134,7 @@ describe('paste to replace', () => {
   })
 
   test('replaces only top-level selected targets', async () => {
-    const html = copiedRectangleHTML()
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const parent = editor.graph.createNode('FRAME', pageId, {
@@ -146,7 +153,7 @@ describe('paste to replace', () => {
     })
 
     editor.select([parent.id, child.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
 
     expect(editor.graph.getNode(parent.id)).toBeUndefined()
     expect(editor.graph.getNode(child.id)).toBeUndefined()
@@ -155,7 +162,7 @@ describe('paste to replace', () => {
   })
 
   test('replaces targets inside a frame and preserves parent order through undo and redo', async () => {
-    const html = copiedRectangleHTML()
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const frame = editor.graph.createNode('FRAME', pageId, {
@@ -170,7 +177,7 @@ describe('paste to replace', () => {
     const after = editor.graph.createNode('RECTANGLE', frame.id, { name: 'After', x: 200, y: 200 })
 
     editor.select([target.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
     const [createdId] = [...editor.state.selectedIds]
 
     expect(editor.graph.getNode(createdId)?.parentId).toBe(frame.id)
@@ -184,7 +191,7 @@ describe('paste to replace', () => {
   })
 
   test('starts the replacement where the target started on the canvas, upright, inside an offset, rotated, or flipped frame', async () => {
-    const html = copiedRectangleHTML()
+    const snapshot = await copiedRectangle()
     const editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
       x: 50,
@@ -202,7 +209,7 @@ describe('paste to replace', () => {
       editor.graph.updateNode(frame.id, transform)
       const start = canvasBox(editor, target.id)
       editor.select([target.id])
-      await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+      await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
       const [createdId] = editor.state.selectedIds
       // Figma keeps the target's canvas top-left, and the replacement as it was drawn when copied
       // (desktop 126).
@@ -246,12 +253,12 @@ describe('paste to replace', () => {
   })
 
   test('preserves pasted child subtrees', async () => {
-    const html = copiedFrameHTML()
+    const snapshot = await copiedFrame()
     const editor = createEditor()
     const target = createTarget(editor)
 
     editor.select([target.id])
-    await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await editor.pasteSnapshot(snapshot, undefined, { replaceSelection: true })
 
     const [createdId] = [...editor.state.selectedIds]
     const created = editor.graph.getNode(createdId)

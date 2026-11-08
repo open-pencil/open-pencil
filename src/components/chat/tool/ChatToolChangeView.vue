@@ -11,11 +11,11 @@ import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import splitterTheme from '@/theme/splitter'
 
-import { chatToolTheme } from './ui'
+import { chatToolChangeTheme } from './ui'
 
 const { change } = defineProps<{ change: ToolChange }>()
 const { ai } = useI18n()
-const ui = chatToolTheme()
+const ui = chatToolChangeTheme()
 const splitter = tv(splitterTheme)({ direction: 'horizontal' })
 
 const beforeURL = useObjectUrl(() => change.images?.before ?? undefined)
@@ -55,31 +55,26 @@ const aspectRatio = computed(() =>
         </IconButton>
       </div>
       <div
-        :class="ui.compare()"
+        :class="ui.root()"
         :style="{ aspectRatio }"
         :data-mode="highlight ? 'highlight' : 'compare'"
         data-slot="chat-tool-change-images"
       >
         <template v-if="highlight">
-          <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.compareImage()" />
-          <img :src="highlightURL" alt="" :class="ui.compareImage()" />
+          <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.image()" />
+          <img :src="highlightURL" alt="" :class="ui.image()" />
         </template>
-        <SplitterGroup v-else direction="horizontal" :class="ui.compareSplit()">
-          <SplitterPanel :default-size="50" :class="ui.comparePanel()">
-            <img
-              v-if="beforeURL"
-              :src="beforeURL"
-              :alt="ai.changeBefore"
-              :class="ui.compareBefore()"
-            />
-            <span :class="ui.compareLabel({ class: 'left-1' })">{{ ai.changeBefore }}</span>
+        <SplitterGroup v-else direction="horizontal" :class="ui.split()">
+          <SplitterPanel :default-size="50" :class="ui.panel()">
+            <img v-if="beforeURL" :src="beforeURL" :alt="ai.changeBefore" :class="ui.before()" />
+            <span :class="ui.label({ class: 'left-1' })">{{ ai.changeBefore }}</span>
           </SplitterPanel>
           <SplitterResizeHandle :class="splitter.handle()" :aria-label="ai.changeSplit">
-            <div :class="splitter.divider({ class: ui.compareDivider() })" />
+            <div :class="splitter.divider({ class: ui.divider() })" />
           </SplitterResizeHandle>
-          <SplitterPanel :default-size="50" :class="ui.comparePanel()">
-            <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.compareAfter()" />
-            <span :class="ui.compareLabel({ class: 'right-1' })">{{ ai.changeAfter }}</span>
+          <SplitterPanel :default-size="50" :class="ui.panel()">
+            <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.after()" />
+            <span :class="ui.label({ class: 'right-1' })">{{ ai.changeAfter }}</span>
           </SplitterPanel>
         </SplitterGroup>
       </div>

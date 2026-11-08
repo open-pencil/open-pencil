@@ -1,4 +1,5 @@
 import { defaultRelayURL } from '#cloud/contract'
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
@@ -82,8 +83,16 @@ async function startConfiguredServer(
   } = createNodeTransactionalEmailRuntime(config, database)
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
   const policy = createConfiguredCloudPolicy(config, database)
-  const cleanup = config.cleanupEnabled
-    ? startCleanupWorker(createCleanupServices(config, database, objects, policy), {
+  // Cleanup sweeps may run longer than a request should, so they have a connection of their own
+  // without the statement timeout.
+  const cleanupDatabase = config.cleanupEnabled
+    ? createPostgresCloudDatabase({
+        connectionString: config.databaseURL,
+        statementTimeoutMs: null
+      })
+    : undefined
+  const cleanup = cleanupDatabase
+    ? startCleanupWorker(createCleanupServices(config, cleanupDatabase, objects, policy), {
         ...cleanupPassOptions(config),
         intervalMs: config.cleanupIntervalMs,
         onError: (error) =>
@@ -146,6 +155,7 @@ async function startConfiguredServer(
       await relayListener.close()
       await server.close()
       await cleanup?.stop()
+      await cleanupDatabase?.destroy()
       await emailWorker?.stop()
       await database.destroy()
     }

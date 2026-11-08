@@ -1,8 +1,8 @@
-import { fromUint8Array } from 'js-base64'
 import type PptxGenJS from 'pptxgenjs'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
@@ -519,7 +519,7 @@ async function addFallbackImage(
   }
   const box = nodeBox(ctx, node)
   ctx.slide.addImage({
-    data: `data:image/png;base64,${fromUint8Array(data)}`,
+    data: imageDataURL(data),
     x: box.x,
     y: box.y,
     w: box.w,

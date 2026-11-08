@@ -22,7 +22,11 @@ export interface EditorShortcut {
   id: string
   keys: HotkeyChord | readonly HotkeyChord[]
   run: (event: KeyboardEvent) => void
-  /** Whether the browser's own action for the key is stopped; by default always. */
+  /**
+   * Whether the key was the editor's, so the browser's own action is stopped and a closing menu
+   * that still has focus does not act on it too; by default always. Return false when the key
+   * did nothing, as an unbound tool key does.
+   */
   preventDefault?: (event: KeyboardEvent) => boolean
   /** Runs wherever focus is, in a text field or with a dialog open, as app-wide keys do. */
   global?: boolean

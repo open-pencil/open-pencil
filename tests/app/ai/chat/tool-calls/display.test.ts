@@ -11,6 +11,7 @@ import {
   toolNodeIds,
   toolSource,
   toolSummary,
+  toolWebResults,
   type ChatMessagePart,
   type ToolCallPart
 } from '@/app/ai/chat/tool-calls/display'
@@ -115,6 +116,36 @@ describe('tool call display', () => {
         })
       )
     ).toBeNull()
+  })
+
+  test('shows the pages a web search found as sources, not its own output', () => {
+    const results = [
+      {
+        url: 'https://example.com/grids',
+        title: 'Grids',
+        publishedAt: null,
+        author: null,
+        text: 'Columns and gutters.'
+      }
+    ]
+    const found = call({ type: 'tool-web_search', state: 'output-available', output: { results } })
+    expect(toolWebResults(found)).toEqual(results)
+    const refused = call({
+      type: 'tool-web_search',
+      state: 'output-available',
+      output: { error: 'Out of credits' }
+    })
+    expect(toolWebResults(refused)).toBeNull()
+    expect(
+      toolWebResults(call({ type: 'tool-get_jsx', state: 'output-available', output: { results } }))
+    ).toBeNull()
+    // An agent such as Claude Code gets it from OpenPencil's MCP server as JSON text.
+    const throughMCP = call({
+      type: 'tool-mcp__open-pencil__web_search',
+      state: 'output-available',
+      output: { content: [{ type: 'text', text: JSON.stringify({ results }) }] }
+    })
+    expect(toolWebResults(throughMCP)).toEqual(results)
   })
 
   test('groups consecutive tool calls between other parts', () => {
