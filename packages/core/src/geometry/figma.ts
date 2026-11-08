@@ -5,6 +5,14 @@ import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
+ * A number as Figma's Design panel and size label show it: rounded to two decimals, so 33.333
+ * reads 33.33 and 0.126 reads 0.13. The layer keeps its exact value.
+ */
+export function panelNumber(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+/**
  * Figma's rotation of a transform: counterclockwise degrees in (-180, 180]. The plugin API and the
  * properties panel both report it; our nodes store a clockwise angle about their center.
  */
