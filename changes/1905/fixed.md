@@ -1,0 +1,1 @@
+- Design panel fields and the canvas size label show fractional values to two decimals, as in Figma, instead of rounding them to whole numbers (#1905).
