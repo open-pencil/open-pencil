@@ -2,6 +2,8 @@ import type { Context, ErrorHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { routePath } from 'hono/route'
 
+import type { ErrorReportContext, ErrorReporter } from './posthog'
+
 /** Where the server caught an error. */
 export const CLOUD_ERROR_SOURCES = [
   'request',
@@ -14,19 +16,17 @@ export const CLOUD_ERROR_SOURCES = [
 ] as const
 export type CloudErrorSource = (typeof CLOUD_ERROR_SOURCES)[number]
 
-/** What the server knows about a caught error; never who made the request or what it carried. */
-export type CloudErrorContext = {
-  source: CloudErrorSource
-  /** For a request: its method and the route pattern it matched, not the path with its IDs. */
-  method?: string
-  route?: string
-}
+/**
+ * What the server knows about a caught error; never who made the request or what it carried. For a
+ * request: its method and the route pattern it matched, not the path with its IDs.
+ */
+export type CloudErrorContext = ErrorReportContext<CloudErrorSource>
 
 /**
  * Sends a caught error to the deployment's error tracking. Runtimes create one only when the
  * deployment configures error tracking; its promise never rejects.
  */
-export type CloudErrorReporter = (error: unknown, context: CloudErrorContext) => Promise<void>
+export type CloudErrorReporter = ErrorReporter<CloudErrorSource>
 
 /** Logs a caught error and reports it, when the deployment reports errors. */
 export function reportCloudError(
@@ -54,3 +54,10 @@ export function cloudErrorHandler(reporter: CloudErrorReporter | undefined): Err
     return context.text('Internal Server Error', 500)
   }
 }
+
+export {
+  createPostHogErrorReporter,
+  type ErrorReportContext,
+  type ErrorReporter,
+  type PostHogErrorReporterOptions
+} from './posthog'
