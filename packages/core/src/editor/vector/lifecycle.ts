@@ -154,7 +154,7 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     ctx.state.nodeEditState = {
       nodeId,
       keepOpen: options.keepOpen ?? false,
-      handles: options.handles ?? 'near-selection',
+      showHandles: options.showHandles ?? 'near-selection',
       origNetwork: cloneVectorNetwork(layer.vectorNetwork),
       origBounds: { x: layer.x, y: layer.y, width: layer.width, height: layer.height },
       origAbsNetwork: cloneVectorNetwork(absNetwork),

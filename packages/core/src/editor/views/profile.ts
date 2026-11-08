@@ -6,12 +6,13 @@ import { BOARD_GRID } from '#core/constants'
 import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
-import type {
-  CanvasView,
-  EditorProfile,
-  EditorProfileInputs,
-  EditorRestrictions,
-  LayerEdits
+import {
+  LAYER_EDIT_LEVELS,
+  PATH_EDIT_LEVELS,
+  type CanvasView,
+  type EditorProfile,
+  type EditorProfileInputs,
+  type EditorRestrictions
 } from './types'
 
 export const EDIT_VIEW: CanvasView = { id: 'edit' }
@@ -128,18 +129,16 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
     toolKeys: tools
       ? pickBy(profile.toolKeys, (tool) => !!tool && tools.has(tool))
       : profile.toolKeys,
-    pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits,
+    pathEdits: narrower(PATH_EDIT_LEVELS, profile.pathEdits, restrictions.pathEdits),
     layerEdits: restrictions.readOnly
       ? 'none'
-      : narrowerLayerEdits(profile.layerEdits, restrictions.layerEdits)
+      : narrower(LAYER_EDIT_LEVELS, profile.layerEdits, restrictions.layerEdits)
   }
 }
 
-const LAYER_EDITS: readonly LayerEdits[] = ['all', 'move', 'none']
-
-/** The narrower of two layer edit levels. */
-function narrowerLayerEdits(a: LayerEdits, b: LayerEdits): LayerEdits {
-  return LAYER_EDITS.indexOf(a) > LAYER_EDITS.indexOf(b) ? a : b
+/** The narrower of two levels of a restriction, whose levels are listed widest first. */
+function narrower<L extends string>(levels: readonly L[], a: L, b: L): L {
+  return levels.indexOf(a) > levels.indexOf(b) ? a : b
 }
 
 /**

@@ -139,7 +139,7 @@ editor.asHost(() => editor.booleanOperationSelected('UNION'))
 
 // Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or
 // another layer leave it open. Every point shows its handles.
-editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
+editor.enterNodeEditMode(nodeId, { keepOpen: true, showHandles: 'all' })
 
 // The host ends it; so do switching pages, deleting the layer, replacing the document, and
 // going read-only.
