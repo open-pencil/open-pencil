@@ -341,3 +341,35 @@ describe('resizing a fractional multi-selection on the pixel grid', () => {
     expect(editor.graph.getNode(a)?.width).toBeCloseTo((60.25 * 160.75) / 150.75, 6)
   })
 })
+
+describe('whole-pixel layers in a resized multi-selection', () => {
+  test('a level line keeps no height', () => {
+    editor = createEditor()
+    editor.state.snappingPreferences = { geometry: true, objects: false, pixelGrid: true }
+    const page = editor.state.currentPageId
+    const line = editor.graph.createNode('LINE', page, { x: 0.5, y: 10.25, width: 40.5, height: 0 })
+    const rect = editor.graph.createNode('RECTANGLE', page, { x: 60, y: 0, width: 30, height: 30 })
+    editor.select([line.id, rect.id])
+    const drag = start(90, 15)
+    applySelectionResize(drag, 100.3, 15, false, editor)
+    commitSelectionResize(drag, editor)
+    expect(editor.graph.getNode(line.id)?.height).toBe(0)
+    expect(editor.graph.getNode(rect.id)?.width).toBeGreaterThan(30)
+  })
+
+  test('a box that snaps to another layer keeps its outer layer on that edge', () => {
+    editor = createEditor()
+    editor.state.snappingPreferences = { geometry: true, objects: true, pixelGrid: true }
+    const page = editor.state.currentPageId
+    const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 40, height: 40 })
+    const b = editor.graph.createNode('RECTANGLE', page, { x: 60, y: 0, width: 30, height: 40 })
+    // A neighbour whose left edge sits at a fractional x, just right of the box.
+    editor.graph.createNode('RECTANGLE', page, { x: 93.375, y: 100, width: 20, height: 20 })
+    editor.select([a.id, b.id])
+    const drag = start(90, 20)
+    applySelectionResize(drag, 93, 20, false, editor)
+    commitSelectionResize(drag, editor)
+    const outer = editor.graph.getNode(b.id)
+    expect((outer?.x ?? 0) + (outer?.width ?? 0)).toBeCloseTo(93.375, 6)
+  })
+})

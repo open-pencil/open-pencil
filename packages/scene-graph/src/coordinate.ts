@@ -349,11 +349,24 @@ export interface ResizedBoundsOptions {
   wholeEdges?: boolean
 }
 
-/** `from`..`to` on the canvas with both ends a whole number of pixels from `origin`. */
-function wholeSpan(origin: number, from: number, to: number): { start: number; size: number } {
-  const start = origin + Math.round(from - origin)
-  const end = origin + Math.round(to - origin)
-  return { start, size: Math.max(1, end - start) }
+/** Within floating-point noise of each other. */
+const sameEdge = (a: number, b: number) => Math.abs(a - b) < 1e-6
+
+/**
+ * `from`..`to` on the canvas with both ends a whole number of pixels from the box's `start`. An end
+ * on the box's own edge stays there, so a box that snapped to a fractional guide keeps its layers on
+ * it; a span of no length, such as a level line's height, stays at none.
+ */
+function wholeSpan(
+  box: { start: number; end: number },
+  from: number,
+  to: number
+): { start: number; size: number } {
+  const land = (edge: number) =>
+    sameEdge(edge, box.end) ? box.end : box.start + Math.round(edge - box.start)
+  const start = land(from)
+  if (sameEdge(from, to)) return { start, size: 0 }
+  return { start, size: Math.max(1, land(to) - start) }
 }
 
 /** Where a layer sits in its parent and how large it is, with its angle and flips. */
@@ -401,8 +414,8 @@ export function placeInResizedBounds(
   let [left, top] = [tx, ty]
   const upright = Math.abs(uy) < 1e-9 && ux > 0 && mirrored > 0
   if (wholeEdges && !keepRatio && upright) {
-    const across = wholeSpan(to.x, tx, tx + width)
-    const down = wholeSpan(to.y, ty, ty + height)
+    const across = wholeSpan({ start: to.x, end: to.x + to.width }, tx, tx + width)
+    const down = wholeSpan({ start: to.y, end: to.y + to.height }, ty, ty + height)
     ;[left, width, top, height] = [across.start, across.size, down.start, down.size]
   }
   const squared: Mat3 = [ux, -uy * mirrored, left, uy, ux * mirrored, top, 0, 0, 1]
