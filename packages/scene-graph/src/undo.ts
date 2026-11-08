@@ -10,8 +10,11 @@ export type HistoryChange = 'record' | 'undo' | 'redo' | 'clear'
 
 export interface UndoManagerOptions {
   limit?: number
-  /** Called after recording, undoing, redoing, or clearing committed history, with which. */
-  onChange?: (change: HistoryChange) => void
+  /**
+   * Called after recording, undoing, redoing, or clearing committed history, with which, and with
+   * the step recorded for `'record'`.
+   */
+  onChange?: (change: HistoryChange, step?: UndoEntry) => void
   /**
    * Called when an edit ends without a step, its changes undone or amounting to nothing: a batch
    * rolled back, or an edit reported with `discardEdit`. History is unchanged, so `onChange` is not.
@@ -41,7 +44,7 @@ export class UndoManager {
   private openEdits = 0
   private readonly settlers = new Set<() => void>()
   private readonly limit: number
-  private readonly onChange: ((change: HistoryChange) => void) | undefined
+  private readonly onChange: ((change: HistoryChange, step?: UndoEntry) => void) | undefined
   private readonly onDiscard: (() => void) | undefined
   private readonly runReplay: (replay: () => void) => void
 
@@ -305,7 +308,7 @@ export class UndoManager {
     }
     this.redoStack = []
     this.trimUndoStack()
-    this.onChange?.('record')
+    this.onChange?.('record', this.undoStack.at(-1))
   }
 
   private trimUndoStack(): void {

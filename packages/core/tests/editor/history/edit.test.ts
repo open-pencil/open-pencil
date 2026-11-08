@@ -41,24 +41,47 @@ describe('recordEdit', () => {
     expect(editor.undo.undo()).toBe('Arrange')
   })
 
-  test('joins the newest step, or records its own with none to join', () => {
+  test('joins the step it responds to, so undo and redo take back both', () => {
     const { editor, card } = setup()
-
-    editor.recordEdit({ label: 'Snap', joinStep: true }, () =>
-      editor.graph.updateNode(card.id, { y: 5 })
-    )
     editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
-    editor.recordEdit({ label: 'Snap', joinStep: true }, () =>
+    const step = editor.undo.peekUndo()
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
       editor.graph.updateNode(card.id, { x: 40 })
     )
 
     expect(editor.undo.undo()).toBe('Move')
-    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 5 })
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
     expect(editor.undo.redo()).toBe('Move')
     expect(editor.graph.getNode(card.id)?.x).toBe(40)
+  })
+
+  test('a response to a step undone before it ran changes nothing and records nothing', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
     editor.undo.undo()
-    expect(editor.undo.undo()).toBe('Snap')
-    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 0 })
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
+    // Redo is still there, as the response took nothing away.
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+  })
+
+  test('history:changed passes the step it recorded', () => {
+    const { editor, card } = setup()
+    const seen: unknown[] = []
+    editor.onEditorEvent('history:changed', (change, step) => seen.push([change, step?.label]))
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    editor.undo.undo()
+    expect(seen).toEqual([
+      ['record', 'Move'],
+      ['undo', undefined]
+    ])
   })
 
   test('rolls back an edit that threw part way and leaves no step', () => {

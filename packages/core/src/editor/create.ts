@@ -90,7 +90,7 @@ export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({
-    onChange: (change) => emitEditorEvent('history:changed', change),
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
     onDiscard: () => emitEditorEvent('edit:discarded'),
     runReplay: (replay) => _graph.runOutsideEdits(replay)
   })

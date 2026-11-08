@@ -205,7 +205,10 @@ describe('layers the host lets only move', () => {
   test('runs only synchronous host edits, and swallows what the promise does after', async () => {
     const { editor } = movable()
     let rejected = false
-    process.once('unhandledRejection', () => (rejected = true))
+    const onRejection = () => {
+      rejected = true
+    }
+    process.on('unhandledRejection', onRejection)
     const ran = () =>
       editor.asHost(async () => {
         await Promise.resolve()
@@ -215,6 +218,7 @@ describe('layers the host lets only move', () => {
     await new Promise((resolve) => {
       setTimeout(resolve, 10)
     })
+    process.off('unhandledRejection', onRejection)
     expect(rejected).toBe(false)
   })
 

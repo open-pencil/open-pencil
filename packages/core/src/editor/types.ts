@@ -14,7 +14,7 @@ import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
-import type { HistoryChange, UndoManager } from '@open-pencil/scene-graph/undo'
+import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
@@ -247,11 +247,12 @@ export interface EditorEvents extends SceneGraphEvents {
   'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   /**
-   * Committed history changed: a new step was recorded, or undo, redo, or clearing ran. A host
-   * that responds to the person's edits responds to `'record'`; undo and redo bring back a
-   * document that was already responded to.
+   * Committed history changed: a new step was recorded, with the step, or undo, redo, or clearing
+   * ran. A host that responds to the person's edits responds to `'record'`, joining its response
+   * to the step (`recordEdit`'s `joinStep`); undo and redo bring back a document that was already
+   * responded to.
    */
-  'history:changed': (change: HistoryChange) => void
+  'history:changed': (change: HistoryChange, step?: UndoEntry) => void
   /**
    * An edit or batch ended without a step, rolled back or changing nothing, so what it changed
    * meanwhile is undone. The history is unchanged.

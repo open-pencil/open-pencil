@@ -146,11 +146,12 @@ editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
 editor.exitNodeEditMode(true, { release: true })
 ```
 
-Undo and redo stop at the steps made before layers were restricted. A host that responds to the person's edits, such as snapping a dropped layer into place, records its response into their step with `recordEdit({ label, joinStep: true }, run)`, so one undo takes back both. `history:changed` says why history changed (`'record'`, `'undo'`, `'redo'`, or `'clear'`), so the host responds to new steps only:
+Undo and redo stop at the steps made before layers were restricted. A host that responds to the person's edits, such as snapping a dropped layer into place, records its response into their step with `recordEdit({ label, joinStep: step }, run)`, so one undo takes back both. `history:changed` says why history changed (`'record'`, `'undo'`, `'redo'`, or `'clear'`) and passes the step it recorded, so the host responds to new steps only. A response whose step was undone or followed by another before it ran changes nothing:
 
 ```ts
-editor.onEditorEvent('history:changed', (change) => {
-  if (change === 'record') queueMicrotask(() => editor.recordEdit({ label: 'Snap', joinStep: true }, snap))
+editor.onEditorEvent('history:changed', (change, step) => {
+  if (change !== 'record') return
+  queueMicrotask(() => editor.recordEdit({ label: 'Snap', joinStep: step }, snap))
 })
 ```
 
