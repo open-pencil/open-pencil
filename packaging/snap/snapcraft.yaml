@@ -27,6 +27,9 @@ apps:
       - network
       - removable-media
       - password-manager-service
+      # Voice calls with collaborators (src/app/collab/voice).
+      - audio-playback
+      - audio-record
 
 # tauri-plugin-single-instance names the running instance after the app identifier, and a
 # second launch hands it its files and links over the session bus. The slot lets the snap own
@@ -48,5 +51,11 @@ parts:
       # Snap desktop files name their icon by path inside the snap.
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/128x128/apps/OpenPencil.png|' \
         "$CRAFT_PART_INSTALL/usr/share/applications/OpenPencil.desktop"
+      # The store icon is the metainfo's stock icon at the theme's largest size, but snapcraft
+      # compares sizes as text, so 32x32 would win, and it skips Tauri's 256x256@2 folder. The
+      # desktop entry above names its icon by path, so the snap needs neither folder.
+      icons="$CRAFT_PART_INSTALL/usr/share/icons/hicolor"
+      mv "$icons/256x256@2" "$icons/256x256"
+      rm -r "$icons/32x32"
     prime:
       - -openpencil.deb

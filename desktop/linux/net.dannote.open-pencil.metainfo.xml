@@ -12,9 +12,10 @@
   <!-- One line per paragraph: stores keep line breaks inside a paragraph. -->
   <description>
     <p>OpenPencil is an open-source design editor for interfaces. It opens and saves Figma .fig files, lays out with auto layout and grids, and works with components, variables, and prototypes.</p>
-    <p>AI can edit the canvas and review designs through the models and subscriptions you already use. Files stay on your computer unless you share them.</p>
+    <p>AI can edit the canvas and review designs with your own API keys or a ChatGPT subscription. Files stay on your computer unless you share them.</p>
   </description>
   <launchable type="desktop-id">OpenPencil.desktop</launchable>
+  <icon type="stock">OpenPencil</icon>
   <url type="homepage">https://openpencil.dev</url>
   <url type="bugtracker">https://github.com/open-pencil/open-pencil/issues</url>
   <url type="vcs-browser">https://github.com/open-pencil/open-pencil</url>
@@ -33,5 +34,8 @@
     <mediatype>application/x-figma</mediatype>
     <mediatype>application/x-pencil-pen</mediatype>
   </provides>
-  <content_rating type="oars-1.1" />
+  <!-- People in a shared file can talk in an unmoderated voice call. -->
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-audio">intense</content_attribute>
+  </content_rating>
 </component>
