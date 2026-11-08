@@ -18,7 +18,8 @@ const migrations: Record<string, Migration> = {
   '006_operations': operations
 }
 
-class CloudMigrationProvider implements MigrationProvider {
+/** Cloud's migrations, in order. */
+export class CloudMigrationProvider implements MigrationProvider {
   async getMigrations(): Promise<Record<string, Migration>> {
     return migrations
   }
