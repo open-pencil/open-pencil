@@ -16,6 +16,7 @@ import { reportErrorAction } from '@/app/reports/state'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { toast } from '@/app/shell/ui'
+import { stopLeftoverAgentChildren } from '@/app/tauri/children'
 import { IS_TAURI } from '@/constants'
 
 import App from './App.vue'
@@ -28,7 +29,11 @@ import router from './router'
  */
 export async function boot(): Promise<void> {
   registerInterfaceFont()
-  if (IS_TAURI) installNativeFigArchives()
+  if (IS_TAURI) {
+    installNativeFigArchives()
+    // Before anything else starts a process, so a pid it stops can only be a leftover.
+    void stopLeftoverAgentChildren()
+  }
   preloadCanvasKit()
   preloadFonts()
   const head = createHead()
