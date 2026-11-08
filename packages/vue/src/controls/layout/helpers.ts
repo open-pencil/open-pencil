@@ -23,7 +23,7 @@ import {
 } from '@open-pencil/scene-graph/layout'
 
 import { useNodePreview } from '#vue/controls/node-preview/use'
-import { sizesLayersInside, usePanelSize } from '#vue/controls/position/size'
+import { usePanelSize } from '#vue/controls/panel-size/use'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 import type { useI18n } from '#vue/i18n'
 
@@ -264,22 +264,15 @@ export function createLayoutActions({
   function updateAxisSize(axis: LayoutAxis, value: number) {
     const n = node.value
     if (!n) return
-    // A scrub whose edit was put back changes nothing more until it ends, as a node preview does.
-    if (panelSize.isInterrupted()) return
     const ratio = enforcedAspectRatio(n)
-    if (sizesLayersInside(n)) {
-      panelSize.update([n], (start) =>
-        ratio === null ? { ...start, [axis]: value } : sizeKeepingAspectRatio(ratio, axis, value)
-      )
-      return
-    }
-    if (ratio === null) {
-      preview.update([n.id], { ...fixedAxisPatch(n, axis), [axis]: value }, `Change ${axis}`)
-      return
-    }
-    const size = sizeKeepingAspectRatio(ratio, axis, value)
-    const patch = { ...fixedAxisPatch(n, 'width'), ...fixedAxisPatch(n, 'height'), ...size }
-    preview.update([n.id], patch, `Change ${axis}`)
+    const size: Partial<Pick<SceneNode, LayoutAxis>> =
+      ratio === null ? { [axis]: value } : sizeKeepingAspectRatio(ratio, axis, value)
+    panelSize.update([n], size, () => {
+      // A layer with nothing inside also leaves Hug or Fill on the axes it sets.
+      const axes: LayoutAxis[] = ratio === null ? [axis] : ['width', 'height']
+      const patch = Object.assign({}, ...axes.map((each) => fixedAxisPatch(n, each)), size)
+      preview.update([n.id], patch, `Change ${axis}`)
+    })
   }
 
   function toggleAspectRatioLock() {
