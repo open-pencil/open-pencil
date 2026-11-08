@@ -342,21 +342,24 @@ function snapshotGeometry(orig: ResizeSnapshot): Partial<SceneNode> {
   }
 }
 
+/** Whether a box of `size` scales the snapshot's geometry, a flat side left out. */
+function scalesGeometry(orig: ResizeSnapshot, size: Pick<Rect, 'width' | 'height'>): boolean {
+  return sideScale(orig.width, size.width) !== 1 || sideScale(orig.height, size.height) !== 1
+}
+
 /**
- * A child's geometry for its constrained `box`, scaled from the snapshot. Back at its snapshot
- * size after an earlier frame of the same drag scaled it, the child takes its snapshot geometry
- * again, as nothing else would undo that scaling.
+ * A child's geometry for its constrained `box`, scaled from the snapshot. At a box that scales
+ * nothing, after an earlier frame of the same drag scaled it, the child takes its snapshot
+ * geometry again, as nothing else would undo that scaling.
  */
 function constrainedGeometryChanges(
   orig: ResizeSnapshot,
   current: Pick<SceneNode, 'width' | 'height'>,
   box: Pick<Rect, 'width' | 'height'>
 ): Partial<SceneNode> {
-  const atSnapshotSize = box.width === orig.width && box.height === orig.height
-  if (!atSnapshotSize)
+  if (scalesGeometry(orig, box))
     return scaledGeometryChanges(orig, orig.width, orig.height, box.width, box.height)
-  const wasScaled = current.width !== orig.width || current.height !== orig.height
-  return wasScaled ? snapshotGeometry(orig) : {}
+  return scalesGeometry(orig, current) ? snapshotGeometry(orig) : {}
 }
 
 export function collectResizeDescendants(

@@ -207,6 +207,40 @@ describe('resizing a frame across zero', () => {
     expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 20, y: 16 })
   })
 
+  test('a flat line back at its length takes its path back, whatever its flat side became', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 100, height: 100 })
+    const line = graph.createNode('VECTOR', frame.id, {
+      x: 10,
+      y: 10,
+      width: 10,
+      height: 0,
+      horizontalConstraint: 'STRETCH',
+      verticalConstraint: 'STRETCH',
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    })
+    const originals = collectResizeDescendants(graph, frame.id)
+    if (!originals) throw new Error('Expected the line')
+    const resize = (width: number, height: number) => {
+      graph.updateNode(frame.id, { width, height })
+      const before = { width: 100, height: 100 }
+      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height }, originals)
+      for (const [id, change] of changes) graph.updateNode(id, change)
+    }
+    resize(110, 110)
+    resize(100, 120)
+    const node = graph.getNode(line.id)
+    expect(node).toMatchObject({ width: 10, height: 20 })
+    expect(node?.vectorNetwork?.vertices[1]).toEqual({ x: 10, y: 0 })
+  })
+
   test('a drag turns the layer over once, from where it started', () => {
     const { graph, frame, resize, node } = stretched()
     const originals = collectResizeDescendants(graph, frame.id)
