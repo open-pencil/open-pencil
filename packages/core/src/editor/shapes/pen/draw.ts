@@ -13,6 +13,8 @@ import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/v
 import type { EditorContext, ResumedPath } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
 
+import { createPenHistory } from './history'
+
 export interface PenDragOptions {
   keepOpposite?: boolean
   constrainToOpposite?: boolean
@@ -93,7 +95,19 @@ export function createPenActions(
   createShape: CreateShape,
   updateNodeWithUndo: UpdateNodeWithUndo
 ) {
+  const history = createPenHistory(ctx)
+
+  /**
+   * Starts a press of the pen: what the press does until the next one is one undo step. Placing a
+   * point starts one too, so a host needs this only for a press that places none, such as one
+   * back on the last point or on the first to close the path.
+   */
+  function penPushHistory() {
+    history.begin()
+  }
+
   function penAddVertex(x: number, y: number) {
+    history.begin()
     if (!ctx.state.penState) {
       ctx.state.penState = {
         vertices: [{ x, y }],
@@ -199,12 +213,16 @@ export function createPenActions(
     ctx.requestRender()
   }
 
+  /** Ends the path, keeping what was drawn: one undo step, which undo draws on from again. */
   function penCommit(closed: boolean) {
+    if (!ctx.state.penState) return
+    history.end('Draw path', () => commitPath(closed))
+  }
+
+  function commitPath(closed: boolean) {
     const ps = ctx.state.penState
     if (!ps || ps.vertices.length < 2) {
-      ctx.state.penState = null
-      ctx.state.penCursorX = null
-      ctx.state.penCursorY = null
+      clearPath()
       return
     }
 
@@ -272,23 +290,26 @@ export function createPenActions(
     return true
   }
 
-  function finishPath() {
+  function clearPath() {
     ctx.state.penState = null
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null
-    ctx.setActiveTool('SELECT')
     ctx.requestRender()
   }
 
-  function penCancel() {
-    ctx.state.penState = null
-    ctx.state.penCursorX = null
-    ctx.state.penCursorY = null
+  function finishPath() {
+    clearPath()
     ctx.setActiveTool('SELECT')
-    ctx.requestRender()
+  }
+
+  /** Drops the path being drawn; undo brings it back. */
+  function penCancel() {
+    if (ctx.state.penState) history.end('Cancel path', finishPath)
+    else finishPath()
   }
 
   return {
+    penPushHistory,
     penAddVertex,
     penSetDragTangent,
     penSetClosingToFirst,
