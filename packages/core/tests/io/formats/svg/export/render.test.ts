@@ -309,6 +309,47 @@ describe('renderNodesToSVG()', () => {
     expect(result).toContain('clip-path="url(#clip')
   })
 
+  test('rounded frame clips its children to its rounded corners', () => {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 40,
+      cornerRadius: 8,
+      clipsContent: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      y: 39,
+      width: 100,
+      height: 1,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const result = exportSVGOrThrow(graph, [frame.id])
+    expect(result).toMatch(
+      /<clipPath id="clip[^"]*">\s*<rect width="100" height="40" rx="8" ry="8"/
+    )
+  })
+
+  test('frame with independent corners clips its children to its outline', () => {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 40,
+      independentCorners: true,
+      topLeftRadius: 8,
+      bottomRightRadius: 4,
+      clipsContent: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 100,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const result = exportSVGOrThrow(graph, [frame.id])
+    expect(result).toMatch(/<clipPath id="clip[^"]*">\s*<path d="M8 0L100 0L100 36A4 4 0 0 1 96 40/)
+  })
+
   test('hidden children excluded', () => {
     const graph = makeSceneGraph('Page 1')
     const frame = graph.createNode('FRAME', firstPageId(graph), {

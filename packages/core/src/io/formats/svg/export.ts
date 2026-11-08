@@ -178,24 +178,29 @@ function nodeShapeElements(
     case 'SHAPE_WITH_TEXT':
       return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
-    default: {
-      if (hasRadius(node)) {
-        if (node.independentCorners) {
-          return [svg('path', { d: roundedRectPath(node), ...common })]
-        }
-        return [
-          svg('rect', {
-            width: round(node.width),
-            height: round(node.height),
-            rx: round(node.cornerRadius),
-            ry: round(node.cornerRadius),
-            ...common
-          })
-        ]
-      }
-      return [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
-    }
+    default:
+      return [boxOutlineElement(node, common)]
   }
+}
+
+/** A frame or rectangle-like layer's box as one element, with its corner radii. */
+function boxOutlineElement(
+  node: SceneNode,
+  attrs: Record<string, string | number | undefined>
+): SVGNode {
+  if (hasRadius(node)) {
+    if (node.independentCorners) {
+      return svg('path', { d: roundedRectPath(node), ...attrs })
+    }
+    return svg('rect', {
+      width: round(node.width),
+      height: round(node.height),
+      rx: round(node.cornerRadius),
+      ry: round(node.cornerRadius),
+      ...attrs
+    })
+  }
+  return svg('rect', { width: round(node.width), height: round(node.height), ...attrs })
 }
 
 /**
@@ -258,13 +263,7 @@ function buildGroupAttrs(
   let clipId: string | undefined
   if (node.clipsContent && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
-    ctx.defs.push(
-      svg(
-        'clipPath',
-        { id: clipId },
-        svg('rect', { width: round(node.width), height: round(node.height) })
-      )
-    )
+    ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }
 
   return { attrs, clipId }
