@@ -64,14 +64,17 @@ describe('slots round trip', () => {
     if (!page) throw new Error('Missing slots fixture page')
     const target = graph.getChildren(page.id).find((node) => node.name === 'Card default content')
     if (!target) throw new Error('Missing edited component')
-    const before = graph.getChildren(page.id).map((node) => node.name)
+    // By ID as well as name: swapping two layers of the same name keeps the names in order.
+    const layers = (of: SceneGraph, pageId: string) =>
+      of.getChildren(pageId).map((node) => `${node.id} ${node.name}`)
+    const before = layers(graph, page.id)
     graph.updateNode(target.id, { x: target.x + 37 })
     releaseFigPopulationWorker(graph)
     const exported = await exportFigFile(graph)
     const reopened = await parseFigFile(exported.slice().buffer)
     const reopenedPage = reopened.getPages().find((candidate) => candidate.name === 'Slots fixture')
     if (!reopenedPage) throw new Error('Missing reopened slots fixture page')
-    expect(reopened.getChildren(reopenedPage.id).map((node) => node.name)).toEqual(before)
+    expect(layers(reopened, reopenedPage.id)).toEqual(before)
     const positions = reopened
       .getChildren(reopenedPage.id)
       .map((node) => node.source.orderKey ?? '')

@@ -1,2 +1,2 @@
-- Edited `.fig` saves preserve the order of existing layers when component dependencies load additional pages.
-- Saving a `.fig` document with a thumbnail preserves stored text dimensions in scaled instances while newly created instances still measure their text.
+- Loading a page of a `.fig` document keeps the order of the layers on the pages it reads components from, so edited saves keep the saved layer order.
+- Saving a `.fig` document with a thumbnail preserves stored text dimensions in scaled instances, while newly created instances, and instance text the file saved no size for, still measure their text.

@@ -32,8 +32,7 @@ import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/sessio
 import {
   isReaderPagePending,
   populateFigPage,
-  readerCheckpoint,
-  restoreSiblingOrder
+  readerCheckpoint
 } from '#core/kiwi/fig/session/document-state'
 
 import { narrowToChangedFields, type RecordWriter } from './fields'
@@ -446,12 +445,10 @@ export async function writePatchedFigFile(
   const changes = archiveChanges(source)
   const loaded = archiveRecords(source)
   if (!archive || !changes || !loaded) return null
-  const childOrder = new Map(source.getPages(true).map((page) => [page.id, [...page.childIds]]))
   // Pages loaded for the components add their records, so the map is read again after them.
   const archived = (await loadComponentUsePages(source, archive, changes, loaded))
     ? archiveRecords(source)
     : loaded
-  restoreSiblingOrder(source, childOrder)
   if (!archived) return null
   const info = await archive.info()
   let built: Awaited<ReturnType<typeof buildPatch>>
