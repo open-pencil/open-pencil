@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "category": "GraphicsAndDesign",
     "targets": "all",
     "createUpdaterArtifacts": true,
     "icon": [

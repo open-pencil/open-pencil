@@ -106,3 +106,6 @@ desktop/swift/*/.build/
 # Rust build output, and the HTML engine's WebAssembly module built from it
 /target
 packages/html-engine/wasm/
+
+# The release .deb a snap is packed from (snap/snapcraft.yaml)
+/snap/local/*.deb

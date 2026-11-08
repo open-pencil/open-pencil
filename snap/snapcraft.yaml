@@ -1,0 +1,65 @@
+name: openpencil
+title: OpenPencil
+summary: Open-source design editor that opens and saves Figma files
+description: |
+  OpenPencil is an open-source design editor for interfaces. It opens and saves
+  Figma .fig files, lays out with auto layout and grids, and works with
+  components, variables, and prototypes. AI can edit the canvas and review
+  designs through the AI models and subscriptions you already use.
+
+  This package runs in the snap sandbox: it updates through the Snap Store and
+  does not start coding agents installed on this computer. The download from
+  GitHub can.
+base: core24
+adopt-info: openpencil
+grade: stable
+confinement: strict
+license: MIT
+website: https://openpencil.dev
+source-code: https://github.com/open-pencil/open-pencil
+issues: https://github.com/open-pencil/open-pencil/issues
+contact: https://github.com/open-pencil/open-pencil/issues
+
+platforms:
+  amd64:
+  arm64:
+
+apps:
+  openpencil:
+    command: usr/bin/OpenPencil
+    desktop: usr/share/applications/OpenPencil.desktop
+    extensions: [gnome]
+    environment:
+      # The Snap Store delivers updates, and the sandbox cannot start host programs
+      # (desktop/src/capabilities.rs).
+      OPENPENCIL_SELF_UPDATE: '0'
+      OPENPENCIL_HOST_PROCESSES: '0'
+    plugs:
+      - home
+      - network
+      - removable-media
+      - password-manager-service
+
+# tauri-plugin-single-instance names the running instance after the app identifier, and a
+# second launch hands it its files and links over the session bus. The slot lets the snap own
+# that name; its own second launch reaches it without a plug.
+slots:
+  single-instance:
+    interface: dbus
+    bus: session
+    name: net.dannote.open-pencil.SingleInstance
+
+parts:
+  openpencil:
+    # The release .deb, built for the snap's architecture and copied here first:
+    # `cp OpenPencil_*.deb snap/local/openpencil.deb`.
+    plugin: dump
+    source: snap/local/openpencil.deb
+    source-type: deb
+    build-packages: [jq]
+    override-build: |
+      craftctl default
+      craftctl set version="$(jq -r .version "$CRAFT_PROJECT_DIR/desktop/tauri.conf.json")"
+      # Snap desktop files name their icon by path inside the snap.
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/128x128/apps/OpenPencil.png|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/OpenPencil.desktop"
