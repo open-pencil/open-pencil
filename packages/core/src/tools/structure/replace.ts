@@ -13,13 +13,13 @@ export const nodeReplaceWith = defineTool({
     jsx: v.pipe(v.string(), v.description('JSX string for the replacement'))
   }),
   execute: async (figma, args) => {
+    const { designJSXRenderer } = await graphOf(figma).waitOutsideEdit(import('#core/design-jsx'))
     const node = figma.getNodeById(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
     const parentId = node.parent?.id ?? figma.currentPageId
     const x = node.x
     const y = node.y
     node.remove()
-    const { designJSXRenderer } = await import('#core/design-jsx')
     const { renderJSX } = designJSXRenderer(figma.icons)
     const results = await renderJSX(graphOf(figma), args.jsx, { parentId, x, y })
     const result = results[0]

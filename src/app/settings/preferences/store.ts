@@ -92,6 +92,12 @@ export interface NotificationPreferences {
   agentFailed: boolean
 }
 
+/** Desktop update checks. The menu item is separate from the silent launch check. */
+export interface UpdatePreferences {
+  /** Silent check a few seconds after the desktop app opens. */
+  checkOnStartup: boolean
+}
+
 export interface AppPreferences {
   appearance: {
     animations: AnimationPreference
@@ -130,6 +136,7 @@ export interface AppPreferences {
   sharing: SharingPreferences
   donation: DonationPreferences
   notifications: NotificationPreferences
+  updates: UpdatePreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -162,7 +169,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
-  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
+  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
+  updates: { checkOnStartup: true }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -263,6 +271,9 @@ const appPreferencesSchema = section({
     agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
+  }),
+  updates: section({
+    checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup)
   })
 })
 
@@ -368,5 +379,12 @@ export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
   appPreferences.value = {
     ...appPreferences.value,
     appearance: { ...appPreferences.value.appearance, interfaceScale }
+  }
+}
+
+export function updateStartupUpdateCheck(checkOnStartup: boolean): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    updates: { ...appPreferences.value.updates, checkOnStartup }
   }
 }

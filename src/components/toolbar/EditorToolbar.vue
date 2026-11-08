@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onScopeDispose, watch, watchEffect } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
@@ -8,6 +8,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { ToolbarRoot, useToolbarState } from '@open-pencil/vue/primitives/Toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { toolbarChrome } from '@/app/editor/toolbar/dock'
 import { TOOLBAR_ACTIONS, toolbarItems, toolbarLayoutFor } from '@/app/editor/toolbar/layout'
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 import { appPreferences, updateToolbarDock } from '@/app/settings/preferences/store'
@@ -66,6 +67,15 @@ watch(
   () => store.requestRender(),
   { flush: 'post' }
 )
+
+// Zoom to fit and a page's first view keep clear of the toolbar on its edge; a phone's sits at
+// the bottom. Without the toolbar, as in a preview, nothing floats over the canvas.
+watchEffect(() =>
+  store.setViewportChrome(
+    toolbarChrome(isMobile.value ? 'bottom' : appPreferences.value.toolbarDock.side)
+  )
+)
+onScopeDispose(() => store.setViewportChrome(toolbarChrome(null)))
 
 const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
 

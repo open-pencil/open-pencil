@@ -3,10 +3,6 @@ import { useEditorKeyboard, type EditorShortcut } from '@open-pencil/vue/editor/
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
 import {
-  COPY_PROPERTIES_SHORTCUT,
-  PASTE_PROPERTIES_SHORTCUT
-} from '@/app/editor/canvas/menu/registry'
-import {
   copySelectionProperties,
   pasteClipboardProperties
 } from '@/app/editor/clipboard/properties'
@@ -28,12 +24,12 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
   return [
     {
       id: 'copy-properties',
-      keys: COPY_PROPERTIES_SHORTCUT,
+      keys: menuKeys('copy-properties'),
       run: () => void copySelectionProperties(store)
     },
     {
       id: 'paste-properties',
-      keys: PASTE_PROPERTIES_SHORTCUT,
+      keys: menuKeys('paste-properties'),
       run: () => void pasteClipboardProperties(store)
     },
     {
@@ -91,7 +87,7 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
           store.splitPane(store.activePaneId.value, 'horizontal')
       }
     },
-    { id: 'toggle-ai', keys: 'Mod+J', run: actions.toggleAI },
+    { id: 'toggle-ai', keys: menuKeys('toggle-ai'), run: actions.toggleAI },
     {
       id: 'toggle-comments',
       keys: menuKeys('view-comments'),

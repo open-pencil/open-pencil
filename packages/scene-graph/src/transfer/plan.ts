@@ -1,4 +1,5 @@
 import type { SceneGraph } from '../graph'
+import { sharedStyleLayers } from '../shared-styles'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { prepareNodeTransfer } from './nodes'
 import { requireTransferReference } from './references'
@@ -73,14 +74,12 @@ export function prepareGraphTransfer(input: GraphTransferInput) {
     }
   // Layers name a style by the style's own ID, which a transferred style keeps unless the
   // target already holds another style by it: IDs read from Figma are only unique in one file.
-  const targetStyleIds = new Set<string>()
-  for (const node of target.getAllNodes())
-    if (node.sharedStyleType !== null && node.source.id) targetStyleIds.add(node.source.id)
+  const targetStyles = sharedStyleLayers(target)
   const styles = new Map<string, string>()
   for (const node of ordered) {
     const id = node.source.id
     if (node.sharedStyleType === null || !id) continue
-    styles.set(id, targetStyleIds.has(id) ? allocate() : id)
+    styles.set(id, targetStyles.has(id) ? allocate() : id)
   }
   const references = {
     nodes,

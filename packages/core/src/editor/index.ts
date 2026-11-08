@@ -27,6 +27,7 @@ export {
   pickEditorViewState
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
+export { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
 export { executeAtomicTool, type AtomicToolOptions } from './history/atomic-tool'
 export { isEmptyDocumentChange, type DocumentChange } from './history/document-change'
 export type { RecordEditOptions } from './history/edit'

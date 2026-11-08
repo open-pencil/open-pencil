@@ -39,9 +39,11 @@ export const importSVG = defineTool({
 
     const data = prepareSVGImport(args.svg, { defaultColor: args.color })
     // Text is measured and placed as it is created, so its fonts load first.
-    await Promise.all(
-      (data ? svgImportFonts(data) : []).map(({ family, style }) =>
-        figma.loadFontAsync({ family, style })
+    await graphOf(figma).waitOutsideEdit(
+      Promise.all(
+        (data ? svgImportFonts(data) : []).map(({ family, style }) =>
+          figma.loadFontAsync({ family, style })
+        )
       )
     )
     const parentId = args.parent_id ?? figma.currentPage.id

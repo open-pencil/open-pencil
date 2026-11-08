@@ -90,5 +90,7 @@
   "showVersionHistory": "Afficher l’historique des versions",
   "saveToVersionHistory": "Enregistrer dans l’historique des versions…",
   "reportProblem": "Signaler un problème…",
-  "supportOpenPencil": "Soutenir OpenPencil…"
+  "supportOpenPencil": "Soutenir OpenPencil…",
+  "newBoard": "Nouveau tableau blanc",
+  "toggleAIChat": "Basculer le chat IA"
 }

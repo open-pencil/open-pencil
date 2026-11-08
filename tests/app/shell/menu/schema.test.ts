@@ -71,7 +71,7 @@ describe('APP_MENU_SCHEMA', () => {
       'type' in entry ? '' : entry.id
     )
 
-    expect(ids.slice(0, 3)).toEqual(['new', 'new-tab', 'open'])
+    expect(ids.slice(0, 4)).toEqual(['new', 'new-board', 'new-tab', 'open'])
     expect(ids).not.toContain('browse-files')
     expect(ids).toContain('save-to')
     expect(ids).not.toContain('save-to-cloud')

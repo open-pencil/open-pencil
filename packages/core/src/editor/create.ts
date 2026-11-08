@@ -81,7 +81,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
+import { createViewportActions, DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
 import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
@@ -89,7 +89,10 @@ export { createDefaultEditorState } from './state'
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
-  const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
+  const undo = new UndoManager({
+    onChange: () => emitEditorEvent('history:changed'),
+    onDiscard: () => emitEditorEvent('edit:discarded')
+  })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
   // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
   const viewportSize = { width: 0, height: 0 }
@@ -100,6 +103,8 @@ export function createEditor(options?: EditorOptions) {
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
+  // Floating UI over the canvas edges, which fits keep clear of; the host reports where it sits.
+  let viewportChrome: ViewportInsets = { ...DEFAULT_VIEWPORT_CHROME }
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
@@ -290,6 +295,7 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    getViewportChrome: () => viewportChrome,
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
@@ -531,6 +537,15 @@ export function createEditor(options?: EditorOptions) {
     setViewportSize(width: number, height: number) {
       viewportSize.width = width
       viewportSize.height = height
+    },
+    /** Floating UI over each canvas edge, in screen pixels, that zooming to fit keeps clear of. */
+    getViewportChrome: () => ({ ...viewportChrome }),
+    /**
+     * Records the floating UI over each canvas edge, such as a toolbar docked there, which zooming
+     * to fit and a page's first view keep clear of; Figma's bottom toolbar until a host reports.
+     */
+    setViewportChrome(chrome: ViewportInsets) {
+      viewportChrome = { ...chrome }
     },
 
     // Canvas and frame guides

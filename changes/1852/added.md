@@ -1,0 +1,1 @@
+- The command palette and menus include New Board, Toggle AI chat, Copy and Paste properties, and Wrap in new section (#1852).

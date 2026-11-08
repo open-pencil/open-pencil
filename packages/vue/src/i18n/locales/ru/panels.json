@@ -361,7 +361,7 @@
   "libraryUpdateImpact": "Затронуто экземпляров: {affected} · резервных вариантов: {fallback}",
   "publishLibrary": "Опубликовать библиотеку",
   "publishingLibrary": "Публикация…",
-  "publishLibraryHelp": "Опубликуйте компоненты этого файла как неизменяемую версию.",
+  "publishLibraryHelp": "Опубликуйте компоненты, стили и переменные этого файла как неизменяемую версию.",
   "libraryId": "Идентификатор библиотеки",
   "libraryName": "Название библиотеки",
   "revisionDescription": "Описание редакции",
