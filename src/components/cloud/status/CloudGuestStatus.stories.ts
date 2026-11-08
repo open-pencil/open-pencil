@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { userEvent, within } from 'storybook/test'
 
 import CloudGuestStatus from './CloudGuestStatus.vue'
+import { openStatusPopover, statusToolbarTemplate } from './examples/toolbar'
 
 type Args = { canEditSignedIn: boolean }
 
@@ -12,20 +12,12 @@ const meta = {
   render: (args) => ({
     components: { CloudGuestStatus },
     setup: () => ({ args }),
-    template: `
-      <div class="h-60">
-        <div class="flex w-64 items-center gap-1 border-b border-border bg-panel px-2 py-2">
-          <span class="flex size-6 items-center justify-center rounded bg-accent text-2xs font-bold text-on-accent">P</span>
-          <span class="min-w-0 flex-1 truncate px-1 text-xs text-surface">Homepage redesign</span>
-          <CloudGuestStatus :can-edit-signed-in="args.canEditSignedIn" />
-        </div>
-      </div>`
+    template: statusToolbarTemplate(
+      '<CloudGuestStatus :can-edit-signed-in="args.canEditSignedIn" />',
+      'h-60'
+    )
   }),
-  play: async ({ canvasElement }) => {
-    const trigger = canvasElement.querySelector<HTMLElement>('[data-state-sync]')
-    if (trigger) await userEvent.click(trigger)
-    await within(document.body).findByRole('dialog')
-  }
+  play: openStatusPopover
 } satisfies Meta<Args>
 
 export default meta
