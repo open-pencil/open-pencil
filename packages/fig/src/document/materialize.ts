@@ -402,7 +402,8 @@ function materializeReader(
 }
 
 function compareOrderKeys(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
+  if (a === b) return 0
+  return a < b ? -1 : 1
 }
 
 function pushTo(groups: Map<string, string[]>, key: string, id: string): void {
