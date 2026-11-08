@@ -39,10 +39,12 @@ test('padding and gap show two decimals', async () => {
 test('a new variable is offered with the value it will hold', async () => {
   await scene.select((ids) => ids.padded)
   await propertyField(editor.page, 'paddingLeft').getByLabel('Apply variable').click()
-  await expect(
-    editor.page.getByText('Create number variable from 10.5', { exact: true })
-  ).toBeVisible()
-  await editor.page.keyboard.press('Escape')
+  // The offer names the value the variable will hold, whatever its wording.
+  await editor.page.getByRole('button', { name: /(^|\s)10\.5$/ }).click()
+  await editor.page.getByRole('textbox').last().fill('Padding/side')
+  await editor.page.getByRole('textbox').last().press('Enter')
+  await editor.canvas.waitForRender()
+  expect(await scene.boundValue((ids) => ids.padded, 'paddingLeft')).toBe(10.5)
   editor.canvas.assertNoErrors()
 })
 

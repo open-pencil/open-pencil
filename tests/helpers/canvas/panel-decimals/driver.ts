@@ -28,6 +28,20 @@ export function panelDecimalsDriver(page: () => Page) {
         (select) => window.openPencil?.getStore?.().select(select),
         Array.isArray(picked) ? picked : [picked]
       )
+    },
+
+    /** The value of the variable a layer's field is bound to, or null when it is unbound. */
+    boundValue(pick: (ids: SceneIds) => string, field: string) {
+      return page().evaluate(
+        ({ id, field }) => {
+          const store = window.openPencil?.getStore?.()
+          const node = store?.graph.getNode(id)
+          const variableId = node?.boundVariables[field]
+          if (!store || !node || !variableId) return null
+          return store.graph.resolveNumberVariableForNode(id, variableId) ?? null
+        },
+        { id: pick(scene()), field }
+      )
     }
   }
 }
