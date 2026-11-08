@@ -333,7 +333,7 @@
   "versionChangeFailed": "Impossibile modificare la cronologia versioni.",
   "versionCopyName": "{name} (copia)",
   "reportFile": "Segnala questo file",
-  "reportDescription": "Spiega agli amministratori di {host} cosa non va. Chi l’ha condiviso non vedrà la tua segnalazione.",
+  "reportDescription": "Spiega agli amministratori di {host} cosa non va. Solo loro vedranno la tua segnalazione.",
   "reportReason": "Cosa non va",
   "reportReasonSpam": "Spam o phishing",
   "reportReasonIllegal": "Contenuti illegali",

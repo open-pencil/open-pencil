@@ -393,7 +393,7 @@ export const cloudMessageDefaults = {
   versionChangeFailed: 'Couldn’t change the version history.',
   reportFile: 'Report this file',
   reportDescription: params(
-    'Tell the administrators of {host} what’s wrong with it. The people who shared it won’t see your report.'
+    'Tell the administrators of {host} what’s wrong with it. Only they see your report.'
   ),
   reportReason: 'What’s wrong',
   reportReasonSpam: 'Spam or phishing',

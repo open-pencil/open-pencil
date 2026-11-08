@@ -333,7 +333,7 @@
   "versionChangeFailed": "Der Versionsverlauf konnte nicht geändert werden.",
   "versionCopyName": "{name} (Kopie)",
   "reportFile": "Diese Datei melden",
-  "reportDescription": "Sag den Administratoren von {host}, was damit nicht stimmt. Die Personen, die sie geteilt haben, sehen deine Meldung nicht.",
+  "reportDescription": "Sag den Administratoren von {host}, was damit nicht stimmt. Nur sie sehen deine Meldung.",
   "reportReason": "Was stimmt nicht",
   "reportReasonSpam": "Spam oder Phishing",
   "reportReasonIllegal": "Illegale Inhalte",

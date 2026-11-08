@@ -333,7 +333,7 @@
   "versionChangeFailed": "Não foi possível alterar o histórico de versões.",
   "versionCopyName": "{name} (cópia)",
   "reportFile": "Denunciar este arquivo",
-  "reportDescription": "Conte aos administradores de {host} o que há de errado. Quem compartilhou não verá sua denúncia.",
+  "reportDescription": "Conte aos administradores de {host} o que há de errado. Só eles verão sua denúncia.",
   "reportReason": "O que há de errado",
   "reportReasonSpam": "Spam ou phishing",
   "reportReasonIllegal": "Conteúdo ilegal",

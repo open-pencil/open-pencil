@@ -336,7 +336,7 @@
   "versionChangeFailed": "Nie udało się zmienić historii wersji.",
   "versionCopyName": "{name} (kopia)",
   "reportFile": "Zgłoś ten plik",
-  "reportDescription": "Napisz administratorom {host}, co jest nie tak. Osoby, które go udostępniły, nie zobaczą twojego zgłoszenia.",
+  "reportDescription": "Napisz administratorom {host}, co jest nie tak. Tylko oni zobaczą twoje zgłoszenie.",
   "reportReason": "Co jest nie tak",
   "reportReasonSpam": "Spam lub phishing",
   "reportReasonIllegal": "Nielegalne treści",

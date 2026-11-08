@@ -336,7 +336,7 @@
   "versionChangeFailed": "Не удалось изменить историю версий.",
   "versionCopyName": "{name} (копия)",
   "reportFile": "Пожаловаться на файл",
-  "reportDescription": "Расскажите администраторам {host}, что с ним не так. Те, кто им поделился, вашу жалобу не увидят.",
+  "reportDescription": "Расскажите администраторам {host}, что с ним не так. Вашу жалобу увидят только они.",
   "reportReason": "В чём проблема",
   "reportReasonSpam": "Спам или фишинг",
   "reportReasonIllegal": "Незаконный контент",

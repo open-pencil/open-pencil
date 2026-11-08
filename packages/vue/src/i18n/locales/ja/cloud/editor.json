@@ -330,7 +330,7 @@
   "versionChangeFailed": "バージョン履歴を変更できませんでした。",
   "versionCopyName": "{name}（コピー）",
   "reportFile": "このファイルを報告",
-  "reportDescription": "{host} の管理者に問題を伝えます。共有した人にはあなたの報告は表示されません。",
+  "reportDescription": "{host} の管理者に問題を伝えます。報告を見られるのは管理者だけです。",
   "reportReason": "問題の種類",
   "reportReasonSpam": "スパムまたはフィッシング",
   "reportReasonIllegal": "違法なコンテンツ",

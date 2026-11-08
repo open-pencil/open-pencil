@@ -249,8 +249,9 @@ optionally, where to answer. `POST /api/shares/:shareId/reports` resolves the li
 does, so a wrong secret, a revoked link, or a server that turns guests away refuses the report,
 and its answer says only that it arrived. One reporter may report a link three times a day and a
 link gathers at most fifty reports a day (`src/server/reports/service.ts`), besides the public
-routes' per-address limit. Each report emails the deployment's administrator notification
-addresses, the ones enrollment uses. The console's Reports list shows open reports first, with
+routes' per-address limit. Where email delivery is configured, each report emails the
+deployment's administrator notification addresses, the ones enrollment uses; without it, reports
+wait in the console's Reports list unannounced. The console's Reports list shows open reports first, with
 the document, its workspace and owner, and the link; from a report an administrator takes the
 document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
 Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
