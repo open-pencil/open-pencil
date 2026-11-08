@@ -234,8 +234,8 @@ describe('recordEditAsync', () => {
     expect(editor.graph.variables.get(gap.id)?.valuesByMode).not.toHaveProperty('extra')
   })
 
-  // Known gap: nothing tells whose write is whose across an await, so the open edit takes in a
-  // write made elsewhere meanwhile, such as the user's or a collaborator's.
+  // Known gap: nothing tells whose write is whose across an await, so the open edit takes in an
+  // edit the user makes meanwhile. A collaborator's and an undo stay out (`runOutsideEdits`).
   test.failing('leaves an edit made elsewhere while it awaits out of its step', async () => {
     const { editor, pageId, card } = setup()
     const other = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
@@ -251,9 +251,7 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(other.id)?.x).toBe(25)
   })
 
-  // Known gap: undo is not held back while an edit is open, so the open edit records the undo
-  // as its own change and undoing the edit replays the undone step.
-  test.failing('keeps an undo made while it awaits out of its step', async () => {
+  test('keeps an undo made while it awaits out of its step', async () => {
     const { editor, card } = setup()
     editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 25 }))
 
@@ -265,5 +263,51 @@ describe('recordEditAsync', () => {
 
     expect(editor.undo.undo()).toBe('Agent: resize')
     expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, width: 100 })
+  })
+
+  test('undoing it keeps a layer someone else put into a frame it created', async () => {
+    const { editor, pageId } = setup()
+    const download = Promise.withResolvers<undefined>()
+    let frameId = ''
+
+    const edit = editor.recordEditAsync({ label: 'Agent: frame' }, async () => {
+      const frame = editor.graph.createNode('FRAME', pageId, {
+        x: 100,
+        y: 50,
+        width: 200,
+        height: 200
+      })
+      frameId = frame.id
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+    const note = editor.recordEdit({ label: 'Add note' }, () =>
+      editor.graph.createNode('RECTANGLE', frameId, { x: 10, y: 20, width: 5, height: 5 })
+    )
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: frame')
+    expect(editor.graph.getNode(frameId)).toBeUndefined()
+    // The note moves out to the page and stays where it was on the canvas.
+    expect(editor.graph.getNode(note.id)).toMatchObject({ parentId: pageId, x: 110, y: 70 })
+    expect(editor.undo.undo()).toBe('Add note')
+    expect(editor.graph.getNode(note.id)).toBeUndefined()
+  })
+
+  test('undoing it brings back the mode a collection it removed was showing', () => {
+    const { editor } = setup()
+    const collection = editor.graph.createCollection('Theme')
+    const dark = editor.graph.createMode(collection.id, 'Dark')
+    if (!dark) throw new Error('No Dark mode')
+    editor.graph.setActiveMode(collection.id, dark)
+
+    editor.recordEdit({ label: 'Agent: remove' }, () =>
+      editor.graph.removeCollection(collection.id)
+    )
+    expect(editor.undo.undo()).toBe('Agent: remove')
+    expect(editor.graph.activeMode.get(collection.id)).toBe(dark)
+
+    editor.undo.redo()
+    expect(editor.graph.activeMode.has(collection.id)).toBe(false)
   })
 })

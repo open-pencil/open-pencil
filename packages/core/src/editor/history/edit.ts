@@ -88,9 +88,10 @@ export function recordEdit<T>(ctx: EditorContext, options: RecordEditOptions, ru
  * Runs an edit that awaits before it finishes, such as an agent's tool call that loads fonts or
  * runs a layout, as one undo step; one that rejects is rolled back and leaves no step. The edit
  * stays open until its step is recorded, so the changes it makes meanwhile count as its own
- * rather than as edits outside the history. An edit made elsewhere while it runs, such as the
- * user's, lands in the same step unless the edit waits outside itself
- * (`SceneGraph.waitOutsideEdit`): nothing else tells whose write is whose across an await. An edit
+ * rather than as edits outside the history. A collaborator's change and an undo or redo run
+ * outside it (`SceneGraph.runOutsideEdits`); another edit made while it runs, such as the user's,
+ * lands in the same step unless the edit waits outside itself (`SceneGraph.waitOutsideEdit`):
+ * nothing else tells whose write is whose across an await. An edit
  * that can compute first and apply in one go records only the apply with `recordEdit` instead.
  */
 export async function recordEditAsync<T>(

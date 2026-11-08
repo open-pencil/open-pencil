@@ -91,7 +91,8 @@ export function createEditor(options?: EditorOptions) {
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({
     onChange: () => emitEditorEvent('history:changed'),
-    onDiscard: () => emitEditorEvent('edit:discarded')
+    onDiscard: () => emitEditorEvent('edit:discarded'),
+    runReplay: (replay) => _graph.runOutsideEdits(replay)
   })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
   // The canvas reports its size through `setViewportSize`; until it does, the window stands in.

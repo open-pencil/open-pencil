@@ -129,19 +129,41 @@ export class SceneGraph {
    * as the waiting edit's. Only for code that writes nothing itself until the wait ends.
    */
   async waitOutsideEdit<T>(promise: Promise<T>): Promise<T> {
-    // Each wait pauses the recorders open when it starts, and only those: a recorder that opens
-    // while an earlier wait is still pending, such as a script's load left unawaited, pauses for
-    // its own waits and is not resumed by the earlier one.
-    const waiting = [...this.changeObservers]
-    for (const observer of waiting) {
+    const resume = this.pauseOpenEdits()
+    try {
+      return await promise
+    } finally {
+      resume()
+    }
+  }
+
+  /**
+   * Runs `write`, a change someone else makes, such as a collaborator's arriving or an undo,
+   * outside every edit in progress, so none records it as its own.
+   */
+  runOutsideEdits<T>(write: () => T): T {
+    const resume = this.pauseOpenEdits()
+    try {
+      return write()
+    } finally {
+      resume()
+    }
+  }
+
+  /**
+   * Pauses the recorders open now, and only those, until the returned function resumes them: a
+   * recorder that opens while an earlier pause is still pending, such as during a script's load
+   * left unawaited, pauses for its own waits and is not resumed by the earlier one.
+   */
+  private pauseOpenEdits(): () => void {
+    const paused = [...this.changeObservers]
+    for (const observer of paused) {
       const waits = this.outsideWaits.get(observer) ?? 0
       if (waits === 0) observer.pause?.()
       this.outsideWaits.set(observer, waits + 1)
     }
-    try {
-      return await promise
-    } finally {
-      for (const observer of waiting) {
+    return () => {
+      for (const observer of paused) {
         const waits = (this.outsideWaits.get(observer) ?? 1) - 1
         if (waits > 0) {
           this.outsideWaits.set(observer, waits)
