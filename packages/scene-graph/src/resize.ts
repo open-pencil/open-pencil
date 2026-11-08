@@ -1,3 +1,5 @@
+import { CONSTRAINT_PARENT_TYPES } from './constraints'
+import { getNodeLocalMatrix } from './coordinate'
 import {
   cloneVectorNetwork,
   copyDerivedGlyphs,
@@ -6,7 +8,10 @@ import {
   copyStrokes,
   scaleGeometryPaths
 } from './copy'
+import { groupFitChanges } from './group-bounds'
 import { enforcedAspectRatio } from './layout/aspect-ratio'
+import Matrix, { type Mat3 } from './matrix'
+import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect } from './primitives'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 
@@ -35,37 +40,17 @@ export type ResizeSnapshot = Pick<
 >
 
 interface ResizeGraph {
+  readonly rootId: string
   getNode(id: string): SceneNode | undefined
 }
 
-/** Containers whose children keep their place by their own constraints. */
-const CONSTRAINT_PARENT_TYPES = new Set<SceneNode['type']>([
-  'FRAME',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
 /**
- * Whether `node` follows its own constraints when its parent resizes, so the Design panel offers
- * them and the canvas shows them: any layer but a group, in a frame, component, or instance, unless
- * that parent's auto layout places it.
- */
-export function isConstraintEligible(graph: ResizeGraph, node: SceneNode): boolean {
-  if (node.type === 'GROUP' || !node.parentId) return false
-  const parent = graph.getNode(node.parentId)
-  if (!parent || !CONSTRAINT_PARENT_TYPES.has(parent.type)) return false
-  return parent.layoutMode === 'NONE' || node.layoutPositioning === 'ABSOLUTE'
-}
-
-/**
- * Containers whose resize moves their children: the constraint parents, plus groups and boolean
- * operations, which scale them.
+ * Containers whose resize moves their children: the constraint parents, and groups and booleans,
+ * which scale theirs.
  */
 const CONSTRAINT_CONTAINER_TYPES = new Set<SceneNode['type']>([
   ...CONSTRAINT_PARENT_TYPES,
-  'GROUP',
-  'BOOLEAN_OPERATION'
+  ...FITTED_CONTAINER_TYPES
 ])
 
 type AxisPlacement = { position: number; size: number; flipped?: boolean }
@@ -381,54 +366,161 @@ export function flipChanges(
   return changes
 }
 
+type Size = Pick<Rect, 'width' | 'height'>
+
+/** One constrained resize: the graph, where each layer was when it began, and what it changes. */
+interface ResizePlan {
+  graph: ResizeGraph
+  originals: ReadonlyMap<string, ResizeSnapshot>
+  changes: Map<string, Partial<SceneNode>>
+}
+
+/** The layer as the resize found it, or as the resize leaves it with its changes so far. */
+function startOf(plan: ResizePlan, id: string): SceneNode | undefined {
+  const node = plan.graph.getNode(id)
+  const original = plan.originals.get(id)
+  return node && original ? { ...node, ...original } : node
+}
+
+function plannedOf(plan: ResizePlan, id: string): SceneNode | undefined {
+  const node = startOf(plan, id)
+  const changes = plan.changes.get(id)
+  return node && changes ? { ...node, ...changes } : node
+}
+
+function mergeChanges(plan: ResizePlan, id: string, changes: Partial<SceneNode>) {
+  plan.changes.set(id, { ...plan.changes.get(id), ...changes })
+}
+
+/** Writes where a layer's constraints put it, then places its own children. */
+function placeConstrained(
+  plan: ResizePlan,
+  child: SceneNode,
+  original: ResizeSnapshot,
+  rect: ConstrainedRect,
+  toParent: Mat3 | null
+) {
+  const { flipsX, flipsY, ...box } = rect
+  const position = toParent ? Matrix.mapPoint(toParent, box) : box
+  plan.changes.set(child.id, {
+    ...box,
+    ...position,
+    ...flipChanges(original, child, flipsX, flipsY),
+    ...scaledGeometryChanges(original, original.width, original.height, box.width, box.height)
+  })
+  // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
+  placeChildren(plan, child.id, original, child.layoutMode === 'NONE' ? box : child)
+}
+
+/**
+ * Places the layers in a group or boolean whose frame resized. The group owns no constraints: each
+ * layer in it keeps its place in the frame by its own, through nested groups, and the groups then
+ * fit around them, as in Figma (live, #1835). A layer is placed in the frame's space and written
+ * back in its group's.
+ */
+function placeGroupedLayers(
+  plan: ResizePlan,
+  group: SceneNode,
+  toFrame: Mat3,
+  frameBefore: Size,
+  frameAfter: Size
+) {
+  for (const childId of group.childIds) {
+    const child = plan.graph.getNode(childId)
+    const original = plan.originals.get(childId)
+    const start = startOf(plan, childId)
+    if (!child || !original || !start) continue
+    if (FITTED_CONTAINER_TYPES.has(child.type)) {
+      const inner = Matrix.multiply(toFrame, getNodeLocalMatrix(start))
+      placeGroupedLayers(plan, start, inner, frameBefore, frameAfter)
+      continue
+    }
+    const inFrame = Matrix.mapPoint(toFrame, original)
+    const rect = constrainedChildRect(
+      { ...inFrame, width: original.width, height: original.height },
+      frameBefore,
+      frameAfter,
+      child.horizontalConstraint,
+      child.verticalConstraint,
+      enforcedAspectRatio(child)
+    )
+    placeConstrained(plan, child, original, rect, Matrix.invert(toFrame))
+  }
+  fitPlannedGroup(plan, group.id)
+}
+
+const PLACEMENT_KEYS = ['x', 'y', 'width', 'height'] as const
+
+/**
+ * Fits a group to its layers where the resize put them, when any of them moved: a boolean's box
+ * is its result's, which only the renderer measures, so one whose operands stay keeps its box. A
+ * drag places from the start each time, so the group's box is always written.
+ */
+function fitPlannedGroup(plan: ResizePlan, groupId: string) {
+  const group = plannedOf(plan, groupId)
+  if (!group) return
+  const { x, y, width, height } = group
+  mergeChanges(plan, groupId, { x, y, width, height })
+  const moved = group.childIds.some((id) => {
+    const start = startOf(plan, id)
+    const planned = plannedOf(plan, id)
+    return start && planned && PLACEMENT_KEYS.some((key) => start[key] !== planned[key])
+  })
+  if (!moved) return
+  const reader = { rootId: plan.graph.rootId, getNode: (id: string) => plannedOf(plan, id) }
+  const children = group.childIds.flatMap((id) => reader.getNode(id) ?? [])
+  const fit = groupFitChanges(reader, group, children)
+  for (const [id, changes] of fit ?? []) mergeChanges(plan, id, changes)
+}
+
+/**
+ * Places the children of a layer that went from `parentBefore` to `parentAfter`: a frame's by their
+ * constraints, the layers in its groups and booleans by theirs, a group's or boolean's own scaled.
+ */
+function placeChildren(plan: ResizePlan, parentId: string, parentBefore: Size, parentAfter: Size) {
+  const parent = plan.graph.getNode(parentId)
+  if (!parent) return
+  const scalesChildren = FITTED_CONTAINER_TYPES.has(parent.type)
+  for (const childId of parent.childIds) {
+    const original = plan.originals.get(childId)
+    const child = plan.graph.getNode(childId)
+    if (!original || !child) continue
+    const isInFlow = parent.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE'
+    if (isInFlow) {
+      placeChildren(plan, childId, original, child)
+      continue
+    }
+    if (!scalesChildren && FITTED_CONTAINER_TYPES.has(child.type)) {
+      const start = { ...child, ...original }
+      placeGroupedLayers(plan, start, getNodeLocalMatrix(start), parentBefore, parentAfter)
+      continue
+    }
+    const rect: ConstrainedRect = scalesChildren
+      ? scaledChildRect(original, parentBefore, parentAfter)
+      : constrainedChildRect(
+          original,
+          parentBefore,
+          parentAfter,
+          child.horizontalConstraint,
+          child.verticalConstraint,
+          enforcedAspectRatio(child)
+        )
+    placeConstrained(plan, child, original, rect, null)
+  }
+}
+
+/**
+ * Where the descendants of a layer go when it resizes from `rootBefore` to `rootAfter`, from the
+ * places `originals` recorded.
+ */
 export function computeConstrainedResizeChanges(
   graph: ResizeGraph,
   rootId: string,
-  rootBefore: Pick<Rect, 'width' | 'height'>,
-  rootAfter: Pick<Rect, 'width' | 'height'>,
+  rootBefore: Size,
+  rootAfter: Size,
   originals: ReadonlyMap<string, ResizeSnapshot>
 ): Map<string, Partial<SceneNode>> {
-  const changes = new Map<string, Partial<SceneNode>>()
-
-  const compute = (
-    parentId: string,
-    parentBefore: Pick<Rect, 'width' | 'height'>,
-    parentAfter: Pick<Rect, 'width' | 'height'>
-  ) => {
-    const parent = graph.getNode(parentId)
-    if (!parent) return
-    const scalesChildren = parent.type === 'GROUP' || parent.type === 'BOOLEAN_OPERATION'
-    for (const childId of parent.childIds) {
-      const original = originals.get(childId)
-      const child = graph.getNode(childId)
-      if (!original || !child) continue
-      const isInFlow = parent.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE'
-      if (isInFlow) {
-        compute(childId, original, child)
-        continue
-      }
-      const rect: ConstrainedRect = scalesChildren
-        ? scaledChildRect(original, parentBefore, parentAfter)
-        : constrainedChildRect(
-            original,
-            parentBefore,
-            parentAfter,
-            child.horizontalConstraint,
-            child.verticalConstraint,
-            enforcedAspectRatio(child)
-          )
-      const { flipsX, flipsY, ...box } = rect
-      const childChanges: Partial<SceneNode> = {
-        ...box,
-        ...flipChanges(original, child, flipsX, flipsY),
-        ...scaledGeometryChanges(original, original.width, original.height, box.width, box.height)
-      }
-      changes.set(childId, childChanges)
-      // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
-      compute(childId, original, child.layoutMode === 'NONE' ? box : child)
-    }
-  }
-
-  compute(rootId, rootBefore, rootAfter)
-  return changes
+  const plan: ResizePlan = { graph, originals, changes: new Map() }
+  placeChildren(plan, rootId, rootBefore, rootAfter)
+  return plan.changes
 }

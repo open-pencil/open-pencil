@@ -133,6 +133,7 @@ export const developmentSidebar = (
             { text: 'AI Chat Replies', link: '/development/ai-chat' },
             { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
             { text: 'Cloud Architecture', link: '/development/cloud' },
+            { text: 'Demo Tour', link: '/development/demo-tour' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
