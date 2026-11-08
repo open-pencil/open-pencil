@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import {
@@ -26,9 +27,13 @@ export function createVariableBindingActions(ctx: EditorContext) {
     }
     if (isNumericVariableBindingField(path))
       Object.assign(previous, { [path]: node[path as keyof SceneNode] })
-    // Binding a paint gives it its variable's color, which undo takes back.
-    const paint = paintBindingTarget(path)
-    if (paint) Object.assign(previous, { [paint.list]: node[paint.list] })
+    // Binding a paint gives it its variable's color, which undo takes back from that paint alone.
+    const target = paintBindingTarget(path)
+    const targetPaint = target ? node[target.list].at(target.index) : undefined
+    const previousPaint =
+      target && targetPaint
+        ? { ...target, color: { ...targetPaint.color }, opacity: targetPaint.opacity }
+        : null
     const owner = variableBindingOwner(ctx.graph, node)
     const nearest = findInstanceAncestor(ctx.graph, nodeId)
     const owners = new Map(
@@ -67,6 +72,13 @@ export function createVariableBindingActions(ctx: EditorContext) {
             ([field]) => field in restored.boundVariables
           )
         )
+        const current = ctx.graph.getNode(nodeId)
+        if (previousPaint && current?.[previousPaint.list].at(previousPaint.index)) {
+          const { list, index, color, opacity } = previousPaint
+          const paints = list === 'fills' ? copyFills(current.fills) : copyStrokes(current.strokes)
+          Object.assign(paints[index], { color: { ...color }, opacity })
+          Object.assign(restored, { [list]: paints })
+        }
         ctx.graph.updateNode(nodeId, restored)
         refreshBindings(nodeId)
       }

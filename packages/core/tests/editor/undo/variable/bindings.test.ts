@@ -63,6 +63,28 @@ describe('variable-bindings undo resilience', () => {
     expect([fill.color.r, fill.opacity]).toEqual([1, 0.4])
   })
 
+  test('bindVariable undo gives back only the bound paint, keeping later changes to others', () => {
+    const editor = createEditor()
+    setupColorVar(editor, 'v1')
+    const node = editor.graph.createNode('RECTANGLE', pageId(editor), {
+      name: 'Rect',
+      fills: [
+        { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 0.4 },
+        { type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, visible: true, opacity: 1 }
+      ]
+    })
+
+    editor.bindVariable(node.id, 'fills/0/color', 'v1')
+    // Another paint changes meanwhile, as a collaborator's edit arrives.
+    const [bound, other] = getNodeOrThrow(editor.graph, node.id).fills
+    editor.graph.updateNode(node.id, { fills: [bound, { ...other, opacity: 0.25 }] })
+
+    editor.undo.undo()
+    const [first, second] = getNodeOrThrow(editor.graph, node.id).fills
+    expect([first.color.r, first.opacity]).toEqual([1, 0.4])
+    expect(second.opacity).toBe(0.25)
+  })
+
   test('bindVariable undo gracefully degrades when variable was deleted', () => {
     const editor = createEditor()
     setupColorVar(editor, 'v1')
