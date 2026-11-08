@@ -103,7 +103,7 @@ export const cloudPortalMessageDefaults = {
 
   deviceTitle: 'Sign in to the OpenPencil app?',
   deviceDescription: params('The OpenPencil app asks to use your account, {email}.'),
-  deviceCheckCode: 'Check that the app shows this code',
+  deviceEnterCode: 'Enter the code the app shows',
   deviceWarningTitle: 'Only approve a sign-in you started',
   deviceWarningDescription:
     'If you didn’t just sign in to OpenPencil on a computer, deny this request.',

@@ -285,6 +285,15 @@ describe('import_svg', () => {
     expect(line?.strokes[0]?.weight).toBe(6)
   })
 
+  test('paints currentColor in the color the SVG sets', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="10" height="10" color="#ff0000"><rect width="10" height="10" fill="currentColor"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.fills[0]).toMatchObject({ type: 'SOLID', color: { r: 1, g: 0, b: 0 } })
+  })
+
   test('supports preserveAspectRatio none', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg width="200" height="200" viewBox="0 0 100 50" preserveAspectRatio="none"><rect width="100" height="50"/></svg>`

@@ -110,7 +110,8 @@ export const cloudMessageDefaults = {
   saveStorageGroup: 'Storage',
   saveName: 'Name',
   saveQuotaHeading: 'This workspace is out of space',
-  saveQuotaDescription: 'Free some space or choose another workspace.',
+  saveQuotaOwnerDescription:
+    'Its owner’s plan is full across all their workspaces. Free some space, or choose a workspace someone else owns.',
   saveOfflineHeading: 'You’re offline',
   saveOfflineDescription:
     'Connect to the internet to save to Cloud. Nothing has changed on this device.',
@@ -328,7 +329,8 @@ export const cloudMessageDefaults = {
   homeCloudOnHost: params('OpenPencil Cloud · {host}'),
   homeUsageUsed: params('{used} used'),
   homeUsageOf: params('{used} of {total}'),
-  homeWorkspaceStorage: params('Workspace storage, {usage}'),
+  // Every workspace an account owns shares its plan's storage, so this counts all of them.
+  homeOwnerStorage: params('Storage on the owner’s plan, {usage}'),
   homeView: 'View',
   homeGrid: 'Grid',
   homeList: 'List',

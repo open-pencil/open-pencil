@@ -86,7 +86,7 @@
   "resetSentDescription": "Se {email} tiver uma conta aqui, um link de redefinição está a caminho.",
   "deviceTitle": "Entrar no app OpenPencil?",
   "deviceDescription": "O app OpenPencil pede para usar a sua conta, {email}.",
-  "deviceCheckCode": "Confira se o app mostra este código",
+  "deviceEnterCode": "Digite o código mostrado no app",
   "deviceWarningTitle": "Aprove apenas uma entrada que você iniciou",
   "deviceWarningDescription": "Se você não acabou de entrar no OpenPencil em um computador, negue esta solicitação.",
   "approve": "Aprovar",

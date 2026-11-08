@@ -77,7 +77,7 @@
   "resetSentDescription": "Falls {email} hier ein Konto hat, ist ein Link zum Zurücksetzen unterwegs.",
   "deviceTitle": "Bei der OpenPencil-App anmelden?",
   "deviceDescription": "Die OpenPencil-App möchte dein Konto {email} verwenden.",
-  "deviceCheckCode": "Prüfe, ob die App diesen Code anzeigt",
+  "deviceEnterCode": "Gib den Code ein, den die App anzeigt",
   "deviceWarningTitle": "Genehmige nur Anmeldungen, die du selbst gestartet hast",
   "deviceWarningDescription": "Wenn du dich gerade nicht auf einem Computer bei OpenPencil angemeldet hast, lehne diese Anfrage ab.",
   "approve": "Genehmigen",

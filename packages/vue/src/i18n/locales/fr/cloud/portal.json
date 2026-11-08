@@ -77,7 +77,7 @@
   "resetSentDescription": "Si {email} possède un compte ici, un lien de réinitialisation est en route.",
   "deviceTitle": "Se connecter à l’app OpenPencil ?",
   "deviceDescription": "L’app OpenPencil demande à utiliser votre compte {email}.",
-  "deviceCheckCode": "Vérifiez que l’app affiche ce code",
+  "deviceEnterCode": "Saisissez le code affiché par l’app",
   "deviceWarningTitle": "N’approuvez qu’une connexion que vous avez lancée",
   "deviceWarningDescription": "Si vous ne venez pas de vous connecter à OpenPencil sur un ordinateur, refusez cette demande.",
   "approve": "Approuver",

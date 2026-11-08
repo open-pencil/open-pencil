@@ -47,7 +47,9 @@ async function documentAccessGrants(
   if (!document) return []
 
   const grants: DocumentAccessGrant[] = []
-  if (document.createdBy === userId) {
+  // Making a document gives access only while its maker is in the workspace: someone removed
+  // from it keeps no way back in.
+  if (document.createdBy === userId && document.workspaceRole !== null) {
     grants.push({ source: 'owner', can: (request) => documentRoleCan('owner', request) })
   }
   const { workspaceRole, grantPermission } = document

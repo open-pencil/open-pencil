@@ -47,7 +47,6 @@ import {
   type UpdateDocumentVersionInput,
   type SharedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
   fileDocumentReportResponseSchema,
@@ -146,20 +145,6 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         servicesTokenSchema,
         options.onDiagnostic
       )
-    },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
-        options.onDiagnostic
-      )
-      return response.user
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(

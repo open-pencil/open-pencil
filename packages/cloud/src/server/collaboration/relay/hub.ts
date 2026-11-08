@@ -389,8 +389,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
     return contentOf(room).then(
       (content) => {
-        // The peer may have left while the document loaded.
-        if (room.peers.get(peer.id) !== peer) return undefined
+        // The peer may have left, or its ticket lapsed, while the document loaded.
+        if (room.peers.get(peer.id) !== peer || !current(peer)) return undefined
         handleMessage(room, content, peer, namespace, target, payload)
         return undefined
       },

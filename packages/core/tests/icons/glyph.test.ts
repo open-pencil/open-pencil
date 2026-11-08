@@ -18,7 +18,7 @@ const LOGO = '<path fill="#e11d48" d="M2 2h20v20H2z"/><path fill="currentColor" 
 
 function placed(body: string, size = 24) {
   const graph = new SceneGraph()
-  const icon = buildIconData({ body }, 'test', 'icon', 24, 24, size)
+  const icon = buildIconData({ body, width: 24, height: 24 }, 'test', 'icon', size)
   const frame = placeIcon(graph, graph.getPages()[0].id, icon, { size, color: BLACK })
   const modified = () => isIconModified(graph, graph.getNode(frame.id) ?? frame)
   return { graph, frame, modified }
@@ -110,7 +110,11 @@ describe('icon glyphs', () => {
   test('a swap draws a fresh glyph, so an edited icon is as placed again', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     graph.createNode('RECTANGLE', frame.id, { width: 4, height: 4 })
-    swapIcon(graph, frame.id, buildIconData({ body: OUTLINE }, 'test', 'other', 24, 24, 24))
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: OUTLINE, width: 24, height: 24 }, 'test', 'other', 24)
+    )
     expect(modified()).toBe(false)
   })
 
@@ -127,7 +131,11 @@ describe('icon glyphs', () => {
   test('a swap into an unevenly resized icon stretches the glyph to it', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     resize(graph, frame.id, 40, 20)
-    swapIcon(graph, frame.id, buildIconData({ body: OUTLINE }, 'test', 'other', 24, 24, 20))
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: OUTLINE, width: 24, height: 24 }, 'test', 'other', 20)
+    )
 
     expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 40, height: 20 })
     expect(modified()).toBe(false)

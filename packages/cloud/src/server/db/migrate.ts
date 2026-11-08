@@ -30,6 +30,8 @@ import * as userPicture from './migrations/026_user_picture'
 import * as documentKind from './migrations/027_document_kind'
 import * as collaborationUpdates from './migrations/028_collaboration_updates'
 import * as servicesEntitlements from './migrations/029_services_entitlements'
+import * as accountPlans from './migrations/030_account_plans'
+import * as invitationSends from './migrations/031_invitation_sends'
 import * as documentReports from './migrations/032_document_reports'
 import type { CloudDatabase } from './tables'
 
@@ -63,6 +65,8 @@ const migrations: Record<string, Migration> = {
   '027_document_kind': documentKind,
   '028_collaboration_updates': collaborationUpdates,
   '029_services_entitlements': servicesEntitlements,
+  '030_account_plans': accountPlans,
+  '031_invitation_sends': invitationSends,
   '032_document_reports': documentReports
 }
 

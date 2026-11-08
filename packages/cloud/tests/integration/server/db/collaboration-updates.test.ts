@@ -15,7 +15,13 @@ describe('migration 028', () => {
       const solo = crypto.randomUUID()
       await database
         .insertInto('workspace')
-        .values({ id: workspaceId, name: 'Studio', slug: 'studio', createdBy: 'alice' })
+        .values({
+          id: workspaceId,
+          name: 'Studio',
+          slug: 'studio',
+          createdBy: 'alice',
+          ownerId: 'alice'
+        })
         .execute()
       await database
         .insertInto('document')

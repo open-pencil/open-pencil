@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/svg'
@@ -14,7 +14,7 @@ import { buildIconData } from '#core/icons/svg'
 const BLACK = parseColor('#000000')
 
 function insertIcon(graph: SceneGraph, body: string, viewBox = 24, size = 24) {
-  const icon = buildIconData({ body }, 'test', 'icon', viewBox, viewBox, size)
+  const icon = buildIconData({ body, width: viewBox, height: viewBox }, 'test', 'icon', size)
   const page = graph.getPages()[0]
   const frame = placeIcon(graph, page.id, icon, { size, color: BLACK })
   return { page, frame, vectors: graph.getChildren(frame.id) }
@@ -127,11 +127,9 @@ describe('icon identity', () => {
     const green = parseColor('#00ff00')
     recolorIcon(graph, frame.id, green)
     const other = buildIconData(
-      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' },
+      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>', width: 24, height: 24 },
       'test',
       'square',
-      24,
-      24,
       32
     )
     swapIcon(graph, frame.id, other)
@@ -146,7 +144,7 @@ describe('icon identity', () => {
 
   test('leaves artwork without a name in a set unnamed', () => {
     const graph = new SceneGraph()
-    const icon = buildIconData({ body: BODY }, 'svg', 'custom', 24, 24, 24)
+    const icon = buildIconData({ body: BODY, width: 24, height: 24 }, 'svg', 'custom', 24)
     const frame = placeIcon(graph, graph.getPages()[0].id, icon, {
       size: 24,
       color: BLACK,

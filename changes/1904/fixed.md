@@ -1,0 +1,2 @@
+- Iconify icons draw in their set's own box: icons from sets without a size, such as Bootstrap Icons, fill the icon instead of two thirds of it, Jam icons are no longer offset, and aliases that flip or turn another icon, as in Font Awesome 4 and Fluent Emoji, draw flipped or turned.
+- SVG `currentColor` takes the CSS `color` an element sets, in pasted and imported SVG, icons, and design JSX `<svg>`, and matches in any letter case, so `currentcolor` in an icon follows the icon color instead of drawing black.

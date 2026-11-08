@@ -40,14 +40,14 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - On Cloudflare, every socket event goes through `createRelaySockets`, which wakes the relay and resumes the socket's peer first, since a close can be the first event after hibernation; a room closing after a wake still folds its log into a snapshot (`tests/runtime/cloudflare/relay/sockets.test.ts`, `tests/server/collaboration/relay/resume.test.ts`).
 - The heartbeat is the only text on a relay socket: a runtime answers `RELAY_HEARTBEAT.ping` with `pong` before the hub sees it, the Durable Object through `setWebSocketAutoResponse` so a ping never wakes it. Editors ping only a relay whose tickets set `relayHeartbeat`, since an older relay turns a ping away as a malformed frame (`tests/runtime/node/relay.test.ts`, `tests/e2e/cloudflare/checks.ts`).
 
-## AI relay
+## Services server
 
-- The reference AI service in `src/ai-relay/` implements the chat part of the services contract. It is runtime-neutral like `src/server`; runtimes own listening and keys (`src/runtime/node/ai-relay/server.ts`).
+- The reference services server in `src/services/` implements the chat part of the services contract. It is runtime-neutral like `src/server`; runtimes own listening and keys (`src/runtime/node/services/server.ts`).
 - It speaks only the contract in `src/contract/services.ts` (`tests/contract/services.test.ts`).
-- It trusts nothing about a request beyond a token that verifies against Cloud's keys (`tests/integration/ai-relay/app.test.ts`).
-- It forwards only the chat completion fields in `FORWARDED_FIELDS`, so routing fields cannot reach models outside the catalog (`tests/integration/ai-relay/app.test.ts`).
-- The relay's tables are `ai_relay_*` with their own migration history, so it can share Cloud's database (`src/ai-relay/db/migrate.ts`).
-- Neither the relay nor Cloud reads the other's tables (`src/ai-relay/db/schema.ts`).
+- It trusts nothing about a request beyond a token that verifies against Cloud's keys (`tests/integration/services/app.test.ts`).
+- It forwards only the chat completion fields in `FORWARDED_FIELDS`, so routing fields cannot reach models outside the catalog (`tests/integration/services/app.test.ts`).
+- Its tables are `services_*` with their own migration history (`services_migration`), so it can share Cloud's database; `migrateServicesDatabase` renames the history a database kept as `ai_relay_*` before it runs (`src/services/db/migrate.ts`, `tests/integration/services/migrations.test.ts`).
+- Neither the services server nor Cloud reads the other's tables (`src/services/db/schema.ts`).
 
 ## Portal
 
@@ -58,9 +58,10 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Deployment settings live in the schema-versioned TOML parsed by `src/server/config/deployment.ts`; environment variables only resolve `{ from_env }` secret references and never override the file (`tests/runtime/node/config.test.ts`).
 - Technical limits are ceilings that policy can tighten but never raise (`src/server/config/limits.ts`, `src/server/policy/`).
 - Feature and limit decisions go through the OpenFeature policy keys in `src/server/policy/keys.ts`; never branch on a plan name.
+- Plans belong to accounts: ask a workspace's or document's policy through `workspacePolicyContext`, which targets the workspace owner, never with the workspace as the target, so creating workspaces adds no allowance (`tests/integration/server/policy/service.test.ts`, `tests/integration/server/quota/storage.test.ts`).
 
 ## Tests
 
-- Unit tests mirror `src` under `tests/{ai-relay,client,contract,email,runtime,server}`; integration tests mirror `src` under `tests/integration` and run on PGlite through `tests/helpers/database.ts`; `tests/e2e` holds Docker Compose runners that `test` never starts.
+- Unit tests mirror `src` under `tests/{client,contract,email,runtime,server,services}`; integration tests mirror `src` under `tests/integration` and run on PGlite through `tests/helpers/database.ts`; `tests/e2e` holds Docker Compose runners that `test` never starts.
 - Tests import source through `#cloud/*` and helpers through `#cloud-tests/*`, and read responses with `responseJSON` from `tests/helpers/response.ts`.
 - `bun run test:cloud` type-checks the package and runs unit and integration suites.
