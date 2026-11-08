@@ -14,21 +14,14 @@ import { runFocusedCommand } from '@/app/shell/commands/focused'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { watchNativeMenuFeatures } from '@/app/shell/menu/features'
-import { openFileDialog, openFileFromPath } from '@/app/shell/menu/files'
+import { createFileMenuActions, openFileFromPath } from '@/app/shell/menu/files'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
 import { OPEN_RECENT_EVENT_PREFIX, watchRecentFilesMenu } from '@/app/shell/menu/recent-files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { SHELL_MENU_IDS } from '@/app/shell/menu/shell'
 import { useAppTheme } from '@/app/shell/theme'
-import {
-  createDocumentTab,
-  createTab,
-  closeTab,
-  activeTab,
-  openNewFileTab,
-  switchAdjacentTab
-} from '@/app/tabs'
+import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 function commandMenuIds(entries: readonly AppMenuEntry[]): EditorCommandId[] {
@@ -79,10 +72,7 @@ export function useEditorMenu() {
   watchNativeMenuDisabled(commands)
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => createTab(),
-    'new-board': () => createDocumentTab('board'),
-    'new-tab': () => openNewFileTab(),
-    open: () => void openFileDialog(),
+    ...createFileMenuActions(),
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },

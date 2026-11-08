@@ -16,7 +16,14 @@ import {
 import { notificationMessages } from '@/app/i18n/notifications'
 import { rememberRecentFile } from '@/app/recent-files'
 import { toast } from '@/app/shell/ui'
-import { getTabsSnapshot, openFileInNewTab, switchTab } from '@/app/tabs'
+import {
+  createDocumentTab,
+  createTab,
+  getTabsSnapshot,
+  openFileInNewTab,
+  openNewFileTab,
+  switchTab
+} from '@/app/tabs'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 import { isTauri } from '@/app/tauri/env'
 import { IS_BROWSER } from '@/constants'
@@ -203,4 +210,14 @@ export async function openFileDialog() {
 
 export async function importFileDialog() {
   await openFileDialog()
+}
+
+/** The File menu's new and open entries, which the app menu and the native menu share. */
+export function createFileMenuActions(): Partial<Record<string, () => void>> {
+  return {
+    new: () => createTab(),
+    'new-board': () => createDocumentTab('board'),
+    'new-tab': () => openNewFileTab(),
+    open: () => void openFileDialog()
+  }
 }

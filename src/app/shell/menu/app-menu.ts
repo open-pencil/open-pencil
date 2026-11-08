@@ -40,6 +40,7 @@ import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { createFileMenuActions } from '@/app/shell/menu/files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -50,16 +51,8 @@ import type {
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
-import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import {
-  closeTab,
-  activeTab,
-  createDocumentTab,
-  createTab,
-  openNewFileTab,
-  switchAdjacentTab
-} from '@/app/tabs'
+import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -184,10 +177,7 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => createTab(),
-    'new-board': () => createDocumentTab('board'),
-    'new-tab': () => openNewFileTab(),
-    open: () => void openFileDialog(),
+    ...createFileMenuActions(),
     'open-tour': openTourFromMenu,
     ...createSaveMenuActions(store),
     'export-selection': () => exportSelection('png'),
