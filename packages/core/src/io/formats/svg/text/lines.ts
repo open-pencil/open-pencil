@@ -1,5 +1,6 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { containsRTLText } from '@open-pencil/scene-graph/text/direction'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
@@ -126,6 +127,26 @@ function fallbackSegments(line: SVGTextLine, from: number, to: number): Fallback
   return segments
 }
 
+/**
+ * The characters from `from` to `to` as the pieces a renderer must not reorder across: the whole
+ * stretch when it is left-to-right only, otherwise each word and each run of spaces. A stretch
+ * that mixes directions is laid out by the canvas's bidi; placed word by word, each word keeps
+ * the place the canvas gives it, and a renderer only orders the letters within it.
+ */
+function directionalPieces(
+  node: SceneNode,
+  line: SVGTextLine,
+  from: number,
+  to: number
+): Array<{ from: number; to: number }> {
+  const text = node.text.slice(from, to)
+  if (!line.characters || !containsRTLText(text)) return [{ from, to }]
+  return Array.from(text.matchAll(/\s+|\S+/gu), (match) => ({
+    from: from + match.index,
+    to: from + match.index + match[0].length
+  }))
+}
+
 function lineSpans(
   node: SceneNode,
   pieces: readonly TextPiece[],
@@ -142,19 +163,22 @@ function lineSpans(
   const y = round(line.y)
   const spans: SVGNode[] = []
   for (const piece of pieces) {
-    for (const { from, to, fallback } of fallbackSegments(
+    for (const segment of fallbackSegments(
       line,
       Math.max(piece.from, line.start),
       Math.min(piece.to, end)
     )) {
-      if (to <= from) continue
+      if (segment.to <= segment.from) continue
+      const { fallback } = segment
       const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
-      // Every span starts at its left edge, in either direction, since renderers disagree on
-      // which side `text-anchor` and `direction` place. Without character edges the first span
-      // of a line starts at the line's left edge, and the rest follow on from it.
-      const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
-      const position = left === null ? {} : { x: round(left), y }
-      spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
+      for (const { from, to } of directionalPieces(node, line, segment.from, segment.to)) {
+        // Every span starts at its left edge, in either direction, since renderers disagree on
+        // which side `text-anchor` and `direction` place. Without character edges the first
+        // span of a line starts at the line's left edge, and the rest follow on from it.
+        const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
+        const position = left === null ? {} : { x: round(left), y }
+        spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
+      }
     }
   }
   return spans
