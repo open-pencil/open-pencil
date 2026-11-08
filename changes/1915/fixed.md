@@ -1,0 +1,2 @@
+- Icons and design JSX `<svg>` draw gradient fills and strokes as gradients instead of solid black, as in Noto, Fluent Color, Logos, and Meteocons icons, and icons whose SVG uses `xlink:href` draw instead of coming out empty. Their paths are placed at their own bounds, as pasted SVG places them.
+- Pasted and imported SVG draw gradient strokes as gradients, follow gradients that take their stops from another through `href`, and leave a shape with `fill="none"` and no stroke unpainted instead of filling it black.
