@@ -36,6 +36,16 @@ test('padding and gap show two decimals', async () => {
   editor.canvas.assertNoErrors()
 })
 
+test('a new variable is offered with the value it will hold', async () => {
+  await scene.select((ids) => ids.padded)
+  await propertyField(editor.page, 'paddingLeft').getByLabel('Apply variable').click()
+  await expect(
+    editor.page.getByText('Create number variable from 10.5', { exact: true })
+  ).toBeVisible()
+  await editor.page.keyboard.press('Escape')
+  editor.canvas.assertNoErrors()
+})
+
 test('a multi-selection shows its shared size to two decimals', async () => {
   await scene.select((ids) => ids.thirds)
   await expect(field('Width')).toHaveAttribute('aria-valuenow', '33.33')
