@@ -77,7 +77,7 @@
   "resetSentDescription": "Se {email} ha un account qui, riceverai a breve un link per reimpostare la password.",
   "deviceTitle": "Accedere all’app OpenPencil?",
   "deviceDescription": "L’app OpenPencil chiede di usare il tuo account, {email}.",
-  "deviceCheckCode": "Verifica che l’app mostri questo codice",
+  "deviceEnterCode": "Inserisci il codice mostrato dall’app",
   "deviceWarningTitle": "Approva solo un accesso avviato da te",
   "deviceWarningDescription": "Se non hai appena effettuato l’accesso a OpenPencil da un computer, nega questa richiesta.",
   "approve": "Approva",

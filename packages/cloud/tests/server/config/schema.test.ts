@@ -14,6 +14,9 @@ const baseConfig = {
   s3SecretAccessKey: 'secret-key'
 }
 
+/** What every official deployment sets: administrators confirm a second step. */
+const officialMFA = { deployment: 'official', deploymentAdminMFARequired: true, totpEnabled: true }
+
 describe('Cloud server configuration', () => {
   test('accepts a self-hosted configuration without social providers', () => {
     expect(parseCloudServerConfig(baseConfig)).toMatchObject({
@@ -29,6 +32,18 @@ describe('Cloud server configuration', () => {
     ).toThrow('requires TOTP or passkeys')
   })
 
+  test('requires administrator MFA on an official deployment', () => {
+    for (const config of [
+      { deployment: 'official' },
+      { deployment: 'official', totpEnabled: true }
+    ]) {
+      expect(() => parseCloudServerConfig({ ...baseConfig, ...config })).toThrow(
+        'requires MFA for deployment administrators'
+      )
+    }
+    expect(parseCloudServerConfig({ ...baseConfig, ...officialMFA }).deployment).toBe('official')
+  })
+
   test('requires email delivery when enabling email and password', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, emailPasswordEnabled: true })).toThrow(
       'requires transactional email delivery'
@@ -39,7 +54,7 @@ describe('Cloud server configuration', () => {
     expect(() =>
       parseCloudServerConfig({
         ...baseConfig,
-        deployment: 'official',
+        ...officialMFA,
         emailPasswordEnabled: true,
         emailTransport: 'cloudflare',
         emailFrom: 'cloud@example.com'
@@ -115,7 +130,7 @@ describe('Cloud server configuration', () => {
   test('requires HTTPS for the official services endpoint, whatever the scheme case', () => {
     const official = {
       ...baseConfig,
-      deployment: 'official',
+      ...officialMFA,
       servicesSigningKey: 'signing-key-pem'
     }
     for (const servicesEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {

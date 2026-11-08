@@ -211,6 +211,8 @@ export {
   type SetAccountEntitlementsInput
 } from './internal'
 export {
+  INVITATION_BUDGET,
+  InvitationLimitError,
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,

@@ -77,7 +77,7 @@
   "resetSentDescription": "{email} のアカウントがある場合は、リセット用のリンクをお送りしました。",
   "deviceTitle": "OpenPencil アプリにサインインしますか？",
   "deviceDescription": "OpenPencil アプリがあなたのアカウント（{email}）の使用を求めています。",
-  "deviceCheckCode": "アプリにこのコードが表示されていることを確認してください",
+  "deviceEnterCode": "アプリに表示されているコードを入力してください",
   "deviceWarningTitle": "自分で開始したサインインだけを承認してください",
   "deviceWarningDescription": "今パソコンで OpenPencil にサインインしようとしていない場合は、このリクエストを拒否してください。",
   "approve": "承認",

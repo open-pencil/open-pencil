@@ -77,7 +77,7 @@
   "resetSentDescription": "如果 {email} 在此注册过账号，重置链接已发出。",
   "deviceTitle": "登录 OpenPencil 应用？",
   "deviceDescription": "OpenPencil 应用请求使用你的账号 {email}。",
-  "deviceCheckCode": "请确认应用中显示的是此代码",
+  "deviceEnterCode": "请输入应用中显示的代码",
   "deviceWarningTitle": "只批准你自己发起的登录",
   "deviceWarningDescription": "如果你刚才没有在电脑上登录 OpenPencil，请拒绝此请求。",
   "approve": "批准",

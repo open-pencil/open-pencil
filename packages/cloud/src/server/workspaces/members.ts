@@ -12,6 +12,7 @@ import type { CloudActor } from '#cloud/server/auth'
 import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
+import { spendInvitationBudget } from '#cloud/server/invitations'
 import { lockStorageAllowance } from '#cloud/server/quota/storage'
 import {
   invitationMatchesActor,
@@ -238,6 +239,7 @@ export function createWorkspaceMemberService(
     const expiresAt = new Date(Date.now() + INVITATION_LIFETIME_MS)
     const url = acceptanceURL(id, token)
     const row = await database.transaction().execute(async (transaction) => {
+      await spendInvitationBudget(transaction, { senderId: userId, email: input.email })
       await transaction
         .updateTable('workspaceInvitation')
         .set({ revokedAt: new Date() })

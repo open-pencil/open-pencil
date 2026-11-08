@@ -2,7 +2,6 @@ import {
   parseAcceptDocumentInvitation,
   parseCreateInvitationContinuation,
   parseCreateDocumentInvitation,
-  parseLookupCloudUser,
   parseCreateDocumentShare,
   parsePutDocumentGrant,
   parseResolveDocumentShare,
@@ -54,21 +53,6 @@ export function createDocumentSharingRoutes(
     )
   }
   return router
-    .post(
-      '/documents/:documentId/users/lookup',
-      documentParams,
-      validatedJSON(parseLookupCloudUser),
-      (context) =>
-        sharingRoute(context, async () =>
-          context.json({
-            user: await service.lookupUser(
-              context.get('actor').userId,
-              context.req.valid('param').documentId,
-              context.req.valid('json')
-            )
-          })
-        )
-    )
     .get('/documents/:documentId/users/:userId', documentUserParams, (context) =>
       sharingRoute(context, async () =>
         context.json({

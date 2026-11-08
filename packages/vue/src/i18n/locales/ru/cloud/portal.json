@@ -77,7 +77,7 @@
   "resetSentDescription": "Если для {email} здесь есть аккаунт, ссылка для сброса уже в пути.",
   "deviceTitle": "Войти в приложение OpenPencil?",
   "deviceDescription": "Приложение OpenPencil запрашивает доступ к вашему аккаунту {email}.",
-  "deviceCheckCode": "Убедитесь, что приложение показывает этот код",
+  "deviceEnterCode": "Введите код, который показывает приложение",
   "deviceWarningTitle": "Одобряйте только вход, который начали сами",
   "deviceWarningDescription": "Если вы только что не входили в OpenPencil на компьютере, отклоните запрос.",
   "approve": "Одобрить",

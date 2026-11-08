@@ -77,7 +77,7 @@
   "resetSentDescription": "Si {email} tiene una cuenta aquí, el enlace para restablecer la contraseña está en camino.",
   "deviceTitle": "¿Iniciar sesión en la app de OpenPencil?",
   "deviceDescription": "La app de OpenPencil quiere usar tu cuenta, {email}.",
-  "deviceCheckCode": "Comprueba que la app muestra este código",
+  "deviceEnterCode": "Introduce el código que muestra la app",
   "deviceWarningTitle": "Aprueba solo un inicio de sesión que hayas iniciado tú",
   "deviceWarningDescription": "Si no acabas de iniciar sesión en OpenPencil en un ordenador, deniega esta solicitud.",
   "approve": "Aprobar",

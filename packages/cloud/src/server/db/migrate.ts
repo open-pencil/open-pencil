@@ -31,6 +31,7 @@ import * as documentKind from './migrations/027_document_kind'
 import * as collaborationUpdates from './migrations/028_collaboration_updates'
 import * as servicesEntitlements from './migrations/029_services_entitlements'
 import * as accountPlans from './migrations/030_account_plans'
+import * as invitationSends from './migrations/031_invitation_sends'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -63,7 +64,8 @@ const migrations: Record<string, Migration> = {
   '027_document_kind': documentKind,
   '028_collaboration_updates': collaborationUpdates,
   '029_services_entitlements': servicesEntitlements,
-  '030_account_plans': accountPlans
+  '030_account_plans': accountPlans,
+  '031_invitation_sends': invitationSends
 }
 
 class CloudMigrationProvider implements MigrationProvider {

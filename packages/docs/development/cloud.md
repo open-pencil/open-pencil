@@ -112,13 +112,21 @@ accepts the resulting bearer token.
 
 Access to a document comes from ownership, workspace membership, a direct grant, or a capability
 link, and the strongest source wins. Revoking one source leaves access inherited from another.
-Documents granted to someone outside their own workspaces are listed for them separately, so a
-client can show what was shared with them.
+Ownership counts only while the document's maker is still in its workspace, so someone removed
+keeps no way back in; their collaboration tickets lapse within five minutes. A direct grant comes
+only from an invitation the person accepted: sharing can change or revoke a grant, never give one,
+and the server never looks people up by email, so nobody can find out who has an account or put a
+document in a stranger's files. Documents granted to someone outside their own workspaces are
+listed for them separately, so a client can show what was shared with them. A share link stops
+working while the person who made it, or made its document, is banned.
 
 Workspace administrators invite people by email with a role. Workspace invitations use the same
 `/invitations/:id` link as document invitations: preview and accept look for a workspace
 invitation first and fall back to a document one, so email, the desktop handoff, and the editor's
-invitation dialog serve both. A workspace with members always keeps an administrator.
+invitation dialog serve both. A workspace with members always keeps an administrator. Each
+invitation emails the inviter's and the file's names, which the sender chooses, so one person may
+send 100 invitations a day and one address may receive 5, documents and workspaces together
+(`src/server/invitations/budget.ts`).
 
 Database rows use UUIDs. Capability secrets and invitation tokens are random hex; only their SHA-256
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`
@@ -217,7 +225,8 @@ not carried over the relay yet; the transport reports no media.
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a
 pending request that a deployment administrator approves or rejects; approval can be revoked later.
 Deployment administrators are separate from workspace administrators, and startup never grants
-either role: the first operator is approved and promoted through the `admin` command.
+either role: the first operator is approved and promoted through the `admin` command. An official
+deployment must require a second sign-in step from them (`required_for_admins`).
 
 The console's lists are tables the server pages, searches, and filters: each admin list endpoint
 takes `search`, `filter`, `limit`, and `offset` and answers with its rows, the `total` matching, and
@@ -260,8 +269,12 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
+The pages carry no inline script for it to allow: a build loads the boot splash's script from its
+own file. The desktop approval page never shows the code it
+was opened with: the person types the code the app shows, so a link someone else sent cannot be
+approved in one click. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
 the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
 its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads
