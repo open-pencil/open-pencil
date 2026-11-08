@@ -39,6 +39,9 @@ export async function renameTableOnce<Database>(
   await sql`
     do $$
     begin
+      -- Held until this statement's transaction ends, so a second process waits and then finds
+      -- the table already renamed.
+      perform pg_advisory_xact_lock(hashtextextended(${sql.lit(`rename-table:${to}`)}, 0));
       if to_regclass(${sql.lit(from)}) is not null and to_regclass(${sql.lit(to)}) is null then
         execute format('alter table %I rename to %I', ${sql.lit(from)}, ${sql.lit(to)});
         execute format(

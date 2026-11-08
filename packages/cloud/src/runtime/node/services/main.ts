@@ -9,7 +9,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
     Runs the reference AI service for a self-hosted OpenPencil Cloud. Settings come from the
     environment:
-      OPENPENCIL_SERVICES_CONFIG  the relay TOML file (required)
+      OPENPENCIL_SERVICES_CONFIG  the services TOML file (required)
       PORT, HOST                  where to listen (default 8788 on 0.0.0.0)
     plus the secrets the TOML names. See https://openpencil.dev/reference/self-hosting-cloud
   `)

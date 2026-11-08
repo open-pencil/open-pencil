@@ -24,7 +24,7 @@ export async function startNodeServices(options: NodeServicesOptions = {}) {
   const environment = options.environment ?? process.env
   const path = environment.OPENPENCIL_SERVICES_CONFIG
   if (!path) {
-    throw new ServicesConfigError('OPENPENCIL_SERVICES_CONFIG must name a relay TOML file')
+    throw new ServicesConfigError('OPENPENCIL_SERVICES_CONFIG must name a services TOML file')
   }
   const config = parseServicesTOML(await readFile(path, 'utf8'), environment)
   const database = createServicesDatabase(
