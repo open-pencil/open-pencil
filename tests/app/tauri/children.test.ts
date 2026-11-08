@@ -5,11 +5,14 @@ import { ref } from 'vue'
 
 import { createAgentChildren } from '@/app/tauri/children'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
+import {
+  clearTauriMocks,
+  mockTauriIPC,
+  shellEvents,
+  type ShellEvent
+} from '#tests/helpers/tauri/mocks'
 
 afterEach(clearTauriMocks)
-
-type ShellEvent = { event: string; payload: unknown }
 
 /** A plugin-shell that hands out pids in order and records the pids it was asked to kill. */
 async function shell() {
@@ -19,8 +22,7 @@ async function shell() {
   await mockTauriIPC((cmd, args) => {
     if (cmd === 'plugin:shell|spawn') {
       const pid = nextPid++
-      const { onEvent } = args as { onEvent: { onmessage: (event: ShellEvent) => void } }
-      events.set(pid, (event) => onEvent.onmessage(event))
+      events.set(pid, shellEvents(args))
       return pid
     }
     if (cmd === 'plugin:shell|kill') killed.push((args as { pid: number }).pid)
