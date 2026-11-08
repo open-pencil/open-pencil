@@ -24,6 +24,7 @@ import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { PenPressEvent, PenReleaseEvent } from '#core/editor/shapes/pen/gesture'
 import type { NodeEditState } from '#core/editor/vector/types'
 import type { ViewportInsets } from '#core/editor/viewport'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
@@ -135,6 +136,11 @@ export interface EditorViewState {
   selectedIds: Set<string>
   marquee: Rect | null
   snapGuides: SnapGuide[]
+  /**
+   * Points the host adds to what the pen and vector edit mode snap to, on the current page
+   * (`setSnapTargets`), such as where a traced shape starts and ends.
+   */
+  snapTargets: { points: Vector[] }
   guides: GuideOverlayState
   rotationPreview: RotationPreview | null
   dropTargetId: string | null
@@ -258,6 +264,12 @@ export interface EditorEvents extends SceneGraphEvents {
    * meanwhile is undone. The history is unchanged.
    */
   'edit:discarded': () => void
+  /** A press of the pen, before it acts; `cancelGesture` refuses it. */
+  'pen:pressed': (event: PenPressEvent) => void
+  /** The release ending a press of the pen, before it commits; `cancelGesture` takes it back. */
+  'pen:released': (event: PenReleaseEvent) => void
+  /** The gesture in progress was taken back (`cancelGesture`); the canvas drops what it holds. */
+  'gesture:cancelled': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void

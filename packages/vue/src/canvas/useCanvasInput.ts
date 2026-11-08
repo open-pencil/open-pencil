@@ -460,11 +460,9 @@ export function useCanvasInput(
     } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'resize-selection') commitSelectionResize(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState
-      if (penState?.pendingClose) {
-        editor.penCommit(true)
-      }
+      // Cleared first: a host that refuses the release cancels the gesture, which drops the drag.
       drag.value = null
+      editor.penRelease()
       return
     } else if (d.type === 'pencil-drag') finishPencilDrag(editor)
     else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
@@ -598,6 +596,14 @@ export function useCanvasInput(
     { capture: true }
   )
 
+  // A host that refused the gesture in progress (`cancelGesture`): the drag goes with it.
+  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', () => {
+    const d = drag.value
+    if (!d) return
+    drag.value = null
+    cursorOverride.value = null
+    clearTransientInteractionFeedback()
+  })
   const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
     if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
       cancelPointerInteraction()
@@ -636,6 +642,7 @@ export function useCanvasInput(
       })
   )
   onScopeDispose(() => {
+    stopGestureListener()
     stopRotationListener()
     stopToolListener()
     stopReadOnlyListener()
