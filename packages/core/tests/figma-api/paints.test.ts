@@ -568,6 +568,50 @@ describe('paint types', () => {
     expect(run?.style.fills?.[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
   })
 
+  test('keeps each run its own poster when a script writes a range over runs sharing a clip', () => {
+    const { graph, figma } = api()
+    const posters = ['c4'.repeat(20), 'c5'.repeat(20)]
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'clip',
+      styleRuns: posters.map((imageHash, index) => ({
+        start: index * 2,
+        length: 2,
+        style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash, videoHash: HASH }] }
+      }))
+    })
+
+    figma
+      .getNodeById(node.id)
+      ?.setRangeFills(0, 4, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL', opacity: 0.5 }])
+
+    const runs = graph.getNode(node.id)?.styleRuns ?? []
+    expect(runs.map((run) => run.style.fills?.[0]?.imageHash)).toEqual(posters)
+    expect(runs.map((run) => run.style.fills?.[0]?.opacity)).toEqual([0.5, 0.5])
+  })
+
+  test('gives a run without the clip the poster another run of the range holds', () => {
+    const { graph, figma } = api()
+    const poster = 'c6'.repeat(20)
+    otherPosterOfClip(graph)
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'clip',
+      styleRuns: [
+        {
+          start: 2,
+          length: 2,
+          style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }] }
+        }
+      ]
+    })
+
+    figma
+      .getNodeById(node.id)
+      ?.setRangeFills(0, 4, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }])
+
+    const runs = graph.getNode(node.id)?.styleRuns ?? []
+    expect(runs.map((run) => run.style.fills?.[0]?.imageHash)).toEqual([poster])
+  })
+
   test('finds a poster for a text range only another layer holds', () => {
     const { graph, figma } = api()
     const poster = 'd4'.repeat(20)

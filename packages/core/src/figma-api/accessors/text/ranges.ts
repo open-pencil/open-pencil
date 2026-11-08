@@ -1,5 +1,6 @@
 import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalone'
 import { uniqBy } from 'es-toolkit/array'
+import { isEqual } from 'es-toolkit/predicate'
 
 import type {
   CharacterStyleOverride,
@@ -7,6 +8,7 @@ import type {
   HyperlinkTarget,
   SceneGraph,
   SceneNode,
+  StyleRun,
   TextBindableField,
   TextCase,
   TextDecoration,
@@ -55,6 +57,7 @@ import {
   characterStyles,
   nodeStyle,
   styleRunsWithPatch,
+  styleRunsWithPatchOver,
   type TextStylePatch
 } from '#core/text/character-style'
 import { textStyleName } from '#core/text/font/names'
@@ -105,9 +108,64 @@ export function fontNameStyle(
   return fontNameInputStyle(method, fontName, currentFont(node, start))
 }
 
-function rangeFills(node: SceneNode, start: number): readonly Fill[] {
-  const [style] = characterStyles(node, start, start + 1)
-  return style.fills
+type FillSegment = { readonly range: [number, number]; readonly fills: readonly Fill[] }
+
+function rangeFillSegments(node: SceneNode, start: number, end: number): FillSegment[] {
+  const segments: FillSegment[] = []
+  for (const [offset, style] of characterStyles(node, start, end).entries()) {
+    const previous = segments.at(-1)
+    if (previous && isEqual(previous.fills, style.fills)) {
+      previous.range[1]++
+    } else {
+      segments.push({ range: [start + offset, start + offset + 1], fills: style.fills })
+    }
+  }
+  return segments
+}
+
+type PosterGroup = { readonly fills: Fill[]; readonly ranges: [number, number][] }
+
+function rangePosterGroups(
+  node: SceneNode,
+  start: number,
+  end: number,
+  paints: Fill[],
+  graph: SceneGraph
+): PosterGroup[] {
+  const segments = rangeFillSegments(node, start, end)
+  const rangeFills = keepVideoPosters(
+    paints,
+    segments.flatMap((segment) => segment.fills),
+    graph
+  )
+  const groups: PosterGroup[] = []
+  for (const segment of segments) {
+    const fills = keepVideoPosters(paints, [...segment.fills, ...rangeFills], graph)
+    const group = groups.find((candidate) => isEqual(candidate.fills, fills))
+    if (group) {
+      group.ranges.push(segment.range)
+    } else {
+      groups.push({ fills, ranges: [segment.range] })
+    }
+  }
+  return groups
+}
+
+function styleRunsWithRangeFills(
+  node: SceneNode,
+  start: number,
+  end: number,
+  paints: Fill[],
+  graph: SceneGraph
+): StyleRun[] {
+  if (!paints.some((paint) => paint.type === 'VIDEO')) {
+    return styleRunsWithPatch(node, start, end, { fills: paints })
+  }
+  return rangePosterGroups(node, start, end, paints, graph).reduce(
+    (styleRuns, group) =>
+      styleRunsWithPatchOver({ ...node, styleRuns }, group.ranges, { fills: group.fills }),
+    node.styleRuns
+  )
 }
 
 type RangeSetter = (
@@ -135,9 +193,6 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     assertFontLoaded(method, node, style)
     return style
   },
-  setRangeFills: (method, node, start, _end, value, graph) => ({
-    fills: keepVideoPosters(fillsFromPaints(method, value), rangeFills(node, start), graph)
-  }),
   // A percent stays a percent, following the size of the characters it styles, as in Figma.
   setRangeLetterSpacing: (method, _node, _start, _end, value) => ({
     letterSpacing: letterSpacingLength(method, value)
@@ -162,11 +217,7 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
 }
 
 /** Range setters Figma takes with the text's fonts unloaded: paints and links, measured live. */
-const RANGE_SETTERS_WITHOUT_FONTS = new Set([
-  'setRangeFills',
-  'setRangeHyperlink',
-  'setRangeTextDecorationColor'
-])
+const RANGE_SETTERS_WITHOUT_FONTS = new Set(['setRangeHyperlink', 'setRangeTextDecorationColor'])
 
 /** Range getters by method and the segment field each reads. */
 const RANGE_GETTERS: Record<string, TextSegmentField> = {
@@ -286,6 +337,16 @@ export function installTextRangeMethods(
         if (!RANGE_SETTERS_WITHOUT_FONTS.has(method)) assertTextFontsLoaded(method, node)
         updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
       }
+    }
+  }
+  methods.setRangeFills = {
+    value(this: ProxyThis, start: number, end: number, value: unknown) {
+      const node = raw(this, internals)
+      assertTextRange('setRangeFills', node, start, end)
+      const paints = fillsFromPaints('setRangeFills', value)
+      updateNode(this, internals, {
+        styleRuns: styleRunsWithRangeFills(node, start, end, paints, graphOf(this))
+      })
     }
   }
   methods.getRangeAllFontNames = {
