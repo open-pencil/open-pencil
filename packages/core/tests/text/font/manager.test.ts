@@ -1,11 +1,13 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
+import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, facesFromStyles } from '@open-pencil/core/text'
+
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
 function offlineManager() {
@@ -24,6 +26,34 @@ function countingProvider() {
   } as TypefaceFontProvider
   return { provider, registrations }
 }
+
+test('the canvases of one CanvasKit share a provider, so each face is copied into it once', async () => {
+  const manager = offlineManager()
+  const made: Array<{ registrations: Map<string, number>; deleted: boolean }> = []
+  const make = () => {
+    const { provider, registrations } = countingProvider()
+    const entry = { registrations, deleted: false }
+    made.push(entry)
+    return Object.assign(provider, {
+      delete() {
+        entry.deleted = true
+      }
+    })
+  }
+  const canvasKit = Object.assign({} as CanvasKit, { TypefaceFontProvider: { Make: make } })
+  const scene = manager.acquireProvider(canvasKit)
+  const overlays = manager.acquireProvider(canvasKit)
+  await manager.markLoaded('Shared Face', 'Regular', new Uint8Array(16).fill(7).buffer)
+
+  expect(overlays).toBe(scene)
+  expect(made).toHaveLength(1)
+  expect(made[0].registrations.get('Shared Face')).toBe(1)
+  manager.releaseProvider(scene)
+  expect(made[0].deleted).toBe(false)
+  manager.releaseProvider(overlays)
+  expect(made[0].deleted).toBe(true)
+  expect(manager.providerFor(canvasKit)).toBeNull()
+})
 
 test('a face lookup that outlives a new catalog does not overwrite what the catalog says', async () => {
   const manager = offlineManager()
@@ -134,6 +164,108 @@ test('macOS fallback preparation after a document edit reads and registers each 
   expect([...registrations.values()].every((count) => count === 1)).toBe(true)
 })
 
+test('loads the next fallback family only for the characters CanvasKit finds no glyph for', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
+  const latin = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  // macOS lists PingFang SC, Heiti SC, PingFang TC, Hiragino Sans for Simplified Chinese.
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return family === 'PingFang SC' ? latin : chinese
+  })
+
+  try {
+    await manager.ensureFallbackPack(['cjk-sc'], '设计')
+    expect(reads).toEqual(['PingFang SC', 'Heiti SC'])
+    expect(manager.getCJKFallbackFamilies()).toEqual(['PingFang SC', 'Heiti SC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
+})
+
+test('a Traditional Chinese fallback covers the Han characters it shares with the others', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
+  const latin = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  // macOS lists PingFang TC, Heiti TC, PingFang SC, Hiragino Sans for Traditional Chinese.
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return family === 'PingFang TC' ? latin : chinese
+  })
+
+  try {
+    // 中 is written alike in both; 語 is Traditional only.
+    await manager.ensureFallbackPack(['cjk-tc'], '中')
+    expect(reads).toEqual(['PingFang TC', 'Heiti TC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
+})
+
+test('loads every listed fallback family when no canvas can tell what they cover', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return chinese
+  })
+
+  // As an export before any canvas or shaper holds a provider.
+  await manager.ensureFallbackPack(['cjk-sc'], '设计')
+
+  expect(reads).toEqual(['PingFang SC', 'Heiti SC', 'PingFang TC', 'Hiragino Sans'])
+})
+
+test('a fallback leaves another language its letters, which that language loads for', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  const provider = manager.acquireProvider(await getCanvasKit())
+  const chinese = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const reads: string[] = []
+  manager.setHostFontLoader(async (family) => {
+    reads.push(family)
+    return chinese
+  })
+
+  try {
+    // The Simplified Chinese face has no Hangul; the Korean fallback loads a face that has.
+    await manager.ensureFallbackPack(['cjk-sc'], '设计한국')
+    expect(reads).toEqual(['PingFang SC'])
+  } finally {
+    manager.releaseProvider(provider)
+  }
+})
+
+test('leaves installed faces to the page, which draws them by name', async () => {
+  const manager = offlineManager()
+  const registered: string[] = []
+  manager.registerFontInBrowser = (family, style) => {
+    registered.push(`${family} ${style}`)
+  }
+  const installed = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+  manager.setHostFontLoader(async (family) => (family === 'Installed Sans' ? installed : null))
+
+  await manager.loadFont('Installed Sans', 'Regular')
+  await manager.loadFont('Inter', 'Regular')
+
+  expect(manager.isStyleLoaded('Installed Sans', 'Regular')).toBe(true)
+  // A page face under an installed family's name would stand in for all of its faces.
+  expect(registered).toEqual(['Inter Regular'])
+
+  // A file that replaces the installed one, as a web font does a fallback, keeps that one off it.
+  const replacement = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  await manager.markLoaded('Installed Sans', 'Regular', replacement)
+  expect(registered).toEqual(['Inter Regular', 'Installed Sans Regular'])
+})
+
 test('a host read that outlives its loader never registers the replaced loader data', async () => {
   const manager = offlineManager()
   manager.setFallbackUserAgent('Windows')
@@ -148,7 +280,11 @@ test('a host read that outlives its loader never registers the replaced loader d
   expect(manager.loadedData('Microsoft YaHei', 'Regular')).toBeNull()
 
   await manager.ensureFallbackPack(['cjk-sc'], '', new AbortController().signal)
-  expect(manager.loadedData('Microsoft YaHei', 'Regular')).toBe(replacement)
+  const drawn = manager
+    .getCJKFallbackFamilies()
+    .map((family) => manager.loadedData(family, 'Regular'))
+  expect(drawn.length).toBeGreaterThan(0)
+  expect(drawn.every((data) => data === replacement)).toBe(true)
 })
 
 test('draws every weight its variable font covers from the one file, in the same slant', async () => {
@@ -177,31 +313,25 @@ test('an installed face of the style comes before a variable file loaded for ano
 
 test('a variable font shared with another weight still fetches the characters it lacks', async () => {
   const manager = new FontManager()
-  manager.setOnlineFontProviders({ google: true })
   const family = 'Fonts Test Shared Coverage'
-  const fontURL = 'https://fonts.gstatic.com/s/test/shared.ttf'
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-  const asked: string[] = []
-  manager.setWebFontFetch(async (url) => {
-    if (url.startsWith('https://fonts.google.com/metadata/fonts'))
-      return Response.json({
-        familyMetadataList: [
-          { family, fonts: { '400': {}, '700': {} }, axes: [{ tag: 'wght', min: 100, max: 900 }] }
-        ]
-      })
-    if (url.startsWith('https://fonts.googleapis.com/css2')) {
-      asked.push(new URL(url).searchParams.get('text') ?? '')
-      return new Response(
-        `@font-face { font-family: '${family}'; font-style: normal; font-weight: 100 900; src: url(${fontURL}) format('truetype'); }`
-      )
+  const google = fakeGoogleFonts([
+    {
+      family,
+      weights: [400, 700],
+      axes: [{ tag: 'wght', min: 100, max: 900 }],
+      files: [{ url: 'https://fonts.gstatic.com/s/test/shared.ttf', data: variable, weight: '100 900' }]
     }
-    if (url === fontURL) return new Response(variable.slice(0))
-    return new Response(null, { status: 404 })
-  })
-
-  await manager.loadFont(family, 'Regular', 'abc')
-  await manager.loadFont(family, 'Bold', 'xyz')
-  expect(asked.at(-1)).toContain('xyz')
+  ])
+  await withGoogleFonts(
+    google,
+    async () => {
+      await manager.loadFont(family, 'Regular', 'abc')
+      await manager.loadFont(family, 'Bold', 'xyz')
+    },
+    manager
+  )
+  expect(google.stylesheets.at(-1)?.searchParams.get('text')).toContain('xyz')
 })
 
 test('keeps the file it has when the same font is read or downloaded again', async () => {

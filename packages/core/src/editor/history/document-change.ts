@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, isPlainObject, omit } from 'es-toolkit'
 
 import type {
   FigmaSourcePayload,
@@ -8,6 +8,7 @@ import type {
   Variable,
   VariableCollection
 } from '@open-pencil/scene-graph'
+import type { TouchedCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 import { withLiveComments } from '@open-pencil/scene-graph/comments'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import {
@@ -149,17 +150,6 @@ function captureNode(node: SceneNode): SceneNode {
   }
 }
 
-/** Copies a page's layers not copied yet; a layer moved in from another page keeps its copy. */
-function capturePage(graph: SceneGraph, pageId: string, captured: Map<string, SceneNode>): void {
-  const stack = [pageId]
-  for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
-    const node = graph.getNode(id)
-    if (!node) continue
-    if (!captured.has(id)) captured.set(id, captureNode(node))
-    stack.push(...node.childIds)
-  }
-}
-
 /**
  * A layer and its ancestors, nearest first. Like `SceneGraph.closest`, the walk visits at most as
  * many layers as there are, so a parent cycle in bad data cannot hang it.
@@ -206,15 +196,6 @@ function recordLayer(
   }
 }
 
-function diffRecords<T>(previous: Map<string, T>, current: Map<string, T>): RecordChange<T>[] {
-  const ids = new Set([...previous.keys(), ...current.keys()])
-  return [...ids].flatMap((id) => {
-    const before = previous.get(id) ?? null
-    const after = current.get(id) ?? null
-    return isEqual(before, after) ? [] : [{ id, before, after: structuredClone(after) }]
-  })
-}
-
 /** Restores records in place where they exist, as views may hold them, as atomic tools do. */
 /** Make `target` hold `value` under `id`, or nothing; an existing record is kept and rewritten. */
 export function writeRecord<T extends object>(
@@ -238,80 +219,285 @@ export function writeRecord<T extends object>(
 function restoreRecords<T extends object>(
   target: Map<string, T>,
   changes: RecordChange<T>[],
-  side: Side
+  side: Side,
+  willChange: (id: string) => void
 ): void {
-  for (const change of changes) writeRecord(target, change.id, change[side])
+  for (const change of changes) {
+    // An edit recording meanwhile, such as an agent's waiting on a download, sees undo's change.
+    willChange(change.id)
+    writeRecord(target, change.id, change[side])
+  }
+}
+
+/** Records of one kind by id as an edit found them: `null` for one it added. */
+type RecordCopies<T> = Map<string, T | null>
+
+function copyRecord<T>(copies: RecordCopies<T>, live: ReadonlyMap<string, T>, id: string): void {
+  if (!copies.has(id)) copies.set(id, structuredClone(live.get(id) ?? null))
+}
+
+function recordChangesOf<T>(
+  copies: ReadonlyMap<string, T | null>,
+  live: ReadonlyMap<string, T>
+): RecordChange<T>[] {
+  return [...copies].flatMap(([id, before]) => {
+    const after = live.get(id) ?? null
+    return isEqual(before, after) ? [] : [{ id, before, after: structuredClone(after) }]
+  })
+}
+
+/**
+ * `baseline`, a layer or record as it was before an edit, with what someone else changed on it
+ * while the edit waited, from `atPause` to `live`, wherever the edit itself had left it alone:
+ * field by field, and one level into fields that map keys to values, such as variable bindings
+ * or a variable's values by mode, so independent entries of one field both survive.
+ */
+function adoptChanges<T extends object>(baseline: T, atPause: T, live: T, depth = 1): T {
+  const adopted = { ...baseline }
+  for (const key of new Set([...Object.keys(atPause), ...Object.keys(live)])) {
+    const paused: unknown = Reflect.get(atPause, key)
+    const now: unknown = Reflect.get(live, key)
+    const base: unknown = Reflect.get(baseline, key)
+    const pausedHas = Object.hasOwn(atPause, key)
+    const liveHas = Object.hasOwn(live, key)
+    // Nobody else changed the field.
+    if (pausedHas === liveHas && isEqual(paused, now)) continue
+    if (Object.hasOwn(baseline, key) === pausedHas && isEqual(base, paused)) {
+      if (liveHas) Reflect.set(adopted, key, structuredClone(now))
+      else Reflect.deleteProperty(adopted, key)
+    } else if (depth > 0 && isPlainObject(base) && isPlainObject(paused) && isPlainObject(now)) {
+      Reflect.set(adopted, key, adoptChanges(base, paused, now, depth - 1))
+    }
+  }
+  return adopted
+}
+
+/**
+ * Takes in the changes someone else made to records while an edit waited: a record the edit had
+ * copied starts from its new state wherever the edit left it alone, and one removed meanwhile is
+ * no longer the edit's to restore. A record the edit had not copied yet is copied as it is when
+ * the edit first changes it.
+ */
+function adoptRecordChanges<T extends object>(
+  copies: RecordCopies<T>,
+  atPause: RecordCopies<T>,
+  live: ReadonlyMap<string, T>
+): void {
+  for (const [id, paused] of atPause) {
+    if (!copies.has(id)) continue
+    const copy = copies.get(id) ?? null
+    const now = live.get(id) ?? null
+    if (isEqual(copy, paused)) copies.set(id, structuredClone(now))
+    else if (!now) copies.delete(id)
+    else if (copy && paused) copies.set(id, adoptChanges(copy, paused, now))
+  }
+}
+
+/** The layers a recorded mutation touched, including the parents it moved layers between. */
+function touchedIds(impact: ReturnType<typeof createSceneMutationImpact>): Set<string> {
+  return new Set([
+    ...impact.changedNodeIds,
+    ...impact.previousParentIds,
+    ...impact.currentParentIds
+  ])
 }
 
 /**
  * Starts recording an edit made from `pageId`. Call the returned function once the edit is
  * done, also when it failed, to stop recording and get what the edit changed.
  *
- * The page is copied up front, so values written into its layers in place are kept too. Another
- * page, or the document node, is copied the first time the edit is about to change it.
+ * Nothing is copied up front, so recording costs what the edit touches: a layer is copied the
+ * first time the graph reports it about to change (`SceneGraph.observeNodeChanges`), with its
+ * ancestors below the page, which keep instance override maps the graph writes into in place,
+ * and a variable or collection the first time it is reported (`willChangeVariable`).
+ *
+ * While the edit waits outside itself (`SceneGraph.waitOutsideEdit`), changes are someone else's:
+ * they stay out of the edit, and a layer or record they changed that the edit had not starts
+ * from its new state.
  */
 export function captureDocumentChange(graph: SceneGraph, pageId: string): () => DocumentChange {
   const captured = new Map<string, SceneNode>()
-  const capturedPages = new Set([pageId])
   const created = new Set<string>()
-  capturePage(graph, pageId, captured)
-  const variables = structuredClone(graph.variables)
-  const collections = structuredClone(graph.variableCollections)
+  const variables: RecordCopies<Variable> = new Map()
+  const collections: RecordCopies<VariableCollection> = new Map()
   const impact = createSceneMutationImpact()
-  const unbindEvents = recordSceneMutations(graph, impact)
+  let elsewhere: ReturnType<typeof createSceneMutationImpact> | null = null
+  const layersAtPause = new Map<string, SceneNode>()
+  const variablesAtPause: RecordCopies<Variable> = new Map()
+  const collectionsAtPause: RecordCopies<VariableCollection> = new Map()
+  const unbindEvents = recordSceneMutations(graph, impact, () => !elsewhere)
+  let stopElsewhere: () => void = () => undefined
+
+  /** Copies `node` and each ancestor below its page not copied yet, nearest first. */
+  function copyLineage(node: SceneNode) {
+    for (const layer of lineage(graph.nodes, node.id)) {
+      if (captured.has(layer.id) || created.has(layer.id)) return
+      if (layer !== node && layer.type === 'CANVAS') return
+      captured.set(layer.id, captureNode(layer))
+    }
+  }
+
   const unobserve = graph.observeNodeChanges({
-    created: (node) => created.add(node.id),
+    created: (node) => {
+      if (!elsewhere) created.add(node.id)
+    },
     before: (node) => {
-      if (captured.has(node.id) || created.has(node.id)) return
-      const page = pageOf(graph.nodes, node.id)
-      if (page && !capturedPages.has(page)) {
-        capturedPages.add(page)
-        capturePage(graph, page, captured)
+      if (!elsewhere) copyLineage(node)
+      else if (!layersAtPause.has(node.id)) layersAtPause.set(node.id, captureNode(node))
+    },
+    beforeRecord: (kind, id) => {
+      if (kind === 'variable') {
+        copyRecord(elsewhere ? variablesAtPause : variables, graph.variables, id)
+      } else {
+        copyRecord(elsewhere ? collectionsAtPause : collections, graph.variableCollections, id)
       }
-      if (!captured.has(node.id)) captured.set(node.id, captureNode(node))
+    },
+    pause: () => {
+      if (elsewhere) return
+      const other = createSceneMutationImpact()
+      elsewhere = other
+      stopElsewhere = recordSceneMutations(graph, other)
+    },
+    resume: () => {
+      if (!elsewhere) return
+      stopElsewhere()
+      const own = touchedIds(impact)
+      for (const id of new Set([...touchedIds(elsewhere), ...layersAtPause.keys()])) {
+        const baseline = captured.get(id)
+        if (!baseline) continue
+        const node = graph.getNode(id)
+        const atPause = layersAtPause.get(id)
+        // A layer removed meanwhile is no longer the edit's to put back.
+        if (!node) captured.delete(id)
+        else if (!own.has(id)) captured.set(id, captureNode(node))
+        else if (atPause) captured.set(id, adoptChanges(baseline, atPause, node))
+      }
+      layersAtPause.clear()
+      adoptRecordChanges(variables, variablesAtPause, graph.variables)
+      adoptRecordChanges(collections, collectionsAtPause, graph.variableCollections)
+      variablesAtPause.clear()
+      collectionsAtPause.clear()
+      elsewhere = null
     }
   })
 
   return () => {
     unobserve()
     unbindEvents()
-    const change: DocumentChange = {
-      pageId,
-      pageIds: [],
-      created: [],
-      deleted: [],
-      updated: [],
-      children: { before: [], after: [] },
-      variables: diffRecords(variables, graph.variables),
-      collections: diffRecords(collections, graph.variableCollections)
+    stopElsewhere()
+
+    // Layers not copied are as they were, apart from those the edit added.
+    const previous: Lookup = {
+      get: (id) => captured.get(id) ?? (created.has(id) ? undefined : graph.getNode(id)),
+      size: graph.nodes.size + captured.size
     }
-    const pageIds = new Set<string>()
-    const touched = new Set([
-      ...impact.changedNodeIds,
-      ...impact.previousParentIds,
-      ...impact.currentParentIds
-    ])
-    for (const id of touched) {
-      const previous = captured.get(id)
-      // A layer changed without telling observers has no state to go back to.
-      if (!previous && !created.has(id)) continue
-      const current = graph.getNode(id)
-      // Comments are never part of an undo step.
-      const kept =
-        previous && current && id === graph.rootId ? withCommentsOf(previous, current) : previous
-      recordLayer(change, id, kept, current)
-      for (const page of [pageOf(captured, id), pageOf(graph.nodes, id)])
-        if (page) pageIds.add(page)
-    }
-    change.pageIds = [...pageIds]
-    const byDepth = (nodes: Lookup) => (a: { id: string }, b: { id: string }) =>
-      depthIn(nodes, a.id) - depthIn(nodes, b.id)
-    change.created.sort(byDepth(graph.nodes))
-    change.children.after.sort(byDepth(graph.nodes))
-    change.deleted.sort(byDepth(captured))
-    change.children.before.sort(byDepth(captured))
-    return change
+    // Ancestors are copied because the graph writes instance overrides into them in place.
+    const ids = new Set([...touchedIds(impact), ...captured.keys()])
+    return buildDocumentChange(graph, pageId, ids, previous, created, {
+      variables: recordChangesOf(variables, graph.variables),
+      collections: recordChangesOf(collections, graph.variableCollections)
+    })
   }
+}
+
+type RecordChanges = Pick<DocumentChange, 'variables' | 'collections'>
+
+/**
+ * The change of the touched layers `ids`, given each one's state before the edit in `previous`,
+ * which also gives the ancestors of layers the edit moved or removed. A layer neither in
+ * `previous` nor `created` changed without telling observers and has no state to go back to.
+ */
+function buildDocumentChange(
+  graph: SceneGraph,
+  pageId: string,
+  ids: Iterable<string>,
+  previous: Lookup,
+  created: ReadonlySet<string>,
+  records: RecordChanges
+): DocumentChange {
+  const change: DocumentChange = {
+    ...emptyDocumentChange(pageId),
+    variables: records.variables,
+    collections: records.collections
+  }
+  const pageIds = new Set<string>()
+  for (const id of ids) {
+    const before = previous.get(id)
+    if (!before && !created.has(id)) continue
+    const current = graph.getNode(id)
+    // Comments are never part of an undo step.
+    const kept = before && current && id === graph.rootId ? withCommentsOf(before, current) : before
+    recordLayer(change, id, kept, current)
+    for (const page of [pageOf(previous, id), pageOf(graph.nodes, id)]) if (page) pageIds.add(page)
+  }
+  change.pageIds = [...pageIds]
+  const byDepth = (nodes: Lookup) => (a: { id: string }, b: { id: string }) =>
+    depthIn(nodes, a.id) - depthIn(nodes, b.id)
+  change.created.sort(byDepth(graph.nodes))
+  change.children.after.sort(byDepth(graph.nodes))
+  change.deleted.sort(byDepth(previous))
+  change.children.before.sort(byDepth(previous))
+  return change
+}
+
+/** A change that changed nothing, as an edit that failed or did nothing records. */
+export function emptyDocumentChange(pageId: string): DocumentChange {
+  return {
+    pageId,
+    pageIds: [],
+    created: [],
+    deleted: [],
+    updated: [],
+    children: { before: [], after: [] },
+    variables: [],
+    collections: []
+  }
+}
+
+/** The variables and collections an edit changed, against the copies a checkpoint took. */
+export function recordChanges(graph: SceneGraph, checkpoint: TouchedCheckpoint): RecordChanges {
+  return {
+    variables: recordChangesOf(checkpoint.variables, graph.variables),
+    collections: recordChangesOf(checkpoint.variableCollections, graph.variableCollections)
+  }
+}
+
+/**
+ * What a property edit observed by `checkpoint` changed, at the cost of the layers it touched:
+ * each copied layer is compared with the live one. Layers the checkpoint did not copy are read
+ * live, which they still are, so the pages of the copied layers are found.
+ */
+export function documentChangeFromCheckpoint(
+  graph: SceneGraph,
+  pageId: string,
+  checkpoint: TouchedCheckpoint,
+  records: RecordChanges = recordChanges(graph, checkpoint)
+): DocumentChange {
+  const created = new Set([...checkpoint.reported].filter((id) => !checkpoint.nodes.has(id)))
+  // A layer the edit created has no state before it, though the live graph now holds one.
+  const previous: Lookup = {
+    get: (id) => checkpoint.nodes.get(id) ?? (created.has(id) ? undefined : graph.getNode(id)),
+    size: graph.nodes.size
+  }
+  const ids = [...checkpoint.nodes.keys(), ...created]
+  return buildDocumentChange(graph, pageId, ids, previous, created, records)
+}
+
+/**
+ * How many layers `checkpoint` saw reported whose own fields now differ, children, parent, and
+ * source metadata aside: the layers whose content an undo step would hold. A write of the value a
+ * layer already had is not counted.
+ */
+export function countChangedLayers(graph: SceneGraph, checkpoint: TouchedCheckpoint): number {
+  const skipped = [...NESTED_FIELDS]
+  let count = 0
+  for (const id of checkpoint.reported) {
+    const previous = checkpoint.nodes.get(id)
+    const current = graph.getNode(id)
+    const same = previous && current && isEqual(omit(previous, skipped), omit(current, skipped))
+    if (!same) count++
+  }
+  return count
 }
 
 export function isEmptyDocumentChange(change: DocumentChange): boolean {
@@ -335,8 +521,10 @@ export function isEmptyDocumentChange(change: DocumentChange): boolean {
 export function applyDocumentChange(graph: SceneGraph, change: DocumentChange, side: Side): void {
   const restored = side === 'before' ? change.deleted : change.created
   const removed = side === 'before' ? change.created : change.deleted
-  restoreRecords(graph.variableCollections, change.collections, side)
-  restoreRecords(graph.variables, change.variables, side)
+  restoreRecords(graph.variableCollections, change.collections, side, (id) =>
+    graph.willChangeCollection(id)
+  )
+  restoreRecords(graph.variables, change.variables, side, (id) => graph.willChangeVariable(id))
   graph.preserveSourceMetadataDuring(() => {
     for (const node of restored) {
       const { parentId, childIds: _childIds, ...fields } = structuredClone(node)

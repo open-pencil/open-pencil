@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
-
 import { type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { graphOf } from '#core/figma-api/graph'
 
 const CURVED_PATH = 'M10 20 C20 0 40 40 50 20 Z'
 
@@ -12,7 +12,7 @@ describe('vector paths', () => {
   test('exposes imported geometry as Figma SVG paths', () => {
     const api = createAPI()
     const vector = api.createVector()
-    api.graph.updateNode(vector.id, {
+    graphOf(api).updateNode(vector.id, {
       fillGeometry: [
         {
           windingRule: 'EVENODD',

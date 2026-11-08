@@ -1,7 +1,7 @@
 export default {
   slots: {
     base: [
-      'inline-flex items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',
+      'inline-flex cursor-pointer items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
       'disabled:cursor-not-allowed disabled:opacity-50'
     ],
@@ -22,7 +22,7 @@ export default {
       link: {}
     },
     size: {
-      xs: { base: 'h-6 px-1.5 text-[10px]', icon: 'size-3' },
+      xs: { base: 'h-6 px-1.5 text-3xs', icon: 'size-3' },
       sm: { base: 'h-7 px-2 text-xs' },
       md: { base: 'h-8 px-3 text-xs' },
       lg: { base: 'h-9 px-3.5 text-sm' }

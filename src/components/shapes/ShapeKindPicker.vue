@@ -22,12 +22,15 @@ const {
   heading,
   selected,
   tooltip,
+  tooltipSide = 'top',
   side = 'top',
   align = 'center'
 } = defineProps<{
   heading: string
   selected?: ShapeWithTextType
   tooltip?: string
+  /** Where the trigger's tooltip opens. */
+  tooltipSide?: 'left' | 'right' | 'top' | 'bottom'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
 }>()
@@ -62,6 +65,7 @@ function pick(value: string) {
     :items="items"
     :selected="selected"
     :tooltip="tooltip"
+    :tooltip-side="tooltipSide"
     :side="side"
     :align="align"
     :search-placeholder="shapes.search"
@@ -80,7 +84,7 @@ function pick(value: string) {
       />
     </template>
     <template #footer="{ highlighted }">
-      <p class="flex h-5 items-center truncate px-1 text-[11px] text-muted">
+      <p class="flex h-5 items-center truncate px-1 text-2xs text-muted">
         <span class="truncate" :class="highlighted && 'text-surface'">
           {{ highlighted?.label ?? label(selected ?? 'SQUARE') }}
         </span>

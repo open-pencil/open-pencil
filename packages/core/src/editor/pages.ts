@@ -1,5 +1,3 @@
-import { limitAsync } from 'es-toolkit/promise'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -13,14 +11,16 @@ import {
   canUseFigPopulationWorker,
   createFigPopulationWorker
 } from '#core/kiwi/fig/population/client'
-import { isReaderPagePending, recoverReaderPage } from '#core/kiwi/fig/session/document-state'
+import {
+  isReaderPagePending,
+  pendingReaderPageOfNode,
+  recoverReaderPage
+} from '#core/kiwi/fig/session/document-state'
 import { computeAllLayouts } from '#core/layout'
-import { fontManager } from '#core/text/font/manager'
-import { collectGraphFontRequirements } from '#core/text/requirements/collect'
-import { missingGraphFontScripts } from '#core/text/requirements/resolved'
+import { prepareGraphFonts } from '#core/text/prepare'
 
-import { createPageViewportStore } from './page-viewports'
 import { createPageLayouts } from './pages/layouts'
+import { createPageViewportStore } from './pages/viewports'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {
@@ -61,26 +61,29 @@ interface PageDrawing {
 }
 
 /**
- * The other pages that hold the component sets instances on `pageId` show a variant of,
- * nested instances included. A set on Figma's internal canvas is a copy of a library's, kept
- * with only what the file uses, so its page is left out.
+ * The component sets on other pages that instances on `pageId` show a variant of, nested
+ * instances included, and the sets those sets' variants use in turn. Reading a page brings in
+ * each such set whole, so its variants can be switched to; they get fonts and layout here
+ * rather than their pages, whose other layers the page does not use.
  */
-export function componentSetPages(graph: SceneGraph, pageId: string): string[] {
-  const pages = new Set<string>()
+export function componentSetsUsed(graph: SceneGraph, pageId: string): string[] {
+  const sets = new Set<string>()
+  const pending = [pageId]
   const visit = (id: string): void => {
     for (const node of graph.getChildren(id)) {
       if (node.type === 'INSTANCE') {
         const component = instanceMainComponent(graph, node)
         const set = component?.parentId ? graph.getNode(component.parentId) : undefined
-        const setPageId = set?.type === 'COMPONENT_SET' ? graph.pageOf(set.id) : null
-        const setPage = setPageId ? graph.getNode(setPageId) : undefined
-        if (setPage && setPage.id !== pageId && !setPage.internalOnly) pages.add(setPage.id)
+        if (set?.type === 'COMPONENT_SET' && graph.pageOf(set.id) !== pageId && !sets.has(set.id)) {
+          sets.add(set.id)
+          pending.push(set.id)
+        }
       }
       visit(node.id)
     }
   }
-  visit(pageId)
-  return [...pages]
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) visit(id)
+  return [...sets]
 }
 
 export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
@@ -133,66 +136,23 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     return false
   }
 
-  async function resolvePageFonts(
-    pageId: string,
+  /** Loads the fonts the layers under `rootIds` use, with fallbacks for their scripts. */
+  async function resolveFonts(
+    rootIds: readonly string[],
     pageName: string,
     options: PreparePageOptions
   ): Promise<void> {
-    const childIds = ctx.graph.getChildren(pageId).map((node) => node.id)
-    const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
-    const requirements = collectGraphFontRequirements(ctx.graph, childIds)
-    options.onProgress?.({
-      phase: 'resolving-fonts',
-      detail: pageName,
-      completed: 0,
-      total: toLoad.length
-    })
-    fontManager.blockNodesUntilFontsResolve(childIds)
+    const childIds = rootIds.flatMap((id) => ctx.graph.getChildren(id).map((node) => node.id))
     try {
-      let completedFaces = 0
-      const loadFace = limitAsync(async ([family, style]: [string, string]) => {
-        throwIfAborted(options.signal)
-        const result = await ctx.loadFont(family, style, requirements.characters, options.signal)
-        throwIfAborted(options.signal)
-        completedFaces++
-        options.onProgress?.({
-          phase: 'resolving-fonts',
-          detail: `${family} ${style}`,
-          completed: completedFaces,
-          total: toLoad.length
-        })
-        return result
-      }, MAX_CONCURRENT_FONT_LOADS)
-      const results = await Promise.all(toLoad.map(loadFace))
-      throwIfAborted(options.signal)
-      const requiredFallbacks = missingGraphFontScripts(requirements)
-      options.onProgress?.({
-        phase: 'resolving-fallbacks',
-        detail: pageName,
-        completed: 0,
-        total: requiredFallbacks.length
+      await prepareGraphFonts(ctx.graph, childIds, {
+        loadFont: ctx.loadFont,
+        hide: true,
+        signal: options.signal,
+        concurrency: MAX_CONCURRENT_FONT_LOADS,
+        label: pageName,
+        onProgress: options.onProgress
       })
-      const fallbacks = await fontManager.ensureFallbackPack(
-        requiredFallbacks,
-        requirements.characters,
-        options.signal
-      )
-      throwIfAborted(options.signal)
-      options.onProgress?.({
-        phase: 'resolving-fallbacks',
-        detail: pageName,
-        completed: requiredFallbacks.length,
-        total: requiredFallbacks.length
-      })
-      const facesReady = results.every((result) => result !== null)
-      const fallbacksReady = requiredFallbacks.every(
-        (script) => (fallbacks[script]?.length ?? 0) > 0
-      )
-      if (facesReady && fallbacksReady) {
-        for (const node of requirements.nodes) if (node.type === 'TEXT') node.textPicture = null
-      }
     } finally {
-      fontManager.unblockNodes(childIds)
       ctx.getRenderer()?.invalidateAllPictures()
     }
   }
@@ -209,23 +169,17 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     options.onProgress?.({ phase: 'populating-page', detail: page.name })
     const populated = await populatePage(pageId, generation, options.signal)
     if (populated === null || generation !== pageSwitchGeneration) return null
-    // A file brings in only the variants a page uses; switching a variant, in the panel or in
-    // preview, needs the rest of its set, laid out with its fonts, so the pages holding those
-    // sets are prepared with this one, and the pages of sets their variants use in turn.
-    const seen = new Set([pageId])
-    const pending = componentSetPages(ctx.graph, pageId)
-    for (let setPageId = pending.shift(); setPageId !== undefined; setPageId = pending.shift()) {
-      if (seen.has(setPageId)) continue
-      seen.add(setPageId)
-      const ready = await preparePageNodes(setPageId)
-      throwIfAborted(options.signal)
-      if (!ready || generation !== pageSwitchGeneration) return null
-      pending.push(...componentSetPages(ctx.graph, setPageId))
-    }
-
-    await resolvePageFonts(pageId, page.name, options)
+    // Switching a variant, in the panel or in preview, needs the rest of its set laid out with
+    // its fonts. Reading the page brought each set it uses in whole; those on other pages are
+    // laid out here, without the rest of their pages.
+    const sets = componentSetsUsed(ctx.graph, pageId)
+    await resolveFonts([pageId, ...sets], page.name, options)
     throwIfAborted(options.signal)
     if (generation !== pageSwitchGeneration) return null
+    if (sets.length > 0)
+      ctx.graph.applyDerivedLayoutDuring(() => {
+        for (const setId of sets) computeAllLayouts(ctx.graph, setId)
+      })
     // A page visited before keeps the layout it got then, unless something it depends on changed.
     if ((ctx.getRenderer() || populated) && !pageLayouts.isCurrent(pageId)) {
       options.onProgress?.({ phase: 'layout', detail: page.name })
@@ -266,10 +220,17 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     if (ctx.graph.getNode(pageId)?.type === 'CANVAS') await populatePage(pageId, null)
   }
 
+  /** The page holding a layer not in the document yet because its page has not loaded. */
+  function pageHoldingNode(nodeId: string): Promise<string | null> {
+    return ctx.graph.getNode(nodeId)
+      ? Promise.resolve(null)
+      : pendingReaderPageOfNode(ctx.graph, nodeId)
+  }
+
   async function prepareOffscreenPage(graph: SceneGraph, page: SceneNode): Promise<boolean> {
     const populated = await populatePage(page.id, null)
     if (populated === null || graph !== ctx.graph) return false
-    await resolvePageFonts(page.id, page.name, {})
+    await resolveFonts([page.id], page.name, {})
     if (graph !== ctx.graph) return false
     graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, page.id))
     return true
@@ -384,6 +345,7 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
 
   return {
     loadPageNodes,
+    pageHoldingNode,
     preparePageNodes,
     pageSwitchCount,
     preparePage,

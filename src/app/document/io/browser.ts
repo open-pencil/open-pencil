@@ -1,4 +1,4 @@
-import type { ViewportSize } from '@/app/document/io/types'
+import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 /**
  * Ceiling on a document fetched from a URL. Both the browser link and the automation
@@ -77,33 +77,14 @@ export function resolveBrowserFileURL(path: string): URL {
   return url
 }
 
-export function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 type ViewportEditor = {
   zoomToFit: () => void
 }
 
-export function createDocumentViewportActions(editor: ViewportEditor, viewportSize: ViewportSize) {
-  function setViewportSize(width: number, height: number) {
-    viewportSize.width = width
-    viewportSize.height = height
-  }
-
-  /** The canvas size in screen pixels, as the canvas last reported it. */
-  function getViewportSize(): ViewportSize {
-    return { ...viewportSize }
-  }
-
-  async function fitCurrentPageToViewport() {
-    await yieldToUI()
-    editor.zoomToFit()
-  }
-
-  return { setViewportSize, getViewportSize, fitCurrentPageToViewport }
+/** Fits the page once the canvas has its size; `signal` stops waiting for it. */
+export async function fitPageToViewport(editor: ViewportEditor, signal?: AbortSignal) {
+  await nextShownFrame({ signal })
+  editor.zoomToFit()
 }
 
 export function downloadBlob(data: Uint8Array, filename: string, mime: string) {

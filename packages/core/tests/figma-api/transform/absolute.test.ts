@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
+import { graphOf } from '#core/figma-api/graph'
 describe('absolute position', () => {
   test('relative and absolute transforms include rotation and reflection', () => {
     const api = createAPI()
@@ -29,10 +29,10 @@ describe('absolute position', () => {
   test('exposes preserved FIG reflection transforms and Figma rotation', () => {
     const api = createAPI()
     const node = api.createVector()
-    const raw = api.graph.getNode(node.id)
+    const raw = graphOf(api).getNode(node.id)
     expect(raw).toBeDefined()
     if (!raw) return
-    api.graph.updateNode(node.id, {
+    graphOf(api).updateNode(node.id, {
       x: 5,
       y: 8,
       width: 14,

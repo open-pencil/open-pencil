@@ -1,0 +1,18 @@
+# Licenses the crates compiled into html-engine.wasm may carry (`bun run check:licenses`).
+# Stylo, Blitz's style engine, is MPL-2.0: file-level copyleft, met by the notices the release
+# writes beside the module (`notices` in tools/release/release-packages), which name every
+# crate's source. They accept the licenses allowed here.
+[graph]
+targets = ["wasm32-unknown-unknown"]
+
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "MIT",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Zlib",
+]
+confidence-threshold = 0.9

@@ -1,7 +1,6 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { createCanvasKitRasterCodec, reencodeImage } from '@open-pencil/core/io/formats/raster'
 
@@ -45,4 +44,23 @@ test('the shared CanvasKit encodes JPEG', async () => {
 
 test('an image CanvasKit cannot decode is not encoded', async () => {
   expect(reencodeImage(await getCanvasKit(), new Uint8Array([1, 2, 3]), 'WEBP', 90)).toBeNull()
+})
+
+test('a JPEG lays transparent pixels over black', async () => {
+  const codec = createCanvasKitRasterCodec(await getCanvasKit())
+  // Two 8×8 blocks of red, clear and half transparent, so JPEG's blocks keep them apart.
+  const width = 16
+  const height = 8
+  const data = new Uint8Array(width * height * 4)
+  for (let index = 0; index < width * height; index++) {
+    data.set([255, 0, 0, index % width < 8 ? 0 : 128], index * 4)
+  }
+  const jpg = expectDefined(codec.encodeJPG({ width, height, data }), 'JPEG')
+  const decoded = expectDefined(codec.decode(jpg), 'decoded JPEG')
+  // A pixel on the middle row.
+  const pixel = (x: number) => decoded.data.subarray((4 * width + x) * 4, (4 * width + x + 1) * 4)
+  const near = (actual: Uint8Array, expected: number[]) =>
+    actual.every((value, index) => Math.abs(value - expected[index]) <= 8)
+  expect(near(pixel(3), [0, 0, 0, 255])).toBe(true)
+  expect(near(pixel(12), [128, 0, 0, 255])).toBe(true)
 })

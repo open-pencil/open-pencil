@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -20,12 +19,12 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { common, diagnostics: diagnosticMessages } = useI18n()
-const { copy: copyText, copied } = useClipboard({ copiedDuring: 1500 })
 const clearOpen = ref(false)
 
 const { diagnosticsEnabled, diagnosticsRetention } = useDiagnosticsSettings()
@@ -63,12 +62,9 @@ async function clearDiagnostics() {
   toast.info(diagnosticMessages.value.cleared)
 }
 
-async function exportDiagnostics() {
-  try {
-    await copyText(await diagnostics.export(diagnosticsEnvironment()))
-  } catch {
-    toast.error(diagnosticMessages.value.copyFailed)
-  }
+/** The report, read when it is copied so it has every event so far. */
+function diagnosticsReport(): Promise<string> {
+  return diagnostics.export(diagnosticsEnvironment())
 }
 
 async function saveDiagnostics() {
@@ -120,7 +116,7 @@ async function saveDiagnostics() {
     </SettingsGroup>
     <DiagnosticsEventList :refresh-stats="refreshDiagnosticsStats" />
     <!-- On a narrow page the buttons wrap below the count rather than squeezing it. -->
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted">
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-2xs text-muted">
       <span class="whitespace-nowrap">{{
         diagnosticMessages.eventCount({
           count: diagnosticsCount,
@@ -128,11 +124,15 @@ async function saveDiagnostics() {
         })
       }}</span>
       <div class="flex flex-wrap items-center gap-1.5">
-        <AppButton size="xs" color="neutral" variant="ghost" @click="exportDiagnostics"
-          ><template #leading
-            ><icon-lucide-check v-if="copied" /><icon-lucide-copy v-else /></template
-          >{{ copied ? common.copied : diagnosticMessages.copy }}</AppButton
-        >
+        <AppCopyButton
+          :value="diagnosticsReport"
+          :label="diagnosticMessages.copy"
+          :copied-label="common.copied"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          @failed="toast.error(diagnosticMessages.copyFailed)"
+        />
         <AppButton size="xs" color="neutral" variant="ghost" @click="saveDiagnostics"
           ><template #leading><icon-lucide-download /></template
           >{{ diagnosticMessages.save }}</AppButton

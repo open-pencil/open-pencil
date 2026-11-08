@@ -107,7 +107,8 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     nodeIds: string[],
     scale: number,
     format: RasterExportFormat,
-    pageId = state.currentPageId
+    pageId = state.currentPageId,
+    { useAbsoluteBounds = false }: { useAbsoluteBounds?: boolean } = {}
   ): Promise<Uint8Array<ArrayBuffer> | null> {
     const renderer = editor.renderer
     if (!renderer) return null
@@ -116,7 +117,8 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     const ownerPageId = findPageId(editor.graph, ids[0]) ?? pageId
     return renderNodesToImage(renderer.ck, renderer, editor.graph, ownerPageId, ids, {
       scale,
-      format
+      format,
+      useAbsoluteBounds
     })
   }
 

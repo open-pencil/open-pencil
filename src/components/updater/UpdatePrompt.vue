@@ -97,7 +97,7 @@ function openNotesLink(event: MouseEvent) {
 
         <div :class="ui.notesHeader">
           <h2 :class="ui.notesLabel">{{ t.whatsNew }}</h2>
-          <ExternalLink :href="releaseNotesURL(release.version)" class="text-[11px]">
+          <ExternalLink :href="releaseNotesURL(release.version)" class="text-2xs">
             {{ t.fullReleaseNotes }}
           </ExternalLink>
         </div>

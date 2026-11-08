@@ -277,10 +277,15 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
 export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
+/** Figma's zoom range, 2% to 25,600%. */
+export const ZOOM_MIN = 0.02
+export const ZOOM_MAX = 256
 export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 
 export const PEN_CLOSE_THRESHOLD = 8
+/** Points a pen path needs before a press on its first point closes it: two make a closed shape, as in Figma. */
+export const PEN_CLOSE_MIN_POINTS = 2
 /**
  * Screen pixels a pencil sample may stray from the line through its neighbours before the curve
  * keeps it, so a stroke drawn zoomed in keeps more detail.

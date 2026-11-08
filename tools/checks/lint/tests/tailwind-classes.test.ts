@@ -103,3 +103,94 @@ test('checks SDK examples and the landing against the docs stylesheet that build
   )
   expect(diagnostics.map((item) => item.filename?.split('/').pop())).toEqual(['Palette.vue'])
 })
+
+describe('no-px-tailwind-values', () => {
+  const pxRule = 'no-px-tailwind-values'
+
+  test('rejects pixel lengths in arbitrary values in the app and the SDK', async () => {
+    const classes = [
+      'text-[11px]',
+      'hover:h-[26px]',
+      '-bottom-[9px]',
+      'grid-cols-[24px_minmax(0,1fr)]',
+      'w-[min(360px,100%)]',
+      '[width:10px]',
+      'w-[10PX]'
+    ]
+    const accepted = [
+      'text-2xs',
+      'h-6.5',
+      'w-[22.5rem]',
+      'rounded-md',
+      'w-px',
+      'shadow-[0_8px_30px_var(--color-border)]',
+      'grid-cols-[repeat(2,1fr)]',
+      '[box-shadow:0_1px_2px_var(--color-border)]',
+      'after:content-["10px_wide"]'
+    ]
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/rejected.ts': `export const theme = '${classes.join(' ')}'\n`,
+          'src/theme/accepted.ts': `export const theme = '${accepted.join(' ')}'\n`,
+          'packages/vue/src/primitives/Demo/examples/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`,
+          'packages/docs/.vitepress/theme/landing/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`
+        },
+        { [`open-pencil/${pxRule}`]: 'error' }
+      ),
+      pxRule
+    )
+    const files = diagnostics.map((item) => item.filename?.split('/').pop())
+    expect(files.filter((name) => name === 'rejected.ts')).toHaveLength(classes.length)
+    expect(files.filter((name) => name !== 'rejected.ts')).toEqual(['Px.vue'])
+    expect(diagnostics.find((item) => item.filename?.endsWith('Px.vue'))?.filename).toContain(
+      'packages/vue/src/'
+    )
+  })
+})
+
+describe('no-interpolated-tailwind-classes', () => {
+  const interpolatedRule = 'no-interpolated-tailwind-classes'
+
+  test('rejects class lists interpolated in themes and class helpers', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/spinner.ts': `const spin = 'animate-spin'\nexport default { slots: { spinner: \`size-3.5 \${spin}\` } }\n`,
+          'src/components/variants.ts': `import { tv } from 'tailwind-variants'\nconst spin = 'animate-spin'\nexport const ui = tv({ base: \`size-3.5 \${spin}\` })\n`,
+          'src/components/merge.ts': `import { twMerge } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const merged = twMerge(\`size-3.5 \${spin}\`)\n`,
+          'src/components/join.ts': `import { twJoin } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const joined = twJoin(\`size-3.5 \${spin}\`)\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics.map((item) => item.filename?.split('/').pop()).toSorted()).toEqual([
+      'join.ts',
+      'merge.ts',
+      'spinner.ts',
+      'variants.ts'
+    ])
+  })
+
+  test('accepts arrays, plain template strings, and interpolation outside class lists', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/array.ts':
+            "const spin = 'animate-spin'\nexport default { slots: { spinner: ['size-3.5', spin] } }\n",
+          'src/theme/plain.ts': 'export default { slots: { root: `size-3.5 shrink-0` } }\n',
+          'src/theme/variant-key.ts': `const size = 'sm'\nexport default { slots: { root: 'flex' }, defaultVariants: { size: \`\${size}\` } }\n`,
+          'src/components/key.ts': `const id = 'a'\nexport const key = \`\${id}:b\`\n`,
+          // CSS values a theme module hands another library are not class lists.
+          'src/theme/editor.ts': `import { EditorView } from '@codemirror/view'\nconst gap = 8\nexport const theme = EditorView.theme({ '.cm-line': { padding: \`0 \${gap}px\` } })\n`,
+          // Outside a theme module, a template after a helper call is no longer inside it.
+          'src/components/after.ts': `import { tv } from 'tailwind-variants'\nconst id = 'a'\nexport const ui = tv({ base: 'flex' })\nexport const key = \`\${id}:b\`\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics).toEqual([])
+  })
+})

@@ -132,8 +132,14 @@ describe('node.effects', () => {
   })
 
   test('names the invalid field', () => {
-    expect(() => assign([{ ...shadow, radius: -5 }])).toThrow('at [0].radius')
-    expect(() => assign([shadow, { ...shadow, foo: 1 }])).toThrow('[1]')
+    const message = (problem: string) =>
+      `in set_effects: Property "effects" failed validation: ${problem}`
+    expect(() => assign([{ ...shadow, radius: -5 }])).toThrow(
+      message('Too small: expected number to be >=0 at [0].radius')
+    )
+    expect(() => assign([shadow, { ...shadow, foo: 1 }])).toThrow(
+      message('Unrecognized key: "foo" at index 1')
+    )
   })
 
   test('reports Figma effects OpenPencil does not model yet', () => {

@@ -3,8 +3,8 @@ import type { ChatTransport, FinishReason, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
+import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
@@ -38,6 +38,7 @@ import { buildPiMCPServers } from '@/app/integrations/mcp'
 import { trackUsage } from '@/app/telemetry'
 
 import { createTraceStore } from './history/idb'
+import type { AgentSessionLink } from './history/types'
 import { updateMessage } from './metadata'
 import { createRunRecorder } from './trace/recorder'
 
@@ -55,14 +56,23 @@ type ChatSessionOptions = {
 export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
-  onUsage?: (usage: AgentTurnUsage) => void
+  onUsage?: (usage: AgentTurnUsage) => void,
+  agentSession?: AgentSessionLink
 ) {
-  const agentId = providerID.replace('acp:', '') as ACPAgentID
-  const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
-  if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
+  const agentDef = acpAgentFor(providerID)
+  if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
 
   // A folder of its own, not the home folder, whose project settings the agent would read.
-  return new ACPChatTransport({ agentDef, cwd: await agentWorkspace(), store, onUsage })
+  // Claude keeps its sessions per folder, so resuming one needs the same folder every time.
+  return new ACPChatTransport({
+    agentDef,
+    cwd: await agentWorkspace(),
+    store,
+    onUsage,
+    resume: agentSession?.resume ?? null,
+    onSession:
+      agentSession && ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id }))
+  })
 }
 
 /**
@@ -84,8 +94,7 @@ async function settleEndedReply(
 
 /** The agent or provider a chat runs on, as the composer names it. */
 function providerName(id: AIProviderID): string {
-  const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === id)
-  return agent?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
+  return acpAgentFor(id)?.name ?? AI_PROVIDERS.find((provider) => provider.id === id)?.name ?? id
 }
 
 export function createChatSessionManager({
@@ -97,12 +106,14 @@ export function createChatSessionManager({
   getActiveEditorStore
 }: ChatSessionOptions) {
   const failure = ref<AIChatFailure | null>(null)
-  let transportDirty = false
+  // Bumped by anything that changes the transport; a chat keeps the revision it was built from.
+  let transportRevision = 0
+  let chatTransportRevision = 0
   let currentChatStore: EditorStore | null = null
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
-  let harnessTransportInstance: { stop(): Promise<void> } | null = null
+  let harnessTransportInstance: Pick<HarnessChatTransport, 'stop' | 'compact'> | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
   let activeProviderError: unknown = null
   const runRecorder = createRunRecorder(createTraceStore())
@@ -138,7 +149,7 @@ export function createChatSessionManager({
   }
 
   function markTransportDirty() {
-    transportDirty = true
+    transportRevision++
   }
 
   async function destroyAgentTransports(): Promise<void> {
@@ -153,13 +164,22 @@ export function createChatSessionManager({
     if (errors.length) throw new AggregateError(errors, 'Agent transport teardown failed')
   }
 
-  async function createActiveACPTransport(store: EditorStore, context: AIDiagnosticContext) {
+  /** `provider` is the one the chat chose, which a profile change while the agent starts keeps. */
+  async function createActiveACPTransport(
+    store: EditorStore,
+    context: AIDiagnosticContext,
+    provider: AIProviderID,
+    agentSession?: AgentSessionLink
+  ) {
     await destroyAgentTransports()
     await assertAgentReady('acp')
-    const provider = providerID.value
     // An agent's turn counts as one step of the model it names, or of the agent itself.
-    const transport = await createACPTransport(provider, store, ({ model, ...tokens }) =>
-      recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context)
+    const transport = await createACPTransport(
+      provider,
+      store,
+      ({ model, ...tokens }) =>
+        recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
+      agentSession
     )
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -236,7 +256,8 @@ export function createChatSessionManager({
 
   async function ensureChat(
     initialMessages?: UIMessage[],
-    sessionId = crypto.randomUUID()
+    sessionId = crypto.randomUUID(),
+    agentSession?: AgentSessionLink
   ): Promise<Chat<UIMessage> | null> {
     await credentialsReady
     if (!isConfigured.value) return null
@@ -246,7 +267,9 @@ export function createChatSessionManager({
       currentChatMessages.set(currentChatStore, chat.messages)
     }
 
-    if (!chat || transportDirty || currentChatStore !== store) {
+    if (!chat || chatTransportRevision !== transportRevision || currentChatStore !== store) {
+      // Read before building: a change while the transport loads leaves this chat out of date.
+      const revision = transportRevision
       const messages = initialMessages ?? currentChatMessages.get(store)
       const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
       // Failures belong to the provider this chat was created for, even if the profile changes.
@@ -256,7 +279,12 @@ export function createChatSessionManager({
       let agentKind: 'acp' | 'harness' | null = null
       if (isACPProvider.value) {
         agentKind = 'acp'
-        transport = await createActiveACPTransport(store, diagnosticContext)
+        transport = await createActiveACPTransport(
+          store,
+          diagnosticContext,
+          chatProviderID,
+          agentSession
+        )
       } else if (isHarnessProvider.value) {
         agentKind = 'harness'
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
@@ -309,7 +337,7 @@ export function createChatSessionManager({
       })
       chat = created
       currentChatStore = store
-      transportDirty = false
+      chatTransportRevision = revision
     }
     return chat
   }
@@ -320,7 +348,7 @@ export function createChatSessionManager({
     failure.value = null
     chat = null
     currentChatStore = null
-    transportDirty = false
+    chatTransportRevision = transportRevision
   }
 
   function setOverrideTransport(factory: (() => ChatTransport<UIMessage>) | null) {
@@ -328,5 +356,18 @@ export function createChatSessionManager({
     markTransportDirty()
   }
 
-  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport, failure, clearFailure }
+  /** Asks the chat's agent to compact its own context; false when it has none to compact yet. */
+  async function compactAgent(instructions?: string): Promise<boolean> {
+    return (await harnessTransportInstance?.compact(instructions)) ?? false
+  }
+
+  return {
+    ensureChat,
+    resetChat,
+    markTransportDirty,
+    setOverrideTransport,
+    compactAgent,
+    failure,
+    clearFailure
+  }
 }

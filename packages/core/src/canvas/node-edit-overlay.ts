@@ -7,18 +7,20 @@ import type {
   SceneGraph
 } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import {
+  type NodeEditHandles,
+  handleVisibleVertices,
   regenerateFillGeometry,
   vectorHandleId,
-  vectorHandleParts,
   vectorNetworkToPath
 } from '#core/vector'
-import { evalCubic, segmentToAbsolute } from '#core/vector/curve-math'
+import { segmentToAbsolute } from '#core/vector/curve-math'
 
 import { drawRegionHatch } from './region-hatch'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -41,34 +43,14 @@ export interface NodeEditOverlayState {
   hoveredHandleInfo?: HandleInfo
   hoveredRegion?: number | null
   selectedRegions?: Set<number>
+  /** Which points show their handles; near the selection when unset. */
+  handles?: NodeEditHandles
 }
 
 // Blue = rgb(59,130,246) ≈ 0.23, 0.51, 0.96
 // Light blue (hover) = rgb(96,165,250) ≈ 0.376, 0.647, 0.98
 const BLUE = [0.23, 0.51, 0.96] as const
 const LIGHT_BLUE = [0.376, 0.647, 0.98] as const
-
-export function computeHandleVisibleVertices(
-  selectedVertexIndices: Set<number>,
-  selectedHandles: Set<number>,
-  segments: VectorSegment[]
-): Set<number> {
-  // Seed: selected vertices + vertices that own a selected handle
-  const seed = new Set(selectedVertexIndices)
-  for (const handleId of selectedHandles) {
-    const handle = vectorHandleParts(handleId)
-    if (!handle || handle.segmentIndex >= segments.length) continue
-    const seg = segments[handle.segmentIndex]
-    seed.add(handle.tangentField === 'tangentStart' ? seg.start : seg.end)
-  }
-  // Expand: add only direct neighbors of seed vertices (no cascading)
-  const visible = new Set(seed)
-  for (const seg of segments) {
-    if (seed.has(seg.start)) visible.add(seg.end)
-    if (seed.has(seg.end)) visible.add(seg.start)
-  }
-  return visible
-}
 
 export function drawNodeEditOverlay(
   r: SkiaRenderer,
@@ -90,11 +72,7 @@ export function drawNodeEditOverlay(
 
   const selectedHandles = editState.selectedHandles ?? new Set<number>()
   const hovered = editState.hoveredHandleInfo ?? null
-  const handleVisibleVertices = computeHandleVisibleVertices(
-    selectedVertexIndices,
-    selectedHandles,
-    segments
-  )
+  const visibleHandleVertices = handleVisibleVertices(editState)
 
   // Draw the node shape with its original fills/strokes/effects using live vertices
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
@@ -120,7 +98,7 @@ export function drawNodeEditOverlay(
     canvas,
     vertices,
     segments,
-    handleVisibleVertices,
+    visibleHandleVertices,
     toScreen,
     selectedHandles,
     hovered
@@ -312,7 +290,7 @@ function drawSelectedSegments(
     canvas.drawPath(path, segmentSelectedPaint)
     path.delete()
 
-    const mid = evalCubic(s0.x, s0.y, s1.x, s1.y, s2.x, s2.y, s3.x, s3.y, 0.5)
+    const mid = cubicPoint(s0, s1, s2, s3, 0.5)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, r.penVertexFill)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, vertexStroke1px)
   }
@@ -327,7 +305,7 @@ function drawEditHandles(
   canvas: Canvas,
   vertices: VectorVertex[],
   segments: VectorSegment[],
-  handleVisibleVertices: Set<number>,
+  visibleHandleVertices: Set<number>,
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo
@@ -342,7 +320,7 @@ function drawEditHandles(
       seg,
       si,
       'tangentStart',
-      handleVisibleVertices,
+      visibleHandleVertices,
       toScreen,
       selectedHandles,
       hovered,
@@ -355,7 +333,7 @@ function drawEditHandles(
       seg,
       si,
       'tangentEnd',
-      handleVisibleVertices,
+      visibleHandleVertices,
       toScreen,
       selectedHandles,
       hovered,
@@ -371,14 +349,14 @@ function drawSegmentHandle(
   seg: VectorSegment,
   segmentIndex: number,
   tangentField: 'tangentStart' | 'tangentEnd',
-  handleVisibleVertices: Set<number>,
+  visibleHandleVertices: Set<number>,
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo,
   paints: NodeEditPaints
 ): void {
   const vertexIndex = tangentField === 'tangentStart' ? seg.start : seg.end
-  if (!handleVisibleVertices.has(vertexIndex)) return
+  if (!visibleHandleVertices.has(vertexIndex)) return
 
   const tangent = seg[tangentField]
   if (tangent.x === 0 && tangent.y === 0) return

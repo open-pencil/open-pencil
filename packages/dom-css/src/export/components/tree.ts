@@ -30,6 +30,15 @@ export interface TreeLabels {
   layerOf: (element: StateElement) => string | undefined
 }
 
+/** What a repeated part adds to its element: the value it stands for, and a disabled trigger. */
+function repeatedFields(
+  repeated: RepeatedPart | undefined
+): Pick<ComponentElement, 'value' | 'disabled'> {
+  if (!repeated) return {}
+  if (repeated.disabled) return { value: repeated.value, disabled: true }
+  return { value: repeated.value }
+}
+
 export function componentTree(
   node: StateElement,
   labels: TreeLabels,
@@ -43,7 +52,7 @@ export function componentTree(
   return {
     type: 'element',
     part,
-    ...(repeated ? { value: repeated.value } : {}),
+    ...repeatedFields(repeated),
     tag: node.tagName,
     className,
     layerId,

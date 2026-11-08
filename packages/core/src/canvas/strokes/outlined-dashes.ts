@@ -3,6 +3,7 @@ import type { Canvas, CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { appendVerb, forEachVerb } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import { getStrokeCapEntity, getStrokeJoinEntity } from '#core/canvas/strokes'
@@ -74,12 +75,16 @@ function edgePath(r: SkiaRenderer, node: SceneNode): Path {
   return builder.detachAndDelete()
 }
 
-/** All dashes along `edge`, stroked with `options`, as one path. */
-function dashPath(
+/**
+ * All dashes along `edge`, one contour, stroked with `options`, as one path. A closed contour's
+ * dashes run on past its start; an open one's stop at its end.
+ */
+export function dashPath(
   r: SkiaRenderer,
   edge: Path,
   pattern: readonly number[],
-  options: Parameters<Path['makeStroked']>[0]
+  options: Parameters<Path['makeStroked']>[0],
+  closed = true
 ): Path | null {
   const pieces = outlinePieces(r, edge)
   const total = pieces.reduce((sum, [, length]) => sum + length, 0)
@@ -90,9 +95,10 @@ function dashPath(
         ? sideDashSpans(length, pattern).map(([s, e]): Span => [start + s, start + e])
         : []
     ),
-    total
+    total,
+    closed
   )
-  const iter = new r.ck.ContourMeasureIter(edge, true, 1)
+  const iter = new r.ck.ContourMeasureIter(edge, closed, 1)
   const contour = iter.next()
   iter.delete()
   if (!contour) return null
@@ -101,7 +107,9 @@ function dashPath(
     for (const [start, end] of spans) {
       const line = new r.ck.PathBuilder()
       appendSegment(r.ck, line, contour.getSegment(start, Math.min(end, total), true), false)
-      if (end > total) appendSegment(r.ck, line, contour.getSegment(0, end - total, true), true)
+      if (closed && end > total) {
+        appendSegment(r.ck, line, contour.getSegment(0, end - total, true), true)
+      }
       const centre = line.detachAndDelete()
       const outline = centre.makeStroked(options)
       centre.delete()
@@ -168,14 +176,15 @@ function curveLength(r: SkiaRenderer, from: Vector, verb: number, args: Float32A
  * Spans in order along a closed outline of length `total`, with spans that touch joined into one,
  * the last running past `total` into the first when they meet where the outline starts.
  */
-function mergeTouching(spans: Span[], total: number): Span[] {
+function mergeTouching(spans: Span[], total: number, closed: boolean): Span[] {
   const merged: Span[] = []
   for (const [start, end] of spans) {
     const last = merged.at(-1)
     if (last && start - last[1] < EPSILON) last[1] = Math.max(last[1], end)
     else merged.push([start, end])
   }
-  if (merged.length < 2) return merged
+  // A closed contour's last dash runs on into its first; an open one's ends stay apart.
+  if (!closed || merged.length < 2) return merged
   const first = merged[0]
   const last = merged[merged.length - 1]
   if (first[0] < EPSILON && total - last[1] < EPSILON) {
@@ -183,29 +192,6 @@ function mergeTouching(spans: Span[], total: number): Span[] {
     merged.shift()
   }
   return merged
-}
-
-/** Calls `visit` with each verb of `path` and its coordinates, a conic's weight last. */
-function forEachVerb(
-  ck: CanvasKit,
-  path: Path,
-  visit: (verb: number, args: Float32Array) => void
-): void {
-  const cmds = path.toCmds()
-  const counts = new Map([
-    [ck.MOVE_VERB, 2],
-    [ck.LINE_VERB, 2],
-    [ck.QUAD_VERB, 4],
-    [ck.CONIC_VERB, 5],
-    [ck.CUBIC_VERB, 6],
-    [ck.CLOSE_VERB, 0]
-  ])
-  for (let index = 0; index < cmds.length;) {
-    const verb = cmds[index]
-    const count = counts.get(verb) ?? 0
-    visit(verb, cmds.subarray(index + 1, index + 1 + count))
-    index += 1 + count
-  }
 }
 
 /** Appends `segment` to `builder`, running on from its last point when `continues`. */
@@ -216,12 +202,8 @@ function appendSegment(
   continues: boolean
 ): void {
   forEachVerb(ck, segment, (verb, a) => {
-    if (verb === ck.MOVE_VERB) {
-      if (!continues) builder.moveTo(a[0], a[1])
-    } else if (verb === ck.LINE_VERB) builder.lineTo(a[0], a[1])
-    else if (verb === ck.QUAD_VERB) builder.quadTo(a[0], a[1], a[2], a[3])
-    else if (verb === ck.CONIC_VERB) builder.conicTo(a[0], a[1], a[2], a[3], a[4])
-    else if (verb === ck.CUBIC_VERB) builder.cubicTo(a[0], a[1], a[2], a[3], a[4], a[5])
+    if (verb === ck.CLOSE_VERB || (verb === ck.MOVE_VERB && continues)) return
+    appendVerb(ck, builder, verb, a)
   })
   segment.delete()
 }

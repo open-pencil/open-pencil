@@ -1,10 +1,10 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { computeContentBounds, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
 
 export type RenderChunkKind = 'self' | 'subtree'
@@ -84,11 +84,7 @@ export function estimateCost(nodeCount: number, node: SceneNode): number {
 }
 
 export function subtreeBounds(graph: SceneGraph, nodeId: string) {
-  return computeDescendantVisualBounds(
-    [nodeId],
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  return computeContentBounds(graph, [nodeId])
 }
 
 /** One walk from the root composes the parent's transform and gathers the clips on the way. */

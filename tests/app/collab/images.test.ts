@@ -3,11 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { noop } from 'es-toolkit'
 import * as Y from 'yjs'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import type { EditorStore } from '@/app/editor/active-store'
-
-import { asDouble } from '#tests/helpers/doubles'
-
 /** A store that keeps images by a reference of its own, counting what it was asked. */
 function memoryImageStore(canStore = true, failStoring = false) {
   const kept = new Map<string, Uint8Array>()

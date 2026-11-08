@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { resolveEditorProfile } from '@open-pencil/core'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
@@ -10,7 +10,7 @@ import { ToolbarRoot, useToolbarState } from '@open-pencil/vue/primitives/Toolba
 import { useEditorStore } from '@/app/editor/active-store'
 import { TOOLBAR_ACTIONS, toolbarItems, toolbarLayoutFor } from '@/app/editor/toolbar/layout'
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
-import { appPreferences } from '@/app/settings/preferences/store'
+import { appPreferences, updateToolbarDock } from '@/app/settings/preferences/store'
 import { useActionToast } from '@/app/shell/toast/action'
 import InsertIconButton from '@/components/icon-picker/InsertIconButton.vue'
 import { toolIcons } from '@/components/icons'
@@ -60,6 +60,13 @@ const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
 const toolbarUI = { flyoutContent: flyoutMenuCls.content }
 const { editActions, arrangeActions } = useToolbarActions({ store, getCommand, menu })
 
+// Canvas overlays keep clear of the toolbar's box as of the last render, so redraw once it moves.
+watch(
+  () => appPreferences.value.toolbarDock,
+  () => store.requestRender(),
+  { flush: 'post' }
+)
+
 const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
 
 function onActionTap(item: ToolbarActionItem) {
@@ -69,9 +76,16 @@ function onActionTap(item: ToolbarActionItem) {
 </script>
 
 <template>
-  <ToolbarRoot v-slot="{ activeTool, flyoutSelections, actions }" :tools="tools">
+  <ToolbarRoot
+    v-slot="{ activeTool, flyoutSelections, actions }"
+    :tools="tools"
+    :side="appPreferences.toolbarDock.side"
+    :align="appPreferences.toolbarDock.align"
+    @update:side="updateToolbarDock({ side: $event })"
+    @update:align="updateToolbarDock({ align: $event })"
+  >
     <!-- A profile that fixes the tools, as a board's does, has nothing to customize, as in FigJam. -->
-    <ToolbarContextMenu :disabled="profile.tools !== null">
+    <ToolbarContextMenu :disabled="profile.tools !== null" :dockable="!isMobile">
       <DesktopToolbar
         v-if="!isMobile"
         :items="items"
@@ -80,15 +94,27 @@ function onActionTap(item: ToolbarActionItem) {
         :tool-icons="toolIcons"
         :tool-labels="toolLabels"
         :tool-shortcuts="toolShortcuts"
+        :side="appPreferences.toolbarDock.side"
+        :align="appPreferences.toolbarDock.align"
         :ui="toolbarUI"
         @set-tool="actions.setTool"
       >
-        <template #action="{ action }">
-          <InsertIconButton v-if="action === 'insert-icon'" :ui="toolbarUI" />
+        <template #action="{ action, side, align }">
+          <InsertIconButton
+            v-if="action === 'insert-icon'"
+            :side="side"
+            :align="align"
+            :ui="toolbarUI"
+          />
         </template>
-        <template #hidden>
+        <template #hidden="{ side, align }">
           <template v-for="action in hiddenActions" :key="action">
-            <InsertIconButton v-if="action === 'insert-icon'" anchored />
+            <InsertIconButton
+              v-if="action === 'insert-icon'"
+              anchored
+              :side="side"
+              :align="align"
+            />
           </template>
         </template>
       </DesktopToolbar>

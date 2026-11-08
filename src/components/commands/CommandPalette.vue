@@ -1,22 +1,23 @@
 <script setup lang="ts">
+import { matchesKeyboardEvent, type HotkeyChord } from '@tanstack/hotkeys'
 import { useEventListener } from '@vueuse/core'
 import { DialogDescription, DialogTitle, VisuallyHidden } from 'reka-ui'
 import { computed } from 'vue'
 import Search from '~icons/lucide/search'
 import X from '~icons/lucide/x'
 
-import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
 import { useCommandMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 import { CommandPaletteRoot } from '@open-pencil/vue/primitives/CommandPalette'
 
 import { usePagePaletteGroup } from '@/app/editor/pages/palette'
-import { shortcutCode } from '@/app/shell/keyboard/layout'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import { IS_BROWSER } from '@/constants'
 
 import { useCommandPaletteUI } from './ui'
+
+const COMMAND_PALETTE_SHORTCUT: HotkeyChord = 'Mod+K'
 
 const { commandGroups } = useAppMenu()
 const pageGroup = usePagePaletteGroup()
@@ -40,13 +41,8 @@ function close() {
 }
 
 if (IS_BROWSER) {
-  const isMac = shortcutPlatform() === 'mac'
   useEventListener(window, 'keydown', (event) => {
-    const hasPlatformModifier = isMac
-      ? event.metaKey && !event.ctrlKey
-      : event.ctrlKey && !event.metaKey
-    if (!hasPlatformModifier || event.altKey || event.shiftKey || shortcutCode(event) !== 'KeyK')
-      return
+    if (!matchesKeyboardEvent(event, COMMAND_PALETTE_SHORTCUT)) return
     event.preventDefault()
     open.value = true
   })

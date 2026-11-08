@@ -2,14 +2,14 @@ import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
+import { claimRoot } from '@open-pencil/collab'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
-import { claimRoot } from '@/app/collab/shared-tree/fields'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
 
 const ROOM_A = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'

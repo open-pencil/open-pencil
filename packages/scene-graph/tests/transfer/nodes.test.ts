@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { variableModeOverrideField } from '@open-pencil/scene-graph/instances/overrides'
 import { prepareNodeTransfer, type NodeTransferReferences } from '@open-pencil/scene-graph/transfer'
 
 const references = (): NodeTransferReferences => ({
@@ -54,4 +55,14 @@ test('node preparation fails on missing runtime references before destination mu
   const graph = new SceneGraph()
   const node = graph.createNode('INSTANCE', graph.getPages()[0].id, { componentId: 'missing' })
   expect(() => prepareNodeTransfer(node, references())).toThrow('Missing node transfer mapping')
+})
+
+test('node preparation remaps the collection a mode override is keyed by', () => {
+  const graph = new SceneGraph()
+  const node = graph.createNode('INSTANCE', graph.getPages()[0].id, { componentId: 'component' })
+  node.instanceOverrides.self.set(variableModeOverrideField('set'), true)
+  const result = prepareNodeTransfer(node, references())
+  expect(result.instanceOverrides?.self).toEqual(
+    new Map<string, unknown>([[variableModeOverrideField('new-set'), true]])
+  )
 })

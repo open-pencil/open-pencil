@@ -1,8 +1,10 @@
+import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
-  loadAISigningKey,
+  loadServicesSigningKey,
   parseCloudDeploymentTOML,
-  type AISigningKey,
+  type ServicesSigningKey,
   type CloudEnvironment,
+  type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
 
@@ -25,7 +27,9 @@ export type CloudflareCloudEnvironment = CloudflareCloudBindings & Record<string
 
 export type PreparedCloudflareCloud = {
   config: CloudServerConfig
-  aiSigningKey: AISigningKey | undefined
+  servicesSigningKey: ServicesSigningKey | undefined
+  /** Set when the deployment configures error tracking. */
+  reportError: CloudErrorReporter | undefined
 }
 
 /** The Worker's string variables and secrets, with `DATABASE_URL` from Hyperdrive. */
@@ -39,19 +43,29 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
 }
 
 /**
- * Reads the deployment TOML once per isolate: its config and AI signing key stay the same for the
+ * Reads the deployment TOML once per isolate: its config and services signing key stay the same for the
  * Worker's lifetime. A failure is not kept, so the next request tries again.
  */
 export function cloudflareCloudSetup(source: string) {
   let prepared: Promise<PreparedCloudflareCloud> | null = null
-  return (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
+  /** Set once an attempt's config parses, so its later setup steps that fail can be reported. */
+  let reportError: CloudErrorReporter | undefined
+  const prepare = (env: CloudflareCloudEnvironment): Promise<PreparedCloudflareCloud> => {
     prepared ??= (async () => {
+      // An attempt whose config fails to parse has no project to report to, not an earlier one's.
+      reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
-      return { config, aiSigningKey: await loadAISigningKey(config) }
+      reportError = createPostHogErrorReporter(config, 'cloudflare')
+      return { config, servicesSigningKey: await loadServicesSigningKey(config), reportError }
     })().catch((error: unknown) => {
       prepared = null
       throw error
     })
     return prepared
+  }
+  return {
+    prepare,
+    /** The reporter of the latest attempt, once its config parsed, if it configures error tracking. */
+    reporter: () => reportError
   }
 }

@@ -34,12 +34,26 @@ export type SceneGraphEventHandlers = Partial<{
   ) => void
 }>
 
+/** The document's records besides its nodes, which edits report changing as they do nodes. */
+export type DocumentRecordKind = 'variable' | 'collection'
+
 /** Hears about nodes as an edit adds and changes them, synchronously and before each change. */
 export interface NodeChangeObserver {
   /** A node is about to change and is still as it was. */
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /**
+   * A variable or collection is about to change, be added, or be removed, and is still as it
+   * was: absent, for one about to be added.
+   */
+  beforeRecord?: (kind: DocumentRecordKind, id: string) => void
+  /**
+   * The edit being observed waits on something outside it (`SceneGraph.waitOutsideEdit`): until
+   * `resume`, nodes change for someone else's edit, not this one.
+   */
+  pause?: () => void
+  resume?: () => void
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
@@ -443,9 +457,37 @@ export interface PluginDataEntry {
   value: string
 }
 
+/** A fixed width or height in pixels an export is scaled to, instead of a multiplier. */
+export interface ExportSize {
+  type: 'WIDTH' | 'HEIGHT'
+  value: number
+}
+
+/** The colour profile an export is written in; the document's own unless set. */
+export type ExportColorProfile = 'DOCUMENT' | 'SRGB' | 'DISPLAY_P3_V4'
+
+/**
+ * One export a layer keeps. The options past `scale` and `format` are Figma's and read as Figma's
+ * defaults when left out.
+ */
 export interface ExportSetting {
   scale: number
   format: ExportFormatId
+  /** Appended to the file name. */
+  suffix?: string
+  /** A size that replaces `scale`. */
+  size?: ExportSize
+  /** Only the layer, without what overlaps it (default true). */
+  contentsOnly?: boolean
+  /** The layer's box rather than everything it draws, for text (default false). */
+  useAbsoluteBounds?: boolean
+  colorProfile?: ExportColorProfile
+  /** SVG: text as outlines rather than `<text>` (default true). */
+  svgOutlineText?: boolean
+  /** SVG: every layer's name as its element's `id` (default false). */
+  svgIdAttribute?: boolean
+  /** SVG: strokes as strokes where possible rather than masked outlines (default true). */
+  svgSimplifyStroke?: boolean
 }
 
 export interface PluginRelaunchDataEntry {
@@ -822,6 +864,11 @@ export interface SceneNode {
   sharedSymbolVersion: string | null
   publishedVersion: string | null
   librarySource: LibraryAssetSource | null
+  /**
+   * The layer of a library's source document that a library definition's layer copies, which pairs
+   * it with the same layer in the library's next revision whatever that layer is called by then.
+   */
+  libraryLayerId: string | null
   isPublishable: boolean
   isSymbolPublishable: boolean
   /**

@@ -161,7 +161,7 @@ const metadata = (document: CloudDocumentRow) =>
 
     <div
       v-if="state === 'loading'"
-      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
+      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
       :aria-label="t.homeLoadingFiles"
     >
       <div v-for="index in 4" :key="index" class="min-w-0 animate-pulse motion-reduce:animate-none">
@@ -192,7 +192,7 @@ const metadata = (document: CloudDocumentRow) =>
       v-else
       :class="
         view === 'grid'
-          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]'
+          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]'
           : 'overflow-hidden rounded-lg border border-border'
       "
     >

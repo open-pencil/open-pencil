@@ -1,6 +1,11 @@
-import type { Font } from 'canvaskit-wasm'
+import type { Font, TypefaceFontProvider } from 'canvaskit-wasm'
+import { uniqBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
+import { FIGJAM_TYPEFACES } from '@open-pencil/scene-graph/figjam'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+import { STICKY_FONT_FAMILY, STICKY_FONT_WEIGHT } from '@open-pencil/scene-graph/generated'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { NodeFontReadiness } from '#core/canvas/text'
@@ -17,6 +22,7 @@ import {
 } from '#core/constants'
 import { withTextMeasurer } from '#core/layout/text-measurement'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
+import { resetFontCollection } from '#core/text/font/collection'
 import { fontManager } from '#core/text/font/manager'
 import { prepareGraphFonts } from '#core/text/prepare'
 import {
@@ -138,10 +144,21 @@ export function getFontProvider(r: SkiaRenderer) {
   return r.isDestroyed() || !r.fontProvider ? null : r.fontProvider
 }
 
+/**
+ * The shared providers that have the section titles' face. Every renderer that loads fonts reads
+ * the file again, and the provider would keep each copy.
+ */
+const sectionTitleProviders = new WeakSet<TypefaceFontProvider>()
+
 /** Section titles' face, for the canvas and for the field that renames a title in the page. */
 function registerSectionTitleFont(r: SkiaRenderer, data: ArrayBuffer) {
-  r.fontProvider?.registerFont(data, SECTION_TITLE_FONT_FAMILY)
-  fontManager.registerFontInBrowser(SECTION_TITLE_FONT_FAMILY, 'SemiBold', data)
+  const provider = r.fontProvider
+  if (provider && !sectionTitleProviders.has(provider)) {
+    sectionTitleProviders.add(provider)
+    provider.registerFont(data, SECTION_TITLE_FONT_FAMILY)
+    resetFontCollection(provider)
+    fontManager.registerFontInBrowser(SECTION_TITLE_FONT_FAMILY, 'SemiBold', data)
+  }
   const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(data)
   if (!typeface) return
   try {
@@ -153,6 +170,21 @@ function registerSectionTitleFont(r: SkiaRenderer, data: ArrayBuffer) {
   }
 }
 
+/**
+ * The faces the editor creates text in: the text tool's, and FigJam's for sticky notes, shape
+ * labels and connector labels. They load with the canvas, so new text is laid out in its own face
+ * from the first click.
+ */
+const CREATED_TEXT_FACES = uniqBy(
+  [
+    { family: DEFAULT_FONT_FAMILY, weight: 400 },
+    { family: STICKY_FONT_FAMILY, weight: STICKY_FONT_WEIGHT },
+    { family: FIGJAM_TYPEFACES.simple.fontFamily, weight: FIGJAM_TYPEFACES.simple.fontWeight },
+    { family: CONNECTOR_LABEL_FONT.family, weight: CONNECTOR_LABEL_FONT.weight }
+  ].map(({ family, weight }) => ({ family, style: faceLoadKey(weight) })),
+  ({ family, style }) => `${family}\u0000${style}`
+)
+
 export async function loadFonts(
   r: SkiaRenderer,
   onFallbackFontsLoaded?: () => void
@@ -163,17 +195,16 @@ export async function loadFonts(
     settleFontDemand(r, snapshot, nodeIds)
     onFallbackFontsLoaded?.()
   }
-  r.fontProvider?.delete()
-  r.fontProvider = r.ck.TypefaceFontProvider.Make()
-
-  fontManager.attachProvider(r.ck, r.fontProvider)
+  if (r.fontProvider) fontManager.releaseProvider(r.fontProvider)
+  r.fontProvider = fontManager.acquireProvider(r.ck)
   syncFontGeneration(r)
 
   const [fontData, titleData] = await Promise.all([
     fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular'),
     fontManager.fetchBundledFont(SECTION_TITLE_FONT_URL).catch(() => null),
     // Without it emoji only take the text font's missing-glyph width; text still draws.
-    fontManager.loadFont(EMOJI_METRICS_FAMILY, 'Regular').catch(() => null)
+    fontManager.loadFont(EMOJI_METRICS_FAMILY, 'Regular').catch(() => null),
+    ...CREATED_TEXT_FACES.map(({ family, style }) => fontManager.loadFont(family, style))
   ])
   if (r.isDestroyed()) return
   if (titleData) registerSectionTitleFont(r, titleData)

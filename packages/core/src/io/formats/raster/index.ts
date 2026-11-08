@@ -1,14 +1,25 @@
+export { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 export {
-  computeContentBounds,
+  exportBounds,
+  fittedLayerRenderer,
+  MAX_RASTER_PIXELS,
+  oversizedRaster,
+  rasterSize,
   renderNodesToImage,
   renderThumbnail,
   thumbnailFrame,
   type RasterExportFormat,
+  type ScaledLayerRender,
   type ThumbnailFit,
   type ThumbnailFrame,
   type ExportFormat
 } from './render'
-export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless'
+export {
+  initCanvasKit,
+  headlessRenderer,
+  headlessRenderNodes,
+  headlessRenderThumbnail
+} from './headless'
 export {
   createCanvasKitRasterCodec,
   reencodeImage,

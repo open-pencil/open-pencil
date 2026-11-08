@@ -13,7 +13,7 @@ import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { NodePreview } from '#core/editor/node-preview'
+import type { NodePreview } from '#core/editor/nodes/preview'
 import type { EditorContext } from '#core/editor/types'
 
 type BeginNodePreview = (label?: string) => NodePreview

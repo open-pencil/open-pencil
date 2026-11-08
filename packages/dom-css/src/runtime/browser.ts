@@ -4,8 +4,10 @@ import type {
   CSSRuntime,
   DesignDocument,
   DesignElement,
-  DesignNode
+  DesignNode,
+  DesignViewport
 } from '../types'
+import { recordLayout } from './layout'
 
 export interface BrowserCSSRuntimeOptions {
   document?: Document
@@ -72,6 +74,8 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'text-shadow',
   'text-transform',
   'top',
+  'transform',
+  'transform-origin',
   'white-space',
   'width'
 ] as const
@@ -178,6 +182,49 @@ function computedStyleToRecord(
   return entries
 }
 
+/**
+ * How long layout waits for an image to load. An image without a size takes its own once loaded,
+ * moving what follows it, but a request that never ends must not hold an import forever.
+ */
+const IMAGE_LOAD_LIMIT_MS = 10_000
+
+/** Resolves once every image under `root` has loaded or failed, or the time limit passes. */
+function imagesLoaded(root: ParentNode, view: Window): Promise<void> {
+  const images = Array.from(root.querySelectorAll('img'))
+  // A lazy image outside the sandbox's view would never load, so every image loads now.
+  for (const image of images) {
+    if (image.getAttribute('loading') === 'lazy') image.setAttribute('loading', 'eager')
+  }
+  const pending = images.filter((image) => !image.complete)
+  if (pending.length === 0) return Promise.resolve()
+  const loaded = Promise.all(
+    pending.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          image.addEventListener('load', () => resolve(), { once: true })
+          image.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  ).then(() => undefined)
+  const limit = new Promise<void>((resolve) => {
+    view.setTimeout(resolve, IMAGE_LOAD_LIMIT_MS)
+  })
+  return Promise.race([loaded, limit])
+}
+
+/**
+ * Waits until the document's web fonts and the content's images have loaded and a frame has laid
+ * it out with them, so lines break and boxes size as the page shows them, not in a fallback font
+ * or around an image that has not arrived.
+ */
+async function settle(browserDocument: Document, content: ParentNode): Promise<void> {
+  await requestFrame(browserDocument)
+  await browserDocument.fonts.ready
+  const view = browserDocument.defaultView
+  if (view) await imagesLoaded(content, view)
+  await requestFrame(browserDocument)
+}
+
 function requestFrame(browserDocument: Document): Promise<void> {
   const requestAnimationFrame = browserDocument.defaultView?.requestAnimationFrame
   if (!requestAnimationFrame) return Promise.resolve()
@@ -186,13 +233,16 @@ function requestFrame(browserDocument: Document): Promise<void> {
   })
 }
 
-function applySandboxHostStyle(element: HTMLElement): void {
+const DEFAULT_SANDBOX_WIDTH = 1000
+
+function applySandboxHostStyle(element: HTMLElement, viewport: DesignViewport | undefined): void {
   element.style.cssText = [
     'position: fixed',
     'left: -100000px',
     'top: 0',
-    'width: 1000px',
-    'height: auto',
+    `width: ${viewport?.width ?? DEFAULT_SANDBOX_WIDTH}px`,
+    viewport ? `height: ${viewport.height}px` : 'height: auto',
+    'border: 0',
     'visibility: hidden',
     'pointer-events: none',
     'contain: layout style paint'
@@ -206,7 +256,7 @@ async function computeStylesInShadowRoot(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const host = browserDocument.createElement('div')
-  applySandboxHostStyle(host)
+  applySandboxHostStyle(host, options.viewport)
 
   const shadow = host.attachShadow({ mode: 'open' })
   const style = browserDocument.createElement('style')
@@ -219,8 +269,11 @@ async function computeStylesInShadowRoot(
   browserDocument.body.append(host)
 
   try {
-    await requestFrame(browserDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(browserDocument, shadow)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: content,
+      styleRoot: shadow
+    })
   } finally {
     host.remove()
   }
@@ -233,7 +286,7 @@ async function computeStylesInIframe(
   options: CSSComputeOptions
 ): Promise<DesignDocument> {
   const iframe = browserDocument.createElement('iframe')
-  applySandboxHostStyle(iframe)
+  applySandboxHostStyle(iframe, options.viewport)
   browserDocument.body.append(iframe)
 
   try {
@@ -247,21 +300,33 @@ async function computeStylesInIframe(
     style.textContent = cssText
     iframeDocument.head.append(style)
 
-    const content = iframeDocument.createElement('div')
+    // The document's top-level nodes go straight into the body, so `body` rules and selectors
+    // such as `body > header` apply to them as they do on the page they came from.
+    const content = iframeDocument.body
     content.innerHTML = serializeHTML(designDocument)
-    iframeDocument.body.append(content)
 
-    await requestFrame(iframeDocument)
-    return copyComputedStyles(designDocument, content, options)
+    await settle(iframeDocument, iframeDocument)
+    return copyComputedStyles(designDocument, content, options, {
+      origin: iframeDocument.documentElement,
+      styleRoot: iframeDocument.head
+    })
   } finally {
     iframe.remove()
   }
 }
 
+interface LayoutFrame {
+  /** The element whose top-left the recorded boxes are relative to. */
+  origin: Element
+  /** Where the stylesheet that switches transforms off goes while boxes are read. */
+  styleRoot: Node & ParentNode
+}
+
 function copyComputedStyles(
   designDocument: DesignDocument,
   content: Element,
-  options: CSSComputeOptions
+  options: CSSComputeOptions,
+  frame: LayoutFrame
 ): DesignDocument {
   const view = content.ownerDocument.defaultView
   if (!view) throw new TypeError('Browser CSS runtime requires getComputedStyle')
@@ -277,6 +342,8 @@ function copyComputedStyles(
   for (const [designElement, domElement] of pairs) {
     designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
   }
+  // After the styles are copied: reading layout switches transforms off for a moment.
+  if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)
 
   return nextDocument
 }

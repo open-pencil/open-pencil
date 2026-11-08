@@ -116,6 +116,13 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <span>{{ t.pasteToReplace }}</span>
         </ContextMenuItem>
         <ContextMenuItem
+          data-test-id="context-paste-as-layers"
+          :class="cls.item"
+          @select="canvasMenuActions.pasteAsLayers"
+        >
+          <span>{{ t.pasteAsLayers }}</span>
+        </ContextMenuItem>
+        <ContextMenuItem
           data-test-id="context-duplicate"
           :class="cls.item"
           :disabled="!hasSelection"
@@ -175,7 +182,7 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
             <span
               v-if="item.shortcut"
-              class="text-[11px]"
+              class="text-2xs"
               :class="canvasMenuShortcutClass(item.label)"
               >{{ item.shortcut }}</span
             >

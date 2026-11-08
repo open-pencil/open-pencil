@@ -1,35 +1,36 @@
 import { motionStyles } from '@/theme/motion/styles'
 
+/**
+ * A toast is a floating bar like the toolbar, on the panel colour with the toolbar's shadow, so a
+ * passing notice is as quiet as the rest of the chrome. A warning or an error shows in its icon, and
+ * an action is an ordinary button.
+ */
 const toastTheme = {
   slots: {
-    root: 'motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none flex max-w-sm items-start gap-1.5 rounded-md px-2.5 py-1.5 text-xs shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',
-    icon: 'mt-0.5 size-3 shrink-0',
-    content: 'min-w-0 flex-1',
-    message: 'select-text',
-    count: 'ml-1.5',
+    root: 'motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none flex min-h-9 max-w-md items-center gap-2 rounded-lg bg-panel py-1 text-xs text-surface shadow-(--floating-bar-shadow) data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',
+    icon: 'size-3.5 shrink-0',
+    content: 'min-w-0 flex-1 py-1',
+    message: 'leading-4 select-text',
+    count: 'ml-1.5 text-muted tabular-nums',
     progress: 'mt-1.5',
-    // A filled button that darkens the toast, so its text keeps the toast's contrast.
-    action:
-      'shrink-0 cursor-pointer rounded px-2 py-0.5 text-[11px] leading-4 font-medium transition-colors focus-visible:outline-1 focus-visible:outline-current',
-    control: 'mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100'
+    action: 'shrink-0',
+    controls: 'flex shrink-0 items-center'
   },
   variants: {
-    tone: {
-      default: { root: 'bg-accent text-on-accent', action: 'bg-black/20 hover:bg-black/30' },
-      warning: {
-        root: 'border border-warning-border bg-warning-bg text-warning',
-        action: 'bg-current/10 hover:bg-current/15'
-      },
-      error: { root: 'bg-error-fill text-white', action: 'bg-black/20 hover:bg-black/30' }
+    // Buttons bring their own padding, so a toast that ends in one keeps a narrow edge there.
+    trailing: {
+      true: { root: 'pr-1 pl-3' },
+      false: { root: 'px-3' }
     },
-    // Work in progress spins the icon; AppProgress draws the bar.
+    // Work in progress spins a muted icon, and AppProgress draws the bar; a warning or an error
+    // keeps its own colour.
     progress: {
       none: {},
-      determinate: { icon: motionStyles.spinner },
-      indeterminate: { icon: motionStyles.spinner }
+      determinate: { icon: ['text-muted', motionStyles.spinner] },
+      indeterminate: { icon: ['text-muted', motionStyles.spinner] }
     }
   },
-  defaultVariants: { tone: 'default' as const, progress: 'none' as const }
+  defaultVariants: { trailing: false, progress: 'none' as const }
 } as const
 
 export default toastTheme

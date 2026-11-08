@@ -1,3 +1,5 @@
+import { createDocumentVariables, type DocumentVariables } from '#fig/document/variables'
+
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
@@ -8,6 +10,10 @@ import { findWithinBoundary, type TreeShape } from './tree'
 export interface SourceIndex {
   readonly sources: ReadonlyMap<string, NodeChange>
   readonly children: ReadonlyMap<string, readonly NodeChange[]>
+}
+
+export interface InterpreterIndex extends SourceIndex {
+  readonly variables: DocumentVariables
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
@@ -53,6 +59,10 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
   }
   for (const siblings of children.values()) siblings.sort(bySavedPosition)
   return { sources, children }
+}
+
+export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
+  return { ...createSourceIndex(changes), variables: createDocumentVariables(changes) }
 }
 
 export function sameGuid(left: GUID | undefined, right: GUID): boolean {

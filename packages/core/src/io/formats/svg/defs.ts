@@ -48,10 +48,18 @@ export interface SVGExportContext {
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
   fontAlias?: SVGFontAlias
+  /**
+   * When layers are written with their names as ids: how many have taken each name, and every id
+   * given out so far, defs included, so no two elements share one.
+   */
+  layerIds?: { names: Map<string, number>; taken: Set<string> }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  ctx.layerIds?.taken.add(id)
+  return id
 }
 
 export function formatColor(
@@ -320,25 +328,4 @@ export const SVG_STROKE_JOIN: Record<string, string> = {
   MITER: 'miter',
   ROUND: 'round',
   BEVEL: 'bevel'
-}
-
-export const SVG_BLEND_MODE: Record<string, string> = {
-  NORMAL: 'normal',
-  DARKEN: 'darken',
-  MULTIPLY: 'multiply',
-  COLOR_BURN: 'color-burn',
-  LIGHTEN: 'lighten',
-  LINEAR_BURN: 'plus-darker',
-  SCREEN: 'screen',
-  LINEAR_DODGE: 'plus-lighter',
-  COLOR_DODGE: 'color-dodge',
-  OVERLAY: 'overlay',
-  SOFT_LIGHT: 'soft-light',
-  HARD_LIGHT: 'hard-light',
-  DIFFERENCE: 'difference',
-  EXCLUSION: 'exclusion',
-  HUE: 'hue',
-  SATURATION: 'saturation',
-  COLOR: 'color',
-  LUMINOSITY: 'luminosity'
 }

@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { createShapeWithText, shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { createShapeWithText, shapeWithTextKindFields } from '@open-pencil/scene-graph/generated'
 import {
   isShapeWithTextType,
   SHAPE_WITH_TEXT_TYPES,
@@ -10,7 +10,8 @@ import type { InterfaceTheme } from '#core/constants'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { graph, prepareFollowedFieldEdit, raw, updateNode } from './accessor-utils'
+import { prepareFollowedFieldEdit, raw, updateNode } from './accessor-utils'
+import { graphOf } from './graph'
 
 /** `value` as a kind for `node`, refused in the words Figma's plugin API refuses it with. */
 function checkedShapeType(node: SceneNode, value: unknown): ShapeWithTextType {
@@ -30,12 +31,8 @@ function checkedShapeType(node: SceneNode, value: unknown): ShapeWithTextType {
  * A new, empty shape with text on the API's current page, as FigJam's plugin API creates it: an
  * ellipse 176 px square, painted as the shape tool paints a new shape. Measured in FigJam.
  */
-export function newShapeWithText(api: {
-  graph: SceneGraph
-  currentPageId: string
-  theme: InterfaceTheme
-}): SceneNode {
-  return createShapeWithText(api.graph, api.currentPageId, {
+export function newShapeWithText(api: { currentPageId: string; theme: InterfaceTheme }): SceneNode {
+  return createShapeWithText(graphOf(api), api.currentPageId, {
     ...newLayerDefaults('SHAPE_WITH_TEXT', api.theme),
     shapeWithTextType: 'ELLIPSE'
   })
@@ -55,12 +52,9 @@ export function installShapeWithTextAccessors(
       set(this: ProxyThis, value: unknown) {
         const node = raw(this, internals)
         const kind = checkedShapeType(node, value)
-        prepareFollowedFieldEdit(graph(this, internals), node, 'shapeType', 'shape-type')
+        prepareFollowedFieldEdit(graphOf(this), node, 'shapeType', 'shape-type')
         // The new kind lays the label out in its own area, as FigJam's shape switcher does.
-        updateNode(this, internals, {
-          shapeWithTextType: kind,
-          ...shapeWithTextFrameFields(kind, node.width, node.height)
-        })
+        updateNode(this, internals, shapeWithTextKindFields(node, kind))
       }
     }
   })

@@ -19,19 +19,16 @@ import type { UndoManager } from '@open-pencil/scene-graph/undo'
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type {
-  MeasurementMode,
-  PresenceCursor,
-  RenderOverlays,
-  SelectionTheme
-} from '#core/canvas/renderer/types'
+import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { NodeEditState } from '#core/editor/vector/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
+import type { MutationWithLayout } from '#core/layout/mutations'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -52,6 +49,7 @@ export type Tool =
   | 'PENCIL'
   | 'HAND'
   | 'COMMENT'
+  | 'EYEDROPPER'
 
 /** The gradient whose handles the canvas shows while its paint picker is open. */
 export interface GradientEdit {
@@ -160,6 +158,11 @@ export interface EditorViewState {
     dragTangent: Vector | null
     oppositeDragTangent: Vector | null
     pendingClose?: boolean
+    /**
+     * The last point's outgoing handle while the pen closes the path: the closing segment starts
+     * with it, and `dragTangent` holds the drag at the first point.
+     */
+    closeTangent?: Vector | null
     closingToFirst: boolean
     resumingNodeId?: string
     resumedPath?: ResumedPath
@@ -188,7 +191,8 @@ export interface EditorViewState {
   /** Bumped when the caret or selection of the text being edited moves, which changes nothing else. */
   textSelectionVersion: number
   enteredContainerId: string | null
-  nodeEditState?: RenderOverlays['nodeEditState'] | null
+  /** The vector path being edited point by point, or null outside vector edit mode. */
+  nodeEditState: NodeEditState | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
   /** What this canvas shows: the design being edited, or running as a preview. */
@@ -216,15 +220,37 @@ export type FigmaClipboardImageResolver = (
   hashes: string[]
 ) => Promise<ReadonlyMap<string, Uint8Array>>
 
+/**
+ * What a frame draws: `sceneVersion` counts the document's content, `renderVersion` everything
+ * on screen, the viewport included.
+ */
+export interface RenderVersions {
+  renderVersion: number
+  sceneVersion: number
+}
+
 export interface EditorEvents extends SceneGraphEvents {
-  'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
-  'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
+  'render:requested': (versions: RenderVersions) => void
+  'repaint:requested': (versions: RenderVersions) => void
+  /**
+   * A canvas drawing the editor's own state showed a frame of these versions with the whole
+   * visible scene on screen, nothing left to fill in. Overlay-only canvases and split panes
+   * showing another view do not report.
+   */
+  'render:presented': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
+  /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
+  'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
   'history:changed': () => void
+  /**
+   * An edit or batch ended without a step, rolled back or changing nothing, so what it changed
+   * meanwhile is undone. The history is unchanged.
+   */
+  'edit:discarded': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
@@ -253,6 +279,10 @@ export interface EditorOptions {
     signal?: AbortSignal
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages?: FigmaClipboardImageResolver
+  /**
+   * The canvas's size in screen pixels. Without it the editor uses the size the canvas last gave
+   * `setViewportSize`, and the window's before that.
+   */
   getViewportSize?: () => { width: number; height: number }
   /** The name of whoever is editing, which a sticky note they place is signed with. */
   getUserName?: () => string
@@ -299,8 +329,7 @@ export interface EditorContext {
   runLayoutForNode: (id: string) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
-    fallbackId?: string,
-    beforeLayout?: (result: T) => Promise<void> | void
-  ) => Promise<T>
+    fallbackId?: string
+  ) => Promise<MutationWithLayout<T>>
   subscribeToGraph: () => void
 }

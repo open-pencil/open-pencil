@@ -6,6 +6,7 @@ import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
+  createCollaborationStateStore,
   createCloudApp,
   createDefaultCloudPolicy,
   createRevisionCompactionService,
@@ -133,7 +134,8 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
 
   /** Moves the whole history back in time, as if it were made that long ago. */
   async function age(milliseconds: number) {
-    for (const table of ['documentVersion', 'documentRevision'] as const) {
+    // Stored files are as old as the saves that wrote them.
+    for (const table of ['documentVersion', 'documentRevision', 'storageObject'] as const) {
       const rows = await runtime.database.selectFrom(table).select(['id', 'createdAt']).execute()
       for (const row of rows) {
         await runtime.database
@@ -247,6 +249,11 @@ describe('Cloud version history', () => {
         .select('collaborationEpoch')
         .where('id', '=', context.documentId)
         .executeTakeFirstOrThrow()
+      // What the relay saved of the live room, which the restore replaces.
+      const rooms = createCollaborationStateStore(context.runtime.database, context.objects.store)
+      const room = { documentId: context.documentId, roomEpoch: before.collaborationEpoch }
+      await rooms.compact(room, 0, Uint8Array.from([1]))
+      await rooms.append(room, 1, Uint8Array.from([2]))
 
       const restored = await responseJSON(
         await context.request(`/documents/${context.documentId}/versions/${original.id}/restore`, {
@@ -273,6 +280,8 @@ describe('Cloud version history', () => {
         .executeTakeFirstOrThrow()
       expect(after.collaborationEpoch).toBe(before.collaborationEpoch + 1)
       expect(context.restoredDocuments).toEqual([context.documentId])
+      // The replaced room never opens again, so nothing the relay saved of it is kept.
+      expect(await rooms.load(room)).toEqual({ snapshot: null, updates: [], sequence: 0 })
 
       // The restored state is the same stored file, so it opens as the original and costs nothing.
       const [restoredDownload, originalDownload] = await Promise.all(

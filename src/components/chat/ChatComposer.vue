@@ -4,8 +4,10 @@ import type { ChatStatus } from 'ai'
 import { TooltipProvider } from 'reka-ui'
 import { computed, useTemplateRef } from 'vue'
 
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { CHAT_COMPOSER_KEYS } from '@/components/chat/composer/keys'
 import { useChatEditor } from '@/components/chat/composer/useChatEditor'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import InputGroup from '@/components/ui/input/InputGroup.vue'
@@ -29,7 +31,6 @@ const emit = defineEmits<{
   stop: []
   /** Escape while the agent works: stop it and send what is waiting. */
   interrupt: []
-  settings: []
   paste: [event: ClipboardEvent]
 }>()
 const { ai } = useI18n()
@@ -38,7 +39,10 @@ const working = computed(() => status === 'streaming' || status === 'submitted')
 const host = useTemplateRef<HTMLDivElement>('host')
 const editor = useChatEditor(host, {
   label: () => ai.value.describeChange,
-  placeholder: () => (working.value ? ai.value.queueMessage : ai.value.describeChange),
+  placeholder: () =>
+    working.value
+      ? ai.value.queueMessage({ shortcut: formatShortcut(CHAT_COMPOSER_KEYS.followUp) ?? '' })
+      : ai.value.describeChange,
   editable: () => !disabled,
   attributes: { 'data-test-id': 'chat-input' },
   completions,
@@ -76,7 +80,11 @@ function restoreDraft(draft: string): boolean {
   editor.setText(draft)
   return true
 }
-defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
+defineExpose({
+  restoreDraft,
+  insert: editor.insert,
+  focus: editor.focus
+})
 </script>
 <template>
   <TooltipProvider>
@@ -96,14 +104,6 @@ defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
           <template #model><slot name="model" /></template>
 
           <template #actions>
-            <IconButton
-              :label="ai.providerSettings"
-              size="sm"
-              data-test-id="provider-settings-trigger"
-              @click="emit('settings')"
-            >
-              <icon-lucide-settings class="size-3.5" />
-            </IconButton>
             <IconButton
               v-if="showStop"
               :label="ai.stopGenerating"

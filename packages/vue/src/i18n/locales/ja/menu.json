@@ -41,6 +41,7 @@
   "pasteToReplace": "貼り付けて置換",
   "copyProperties": "プロパティをコピー",
   "pasteProperties": "プロパティを貼り付け",
+  "pasteAsLayers": "レイヤーとして貼り付け",
   "copyPasteAs": "形式を選択してコピー/貼り付け",
   "copyAsText": "テキストとしてコピー",
   "copyAsSVG": "SVGとしてコピー",
@@ -87,5 +88,9 @@
   "togglePreview": "プレビュー",
   "saveTo": "保存先を選んで保存…",
   "showVersionHistory": "バージョン履歴を表示",
-  "saveToVersionHistory": "バージョン履歴に保存…"
+  "saveToVersionHistory": "バージョン履歴に保存…",
+  "reportProblem": "問題を報告…",
+  "supportOpenPencil": "OpenPencil を支援…",
+  "newBoard": "新規ボード",
+  "toggleAIChat": "AIチャットの切り替え"
 }

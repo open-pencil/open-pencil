@@ -8,13 +8,12 @@ import {
   type EnrollmentService
 } from '#cloud/admin'
 import {
-  CLOUD_AI_JWKS_PATH,
+  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
 import { createAccountRoutes } from '#cloud/server/account/routes'
-import { createAITokenService, type AISigningKey } from '#cloud/server/ai'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -39,6 +38,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
+import { cloudErrorHandler, type CloudErrorReporter } from '#cloud/server/errors'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
@@ -57,6 +57,7 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createServicesTokenService, type ServicesSigningKey } from '#cloud/server/services'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
@@ -76,8 +77,8 @@ export type CloudServices = {
   enrollment?: EnrollmentService
   entitlementSource?: EntitlementSource
   policy?: CloudPolicy
-  /** The imported `aiSigningKey`, required when the config names one. See `loadAISigningKey`. */
-  aiSigningKey?: AISigningKey
+  /** The imported `servicesSigningKey`, required when the config names one. See `loadServicesSigningKey`. */
+  servicesSigningKey?: ServicesSigningKey
   /**
    * Where clients reach this runtime's collaboration relay. Without one, Cloud rooms fall back to
    * peer-to-peer and writes are not enforced by the server.
@@ -87,6 +88,8 @@ export type CloudServices = {
   onDocumentRestored?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
+  /** Reports errors no route handled, when the deployment configures error tracking. */
+  reportError?: CloudErrorReporter
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -217,17 +220,17 @@ export function createCloudApp(services: CloudServices) {
     policy,
     deploymentMode: services.config.deployment
   })
-  if (services.config.aiSigningKey && !services.aiSigningKey) {
-    throw new CloudConfigError('The AI service needs the signing key imported by loadAISigningKey')
+  if (services.config.servicesSigningKey && !services.servicesSigningKey) {
+    throw new CloudConfigError('Services need the signing key imported by loadServicesSigningKey')
   }
-  const aiTokens = services.aiSigningKey
-    ? createAITokenService({
+  const servicesTokens = services.servicesSigningKey
+    ? createServicesTokenService({
         database: services.database,
         policy,
         deploymentMode: services.config.deployment,
         issuer: new URL(services.config.publicURL).origin,
-        signingKey: services.aiSigningKey,
-        lifetimeSeconds: services.config.aiTokenLifetimeSeconds
+        signingKey: services.servicesSigningKey,
+        lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
       })
     : undefined
 
@@ -284,7 +287,7 @@ export function createCloudApp(services: CloudServices) {
     documents,
     versions,
     entitlements,
-    aiTokens,
+    servicesTokens,
     sharing,
     workspaces,
     workspaceMembers,
@@ -310,6 +313,7 @@ export function createCloudApp(services: CloudServices) {
     : new Hono()
 
   return new Hono<CloudEnvironment>()
+    .onError(cloudErrorHandler(services.reportError))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .use('*', async (context, next) => {
@@ -354,8 +358,8 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .get(CLOUD_AI_JWKS_PATH, async (context) =>
-      aiTokens ? context.json(aiTokens.jwks()) : context.notFound()
+    .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
+      servicesTokens ? context.json(servicesTokens.jwks()) : context.notFound()
     )
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', accountRoutes)

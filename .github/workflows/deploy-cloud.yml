@@ -1,0 +1,108 @@
+name: Deploy Cloud
+
+# Deploys an official OpenPencil Cloud deployment: packages/cloud/deploy/openpencil/<target>, with
+# the secrets and reviewers of the cloud-<target> GitHub environment.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment
+        type: choice
+        options: [staging]
+
+concurrency:
+  group: cloud-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: cloud-${{ inputs.target }}
+      url: ${{ vars.CLOUD_URL }}
+    permissions:
+      contents: read
+      deployments: write
+    env:
+      DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
+
+      # The editor's demo document draws its shader fills at build time in a headless Chromium.
+      - uses: ./.github/actions/setup/playwright
+
+      # The Worker serves the editor and the portal as static assets. The editor names this
+      # deployment as the official server and, like app.openpencil.dev, sends the daily ping.
+      - name: Build the Cloud site
+        env:
+          VITE_OPENPENCIL_OFFICIAL_CLOUD_URL: ${{ vars.CLOUD_URL }}
+          VITE_OPENPENCIL_FEEDBACK: "on"
+        run: bun run build:cloud
+
+      # wrangler builds the Worker without deploying it, so the bundle whose source map PostHog gets
+      # is the one that ships, with the chunk ID its error reports carry.
+      - name: Build the Worker
+        working-directory: ${{ env.DEPLOYMENT }}
+        run: bunx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker" --assets "$GITHUB_WORKSPACE/dist-cloud"
+
+      - name: Upload the Worker's source maps for error reports
+        env:
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: "267806"
+          POSTHOG_CLI_HOST: https://eu.posthog.com
+        run: >-
+          bun tools/release/release-packages/src/sourcemaps/publish.ts --dist "$RUNNER_TEMP/worker"
+          --release-name openpencil-cloud --release-version "$GITHUB_SHA" --linked
+
+      # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
+      # config reads every secret it names, so only this step and the next one see them.
+      - name: Migrate the database
+        env:
+          OPENPENCIL_CLOUD_CONFIG: ${{ github.workspace }}/${{ env.DEPLOYMENT }}/openpencil-cloud.toml
+          DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
+        run: bun --filter @open-pencil/cloud migrate
+
+      - name: Collect the Worker's secrets
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
+        run: >-
+          bun tools/ci/cloud-deploy/src/secrets.ts "$RUNNER_TEMP/cloud-secrets.json"
+          BETTER_AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET S3_ACCESS_KEY_ID
+          S3_SECRET_ACCESS_KEY POSTHOG_PROJECT_API_KEY OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY
+
+      - uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ${{ env.DEPLOYMENT }}
+          packageManager: bun
+          command: >-
+            deploy ${{ runner.temp }}/worker/worker.js --config wrangler.jsonc --no-bundle
+            --assets ${{ github.workspace }}/dist-cloud
+            --secrets-file ${{ runner.temp }}/cloud-secrets.json
+
+      - name: Check the deployment
+        env:
+          CLOUD_URL: ${{ vars.CLOUD_URL }}
+        # Only a 200 counts, and pages are asked for as a browser does (tools/ci/cloud-deploy/src/health.ts).
+        run: bun tools/ci/cloud-deploy/src/health.ts "$CLOUD_URL"

@@ -78,7 +78,7 @@ function listStopClass(active: boolean) {
 
       <div class="mb-2">
         <div class="mb-1 flex items-center justify-between">
-          <span class="text-[11px] text-muted">{{ panels.stops }}</span>
+          <span class="text-2xs text-muted">{{ panels.stops }}</span>
           <IconButton
             :label="panels.addStop"
             data-test-id="fill-picker-add-stop"
@@ -128,7 +128,7 @@ function listStopClass(active: boolean) {
             </template>
             <template #value>
               <input
-                class="min-w-0 flex-1 border-none bg-transparent font-mono text-[11px] text-surface outline-none"
+                class="min-w-0 flex-1 border-none bg-transparent font-mono text-2xs text-surface outline-none"
                 :value="s.hex"
                 maxlength="6"
                 @change="s.actions.updateColor(inputValue($event))"
@@ -146,7 +146,11 @@ function listStopClass(active: boolean) {
         </GradientEditorStop>
       </div>
 
-      <ColorPickerPanel :color="root.activeColor" @update="root.actions.updateActiveColor" />
+      <ColorPickerPanel
+        :color="root.activeColor"
+        eyedropper
+        @update="root.actions.updateActiveColor"
+      />
     </div>
   </GradientEditorRoot>
 </template>

@@ -2,6 +2,9 @@ import { getToolName, isToolUIPart } from 'ai'
 import type { UIDataTypes, UIMessagePart, UITools } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 import { isValid } from 'js-base64'
+import * as v from 'valibot'
+
+import { searchResponseSchema, type SearchResult } from '@open-pencil/cloud/contract'
 
 export type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>
 export type ToolCallPart = Extract<ChatMessagePart, { toolCallId: string }>
@@ -103,6 +106,24 @@ export function toolImage(part: ToolCallPart): string | null {
   return `data:${mimeType};base64,${base64}`
 }
 
+const searchOutputSchema = v.union([
+  searchResponseSchema,
+  // Through OpenPencil's MCP server, as an agent such as Claude Code receives it.
+  v.pipe(
+    v.object({ content: v.tuple([v.object({ type: v.literal('text'), text: v.string() })]) }),
+    v.transform((output) => output.content[0].text),
+    v.parseJson(),
+    searchResponseSchema
+  )
+])
+
+/** The pages a `web_search` call found, to show as sources rather than JSON. */
+export function toolWebResults(part: ToolCallPart): SearchResult[] | null {
+  if (part.state !== 'output-available' || toolName(part) !== 'web_search') return null
+  const found = v.safeParse(searchOutputSchema, part.output)
+  return found.success ? found.output.results : null
+}
+
 /** Output with large binary payloads elided, for display as JSON. */
 export function displayedToolOutput(part: ToolCallPart): unknown {
   if (part.state !== 'output-available') return undefined
@@ -130,13 +151,26 @@ export function toolHasInput(part: ToolCallPart): boolean {
 export type MessagePartGroup =
   | { kind: 'part'; part: ChatMessagePart; index: number }
   | { kind: 'tools'; parts: { part: ToolCallPart; index: number }[] }
+  | { kind: 'compaction'; index: number; compaction: number }
 
-/** Consecutive tool calls form one group, so a long run can collapse into a single row. */
-export function groupMessageParts(parts: readonly ChatMessagePart[]): MessagePartGroup[] {
+/**
+ * Consecutive tool calls form one group, so a long run can collapse into a single row. Each
+ * compaction within the reply, before a step in `compactedSteps`, sits between groups and names
+ * its place in that list.
+ */
+export function groupMessageParts(
+  parts: readonly ChatMessagePart[],
+  compactedSteps: readonly number[] = []
+): MessagePartGroup[] {
   const groups: MessagePartGroup[] = []
+  let step = 0
   parts.forEach((part, index) => {
     // Step boundaries are not rendered, so they must not split a run of calls.
-    if (part.type === 'step-start') return
+    if (part.type === 'step-start') {
+      const compaction = compactedSteps.indexOf(step++)
+      if (compaction !== -1) groups.push({ kind: 'compaction', index, compaction })
+      return
+    }
     if (!isToolUIPart(part)) {
       groups.push({ kind: 'part', part, index })
       return

@@ -29,7 +29,12 @@ export interface DesignJSXServices<Artwork> {
   svg(source: SVGSource, size: number): Artwork | null
   /** Vector nodes for the artwork, created under the placement's parent. */
   createArtwork(graph: SceneGraph, artwork: Artwork, placement: ArtworkPlacement): SceneNode
-  /** Size and lay out the rendered roots once they are in place. */
+  /**
+   * Prepare the fonts the rendered roots' text uses, before they are laid out, so layout measures
+   * that text in its own fonts. An engine without fonts leaves it out.
+   */
+  prepareFonts?(graph: SceneGraph, rootIds: readonly string[]): Promise<unknown>
+  /** Size and lay out the rendered roots once they are in place and their fonts prepared. */
   layout(graph: SceneGraph, rootIds: readonly string[]): void
   /** The tight bounds of a vector network, its curves included, which size a `<Vector>`. */
   vectorBounds(network: VectorNetwork): Rect

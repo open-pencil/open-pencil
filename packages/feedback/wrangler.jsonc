@@ -33,7 +33,13 @@
   "ratelimits": [
     { "name": "PING_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
     { "name": "INGEST_LIMITER", "namespace_id": "1002", "simple": { "limit": 60, "period": 60 } },
-    { "name": "WAITLIST_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } }
+    { "name": "WAITLIST_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } },
+    { "name": "REPORT_LIMITER", "namespace_id": "1004", "simple": { "limit": 10, "period": 60 } }
+  ],
+  // Files attached to error and problem reports. Created with
+  // `wrangler r2 bucket create openpencil-reports --jurisdiction eu`, so they stay in the EU.
+  "r2_buckets": [
+    { "binding": "REPORTS", "bucket_name": "openpencil-reports", "jurisdiction": "eu" }
   ],
   "send_email": [{ "name": "EMAIL" }],
   // The metrics dashboard, built by `vite build --mode metrics` at the repository root. Its page
@@ -57,7 +63,9 @@
       "POSTHOG_PERSONAL_KEY",
       // Not secret, but set per deployment once the Access application in front of /admin exists.
       "ACCESS_TEAM_DOMAIN",
-      "ACCESS_AUD"
+      "ACCESS_AUD",
+      // Any long random string; rotating it only invalidates uploads in flight.
+      "REPORT_UPLOAD_SECRET"
     ]
   }
 }

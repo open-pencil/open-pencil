@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { AgentAccount } from '@/app/ai/agents/setup/accounts'
 import { codingAgentDetection, piDetection } from '@/app/ai/agents/setup/detection'
 import type { DetectedAgent } from '@/app/ai/agents/setup/discovery'
 import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup/view'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const claude = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
   'Claude Code'

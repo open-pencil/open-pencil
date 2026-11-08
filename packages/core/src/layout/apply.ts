@@ -2,7 +2,7 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { flipChanges, layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 
@@ -23,7 +23,7 @@ function preservesImportedHugCrossSize(
     )
 }
 
-type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>>
+type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'flipX' | 'flipY'>>
 
 /**
  * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
@@ -43,9 +43,9 @@ function writeLayoutGeometry(
   if (!node) return
   const from = before ?? { width: node.width, height: node.height }
   const changes: LayoutGeometry = {}
-  for (const key of ['x', 'y', 'width', 'height'] as const) {
+  for (const key of ['x', 'y', 'width', 'height', 'flipX', 'flipY'] as const) {
     const value = geometry[key]
-    if (value !== undefined && value !== node[key]) changes[key] = value
+    if (value !== undefined && value !== node[key]) Object.assign(changes, { [key]: value })
   }
   if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
   if (!CONSTRAINT_PARENT_TYPES.has(node.type)) return
@@ -54,14 +54,24 @@ function writeLayoutGeometry(
   if (graph.isApplyingDerivedLayout && !constrained) return
   if (from.width !== node.width || from.height !== node.height) {
     constrainChildren(graph, node, from, computeLayout)
+    rememberPlacedSize(node)
   }
 }
 
 /**
- * The size each Hug frame had after layout last ran on it. Keyed by the node, so a deleted
- * frame's entry goes with it and a restored one starts afresh.
+ * The size each Hug frame's constrained children were last placed for by layout. Keyed by the
+ * node, so a deleted frame's entry goes with it and a restored one starts afresh.
  */
 const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
+
+function rememberPlacedSize(frame: SceneNode): void {
+  const placed = huggedSizes.get(frame)
+  if (!placed) {
+    return
+  }
+  placed.width = frame.width
+  placed.height = frame.height
+}
 
 const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set([
   'FRAME',
@@ -85,17 +95,18 @@ function constrainChildren(
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
     const size = { width: child.width, height: child.height }
+    const { flipsX, flipsY, ...box } = layoutConstrainedChildRect(
+      child,
+      before,
+      frame,
+      child.horizontalConstraint,
+      child.verticalConstraint,
+      enforcedAspectRatio(child)
+    )
     writeLayoutGeometry(
       graph,
       child.id,
-      layoutConstrainedChildRect(
-        child,
-        before,
-        frame,
-        child.horizontalConstraint,
-        child.verticalConstraint,
-        enforcedAspectRatio(child)
-      ),
+      { ...box, ...flipChanges(child, child, flipsX, flipsY) },
       computeLayout,
       undefined,
       true

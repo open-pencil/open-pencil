@@ -246,6 +246,33 @@ describe('storage library catalog', () => {
     expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
   })
 
+  test('leaves out a library an earlier version published, and publishes it again', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const summary = {
+      libraryId: 'design-system',
+      name: 'Design system',
+      latestRevisionId: 'a'.repeat(64),
+      publishedAt: '2026-01-01T00:00:00.000Z',
+      assetCount: 1
+    }
+    await objects.putObject(
+      'open-pencil/libraries/design-system/manifest.json',
+      new TextEncoder().encode(JSON.stringify({ schemaVersion: 1, summary }))
+    )
+
+    expect(await catalog.listLibraries()).toEqual([])
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+
+    expect((await catalog.listLibraries()).map((library) => library.latestRevisionId)).toEqual([
+      revision.manifest.revisionId
+    ])
+  })
+
   test('rejects stale publication pointers', async () => {
     const catalog = new StorageLibraryCatalog(new MemoryObjects())
     await catalog.publishRevision({

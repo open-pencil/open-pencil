@@ -73,7 +73,7 @@ const radius = (index: number): [number, number, number, number] =>
     :bar-gap="2"
     :bar-category-gap="stacked ? '10%' : '30%'"
     :is-animation-active="false"
-    class="text-[11px]"
+    class="text-2xs"
     :title="label"
   >
     <CartesianGrid :vertical="false" />

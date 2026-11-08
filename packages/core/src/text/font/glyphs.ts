@@ -1,19 +1,22 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { fontManager } from '#core/text/font/manager'
 
 import {
   fontInstance,
+  glyphBox,
   glyphCommands,
   harfBuzzFont,
+  harfBuzzTable,
   isHarfBuzzLoaded,
   loadHarfBuzz,
   shapeText,
   type HarfBuzzFont,
+  type HarfBuzzInstance,
   type OutlineCommand,
   type ShapingOptions
 } from './harfbuzz'
-import { fontTableView } from './variation'
 
 export type { OutlineCommand } from './harfbuzz'
 
@@ -113,8 +116,8 @@ const lineMetricsCache = new WeakMap<HarfBuzzFont, LineMetrics>()
 function lineMetrics(parsed: HarfBuzzFont): LineMetrics {
   const cached = lineMetricsCache.get(parsed)
   if (cached) return cached
-  const hhea = fontTableView(parsed.bytes, 'hhea')
-  const os2 = fontTableView(parsed.bytes, 'OS/2')
+  const hhea = harfBuzzTable(parsed.face, 'hhea')
+  const os2 = harfBuzzTable(parsed.face, 'OS/2')
   const hasHhea = hhea !== null && hhea.byteLength >= 8
   const metrics = {
     ascender: hasHhea ? hhea.getInt16(4) : 0,
@@ -125,6 +128,15 @@ function lineMetrics(parsed: HarfBuzzFont): LineMetrics {
   return metrics
 }
 
+/** A cap height most Latin fonts are near, in ems, for text whose font cannot be read. */
+export const TYPICAL_CAP_HEIGHT_EMS = 0.7
+
+export interface MeasuredTextLines {
+  width: number
+  lines: number
+  lineHeight: number
+}
+
 export function measureTextWithFont(
   text: string,
   fontSize: number,
@@ -132,7 +144,7 @@ export function measureTextWithFont(
   style: string,
   maxWidth?: number,
   lineHeight?: number
-): { width: number; height: number } | null {
+): MeasuredTextLines | null {
   const parsed = getParsedFont(family, style)
   if (!parsed) return null
 
@@ -146,9 +158,9 @@ export function measureTextWithFont(
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
-    return { width: maxWidth, height: Math.ceil(lines * lineH) }
+    return { width: maxWidth, lines, lineHeight: lineH }
   }
-  return { width: Math.ceil(singleLineWidth), height: lineH }
+  return { width: Math.ceil(singleLineWidth), lines: 1, lineHeight: lineH }
 }
 
 /**
@@ -300,6 +312,13 @@ export interface GlyphOutlineSource {
   /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and as `shaping` asks. */
   shape(text: string, shaping: RunShaping): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
+  /**
+   * The box around `glyphId`'s outline at `fontSize`, y down from the baseline, as the font
+   * measures it at its axes; `null` for a glyph that draws nothing.
+   */
+  extents(glyphId: number, fontSize: number): VisualBounds | null
+  /** The cap height at the font's axes, in ems; HarfBuzz measures `H` when no table declares it. */
+  capHeight(): number
 }
 
 /**
@@ -348,8 +367,24 @@ function outlineSource(
         yOffset: (glyph.yOffset ?? 0) / parsed.face.upem
       })),
     outline: (glyphId, fontSize) =>
-      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null
+      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null,
+    extents: (glyphId, fontSize) =>
+      glyphId < parsed.glyphCount ? glyphBox(parsed, instance, glyphId, fontSize) : null,
+    capHeight: () => instanceCapHeight(parsed, instance)
   }
+}
+
+const capHeights = new WeakMap<HarfBuzzInstance, number>()
+
+function instanceCapHeight(parsed: HarfBuzzFont, instance: HarfBuzzInstance): number {
+  let capHeight = capHeights.get(instance)
+  if (capHeight === undefined) {
+    const units = instance.font.getMetricPositionWithFallback(parsed.hb.MetricsTag.CAP_HEIGHT)
+    capHeight =
+      Number.isFinite(units) && units > 0 ? units / parsed.face.upem : TYPICAL_CAP_HEIGHT_EMS
+    capHeights.set(instance, capHeight)
+  }
+  return capHeight
 }
 
 /** The advance of glyph `glyphId` of a loaded font at `fontSize`, or `null` when it has none. */

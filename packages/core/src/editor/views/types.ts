@@ -1,11 +1,36 @@
 import type { EditorState, Tool } from '#core/editor/types'
 
 /**
- * What the host takes away from every view, whatever the canvas shows: a read-only document, as
- * for a viewer or an earlier version, can be looked at, selected in, and copied from, not changed.
+ * How much of a path vector edit mode may change: anything, or only the handles of its points,
+ * which keep their places and connections. A host that lets players reshape curves but not
+ * redraw them, as a lettering game does, offers handles only.
+ */
+export type PathEdits = 'all' | 'handles'
+
+/**
+ * Whether layers may change: anything, or none of them, so nothing is moved, resized, restyled,
+ * renamed, added, or deleted, while vector edit mode still reshapes a path as far as `PathEdits`
+ * lets it. A host that hands the player one path to reshape, as a lettering game does, offers
+ * none.
+ */
+export type LayerEdits = 'all' | 'none'
+
+/**
+ * What the host takes away from every view, whatever the canvas shows. A restriction only ever
+ * takes away from what the document's kind and the view offer.
  */
 export interface EditorRestrictions {
+  /**
+   * A read-only document, as for a viewer or an earlier version, can be looked at, selected in,
+   * and copied from, not changed.
+   */
   readOnly: boolean
+  /** The only tools the host offers, or null to leave the profile's tools as they are. */
+  tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change. */
+  pathEdits: PathEdits
+  /** Whether layers may change outside vector edit mode. */
+  layerEdits: LayerEdits
 }
 
 /**
@@ -43,7 +68,14 @@ export interface EditorProfile {
   edits: boolean
   /** The tools on offer, or null for every tool. */
   tools: ReadonlySet<Tool> | null
-  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  /** How much of a path vector edit mode may change: anything, or only its handles. */
+  pathEdits: PathEdits
+  /**
+   * Whether layers may change: the canvas's edit handles, layer drags, text editing, value
+   * scrubbing, and guide editing. None while the document is read-only.
+   */
+  layerEdits: LayerEdits
+  /** Which tool each key picks, by shortcut (`R`, `Shift+S`), as TanStack Hotkeys spells it. */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas
@@ -59,6 +91,11 @@ export interface EditorProfile {
    * board it selects the frame, and double-click or Enter goes inside.
    */
   framesOpen: boolean
+  /**
+   * What a section's title is coloured from: its fill, as in Figma Design, or its outline, as a
+   * FigJam board draws it.
+   */
+  sectionTitles: 'fill' | 'outline'
   /** Whether design lint checks the document; a FigJam board has none. */
   lint: boolean
   /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */

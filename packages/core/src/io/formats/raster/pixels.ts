@@ -1,4 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit, EncodedImageFormat } from 'canvaskit-wasm'
 
 import type { ExportFormat, RasterExportFormat } from './render'
 
@@ -13,6 +13,8 @@ export interface RGBAImage {
 export interface RasterCodec {
   decode(bytes: Uint8Array): RGBAImage | null
   encodePNG(image: RGBAImage): Uint8Array | null
+  /** `image` as a JPEG, its alpha dropped onto black. */
+  encodeJPG(image: RGBAImage): Uint8Array | null
 }
 
 export function createCanvasKitRasterCodec(ck: CanvasKit): RasterCodec {
@@ -23,6 +25,21 @@ export function createCanvasKitRasterCodec(ck: CanvasKit): RasterCodec {
     width,
     height
   })
+
+  const encode = (
+    { width, height, data }: RGBAImage,
+    format: EncodedImageFormat,
+    quality: number
+  ) => {
+    const image = ck.MakeImage(info(width, height), data, width * 4)
+    if (!image) return null
+    try {
+      const encoded = image.encodeToBytes(format, quality)
+      return encoded ? new Uint8Array(encoded) : null
+    } finally {
+      image.delete()
+    }
+  }
 
   return {
     decode(bytes) {
@@ -39,14 +56,20 @@ export function createCanvasKitRasterCodec(ck: CanvasKit): RasterCodec {
         image.delete()
       }
     },
-    encodePNG({ width, height, data }) {
-      const image = ck.MakeImage(info(width, height), data, width * 4)
-      if (!image) return null
+    encodePNG: (image) => encode(image, ck.ImageFormat.PNG, 100),
+    encodeJPG(image) {
+      // JPEG ignores alpha; premultiplied colour is the colour laid over black.
+      const source = ck.MakeImage(info(image.width, image.height), image.data, image.width * 4)
+      if (!source) return null
       try {
-        const encoded = image.encodeToBytes(ck.ImageFormat.PNG, 100)
-        return encoded ? new Uint8Array(encoded) : null
+        const overBlack = source.readPixels(0, 0, {
+          ...info(image.width, image.height),
+          alphaType: ck.AlphaType.Premul
+        })
+        if (!(overBlack instanceof Uint8Array)) return null
+        return encode({ ...image, data: overBlack }, ck.ImageFormat.JPEG, 90)
       } finally {
-        image.delete()
+        source.delete()
       }
     }
   }

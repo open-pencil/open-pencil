@@ -184,14 +184,38 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
-  test('advertises an AI service and billing portal only when configured', () => {
+  test('reports server errors only when error tracking is configured', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).errorTracking).toBeUndefined()
+
+    const tracked = `${minimalSource}
+[error_tracking]
+provider = "posthog"
+`
+    expect(() => parseCloudDeploymentTOML(tracked, environment)).toThrow('POSTHOG_PROJECT_API_KEY')
+    expect(
+      parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
+        .errorTracking
+    ).toEqual({ provider: 'posthog', host: 'https://us.i.posthog.com', projectAPIKey: 'phc_test' })
+
+    const inline = tracked.replace(
+      'provider = "posthog"',
+      'provider = "posthog"\nhost = "https://eu.i.posthog.com"\nproject_api_key = "phc_inline"'
+    )
+    expect(parseCloudDeploymentTOML(inline, environment).errorTracking).toEqual({
+      provider: 'posthog',
+      host: 'https://eu.i.posthog.com',
+      projectAPIKey: 'phc_inline'
+    })
+  })
+
+  test('advertises services and a billing portal only when configured', () => {
     const plain = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
-    expect(plain.ai).toBeUndefined()
+    expect(plain.services).toBeUndefined()
     expect(plain.billing).toBeUndefined()
 
     const source = `${minimalSource}
-[ai]
-endpoint = "https://ai.example.com"
+[services]
+endpoint = "https://services.example.com"
 token_lifetime_minutes = 5
 
 [billing]
@@ -201,23 +225,26 @@ portal_url = "https://billing.example.com"
 `
     const withSecrets = {
       ...environment,
-      OPENPENCIL_CLOUD_AI_SIGNING_KEY: 'signing-key-pem',
+      OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: 'signing-key-pem',
       OPENPENCIL_CLOUD_SERVICE_TOKEN: 'service-token-with-at-least-32-characters'
     }
     const config = parseCloudDeploymentTOML(source, withSecrets)
     expect(config).toMatchObject({
-      aiEndpoint: 'https://ai.example.com',
-      aiSigningKey: 'signing-key-pem',
-      aiTokenLifetimeSeconds: 300,
+      servicesEndpoint: 'https://services.example.com',
+      servicesSigningKey: 'signing-key-pem',
+      servicesTokenLifetimeSeconds: 300,
       billingPortalURL: 'https://billing.example.com',
       internalServiceToken: 'service-token-with-at-least-32-characters'
     })
     const discovery = cloudDiscoveryFromConfig(config)
-    expect(discovery.ai).toEqual({ endpoint: 'https://ai.example.com', contractVersion: '1' })
+    expect(discovery.services).toEqual({
+      endpoint: 'https://services.example.com',
+      contractVersion: '1'
+    })
     expect(discovery.billing).toEqual({ portalURL: 'https://billing.example.com' })
 
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow(
-      'OPENPENCIL_CLOUD_AI_SIGNING_KEY'
+      'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY'
     )
     expect(() =>
       parseCloudDeploymentTOML(`${source}\n[entitlements]\nsource = "static"\n`, withSecrets)

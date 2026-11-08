@@ -13,6 +13,9 @@ export const notificationMessageDefaults = {
   copiedProperties: 'Copied properties.',
   tokensLeftOut: params('Left out of the stylesheet: {names}.'),
   designTokensLeftOut: params('Left out of the design tokens: {names}.'),
+  designTokensAmbiguous: params(
+    'These styles refer to a variable whose path another collection also has, so other tools may read the wrong one: {names}.'
+  ),
   designTokensImported: params('Imported {count} design tokens.'),
   unsupportedVariableExpressions: params(
     'OpenPencil can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
@@ -23,6 +26,7 @@ export const notificationMessageDefaults = {
   xPaths: 'XPaths',
   pngClipboardUnavailable: 'PNG clipboard export is not available in this browser.',
   openFileFailed: params('Could not open “{name}”: {error}'),
+  openTourFailed: params('Could not open the tour: {error}'),
   viewDiagnostics: 'View diagnostics',
   importedDOMCSS: 'Imported DOM/CSS document.',
   importDOMCSSFailed: params('Could not import DOM/CSS: {error}'),
@@ -50,6 +54,7 @@ const localeLoaders = {
   it: () => import('./locales/it.json'),
   ja: () => import('./locales/ja.json'),
   pl: () => import('./locales/pl.json'),
+  'pt-BR': () => import('./locales/pt-br.json'),
   ru: () => import('./locales/ru.json'),
   'zh-CN': () => import('./locales/zh-cn.json')
 } satisfies Record<TranslatedLocale, () => Promise<{ default: Record<string, string> }>>

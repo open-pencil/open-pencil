@@ -53,7 +53,8 @@ export const panelMessageDefaults = {
   libraryUpdateImpact: params('{affected} affected instances · {fallback} variant fallbacks'),
   publishLibrary: 'Publish library',
   publishingLibrary: 'Publishing…',
-  publishLibraryHelp: 'Publish this file’s components as an immutable revision.',
+  publishLibraryHelp:
+    'Publish this file’s components, styles, and variables as an immutable revision.',
   libraryId: 'Library ID',
   libraryName: 'Library name',
   revisionDescription: 'Revision description',
@@ -143,6 +144,7 @@ export const panelMessageDefaults = {
   /** A star's inner radius as a share of its outer one. */
   starRatio: 'Ratio',
   spread: 'Spread',
+  effectColor: 'Color',
 
   page: 'Page',
   selectionColors: 'Selection colors',
@@ -255,6 +257,9 @@ export const panelMessageDefaults = {
   behaviourCheckboxDescription: 'Checks and unchecks',
   behaviourSliderDescription: 'Drags a thumb along a track',
   behaviourTabsDescription: 'Shows one panel at a time',
+  behaviourTab: 'Tab',
+  behaviourTabDescription: 'A trigger of tabs, drawn selected or not',
+  behaviourSelected: 'Selected',
   behaviourTextField: 'Text field',
   behaviourTextFieldDescription: 'Takes one line of typing',
   behaviourTextarea: 'Textarea',
@@ -289,8 +294,11 @@ export const panelMessageDefaults = {
   behaviourMoreOptions: 'More options',
   behaviourValue: 'Value',
   behaviourDisabled: 'Disabled',
+  behaviourInvalid: 'Invalid',
   behaviourOnValue: 'On',
   behaviourOffValue: 'Off',
+  /** A value's on or off variant field, such as "Checked: On". */
+  behaviourValueField: params('{value}: {side}'),
   behaviourTrack: 'Track',
   behaviourThumb: 'Thumb',
   behaviourRange: 'Range',
@@ -318,6 +326,7 @@ export const panelMessageDefaults = {
   behaviourStatePressed: 'Pressed',
   behaviourStateFocus: 'Focus',
   behaviourStateDisabled: 'Disabled',
+  behaviourStateInvalid: 'Invalid',
   behaviourStateUnset: 'None',
   behaviourStateField: params('{state} state'),
   searchComponentProperties: 'Search properties',

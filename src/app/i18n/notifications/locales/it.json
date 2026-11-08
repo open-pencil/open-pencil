@@ -7,6 +7,7 @@
   "copiedProperties": "Proprietà copiate.",
   "pngClipboardUnavailable": "L’esportazione PNG negli appunti non è disponibile in questo browser.",
   "openFileFailed": "Impossibile aprire «{name}»: {error}",
+  "openTourFailed": "Impossibile aprire il tour: {error}",
   "viewDiagnostics": "Mostra diagnostica",
   "importedDOMCSS": "Documento DOM/CSS importato.",
   "importDOMCSSFailed": "Impossibile importare DOM/CSS: {error}",
@@ -31,6 +32,7 @@
   "openQueuedFilesFailed": "Impossibile aprire i file passati a OpenPencil: {error}",
   "tokensLeftOut": "Esclusi dal foglio di stile: {names}.",
   "designTokensLeftOut": "Esclusi dai design token: {names}.",
+  "designTokensAmbiguous": "Questi stili rimandano a una variabile il cui percorso esiste anche in un’altra collezione, quindi altri strumenti potrebbero leggere quella sbagliata: {names}.",
   "designTokensImported": "Importati {count} design token.",
   "unsupportedVariableExpressions": "OpenPencil non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}."
 }

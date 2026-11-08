@@ -74,7 +74,7 @@ function handleDismiss() {
 
     <pre
       v-if="toolInput"
-      class="mt-2 max-h-32 overflow-auto rounded bg-input p-2 text-[10px] text-muted"
+      class="mt-2 max-h-32 overflow-auto rounded bg-input p-2 text-3xs text-muted"
       >{{ toolInput }}</pre>
 
     <div class="mt-4 flex flex-col gap-2">

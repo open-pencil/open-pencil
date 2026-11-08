@@ -1,9 +1,10 @@
 import { cloneNodeProps } from '../copy'
 import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
 import { referencedStyleIds } from '../shared-styles'
-import { remapStyleRunReferences, styleRunReferences } from '../text/references'
+import { styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
+import { remappedResourceReferences } from './resources'
 import type { VariableTransferReferences } from './variables'
 
 export function semanticTransferReferences(node: SceneNode): string[] {
@@ -65,51 +66,36 @@ export function prepareNodeTransfer(
   result.componentId = source.componentId ? node(source.componentId) : null
   result.instanceOverrides = remapInstanceOverrideState(source.instanceOverrides, {
     node,
-    variable
+    variable,
+    collection: (id) => refs.collections.get(id)
   })
-  result.boundVariables = Object.fromEntries(
-    Object.entries(source.boundVariables).map(([field, id]) => [field, variable(id)])
-  )
-  result.variableModes = Object.fromEntries(
-    Object.entries(source.variableModes).map(([collection, mode]) => [
-      required(refs.collections, collection, 'collection'),
-      required(refs.modes, mode, 'mode')
-    ])
-  )
-  for (const field of [
-    'fillStyleId',
-    'strokeStyleId',
-    'textStyleId',
-    'effectStyleId',
-    'gridStyleId'
-  ] as const) {
-    result[field] = source[field] ? style(source[field]) : null
-  }
-  if (result.styleRuns) {
-    // A link to a layer the transfer leaves behind keeps naming it.
-    result.styleRuns = remapStyleRunReferences(result.styleRuns, {
+  Object.assign(
+    result,
+    remappedResourceReferences(source, {
       variable,
+      collection: (id) => required(refs.collections, id, 'collection'),
+      mode: (id) => required(refs.modes, id, 'mode'),
       style,
-      node: (id) => refs.nodes.get(id) ?? id
+      // A link to a layer the transfer leaves behind keeps naming it.
+      layer: (id) => refs.nodes.get(id) ?? id
     })
-  }
+  )
   // A connector keeps the layers it was attached to when they are left behind; the end becomes
   // free where nothing by that ID exists, as a pasted Figma connector does.
   for (const field of ['connectorStart', 'connectorEnd'] as const) {
     const endpoint = result[field]
     if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
   }
-  for (const region of result.vectorNetwork?.regions ?? [])
-    if (region.fillStyleId) region.fillStyleId = style(region.fillStyleId)
   result.componentPropertyDefinitions = source.componentPropertyDefinitions.map((definition) => ({
     ...structuredClone(definition),
     id: property(definition.id),
     defaultValue: propertyValue(definition.id, definition.defaultValue)
   }))
-  result.componentPropertyReferences = source.componentPropertyReferences.map((reference) => ({
-    ...reference,
-    propertyId: property(reference.propertyId)
-  }))
+  // A reference to a property that neither the transfer nor its destination defines names nothing.
+  result.componentPropertyReferences = source.componentPropertyReferences.flatMap((reference) => {
+    const propertyId = refs.properties.get(reference.propertyId)
+    return propertyId ? [{ ...reference, propertyId }] : []
+  })
   result.componentPropertyAssignments = values(source.componentPropertyAssignments)
   // Variant values are keyed by display names, unlike definition-ID assignments.
   result.componentPropertyValues = { ...source.componentPropertyValues }

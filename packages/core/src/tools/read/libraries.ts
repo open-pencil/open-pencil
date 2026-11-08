@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { getComponentCatalog } from '#core/tools/component-catalog'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -10,7 +12,7 @@ export const listLibraries = defineTool({
   exposure: { webmcp: false },
   input: v.strictObject({}),
   execute: async (figma) => {
-    const catalog = getComponentCatalog(figma.graph)
+    const catalog = getComponentCatalog(graphOf(figma))
     const libraries = catalog ? await catalog.listLibraries() : []
     return { count: libraries.length, libraries }
   }
@@ -34,7 +36,9 @@ export const insertLibraryComponent = defineTool({
     )
   }),
   execute: async (figma, args) => {
-    const catalog = getComponentCatalog(figma.graph)
+    if (args.parent_id)
+      prepareSlotInsertion(graphOf(figma), args.parent_id, 'insert_library_component')
+    const catalog = getComponentCatalog(graphOf(figma))
     if (!catalog) throw new Error('No component library catalog is configured')
     let variantValues: Record<string, string> | undefined
     if (args.variant_values) {

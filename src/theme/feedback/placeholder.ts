@@ -19,7 +19,7 @@ const placeholderTheme = {
         content: 'max-w-xs',
         icon: 'mb-2 size-8',
         label: 'font-normal text-muted',
-        description: 'text-[11px]',
+        description: 'text-2xs',
         action: 'mt-3'
       },
       panel: { root: 'p-6' },

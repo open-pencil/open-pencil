@@ -50,12 +50,10 @@ import {
   NumberFieldValue
 } from '@open-pencil/vue/primitives/NumberField'
 
-import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/input/number-field'
 
 const attrs = useAttrs()
 const slots = defineSlots<NumberFieldSlots>()
-const store = useEditorStore()
 const { panels } = useI18n()
 
 const {
@@ -115,12 +113,7 @@ defineOptions({ inheritAttrs: false })
       (expression: string, reason: NumberExpressionError) => emit('invalid', expression, reason)
     "
     @detach-request="emit('detach-request', $event)"
-    @editing-change="
-      (editing: boolean) => {
-        store.state.numberFieldFocused = editing
-        emit('editing-change', editing)
-      }
-    "
+    @editing-change="(editing: boolean) => emit('editing-change', editing)"
   >
     <div
       v-bind="{ ...attrs, ...rootAttrs }"
@@ -132,14 +125,11 @@ defineOptions({ inheritAttrs: false })
         actions.startScrub($event)
       "
     >
-      <span
-        v-if="editing || !slots.bound || rootAttrs['data-bound'] === undefined"
-        :class="styles.leading({ class: ui?.leading })"
-      >
+      <span :class="styles.leading({ class: ui?.leading })">
         <slot name="icon">
-          <span v-if="icon" class="text-[11px] leading-none">{{ icon }}</span>
+          <span v-if="icon" class="text-2xs leading-none">{{ icon }}</span>
         </slot>
-        <span v-if="label" class="text-[11px] leading-none">{{ label }}</span>
+        <span v-if="label" class="text-2xs leading-none">{{ label }}</span>
       </span>
       <NumberFieldInput :class="styles.field({ class: ui?.field })" />
       <NumberFieldValue :class="styles.display({ class: ui?.display })">

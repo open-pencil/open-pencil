@@ -11,7 +11,7 @@ import {
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import { figJamColoredLayers } from '#core/editor/figjam/toolbar'
-import type { NodeActions } from '#core/editor/nodes'
+import type { NodeActions } from '#core/editor/nodes/actions'
 import type { EditorContext } from '#core/editor/types'
 
 /**

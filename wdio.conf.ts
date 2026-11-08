@@ -6,7 +6,7 @@ import type { TauriCapabilities } from '@wdio/tauri-service'
 
 const root = dirname(fileURLToPath(import.meta.url))
 const binaryName = process.platform === 'win32' ? 'OpenPencil.exe' : 'OpenPencil'
-const appBinary = join(root, 'desktop', 'target', 'debug', binaryName)
+const appBinary = join(root, 'target', 'debug', binaryName)
 
 const capability: TauriCapabilities = {
   browserName: 'tauri',

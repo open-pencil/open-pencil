@@ -72,7 +72,8 @@ function swatchRows() {
     const swatch = editor.graph.createNode('RECTANGLE', frame.id, {
       name: `${frame.name} swatch`,
       width: 120,
-      height: 60
+      height: 60,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
     })
     return { frame, swatch }
   }

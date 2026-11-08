@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 import { queryByXPath } from '#core/xpath'
 
@@ -24,8 +25,10 @@ Examples:
     limit: v.optional(toolNumber(v.pipe(v.number(), v.description('Max results (default: 1000)'))))
   }),
   execute: async (figma, args) => {
+    if (args.page !== undefined)
+      await figma.root.children.find((page) => page.name === args.page)?.loadAsync()
     try {
-      const nodes = await queryByXPath(figma.graph, args.selector, {
+      const nodes = await queryByXPath(graphOf(figma), args.selector, {
         page: args.page ?? figma.currentPage.name,
         limit: args.limit
       })

@@ -1,5 +1,9 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
-import { styleSpelling, styleToWeight } from '@open-pencil/scene-graph/font-style'
+import {
+  styleSpelling,
+  styleToWeight,
+  type FontFamilyStyle
+} from '@open-pencil/scene-graph/font-style'
 
 interface TableRange {
   offset: number
@@ -9,6 +13,10 @@ interface TableRange {
 const WINDOWS_PLATFORM = 3
 const MAC_PLATFORM = 1
 const ENGLISH_US = 0x409
+/** Windows names are UTF-16; Mac names are read in the Roman script, the one with a decoder. */
+const WINDOWS_NAMES = new TextDecoder('utf-16be')
+const MAC_ROMAN_NAMES = new TextDecoder('macintosh')
+const MAC_ROMAN = 0
 const NAME_HEADER_SIZE = 6
 const NAME_RECORD_SIZE = 12
 const FVAR_HEADER_SIZE = 16
@@ -69,16 +77,33 @@ function fontName(view: DataView, name: TableRange, nameId: number): string | nu
     if (start + length > end) continue
     const bytes = new Uint8Array(view.buffer, view.byteOffset + start, length)
     if (platform === WINDOWS_PLATFORM) {
-      let value = ''
-      for (let c = 0; c + 1 < length; c += 2)
-        value += String.fromCharCode((bytes[c] << 8) | bytes[c + 1])
+      const value = WINDOWS_NAMES.decode(bytes)
       if (language === ENGLISH_US) return value
       fallback ??= value
-    } else if (platform === MAC_PLATFORM) {
-      fallback ??= String.fromCharCode(...bytes)
+    } else if (platform === MAC_PLATFORM && view.getUint16(record + 2) === MAC_ROMAN) {
+      fallback ??= MAC_ROMAN_NAMES.decode(bytes)
     }
   }
   return fallback
+}
+
+const FAMILY_NAME = 1
+const SUBFAMILY_NAME = 2
+const TYPOGRAPHIC_FAMILY_NAME = 16
+const TYPOGRAPHIC_SUBFAMILY_NAME = 17
+
+/**
+ * The family and style a font file names itself with: its typographic names, which keep every
+ * weight in one family, else the legacy ones, which group at most four styles per family.
+ */
+export function fontFaceName(data: ArrayBuffer): FontFamilyStyle | null {
+  const view = new DataView(data)
+  const name = sfntTable(view, 'name')
+  if (!name) return null
+  const family = fontName(view, name, TYPOGRAPHIC_FAMILY_NAME) ?? fontName(view, name, FAMILY_NAME)
+  const style =
+    fontName(view, name, TYPOGRAPHIC_SUBFAMILY_NAME) ?? fontName(view, name, SUBFAMILY_NAME)
+  return family ? { family, style: style ?? 'Regular' } : null
 }
 
 /** A variation axis of a font: its tag, its range and default, and the name the font gives it. */

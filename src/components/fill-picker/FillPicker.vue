@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -10,12 +9,15 @@ import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/contro
 import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { pickerOutsideHandlers, type PickerKeepOpen } from '@open-pencil/vue/primitives/ColorPicker'
 import { FillRoot } from '@open-pencil/vue/primitives/Fill'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
 import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -45,7 +47,7 @@ const {
   /** Names the trigger for a paint that is not a fill, such as a stroke. */
   label?: string
   /** Whether a press outside the picker should leave it open, such as on a gradient handle. */
-  keepOpen?: (event: PointerEvent) => boolean
+  keepOpen?: PickerKeepOpen
   /** The one layer the paint is on, which an image crop starts by covering. */
   layerSize?: { width: number; height: number } | null
 }>()
@@ -61,35 +63,31 @@ const emit = defineEmits<{
   openChange: [open: boolean]
   cancel: []
 }>()
-const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
-  emit('cancel')
-  emit('openChange', false)
-})
+const { open: popupOpen, portalActive } = useRetainedPopup(
+  undefined,
+  () => {
+    emit('cancel')
+    emit('openChange', false)
+  },
+  'picker'
+)
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
 const { panels } = useI18n()
 
-/** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
-function keepOpenOnPress(event: PointerDownOutsideEvent) {
-  if (keepOpen?.(event.detail.originalEvent)) event.preventDefault()
-}
-
-/** A press focuses the canvas before the press itself reaches the picker, so the press decides. */
-function keepOpenOnFocus(event: FocusOutsideEvent) {
-  if (keepOpen && event.detail.originalEvent.target instanceof HTMLCanvasElement)
-    event.preventDefault()
-}
-
-function cancelFromEscape(event: KeyboardEvent) {
-  event.stopPropagation()
-  emit('cancel')
-}
+/** Dragging a gradient handle or sampling a color on the canvas leaves the picker open. */
+const keepPickerOpen = useEyedropperKeepOpen(() => keepOpen)
+const outside = pickerOutsideHandlers(() => keepPickerOpen)
 </script>
 
 <template>
   <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
-    <PopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
+    <AppPopoverRoot
+      v-model:open="popupOpen"
+      overlay-kind="picker"
+      @update:open="emit('openChange', $event)"
+    >
       <PopoverTrigger as-child>
         <button
           type="button"
@@ -112,9 +110,9 @@ function cancelFromEscape(event: KeyboardEvent) {
           :side-offset="4"
           side="left"
           data-picker-content
-          @escape-key-down="cancelFromEscape"
-          @pointer-down-outside="keepOpenOnPress"
-          @focus-outside="keepOpenOnFocus"
+          @escape-key-down="emit('cancel')"
+          @pointer-down-outside="outside.onPointerDownOutside"
+          @focus-outside="outside.onFocusOutside"
         >
           <div class="mb-2 flex items-center gap-0.5">
             <Tip :label="panels.solid">
@@ -167,6 +165,7 @@ function cancelFromEscape(event: KeyboardEvent) {
             v-if="root.category === 'SOLID'"
             :color="root.fill.color"
             :okhcl="okhcl"
+            eyedropper
             @update="emit('update', applySolidFillColor(root.fill, $event))"
           />
 
@@ -191,6 +190,6 @@ function cancelFromEscape(event: KeyboardEvent) {
           />
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </FillRoot>
 </template>

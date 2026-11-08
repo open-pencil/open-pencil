@@ -1,1 +1,0 @@
-- Documents with vector masks, including ones imported from SVG clip paths, now save as `.fig` files.

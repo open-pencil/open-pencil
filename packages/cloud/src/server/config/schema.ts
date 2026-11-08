@@ -136,17 +136,25 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(0)),
     30 * 24 * 60 * 60_000
   ),
-  /** The AI service editors reach with tokens this server signs; see `src/contract/ai.ts`. */
-  aiEndpoint: v.optional(httpURLSchema),
-  /** The PKCS #8 PEM of the P-256 key that signs AI service tokens. */
-  aiSigningKey: optionalTextSchema,
-  aiTokenLifetimeSeconds: v.optional(
+  /** The OpenPencil services editors reach with tokens this server signs; see `src/contract/services.ts`. */
+  servicesEndpoint: v.optional(httpURLSchema),
+  /** The PKCS #8 PEM of the P-256 key that signs service tokens. */
+  servicesSigningKey: optionalTextSchema,
+  servicesTokenLifetimeSeconds: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(60), v.maxValue(60 * 60)),
     10 * 60
   ),
   billingPortalURL: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
-  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32)))
+  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** Where server errors are reported; without it the server reports nothing. */
+  errorTracking: v.optional(
+    v.object({
+      provider: v.literal('posthog'),
+      host: httpURLSchema,
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+    })
+  )
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>
@@ -222,7 +230,7 @@ function validateEmailConfig(config: CloudServerConfig): void {
 }
 
 function validateServiceConfig(config: CloudServerConfig): void {
-  requireTogether(config, 'AI service', ['aiEndpoint', 'aiSigningKey'])
+  requireTogether(config, 'Services', ['servicesEndpoint', 'servicesSigningKey'])
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(
       'The internal API writes database entitlements, which static entitlements would hide'
@@ -230,10 +238,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
   }
   if (
     config.deployment === 'official' &&
-    config.aiEndpoint &&
-    new URL(config.aiEndpoint).protocol !== 'https:'
+    config.servicesEndpoint &&
+    new URL(config.servicesEndpoint).protocol !== 'https:'
   ) {
-    throw new CloudConfigError('Official AI service endpoint must use HTTPS')
+    throw new CloudConfigError('Official services endpoint must use HTTPS')
   }
 }
 
@@ -263,6 +271,9 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   return config
 }
 
+/** PostHog's US Cloud ingestion host. */
+const POSTHOG_DEFAULT_HOST = 'https://us.i.posthog.com'
+
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
   authSecret: 'BETTER_AUTH_SECRET',
@@ -275,8 +286,9 @@ const DEFAULT_SECRET_NAMES = {
   smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
   smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
-  aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
-  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN'
+  servicesSigningKey: 'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY',
+  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN',
+  posthogProjectAPIKey: 'POSTHOG_PROJECT_API_KEY'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -490,10 +502,10 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       v.strictObject({ source: v.literal('database') })
     ])
   ),
-  ai: v.optional(
+  services: v.optional(
     v.strictObject({
       endpoint: urlSchema,
-      signing_key: defaultReference(DEFAULT_SECRET_NAMES.aiSigningKey),
+      signing_key: defaultReference(DEFAULT_SECRET_NAMES.servicesSigningKey),
       token_lifetime_minutes: v.optional(
         v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(60)),
         10
@@ -503,6 +515,16 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
+  error_tracking: v.optional(
+    v.strictObject({
+      provider: v.literal('posthog'),
+      host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
+      project_api_key: v.optional(configurableTextSchema, {
+        from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
+      })
+    })
   )
 })
 

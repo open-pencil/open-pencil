@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
+import { FIXTURES } from '@open-pencil/test-support/paths'
 import { isVariableFont, isWOFF2, WebFontResolver } from '@open-pencil/core/text'
+
+import { fakeGoogleFonts } from '#core-tests/helpers/google-fonts'
 
 const FONT_URL = 'https://fonts.gstatic.com/s/test/faces.woff2'
 
@@ -18,31 +19,15 @@ interface Family {
  */
 async function googleResolver(families: Family[], icons: string[] = []) {
   const woff2 = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Faces.woff2')).arrayBuffer()
-  const requests: URL[] = []
+  const files = [{ url: FONT_URL, data: woff2 }]
+  const google = fakeGoogleFonts(
+    families.map((family) => ({ ...family, weights: [400, 700], files })),
+    icons.map((family) => ({ family, files }))
+  )
   const resolver = new WebFontResolver()
   resolver.setEnabled({ google: true })
-  resolver.setRemoteFetch(async (input) => {
-    const url = new URL(String(input))
-    if (url.href.startsWith('https://fonts.google.com/metadata/fonts'))
-      return Response.json({
-        familyMetadataList: families.map((family) => ({
-          ...family,
-          fonts: { '400': {}, '700': {} }
-        }))
-      })
-    if (url.href.startsWith('https://fonts.google.com/metadata/icons'))
-      return new Response(`)]}'\n${JSON.stringify({ families: icons })}`)
-    if (url.href.startsWith('https://fonts.googleapis.com/css2')) {
-      requests.push(url)
-      const family = url.searchParams.get('family')?.split(':')[0] ?? ''
-      return new Response(
-        `@font-face { font-family: '${family}'; font-style: normal; font-weight: 400; src: url(${FONT_URL}) format('woff2'); }`
-      )
-    }
-    if (url.href === FONT_URL) return new Response(woff2)
-    return new Response(null, { status: 404 })
-  })
-  return { resolver, requests }
+  resolver.setRemoteFetch(google.fetch)
+  return { resolver, requests: google.stylesheets }
 }
 
 /**

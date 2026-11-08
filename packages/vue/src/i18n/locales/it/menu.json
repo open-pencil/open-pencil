@@ -42,6 +42,7 @@
   "pasteToReplace": "Incolla per sostituire",
   "copyProperties": "Copia proprietà",
   "pasteProperties": "Incolla proprietà",
+  "pasteAsLayers": "Incolla come livelli",
   "copyPasteAs": "Copia/Incolla come",
   "copyAsText": "Copia come testo",
   "copyAsSVG": "Copia come SVG",
@@ -87,5 +88,9 @@
   "togglePreview": "Anteprima",
   "saveTo": "Salva in…",
   "showVersionHistory": "Mostra cronologia versioni",
-  "saveToVersionHistory": "Salva nella cronologia versioni…"
+  "saveToVersionHistory": "Salva nella cronologia versioni…",
+  "reportProblem": "Segnala un problema…",
+  "supportOpenPencil": "Sostieni OpenPencil…",
+  "newBoard": "Nuova lavagna",
+  "toggleAIChat": "Mostra/nascondi chat AI"
 }

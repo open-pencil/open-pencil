@@ -47,6 +47,16 @@
 }
 
 @theme {
+  /*
+   * Interface text below Tailwind's text-xs. Sizes are in rem, like Tailwind's own scale, so the
+   * whole interface follows the root font size. T-shirt names keep tailwind-merge reading them as
+   * font sizes rather than colors.
+   */
+  --text-2xs: 0.6875rem;
+  --text-3xs: 0.625rem;
+  --text-4xs: 0.5625rem;
+  --text-5xs: 0.5rem;
+
   /* The theme's colors are its own: Tailwind's default palette is left out. */
   --color-*: initial;
   --color-white: #ffffff;
@@ -70,6 +80,8 @@
   --color-input: #1e1e1e;
   --color-component: #bb8cff;
   --color-slot: #f45cc4;
+  /* The heart beside a request for donations. */
+  --color-heart: #fb7185;
   /* A FigJam board's mark in file lists, after FigJam's own purple. */
   --color-board: #b38cff;
   /*
@@ -108,6 +120,15 @@
   --color-chart-3: #199e70;
 }
 
+/* Figma's --elevation-200-canvas, for small bars floating over the canvas such as the toolbar and
+   toasts. A plain variable, not a theme token: Tailwind copies a token's value into its utility,
+   so a light-theme override would not reach it. */
+:root {
+  --floating-bar-shadow:
+    0 3px 8px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.5),
+    inset 0 0.5px 0 rgb(255 255 255 / 0.08), inset 0 0 0.5px rgb(255 255 255 / 0.3);
+}
+
 html[data-theme='light'] {
   --color-panel: #ffffff;
   --color-panel-secondary: #f7f8fa;
@@ -128,6 +149,7 @@ html[data-theme='light'] {
   --color-input: #ffffff;
   --color-component: #7c3aed;
   --color-slot: #db2777;
+  --color-heart: #e11d48;
   --color-board: #8b5cf6;
   --color-warning: #8f5500;
   --color-warning-bg: rgb(245 158 11 / 0.14);
@@ -150,6 +172,8 @@ html[data-theme='light'] {
   --color-chart-1: #2a78d6;
   --color-chart-2: #eb6834;
   --color-chart-3: #1baf7a;
+  --floating-bar-shadow:
+    0 0 0.5px rgb(0 0 0 / 0.18), 0 3px 8px rgb(0 0 0 / 0.1), 0 1px 3px rgb(0 0 0 / 0.1);
 }
 
 /* Points vccs charts at the theme: series colors, quiet grid and axes, panel tooltips. */

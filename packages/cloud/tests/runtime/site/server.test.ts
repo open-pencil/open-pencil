@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
+import type { CloudErrorContext } from '#cloud/server'
 
 const files: Record<string, string> = {
   '/cloud.html': '<!doctype html><title>Portal</title>',
@@ -80,5 +81,29 @@ describe('Cloud server', () => {
     expect(
       (await bare.request('https://cloud.example/', { headers: { Accept: 'text/html' } })).status
     ).toBe(404)
+  })
+
+  test('reports a site file it fails to read and answers 500', async () => {
+    const logged = spyOn(console, 'error').mockImplementation(() => undefined)
+    const reported: { error: unknown; context: CloudErrorContext }[] = []
+    const failure = new Error('assets unavailable')
+    try {
+      const failing = createCloudServer(api, {
+        site: async () => {
+          throw failure
+        },
+        indexingPolicy: 'deny',
+        reportError: async (error, context) => {
+          reported.push({ error, context })
+        }
+      })
+      const response = await failing.request(new Request('https://cloud.example/favicon.svg'))
+      expect(response.status).toBe(500)
+      expect(reported).toEqual([
+        { error: failure, context: { source: 'request', method: 'GET', route: '/*' } }
+      ])
+    } finally {
+      logged.mockRestore()
+    }
   })
 })

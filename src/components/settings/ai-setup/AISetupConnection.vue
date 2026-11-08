@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
+import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup/view'
@@ -26,7 +26,7 @@ import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/ai-setup/connection'
 
 import AISetupServer from './AISetupServer.vue'
 import AISetupSignIn from './AISetupSignIn.vue'
@@ -81,11 +81,7 @@ const name = computed(() =>
     ? ai.value.aiSetupAccessServer
     : modelProviderName(providerID)
 )
-const agent = computed(() =>
-  isOnboardingAgent(providerID)
-    ? ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === providerID)
-    : undefined
-)
+const agent = computed(() => (isOnboardingAgent(providerID) ? acpAgentFor(providerID) : undefined))
 const provider = computed(() => AI_PROVIDERS.find((candidate) => candidate.id === providerID))
 const server = computed(() => providerID === ONBOARDING_SERVER_PROVIDER)
 const signInProvider = computed(() => (isOnboardingSignInProvider(providerID) ? providerID : null))

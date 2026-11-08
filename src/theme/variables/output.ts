@@ -1,7 +1,7 @@
 export default {
   slots: {
     root: 'flex shrink-0 flex-col border-t border-border',
-    title: 'text-[11px] font-semibold text-muted'
+    title: 'text-2xs font-semibold text-muted'
   },
   variants: {
     /** Under the token list on desktop; the whole panel, behind a back button, on mobile. */

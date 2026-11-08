@@ -3,6 +3,8 @@ import * as v from 'valibot'
 import { detectMermaidDiagram, parseFlowchart } from '@open-pencil/mermaid'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { addFlowchart } from '#core/io/formats/mermaid'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -36,9 +38,10 @@ export const importMermaid = defineTool({
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }
-    const { graph } = figma
+    const graph = graphOf(figma)
     const parentId = args.parent_id ?? figma.currentPage.id
     if (!graph.getNode(parentId)) return { error: `Parent ${parentId} not found` }
+    prepareSlotInsertion(graph, parentId, 'import_mermaid')
     const content = graph.getNode(parentId)?.childIds ?? []
     const bounds =
       content.length > 0

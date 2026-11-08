@@ -1,5 +1,6 @@
 import {
   figArchiveComponentUsePages,
+  figArchiveRecordPages,
   patchFigArchive,
   type FigArchiveRecordInfo,
   type FigPatchedArchiveInput,
@@ -21,6 +22,8 @@ export interface FigArchiveAccess {
   info(): Promise<FigArchiveRecordInfo>
   /** Archive GUIDs of the pages whose instances use these components. */
   componentPages(componentIds: string[]): Promise<string[]>
+  /** The archive GUID of the page each record is on, `null` for one on no page. */
+  recordPages(recordIds: string[]): Promise<(string | null)[]>
   patch(patch: FigRecordPatch, input: FigPatchedArchiveInput): Promise<Uint8Array>
   /** The document closed: release whatever holds the archive. */
   close(): void
@@ -51,6 +54,8 @@ export function createFigArchiveOperations(bytes: ArrayBuffer, info: () => FigAr
     original: () => new Uint8Array(bytes.slice(0)),
     info,
     componentPages: (componentIds: string[]) => figArchiveComponentUsePages(bytes, componentIds),
+    recordPages: (recordIds: string[]) =>
+      figArchiveRecordPages(bytes, recordIds).map((pageId) => pageId ?? null),
     patch: async (patch: FigRecordPatch, input: FigPatchedArchiveInput) =>
       patchFigArchive(bytes, patch, input, await loadFigDataCompressor(input.compressionLevel))
   }
@@ -65,6 +70,7 @@ export function localFigArchive(
     original: async () => operations.original(),
     info: async () => operations.info(),
     componentPages: async (componentIds) => operations.componentPages(componentIds),
+    recordPages: async (recordIds) => operations.recordPages(recordIds),
     patch: (patch, input) => operations.patch(patch, input),
     close: () => undefined
   }
@@ -77,6 +83,7 @@ type ArchiveResponse = Extract<
       | 'original-archive-result'
       | 'archive-info-result'
       | 'component-pages-result'
+      | 'record-pages-result'
       | 'patch-archive-result'
       | 'archive-error'
   }
@@ -86,6 +93,7 @@ const ARCHIVE_RESPONSES = new Set<FigSessionResponse['type']>([
   'original-archive-result',
   'archive-info-result',
   'component-pages-result',
+  'record-pages-result',
   'patch-archive-result',
   'archive-error'
 ])
@@ -180,6 +188,13 @@ export function workerFigArchive(
         'component-pages-result',
         (response) => response.pageIds,
         (access) => access.componentPages(componentIds)
+      ),
+    recordPages: (recordIds) =>
+      ask(
+        { type: 'record-pages', recordIds },
+        'record-pages-result',
+        (response) => response.pageIds,
+        (access) => access.recordPages(recordIds)
       ),
     patch: (patch, input) =>
       ask(

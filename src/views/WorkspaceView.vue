@@ -24,6 +24,7 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
+import { offerDonationPrompt, startDonationClock } from '@/app/donation'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -45,7 +46,7 @@ import {
 } from '@/app/tabs'
 import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
-import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
+import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import { CloudVersionDialog } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -139,8 +140,12 @@ const welcomeShown =
     ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
-// One question per surface: a first run is asked about usage stats once the welcome closes.
+// Release builds ask for donations; development and test runs would only be interrupted.
+const asksForDonations = import.meta.env.PROD && !appRuntimeConfig.test
+// One question per launch: a first run is asked about usage stats once the welcome closes, and
+// a later launch about usage stats if still unanswered, otherwise about a donation once it is due.
 if (welcomeShown) {
+  startDonationClock()
   whenever(
     () => !aiSetupDialogOpen.value,
     async () => {
@@ -156,6 +161,7 @@ if (welcomeShown) {
     async () => {
       await sharingStarted
       offerUsageStatsPrompt('prompt')
+      if (asksForDonations && !usageStatsPrompt.value) offerDonationPrompt()
     },
     { once: true, immediate: true }
   )

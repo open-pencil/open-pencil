@@ -37,7 +37,7 @@ const meta = {
       return { kind, color, fillMode, lineStyle, lineColor, textSize, typeface }
     },
     template: `
-      <div class="w-[240px] bg-panel p-4">
+      <div class="w-60 bg-panel p-4">
         <ShapeWithTextControls
           :kind="kind"
           :color="color"

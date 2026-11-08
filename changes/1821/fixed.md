@@ -1,0 +1,1 @@
+- Text whose fonts were still loading no longer stays missing from the canvas after they load, as it could when its box or saved glyphs kept its size (#1821).

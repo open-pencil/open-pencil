@@ -1,0 +1,1 @@
+- The web app offers a new version in a notification with a Reload button instead of reloading under you; a tab in the background with nothing unsaved updates on its own.

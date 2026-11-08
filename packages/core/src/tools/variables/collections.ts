@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 export const listCollections = defineTool({
@@ -8,7 +9,7 @@ export const listCollections = defineTool({
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({}),
   execute: (figma) => {
-    const collections = [...figma.graph.variableCollections.values()]
+    const collections = [...graphOf(figma).variableCollections.values()]
     return { count: collections.length, collections }
   }
 })
@@ -22,11 +23,11 @@ export const getCollection = defineTool({
     id: v.pipe(v.string(), v.description('Collection ID'))
   }),
   execute: (figma, { id }) => {
-    const collection = figma.graph.variableCollections.get(id)
+    const collection = graphOf(figma).variableCollections.get(id)
     if (!collection) return { error: `Collection "${id}" not found` }
     return {
       ...collection,
-      activeModeId: figma.graph.getActiveModeId(id)
+      activeModeId: graphOf(figma).getActiveModeId(id)
     }
   }
 })
@@ -40,7 +41,7 @@ export const createCollection = defineTool({
     name: v.pipe(v.string(), v.description('Collection name'))
   }),
   execute: (figma, { name }) => {
-    return figma.graph.variableCollections.get(figma.variables.createVariableCollection(name).id)
+    return graphOf(figma).variableCollections.get(figma.variables.createVariableCollection(name).id)
   }
 })
 

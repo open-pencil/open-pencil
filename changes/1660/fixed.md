@@ -1,1 +1,0 @@
-- Home shows previews of recent and stored files again instead of a placeholder icon.

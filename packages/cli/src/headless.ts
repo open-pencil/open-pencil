@@ -1,18 +1,22 @@
 import { readFile, realpath } from 'node:fs/promises'
-import { dirname, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderer, initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import {
   computeAllLayouts,
   installTextMeasurer,
   sizeAutoResizingText
 } from '@open-pencil/core/layout'
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
-import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
+import {
+  installTextInkMeasurer,
+  prepareGraphFonts,
+  type DocumentFontStatus
+} from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
@@ -32,9 +36,35 @@ const io = new IORegistry(CLI_IO_FORMATS)
 function documentAssetReader(filePath: string) {
   return async (path: string): Promise<Uint8Array | null> => {
     const folder = await realpath(dirname(filePath))
-    const target = await realpath(resolve(folder, path)).catch(() => null)
-    if (!target?.startsWith(folder + sep)) return null
-    return new Uint8Array(await readFile(target))
+    return readWithin(folder, resolve(folder, path))
+  }
+}
+
+/** Whether `path` lies inside the folder `root`, which may be the filesystem root. */
+function isInside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
+/** The file at `path`, when it really lies inside `root`; null otherwise. */
+async function readWithin(root: string, path: string): Promise<Uint8Array | null> {
+  const target = await realpath(path).catch(() => null)
+  if (!target || !isInside(root, target)) return null
+  return new Uint8Array(await readFile(target))
+}
+
+/**
+ * Reads a document a document imports, such as a `.pen` library in a sibling folder, and the
+ * files it names. Imports may leave the document's folder, but not the working directory, which a
+ * repository's tooling runs from; a document outside the working directory imports only from its
+ * own folder.
+ */
+function documentImportReader(filePath: string) {
+  return async (path: string): Promise<Uint8Array | null> => {
+    const folder = await realpath(dirname(filePath))
+    const cwd = await realpath(process.cwd())
+    const root = folder === cwd || isInside(cwd, folder) ? cwd : folder
+    return readWithin(root, resolve(folder, path))
   }
 }
 
@@ -46,27 +76,28 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
-    readAsset: documentAssetReader(filePath)
+    readAsset: documentAssetReader(filePath),
+    readImport: documentImportReader(filePath)
   })
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
 }
 
-let textMeasurer: Promise<void> | null = null
+let textMeasurer: Promise<SkiaRenderer> | null = null
 
 /**
  * Measure text a script or tool lays out with CanvasKit and the fonts it loads, as the app
  * does, instead of the estimate that knows neither line breaks nor wrapping. The document as
- * loaded keeps the layout its file gives it; only edits made afterwards are measured.
+ * loaded keeps the layout its file gives it; only edits made afterwards are measured. Resolves
+ * to the renderer that measures, which also measures geometry for the Figma API.
  */
-export function measureTextHeadlessly(): Promise<void> {
+export function measureTextHeadlessly(): Promise<SkiaRenderer> {
   textMeasurer ??= (async () => {
-    const ck = await initCanvasKit()
-    const surface = ck.MakeSurface(1, 1)
-    if (!surface) throw new Error('CanvasKit could not make a surface to measure text')
-    const renderer = new SkiaRenderer(ck, surface)
-    await renderer.loadFonts()
+    const renderer = await headlessRenderer()
     installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+    // Bounds take a text by its ink, as the app's do, for exports and absoluteRenderBounds.
+    installTextInkMeasurer((node) => renderer.measureTextInk(node))
+    return renderer
   })().catch((error: unknown) => {
     textMeasurer = null
     throw error

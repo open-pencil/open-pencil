@@ -1,27 +1,26 @@
 import type { Editor, EditorState } from '@open-pencil/core'
 import { prefetchFigmaSchema } from '@open-pencil/core/clipboard'
 
-import { createDocumentViewportActions, downloadBlob } from '@/app/document/io/browser'
+import { downloadBlob, fitPageToViewport } from '@/app/document/io/browser'
 import { createDOMOpenActions } from '@/app/document/io/dom'
 import { createOpenActions, createReloadActions } from '@/app/document/io/read'
 import {
   createDocumentSourceActions,
   createDocumentSourceState
 } from '@/app/document/io/source/actions'
-import type { ViewportSize } from '@/app/document/io/types'
 import { createFileWatcher } from '@/app/document/io/watch/watcher'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 
 type DocumentIOState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  roomKeepsEdits: boolean
   showUI: boolean
 }
 
 export function createDocumentIOActions(
   editor: Editor,
   state: DocumentIOState,
-  viewportSize: ViewportSize,
   preparationController: EditorPreparationController
 ) {
   const sourceState = createDocumentSourceState()
@@ -44,8 +43,7 @@ export function createDocumentIOActions(
       void reloadFromDisk()
     }
   })
-  const { setViewportSize, getViewportSize, fitCurrentPageToViewport } =
-    createDocumentViewportActions(editor, viewportSize)
+  const fitCurrentPageToViewport = (signal?: AbortSignal) => fitPageToViewport(editor, signal)
   const sourceActions = createDocumentSourceActions({
     editor,
     state,
@@ -73,10 +71,9 @@ export function createDocumentIOActions(
     renameDocument: sourceActions.renameDocument,
     onDocumentRenamed: sourceActions.onDocumentRenamed,
     downloadBlob,
-    setViewportSize,
-    getViewportSize,
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
+    getDocumentFileHandle: sourceState.getFileHandle,
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
     hasWritableSource: sourceState.hasWritableSource,

@@ -194,6 +194,15 @@ export function styleRunsWithPatch(
   end: number,
   patch: TextStylePatch
 ): StyleRun[] {
+  return styleRunsWithPatchOver(node, [[start, end]], patch)
+}
+
+/** Style runs with `patch` over each `[start, end)` range, rebuilding the text's runs once. */
+export function styleRunsWithPatchOver(
+  node: SceneNode,
+  ranges: ReadonlyArray<readonly [number, number]>,
+  patch: TextStylePatch
+): StyleRun[] {
   const length = node.text.length
   const chars: CharacterStyleOverride[] = Array.from({ length }, () => ({}))
   for (const run of node.styleRuns) {
@@ -203,14 +212,16 @@ export function styleRunsWithPatch(
   }
   const sized = typeof patch === 'function' ? patch : null
   const patches = new Map<number, CharacterStyleOverride>()
-  for (let index = start; index < end; index++) {
-    let style = sized ? undefined : (patch as CharacterStyleOverride)
-    if (sized) {
-      const fontSize = chars[index].fontSize ?? node.fontSize
-      style = patches.get(fontSize) ?? sized(fontSize)
-      patches.set(fontSize, style)
+  for (const [start, end] of ranges) {
+    for (let index = start; index < end; index++) {
+      let style = sized ? undefined : (patch as CharacterStyleOverride)
+      if (sized) {
+        const fontSize = chars[index].fontSize ?? node.fontSize
+        style = patches.get(fontSize) ?? sized(fontSize)
+        patches.set(fontSize, style)
+      }
+      chars[index] = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
     }
-    chars[index] = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
   }
   // A newline takes the style of the character before it, as in Figma: a range that ends a
   // paragraph styles its newline too, and a newline cannot be styled on its own.
