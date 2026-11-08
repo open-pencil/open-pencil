@@ -1,7 +1,6 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
 import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { isConstraintEligible } from '@open-pencil/scene-graph/resize'
 
@@ -10,27 +9,24 @@ import type { RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './outline'
 
-/** Dash and gap of an indicator line, in screen pixels. */
-const INDICATOR_DASH = [4, 4] as const
-/** How far a Center indicator reaches each way from the layer's centre, in screen pixels. */
-const CENTER_REACH = 6
+/** Dash and gap of an indicator line in screen pixels, as Figma draws them (live, #1835). */
+const INDICATOR_DASH = [2.5, 1.5] as const
 
 type Segment = readonly [x1: number, y1: number, x2: number, y2: number]
 
-/** The indicator lines of one axis, given the layer's box and its parent's extent on that axis. */
+/** The indicator lines of one axis, given the layer's span and its parent's extent on that axis. */
 function axisSegments(
   constraint: ConstraintType,
   start: number,
   end: number,
-  extent: number,
-  reach: number
+  extent: number
 ): (readonly [from: number, to: number])[] {
   const segments: (readonly [number, number])[] = []
   if (constraint === 'MIN' || constraint === 'STRETCH') segments.push([0, start])
   if (constraint === 'MAX' || constraint === 'STRETCH') segments.push([end, extent])
   if (constraint === 'CENTER') {
-    const middle = (start + end) / 2
-    segments.push([middle - reach, middle + reach])
+    const quarter = (end - start) / 4
+    segments.push([start + quarter, end - quarter])
   }
   return segments
 }
@@ -40,13 +36,12 @@ export function constraintSegments(
   box: Rect,
   parent: Pick<SceneNode, 'width' | 'height'>,
   horizontal: ConstraintType,
-  vertical: ConstraintType,
-  centerReach: number
+  vertical: ConstraintType
 ): Segment[] {
   const midX = box.x + box.width / 2
   const midY = box.y + box.height / 2
-  const across = axisSegments(horizontal, box.x, box.x + box.width, parent.width, centerReach)
-  const down = axisSegments(vertical, box.y, box.y + box.height, parent.height, centerReach)
+  const across = axisSegments(horizontal, box.x, box.x + box.width, parent.width)
+  const down = axisSegments(vertical, box.y, box.y + box.height, parent.height)
   return [
     ...across.map(([from, to]): Segment => [from, midY, to, midY]),
     ...down.map(([from, to]): Segment => [midX, from, midX, to])
@@ -56,8 +51,8 @@ export function constraintSegments(
 /**
  * A single selected layer's constraints as Figma shows them, in its parent's space: a dashed line
  * from the middle of each pinned side to the parent's matching edge (both for Left & Right or Top &
- * Bottom), a short one through the centre along a centred axis, and nothing for Scale. Only layers
- * whose constraints the Design panel offers have them.
+ * Bottom), one across the middle half of the layer along a centred axis, and nothing for Scale.
+ * Only layers whose constraints the Design panel offers have them.
  */
 export function drawConstraintIndicators(
   r: SkiaRenderer,
@@ -70,20 +65,12 @@ export function drawConstraintIndicators(
   const parent = graph.getNode(node.parentId)
   if (!parent) return
   const geometry = r.sceneGeometry(graph, preview)
-  const projected = {
-    rootId: graph.rootId,
-    getNode: (id: string) => {
-      const source = graph.getNode(id)
-      return source ? geometry.node(source) : undefined
-    }
-  }
-  const box = getAxisAlignedBoundsInParent([geometry.node(node)], parent.id, projected)
+  const box = geometry.boundsInParent(node, parent.id)
   const segments = constraintSegments(
     box,
     parent,
     node.horizontalConstraint,
-    node.verticalConstraint,
-    CENTER_REACH / r.zoom
+    node.verticalConstraint
   )
   if (segments.length === 0) return
   const stroke = { color: r.outlineColor(node, graph), dash: INDICATOR_DASH }

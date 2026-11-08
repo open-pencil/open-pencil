@@ -58,11 +58,12 @@ export function isConstraintEligible(graph: ResizeGraph, node: SceneNode): boole
   return parent.layoutMode === 'NONE' || node.layoutPositioning === 'ABSOLUTE'
 }
 
-const CONSTRAINT_CONTAINER_TYPES = new Set([
-  'FRAME',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE',
+/**
+ * Containers whose resize moves their children: the constraint parents, plus groups and boolean
+ * operations, which scale them.
+ */
+const CONSTRAINT_CONTAINER_TYPES = new Set<SceneNode['type']>([
+  ...CONSTRAINT_PARENT_TYPES,
   'GROUP',
   'BOOLEAN_OPERATION'
 ])
