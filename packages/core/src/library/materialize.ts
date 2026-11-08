@@ -104,7 +104,7 @@ function markDefinitions(
   revision: ComponentLibraryRevision,
   mappedIds: Map<string, string>
 ): void {
-  remapCopiedReferences(graph, mappedIds)
+  remapCopiedReferences(graph, mappedIds, { followTextLinks: true })
   for (const [sourceId, targetId] of mappedIds) {
     const target = graph.getNode(targetId)
     if (!target) continue
