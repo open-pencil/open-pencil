@@ -12,6 +12,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
+  'flushComponentSync',
   'getChildren',
   'getCollection',
   'getCollectionCount',

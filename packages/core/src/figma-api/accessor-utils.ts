@@ -11,6 +11,7 @@ import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { bindGraph, graphOf } from '#core/figma-api/graph'
+import { flushPendingComponentSync } from '#core/figma-api/pending-sync'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
@@ -27,7 +28,9 @@ export function nodeId(target: ProxyThis, internals: NodeProxyInternals): string
 
 export function raw(target: ProxyThis, internals: NodeProxyInternals): SceneNode {
   const id = nodeId(target, internals)
-  const node = graphOf(target).getNode(id)
+  const graph = graphOf(target)
+  flushPendingComponentSync(graph, id)
+  const node = graph.getNode(id)
   if (!node) throw new Error(`Node ${id} has been removed`)
   return node
 }

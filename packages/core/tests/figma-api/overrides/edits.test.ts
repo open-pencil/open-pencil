@@ -171,13 +171,10 @@ describe('setting fills on an instance descendant', () => {
     const api = createAPI()
     const icon = api.createComponent()
     icon.resize(16, 16)
+    icon.appendChild(api.createVector())
 
     const instance = icon.createInstance()
-    const vector = graphOf(api).createNode('VECTOR', instance.id, { width: 16, height: 16 })
-    graphOf(api).updateNode(vector.id, { componentId: icon.id })
-
-    const vectorProxy = api.getNodeById(vector.id)
-    if (!vectorProxy) throw new Error('vector proxy not found')
+    const [vectorProxy] = instance.children as FigmaNodeProxy[]
     vectorProxy.fills = [solidFill({ r: 0, g: 0, b: 1, a: 1 })]
 
     const raw = graphOf(api).getNode(instance.id)
@@ -185,7 +182,7 @@ describe('setting fills on an instance descendant', () => {
       getInstanceOverride(
         raw?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
         instance.id,
-        vector.id,
+        vectorProxy.id,
         'fills'
       )
     ).toBe(true)
