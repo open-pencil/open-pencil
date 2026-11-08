@@ -514,6 +514,12 @@ describe('writing an edited document into its archive', () => {
       })
       source.bindVariable(card.id, 'fills/0/color', surface.id)
     }
+    const internal = source.createNode('CANVAS', source.rootId, { internalOnly: true })
+    const stored = source.createNode('RECTANGLE', internal.id, {
+      name: 'Internal',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    source.bindVariable(stored.id, 'fills/0/color', surface.id)
     const bytes = await exportFigFile(source)
     const fillOf = (saved: Uint8Array, name: string) =>
       [...recordsOf(saved).values()].find((record) => record.name === name)?.fillPaints?.[0]?.color
@@ -549,8 +555,11 @@ describe('writing an edited document into its archive', () => {
 
     // A new default mode reaches layers with no mode of their own.
     const defaults = await open(bytes)
+    populateFigInternalPages(defaults)
     setDefaultMode(defaults, collection.id, darkId)
-    expect(fillOf(await exportFigFile(defaults), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    const defaultDark = await exportFigFile(defaults)
+    expect(fillOf(defaultDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(fillOf(defaultDark, 'Internal')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {

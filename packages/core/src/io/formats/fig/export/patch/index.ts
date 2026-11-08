@@ -173,7 +173,7 @@ function addVariableUsers(
       .map((collection) => collection.id)
   )
   if (defaultsChanged.size === 0) return
-  const pages = graph.getPages().map((page) => page.id)
+  const pages = graph.getPages(true).map((page) => page.id)
   for (const layer of layersResolvingCollections(graph, pages, defaultsChanged)) add(layer.id)
 }
 
