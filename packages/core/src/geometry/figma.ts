@@ -9,7 +9,8 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
  * reads 33.33 and 0.126 reads 0.13. The layer keeps its exact value.
  */
 export function panelNumber(value: number): number {
-  return Math.round(value * 100) / 100
+  // A small negative value rounds to -0, which reads as 0.
+  return Math.round(value * 100) / 100 + 0
 }
 
 /**

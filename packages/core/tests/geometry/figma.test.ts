@@ -113,5 +113,6 @@ describe('panel numbers', () => {
     expect(shown.map(panelNumber)).toEqual([
       151.25, 100.4, 33.33, 0.13, 1234.57, 100, 6000.38, -30.13, 0
     ])
+    expect(Object.is(panelNumber(-0.004), 0)).toBe(true)
   })
 })
