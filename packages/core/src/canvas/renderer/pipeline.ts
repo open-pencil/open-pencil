@@ -24,12 +24,17 @@ export function renderSceneToCanvas(
     | 'nodePaths'
     | 'editingTextId'
     | 'invalidateNodePicture'
+    | 'invalidateAllPictures'
+    | 'images'
   >,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
 ): void {
   r.nodePaths.releaseUncached()
+  // Pictures are keyed by node ID, so an export graph cannot reuse or leave pictures for another graph.
+  const foreignGraph = r.images.memoryGraph !== graph
+  if (foreignGraph) r.invalidateAllPictures()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
   const editing = r.editingTextId
@@ -49,6 +54,7 @@ export function renderSceneToCanvas(
     r.viewportImageRendering = previewMode
     r.editingTextId = editing
     if (editing) r.invalidateNodePicture(editing)
+    if (foreignGraph) r.invalidateAllPictures()
   }
 }
 

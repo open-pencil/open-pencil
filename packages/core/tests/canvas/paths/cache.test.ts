@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import type { Path } from 'canvaskit-wasm'
 
-import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Color, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'
@@ -100,6 +100,31 @@ function replacementGraph(side: 'upper-right' | 'lower-left', graph = new SceneG
     height: 40,
     fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
     vectorNetwork
+  })
+  return { graph, pageId: page.id }
+}
+
+function effectGraph(fill: Color) {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'default page')
+  graph.createNodeWithId('reused-effect-shape', 'RECTANGLE', page.id, {
+    x: 10,
+    y: 10,
+    width: 40,
+    height: 40,
+    fills: [{ type: 'SOLID', color: fill, opacity: 1, visible: true }],
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        radius: 8,
+        spread: 0,
+        offset: { x: 0, y: 0 },
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        visible: true,
+        blendMode: 'NORMAL',
+        showShadowBehindNode: false
+      }
+    ]
   })
   return { graph, pageId: page.id }
 }
@@ -236,6 +261,25 @@ describe('renderer path caches', () => {
 
       expect(pixelAt(pixels, 45, 15)).toEqual([255, 255, 255, 255])
       expect(pixelAt(pixels, 15, 45)).toEqual([255, 0, 0, 255])
+    })
+  })
+
+  test('does not reuse effect pictures from another graph during direct canvas draws', () => {
+    const document = effectGraph({ r: 1, g: 0, b: 0, a: 1 })
+    const exportGraph = effectGraph({ r: 0, g: 0, b: 1, a: 1 })
+    withRenderer(document.pageId, (renderer) => {
+      const state = createDefaultEditorState(document.pageId)
+      state.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+      renderer.renderFromEditorState(state, document.graph, null, 256, 256, false, 'scene')
+      expect(renderer.nodePictures.has('reused-effect-shape')).toBe(true)
+
+      const canvas = renderer.surface.getCanvas()
+      canvas.clear(ck.Color4f(1, 1, 1, 1))
+      renderer.renderSceneToCanvas(canvas, exportGraph.graph, exportGraph.pageId)
+      const pixels = surfacePixels(renderer)
+
+      expect(pixelAt(pixels, 30, 30)).toEqual([0, 0, 255, 255])
+      expect(renderer.nodePictures.size).toBe(0)
     })
   })
 
