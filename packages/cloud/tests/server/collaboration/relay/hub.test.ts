@@ -539,6 +539,78 @@ describe('collaboration relay', () => {
     expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
   })
 
+  test('turns away an editor whose update would grow the room past its limit', async () => {
+    const { relay: hub } = relay({ maximumRoomBytes: 4_096 })
+    const alice = await join(hub)
+    const send = () =>
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: edit('x'.repeat(1_000))
+      })
+    for (let index = 0; index < 4; index++) send()
+    expect(alice.closed).toBeNull()
+    send()
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
+
+    const bob = await join(hub, { permission: 'view' })
+    bob.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncStep1,
+      target: RELAY_SERVER_PEER,
+      payload: Y.encodeStateVector(new Y.Doc())
+    })
+    const [reply] = bob.messages(COLLAB_ACTIONS.syncReply)
+    expect(textOf(reply?.payload ?? new Uint8Array())).toHaveLength(4_000)
+  })
+
+  test('lets a full room shrink, and takes edits again once it has', async () => {
+    const editor = new Y.Doc()
+    const text = editor.getText('t')
+    const change = (edit: () => void) => {
+      const before = Y.encodeStateVector(editor)
+      edit()
+      return Y.encodeStateAsUpdateV2(editor, before)
+    }
+    const inserts = [1, 2, 3].map(() => change(() => text.insert(0, 'x'.repeat(1_200))))
+    const deletion = change(() => text.delete(0, text.length))
+    // The inserts fill the room exactly, so the deletion takes it past its bound.
+    const full = inserts.reduce((total, update) => total + update.byteLength, 0)
+    const { relay: hub } = relay({ maximumRoomBytes: full })
+    const alice = await join(hub)
+    const send = (payload: Uint8Array) =>
+      alice.send({ type: 'message', namespace: COLLAB_ACTIONS.yjsUpdate, target: null, payload })
+    for (const insert of inserts) send(insert)
+    // Deleting adds nothing, so it goes through however full the room is.
+    send(deletion)
+    expect(alice.closed).toBeNull()
+    // The deletion freed the room, which a measure finds before turning the edit away.
+    send(change(() => text.insert(0, 'y'.repeat(1_200))))
+    expect(alice.closed).toBeNull()
+  })
+
+  test('counts deletions of what the room never received against its limit', async () => {
+    const { relay: hub } = relay({ maximumRoomBytes: 512 })
+    const alice = await join(hub)
+    // A document the room never saw: deleting from it leaves deletions the room must keep.
+    const ghost = new Y.Doc()
+    const text = ghost.getText('t')
+    text.insert(0, 'x'.repeat(1_000))
+    for (let sent = 0; sent < 500 && alice.closed === null; sent++) {
+      text.delete(sent % 2 === 0 ? 0 : text.length - 1, 1)
+      // Everything the ghost deleted, and none of its content.
+      const deletions = Y.diffUpdateV2(Y.encodeStateAsUpdateV2(ghost), Y.encodeStateVector(ghost))
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: deletions
+      })
+    }
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
+  })
+
   test('closes peers that send malformed document updates', async () => {
     const { relay: hub } = relay()
     const alice = await join(hub)

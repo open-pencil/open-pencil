@@ -74,7 +74,7 @@ export async function verifyPackageBinaries(consumerDirectory: string): Promise<
     'openpencil-mcp',
     'openpencil-mcp-http',
     'openpencil-cloud',
-    'openpencil-ai-relay'
+    'openpencil-services'
   ]
   for (const runtime of RUNTIMES) {
     for (const binary of binaries) {

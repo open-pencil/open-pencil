@@ -65,6 +65,8 @@ describe('layers the host keeps as they are', () => {
     const tangent = () => getNodeOrThrow(editor.graph, path.id).vectorNetwork?.segments[0]
     expect(tangent()?.tangentStart).toEqual({ x: 30, y: 40 })
 
+    // The first undo opens the path again, as in Figma; the next takes back the change.
+    editor.undoAction()
     editor.undoAction()
     expect(tangent()?.tangentStart).toEqual({ x: 0, y: 0 })
   })
@@ -122,8 +124,10 @@ describe('history while layers are kept', () => {
     const tangent = () => getNodeOrThrow(editor.graph, path.id).vectorNetwork?.segments[0]
 
     editor.undoAction()
+    editor.undoAction()
     expect(tangent()?.tangentStart).toEqual({ x: 0, y: 0 })
     expect(() => editor.undoAction()).not.toThrow()
+    editor.redoAction()
     editor.redoAction()
     expect(tangent()?.tangentStart).toEqual({ x: 30, y: 40 })
   })

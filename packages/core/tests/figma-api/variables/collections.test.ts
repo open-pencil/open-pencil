@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 
 // Expected values and messages were recorded by running the same calls in Figma desktop.
@@ -143,12 +144,12 @@ describe('figma.variables', () => {
 
   test('scopes the plugin API cannot name stay when a script sets scopes', () => {
     const { api, size } = tokens()
-    expectDefined(api.graph.variables.get(size.id), 'size').scopes = ['GAP', 'TRANSFORM', 'STROKE']
+    expectDefined(graphOf(api).variables.get(size.id), 'size').scopes = ['GAP', 'TRANSFORM', 'STROKE']
     expect(size.scopes).toEqual(['GAP', 'STROKE_COLOR'])
     size.scopes = size.scopes.filter((scope) => scope !== 'GAP')
-    expect(api.graph.variables.get(size.id)?.scopes).toEqual(['STROKE', 'TRANSFORM'])
+    expect(graphOf(api).variables.get(size.id)?.scopes).toEqual(['STROKE', 'TRANSFORM'])
     size.scopes = ['ALL_SCOPES']
-    expect(api.graph.variables.get(size.id)?.scopes).toBeUndefined()
+    expect(graphOf(api).variables.get(size.id)?.scopes).toBeUndefined()
   })
 
   test('removing a variable or collection takes it out of the document', () => {
@@ -205,7 +206,7 @@ describe('node variable bindings', () => {
       ...corners.map((corner) => rect[corner])
     ]
     // A .pen or .fig file binds a uniform radius as one field.
-    api.graph.bindVariable(rect.id, 'cornerRadius', size.id)
+    graphOf(api).bindVariable(rect.id, 'cornerRadius', size.id)
     size.setValueForMode(mode, 6)
     expect(Object.keys(rect.boundVariables)).toEqual([...corners])
 
@@ -218,16 +219,16 @@ describe('node variable bindings', () => {
 
     for (const corner of corners.slice(1)) rect.setBoundVariable(corner, null)
     rect.cornerRadius = 20
-    expect(api.graph.getNode(rect.id)?.boundVariables).toEqual({})
+    expect(graphOf(api).getNode(rect.id)?.boundVariables).toEqual({})
     expect(radii()).toEqual([20, 20, 20, 20, 20])
   })
 
   test('setting one corner of a radius a file binds as one field keeps the others bound', () => {
     const { api, size } = tokens()
     const rect = api.createRectangle()
-    api.graph.bindVariable(rect.id, 'cornerRadius', size.id)
+    graphOf(api).bindVariable(rect.id, 'cornerRadius', size.id)
     rect.topLeftRadius = 20
-    const bound = api.graph.getNode(rect.id)?.boundVariables ?? {}
+    const bound = graphOf(api).getNode(rect.id)?.boundVariables ?? {}
     expect(bound).not.toHaveProperty('cornerRadius')
     expect(bound).toMatchObject({
       topRightRadius: size.id,
@@ -257,7 +258,7 @@ describe('node variable bindings', () => {
     size.setValueForMode(mode, 10)
     expect(rect.cornerRadius).toBe(10)
     // The layer draws its corners, which hold the bound value, not a radius left at 0.
-    expect(api.graph.getNode(rect.id)).toMatchObject({
+    expect(graphOf(api).getNode(rect.id)).toMatchObject({
       independentCorners: true,
       topLeftRadius: 10,
       topRightRadius: 10,
@@ -310,7 +311,7 @@ describe('node variable bindings', () => {
 
   test('setBoundVariable refuses a layer of a library definition, as other setters do', () => {
     const { api, size } = tokens()
-    const component = api.graph.createNode('COMPONENT', api.currentPage.id, {
+    const component = graphOf(api).createNode('COMPONENT', api.currentPage.id, {
       name: 'Remote button',
       librarySource: {
         identity: { libraryId: 'design-system', assetKey: 'button', revisionId: 'r1' },
@@ -397,7 +398,7 @@ describe('node variable bindings', () => {
 
   test('exposes explicit and inherited variable modes on nodes', () => {
     const api = createAPI()
-    api.graph.addCollection({
+    graphOf(api).addCollection({
       id: 'col1',
       name: 'Theme',
       modes: [
@@ -407,12 +408,12 @@ describe('node variable bindings', () => {
       defaultModeId: 'light',
       variableIds: []
     })
-    api.graph.setActiveMode('col1', 'dark')
+    graphOf(api).setActiveMode('col1', 'dark')
 
     const parent = api.createFrame()
     const child = api.createRectangle()
     parent.appendChild(child)
-    api.graph.updateNode(parent.id, { variableModes: { col1: 'light' } })
+    graphOf(api).updateNode(parent.id, { variableModes: { col1: 'light' } })
 
     expect(parent.explicitVariableModes).toEqual({ col1: 'light' })
     expect(child.explicitVariableModes).toEqual({})

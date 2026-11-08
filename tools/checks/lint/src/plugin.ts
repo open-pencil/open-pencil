@@ -1,5 +1,7 @@
 import { noEditorProfileInputs, noFlatKiwiModules } from '#lint/rules/policy.ts'
+import { noHandRolledDataURLRule } from '#lint/rules/quality/data-url.ts'
 import {
+  noInterpolatedTailwindClassesRule,
   noPxTailwindValuesRule,
   noUnknownTailwindClassesRule
 } from '#lint/rules/quality/tailwind-classes.ts'
@@ -373,6 +375,8 @@ const plugin = {
     'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
     'no-px-tailwind-values': noPxTailwindValuesRule,
+    'no-hand-rolled-data-url': noHandRolledDataURLRule,
+    'no-interpolated-tailwind-classes': noInterpolatedTailwindClassesRule,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
     'no-typeof-window-check': noTypeofWindowCheck,

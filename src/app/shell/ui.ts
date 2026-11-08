@@ -190,7 +190,8 @@ export async function openExternalLink(url: string) {
     // An app command, so native tests can read the address instead of opening a browser.
     await invoke('open_external_url', { url })
   } else {
-    window.open(url, '_blank')
+    // Without an opener, the page cannot navigate the editor's tab.
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
 export function decodeTauriStderr(raw: Uint8Array | number[] | string): string {

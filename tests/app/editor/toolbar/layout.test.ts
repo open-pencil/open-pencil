@@ -12,11 +12,13 @@ import {
   combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
   detachToolbarEntry,
+  hiddenToolbarActions,
   joinToolbarEntry,
   moveToolbarEntry,
   normalizeToolbarLayout,
   placeToolbarEntry,
   setToolbarEntryHidden,
+  shownToolbarActions,
   toolbarDropOperations,
   toolbarItems,
   toolbarLayoutFor,
@@ -287,6 +289,27 @@ describe('toolbarLayoutFor', () => {
       'HAND',
       'COMMENT'
     ])
+  })
+})
+
+describe('toolbar commands', () => {
+  const items = (groups: ToolbarEntry[][], hidden: ToolbarEntry[] = []) =>
+    toolbarItems(layout(groups, hidden), LABELS, SHORTCUTS)
+
+  test('a shown command has its button and nothing hidden', () => {
+    const shown = items([['SELECT'], ['insert-icon']])
+    expect(shownToolbarActions(shown)).toEqual(['insert-icon'])
+    expect(hiddenToolbarActions(shown, true)).toEqual([])
+  })
+
+  test('a command hidden from the toolbar keeps its picker for the menu and the palette', () => {
+    const shown = items([['SELECT'], ['insert-icon']], ['insert-icon'])
+    expect(shownToolbarActions(shown)).toEqual([])
+    expect(hiddenToolbarActions(shown, true)).toEqual(['insert-icon'])
+  })
+
+  test('a document that cannot be edited keeps no pickers', () => {
+    expect(hiddenToolbarActions(items([['SELECT']], ['insert-icon']), false)).toEqual([])
   })
 })
 

@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs'
 
 import type { CanvasKit, Paragraph, ParagraphBuilder, TypefaceFontProvider } from 'canvaskit-wasm'
 
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 let provider: TypefaceFontProvider
@@ -119,8 +119,8 @@ describe('label paragraph reuse', () => {
       ...ck,
       ParagraphBuilder: {
         ...ck.ParagraphBuilder,
-        MakeFromFontProvider: (...args) => {
-          const created = ck.ParagraphBuilder.MakeFromFontProvider(...args)
+        MakeFromFontCollection: (...args) => {
+          const created = ck.ParagraphBuilder.MakeFromFontCollection(...args)
           builder = created
           if (stage === 'addText') created.addText = fail
           else {

@@ -2,7 +2,7 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { layoutConstrainedChildRect } from '@open-pencil/scene-graph/resize'
+import { constrainedChildRect, flipChanges } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 
@@ -23,7 +23,7 @@ function preservesImportedHugCrossSize(
     )
 }
 
-type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>>
+type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'flipX' | 'flipY'>>
 
 /**
  * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
@@ -43,9 +43,9 @@ function writeLayoutGeometry(
   if (!node) return
   const from = before ?? { width: node.width, height: node.height }
   const changes: LayoutGeometry = {}
-  for (const key of ['x', 'y', 'width', 'height'] as const) {
+  for (const key of ['x', 'y', 'width', 'height', 'flipX', 'flipY'] as const) {
     const value = geometry[key]
-    if (value !== undefined && value !== node[key]) changes[key] = value
+    if (value !== undefined && value !== node[key]) Object.assign(changes, { [key]: value })
   }
   if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
   if (!CONSTRAINT_PARENT_TYPES.has(node.type)) return
@@ -63,6 +63,15 @@ function writeLayoutGeometry(
  * node, so a deleted frame's entry goes with it and a restored one starts afresh.
  */
 const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
+
+/**
+ * Records that a Hug frame's constrained children are placed for the size it has now. Undo and
+ * redo put back a frame's hugged size together with the places layout gave its children, so the
+ * next layout must move them from that size, not from the one it hugged to before.
+ */
+export function restoredHuggedSize(frame: SceneNode): void {
+  if (huggedSizes.has(frame)) huggedSizes.set(frame, { width: frame.width, height: frame.height })
+}
 
 function rememberPlacedSize(frame: SceneNode): void {
   const placed = huggedSizes.get(frame)
@@ -95,17 +104,18 @@ function constrainChildren(
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
     const size = { width: child.width, height: child.height }
+    const { flipsX, flipsY, ...box } = constrainedChildRect(
+      child,
+      before,
+      frame,
+      child.horizontalConstraint,
+      child.verticalConstraint,
+      enforcedAspectRatio(child)
+    )
     writeLayoutGeometry(
       graph,
       child.id,
-      layoutConstrainedChildRect(
-        child,
-        before,
-        frame,
-        child.horizontalConstraint,
-        child.verticalConstraint,
-        enforcedAspectRatio(child)
-      ),
+      { ...box, ...flipChanges(child, child, flipsX, flipsY) },
       computeLayout,
       undefined,
       true

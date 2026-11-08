@@ -34,6 +34,7 @@ test('layers are created under their records’ GUIDs, and copies in instances u
   expect(graph.getPages().map((page) => page.id)).toEqual(['1:1'])
   expect(graph.getNode('1:2')?.type).toBe('COMPONENT')
   expect(graph.getNode('1:3')?.parentId).toBe('1:2')
+  expect(graph.getNode('1:3')?.componentId).toBeNull()
   expect(graph.getNode('1:4')?.componentId).toBe('1:2')
   const [copy] = graph.getChildren('1:4')
   expect(copy.text).toBe('Label')

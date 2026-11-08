@@ -1,11 +1,15 @@
-import { iconToSVG } from '@iconify/utils'
+import { iconToSVG, type IconifyIcon } from '@iconify/utils'
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
-import svgpath from 'svgpath'
 
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
+import {
+  placeSVGPath,
+  resolveSVGViewportMapping,
+  svgStrokeScale,
+  type SVGViewportMapping
+} from '#core/vector/vectorize/svg/transform'
 
 import {
   combinedTransform,
@@ -21,7 +25,6 @@ import { elementLayer, type Scope, type Traversal } from './svg/scope'
 import { textInfo } from './svg/text'
 import type {
   IconData,
-  IconifyIconEntry,
   IconPathInfo,
   SVGClipPathRegion,
   SVGElementLayer,
@@ -129,8 +132,8 @@ function appendShapePath(
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
-    fill: normalizeSVGPaint(presentation.fill),
-    stroke: normalizeSVGPaint(presentation.stroke),
+    fill: normalizeSVGPaint(presentation.fill, presentation.color),
+    stroke: normalizeSVGPaint(presentation.stroke, presentation.color),
     strokeWidth: Number.isFinite(strokeWidth) ? strokeWidth : 1,
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
@@ -214,7 +217,10 @@ function collectPaths(
   const tagName = element.localName || element.tagName
   if (NON_RENDERED_CONTAINERS.has(tagName) && !inherited.referenced) return
 
-  const transform = combinedTransform(inherited.transform, element)
+  const transform =
+    element === traversal.viewport
+      ? inherited.transform
+      : combinedTransform(inherited.transform, element)
   const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, traversal)
   const clipPaths = ownClipPath ? [...inherited.clipPaths, ownClipPath] : inherited.clipPaths
   const clip = ownClipPath ? clipPaths.length - 1 : null
@@ -280,6 +286,14 @@ export interface SVGContent {
   texts: SVGTextInfo[]
 }
 
+/** The one `<svg>` inside the wrapper root, which is the artwork's own outermost `<svg>`. */
+function outermostSVG(root: Element): Element | null {
+  const children = Array.from(root.childNodes).filter(isElement)
+  if (children.length !== 1) return null
+  const [only] = children
+  return (only.localName || only.tagName) === 'svg' ? only : null
+}
+
 function collectDocument(root: Element): SVGContent {
   const elementsById = new Map<string, Element>()
   for (const element of Array.from(root.getElementsByTagName('*'))) {
@@ -287,7 +301,13 @@ function collectDocument(root: Element): SVGContent {
     if (id) elementsById.set(id, element)
   }
   const paths: IconPathInfo[] = []
-  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [] }
+  const traversal: Traversal = {
+    root,
+    viewport: outermostSVG(root),
+    elementsById,
+    nextKey: 0,
+    texts: []
+  }
   collectPaths(
     root,
     {
@@ -330,65 +350,41 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
   return extractSVGContent(svgBody).paths.filter(isSVGPathShown)
 }
 
+/**
+ * An Iconify icon at `size`. Iconify's own rendering applies its box, defaulting to 16, and any
+ * turn or flip, before the shapes are placed in the icon box as SVG import places them.
+ */
 export function buildIconData(
-  iconEntry: IconifyIconEntry,
+  icon: IconifyIcon,
   prefix: string,
   iconName: string,
-  defaultW: number,
-  defaultH: number,
   size: number
 ): IconData {
-  const rendered = iconToSVG({
-    body: iconEntry.body,
-    width: iconEntry.width ?? defaultW,
-    height: iconEntry.height ?? defaultH
-  })
-  const [, , viewBoxWidth, viewBoxHeight] = rendered.viewBox
-  const scaleX = size / viewBoxWidth
-  const scaleY = size / viewBoxHeight
-
-  const pathInfos = extractPaths(rendered.body)
+  const rendered = iconToSVG(icon)
+  const [x, y, width, height] = rendered.viewBox
 
   return {
     prefix,
     name: iconName,
     width: size,
     height: size,
-    paths: scalePathInfos(pathInfos, scaleX, scaleY)
+    paths: scalePathInfos(
+      extractPaths(rendered.body),
+      resolveSVGViewportMapping({ x, y, width, height }, { width: size, height: size })
+    )
   }
 }
 
-function transformStrokeScale(transform: string | null | undefined): number {
-  if (!transform || transform === 'none') return 1
-
-  const points: Vector[] = []
-  svgpath('M0 0 L1 0 M0 0 L0 1')
-    .transform(transform)
-    .abs()
-    .iterate((segment) => {
-      if (segment[0] === 'M' || segment[0] === 'L') {
-        points.push({ x: segment[1], y: segment[2] })
-      }
-    })
-  if (points.length < 4) return 1
-
-  const xScale = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y)
-  const yScale = Math.hypot(points[3].x - points[2].x, points[3].y - points[2].y)
-  return Math.min(xScale, yScale)
-}
-
-/** Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx <svg>). */
+/**
+ * Place extracted SVG path info into IconData paths through the viewport mapping that SVG import
+ * uses (shared by buildIconData and design-jsx `<svg>`).
+ */
 export function scalePathInfos(
   pathInfos: IconPathInfo[],
-  scaleX: number,
-  scaleY: number
+  viewport: SVGViewportMapping
 ): IconData['paths'] {
   return pathInfos.map((path) => {
-    let transformedPath = svgpath(path.d)
-    if (path.transform && path.transform !== 'none') {
-      transformedPath = transformedPath.transform(path.transform)
-    }
-    if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
+    const transformedPath = placeSVGPath(path.d, path.transform, viewport)
     // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
     // arc's own end can put it on its start, and a degenerate arc draws nothing.
     const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
@@ -401,8 +397,7 @@ export function scalePathInfos(
       }),
       fill,
       stroke,
-      strokeWidth:
-        path.strokeWidth * transformStrokeScale(path.transform) * Math.min(scaleX, scaleY),
+      strokeWidth: path.strokeWidth * svgStrokeScale(path.transform, viewport),
       strokeCap: path.strokeCap,
       strokeJoin: path.strokeJoin
     }

@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 import { autoDepth, describeOneNode } from './tree'
@@ -32,14 +33,14 @@ export const describe = defineTool({
     if (args.ids && Array.isArray(args.ids)) {
       return {
         nodes: args.ids.map((nodeId) => {
-          const depth = Math.min(args.depth ?? autoDepth(figma.graph, nodeId), 5)
-          return describeOneNode(figma, nodeId, depth, gridSize)
+          const depth = Math.min(args.depth ?? autoDepth(graphOf(figma), nodeId), 5)
+          return describeOneNode(graphOf(figma), nodeId, depth, gridSize)
         })
       }
     }
 
     if (!args.id) return { error: 'Provide id (string) or ids (string[])' }
-    const depth = Math.min(args.depth ?? autoDepth(figma.graph, args.id), 5)
-    return describeOneNode(figma, args.id, depth, gridSize)
+    const depth = Math.min(args.depth ?? autoDepth(graphOf(figma), args.id), 5)
+    return describeOneNode(graphOf(figma), args.id, depth, gridSize)
   }
 })

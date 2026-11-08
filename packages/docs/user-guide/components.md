@@ -61,11 +61,11 @@ Behaviours are saved in `.fig` files and published with library components.
 
 ## Component Libraries
 
-A component library publishes reusable components as an immutable revision. Each published asset has stable library, asset, and revision identity, so different instances can remain on different revisions until you explicitly update them.
+A component library publishes reusable components, shared styles, and variable collections as an immutable revision. Each published asset has stable library, asset, and revision identity, so different instances can remain on different revisions until you explicitly update them.
 
 ### Publish a Library
 
-1. Create the components and component sets you want to share.
+1. Create the components, component sets, styles, and variables you want to share.
 2. Open **Assets**, then select **Manage libraries**.
 3. Select **Publish library**.
 4. Enter a stable library ID and display name. The library ID is locked after the first publication.
@@ -73,11 +73,15 @@ A component library publishes reusable components as an immutable revision. Each
 6. Select the added, modified, renamed, or removed assets to include.
 7. Confirm the destination and select **Publish library**.
 
+A library publishes every style and variable collection the document defines, and each component carries the styles and variables it uses, including the variables those alias. A changed variable value is a change to its collection, not to the components that use it. Each published component and set includes a thumbnail.
+
 On later publications, unchecked changes remain pending. Unchanged assets keep their previous published definitions, and removed definitions remain available while documents still reference their historical revision.
 
 ### Enable and Insert Library Assets
 
 Open **Assets → Manage libraries** to enable a published library. Its components appear in the Assets panel alongside local components. Insert one by clicking it, using the keyboard, or dragging it onto the canvas.
+
+Inserting a component also brings the styles and variables it uses. They arrive as the library's read-only styles and collections, later inserts reuse them, and updating the library refreshes their values.
 
 Published definitions are read-only in consuming documents. Edit the source document and publish another revision to change a definition. Instances linked to those definitions remain editable through their component properties and overrides.
 
@@ -90,7 +94,7 @@ Open **Manage libraries → Updates** to discover newer revisions. Discovery doe
 - Instances on the current page
 - Instances across all pages
 
-OpenPencil preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
+Updating every instance of an asset redraws the document's copy of that component in place, so its instances keep their overrides — on layers the library renamed too, since each layer is matched to the library layer it copies — and lose only those on layers the library removed. Updating some instances of an asset moves just those to a copy of the newer definition, as does updating a component the library turned into another kind of layer, such as a set of variants; OpenPencil then preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
 
 ### Local, Storage, and Offline Use
 

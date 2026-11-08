@@ -14,7 +14,6 @@ import type {
 
 import {
   assertProxyEditable,
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
@@ -28,6 +27,7 @@ import {
   type FigmaFontNameInput
 } from '#core/figma-api/fonts/names'
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaPaint } from '#core/figma-api/paints'
 import { fontNameSchema } from '#core/figma-api/schema'
 import {
@@ -276,7 +276,7 @@ export function installTextRangeMethods(
       value(this: ProxyThis, start: number, end: number, value: unknown) {
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
-        const patch = setter(method, node, start, end, value, graph(this, internals))
+        const patch = setter(method, node, start, end, value, graphOf(this))
         if (!RANGE_SETTERS_WITHOUT_FONTS.has(method)) assertTextFontsLoaded(method, node)
         updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
       }
@@ -305,7 +305,7 @@ export function installTextRangeMethods(
   methods.setRangeListOptions = {
     value(this: ProxyThis, start: number, end: number, value: TextListOptions) {
       assertProxyEditable(this, internals)
-      setRangeListOptions(graph(this, internals), raw(this, internals), start, end, value)
+      setRangeListOptions(graphOf(this), raw(this, internals), start, end, value)
     }
   }
   methods.getRangeIndentation = {
@@ -316,7 +316,7 @@ export function installTextRangeMethods(
   methods.setRangeIndentation = {
     value(this: ProxyThis, start: number, end: number, value: number) {
       assertProxyEditable(this, internals)
-      setRangeIndentation(graph(this, internals), raw(this, internals), start, end, value)
+      setRangeIndentation(graphOf(this), raw(this, internals), start, end, value)
     }
   }
   for (const [name, field] of Object.entries(PARAGRAPH_SPACING_METHODS)) {
@@ -328,14 +328,7 @@ export function installTextRangeMethods(
     methods[`setRange${name}`] = {
       value(this: ProxyThis, start: number, end: number, value: number) {
         assertProxyEditable(this, internals)
-        setRangeParagraphSpacing(
-          graph(this, internals),
-          raw(this, internals),
-          field,
-          start,
-          end,
-          value
-        )
+        setRangeParagraphSpacing(graphOf(this), raw(this, internals), field, start, end, value)
       }
     }
   }

@@ -1,7 +1,7 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
-  aiTokenSchema,
+  servicesTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -22,7 +22,7 @@ import {
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
-  type AIToken,
+  type ServicesToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
@@ -47,7 +47,6 @@ import {
   type UpdateDocumentVersionInput,
   type SharedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
   type UpdateDocumentShareInput,
@@ -137,27 +136,13 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
     },
-    /** A short-lived token for the deployment's AI service, on the workspace's behalf. */
-    async requestAIToken(workspaceId: string): Promise<AIToken> {
+    /** A short-lived token for the deployment's services, on the workspace's behalf. */
+    async requestServicesToken(workspaceId: string): Promise<ServicesToken> {
       return parseResponse(
-        client.ai.token.$post({ json: { workspaceId } }),
-        aiTokenSchema,
+        client.services.token.$post({ json: { workspaceId } }),
+        servicesTokenSchema,
         options.onDiagnostic
       )
-    },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
-        options.onDiagnostic
-      )
-      return response.user
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(

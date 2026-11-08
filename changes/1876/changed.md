@@ -1,0 +1,2 @@
+- Cloud refuses API requests larger than 8 MiB; the editor commits a save's images in batches that fit.
+- A Node Cloud server cancels database queries that run past 30 seconds.

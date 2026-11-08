@@ -5,7 +5,7 @@ import {
   type DesignElement,
   type DesignNode
 } from '@open-pencil/dom-css/export'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import { SceneGraph, type ConstraintType, type Fill } from '@open-pencil/scene-graph'
 
 function element(node: DesignNode | undefined): DesignElement {
   if (node?.type !== 'element') throw new Error('Expected an element')
@@ -46,6 +46,138 @@ describe('DOM projection', () => {
 
     const root = element(sceneNodeToDesignDocument(graph, column.id).children[0])
     expect(root.inlineStyle?.['align-items']).toBe('flex-start')
+  })
+})
+
+describe('DOM projection constraints', () => {
+  function placed(horizontalConstraint: ConstraintType, verticalConstraint: ConstraintType) {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, { name: 'Card', width: 200, height: 100 })
+    graph.createNode('RECTANGLE', card.id, {
+      name: 'Bar',
+      x: 20,
+      y: 10,
+      width: 60,
+      height: 30,
+      horizontalConstraint,
+      verticalConstraint
+    })
+    const root = element(sceneNodeToDesignDocument(graph, card.id).children[0])
+    return element(root.children[0]).inlineStyle ?? {}
+  }
+
+  test('Left and Top keep the start edges', () => {
+    expect(placed('MIN', 'MIN')).toMatchObject({ left: '20px', top: '10px', width: '60px' })
+  })
+
+  test('Right and Bottom keep the end edges', () => {
+    const style = placed('MAX', 'MAX')
+    expect(style).toMatchObject({ right: '120px', bottom: '60px', width: '60px', height: '30px' })
+    expect(style.left).toBeUndefined()
+    expect(style.top).toBeUndefined()
+  })
+
+  test('Center keeps the offset from the centre', () => {
+    expect(placed('CENTER', 'CENTER')).toMatchObject({
+      left: 'calc(50% - 80px)',
+      top: 'calc(50% - 40px)',
+      width: '60px'
+    })
+  })
+
+  test('Left and right keep both edges, with the size written out so images fill it too', () => {
+    expect(placed('STRETCH', 'STRETCH')).toMatchObject({
+      left: '20px',
+      width: 'calc(100% - 140px)',
+      top: '10px',
+      height: 'calc(100% - 70px)'
+    })
+  })
+
+  test('a parent with no size on an axis leaves its children at their start and size', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, { name: 'Card', width: 0, height: 100 })
+    graph.createNode('RECTANGLE', card.id, {
+      name: 'Bar',
+      x: 20,
+      width: 60,
+      height: 30,
+      horizontalConstraint: 'STRETCH'
+    })
+    const root = element(sceneNodeToDesignDocument(graph, card.id).children[0])
+    expect(element(root.children[0]).inlineStyle).toMatchObject({ left: '20px', width: '60px' })
+  })
+
+  test('offsets are measured inside the parent border, which a stroke does not take', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, {
+      name: 'Card',
+      width: 200,
+      height: 100,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          weight: 10,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE'
+        }
+      ]
+    })
+    graph.createNode('RECTANGLE', card.id, {
+      name: 'Bar',
+      x: 20,
+      y: 10,
+      width: 60,
+      height: 30,
+      horizontalConstraint: 'SCALE',
+      verticalConstraint: 'MAX'
+    })
+    const root = element(sceneNodeToDesignDocument(graph, card.id).children[0])
+    expect(element(root.children[0]).inlineStyle).toMatchObject({
+      left: '5.5556%',
+      width: '33.3333%',
+      bottom: '50px'
+    })
+  })
+
+  test('Scale keeps its share of the parent', () => {
+    expect(placed('SCALE', 'SCALE')).toMatchObject({
+      left: '10%',
+      width: '30%',
+      top: '10%',
+      height: '30%'
+    })
+  })
+
+  test('an absolutely positioned layer in auto layout follows its constraints too', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const row = graph.createNode('FRAME', page.id, {
+      name: 'Row',
+      width: 200,
+      height: 40,
+      layoutMode: 'HORIZONTAL'
+    })
+    graph.createNode('RECTANGLE', row.id, {
+      name: 'Badge',
+      x: 180,
+      y: 0,
+      width: 12,
+      height: 12,
+      layoutPositioning: 'ABSOLUTE',
+      horizontalConstraint: 'MAX'
+    })
+    const root = element(sceneNodeToDesignDocument(graph, row.id).children[0])
+    expect(element(root.children[0]).inlineStyle).toMatchObject({
+      position: 'absolute',
+      right: '8px',
+      top: '0px'
+    })
   })
 })
 

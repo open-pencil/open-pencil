@@ -99,8 +99,9 @@ describe('atomic agent tools', () => {
           {
             ...tool('set_opacity'),
             execute: () => {
-              // Code that writes into a node directly reports it first.
+              // Code that writes into a node or variable directly reports it first.
               if (kind === 'node') graph.willChangeNode(graph.getNode(rectangle.id))
+              else graph.willChangeVariable(variable.id)
               set(after)
             }
           },

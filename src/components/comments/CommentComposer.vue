@@ -2,8 +2,6 @@
 import { useTextareaAutosize } from '@vueuse/core'
 import { computed, nextTick, useTemplateRef } from 'vue'
 
-import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
-import { shortcutCode } from '@open-pencil/vue/editor/keyboard'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -35,7 +33,6 @@ useTextareaAutosize({ element: input, input: text })
 const messages = useCommentMessages()
 const ui = computed(() => comments({ bare }))
 const empty = computed(() => text.value.trim() === '')
-const mac = shortcutPlatform() === 'mac'
 
 function submit() {
   if (empty.value) return
@@ -69,12 +66,7 @@ function onKeydown(event: KeyboardEvent) {
     apply(next)
     return
   }
-  const format = commentFormatForKey({
-    code: shortcutCode(event),
-    shiftKey: event.shiftKey,
-    altKey: event.altKey,
-    mod: mac ? event.metaKey : event.ctrlKey
-  })
+  const format = commentFormatForKey(event)
   if (!format) return
   // The editor binds some of these keys too, such as Cmd+K for the command palette.
   event.preventDefault()

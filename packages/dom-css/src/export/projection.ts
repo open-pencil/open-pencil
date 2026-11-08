@@ -1,10 +1,8 @@
-import { fromUint8Array } from 'js-base64'
-
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
@@ -23,6 +21,7 @@ import {
   textEffectsToCSS
 } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
+import { addPositioning, constraintSizes, placement } from './position'
 import { textCaseToCSS, textElementContent } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -107,8 +106,12 @@ function addSize(
   parent: SceneNode | undefined,
   css: FieldCSS
 ): void {
+  const placed = placement(node, parent)
   const sized = (axis: 'width' | 'height') =>
-    node[axis] > 0 && !hugs(node, axis) && !stretches(node, parent, axis)
+    node[axis] > 0 &&
+    !hugs(node, axis) &&
+    !stretches(node, parent, axis) &&
+    !(placed && constraintSizes(node, placed.parent, axis))
   if (sized('width')) style.width = css('width', px(node.width))
   if (sized('height')) style.height = css('height', px(node.height))
 }
@@ -128,28 +131,6 @@ function stretches(
   if (parent.layoutMode === 'GRID') return true
   const mainAxis = parent.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
   return axis !== mainAxis
-}
-
-/**
- * Place a layer at its coordinates when its parent does not lay it out: it is absolutely
- * positioned, or its parent frame has no auto layout. A frame without auto layout becomes the
- * containing block of the children it places.
- */
-function addPositioning(
-  style: DesignStyleDeclaration,
-  node: SceneNode,
-  parent: SceneNode | undefined
-): void {
-  const placed =
-    node.layoutPositioning === 'ABSOLUTE' ||
-    (parent !== undefined && parent.type !== 'CANVAS' && parent.layoutMode === 'NONE')
-  if (placed) {
-    style.position = 'absolute'
-    style.left = `${node.x}px`
-    style.top = `${node.y}px`
-  } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
-    style.position = 'relative'
-  }
 }
 
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
@@ -241,11 +222,6 @@ function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 
   if (node.itemSpacing > 0) style['row-gap'] = item
   style['column-gap'] = counter
-}
-
-/** Image bytes as a data URL of the type they are encoded in. */
-function imageDataURL(bytes: Uint8Array): string {
-  return `data:${imageMimeType(bytes)};base64,${fromUint8Array(bytes)}`
 }
 
 /**

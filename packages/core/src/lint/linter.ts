@@ -18,15 +18,37 @@ import type {
 } from './types'
 import { getNodePath } from './utils'
 
+/**
+ * How many of the text's characters some run styles. Runs are clipped to the text, which an
+ * imported `characterStyleIDs` can outrun, and overlapping runs count each character once.
+ */
+function coveredCharacters(runs: readonly SceneNode['styleRuns'][number][], length: number) {
+  const spans = runs
+    .map((run) => [Math.max(0, run.start), Math.min(length, run.start + run.length)] as const)
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0])
+  let covered = 0
+  let end = 0
+  for (const [from, to] of spans) {
+    const start = Math.max(from, end)
+    if (to <= start) continue
+    covered += to - start
+    end = to
+  }
+  return covered
+}
+
 /** The size and weight of each stretch of a text layer's characters, as the canvas draws them. */
 function effectiveTextStyles(node: SceneNode): { fontSize: number; fontWeight: number }[] {
   const base = { fontSize: node.fontSize, fontWeight: node.fontWeight }
-  const runs = node.styleRuns.map((run) => ({
+  const length = node.text.length
+  // A run past the end of the text styles nothing the canvas draws.
+  const inText = node.styleRuns.filter((run) => run.start < length && run.start + run.length > 0)
+  const runs = inText.map((run) => ({
     fontSize: run.style.fontSize ?? base.fontSize,
     fontWeight: run.style.fontWeight ?? base.fontWeight
   }))
-  const covered = node.styleRuns.reduce((total, run) => total + run.length, 0)
-  return covered < node.text.length || runs.length === 0 ? [base, ...runs] : runs
+  return coveredCharacters(inText, length) < length || runs.length === 0 ? [base, ...runs] : runs
 }
 
 /** Sticky notes, shapes, and connectors: FigJam's own layers, which lint leaves alone. */

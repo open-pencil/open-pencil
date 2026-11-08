@@ -148,3 +148,49 @@ describe('no-px-tailwind-values', () => {
     )
   })
 })
+
+describe('no-interpolated-tailwind-classes', () => {
+  const interpolatedRule = 'no-interpolated-tailwind-classes'
+
+  test('rejects class lists interpolated in themes and class helpers', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/spinner.ts': `const spin = 'animate-spin'\nexport default { slots: { spinner: \`size-3.5 \${spin}\` } }\n`,
+          'src/components/variants.ts': `import { tv } from 'tailwind-variants'\nconst spin = 'animate-spin'\nexport const ui = tv({ base: \`size-3.5 \${spin}\` })\n`,
+          'src/components/merge.ts': `import { twMerge } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const merged = twMerge(\`size-3.5 \${spin}\`)\n`,
+          'src/components/join.ts': `import { twJoin } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const joined = twJoin(\`size-3.5 \${spin}\`)\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics.map((item) => item.filename?.split('/').pop()).toSorted()).toEqual([
+      'join.ts',
+      'merge.ts',
+      'spinner.ts',
+      'variants.ts'
+    ])
+  })
+
+  test('accepts arrays, plain template strings, and interpolation outside class lists', async () => {
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/array.ts':
+            "const spin = 'animate-spin'\nexport default { slots: { spinner: ['size-3.5', spin] } }\n",
+          'src/theme/plain.ts': 'export default { slots: { root: `size-3.5 shrink-0` } }\n',
+          'src/theme/variant-key.ts': `const size = 'sm'\nexport default { slots: { root: 'flex' }, defaultVariants: { size: \`\${size}\` } }\n`,
+          'src/components/key.ts': `const id = 'a'\nexport const key = \`\${id}:b\`\n`,
+          // CSS values a theme module hands another library are not class lists.
+          'src/theme/editor.ts': `import { EditorView } from '@codemirror/view'\nconst gap = 8\nexport const theme = EditorView.theme({ '.cm-line': { padding: \`0 \${gap}px\` } })\n`,
+          // Outside a theme module, a template after a helper call is no longer inside it.
+          'src/components/after.ts': `import { tv } from 'tailwind-variants'\nconst id = 'a'\nexport const ui = tv({ base: 'flex' })\nexport const key = \`\${id}:b\`\n`
+        },
+        { [`open-pencil/${interpolatedRule}`]: 'error' }
+      ),
+      interpolatedRule
+    )
+    expect(diagnostics).toEqual([])
+  })
+})

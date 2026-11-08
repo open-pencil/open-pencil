@@ -19,6 +19,7 @@ import {
 } from '#core/text/fallbacks'
 import { BundledFonts, type BundledFontLocator } from '#core/text/font/bundled'
 import { FamilyFaceCatalog, type HostFontFamily } from '#core/text/font/catalog'
+import { makeParagraphBuilder, resetFontCollection } from '#core/text/font/collection'
 import {
   browserFaceDescriptors,
   fontFaceRenderFamily,
@@ -136,6 +137,7 @@ export class FontManager {
       if (--shared.users > 0) return
       this.sharedProviders.delete(canvasKit)
       this.detachProvider(provider)
+      resetFontCollection(provider)
       provider.delete()
       return
     }
@@ -270,6 +272,11 @@ export class FontManager {
     return this.faces.offersFace(family, weight, italic)
   }
 
+  /** The families whose faces `familyFaces` has found so far. */
+  familiesWithFoundFaces(): string[] {
+    return this.faces.foundFamilies()
+  }
+
   /** Calls the listener whenever the faces found so far are forgotten. */
   onFamilyFacesReset(listener: () => void): () => void {
     return this.faces.onReset(listener)
@@ -336,7 +343,8 @@ export class FontManager {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
       }
     }
-    for (const font of fonts) byFamily.set(font.family, { family: font.family, source: 'local' })
+    for (const family of [...fonts.map((font) => font.family), ...this.faces.hostFamilies()])
+      byFamily.set(family, { family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
 
@@ -837,7 +845,7 @@ export class FontManager {
     const style = new canvasKit.ParagraphStyle({
       textStyle: { fontFamilies: [...families], fontSize: 16 }
     })
-    const builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(style, provider)
+    const builder = makeParagraphBuilder(canvasKit, style, provider)
     try {
       builder.addText(characters.join(''))
       const paragraph = builder.build()
@@ -989,6 +997,7 @@ export class FontManager {
     if (registeredData?.has(data)) return true
     try {
       provider.registerFont(data, family)
+      resetFontCollection(provider)
       const familyRegistrations = registeredData ?? new Set<ArrayBuffer>()
       familyRegistrations.add(data)
       registrations.set(family, familyRegistrations)

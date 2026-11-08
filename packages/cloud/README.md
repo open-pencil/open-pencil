@@ -20,7 +20,7 @@ secrets from the environment. Start from
 the server on Node 22 or later, installed from npm or built from a checkout:
 
 ```sh
-npx -p @open-pencil/cloud openpencil-cloud   # openpencil-ai-relay runs the AI relay
+npx -p @open-pencil/cloud openpencil-cloud   # openpencil-services runs the services server
 bun --filter @open-pencil/cloud build:standalone && bun --filter @open-pencil/cloud start
 ```
 
