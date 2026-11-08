@@ -1,3 +1,5 @@
+import { cloneDeep } from 'es-toolkit'
+
 import type { EditorContext, EditorState } from '#core/editor/types'
 
 type PenSnapshot = EditorState['penState']
@@ -26,14 +28,15 @@ export function createPenHistory(ctx: EditorContext): PenHistory {
   // Undo and redo act on the newest point, so a press waiting to be recorded is recorded first.
   let stopSettling: (() => void) | null = null
 
-  const snapshot = (): PenSnapshot => structuredClone(ctx.state.penState)
+  // A host may keep the editor's state reactive, whose proxies structuredClone refuses.
+  const snapshot = (): PenSnapshot => cloneDeep(ctx.state.penState)
   const same = (a: PenSnapshot, b: PenSnapshot) => JSON.stringify(a) === JSON.stringify(b)
 
   function restore(path: PenSnapshot) {
     pending = null
     stopSettling?.()
     stopSettling = null
-    ctx.state.penState = structuredClone(path)
+    ctx.state.penState = cloneDeep(path)
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null
     if (path) ctx.setActiveTool('PEN')
