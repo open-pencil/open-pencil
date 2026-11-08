@@ -120,6 +120,8 @@ function resizedPlacement(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
+  // A handle pressed and released without moving leaves the layer as it was, as in Figma.
+  if (cx === d.startX && cy === d.startY) return placeInResizedFrame(placement, origRect, origRect)
   const { x: dx, y: dy } = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
   const signed = signedResizeRect(d.handle, origRect, dx, dy, aspect)
   if (signed.width < 0 || signed.height < 0) {

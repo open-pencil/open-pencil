@@ -1,7 +1,7 @@
 import { compact } from 'es-toolkit'
 import { toRaw } from 'vue'
 
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core'
 import {
   createSceneGeometry,
   transformZoneAt,
@@ -20,7 +20,11 @@ import {
   scaledChanges
 } from '#vue/shared/input/resize'
 import { signedResizeRect } from '#vue/shared/input/resize/rect'
-import { applyBoxResizeSnap, proportionalBoxResizeRect } from '#vue/shared/input/resize/snap'
+import {
+  applyBoxResizeSnap,
+  proportionalBoxResizeRect,
+  roundsToPixels
+} from '#vue/shared/input/resize/snap'
 import { createResizeDrag } from '#vue/shared/input/resize/start'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResizeSelection, DragState } from '#vue/shared/input/types'
@@ -89,15 +93,6 @@ export function tryStartSelectionResize(
     origBounds: box,
     members
   }
-}
-
-function roundsToPixels(editor: Editor): boolean {
-  const state = optionalEditorState(editor)
-  return (
-    state !== undefined &&
-    state.snappingPreferences.pixelGrid &&
-    resolveEditorProfile(state).pixelGrid
-  )
 }
 
 /** `size` at least a pixel long, keeping its sign. */
