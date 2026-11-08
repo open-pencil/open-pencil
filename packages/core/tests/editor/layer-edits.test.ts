@@ -202,10 +202,20 @@ describe('layers the host lets only move', () => {
     expect(() => editor.asHost(() => editor.setOpacity(0.5))).toThrow(ReadOnlyDocumentError)
   })
 
-  test('runs only synchronous host edits', () => {
+  test('runs only synchronous host edits, and swallows what the promise does after', async () => {
     const { editor } = movable()
-    const ran = () => editor.asHost(async () => undefined)
+    let rejected = false
+    process.once('unhandledRejection', () => (rejected = true))
+    const ran = () =>
+      editor.asHost(async () => {
+        await Promise.resolve()
+        editor.setOpacity(0.5)
+      })
     expect(ran).toThrow(TypeError)
+    await new Promise((resolve) => {
+      setTimeout(resolve, 10)
+    })
+    expect(rejected).toBe(false)
   })
 
   test('undo stops at the changes made before layers could only move', () => {

@@ -219,6 +219,9 @@ export function createReadOnlyActions(
       hostDepth--
     }
     if (isThenable(result)) {
+      // The TypeError reports the mistake; the promise's own failure, such as an edit after the
+      // await being refused, would only be an unhandled rejection on top of it.
+      void Promise.resolve(result).catch(() => undefined)
       throw new TypeError('asHost runs synchronous edits only; await outside it and call it again')
     }
     return result
