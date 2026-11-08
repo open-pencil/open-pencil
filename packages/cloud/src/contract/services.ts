@@ -59,7 +59,13 @@ export const servicesTokenClaimsSchema = v.object({
   aud: v.literal(CLOUD_SERVICES_TOKEN_AUDIENCE),
   sub: v.pipe(v.string(), v.minLength(1)),
   workspaceId: v.pipe(v.string(), v.uuid()),
-  /** Credits the workspace's plan grants each month; `null` when Cloud sets no allowance. */
+  /**
+   * The account whose credits the request spends: the workspace's owner, whose allowance every
+   * workspace they own shares. Absent from tokens a Cloud from before account plans issued, which
+   * a relay takes as the workspace's own allowance, as such a Cloud meant.
+   */
+  accountId: v.optional(v.pipe(v.string(), v.minLength(1))),
+  /** Credits the owner's plan grants each month; `null` when Cloud sets no allowance. */
   monthlyCreditAllowance: v.nullable(creditsSchema),
   iat: v.pipe(v.number(), v.integer()),
   exp: v.pipe(v.number(), v.integer())

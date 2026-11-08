@@ -10,6 +10,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely, UpdateObject } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
@@ -64,17 +65,13 @@ export function createCapabilityService(
   ): Promise<DocumentPermission | null> {
     const policy = options.policy
     if (!policy) return linkPermission
-    const document = await database
-      .selectFrom('document')
-      .select('workspaceId')
-      .where('id', '=', documentId)
-      .executeTakeFirstOrThrow()
-    const context = {
-      targetingKey: document.workspaceId,
-      workspaceId: document.workspaceId,
-      documentId,
-      deploymentMode: options.deploymentMode ?? 'self-hosted'
-    }
+    // A workspace takes its owner's plan.
+    const context = await workspacePolicyContext(
+      database,
+      { documentId },
+      { deploymentMode: options.deploymentMode ?? 'self-hosted' }
+    )
+    if (!context) return null
     if (
       linkPermission === 'edit' &&
       (await policy.boolean(CLOUD_FEATURE_KEYS.guestEdit, false, context))

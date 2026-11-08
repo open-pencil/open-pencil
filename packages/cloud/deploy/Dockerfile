@@ -3,7 +3,7 @@
 # with the HTML engine's WebAssembly module built first, which needs Rust (the image has none):
 #   bun run --filter @open-pencil/html-engine build:wasm
 #   docker build -f packages/cloud/deploy/Dockerfile -t openpencil-cloud .
-# The image also runs the AI relay: `docker run … openpencil-cloud node ai-relay.mjs`.
+# The image also runs the services server: `docker run … openpencil-cloud node services.mjs`.
 
 # The build's output is JavaScript and static files, so it runs on the builder's own platform
 # once, whichever platforms the image is for, with Bun for that platform too. Playwright's

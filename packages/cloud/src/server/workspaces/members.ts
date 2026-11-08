@@ -12,6 +12,7 @@ import type { CloudActor } from '#cloud/server/auth'
 import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
+import { lockStorageAllowance } from '#cloud/server/quota/storage'
 import {
   invitationMatchesActor,
   invitationTokenIsActive,
@@ -20,7 +21,7 @@ import {
 import { dateString } from '#cloud/server/sharing/contracts'
 import { hashCapability } from '#cloud/server/sharing/crypto'
 import { findWorkspace, type WorkspaceDatabase } from '#cloud/server/workspaces/repository'
-import type { Kysely } from 'kysely'
+import type { Kysely, Transaction } from 'kysely'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -100,6 +101,45 @@ function invitationContract(row: {
     invitedAt: dateString(row.invitedAt) ?? '',
     expiresAt: dateString(row.expiresAt) ?? ''
   }
+}
+
+/**
+ * Passes the workspace to its longest-standing other admin when its owner leaves or stops being
+ * an admin, so its limits come from someone still running it. The last-admin guard keeps one.
+ */
+async function handOverOwnership(
+  database: Transaction<CloudDatabase>,
+  workspaceId: string,
+  leavingUserId: string
+): Promise<void> {
+  const workspace = await database
+    .selectFrom('workspace')
+    .select('ownerId')
+    .where('id', '=', workspaceId)
+    // Changing the owner changes no key, so a reservation's foreign-key check on this row is
+    // never kept waiting behind it while the transfer waits for that reservation's lock.
+    .forNoKeyUpdate()
+    .executeTakeFirstOrThrow()
+  if (workspace.ownerId !== leavingUserId) return
+  const successor = await database
+    .selectFrom('workspaceMember')
+    .select('userId')
+    .where('workspaceId', '=', workspaceId)
+    .where('role', '=', 'admin')
+    .where('userId', '!=', leavingUserId)
+    .orderBy('createdAt')
+    .orderBy('userId')
+    .executeTakeFirst()
+  if (!successor) return
+  // Reservations count this workspace under its owner's lock: hold both owners', in one order.
+  for (const owner of [leavingUserId, successor.userId].toSorted()) {
+    await lockStorageAllowance(database, owner)
+  }
+  await database
+    .updateTable('workspace')
+    .set({ ownerId: successor.userId, updatedAt: new Date() })
+    .where('id', '=', workspaceId)
+    .execute()
 }
 
 async function adminCount(database: WorkspaceDatabase, workspaceId: string): Promise<number> {
@@ -368,6 +408,7 @@ export function createWorkspaceMemberService(
           .where('workspaceId', '=', workspaceId)
           .where('userId', '=', memberId)
           .execute()
+        if (role !== 'admin') await handOverOwnership(transaction, workspaceId, memberId)
       })
     },
 
@@ -395,7 +436,10 @@ export function createWorkspaceMemberService(
       })
     },
 
-    /** Removes a member, or lets someone leave; the last administrator cannot go. */
+    /**
+     * Removes a member, or lets someone leave; the last administrator cannot go, and an owner who
+     * goes leaves the workspace to the longest-standing other admin.
+     */
     async remove(userId: string, workspaceId: string, memberId: string): Promise<void> {
       if (memberId === userId) await membership(userId, workspaceId)
       else await requireAccess(userId, workspaceId, { workspace: ['manage-members'] })
@@ -409,6 +453,7 @@ export function createWorkspaceMemberService(
           .where('workspaceId', '=', workspaceId)
           .where('userId', '=', memberId)
           .execute()
+        await handOverOwnership(transaction, workspaceId, memberId)
       })
     },
 

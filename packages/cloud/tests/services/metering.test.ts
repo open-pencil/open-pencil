@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { creditsFor, meteredUsage } from '#cloud/ai-relay'
 import type { ChatModel } from '#cloud/contract'
+import { creditsFor, meteredUsage } from '#cloud/services'
 
 const model: ChatModel = {
   id: 'model',
@@ -22,7 +22,7 @@ function stream(...chunks: string[]): ReadableStream<Uint8Array> {
   })
 }
 
-describe('AI relay metering', () => {
+describe('Services server metering', () => {
   test('charges per million tokens and rounds up', () => {
     expect(creditsFor(model, { inputTokens: 1_000_000, outputTokens: 0 })).toBe(3000)
     expect(creditsFor(model, { inputTokens: 1000, outputTokens: 1000 })).toBe(18)

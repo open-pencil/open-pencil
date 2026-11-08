@@ -11,6 +11,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents'
 import { resolveDocumentAccess } from '#cloud/server/documents/access'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { base64url, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
@@ -114,20 +115,12 @@ export function createCollaborationTicketService({
       const access = await resolveDocumentAccess(database, actor.userId, documentId)
       if (!access) throw new DocumentNotFoundError()
       if (policy) {
-        const workspace = await database
-          .selectFrom('document')
-          .select('workspaceId')
-          .where('id', '=', documentId)
-          .executeTakeFirstOrThrow()
-        if (
-          !(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, {
-            targetingKey: workspace.workspaceId,
-            actorId: actor.userId,
-            workspaceId: workspace.workspaceId,
-            documentId,
-            deploymentMode
-          }))
-        ) {
+        const context = await workspacePolicyContext(
+          database,
+          { documentId },
+          { actorId: actor.userId, deploymentMode }
+        )
+        if (!context || !(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context))) {
           throw new DocumentNotFoundError()
         }
       }
@@ -155,19 +148,12 @@ export function createCollaborationTicketService({
     ): Promise<CollaborationTicket> {
       const resolved = await sharing.resolveShare(shareId, input, actor)
       if (policy) {
-        const workspace = await database
-          .selectFrom('document')
-          .select('workspaceId')
-          .where('id', '=', resolved.documentId)
-          .executeTakeFirstOrThrow()
-        const context = {
-          targetingKey: workspace.workspaceId,
-          ...(actor ? { actorId: actor.userId } : {}),
-          workspaceId: workspace.workspaceId,
-          documentId: resolved.documentId,
-          deploymentMode
-        }
-        if (!(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context))) {
+        const context = await workspacePolicyContext(
+          database,
+          { documentId: resolved.documentId },
+          { actorId: actor?.userId, deploymentMode }
+        )
+        if (!context || !(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context))) {
           throw new DocumentNotFoundError()
         }
         if (!actor && !(await policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context))) {

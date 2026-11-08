@@ -3,7 +3,7 @@ import { fromDate, startOfMonth, toCalendarDate } from '@internationalized/date'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import type { AIRelayDatabase, NewAIRelayUsage } from './db'
+import type { ServicesDatabase, NewServicesUsage } from './db'
 
 const USAGE_PAGE_SIZE = 50
 
@@ -31,20 +31,36 @@ function encodeCursor(createdAt: Date, id: string): string {
   return `${createdAt.getTime()}.${id}`
 }
 
-export class AIUsageCursorError extends Error {
+export class ServicesUsageCursorError extends Error {
   constructor() {
     super('Invalid usage cursor')
-    this.name = 'AIUsageCursorError'
+    this.name = 'ServicesUsageCursorError'
   }
 }
 
-export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
-  async function spent(workspaceId: string, now: Date): Promise<number> {
+/**
+ * Who a request spends for: the account whose allowance it draws on, and the workspace it came
+ * from, whose requests recorded before accounts carry no account and still count this month.
+ */
+export type CreditSpender = { accountId: string; workspaceId: string }
+
+/** The spender a token names; a token without an account spends its workspace's allowance. */
+export function spender(claims: { accountId?: string; workspaceId: string }): CreditSpender {
+  return { accountId: claims.accountId ?? claims.workspaceId, workspaceId: claims.workspaceId }
+}
+
+export function createServicesUsageStore(database: Kysely<ServicesDatabase>) {
+  async function spent({ accountId, workspaceId }: CreditSpender, now: Date): Promise<number> {
     const { start, end } = usagePeriod(now)
     const row = await database
-      .selectFrom('aiRelayUsage')
+      .selectFrom('servicesUsage')
       .select((query) => query.fn.sum<string | number | null>('credits').as('credits'))
-      .where('workspaceId', '=', workspaceId)
+      .where((usage) =>
+        usage.or([
+          usage('accountId', '=', accountId),
+          usage.and([usage('accountId', 'is', null), usage('workspaceId', '=', workspaceId)])
+        ])
+      )
       .where('createdAt', '>=', start)
       .where('createdAt', '<', end)
       .executeTakeFirst()
@@ -52,33 +68,41 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
   }
 
   return {
-    async record(usage: NewAIRelayUsage): Promise<void> {
-      await database.insertInto('aiRelayUsage').values(usage).execute()
+    async record(usage: NewServicesUsage): Promise<void> {
+      await database.insertInto('servicesUsage').values(usage).execute()
     },
 
     /**
-     * The workspace's single allowance bucket for the current month. A `null` allowance means
-     * Cloud set none, and the relay does not limit spend.
+     * The account's single allowance bucket for the current month, which every workspace it owns
+     * spends from. A `null` allowance means Cloud set none, and the relay does not limit spend.
      */
-    async wallet(workspaceId: string, allowance: number | null, now: Date): Promise<CreditWallet> {
+    async wallet(
+      spending: CreditSpender,
+      allowance: number | null,
+      now: Date
+    ): Promise<CreditWallet> {
       if (allowance === null) return { balance: null, buckets: [] }
-      const remaining = Math.max(0, allowance - (await spent(workspaceId, now)))
+      const remaining = Math.max(0, allowance - (await spent(spending, now)))
       return {
         balance: remaining,
         buckets: [{ kind: 'allowance', remaining, expiresAt: usagePeriod(now).end.toISOString() }]
       }
     },
 
-    /** Newest first, across every member of the workspace. */
+    /**
+     * Newest first, across every member of the workspace. Only this workspace's requests are
+     * listed, though its owner's other workspaces spend the same credits: their members and
+     * models are theirs to see.
+     */
     async page(workspaceId: string, cursor: string | undefined): Promise<UsagePage> {
       let after: { createdAt: Date; id: string } | undefined
       if (cursor !== undefined) {
         const parsed = v.safeParse(cursorSchema, cursor)
-        if (!parsed.success) throw new AIUsageCursorError()
+        if (!parsed.success) throw new ServicesUsageCursorError()
         after = parsed.output
       }
       let query = database
-        .selectFrom('aiRelayUsage')
+        .selectFrom('servicesUsage')
         .select(['id', 'createdAt', 'modelId', 'userId', 'credits'])
         .where('workspaceId', '=', workspaceId)
       if (after) {
@@ -112,4 +136,4 @@ export function createAIUsageStore(database: Kysely<AIRelayDatabase>) {
   }
 }
 
-export type AIUsageStore = ReturnType<typeof createAIUsageStore>
+export type ServicesUsageStore = ReturnType<typeof createServicesUsageStore>

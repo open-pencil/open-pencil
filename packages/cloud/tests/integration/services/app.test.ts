@@ -2,13 +2,6 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
-  createAIRelayApp,
-  createAIRelayDatabase,
-  migrateAIRelayDatabase,
-  parseAIRelayConfig,
-  type AIRelayConfigInput
-} from '#cloud/ai-relay'
-import {
   serviceCatalogSchema,
   serviceErrorSchema,
   usagePageSchema,
@@ -16,6 +9,13 @@ import {
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
+import {
+  createServicesApp,
+  createServicesDatabase,
+  migrateServicesDatabase,
+  parseServicesConfig,
+  type ServicesConfigInput
+} from '#cloud/services'
 import { PGlite } from '@electric-sql/pglite'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { InsertQueryNode, type KyselyPlugin, type QueryId } from 'kysely'
@@ -27,7 +27,7 @@ const APP = 'https://app.example.com'
 const MODEL = 'anthropic/claude-sonnet-5-5'
 const NOW = new Date('2026-10-21T12:00:00Z')
 
-const configInput: AIRelayConfigInput = {
+const configInput: ServicesConfigInput = {
   schema_version: 1,
   relay: { cloud_url: CLOUD, allowed_origins: [APP], max_concurrent_requests: 1 },
   upstream: { base_url: 'https://upstream.example.com/api/v1' },
@@ -81,24 +81,24 @@ async function relay(
   options: { upstreamTimeoutMs?: number; maxRequestBytes?: number; chargeGate?: Promise<void> } = {}
 ) {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
-  const database = createAIRelayDatabase(new PGliteDialect(pglite))
+  const database = createServicesDatabase(new PGliteDialect(pglite))
   closers.push(() => database.destroy())
-  await migrateAIRelayDatabase(database)
+  await migrateServicesDatabase(database)
 
   const { privateKey, publicKey } = await generateKeyPair('ES256')
   const keys = createLocalJWKSet({ keys: [{ ...(await exportJWK(publicKey)), kid: 'cloud' }] })
   const calls: UpstreamCall[] = []
   const settled: Promise<unknown>[] = []
   const backgroundErrors: unknown[] = []
-  const app = createAIRelayApp({
-    config: parseAIRelayConfig(
+  const app = createServicesApp({
+    config: parseServicesConfig(
       {
         ...configInput,
         relay: { ...configInput.relay, max_request_bytes: options.maxRequestBytes }
       },
       {
         DATABASE_URL: 'postgresql://unused',
-        OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
+        OPENPENCIL_SERVICES_UPSTREAM_KEY: 'upstream-key'
       }
     ),
     database: options.chargeGate ? database.withPlugin(holdInserts(options.chargeGate)) : database,
@@ -121,11 +121,17 @@ async function relay(
 
   const workspaceId = crypto.randomUUID()
   async function token(
-    claims: { monthlyCreditAllowance?: number | null; workspaceId?: string } = {},
+    claims: {
+      monthlyCreditAllowance?: number | null
+      workspaceId?: string
+      /** Null for a token from a Cloud before account plans, which names no account. */
+      accountId?: string | null
+    } = {},
     options: { issuer?: string; signingKey?: CryptoKey } = {}
   ) {
     return new SignJWT({
       workspaceId: claims.workspaceId ?? workspaceId,
+      ...(claims.accountId === null ? {} : { accountId: claims.accountId ?? 'owner-1' }),
       monthlyCreditAllowance:
         claims.monthlyCreditAllowance === undefined ? 1000 : claims.monthlyCreditAllowance
     })
@@ -147,10 +153,10 @@ async function relay(
       method: 'POST',
       body: JSON.stringify(body)
     })
-  return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId }
+  return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId, database }
 }
 
-describe('AI relay', () => {
+describe('Services server', () => {
   test('refuses requests without a token Cloud signed for this service', async () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')
@@ -277,7 +283,7 @@ describe('AI relay', () => {
     expect(wallet.balance).toBe(1000 - 18)
   })
 
-  test('refuses models outside the catalog and workspaces with no credits left', async () => {
+  test('refuses models outside the catalog and accounts with no credits left', async () => {
     const context = await relay(() =>
       Response.json({ choices: [], usage: { prompt_tokens: 1_000_000, completion_tokens: 0 } })
     )
@@ -300,8 +306,11 @@ describe('AI relay', () => {
     })
     expect(context.calls).toHaveLength(1)
 
-    // Another workspace, and one without an allowance, are unaffected.
-    const other = await context.token({ workspaceId: crypto.randomUUID() })
+    // The owner's other workspaces spend the same credits; another account's are unaffected, as
+    // is a token without an allowance.
+    const sibling = await context.token({ workspaceId: crypto.randomUUID() })
+    expect((await context.complete(sibling, { model: MODEL })).status).toBe(402)
+    const other = await context.token({ workspaceId: crypto.randomUUID(), accountId: 'owner-2' })
     expect((await context.complete(other, { model: MODEL })).status).toBe(200)
     const unlimited = await context.token({ monthlyCreditAllowance: null })
     const wallet = await responseJSON(
@@ -312,7 +321,56 @@ describe('AI relay', () => {
     expect((await context.complete(unlimited, { model: MODEL })).status).toBe(200)
   })
 
-  test('limits a workspace to its concurrent requests until metering settles', async () => {
+  test('counts this month’s spend from before accounts, and takes tokens without one', async () => {
+    const context = await relay(() =>
+      Response.json({ choices: [], usage: { prompt_tokens: 1, completion_tokens: 0 } })
+    )
+    const balance = async (bearer: string) =>
+      (
+        await responseJSON(
+          await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+          creditWalletSchema
+        )
+      ).balance
+    // A request recorded before the upgrade, with no account, still counts for its workspace.
+    await context.database
+      .insertInto('servicesUsage')
+      .values({
+        id: crypto.randomUUID(),
+        workspaceId: context.workspaceId,
+        accountId: null,
+        userId: 'user-1',
+        modelId: MODEL,
+        inputTokens: 0,
+        outputTokens: 0,
+        credits: 400,
+        createdAt: new Date('2026-10-20T00:00:00Z')
+      })
+      .execute()
+    expect(await balance(await context.token())).toBe(600)
+    // A Cloud not yet upgraded issues tokens without an account: they spend the workspace's own.
+    const older = await context.token({ accountId: null })
+    expect(await balance(older)).toBe(600)
+    const answer = await context.complete(older, { model: MODEL })
+    expect(answer.status).toBe(200)
+    await answer.text()
+    // What such a token spends is recorded under no account, so it still counts once Cloud
+    // upgrades and tokens name the workspace's owner.
+    const recorded = async () =>
+      context.database
+        .selectFrom('servicesUsage')
+        .select('accountId')
+        .where('credits', '!=', 400)
+        .execute()
+    for (let attempt = 0; attempt < 100 && (await recorded()).length === 0; attempt++) {
+      await Bun.sleep(5)
+    }
+    expect(await recorded()).toEqual([{ accountId: null }])
+    expect(await balance(await context.token())).toBe(await balance(older))
+    expect(await balance(older)).toBeLessThan(600)
+  })
+
+  test('limits an account to its concurrent requests until metering settles', async () => {
     let finish: (() => void) | undefined
     const context = await relay(
       () =>

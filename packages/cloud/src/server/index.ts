@@ -205,10 +205,10 @@ export {
 export {
   createInternalRoutes,
   createInternalService,
-  parseSetWorkspaceEntitlements,
-  setWorkspaceEntitlementsSchema,
+  parseSetAccountEntitlements,
+  setAccountEntitlementsSchema,
   type InternalService,
-  type SetWorkspaceEntitlementsInput
+  type SetAccountEntitlementsInput
 } from './internal'
 export {
   noOpInvitationDelivery,
@@ -253,7 +253,7 @@ export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
   createConfiguredCloudPolicy,
-  createWorkspaceEntitlementRepository,
+  createAccountEntitlementRepository,
   DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
   createDefaultCloudPolicy,

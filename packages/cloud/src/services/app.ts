@@ -17,14 +17,14 @@ import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import type { AIRelayConfig } from './config'
-import type { AIRelayDatabase } from './db'
+import type { ServicesConfig } from './config'
+import type { ServicesDatabase } from './db'
 import { creditsFor, meteredUsage } from './metering'
-import { AIUsageCursorError, createAIUsageStore } from './usage'
+import { ServicesUsageCursorError, createServicesUsageStore, spender } from './usage'
 
-export type AIRelayServices = {
-  config: AIRelayConfig
-  database: Kysely<AIRelayDatabase>
+export type ServicesAppDependencies = {
+  config: ServicesConfig
+  database: Kysely<ServicesDatabase>
   /** Resolves Cloud's signing keys, normally `createRemoteJWKSet` on Cloud's JWKS. */
   keys: JWTVerifyGetKey
   /** Reaches the upstream model API. */
@@ -39,7 +39,7 @@ export type AIRelayServices = {
   upstreamTimeoutMs?: number
 }
 
-type AIRelayEnvironment = { Variables: { claims: ServicesTokenClaims } }
+type ServicesEnvironment = { Variables: { claims: ServicesTokenClaims } }
 
 const chatRequestSchema = v.looseObject({
   model: v.pipe(v.string(), v.minLength(1)),
@@ -83,21 +83,24 @@ function aiError(
   return context.json({ error: { code, ...details } }, SERVICE_ERROR_STATUS[code])
 }
 
-/** Counts each workspace's model requests in flight, within one process. */
+/**
+ * Counts each account's model requests in flight, within one process: its workspaces spend the
+ * same credits, so they share one limit.
+ */
 function concurrencyLimiter(maximum: number) {
   const inFlight = new Map<string, number>()
   return {
-    acquire(workspaceId: string): (() => void) | null {
-      const count = inFlight.get(workspaceId) ?? 0
+    acquire(accountId: string): (() => void) | null {
+      const count = inFlight.get(accountId) ?? 0
       if (count >= maximum) return null
-      inFlight.set(workspaceId, count + 1)
+      inFlight.set(accountId, count + 1)
       let released = false
       return () => {
         if (released) return
         released = true
-        const remaining = (inFlight.get(workspaceId) ?? 1) - 1
-        if (remaining > 0) inFlight.set(workspaceId, remaining)
-        else inFlight.delete(workspaceId)
+        const remaining = (inFlight.get(accountId) ?? 1) - 1
+        if (remaining > 0) inFlight.set(accountId, remaining)
+        else inFlight.delete(accountId)
       }
     }
   }
@@ -109,19 +112,19 @@ function concurrencyLimiter(maximum: number) {
  * A request is admitted while the workspace has credits left and charged once its usage is known,
  * so concurrent requests can overdraw the allowance by what they cost.
  */
-export function createAIRelayApp(services: AIRelayServices) {
+export function createServicesApp(services: ServicesAppDependencies) {
   const { config } = services
   const upstreamFetch = services.fetch ?? ((input, init) => fetch(input, init))
   const now = services.now ?? (() => new Date())
-  const usage = createAIUsageStore(services.database)
+  const usage = createServicesUsageStore(services.database)
   const models = new Map(config.catalog.models.map((model) => [model.id, model]))
   const limiter = concurrencyLimiter(config.maximumConcurrentRequests)
   const allowedOrigins = new Set(config.allowedOrigins)
   const reportBackgroundError =
     services.onBackgroundError ??
-    ((error: unknown) => console.error('[AI relay] Metering failed:', error))
+    ((error: unknown) => console.error('[Services] Metering failed:', error))
 
-  const requireToken = async (context: Context<AIRelayEnvironment>, next: () => Promise<void>) => {
+  const requireToken = async (context: Context<ServicesEnvironment>, next: () => Promise<void>) => {
     const header = context.req.header('Authorization')
     const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined
     if (!token) return aiError(context, 'unauthorized')
@@ -138,7 +141,7 @@ export function createAIRelayApp(services: AIRelayServices) {
     return next()
   }
 
-  return new Hono<AIRelayEnvironment>()
+  return new Hono<ServicesEnvironment>()
     .use(
       '*',
       cors({
@@ -152,9 +155,7 @@ export function createAIRelayApp(services: AIRelayServices) {
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
       const claims = context.get('claims')
-      return context.json(
-        await usage.wallet(claims.workspaceId, claims.monthlyCreditAllowance, now())
-      )
+      return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))
     })
     .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
       try {
@@ -162,7 +163,7 @@ export function createAIRelayApp(services: AIRelayServices) {
           await usage.page(context.get('claims').workspaceId, context.req.valid('query').cursor)
         )
       } catch (error) {
-        if (error instanceof AIUsageCursorError) {
+        if (error instanceof ServicesUsageCursorError) {
           return context.json({ error: { code: 'invalid_request' as const } }, 400)
         }
         throw error
@@ -183,13 +184,13 @@ export function createAIRelayApp(services: AIRelayServices) {
         const request = pick(parsed.output, FORWARDED_FIELDS)
         const model = models.get(request.model)
         if (!model) return aiError(context, 'model_not_allowed')
-        const wallet = await usage.wallet(claims.workspaceId, claims.monthlyCreditAllowance, now())
+        const wallet = await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now())
         if (wallet.balance === 0) {
           return aiError(context, 'insufficient_credits', {
             resetsAt: wallet.buckets[0]?.expiresAt ?? undefined
           })
         }
-        const release = limiter.acquire(claims.workspaceId)
+        const release = limiter.acquire(spender(claims).accountId)
         if (!release) return aiError(context, 'rate_limited')
 
         const streamed = request.stream === true
@@ -231,6 +232,9 @@ export function createAIRelayApp(services: AIRelayServices) {
           await usage.record({
             id: crypto.randomUUID(),
             workspaceId: claims.workspaceId,
+            // A token from a Cloud without accounts names none; the row then counts for its
+            // workspace, and once Cloud upgrades, for that workspace's owner as well.
+            accountId: claims.accountId ?? null,
             userId: claims.sub,
             modelId: model.id,
             inputTokens: tokens.inputTokens,
@@ -248,4 +252,4 @@ export function createAIRelayApp(services: AIRelayServices) {
     )
 }
 
-export type AIRelayApp = ReturnType<typeof createAIRelayApp>
+export type ServicesApp = ReturnType<typeof createServicesApp>

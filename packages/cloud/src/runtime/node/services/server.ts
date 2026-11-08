@@ -1,44 +1,44 @@
 import { readFile } from 'node:fs/promises'
 
-import {
-  AIRelayConfigError,
-  createAIRelayApp,
-  createAIRelayDatabase,
-  migrateAIRelayDatabase,
-  parseAIRelayTOML,
-  type AIRelayEnvironment
-} from '#cloud/ai-relay'
 import { CLOUD_SERVICES_JWKS_PATH } from '#cloud/contract'
+import {
+  ServicesConfigError,
+  createServicesApp,
+  createServicesDatabase,
+  migrateServicesDatabase,
+  parseServicesTOML,
+  type ServicesEnvironment
+} from '#cloud/services'
 import { createRemoteJWKSet } from 'jose'
 import { PostgresDialect } from 'kysely'
 import { Pool } from 'pg'
 
 import { listen } from '../listen'
 
-export type NodeAIRelayOptions = {
-  environment?: AIRelayEnvironment
+export type NodeServicesOptions = {
+  environment?: ServicesEnvironment
   port?: number
 }
 
-export async function startNodeAIRelay(options: NodeAIRelayOptions = {}) {
+export async function startNodeServices(options: NodeServicesOptions = {}) {
   const environment = options.environment ?? process.env
-  const path = environment.OPENPENCIL_AI_RELAY_CONFIG
+  const path = environment.OPENPENCIL_SERVICES_CONFIG
   if (!path) {
-    throw new AIRelayConfigError('OPENPENCIL_AI_RELAY_CONFIG must name a relay TOML file')
+    throw new ServicesConfigError('OPENPENCIL_SERVICES_CONFIG must name a services TOML file')
   }
-  const config = parseAIRelayTOML(await readFile(path, 'utf8'), environment)
-  const database = createAIRelayDatabase(
+  const config = parseServicesTOML(await readFile(path, 'utf8'), environment)
+  const database = createServicesDatabase(
     new PostgresDialect({ pool: new Pool({ connectionString: config.databaseURL }) })
   )
   try {
-    await migrateAIRelayDatabase(database)
+    await migrateServicesDatabase(database)
   } catch (error) {
     await database.destroy()
     throw error
   }
   // Metering outlives its answer; shutdown waits for it so no request goes uncharged.
   const metering = new Set<Promise<unknown>>()
-  const app = createAIRelayApp({
+  const app = createServicesApp({
     config,
     database,
     keys: createRemoteJWKSet(new URL(CLOUD_SERVICES_JWKS_PATH, config.cloudURL)),

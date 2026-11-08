@@ -1,13 +1,13 @@
-# The OpenPencil AI relay: a minimal AI service for a self-hosted Cloud. It accepts tokens your Cloud
+# The OpenPencil services server: a minimal OpenPencil services implementation for a self-hosted Cloud. It accepts tokens your Cloud
 # signs, forwards chat completions to one OpenAI-compatible upstream with one key, and holds each
 # workspace to the monthly credit allowance its Cloud entitlements grant. Point Cloud's `[services]`
-# endpoint at it. Run it with `OPENPENCIL_AI_RELAY_CONFIG=<this file>`.
+# endpoint at it. Run it with `OPENPENCIL_SERVICES_CONFIG=<this file>`.
 schema_version = 1
 
 [relay]
 # The Cloud whose tokens are accepted; its public keys are read from /.well-known/jwks.json.
 cloud_url = "http://localhost:8787"
-# Browser editors calling the relay. The desktop editor is not subject to CORS.
+# Browser editors calling the services server. The desktop editor is not subject to CORS.
 allowed_origins = ["http://localhost:5173"]
 # Model requests one workspace may have in flight at once.
 max_concurrent_requests = 4
@@ -20,9 +20,9 @@ max_request_bytes = 16777216
 
 [upstream]
 base_url = "https://openrouter.ai/api/v1"
-# The key defaults to OPENPENCIL_AI_RELAY_UPSTREAM_KEY.
+# The key defaults to OPENPENCIL_SERVICES_UPSTREAM_KEY.
 
-# 1,000 credits are worth what your plan says they are; the relay only counts them. A request costs
+# 1,000 credits are worth what your plan says they are; the services server only counts them. A request costs
 # its input and output tokens at these rates, rounded up.
 [catalog]
 default_model = "anthropic/claude-sonnet-5-5"
