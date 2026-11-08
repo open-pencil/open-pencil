@@ -439,6 +439,29 @@ describe('BrowserRpcBridge reconnection', () => {
     expect(result.injected).toBeUndefined()
   })
 
+  test('tells the app to cancel a call it did not answer in time', async () => {
+    const pair = await setupWsPair()
+    track(pair)
+    const bridge = createBrowserRPCBridge({
+      authToken: AUTH_TOKEN,
+      onConnectionChange: () => undefined,
+      rpcTimeoutMs: 50
+    })
+    await registerBrowser(pair.serverWs, pair.clientWs, bridge)
+    const received = new Map<string, Record<string, unknown>>()
+    const cancelled = new Promise<void>((resolve) => {
+      pair.clientWs.on('message', (raw) => {
+        const message = JSON.parse(String(raw))
+        received.set(message.type, message)
+        if (message.type === 'cancel') resolve()
+      })
+    })
+
+    await expect(bridge.sendRPC(RPC_BODY)).rejects.toThrow('RPC timeout')
+    await cancelled
+    expect(received.get('cancel')).toEqual({ type: 'cancel', id: received.get('request')?.id })
+  })
+
   test('ignores malformed JSON but closes sockets that send malformed messages', async () => {
     const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,

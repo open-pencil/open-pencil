@@ -10,7 +10,11 @@ import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
-import { effectBindingTarget, isNumericVariableBindingField } from '../variables/fields'
+import {
+  effectBindingTarget,
+  isNumericVariableBindingField,
+  paintBindingTarget
+} from '../variables/fields'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -31,7 +35,7 @@ import {
   setInstanceOverride,
   type InstanceOverrideState
 } from './overrides'
-import { PLACEMENT_FIELDS, placedByConstraints } from './placement'
+import { fitCopiedGroup, PLACEMENT_FIELDS, placedByConstraints } from './placement'
 import { followVectorGeometry } from './vector-geometry'
 
 function setSceneProp<K extends keyof SceneNode>(
@@ -84,9 +88,12 @@ export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string
   }
   return (field) => {
     if (fields.has(field)) return true
-    // Effects an instance set itself own their bindings too, bound or not, as its fills do.
+    // Paints and effects an instance set itself own their bindings too, bound or not.
     const binding = overriddenBindingField(field)
-    return binding !== null && fields.has('effects') && effectBindingTarget(binding) !== null
+    if (binding === null) return false
+    const paint = paintBindingTarget(binding)
+    if (paint) return fields.has(paint.list)
+    return fields.has('effects') && effectBindingTarget(binding) !== null
   }
 }
 
@@ -163,6 +170,7 @@ interface SyncedFieldsInput {
 
 /** The fields a copy takes from its component's layer, placed in the copy's parent. */
 function copySyncedFields(
+  graph: SceneGraph,
   updates: Partial<SceneNode>,
   copy: SceneNode,
   source: SceneNode,
@@ -172,7 +180,7 @@ function copySyncedFields(
   const placedByLayout = instParent.layoutMode !== 'NONE' && source.layoutPositioning !== 'ABSOLUTE'
   const placed = placedByLayout
     ? source
-    : placedByConstraints(source, compParent, instParent, factor)
+    : placedByConstraints(graph, source, compParent, instParent, factor)
   for (const { key, owner, placement, position } of SYNCED_FIELDS) {
     if ((placedByLayout && position) || skip(key) || (owner && skip(owner))) {
       continue
@@ -415,7 +423,7 @@ export function syncCopy(
   { compParent, instParent, compChild, instChild }: MatchedCopy,
   protectedField: (field: string) => boolean,
   linkedLayerId?: string
-): void {
+): boolean {
   const driven = propertyDrivenFields(graph, instChild, compChild)
   const kept =
     driven.size === 0 && protectedField === NOTHING_PROTECTED
@@ -438,7 +446,7 @@ export function syncCopy(
     updates.componentId = linkedLayerId
   }
   syncBindingFields(instChild, source, updates, protectedField)
-  const placement = copySyncedFields(updates, instChild, source, {
+  const placement = copySyncedFields(graph, updates, instChild, source, {
     compParent,
     instParent,
     factor: componentScale / compChild.componentScale,
@@ -447,6 +455,7 @@ export function syncCopy(
   Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
   keepOwnContentSize(graph, updates, instChild, source, placement)
   updateSyncedProps(graph, instChild, updates, kept)
+  return placement.placed !== source
 }
 
 /** True when syncing `compParentId` into `instParentId` would form a cycle. */
@@ -525,13 +534,13 @@ export function syncChildren(
   instParentId: string,
   overrides: InstanceOverrideState,
   context: InstanceSyncContext = createInstanceSyncContext(instParentId, overrides)
-): void {
+): boolean {
   // An instance inside its own component would clone the component into itself without end.
-  if (isCyclicSync(graph, compParentId, instParentId)) return
+  if (isCyclicSync(graph, compParentId, instParentId)) return false
 
   const compParent = graph.nodes.get(compParentId)
   const instParent = graph.nodes.get(instParentId)
-  if (!compParent || !instParent) return
+  if (!compParent || !instParent) return false
 
   const instChildMap = new Map<string, SceneNode>()
   const usedInstChildIds = new Set<string>()
@@ -562,17 +571,16 @@ export function syncChildren(
   placeMissingChildren(graph, compParent, instParent, instChildMap, usedInstChildIds, context)
 
   // Pass 4: Synchronize properties and recurse
+  let constrained = false
   for (const compChildId of compParent.childIds) {
     const compChild = graph.nodes.get(compChildId)
     const instChild = instChildMap.get(compChildId)
     if (!compChild || !instChild) continue
 
-    syncCopy(
-      graph,
-      { compParent, instParent, compChild, instChild },
-      childBindingProtection(graph, instChild, overrides)
-    )
-
+    const match = { compParent, instParent, compChild, instChild }
+    const protection = childBindingProtection(graph, instChild, overrides)
+    // True when its constraints placed the copy elsewhere than the component's layer.
+    if (syncCopy(graph, match, protection)) constrained = true
     if (
       compChild.childIds.length > 0 &&
       !hasNodeInstanceOverride(overrides, instParentId, instChild.id, 'componentId') &&
@@ -580,10 +588,13 @@ export function syncChildren(
       // its bindings are not synced.
       !ownsSlotContent(graph, instChild, slotPropertyId(compChild))
     ) {
-      syncChildren(graph, compChildId, instChild.id, overrides, context)
+      if (syncChildren(graph, compChildId, instChild.id, overrides, context)) constrained = true
     }
   }
 
   // Pass 5: Sort instance children to match component child order
   sortInstanceChildren(graph, instParent, instParentId, compParent.childIds, overrides)
+  // A group fits layers its constraints moved; else it keeps the component's box, as a boolean must.
+  if (constrained) fitCopiedGroup(graph, instParentId)
+  return constrained
 }

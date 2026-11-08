@@ -16,6 +16,7 @@
   "xPaths": "XPaths",
   "pngClipboardUnavailable": "A exportação de PNG para a área de transferência não está disponível neste navegador.",
   "openFileFailed": "Não foi possível abrir “{name}”: {error}",
+  "openTourFailed": "Não foi possível abrir o tour: {error}",
   "viewDiagnostics": "Ver diagnóstico",
   "importedDOMCSS": "Documento DOM/CSS importado.",
   "importDOMCSSFailed": "Não foi possível importar DOM/CSS: {error}",

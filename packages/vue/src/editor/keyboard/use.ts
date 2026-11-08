@@ -20,6 +20,7 @@ import { createEditorKeyActions } from './actions'
 import { isInputElement } from './focus'
 import { createShortcutGuard } from './guard'
 import { bindNudgeKeys } from './nudge'
+import { pressedInClosingOverlay } from './overlays'
 import { editorShortcuts, toolShortcuts, type EditorShortcut } from './shortcuts'
 import { bindSpaceHandTool } from './space-hand'
 
@@ -83,7 +84,10 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
       )?.shortcut
       if (!shortcut || !active() || !mayRun(event, shortcut)) return
       runRefusable(() => shortcut.run(event))
-      if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
+      if (!(shortcut.preventDefault?.(event) ?? true)) return
+      event.preventDefault()
+      // The key was the canvas's; a closing menu still holding focus must not act on it as well.
+      if (pressedInClosingOverlay(event)) event.stopPropagation()
     },
     { capture: true }
   )

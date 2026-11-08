@@ -60,7 +60,11 @@ function cloudServices(
   const reporter = keptAlive(prepared.reportError, context)
   const reportError = (message: string, error: unknown, source: CloudErrorSource) =>
     reportCloudError(reporter, message, error, { source })
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   const objects = createS3ObjectStore(config)
   const transport = emailTransport(prepared, env)
   const queued = createTransactionalEmailService(database, {
@@ -166,6 +170,8 @@ export function createCloudflareCloud(configSource: string) {
           relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
           onDocumentRestored: (documentId) =>
             runInBackground(relayFor(c.env, documentId).startOver(documentId)),
+          onDocumentTakenDown: (documentId) =>
+            runInBackground(relayFor(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
             runInBackground(relayFor(c.env, documentId).announceVersions(documentId)),
           reportError: services.reporter

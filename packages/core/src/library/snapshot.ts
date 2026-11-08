@@ -1,15 +1,29 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { omit, uniqBy } from 'es-toolkit'
+
+import { SceneGraph, type SceneNode, type VariableCollection } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { copyImages } from '@open-pencil/scene-graph/images'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { copiedComponentLayerId } from '@open-pencil/scene-graph/instances/overrides'
 import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 import { ownsSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
-import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
+import {
+  copyVariableTables,
+  layerDependencies,
+  remapCopiedReferences,
+  variableDependencies
+} from '@open-pencil/scene-graph/transfer'
 
-import { existingAssetKey } from './asset-keys'
+import {
+  libraryAssetKey,
+  libraryCollectionAsset,
+  libraryLayerAsset,
+  publishableLibraryCollections,
+  publishableLibraryRoots,
+  publishableLibraryStyles
+} from './asset-keys'
 import { contentHash } from './hash'
-import { assertLibraryAssetKey } from './identity'
 import type { LibraryAssetDescriptor, PortableLibrarySnapshot } from './types'
 
 const VOLATILE_NODE_FIELDS = new Set([
@@ -27,13 +41,6 @@ const VOLATILE_NODE_FIELDS = new Set([
   'librarySource',
   'libraryLayerId'
 ])
-
-function assetKey(node: SceneNode): string {
-  const key = existingAssetKey(node)
-  if (!key) throw new Error(`Component ${node.name} has no stable library asset key`)
-  assertLibraryAssetKey(key)
-  return key
-}
 
 function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
   const ids = new Set<string>()
@@ -96,6 +103,8 @@ function addSnapshotNode(
   const node = source.getNode(sourceId)
   if (!node) return
   const created = target.createNode(node.type, targetParentId, {
+    // A file's layers name no component as an empty one; only a link makes the layer a copy,
+    // which would drop the source a style is known by.
     ...cloneNodeProps(node, node.componentId),
     // A behaviour or other plugin content belongs to the asset; where it came from does not.
     pluginData: contentPluginData(node.pluginData),
@@ -106,21 +115,32 @@ function addSnapshotNode(
     addSnapshotNode(source, target, childId, created.id, mappedIds, identify)
 }
 
+/**
+ * A revision's graph: the published components with the components they use, the published
+ * styles and the styles those use, and the variables, collections, and images all of them need.
+ * `assetIds` limits what is published; every publishable component, style, and collection by
+ * default. Variables and collections keep their IDs, which are the source document's own.
+ */
 export function extractLibrarySnapshot(
   source: SceneGraph,
-  assetNodeIds?: string[],
+  assetIds?: string[],
   keepLayerIdentities = false
 ): PortableLibrarySnapshot {
-  const roots = (assetNodeIds ?? [...source.getAllNodes()].map((node) => node.id))
-    .map((id) => source.getNode(id))
-    .filter(
-      (node): node is SceneNode => node?.type === 'COMPONENT' || node?.type === 'COMPONENT_SET'
-    )
-    .filter((node) => node.parentId && source.getNode(node.parentId)?.type !== 'COMPONENT_SET')
+  const selected = assetIds ? new Set(assetIds) : null
+  const pick = <T extends { id: string }>(items: T[]): T[] =>
+    selected ? items.filter((item) => selected.has(item.id)) : items
+  const roots = pick(publishableLibraryRoots(source))
+  const publishedStyles = pick(publishableLibraryStyles(source))
+  const publishedCollections = pick(publishableLibraryCollections(source))
   const closure = collectNodeClosure(
     source,
     roots.map((node) => node.id)
   )
+  const dependencies = layerDependencies(source, [
+    ...[...closure].flatMap((id) => source.getNode(id) ?? []),
+    ...publishedStyles
+  ])
+  const styles = uniqBy([...publishedStyles, ...dependencies.styles], (node) => node.id)
   const snapshot = new SceneGraph()
   const page = snapshot.getPages()[0]
   page.name = 'Library definitions'
@@ -132,32 +152,39 @@ export function extractLibrarySnapshot(
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
   const identify = layerIdentities(source, keepLayerIdentities)
-  for (const root of closureRoots)
+  for (const root of [...closureRoots, ...styles])
     addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
   for (const [sourceId, targetId] of mappedIds)
     if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
-  remapCopiedReferences(snapshot, mappedIds)
+  remapCopiedReferences(snapshot, mappedIds, { followTextLinks: true })
 
-  for (const imageHash of new Set(
-    [...closure].flatMap((id) => {
-      const node = source.getNode(id)
-      return node
-        ? node.fills.flatMap((paint) =>
-            paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []
-          )
-        : []
-    })
-  )) {
-    const image = source.images.get(imageHash)
-    if (image) snapshot.images.set(imageHash, new Uint8Array(image))
+  // A published collection brings all its variables, and they the variables they alias.
+  const published = variableDependencies(
+    source,
+    publishedCollections.flatMap((collection) => collection.variableIds)
+  )
+  copyVariableTables(
+    snapshot,
+    new Set([...dependencies.variables, ...published.variables]),
+    new Set([
+      ...dependencies.collections,
+      ...published.collections,
+      ...publishedCollections.map((collection) => collection.id)
+    ]),
+    () => [source]
+  )
+  copyImages(source.images, snapshot.images, dependencies.images)
+  const mapped = (node: SceneNode): SceneNode[] => {
+    const id = mappedIds.get(node.id)
+    const copy = id ? snapshot.getNode(id) : undefined
+    return copy ? [copy] : []
   }
   return {
     graph: snapshot,
-    assetRoots: roots.flatMap((root) => {
-      const id = mappedIds.get(root.id)
-      const mapped = id ? snapshot.getNode(id) : undefined
-      return mapped ? [mapped] : []
-    })
+    assetRoots: [...roots, ...publishedStyles].flatMap(mapped),
+    collections: publishedCollections.flatMap(
+      (collection) => snapshot.variableCollections.get(collection.id) ?? []
+    )
   }
 }
 
@@ -226,7 +253,7 @@ export function canonicalLibraryNode(
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =
     component?.type === 'COMPONENT' || component?.type === 'COMPONENT_SET'
-      ? assetKey(component)
+      ? libraryAssetKey(component)
       : null
   const dependency =
     component && dependencyKey && !dependencyStack.has(component.id)
@@ -243,17 +270,40 @@ export function canonicalLibraryNode(
   }
 }
 
+/**
+ * A collection as its content compares it: its modes and its variables in order, aliases and
+ * modes named by their IDs, which a library's revisions share.
+ */
+export function canonicalLibraryCollection(
+  graph: SceneGraph,
+  collection: VariableCollection
+): unknown {
+  return {
+    ...omit(collection, ['id', 'name', 'key', 'version', 'variableIds', 'pluginData']),
+    pluginData: contentPluginData(collection.pluginData ?? []),
+    variables: collection.variableIds.flatMap((id) => {
+      const variable = graph.variables.get(id)
+      if (!variable) return []
+      return [
+        {
+          ...omit(variable, ['collectionId', 'key', 'version', 'pluginData']),
+          pluginData: contentPluginData(variable.pluginData ?? [])
+        }
+      ]
+    })
+  }
+}
+
 export async function describeSnapshotAssets(
   snapshot: PortableLibrarySnapshot
 ): Promise<LibraryAssetDescriptor[]> {
-  return Promise.all(
-    snapshot.assetRoots.map(async (node) => ({
-      key: assetKey(node),
-      type: node.type === 'COMPONENT_SET' ? 'COMPONENT_SET' : 'COMPONENT',
-      name: node.name,
-      description: node.symbolDescription,
-      sourceNodeId: node.id,
-      contentHash: await contentHash(canonicalLibraryNode(snapshot.graph, node, new Set([node.id])))
-    }))
-  )
+  const nodes = snapshot.assetRoots.map(async (node) => ({
+    ...libraryLayerAsset(node),
+    contentHash: await contentHash(canonicalLibraryNode(snapshot.graph, node, new Set([node.id])))
+  }))
+  const collections = snapshot.collections.map(async (collection) => ({
+    ...libraryCollectionAsset(collection),
+    contentHash: await contentHash(canonicalLibraryCollection(snapshot.graph, collection))
+  }))
+  return Promise.all([...nodes, ...collections])
 }

@@ -10,12 +10,18 @@ import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import type { KeyboardShortcutOptions } from '@/app/shell/keyboard/types'
+import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
-import { showsDocument } from '@/app/tabs'
 
-/** The app's keys beside the editor's: files, tabs, panels, and app-wide toggles. */
-function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
+/**
+ * The app's keys beside the editor's: files, tabs, panels, and app-wide toggles. Saving is global,
+ * as in Figma: held back while text is edited or a field has focus, Mod+S would reach the browser,
+ * which offers to save the page instead.
+ */
+export function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
   const { store, actions } = options
+  // The menus' save actions, which commit a field being typed in before writing the file.
+  const saving = createSaveMenuActions(store)
   const menuKeys = (id: string) => {
     const shortcut = appMenuShortcut(id)
     if (!shortcut) throw new Error(`Menu item '${id}' has no shortcut`)
@@ -40,9 +46,8 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
     {
       id: 'save-as',
       keys: menuKeys('save-as'),
-      run: () => {
-        if (showsDocument()) void store.saveFigFileAs()
-      }
+      run: saving['save-as'],
+      global: true
     },
     {
       id: 'save-version',
@@ -122,9 +127,8 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
     {
       id: 'save',
       keys: menuKeys('save'),
-      run: () => {
-        if (showsDocument()) void store.saveFigFile()
-      }
+      run: saving.save,
+      global: true
     },
     { id: 'open-file', keys: menuKeys('open'), run: options.openFileDialog }
   ]

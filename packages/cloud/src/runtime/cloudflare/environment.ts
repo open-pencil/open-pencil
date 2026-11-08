@@ -1,4 +1,4 @@
-import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
   loadServicesSigningKey,
   parseCloudDeploymentTOML,
@@ -55,7 +55,7 @@ export function cloudflareCloudSetup(source: string) {
       // An attempt whose config fails to parse has no project to report to, not an earlier one's.
       reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
-      reportError = createPostHogErrorReporter(config, 'cloudflare')
+      reportError = createCloudErrorReporter(config, 'cloudflare')
       return { config, servicesSigningKey: await loadServicesSigningKey(config), reportError }
     })().catch((error: unknown) => {
       prepared = null

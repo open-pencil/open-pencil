@@ -1,0 +1,1 @@
+- Save on a Cloud server's own editor without an account offers signing up or in to keep the file in Cloud, or saving it to this computer; after signing up, the file opens and saves to Cloud, even when an email confirmation opens another tab.

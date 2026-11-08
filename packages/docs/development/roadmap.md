@@ -150,7 +150,7 @@ Work with open pull requests. It may change before it merges:
 - Motion: reusable code-authored animation presets, timelines, easing, and deterministic playback/export that compose with prototype interactions and shader inputs.
 - Tables and data grids: structured rows, columns, headers, resizing, merged cells, and normal scene nodes inside cells instead of drawing tables as unrelated rectangles.
 - Comments: pins, threads, resolution state, and collaboration-aware display.
-- Extend shared libraries beyond the existing component publish/consume/update workflow to broader style management and governance.
+- Extend shared libraries beyond the existing publish/consume/update workflow for components, styles, and variable collections to governance, usage analytics, and inserting styles and variables without a component.
 - Platform asset libraries: use licensed system-native and third-party icon sources, including SF Symbols where platform and redistribution rules allow, alongside the existing Iconify/Lucide workflow.
 - Figma Slides (`.deck`) interoperability: import/export, slide editing, presentation, speaker notes, and filmstrip workflows. This ranks below core Figma Design fidelity, reliability, Cloud/self-hosting, and international-text work.
 - Platform polish: Windows code signing, PWA support, packaged updater improvements, and desktop-side MCP bundling.

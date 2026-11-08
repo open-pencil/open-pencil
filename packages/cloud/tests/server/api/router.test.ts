@@ -70,8 +70,8 @@ function services() {
       restore: notUsed,
       duplicate: notUsed
     },
+    reports: { file: notUsed },
     sharing: {
-      lookupUser: async () => null,
       userProfile: async () => null,
       listShares: async () => [],
       createShare: async () => {

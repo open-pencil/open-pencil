@@ -19,7 +19,7 @@ docker run -p 8787:8787 \
   ghcr.io/open-pencil/cloud:0.16
 ```
 
-The image serves its own editor and pages from `/app/site`, so leave `OPENPENCIL_CLOUD_SITE_DIR` out of the `.env` it is given, or the variable points the server somewhere the container does not have. It listens on port 8787, and reports health from `GET /ready`. `docker run … ghcr.io/open-pencil/cloud node ai-relay.mjs` runs the [AI relay](#ai) instead.
+The image serves its own editor and pages from `/app/site`, so leave `OPENPENCIL_CLOUD_SITE_DIR` out of the `.env` it is given, or the variable points the server somewhere the container does not have. It listens on port 8787, and reports health from `GET /ready`. `docker run … ghcr.io/open-pencil/cloud node services.mjs` runs the [services server](#services) instead.
 
 To try it on one machine, [`compose.self-hosted.yml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/compose.self-hosted.yml) runs the image with PostgreSQL, SeaweedFS for storage, and Mailpit for email, configured by [`self-hosted/openpencil-cloud.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/self-hosted/openpencil-cloud.toml):
 
@@ -72,7 +72,7 @@ The server migrates the database before it accepts requests and listens on `PORT
 
 The server serves the editor at its own address. Visitors who are not signed in get a welcome page there first, where they sign in or use the editor without an account. Signed-in people whose account may use the server get the editor, already connected to it; an account waiting for approval gets a page that says so. Invitation and share links open the editor too.
 
-For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server.
+For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server. With `guest_view` on and `guest_edit` off, as the shipped configurations have it, a guest opens an edit link view-only and signs in to edit.
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
@@ -115,19 +115,19 @@ Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and
 | `bun --filter @open-pencil/cloud migrate`         | Apply database migrations                       |
 | `bun --filter @open-pencil/cloud cleanup`         | Run one cleanup pass outside the server worker  |
 | `bun --filter @open-pencil/cloud quota:reconcile` | Recompute stored usage from committed revisions |
-| `bun --filter @open-pencil/cloud entitlements`    | Inspect or set a workspace's entitlements       |
+| `bun --filter @open-pencil/cloud entitlements`    | Inspect or set an account's entitlements        |
 | `bun --filter @open-pencil/cloud admin`           | Approve enrollment and grant deployment admin   |
 
-## AI
+## Services
 
-Cloud does not run models itself. It advertises a service and signs short-lived tokens that let workspace members use it, and the service holds each workspace to the credit allowance its entitlements grant. The repository's AI relay is a minimal service for this: it forwards chat completions to one OpenAI-compatible upstream, such as OpenRouter, with your key.
+Cloud does not run models itself. It advertises a service and signs short-lived tokens that let workspace members use it, and the service holds each workspace's owner to the credit allowance their plan grants, shared by every workspace they own. The repository's services server is a minimal implementation of this: it forwards chat completions to one OpenAI-compatible upstream, such as OpenRouter, with your key.
 
 1. Create a P-256 signing key, `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, and pass the PEM in `OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY`. Cloud refuses to start with a key it cannot sign with.
-2. Add `[services] endpoint` to the Cloud TOML with the relay's address, and enable `[entitlements.services]`, optionally with a `monthly_credit_allowance`; without one, the relay does not limit spend. With entitlements from the database, set them per workspace with the `entitlements` command instead.
-3. Copy [`openpencil-ai-relay.example.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/openpencil-ai-relay.example.toml), set `relay.cloud_url` to Cloud's `public_url`, `allowed_origins` to the browser editors, and list the models with their credit prices.
-4. Start it with `OPENPENCIL_AI_RELAY_CONFIG`, `OPENPENCIL_AI_RELAY_UPSTREAM_KEY`, and `DATABASE_URL` set: `node --env-file=.env dist-standalone/ai-relay.mjs`, or `openpencil-ai-relay` from the npm package. It listens on `PORT` (default `8788`) and can share Cloud's database, keeping its own tables and migration history.
+2. Add `[services] endpoint` to the Cloud TOML with the services server's address, and enable `[entitlements.services]`, optionally with a `monthly_credit_allowance`; without one, the services server does not limit spend. With entitlements from the database, set them per account with the `entitlements` command instead (`--account <user id>`); a workspace takes its owner's.
+3. Copy [`openpencil-services.example.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/openpencil-services.example.toml), set `relay.cloud_url` to Cloud's `public_url`, `allowed_origins` to the browser editors, and list the models with their credit prices.
+4. Start it with `OPENPENCIL_SERVICES_CONFIG`, `OPENPENCIL_SERVICES_UPSTREAM_KEY`, and `DATABASE_URL` set: `node --env-file=.env dist-standalone/services.mjs`, or `openpencil-services` from the npm package. It listens on `PORT` (default `8788`) and can share Cloud's database, keeping its own tables and migration history.
 
-The relay charges a request once the upstream reports its usage, and admits one while the workspace has credits left, so requests already in flight can overdraw the month's allowance by what they cost; `relay.max_concurrent_requests` bounds them. A workspace's allowance renews at the start of each UTC month. The editor's chat shows how many credits are left, and once they run out it says when the allowance renews and asks members to contact you; with no `[billing]` table it offers nothing to buy. It refuses a model request larger than `relay.max_request_bytes` (16 MiB by default) before reading it all. Choose an upstream that reports token usage: a request it reports none for is logged as an error and not charged.
+The services server charges a request once the upstream reports its usage, and admits one while the workspace owner's account has credits left, so requests already in flight can overdraw the month's allowance by what they cost; `relay.max_concurrent_requests` bounds them per account. An account's allowance, shared by every workspace it owns, renews at the start of each UTC month. The editor's chat shows how many credits are left, and once they run out it says when the allowance renews and asks members to contact you; with no `[billing]` table it offers nothing to buy. It refuses a model request larger than `relay.max_request_bytes` (16 MiB by default) before reading it all. Choose an upstream that reports token usage: a request it reports none for is logged as an error and not charged.
 
 ## Email
 
@@ -146,6 +146,8 @@ The server reports nothing unless you ask it to. Add an `[error_tracking]` table
 ## Backups and upgrades
 
 Back up PostgreSQL and the bucket together. To upgrade, build the new version, stop the old process, and start the new one: it applies migrations before it accepts requests. Migrations only move forward, so restore the database backup to roll back.
+
+Cloud's migrations started over before the first stable release. A database created by an earlier build, a pre-release or one built from source, cannot be upgraded to a build that has the new migrations: recreate it and the bucket's documents. Recreate the services server's database too, or drop its tables when it shares Cloud's, since its migrations started over as well.
 
 ## Hardening
 

@@ -74,6 +74,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - Bind visual state through semantic `data-*` attributes. Steiger rejects template-time `use*UI()`, visual-state utility branches, and raw SVG app icons.
 - `Tip`, not native `title`; Lucide/Iconify components, not raw SVG or Unicode icons; `e.code`, not `e.key`, for modified shortcuts.
 - A theme file default-exports a plain slots object; the component side wraps it with `tv` once and derives its `UI` type with `ComponentUI` (`open-pencil/no-tailwind-variants-in-themes`, `check:arch`).
+- A slot built from shared classes is an array, as Tailwind Variants takes it: `['size-3.5 shrink-0', motionStyles.spinner]`, never an interpolated template string (`open-pencil/no-interpolated-tailwind-classes`; `src/theme/dialog/index.ts`).
 - A family of parts keeps one theme in `src/theme/<family>/index.ts`, wraps it in `ui.ts` as `<family>` and `use<Family>UI`, and exports its parts from `index.ts`; a single component keeps `src/theme/<family>/<component>.ts` and a wrapper of the same name (`src/components/ui/table/ui.ts`, `src/components/ui/feedback/toast.ts`).
 - Compose a family's parts as components whose slots carry content, not data a part could render itself (`src/components/ui/table/`).
 - App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog/index.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs.

@@ -125,7 +125,7 @@ defineOptions({ inheritAttrs: false })
             :detach-label="panels.detachVariable"
             :create-label="
               panels.createNumberVariable({
-                value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
+                value: typeof modelValue === 'number' ? modelValue : 0
               })
             "
             :create-name-placeholder="panels.variableName"

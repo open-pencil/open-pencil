@@ -1,5 +1,7 @@
 ja:ai.aiSetupAccessAPI
 ja:ai.aiSetupAccessAgentsDesktop
+ja:ai.aiSetupAccessAgentsSandboxed
+ja:ai.aiSetupGetDownload
 ja:ai.aiSetupAccessChatGPT
 ja:ai.aiSetupAccessServerDescription
 ja:ai.aiSetupAgentAdapterMismatch
@@ -183,6 +185,7 @@ ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
 ja:media.unsplashKeyRejected
+ja:media.webSearchDescription
 ja:menu.copyAsJSX
 ja:menu.copyAsPNG
 ja:menu.copyAsSVG
@@ -227,6 +230,8 @@ ja:updates.upToDate
 ja:updates.webUpdateReady
 zh-cn:ai.aiSetupAccessAPI
 zh-cn:ai.aiSetupAccessAgentsDesktop
+zh-cn:ai.aiSetupAccessAgentsSandboxed
+zh-cn:ai.aiSetupGetDownload
 zh-cn:ai.aiSetupAccessChatGPT
 zh-cn:ai.aiSetupAccessServerDescription
 zh-cn:ai.aiSetupAgentAdapterMismatch
@@ -411,6 +416,7 @@ zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
 zh-cn:media.unsplashKeyRejected
+zh-cn:media.webSearchDescription
 zh-cn:menu.copyAsJSX
 zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG
@@ -536,6 +542,7 @@ ja:cloudPortal.accountId
 ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
 ja:cloudPortal.pictureUnreadable
+ja:cloudPortal.noDocumentsFoundDescription
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -558,6 +565,7 @@ zh-cn:cloudPortal.accountIdDescription
 zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
 zh-cn:cloudPortal.pictureUnreadable
+zh-cn:cloudPortal.noDocumentsFoundDescription
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted

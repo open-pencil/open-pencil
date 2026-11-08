@@ -1,0 +1,1 @@
+- OpenPencil Cloud plans belong to accounts: every workspace takes its owner's storage, OpenPencil services credits, and features, so creating more workspaces adds no allowance. Ownership passes to the longest-standing admin when the owner leaves. Billing sets entitlements per account at `/api/internal/accounts/:userId/entitlements`.

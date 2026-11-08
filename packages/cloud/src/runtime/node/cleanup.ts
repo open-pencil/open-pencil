@@ -10,7 +10,11 @@ import {
 import { loadNodeCloudServerConfig } from './config'
 
 const config = await loadNodeCloudServerConfig(process.env)
-const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+// A sweep may take longer than a request should.
+const database = createPostgresCloudDatabase({
+  connectionString: config.databaseURL,
+  statementTimeoutMs: null
+})
 const objects = createS3ObjectStore(config)
 try {
   const policy = createConfiguredCloudPolicy(config, database)

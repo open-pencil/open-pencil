@@ -4,8 +4,23 @@ import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
+import {
+  buildIconData,
+  extractPaths,
+  extractPathsFromElements,
+  scalePathInfos
+} from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
+import { resolveSVGViewportMapping } from '#core/vector/vectorize/svg/transform'
+
+/** A viewport that scales user units by `scaleX` and `scaleY` from the origin. */
+function scaling(scaleX: number, scaleY = scaleX) {
+  return resolveSVGViewportMapping(
+    { x: 0, y: 0, width: 1, height: 1 },
+    { width: scaleX, height: scaleY },
+    { preserveAspectRatio: 'none' }
+  )
+}
 describe('SVG XML parsing', () => {
   test('reads quoted root metadata through the XML parser', () => {
     const svg = `<svg width='120' height="80" viewBox='10 20 300 200'><path d='M0 0'/></svg>`
@@ -69,19 +84,35 @@ describe('SVG XML parsing', () => {
       extractPaths(
         '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(2)" />'
       ),
-      1,
-      1
+      scaling(1)
     )
     const [nonUniform] = scalePathInfos(
       extractPaths(
         '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(4 2)" />'
       ),
-      1,
-      1
+      scaling(1)
     )
 
     expect(uniform?.strokeWidth).toBe(6)
     expect(nonUniform?.strokeWidth).toBe(6)
+  })
+
+  test('reads currentColor in any case as the tint an icon color fills', () => {
+    const [path] = extractPaths('<path fill="currentcolor" stroke="CurrentColor" d="M0 0h4v4H0z"/>')
+
+    expect(path).toMatchObject({ fill: 'currentColor', stroke: 'currentColor' })
+  })
+
+  test('paints currentColor in the color an element sets or inherits, as browsers do', () => {
+    const paths = extractPaths(
+      '<g color="#f00"><path fill="currentColor" d="M0 0h1v1H0z"/>' +
+        '<g style="color: #00f" fill="currentColor"><path d="M0 0h1v1H0z"/></g>' +
+        '<path d="M0 0h1v1H0z"/></g>'
+    )
+
+    // The second fill is inherited as currentColor and takes its own element's color; a path
+    // with no fill keeps the host's color, as SVG's initial fill is not currentColor.
+    expect(paths.map((path) => path.fill)).toEqual(['#f00', '#00f', 'currentColor'])
   })
 
   test('does not interpret attribute-like path text as markup', () => {
@@ -107,8 +138,7 @@ function scaledNetwork(d: string, scaleX = 12 / 24, scaleY = scaleX): VectorNetw
   const path = expectDefined(
     scalePathInfos(
       extractPaths(`<path d="${d}" fill="none" stroke="#000" stroke-width="2.5"/>`),
-      scaleX,
-      scaleY
+      scaling(scaleX, scaleY)
     )[0],
     'scaled path'
   )
@@ -147,6 +177,24 @@ function roundedHandle(
     y: Math.round((vertex.y + tangent.y) * 100) / 100
   }
 }
+
+describe('buildIconData', () => {
+  test('fits an icon of another aspect ratio centered, as the browser draws its SVG', () => {
+    const icon = buildIconData(
+      { body: '<path d="M0 0H32V16H0Z"/>', width: 32, height: 16 },
+      'test',
+      'wide',
+      16
+    )
+    const vertices = icon.paths[0]?.vectorNetwork.vertices.map(({ x, y }) => ({ x, y }))
+    expect(vertices).toEqual([
+      { x: 0, y: 4 },
+      { x: 16, y: 4 },
+      { x: 16, y: 12 },
+      { x: 0, y: 12 }
+    ])
+  })
+})
 
 describe('scalePathInfos', () => {
   test('keeps a nearly closed arc when scaling rounds its end onto its start', () => {

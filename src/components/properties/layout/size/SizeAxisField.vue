@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SelectSeparator, SelectTrigger } from 'reka-ui'
 
+import { panelNumber } from '@open-pencil/core/geometry'
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -75,7 +76,7 @@ function handleSelect(value: SizeSelectValue) {
     <VariableNumberField
       :icon="icon"
       :aria-label="label"
-      :model-value="Math.round(ctx.node[axis])"
+      :model-value="panelNumber(ctx.node[axis])"
       :min="0"
       :node-id="ctx.node.id"
       :binding-path="axis"

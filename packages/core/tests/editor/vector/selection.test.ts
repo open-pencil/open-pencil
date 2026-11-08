@@ -62,7 +62,7 @@ test('undo inside the path forgets the selected segments', () => {
   es.selectedSegmentIndices = new Set([0])
   editor.nodeEditDeleteSelected()
   expectDefined(editor.state.nodeEditState).selectedSegmentIndices = new Set([0])
-  editor.nodeEditUndo()
+  editor.undoAction()
   expect(expectDefined(editor.state.nodeEditState).segments).toHaveLength(3)
   expect(expectDefined(editor.state.nodeEditState).selectedSegmentIndices.size).toBe(0)
 })

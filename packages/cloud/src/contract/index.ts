@@ -12,6 +12,12 @@ export {
   usagePageSchema,
   usageQuerySchema,
   creditWalletSchema,
+  searchPricingSchema,
+  searchRequestSchema,
+  searchResultSchema,
+  searchResponseSchema,
+  MAX_SEARCH_RESULTS,
+  MAX_SEARCH_QUERY_LENGTH,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_SERVICES_JWKS_PATH,
@@ -20,6 +26,7 @@ export {
   cloudBillingDiscoverySchema,
   createServicesTokenSchema,
   parseUsageQuery,
+  parseSearchRequest,
   parseCreateServicesToken,
   type ServiceCatalog,
   type CreditBucket,
@@ -32,9 +39,16 @@ export {
   type UsagePage,
   type UsageQuery,
   type CreditWallet,
+  type SearchPricing,
+  type SearchRequest,
+  type SearchRequestInput,
+  type SearchResult,
+  type SearchResponse,
   type CloudServicesDiscovery,
   type CloudBillingDiscovery,
-  type CreateServicesTokenInput
+  type CreateServicesTokenInput,
+  type CloudServicesAPI,
+  type CloudServicesSchema
 } from './services'
 export * from './admin'
 export {
@@ -67,6 +81,7 @@ export {
 export {
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,
+  CLOUD_API_MAX_BODY_BYTES,
   CLOUD_MAX_DOCUMENT_IMAGES,
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudActorSchema,
@@ -129,12 +144,10 @@ export {
   documentShareSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
-  lookupCloudUserSchema,
   parseAcceptDocumentInvitation,
   parseCreateInvitationContinuation,
   parseCreateDocumentInvitation,
   parseCreateDocumentShare,
-  parseLookupCloudUser,
   parsePutDocumentGrant,
   parseRequestSharedImageLinks,
   parseResolveDocumentShare,
@@ -155,7 +168,6 @@ export {
   type DocumentShare,
   type InvitationContinuation,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type RequestSharedImageLinksInput,
   type ResolveDocumentShareInput,
@@ -202,3 +214,12 @@ export {
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export {
+  DOCUMENT_REPORT_DESCRIPTION_MAX,
+  documentReportReasonSchema,
+  fileDocumentReportResponseSchema,
+  fileDocumentReportSchema,
+  parseFileDocumentReport,
+  type DocumentReportReason,
+  type FileDocumentReportInput
+} from './reports'
