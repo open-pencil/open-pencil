@@ -72,6 +72,20 @@ describe('recordEdit', () => {
     expect(editor.graph.getNode(card.id)?.x).toBe(37)
   })
 
+  test('a response that comes after a nudge leaves the nudge as the newest step', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.select([card.id])
+    editor.nudgeSelected(5, 0)
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(42)
+    expect(editor.undo.undoLabel).toBe('Nudge')
+  })
+
   test('history:changed passes the step it recorded or joined', () => {
     const { editor, card } = setup()
     const seen: unknown[] = []

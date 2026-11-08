@@ -1,3 +1,4 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext, Tool } from '#core/editor/types'
@@ -8,7 +9,13 @@ import {
   type EditorRestrictions
 } from '#core/editor/views'
 
-import { MOVE_ACTIONS, PATH_EDIT_ACTIONS, POSITION_ACTIONS, READ_ONLY_ACTIONS } from './actions'
+import {
+  MOVE_ACTIONS,
+  PATH_EDIT_ACTIONS,
+  POSITION_ACTIONS,
+  READ_ONLY_ACTIONS,
+  REORDER_ACTIONS
+} from './actions'
 
 /**
  * Raised by an edit the editor's restrictions refuse. Such an edit does nothing, as in Figma, so
@@ -64,16 +71,27 @@ function movesOnly(args: readonly unknown[]): boolean {
   )
 }
 
+/** Whether a new child order holds the frame's own children and no others, just rearranged. */
+function rearrangesOnly(graph: Pick<SceneGraph, 'getNode'>, args: readonly unknown[]): boolean {
+  const [parentId, order] = args
+  const current = typeof parentId === 'string' ? graph.getNode(parentId)?.childIds : undefined
+  if (!current || !Array.isArray(order) || order.length !== current.length) return false
+  const children = new Set(current)
+  return new Set(order).size === order.length && order.every((id) => children.has(id))
+}
+
 /**
  * The error an action is refused with, or null when it may run: while the profile offers no
  * edits every action outside `READ_ONLY_ACTIONS` is refused; while it offers no layer edits so
  * is every one outside those and `PATH_EDIT_ACTIONS`; and while layers may only move, every one
- * outside those and `MOVE_ACTIONS`, with `POSITION_ACTIONS` let through for positions alone.
+ * outside those and `MOVE_ACTIONS`, with `POSITION_ACTIONS` let through for positions alone and
+ * `REORDER_ACTIONS` for the same children rearranged.
  */
 export function refusalFor(
   action: string,
   profile: EditorProfile,
-  args: readonly unknown[] = []
+  args: readonly unknown[] = [],
+  graph?: Pick<SceneGraph, 'getNode'>
 ): RefusedEditError | null {
   if (READ_ONLY_ACTIONS.has(action)) return null
   if (!profile.edits) return new ReadOnlyDocumentError()
@@ -81,6 +99,7 @@ export function refusalFor(
   if (profile.layerEdits === 'none')
     return PATH_EDIT_ACTIONS.has(action) ? null : new FixedLayersError()
   if (MOVE_ACTIONS.has(action) || (POSITION_ACTIONS.has(action) && movesOnly(args))) return null
+  if (REORDER_ACTIONS.has(action) && graph && rearrangesOnly(graph, args)) return null
   return new MoveOnlyLayersError()
 }
 
@@ -252,7 +271,7 @@ export function createReadOnlyActions(
   function refusal(action: string, args: readonly unknown[] = []): RefusedEditError | null {
     if (action === 'undoAction') return historyRefusal('undo')
     if (action === 'redoAction') return historyRefusal('redo')
-    return refusalFor(action, judgedProfile(), args)
+    return refusalFor(action, judgedProfile(), args, ctx.graph)
   }
 
   return { actions: { setReadOnly, setHostRestrictions, asHost }, refusal, historyRefusal }

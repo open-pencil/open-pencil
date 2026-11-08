@@ -82,4 +82,32 @@ describe('pointer input where layers only move', () => {
     editor.undoAction()
     expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 0, y: 0 })
   })
+
+  test('a layer in an auto layout row reorders along it, as arrow keys do, and undo takes it back', () => {
+    const { node, page, drag } = setup()
+    editor.setHostRestrictions({ layerEdits: 'all' })
+    const row = node('FRAME', page, {
+      y: 200,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 10,
+      paddingLeft: 10,
+      paddingRight: 10,
+      paddingTop: 10,
+      paddingBottom: 10
+    })
+    const [first, second] = [0, 1].map(() => node('RECTANGLE', row.id, { width: 60, height: 40 }))
+    editor.runLayoutForNode(row.id)
+    editor.setHostRestrictions({ layerEdits: 'move' })
+    if (!first || !second) throw new Error('no children')
+    const order = () => editor.graph.getChildren(row.id).map((child) => child.id)
+
+    // From the first layer's centre, past the second's centre.
+    drag([first.id], [40, 230], [115, 230])
+    expect(order()).toEqual([second.id, first.id])
+    expect(editor.graph.getNode(first.id)?.parentId).toBe(row.id)
+    editor.undoAction()
+    expect(order()).toEqual([first.id, second.id])
+  })
 })

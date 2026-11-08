@@ -222,6 +222,23 @@ describe('layers the host lets only move', () => {
     expect(rejected).toBe(false)
   })
 
+  test('records moves as positions alone, and reorders only the same children', () => {
+    const { editor, a, b } = movable()
+    const pageId = editor.state.currentPageId
+    editor.updateNode(a.id, { x: 30 })
+    // A caller's map carries more than a position; undo puts back the position alone.
+    editor.commitMove(new Map([[a.id, { x: 0, y: 0, opacity: 0.2 } as { x: number; y: number }]]))
+    editor.undoAction()
+    expect(getNodeOrThrow(editor.graph, a.id)).toMatchObject({ x: 0, opacity: 1 })
+
+    expect(() => editor.commitMoveWithReparent(new Map())).toThrow(MoveOnlyLayersError)
+    editor.setChildOrder(pageId, [b.id, a.id])
+    expect(editor.graph.getChildren(pageId).map((node) => node.id)).toEqual([b.id, a.id])
+    const stray = editor.asHost(() => editor.graph.createNode('RECTANGLE', pageId, {}))
+    editor.graph.deleteNode(stray.id)
+    expect(() => editor.setChildOrder(pageId, [a.id, stray.id])).toThrow(MoveOnlyLayersError)
+  })
+
   test('undo stops at the changes made before layers could only move', () => {
     const editor = createEditor()
     const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {

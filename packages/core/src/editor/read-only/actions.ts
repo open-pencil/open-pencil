@@ -204,12 +204,17 @@ export const PATH_EDIT_ACTIONS: ReadonlySet<string> = new Set([
  */
 export const MOVE_ACTIONS: ReadonlySet<string> = new Set([
   'commitMove',
-  'commitMoveWithReparent',
   'fitEnclosingGroups',
   'nudgeSelected',
   'redoAction',
   'undoAction'
 ])
+
+/**
+ * Editor actions that reorder a frame's children, which a host that lets layers only move still
+ * offers to rearrange the same children, as moving a layer along an auto layout flow does.
+ */
+export const REORDER_ACTIONS: ReadonlySet<string> = new Set(['setChildOrder'])
 
 /**
  * Editor actions that update any field of a layer, which a host that lets layers only move still

@@ -120,7 +120,8 @@ export function createSelectionMoveDrag(
     return duplicateAndDrag(cx, cy, sx, sy, editor).drag
 
   const originals = collectMoveOriginals(editor)
-  // Where layers only move, they stay in their parents and in their order.
+  // Where layers only move, they stay in their parents; along an auto layout flow they reorder,
+  // as arrow keys do.
   if (resolveEditorProfile(editor.state).layerEdits === 'move') {
     return {
       type: 'move',
@@ -134,7 +135,8 @@ export function createSelectionMoveDrag(
       startScreenY: sy,
       dragStarted: false,
       originals,
-      keepParents: true
+      keepParents: true,
+      flows: collectFlowDrags(originals, editor)
     }
   }
 

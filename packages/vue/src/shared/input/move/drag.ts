@@ -396,6 +396,9 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
         [...d.originals.keys()],
         d.duplicatedPreviousSelection ?? new Set<string>()
       )
+    } else if (moved && d.keepParents) {
+      // Parents and order stay, so the step records positions alone.
+      editor.commitMove(new Map([...d.originals].map(([id, { x, y }]) => [id, { x, y }])))
     } else if (moved) {
       editor.commitMoveWithReparent(d.originals)
     }
