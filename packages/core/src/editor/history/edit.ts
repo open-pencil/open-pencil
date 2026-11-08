@@ -21,6 +21,12 @@ export interface RecordEditOptions {
    */
   ownStep?: boolean
   /**
+   * Joins the newest step rather than recording one, as a change made in response to that step
+   * does, such as a host snapping a dropped layer into place: undo and redo take both back
+   * together. With no step to join it records its own.
+   */
+  joinStep?: boolean
+  /**
    * Receives what the edit changed, before its step closes; an edit that failed changed nothing,
    * as it is rolled back.
    */
@@ -51,8 +57,9 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
         forward: () => restoreDocumentChange(ctx, change, 'after'),
         inverse: () => restoreDocumentChange(ctx, change, 'before')
       }
-      if (options.ownStep) ctx.undo.pushStep(entry)
-      else ctx.undo.push(entry)
+      const joined = options.joinStep === true && ctx.undo.extendLastStep(entry)
+      if (!joined && options.ownStep) ctx.undo.pushStep(entry)
+      else if (!joined) ctx.undo.push(entry)
     }
     options.onRecorded?.(change)
     return isEmptyDocumentChange(change)

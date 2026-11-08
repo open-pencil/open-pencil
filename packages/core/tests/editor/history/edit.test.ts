@@ -41,6 +41,26 @@ describe('recordEdit', () => {
     expect(editor.undo.undo()).toBe('Arrange')
   })
 
+  test('joins the newest step, or records its own with none to join', () => {
+    const { editor, card } = setup()
+
+    editor.recordEdit({ label: 'Snap', joinStep: true }, () =>
+      editor.graph.updateNode(card.id, { y: 5 })
+    )
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    editor.recordEdit({ label: 'Snap', joinStep: true }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+
+    expect(editor.undo.undo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 5 })
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(40)
+    editor.undo.undo()
+    expect(editor.undo.undo()).toBe('Snap')
+    expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, y: 0 })
+  })
+
   test('rolls back an edit that threw part way and leaves no step', () => {
     const { editor, pageId, card } = setup()
     let recorded: DocumentChange | undefined
