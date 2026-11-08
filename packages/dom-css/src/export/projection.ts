@@ -1,10 +1,8 @@
-import { fromUint8Array } from 'js-base64'
-
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
@@ -224,11 +222,6 @@ function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 
   if (node.itemSpacing > 0) style['row-gap'] = item
   style['column-gap'] = counter
-}
-
-/** Image bytes as a data URL of the type they are encoded in. */
-function imageDataURL(bytes: Uint8Array): string {
-  return `data:${imageMimeType(bytes)};base64,${fromUint8Array(bytes)}`
 }
 
 /**
