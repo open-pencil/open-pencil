@@ -342,6 +342,18 @@ export interface ResizedBoundsOptions {
   keepRatio?: boolean
   /** Adjusts a locked layer's sizes, such as to whole pixels. */
   round?: (size: number) => number
+  /**
+   * Lands an upright layer's edges on whole pixels from the box's top-left corner, as Figma places
+   * the layers of a selection a handle resizes while Snap to pixel grid is on.
+   */
+  wholeEdges?: boolean
+}
+
+/** `from`..`to` on the canvas with both ends a whole number of pixels from `origin`. */
+function wholeSpan(origin: number, from: number, to: number): { start: number; size: number } {
+  const start = origin + Math.round(from - origin)
+  const end = origin + Math.round(to - origin)
+  return { start, size: Math.max(1, end - start) }
 }
 
 /** Where a layer sits in its parent and how large it is, with its angle and flips. */
@@ -362,7 +374,11 @@ export function placeInResizedBounds(
   placement: SelectionPlacement,
   from: Rect,
   to: Rect,
-  { keepRatio = false, round = (size: number) => size }: ResizedBoundsOptions = {}
+  {
+    keepRatio = false,
+    round = (size: number) => size,
+    wholeEdges = false
+  }: ResizedBoundsOptions = {}
 ): LayerPlacement {
   const { node, world, parentWorld } = placement
   const scaleX = from.width > 0 ? to.width / from.width : 1
@@ -377,12 +393,19 @@ export function placeInResizedBounds(
   const yLength = Math.hypot(b, d)
   // A layer locked to its ratio scales evenly, by the mean of the box's scales, as in Figma.
   const even = Math.sqrt(Math.abs(scaleX * scaleY))
-  const width = keepRatio ? round(node.width * even) : node.width * xLength
-  const height = keepRatio ? round(node.height * even) : node.height * yLength
+  let width = keepRatio ? round(node.width * even) : node.width * xLength
+  let height = keepRatio ? round(node.height * even) : node.height * yLength
   const ux = xLength > 0 ? a / xLength : 1
   const uy = xLength > 0 ? c / xLength : 0
   const mirrored = a * d - b * c < 0 ? -1 : 1
-  const squared: Mat3 = [ux, -uy * mirrored, tx, uy, ux * mirrored, ty, 0, 0, 1]
+  let [left, top] = [tx, ty]
+  const upright = Math.abs(uy) < 1e-9 && ux > 0 && mirrored > 0
+  if (wholeEdges && !keepRatio && upright) {
+    const across = wholeSpan(to.x, tx, tx + width)
+    const down = wholeSpan(to.y, ty, ty + height)
+    ;[left, width, top, height] = [across.start, across.size, down.start, down.size]
+  }
+  const squared: Mat3 = [ux, -uy * mirrored, left, uy, ux * mirrored, top, 0, 0, 1]
   const sized = { ...node, width, height }
   const { x, y, rotation, flipX, flipY } =
     localTransformFromWorld(sized, squared, parentWorld) ?? node

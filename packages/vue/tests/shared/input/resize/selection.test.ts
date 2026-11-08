@@ -294,3 +294,50 @@ describe('the multi-selection box’s handles', () => {
     expect((drag as DragState | null)?.type).not.toBe('resize-selection')
   })
 })
+
+// Figma desktop (2026-11-08) on a selection of 60.25 × 20.5 at x 9000.375 and 51 × 13.083333 at
+// (9100.125, 9030.25), with Snap to pixel grid on: a side drag gives the box a whole width, keeps
+// the edge the handle leaves, and rounds the box's height about its centre; every layer lands with
+// whole edges from the box's top-left corner; a press without moving changes nothing.
+describe('resizing a fractional multi-selection on the pixel grid', () => {
+  function fractional() {
+    editor = createEditor()
+    editor.state.snappingPreferences = { geometry: true, objects: false, pixelGrid: true }
+    const page = editor.state.currentPageId
+    const a = editor.graph.createNode('RECTANGLE', page, { x: 400.375, y: 100, width: 60.25, height: 20.5 })
+    const b = editor.graph.createNode('RECTANGLE', page, {
+      x: 500.125,
+      y: 130.25,
+      width: 51,
+      height: 13.083333
+    })
+    editor.select([a.id, b.id])
+    // The box: 400.375…551.125 across, 100…143.333333 down.
+    return { a: a.id, b: b.id, right: 551.125, middle: 100 + 43.333333 / 2 }
+  }
+  const near = (node: SceneNode | undefined) => mapValues(box(node), (v) => Math.round(v * 1e4) / 1e4)
+
+  test('a side drag gives the box and its layers whole pixels', () => {
+    const { a, b, right, middle } = fractional()
+    const drag = start(right, middle)
+    applySelectionResize(drag, right + 10, middle, false, editor)
+    commitSelectionResize(drag, editor)
+    expect(near(editor.graph.getNode(a))).toEqual({ x: 400.375, y: 100.1667, width: 64, height: 20 })
+    expect(near(editor.graph.getNode(b))).toEqual({ x: 507.375, y: 130.1667, width: 54, height: 13 })
+  })
+
+  test('a press without moving and a Control drag leave the layers unrounded', () => {
+    const { a, b, right, middle } = fractional()
+    const still = start(right, middle)
+    applySelectionResize(still, right, middle, false, editor)
+    commitSelectionResize(still, editor)
+    expect(box(editor.graph.getNode(a))).toEqual({ x: 400.375, y: 100, width: 60.25, height: 20.5 })
+    expect(editor.undo.canUndo).toBe(false)
+
+    const free = start(right, middle)
+    applySelectionResize(free, right + 10, middle, false, editor, true)
+    commitSelectionResize(free, editor)
+    expect(editor.graph.getNode(b)?.height).toBeCloseTo(13.083333, 6)
+    expect(editor.graph.getNode(a)?.width).toBeCloseTo((60.25 * 160.75) / 150.75, 6)
+  })
+})
