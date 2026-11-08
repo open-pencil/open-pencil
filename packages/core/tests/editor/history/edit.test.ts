@@ -86,6 +86,17 @@ describe('recordEdit', () => {
     expect(editor.undo.undoLabel).toBe('Nudge')
   })
 
+  test('an edit that awaits joins no step', async () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const options = { label: 'Snap', joinStep: editor.undo.peekUndo() }
+    await expect(
+      editor.recordEditAsync(options, async () => editor.graph.updateNode(card.id, { x: 40 }))
+    ).rejects.toThrow(TypeError)
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+    expect(editor.undo.undoLabel).toBe('Move')
+  })
+
   test('history:changed passes the step it recorded or joined', () => {
     const { editor, card } = setup()
     const seen: unknown[] = []

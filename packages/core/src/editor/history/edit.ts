@@ -37,6 +37,9 @@ export interface RecordEditOptions {
   onRecorded?: (change: DocumentChange) => void
 }
 
+/** An edit that awaits records a step of its own: what it would join can move on meanwhile. */
+export type AsyncRecordEditOptions = Omit<RecordEditOptions, 'joinStep'>
+
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const pageId = options.pageId ?? ctx.state.currentPageId
   const finish = captureDocumentChange(ctx.graph, pageId)
@@ -112,9 +115,13 @@ export function recordEdit<T>(ctx: EditorContext, options: RecordEditOptions, ru
  */
 export async function recordEditAsync<T>(
   ctx: EditorContext,
-  options: RecordEditOptions,
+  options: AsyncRecordEditOptions,
   run: () => Promise<T>
 ): Promise<T> {
+  // The step it would join can be undone or followed by another while it awaits.
+  if ('joinStep' in options) {
+    throw new TypeError('recordEditAsync records a step of its own; join a step with recordEdit')
+  }
   // Capturing can throw; the edit opens only once it has, so a failure never leaves it open.
   const finish = begin(ctx, { ...options, ownStep: true })
   const close = ctx.undo.openEdit()
