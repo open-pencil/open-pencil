@@ -51,7 +51,7 @@ export interface WorkspaceTable {
   name: string
   slug: string
   createdBy: string
-  /** Whose plan the workspace's limits come from; see `migrations/030_account_plans.ts`. */
+  /** Whose plan the workspace's limits come from; ownership passes to another admin when they go. */
   ownerId: string
   createdAt: TimestampColumn
   updatedAt: TimestampColumn

@@ -147,6 +147,8 @@ The server reports nothing unless you ask it to. Add an `[error_tracking]` table
 
 Back up PostgreSQL and the bucket together. To upgrade, build the new version, stop the old process, and start the new one: it applies migrations before it accepts requests. Migrations only move forward, so restore the database backup to roll back.
 
+The first stable release starts the database from one baseline. A database created by a pre-release version cannot be upgraded to it: recreate the database, and the services server's tables when it shares it, and the bucket's documents with them.
+
 ## Hardening
 
 Replace every development credential, including the ones in the example Compose files. The [security checklist](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/security.md) covers the remaining checks.
