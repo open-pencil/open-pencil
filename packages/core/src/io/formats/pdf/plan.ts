@@ -41,7 +41,7 @@ function visibleChildren(graph: SceneGraph, pageId: string): string[] {
 }
 
 /**
- * Decides which PDF pages an export makes. Pure over the scene graph, so it needs neither jsPDF
+ * Decides which PDF pages an export makes. Pure over the scene graph, so it needs neither a renderer
  * nor a DOM. Throws PDFPlanError when the request names something missing or exports nothing.
  */
 export function planPDFPages(graph: SceneGraph, input: PDFPlanInput): PDFPageSpec[] {

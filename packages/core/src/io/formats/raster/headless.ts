@@ -1,5 +1,4 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
-
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
@@ -60,6 +59,17 @@ async function createRenderer(ck: CanvasKit): Promise<SkiaRenderer> {
   return renderer
 }
 
+/**
+ * The headless renderer, ready to draw another document: paths kept by layer id belong to the
+ * document drawn before, whose layers can share those ids.
+ */
+export async function headlessExportRenderer(): Promise<SkiaRenderer> {
+  const { renderer } = await getRenderer()
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  return renderer
+}
+
 export async function headlessRenderNodes(
   graph: SceneGraph,
   pageId: string,
@@ -72,10 +82,8 @@ export async function headlessRenderNodes(
     useAbsoluteBounds?: boolean
   } = {}
 ): Promise<Uint8Array | null> {
-  const { ck, renderer } = await getRenderer()
-  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
-  renderer.nodePaths.clear()
-  renderer.invalidateAllPictures()
+  const ck = await initCanvasKit()
+  const renderer = await headlessExportRenderer()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   // An export takes a text by its ink, as Figma's do.
   return withTextInkMeasurer(
@@ -97,10 +105,8 @@ export async function headlessRenderThumbnail(
   width: number,
   height: number
 ): Promise<Uint8Array | null> {
-  const { ck, renderer } = await getRenderer()
-  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
-  renderer.nodePaths.clear()
-  renderer.invalidateAllPictures()
+  const ck = await initCanvasKit()
+  const renderer = await headlessExportRenderer()
   await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
   return withTextInkMeasurer(
     (node) => renderer.measureTextInk(node),

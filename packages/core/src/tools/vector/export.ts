@@ -87,7 +87,7 @@ export const exportPDF = defineTool({
   description:
     'Export nodes as a vector PDF document. Text remains selectable and keeps its line breaks, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
     'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids). ' +
-    'embed_fonts embeds the TrueType file of each font face the text uses, and of a variable font a static file of each instance the text draws (its weight, optical size, and other axes), and reports which faces were embedded and which fell back to a standard PDF font.',
+    'Pages are drawn as the canvas draws them, with the fonts the text uses embedded; blurs, shadows, and shader fills are drawn as images.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({
@@ -106,22 +106,10 @@ export const exportPDF = defineTool({
         v.array(v.string()),
         v.description('mode "pages": the design pages to export, in order (default: all pages)')
       )
-    ),
-    embed_fonts: v.optional(
-      v.pipe(
-        v.boolean(),
-        v.description(
-          'Embed the fonts the text uses (default false: standard PDF fonts). Makes the file larger.'
-        )
-      ),
-      false
     )
   }),
   execute: async (figma, args) => {
-    const [{ exportPDFDocument }, { readPDFPages }] = await Promise.all([
-      import('#core/io/formats/pdf/document'),
-      import('#core/io/formats/pdf/prepare')
-    ])
+    const { exportPDFDocument, readPDFPages } = await import('#core/io/formats/pdf/document')
     try {
       if (args.mode === 'pages') readPDFPages(graphOf(figma), args.page_ids)
       const specs = planPDFPages(graphOf(figma), {
@@ -130,10 +118,7 @@ export const exportPDF = defineTool({
         pageIds: args.page_ids,
         currentPageId: figma.currentPageId
       })
-      const result = await exportPDFDocument(graphOf(figma), specs, {
-        embedFonts: args.embed_fonts,
-        layOutPages: args.mode === 'pages'
-      })
+      const result = await exportPDFDocument(graphOf(figma), specs, { renderer: figma.renderer })
       if (!result || result.data.length === 0) return { error: 'No visible nodes to export' }
       return {
         mimeType: 'application/pdf',
@@ -145,8 +130,7 @@ export const exportPDF = defineTool({
           ...(page.label ? { name: page.label } : {}),
           width: Math.round(page.width),
           height: Math.round(page.height)
-        })),
-        ...(result.fonts ? { fonts: result.fonts } : {})
+        }))
       }
     } catch (error) {
       if (error instanceof PDFPlanError) return { error: error.message }

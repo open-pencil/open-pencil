@@ -17,6 +17,7 @@ export {
 export {
   initCanvasKit,
   headlessRenderer,
+  headlessExportRenderer,
   headlessRenderNodes,
   headlessRenderThumbnail
 } from './headless'

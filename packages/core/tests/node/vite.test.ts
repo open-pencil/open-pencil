@@ -69,7 +69,7 @@ function assetNames(output: Output): string[] {
 async function expectEngineFiles(output: Output): Promise<void> {
   const assets = assetNames(output)
   const fonts = (await readdir(CORE_ASSETS)).filter((file) => /\.(?:ttf|woff2)$/.test(file))
-  for (const file of ['canvaskit', 'harfbuzz-subset', ...fonts.map((f) => f.replace(/\..*$/, ''))])
+  for (const file of ['canvaskit', ...fonts.map((f) => f.replace(/\..*$/, ''))])
     expect(assets.some((name) => new RegExp(`^assets/${file}-[\\w-]+\\.\\w+$`).test(name))).toBe(
       true
     )
