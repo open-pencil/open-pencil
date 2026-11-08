@@ -1,7 +1,9 @@
 import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { CONSTRAINT_PARENT_TYPES } from '@open-pencil/scene-graph/constraints'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
+import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import { constrainedChildRect, flipChanges } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
@@ -82,13 +84,6 @@ function rememberPlacedSize(frame: SceneNode): void {
   placed.height = frame.height
 }
 
-const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set([
-  'FRAME',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
 /**
  * Places the children of a frame layout resized by their constraints: every child of a frame
  * without auto layout, and those that ignore an auto layout, as Figma keeps a badge pinned to the
@@ -103,6 +98,9 @@ function constrainChildren(
 ): void {
   for (const child of graph.getChildren(frame.id)) {
     if (frame.layoutMode !== 'NONE' && child.layoutPositioning !== 'ABSOLUTE') continue
+    // A group or boolean owns no constraints, and layout leaves the layers in it where they are:
+    // in Figma a Hug frame grows past an absolute group without moving it (live, 2026-11-08).
+    if (FITTED_CONTAINER_TYPES.has(child.type)) continue
     const size = { width: child.width, height: child.height }
     const { flipsX, flipsY, ...box } = constrainedChildRect(
       child,

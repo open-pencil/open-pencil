@@ -112,13 +112,21 @@ accepts the resulting bearer token.
 
 Access to a document comes from ownership, workspace membership, a direct grant, or a capability
 link, and the strongest source wins. Revoking one source leaves access inherited from another.
-Documents granted to someone outside their own workspaces are listed for them separately, so a
-client can show what was shared with them.
+Ownership counts only while the document's maker is still in its workspace, so someone removed
+keeps no way back in; their collaboration tickets lapse within five minutes. A direct grant comes
+only from an invitation the person accepted: sharing can change or revoke a grant, never give one,
+and the server never looks people up by email, so nobody can find out who has an account or put a
+document in a stranger's files. Documents granted to someone outside their own workspaces are
+listed for them separately, so a client can show what was shared with them. A share link stops
+working while the person who made it, or made its document, is banned.
 
 Workspace administrators invite people by email with a role. Workspace invitations use the same
 `/invitations/:id` link as document invitations: preview and accept look for a workspace
 invitation first and fall back to a document one, so email, the desktop handoff, and the editor's
-invitation dialog serve both. A workspace with members always keeps an administrator.
+invitation dialog serve both. A workspace with members always keeps an administrator. Each
+invitation emails the inviter's and the file's names, which the sender chooses, so one person may
+send 100 invitations a day and one address may receive 5, documents and workspaces together
+(`src/server/invitations/budget.ts`).
 
 Database rows use UUIDs. Capability secrets and invitation tokens are random hex; only their SHA-256
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`
@@ -217,7 +225,8 @@ not carried over the relay yet; the transport reports no media.
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a
 pending request that a deployment administrator approves or rejects; approval can be revoked later.
 Deployment administrators are separate from workspace administrators, and startup never grants
-either role: the first operator is approved and promoted through the `admin` command.
+either role: the first operator is approved and promoted through the `admin` command. An official
+deployment must require a second sign-in step from them (`required_for_admins`).
 
 The console's lists are tables the server pages, searches, and filters: each admin list endpoint
 takes `search`, `filter`, `limit`, and `offset` and answers with its rows, the `total` matching, and
@@ -233,6 +242,27 @@ sign-ins. Administrators make and remove administrators, sign people out everywh
 with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
 removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.
 Every action asks once more.
+
+Anyone a share link lets in, guest or signed in, may report its document: why (spam or
+phishing, illegal content, copyright, harassment, or something else), what to look at, and,
+optionally, where to answer. `POST /api/shares/:shareId/reports` resolves the link as opening it
+does, so a wrong secret, a revoked link, or a server that turns guests away refuses the report,
+and its answer says only that it arrived. One reporter may report a link three times a day and a
+link gathers at most fifty reports a day (`src/server/reports/service.ts`), besides the public
+routes' per-address limit. Where email delivery is configured, each report emails the
+deployment's administrator notification addresses, the ones enrollment uses; without it, reports
+wait in the console's Reports list unannounced. The console's Reports list shows open reports first, with
+the document, its workspace and owner, and the link; from a report an administrator takes the
+document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
+Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
+to reported or taken-down ones. A document taken down (`document.disabled_at`) is out of reach
+for everyone, its owner included: access, listings, share links, invitations, and collaboration
+tickets all treat it as gone, and the relay admits nobody to its rooms even with a ticket issued
+before. Its live rooms close and are saved, and its collaboration epoch stays, so restoring it
+gives everything back, edits not yet in a revision included; its open reports count as acted on.
+Revoking a link from the console works as the owner's revocation does: the epoch moves on, so the
+link's guests lose their tickets while members keep editing. Each of these actions goes into the
+activity log.
 
 Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
 server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the
@@ -260,8 +290,12 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
+The pages carry no inline script for it to allow: a build loads the boot splash's script from its
+own file. The desktop approval page never shows the code it
+was opened with: the person types the code the app shows, so a link someone else sent cannot be
+approved in one click. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
 the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
 its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads

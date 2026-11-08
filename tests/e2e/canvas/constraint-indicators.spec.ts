@@ -32,3 +32,23 @@ test('constraint indicators follow a rotated parent', async () => {
   await editor.canvas.waitForRender()
   await expectCanvas('constraints-rotated-parent')
 })
+
+// A group owns no constraints: a layer in it pins to the frame, and the group shows the ones its
+// layers share, from its own box, with nothing on an axis where they differ (live Figma, #1835).
+test('a layer in a group shows its constraints to the frame', async () => {
+  await constrained.selectInGroup('MIN', 'first')
+  await editor.canvas.waitForRender()
+  await expectCanvas('constraints-group-layer')
+})
+
+test('a group shows the constraints its layers share', async () => {
+  await constrained.selectInGroup('MAX', 'group')
+  await editor.canvas.waitForRender()
+  await expectCanvas('constraints-group-shared')
+})
+
+test('a group whose layers differ shows none', async () => {
+  await constrained.selectInGroup('MIN', 'group')
+  await editor.canvas.waitForRender()
+  await expectCanvas('constraints-group-mixed')
+})

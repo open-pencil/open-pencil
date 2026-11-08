@@ -16,11 +16,28 @@ export type SiteFiles = (path: string, request: Request) => Promise<SiteFile | n
 const PORTAL_PAGE = '/cloud.html'
 const EDITOR_PAGE = '/index.html'
 
+/**
+ * What the site's pages may run: only the site's own scripts and Turnstile's on the portal, so an
+ * injected script tag or one from another host never runs. The pages carry no inline script (the
+ * boot splash loads its own file). The editor compiles design JSX and code-tool snippets with
+ * `Function` and runs WebAssembly and workers from blobs, which the policy keeps; plugins and AI
+ * providers reach other hosts through `fetch`, which it leaves be. Desktop sign-in approval and
+ * the editor must never be framed by another site.
+ */
+export const SITE_CONTENT_SECURITY_POLICY = [
+  "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'"
+].join('; ')
+
 const PAGE_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
   'Cache-Control': 'no-cache',
-  // Desktop sign-in approval and the editor must never be framed by another site.
-  'Content-Security-Policy': "frame-ancestors 'none'",
+  'Content-Security-Policy': SITE_CONTENT_SECURITY_POLICY,
+  // Browsers take this only over HTTPS; a deployment on plain HTTP is unaffected.
+  'Strict-Transport-Security': 'max-age=31536000',
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff'
 }

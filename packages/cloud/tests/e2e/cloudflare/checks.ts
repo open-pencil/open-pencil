@@ -153,7 +153,9 @@ for (const [path, title] of [
     `The page at ${path} answered HTTP ${page.status}`
   )
   check(
-    page.headers.get('content-security-policy') === "frame-ancestors 'none'",
+    (page.headers.get('content-security-policy') ?? '').includes("frame-ancestors 'none'") &&
+      (page.headers.get('content-security-policy') ?? '').includes("script-src 'self'") &&
+      page.headers.has('strict-transport-security'),
     `The page at ${path} is missing its headers`
   )
   check((await page.text()).includes(`<title>${title}</title>`), `${path} is not the expected page`)

@@ -52,4 +52,9 @@ describe('constraint indicator lines', () => {
     expect(constraintSegments(box, parent, 'SCALE', 'SCALE')).toEqual([])
     expect(constraintSegments(box, parent, 'SCALE', 'MIN')).toEqual([[50, 0, 50, 10]])
   })
+
+  test('an axis whose layers differ draws nothing', () => {
+    expect(constraintSegments(box, parent, null, 'MAX')).toEqual([[50, 30, 50, 60]])
+    expect(constraintSegments(box, parent, null, null)).toEqual([])
+  })
 })

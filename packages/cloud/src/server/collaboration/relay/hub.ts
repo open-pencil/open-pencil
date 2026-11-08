@@ -389,8 +389,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
     return contentOf(room).then(
       (content) => {
-        // The peer may have left while the document loaded.
-        if (room.peers.get(peer.id) !== peer) return undefined
+        // The peer may have left, or its ticket lapsed, while the document loaded.
+        if (room.peers.get(peer.id) !== peer || !current(peer)) return undefined
         handleMessage(room, content, peer, namespace, target, payload)
         return undefined
       },
@@ -405,13 +405,15 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     socket: RelaySocket,
     authorization: RelayAuthorization
   ): Promise<Peer | null> {
-    const limit = await options.maximumParticipants?.(authorization.documentId)
     let room: Room
+    let limit: number | null | undefined
     let epoch: number | null | undefined
-    // The room's last peer may have left while it opened, or a restore ended it; a closed room
-    // takes no newcomers. The epoch is read once the room is open, so a restore cannot slip between.
+    // The room's last peer may have left while it opened, or a restore or takedown ended it; a
+    // closed room takes no newcomers. The limit and epoch are read once the room is open, so
+    // neither a restore nor a takedown can slip between.
     do {
       room = await openRoom(authorization)
+      limit = await options.maximumParticipants?.(authorization.documentId)
       epoch = await options.currentRoomEpoch?.(authorization.documentId)
     } while (rooms.get(room.id) !== room)
     if (epoch != null && authorization.roomEpoch < epoch) {
@@ -547,6 +549,22 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         }
         room.peers.clear()
         room.content?.document.destroy()
+      }
+    },
+
+    /**
+     * Ends a taken-down document's rooms for everyone in them, saving what each room holds, so
+     * a restore opens them again with every edit. Nobody gets back in meanwhile: tickets are
+     * issued only for documents people can reach.
+     */
+    closeDocument(documentId: string) {
+      for (const room of rooms.values()) {
+        if (room.identity.documentId !== documentId) continue
+        for (const peer of room.peers.values()) {
+          peer.socket.close(RELAY_CLOSE.unauthorized, 'The document was taken down')
+        }
+        room.peers.clear()
+        void leaveRoom(room)
       }
     },
 

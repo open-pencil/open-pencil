@@ -20,6 +20,8 @@ import { createRelaySockets } from './sockets'
 export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvironment> {
   /** Ends the document's live rooms after a restore, without saving them. */
   startOver(documentId: string): Promise<void>
+  /** Ends a taken-down document's live rooms, saving them. */
+  closeDocument(documentId: string): Promise<void>
   /** Tells the document's live rooms its version history changed. */
   announceVersions(documentId: string): Promise<void>
 }
@@ -138,6 +140,11 @@ export function createCloudflareRelayObject(
     async startOver(documentId: string) {
       if (!this.#sockets.active) return
       ;(await this.#sockets.open(documentId)).startOver(documentId)
+    }
+
+    async closeDocument(documentId: string) {
+      if (!this.#sockets.active) return
+      ;(await this.#sockets.open(documentId)).closeDocument(documentId)
     }
 
     async announceVersions(documentId: string) {

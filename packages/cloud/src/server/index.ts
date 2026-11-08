@@ -211,6 +211,8 @@ export {
   type SetAccountEntitlementsInput
 } from './internal'
 export {
+  INVITATION_BUDGET,
+  InvitationLimitError,
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,
@@ -297,3 +299,11 @@ export {
   type WorkspaceRouteEnvironment,
   type WorkspaceService
 } from './workspaces'
+export {
+  createDocumentReportService,
+  createPublicReportRoutes,
+  DOCUMENT_REPORT_BUDGET,
+  DocumentReportLimitError,
+  type DocumentReportService,
+  type DocumentReportServiceOptions
+} from './reports'

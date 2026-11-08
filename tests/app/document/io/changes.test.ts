@@ -188,6 +188,33 @@ test('a change outside the history keeps the document unsaved after undoing back
   })
 })
 
+test('a collaborator change during an open edit stays unsaved after undoing back', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    const close = editor.undo.openEdit()
+    editor.graph.runOutsideEdits(() => editor.graph.updateNode(id, { name: 'Renamed by a peer' }))
+    await settle()
+    editor.updateNodeWithUndo(id, { width: 30 }, 'Resize')
+    close()
+    editor.undoAction()
+    await settle()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+  })
+})
+
+test('a nudge, whose step waits for the keys to pause, undone back leaves the document saved', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    editor.select([id])
+    editor.nudgeSelected(1, 0)
+    await settle()
+    editor.flushNudge()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+    editor.undoAction()
+    await settle()
+    expect(editor.graph.getNode(id)?.x).toBe(0)
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  })
+})
+
 test('changes typed while editing text belong to the step the edit records when it ends', async () => {
   await withSavedRectangle(async (editor, id, changes) => {
     // Typing resizes the layer as it goes; the text edit records one step when it is committed.

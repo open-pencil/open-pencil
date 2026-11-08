@@ -41,11 +41,15 @@ async function documentAccessGrants(
     ])
     .where('document.id', '=', documentId)
     .where('document.deletedAt', 'is', null)
+    // A document an administrator took down is out of reach for everyone, its owner included.
+    .where('document.disabledAt', 'is', null)
     .executeTakeFirst()
   if (!document) return []
 
   const grants: DocumentAccessGrant[] = []
-  if (document.createdBy === userId) {
+  // Making a document gives access only while its maker is in the workspace: someone removed
+  // from it keeps no way back in.
+  if (document.createdBy === userId && document.workspaceRole !== null) {
     grants.push({ source: 'owner', can: (request) => documentRoleCan('owner', request) })
   }
   const { workspaceRole, grantPermission } = document

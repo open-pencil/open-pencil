@@ -334,5 +334,22 @@
   "versionsFailed": "Не удалось загрузить историю версий.",
   "versionFailed": "Не удалось открыть эту версию.",
   "versionChangeFailed": "Не удалось изменить историю версий.",
-  "versionCopyName": "{name} (копия)"
+  "versionCopyName": "{name} (копия)",
+  "reportFile": "Пожаловаться на файл",
+  "reportDescription": "Расскажите администраторам {host}, что с ним не так. Вашу жалобу увидят только они.",
+  "reportReason": "В чём проблема",
+  "reportReasonSpam": "Спам или фишинг",
+  "reportReasonIllegal": "Незаконный контент",
+  "reportReasonCopyright": "Авторские права",
+  "reportReasonHarassment": "Травля",
+  "reportReasonOther": "Другое",
+  "reportDetails": "Подробности",
+  "reportDetailsPlaceholder": "На что стоит посмотреть администратору?",
+  "reportEmail": "Ваша почта (необязательно)",
+  "reportEmailHint": "Только чтобы администратор мог ответить.",
+  "reportSend": "Отправить жалобу",
+  "reportSent": "Жалоба отправлена. Спасибо.",
+  "reportFailed": "Не удалось отправить жалобу. Попробуйте позже.",
+  "reportTooMany": "Сегодня на этот файл больше нельзя пожаловаться. Попробуйте завтра.",
+  "reportEmailInvalid": "Введите адрес почты или оставьте поле пустым."
 }
