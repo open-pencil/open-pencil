@@ -141,6 +141,45 @@ describe('document sharing capabilities integration', () => {
     }
   })
 
+  test('lets guests view an edit link where they may view but not edit', async () => {
+    const context = await seedSharing()
+    try {
+      const viewOnly = sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestView]: true,
+        [CLOUD_FEATURE_KEYS.guestEdit]: false
+      })
+      const capability = await viewOnly.createShare('owner', context.documentId, {
+        permission: 'edit'
+      })
+      const input = { secret: capability.secret, guestName: 'Visitor' }
+      expect(await viewOnly.resolveShare(capability.share.id, input)).toMatchObject({
+        permission: 'view',
+        linkPermission: 'edit',
+        principal: { kind: 'guest', name: 'Visitor' }
+      })
+      expect(
+        await viewOnly.resolveShare(capability.share.id, input, {
+          userId: 'alice',
+          name: 'Alice',
+          email: 'alice@example.com'
+        })
+      ).toMatchObject({ permission: 'edit', linkPermission: 'edit' })
+
+      const open = sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestView]: false,
+        [CLOUD_FEATURE_KEYS.guestEdit]: true
+      })
+      expect(await open.resolveShare(capability.share.id, input)).toMatchObject({
+        permission: 'edit',
+        linkPermission: 'edit'
+      })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('checks sharing access before it looks up a share to update', async () => {
     const context = await seedSharing()
     try {

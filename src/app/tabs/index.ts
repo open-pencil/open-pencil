@@ -277,8 +277,10 @@ function isDOMImportFile(file: File): boolean {
 }
 
 /**
- * A tab a document opens in: a new one, or an untouched empty design in front; never Home. `from`
- * is the tab in front when the open began, which comes back to the front if the open fails.
+ * A tab a document opens in: a new one, or an untouched empty design in front; never Home. A
+ * restored copy is not untouched, though it has no history or source, and may still be on its way
+ * to a server. `from` is the tab in front when the open began, which comes back to the front if
+ * the open fails.
  */
 type OpeningTab = { store: EditorStore; created: boolean; from: Tab | undefined }
 
@@ -289,6 +291,7 @@ function reusableTabStore(): OpeningTab {
     current?.kind === 'document' &&
     current.store.state.documentName === 'Untitled' &&
     !current.store.undo.canUndo &&
+    !current.store.hasUnsavedChanges() &&
     current.store.getStorageBinding() === null &&
     source?.path === null &&
     source.handle === null

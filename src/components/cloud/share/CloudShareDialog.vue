@@ -81,6 +81,13 @@ const accessValue = computed(() => link.access)
 const linkPermission = computed<SharePermission>(() =>
   link.access === 'link' ? link.permission : 'view'
 )
+/** Who a link lets in: guests as far as the server allows, and on an edit link viewers first. */
+const linkDetail = computed(() => {
+  if (link.access !== 'link') return ''
+  if (link.permission === 'edit' ? links.guestEdit : links.guestView) return t.value.shareLinkDetail
+  if (link.permission === 'edit' && links.guestView) return t.value.shareLinkGuestViewDetail
+  return t.value.shareLinkSignInDetail
+})
 const permissionLabel = (permission: SharePermission | 'owner') =>
   ({ owner: t.value.shareOwner, edit: t.value.canEdit, view: t.value.canView })[permission]
 
@@ -211,9 +218,7 @@ function submitInvite() {
             <p :class="ui.accessDetail()">
               {{
                 link.access === 'link'
-                  ? (link.permission === 'edit' ? links.guestEdit : links.guestView)
-                    ? t.shareLinkDetail
-                    : t.shareLinkSignInDetail
+                  ? linkDetail
                   : links.allowed
                     ? t.shareRestrictedDetail
                     : t.shareRestrictedNoLinksDetail

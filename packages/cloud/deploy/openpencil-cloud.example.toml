@@ -142,7 +142,7 @@ maximum_bytes = 1_099_511_627_776
 [entitlements.sharing]
 links = true
 guest_view = true
-guest_edit = true
+guest_edit = false
 guest_presence = true
 
 [entitlements.collaboration]

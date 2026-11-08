@@ -1,6 +1,6 @@
 import { useEditorKeyboard, type EditorShortcut } from '@open-pencil/vue/editor/keyboard'
 
-import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
+import { isCloudBinding, openVersionDialog, saveDocument } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
 import {
   copySelectionProperties,
@@ -123,7 +123,7 @@ function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
       id: 'save',
       keys: menuKeys('save'),
       run: () => {
-        if (showsDocument()) void store.saveFigFile()
+        if (showsDocument()) void saveDocument(store)
       }
     },
     { id: 'open-file', keys: menuKeys('open'), run: options.openFileDialog }
