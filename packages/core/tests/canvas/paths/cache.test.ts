@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { Path } from 'canvaskit-wasm'
 
-import { SceneGraph, type Color, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'

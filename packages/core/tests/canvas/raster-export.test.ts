@@ -52,6 +52,8 @@ describe('raster export', () => {
       viewportImageRendering: true,
       worldViewport: viewport,
       nodePaths: new NodePathCaches(),
+      images: { memoryGraph: null } as SkiaRenderer['images'],
+      nodePictures: new Map(),
       renderNode() {
         expect(this.viewportImageRendering).toBe(false)
         throw new Error('drawing failed')
@@ -78,6 +80,8 @@ describe('raster export', () => {
       viewportImageRendering: false,
       worldViewport: { x: 0, y: 0, w: 1, h: 1 },
       nodePaths: new NodePathCaches(),
+      images: { memoryGraph: graph } as SkiaRenderer['images'],
+      nodePictures: new Map(),
       renderNode() {
         seen.push(this.editingTextId)
       }
