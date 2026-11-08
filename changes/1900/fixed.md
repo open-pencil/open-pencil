@@ -1,0 +1,2 @@
+- A collaborator's edit or an undo made while an agent's call runs no longer joins the agent's undo step, so undoing the agent keeps them; an `eval` script's own `fetch` calls and timers are still not covered for your own edits. Undoing an agent's step that created a frame keeps layers someone else put into it (#1900).
+- Undoing the removal of a variable collection, or of the mode it showed, shows that mode again instead of the default (#1900).
