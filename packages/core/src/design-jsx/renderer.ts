@@ -1,4 +1,5 @@
 import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
@@ -18,12 +19,11 @@ function stringProp(value: unknown): string | null {
 }
 
 /** Inline SVG through the same path pipeline as Iconify icons, placed as SVG import places it. */
-function svgIconData({ body, elements, props }: SVGSource, size: number): IconData | null {
+function svgIconData({ body, elements, props }: SVGSource, box: Size): IconData | null {
   // Children may arrive as parsed SVG elements rather than markup; both use the same shapes.
   let pathInfos = body.trim() ? extractPaths(body) : []
   if (pathInfos.length === 0) pathInfos = extractPathsFromElements(elements, props)
   if (pathInfos.length === 0) return null
-  const box = { width: size, height: size }
   const space = parseSVGViewBoxValue(stringProp(props.viewBox)) ?? { x: 0, y: 0, ...box }
   const viewport = resolveSVGViewportMapping(space, box, {
     preserveAspectRatio: stringProp(props.preserveAspectRatio),
@@ -32,8 +32,8 @@ function svgIconData({ body, elements, props }: SVGSource, size: number): IconDa
   return {
     prefix: INLINE_SVG,
     name: stringProp(props.name) ?? 'custom',
-    width: size,
-    height: size,
+    width: box.width,
+    height: box.height,
     paths: scalePathInfos(pathInfos, viewport)
   }
 }

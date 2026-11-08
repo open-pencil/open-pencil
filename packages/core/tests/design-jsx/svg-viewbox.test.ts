@@ -72,6 +72,18 @@ describe('inline SVG viewBox origin', () => {
     ])
   })
 
+  test('maps the viewBox into the layer box that w and h set', async () => {
+    // A 200 × 100 viewBox fills a 200 × 100 layer, rather than being centered in a 200px square.
+    const jsx =
+      '<svg viewBox="0 0 200 100" w={200} h={100}><rect x={0} y={0} width={20} height={20} /></svg>'
+    expect(await rectVertices(jsx)).toEqual([
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      { x: 20, y: 20 },
+      { x: 0, y: 20 }
+    ])
+  })
+
   test('stretches from the viewBox origin with preserveAspectRatio none', async () => {
     // 50 user units map to 100px, so a 20-unit square at the origin becomes 40px wide at (0, 0).
     const jsx = icon('50 50 50 100', 50, 50, 100, ' preserveAspectRatio="none"')
