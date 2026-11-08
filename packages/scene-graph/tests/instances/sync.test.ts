@@ -1,8 +1,13 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import {
+  reconcileVariableBindings,
+  resolvedPaintBindings
+} from '@open-pencil/scene-graph/variables'
 
 function must<T>(value: T | null | undefined, what: string): T {
   if (value === null || value === undefined) throw new Error(`Missing ${what}`)
@@ -159,6 +164,37 @@ test('syncing a component keeps a bound number its instance overrides', () => {
   expect(synced.width).toBe(60)
   expect(synced.opacity).toBe(0.3)
 })
+
+const paint = (color: Color): Stroke => ({ ...colorToFill(color), weight: 1, align: 'INSIDE' })
+
+test.each(['fills', 'strokes'] as const)(
+  'syncing an outer instance keeps the literal %s it sets on a nested layer unbound',
+  (list) => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const collection = graph.createCollection('Theme')
+    const gray = { r: 0.5, g: 0.5, b: 0.5, a: 1 }
+    const tone = graph.createVariable('Gray', 'COLOR', collection.id, gray)
+    const inner = graph.createNode('COMPONENT', page, { name: 'Inner' })
+    const shape = graph.createNode('RECTANGLE', inner.id, { name: 'Shape', [list]: [paint(gray)] })
+    graph.bindVariable(shape.id, `${list}/0/color`, tone.id)
+    const outer = graph.createNode('COMPONENT', page, { name: 'Outer' })
+    must(graph.createInstance(inner.id, outer.id), 'inner in outer')
+    const placed = must(graph.createInstance(outer.id, page), 'placed outer')
+    const nested = () =>
+      must(graph.getChildren(must(graph.getChildren(placed.id)[0], 'nested inner').id)[0], 'shape')
+    const literal = [paint({ r: 0.1, g: 0.2, b: 0.3, a: 1 })]
+    // The outer instance claims the shape's paints; the shape itself binds nothing.
+    graph.updateNode(nested().id, { [list]: literal, boundVariables: {} })
+    setInstanceOverride(placed.instanceOverrides, placed.id, nested().id, list, literal)
+
+    graph.syncInstance(placed.id)
+
+    expect(nested().boundVariables).toEqual({})
+    expect(resolvedPaintBindings(graph, nested())[list]).toBeUndefined()
+    expect(nested()[list][0].color).toEqual(literal[0].color)
+  }
+)
 
 // Figma (desktop, 2026-11-07): a copy in an instance resized to 113.3×57.1, then synced after its
 // component's layer changes, scales by the exact ratio; one Left & right stretched past zero in a
