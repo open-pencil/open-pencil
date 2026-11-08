@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
+import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 
 /** What copying a layer of `source` puts on the clipboard, as in-app paste reads it. */
@@ -216,6 +219,45 @@ describe('paste to replace', () => {
       expect(editor.graph.getNode(createdId)?.parentId).toBe(frame.id)
       expect(canvasBox(editor, createdId)).toMatchObject({ x: start.x, y: start.y })
       expect(canvasAxes(editor, createdId)).toEqual([1, 0, 0, 1])
+      editor.undo.undo()
+    }
+  })
+
+  test('keeps a replacement pasted from Figma as it was drawn, inside a rotated or flipped frame', async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const rectangle = source.createNode('RECTANGLE', source.getPages()[0].id, {
+      name: 'Pasted',
+      width: 20,
+      height: 20,
+      rotation: 30
+    })
+    const html = await buildFigmaClipboardHTML([rectangle], source)
+    const editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      x: 50,
+      y: 50,
+      width: 300,
+      height: 300
+    })
+    const target = createTarget(editor, frame.id)
+    const copiedAxes = (() => {
+      const [a, c, , b, d] = getWorldMatrix(rectangle, source)
+      return [a, b, c, d].map((value) => Math.round(value * 100) / 100 + 0)
+    })()
+    for (const transform of [{ rotation: 90 }, { rotation: -45 }, { rotation: 0, flipY: true }]) {
+      editor.graph.updateNode(frame.id, transform)
+      const start = canvasBox(editor, target.id)
+      editor.select([target.id])
+      await editor.pasteFromHTML(html, undefined, { replaceSelection: true })
+      const [createdId] = editor.state.selectedIds
+      const created = editor.graph.getNode(createdId)
+      if (!created) throw new Error('Missing replacement')
+      const [a, c, , b, d] = getWorldMatrix(created, editor.graph)
+      // Figma keeps the copied layer's canvas angle and the target's canvas top-left (desktop 126).
+      expect(created.parentId).toBe(frame.id)
+      expect([a, b, c, d].map((value) => Math.round(value * 100) / 100 + 0)).toEqual(copiedAxes)
+      expect(canvasBox(editor, createdId)).toMatchObject({ x: start.x, y: start.y })
       editor.undo.undo()
     }
   })
