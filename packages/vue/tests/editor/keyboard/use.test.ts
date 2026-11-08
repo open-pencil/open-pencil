@@ -253,7 +253,9 @@ describe('useEditorKeyboard', () => {
     menu.appendChild(item)
     dom.document.body.appendChild(menu)
     const itemKeys: string[] = []
-    item.addEventListener('keydown', (event) => itemKeys.push(event.key))
+    item.addEventListener('keydown', (event) => {
+      if (event instanceof dom.KeyboardEvent) itemKeys.push(event.key)
+    })
     const pressInItem = (code: string, key: string) =>
       item.dispatchEvent(
         new dom.KeyboardEvent('keydown', { code, key, bubbles: true, cancelable: true })
@@ -261,9 +263,11 @@ describe('useEditorKeyboard', () => {
 
     pressInItem('KeyR', 'r')
     pressInItem('KeyQ', 'q')
+    // X arms a connector only on a board; in a design file it is the menu's.
+    pressInItem('KeyX', 'x')
 
     expect(editor.state.activeTool).toBe('RECTANGLE')
-    expect(itemKeys).toEqual(['q'])
+    expect(itemKeys).toEqual(['q', 'x'])
     menu.remove()
   })
 

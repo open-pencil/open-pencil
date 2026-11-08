@@ -84,7 +84,8 @@ export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
       )?.shortcut
       if (!shortcut || !active() || !mayRun(event, shortcut)) return
       runRefusable(() => shortcut.run(event))
-      if (shortcut.preventDefault?.(event) ?? true) event.preventDefault()
+      if (!(shortcut.preventDefault?.(event) ?? true)) return
+      event.preventDefault()
       // The key was the canvas's; a closing menu still holding focus must not act on it as well.
       if (pressedInClosingOverlay(event)) event.stopPropagation()
     },
