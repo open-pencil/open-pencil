@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { cloudReport, sendCloudReport, type CloudReportInput } from '@/app/cloud/reports/file'
 import { toast } from '@/app/shell/ui'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudReportDialog from './CloudReportDialog.vue'
 
@@ -12,13 +13,17 @@ import CloudReportDialog from './CloudReportDialog.vue'
 const t = useCloudMessages()
 const busy = ref(false)
 const failure = ref<'failed' | 'too-many' | null>(null)
+// Drawn from what it showed while it animates closed.
+const shown = useHeldContent(cloudReport)
 const open = computed({
   get: () => cloudReport.value !== null,
   set: (value) => {
-    if (value) return
-    cloudReport.value = null
-    failure.value = null
+    if (!value) cloudReport.value = null
   }
+})
+// A report starts clean as its dialog opens; the closing one keeps its alert.
+watch(cloudReport, (draft, previous) => {
+  if (draft && draft !== previous) failure.value = null
 })
 
 async function send(input: CloudReportInput) {
@@ -28,20 +33,19 @@ async function send(input: CloudReportInput) {
   failure.value = null
   const outcome = await sendCloudReport(draft.link, input)
   busy.value = false
-  if (outcome !== 'sent') {
-    failure.value = outcome
-    return
-  }
-  open.value = false
-  toast.info(t.value.reportSent)
+  // Sent counts whatever the dialog does now; the rest only concerns the dialog that sent it.
+  if (outcome === 'sent') toast.info(t.value.reportSent)
+  if (cloudReport.value !== draft) return
+  if (outcome === 'sent') open.value = false
+  else failure.value = outcome
 }
 </script>
 
 <template>
   <CloudReportDialog
     v-model:open="open"
-    :host="cloudReport?.host ?? ''"
-    :email="cloudReport?.email ?? null"
+    :host="shown?.host ?? ''"
+    :email="shown?.email ?? null"
     :busy="busy"
     :failure="failure"
     @send="send"

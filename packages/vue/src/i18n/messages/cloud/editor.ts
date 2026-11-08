@@ -408,7 +408,7 @@ export const cloudMessageDefaults = {
   reportSend: 'Send report',
   reportSent: 'Report sent. Thank you.',
   reportFailed: 'The report didn’t go through. Try again later.',
-  reportTooMany: 'You’ve already reported this file today.',
+  reportTooMany: 'This file can’t take more reports today. Try again tomorrow.',
   reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const

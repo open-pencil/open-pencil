@@ -347,6 +347,6 @@
   "reportSend": "Meldung senden",
   "reportSent": "Meldung gesendet. Danke.",
   "reportFailed": "Die Meldung wurde nicht gesendet. Versuch es später noch einmal.",
-  "reportTooMany": "Du hast diese Datei heute bereits gemeldet.",
+  "reportTooMany": "Für diese Datei sind heute keine weiteren Meldungen möglich. Versuche es morgen erneut.",
   "reportEmailInvalid": "Gib eine E-Mail-Adresse ein oder lass das Feld leer."
 }

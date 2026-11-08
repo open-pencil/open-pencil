@@ -4,9 +4,11 @@ import { seedSharing } from '#cloud-tests/helpers/sharing'
 import { createAdminDocumentService, createAdminReportService } from '#cloud/admin'
 import {
   createCollaborationTicketService,
+  createDefaultCloudPolicy,
   createDocumentReportService,
   DocumentNotFoundError,
   DocumentShareInvalidError,
+  relayDocumentLookups,
   resolveDocumentAccess
 } from '#cloud/server'
 import { listDocuments } from '#cloud/server/documents/repository'
@@ -17,7 +19,7 @@ async function seed() {
   const context = await seedSharing()
   const ended: string[] = []
   const documents = createAdminDocumentService(context.runtime.database, {
-    endRooms: (documentId) => ended.push(documentId)
+    closeRooms: (documentId) => ended.push(documentId)
   })
   const reportsAdmin = createAdminReportService(context.runtime.database)
   const capability = await context.sharing.createShare('owner', context.documentId, {
@@ -85,16 +87,43 @@ describe('document takedown', () => {
       await fileReport('guest-0123456789abcdef')
       expect(await reachable()).toEqual({ owner: true, link: true, ticket: true, listed: true })
 
+      const invited = await context.sharing.createInvitation('owner', context.documentId, {
+        email: 'later@example.com',
+        permission: 'view'
+      })
+      const invitation = { token: invited.token }
+      const recipient = { userId: 'later-user', name: 'Later', email: 'later@example.com' }
+
       await documents.disable(ADMIN, context.documentId, 'Phishing')
       expect(await reachable()).toEqual({ owner: false, link: false, ticket: false, listed: false })
+      // Its invitations name nothing meanwhile, and stay unused.
+      await expect(
+        context.sharing.previewInvitation(invited.invitation.id, invitation)
+      ).rejects.toBeInstanceOf(DocumentShareInvalidError)
+      await expect(
+        context.sharing.acceptInvitation(recipient, invited.invitation.id, invitation)
+      ).rejects.toBeInstanceOf(DocumentShareInvalidError)
       expect(ended).toEqual([context.documentId])
       // Its open report counts as acted on.
       expect(
         await context.runtime.database.selectFrom('documentReport').select('status').execute()
       ).toEqual([{ status: 'actioned' }])
 
+      // The relay admits nobody, even with a ticket from before, and the room keeps its epoch.
+      const relay = relayDocumentLookups(
+        context.runtime.database,
+        createDefaultCloudPolicy(),
+        'self-hosted'
+      )
+      expect(await relay.maximumParticipants?.(context.documentId)).toBe(0)
+      expect(await relay.currentRoomEpoch?.(context.documentId)).toBe(0)
+
       await documents.enable(ADMIN, context.documentId)
       expect(await reachable()).toEqual({ owner: true, link: true, ticket: true, listed: true })
+      expect(await relay.maximumParticipants?.(context.documentId)).not.toBe(0)
+      expect(
+        await context.sharing.acceptInvitation(recipient, invited.invitation.id, invitation)
+      ).toMatchObject({ kind: 'document' })
       expect(await audited(context)).toEqual([
         { action: 'document.disabled', subjectType: 'document', subjectId: context.documentId },
         { action: 'document.enabled', subjectType: 'document', subjectId: context.documentId }
@@ -104,12 +133,12 @@ describe('document takedown', () => {
     }
   })
 
-  test('revokes a link for good and ends its rooms', async () => {
+  test('revokes a link for good, leaving members’ rooms open', async () => {
     const { context, documents, capability, reachable, ended } = await seed()
     try {
       await documents.revokeShare(ADMIN, capability.share.id)
-      expect((await reachable()).link).toBe(false)
-      expect(ended).toEqual([context.documentId])
+      expect(await reachable()).toEqual({ owner: true, link: false, ticket: true, listed: true })
+      expect(ended).toEqual([])
       expect(await audited(context)).toEqual([
         {
           action: 'document-share.revoked',

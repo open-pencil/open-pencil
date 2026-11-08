@@ -350,6 +350,6 @@
   "reportSend": "Wyślij zgłoszenie",
   "reportSent": "Zgłoszenie wysłane. Dziękujemy.",
   "reportFailed": "Nie udało się wysłać zgłoszenia. Spróbuj później.",
-  "reportTooMany": "Ten plik został już dziś przez ciebie zgłoszony.",
+  "reportTooMany": "Dziś nie można już zgłosić tego pliku. Spróbuj ponownie jutro.",
   "reportEmailInvalid": "Wpisz adres e-mail lub zostaw puste."
 }

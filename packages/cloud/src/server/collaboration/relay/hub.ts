@@ -550,6 +550,22 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       }
     },
 
+    /**
+     * Ends a taken-down document's rooms for everyone in them, saving what each room holds, so
+     * a restore opens them again with every edit. Nobody gets back in meanwhile: tickets are
+     * issued only for documents people can reach.
+     */
+    closeDocument(documentId: string) {
+      for (const room of rooms.values()) {
+        if (room.identity.documentId !== documentId) continue
+        for (const peer of room.peers.values()) {
+          peer.socket.close(RELAY_CLOSE.unauthorized, 'The document was taken down')
+        }
+        room.peers.clear()
+        void leaveRoom(room)
+      }
+    },
+
     /** Tells everyone in a document's rooms that its version history changed. */
     announceVersions(documentId: string) {
       const frame: RelayServerFrame = {

@@ -44,9 +44,10 @@ export const Guest: Story = {
     const email = dialog.getByLabelText('Your email (optional)')
     await userEvent.type(email, 'not an address')
     await expect(send).toBeDisabled()
-    await expect(dialog.getByText('Enter an email address, or leave it empty.')).toBeVisible()
+    await expect(email).toHaveAttribute('aria-invalid', 'true')
     await userEvent.clear(email)
     await expect(send).toBeEnabled()
+    await expect(email).not.toHaveAttribute('aria-invalid')
   }
 }
 

@@ -1,5 +1,5 @@
 import { CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
-import type { Kysely } from 'kysely'
+import { sql, type Kysely } from 'kysely'
 
 import { addCheckConstraint, replaceCheckConstraint } from './helpers'
 
@@ -100,6 +100,8 @@ export async function up(database: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {
+  // The narrower check refuses rows it no longer names, so report emails go first.
+  await sql`delete from transactional_email where kind = 'document-report'`.execute(database)
   await replaceCheckConstraint(
     database,
     'transactional_email',

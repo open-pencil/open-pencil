@@ -347,6 +347,6 @@
   "reportSend": "Invia segnalazione",
   "reportSent": "Segnalazione inviata. Grazie.",
   "reportFailed": "La segnalazione non è stata inviata. Riprova più tardi.",
-  "reportTooMany": "Hai già segnalato questo file oggi.",
+  "reportTooMany": "Oggi non è possibile inviare altre segnalazioni per questo file. Riprova domani.",
   "reportEmailInvalid": "Inserisci un indirizzo email o lascia vuoto."
 }

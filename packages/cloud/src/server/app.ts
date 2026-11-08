@@ -91,6 +91,8 @@ export type CloudServices = {
   relayURL?: string
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
+  /** Ends a taken-down document's live rooms, saving them for when it is restored. */
+  onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Reports errors no route handled, when the deployment configures error tracking. */
@@ -178,7 +180,7 @@ export function createCloudApp(services: CloudServices) {
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config),
       documents: createAdminDocumentService(services.database, {
-        endRooms: services.onDocumentRestored
+        closeRooms: services.onDocumentTakenDown
       }),
       reports: createAdminReportService(services.database)
     },

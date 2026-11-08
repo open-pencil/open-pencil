@@ -8,7 +8,13 @@ import { useCollabIdentity } from '@/app/collab/identity'
 import type { EditorStore } from '@/app/editor/session'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
-import { allTabs, closeTab, getTabForStore, openFileInNewTab } from '@/app/tabs'
+import {
+  allTabs,
+  closeTab,
+  getTabForStore,
+  onTabDocumentReplaced,
+  openFileInNewTab
+} from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
 import { rememberShareLinkTab } from '../reports/tabs'
@@ -68,6 +74,11 @@ function setGuestLinkTab(store: EditorStore, tab: CloudGuestLinkTab | null): voi
   } else next.delete(store)
   cloudGuestLinkTabs.value = next
 }
+
+// A tab that opens another file no longer shows the link's document.
+onTabDocumentReplaced((store) => {
+  if (cloudGuestLinkTabs.value.has(store)) setGuestLinkTab(store, null)
+})
 
 /**
  * Closes the guest tabs of a link once it opened again with an account, so the signed-in tab

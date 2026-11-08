@@ -147,8 +147,11 @@ function lockedDocument(transaction: Transaction<CloudDatabase>, documentId: str
 }
 
 export type AdminDocumentServiceOptions = {
-  /** Ends a document's live rooms, as a restore does, so a takedown reaches open tabs at once. */
-  endRooms?: (documentId: string) => void
+  /**
+   * Ends a taken-down document's live rooms, saving them, so a takedown reaches open tabs at once
+   * and a restore loses no edit.
+   */
+  closeRooms?: (documentId: string) => void
 }
 
 export function createAdminDocumentService(
@@ -189,8 +192,8 @@ export function createAdminDocumentService(
 
     /**
      * Takes a document down: it opens for nobody, its owner included, its links stop working,
-     * and its live rooms end. Its open reports count as acted on. Nothing is deleted, so enabling
-     * it gives everything back.
+     * and its live rooms close, saved. Its open reports count as acted on. Nothing is deleted and
+     * its collaboration epoch stays, so enabling it gives everything back, live edits included.
      */
     async disable(actorId: string, documentId: string, reason: string | undefined): Promise<void> {
       await database.transaction().execute(async (transaction) => {
@@ -198,12 +201,7 @@ export function createAdminDocumentService(
         if (document.disabledAt) return
         await transaction
           .updateTable('document')
-          .set((expression) => ({
-            disabledAt: new Date(),
-            disabledReason: reason ?? null,
-            // Tickets for its rooms stop working, as after a restore.
-            collaborationEpoch: expression('collaborationEpoch', '+', 1)
-          }))
+          .set({ disabledAt: new Date(), disabledReason: reason ?? null })
           .where('id', '=', documentId)
           .execute()
         await transaction
@@ -220,7 +218,7 @@ export function createAdminDocumentService(
           reason ? { reason } : {}
         )
       })
-      options.endRooms?.(documentId)
+      options.closeRooms?.(documentId)
     },
 
     /** Puts a document taken down back where it was. */
@@ -240,16 +238,19 @@ export function createAdminDocumentService(
       })
     },
 
-    /** Revokes a share link for good, as its owner can; its guests' rooms end. */
+    /**
+     * Revokes a share link for good, as its owner can: the collaboration epoch moves on, so the
+     * link's guests lose their tickets, while members keep editing.
+     */
     async revokeShare(actorId: string, shareId: string): Promise<void> {
-      const documentId = await database.transaction().execute(async (transaction) => {
+      await database.transaction().execute(async (transaction) => {
         const share = await transaction
           .selectFrom('documentShare')
           .select(['id', 'documentId', 'revokedAt'])
           .where('id', '=', shareId)
           .forUpdate()
           .executeTakeFirstOrThrow()
-        if (share.revokedAt) return null
+        if (share.revokedAt) return
         await transaction
           .updateTable('documentShare')
           .set({ revokedAt: new Date(), updatedAt: new Date() })
@@ -267,9 +268,7 @@ export function createAdminDocumentService(
           { type: 'document-share', id: shareId },
           { documentId: share.documentId }
         )
-        return share.documentId
       })
-      if (documentId) options.endRooms?.(documentId)
     }
   }
 }

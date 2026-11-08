@@ -347,6 +347,6 @@
   "reportSend": "Enviar denúncia",
   "reportSent": "Denúncia enviada. Obrigado.",
   "reportFailed": "A denúncia não foi enviada. Tente mais tarde.",
-  "reportTooMany": "Você já denunciou este arquivo hoje.",
+  "reportTooMany": "Este arquivo não aceita mais denúncias hoje. Tente novamente amanhã.",
   "reportEmailInvalid": "Digite um e-mail ou deixe em branco."
 }

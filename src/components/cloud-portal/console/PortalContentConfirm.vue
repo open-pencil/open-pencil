@@ -27,9 +27,12 @@ const shown = useHeldContent(() => pending)
 const confirmation = computed(() =>
   shown.value ? contentConfirmation(messages.value, shown.value.action, shown.value.document) : null
 )
+// A fresh reason for each confirmation, cleared as it opens so the closing one keeps its text.
 watch(
   () => pending,
-  () => (reason.value = '')
+  (next) => {
+    if (next) reason.value = ''
+  }
 )
 </script>
 

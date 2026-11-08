@@ -255,10 +255,13 @@ the document, its workspace and owner, and the link; from a report an administra
 document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
 Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
 to reported or taken-down ones. A document taken down (`document.disabled_at`) is out of reach
-for everyone, its owner included: access, listings, share links, and collaboration tickets all
-treat it as gone, its collaboration epoch advances and its live rooms end, and its open reports
-count as acted on. Nothing is deleted, so restoring it gives everything back. Each of these
-actions goes into the activity log.
+for everyone, its owner included: access, listings, share links, invitations, and collaboration
+tickets all treat it as gone, and the relay admits nobody to its rooms even with a ticket issued
+before. Its live rooms close and are saved, and its collaboration epoch stays, so restoring it
+gives everything back, edits not yet in a revision included; its open reports count as acted on.
+Revoking a link from the console works as the owner's revocation does: the epoch moves on, so the
+link's guests lose their tickets while members keep editing. Each of these actions goes into the
+activity log.
 
 Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
 server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the

@@ -344,6 +344,6 @@
   "reportSend": "发送举报",
   "reportSent": "举报已发送，谢谢。",
   "reportFailed": "举报未能发送，请稍后重试。",
-  "reportTooMany": "你今天已经举报过此文件。",
+  "reportTooMany": "今天无法再举报此文件。请明天再试。",
   "reportEmailInvalid": "请输入邮箱地址，或留空。"
 }
