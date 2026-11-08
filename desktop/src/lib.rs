@@ -43,7 +43,7 @@ pub fn run() {
         agents::path::augment_process_path();
     }
 
-    let mut builder = tauri::Builder::default().plugin(capabilities::plugin(capabilities));
+    let mut builder = tauri::Builder::default();
 
     if capabilities.self_update {
         builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
@@ -135,7 +135,7 @@ pub fn run() {
         })
         .setup(move |app| {
             // Before the main window exists, so its first script can already spawn.
-            capabilities::grant_host_processes(app.handle(), capabilities)?;
+            capabilities.grant(app.handle())?;
 
             // Panics from here on are kept for the next launch to offer as a report.
             if let Ok(directory) = app.path().app_data_dir() {
@@ -155,6 +155,7 @@ pub fn run() {
                 .cloned()
                 .ok_or("the main window is not configured")?;
             tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .initialization_script(capabilities.init_script())
                 .on_new_window(system::opener::open_new_window_externally(
                     app.handle().clone(),
                 ))
