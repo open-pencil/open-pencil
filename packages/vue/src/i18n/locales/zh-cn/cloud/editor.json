@@ -318,5 +318,22 @@
   "versionsFailed": "无法加载版本历史。",
   "versionFailed": "无法打开此版本。",
   "versionChangeFailed": "无法更改版本历史。",
-  "versionCopyName": "{name}（副本）"
+  "versionCopyName": "{name}（副本）",
+  "reportFile": "举报此文件",
+  "reportDescription": "告诉 {host} 的管理员它有什么问题。分享它的人看不到你的举报。",
+  "reportReason": "问题类型",
+  "reportReasonSpam": "垃圾信息或钓鱼",
+  "reportReasonIllegal": "违法内容",
+  "reportReasonCopyright": "版权",
+  "reportReasonHarassment": "骚扰",
+  "reportReasonOther": "其他",
+  "reportDetails": "详情",
+  "reportDetailsPlaceholder": "管理员应该查看什么？",
+  "reportEmail": "你的邮箱（可选）",
+  "reportEmailHint": "仅用于管理员回复你。",
+  "reportSend": "发送举报",
+  "reportSent": "举报已发送，谢谢。",
+  "reportFailed": "举报未能发送，请稍后重试。",
+  "reportTooMany": "你今天已经举报过此文件。",
+  "reportEmailInvalid": "请输入邮箱地址，或留空。"
 }

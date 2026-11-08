@@ -232,6 +232,23 @@ with a reason the activity log keeps, and reset a locked-out person's two-step s
 removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.
 Every action asks once more.
 
+Anyone a share link lets in, guest or signed in, may report its document: why (spam or
+phishing, illegal content, copyright, harassment, or something else), what to look at, and,
+optionally, where to answer. `POST /api/shares/:shareId/reports` resolves the link as opening it
+does, so a wrong secret, a revoked link, or a server that turns guests away refuses the report,
+and its answer says only that it arrived. One reporter may report a link three times a day and a
+link gathers at most fifty reports a day (`src/server/reports/service.ts`), besides the public
+routes' per-address limit. Each report emails the deployment's administrator notification
+addresses, the ones enrollment uses. The console's Reports list shows open reports first, with
+the document, its workspace and owner, and the link; from a report an administrator takes the
+document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
+Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
+to reported or taken-down ones. A document taken down (`document.disabled_at`) is out of reach
+for everyone, its owner included: access, listings, share links, and collaboration tickets all
+treat it as gone, its collaboration epoch advances and its live rooms end, and its open reports
+count as acted on. Nothing is deleted, so restoring it gives everything back. Each of these
+actions goes into the activity log.
+
 Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
 server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the
 picture's SHA-256: a new picture is a new address. Responses are cached for one day, so a

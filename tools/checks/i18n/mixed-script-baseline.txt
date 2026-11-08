@@ -538,6 +538,7 @@ ja:cloudPortal.accountId
 ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
 ja:cloudPortal.pictureUnreadable
+ja:cloudPortal.noDocumentsFoundDescription
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -560,6 +561,7 @@ zh-cn:cloudPortal.accountIdDescription
 zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
 zh-cn:cloudPortal.pictureUnreadable
+zh-cn:cloudPortal.noDocumentsFoundDescription
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted

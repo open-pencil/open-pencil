@@ -321,5 +321,22 @@
   "versionsFailed": "Der Versionsverlauf konnte nicht geladen werden.",
   "versionFailed": "Diese Version konnte nicht geöffnet werden.",
   "versionChangeFailed": "Der Versionsverlauf konnte nicht geändert werden.",
-  "versionCopyName": "{name} (Kopie)"
+  "versionCopyName": "{name} (Kopie)",
+  "reportFile": "Diese Datei melden",
+  "reportDescription": "Sag den Administratoren von {host}, was damit nicht stimmt. Die Personen, die sie geteilt haben, sehen deine Meldung nicht.",
+  "reportReason": "Was stimmt nicht",
+  "reportReasonSpam": "Spam oder Phishing",
+  "reportReasonIllegal": "Illegale Inhalte",
+  "reportReasonCopyright": "Urheberrecht",
+  "reportReasonHarassment": "Belästigung",
+  "reportReasonOther": "Etwas anderes",
+  "reportDetails": "Details",
+  "reportDetailsPlaceholder": "Worauf soll ein Administrator achten?",
+  "reportEmail": "Deine E-Mail (optional)",
+  "reportEmailHint": "Nur damit ein Administrator antworten kann.",
+  "reportSend": "Meldung senden",
+  "reportSent": "Meldung gesendet. Danke.",
+  "reportFailed": "Die Meldung wurde nicht gesendet. Versuch es später noch einmal.",
+  "reportTooMany": "Du hast diese Datei heute bereits gemeldet.",
+  "reportEmailInvalid": "Gib eine E-Mail-Adresse ein oder lass das Feld leer."
 }

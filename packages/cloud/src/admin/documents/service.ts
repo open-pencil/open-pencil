@@ -1,0 +1,277 @@
+import {
+  containsPattern,
+  countEachFilter,
+  listSearch,
+  listWindow,
+  type AdminListQuery,
+  type ListFilters
+} from '#cloud/admin/list'
+import { isUUID } from '#cloud/admin/schema'
+import {
+  cloudAdminDocumentFilterSchema,
+  type CloudAdminDocument,
+  type CloudAdminDocumentFilter
+} from '#cloud/contract'
+import type { CloudDatabase } from '#cloud/server/db'
+import { dateString } from '#cloud/server/sharing/contracts'
+import { uniq } from 'es-toolkit'
+import type { ExpressionBuilder, Kysely, Transaction } from 'kysely'
+
+type DocumentExpression = ExpressionBuilder<CloudDatabase, 'document'>
+
+/** Whether reports about the document are still waiting for a decision. */
+const reported = (expression: DocumentExpression) =>
+  expression.exists(
+    expression
+      .selectFrom('documentReport')
+      .select('documentReport.id')
+      .whereRef('documentReport.documentId', '=', 'document.id')
+      .where('documentReport.status', '=', 'open')
+  )
+
+const FILTERS: ListFilters<CloudAdminDocumentFilter, 'document'> = {
+  all: (expression) => expression.lit(true),
+  reported,
+  disabled: (expression) => expression('document.disabledAt', 'is not', null)
+}
+
+/** Documents whose name, ID, or maker's name or email has the search in it. */
+function searchCondition(search: string) {
+  const pattern = containsPattern(search)
+  return (expression: DocumentExpression) =>
+    expression.or([
+      expression('document.name', 'ilike', pattern),
+      expression(expression.cast('document.id', 'text'), '=', search.toLowerCase()),
+      expression.exists(
+        expression
+          .selectFrom('user')
+          .select('user.id')
+          .where((inner) =>
+            inner(inner.cast('user.id', 'text'), '=', inner.ref('document.createdBy'))
+          )
+          .where((inner) =>
+            inner.or([inner('user.email', 'ilike', pattern), inner('user.name', 'ilike', pattern)])
+          )
+      )
+    ])
+}
+
+/** The documents with these IDs as the console shows them, in no particular order. */
+export async function adminDocuments(
+  database: Kysely<CloudDatabase>,
+  documentIds: readonly string[]
+): Promise<Map<string, CloudAdminDocument>> {
+  const ids = uniq(documentIds).filter(isUUID)
+  if (ids.length === 0) return new Map()
+  const rows = await database
+    .selectFrom('document')
+    .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
+    .select((expression) => [
+      'document.id',
+      'document.name',
+      'document.createdBy',
+      'document.createdAt',
+      'document.updatedAt',
+      'document.disabledAt',
+      'document.disabledReason',
+      'workspace.id as workspaceId',
+      'workspace.name as workspaceName',
+      expression
+        .selectFrom('documentReport')
+        .select((inner) => inner.fn.countAll<string>().as('count'))
+        .whereRef('documentReport.documentId', '=', 'document.id')
+        .where('documentReport.status', '=', 'open')
+        .as('openReports')
+    ])
+    .where('document.id', 'in', ids)
+    .execute()
+  const ownerIds = uniq(rows.map((row) => row.createdBy)).filter(isUUID)
+  const owners = ownerIds.length
+    ? await database
+        .selectFrom('user')
+        .select(['id', 'name', 'email'])
+        .where('id', 'in', ownerIds)
+        .execute()
+    : []
+  const ownerById = new Map(owners.map((owner) => [owner.id, owner]))
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        name: row.name,
+        workspace: { id: row.workspaceId, name: row.workspaceName },
+        owner: ownerById.get(row.createdBy) ?? null,
+        createdAt: dateString(row.createdAt) ?? '',
+        updatedAt: dateString(row.updatedAt) ?? '',
+        disabledAt: dateString(row.disabledAt),
+        disabledReason: row.disabledReason,
+        openReports: Number(row.openReports ?? 0)
+      }
+    ])
+  )
+}
+
+type AuditDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
+
+/** Records an administrator's action on a document, a link, or a report. */
+export async function auditContentAction(
+  database: AuditDatabase,
+  actorId: string,
+  action: string,
+  subject: { type: 'document' | 'document-share' | 'document-report'; id: string },
+  metadata: Record<string, unknown> = {}
+): Promise<void> {
+  await database
+    .insertInto('adminAuditEvent')
+    .values({
+      id: crypto.randomUUID(),
+      actorUserId: actorId,
+      action,
+      subjectType: subject.type,
+      subjectId: subject.id,
+      metadata
+    })
+    .execute()
+}
+
+/** A document that is not deleted, held until the transaction ends; none is not found. */
+function lockedDocument(transaction: Transaction<CloudDatabase>, documentId: string) {
+  return transaction
+    .selectFrom('document')
+    .select(['id', 'disabledAt'])
+    .where('id', '=', documentId)
+    .where('deletedAt', 'is', null)
+    .forUpdate()
+    .executeTakeFirstOrThrow()
+}
+
+export type AdminDocumentServiceOptions = {
+  /** Ends a document's live rooms, as a restore does, so a takedown reaches open tabs at once. */
+  endRooms?: (documentId: string) => void
+}
+
+export function createAdminDocumentService(
+  database: Kysely<CloudDatabase>,
+  options: AdminDocumentServiceOptions = {}
+) {
+  return {
+    /** A page of documents, newest change first, and how many match the search under each filter. */
+    async list(query: AdminListQuery<CloudAdminDocumentFilter> = {}) {
+      const search = listSearch(query)
+      const filter = query.filter ?? 'all'
+      const { limit, offset } = listWindow(query)
+      let searched = database.selectFrom('document').where('document.deletedAt', 'is', null)
+      if (search) searched = searched.where(searchCondition(search))
+      const counts = await countEachFilter(
+        searched,
+        cloudAdminDocumentFilterSchema.options,
+        FILTERS
+      )
+      const page = await searched
+        .where(FILTERS[filter])
+        .select('document.id')
+        .orderBy('document.updatedAt', 'desc')
+        .orderBy('document.id')
+        .limit(limit)
+        .offset(offset)
+        .execute()
+      const documents = await adminDocuments(
+        database,
+        page.map((row) => row.id)
+      )
+      return {
+        documents: page.flatMap((row) => documents.get(row.id) ?? []),
+        total: counts[filter],
+        counts
+      }
+    },
+
+    /**
+     * Takes a document down: it opens for nobody, its owner included, its links stop working,
+     * and its live rooms end. Its open reports count as acted on. Nothing is deleted, so enabling
+     * it gives everything back.
+     */
+    async disable(actorId: string, documentId: string, reason: string | undefined): Promise<void> {
+      await database.transaction().execute(async (transaction) => {
+        const document = await lockedDocument(transaction, documentId)
+        if (document.disabledAt) return
+        await transaction
+          .updateTable('document')
+          .set((expression) => ({
+            disabledAt: new Date(),
+            disabledReason: reason ?? null,
+            // Tickets for its rooms stop working, as after a restore.
+            collaborationEpoch: expression('collaborationEpoch', '+', 1)
+          }))
+          .where('id', '=', documentId)
+          .execute()
+        await transaction
+          .updateTable('documentReport')
+          .set({ status: 'actioned', resolvedAt: new Date(), resolvedBy: actorId })
+          .where('documentId', '=', documentId)
+          .where('status', '=', 'open')
+          .execute()
+        await auditContentAction(
+          transaction,
+          actorId,
+          'document.disabled',
+          { type: 'document', id: documentId },
+          reason ? { reason } : {}
+        )
+      })
+      options.endRooms?.(documentId)
+    },
+
+    /** Puts a document taken down back where it was. */
+    async enable(actorId: string, documentId: string): Promise<void> {
+      await database.transaction().execute(async (transaction) => {
+        const document = await lockedDocument(transaction, documentId)
+        if (!document.disabledAt) return
+        await transaction
+          .updateTable('document')
+          .set({ disabledAt: null, disabledReason: null })
+          .where('id', '=', documentId)
+          .execute()
+        await auditContentAction(transaction, actorId, 'document.enabled', {
+          type: 'document',
+          id: documentId
+        })
+      })
+    },
+
+    /** Revokes a share link for good, as its owner can; its guests' rooms end. */
+    async revokeShare(actorId: string, shareId: string): Promise<void> {
+      const documentId = await database.transaction().execute(async (transaction) => {
+        const share = await transaction
+          .selectFrom('documentShare')
+          .select(['id', 'documentId', 'revokedAt'])
+          .where('id', '=', shareId)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        if (share.revokedAt) return null
+        await transaction
+          .updateTable('documentShare')
+          .set({ revokedAt: new Date(), updatedAt: new Date() })
+          .where('id', '=', shareId)
+          .execute()
+        await transaction
+          .updateTable('document')
+          .set((expression) => ({ collaborationEpoch: expression('collaborationEpoch', '+', 1) }))
+          .where('id', '=', share.documentId)
+          .execute()
+        await auditContentAction(
+          transaction,
+          actorId,
+          'document-share.revoked',
+          { type: 'document-share', id: shareId },
+          { documentId: share.documentId }
+        )
+        return share.documentId
+      })
+      if (documentId) options.endRooms?.(documentId)
+    }
+  }
+}
+
+export type AdminDocumentService = ReturnType<typeof createAdminDocumentService>

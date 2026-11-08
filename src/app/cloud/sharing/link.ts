@@ -10,6 +10,7 @@ import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { getTabForStore, openFileInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
+import { rememberShareLinkTab } from '../reports/tabs'
 import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
@@ -28,6 +29,23 @@ const guestId = IS_BROWSER
 
 export type CloudShareLink = { shareId: string; server: string; secret: string }
 
+/** The API client for a link's server, carrying this app's session with it when there is one. */
+export async function shareLinkClient(link: CloudShareLink) {
+  const url = normalizeCloudServerURL(link.server)
+  if (!url) throw new TypeError('The link names no server')
+  const discovery = await discoverCloudServer(url)
+  const server = cloudServers.value.find((candidate) => candidate.url === url)
+  const client = createCloudAPIClient(discovery.apiURL, {
+    fetch: server ? cloudServerFetch(server.id) : cloudFetch
+  })
+  return { client, discovery, serverId: server?.id ?? null }
+}
+
+/** Who this browser is to a link's server as a guest. */
+export function cloudGuestId(): string {
+  return guestId.value
+}
+
 /**
  * Opens a document someone shared by link: its latest revision in a tab of its own, then its
  * room with the link's permission. The tab is a copy that never saves to the server; edits reach
@@ -36,13 +54,7 @@ export type CloudShareLink = { shareId: string; server: string; secret: string }
  * the server asks for that.
  */
 export async function openCloudShareLink(link: CloudShareLink): Promise<'opened' | 'sign-in'> {
-  const url = normalizeCloudServerURL(link.server)
-  if (!url) throw new TypeError('The link names no server')
-  const discovery = await discoverCloudServer(url)
-  const server = cloudServers.value.find((candidate) => candidate.url === url)
-  const client = createCloudAPIClient(discovery.apiURL, {
-    fetch: server ? cloudServerFetch(server.id) : cloudFetch
-  })
+  const { client, discovery } = await shareLinkClient(link)
   const input = {
     secret: link.secret,
     guestName: useCollabIdentity().name.value,
@@ -61,6 +73,7 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
   const store = await openFileInNewTab(
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' })
   )
+  rememberShareLinkTab(store, link)
   if (!discovery.capabilities.collaboration) return 'opened'
   const first = await client.getSharedCollaborationTicket(link.shareId, input)
   // The tab may have closed while the ticket was on its way.

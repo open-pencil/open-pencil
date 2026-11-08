@@ -41,6 +41,8 @@ export async function resolveDocumentAccess(
     ])
     .where('document.id', '=', documentId)
     .where('document.deletedAt', 'is', null)
+    // A document an administrator took down is out of reach for everyone, its owner included.
+    .where('document.disabledAt', 'is', null)
     .executeTakeFirst()
   if (!document) return undefined
 
@@ -93,6 +95,8 @@ export async function canDeleteDocument(
     .select(['document.createdBy', 'workspaceMember.role as workspaceRole'])
     .where('document.id', '=', documentId)
     .where('document.deletedAt', 'is', null)
+    // A document an administrator took down is out of reach for everyone, its owner included.
+    .where('document.disabledAt', 'is', null)
     .executeTakeFirst()
   if (!document) return false
   return (

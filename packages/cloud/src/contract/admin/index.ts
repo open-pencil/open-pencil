@@ -7,6 +7,7 @@ import {
   cloudPersonSchema,
   cloudSignInSchema
 } from '../account'
+import { documentReportReasonSchema } from '../reports'
 import { workspaceRoleSchema } from '../workspaces'
 
 const timestampSchema = v.pipe(v.string(), v.isoTimestamp())
@@ -147,16 +148,65 @@ export const adminAuditEventSchema = v.object({
   id: v.string(),
   actor: auditPartySchema,
   action: v.string(),
-  /** What the event is about: an account, an access request, or an email. */
+  /** What the event is about: an account, an access request, an email, or a document. */
   subject: v.object({ ...auditPartySchema.entries, type: v.string() }),
   metadata: v.unknown(),
   createdAt: timestampSchema
 })
 /** Which events a list of activity shows, by what they are about. */
-export const cloudAdminAuditFilterSchema = v.picklist(['all', 'accounts', 'requests', 'email'])
+export const cloudAdminAuditFilterSchema = v.picklist([
+  'all',
+  'accounts',
+  'requests',
+  'email',
+  'documents'
+])
 export const adminAuditResponseSchema = v.object({
   events: v.array(adminAuditEventSchema),
   ...listTotals(cloudAdminAuditFilterSchema.options)
+})
+
+/** A document as the console shows it: where it lives, who made it, and whether it is taken down. */
+export const cloudAdminDocumentSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  workspace: v.object({ id: v.string(), name: v.string() }),
+  /** Who made it, while the server knows them. */
+  owner: v.nullable(v.object({ id: v.string(), name: v.string(), email: v.string() })),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+  disabledAt: nullableTimestampSchema,
+  disabledReason: v.nullable(v.string()),
+  /** Reports about it still waiting for a decision. */
+  openReports: countSchema
+})
+/** Which documents a list shows. */
+export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled'])
+export const cloudAdminDocumentsResponseSchema = v.object({
+  documents: v.array(cloudAdminDocumentSchema),
+  ...listTotals(cloudAdminDocumentFilterSchema.options)
+})
+
+export const cloudAdminReportStatusSchema = v.picklist(['open', 'dismissed', 'actioned'])
+export const cloudAdminReportSchema = v.object({
+  id: v.string(),
+  reason: documentReportReasonSchema,
+  description: v.string(),
+  status: cloudAdminReportStatusSchema,
+  /** The account that filed it, or null for a guest. */
+  reporter: v.nullable(v.object({ id: v.string(), name: v.nullable(v.string()) })),
+  replyEmail: v.nullable(v.string()),
+  createdAt: timestampSchema,
+  resolvedAt: nullableTimestampSchema,
+  document: cloudAdminDocumentSchema,
+  /** The link it was opened from, and whether that link still works. */
+  share: v.nullable(v.object({ id: v.string(), revoked: v.boolean() }))
+})
+/** Which reports a list shows, by where they stand. */
+export const cloudAdminReportFilterSchema = v.picklist(['open', 'actioned', 'dismissed', 'all'])
+export const cloudAdminReportsResponseSchema = v.object({
+  reports: v.array(cloudAdminReportSchema),
+  ...listTotals(cloudAdminReportFilterSchema.options)
 })
 
 export const adminOperationsResponseSchema = v.object({
@@ -164,6 +214,7 @@ export const adminOperationsResponseSchema = v.object({
   enrollmentMode: v.picklist(['open', 'approval', 'closed']),
   emailTransport: v.picklist(['none', 'smtp', 'cloudflare']),
   pendingEnrollment: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  openReports: countSchema,
   pendingEmail: v.pipe(v.number(), v.integer(), v.minValue(0)),
   failedEmail: v.pipe(v.number(), v.integer(), v.minValue(0)),
   accounts: countSchema,
@@ -185,3 +236,8 @@ export type CloudAdminUserDetail = v.InferOutput<typeof cloudAdminUserDetailSche
 export type TransactionalEmailAdmin = v.InferOutput<typeof transactionalEmailAdminSchema>
 export type AdminAuditEvent = v.InferOutput<typeof adminAuditEventSchema>
 export type AdminOperations = v.InferOutput<typeof adminOperationsResponseSchema>
+export type CloudAdminDocument = v.InferOutput<typeof cloudAdminDocumentSchema>
+export type CloudAdminDocumentFilter = v.InferOutput<typeof cloudAdminDocumentFilterSchema>
+export type CloudAdminReport = v.InferOutput<typeof cloudAdminReportSchema>
+export type CloudAdminReportFilter = v.InferOutput<typeof cloudAdminReportFilterSchema>
+export type CloudAdminReportStatus = v.InferOutput<typeof cloudAdminReportStatusSchema>

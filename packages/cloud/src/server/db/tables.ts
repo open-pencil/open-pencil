@@ -90,6 +90,25 @@ export interface DocumentTable {
   deletedAt: TimestampColumn | null
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
+  /** Set while a deployment administrator has taken the document down; see migration 032. */
+  disabledAt: TimestampColumn | null
+  disabledReason: Generated<string | null>
+}
+
+/** A report someone filed about a document shared with them by link; see migration 032. */
+export interface DocumentReportTable {
+  id: string
+  documentId: string
+  shareId: string | null
+  reporterUserId: string | null
+  reporterGuestId: string | null
+  replyEmail: string | null
+  reason: 'spam-phishing' | 'illegal' | 'copyright' | 'harassment' | 'other'
+  description: string
+  status: Generated<'open' | 'dismissed' | 'actioned'>
+  createdAt: TimestampColumn
+  resolvedAt: TimestampColumn | null
+  resolvedBy: string | null
 }
 
 export interface StorageObjectTable {
@@ -384,6 +403,7 @@ export interface CloudDatabase {
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
+  documentReport: DocumentReportTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

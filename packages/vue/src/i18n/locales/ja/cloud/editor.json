@@ -318,5 +318,22 @@
   "versionsFailed": "バージョン履歴を読み込めませんでした。",
   "versionFailed": "このバージョンを開けませんでした。",
   "versionChangeFailed": "バージョン履歴を変更できませんでした。",
-  "versionCopyName": "{name}（コピー）"
+  "versionCopyName": "{name}（コピー）",
+  "reportFile": "このファイルを報告",
+  "reportDescription": "{host} の管理者に問題を伝えます。共有した人にはあなたの報告は表示されません。",
+  "reportReason": "問題の種類",
+  "reportReasonSpam": "スパムまたはフィッシング",
+  "reportReasonIllegal": "違法なコンテンツ",
+  "reportReasonCopyright": "著作権",
+  "reportReasonHarassment": "嫌がらせ",
+  "reportReasonOther": "その他",
+  "reportDetails": "詳細",
+  "reportDetailsPlaceholder": "管理者に確認してほしい点",
+  "reportEmail": "メールアドレス（任意）",
+  "reportEmailHint": "管理者が返信するためだけに使われます。",
+  "reportSend": "報告を送信",
+  "reportSent": "報告を送信しました。ありがとうございます。",
+  "reportFailed": "報告を送信できませんでした。後でもう一度お試しください。",
+  "reportTooMany": "このファイルは今日すでに報告されています。",
+  "reportEmailInvalid": "メールアドレスを入力するか、空欄のままにしてください。"
 }

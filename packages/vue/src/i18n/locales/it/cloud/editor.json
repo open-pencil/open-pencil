@@ -321,5 +321,22 @@
   "versionsFailed": "Impossibile caricare la cronologia versioni.",
   "versionFailed": "Impossibile aprire questa versione.",
   "versionChangeFailed": "Impossibile modificare la cronologia versioni.",
-  "versionCopyName": "{name} (copia)"
+  "versionCopyName": "{name} (copia)",
+  "reportFile": "Segnala questo file",
+  "reportDescription": "Spiega agli amministratori di {host} cosa non va. Chi l’ha condiviso non vedrà la tua segnalazione.",
+  "reportReason": "Cosa non va",
+  "reportReasonSpam": "Spam o phishing",
+  "reportReasonIllegal": "Contenuti illegali",
+  "reportReasonCopyright": "Copyright",
+  "reportReasonHarassment": "Molestie",
+  "reportReasonOther": "Altro",
+  "reportDetails": "Dettagli",
+  "reportDetailsPlaceholder": "Cosa dovrebbe controllare un amministratore?",
+  "reportEmail": "La tua email (facoltativa)",
+  "reportEmailHint": "Solo perché un amministratore possa rispondere.",
+  "reportSend": "Invia segnalazione",
+  "reportSent": "Segnalazione inviata. Grazie.",
+  "reportFailed": "La segnalazione non è stata inviata. Riprova più tardi.",
+  "reportTooMany": "Hai già segnalato questo file oggi.",
+  "reportEmailInvalid": "Inserisci un indirizzo email o lascia vuoto."
 }

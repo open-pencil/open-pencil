@@ -46,6 +46,7 @@
     "#cloud/server/policy": "./src/server/policy/index.ts",
     "#cloud/server/quota": "./src/server/quota/index.ts",
     "#cloud/server/rate-limit": "./src/server/rate-limit/index.ts",
+    "#cloud/server/reports": "./src/server/reports/index.ts",
     "#cloud/server/services": "./src/server/services/index.ts",
     "#cloud/server/sharing": "./src/server/sharing/index.ts",
     "#cloud/server/workspaces": "./src/server/workspaces/index.ts",

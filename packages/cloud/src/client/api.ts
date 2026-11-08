@@ -50,6 +50,8 @@ import {
   type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  fileDocumentReportResponseSchema,
+  type FileDocumentReportInput,
   type UpdateDocumentShareInput,
   type AcceptedInvitation
 } from '#cloud/contract'
@@ -377,6 +379,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         }),
+        options.onDiagnostic
+      )
+    },
+    /** Reports the document a share link opens to the server's administrators. */
+    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
+      await parseResponse(
+        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
+        fileDocumentReportResponseSchema,
         options.onDiagnostic
       )
     },

@@ -321,5 +321,22 @@
   "versionsFailed": "No se pudo cargar el historial de versiones.",
   "versionFailed": "No se pudo abrir esta versión.",
   "versionChangeFailed": "No se pudo cambiar el historial de versiones.",
-  "versionCopyName": "{name} (copia)"
+  "versionCopyName": "{name} (copia)",
+  "reportFile": "Denunciar este archivo",
+  "reportDescription": "Cuéntales a los administradores de {host} qué le pasa. Quienes lo compartieron no verán tu denuncia.",
+  "reportReason": "Qué ocurre",
+  "reportReasonSpam": "Spam o phishing",
+  "reportReasonIllegal": "Contenido ilegal",
+  "reportReasonCopyright": "Derechos de autor",
+  "reportReasonHarassment": "Acoso",
+  "reportReasonOther": "Otra cosa",
+  "reportDetails": "Detalles",
+  "reportDetailsPlaceholder": "¿Qué debería revisar un administrador?",
+  "reportEmail": "Tu correo (opcional)",
+  "reportEmailHint": "Solo para que un administrador pueda responder.",
+  "reportSend": "Enviar denuncia",
+  "reportSent": "Denuncia enviada. Gracias.",
+  "reportFailed": "La denuncia no se envió. Inténtalo más tarde.",
+  "reportTooMany": "Ya has denunciado este archivo hoy.",
+  "reportEmailInvalid": "Escribe un correo o déjalo vacío."
 }
