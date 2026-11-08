@@ -20,7 +20,7 @@ import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import { DESKTOP_DOWNLOAD_URL } from '@/constants'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/ai-setup/access'
 
 const { agentsAvailable, detections = {} } = defineProps<{
   agentsAvailable: boolean

@@ -45,10 +45,10 @@ const serializedBytesSchema = v.instance(Uint8Array)
 
 const libraryAssetDescriptorSchema = v.object({
   key: v.string(),
-  type: v.picklist(['COMPONENT', 'COMPONENT_SET']),
+  type: v.picklist(['COMPONENT', 'COMPONENT_SET', 'STYLE', 'VARIABLE_COLLECTION']),
   name: v.string(),
   description: v.string(),
-  sourceNodeId: v.string(),
+  sourceId: v.string(),
   contentHash: v.string(),
   thumbnail: v.optional(serializedBytesSchema)
 })

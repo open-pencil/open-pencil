@@ -23,5 +23,8 @@
   "unavailable": "Updates sind noch nicht verfügbar. Veröffentliche zuerst ein signiertes Release mit latest.json.",
   "checkFailed": "Updates konnten nicht geprüft werden: {error}",
   "webUpdateReady": "Eine neue Version von OpenPencil ist bereit",
-  "reload": "Neu laden"
+  "reload": "Neu laden",
+  "settingsSection": "Aktualisierungen",
+  "checkOnStartup": "Beim Start nach Updates suchen",
+  "checkOnStartupDescription": "Sucht kurz nach dem Öffnen der Desktop-App nach einer neuen Version. „Nach Updates suchen…“ im Menü prüft auch, wenn dies aus ist."
 }

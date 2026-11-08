@@ -1,6 +1,7 @@
 export { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 export {
   exportBounds,
+  fittedLayerRenderer,
   MAX_RASTER_PIXELS,
   oversizedRaster,
   rasterSize,
@@ -8,6 +9,7 @@ export {
   renderThumbnail,
   thumbnailFrame,
   type RasterExportFormat,
+  type ScaledLayerRender,
   type ThumbnailFit,
   type ThumbnailFrame,
   type ExportFormat

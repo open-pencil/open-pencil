@@ -8,7 +8,7 @@ export default {
     person: 'flex h-7 min-w-0 items-center gap-2',
     agent: 'flex h-7 min-w-0 items-center gap-2 pl-8',
     agentIcon: 'size-3.5 shrink-0',
-    name: `${NAME} flex-1`,
+    name: [NAME, 'flex-1'],
     // An agent's callsign keeps its width; the status beside it truncates first.
     agentName: NAME,
     status: 'min-w-0 flex-1 truncate text-right text-3xs text-muted',

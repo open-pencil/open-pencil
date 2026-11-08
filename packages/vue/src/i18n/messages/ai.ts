@@ -124,6 +124,8 @@ export const aiMessageDefaults = {
   toolInput: 'Input',
   toolOutput: 'Output',
   toolDetails: 'Tool call details',
+  webSearchSources: 'Sources',
+  webSearchNothingFound: 'The search found nothing.',
   toolSteps: params('Earlier steps: {count}'),
   toolStepsFailed: params('failed: {count}'),
   showNodeOnCanvas: params('Show {name} on canvas'),
@@ -276,6 +278,7 @@ export const aiMessageDefaults = {
   aiSetupWelcomeTourDescription:
     'A short file that walks through components and slots, working controls, modes, shaders, code, and lint, with a card on each that says what to try.',
   aiSetupTakeTour: 'Open the tour',
+  aiSetupTourFailed: 'The tour could not be opened. Try again, or open it later from the menu.',
   aiSetupStart: 'Set up AI',
   aiSetupSkip: 'Start designing',
   aiSetupProgress: params('Step {current} of {total}'),

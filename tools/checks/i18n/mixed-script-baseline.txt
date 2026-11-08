@@ -183,6 +183,7 @@ ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
 ja:media.unsplashKeyRejected
+ja:media.webSearchDescription
 ja:menu.copyAsJSX
 ja:menu.copyAsPNG
 ja:menu.copyAsSVG
@@ -194,6 +195,7 @@ ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.supportOpenPencil
+ja:menu.toggleAIChat
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
@@ -410,6 +412,7 @@ zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
 zh-cn:media.unsplashKeyRejected
+zh-cn:media.webSearchDescription
 zh-cn:menu.copyAsJSX
 zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG
@@ -421,6 +424,7 @@ zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:menu.supportOpenPencil
+zh-cn:menu.toggleAIChat
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl

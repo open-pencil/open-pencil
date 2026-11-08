@@ -90,5 +90,7 @@
   "splitRight": "Dividir à direita",
   "splitDown": "Dividir abaixo",
   "closeView": "Fechar visualização",
-  "removeGuide": "Remover guia"
+  "removeGuide": "Remover guia",
+  "newBoard": "Novo quadro",
+  "toggleAIChat": "Alternar chat de IA"
 }

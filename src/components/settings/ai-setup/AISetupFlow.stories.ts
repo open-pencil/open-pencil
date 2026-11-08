@@ -14,6 +14,7 @@ import AISetupFlow from './AISetupFlow.vue'
 interface Args {
   entry: 'welcome' | 'guided'
   offersTour?: boolean
+  tourFailed?: boolean
   agentsAvailable: boolean
 }
 
@@ -83,6 +84,17 @@ export const Welcome: Story = { args: { entry: 'welcome' } }
 
 /** Offered over the demo, which is the tour, so it does not point to it. */
 export const WelcomeInTour: Story = { args: { entry: 'welcome', offersTour: false } }
+
+/** The tour could not load; the welcome stays open so the person can try again. */
+export const WelcomeTourFailed: Story = {
+  args: { entry: 'welcome', tourFailed: true },
+  play: async () => {
+    // Behaviour, not copy: the alert shows and the tour can be tried again.
+    await expect(page().getByRole('alert')).toBeVisible()
+    const tour = document.querySelector<HTMLElement>('[data-test-id="ai-setup-tour"]')
+    await expect(tour && within(tour).getByRole('button')).toBeEnabled()
+  }
+}
 export const Goals: Story = {}
 export const AccessInBrowser: Story = {
   play: async () => {
