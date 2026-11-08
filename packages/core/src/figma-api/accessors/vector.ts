@@ -1,5 +1,7 @@
 import type {
+  Fill,
   HandleMirroring,
+  SceneGraph,
   VectorNetwork as SceneVectorNetwork,
   VectorRegion as SceneVectorRegion,
   VectorSegment,
@@ -23,7 +25,12 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { graphOf } from '#core/figma-api/graph'
-import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import {
+  keepVideoPosters,
+  parseFigmaPaints,
+  toFigmaPaint,
+  type FigmaPaint
+} from '#core/figma-api/paints'
 import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
@@ -73,7 +80,16 @@ function networkFromVectorPaths(paths: readonly FigmaVectorPath[]): SceneVectorN
   return networks.length > 0 ? mergeVectorNetworks(networks) : structuredClone(EMPTY_NETWORK)
 }
 
-function normalizeInputNetwork(value: FigmaVectorNetwork): SceneVectorNetwork {
+type RegionPaintSource = {
+  readonly previous: SceneVectorNetwork | null
+  readonly layerFills: readonly Fill[]
+  readonly graph: SceneGraph
+}
+
+function normalizeInputNetwork(
+  value: FigmaVectorNetwork,
+  source: RegionPaintSource
+): SceneVectorNetwork {
   const regions = value.regions ?? []
   return normalizeVectorNetwork({
     vertices: value.vertices.map((vertex) => ({ ...vertex })),
@@ -88,18 +104,28 @@ function normalizeInputNetwork(value: FigmaVectorNetwork): SceneVectorNetwork {
         y: segment.tangentEnd?.y ?? 0
       }
     })),
-    regions: regions.map(sceneRegion)
+    regions: regions.map((region, index) => sceneRegion(region, index, source))
   })
 }
 
 /** A region as the network stores it, with paints of its own only when Figma's names them. */
-function sceneRegion(region: FigmaVectorRegion): SceneVectorRegion {
+function sceneRegion(
+  region: FigmaVectorRegion,
+  index: number,
+  source: RegionPaintSource
+): SceneVectorRegion {
   const scene: SceneVectorRegion = {
     windingRule: region.windingRule,
     loops: region.loops.map((loop) => [...loop])
   }
-  if (region.fills !== undefined)
-    scene.fills = parseFigmaPaints(region.fills, 'set_vectorNetwork', 'vectorNetwork')
+  if (region.fills !== undefined) {
+    const previous = source.previous?.regions[index]?.fills ?? source.layerFills
+    scene.fills = keepVideoPosters(
+      parseFigmaPaints(region.fills, 'set_vectorNetwork', 'vectorNetwork'),
+      previous,
+      source.graph
+    )
+  }
   if (region.fillStyleId) scene.fillStyleId = region.fillStyleId
   return scene
 }
@@ -159,7 +185,12 @@ function assignVectorNetwork(
   const errors = validateVectorNetwork(value)
   if (errors.length > 0) throw new TypeError(`Invalid vectorNetwork: ${errors.join('; ')}`)
   validateRegionPaintMetadata(value.regions ?? [])
-  const network = normalizeInputNetwork(value)
+  const node = raw(target, internals)
+  const network = normalizeInputNetwork(value, {
+    previous: node.vectorNetwork,
+    layerFills: node.fills,
+    graph: graphOf(target)
+  })
   prepareVectorDataEdit(target, internals, setter)
   setGeometry(target, internals, network)
 }

@@ -3,6 +3,7 @@ import { uniqBy } from 'es-toolkit/array'
 
 import type {
   CharacterStyleOverride,
+  Fill,
   HyperlinkTarget,
   SceneGraph,
   SceneNode,
@@ -28,7 +29,7 @@ import {
 } from '#core/figma-api/fonts/names'
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { graphOf } from '#core/figma-api/graph'
-import type { FigmaPaint } from '#core/figma-api/paints'
+import { keepVideoPosters, type FigmaPaint } from '#core/figma-api/paints'
 import { fontNameSchema } from '#core/figma-api/schema'
 import {
   getRangeIndentation,
@@ -104,6 +105,11 @@ export function fontNameStyle(
   return fontNameInputStyle(method, fontName, currentFont(node, start))
 }
 
+function rangeFills(node: SceneNode, start: number): readonly Fill[] {
+  const [style] = characterStyles(node, start, start + 1)
+  return style.fills
+}
+
 type RangeSetter = (
   method: string,
   node: SceneNode,
@@ -129,8 +135,8 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     assertFontLoaded(method, node, style)
     return style
   },
-  setRangeFills: (method, _node, _start, _end, value) => ({
-    fills: fillsFromPaints(method, value)
+  setRangeFills: (method, node, start, _end, value, graph) => ({
+    fills: keepVideoPosters(fillsFromPaints(method, value), rangeFills(node, start), graph)
   }),
   // A percent stays a percent, following the size of the characters it styles, as in Figma.
   setRangeLetterSpacing: (method, _node, _start, _end, value) => ({

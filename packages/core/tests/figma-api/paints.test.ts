@@ -195,6 +195,12 @@ function setFills(target: object, fills: unknown[]) {
   Reflect.set(target, 'fills', fills)
 }
 
+function otherPosterOfClip(graph: SceneGraph) {
+  graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+    fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: '9'.repeat(40), videoHash: HASH }]
+  })
+}
+
 function failure(problem: string, method = 'set_fills', property = 'fills') {
   return `in ${method}: Property "${property}" failed validation: ${problem}`
 }
@@ -537,6 +543,97 @@ describe('paint types', () => {
     rectangle.fills = [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
 
     expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBe(poster)
+  })
+
+  test('keeps the poster when a script writes a text range back', () => {
+    const { graph, figma } = api()
+    const poster = 'c3'.repeat(20)
+    otherPosterOfClip(graph)
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'clip',
+      styleRuns: [
+        {
+          start: 0,
+          length: 4,
+          style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }] }
+        }
+      ]
+    })
+
+    figma
+      .getNodeById(node.id)
+      ?.setRangeFills(0, 2, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL', opacity: 0.5 }])
+
+    const [run] = graph.getNode(node.id)?.styleRuns ?? []
+    expect(run?.style.fills?.[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
+  })
+
+  test('finds a poster for a text range only another layer holds', () => {
+    const { graph, figma } = api()
+    const poster = 'd4'.repeat(20)
+    const rectangle = figma.createRectangle()
+    graph.updateNode(rectangle.id, {
+      fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
+    })
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'clip' })
+
+    figma
+      .getNodeById(node.id)
+      ?.setRangeFills(0, 4, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }])
+
+    const [run] = graph.getNode(node.id)?.styleRuns ?? []
+    expect(run?.style.fills?.[0]?.imageHash).toBe(poster)
+  })
+
+  test('keeps the poster when a script writes a vector region back', () => {
+    const { graph, figma } = api()
+    const poster = 'e5'.repeat(20)
+    otherPosterOfClip(graph)
+    const vector = figma.createVector()
+    vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 20 0 L 20 20 Z' }]
+    const network = graph.getNode(vector.id)?.vectorNetwork
+    graph.updateNode(vector.id, {
+      vectorNetwork: network && {
+        ...network,
+        regions: network.regions.map((region) => ({
+          ...region,
+          fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
+        }))
+      }
+    })
+
+    vector.vectorNetwork = {
+      ...vector.vectorNetwork,
+      regions: vector.vectorNetwork.regions?.map((region) => ({
+        ...region,
+        fills: [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL', opacity: 0.5 }]
+      }))
+    }
+
+    const [region] = graph.getNode(vector.id)?.vectorNetwork?.regions ?? []
+    expect(region?.fills?.[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
+  })
+
+  test('gives a region without its own fills the poster of the layer it drew with', () => {
+    const { graph, figma } = api()
+    const poster = 'a7'.repeat(20)
+    otherPosterOfClip(graph)
+    const vector = figma.createVector()
+    vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 20 0 L 20 20 Z' }]
+    graph.updateNode(vector.id, {
+      fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
+    })
+
+    vector.vectorNetwork = {
+      ...vector.vectorNetwork,
+      regions: vector.vectorNetwork.regions?.map((region) => ({
+        ...region,
+        fills: [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
+      }))
+    }
+
+    const [region] = graph.getNode(vector.id)?.vectorNetwork?.regions ?? []
+    expect(region?.fills?.[0]?.imageHash).toBe(poster)
   })
 
   test('keeps the poster when a script writes a paint style back', () => {
