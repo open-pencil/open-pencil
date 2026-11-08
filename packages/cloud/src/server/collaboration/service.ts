@@ -129,6 +129,7 @@ export function createCollaborationTicketService({
         .select('collaborationEpoch')
         .where('id', '=', documentId)
         .where('deletedAt', 'is', null)
+        .where('disabledAt', 'is', null)
         .executeTakeFirst()
       if (!document) throw new DocumentNotFoundError()
       return signCollaborationTicket({
@@ -165,6 +166,7 @@ export function createCollaborationTicketService({
         .select('collaborationEpoch')
         .where('id', '=', resolved.documentId)
         .where('deletedAt', 'is', null)
+        .where('disabledAt', 'is', null)
         .executeTakeFirst()
       if (!document) throw new DocumentNotFoundError()
       return signCollaborationTicket({

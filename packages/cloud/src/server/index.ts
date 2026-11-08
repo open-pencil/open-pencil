@@ -299,3 +299,11 @@ export {
   type WorkspaceRouteEnvironment,
   type WorkspaceService
 } from './workspaces'
+export {
+  createDocumentReportService,
+  createPublicReportRoutes,
+  DOCUMENT_REPORT_BUDGET,
+  DocumentReportLimitError,
+  type DocumentReportService,
+  type DocumentReportServiceOptions
+} from './reports'

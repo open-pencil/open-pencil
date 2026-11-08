@@ -265,6 +265,8 @@ export function createCapabilityService(
         .where('documentShare.id', '=', shareId)
         .where('documentShare.revokedAt', 'is', null)
         .where('document.deletedAt', 'is', null)
+        // A document an administrator took down opens for nobody.
+        .where('document.disabledAt', 'is', null)
         .executeTakeFirst()
       if (
         !row ||

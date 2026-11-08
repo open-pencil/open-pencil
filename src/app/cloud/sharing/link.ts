@@ -8,9 +8,16 @@ import { useCollabIdentity } from '@/app/collab/identity'
 import type { EditorStore } from '@/app/editor/session'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
-import { allTabs, closeTab, getTabForStore, openFileInNewTab } from '@/app/tabs'
+import {
+  allTabs,
+  closeTab,
+  getTabForStore,
+  onTabDocumentReplaced,
+  openFileInNewTab
+} from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
+import { rememberShareLinkTab } from '../reports/tabs'
 import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
@@ -29,6 +36,23 @@ const guestId = IS_BROWSER
   : ref(randomHex(16))
 
 export type CloudShareLink = { shareId: string; server: string; secret: string }
+
+/** The API client for a link's server, carrying this app's session with it when there is one. */
+export async function shareLinkClient(link: CloudShareLink) {
+  const url = normalizeCloudServerURL(link.server)
+  if (!url) throw new TypeError('The link names no server')
+  const discovery = await discoverCloudServer(url)
+  const server = cloudServers.value.find((candidate) => candidate.url === url)
+  const client = createCloudAPIClient(discovery.apiURL, {
+    fetch: server ? cloudServerFetch(server.id) : cloudFetch
+  })
+  return { client, discovery, serverId: server?.id ?? null }
+}
+
+/** Who this browser is to a link's server as a guest. */
+export function cloudGuestId(): string {
+  return guestId.value
+}
 
 /** A tab a guest views from a link, and whether signing in would let them edit it. */
 export type CloudGuestLinkTab = { link: CloudShareLink; canEditSignedIn: boolean }
@@ -50,6 +74,11 @@ function setGuestLinkTab(store: EditorStore, tab: CloudGuestLinkTab | null): voi
   } else next.delete(store)
   cloudGuestLinkTabs.value = next
 }
+
+// A tab that opens another file no longer shows the link's document.
+onTabDocumentReplaced((store) => {
+  if (cloudGuestLinkTabs.value.has(store)) setGuestLinkTab(store, null)
+})
 
 /**
  * Closes the guest tabs of a link once it opened again with an account, so the signed-in tab
@@ -74,13 +103,7 @@ async function closeGuestTabsOf(shareId: string, except: EditorStore): Promise<v
  * the server asks for that.
  */
 export async function openCloudShareLink(link: CloudShareLink): Promise<'opened' | 'sign-in'> {
-  const url = normalizeCloudServerURL(link.server)
-  if (!url) throw new TypeError('The link names no server')
-  const discovery = await discoverCloudServer(url)
-  const server = cloudServers.value.find((candidate) => candidate.url === url)
-  const client = createCloudAPIClient(discovery.apiURL, {
-    fetch: server ? cloudServerFetch(server.id) : cloudFetch
-  })
+  const { client, discovery } = await shareLinkClient(link)
   const input = {
     secret: link.secret,
     guestName: useCollabIdentity().name.value,
@@ -99,6 +122,7 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
   const store = await openFileInNewTab(
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' })
   )
+  rememberShareLinkTab(store, link)
   // The copy may open in a reused tab still in this link's room as a guest, whose ticket would
   // hold it to the guest's permission; it joins again below with this one's.
   leaveCloudRoom(store)

@@ -1,4 +1,4 @@
-import { promiseTimeout } from '@vueuse/core'
+import { createEventHook, promiseTimeout } from '@vueuse/core'
 import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
@@ -345,6 +345,14 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   return imported
 }
 
+const documentReplaced = createEventHook<EditorStore>()
+
+/**
+ * Hears a tab's store take another document, as when opening a file reuses an untouched tab,
+ * so whatever was kept about the document it showed can be dropped.
+ */
+export const onTabDocumentReplaced = documentReplaced.on
+
 async function showImportedGraph(
   store: EditorStore,
   graph: SceneGraph,
@@ -353,6 +361,7 @@ async function showImportedGraph(
 ): Promise<void> {
   load?.update({ phase: 'materializing', detail: store.state.documentName })
   await applyImportedDocument(store, graph, load)
+  void documentReplaced.trigger(store)
   load?.signal.throwIfAborted()
   await prepare?.()
   load?.signal.throwIfAborted()

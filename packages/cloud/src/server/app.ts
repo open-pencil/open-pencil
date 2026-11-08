@@ -1,7 +1,9 @@
 import {
   createAdminAuditService,
+  createAdminDocumentService,
   createAdminEmailService,
   createAdminOperationsService,
+  createAdminReportService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
@@ -58,6 +60,7 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createDocumentReportService } from '#cloud/server/reports'
 import { createServicesTokenService, type ServicesSigningKey } from '#cloud/server/services'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
@@ -88,6 +91,8 @@ export type CloudServices = {
   relayURL?: string
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
+  /** Ends a taken-down document's live rooms, saving them for when it is restored. */
+  onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Reports errors no route handled, when the deployment configures error tracking. */
@@ -173,7 +178,11 @@ export function createCloudApp(services: CloudServices) {
           : undefined
       }),
       audit: createAdminAuditService(services.database),
-      operations: createAdminOperationsService(services.database, services.config)
+      operations: createAdminOperationsService(services.database, services.config),
+      documents: createAdminDocumentService(services.database, {
+        closeRooms: services.onDocumentTakenDown
+      }),
+      reports: createAdminReportService(services.database)
     },
     allowedOrigins,
     {
@@ -282,6 +291,12 @@ export function createCloudApp(services: CloudServices) {
     requireActiveSession,
     authenticatedMutationLimiter
   })
+  const reports = createDocumentReportService(services.database, {
+    sharing,
+    email: services.transactionalEmail,
+    adminRecipients: services.config.enrollmentAdminNotificationEmails,
+    publicURL: services.config.publicURL
+  })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
     database: services.database,
@@ -291,6 +306,7 @@ export function createCloudApp(services: CloudServices) {
     entitlements,
     servicesTokens,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -301,6 +317,7 @@ export function createCloudApp(services: CloudServices) {
     versions,
     entitlements,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession

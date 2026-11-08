@@ -170,6 +170,8 @@ export function createCloudflareCloud(configSource: string) {
           relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
           onDocumentRestored: (documentId) =>
             runInBackground(relayFor(c.env, documentId).startOver(documentId)),
+          onDocumentTakenDown: (documentId) =>
+            runInBackground(relayFor(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
             runInBackground(relayFor(c.env, documentId).announceVersions(documentId)),
           reportError: services.reporter

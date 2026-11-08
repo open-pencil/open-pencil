@@ -15,6 +15,7 @@ import {
   createTab,
   getActiveStore,
   getTabsSnapshot,
+  onTabDocumentReplaced,
   openFileInNewTab,
   showNewTab,
   restoreRecoverySnapshot,
@@ -256,6 +257,16 @@ describe('openFileInNewTab deduplication', () => {
     expect(getActiveStore() === draft).toBe(false)
     expect(draft.getRecoveryId()).toBe('draft')
     resetRecoveryStoreForTests()
+  })
+
+  test('tells listeners when an untouched tab takes another document', async () => {
+    const untouched = getActiveStore()
+    const replaced: unknown[] = []
+    const { off } = onTabDocumentReplaced((store) => replaced.push(store))
+    await settleFileOpen(openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/reused.fig'))
+    off()
+    expect(getActiveStore() === untouched).toBe(true)
+    expect(replaced.includes(untouched)).toBe(true)
   })
 
   test('opens a file from Home in a tab of its own, leaving Home as it is', async () => {

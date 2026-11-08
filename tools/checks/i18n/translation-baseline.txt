@@ -426,6 +426,7 @@ it:cloudPortal.emailTransportSMTP
 it:cloudPortal.emailTransportCloudflare
 it:cloudPortal.emailKindOther
 it:cloudPortal.pictureZoom
+it:cloudPortal.reportReasonCopyright
 de:cloudPortal.columnStatus
 de:cloudPortal.productName
 de:cloudPortal.name
@@ -455,6 +456,8 @@ fr:cloudPortal.deploymentOfficial
 fr:cloudPortal.emailTransportSMTP
 fr:cloudPortal.emailTransportCloudflare
 fr:cloudPortal.pictureZoom
+fr:cloudPortal.filterDocuments
+fr:cloudPortal.columnDocument
 ja:cloudPortal.productName
 ja:cloudPortal.emailPlaceholder
 ja:cloudPortal.providerGoogle
@@ -503,6 +506,7 @@ it:cloud.roleEditor
 it:cloud.homeAccount
 it:cloud.homeCloudOnHost
 it:cloud.settingsTitle
+it:cloud.reportReasonCopyright
 it:shapes.engFile
 ja:cloud.productName
 ja:cloud.homeCloudOnHost
@@ -516,6 +520,7 @@ de:cloud.saveName
 de:cloud.homeCloudOnHost
 de:cloud.inviteEmailPlaceholder
 de:cloud.settingsTitle
+de:cloud.reportDetails
 de:shapes.ellipse
 de:shapes.plus
 de:shapes.chevron

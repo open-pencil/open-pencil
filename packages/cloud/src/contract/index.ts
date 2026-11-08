@@ -214,3 +214,12 @@ export {
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export {
+  DOCUMENT_REPORT_DESCRIPTION_MAX,
+  documentReportReasonSchema,
+  fileDocumentReportResponseSchema,
+  fileDocumentReportSchema,
+  parseFileDocumentReport,
+  type DocumentReportReason,
+  type FileDocumentReportInput
+} from './reports'
