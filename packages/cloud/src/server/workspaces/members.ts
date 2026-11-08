@@ -9,7 +9,7 @@ import type {
 } from '#cloud/contract'
 import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
-import { workspaceRoleCan, type WorkspaceAccessRequest } from '#cloud/server/auth/workspace-access'
+import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
 import {
@@ -147,7 +147,7 @@ export function createWorkspaceMemberService(
   async function requireAccess(
     userId: string,
     workspaceId: string,
-    request: WorkspaceAccessRequest
+    request: AccessRequest
   ): Promise<WorkspaceSummary> {
     const workspace = await membership(userId, workspaceId)
     if (!workspaceRoleCan(workspace.role, request)) throw new WorkspaceForbiddenError()

@@ -7,7 +7,7 @@ import type {
   SaveDocumentVersionInput,
   UpdateDocumentVersionInput
 } from '#cloud/contract'
-import { workspaceRoleCan } from '#cloud/server/auth/workspace-access'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'

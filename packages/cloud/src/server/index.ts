@@ -45,10 +45,14 @@ export {
   type CloudSessionResolver,
   type AccountAuthenticationService,
   type AuthenticationEmailService,
-  workspaceAccessControl,
+  accessControl,
+  accessStatements,
+  documentRoleCan,
+  documentRoles,
   workspaceRoleCan,
   workspaceRoles,
-  workspaceStatements
+  type AccessRequest,
+  type DocumentRole
 } from './auth'
 export {
   createCloudAPIRouter,
