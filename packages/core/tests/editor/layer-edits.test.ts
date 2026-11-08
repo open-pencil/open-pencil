@@ -202,6 +202,12 @@ describe('layers the host lets only move', () => {
     expect(() => editor.asHost(() => editor.setOpacity(0.5))).toThrow(ReadOnlyDocumentError)
   })
 
+  test('runs only synchronous host edits', () => {
+    const { editor } = movable()
+    const ran = () => editor.asHost(async () => undefined)
+    expect(ran).toThrow(TypeError)
+  })
+
   test('undo stops at the changes made before layers could only move', () => {
     const editor = createEditor()
     const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {

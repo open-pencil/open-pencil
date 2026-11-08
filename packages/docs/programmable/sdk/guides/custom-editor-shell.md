@@ -133,7 +133,8 @@ editor.setHostRestrictions({ layerEdits: 'none' })
 editor.setHostRestrictions({ layerEdits: 'move' })
 
 // The host's own edits run past its restrictions, which narrow what the person does; a read-only
-// document still refuses them. Undo takes them back like any other step.
+// document still refuses them. Undo takes them back like any other step. They run synchronously:
+// await outside `asHost`, not inside it.
 editor.asHost(() => editor.booleanOperationSelected('UNION'))
 
 // Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or

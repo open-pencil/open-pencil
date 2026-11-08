@@ -45,6 +45,15 @@ export class MoveOnlyLayersError extends RefusedEditError {
   }
 }
 
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'then' in value &&
+    typeof value.then === 'function'
+  )
+}
+
 /** Whether an update changes nothing but where a layer is. */
 function movesOnly(args: readonly unknown[]): boolean {
   const changes = args[1]
@@ -198,14 +207,21 @@ export function createReadOnlyActions(
    * Runs the host's own edit past its restrictions, which narrow what the person does on the
    * canvas, with keys, and in panels: a game whose pieces only move still combines them from its
    * own buttons. A read-only document still refuses it. The edit is undone like any other.
+   * It runs synchronously: past an await the person's input could run unrestricted too, so a
+   * callback that returns a promise throws, and its edits after the first await are refused.
    */
   function asHost<T>(run: () => T): T {
     hostDepth++
+    let result: T
     try {
-      return run()
+      result = run()
     } finally {
       hostDepth--
     }
+    if (isThenable(result)) {
+      throw new TypeError('asHost runs synchronous edits only; await outside it and call it again')
+    }
+    return result
   }
 
   /** The profile restrictions are judged by: the host's own edits run as if unrestricted. */
