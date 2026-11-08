@@ -462,6 +462,35 @@ describe('writing an edited document into its archive', () => {
     expect(instances(after).some(addressesBody)).toBe(false)
   })
 
+  test("writes a page's variable mode into its record, and clears it", async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const collection = source.createCollection('Theme')
+    const darkId = expectDefined(source.createMode(collection.id, 'Dark'), 'dark mode')
+    source.createNode('RECTANGLE', source.getPages()[0].id, { name: 'Card' })
+    const bytes = await exportFigFile(source)
+
+    const pageModes = async (saved: Uint8Array) => (await open(saved)).getPages()[0].variableModes
+    const changedRecords = (before: Uint8Array, after: Uint8Array) => {
+      const saved = recordsOf(before)
+      return [...recordsOf(after)].flatMap(([guid, record]) =>
+        isEqual(saved.get(guid), record) ? [] : [record.type]
+      )
+    }
+
+    const graph = await open(bytes)
+    graph.updateNode(graph.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    const dark = await exportFigFile(graph)
+    expect(changedRecords(bytes, dark)).toEqual(['CANVAS'])
+    expect(await pageModes(dark)).toEqual({ [collection.id]: darkId })
+
+    const reopened = await open(dark)
+    reopened.updateNode(reopened.getPages()[0].id, { variableModes: {} })
+    const cleared = await exportFigFile(reopened)
+    expect(changedRecords(dark, cleared)).toEqual(['CANVAS'])
+    expect(await pageModes(cleared)).toEqual({})
+  })
+
   test('rewrites the variables when one changes', async () => {
     const { patched } = await exportBothWays((graph) => {
       const [variable] = graph.variables.values()

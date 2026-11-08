@@ -1,0 +1,1 @@
+- A page's variable mode is saved in `.fig` files, and so is clearing it, where saving dropped it.
