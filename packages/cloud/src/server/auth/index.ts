@@ -14,4 +14,10 @@ export {
   type CloudSessionResolver
 } from './session'
 export type { CloudIdentity } from './adapter'
-export { workspaceAccessControl, workspaceRoles, workspaceStatements } from './workspace-access'
+export {
+  workspaceAccessControl,
+  workspaceRoleCan,
+  workspaceRoles,
+  workspaceStatements,
+  type WorkspaceAccessRequest
+} from './workspace-access'
