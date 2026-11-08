@@ -1,9 +1,8 @@
+import type { SceneGraph } from './graph'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { ConstraintType, SceneNode } from './types'
 
-interface ConstraintGraph {
-  getNode(id: string): SceneNode | undefined
-}
+type ConstraintGraph = Pick<SceneGraph, 'getNode' | 'closest'>
 
 /** Containers whose children keep their place by their own constraints when they resize. */
 export const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
@@ -21,11 +20,13 @@ export const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set<S
  */
 export function constraintFrame(graph: ConstraintGraph, node: SceneNode): SceneNode | null {
   let layer = node
-  let parent = node.parentId ? graph.getNode(node.parentId) : undefined
-  while (parent && FITTED_CONTAINER_TYPES.has(parent.type)) {
-    layer = parent
-    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
-  }
+  const parent = node.parentId
+    ? graph.closest(node.parentId, (ancestor) => {
+        if (!FITTED_CONTAINER_TYPES.has(ancestor.type)) return true
+        layer = ancestor
+        return false
+      })
+    : undefined
   if (!parent || !CONSTRAINT_PARENT_TYPES.has(parent.type)) return null
   if (parent.layoutMode !== 'NONE' && layer.layoutPositioning !== 'ABSOLUTE') return null
   return parent

@@ -23,14 +23,12 @@ function frameAround(
   parent: SceneNode
 ): { frame: SceneNode; toFrame: Mat3 } | null {
   let toFrame = Matrix.identity()
-  let node = parent
-  while (FITTED_CONTAINER_TYPES.has(node.type)) {
+  const frame = graph.closest(parent.id, (node) => {
+    if (!FITTED_CONTAINER_TYPES.has(node.type)) return true
     toFrame = Matrix.multiply(getNodeLocalMatrix(node), toFrame)
-    const next = node.parentId ? graph.getNode(node.parentId) : undefined
-    if (!next) return null
-    node = next
-  }
-  return { frame: node, toFrame }
+    return false
+  })
+  return frame ? { frame, toFrame } : null
 }
 
 /**
@@ -38,6 +36,7 @@ function frameAround(
  * instance's frame has another size than the component's, as Figma resizes an instance. A group
  * or boolean owns no constraints: it keeps the component's place, and a layer in it is placed in
  * the frame around it and written back in the copy's group, which `fitCopiedGroup` then fits.
+ * Returns `source` itself when the layer stays where the component's is.
  */
 export function placedByConstraints(
   graph: SceneGraph,
@@ -67,7 +66,11 @@ export function placedByConstraints(
   )
   const back = Matrix.invert(inst.toFrame)
   const position = back ? Matrix.mapPoint(back, box) : box
-  return { ...source, ...box, ...position, ...flipChanges(source, source, flipsX, flipsY) }
+  const placed = { ...source, ...box, ...position, ...flipChanges(source, source, flipsX, flipsY) }
+  const moved = [...PLACEMENT_FIELDS].some(
+    (key) => placed[key as keyof SceneNode] !== source[key as keyof SceneNode]
+  )
+  return moved ? placed : source
 }
 
 /** Fits a copied group or boolean to its layers after the sync placed them by their constraints. */
