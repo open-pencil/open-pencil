@@ -1,12 +1,9 @@
 import {
-  Align,
   Direction,
   Display,
-  FlexDirection,
   Gutter,
   MeasureMode,
   Overflow,
-  Wrap,
   type Node as YogaNode
 } from 'yoga-layout'
 
@@ -24,9 +21,8 @@ import {
 } from './layout/axis-sizing'
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
-import { setFlowEdges } from './layout/flow-edges'
+import { insertFlowBox, setFlexFlow, setFlowEdges } from './layout/flow-edges'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { primaryAxisGap } from './layout/item-spacing'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
@@ -54,10 +50,8 @@ import {
   configureNonTextLeaf,
   createYogaNode,
   freeYogaTree,
-  mapAlign,
   mapAlignSelf,
   mapGridTrack,
-  mapJustify,
   parentStretchedAxis,
   setLayoutPadding
 } from './layout/yoga-helpers'
@@ -215,6 +209,7 @@ function insertFlexChildren(
   graph: SceneGraph,
   direction: 'LTR' | 'RTL'
 ): void {
+  const box = insertFlowBox(yogaParent, parent)
   const flow: YogaNode[] = []
   for (const node of graph.getChildren(parent.id)) {
     const child = asLaidOutIn(graph, node, parent)
@@ -229,9 +224,9 @@ function insertFlexChildren(
       flow.push(yogaChild)
     }
 
-    yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
+    box.insertChild(yogaChild, box.getChildCount())
   }
-  setFlowEdges(yogaParent, parent, flow, direction)
+  setFlowEdges(yogaParent, box, parent, flow, direction)
 }
 
 function configureInFlowChild(
@@ -256,30 +251,9 @@ function configureFlexContainer(
   direction: Exclude<SceneNode['layoutDirection'], 'AUTO'>
 ): void {
   yogaNode.setDirection(direction === 'RTL' ? Direction.RTL : Direction.LTR)
-  yogaNode.setFlexDirection(
-    node.layoutMode === 'HORIZONTAL' ? FlexDirection.Row : FlexDirection.Column
-  )
-  yogaNode.setFlexWrap(node.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
-  yogaNode.setJustifyContent(mapJustify(node.primaryAxisAlign))
-  yogaNode.setAlignItems(mapAlign(node.counterAxisAlign))
+  setFlexFlow(yogaNode, node)
   if (node.clipsContent) yogaNode.setOverflow(Overflow.Hidden)
-
-  if (node.layoutWrap === 'WRAP' && node.counterAxisAlignContent === 'SPACE_BETWEEN') {
-    yogaNode.setAlignContent(Align.SpaceBetween)
-  }
-
   setLayoutPadding(yogaNode, node)
-
-  const primaryGap = primaryAxisGap(node)
-  yogaNode.setGap(
-    Gutter.Column,
-    node.layoutMode === 'HORIZONTAL' ? primaryGap : node.counterAxisSpacing
-  )
-  yogaNode.setGap(
-    Gutter.Row,
-    node.layoutMode === 'HORIZONTAL' ? node.counterAxisSpacing : primaryGap
-  )
-
   applyMinMaxConstraints(yogaNode, node)
 }
 

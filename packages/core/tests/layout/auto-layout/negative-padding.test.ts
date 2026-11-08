@@ -170,16 +170,60 @@ describe('negative auto layout padding moves children past the frame edge', () =
   })
 })
 
-describe('a wrapping frame lays negative padding out as none', () => {
-  test('its first child stays at the frame’s corner', () => {
+const FOUR_SQUARES = [
+  [40, 40],
+  [40, 40],
+  [40, 40],
+  [40, 40]
+] as const
+
+function fixedWrap(spacing: Pick<Partial<SceneNode>, 'itemSpacing' | 'counterAxisSpacing'> = {}) {
+  return {
+    ...fixed('HORIZONTAL', 100, 100),
+    layoutWrap: 'WRAP',
+    itemSpacing: 0,
+    ...spacing
+  } satisfies Partial<SceneNode>
+}
+
+function positions(children: readonly SceneNode[]) {
+  return children.map((child) => [child.x, child.y])
+}
+
+describe('a wrapping frame wraps its rows in the box its negative padding grows', () => {
+  test('its first row starts past the top-left corner', () => {
     const { children } = frameWith(
       { ...fixed('HORIZONTAL', 100, 50), layoutWrap: 'WRAP', itemSpacing: 0 },
       { paddingLeft: -10, paddingTop: -8 },
       TWO_SQUARES
     )
-    expect(children.map((child) => [child.x, child.y])).toEqual([
-      [0, 0],
-      [20, 0]
+    expect(positions(children)).toEqual([
+      [-10, -8],
+      [10, -8]
+    ])
+  })
+
+  test('a row fits as many children as the widened box holds', () => {
+    const { children } = frameWith(
+      fixedWrap({ counterAxisSpacing: 4 }),
+      { paddingLeft: -10, paddingRight: -10, paddingTop: -5, paddingBottom: -5 },
+      FOUR_SQUARES
+    )
+    expect(positions(children)).toEqual([
+      [-10, -5],
+      [30, -5],
+      [70, -5],
+      [-10, 39]
+    ])
+  })
+
+  test('every row starts past a negative left padding, next to a negative gap', () => {
+    const { children } = frameWith(fixedWrap({ itemSpacing: -10 }), { paddingLeft: -10 }, FOUR_SQUARES)
+    expect(positions(children)).toEqual([
+      [-10, 0],
+      [20, 0],
+      [50, 0],
+      [-10, 40]
     ])
   })
 })
