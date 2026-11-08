@@ -240,3 +240,29 @@ test('syncing places copies by their constraints, exactly, and keeps them turned
   const barCopy = must(graph.getChildren(narrow.id)[1], 'bar copy')
   expect(barCopy).toMatchObject({ x: 0, y: 31, width: 10, height: 10, flipX: true })
 })
+
+test('a boolean in a resized instance keeps its box when its constraints keep its operands', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const card = graph.createNode('COMPONENT', page, { name: 'Card', width: 300, height: 220 })
+  // A subtraction whose result is smaller than its operands' bounds, which only the renderer knows.
+  const boolean = graph.createNode('BOOLEAN_OPERATION', card.id, {
+    x: 40,
+    y: 40,
+    width: 30,
+    height: 60,
+    booleanOperation: 'SUBTRACT'
+  })
+  graph.createNode('RECTANGLE', boolean.id, { width: 60, height: 60 })
+  graph.createNode('RECTANGLE', boolean.id, { x: 30, width: 30, height: 60 })
+  const instance = must(graph.createInstance(card.id, page), 'instance')
+  for (const field of ['width', 'height'])
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, field)
+  graph.updateNode(instance.id, { width: 400, height: 300 })
+
+  graph.updateNode(card.id, { opacity: 0.9 })
+  graph.syncInstances(card.id)
+
+  const copy = must(graph.getChildren(instance.id)[0], 'boolean copy')
+  expect([copy.x, copy.y, copy.width, copy.height]).toEqual([40, 40, 30, 60])
+})
