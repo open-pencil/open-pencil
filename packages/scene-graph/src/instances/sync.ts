@@ -10,7 +10,11 @@ import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
-import { effectBindingTarget, isNumericVariableBindingField } from '../variables/fields'
+import {
+  effectBindingTarget,
+  isNumericVariableBindingField,
+  paintBindingTarget
+} from '../variables/fields'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -84,9 +88,12 @@ export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string
   }
   return (field) => {
     if (fields.has(field)) return true
-    // Effects an instance set itself own their bindings too, bound or not, as its fills do.
+    // Paints and effects an instance set itself own their bindings too, bound or not.
     const binding = overriddenBindingField(field)
-    return binding !== null && fields.has('effects') && effectBindingTarget(binding) !== null
+    if (binding === null) return false
+    const paint = paintBindingTarget(binding)
+    if (paint) return fields.has(paint.list)
+    return fields.has('effects') && effectBindingTarget(binding) !== null
   }
 }
 

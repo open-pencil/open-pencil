@@ -202,7 +202,7 @@ describe('a path the host keeps open', () => {
     editor.nodeEditDeleteSelected()
     expect(editor.graph.getNode(vector.id)).toBeDefined()
     expect(editor.state.nodeEditState?.vertices).toHaveLength(3)
-    expect(editor.state.nodeEditState?.history).toEqual([])
+    expect(editor.undo.canUndo).toBe(false)
   })
 
   test('is not left for the pen', () => {

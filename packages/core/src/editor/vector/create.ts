@@ -1,41 +1,29 @@
 import type { EditorContext } from '#core/editor/types'
 
 import { createVectorEditHandleActions } from './handles/actions'
-import { createVectorEditHistoryActions } from './history'
 import { createVectorEditLifecycle } from './lifecycle'
 import { createVectorEditNetworkActions, getLiveNetwork, setNodeEditNetwork } from './network'
 import { createVectorEditSelectionActions } from './selection'
 import type { VectorEditActionDeps } from './types'
 
 /**
- * Vector edit mode: a VECTOR layer's path edited point by point, with its own undo history,
- * committed to the document as one undo step when the session ends.
+ * Vector edit mode: a VECTOR layer's path edited point by point. Opening it, each change, and
+ * leaving it are steps of the document's undo history, as in Figma.
  */
 export function createVectorEditActions(ctx: EditorContext, actions: VectorEditActionDeps) {
-  const { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode } =
+  const { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode, history } =
     createVectorEditLifecycle(ctx, actions)
   const {
     nodeEditSelectVertex,
     nodeEditAlignVertices,
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex
-  } = createVectorEditSelectionActions(ctx, actions, exitNodeEditMode)
+  } = createVectorEditSelectionActions(ctx, actions, exitNodeEditMode, history)
 
   const { nodeEditSetHandle, nodeEditBendHandle, nodeEditZeroVertexHandles } =
-    createVectorEditHandleActions(ctx, getNodeEditState)
-  const { nodeEditPushHistory, nodeEditUndo, nodeEditRedo } = createVectorEditHistoryActions(ctx)
+    createVectorEditHandleActions(ctx, getNodeEditState, history)
   const { nodeEditConnectEndpoints, nodeEditAddVertex, nodeEditRemoveVertex } =
-    createVectorEditNetworkActions(ctx, getNodeEditState)
-
-  function cancelNodeEditDrag() {
-    const editState = getNodeEditState()
-    if (!editState) return
-    const previous = editState.history.at(-1)
-    if (!previous) return
-    setNodeEditNetwork(editState, previous)
-    editState.history.pop()
-    ctx.requestRender()
-  }
+    createVectorEditNetworkActions(ctx, getNodeEditState, history)
 
   return {
     getNodeEditState,
@@ -47,7 +35,7 @@ export function createVectorEditActions(ctx: EditorContext, actions: VectorEditA
     },
     nodeEditCancelDrag: () => {
       const editState = getNodeEditState()
-      if (editState) cancelNodeEditDrag()
+      if (editState) history.cancel(editState)
     },
     enterNodeEditMode,
     exitNodeEditMode,
@@ -61,8 +49,10 @@ export function createVectorEditActions(ctx: EditorContext, actions: VectorEditA
     nodeEditAlignVertices,
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex,
-    nodeEditPushHistory,
-    nodeEditUndo,
-    nodeEditRedo
+    /** Commits the change before and marks where the next one starts, as a press on the path does. */
+    nodeEditPushHistory: () => {
+      const editState = getNodeEditState()
+      if (editState) history.begin(editState)
+    }
   }
 }

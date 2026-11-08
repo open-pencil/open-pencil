@@ -142,18 +142,23 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
   // This peer's own writes are already in its graph.
   function onVariables(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
     if (transaction.local) return
-    const ids = receive(yvariables, graph().variables, isVariable, events, (id) =>
-      graph().willChangeVariable(id)
-    )
-    if (ids.size > 0) settle(ids, new Set())
+    // A collaborator's change is never an edit in progress here, such as an agent's.
+    graph().runOutsideEdits(() => {
+      const ids = receive(yvariables, graph().variables, isVariable, events, (id) =>
+        graph().willChangeVariable(id)
+      )
+      if (ids.size > 0) settle(ids, new Set())
+    })
   }
 
   function onCollections(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
     if (transaction.local) return
-    const ids = receive(ycollections, graph().variableCollections, isCollection, events, (id) =>
-      graph().willChangeCollection(id)
-    )
-    if (ids.size > 0) settle(new Set(), ids)
+    graph().runOutsideEdits(() => {
+      const ids = receive(ycollections, graph().variableCollections, isCollection, events, (id) =>
+        graph().willChangeCollection(id)
+      )
+      if (ids.size > 0) settle(new Set(), ids)
+    })
   }
 
   yvariables.observeDeep(onVariables)

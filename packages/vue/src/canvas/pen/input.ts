@@ -47,6 +47,8 @@ export function startPenInput(
     return true
   }
 
+  // Each press, with its drag, is one undo step.
+  editor.penPushHistory()
   const press = { x: cx, y: cy }
   const penState = editor.state.penState
   if (penState && penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
