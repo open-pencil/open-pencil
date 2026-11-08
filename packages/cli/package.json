@@ -44,7 +44,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@open-pencil/canvaskit": "^0.1.0",
+    "@open-pencil/canvaskit": "workspace:*",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/mcp": "workspace:*",

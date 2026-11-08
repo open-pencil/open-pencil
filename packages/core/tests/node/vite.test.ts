@@ -88,8 +88,11 @@ describe('openPencil Vite plugin', () => {
   }, 60_000)
 
   test('leaves the page alone without injection, and the app imports the module itself', async () => {
+    // CanvasKit emits its own wasm, which it finds beside its module; the install module adds the
+    // fonts and points Core at every file.
     const alone = await buildPage({ inject: false })
-    expect(assetNames(alone).some((name) => name.includes('canvaskit'))).toBe(false)
+    expect(assetNames(alone).some((name) => name.includes('InterVariable'))).toBe(false)
+    expect(code(alone)).not.toContain('setBundledFontLocator')
 
     const imported = await buildPage(
       { inject: false },

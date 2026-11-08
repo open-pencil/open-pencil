@@ -12,7 +12,7 @@ import emojiMetrics from '#core-assets/OpenPencilEmojiMetrics-Regular.ttf?url'
  * loads Core behind a gate of its own imports it there instead. Its `?url` imports stay as written in
  * `dist`, so the app's Vite resolves them, the fonts through Core's `#core-assets` import.
  */
-import canvasKit from '@open-pencil/canvaskit/bin/canvaskit.wasm?url'
+import canvasKit from '@open-pencil/canvaskit/dist/canvaskit.wasm?url'
 
 import { setCanvasKitLocator } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'

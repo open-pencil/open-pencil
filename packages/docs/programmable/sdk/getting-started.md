@@ -40,7 +40,7 @@ With another bundler, serve these files and point Core at them before the canvas
 
 | File | Comes from | Point Core at it with |
 | --- | --- | --- |
-| `canvaskit.wasm` | `@open-pencil/canvaskit/bin/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
+| `canvaskit.wasm` | `@open-pencil/canvaskit/dist/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
 | Bundled fonts (`*.ttf`, `*.woff2`) | `@open-pencil/core/assets/` | `fontManager.setBundledFontLocator` from `@open-pencil/core/text` |
 
 Without a locator, Core requests each file from the site root, such as `/canvaskit.wasm`. When a file is missing there, the error names it and the locator to set.
