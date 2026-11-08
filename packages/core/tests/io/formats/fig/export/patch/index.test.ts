@@ -18,19 +18,19 @@ import {
 } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { setDefaultMode } from '@open-pencil/scene-graph/variables'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { reconcileVariableLayouts } from '#core/layout/variables'
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {
   hasPendingReaderPages,
   populateFigInternalPages
 } from '#core/kiwi/fig/session/document-state'
+import { reconcileVariableLayouts } from '#core/layout/variables'
 
 setDefaultTimeout(60_000)
 
@@ -550,11 +550,11 @@ describe('writing an edited document into its archive', () => {
     const left = await open(panelDark)
     const inner = left.createNode('FRAME', layerNamed(left, 'Holder').id, { name: 'Inner' })
     left.reparentNode(layerNamed(left, 'On page').id, inner.id)
-    left.updateNode(layerNamed(left, 'Holder').id, { variableModes: { [collection.id]: lightId } })
-    left.updateNode(left.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    setMode(left, layerNamed(left, 'Holder').id, { [collection.id]: lightId })
+    setMode(left, left.getPages()[0].id, { [collection.id]: darkId })
     const saved = await open(await exportFigFile(left))
     expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    saved.updateNode(layerNamed(saved, 'Holder').id, { variableModes: { [collection.id]: darkId } })
+    setMode(saved, layerNamed(saved, 'Holder').id, { [collection.id]: darkId })
     saved.reparentNode(layerNamed(saved, 'Inner').id, saved.getPages()[0].id)
     expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
 
