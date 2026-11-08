@@ -187,12 +187,14 @@ describe('resuming collaboration peers', () => {
   test('drops a message whose sender’s ticket lapsed while the room loaded', async () => {
     const memory = memoryStateStore()
     let release: (() => void) | undefined
+    let loading = false
     const loaded = new Promise<void>((resolve) => {
       release = resolve
     })
     const hub = hubOver({
       ...memory.store,
       async load(room) {
+        loading = true
         await loaded
         return memory.store.load(room)
       }
@@ -205,7 +207,7 @@ describe('resuming collaboration peers', () => {
         roomEpoch: 0,
         permission: 'edit',
         principal: user('alice'),
-        expiresAt: Date.now() + 200
+        expiresAt: Date.now() + 500
       },
       presenceClients: []
     }
@@ -216,7 +218,10 @@ describe('resuming collaboration peers', () => {
       target: RELAY_SERVER_PEER,
       payload: Y.encodeStateVector(new Y.Doc())
     })
-    await Bun.sleep(300)
+    // The message passed the ticket check and started the load; only then does the ticket lapse.
+    await until(() => loading)
+    expect(resumed.closed).toBeNull()
+    await Bun.sleep(Math.max(0, state.authorization.expiresAt - Date.now()) + 20)
     release?.()
     await until(() => resumed.closed !== null)
     expect(resumed.closed?.code).toBe(RELAY_CLOSE.expired)
