@@ -94,7 +94,7 @@ describe('icon glyphs', () => {
     swapIcon(
       graph,
       frame.id,
-      buildIconData({ body: MINUS, width: 24, height: 24 }, 'test', 'minus', 48)
+      buildIconData({ body: MINUS, width: 24, height: 24 }, 'test', 'minus', 24)
     )
     expect(line()).toEqual({ height: 0, ends: [10, 38] })
   })
