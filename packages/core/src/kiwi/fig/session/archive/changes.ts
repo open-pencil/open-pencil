@@ -80,8 +80,15 @@ export function trackArchiveChanges(graph: SceneGraph): void {
     collections: collectionsSnapshot(graph),
     settings: settingsSnapshot(graph)
   }
+  // A variable's new values reach the layers using it, which the patch writes from the variables
+  // they use; they are no edit of the components holding them.
   const touch = (id: string) => {
-    if (!graph.isApplyingImportedState && !graph.isApplyingDerivedLayout) entry.touched.add(id)
+    if (
+      !graph.isApplyingImportedState &&
+      !graph.isApplyingDerivedLayout &&
+      !graph.isApplyingVariableResults
+    )
+      entry.touched.add(id)
   }
   const edits = () => !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout
   graph.observeNodeChanges({

@@ -1,19 +1,19 @@
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
 import { pixelLength } from '../text/lengths'
-import type { Effect, Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
+import type { Effect, SceneNode, StyleRun, TextLength } from '../types'
 import {
   effectBindableProperties,
   effectBindingTarget,
   NUMERIC_FIELDS,
   isNumericVariableBindingField,
-  paintBindingTarget,
   type EffectBindingProperty
 } from './fields'
+import { refreshBoundPaints } from './paints'
+import { collectionsResolving } from './resolution'
 import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
 export {
@@ -153,42 +153,6 @@ function boundVariableIds(node: SceneNode): string[] {
   ].filter((id): id is string => typeof id === 'string')
 }
 
-/**
- * A bound paint takes its whole color from the variable, alpha included, the way Figma stores
- * it: the variable's RGB at full alpha, and its alpha as the paint's opacity.
- */
-function applyBoundColor(paint: Fill | Stroke, color: Color): void {
-  paint.color = { ...color, a: 1 }
-  paint.opacity = color.a
-}
-
-/** The fills and strokes a node's color bindings resolve to in its mode, when it has any. */
-export function resolvedPaintBindings(
-  graph: SceneGraph,
-  node: SceneNode
-): Pick<Partial<SceneNode>, 'fills' | 'strokes'> {
-  // Most nodes bind nothing, so no copy is made until a paint binding is actually found.
-  const changes: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
-  for (const field in node.boundVariables) {
-    if (!field.endsWith('/color')) continue
-    const paint = paintBindingTarget(field)
-    if (!paint) continue
-    const color = graph.resolveColorVariableForNode(node.id, node.boundVariables[field])
-    const { index } = paint
-    if (!color) continue
-    if (paint.list === 'fills') {
-      if (!node.fills[index]) continue
-      changes.fills ??= copyFills(node.fills)
-      applyBoundColor(changes.fills[index], color)
-    } else {
-      if (!node.strokes[index]) continue
-      changes.strokes ??= copyStrokes(node.strokes)
-      applyBoundColor(changes.strokes[index], color)
-    }
-  }
-  return changes
-}
-
 /** `effect` with one bound property set to its variable's value; a colour keeps its alpha. */
 function withBoundEffectValue(
   effect: Effect,
@@ -281,19 +245,7 @@ function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneNode[] {
  * those the bound variables alias, so a mode set on the subtrees can change what they show.
  */
 export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): Set<string> {
-  const pending = subtreeNodes(graph, roots).flatMap(boundVariableIds)
-  const seen = new Set<string>()
-  const collections = new Set<string>()
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    if (seen.has(id)) continue
-    seen.add(id)
-    const variable = graph.variables.get(id)
-    if (!variable) continue
-    collections.add(variable.collectionId)
-    for (const value of Object.values(variable.valuesByMode))
-      pending.push(...variableValueReferences(value))
-  }
-  return collections
+  return collectionsResolving(graph, subtreeNodes(graph, roots).flatMap(boundVariableIds))
 }
 
 /**
@@ -335,26 +287,34 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
 }
 
 /**
- * Resolve live numeric, text, visibility, and effect bindings, numbers in scene units, without
+ * Resolve live numeric, text, visibility, and effect bindings, numbers in scene units, and refresh
+ * bound paints whose variable's color for the layer changed (`refreshBoundPaints`), without
  * authoring instance overrides. A scope limits it to the layers a change can reach, so layers whose
  * saved values differ from their bindings elsewhere in the document are left as saved. Returns the
- * layers whose change needs a layout pass; effects are not a layout input, so an effect-only change
- * is written but not returned.
+ * layers whose change needs a layout pass; effects and paints are not a layout input, so a change
+ * to them alone is written but not returned.
  */
 export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
   return [...reconcileVariableBindingUpdates(graph, scope).keys()]
 }
 
 /**
- * As `reconcileVariableBindings`, with the layout fields each relaid layer received. Effects
- * are written too, but draw without layout, so a layer whose only change is an effect is left out.
+ * As `reconcileVariableBindings`, with the layout fields each relaid layer received. Effects and
+ * paints are written too, but draw without layout, so a layer whose only change is one is left out.
  */
 export function reconcileVariableBindingUpdates(
   graph: SceneGraph,
   scope?: BindingScope
 ): Map<string, Partial<SceneNode>> {
   const relaid = new Map<string, Partial<SceneNode>>()
-  for (const node of scopedNodes(graph, scope)) {
+  const nodes = [...scopedNodes(graph, scope)]
+  // A variable's new value refreshes the paints of every layer using it, each by itself.
+  const refreshPaints = () => {
+    for (const node of nodes) refreshBoundPaints(graph, node)
+  }
+  if (scope && 'variables' in scope) graph.applyVariableResultsDuring(refreshPaints)
+  else refreshPaints()
+  for (const node of nodes) {
     const layoutUpdates = {
       ...resolvedNumericBindings(graph, node),
       ...resolvedValueBindings(graph, node),

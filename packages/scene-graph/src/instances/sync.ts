@@ -15,6 +15,7 @@ import {
   isNumericVariableBindingField,
   paintBindingTarget
 } from '../variables/fields'
+import { applyBoundPaintColorsIn, keepCopyBoundPaints } from '../variables/paints'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -208,6 +209,10 @@ export function updateSyncedProps(
   kept: (field: string) => boolean = () => false
 ): void {
   resolveBoundNumbersInPlace(graph, target, updates, kept)
+  if (updates.fills || updates.strokes || updates.boundVariables) {
+    applySyncedModes(graph, target, updates)
+    keepCopyBoundPaints(graph, target, updates)
+  }
   let changed: Partial<SceneNode> | undefined
   for (const key of Object.keys(updates)) {
     const current = target[key as keyof SceneNode]
@@ -248,11 +253,15 @@ function resolveBoundNumbersInPlace(
     (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
   )
   if (synced.length === 0) return
-  // The modes the copy takes in this sync decide what its bindings resolve to.
-  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
-    graph.updateNode(target.id, { variableModes: updates.variableModes })
+  applySyncedModes(graph, target, updates)
   const resolved = resolvedNumericBindings(graph, { ...target, ...updates })
   Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
+}
+
+/** The modes the copy takes in this sync decide what its bindings resolve to. */
+function applySyncedModes(graph: SceneGraph, target: SceneNode, updates: Partial<SceneNode>): void {
+  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
+    graph.updateNode(target.id, { variableModes: updates.variableModes })
 }
 
 export function cloneChildInCoordinates(
@@ -519,6 +528,7 @@ function placeMissingChildren(
       cloneChildrenWithMapping(graph, compChildId, clone.id)
     }
     applyEnclosingAssignments(graph, clone)
+    applyBoundPaintColorsIn(graph, clone.id)
     instChildMap.set(compChildId, clone)
     usedInstChildIds.add(clone.id)
     context.matched.add(clone.id)

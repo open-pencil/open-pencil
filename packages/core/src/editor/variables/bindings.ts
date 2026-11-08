@@ -3,7 +3,8 @@ import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import {
   variableBindingOwner,
-  isNumericVariableBindingField
+  isNumericVariableBindingField,
+  paintBindingTarget
 } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
@@ -21,9 +22,13 @@ export function createVariableBindingActions(ctx: EditorContext) {
     if (!node || (variableId === undefined && !(path in node.boundVariables))) return
     const previous = {
       boundVariables: { ...node.boundVariables },
-      variableBindingScales: { ...node.variableBindingScales },
-      ...(isNumericVariableBindingField(path) ? { [path]: node[path as keyof SceneNode] } : {})
+      variableBindingScales: { ...node.variableBindingScales }
     }
+    if (isNumericVariableBindingField(path))
+      Object.assign(previous, { [path]: node[path as keyof SceneNode] })
+    // Binding a paint gives it its variable's color, which undo takes back.
+    const paint = paintBindingTarget(path)
+    if (paint) Object.assign(previous, { [paint.list]: node[paint.list] })
     const owner = variableBindingOwner(ctx.graph, node)
     const nearest = findInstanceAncestor(ctx.graph, nodeId)
     const owners = new Map(
