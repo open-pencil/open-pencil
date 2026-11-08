@@ -30,6 +30,9 @@ export function panelDecimalsDriver(page: () => Page) {
       )
     },
 
+    /** The scene's layer ids. */
+    ids: () => Promise.resolve(scene()),
+
     /** The value of the variable a layer's field is bound to, or null when it is unbound. */
     boundValue(pick: (ids: SceneIds) => string, field: string) {
       return page().evaluate(

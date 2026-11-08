@@ -1,6 +1,7 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { panelDecimalsDriver } from '#tests/helpers/canvas/panel-decimals/driver'
 import { propertyField } from '#tests/helpers/properties'
+import { getNodeById } from '#tests/helpers/store'
 
 // Figma desktop (2026-11-08) shows X, Y, W, H, rotation, padding, and gap to two decimals, both
 // at rest and while a field is edited; the layer keeps its exact value.
@@ -25,6 +26,17 @@ test('position and size fields show two decimals', async () => {
 
   await scene.select((ids) => ids.turned)
   await expect(field('Rotation')).toHaveAttribute('aria-valuenow', /^-?30\.13$/)
+  editor.canvas.assertNoErrors()
+})
+
+test('a field left as it began keeps the layer’s exact value', async () => {
+  await scene.select((ids) => ids.measured)
+  const ids = await scene.ids()
+  await field('Height').focus()
+  await expect(field('Height')).toHaveValue('33.33')
+  await field('Height').press('Enter')
+  await editor.canvas.waitForRender()
+  expect((await getNodeById(editor.page, ids.measured))?.height).toBe(33.333333)
   editor.canvas.assertNoErrors()
 })
 
