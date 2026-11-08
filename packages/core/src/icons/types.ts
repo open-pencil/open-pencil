@@ -27,20 +27,6 @@ export type IconOption =
   | { key: string; name: string; min: number; max: number; default: number; step: number }
   | { key: string; name: string; values: readonly string[]; default: string }
 
-export interface IconifyIconEntry {
-  body: string
-  width?: number
-  height?: number
-}
-
-export interface IconifyResponse {
-  prefix: string
-  width?: number
-  height?: number
-  icons: { [key: string]: IconifyIconEntry | undefined }
-  aliases?: { [key: string]: { parent: string } | undefined }
-}
-
 export interface IconSearchResult {
   icons: string[]
   total: number
