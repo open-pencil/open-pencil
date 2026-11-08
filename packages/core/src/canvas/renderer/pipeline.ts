@@ -24,17 +24,16 @@ export function renderSceneToCanvas(
     | 'nodePaths'
     | 'editingTextId'
     | 'invalidateNodePicture'
-    | 'invalidateAllPictures'
     | 'images'
+    | 'nodePictures'
   >,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
 ): void {
   r.nodePaths.releaseUncached()
-  // Pictures are keyed by node ID, so an export graph cannot reuse or leave pictures for another graph.
+  // Pictures are keyed by node ID, so a foreign export gets a separate picture cache.
   const foreignGraph = r.images.memoryGraph !== graph
-  if (foreignGraph) r.invalidateAllPictures()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
   const editing = r.editingTextId
@@ -43,6 +42,8 @@ export function renderSceneToCanvas(
   // the edited text's picture is of its live layout, so it is dropped on the way in and out.
   r.editingTextId = null
   if (editing) r.invalidateNodePicture(editing)
+  const viewportNodePictures = foreignGraph ? new Map(r.nodePictures) : null
+  if (viewportNodePictures) r.nodePictures.clear()
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
     const pageNode = graph.getNode(pageId)
@@ -53,8 +54,12 @@ export function renderSceneToCanvas(
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
     r.editingTextId = editing
+    if (viewportNodePictures) {
+      for (const { picture } of r.nodePictures.values()) picture.delete()
+      r.nodePictures.clear()
+      for (const [id, picture] of viewportNodePictures) r.nodePictures.set(id, picture)
+    }
     if (editing) r.invalidateNodePicture(editing)
-    if (foreignGraph) r.invalidateAllPictures()
   }
 }
 

@@ -271,7 +271,10 @@ describe('renderer path caches', () => {
       const state = createDefaultEditorState(document.pageId)
       state.pageColor = { r: 1, g: 1, b: 1, a: 1 }
       renderer.renderFromEditorState(state, document.graph, null, 256, 256, false, 'scene')
-      expect(renderer.nodePictures.has('reused-effect-shape')).toBe(true)
+      const viewportPicture = expectDefined(
+        renderer.nodePictures.get('reused-effect-shape'),
+        'viewport effect picture'
+      )
 
       const canvas = renderer.surface.getCanvas()
       canvas.clear(ck.Color4f(1, 1, 1, 1))
@@ -279,7 +282,7 @@ describe('renderer path caches', () => {
       const pixels = surfacePixels(renderer)
 
       expect(pixelAt(pixels, 30, 30)).toEqual([0, 0, 255, 255])
-      expect(renderer.nodePictures.size).toBe(0)
+      expect(renderer.nodePictures.get('reused-effect-shape')).toBe(viewportPicture)
     })
   })
 
