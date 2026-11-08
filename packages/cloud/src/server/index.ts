@@ -45,9 +45,14 @@ export {
   type CloudSessionResolver,
   type AccountAuthenticationService,
   type AuthenticationEmailService,
-  workspaceAccessControl,
+  accessControl,
+  accessStatements,
+  documentRoleCan,
+  documentRoles,
+  workspaceRoleCan,
   workspaceRoles,
-  workspaceStatements
+  type AccessRequest,
+  type DocumentRole
 } from './auth'
 export {
   createCloudAPIRouter,
@@ -191,7 +196,11 @@ export {
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource
+  type CloudErrorSource,
+  createPostHogErrorReporter,
+  type ErrorReportContext,
+  type ErrorReporter,
+  type PostHogErrorReporterOptions
 } from './errors'
 export {
   createInternalRoutes,

@@ -9,6 +9,7 @@ import type {
 } from '#cloud/contract'
 import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
+import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
 import { spendInvitationBudget } from '#cloud/server/invitations'
@@ -144,9 +145,13 @@ export function createWorkspaceMemberService(
     return workspace
   }
 
-  async function requireAdmin(userId: string, workspaceId: string): Promise<WorkspaceSummary> {
+  async function requireAccess(
+    userId: string,
+    workspaceId: string,
+    request: AccessRequest
+  ): Promise<WorkspaceSummary> {
     const workspace = await membership(userId, workspaceId)
-    if (workspace.role !== 'admin') throw new WorkspaceForbiddenError()
+    if (!workspaceRoleCan(workspace.role, request)) throw new WorkspaceForbiddenError()
     return workspace
   }
 
@@ -176,7 +181,7 @@ export function createWorkspaceMemberService(
     workspaceId: string,
     input: CreateWorkspaceInvitationInput
   ): Promise<CreatedWorkspaceInvitation> {
-    const workspace = await requireAdmin(userId, workspaceId)
+    const workspace = await requireAccess(userId, workspaceId, { workspace: ['invite'] })
     const existing = await memberUsers(workspaceId)
       .select('workspaceMember.userId')
       .where((expression) =>
@@ -243,7 +248,7 @@ export function createWorkspaceMemberService(
 
   return {
     async rename(userId: string, workspaceId: string, name: string): Promise<WorkspaceSummary> {
-      await requireAdmin(userId, workspaceId)
+      await requireAccess(userId, workspaceId, { workspace: ['update'] })
       await database
         .updateTable('workspace')
         .set({ name, updatedAt: new Date() })
@@ -265,35 +270,34 @@ export function createWorkspaceMemberService(
         ])
         .orderBy('workspaceMember.createdAt')
         .execute()
-      const invitations =
-        workspace.role === 'admin'
-          ? await database
-              .selectFrom('workspaceInvitation')
-              .leftJoin('user', (join) =>
-                join.on((expression) =>
-                  expression(
-                    expression.cast(expression.ref('user.id'), 'text'),
-                    '=',
-                    expression.ref('workspaceInvitation.invitedBy')
-                  )
+      const invitations = workspaceRoleCan(workspace.role, { workspace: ['invite'] })
+        ? await database
+            .selectFrom('workspaceInvitation')
+            .leftJoin('user', (join) =>
+              join.on((expression) =>
+                expression(
+                  expression.cast(expression.ref('user.id'), 'text'),
+                  '=',
+                  expression.ref('workspaceInvitation.invitedBy')
                 )
               )
-              .select([
-                'workspaceInvitation.id',
-                'workspaceInvitation.emailNormalized',
-                'workspaceInvitation.role',
-                'workspaceInvitation.invitedAt',
-                'workspaceInvitation.expiresAt',
-                'workspaceInvitation.invitedBy',
-                'user.name as inviterName'
-              ])
-              .where('workspaceInvitation.workspaceId', '=', workspaceId)
-              .where('workspaceInvitation.acceptedAt', 'is', null)
-              .where('workspaceInvitation.revokedAt', 'is', null)
-              .where('workspaceInvitation.expiresAt', '>', new Date())
-              .orderBy('workspaceInvitation.invitedAt')
-              .execute()
-          : []
+            )
+            .select([
+              'workspaceInvitation.id',
+              'workspaceInvitation.emailNormalized',
+              'workspaceInvitation.role',
+              'workspaceInvitation.invitedAt',
+              'workspaceInvitation.expiresAt',
+              'workspaceInvitation.invitedBy',
+              'user.name as inviterName'
+            ])
+            .where('workspaceInvitation.workspaceId', '=', workspaceId)
+            .where('workspaceInvitation.acceptedAt', 'is', null)
+            .where('workspaceInvitation.revokedAt', 'is', null)
+            .where('workspaceInvitation.expiresAt', '>', new Date())
+            .orderBy('workspaceInvitation.invitedAt')
+            .execute()
+        : []
       return {
         members: members.map((member) => ({
           userId: member.userId,
@@ -315,7 +319,7 @@ export function createWorkspaceMemberService(
       workspaceId: string,
       invitationId: string
     ): Promise<CreatedWorkspaceInvitation> {
-      await requireAdmin(userId, workspaceId)
+      await requireAccess(userId, workspaceId, { workspace: ['invite'] })
       const invitation = await database
         .selectFrom('workspaceInvitation')
         .select(['emailNormalized', 'role'])
@@ -336,7 +340,7 @@ export function createWorkspaceMemberService(
       workspaceId: string,
       invitationId: string
     ): Promise<void> {
-      await requireAdmin(userId, workspaceId)
+      await requireAccess(userId, workspaceId, { workspace: ['invite'] })
       const result = await database
         .updateTable('workspaceInvitation')
         .set({ revokedAt: new Date() })
@@ -354,7 +358,7 @@ export function createWorkspaceMemberService(
       memberId: string,
       role: WorkspaceRole
     ): Promise<void> {
-      await requireAdmin(userId, workspaceId)
+      await requireAccess(userId, workspaceId, { workspace: ['manage-members'] })
       await database.transaction().execute(async (transaction) => {
         const member = await lockedMember(transaction, workspaceId, memberId)
         if (member.role === 'admin' && role !== 'admin') {
@@ -371,7 +375,7 @@ export function createWorkspaceMemberService(
 
     /** Deletes an empty workspace, with its members and invitations. */
     async delete(userId: string, workspaceId: string): Promise<void> {
-      await requireAdmin(userId, workspaceId)
+      await requireAccess(userId, workspaceId, { workspace: ['delete'] })
       await database.transaction().execute(async (transaction) => {
         // Locked first, so a document created meanwhile waits and then finds no workspace.
         await transaction
@@ -396,7 +400,7 @@ export function createWorkspaceMemberService(
     /** Removes a member, or lets someone leave; the last administrator cannot go. */
     async remove(userId: string, workspaceId: string, memberId: string): Promise<void> {
       if (memberId === userId) await membership(userId, workspaceId)
-      else await requireAdmin(userId, workspaceId)
+      else await requireAccess(userId, workspaceId, { workspace: ['manage-members'] })
       await database.transaction().execute(async (transaction) => {
         const member = await lockedMember(transaction, workspaceId, memberId)
         if (member.role === 'admin' && (await adminCount(transaction, workspaceId)) <= 1) {

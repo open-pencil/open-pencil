@@ -173,6 +173,7 @@ export function createVariableActions(ctx: EditorContext) {
       .map((vid) => ctx.graph.variables.get(vid))
       .filter((v): v is Variable => v != null)
       .map((v) => structuredClone(v))
+    const shown = ctx.graph.activeMode.get(id)
     ctx.graph.removeCollection(id)
     ctx.undo.push({
       label: 'Remove collection',
@@ -183,6 +184,7 @@ export function createVariableActions(ctx: EditorContext) {
       inverse: () => {
         ctx.graph.addCollection(snapshot)
         for (const v of variables) ctx.graph.addVariable(v)
+        if (shown) ctx.graph.setActiveMode(id, shown)
         refreshVariables(scope)
       }
     })
@@ -340,6 +342,7 @@ export function createVariableActions(ctx: EditorContext) {
     const modeIndex = collection.modes.indexOf(removedMode)
     const savedMode = structuredClone(removedMode)
     const wasDefault = collection.defaultModeId === modeId
+    const wasShown = ctx.graph.activeMode.get(collectionId) === modeId
     const valueSnapshots = new Map<string, VariableValue>()
     for (const varId of collection.variableIds) {
       const v = ctx.graph.variables.get(varId)
@@ -367,6 +370,7 @@ export function createVariableActions(ctx: EditorContext) {
           if (v) v.valuesByMode[modeId] = structuredClone(value)
         }
         if (wasDefault) ctx.graph.setDefaultMode(collectionId, modeId)
+        if (wasShown) ctx.graph.setActiveMode(collectionId, modeId)
         refreshVariables(collectionScope(collectionId))
       }
     })

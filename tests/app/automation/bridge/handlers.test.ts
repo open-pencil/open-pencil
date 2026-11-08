@@ -145,6 +145,26 @@ describe('undo and redo', () => {
     expect(store.graph.getNode(node)?.opacity).toBe(1)
   })
 
+  test('wait while the pen draws, whose last point becomes a step when undo runs', async () => {
+    const tab = createTab()
+    const store = tab.store
+    const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
+    await request('tool', {
+      document_id: tab.id,
+      name: 'set_opacity',
+      args: { id: node, value: 0.5 }
+    })
+    store.setTool('PEN')
+    store.penAddVertex(0, 0)
+    store.penAddVertex(100, 0)
+
+    await expect(request('undo', { document_id: tab.id })).rejects.toThrow(
+      'A path is being drawn with the pen'
+    )
+    expect(store.state.penState?.vertices).toHaveLength(2)
+    expect(store.graph.getNode(node)?.opacity).toBe(0.5)
+  })
+
   test('report nothing to redo on a fresh history', async () => {
     const tab = createTab()
     const response = await request('redo', { document_id: tab.id })

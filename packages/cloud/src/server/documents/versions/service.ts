@@ -7,6 +7,7 @@ import type {
   SaveDocumentVersionInput,
   UpdateDocumentVersionInput
 } from '#cloud/contract'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
@@ -24,7 +25,6 @@ import { historyStart } from './history'
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const DEFAULT_PAGE_SIZE = 50
 const MAXIMUM_PAGE_SIZE = 100
-const WRITABLE_ROLES = new Set(['admin', 'editor'])
 
 type VersionRow = {
   id: string
@@ -351,7 +351,7 @@ export function createDocumentVersionService(
       const { document, start } = await openHistory(userId, documentId, false)
       const role = await workspaceRole(database, userId, document.workspaceId)
       if (!role) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(role)) throw new DocumentForbiddenError()
+      if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
       const version = await findVersion(documentId, versionId, start)
       const copyId = crypto.randomUUID()
       const revisionId = crypto.randomUUID()

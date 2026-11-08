@@ -198,3 +198,37 @@ test('the pen drags the last point out again when it is pressed', async () => {
     ]
   })
 })
+
+// Figma desktop 126: each pen point is an undo step, and undo after the path ends draws on again.
+test('undo takes back pen points one by one, also after the path ends', async () => {
+  await editor.page.evaluate(() => window.openPencil?.getStore?.()?.setTool('PEN'))
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const { mouse, keyboard } = editor.page
+  const read = () =>
+    editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      return {
+        points: store?.state.penState?.vertices.length ?? 0,
+        tool: store?.state.activeTool,
+        layers: store?.graph.getChildren(store.state.currentPageId).length
+      }
+    })
+
+  await mouse.click(box.x + 100, box.y + 100)
+  await mouse.click(box.x + 300, box.y + 100)
+  await mouse.click(box.x + 300, box.y + 300)
+  await keyboard.press('ControlOrMeta+z')
+  expect(await read()).toEqual({ points: 2, tool: 'PEN', layers: 0 })
+  await keyboard.press('ControlOrMeta+Shift+z')
+  expect(await read()).toEqual({ points: 3, tool: 'PEN', layers: 0 })
+
+  await keyboard.press('Escape')
+  expect(await read()).toEqual({ points: 0, tool: 'SELECT', layers: 1 })
+  await keyboard.press('ControlOrMeta+z')
+  expect(await read()).toEqual({ points: 3, tool: 'PEN', layers: 0 })
+  await keyboard.press('ControlOrMeta+z')
+  expect(await read()).toEqual({ points: 2, tool: 'PEN', layers: 0 })
+  await mouse.click(box.x + 100, box.y + 300)
+  expect(await read()).toEqual({ points: 3, tool: 'PEN', layers: 0 })
+})

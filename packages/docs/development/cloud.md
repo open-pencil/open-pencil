@@ -338,7 +338,8 @@ OpenFeature answers concrete questions such as whether links work, whether guest
 follow a link without signing in, may view or edit through one, or whether full revision history
 is kept, and what a numeric limit is. Links always work for people signed in to the server: the
 share routes resolve the session, and a guest the server turns away gets `401` so the editor signs
-in and opens the link again. Its provider reads one entitlement
+in and opens the link again. A guest who may view but not edit opens an edit link view-only; the
+resolution names the link's own permission as well, so the editor offers signing in to edit. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
 are alternatives, not layers. Technical limits cap the file size and participant limits the source

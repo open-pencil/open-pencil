@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { resolveVertexSnap } from '#vue/shared/input/snap'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 let editor: Editor
 
@@ -86,4 +89,18 @@ describe('pen vertex snapping', () => {
     editor.penCancel()
     expect(editor.state.snapGuides).toEqual([])
   })
+})
+
+// The SDK guides keep the editor's state reactive, so the pen's undo steps copy through its proxies.
+test('undo takes back pen points when the editor state is reactive', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0])
+  editor = createEditor({ graph, state: reactive(createDefaultEditorState(page.id)) })
+  editor.setTool('PEN')
+  click(0, 0)
+  click(100, 0)
+  editor.undoAction()
+  expect(editor.state.penState?.vertices).toHaveLength(1)
+  editor.redoAction()
+  expect(editor.state.penState?.vertices).toHaveLength(2)
 })

@@ -47,15 +47,20 @@ openpencil redo --document-id tab-123 --json
 ```json
 {
   "result": { "applied": true, "label": "Set opacity", "scope": "document" },
-  "target": { "documentId": "tab-123", "documentName": "Landing", "pageId": "0:1", "pageName": "Page 1" }
+  "target": {
+    "documentId": "tab-123",
+    "documentName": "Landing",
+    "pageId": "0:1",
+    "pageName": "Page 1"
+  }
 }
 ```
 
 When there is nothing to undo or redo, the command says so and `result.applied` is `false`.
 
-The editor has one history, shared by you and every automation client, so **Edit → Undo** in the app steps back through any change, newest first. Automation is narrower: `undo` and `redo` only act on a step that the CLI or MCP made, and only while it is the newest one. If the newest change was made in the editor, the command fails and leaves it alone, so an agent can't revert your work. They also fail while the document is in vector edit mode, whose history belongs to the editing session.
+The editor has one history, shared by you and every automation client, so **Edit → Undo** in the app steps back through any change, newest first. Automation is narrower: `undo` and `redo` only act on a step that the CLI or MCP made, and only while it is the newest one. If the newest change was made in the editor, the command fails and leaves it alone, so an agent can't revert your work. They also fail while a path is open in vector edit mode or being drawn with the pen: its last change becomes a step when undo runs, which would put your change on top.
 
-Each CLI or MCP command that edits the document is one undo step of everything it changed, on any page. While a command waits on a download, such as a font, image, or page load, what you do in the editor stays out of its step. An `eval` script's own `fetch` calls and timers are the exception: an edit you make while a script waits on one lands in the script's step. A command that fails is rolled back and leaves no undo step.
+Each CLI or MCP command that edits the document is one undo step of everything it changed, on any page. Collaborators' edits and your undo or redo never join a command's step. While a command waits on a download, such as a font, image, or page load, other edits you make in the editor stay out of its step too. An `eval` script's own `fetch` calls and timers are the exception: an edit you make while a script waits on one lands in the script's step. Undoing a command that created a frame keeps layers someone else put into it, moved out to the frame's parent. A command that fails is rolled back and leaves no undo step.
 
 ## Settings
 
@@ -71,22 +76,22 @@ openpencil settings set chat.maxAgentSteps 100
 
 Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain strings otherwise. Invalid keys and values are rejected without changing anything.
 
-| Key | Values |
-|-----|--------|
-| `appearance.theme` | `dark`, `light`, `auto` |
-| `appearance.language` | `en`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `zh-CN` |
-| `appearance.animations` | `system`, `off` |
-| `appearance.accent` | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
-| `editing.snapping.geometry` | `true`, `false` |
-| `editing.snapping.objects` | `true`, `false` |
-| `editing.snapping.pixelGrid` | `true`, `false` |
-| `recovery.enabled` | `true`, `false` |
-| `chat.reasoningDisplay` | `collapsed`, `while-thinking`, `expanded` |
-| `chat.maxAgentSteps` | integer 1–1000 |
-| `chat.changePreviewSize` | `off`, `small`, `medium`, `large` |
-| `designCheck.showOnCanvas` | `true`, `false` |
-| `designCheck.preset` | `recommended`, `strict`, `accessibility` |
-| `designCheck.disabledRules` | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules` |
+| Key                          | Values                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appearance.theme`           | `dark`, `light`, `auto`                                                                                                                                                   |
+| `appearance.language`        | `en`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `zh-CN`                                                                                                          |
+| `appearance.animations`      | `system`, `off`                                                                                                                                                           |
+| `appearance.accent`          | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
+| `editing.snapping.geometry`  | `true`, `false`                                                                                                                                                           |
+| `editing.snapping.objects`   | `true`, `false`                                                                                                                                                           |
+| `editing.snapping.pixelGrid` | `true`, `false`                                                                                                                                                           |
+| `recovery.enabled`           | `true`, `false`                                                                                                                                                           |
+| `chat.reasoningDisplay`      | `collapsed`, `while-thinking`, `expanded`                                                                                                                                 |
+| `chat.maxAgentSteps`         | integer 1–1000                                                                                                                                                            |
+| `chat.changePreviewSize`     | `off`, `small`, `medium`, `large`                                                                                                                                         |
+| `designCheck.showOnCanvas`   | `true`, `false`                                                                                                                                                           |
+| `designCheck.preset`         | `recommended`, `strict`, `accessibility`                                                                                                                                  |
+| `designCheck.disabledRules`  | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules`                                                                                   |
 
 Credentials, AI models, MCP connections, storage, and tool access are deliberately not available here: an automation client can't read secrets or grant itself access.
 

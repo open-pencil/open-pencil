@@ -109,6 +109,7 @@ export function chainEndingAt(network: VectorNetwork, end: number): PenChain {
 /** What ends the edits a resumed pen takes over from. */
 export interface PenResumeDeps {
   penCommit: (closed: boolean) => void
+  penPushHistory: () => void
   exitNodeEditMode: (commit: boolean) => void
 }
 
@@ -141,6 +142,8 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
     const node = ctx.graph.getNode(nodeId)
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
     const absNetwork = transformVectorNetwork(getWorldMatrix(node, ctx.graph), node.vectorNetwork)
+    // Picking the path up is a step of its own, as in Figma, which undo puts down again.
+    deps.penPushHistory()
     ctx.state.penState = createResumedPenState(node, pick(absNetwork))
     ctx.setSelectedIds(new Set())
     ctx.setActiveTool('PEN')
