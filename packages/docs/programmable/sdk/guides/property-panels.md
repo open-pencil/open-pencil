@@ -51,21 +51,27 @@ state differently.
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { usePosition } from '@open-pencil/vue/controls/position'
 
-const { panelProp, updateProp } = usePosition()
+const { panelProp, updateProp, commitProp } = usePosition()
 const x = panelProp('x')
 const y = panelProp('y')
 const width = panelProp('width')
 const height = panelProp('height')
-// A multi-selection whose layers differ shows an empty field.
+// A multi-selection whose layers show different values shows an empty field.
 const shown = (value: number | typeof MIXED) => (value === MIXED ? '' : value)
+// Applied on change, so the rounded value replaces the text only once typing is done.
+function set(key: 'x' | 'y' | 'width' | 'height', event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  updateProp(key, value)
+  commitProp(key, value, value)
+}
 </script>
 
 <template>
   <div class="grid grid-cols-2 gap-2">
-    <input :value="shown(x)" @input="updateProp('x', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="shown(y)" @input="updateProp('y', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="shown(width)" @input="updateProp('width', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="shown(height)" @input="updateProp('height', Number(($event.target as HTMLInputElement).value))" />
+    <input :value="shown(x)" @change="set('x', $event)" />
+    <input :value="shown(y)" @change="set('y', $event)" />
+    <input :value="shown(width)" @change="set('width', $event)" />
+    <input :value="shown(height)" @change="set('height', $event)" />
   </div>
 </template>
 ```
