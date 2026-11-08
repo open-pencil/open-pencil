@@ -1,6 +1,6 @@
 import { defaultRelayURL } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
-import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
@@ -54,7 +54,7 @@ function siteFiles(
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
-  const reportError = createPostHogErrorReporter(config, 'node')
+  const reportError = createCloudErrorReporter(config, 'node')
   try {
     return await startConfiguredServer(config, environment, options, reportError)
   } catch (error) {

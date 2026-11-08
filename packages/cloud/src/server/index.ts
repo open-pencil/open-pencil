@@ -196,7 +196,11 @@ export {
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource
+  type CloudErrorSource,
+  createPostHogErrorReporter,
+  type ErrorReportContext,
+  type ErrorReporter,
+  type PostHogErrorReporterOptions
 } from './errors'
 export {
   createInternalRoutes,
