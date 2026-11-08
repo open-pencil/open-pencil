@@ -46,6 +46,7 @@ export {
   type AccountAuthenticationService,
   type AuthenticationEmailService,
   workspaceAccessControl,
+  workspaceRoleCan,
   workspaceRoles,
   workspaceStatements
 } from './auth'

@@ -4,6 +4,7 @@ import type {
   DocumentPermission,
   WorkspaceRole
 } from '#cloud/contract'
+import { workspaceRoleCan } from '#cloud/server/auth/workspace-access'
 import type { CloudDatabase } from '#cloud/server/db'
 import { maxBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
@@ -13,7 +14,7 @@ export type AccessDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 const PERMISSION_WEIGHT: Record<DocumentPermission, number> = { view: 1, edit: 2 }
 
 function workspacePermission(role: WorkspaceRole): DocumentPermission {
-  return role === 'viewer' ? 'view' : 'edit'
+  return workspaceRoleCan(role, { document: ['edit'] }) ? 'edit' : 'view'
 }
 
 export async function resolveDocumentAccess(
@@ -62,7 +63,8 @@ export async function resolveDocumentAccess(
   const permission = maxBy(candidates, (candidate) => PERMISSION_WEIGHT[candidate])
   if (!permission) return undefined
   const workspaceCanManage =
-    document.workspaceRole === 'admin' || document.workspaceRole === 'editor'
+    document.workspaceRole !== null &&
+    workspaceRoleCan(document.workspaceRole, { document: ['share'] })
   return {
     permission,
     canManageSharing: owner || workspaceCanManage || document.grantPermission === 'edit',
@@ -97,7 +99,7 @@ export async function canDeleteDocument(
   if (!document) return false
   return (
     document.createdBy === userId ||
-    document.workspaceRole === 'admin' ||
-    document.workspaceRole === 'editor'
+    (document.workspaceRole !== null &&
+      workspaceRoleCan(document.workspaceRole, { document: ['delete'] }))
   )
 }
