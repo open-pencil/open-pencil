@@ -1,0 +1,1 @@
+- `@open-pencil/cloud/server` renames `workspaceAccessControl` to `accessControl` and `workspaceStatements` to `accessStatements`, and adds `documentRoles` with `documentRoleCan` and `workspaceRoleCan` for the owner, direct-grant, and workspace permission tables (#1898).
