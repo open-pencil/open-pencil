@@ -12,11 +12,17 @@ import { toast } from '@/app/shell/ui'
 import LibraryComparisonPreview from '@/components/libraries/review/LibraryComparisonPreview.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot,
+  useDialogUI
+} from '@/components/ui/dialog'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const editor = useEditorStore()
+const dialog = useDialogUI()
 const service = useLibraryService()
 const { panels, common } = useI18n()
 const preview = shallowRef<LibraryUpdatePreview | null>(null)
@@ -183,21 +189,30 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     />
     <div
       v-if="request"
-      class="border-b border-border px-4 py-3 text-center text-sm font-medium text-surface"
+      :class="[
+        dialog.pane,
+        'border-b border-border px-4 py-3 text-center text-sm font-medium text-surface'
+      ]"
     >
       {{ preview?.graph.getNode(preview.updatedNodeId)?.name ?? panels.reviewLibraryUpdate }}
     </div>
     <div
       v-if="preview?.fallback"
       role="status"
-      class="border-b border-warning/40 bg-warning/10 px-4 py-2 text-xs text-warning"
+      :class="[
+        dialog.pane,
+        'border-b border-warning/40 bg-warning/10 px-4 py-2 text-xs text-warning'
+      ]"
     >
       {{ panels.libraryVariantFallbackWarning }}
     </div>
     <div
       v-if="preview"
-      class="relative grid min-h-0 flex-1 bg-canvas"
-      :class="mode === 'side-by-side' ? 'grid-cols-2' : 'grid-cols-1'"
+      :class="[
+        dialog.pane,
+        'relative grid min-h-0 flex-1 bg-canvas',
+        mode === 'side-by-side' ? 'grid-cols-2' : 'grid-cols-1'
+      ]"
     >
       <section class="flex min-h-0 flex-col border-r border-border p-4">
         <h3 class="text-xs font-semibold text-surface">{{ panels.currentVersion }}</h3>

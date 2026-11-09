@@ -2,7 +2,7 @@
 export default {
   slots: {
     panel: 'flex min-h-0 flex-1 flex-col',
-    list: 'scrollbar-thin min-h-0 flex-1 overflow-y-auto py-1',
+    list: 'min-h-0 flex-1 overflow-y-auto py-1',
     item: 'group/item relative px-2',
     // The line between markers runs through the gutter beside each entry.
     itemButton:
