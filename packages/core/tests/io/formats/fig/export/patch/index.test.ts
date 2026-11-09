@@ -1,6 +1,5 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { isEqual } from 'es-toolkit/predicate'
 import { deflateSync } from 'fflate'
 
@@ -22,6 +21,8 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { setDefaultMode } from '@open-pencil/scene-graph/variables'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {
@@ -460,6 +461,105 @@ describe('writing an edited document into its archive', () => {
     expect(after.has(bodyGuid)).toBe(false)
     expect(instances(after)).toHaveLength(2)
     expect(instances(after).some(addressesBody)).toBe(false)
+  })
+
+  test("writes a page's variable mode into its record, and clears it", async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const collection = source.createCollection('Theme')
+    const darkId = expectDefined(source.createMode(collection.id, 'Dark'), 'dark mode')
+    source.createNode('RECTANGLE', source.getPages()[0].id, { name: 'Card' })
+    const bytes = await exportFigFile(source)
+
+    const pageModes = async (saved: Uint8Array) => (await open(saved)).getPages()[0].variableModes
+    const changedRecords = (before: Uint8Array, after: Uint8Array) => {
+      const saved = recordsOf(before)
+      return [...recordsOf(after)].flatMap(([guid, record]) =>
+        isEqual(saved.get(guid), record) ? [] : [record.type]
+      )
+    }
+
+    const graph = await open(bytes)
+    graph.updateNode(graph.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    const dark = await exportFigFile(graph)
+    expect(changedRecords(bytes, dark)).toEqual(['CANVAS'])
+    expect(await pageModes(dark)).toEqual({ [collection.id]: darkId })
+
+    const reopened = await open(dark)
+    reopened.updateNode(reopened.getPages()[0].id, { variableModes: {} })
+    const cleared = await exportFigFile(reopened)
+    expect(changedRecords(dark, cleared)).toEqual(['CANVAS'])
+    expect(await pageModes(cleared)).toEqual({})
+  })
+
+  test('rewrites bound layers below a page or frame whose mode changes', async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const collection = source.createCollection('Theme')
+    const lightId = collection.defaultModeId
+    const darkId = expectDefined(source.createMode(collection.id, 'Dark'), 'dark mode')
+    const surface = source.createVariable('surface', 'COLOR', collection.id)
+    surface.valuesByMode[lightId] = { r: 1, g: 1, b: 1, a: 1 }
+    surface.valuesByMode[darkId] = { r: 0, g: 0, b: 0, a: 1 }
+    const page = source.getPages()[0]
+    const frame = source.createNode('FRAME', page.id, { name: 'Panel' })
+    const holder = source.createNode('FRAME', page.id, { name: 'Holder' })
+    for (const [name, parentId] of [
+      ['On page', holder.id],
+      ['In panel', frame.id]
+    ]) {
+      const card = source.createNode('RECTANGLE', parentId, {
+        name,
+        fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+      })
+      source.bindVariable(card.id, 'fills/0/color', surface.id)
+    }
+    const internal = source.createNode('CANVAS', source.rootId, { internalOnly: true })
+    const stored = source.createNode('RECTANGLE', internal.id, {
+      name: 'Internal',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    source.bindVariable(stored.id, 'fills/0/color', surface.id)
+    const bytes = await exportFigFile(source)
+    const fillOf = (saved: Uint8Array, name: string) =>
+      [...recordsOf(saved).values()].find((record) => record.name === name)?.fillPaints?.[0]?.color
+
+    const graph = await open(bytes)
+    graph.updateNode(layerNamed(graph, 'Panel').id, { variableModes: { [collection.id]: darkId } })
+    const panelDark = await exportFigFile(graph)
+    expect(fillOf(panelDark, 'In panel')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(fillOf(panelDark, 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+
+    const reopened = await open(panelDark)
+    reopened.updateNode(reopened.getPages()[0].id, {
+      variableModes: { [collection.id]: darkId }
+    })
+    const pageDark = await exportFigFile(reopened)
+    expect(fillOf(pageDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    const moved = await open(panelDark)
+    moved.reparentNode(layerNamed(moved, 'Holder').id, layerNamed(moved, 'Panel').id)
+    expect(fillOf(await exportFigFile(moved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    // The old parent changes mode too, so only its saved mode shows the moved layer changed.
+    const left = await open(panelDark)
+    const inner = left.createNode('FRAME', layerNamed(left, 'Holder').id, { name: 'Inner' })
+    left.reparentNode(layerNamed(left, 'On page').id, inner.id)
+    left.updateNode(layerNamed(left, 'Holder').id, { variableModes: { [collection.id]: lightId } })
+    left.updateNode(left.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    const saved = await open(await exportFigFile(left))
+    expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    saved.updateNode(layerNamed(saved, 'Holder').id, { variableModes: { [collection.id]: darkId } })
+    saved.reparentNode(layerNamed(saved, 'Inner').id, saved.getPages()[0].id)
+    expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+
+    // A new default mode reaches layers with no mode of their own.
+    const defaults = await open(bytes)
+    populateFigInternalPages(defaults)
+    setDefaultMode(defaults, collection.id, darkId)
+    const defaultDark = await exportFigFile(defaults)
+    expect(fillOf(defaultDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(fillOf(defaultDark, 'Internal')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {

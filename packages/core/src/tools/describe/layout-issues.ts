@@ -230,7 +230,7 @@ function checkTextVisibility(ctx: LayoutContext): void {
       })
       continue
     }
-    // A variable-bound color depends on the active mode, so its static value proves nothing;
+    // A variable-bound color depends on the layer's mode, so its static value proves nothing;
     // the color-contrast lint rule skips it for the same reason.
     if (child.boundVariables[`fills/${textFillIndex}/color`]) continue
     const bg = findAncestorBackground(child, graph)

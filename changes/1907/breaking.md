@@ -1,0 +1,1 @@
+- Variable modes come only from pages and layers, as in Figma, so the canvas, exports, and other tools resolve a layer the same way: the document-wide shown mode (`SceneGraph.activeMode`, `getActiveModeId`, `setActiveMode`, the `VariableModeFallback` parameter), the Vue SDK's `setActiveMode`, and `activeModeId` in `get_collection` output are removed.

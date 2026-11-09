@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
@@ -15,7 +17,12 @@ import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
-import { layersUsingVariables } from '@open-pencil/scene-graph/variables'
+import {
+  collectionsBoundIn,
+  getNodeVariableModeId,
+  layersResolvingCollections,
+  layersUsingVariables
+} from '@open-pencil/scene-graph/variables'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
@@ -28,7 +35,11 @@ import {
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
-import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive/changes'
+import {
+  archiveBaseline,
+  archiveChanges,
+  type ArchiveChangeSummary
+} from '#core/kiwi/fig/session/archive/changes'
 import {
   isReaderPagePending,
   populateFigPage,
@@ -151,6 +162,58 @@ function addVariableUsers(
   if (!changes.collectionsChanged) return
   for (const node of graph.nodes.values())
     if (Object.keys(node.variableModes).length > 0) add(node.id)
+  // A new default mode changes what layers with no mode of their own resolve.
+  const saved = new Map(archiveBaseline(graph)?.collections)
+  const defaultsChanged = new Set(
+    [...graph.variableCollections.values()]
+      .filter((collection) => {
+        const before = saved.get(collection.id)
+        return before !== undefined && before.defaultModeId !== collection.defaultModeId
+      })
+      .map((collection) => collection.id)
+  )
+  if (defaultsChanged.size === 0) return
+  const pages = graph.getPages(true).map((page) => page.id)
+  for (const layer of layersResolvingCollections(graph, pages, defaultsChanged)) add(layer.id)
+}
+
+/**
+ * A layer whose mode for a collection changed, set on it or met where it moved to, changes the
+ * values its layers resolve from that collection, and their records carry those values.
+ */
+function addModeChangeUsers(graph: SceneGraph, add: (id: string) => unknown): void {
+  const baseline = archiveBaseline(graph)
+  if (!baseline) return
+  for (const [id, before] of baseline.before) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    if (before.parentId === node.parentId && isEqual(before.variableModes, node.variableModes))
+      continue
+    const changed = new Set(
+      [...collectionsBoundIn(graph, [id])].filter(
+        (collectionId) =>
+          savedModeId(graph, baseline.before, before, collectionId) !==
+          getNodeVariableModeId(graph, id, collectionId)
+      )
+    )
+    if (changed.size === 0) continue
+    for (const layer of layersResolvingCollections(graph, [id], changed)) add(layer.id)
+  }
+}
+
+/** The mode a layer had when the archive was saved, read up the ancestors it had then. */
+function savedModeId(
+  graph: SceneGraph,
+  saved: ReadonlyMap<string, SceneNode>,
+  layer: SceneNode,
+  collectionId: string
+): string | undefined {
+  for (let node: SceneNode | undefined = layer; node;) {
+    const modeId = node.variableModes[collectionId]
+    if (modeId) return modeId
+    node = node.parentId ? (saved.get(node.parentId) ?? graph.getNode(node.parentId)) : undefined
+  }
+  return graph.variableCollections.get(collectionId)?.defaultModeId
 }
 
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
@@ -208,6 +271,7 @@ function planRecords(
   }
   for (const id of changes.touched) add(id)
   addSetVariants(graph, changes, add)
+  addModeChangeUsers(graph, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)

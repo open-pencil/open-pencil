@@ -1,6 +1,5 @@
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
@@ -74,17 +73,13 @@ export function boundNumberValue(field: string, value: number): number | TextLen
  * The values a node's numeric bindings resolve to in its mode, in scene units, for the fields
  * whose stored value differs. A width or height an instance overrides keeps its own value.
  */
-export function resolvedNumericBindings(
-  graph: SceneGraph,
-  node: SceneNode,
-  fallback: VariableModeFallback = 'active'
-): Partial<SceneNode> {
+export function resolvedNumericBindings(graph: SceneGraph, node: SceneNode): Partial<SceneNode> {
   const updates: Partial<SceneNode> = {}
   for (const [field, variableId] of Object.entries(node.boundVariables)) {
     if (!NUMERIC_FIELDS.has(field)) continue
     if ((field === 'width' || field === 'height') && overriddenInInstance(graph, node.id, field))
       continue
-    const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
+    const value = graph.resolveNumberVariableForNode(node.id, variableId)
     if (value === undefined || !Number.isFinite(value)) continue
     const scale = node.variableBindingScales[field] ?? 1
     const effective = value * scale
@@ -105,16 +100,12 @@ export function resolvedNumericBindings(
  * A bound font family is left as stored: changing it needs the font loaded, which resolving a
  * binding cannot do.
  */
-export function resolvedValueBindings(
-  graph: SceneGraph,
-  node: SceneNode,
-  fallback: VariableModeFallback = 'active'
-): Partial<SceneNode> {
+export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Partial<SceneNode> {
   const updates: Partial<SceneNode> = {}
   const resolve = (field: 'text' | 'visible') => {
     const variableId = node.boundVariables[field]
     if (!variableId || overriddenInInstance(graph, node.id, field)) return undefined
-    return graph.resolveVariableForNode(node.id, variableId, fallback)
+    return graph.resolveVariableForNode(node.id, variableId)
   }
   const text = node.type === 'TEXT' ? variableText(resolve('text')) : undefined
   if (text !== undefined && text !== node.text) updates.text = text
@@ -133,8 +124,7 @@ const NUMERIC_RUN_FIELDS = ['fontSize', 'fontWeight', 'letterSpacing', 'lineHeig
  */
 export function resolvedRunBindings(
   graph: SceneGraph,
-  node: SceneNode,
-  fallback: VariableModeFallback = 'active'
+  node: SceneNode
 ): Pick<Partial<SceneNode>, 'styleRuns'> {
   const styleRuns = node.styleRuns.map((run): StyleRun => {
     const bound = run.style.boundVariables
@@ -143,7 +133,7 @@ export function resolvedRunBindings(
     for (const field of NUMERIC_RUN_FIELDS) {
       const variableId = bound[field]
       if (!variableId) continue
-      const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
+      const value = graph.resolveNumberVariableForNode(node.id, variableId)
       if (value === undefined || !Number.isFinite(value)) continue
       const next = boundNumberValue(field, value)
       if (isEqual(style[field], next)) continue
@@ -175,8 +165,7 @@ function applyBoundColor(paint: Fill | Stroke, color: Color): void {
 /** The fills and strokes a node's color bindings resolve to in its mode, when it has any. */
 export function resolvedPaintBindings(
   graph: SceneGraph,
-  node: SceneNode,
-  fallback: VariableModeFallback = 'active'
+  node: SceneNode
 ): Pick<Partial<SceneNode>, 'fills' | 'strokes'> {
   // Most nodes bind nothing, so no copy is made until a paint binding is actually found.
   const changes: Pick<Partial<SceneNode>, 'fills' | 'strokes'> = {}
@@ -184,7 +173,7 @@ export function resolvedPaintBindings(
     if (!field.endsWith('/color')) continue
     const paint = paintBindingTarget(field)
     if (!paint) continue
-    const color = graph.resolveColorVariableForNode(node.id, node.boundVariables[field], fallback)
+    const color = graph.resolveColorVariableForNode(node.id, node.boundVariables[field])
     const { index } = paint
     if (!color) continue
     if (paint.list === 'fills') {
@@ -227,8 +216,7 @@ function scaledLength(length: number | undefined, node: SceneNode): number | und
  */
 export function resolvedEffectBindings(
   graph: SceneGraph,
-  node: SceneNode,
-  fallback: VariableModeFallback = 'active'
+  node: SceneNode
 ): Pick<Partial<SceneNode>, 'effects'> {
   // Most nodes bind nothing, so no copy is made until a value actually changes.
   let effects: Effect[] | undefined
@@ -239,8 +227,8 @@ export function resolvedEffectBindings(
     if (!effect || !effectBindableProperties(effect.type).includes(target.property)) continue
     const value =
       target.property === 'color'
-        ? graph.resolveColorVariableForNode(node.id, variableId, fallback)
-        : scaledLength(graph.resolveNumberVariableForNode(node.id, variableId, fallback), node)
+        ? graph.resolveColorVariableForNode(node.id, variableId)
+        : scaledLength(graph.resolveNumberVariableForNode(node.id, variableId), node)
     if (value == null || (typeof value === 'number' && !Number.isFinite(value))) continue
     const next = withBoundEffectValue(effect, target.property, value)
     if (isEqual(next, effect)) continue
@@ -315,6 +303,27 @@ export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): 
 export function layersUsingVariables(graph: SceneGraph, ids: Iterable<string>): SceneNode[] {
   const variables = variablesResolvingThrough(graph, ids)
   return [...graph.getAllNodes()].filter((node) =>
+    boundVariableIds(node).some((id) => variables.has(id))
+  )
+}
+
+/**
+ * The layers in these subtrees that resolve a variable of these collections, binding it or a
+ * variable that aliases it, so a mode change for the collections can change what they show.
+ */
+export function layersResolvingCollections(
+  graph: SceneGraph,
+  roots: Iterable<string>,
+  collectionIds: ReadonlySet<string>
+): SceneNode[] {
+  const inCollections = [...graph.variables.values()].filter((variable) =>
+    collectionIds.has(variable.collectionId)
+  )
+  const variables = variablesResolvingThrough(
+    graph,
+    inCollections.map((variable) => variable.id)
+  )
+  return subtreeNodes(graph, roots).filter((node) =>
     boundVariableIds(node).some((id) => variables.has(id))
   )
 }

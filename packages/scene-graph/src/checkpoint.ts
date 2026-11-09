@@ -37,7 +37,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     nodes: graph.nodes,
     variables: graph.variables,
     variableCollections: graph.variableCollections,
-    activeMode: graph.activeMode,
     instanceIndex: graph.instanceIndex,
     enabledLibraries: graph.enabledLibraries,
     rootId: graph.rootId,
@@ -75,7 +74,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
   function assertDocumentUnchanged() {
     if (
       !isEqual(snapshot.variableCollections, graph.variableCollections) ||
-      !isEqual(snapshot.activeMode, graph.activeMode) ||
       !isEqual(snapshot.instanceIndex, graph.instanceIndex) ||
       !isEqual(snapshot.enabledLibraries, graph.enabledLibraries) ||
       images.size !== graph.images.size ||
@@ -94,7 +92,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     restoreObjects(graph.nodes, snapshot.nodes, nodeRefs)
     restoreObjects(graph.variables, snapshot.variables, variableRefs)
     restoreObjects(graph.variableCollections, snapshot.variableCollections, collectionRefs)
-    restoreMap(graph.activeMode, structuredClone(snapshot.activeMode))
     restoreMap(graph.instanceIndex, structuredClone(snapshot.instanceIndex))
     restoreMap(graph.enabledLibraries, structuredClone(snapshot.enabledLibraries))
     restoreMap(graph.images, images)
@@ -209,7 +206,6 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
   const variableRefs = new Map(graph.variables)
   const collectionRefs = new Map(graph.variableCollections)
   const saved = structuredClone({
-    activeMode: graph.activeMode,
     enabledLibraries: graph.enabledLibraries
   })
   // Instances follow their nodes' components, which a property edit cannot change, so the sets
@@ -330,7 +326,6 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
       [...variableCollections].some(
         ([id, before]) => !isEqual(before, graph.variableCollections.get(id) ?? null)
       ) ||
-      !isEqual(saved.activeMode, graph.activeMode) ||
       !isEqual(instanceIndex, graph.instanceIndex) ||
       !isEqual(saved.enabledLibraries, graph.enabledLibraries) ||
       images.size !== graph.images.size ||
@@ -384,7 +379,6 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
     }
     restoreCopied(graph.variables, variables, variableRefs)
     restoreCopied(graph.variableCollections, variableCollections, collectionRefs)
-    restoreMap(graph.activeMode, structuredClone(saved.activeMode))
     restoreMap(
       graph.instanceIndex,
       new Map([...instanceIndex].map(([id, instances]) => [id, new Set(instances)]))

@@ -7,7 +7,7 @@ export function canvasLabelForeground(background: Color, canvasBackground: Color
   return readableForeground(compositeOver(background, canvasBackground))
 }
 
-/** An outline's colour in the document, its variable's value in the active mode when it has one. */
+/** An outline's colour in the document, its variable's value in the layer's mode if it has one. */
 export function outlineColorInMode(
   graph: SceneGraph,
   node: SceneNode,
