@@ -74,6 +74,7 @@ function handleSelect(value: SizeSelectValue) {
 <template>
   <Tip :label="label">
     <VariableNumberField
+      :round="panelNumber"
       :icon="icon"
       :aria-label="label"
       :model-value="panelNumber(ctx.node[axis])"
