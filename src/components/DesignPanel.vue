@@ -41,6 +41,7 @@ import IconSection from './properties/IconSection.vue'
 import LayerTypeMenu from './properties/LayerTypeMenu.vue'
 import LayoutGridSection from './properties/layout/guides/LayoutGridSection.vue'
 import LayoutSection from './properties/layout/LayoutSection.vue'
+import LivePageDriftSection from './properties/LivePageDriftSection.vue'
 import LivePageSection from './properties/LivePageSection.vue'
 import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
@@ -230,6 +231,7 @@ const { panels } = useI18n()
       <FramePresetSelect v-if="node.type === 'FRAME' && !readIcon(node)" />
 
       <LivePageSection />
+      <LivePageDriftSection />
 
       <IconSection />
       <StickySection />

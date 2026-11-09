@@ -13,5 +13,17 @@
   "exportVue": "コンポーネントとして書き出す",
   "openAllHint": "ページはこのドキュメントを保存したプロジェクトから読み込みます。",
   "routeParams": "ルートのパラメーター",
-  "routeParamsPlaceholder": "名前=値"
+  "routeParamsPlaceholder": "名前=値",
+  "baselines": "基準画像",
+  "keepBaseline": "基準画像として保存",
+  "compareBaseline": "比較",
+  "compareAll": "すべてのページを比較",
+  "baselineMissing": "このページの画像はまだ保存されていません。",
+  "baselineSame": "ページは基準画像のままです。",
+  "baselineChanged": "ページは基準画像から変わっています。",
+  "baselineTaken": "基準画像の撮影: {date}",
+  "baselineHint": "基準画像はページの画像で、指紋で比較します。画像はデスクトップ版で、このマシンにあるブラウザを使って撮影します。",
+  "baselineNotDrawn": "ページを描画できませんでした。プロジェクトが起動していること、対応するブラウザがインストールされていることを確認してください。",
+  "baselineNotSaved": "基準画像をドキュメントに書き込めませんでした。",
+  "baselineKept": "基準画像があります。比較すると、ページがまだ一致しているか分かります。"
 }

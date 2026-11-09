@@ -13,5 +13,17 @@
   "exportVue": "Esporta come componente Vue",
   "openAllHint": "Le pagine provengono dal progetto in cui è salvato questo documento.",
   "routeParams": "Parametri del percorso",
-  "routeParamsPlaceholder": "slug=ciao, id=42"
+  "routeParamsPlaceholder": "slug=ciao, id=42",
+  "baselines": "Riferimenti",
+  "keepBaseline": "Salva come riferimento",
+  "compareBaseline": "Confronta",
+  "compareAll": "Confronta tutte le pagine",
+  "baselineMissing": "Non c’è ancora un’immagine di questa pagina.",
+  "baselineSame": "La pagina è ancora uguale al suo riferimento.",
+  "baselineChanged": "La pagina è cambiata rispetto al suo riferimento.",
+  "baselineTaken": "Riferimento acquisito il {date}",
+  "baselineHint": "Un riferimento è un’immagine della pagina, confrontata tramite la sua impronta. L’immagine viene acquisita sul desktop, in un browser già installato su questa macchina.",
+  "baselineNotDrawn": "Non è stato possibile disegnare la pagina. Controlla che il progetto sia in esecuzione e che Chrome, Chromium o Edge sia installato.",
+  "baselineNotSaved": "Non è stato possibile scrivere i riferimenti nel documento.",
+  "baselineKept": "Un riferimento è conservato. Confrontalo con la pagina per vedere se corrisponde ancora."
 }

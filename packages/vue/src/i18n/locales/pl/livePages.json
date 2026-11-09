@@ -13,5 +13,17 @@
   "exportVue": "Eksportuj jako komponent Vue",
   "openAllHint": "Strony pochodzą z projektu, w którym zapisano ten dokument.",
   "routeParams": "Parametry trasy",
-  "routeParamsPlaceholder": "slug=czesc, id=42"
+  "routeParamsPlaceholder": "slug=czesc, id=42",
+  "baselines": "Obrazy odniesienia",
+  "keepBaseline": "Zapisz jako odniesienie",
+  "compareBaseline": "Porównaj",
+  "compareAll": "Porównaj wszystkie strony",
+  "baselineMissing": "Dla tej strony nie ma jeszcze obrazu odniesienia.",
+  "baselineSame": "Strona nadal wygląda jak jej odniesienie.",
+  "baselineChanged": "Strona zmieniła się od czasu odniesienia.",
+  "baselineTaken": "Odniesienie wykonano {date}",
+  "baselineHint": "Odniesienie to obraz strony porównywany po jego odcisku. Obraz jest robiony na pulpicie, w przeglądarce, która już jest na tym komputerze.",
+  "baselineNotDrawn": "Nie udało się narysować strony. Sprawdź, czy projekt działa i czy Chrome, Chromium lub Edge jest zainstalowany.",
+  "baselineNotSaved": "Nie udało się zapisać odniesień w dokumencie.",
+  "baselineKept": "Odniesienie jest zapisane. Porównaj je ze stroną, aby sprawdzić, czy strona nadal się zgadza."
 }

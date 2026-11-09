@@ -13,5 +13,17 @@
   "exportVue": "导出为组件",
   "openAllHint": "页面来自保存此文档的项目。",
   "routeParams": "路由参数",
-  "routeParamsPlaceholder": "名称=值"
+  "routeParamsPlaceholder": "名称=值",
+  "baselines": "基准图",
+  "keepBaseline": "保存为基准图",
+  "compareBaseline": "比较",
+  "compareAll": "比较所有页面",
+  "baselineMissing": "这个页面还没有保存图片。",
+  "baselineSame": "页面仍与基准图一致。",
+  "baselineChanged": "页面自基准图以来已经改变。",
+  "baselineTaken": "基准图拍摄于 {date}",
+  "baselineHint": "基准图是页面的图片，按指纹进行比较。图片在桌面版中、使用本机已有的浏览器拍摄。",
+  "baselineNotDrawn": "无法绘制该页面。请确认项目正在运行，并已安装受支持的浏览器。",
+  "baselineNotSaved": "无法将基准图写入文档。",
+  "baselineKept": "已经保存了基准图。与页面比较即可看出页面是否仍然一致。"
 }

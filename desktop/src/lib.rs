@@ -1,5 +1,6 @@
 mod agents;
 mod capabilities;
+mod capture;
 mod credentials;
 mod exec;
 mod explicit_sync;
@@ -118,6 +119,7 @@ pub fn run() {
             git::git_version,
             git::git_repository_root,
             exec::run_program,
+            capture::capture_page,
             runner::project_start,
             runner::project_stop,
             runner::project_run,

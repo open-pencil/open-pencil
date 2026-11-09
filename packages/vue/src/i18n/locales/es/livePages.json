@@ -13,5 +13,17 @@
   "exportVue": "Exportar como componente Vue",
   "openAllHint": "Las páginas se leen del proyecto en el que se guarda este documento.",
   "routeParams": "Parámetros de ruta",
-  "routeParamsPlaceholder": "slug=hola, id=42"
+  "routeParamsPlaceholder": "slug=hola, id=42",
+  "baselines": "Referencias",
+  "keepBaseline": "Guardar como referencia",
+  "compareBaseline": "Comparar",
+  "compareAll": "Comparar todas las páginas",
+  "baselineMissing": "Todavía no hay ninguna imagen de esta página.",
+  "baselineSame": "La página sigue igual que su referencia.",
+  "baselineChanged": "La página ha cambiado desde su referencia.",
+  "baselineTaken": "Referencia tomada el {date}",
+  "baselineHint": "Una referencia es una imagen de la página, comparada por su huella. La imagen se toma en el escritorio, con un navegador que ya esté instalado.",
+  "baselineNotDrawn": "No se pudo dibujar la página. Comprueba que el proyecto esté en marcha y que Chrome, Chromium o Edge esté instalado.",
+  "baselineNotSaved": "No se pudieron escribir las referencias en el documento.",
+  "baselineKept": "Hay una referencia guardada. Compárala con la página para ver si la página sigue coincidiendo."
 }
