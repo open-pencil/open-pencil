@@ -12,6 +12,7 @@ import {
   DocumentConflictError,
   DocumentForbiddenError,
   DocumentNotFoundError,
+  DocumentPurgeFailedError,
   UploadInvalidError
 } from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
@@ -49,6 +50,10 @@ export function documentDomainError(context: Context, error: unknown): Response 
   }
   if (error instanceof StorageQuotaExceededError) {
     return context.json({ error: { code: 'storage_quota_exceeded' as const } }, 409)
+  }
+  // Reported where cleanup failed, so the request handler doesn't report it again.
+  if (error instanceof DocumentPurgeFailedError) {
+    return context.json({ error: { code: 'purge_failed' as const } }, 503)
   }
   if (error instanceof UploadInvalidError) {
     return context.json({ error: { code: 'invalid_upload' as const } }, 422)
@@ -110,6 +115,27 @@ export function createDocumentRoutes(
   return router
     .get('/shared-documents', async (context) =>
       context.json({ documents: await service.listShared(context.get('actor').userId) })
+    )
+    .get('/trash', async (context) =>
+      context.json({ documents: await service.trash.list(context.get('actor').userId) })
+    )
+    .post('/trash/:documentId/restore', documentParams, (context) =>
+      documentResponse(context, async () => {
+        await service.trash.restore(
+          context.get('actor').userId,
+          context.req.valid('param').documentId
+        )
+        return context.body(null, 204)
+      })
+    )
+    .delete('/trash/:documentId', documentParams, (context) =>
+      documentResponse(context, async () => {
+        await service.trash.purge(
+          context.get('actor').userId,
+          context.req.valid('param').documentId
+        )
+        return context.body(null, 204)
+      })
     )
     .get('/workspaces/:workspaceId/documents', workspaceParams, async (context) => {
       const documents = await service.list(

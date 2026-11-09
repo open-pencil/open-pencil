@@ -90,6 +90,16 @@ export interface DocumentTable {
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
   deletedAt: TimestampColumn | null
+  /** Who moved the document to Trash; empty when its account's deletion did. */
+  deletedBy: string | null
+  /**
+   * When it was deleted forever, and by whom (empty for an account's deletion): out of everyone's
+   * sight, its files wait out the deployment's grace before cleanup destroys them.
+   */
+  purgedAt: TimestampColumn | null
+  purgedBy: string | null
+  /** Storage taken off its workspace's usage when it was deleted forever; see migration 007. */
+  purgedBytes: Generated<number>
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
   /** Set while a deployment administrator has taken the document down; see migration 032. */

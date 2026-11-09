@@ -16,7 +16,9 @@ export function documentRow(document: CloudAdminDocument, locale: string): Porta
     updated: formatDate(document.updatedAt, 'date', locale),
     takenDown: document.disabledAt !== null,
     takenDownReason: document.disabledReason,
-    openReports: document.openReports
+    openReports: document.openReports,
+    deletedForever: document.purgedAt !== null,
+    destroyed: document.destroyedAt ? formatDate(document.destroyedAt, 'date', locale) : null
   }
 }
 
@@ -41,6 +43,8 @@ export function useContentActions(reload: () => Promise<void> | undefined, chang
         await portal.api.documentAction(target.document.id, 'disable', reason)
       } else if (action === 'restore') {
         await portal.api.documentAction(target.document.id, 'enable')
+      } else if (action === 'undelete') {
+        await portal.api.documentAction(target.document.id, 'undelete')
       } else if (action === 'revoke-link' && target.shareId) {
         await portal.api.revokeShare(target.shareId)
       } else if (action === 'suspend-owner' && target.document.owner) {
