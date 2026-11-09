@@ -35,6 +35,8 @@ const emit = defineEmits<{ downloadAll: []; confirm: [] }>()
 
 const messages = useCloudPortalMessages()
 const confirmed = ref(false)
+/** Counts openings, so the typed email starts empty each time, even mid close animation. */
+const openings = ref(0)
 
 const blocked = computed(
   () => Boolean(deletion?.lastAdministrator) || (deletion?.blockedBy.length ?? 0) > 0
@@ -58,6 +60,7 @@ function confirm() {
     :error-heading="messages.errorTitle"
     :saving="deleting"
     :submit-disabled="!deletion || blocked || !confirmed || downloading"
+    @open="openings++"
     @submit="confirm"
   >
     <AppAlert
@@ -131,7 +134,12 @@ function confirm() {
         </AppButton>
       </div>
 
-      <AppConfirmTextField v-if="!blocked" v-model:matched="confirmed" :expected="email" />
+      <AppConfirmTextField
+        v-if="!blocked"
+        :key="openings"
+        v-model:matched="confirmed"
+        :expected="email"
+      />
     </template>
   </AppFormDialog>
 </template>

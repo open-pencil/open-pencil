@@ -86,15 +86,19 @@ const description = computed(() =>
         />
       </template>
     </AppFormField>
-    <AppFormField :label="messages.reportEmail" :hint="messages.reportEmailHint">
-      <template #default="{ id, describedBy }">
+    <AppFormField
+      :label="messages.reportEmail"
+      :error="emailInvalid ? messages.reportEmailInvalid : null"
+      :hint="messages.reportEmailHint"
+    >
+      <template #default="{ id, invalid, describedBy }">
         <AppInput
           :id="id"
           v-model="email"
           type="email"
           size="md"
-          :state="emailInvalid ? 'invalid' : 'idle'"
-          :aria-invalid="emailInvalid"
+          :state="invalid ? 'invalid' : 'idle'"
+          :aria-invalid="invalid || undefined"
           :aria-describedby="describedBy"
           autocomplete="email"
         />

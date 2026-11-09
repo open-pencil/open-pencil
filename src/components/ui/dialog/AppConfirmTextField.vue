@@ -9,8 +9,8 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 /**
  * Asks for something typed out, such as a workspace's name or the account's email, before an
  * action that cannot be undone. Spaces around it and letter case don't matter. The text lives
- * here, so it starts empty each time the dialog around it opens and keeps what was typed while
- * the dialog animates closed.
+ * here and stays while the dialog animates closed; the dialog keys this field by each opening, so
+ * it starts empty again even when the dialog reopens before it finished closing.
  */
 const { expected } = defineProps<{ expected: string }>()
 /** Whether what was typed matches. */
@@ -22,8 +22,7 @@ const typed = ref('')
 watch(
   [typed, () => expected],
   () => {
-    matched.value =
-      typed.value.trim().localeCompare(expected.trim(), undefined, { sensitivity: 'accent' }) === 0
+    matched.value = typed.value.trim().toLowerCase() === expected.trim().toLowerCase()
   },
   { immediate: true }
 )

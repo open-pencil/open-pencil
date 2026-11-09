@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -35,6 +35,11 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI()
 const typedMatches = ref(false)
+/** Counts openings, so the typed field starts empty each time, even mid close animation. */
+const openings = ref(0)
+watch(open, (value) => {
+  if (value) openings.value++
+})
 const blocked = computed(
   () => confirmDisabled || (confirmText !== undefined && !typedMatches.value)
 )
@@ -68,6 +73,7 @@ const confirmColor = computed(() => {
       }}</AlertDialogDescription>
       <AppConfirmTextField
         v-if="confirmText !== undefined"
+        :key="openings"
         v-model:matched="typedMatches"
         :expected="confirmText"
         @enter="confirm"
