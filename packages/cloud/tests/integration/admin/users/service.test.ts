@@ -49,6 +49,9 @@ function authAdapter() {
     async unlinkAuthenticationMethod() {
       return complete()
     },
+    async deleteAccount() {
+      return new Headers()
+    },
     async mfaStatus() {
       return null
     },

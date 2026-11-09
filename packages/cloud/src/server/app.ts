@@ -16,6 +16,7 @@ import {
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
+import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import {
   createCloudAPIRouter,
@@ -286,6 +287,7 @@ export function createCloudApp(services: CloudServices) {
     config: services.config,
     enrollment,
     workspaces,
+    deletion: createAccountDeletionService(services.database),
     resolveIdentity,
     resolveSession,
     requireActiveSession,

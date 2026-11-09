@@ -138,6 +138,35 @@
   "accountId": "アカウント ID",
   "accountIdDescription": "アカウントについて管理者に問い合わせるときに伝えてください。",
   "memberSince": "{date}から利用",
+  "deleteAccount": "アカウントを削除",
+  "deleteAccountDescription": "アカウントと、あなただけが参加しているワークスペースをファイルごと削除します。元に戻せません。",
+  "deleteAccountOpen": "アカウントを削除…",
+  "deleteAccountHeading": "アカウントを削除しますか？",
+  "deleteAccountIntro": "元に戻せません。削除されるもの：",
+  "deleteAccountWorkspaces": {
+    "many": "あなただけが参加しているワークスペース {count} 件とそのファイル"
+  },
+  "deleteAccountLeaves": "共有ワークスペースへの参加（ファイルは他のメンバーに残ります）",
+  "deleteAccountSignIn": "ログイン方法、セッション、写真。",
+  "deleteAccountBlockedHeading": "先に他の人を管理者にしてください",
+  "deleteAccountBlockedDescription": "あなたはこれらのワークスペースの唯一の管理者で、他の人がまだ使っています。",
+  "deleteAccountLastAdminHeading": "先に他の人をサーバー管理者にしてください",
+  "deleteAccountLastAdminDescription": "あなたはこのサーバーの唯一の管理者です。管理者がいないと、誰も管理コンソールを開けません。",
+  "deleteAccountDownload": "先にファイルをダウンロード",
+  "deleteAccountDownloadDescription": {
+    "many": "失うファイル {count} 件を 1 つの zip にまとめます。"
+  },
+  "deleteAccountNothingToDownload": "失うファイルはありません。",
+  "downloadAll": "すべてダウンロード",
+  "downloadProgress": "{total} 件中 {done} 件をダウンロード中…",
+  "downloadSaved": {
+    "many": "{count} 件のファイルを保存しました。"
+  },
+  "downloadFailed": "{names} をダウンロードできませんでした。",
+  "deleteAccountConfirmLabel": "確認のため {email} と入力してください",
+  "deleteAccountConfirm": "アカウントを削除",
+  "accountDeleted": "アカウントを削除しました。",
+  "accountArchiveName": "{host} のファイル",
   "activeSessions": "サインイン中のセッション",
   "activeSessionsDescription": "心当たりのないセッションはサインアウトしてください。すぐに終了します。",
   "signOutOtherSessions": "ほかのセッションからサインアウト",
@@ -403,6 +432,7 @@
   "errorLastMethod": "サインイン方法を少なくとも1つ残してください。",
   "errorSessionNotFresh": "安全のため、この変更を行う前にもう一度サインインしてください。",
   "errorLastAdmin": "サーバーには少なくとも1人の管理者が必要です。",
+  "errorAccountSoleAdmin": "他の人が使っているワークスペースの唯一の管理者のままです。先に他の人を管理者にしてください。",
   "errorSelfAction": "自分のアカウントにはこの操作を行えません。",
   "errorTwoStepRequired": "先に2段階認証をオンにしてください。",
   "errorNotAllowed": "この操作を行う権限がありません。",

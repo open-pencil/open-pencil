@@ -166,3 +166,12 @@ export type PortalContentAction =
   | 'suspend-owner'
   | 'dismiss'
   | 'mark-handled'
+
+/** How far Download all got: files saved so far of all of them, and the names it couldn't get. */
+export type PortalAccountArchive = {
+  done: number
+  total: number
+  /** Set once it finished: how many it saved. */
+  saved: number | null
+  failed: string[]
+}
