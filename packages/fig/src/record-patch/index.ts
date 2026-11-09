@@ -1,11 +1,15 @@
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
+import {
+  buildFigKiwi,
+  type FigDataCompressor,
+  type FigFileKind
+} from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 
-import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
+import { readFigArchiveParts, streamFigArchive, type FigImageEntry } from '../archive'
 import { patchedRecord, type FigRecordFieldPatch } from './fields'
 export {
   figArchiveComponentUsePages,
@@ -327,28 +331,34 @@ export function patchFigMessage(
   return concat(chunks)
 }
 
-/** Write the archive with the patch applied, in the archive's own schema. */
+/**
+ * The archive with the patch applied, in the archive's own schema, written as its reader asks for
+ * it. The document is patched and compressed before this returns; the archive's images then pass
+ * through as views of `bytes`, so a save holds them once.
+ */
 export function patchFigArchive(
   bytes: ArrayBuffer,
   patch: FigRecordPatch,
   input: FigPatchedArchiveInput,
   compress?: FigDataCompressor
-): Uint8Array {
+): ReadableStream<Uint8Array> {
   const parts = readFigArchiveParts(bytes)
   const kiwiData = patchFigMessage(parts.schemaDeflated, parts.dataRaw, patch)
   const archiveImages = new Set(parts.images.map(([hash]) => hash))
-  return writeFigArchive({
-    schemaDeflated: parts.schemaDeflated,
-    kiwiData,
+  return streamFigArchive({
+    canvasFig: buildFigKiwi(
+      parts.schemaDeflated,
+      kiwiData,
+      parts.figKiwiVersion,
+      compress,
+      input.kind ?? parts.kind
+    ),
     thumbnailPNG: input.thumbnailPNG,
     metaJSON: input.metaJSON,
     images: [
       ...parts.images.map(([name, data]) => ({ name: `images/${name}`, data })),
       ...parts.videos.map(([name, data]) => ({ name: `videos/${name}`, data })),
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
-    ],
-    figKiwiVersion: parts.figKiwiVersion,
-    compress,
-    kind: input.kind ?? parts.kind
+    ]
   })
 }
