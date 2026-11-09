@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 
 import { silhouetteBounds } from '#core/canvas/shadows/silhouette'
@@ -10,7 +10,7 @@ import { makeLineStrokeOutline } from '#core/canvas/strokes/line'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const SIZE = 400
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 afterAll(() => renderer.destroy())
 

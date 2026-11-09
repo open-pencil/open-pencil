@@ -1,5 +1,6 @@
-import type { CanvasKit, ShapedLine } from 'canvaskit-wasm'
 import { compact } from 'es-toolkit'
+
+import type { CanvasKit, ShapedLine } from '@open-pencil/canvaskit'
 
 import {
   joinerGlyphEnd,

@@ -7,7 +7,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
-import { canvasLabelForeground, outlineColorInMode } from './color'
+import { canvasLabelForeground } from './color'
 import type { LabelHitOptions } from './hit-test'
 import type { LabelLayout, LabelTextMetrics } from './layout'
 import { frameLabelPlacement } from './transform'
@@ -16,12 +16,7 @@ import { frameLabelPlacement } from './transform'
 const FIGJAM_TITLE_EDGE = 0.2
 
 export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: SceneNode) {
-  const figJam =
-    r.sectionTitles === 'outline'
-      ? figJamSectionTitleColors(node, (stroke, index) =>
-          outlineColorInMode(graph, node, stroke, index)
-        )
-      : null
+  const figJam = r.sectionTitles === 'outline' ? figJamSectionTitleColors(node) : null
   if (figJam) {
     const text = figJam.lightText ? 1 : 0
     const outline = node.strokes[figJam.strokeIndex]

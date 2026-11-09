@@ -5,6 +5,7 @@ import {
   MIN_EXPORT_SCALE
 } from '@open-pencil/scene-graph/export-scale'
 
+import type { SkiaRenderer } from '#core/canvas'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { ExportImageOptions } from '#core/figma-api/types'
 import type { RasterCodec } from '#core/io/formats/raster/pixels'
@@ -12,10 +13,11 @@ import { findPageId } from '#core/io/subgraph'
 
 import type { ExportRequest } from './settings'
 
-/** What a host lends an export: its renderer, for raster formats, and its image codec. */
+/** What a host lends an export: its renderer, for raster formats and PDF, and its image codec. */
 export interface ExportHost {
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
   rasterCodec?: RasterCodec
+  readonly renderer?: SkiaRenderer | null
 }
 
 /** A layer or page as `exportAsync` writes it: bytes, an SVG string for `SVG_STRING`. */
@@ -49,7 +51,9 @@ export async function exportLayer(
     }
     case 'PDF': {
       const { exportPDFDocument } = await import('#core/io/formats/pdf/document')
-      const pdf = await exportPDFDocument(graph, [{ pageId, nodeIds: ids }], { embedFonts: false })
+      const pdf = await exportPDFDocument(graph, [{ pageId, nodeIds: ids }], {
+        renderer: host.renderer
+      })
       if (!pdf || pdf.data.length === 0) throw noVisibleLayers()
       return pdf.data
     }

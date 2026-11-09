@@ -1,4 +1,5 @@
-import { releaseVersion } from './context.ts'
+import { releaseTagSchema } from '#release/version'
+import * as v from 'valibot'
 
 export const desktopBuilds = [
   {
@@ -46,7 +47,7 @@ export interface DesktopAsset {
 
 /** Required OpenPencil release outputs, not a discovery or packaging implementation. */
 export function desktopAssets(target: DesktopTarget, version: string): DesktopAsset[] {
-  releaseVersion(`v${version}`)
+  v.parse(releaseTagSchema, `v${version}`)
 
   if (target.endsWith('apple-darwin')) {
     const arch = target.startsWith('aarch64') ? 'aarch64' : 'x64'

@@ -8,8 +8,10 @@ description: Connectez @open-pencil/vue, créez un éditeur et configurez la zon
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
+
+Le canevas charge à l’exécution `canvaskit.wasm` depuis `@open-pencil/canvaskit/dist/` et les polices fournies ; la manière de les servir est décrite dans [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (en anglais).
 
 Le SDK se trouve dans le monorepo OpenPencil et est publié sous forme de package `@open-pencil/vue`.
 

@@ -1,8 +1,8 @@
 export { createInternalRoutes } from './routes'
 export {
   createInternalService,
-  parseSetWorkspaceEntitlements,
+  parseSetAccountEntitlements,
   type InternalService,
-  type SetWorkspaceEntitlementsInput
+  type SetAccountEntitlementsInput
 } from './service'
-export { setWorkspaceEntitlementsSchema } from './schema'
+export { setAccountEntitlementsSchema } from './schema'

@@ -1,4 +1,4 @@
-import type { CanvasKit, LineMetrics } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics } from '@open-pencil/canvaskit'
 
 import { isJoinerIndex, toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
 import {

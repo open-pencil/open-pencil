@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type {
   CanvasKit,
   LineMetrics,
@@ -5,9 +7,7 @@ import type {
   RectHeightStyle,
   RectWidthStyle,
   RectWithDirection
-} from 'canvaskit-wasm'
-import { uniq } from 'es-toolkit'
-
+} from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {

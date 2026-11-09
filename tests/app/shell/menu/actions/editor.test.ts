@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'bun:test'
 
+import { ref } from 'vue'
+
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session/create'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
@@ -8,7 +10,10 @@ import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 test('View → Variables… opens the variables dialog from the native menu as from the app menu', () => {
   const store = createEditorStore()
   setActiveEditorStore(store)
-  const actions: Partial<Record<string, () => void>> = createSharedEditorMenuActions(mock())
+  const actions: Partial<Record<string, () => void>> = createSharedEditorMenuActions(
+    mock(),
+    ref(false)
+  )
   expect(store.state.variablesOpen).toBe(false)
   actions.variables?.()
   expect(store.state.variablesOpen).toBe(true)

@@ -5,6 +5,7 @@ import type {
   AdminEnrollmentNotificationPayload,
   AuthenticationEmailPayload,
   DocumentInvitationEmailPayload,
+  DocumentReportPayload,
   EmailChangeRequestedPayload,
   EnrollmentEmailPayload,
   NewSignInPayload,
@@ -74,6 +75,7 @@ type EnrollmentMessageKind = Exclude<
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'document-report'
 >
 
 type EnrollmentCopy = {
@@ -138,6 +140,29 @@ async function renderAdminNotification(payload: AdminEnrollmentNotificationPaylo
       actionURL: payload.actionURL
     },
     'New OpenPencil Cloud access request'
+  )
+}
+
+const REPORT_REASON_LABELS: Record<string, string> = {
+  'spam-phishing': 'spam or phishing',
+  illegal: 'illegal content',
+  copyright: 'copyright',
+  harassment: 'harassment',
+  other: 'something else'
+}
+
+async function renderDocumentReport(payload: DocumentReportPayload) {
+  const reason = REPORT_REASON_LABELS[payload.reason] ?? payload.reason
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'A shared document was reported',
+      preview: `“${payload.documentName}” was reported for ${reason}.`,
+      message: `Someone who opened “${payload.documentName}” from a share link reported it for ${reason}: ${payload.description}`,
+      actionLabel: 'Review report',
+      actionURL: payload.actionURL
+    },
+    'A shared OpenPencil Cloud document was reported'
   )
 }
 
@@ -272,5 +297,6 @@ export async function renderTransactionalEmail(
   if (content.kind === 'email-change-requested') return renderEmailChangeRequested(content.payload)
   if (content.kind === 'new-sign-in') return renderNewSignIn(content.payload)
   if (content.kind === 'two-step-changed') return renderTwoStepChanged(content.payload)
+  if (content.kind === 'document-report') return renderDocumentReport(content.payload)
   return renderEnrollment(content.kind, content.payload)
 }

@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import {
   toolNumber,
   nodeIdInputSchema,
@@ -87,7 +88,7 @@ export const getPageTree = defineTool({
       const root = await figma.getNodeByIdAsync(root_id)
       if (!root) return { error: `Node "${root_id}" not found` }
       // A page not yet visited has no layers until it loads.
-      if (figma.graph.getNode(root.id)?.type === 'CANVAS') await root.loadAsync()
+      if (graphOf(figma).getNode(root.id)?.type === 'CANVAS') await root.loadAsync()
       return { root: root.id, tree: nodeToTreeEntry(root, 1, depth, typeFilter) }
     }
 

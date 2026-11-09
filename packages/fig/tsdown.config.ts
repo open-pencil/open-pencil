@@ -1,26 +1,16 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
-  entry: {
-    index: './src/index.ts',
-    'instance-overrides': './src/instance-overrides/index.ts',
-    clipboard: './src/clipboard/index.ts',
-    'node-change': './src/node-change/index.ts'
-  },
-  platform: 'neutral',
-  format: ['esm'],
-  dts: true,
-  sourcemap: true,
-  hash: false,
-  clean: true,
-  outDir: './dist',
-  treeshake: {
-    moduleSideEffects: false
-  },
-  deps: {
-    onlyBundle: false
-  },
-  outputOptions: {
-    minifyInternalExports: false
-  }
-})
+import { libraryConfig } from '@open-pencil/package-artifacts-tools/tsdown'
+
+export default defineConfig(
+  libraryConfig({
+    entry: {
+      index: './src/index.ts',
+      'instance-overrides': './src/instance-overrides/index.ts',
+      clipboard: './src/clipboard/index.ts',
+      'node-change': './src/node-change/index.ts'
+    },
+    // Rolldown's own chunk grouping, which the package has always shipped with.
+    chunks: 'default'
+  })
+)

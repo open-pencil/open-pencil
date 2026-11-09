@@ -79,7 +79,7 @@ const open = computed(
 </script>
 
 <template>
-  <AppPopoverRoot :open="open">
+  <AppPopoverRoot :open="open" :holds-keys="false">
     <PopoverPortal>
       <PopoverContent
         v-if="open && reference"

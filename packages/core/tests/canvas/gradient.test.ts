@@ -4,7 +4,7 @@ import type { Fill, GradientTransform } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas/renderer'
 const WIDTH = 200
 const HEIGHT = 120
@@ -24,7 +24,7 @@ function hue([r, g, b]: number[]): Hue | 'other' {
 }
 
 async function render(type: Fill['type'], transform: number[]) {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   const graph = new SceneGraph()

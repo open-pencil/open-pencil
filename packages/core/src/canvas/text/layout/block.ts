@@ -1,4 +1,4 @@
-import type { CanvasKit, LineMetrics, Paragraph } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics, Paragraph } from '@open-pencil/canvaskit'
 
 import type { TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
 import { JoinerIndex, type Joiner } from '#core/canvas/text/paragraph/joiners'

@@ -264,3 +264,26 @@ for (const [name, size] of [
     await expectCanvas(name)
   })
 }
+
+// Figma desktop (2026-11-08) labels a 151.25 × 33.333333 layer "151.25 × 33.33", to two decimals
+// as its Design panel shows them.
+test('a fractional layer’s size label shows two decimals', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const layer = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+      x: 200,
+      y: 200,
+      width: 151.25,
+      height: 33.333333,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, visible: true, opacity: 1 }]
+    })
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    store.select([layer.id])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('fractional-layer-selected')
+})

@@ -1,9 +1,14 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { exportFigFile, readFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, parseFigFile, readFigFile } from '@open-pencil/core/io/formats/fig'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
+import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { runsHeavyTests } from '@open-pencil/test-support/heavy'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { populateAllFigPages } from '#core/io/formats/fig'
 
@@ -45,3 +50,31 @@ test('a hug instance keeps the height its own text laid it out to when reopened'
   expect(reopenedInstance?.height).toBe(120)
   expect(reopened.getChildren(expectDefined(reopenedInstance, 'instance').id)[0]?.height).toBe(80)
 })
+
+test.if(runsHeavyTests)(
+  'scaled instance text is laid out for its overridden string, as Figma shows it',
+  async () => {
+    const graph = await parseFigFile(readFixtureArrayBuffer('gold-preview.fig'))
+    // The file saves no size for this copy, only the text "Category" over the component's "Copy".
+    const copy = expectDefined(graph.getNode('0:1273'), 'scaled instance text')
+    const renderer = await headlessRenderer()
+    const uninstall = installTextMeasurer((node, maxWidth) =>
+      renderer.measureTextNode(node, maxWidth)
+    )
+    try {
+      await prepareGraphFonts(
+        graph,
+        graph.getPages(true).map((page) => page.id)
+      )
+      graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
+      // Figma 126 shows I1:3503;4188:18912;4186:34767 at 56×18.
+      expect({ text: copy.text, width: copy.width, height: copy.height }).toEqual({
+        text: 'Category',
+        width: 56,
+        height: 18
+      })
+    } finally {
+      uninstall()
+    }
+  }
+)

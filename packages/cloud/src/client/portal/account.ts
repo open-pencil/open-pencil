@@ -1,4 +1,5 @@
 import {
+  cloudAccountDeletionResponseSchema,
   cloudAccountMutationResponseSchema,
   cloudAccountSessionsResponseSchema,
   cloudAccountStatusResponseSchema,
@@ -169,6 +170,22 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
       return call(
         (options) => account['sign-ins'].$get(undefined, options),
         cloudSignInsResponseSchema,
+        signal
+      )
+    },
+    /** What deleting the account takes, and the workspaces that stop it. */
+    accountDeletion(signal?: AbortSignal) {
+      return call(
+        (options) => account.deletion.$get(undefined, options),
+        cloudAccountDeletionResponseSchema,
+        signal
+      )
+    },
+    /** Deletes the account; a session that signed in a while ago gives its password. */
+    deleteAccount(password?: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.delete.$post({ json: { password } }, options),
+        cloudAccountMutationResponseSchema,
         signal
       )
     },

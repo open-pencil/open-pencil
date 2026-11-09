@@ -1,4 +1,5 @@
-export { createWorkspaceEntitlementRepository, DatabaseEntitlementSource } from './database'
+export { createAccountEntitlementRepository, DatabaseEntitlementSource } from './database'
+export { workspacePolicyContext } from './workspace'
 export {
   StaticEntitlementSource,
   type EntitlementSource,

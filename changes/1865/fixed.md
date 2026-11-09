@@ -1,0 +1,4 @@
+- Export curved vector paths to SVG with their control points on the right side when a path runs through a segment end to start.
+- Keep the contrast lint running on text with very many style runs, and hold text to the base style's threshold when style runs only appear to cover it.
+- Show each split pane's own shader frames in preview instead of the other pane's.
+- Report a tour that fails to load instead of leaving a blank tab, keep the welcome dialog open to try again, and show both macOS and Windows/Linux shortcuts in the tour's tips.

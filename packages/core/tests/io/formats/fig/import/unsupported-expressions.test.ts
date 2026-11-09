@@ -5,19 +5,20 @@ import { deflateSync } from 'fflate'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
 import { SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
+import { layerDependencies } from '@open-pencil/scene-graph/transfer'
+import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
 
-import { createEditor } from '#core/editor/create'
 import {
   captureClipboardVariables,
   importClipboardVariables
 } from '#core/editor/clipboard/variables'
+import { createEditor } from '#core/editor/create'
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 import { parseFigFile, parseFigFileViaWorker } from '#core/io/formats/fig/read'
-import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { populateFigPage } from '#core/kiwi/fig/session/document-state'
 
 /**
@@ -31,7 +32,11 @@ async function figWithLookup() {
   const compact = source.createVariable('Compact', 'FLOAT', lookup.id, 8)
   const gap = source.createVariable('Gap', 'FLOAT', collection.id, 24)
   for (const page of [source.getPages()[0], source.createNode('CANVAS', source.rootId)])
-    source.createNode('RECTANGLE', page.id, { width: 91, height: 70, boundVariables: { width: gap.id } })
+    source.createNode('RECTANGLE', page.id, {
+      width: 91,
+      height: 70,
+      boundVariables: { width: gap.id }
+    })
   const decoded = parseFigBuffer((await exportFigFile(source)).slice().buffer)
   const record = (id: string) =>
     decoded.nodeChanges.find((node) => node.guid && guidToString(node.guid) === id)
@@ -147,14 +152,18 @@ test('pasting a layer bound to a kept expression into another file follows the c
   const destination = new SceneGraph()
   const transfer = importClipboardVariables(
     destination,
-    captureClipboardVariables(graph, [rectangle])
+    captureClipboardVariables(graph, layerDependencies(graph, [rectangle]))
   )
   transfer.apply()
   const gap = transfer.variableIds.get(file.gap) ?? ''
   const compact = transfer.variableIds.get(file.compact) ?? ''
-  expect(destination.variables.get(gap)?.valuesByMode[transfer.modeIds.get(file.mode) ?? '']).toMatchObject(
-    { expression: 'UNSUPPORTED', references: [compact], modes: [transfer.modeIds.get(file.lookupMode)] }
-  )
+  expect(
+    destination.variables.get(gap)?.valuesByMode[transfer.modeIds.get(file.mode) ?? '']
+  ).toMatchObject({
+    expression: 'UNSUPPORTED',
+    references: [compact],
+    modes: [transfer.modeIds.get(file.lookupMode)]
+  })
   const saved = parseFigBuffer((await exportFigFile(destination)).slice().buffer).nodeChanges
   const savedCompact = saved.find((node) => node.name === 'Compact')?.guid
   const savedLookupMode = saved.find((node) => node.name === 'Lookup')?.variableSetModes?.[0]?.id
@@ -175,7 +184,10 @@ test('pasting copies a collection that a kept expression reaches only through a 
   const destination = new SceneGraph()
   const transfer = importClipboardVariables(
     destination,
-    captureClipboardVariables(graph, [graph.getChildren(graph.getPages()[0].id)[0]])
+    captureClipboardVariables(
+      graph,
+      layerDependencies(graph, graph.getChildren(graph.getPages()[0].id).slice(0, 1))
+    )
   )
   transfer.apply()
   const sizeMode = transfer.modeIds.get(size.defaultModeId)

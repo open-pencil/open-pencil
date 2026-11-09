@@ -1,4 +1,4 @@
-import type { LineMetrics } from 'canvaskit-wasm'
+import type { LineMetrics } from '@open-pencil/canvaskit'
 
 import { spacedLineWidth, toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
 import type { PlacedBlocks } from '#core/canvas/text/layout/positions'

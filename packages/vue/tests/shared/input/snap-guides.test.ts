@@ -4,7 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { computeSnap } from '@open-pencil/scene-graph/snap'
 
-import { applyResizeSnap } from '#vue/shared/input/resize/snap'
+import { layerSnapSource, snapResizedEdges } from '#vue/shared/input/resize/snap'
 import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap'
 
 describe('move snap guide presentation', () => {
@@ -79,9 +79,10 @@ describe('move snap guide presentation', () => {
     const pageId = editor.state.currentPageId
     const box = editor.graph.createNode('FRAME', pageId, { x: 0, y: 20, width: 100, height: 80 })
     editor.graph.createNode('FRAME', pageId, { x: 150, y: 20, width: 100, height: 80 })
-    const rect = applyResizeSnap(
-      { nodeId: box.id, handle: 'e' },
+    const rect = snapResizedEdges(
+      'e',
       { x: 0, y: 20, width: 148, height: 80 },
+      layerSnapSource({ nodeId: box.id, handle: 'e' }, editor),
       editor,
       false
     )

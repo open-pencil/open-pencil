@@ -46,6 +46,8 @@ type LocalAsset = {
   variantCount: number
   hasConflicts: boolean
   sourceLibraryKey: string | null
+  /** The thumbnail a library revision carries for the asset. */
+  thumbnail: Uint8Array | null
   description: string
   docsURL: string | null
   libraryId: string | null
@@ -147,6 +149,7 @@ const assets = computed<LocalAsset[]>(() => {
         variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0,
         hasConflicts: conflicts.length > 0,
         sourceLibraryKey: node.sourceLibraryKey,
+        thumbnail: null,
         description: node.symbolDescription,
         docsURL: node.symbolLinks[0]?.uri ?? null,
         libraryId: null,
@@ -161,7 +164,7 @@ const assets = computed<LocalAsset[]>(() => {
   const remote = remoteAssets.value.map(({ libraryId, libraryName, revisionId, asset }) => ({
     id: `${libraryId}:${asset.key}`,
     name: asset.name,
-    node: createDefaultNode(() => asset.sourceNodeId, asset.type, {
+    node: createDefaultNode(() => asset.sourceId, asset.type, {
       name: asset.name,
       symbolDescription: asset.description,
       sourceLibraryKey: asset.key
@@ -171,6 +174,7 @@ const assets = computed<LocalAsset[]>(() => {
     variantCount: 0,
     hasConflicts: false,
     sourceLibraryKey: asset.key,
+    thumbnail: asset.thumbnail ?? null,
     description: asset.description,
     docsURL: null,
     libraryId,
@@ -409,6 +413,14 @@ async function insertSelectedAsset() {
                 <AssetThumbnail
                   v-if="asset.componentId"
                   :node-id="asset.componentId"
+                  :alt="`${asset.name} preview`"
+                  :size="
+                    assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
+                  "
+                />
+                <AssetThumbnail
+                  v-else-if="asset.thumbnail"
+                  :png="asset.thumbnail"
                   :alt="`${asset.name} preview`"
                   :size="
                     assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE

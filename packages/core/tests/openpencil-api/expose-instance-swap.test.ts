@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { graphOf } from '#core/figma-api/graph'
 
 function createAPI() {
   return new FigmaAPI(new SceneGraph())
@@ -26,7 +27,7 @@ describe('exposeInstanceSwap', () => {
     host.appendChild(slot)
 
     const result = new OpenPencilAPI(api).exposeInstanceSwap([slot], [iconA, iconB], 'Icon')
-    const raw = api.graph.getNode(result.id)
+    const raw = graphOf(api).getNode(result.id)
 
     expect(result.id).toBe(host.id)
     expect(raw?.componentPropertyDefinitions?.length).toBe(1)
@@ -35,7 +36,7 @@ describe('exposeInstanceSwap', () => {
       [iconA.id, iconB.id].sort()
     )
 
-    const slotRaw = api.graph.getNode(slot.id)
+    const slotRaw = graphOf(api).getNode(slot.id)
     expect(slotRaw?.componentPropertyReferences?.length).toBe(1)
     expect(slotRaw?.componentPropertyReferences?.[0].field).toBe('INSTANCE_SWAP')
   })
@@ -58,13 +59,13 @@ describe('exposeInstanceSwap', () => {
     const slotB = icon.createInstance()
     b.appendChild(slotB)
 
-    const set = api.graph.createNode('COMPONENT_SET', api.currentPageId, { name: 'Button' })
-    api.graph.reparentNode(a.id, set.id)
-    api.graph.reparentNode(b.id, set.id)
+    const set = graphOf(api).createNode('COMPONENT_SET', api.currentPageId, { name: 'Button' })
+    graphOf(api).reparentNode(a.id, set.id)
+    graphOf(api).reparentNode(b.id, set.id)
     const result = new OpenPencilAPI(api).exposeInstanceSwap([slotA, slotB], [icon], 'Icon')
 
     expect(result.id).toBe(set.id)
-    const raw = api.graph.getNode(set.id)
+    const raw = graphOf(api).getNode(set.id)
     expect(raw?.componentPropertyDefinitions?.some((d) => d.type === 'INSTANCE_SWAP')).toBe(true)
   })
 

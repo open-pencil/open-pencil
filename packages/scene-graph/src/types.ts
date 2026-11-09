@@ -34,12 +34,26 @@ export type SceneGraphEventHandlers = Partial<{
   ) => void
 }>
 
+/** The document's records besides its nodes, which edits report changing as they do nodes. */
+export type DocumentRecordKind = 'variable' | 'collection'
+
 /** Hears about nodes as an edit adds and changes them, synchronously and before each change. */
 export interface NodeChangeObserver {
   /** A node is about to change and is still as it was. */
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /**
+   * A variable or collection is about to change, be added, or be removed, and is still as it
+   * was: absent, for one about to be added.
+   */
+  beforeRecord?: (kind: DocumentRecordKind, id: string) => void
+  /**
+   * The edit being observed waits on something outside it (`SceneGraph.waitOutsideEdit`): until
+   * `resume`, nodes change for someone else's edit, not this one.
+   */
+  pause?: () => void
+  resume?: () => void
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
@@ -850,6 +864,11 @@ export interface SceneNode {
   sharedSymbolVersion: string | null
   publishedVersion: string | null
   librarySource: LibraryAssetSource | null
+  /**
+   * The layer of a library's source document that a library definition's layer copies, which pairs
+   * it with the same layer in the library's next revision whatever that layer is called by then.
+   */
+  libraryLayerId: string | null
   isPublishable: boolean
   isSymbolPublishable: boolean
   /**

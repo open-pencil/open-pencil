@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { fromUint8Array } from 'js-base64'
+
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { registerTools } from '#mcp/tool/registration'
@@ -30,9 +32,13 @@ interface ToolResult {
   content: { type: string; text?: string }[]
 }
 
-/** An MCP server over a fresh root whose app answers each tool with `results[name]`. */
+/**
+ * An MCP server over a fresh root whose app answers each tool with `results[name]`, keeping the
+ * arguments each call reached the app with in `sent`.
+ */
 async function server(results: Record<string, unknown>) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
+  const sent: Record<string, unknown>[] = []
   const manager = createMCPSessionManager({
     serverVersion: '0.0.0',
     registerTools: (mcpServer, agentSession, onToolSettled) =>
@@ -42,7 +48,8 @@ async function server(results: Record<string, unknown>) {
         onToolSettled,
         mcpRoot: root,
         sendRPC: async (body) => {
-          const { args } = body as { args: { name: string } }
+          const { args } = body as { args: { name: string; args: Record<string, unknown> } }
+          sent.push(args.args)
           return { ok: true, result: results[args.name] }
         }
       })
@@ -79,7 +86,7 @@ async function server(results: Record<string, unknown>) {
     const message: unknown = JSON.parse(json)
     return (message as { result: ToolResult }).result
   }
-  return { root, call }
+  return { root, sent, call }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -111,5 +118,45 @@ describe('MCP tool file output', () => {
     const inline = await call('export_pdf', {})
     expect(inline.content[0].type).toBe('text')
     expect(inline.content[0].text).toContain(result.base64)
+  })
+})
+
+describe('MCP tool file input', () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const filled = { id: '0:1', imageHash: 'hash', scaleMode: 'FILL' }
+
+  test('set_image_fill sends the app the bytes of image_path, read inside the root', async () => {
+    const { root, sent, call } = await server({ set_image_fill: filled })
+    await writeFile(join(root, 'photo.png'), png)
+
+    const result = await call('set_image_fill', { id: '0:1', image_path: 'photo.png' })
+    expect(result.isError).toBeFalsy()
+    expect(sent).toEqual([{ id: '0:1', image_data: fromUint8Array(png), scale_mode: 'FILL' }])
+  })
+
+  test('set_image_fill passes image_data through and refuses a file outside the root', async () => {
+    const { sent, call } = await server({ set_image_fill: filled })
+    const data = imageDataURL(png)
+    expect((await call('set_image_fill', { id: '0:1', image_data: data })).isError).toBeFalsy()
+    expect(sent).toEqual([{ id: '0:1', image_data: data, scale_mode: 'FILL' }])
+
+    const outside = await call('set_image_fill', { id: '0:1', image_path: '../photo.png' })
+    expect(outside.isError).toBe(true)
+    expect(sent).toHaveLength(1)
+  })
+
+  test('set_image_fill takes one of image_path and image_data', async () => {
+    const { root, sent, call } = await server({ set_image_fill: filled })
+    await writeFile(join(root, 'photo.png'), png)
+
+    const neither = await call('set_image_fill', { id: '0:1' })
+    expect(neither.content[0].text).toContain('Pass image_path or image_data')
+    const both = await call('set_image_fill', {
+      id: '0:1',
+      image_path: 'photo.png',
+      image_data: fromUint8Array(png)
+    })
+    expect(both.content[0].text).toContain('not both')
+    expect(sent).toEqual([])
   })
 })

@@ -99,8 +99,9 @@ describe('atomic agent tools', () => {
           {
             ...tool('set_opacity'),
             execute: () => {
-              // Code that writes into a node directly reports it first.
+              // Code that writes into a node or variable directly reports it first.
               if (kind === 'node') graph.willChangeNode(graph.getNode(rectangle.id))
+              else graph.willChangeVariable(variable.id)
               set(after)
             }
           },
@@ -195,7 +196,6 @@ describe('atomic agent tools', () => {
     const variables = structuredClone(graph.variables)
     const collections = structuredClone(graph.variableCollections)
     const index = structuredClone(graph.instanceIndex)
-    const modes = structuredClone(graph.activeMode)
     const original = graph.getNode(instance.id)
     const def: ToolDef = {
       ...tool('set_opacity'),
@@ -229,7 +229,6 @@ describe('atomic agent tools', () => {
     expect(graph.variables).toEqual(variables)
     expect(graph.variableCollections).toEqual(collections)
     expect(graph.instanceIndex).toEqual(index)
-    expect(graph.activeMode).toEqual(modes)
     expect(graph.getNode(instance.id)).toBe(original)
     expect(undo.canUndo).toBe(false)
   })

@@ -1,5 +1,10 @@
-import type { Canvas, CanvasKit, Font, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type {
+  Canvas,
+  CanvasKit,
+  Font,
+  Paragraph,
+  TypefaceFontProvider
+} from '@open-pencil/canvaskit'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
@@ -9,6 +14,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
 import { ELLIPSIS } from '#core/text/ellipsis'
+import { makeParagraphBuilder } from '#core/text/font/collection'
 import { resolveParagraphFontFamilies } from '#core/text/font/families'
 import { missingGlyphOccurrences, type MissingGlyphOccurrence } from '#core/text/resolver'
 
@@ -106,7 +112,7 @@ function buildEntry(
       fontStyle: { weight: { value: fontWeight } }
     }
   })
-  const builder = ck.ParagraphBuilder.MakeFromFontProvider(style, provider)
+  const builder = makeParagraphBuilder(ck, style, provider)
   let paragraph: Paragraph
   try {
     builder.addText(text)

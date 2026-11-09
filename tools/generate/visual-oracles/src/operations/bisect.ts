@@ -6,8 +6,9 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { headlessRenderNodes, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
@@ -232,7 +233,7 @@ async function restoreFigmaVisibility(pageId: string, visibility: boolean[]): Pr
 }
 
 async function diffImages(expectedPath: string, actualPath: string): Promise<DiffMetrics> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const expected = ck.MakeImageFromEncoded(await Bun.file(expectedPath).bytes())
   const actual = ck.MakeImageFromEncoded(await Bun.file(actualPath).bytes())
   if (!expected || !actual) throw new Error('Failed to decode PNGs')

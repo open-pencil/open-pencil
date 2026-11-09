@@ -1,4 +1,4 @@
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
+import type { Canvas, CanvasKit } from '@open-pencil/canvaskit'
 
 import type { LineBand } from '#core/canvas/text/layout/apart'
 import type { TextLayoutBlock } from '#core/canvas/text/layout/block'

@@ -15,7 +15,7 @@ import {
   type Case,
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
-import type { Canvas, ShapedLine } from 'canvaskit-wasm'
+import type { Canvas, ShapedLine } from '@open-pencil/canvaskit'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'

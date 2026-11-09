@@ -110,7 +110,9 @@
     "open-pencil/no-hardcoded-color-constants": "error",
     "open-pencil/no-unknown-tailwind-classes": "error",
     "open-pencil/no-px-tailwind-values": "error",
+    "open-pencil/no-interpolated-tailwind-classes": "error",
     "open-pencil/no-hand-rolled-color": "error",
+    "open-pencil/no-hand-rolled-data-url": "error",
     "open-pencil/no-raw-console-format": "off",
     "open-pencil/no-typeof-window-check": "error",
     "open-pencil/no-vue-self-package-imports": "error",
@@ -423,6 +425,12 @@
       "files": ["packages/scene-graph/src/constants.ts"],
       "rules": {
         "open-pencil/no-hardcoded-color-constants": "off"
+      }
+    },
+    {
+      "files": ["packages/scene-graph/src/images.ts"],
+      "rules": {
+        "open-pencil/no-hand-rolled-data-url": "off"
       }
     },
     {

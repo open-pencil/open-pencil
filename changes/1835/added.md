@@ -1,0 +1,1 @@
+- A single selected layer inside a frame, component, or instance shows its constraints on the canvas as Figma does: dashed lines from its pinned sides to its parent's edges, and a line across the middle of the layer on a centred axis (#1835).

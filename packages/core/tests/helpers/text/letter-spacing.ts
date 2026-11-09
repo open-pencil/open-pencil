@@ -1,6 +1,6 @@
 import { expect } from 'bun:test'
 
-import type { CanvasKit, ShapedLine, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, ShapedLine, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type SceneNode, type TextLength } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'

@@ -1,5 +1,4 @@
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
 

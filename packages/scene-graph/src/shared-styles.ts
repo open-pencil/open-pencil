@@ -103,6 +103,14 @@ export function sharedStyleTypeForKind(kind: SharedStyleKind): SharedStyleType {
   return STYLE_TYPES[kind]
 }
 
+/** The document's shared style layers, by the source ID layers link them by. */
+export function sharedStyleLayers(graph: SceneGraph): Map<string, SceneNode> {
+  const styles = new Map<string, SceneNode>()
+  for (const node of graph.getAllNodes())
+    if (node.sharedStyleType !== null && node.source.id) styles.set(node.source.id, node)
+  return styles
+}
+
 export function getSharedStyles(graph: SceneGraph, kind: SharedStyleKind): SharedStyle[] {
   const type = sharedStyleTypeForKind(kind)
   const styles: SharedStyle[] = []

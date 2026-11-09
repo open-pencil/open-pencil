@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { defineConfig } from 'tsdown'
 import type { Rolldown } from 'tsdown'
 
+import { libraryConfig } from '@open-pencil/package-artifacts-tools/tsdown'
+
 function rawText(): Rolldown.Plugin {
   return {
     name: 'raw-text',
@@ -15,46 +17,17 @@ function rawText(): Rolldown.Plugin {
   }
 }
 
-export default defineConfig({
-  entry: {
-    'schema-runtime': './src/schema-runtime/index.ts',
-    fig: './src/fig/index.ts',
-    'fig/codec': './src/fig/codec.ts',
-    'fig/container': './src/fig/container.ts',
-    'fig/guid': './src/fig/guid.ts',
-    'fig/parse': './src/fig/parse.ts'
-  },
-  plugins: [rawText()],
-  platform: 'neutral',
-  format: ['esm'],
-  dts: true,
-  sourcemap: true,
-  hash: false,
-  clean: true,
-  outDir: './dist',
-  treeshake: {
-    moduleSideEffects: false
-  },
-  deps: {
-    neverBundle: [/^node:/],
-    onlyBundle: false
-  },
-  outputOptions: {
-    minifyInternalExports: false,
-    codeSplitting: {
-      groups: [
-        {
-          test: /(?<!\.d\.c?ts)$/,
-          name: (id) => {
-            const cleanId = id.split('?')[0]
-            const parts = cleanId.split(/[\\/]/g)
-            const srcIndex = parts.lastIndexOf('src')
-            const file =
-              srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : (parts.at(-1) ?? 'chunk')
-            return `chunks/${file.replace(/\.(ts|tsx)$/, '')}`
-          }
-        }
-      ]
-    }
-  }
-})
+
+export default defineConfig(
+  libraryConfig({
+    entry: {
+      'schema-runtime': './src/schema-runtime/index.ts',
+      fig: './src/fig/index.ts',
+      'fig/codec': './src/fig/codec.ts',
+      'fig/container': './src/fig/container.ts',
+      'fig/guid': './src/fig/guid.ts',
+      'fig/parse': './src/fig/parse.ts'
+    },
+    plugins: [rawText()]
+  })
+)

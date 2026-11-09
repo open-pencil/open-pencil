@@ -1,5 +1,4 @@
-import type { Canvas, Path } from 'canvaskit-wasm'
-
+import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 

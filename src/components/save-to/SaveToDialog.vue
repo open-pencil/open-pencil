@@ -60,7 +60,7 @@ const roles = computed(() => ({
   admin: t.value.roleAdmin
 }))
 const errors = computed(() => ({
-  quota: { heading: t.value.saveQuotaHeading, description: t.value.saveQuotaDescription },
+  quota: { heading: t.value.saveQuotaHeading, description: t.value.saveQuotaOwnerDescription },
   offline: { heading: t.value.saveOfflineHeading, description: t.value.saveOfflineDescription },
   unavailable: { heading: t.value.saveFailedHeading, description: t.value.saveFailedDescription }
 }))

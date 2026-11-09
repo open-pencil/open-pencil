@@ -30,8 +30,9 @@ export function requestNetwork(request: Request): PingNetwork {
 }
 
 /**
- * Adds one to today's count for the ping's build and answer, and to today's count for its
- * network, in one batch; no row ever describes a single install.
+ * Adds one to today's count for the ping's build and answer, to today's count for its network,
+ * and to today's count for its step when it sends one, in one batch; no row ever describes a
+ * single install.
  */
 export async function recordPing(
   d1: D1Database,
@@ -41,10 +42,11 @@ export async function recordPing(
 ): Promise<void> {
   const db = createFeedbackDatabase(d1)
   const day = utcDayOf(now).toString()
+  const { pingDays, enteredStep, ...build } = ping
   await runBatch(d1, [
     db
       .insertInto('usagePings')
-      .values({ ...ping, day, count: 1 })
+      .values({ ...build, day, count: 1 })
       .onConflict((conflict) =>
         conflict
           .columns(['day', 'version', 'platform', 'arch', 'app', 'browser', 'usageStats'])
@@ -59,6 +61,19 @@ export async function recordPing(
           .columns(['day', 'asn', 'app', 'platform', 'name'])
           .doUpdateSet((eb) => ({ count: eb('pingNetworks.count', '+', 1) }))
       )
-      .compile()
+      .compile(),
+    ...(pingDays
+      ? [
+          db
+            .insertInto('pingSteps')
+            .values({ day, app: ping.app, step: pingDays, entered: enteredStep ? 1 : 0, count: 1 })
+            .onConflict((conflict) =>
+              conflict
+                .columns(['day', 'app', 'step', 'entered'])
+                .doUpdateSet((eb) => ({ count: eb('pingSteps.count', '+', 1) }))
+            )
+            .compile()
+        ]
+      : [])
   ])
 }

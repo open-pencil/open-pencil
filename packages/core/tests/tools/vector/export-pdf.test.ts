@@ -19,12 +19,6 @@ describe('export_pdf', () => {
     expect(v.safeParse(exportPDF.input, { mode: 'spread' }).success).toBe(false)
   })
 
-  test('embeds fonts only on request', () => {
-    expect(v.parse(exportPDF.input, {}).embed_fonts).toBe(false)
-    expect(v.parse(exportPDF.input, { embed_fonts: true }).embed_fonts).toBe(true)
-    expect(v.safeParse(exportPDF.input, { embed_fonts: 'yes' }).success).toBe(false)
-  })
-
   test('reports a problem with the request as an error result', async () => {
     const figma = new FigmaAPI(new SceneGraph())
     expect(await exportPDF.execute(figma, { mode: 'single' })).toEqual({

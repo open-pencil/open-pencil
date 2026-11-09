@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Image, Surface } from 'canvaskit-wasm'
+import type { Image, Surface } from '@open-pencil/canvaskit'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 

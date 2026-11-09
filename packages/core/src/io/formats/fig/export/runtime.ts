@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import {
   EMPTY_EXPORT_RUNTIME,
   type FigNodeChangeExportRuntime,

@@ -49,6 +49,9 @@ function authAdapter() {
     async unlinkAuthenticationMethod() {
       return complete()
     },
+    async deleteAccount() {
+      return new Headers()
+    },
     async mfaStatus() {
       return null
     },
@@ -207,7 +210,13 @@ describe('deployment admin user safety', () => {
       const workspaceId = crypto.randomUUID()
       await runtime.database
         .insertInto('workspace')
-        .values({ id: workspaceId, name: 'Studio', slug: 'studio', createdBy: USER_ID })
+        .values({
+          id: workspaceId,
+          name: 'Studio',
+          slug: 'studio',
+          createdBy: USER_ID,
+          ownerId: USER_ID
+        })
         .execute()
       await runtime.database
         .insertInto('workspaceMember')

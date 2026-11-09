@@ -15,16 +15,22 @@ import { createAutomationCommandHandlers } from '@/app/automation/bridge/handler
 import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 
-/** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
-const automationRequestSchema = v.pipe(
+/**
+ * Requests from the MCP bridge, and its cancellation of one it stopped waiting for; other
+ * message types (such as the register prompt) are ignored.
+ */
+const automationMessageSchema = v.pipe(
   v.string(),
   v.parseJson(),
-  v.object({
-    type: v.literal('request'),
-    id: v.pipe(v.string(), v.nonEmpty()),
-    command: v.string(),
-    args: v.optional(v.unknown())
-  })
+  v.variant('type', [
+    v.object({
+      type: v.literal('request'),
+      id: v.pipe(v.string(), v.nonEmpty()),
+      command: v.string(),
+      args: v.optional(v.unknown())
+    }),
+    v.object({ type: v.literal('cancel'), id: v.pipe(v.string(), v.nonEmpty()) })
+  ])
 )
 
 /**
@@ -62,9 +68,11 @@ export function connectAutomation(
     automationFiles(automationURL, token)
   )
 
-  async function handleRequest(_id: string, command: string, args: unknown): Promise<unknown> {
-    return handleAutomationRequest(getStore(), command, args)
-  }
+  /**
+   * Calls still running, by request id, with the connection each came over. The bridge cancels
+   * one once it stops waiting, and a closed connection cancels its own: no one waits for them.
+   */
+  const running = new Map<string, { controller: AbortController; socket: WebSocket }>()
 
   function connect() {
     let socket: WebSocket
@@ -87,21 +95,37 @@ export function connectAutomation(
 
     socket.onmessage = async (event) => {
       try {
-        const parsed = v.safeParse(automationRequestSchema, event.data)
+        const parsed = v.safeParse(automationMessageSchema, event.data)
         if (!parsed.success) {
           if (parsed.issues.some((issue) => issue.type === 'parse_json'))
             console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))
           return
         }
         const msg = parsed.output
+        if (msg.type === 'cancel') {
+          // Only the connection a call came over can cancel it.
+          const call = running.get(msg.id)
+          if (call?.socket === socket) {
+            call.controller.abort(new Error('The MCP call timed out and was cancelled'))
+          }
+          return
+        }
         const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
         if (session) {
           const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
           sockets.add(socket)
           sessionSockets.set(session.session, sockets)
         }
+        const controller = new AbortController()
+        const call = { controller, socket }
+        running.set(msg.id, call)
         try {
-          const result = await handleRequest(msg.id, msg.command, msg.args)
+          const result = await handleAutomationRequest(
+            getStore(),
+            msg.command,
+            msg.args,
+            controller.signal
+          )
           if (socket.readyState !== WebSocket.OPEN) return
           socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
@@ -114,6 +138,8 @@ export function connectAutomation(
               error: e instanceof Error ? e.message : String(e)
             })
           )
+        } finally {
+          if (running.get(msg.id) === call) running.delete(msg.id)
         }
       } catch (e) {
         console.warn('Failed to parse WebSocket message:', e)
@@ -122,6 +148,11 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
+      for (const call of running.values()) {
+        if (call.socket === socket) {
+          call.controller.abort(new Error('The MCP connection closed before the call finished'))
+        }
+      }
       // Sessions that reached the app only over this connection cannot any more, so their agents
       // leave; ones that also came another way, such as over a newer connection, stay.
       for (const [id, sockets] of sessionSockets) {

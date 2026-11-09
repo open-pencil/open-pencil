@@ -1,5 +1,4 @@
-import type { CanvasKit, LineMetrics, Paragraph, ShapedLine } from 'canvaskit-wasm'
-
+import type { CanvasKit, LineMetrics, Paragraph, ShapedLine } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { paragraphLength } from '#core/canvas/text/layout/block'

@@ -5,10 +5,11 @@ description: Odczytywanie i zmiana położenia, rozmiaru, obrotu, wyrównania i 
 
 # usePosition
 
-`usePosition()` udostępnia `x`, `y`, `width`, `height` i `rotation`, a także działania wyrównania, odbicia, obrotu oraz podglądu i zapisu właściwości liczbowych.
+`usePosition()` udostępnia `panelProp(key)` dla `'x'`, `'y'`, `'width'`, `'height'` i `'rotation'`: wartość pola zaokrągloną do dwóch miejsc po przecinku, jak w panelu Figmy, albo `MIXED`, gdy zaznaczone warstwy pokazują różne wartości. Warstwy zachowują dokładne wartości. Udostępnia też działania wyrównania, odbicia, obrotu oraz podglądu i zapisu właściwości liczbowych.
 
 ```ts
-const { x, y, width, height, rotation, updateProp, commitProp } = usePosition()
+const position = usePosition()
+const x = position.panelProp('x')
 
 position.align('horizontal', 'center')
 position.flip('horizontal')

@@ -1,4 +1,4 @@
-import type { CanvasKit, LineMetrics, ShapedLine } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics, ShapedLine } from '@open-pencil/canvaskit'
 
 import { allSame, type ShapedLines } from '#core/canvas/text/layout/lines'
 

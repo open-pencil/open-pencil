@@ -1,4 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import { toTextIndex, type TextLayoutBlock } from '#core/canvas/text/layout/block'
 import { figmaLineBox } from '#core/canvas/text/layout/lines'

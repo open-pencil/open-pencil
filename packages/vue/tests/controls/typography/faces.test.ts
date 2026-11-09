@@ -4,7 +4,7 @@ import { computed, effectScope, nextTick, shallowRef } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { facesFromStyles, fontManager, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -346,7 +346,7 @@ test('a cancelled axis edit puts back the axes it previewed', async () => {
 
 test('an axis set while text is edited styles the selected characters, and undoes', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -451,7 +451,7 @@ test('a cancelled size on a layer a range sized puts the range back', () => {
 
 test('a cancelled axis edit on selected characters puts back their own axes', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -522,7 +522,7 @@ test('an axis set on a whole text keeps the other axes a range sets', () => {
 
 test('a cancelled axis preview that outlived text editing puts back the layer and its ranges', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)

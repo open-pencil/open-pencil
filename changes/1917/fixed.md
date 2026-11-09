@@ -1,0 +1,1 @@
+- SVG export clips a rounded frame's children to its rounded or smoothed corners instead of a square box, and fills smoothed rectangles and frames with their smoothed outline (#1916).

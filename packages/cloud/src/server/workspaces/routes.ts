@@ -6,6 +6,7 @@ import {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
+import { InvitationLimitError } from '#cloud/server/invitations'
 import {
   CLOUD_RATE_LIMITS,
   createRouteRateLimiter,
@@ -57,6 +58,9 @@ async function memberRoute<T>(context: Context, action: () => Promise<T>): Promi
     }
     if (error instanceof WorkspaceAlreadyMemberError) {
       return context.json({ error: { code: 'already_member' as const } }, 409)
+    }
+    if (error instanceof InvitationLimitError) {
+      return context.json({ error: { code: 'rate_limited' as const } }, 429)
     }
     throw error
   }

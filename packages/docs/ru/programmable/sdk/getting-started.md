@@ -8,8 +8,10 @@ description: Подключение @open-pencil/vue, создание реда�
 ## Установка
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
+
+Холст загружает во время работы `canvaskit.wasm` из `@open-pencil/canvaskit/dist/` и встроенные шрифты; как их раздавать, описано в разделе [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (на английском).
 
 SDK находится в монорепозитории OpenPencil и опубликован как пакет `@open-pencil/vue`.
 

@@ -1,9 +1,23 @@
 import type { OpenOverlays } from '#vue/lifecycle/overlays'
 
 // A key pressed inside a dialog, menu, list, or picker is that widget's own, such as an arrow in
-// an inline list that never opened as an overlay.
-const OVERLAY_SELECTOR = '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
+// an inline list that never opened as an overlay. One already closing is not: Reka keeps it, and
+// the focus in it, until its exit animation ends, and a key pressed then belongs to the canvas.
+const ANY_OVERLAY_SELECTOR =
+  ':is([data-picker-content], [role="dialog"], [role="listbox"], [role="menu"])'
+const OVERLAY_SELECTOR = `${ANY_OVERLAY_SELECTOR}:not([data-state="closed"])`
+const CLOSING_OVERLAY_SELECTOR = `${ANY_OVERLAY_SELECTOR}[data-state="closed"]`
 const PICKER_SELECTOR = '[data-picker-content]'
+
+/**
+ * Whether the key was pressed in a dialog, menu, list, or picker that is closing. Its items still
+ * answer keys, as a menu item Enter clicks, so a key the canvas took must stop short of them.
+ */
+export function pressedInClosingOverlay(event: KeyboardEvent): boolean {
+  return event
+    .composedPath()
+    .some((target) => target instanceof Element && target.matches(CLOSING_OVERLAY_SELECTOR))
+}
 
 function pressedInOverlay(event: KeyboardEvent, allowPickers: boolean) {
   return event
