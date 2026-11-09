@@ -34,5 +34,7 @@
   "deepLinkPickerDismissed": "Link cancelado: nenhum arquivo foi escolhido.",
   "deepLinkCancelled": "Link cancelado: era esperado um arquivo terminado em “{file}”.",
   "deepLinkNodeNotFound": "O nó “{node}” não foi encontrado em “{file}”.",
-  "openQueuedFilesFailed": "Não foi possível abrir os arquivos entregues ao OpenPencil: {error}"
+  "openQueuedFilesFailed": "Não foi possível abrir os arquivos entregues ao OpenPencil: {error}",
+  "saveFailedRetry": "Tentar salvar novamente",
+  "savingDocument": "Salvando o documento…"
 }

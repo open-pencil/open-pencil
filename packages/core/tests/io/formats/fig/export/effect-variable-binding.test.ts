@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer, patchFigArchive } from '@open-pencil/fig'
+import { parseFigBuffer, patchFigArchive, readStreamBytes } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 
@@ -92,10 +92,12 @@ describe('Figma export of effect variable bindings', () => {
       ...record,
       effects: record.effects?.map((effect) => ({ ...effect, radius: 8, offset: { x: 0, y: 8 } }))
     }
-    const patched = patchFigArchive(
+    const patched = await readStreamBytes(
+      patchFigArchive(
       Uint8Array.from(exported).buffer,
       { records: [saved], blobs: [], removed: [], replaceVariables: false },
       { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
+      )
     )
 
     const reopened = await parseFigFile(Uint8Array.from(patched).buffer)

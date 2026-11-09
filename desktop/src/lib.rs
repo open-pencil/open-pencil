@@ -83,7 +83,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
-            files::fig::build_fig_file,
+            files::fig::compress_fig_canvas,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,

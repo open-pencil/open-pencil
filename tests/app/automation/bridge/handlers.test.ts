@@ -635,10 +635,7 @@ describe('close_file and save_file never prompt', () => {
       getFile: async () => asDouble<File>({ lastModified: 0 }),
       createWritable: async () => {
         opened.count += 1
-        return asDouble<FileSystemWritableFileStream>({
-          write: async () => undefined,
-          close: async () => undefined
-        })
+        return asDouble<FileSystemWritableFileStream>(new WritableStream<Uint8Array>())
       }
     })
     const tab = createTab()
@@ -673,7 +670,7 @@ describe('close_file and save_file never prompt', () => {
 
   /** Save As installs this handle, then the first open fails and later opens write. */
   function pickedHandle(name: string) {
-    const calls = { createWritable: 0, write: 0 }
+    const calls = { createWritable: 0, written: 0 }
     let fail = true
     const handle = asDouble<FileSystemFileHandle>({
       kind: 'file',
@@ -685,12 +682,13 @@ describe('close_file and save_file never prompt', () => {
           fail = false
           throw new Error('disk full')
         }
-        return asDouble<FileSystemWritableFileStream>({
-          write: async () => {
-            calls.write += 1
-          },
-          close: async () => undefined
-        })
+        return asDouble<FileSystemWritableFileStream>(
+          new WritableStream<Uint8Array>({
+            close: () => {
+              calls.written += 1
+            }
+          })
+        )
       }
     })
     return { handle, calls }
@@ -715,7 +713,7 @@ describe('close_file and save_file never prompt', () => {
     const picked = await failSaveAs(tab, 'copy.fig')
     expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.pen')
     await request('save_file', { document_id: tab.id })
-    expect(picked.calls).toEqual({ createWritable: 2, write: 1 })
+    expect(picked.calls).toEqual({ createWritable: 2, written: 1 })
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
 
@@ -731,7 +729,7 @@ describe('close_file and save_file never prompt', () => {
     const picked = await failSaveAs(tab, 'notes.pen')
     expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.fig')
     await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
-    expect(picked.calls).toEqual({ createWritable: 1, write: 0 })
+    expect(picked.calls).toEqual({ createWritable: 1, written: 0 })
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 })

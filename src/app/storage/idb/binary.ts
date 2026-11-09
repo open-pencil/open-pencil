@@ -63,6 +63,16 @@ export async function binaryStorage(): Promise<StoreBinary> {
   return (await blobsStored) ? asBlob : plainBytes
 }
 
+/**
+ * The value a write stores for `data`: a Blob stays a Blob where the engine keeps them, so a large
+ * file goes to disk without being read into memory. Take it before opening the transaction.
+ */
+export async function storedBinary(data: Uint8Array | Blob): Promise<StoredBinary> {
+  if (!(data instanceof Blob)) return (await binaryStorage())(data)
+  blobsStored ??= probeBlobs()
+  return (await blobsStored) ? data : new Uint8Array(await data.arrayBuffer())
+}
+
 /** The bytes of a stored binary value, in any form a version of the app stored. */
 export async function readStoredBinary(
   stored: StoredBinary | undefined
