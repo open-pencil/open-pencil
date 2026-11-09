@@ -1,0 +1,6 @@
+// A diamond gradient over the unit square: the ramp read at twice the Manhattan distance from
+// the centre, so the corners of the square reach its end.
+half4 main(float2 position) {
+  float2 distance = abs(position - float2(0.5));
+  return ramp.eval(float2(2.0 * (distance.x + distance.y), 0.0));
+}

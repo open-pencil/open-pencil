@@ -1,0 +1,6 @@
+// One antialiased dot per grid point, with a dot at the origin.
+half4 main(float2 position) {
+  float2 cell = position - pitch * floor(position / pitch + 0.5);
+  float alpha = clamp(radius + 0.5 - length(cell), 0.0, 1.0);
+  return half4(shade * alpha, shade * alpha, shade * alpha, alpha);
+}

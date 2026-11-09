@@ -1,0 +1,14 @@
+// One line per document pixel, decided per device pixel: the line for document pixel k sits on
+// device pixel round(offset + k · step), the same rounding a drawn rectangle would get.
+bool onLine(float device, float origin, float spacing) {
+  float pixel = floor(device);
+  float nearest = floor((pixel - origin) / spacing + 0.5);
+  return pixel == floor(origin + nearest * spacing + 0.5);
+}
+
+half4 main(float2 position) {
+  float2 device = position * dpr;
+  if (onLine(device.x, gridOffset.x, gridSpacing.x) || onLine(device.y, gridOffset.y, gridSpacing.y))
+    return half4(lineColor.rgb * lineColor.a, lineColor.a);
+  return half4(0);
+}

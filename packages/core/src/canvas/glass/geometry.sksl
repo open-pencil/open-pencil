@@ -1,0 +1,54 @@
+float boxDistance(float2 q, float2 h, float r) {
+  float2 k = abs(q) - h + r;
+  return length(max(k, 0.0)) + min(max(k.x, k.y), 0.0) - r;
+}
+
+// (distance in from the outline, inward direction), negative distance outside a box. A box's
+// direction bends around corners rounded by at least bend.
+float3 geometry(float2 p, float bend) {
+  if (isBox > 0.5) {
+    float2 h = size * 0.5;
+    float2 q = p - origin - h;
+    float r = q.x < 0.0 ? (q.y < 0.0 ? radii.x : radii.w) : (q.y < 0.0 ? radii.y : radii.z);
+    float s = -boxDistance(q, h, r);
+    float b = min(max(r, bend), min(h.x, h.y));
+    float2 k = abs(q) - (h - b);
+    float2 sq = float2(q.x < 0.0 ? -1.0 : 1.0, q.y < 0.0 ? -1.0 : 1.0);
+    float2 dir = (k.x > 0.0 && k.y > 0.0)
+      ? -normalize(k) * sq
+      : (k.x > k.y ? float2(-sq.x, 0.0) : float2(0.0, -sq.y));
+    return float3(s, dir);
+  }
+  // Each chunk of segments lies in a circle (centre, radius). Beyond depth + 8 nothing refracts
+  // or lights, so a pixel that far from every circle skips the outline, and otherwise it walks
+  // only the chunks that may hold the nearest segment.
+  float nearest = 1e9;
+  float farthest = 1e9;
+  for (int c = 0; c < CHUNKS; c++) {
+    if (chunks[c].z < 0.0) break;
+    float centre = length(p - chunks[c].xy);
+    nearest = min(nearest, centre - chunks[c].z);
+    farthest = min(farthest, centre + chunks[c].z);
+  }
+  if (nearest >= depth + 8.0) return float3(nearest, 0.0, 0.0);
+  float best = 1e9;
+  float2 closest = p;
+  for (int c = 0; c < CHUNKS; c++) {
+    if (chunks[c].z < 0.0) break;
+    if (length(p - chunks[c].xy) - chunks[c].z <= farthest) {
+      for (int k = 0; k < CHUNK; k++) {
+        if (float(c * CHUNK + k) >= segmentCount) break;
+        float2 a = segments[c * CHUNK + k].xy;
+        float2 b = segments[c * CHUNK + k].zw;
+        float2 ab = b - a;
+        float t = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
+        float2 point = a + ab * t;
+        float dist = length(p - point);
+        if (dist < best) { best = dist; closest = point; }
+      }
+    }
+  }
+  float2 away = p - closest;
+  float len = length(away);
+  return float3(best, len > 1e-4 ? away / len : float2(0.0));
+}

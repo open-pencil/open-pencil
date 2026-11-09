@@ -1,5 +1,3 @@
-import dedent from 'dedent'
-
 import {
   packUniforms,
   uniformDeclarations,
@@ -8,13 +6,9 @@ import {
 } from './uniforms'
 
 /**
- * SkSL source as a template, dedented so it reads as written. Interpolate single values only:
- * `dedent` re-indents a multi-line value, so a snippet two programs share goes in their `body`
- * as a part of its own.
+ * A program's body: the SkSL of a `.sksl` file imported with `?raw`, or several, such as a
+ * snippet two programs share and each one's own code, joined in order.
  */
-export const sksl = dedent
-
-/** A program's body: its source, or parts such as a shared snippet and its own code. */
 export type SkslBody = string | readonly string[]
 
 /** A Skia runtime program: its SkSL, and the uniforms and child shaders it declares. */
@@ -25,8 +19,15 @@ export interface SkslProgram<U extends UniformSpecs = UniformSpecs> {
   readonly uniforms: U
   /** Child shaders, in declaration order, as `makeShaderWithChildren` takes them. */
   readonly children: readonly string[]
-  /** The whole program: child and uniform declarations, then the body. */
+  /** The whole program: declarations generated from the above, then the body. */
   readonly source: string
+}
+
+interface ProgramParts<U extends UniformSpecs> {
+  uniforms: U
+  /** Integer constants the body reads, such as loop bounds, declared as `const int`. */
+  constants?: Readonly<Record<string, number>>
+  body: SkslBody
 }
 
 /**
@@ -38,40 +39,45 @@ const programs: SkslProgram[] = []
 function define<U extends UniformSpecs>(
   name: string,
   kind: SkslProgram['kind'],
-  uniforms: U,
   children: readonly string[],
-  body: SkslBody
+  { uniforms, constants = {}, body }: ProgramParts<U>
 ): SkslProgram<U> {
-  const parts = typeof body === 'string' ? [body] : body
+  for (const [constant, value] of Object.entries(constants)) {
+    if (!Number.isInteger(value)) throw new Error(`Constant ${constant} of ${name} is not an int`)
+  }
   const declarations = [
     ...children.map((child) => `uniform shader ${child};`),
-    uniformDeclarations(uniforms)
-  ].filter((line) => line.length > 0)
+    uniformDeclarations(uniforms),
+    ...Object.entries(constants).map(([constant, value]) => `const int ${constant} = ${value};`)
+  ]
+    .filter((line) => line.length > 0)
+    .join('\n')
+  const parts = typeof body === 'string' ? [body] : body
   const program = {
     name,
     kind,
     uniforms,
     children,
-    source: `${[declarations.join('\n'), ...parts].join('\n\n')}\n`
+    source: `${[declarations, ...parts.map((part) => part.trim())].join('\n\n')}\n`
   }
   programs.push(program)
   return program
 }
 
-/** A runtime shader: `body` holds `half4 main(float2 position)` and what it calls. */
+/** A runtime shader: its body holds `half4 main(float2 position)` and what it calls. */
 export function defineShader<U extends UniformSpecs>(
   name: string,
-  { uniforms, children = [], body }: { uniforms: U; children?: readonly string[]; body: SkslBody }
+  { children = [], ...parts }: ProgramParts<U> & { children?: readonly string[] }
 ): SkslProgram<U> {
-  return define(name, 'shader', uniforms, children, body)
+  return define(name, 'shader', children, parts)
 }
 
-/** A runtime blender: `body` holds `half4 main(half4 src, half4 dst)`. */
+/** A runtime blender: its body holds `half4 main(half4 src, half4 dst)`. */
 export function defineBlender<U extends UniformSpecs>(
   name: string,
-  { uniforms, body }: { uniforms: U; body: SkslBody }
+  parts: ProgramParts<U>
 ): SkslProgram<U> {
-  return define(name, 'blender', uniforms, [], body)
+  return define(name, 'blender', [], parts)
 }
 
 /** Every program the loaded modules define. */

@@ -4,7 +4,6 @@ export {
   defineShader,
   definedPrograms,
   programUniforms,
-  sksl,
   type SkslBody,
   type SkslProgram
 } from './program'

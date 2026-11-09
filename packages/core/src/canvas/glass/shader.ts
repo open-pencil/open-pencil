@@ -19,7 +19,11 @@ import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-gr
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import { blurSigma } from '@open-pencil/scene-graph/geometry'
 
-import { defineShader, sksl, type UniformValues } from '#core/canvas/sksl'
+import { defineShader, type UniformValues } from '#core/canvas/sksl'
+
+import geometrySource from './geometry.sksl?raw'
+import lightSource from './light.sksl?raw'
+import refractionSource from './refraction.sksl?raw'
 
 /** The most outline segments a non-box shape passes to the shaders. */
 export const GLASS_MAX_SEGMENTS = 128
@@ -40,153 +44,18 @@ const GEOMETRY_UNIFORMS = {
   chunks: { type: 'float4', length: CHUNKS }
 } as const
 
-const GEOMETRY = sksl`
-  float boxDistance(float2 q, float2 h, float r) {
-    float2 k = abs(q) - h + r;
-    return length(max(k, 0.0)) + min(max(k.x, k.y), 0.0) - r;
-  }
-
-  // (distance in from the outline, inward direction), negative distance outside a box. A box's
-  // direction bends around corners rounded by at least bend.
-  float3 geometry(float2 p, float bend) {
-    if (isBox > 0.5) {
-      float2 h = size * 0.5;
-      float2 q = p - origin - h;
-      float r = q.x < 0.0 ? (q.y < 0.0 ? radii.x : radii.w) : (q.y < 0.0 ? radii.y : radii.z);
-      float s = -boxDistance(q, h, r);
-      float b = min(max(r, bend), min(h.x, h.y));
-      float2 k = abs(q) - (h - b);
-      float2 sq = float2(q.x < 0.0 ? -1.0 : 1.0, q.y < 0.0 ? -1.0 : 1.0);
-      float2 dir = (k.x > 0.0 && k.y > 0.0)
-        ? -normalize(k) * sq
-        : (k.x > k.y ? float2(-sq.x, 0.0) : float2(0.0, -sq.y));
-      return float3(s, dir);
-    }
-    // Each chunk of segments lies in a circle (centre, radius). Beyond depth + 8 nothing refracts
-    // or lights, so a pixel that far from every circle skips the outline, and otherwise it walks
-    // only the chunks that may hold the nearest segment.
-    float nearest = 1e9;
-    float farthest = 1e9;
-    for (int c = 0; c < ${CHUNKS}; c++) {
-      if (chunks[c].z < 0.0) break;
-      float centre = length(p - chunks[c].xy);
-      nearest = min(nearest, centre - chunks[c].z);
-      farthest = min(farthest, centre + chunks[c].z);
-    }
-    if (nearest >= depth + 8.0) return float3(nearest, 0.0, 0.0);
-    float best = 1e9;
-    float2 closest = p;
-    for (int c = 0; c < ${CHUNKS}; c++) {
-      if (chunks[c].z < 0.0) break;
-      if (length(p - chunks[c].xy) - chunks[c].z <= farthest) {
-        for (int k = 0; k < ${CHUNK}; k++) {
-          if (float(c * ${CHUNK} + k) >= segmentCount) break;
-          float2 a = segments[c * ${CHUNK} + k].xy;
-          float2 b = segments[c * ${CHUNK} + k].zw;
-          float2 ab = b - a;
-          float t = clamp(dot(p - a, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
-          float2 point = a + ab * t;
-          float dist = length(p - point);
-          if (dist < best) { best = dist; closest = point; }
-        }
-      }
-    }
-    float2 away = p - closest;
-    float len = length(away);
-    return float3(best, len > 1e-4 ? away / len : float2(0.0));
-  }
-`
-
 export const GLASS_REFRACTION = defineShader('glass refraction', {
   uniforms: { ...GEOMETRY_UNIFORMS, refraction: 'float', dispersion: 'float' },
   children: ['backdrop'],
-  body: [
-    GEOMETRY,
-    sksl`
-      float edgeRamp(float s) { return max(0.19, clamp(1.12 * (s - 0.12), 0.0, 1.0)); }
-
-      float roundedProfile(float s) {
-        float u = max(0.0, 1.0 - 2.0 * (abs(s) + 0.5) / depth);
-        return depth * pow(u, 1.4);
-      }
-
-      float displacement(float s) {
-        if (isBox > 0.5) {
-          float t = clamp(1.0 - (s - 1.0) / depth, 0.0, 1.0);
-          return depth * pow(t, 3.5) * edgeRamp(s);
-        }
-        float sum = 0.0;
-        float weights = 0.0;
-        for (int k = -4; k <= 4; k++) {
-          float t = float(k) * 1.75;
-          float w = exp(-t * t / 24.5);
-          sum += w * roundedProfile(s + t);
-          weights += w;
-        }
-        return sum / weights * edgeRamp(s);
-      }
-
-      half4 refracted(float2 p, float2 dir, float d) {
-        if (dispersion <= 0.0) return backdrop.eval(p + d * dir);
-        half4 red = backdrop.eval(p + d * (1.0 + 0.1 * dispersion) * dir);
-        half4 green = backdrop.eval(p + d * dir);
-        half4 blue = backdrop.eval(p + d * (1.0 - 0.1 * dispersion) * dir);
-        return half4(red.r, green.g, blue.b, green.a);
-      }
-
-      // Near the outline the displacement ramps steeply, so a pixel there averages eight points
-      // spread over half a layer pixel along the normal: one device pixel at 2×, which is how
-      // exports and high-density screens draw. Points outside the outline are left to the clip's
-      // antialiasing.
-      half4 main(float2 p) {
-        float3 g = geometry(p, depth);
-        float2 dir = g.yz;
-        if (g.x >= 1.5) return refracted(p, dir, refraction * displacement(g.x));
-        half4 sum = half4(0.0);
-        float count = 0.0;
-        for (int i = 0; i < 8; i++) {
-          float t = (float(i) + 0.5) / 16.0 - 0.25;
-          float s = g.x + t;
-          if (s < 0.0) continue;
-          sum += refracted(p + t * dir, dir, refraction * displacement(s));
-          count += 1.0;
-        }
-        return count > 0.0 ? sum / count : refracted(p, dir, refraction * displacement(g.x));
-      }
-    `
-  ]
+  constants: { CHUNK, CHUNKS },
+  body: [geometrySource, refractionSource]
 })
 
 export const GLASS_LIGHT = defineShader('glass light', {
   uniforms: { ...GEOMETRY_UNIFORMS, axis: 'float2', intensity: 'float' },
   children: ['backdrop'],
-  body: [
-    GEOMETRY,
-    sksl`
-      float light(float3 g) {
-        float facing = dot(-g.yz, axis);
-        float spread = clamp(2.2 * (abs(facing) - 0.44), 0.0, 1.0);
-        float rim = intensity * (facing < 0.0 ? 1.08 : 0.71) * spread * max(0.0, 1.0 - g.x);
-        float band = 12.0 / 255.0 * intensity * facing * max(0.0, 1.0 - g.x / (0.65 * depth));
-        return rim + band;
-      }
-
-      half4 main(float2 p) {
-        half4 color = backdrop.eval(p);
-        float3 g = geometry(p, 0.0);
-        if (g.x >= 1.5) return half4(clamp(color.rgb + light(g) * color.a, 0.0, color.a), color.a);
-        half3 sum = half3(0.0);
-        float count = 0.0;
-        for (int i = 0; i < 8; i++) {
-          float s = g.x + (float(i) + 0.5) / 16.0 - 0.25;
-          if (s < 0.0) continue;
-          sum += clamp(color.rgb + light(float3(s, g.yz)) * color.a, 0.0, color.a);
-          count += 1.0;
-        }
-        return half4(count > 0.0 ? sum / count : color.rgb, color.a);
-      }
-    `
-  ]
+  constants: { CHUNK, CHUNKS },
+  body: [geometrySource, lightSource]
 })
 
 /** Where a glass layer's outline sits, in the layer's units: a box or flattened segments. */

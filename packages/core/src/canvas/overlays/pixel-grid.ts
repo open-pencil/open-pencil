@@ -3,7 +3,9 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
-import { defineShader, programUniforms, sksl } from '#core/canvas/sksl'
+import { defineShader, programUniforms } from '#core/canvas/sksl'
+
+import pixelGridSource from './pixel-grid.sksl?raw'
 
 /** Device pixels one document pixel must cover before Figma shows the pixel grid: 800% at 1×. */
 export const PIXEL_GRID_MIN_DEVICE_PIXELS = 8
@@ -27,20 +29,7 @@ export function pixelGridVisible(zoom: number, dpr: number): boolean {
  */
 const PIXEL_GRID = defineShader('pixel grid', {
   uniforms: { gridOffset: 'float2', gridSpacing: 'float2', lineColor: 'float4', dpr: 'float' },
-  body: sksl`
-    bool onLine(float device, float origin, float spacing) {
-      float pixel = floor(device);
-      float nearest = floor((pixel - origin) / spacing + 0.5);
-      return pixel == floor(origin + nearest * spacing + 0.5);
-    }
-
-    half4 main(float2 position) {
-      float2 device = position * dpr;
-      if (onLine(device.x, gridOffset.x, gridSpacing.x) || onLine(device.y, gridOffset.y, gridSpacing.y))
-        return half4(lineColor.rgb * lineColor.a, lineColor.a);
-      return half4(0);
-    }
-  `
+  body: pixelGridSource
 })
 
 function lineColor(page: Color): Color {

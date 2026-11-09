@@ -3,7 +3,9 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
-import { defineShader, programUniforms, sksl } from '#core/canvas/sksl'
+import { defineShader, programUniforms } from '#core/canvas/sksl'
+
+import dotGridSource from './dot-grid.sksl?raw'
 
 /** FigJam's dots, #C4C4C4, as Figma desktop draws them on a board's #F5F5F5 page. */
 const DOT_COLOR = 196 / 255
@@ -21,13 +23,7 @@ const DOT_MIN_SPACING = 8
  */
 const DOT_GRID = defineShader('dot grid', {
   uniforms: { pitch: 'float', radius: 'float', shade: 'float' },
-  body: sksl`
-    half4 main(float2 position) {
-      float2 cell = position - pitch * floor(position / pitch + 0.5);
-      float alpha = clamp(radius + 0.5 - length(cell), 0.0, 1.0);
-      return half4(shade * alpha, shade * alpha, shade * alpha, alpha);
-    }
-  `
+  body: dotGridSource
 })
 
 /** The spacing FigJam shows at a zoom: the board grid, doubled until the dots stand apart. */
