@@ -4,6 +4,7 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
   buildFigKiwi,
+  figFileKind,
   type FigDataCompressor,
   type FigFileKind
 } from '@open-pencil/kiwi/fig/container'
@@ -510,8 +511,25 @@ function archiveName(name: string): string {
   return `images/${name.replace(/^images\//, '')}`
 }
 
+/** Writes bytes a legacy raw container produced, in bounded chunks. */
+async function writeBytesStream(
+  bytes: Uint8Array,
+  sink: ZipSink,
+  options?: ZipStreamOptions
+): Promise<void> {
+  const chunkBytes = 1024 * 1024
+  for (let start = 0; start < bytes.byteLength; start += chunkBytes) {
+    const end = Math.min(start + chunkBytes, bytes.byteLength)
+    await sink(bytes.subarray(start, end))
+    options?.onProgress?.(end, bytes.byteLength)
+  }
+}
+
 /** The stored bytes of one ZIP entry, inflated only when the archive deflated it. */
-function entryData(bytes: Uint8Array, entry: ReturnType<typeof readZipEntries>[number]): Uint8Array {
+function entryData(
+  bytes: Uint8Array,
+  entry: ReturnType<typeof readZipEntries>[number]
+): Uint8Array {
   const data = bytes.subarray(entry.dataOffset, entry.dataOffset + entry.compressedSize)
   return entry.method === 8 ? inflateSync(data) : data
 }
@@ -531,8 +549,15 @@ export async function patchFigArchiveStream(
   options?: ZipStreamOptions
 ): Promise<void> {
   const archive = new Uint8Array(bytes)
+  // A legacy raw container is not a ZIP; the in-memory patch still writes a ZIP archive from it.
+  if (figFileKind(archive)) {
+    await writeBytesStream(patchFigArchive(bytes, patch, input, compress), sink, options)
+    return
+  }
   const entries = readZipEntries(archive)
-  const canvasEntry = entries.find((entry) => entry.name === 'canvas.fig' || entry.name === 'canvas')
+  const canvasEntry = entries.find(
+    (entry) => entry.name === 'canvas.fig' || entry.name === 'canvas'
+  )
   if (!canvasEntry) throw new Error('No canvas data found in .fig file')
   const payload = parseFigKiwiContainer(entryData(archive, canvasEntry))
   if (!payload) throw new Error('Invalid fig-kiwi container')
@@ -553,7 +578,8 @@ export async function patchFigArchiveStream(
   ]
   const known = new Set(['canvas.fig', 'canvas', 'thumbnail.png', 'meta.json'])
   for (const entry of entries) {
-    if (known.has(entry.name) || !entry.name.startsWith('images/') || added.has(entry.name)) continue
+    if (known.has(entry.name) || !entry.name.startsWith('images/') || added.has(entry.name))
+      continue
     output.push({
       name: entry.name,
       method: entry.method as 0 | 8,

@@ -1,4 +1,4 @@
-import { open } from '@tauri-apps/plugin-fs'
+import { open, remove, rename } from '@tauri-apps/plugin-fs'
 
 import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
 
@@ -93,11 +93,21 @@ export function createDocumentWriter({
       const filePath = getFilePath()
       const fileHandle = getFileHandle()
       if (filePath && isTauri()) {
-        const file = await open(filePath, { write: true, create: true, truncate: true })
+        // Replace the file only once every byte is written, so a failed export leaves the
+        // previous save intact. The temporary name has no leading dot: the fs scope keeps
+        // hidden files out of `**`.
+        const temporary = `${filePath}.saving`
         try {
-          await stream((chunk) => writeAll((bytes) => file.write(bytes), chunk), onProgress)
-        } finally {
-          await file.close()
+          const file = await open(temporary, { write: true, create: true, truncate: true })
+          try {
+            await stream((chunk) => writeAll((bytes) => file.write(bytes), chunk), onProgress)
+          } finally {
+            await file.close()
+          }
+          await rename(temporary, filePath)
+        } catch (error) {
+          await remove(temporary).catch(() => undefined)
+          throw error
         }
         return await finishWrite(version)
       }

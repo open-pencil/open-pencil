@@ -68,11 +68,17 @@ describe('Tauri document IO helpers', () => {
       'plugin:fs|open',
       'plugin:fs|write',
       'plugin:fs|write',
-      'plugin:resources|close'
+      'plugin:resources|close',
+      'plugin:fs|rename'
     ])
     expect(calls[0]?.args).toEqual({
-      path: '/tmp/document.fig',
+      path: '/tmp/document.fig.saving',
       options: { write: true, create: true, truncate: true }
+    })
+    expect(calls[4]?.args).toEqual({
+      oldPath: '/tmp/document.fig.saving',
+      newPath: '/tmp/document.fig',
+      options: undefined
     })
     const written = calls
       .filter((call) => call.cmd === 'plugin:fs|write')
@@ -83,6 +89,46 @@ describe('Tauri document IO helpers', () => {
       [6, 6]
     ])
     expect(savedVersions).toEqual([42])
+  })
+
+  test('keeps the saved file when a stream fails', async () => {
+    const calls: Array<{ cmd: string; args: unknown }> = []
+    await mockTauriIPC((cmd, args) => {
+      calls.push({ cmd, args })
+      if (cmd === 'plugin:fs|open') return 7
+      if (cmd === 'plugin:fs|write') {
+        const data = (args as { data: Uint8Array | number[] }).data
+        return ArrayBuffer.isView(data) ? data.byteLength : data.length
+      }
+      return null
+    })
+    const write = createDocumentWriter({
+      state: { documentName: 'Document' },
+      getFilePath: () => '/tmp/document.fig',
+      getFileHandle: () => null,
+      getStorageBinding: () => null,
+      setSavedVersion: () => undefined,
+      setLastWriteTime: () => undefined
+    })
+
+    await expect(
+      write(async (sink) => {
+        await sink(new Uint8Array([1, 2]))
+        throw new Error('disk full')
+      }, 3)
+    ).rejects.toThrow('disk full')
+
+    expect(calls.map((call) => call.cmd)).toEqual([
+      'plugin:fs|open',
+      'plugin:fs|write',
+      'plugin:resources|close',
+      'plugin:fs|remove'
+    ])
+    expect(calls[0]?.args).toEqual({
+      path: '/tmp/document.fig.saving',
+      options: { write: true, create: true, truncate: true }
+    })
+    expect(calls[3]?.args).toEqual({ path: '/tmp/document.fig.saving', options: undefined })
   })
 
   test('keeps a completed write successful when recovery cleanup fails', async () => {

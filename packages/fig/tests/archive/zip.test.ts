@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
-import { deflateSync, unzipSync } from 'fflate'
 
-import { parseFigBuffer, writeFigArchive } from '#fig/index'
 import {
   readZipEntries,
   renameFigArchiveStream,
   writeFigArchiveStream,
   writeZipStream
 } from '#fig/archive/zip'
+import { parseFigBuffer, writeFigArchive } from '#fig/index'
+import { deflateSync, unzipSync } from 'fflate'
 
 import {
   createNodeChangesMessage,
@@ -114,6 +114,41 @@ describe('streaming .fig archives', () => {
     expect(total).toBe(output.bytes().byteLength)
     expect(progress.at(-1)).toBe(total)
     expect(progress).toEqual([...progress].sort((left, right) => left - right))
+  })
+
+  it('leaves a raw fig-kiwi container for the caller to write whole', async () => {
+    const output = collect()
+
+    await expect(renameFigArchiveStream(canvas(), 'New', output.sink)).resolves.toBe(false)
+    expect(output.chunks).toEqual([])
+  })
+
+  it('rejects archives with more entries than a classic ZIP holds', async () => {
+    const entries = Array.from({ length: 65_536 }, (_, index) => ({
+      name: `entry-${index}`,
+      method: 0 as const,
+      crc: 0,
+      compressedSize: 0,
+      uncompressedSize: 0,
+      data: new Uint8Array(0)
+    }))
+
+    await expect(writeZipStream(entries, () => undefined)).rejects.toThrow('65,535')
+  })
+
+  it('rejects archives whose offsets no longer fit a classic ZIP', async () => {
+    const entries = [
+      {
+        name: 'oversized',
+        method: 0 as const,
+        crc: 0,
+        compressedSize: 0xffffffff,
+        uncompressedSize: 0xffffffff,
+        data: new Uint8Array(0)
+      }
+    ]
+
+    await expect(writeZipStream(entries, () => undefined)).rejects.toThrow('4 GiB')
   })
 
   it('renames the meta.json of a streamed archive and keeps its other entries', async () => {

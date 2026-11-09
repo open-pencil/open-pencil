@@ -1,6 +1,8 @@
 import { deflateSync, inflateSync } from 'fflate'
 import * as v from 'valibot'
 
+import { figFileKind } from '@open-pencil/kiwi/fig/container'
+
 import type { FigImageEntry } from '../archive'
 
 /**
@@ -42,6 +44,9 @@ const UTF8_FLAG = 0x0800
 /** A fixed DOS date (1980-01-01) keeps a streamed archive byte-stable between saves. */
 const DOS_DATE = (1 << 5) | 1
 const CHUNK_BYTES = 1024 * 1024
+/** The largest offsets and entry count a ZIP without ZIP64 records can describe. */
+const MAX_CLASSIC_ZIP_BYTES = 0xffffffff
+const MAX_CLASSIC_ZIP_ENTRIES = 0xffff
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256)
@@ -168,7 +173,13 @@ export async function writeZipStream(
   sink: ZipSink,
   options: ZipStreamOptions = {}
 ): Promise<void> {
+  if (entries.length > MAX_CLASSIC_ZIP_ENTRIES) {
+    throw new Error('A ZIP archive can hold at most 65,535 entries')
+  }
   const total = totalBytes(entries)
+  if (total > MAX_CLASSIC_ZIP_BYTES) {
+    throw new Error('A ZIP archive can hold at most 4 GiB; this archive is larger')
+  }
   let written = 0
   const central: Array<{ entry: ZipEntrySource; offset: number }> = []
 
@@ -288,6 +299,7 @@ export async function renameFigArchiveStream(
   sink: ZipSink,
   options?: ZipStreamOptions
 ): Promise<boolean> {
+  if (figFileKind(bytes)) return false
   const entries = copyZipEntries(bytes)
   const meta = entries.find((entry) => entry.name === 'meta.json')
   if (!meta) return false

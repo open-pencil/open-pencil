@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
-import { deflateSync } from 'fflate'
 
+import { storedZipEntry, deflatedZipEntry } from '#fig/archive/zip'
 import {
   parseFigBuffer,
   patchFigArchive,
@@ -10,7 +10,7 @@ import {
   writeZipStream,
   type FigRecordPatch
 } from '#fig/index'
-import { storedZipEntry, deflatedZipEntry } from '#fig/archive/zip'
+import { deflateSync } from 'fflate'
 
 import {
   createNodeChangesMessage,
@@ -117,6 +117,38 @@ describe('streaming .fig archive patches', () => {
     expect(actualParsed.thumbnailPNG).toEqual(new Uint8Array([4, 5]))
     expect(actualParsed.metaJSON).toBe('{"file_name":"New"}')
     expect(actualParsed.kind).toBe(expectedParsed.kind)
+  })
+
+  it('patches a raw fig-kiwi container', async () => {
+    const input = canvas()
+    const expected = patchFigArchive(
+      input.slice().buffer as ArrayBuffer,
+      PATCH,
+      {
+        thumbnailPNG: new Uint8Array([4, 5]),
+        metaJSON: '{"file_name":"Raw"}',
+        images: []
+      },
+      deflateSync
+    )
+    const actual = await collect(async (sink) => {
+      await patchFigArchiveStream(
+        input.slice().buffer as ArrayBuffer,
+        PATCH,
+        {
+          thumbnailPNG: new Uint8Array([4, 5]),
+          metaJSON: '{"file_name":"Raw"}',
+          images: []
+        },
+        deflateSync,
+        sink
+      )
+    })
+
+    const expectedParsed = parseFigBuffer(expected.slice().buffer as ArrayBuffer)
+    const actualParsed = parseFigBuffer(actual.slice().buffer as ArrayBuffer)
+    expect(actualParsed.nodeChanges).toEqual(expectedParsed.nodeChanges)
+    expect(actualParsed.metaJSON).toBe(expectedParsed.metaJSON)
   })
 
   it('copies images an archive stored with deflate as well as stored ones', async () => {
