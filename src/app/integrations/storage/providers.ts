@@ -1,5 +1,10 @@
 import { CLOUD_STORAGE_PROVIDERS } from '@/app/cloud/integration/storage'
 
+import {
+  createGoogleDriveStorageAdapter,
+  DRIVE_CLIENT_ID_FIELD,
+  DRIVE_FOLDER_FIELD
+} from './google-drive/adapter'
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
 
@@ -19,7 +24,26 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
   createAdapter: createS3StorageAdapter
 })
 
+export const GOOGLE_DRIVE_STORAGE_PROVIDER = defineStorageProvider({
+  id: 'google-drive',
+  label: 'Google Drive',
+  description: 'Your own Google Drive: documents sync between the browser, desktop and phone',
+  preferenceFields: [
+    {
+      id: DRIVE_CLIENT_ID_FIELD,
+      label: 'Google OAuth client ID',
+      kind: 'text',
+      required: true,
+      placeholder: '…apps.googleusercontent.com'
+    },
+    { id: DRIVE_FOLDER_FIELD, label: 'Folder', kind: 'text', placeholder: 'Lawha' }
+  ],
+  credentialFields: [],
+  createAdapter: createGoogleDriveStorageAdapter
+})
+
 export const storageProviderRegistry = new StorageProviderRegistry([
+  GOOGLE_DRIVE_STORAGE_PROVIDER,
   S3_STORAGE_PROVIDER,
   ...CLOUD_STORAGE_PROVIDERS
 ])
