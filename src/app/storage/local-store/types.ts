@@ -48,7 +48,8 @@ export type LocalCanvasWriteInput = LocalCanvasLocation & {
   providerId: StorageProviderID
   name: string
   updatedAt?: string
-  figBytes: Uint8Array
+  /** The `.fig`; a Blob, as a save produces, is stored without being read into memory. */
+  figBytes: Uint8Array | Blob
   thumbBytes?: Uint8Array | null
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
