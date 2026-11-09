@@ -1,2 +1,3 @@
 - CanvasKit is `@open-pencil/canvaskit`, OpenPencil's build of CanvasKit 0.41.1 with Skia's PDF backend: SDK hosts install it in place of `canvaskit-wasm` and serve `@open-pencil/canvaskit/dist/canvaskit.wasm` (#1926).
 - `exportPDFDocument(graph, specs, { renderer, title })` draws with a renderer, the process's headless one when none is given; the `export_pdf` tool drops `embed_fonts` and its font report, since fonts are always embedded; `setHarfBuzzSubsetLocator` and SVG export's `fontAlias` are removed (#1926).
+- `initCanvasKit` is gone from `@open-pencil/core/io/formats/raster`; headless code loads CanvasKit with `getCanvasKit` from `@open-pencil/core/canvaskit`, the one instance Core and the canvas use (#1926).
