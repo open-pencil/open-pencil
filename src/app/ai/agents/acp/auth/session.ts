@@ -6,7 +6,7 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { resolveSpawnCommand, resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 import {

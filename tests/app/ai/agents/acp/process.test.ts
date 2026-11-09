@@ -1,16 +1,12 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
-
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
-import { resolveSpawnCommand, setLastKnownSearchPath } from '@/app/ai/agents/setup/discovery'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
   await clearTauriMocks()
   vi.restoreAllMocks()
-  setLastKnownSearchPath(null)
   Reflect.deleteProperty(globalThis, 'window')
   Reflect.deleteProperty(globalThis, 'navigator')
 })
@@ -87,7 +83,7 @@ describe('Tauri process helpers', () => {
     await process.child.kill()
   })
 
-  test('passes augmented searchPath to process environment', async () => {
+  test('starts the agent with the PATH its lookup searched', async () => {
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
@@ -105,47 +101,6 @@ describe('Tauri process helpers', () => {
       args: ['--stdio'],
       logId: 'test',
       searchPath: '/custom/agent/bin',
-      destroying: () => false,
-      onUnexpectedClose: vi.fn()
-    })
-    await process.child.kill()
-  })
-
-  test('falls back to the search-path recorded during command resolution for chat startup', async () => {
-    await mockTauriIPC((cmd) => {
-      if (cmd === 'agent_lookup') {
-        return {
-          executables: { 'agent-cli': '/discovered/bin/agent-cli' },
-          versions: {},
-          searchPath: '/discovered/bin'
-        }
-      }
-      return null
-    })
-    const agent: ACPAgentDef = {
-      id: 'custom' as ACPAgentID,
-      name: 'Custom',
-      command: 'agent-cli',
-      args: ['--stdio']
-    }
-    await resolveSpawnCommand(agent)
-
-    await mockTauriIPC((cmd, args) => {
-      if (cmd === 'plugin:shell|spawn') {
-        expect(args).toMatchObject({
-          program: 'agent-cli',
-          args: ['--stdio'],
-          options: { encoding: 'raw', env: { PATH: '/discovered/bin' } }
-        })
-        return 47
-      }
-      return null
-    })
-
-    const process = await spawnACPProcess({
-      command: 'agent-cli',
-      args: ['--stdio'],
-      logId: 'test',
       destroying: () => false,
       onUnexpectedClose: vi.fn()
     })

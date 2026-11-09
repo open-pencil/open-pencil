@@ -1,6 +1,6 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
 Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
 
@@ -40,30 +40,25 @@ Sign in with ChatGPT from guided setup, or with `codex login`; both use the same
 
 An older adapter from the `@zed-industries/codex-acp` package also installs a `codex-acp` program. It neither reports nor signs in to your account, so guided setup asks you to install the supported one and to remove the older one or put it later on your `PATH`.
 
-## Antigravity CLI
+## Antigravity CLI {#antigravity}
 
-The Antigravity CLI (`agy`) is Google's unified AI development platform that succeeds Gemini CLI. It natively speaks ACP via `agy acp`, so there is no separate adapter.
-
-Install it from [Antigravity](https://antigravity.google):
-
-**macOS / Linux:**
+Antigravity CLI is Google's command-line agent for Gemini. It speaks ACP itself through `agy acp`, so there is no separate program. Install it from the [Antigravity site](https://antigravity.google):
 
 ```sh
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 ```
 
-**Windows (PowerShell):**
+On Windows, run this in PowerShell instead:
 
 ```powershell
 irm https://antigravity.google/cli/install.ps1 | iex
 ```
 
-Run `agy` once in a terminal to authenticate. In guided setup, choose **Antigravity CLI**.
+Run `agy` once and choose a sign-in method. Antigravity CLI does not report the account it uses, so guided setup shows it as installed without a plan or email.
 
 ## Gemini CLI
 
-> [!NOTE]
-> Google has transitioned individual users from Gemini CLI to the Antigravity CLI (`agy`). If you use an individual tier, prefer Antigravity CLI above.
+Google no longer lets individual Google accounts sign in to Gemini CLI; use [Antigravity CLI](#antigravity) with those.
 
 ```sh
 npm install -g @google/gemini-cli

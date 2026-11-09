@@ -1,6 +1,12 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'antigravity' | 'cursor' | 'grok-build'
+export type ACPAgentID =
+  | 'claude-code'
+  | 'codex'
+  | 'gemini-cli'
+  | 'antigravity'
+  | 'cursor'
+  | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -14,7 +20,7 @@ export interface ACPAgentDef {
   /** The vendor's installation guide for the agent itself. */
   setupURL?: string
   installCommand?: string
-  /** Platform-specific install command for Windows shells (PowerShell / cmd). */
+  /** The install command for Windows, run in PowerShell, where `installCommand` needs a POSIX shell. */
   windowsInstallCommand?: string
   /**
    * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
@@ -74,7 +80,6 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     setupURL: 'https://antigravity.google',
     installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
     windowsInstallCommand: 'irm https://antigravity.google/cli/install.ps1 | iex',
-    signIn: { via: 'acp', method: 'oauth-personal' },
     resumesSessions: true
   },
   {

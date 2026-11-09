@@ -2,7 +2,7 @@ import { Command } from '@tauri-apps/plugin-shell'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { getLastKnownSearchPath } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred } from '@/app/runtime/deferred'
 import { resolveScopedCommand } from '@/app/tauri/command'
 
@@ -46,15 +46,14 @@ export interface TerminalSignIn {
 export async function startTerminalSignIn(
   agent: ACPAgentDef,
   args: string[],
-  onURL: (url: string) => void,
-  searchPath?: string
+  onURL: (url: string) => void
 ): Promise<TerminalSignIn> {
+  const { searchPath } = await resolveSpawnTarget(agent)
   const resolved = resolveScopedCommand(signInScope(agent), agent.command, args)
-  const effectivePath = searchPath ?? (getLastKnownSearchPath() ?? undefined)
   const command = Command.create(
     resolved.command,
     resolved.args,
-    effectivePath ? { env: { PATH: effectivePath } } : undefined
+    searchPath ? { env: { PATH: searchPath } } : undefined
   )
   const finished = createDeferred<undefined>()
   let closed = false

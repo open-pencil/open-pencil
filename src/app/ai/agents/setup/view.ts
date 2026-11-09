@@ -5,6 +5,7 @@ import { MCP_INSTALL_COMMAND } from '@/app/automation/mcp/failure'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import { type AgentAccount } from './accounts'
+import { agentInstallCommand } from './companions'
 import { type DetectedAgent, type DiscoveryError } from './discovery'
 
 /** What setup knows about one coding agent and the MCP server it needs. */
@@ -221,17 +222,13 @@ function manualAgentCommand(
   setup: AgentSetupState,
   userAgent: string = detectUserAgent()
 ): string | null {
-  const isWindows = userAgent.includes('Windows')
-  const command = isWindows && agent.windowsInstallCommand
-    ? agent.windowsInstallCommand
-    : agent.installCommand
+  const windows = userAgent.includes('Windows')
+  const command = agentInstallCommand(agent, windows)
   if (!command || setup.detected?.status === 'available') return null
   const admin = setup.adapterNeedsAdmin === true
   const oneClick = setup.supported && setup.npm && !admin && setup.error !== 'install'
   if (oneClick && agent.adapterPackage) return null
-  return admin && !isWindows
-    ? `sudo ${command}`
-    : command
+  return admin && !windows ? `sudo ${command}` : command
 }
 
 /** The MCP server's install command to run by hand, or null where one click installs it. */
@@ -264,17 +261,13 @@ export function agentSetupView(
     (status === 'needs-adapter' || (bridgeMissing && !bridgeInstallable && !bridgeAdmin))
   const needsAdmin = (status === 'needs-adapter' && adapterAdmin) || (bridgeMissing && bridgeAdmin)
   const mismatch = status === 'available' && adapterMismatch(agent, setup)
-  const isWindows = userAgent.includes('Windows')
-  const fallbackCommand = isWindows && agent.windowsInstallCommand
-    ? agent.windowsInstallCommand
-    : agent.installCommand
   return {
     bridge,
     canInstallAdapter: status === 'needs-adapter' && setup.npm && !adapterAdmin,
     busy: setup.installingAgent || setup.installingBridge,
     problem: setupProblem(setup.error, needsNpm, ['install', 'canvas-install'], needsAdmin),
     manualAgentCommand: mismatch
-      ? (fallbackCommand ?? null)
+      ? agentInstallCommand(agent, userAgent.includes('Windows'))
       : manualAgentCommand(agent, setup, userAgent),
     manualBridgeCommand: manualBridgeCommand(setup, bridge),
     account: accountView(setup, mismatch),

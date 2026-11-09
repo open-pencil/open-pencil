@@ -66,10 +66,12 @@ function fakeAgents({
   const killed = createDeferred<undefined>()
   let kills = 0
   let spawns = 0
+  const searchPaths: (string | null | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
   const spawn: ACPStartup['spawn'] = async (options) => {
     spawns++
+    searchPaths.push(options.searchPath)
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
     const agent: Agent = {
@@ -148,9 +150,9 @@ function fakeAgents({
   }
 
   const startup: ACPStartup = {
-    resolveCommand: async (agent) => {
+    resolveTarget: async (agent) => {
       if (lookupWaits) await lookup.promise
-      return agent.command
+      return { command: agent.command, searchPath: '/lookup/bin' }
     },
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
@@ -172,6 +174,7 @@ function fakeAgents({
     killed: killed.promise,
     kills: () => kills,
     spawns: () => spawns,
+    searchPaths,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -227,6 +230,14 @@ test('a new session gets the instructions once and is reported once the agent an
   expect(agents.prompts[0]?.endsWith('first')).toBe(true)
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])
+  await chat.destroy()
+})
+
+test('the agent starts with the PATH its lookup searched', async () => {
+  const agents = fakeAgents()
+  const { transport: chat } = transport(agents)
+  await send(chat, 'first')
+  expect(agents.searchPaths).toEqual(['/lookup/bin'])
   await chat.destroy()
 })
 

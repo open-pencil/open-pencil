@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
-
 import { codingAgentSetupPrompt } from '@/app/ai/agents/setup/prompt'
 
 describe('coding agent setup prompt', () => {
@@ -20,16 +18,12 @@ describe('coding agent setup prompt', () => {
     )
   })
 
-  test('selects platform-specific installation command for Antigravity CLI', () => {
-    const posixPrompt = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Macintosh)')
-    const windowsPrompt = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Windows NT 10.0)')
-
-    const agent = ACP_AGENTS.find((candidate) => candidate.id === 'antigravity')
-    expect(agent).toBeDefined()
-    expect(posixPrompt).toContain(agent!.installCommand!)
-    expect(posixPrompt).not.toContain(agent!.windowsInstallCommand!)
-
-    expect(windowsPrompt).toContain(agent!.windowsInstallCommand!)
-    expect(windowsPrompt).not.toContain(agent!.installCommand!)
+  test('gives Antigravity CLI the installer for the platform', () => {
+    const macOS = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Macintosh)')
+    const windows = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Windows NT 10.0)')
+    expect(macOS).toContain(
+      'install it: `curl -fsSL https://antigravity.google/cli/install.sh | bash`'
+    )
+    expect(windows).toContain('install it: `irm https://antigravity.google/cli/install.ps1 | iex`')
   })
 })

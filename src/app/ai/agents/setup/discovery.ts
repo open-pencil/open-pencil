@@ -34,19 +34,13 @@ export type DetectedAgent = {
   status: 'available' | 'needs-adapter' | 'not-installed'
 }
 
-let lastKnownSearchPath: string | null = null
-
-export function getLastKnownSearchPath(): string | null {
-  return lastKnownSearchPath
-}
-
-export function setLastKnownSearchPath(path: string | null): void {
-  lastKnownSearchPath = path
-}
-
+/**
+ * The executable to start and the `PATH` it starts with. The lookup's `PATH` includes folders
+ * created after the app started, such as an installer's own; `null` keeps the app's `PATH`.
+ */
 export interface SpawnTarget {
   command: string
-  searchPath?: string
+  searchPath: string | null
 }
 
 /**
@@ -65,19 +59,14 @@ export function spawnCommandFromLookup(
 export async function resolveSpawnTarget(agent: ACPAgentDef): Promise<SpawnTarget> {
   try {
     const lookup = await lookupAgents()
-    lastKnownSearchPath = lookup.searchPath
     return {
       command: spawnCommandFromLookup(agent, lookup.executables),
       searchPath: lookup.searchPath
     }
   } catch (error) {
     if (error instanceof AgentNotInstalledError) throw error
-    return { command: agent.command, searchPath: lastKnownSearchPath ?? undefined }
+    return { command: agent.command, searchPath: null }
   }
-}
-
-export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
-  return (await resolveSpawnTarget(agent)).command
 }
 
 export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {
