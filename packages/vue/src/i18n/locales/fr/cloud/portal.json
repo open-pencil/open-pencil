@@ -167,7 +167,6 @@
     "many": "{count} fichiers enregistrés."
   },
   "downloadFailed": "Impossible de télécharger {names}.",
-  "deleteAccountConfirmLabel": "Pour confirmer, saisissez {email}",
   "deleteAccountConfirm": "Supprimer le compte",
   "accountDeleted": "Votre compte est supprimé.",
   "accountArchiveName": "Fichiers de {host}",

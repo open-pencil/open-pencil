@@ -131,12 +131,7 @@ function confirm() {
         </AppButton>
       </div>
 
-      <AppConfirmTextField
-        v-if="!blocked"
-        v-model:matched="confirmed"
-        :expected="email"
-        :label="messages.deleteAccountConfirmLabel({ email })"
-      />
+      <AppConfirmTextField v-if="!blocked" v-model:matched="confirmed" :expected="email" />
     </template>
   </AppFormDialog>
 </template>

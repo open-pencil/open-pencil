@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+import { useCommonMessages } from '@open-pencil/vue/i18n'
+
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
@@ -10,11 +12,12 @@ import AppInput from '@/components/ui/input/AppInput.vue'
  * here, so it starts empty each time the dialog around it opens and keeps what was typed while
  * the dialog animates closed.
  */
-const { expected, label } = defineProps<{ expected: string; label: string }>()
+const { expected } = defineProps<{ expected: string }>()
 /** Whether what was typed matches. */
 const matched = defineModel<boolean>('matched', { default: false })
 const emit = defineEmits<{ enter: [] }>()
 
+const common = useCommonMessages()
 const typed = ref('')
 watch(
   [typed, () => expected],
@@ -27,7 +30,7 @@ watch(
 </script>
 
 <template>
-  <AppFormField :label="label">
+  <AppFormField :label="common.typeToConfirm({ text: expected })">
     <template #default="{ id }">
       <AppInput
         :id="id"

@@ -206,7 +206,6 @@ export const TypedConfirmation: Story = {
         cancel-label="Cancel"
         confirm-label="Delete workspace"
         confirm-text="Design team"
-        confirm-text-label="Type Design team to confirm"
         @confirm="deleted = true"
       />
     `
@@ -218,7 +217,7 @@ export const TypedConfirmation: Story = {
     const dialog = within(await body.findByRole('alertdialog'))
     const confirm = dialog.getByRole('button', { name: 'Delete workspace' })
     await expect(confirm).toBeDisabled()
-    const typed = dialog.getByLabelText('Type Design team to confirm')
+    const typed = dialog.getByLabelText('To confirm, type “Design team”.')
     await userEvent.type(typed, 'design')
     await expect(confirm).toBeDisabled()
     await userEvent.type(typed, ' TEAM {Enter}')

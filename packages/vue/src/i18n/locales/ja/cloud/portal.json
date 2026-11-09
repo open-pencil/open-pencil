@@ -163,7 +163,6 @@
     "many": "{count} 件のファイルを保存しました。"
   },
   "downloadFailed": "{names} をダウンロードできませんでした。",
-  "deleteAccountConfirmLabel": "確認のため {email} と入力してください",
   "deleteAccountConfirm": "アカウントを削除",
   "accountDeleted": "アカウントを削除しました。",
   "accountArchiveName": "{host} のファイル",

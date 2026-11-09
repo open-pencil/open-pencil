@@ -163,7 +163,6 @@
     "many": "已保存 {count} 个文件。"
   },
   "downloadFailed": "无法下载 {names}。",
-  "deleteAccountConfirmLabel": "请输入 {email} 以确认",
   "deleteAccountConfirm": "删除账号",
   "accountDeleted": "你的账号已删除。",
   "accountArchiveName": "来自 {host} 的文件",

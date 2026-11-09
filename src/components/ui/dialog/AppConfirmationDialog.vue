@@ -18,8 +18,7 @@ const {
   tone = 'primary',
   confirmDisabled = false,
   confirmLoading = false,
-  confirmText,
-  confirmTextLabel = ''
+  confirmText
 } = defineProps<{
   heading: string
   description?: string
@@ -30,7 +29,6 @@ const {
   confirmLoading?: boolean
   /** What must be typed out before confirming, such as the name of what is deleted. */
   confirmText?: string
-  confirmTextLabel?: string
 }>()
 
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
@@ -72,7 +70,6 @@ const confirmColor = computed(() => {
         v-if="confirmText !== undefined"
         v-model:matched="typedMatches"
         :expected="confirmText"
-        :label="confirmTextLabel"
         @enter="confirm"
       />
       <!-- Anything else the person fills in before confirming, such as a reason. -->

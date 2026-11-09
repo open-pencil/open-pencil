@@ -434,7 +434,6 @@ function invite() {
     :cancel-label="common.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     :confirm-text="confirmingShown?.kind === 'delete' ? workspaceName : undefined"
-    :confirm-text-label="t.deleteWorkspaceTypeName({ workspace: workspaceName })"
     @update:open="(isOpen) => !isOpen && (confirming = null)"
     @confirm="confirm"
   />

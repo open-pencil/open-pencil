@@ -303,7 +303,6 @@
   "deleteWorkspace": "Удалить пространство",
   "deleteWorkspaceHeading": "Удалить {workspace}?",
   "deleteWorkspaceDescription": "Все потеряют доступ, а приглашения перестанут работать. Удалить можно только пустое пространство.",
-  "deleteWorkspaceTypeName": "Для подтверждения введите «{workspace}».",
   "dangerZone": "Опасная зона",
   "leaveWorkspaceShort": "Покинуть",
   "deleteWorkspaceShort": "Удалить",

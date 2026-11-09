@@ -202,7 +202,6 @@ export const cloudPortalMessageDefaults = {
   downloadProgress: params('Downloading {done} of {total}…'),
   downloadSaved: count({ one: 'Saved {count} file.', many: 'Saved {count} files.' }),
   downloadFailed: params('Couldn’t download {names}.'),
-  deleteAccountConfirmLabel: params('To confirm, type {email}'),
   deleteAccountConfirm: 'Delete account',
   accountDeleted: 'Your account is deleted.',
   accountArchiveName: params('Files from {host}'),
