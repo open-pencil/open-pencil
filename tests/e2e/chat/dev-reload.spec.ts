@@ -3,11 +3,14 @@ import type { Page, WebSocketRoute } from '@playwright/test'
 import { test as base, expect } from '#tests/helpers/chat/fixture'
 
 type Reload = 'update' | 'restart'
+/** How the user answers the leave prompt an unsaved document raises; omitted, none is expected. */
+type Answer = 'stay' | 'leave'
+
+const PROMPT_TIMEOUT_MS = 10_000
 
 /** Delivers Vite reloads and disconnects without restarting the shared test server. */
 const test = base.extend<{
-  /** An unsaved document's leave prompt is answered by leaving, or with `stay` by staying. */
-  reloadFrontend: (reason: Reload, options?: { stay?: boolean }) => Promise<void>
+  reloadFrontend: (reason: Reload, answer?: Answer) => Promise<void>
 }>({
   reloadFrontend: [
     async ({ page, baseURL }, use) => {
@@ -21,17 +24,18 @@ const test = base.extend<{
           socket.connectToServer()
         }
       )
-      await use(async (reason, { stay = false } = {}) => {
+      await use(async (reason, answer) => {
         if (!connection) throw new Error('Vite did not connect')
-        const asked = new Promise<void>((resolve) => {
-          page.once('dialog', (dialog) => {
-            void (stay ? dialog.dismiss() : dialog.accept()).then(resolve)
-          })
-        })
-        const settled = stay ? asked : page.waitForEvent('load')
+        const prompt = answer && page.waitForEvent('dialog', { timeout: PROMPT_TIMEOUT_MS })
+        const loaded = answer === 'stay' ? null : page.waitForEvent('load')
         if (reason === 'update') connection.send(JSON.stringify({ type: 'full-reload', path: '*' }))
         else await connection.close()
-        await settled
+        if (prompt) {
+          const dialog = await prompt
+          expect(dialog.type()).toBe('beforeunload')
+          await (answer === 'stay' ? dialog.dismiss() : dialog.accept())
+        }
+        await loaded
       })
     },
     { auto: true }
@@ -74,7 +78,7 @@ for (const reason of ['update', 'restart'] as const) {
     await editDocument(page)
     await chat.submit('before the reload')
     await expect(chat.assistantMessage()).toContainText('before the reload')
-    await reloadFrontend(reason, { stay: true })
+    await reloadFrontend(reason, 'stay')
     await chat.submit('after staying')
     await expect(chat.assistantMessage().last()).toContainText('after staying')
   })
@@ -88,7 +92,7 @@ test('a development update that an unsaved document asks about saves the reply b
   await editDocument(page)
   await chat.submit('paused short stream')
   await expect(chat.assistantMessage()).toContainText('Line 1')
-  await reloadFrontend('update')
+  await reloadFrontend('update', 'leave')
   await chat.chatTab.click()
   await page.getByRole('button', { name: 'Conversation history', exact: true }).click()
   await page.getByRole('button', { name: 'All documents', exact: true }).click()
