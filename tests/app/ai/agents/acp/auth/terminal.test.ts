@@ -9,7 +9,12 @@ import {
   stripTerminalCodes
 } from '@/app/ai/agents/acp/auth/terminal'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
+import {
+  clearTauriMocks,
+  mockTauriIPC,
+  shellEvents,
+  type ShellEvent
+} from '#tests/helpers/tauri/mocks'
 
 afterEach(clearTauriMocks)
 
@@ -37,8 +42,6 @@ describe('login output', () => {
   })
 })
 
-type ShellEvent = { event: string; payload: unknown }
-
 /** Mocks the shell plugin and returns what the login was started with and sent. */
 async function mockLogin() {
   const calls: { cmd: string; args: unknown }[] = []
@@ -46,7 +49,7 @@ async function mockLogin() {
   await mockTauriIPC((cmd, args) => {
     calls.push({ cmd, args })
     if (cmd === 'plugin:shell|spawn') {
-      emit = (args as { onEvent: { onmessage: (event: ShellEvent) => void } }).onEvent.onmessage
+      emit = shellEvents(args)
       return 7
     }
     return null

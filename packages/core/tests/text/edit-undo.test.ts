@@ -38,6 +38,7 @@ function setup() {
     requestRefresh: () => {
       state.sceneVersion++
     },
+    constrainMove: (_node, changes) => changes,
     getUserName: () => '',
     requestRepaint: () => {
       state.renderVersion++

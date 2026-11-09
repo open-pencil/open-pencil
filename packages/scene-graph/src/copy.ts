@@ -53,7 +53,8 @@ export function copyEffect(e: Effect): Effect {
   return {
     ...e,
     color: { ...e.color },
-    offset: { ...e.offset }
+    offset: { ...e.offset },
+    ...(e.glass ? { glass: { ...e.glass } } : {})
   }
 }
 
