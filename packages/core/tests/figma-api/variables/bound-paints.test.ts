@@ -172,19 +172,19 @@ describe('bound paints in the plugin API', () => {
     const off = variant('Off', false)
     figma.combineAsVariants([on, off], figma.currentPage)
     const instance = on.createInstance()
-    const group = instance.children[0] as unknown as ReturnType<FigmaAPI['createFrame']>
+    const group = instance.children[0]
     group.setExplicitVariableModeForCollection(collection, dark)
     expect(read(group.children[0])).toBe('0,0,1,0.5')
     instance.setProperties({ State: 'Off' })
     instance.setProperties({ State: 'On' })
-    const restored = instance.children[0] as unknown as ReturnType<FigmaAPI['createFrame']>
+    const restored = instance.children[0]
     expect(restored.explicitVariableModes).toEqual({ [collection.id]: dark })
     expect(read(restored.children[0])).toBe('0,0,1,0.5')
     // A paint edit the switch gives back keeps its own opacity.
     setOpacity(restored.children[0] as Proxy, 0.3)
     instance.setProperties({ State: 'Off' })
     instance.setProperties({ State: 'On' })
-    const again = instance.children[0] as unknown as ReturnType<FigmaAPI['createFrame']>
+    const again = instance.children[0]
     expect(read(again.children[0])).toBe('0,0,1,0.3')
   })
 
