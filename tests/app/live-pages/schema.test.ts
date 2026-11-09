@@ -8,6 +8,7 @@ import {
   canShowLivePage,
   livePageSchema,
   normalizeLiveURL,
+  pageLabel,
   pluginDataWithLivePage,
   readLivePage
 } from '@/app/live-pages/schema'
@@ -56,6 +57,19 @@ test('an entry of the wrong shape reads as no page', () => {
   const entries = [{ pluginId: 'open-pencil', key: 'livePage', value: '{"url":"x"}' }]
   expect(readLivePage({ ...frame, pluginData: entries })).toBeNull()
   expect(v.safeParse(livePageSchema, { url: '' }).success).toBe(false)
+})
+
+test('a layer name longer than a page label still keeps the page readable', () => {
+  const graph = new SceneGraph()
+  const frame = frameOf(graph)
+  const label = pageLabel('x'.repeat(200))
+  const page = { url: 'http://localhost:3000/pricing', label, mode: 'live' as const }
+
+  expect(label.length).toBe(120)
+  graph.updateNode(frame.id, { pluginData: pluginDataWithLivePage(frame, page) })
+  const linked = graph.getNode(frame.id)
+  if (!linked) throw new Error('the frame is still in the graph')
+  expect(readLivePage(linked)).toEqual(page)
 })
 
 test('only a frame can show a page', () => {

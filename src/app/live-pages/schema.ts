@@ -10,6 +10,17 @@ import {
 /** What a page address this app accepts: an absolute http(s) address, never a scheme of its own. */
 const SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
 
+/** The longest label a frame keeps for its page, which is also what the schema accepts. */
+const LABEL_LIMIT = 120
+
+/**
+ * The label a frame keeps for the page it shows. A layer name can be longer than the schema
+ * accepts, so it is cut rather than left for the reader to reject the whole entry.
+ */
+export function pageLabel(text: string): string {
+  return text.trim().slice(0, LABEL_LIMIT).trim()
+}
+
 /**
  * A page of the application a frame shows: the address the dev server answers on, the label the
  * layer tree names it by, and how the page stands to the canvas. The frame's own size is the
@@ -17,7 +28,7 @@ const SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
  */
 export const livePageSchema = v.object({
   url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048)),
-  label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120))),
+  label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(LABEL_LIMIT))),
   mode: v.picklist(['live', 'snapshot'])
 })
 export type LivePage = v.InferOutput<typeof livePageSchema>

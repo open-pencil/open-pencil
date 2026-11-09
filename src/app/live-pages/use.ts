@@ -9,6 +9,7 @@ import { pagePlacement } from './placement'
 import {
   canShowLivePage,
   normalizeLiveURL,
+  pageLabel,
   pluginDataWithLivePage,
   readLivePage,
   type LivePage,
@@ -44,14 +45,17 @@ export function useLivePageSelection() {
  * The pages of the running application shown on the canvas: which frames show one, where they sit,
  * and how to link, unlink, and reload them. A page lives on its frame's plugin data, so it travels
  * with the document and an undo brings it back like any other edit.
+ *
+ * A canvas can show two pages at once: `pageId` names the page a caller draws, which a split pane
+ * passes so each pane draws the frames of the page it shows.
  */
-export function useLivePages() {
+export function useLivePages(options: { pageId?: () => string } = {}) {
   const store = useEditorStore()
 
   const pages = computed<LivePageEntry[]>(() => {
     // A frame can be moved, resized, or relinked without the page itself changing.
     void store.state.sceneVersion
-    const pageId = store.state.currentPageId
+    const pageId = options.pageId?.() ?? store.state.currentPageId
     return store.graph.getChildren(pageId).flatMap((node) => {
       if (!node.visible || !canShowLivePage(node)) return []
       const page = readLivePage(node)
@@ -90,7 +94,7 @@ export function useLivePages() {
     const url = normalizeLiveURL(rawURL)
     const node = store.graph.getNode(nodeId)
     if (url === '' || !node || !canShowLivePage(node)) return false
-    setPage(nodeId, { url, label: label ?? node.name, mode: 'live' })
+    setPage(nodeId, { url, label: pageLabel(label ?? node.name), mode: 'live' })
     return true
   }
 

@@ -31,7 +31,7 @@ const {
   drawn?: ViewportTransform | null
 }>()
 
-const { pages, placementOf, revisionOf } = useLivePages()
+const { pages, placementOf, revisionOf } = useLivePages({ pageId: () => view.currentPageId })
 const { setSelection } = useLivePageSelection()
 const placement = computed(() => drawn ?? view)
 const transform = computed(() => layerTransform(placement.value))
