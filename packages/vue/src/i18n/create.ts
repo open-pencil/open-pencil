@@ -1,10 +1,12 @@
 import { createI18n } from '@nanostores/i18n'
 import type { ComponentsJSON } from '@nanostores/i18n'
 
+import { directedTranslations } from '#vue/i18n/direction'
 import { locale } from '#vue/i18n/locale'
 import type { Locale, TranslatedLocale } from '#vue/i18n/locale'
 
 const localeLoaders = {
+  ar: () => import('#vue/i18n/locales/ar'),
   de: () => import('#vue/i18n/locales/de'),
   es: () => import('#vue/i18n/locales/es'),
   fr: () => import('#vue/i18n/locales/fr'),
@@ -21,6 +23,6 @@ export const i18n = createI18n<Locale, 'en'>(locale, {
   async get(code) {
     if (code === 'en') return {}
     const mod = await localeLoaders[code]()
-    return mod.default
+    return directedTranslations(code, mod.default)
   }
 })
