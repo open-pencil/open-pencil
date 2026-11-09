@@ -213,7 +213,7 @@
   "homeTrashDeleteForever": "Elimina definitivamente",
   "homeTrashDeleteForeverHeading": "Eliminare «{name}» definitivamente?",
   "homeTrashDeleteForeverDescription": "Viene eliminato dal server con la cronologia delle versioni, per tutti. L’operazione non si può annullare.",
-  "homeTrashDeleteForeverFailed": "Impossibile completare l’eliminazione di «{name}». Resta fuori dal cestino e il server lo eliminerà più tardi.",
+  "homeTrashDeleteForeverFailed": "Impossibile eliminare «{name}» definitivamente. Se è ancora nel cestino, riprova.",
   "homeTrashMoveDescription": "Finisce nel cestino per tutti quelli che possono aprirlo. Puoi ripristinarlo da lì per un po’.",
   "homeSignIn": "Accedi…",
   "homeStorage": "Archiviazione",

@@ -210,7 +210,7 @@
   "homeTrashDeleteForever": "完全に削除",
   "homeTrashDeleteForeverHeading": "「{name}」を完全に削除しますか？",
   "homeTrashDeleteForeverDescription": "バージョン履歴とともにサーバーから削除され、誰も開けなくなります。この操作は取り消せません。",
-  "homeTrashDeleteForeverFailed": "「{name}」の削除を完了できませんでした。ゴミ箱には戻らず、後でサーバーが削除します。",
+  "homeTrashDeleteForeverFailed": "「{name}」を完全に削除できませんでした。まだゴミ箱にある場合は、もう一度お試しください。",
   "homeTrashMoveDescription": "開けるすべての人にとってゴミ箱に移動します。しばらくの間はゴミ箱から復元できます。",
   "homeSignIn": "サインイン…",
   "homeStorage": "ストレージ",

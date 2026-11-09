@@ -7,6 +7,7 @@ import { trashSchema, type WorkspaceRole } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
+  createDocumentCleanupService,
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
@@ -120,10 +121,10 @@ async function trashApp(roles: Partial<Record<'bob' | 'carol', WorkspaceRole>> =
         .execute()
     },
     /** Gives a document a saved revision, as a save would, and counts its bytes. */
-    async withRevision(documentId: string) {
+    async withRevision(documentId: string, file = 'revision') {
       const storageObjectId = crypto.randomUUID()
       const revisionId = crypto.randomUUID()
-      const objectKey = `documents/${workspaceId}/${documentId}/revision.fig`
+      const objectKey = `documents/${workspaceId}/${documentId}/${file}.fig`
       await runtime.database
         .insertInto('storageObject')
         .values({
@@ -283,19 +284,47 @@ describe('Cloud Trash', () => {
     }
   })
 
-  test('keeps a document that failed to delete forever out of Trash', async () => {
+  test('keeps a document that failed partway through deleting forever out of Trash', async () => {
     const context = await trashApp()
     try {
       const document = await context.create('Half gone')
-      await context.withRevision(document)
+      await context.withRevision(document, 'first')
+      await context.withRevision(document, 'second')
       await context.remove(document)
-      context.objects.store.delete = async () => {
-        throw new Error('The object store is down')
+      const store = context.objects.store
+      const remove = store.delete.bind(store)
+      let deletes = 0
+      store.delete = async (key) => {
+        deletes++
+        if (deletes > 1) throw new Error('The object store went down')
+        await remove(key)
       }
 
       expect((await context.purge(document)).status).toBe(500)
+      expect(context.objects.deletedKeys).toHaveLength(1)
       expect(await context.trash()).toEqual([])
       expect((await context.restore(document)).status).toBe(404)
+
+      // Once retention passes and the lease is stale, the worker finishes the job.
+      store.delete = remove
+      const later = new Date(Date.now() + 31 * DAY_MS)
+      const result = await createDocumentCleanupService(
+        context.runtime.database,
+        store
+      ).cleanupDeletedDocuments({
+        batchSize: 10,
+        leaseDurationMs: 60_000,
+        retentionMs: 30 * DAY_MS,
+        now: later
+      })
+      expect(result).toMatchObject({ claimed: 1, cleaned: 1, failed: 0 })
+      expect(
+        await context.runtime.database
+          .selectFrom('document')
+          .select('id')
+          .where('id', '=', document)
+          .executeTakeFirst()
+      ).toBeUndefined()
     } finally {
       await context.runtime.close()
     }

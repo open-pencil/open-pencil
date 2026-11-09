@@ -340,7 +340,7 @@ export const cloudMessageDefaults = {
   homeTrashDeleteForeverDescription:
     'It’s deleted from the server with its version history, for everyone. This can’t be undone.',
   homeTrashDeleteForeverFailed: params(
-    'Couldn’t finish deleting “{name}”. It stays out of Trash and the server deletes it later.'
+    'Couldn’t delete “{name}” forever. If it’s still in Trash, try again.'
   ),
   homeTrashMoveDescription:
     'It moves to Trash for everyone who can open it. You can restore it from there for a while.',

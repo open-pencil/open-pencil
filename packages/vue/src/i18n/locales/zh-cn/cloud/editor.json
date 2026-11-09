@@ -210,7 +210,7 @@
   "homeTrashDeleteForever": "永久删除",
   "homeTrashDeleteForeverHeading": "永久删除“{name}”？",
   "homeTrashDeleteForeverDescription": "它会连同版本历史从服务器上删除，所有人都无法再打开。此操作无法撤销。",
-  "homeTrashDeleteForeverFailed": "无法完成删除“{name}”。它不会回到回收站，服务器稍后会删除它。",
+  "homeTrashDeleteForeverFailed": "无法永久删除“{name}”。如果它仍在回收站中，请重试。",
   "homeTrashMoveDescription": "它会为所有能打开它的人移到回收站。在一段时间内，你可以从那里恢复它。",
   "homeSignIn": "登录…",
   "homeStorage": "存储",
