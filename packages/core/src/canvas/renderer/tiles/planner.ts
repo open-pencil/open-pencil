@@ -23,6 +23,11 @@ export interface TilePlanOptions {
   estimateCost: (key: TileKey) => number
   globalFallbackAvailable?: boolean
   /**
+   * The dearest optional background job to plan, in milliseconds. The controller ties it to the
+   * idle frame budget; tests and other callers may set their own.
+   */
+  maxBackgroundCostMs?: number
+  /**
    * A coarser level rendered around the viewport once the visible level and its overscan are
    * complete, so zooming out has scaled tiles to show where the visible level has none.
    */
@@ -49,8 +54,8 @@ const PAGE_BACKDROP_TILES = 4
  */
 const BACKGROUND_MAX_ESTIMATED_MS = 32
 
-function affordableBackgroundJobs(jobs: TileJob[]): TileJob[] {
-  return jobs.filter((job) => job.estimatedCost <= BACKGROUND_MAX_ESTIMATED_MS)
+function affordableBackgroundJobs(jobs: TileJob[], maxCostMs: number): TileJob[] {
+  return jobs.filter((job) => job.estimatedCost <= maxCostMs)
 }
 
 /**
@@ -230,12 +235,14 @@ export function planTiles(
   cachedOnly = false
 ): TilePlan {
   if (cachedOnly) return planCachedVisibleTiles(cache, options)
+  const maxBackgroundCostMs = options.maxBackgroundCostMs ?? BACKGROUND_MAX_ESTIMATED_MS
   const visibleKeys = tileKeysForWorldBounds(options.pageId, options.level, options.viewport)
   const visible = visibleKeys.map((key) => ({ key, tile: cache.get(key) }))
   let jobs = planVisibleJobs(options, visible)
   if (jobs.length === 0 && options.pageBackdrop) {
     jobs = affordableBackgroundJobs(
-      planAreaJobs(cache, options, options.pageBackdrop.level, options.pageBackdrop.bounds)
+      planAreaJobs(cache, options, options.pageBackdrop.level, options.pageBackdrop.bounds),
+      maxBackgroundCostMs
     )
   }
   if (jobs.length === 0) {
@@ -248,7 +255,8 @@ export function planTiles(
         options.overscanTiles,
         visibleIds,
         (tile) => tile !== null
-      )
+      ),
+      maxBackgroundCostMs
     )
   }
   if (jobs.length === 0 && options.pyramid) {
@@ -263,7 +271,8 @@ export function planTiles(
         options.backdrop.overscanTiles,
         new Set(),
         () => true
-      )
+      ),
+      maxBackgroundCostMs
     )
   }
   return { jobs, visible }

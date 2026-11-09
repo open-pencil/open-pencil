@@ -41,6 +41,15 @@ test('keeps a background tile exactly at the idle-frame limit', () => {
   expect(plan.jobs).toHaveLength(1)
 })
 
+test('lets the caller set the background cost limit', () => {
+  const plan = (cost: number, maxBackgroundCostMs: number) =>
+    planTiles(new TileImageCache(), { ...options(cost), maxBackgroundCostMs })
+
+  expect(plan(100, 200).jobs).toHaveLength(1)
+  expect(plan(16, 16).jobs).toHaveLength(1)
+  expect(plan(17, 16).jobs).toEqual([])
+})
+
 test('never drops a visible tile for its estimated cost', () => {
   const plan = planTiles(new TileImageCache(), {
     ...options(100),

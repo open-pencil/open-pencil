@@ -46,6 +46,11 @@ import { TileSurfacePool } from './surface-pool'
 import { emitTileCoverageComplete, emitTileFrameTrace } from './telemetry'
 
 const TILE_FRAME_BUDGET_MS = 8
+/**
+ * An optional background stage may plan a tile this many idle frames long at most. A dearer tile
+ * would land as one long, uninterruptible draw; visible tiles and the pyramid still stand in.
+ */
+const BACKGROUND_MAX_ESTIMATED_MS = TILE_FRAME_BUDGET_MS * 4
 /** Tile work per frame while the viewport moves, leaving the rest to input and presentation. */
 const NAVIGATION_TILE_BUDGET_MS = 2
 /** The one tile a moving frame may still afford past its budget; dearer tiles wait for idle. */
@@ -516,7 +521,8 @@ export class TiledSceneController {
           key,
           this.navigationActive
         ),
-      globalFallbackAvailable: true
+      globalFallbackAvailable: true,
+      maxBackgroundCostMs: BACKGROUND_MAX_ESTIMATED_MS
     }
     // Background stages wait for idle, a moving frame having only its budget to give, and for
     // the content to have been still a while, so an edit in progress rebuilds the visible tiles
