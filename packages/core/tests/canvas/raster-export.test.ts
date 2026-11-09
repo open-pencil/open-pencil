@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 import type { Canvas } from '@open-pencil/canvaskit'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { pixelLength } from '@open-pencil/scene-graph/text'
@@ -14,7 +15,7 @@ import { NodePathCaches } from '#core/canvas/paths/cache'
 import { renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
 import { prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
 import { extractExportGraph } from '#core/io/subgraph'
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 function rectangleCommandsBlob(x: number, y: number, width: number, height: number): Uint8Array {
   const blob = new Uint8Array(1 + 4 * 9 + 1)
@@ -37,7 +38,7 @@ function rectangleCommandsBlob(x: number, y: number, width: number, height: numb
 }
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 describe('raster export', () => {

@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
@@ -59,7 +60,7 @@ describe('placeIcon', () => {
       '<path fill="currentColor" d="M0 0h24v24H0M6 6v12h12V6z"/>'
     )
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
     try {
       const png = expectDefined(

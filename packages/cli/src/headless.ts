@@ -5,7 +5,7 @@ import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
-import { headlessRenderer, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import {
   computeAllLayouts,
   installTextMeasurer,
@@ -21,8 +21,6 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import { printError } from '#cli/format'
-
-export { initCanvasKit }
 
 /** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
 export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]

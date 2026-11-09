@@ -1,8 +1,8 @@
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
+  headlessRenderNodes
 } from '@open-pencil/core/io/formats/raster'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -30,7 +30,7 @@ export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> 
   figma.setRenderer(renderer)
   figma.exportImage = (nodeIds, options) =>
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
-  figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())
+  figma.rasterCodec = createCanvasKitRasterCodec(await getCanvasKit())
   return figma
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -14,7 +14,7 @@ import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { fontManager } from '#core/text/font/manager'
 async function fixture(maxEntries = 8, maxUnits = 1000) {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()
   const graph = new SceneGraph()
   const node = graph.createNode('TEXT', graph.getPages()[0].id, {

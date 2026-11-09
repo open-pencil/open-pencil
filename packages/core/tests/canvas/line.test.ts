@@ -1,14 +1,15 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 describe('line rendering', () => {

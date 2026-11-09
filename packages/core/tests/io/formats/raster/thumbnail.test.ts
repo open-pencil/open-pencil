@@ -2,12 +2,8 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import {
-  createCanvasKitRasterCodec,
-  headlessRenderThumbnail,
-  initCanvasKit,
-  thumbnailFrame
-} from '@open-pencil/core/io/formats/raster'
+import { createCanvasKitRasterCodec, headlessRenderThumbnail, thumbnailFrame } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 setDefaultTimeout(60_000)
@@ -24,7 +20,7 @@ test('a thumbnail shows the page background between its layers', async () => {
   ]
 
   const png = expectDefined(await headlessRenderThumbnail(graph, page.id, 100, 100), 'thumbnail')
-  const image = expectDefined(createCanvasKitRasterCodec(await initCanvasKit()).decode(png))
+  const image = expectDefined(createCanvasKitRasterCodec(await getCanvasKit()).decode(png))
   const gap = (50 * image.width + 50) * 4
 
   expect([...image.data.subarray(gap, gap + 4)]).toEqual([30, 30, 30, 255])
@@ -43,7 +39,7 @@ test('a thumbnail loads the faces its text is set in before drawing it', async (
   })
 
   const png = expectDefined(await headlessRenderThumbnail(graph, page.id, 200, 60), 'thumbnail')
-  const image = expectDefined(createCanvasKitRasterCodec(await initCanvasKit()).decode(png))
+  const image = expectDefined(createCanvasKitRasterCodec(await getCanvasKit()).decode(png))
   const inked = image.data.filter((red, index) => index % 4 === 0 && red < 128).length
 
   expect(inked).toBeGreaterThan(0)

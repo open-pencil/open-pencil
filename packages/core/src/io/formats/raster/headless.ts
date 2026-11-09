@@ -10,14 +10,6 @@ import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render
 let cachedRenderer: Promise<SkiaRenderer> | null = null
 
 /**
- * The process's one CanvasKit, Core's, wherever it runs: objects made by one instance must never
- * meet another instance's memory, and in an app it is the instance the canvas draws with.
- */
-export function initCanvasKit(): Promise<CanvasKit> {
-  return getCanvasKit()
-}
-
-/**
  * The one headless renderer a process keeps, fonts loaded: every renderer registers its own font
  * provider, which holds a copy of each font loaded after it, so a second one doubles that memory.
  * It keeps paths by layer id, which another document's layers share, so a caller measuring a
@@ -29,7 +21,7 @@ export async function headlessRenderer(): Promise<SkiaRenderer> {
 }
 
 async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   // Callers that arrive together share one renderer rather than each making their own.
   cachedRenderer ??= createRenderer(ck).catch((error: unknown) => {
     cachedRenderer = null
@@ -72,7 +64,7 @@ export async function headlessRenderNodes(
     useAbsoluteBounds?: boolean
   } = {}
 ): Promise<Uint8Array | null> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = await headlessExportRenderer()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   // An export takes a text by its ink, as Figma's do.
@@ -95,7 +87,7 @@ export async function headlessRenderThumbnail(
   width: number,
   height: number
 ): Promise<Uint8Array | null> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = await headlessExportRenderer()
   await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
   return withTextInkMeasurer(

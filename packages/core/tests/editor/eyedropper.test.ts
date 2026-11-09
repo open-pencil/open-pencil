@@ -17,7 +17,7 @@ import {
 } from '#core/editor/eyedropper'
 import { TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 
 function solid(color: Color): Fill {
   return { type: 'SOLID', color, opacity: 1, visible: true }
@@ -33,7 +33,7 @@ describe('sampleSceneColor', () => {
   let renderer: SkiaRenderer
 
   beforeAll(async () => {
-    ck = await initCanvasKit()
+    ck = await getCanvasKit()
     renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
   })
   afterAll(() => renderer.destroy())

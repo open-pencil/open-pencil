@@ -4,7 +4,7 @@ import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { getStyleAt, TextEditor } from '@open-pencil/core/text'
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
@@ -368,7 +368,7 @@ describe('formatting a text emptied while editing it', () => {
 
 describe('undoing back to a text emptied while editing it', () => {
   async function editEmptyText() {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const surface = ck.MakeSurface(200, 200)
     if (!surface) {
       throw new Error('no surface')

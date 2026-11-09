@@ -5,7 +5,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { sharedGoldPreviewFixture } from '@open-pencil/test-support/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import {
@@ -18,10 +18,10 @@ import {
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
 let graph: SceneGraph
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
   graph = (await sharedGoldPreviewFixture()).graph
 }, 60_000)
 

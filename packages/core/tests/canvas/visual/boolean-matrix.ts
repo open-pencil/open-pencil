@@ -4,7 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 
 import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
@@ -105,7 +105,7 @@ function applyOperation(operation: Operation, pair: ReturnType<typeof makePair>)
   }
 }
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const width = CELL_W * COLUMNS
 const rows = cases.length
 const height = CELL_H * rows

@@ -3,17 +3,17 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 import type { Surface } from '@open-pencil/canvaskit'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import type { ImagePreview, ImagePreviewDecoder } from '#core/canvas/images/previews'
 import { TiledSceneController } from '#core/canvas/renderer/tiles'
 
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 function color(r: number, g: number, b: number) {
