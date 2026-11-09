@@ -29,18 +29,34 @@ interface WriteTarget {
   fileHandle: FileSystemFileHandle | null
 }
 
+/** How many bytes one raw `write_file` call carries; smaller archive chunks are gathered. */
+const TAURI_WRITE_BYTES = 8 * 1024 * 1024
+
 /**
- * Writes `stream` to `path` as raw request bodies, the first replacing what is there:
- * `FileHandle.write` would send each chunk as a JSON number array.
+ * Writes `stream` to `path` as raw request bodies of up to `TAURI_WRITE_BYTES`, the first replacing
+ * what is there: `FileHandle.write` would send each chunk as a JSON number array.
  */
 async function writeTauriFile(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  const pending = new Uint8Array(TAURI_WRITE_BYTES)
+  let used = 0
   let append = false
+  const flush = async () => {
+    await tauriWrite(path, pending.subarray(0, used), { append })
+    append = true
+    used = 0
+  }
   await stream.pipeTo(
     new WritableStream<Uint8Array>({
       async write(chunk) {
-        await tauriWrite(path, chunk, { append })
-        append = true
-      }
+        for (let offset = 0; offset < chunk.byteLength;) {
+          const take = Math.min(TAURI_WRITE_BYTES - used, chunk.byteLength - offset)
+          pending.set(chunk.subarray(offset, offset + take), used)
+          used += take
+          offset += take
+          if (used === TAURI_WRITE_BYTES) await flush()
+        }
+      },
+      close: () => (used > 0 || !append ? flush() : undefined)
     })
   )
 }

@@ -71,7 +71,7 @@ describe('Tauri document IO helpers', () => {
     expect(document?.getPages().length).toBeGreaterThan(0)
   })
 
-  test('writes beside the file as raw chunks and moves the copy over it once complete', async () => {
+  test('writes beside the file in gathered raw chunks and moves the copy over it once complete', async () => {
     const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
     await mockTauriIPC((cmd, args, options) => {
       calls.push({ cmd, args, options })
@@ -88,13 +88,8 @@ describe('Tauri document IO helpers', () => {
       { cmd: 'plugin:fs|lstat', args: { path: '/tmp/document.fig' }, options: undefined },
       {
         cmd: 'plugin:fs|write_file',
-        args: [1, 2],
+        args: [1, 2, 3],
         options: { headers: { path: encodeURIComponent(partial), options: '{"append":false}' } }
-      },
-      {
-        cmd: 'plugin:fs|write_file',
-        args: [3],
-        options: { headers: { path: encodeURIComponent(partial), options: '{"append":true}' } }
       },
       {
         cmd: 'plugin:fs|rename',
@@ -103,6 +98,31 @@ describe('Tauri document IO helpers', () => {
       }
     ])
     expect(savedVersions).toEqual([42])
+  })
+
+  test('writes a large document in bounded raw chunks', async () => {
+    const sizes: Array<[number, string]> = []
+    await mockTauriIPC((cmd, args, options) => {
+      if (cmd === 'plugin:fs|write_file' && args instanceof Uint8Array) {
+        sizes.push([args.byteLength, (options as { headers: { options: string } }).headers.options])
+      }
+      return null
+    })
+    const megabyte = 1024 * 1024
+    let pulled = 0
+    const large = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (pulled++ < 9) controller.enqueue(new Uint8Array(megabyte))
+        else controller.close()
+      }
+    })
+
+    await writer()(large, 1)
+
+    expect(sizes).toEqual([
+      [8 * megabyte, '{"append":false}'],
+      [megabyte, '{"append":true}']
+    ])
   })
 
   test('leaves the file alone when the document fails partway through', async () => {
@@ -120,7 +140,7 @@ describe('Tauri document IO helpers', () => {
     })
 
     await expect(writer()(failing, 1)).rejects.toThrow('The archive worker stopped')
-    expect(calls).toEqual(['plugin:fs|lstat', 'plugin:fs|write_file', 'plugin:fs|remove'])
+    expect(calls).toEqual(['plugin:fs|lstat', 'plugin:fs|remove'])
   })
 
   test('writes through a symbolic link instead of replacing it', async () => {
