@@ -20,6 +20,9 @@ export function useDialogUI(ui?: DialogUI, variants?: DialogVariants) {
     description: cls.description({ class: ui?.description }),
     close: cls.close({ class: ui?.close }),
     body: cls.body({ class: ui?.body }),
-    footer: cls.footer({ class: ui?.footer })
+    // Callers may restyle the footer but not move its actions: justify-end comes last, so it
+    // wins over any justify class they pass. A separate action goes in the footer's start slot.
+    footer: cls.footer({ class: [ui?.footer, 'justify-end'] }),
+    footerStart: cls.footerStart({ class: ui?.footerStart })
   }
 }

@@ -254,37 +254,37 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     <div v-else class="flex min-h-0 flex-1 items-center justify-center text-xs text-muted">
       {{ loading ? panels.loadingUpdatePreview : panels.noLibraryUpdates }}
     </div>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <div class="flex items-center gap-2 text-xs text-muted">
-        <IconButton
-          :label="panels.previousLibraryInstance"
-          :disabled="applying || instanceIndex === 0"
-          @click="instanceIndex--"
-        >
-          <icon-lucide-chevron-left class="size-4" />
-        </IconButton>
-        <IconButton
-          :label="panels.nextLibraryInstance"
-          :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
-          @click="instanceIndex++"
-        >
-          <icon-lucide-chevron-right class="size-4" />
-        </IconButton>
-        {{
-          panels.libraryInstancePosition({
-            current: instanceIndex + 1,
-            total: request?.instanceIds.length ?? 0
-          })
-        }}
-      </div>
-      <div class="flex gap-2">
-        <AppButton variant="outline" :disabled="applying" @click="updateInstance">
-          {{ panels.updateInstance }}
-        </AppButton>
-        <AppButton color="primary" variant="solid" :disabled="applying" @click="updateAll">
-          {{ panels.updateAll }}
-        </AppButton>
-      </div>
+    <AppDialogFooter>
+      <template #start>
+        <div class="flex items-center gap-2 text-xs text-muted">
+          <IconButton
+            :label="panels.previousLibraryInstance"
+            :disabled="applying || instanceIndex === 0"
+            @click="instanceIndex--"
+          >
+            <icon-lucide-chevron-left class="size-4" />
+          </IconButton>
+          <IconButton
+            :label="panels.nextLibraryInstance"
+            :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
+            @click="instanceIndex++"
+          >
+            <icon-lucide-chevron-right class="size-4" />
+          </IconButton>
+          {{
+            panels.libraryInstancePosition({
+              current: instanceIndex + 1,
+              total: request?.instanceIds.length ?? 0
+            })
+          }}
+        </div>
+      </template>
+      <AppButton variant="outline" :disabled="applying" @click="updateInstance">
+        {{ panels.updateInstance }}
+      </AppButton>
+      <AppButton color="primary" variant="solid" :disabled="applying" @click="updateAll">
+        {{ panels.updateAll }}
+      </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

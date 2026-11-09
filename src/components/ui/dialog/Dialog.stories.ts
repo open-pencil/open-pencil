@@ -224,3 +224,42 @@ export const TypedConfirmation: Story = {
     await expect(canvas.getByText('Deleted')).toBeVisible()
   }
 }
+
+/**
+ * Actions sit at the end, Cancel first and the main action last; a separate action, here Delete,
+ * goes in the footer's start slot. A footer's `ui` can restyle it but not move its actions.
+ */
+export const FooterStartAction: Story = {
+  render: () => ({
+    components: { AppButton, AppDialogBody, AppDialogFooter, AppDialogHeader, AppDialogRoot },
+    setup() {
+      const open = ref(false)
+      return { open }
+    },
+    template: `
+      <AppButton @click="open = true">Edit connection</AppButton>
+      <AppDialogRoot v-model:open="open" size="sm">
+        <AppDialogHeader heading="Edit connection" close-label="Close" />
+        <AppDialogBody><p class="text-xs text-surface">Connection settings.</p></AppDialogBody>
+        <AppDialogFooter :ui="{ footer: 'justify-between' }">
+          <template #start><AppButton color="error" variant="link">Delete</AppButton></template>
+          <AppButton @click="open = false">Cancel</AppButton>
+          <AppButton color="primary" variant="solid" @click="open = false">Save</AppButton>
+        </AppDialogFooter>
+      </AppDialogRoot>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit connection' }))
+    const dialog = within(await within(document.body).findByRole('dialog'))
+    const footer = dialog.getByRole('button', { name: 'Save' }).closest('footer')
+    await expect(footer).toHaveClass('justify-end')
+    await expect(footer).not.toHaveClass('justify-between')
+    const cancel = dialog.getByRole('button', { name: 'Cancel' }).getBoundingClientRect()
+    const save = dialog.getByRole('button', { name: 'Save' }).getBoundingClientRect()
+    const remove = dialog.getByRole('button', { name: 'Delete' }).getBoundingClientRect()
+    await expect(remove.right).toBeLessThan(cancel.left)
+    await expect(cancel.right).toBeLessThan(save.left)
+  }
+}

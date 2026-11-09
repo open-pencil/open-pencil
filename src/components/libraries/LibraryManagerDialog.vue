@@ -175,8 +175,10 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             size="compact"
           />
         </AppDialogBody>
-        <AppDialogFooter :ui="{ footer: 'justify-between' }">
-          <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+        <AppDialogFooter>
+          <template #start>
+            <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+          </template>
           <AppButton
             color="primary"
             variant="solid"

@@ -242,7 +242,7 @@ async function finish(): Promise<void> {
     </div>
   </AppDialogBody>
 
-  <AppDialogFooter :ui="{ footer: 'justify-between' }">
+  <AppDialogFooter>
     <template v-if="phase === 'welcome'">
       <AppButton variant="outline" @click="emit('close')">{{ ai.aiSetupSkip }}</AppButton>
       <AppButton color="primary" variant="solid" @click="phase = 'wizard'">
@@ -250,7 +250,7 @@ async function finish(): Promise<void> {
       </AppButton>
     </template>
     <template v-else-if="phase === 'saved'">
-      <AppButton class="ml-auto" color="primary" variant="solid" @click="emit('close')">
+      <AppButton color="primary" variant="solid" @click="emit('close')">
         {{ common.done }}
       </AppButton>
     </template>

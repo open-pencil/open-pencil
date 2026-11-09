@@ -193,7 +193,6 @@ function importTokens() {
     :heading="variables.importDesignTokens"
     :description="variables.importTokensDescription"
     :close-label="common.close"
-    :ui="{ footer: 'justify-between' }"
     data-test-id="variables-import-dialog"
   >
     <div class="flex flex-col gap-3 text-xs">
@@ -277,24 +276,24 @@ function importTokens() {
       </AppCollapsible>
     </div>
 
-    <template #footer>
+    <template #footer-start>
       <span class="text-xs text-muted" data-test-id="variables-import-summary">
         {{ plan && !empty ? variables.importSummary(plan.counts) : '' }}
       </span>
-      <div class="flex gap-2">
-        <AppButton color="neutral" variant="ghost" @click="open = false">
-          {{ common.cancel }}
-        </AppButton>
-        <AppButton
-          color="primary"
-          variant="solid"
-          :disabled="changes === 0"
-          data-test-id="variables-import-confirm"
-          @click="importTokens"
-        >
-          {{ variables.importAction }}
-        </AppButton>
-      </div>
+    </template>
+    <template #footer>
+      <AppButton color="neutral" variant="ghost" @click="open = false">
+        {{ common.cancel }}
+      </AppButton>
+      <AppButton
+        color="primary"
+        variant="solid"
+        :disabled="changes === 0"
+        data-test-id="variables-import-confirm"
+        @click="importTokens"
+      >
+        {{ variables.importAction }}
+      </AppButton>
     </template>
   </AppDialog>
 </template>

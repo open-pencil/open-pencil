@@ -331,7 +331,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
       </div>
     </AppDialogBody>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton v-if="canGoBack" :disabled="busy" @click="emit('back')">
         {{ common.back }}
       </AppButton>

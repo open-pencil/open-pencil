@@ -186,7 +186,7 @@ async function save() {
         />
       </SliderRoot>
     </AppDialogBody>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton type="button" @click="open = false">{{ messages.cancel }}</AppButton>
       <AppButton
         type="button"

@@ -96,7 +96,7 @@ function cancel() {
           :description="errorHeading ? error : undefined"
         />
       </AppDialogBody>
-      <AppDialogFooter :ui="{ footer: 'justify-between' }">
+      <AppDialogFooter>
         <AppButton type="button" :size="buttonSize" @click="cancel">{{ cancelLabel }}</AppButton>
         <AppButton
           type="submit"

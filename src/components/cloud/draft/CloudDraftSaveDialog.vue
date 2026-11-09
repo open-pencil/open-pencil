@@ -25,14 +25,14 @@ const common = useCommonMessages()
       :description="t.draftDescription({ host })"
       :close-label="common.close"
     />
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <AppButton @click="emit('saveOnDevice')">{{ t.draftSaveOnDevice }}</AppButton>
-      <div class="flex items-center gap-2">
-        <AppButton variant="ghost" @click="emit('signIn')">{{ t.draftSignIn }}</AppButton>
-        <AppButton color="primary" variant="solid" autofocus @click="emit('signUp')">
-          {{ t.draftSignUp }}
-        </AppButton>
-      </div>
+    <AppDialogFooter>
+      <template #start>
+        <AppButton @click="emit('saveOnDevice')">{{ t.draftSaveOnDevice }}</AppButton>
+      </template>
+      <AppButton variant="ghost" @click="emit('signIn')">{{ t.draftSignIn }}</AppButton>
+      <AppButton color="primary" variant="solid" autofocus @click="emit('signUp')">
+        {{ t.draftSignUp }}
+      </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

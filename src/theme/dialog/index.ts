@@ -14,7 +14,10 @@ export default {
     close:
       'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface',
     body: 'min-h-0 flex-1 overflow-y-auto p-4',
-    footer: 'flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3'
+    /** Its actions sit at the end, Cancel first and the main action last. */
+    footer: 'flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3',
+    /** A separate action at the start, such as Delete or Copy codes; never Cancel. */
+    footerStart: 'mr-auto flex min-w-0 items-center gap-2'
   },
   variants: {
     size: {
