@@ -37,6 +37,7 @@ export function createSelectedNodeState(
   const projections = new Map<string, SceneNode>()
   const dirty = new Set<string>()
   let textStyleVersion = -1
+  let editingTextId: string | null = null
   const invalidateAll = () => {
     projections.clear()
     dirty.clear()
@@ -53,6 +54,13 @@ export function createSelectedNodeState(
     void revision.value
     void editor.state.currentPageId
     const ids = [...editor.state.selectedIds]
+    // The panel shows the first character's style outside an edit and the selected characters'
+    // style inside one, so both ends of a session need a fresh projection.
+    if (editor.state.editingTextId !== editingTextId) {
+      if (editingTextId) dirty.add(editingTextId)
+      if (editor.state.editingTextId) dirty.add(editor.state.editingTextId)
+      editingTextId = editor.state.editingTextId
+    }
     if (editor.state.editingTextId && editor.state.textSelectionVersion !== textStyleVersion) {
       textStyleVersion = editor.state.textSelectionVersion
       for (const id of ids) dirty.add(id)

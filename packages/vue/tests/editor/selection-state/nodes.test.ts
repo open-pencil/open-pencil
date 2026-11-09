@@ -213,6 +213,22 @@ describe('selected-node preview projections', () => {
     }
   })
 
+  test('rebuilds a text projection when its edit session opens and closes', () => {
+    const fixture = setup()
+    const { editor, first, selection } = fixture
+    try {
+      const before = selection.node.value
+      editor.state.editingTextId = first.id
+      const editing = selection.node.value
+      expect(editing).not.toBe(before)
+
+      editor.state.editingTextId = null
+      expect(selection.node.value).not.toBe(editing)
+    } finally {
+      fixture.dispose()
+    }
+  })
+
   test('tracks multi-selection, selection changes and preview cancellation', () => {
     const fixture = setup()
     const { editor, first, second, selection } = fixture
