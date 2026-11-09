@@ -33,4 +33,41 @@ describe('navigation settle', () => {
     await Bun.sleep(20)
     expect(editor.state.navigation.phase).toBe('pan')
   })
+
+  test('a gesture that starts while settling survives the pending timer', async () => {
+    editor = createEditor()
+    const settle = createNavigationSettle(editor, 5)
+
+    editor.setNavigationPhase('pan')
+    settle.settle()
+    editor.setNavigationPhase('pan')
+
+    await Bun.sleep(20)
+    expect(editor.state.navigation.phase).toBe('pan')
+  })
+
+  test('disposing a settling navigation returns it to idle', async () => {
+    editor = createEditor()
+    const settle = createNavigationSettle(editor, 5)
+    editor.setNavigationPhase('pan')
+    settle.settle()
+
+    settle.dispose()
+
+    expect(editor.state.navigation.phase).toBe('idle')
+    await Bun.sleep(20)
+    expect(editor.state.navigation.phase).toBe('idle')
+  })
+
+  test('disposing leaves a newer gesture alone', async () => {
+    editor = createEditor()
+    const settle = createNavigationSettle(editor, 5)
+    editor.setNavigationPhase('pan')
+    settle.settle()
+    editor.setNavigationPhase('pan')
+
+    settle.dispose()
+
+    expect(editor.state.navigation.phase).toBe('pan')
+  })
 })

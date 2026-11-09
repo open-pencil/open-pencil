@@ -6,6 +6,7 @@ export const NAVIGATION_SETTLE_DELAY_MS = 120
 export interface NavigationSettle {
   settle: () => void
   cancel: () => void
+  dispose: () => void
 }
 
 /**
@@ -35,5 +36,17 @@ export function createNavigationSettle(
     }, delayMs)
   }
 
-  return { settle, cancel }
+  /**
+   * Stops a canvas from leaving navigation settling for good when it unmounts mid-gesture. A
+   * newer gesture that took the phase over keeps it.
+   */
+  function dispose() {
+    const pending = timer !== null
+    cancel()
+    if (!pending || editor.state.navigation.phase !== 'settling') return
+    editor.setNavigationPhase('idle')
+    editor.requestRepaint()
+  }
+
+  return { settle, cancel, dispose }
 }

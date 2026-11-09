@@ -638,7 +638,7 @@ export function useCanvasInput(
     stopReadOnlyListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
-    navigationSettle.cancel()
+    navigationSettle.dispose()
     // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.
     canvasLabelEdit.commit()
   })

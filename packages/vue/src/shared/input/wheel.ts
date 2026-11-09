@@ -255,6 +255,6 @@ export function setupWheelPanZoom(
   )
 
   onScopeDispose(() => {
-    navigationSettle.cancel()
+    navigationSettle.dispose()
   })
 }
