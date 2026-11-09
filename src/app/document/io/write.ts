@@ -1,4 +1,4 @@
-import { remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-fs'
+import { lstat, remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-fs'
 
 import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
 import { concatenateBytes } from '@open-pencil/core/io/formats/fig'
@@ -31,6 +31,35 @@ type DocumentWriterOptions = {
 
 /** Bytes the Tauri writer hands to one raw IPC write; files are written in this many bytes. */
 const TAURI_CHUNK_BYTES = 8 * 1024 * 1024
+
+/** Writes a stream into a desktop file as bounded raw request bodies. */
+async function writeTauriPath(
+  path: string,
+  stream: DocumentStream,
+  onProgress?: (written: number, total: number) => void
+): Promise<void> {
+  // `write_file` sends its bytes as a raw IPC body. `FileHandle.write` sends the same bytes as
+  // a JSON number array, which made a large save take minutes.
+  await tauriWriteFile(path, new Uint8Array(0))
+  const pending = new Uint8Array(TAURI_CHUNK_BYTES)
+  let used = 0
+  const flush = async () => {
+    if (used === 0) return
+    await tauriWriteFile(path, pending.subarray(0, used), { append: true, create: true })
+    used = 0
+  }
+  await stream(async (chunk) => {
+    let offset = 0
+    while (offset < chunk.byteLength) {
+      const take = Math.min(TAURI_CHUNK_BYTES - used, chunk.byteLength - offset)
+      pending.set(chunk.subarray(offset, offset + take), used)
+      used += take
+      offset += take
+      if (used === TAURI_CHUNK_BYTES) await flush()
+    }
+  }, onProgress)
+  await flush()
+}
 
 export function createDocumentWriter({
   state,
@@ -86,35 +115,20 @@ export function createDocumentWriter({
       const filePath = target.filePath
       const fileHandle = target.fileHandle
       if (filePath && isTauri()) {
+        // A link keeps pointing at its target: the previous writer followed it, and replacing
+        // the link with a regular file would surprise the person who made it. Such a save is
+        // direct, so a failed one leaves a partial target as it always did.
+        const info = await lstat(filePath).catch(() => null)
+        if (info?.isSymlink) {
+          await writeTauriPath(filePath, stream, onProgress)
+          return await finishWrite(version)
+        }
         // Replace the file only once every byte is written, so a failed export leaves the
         // previous save intact. The temporary name has no leading dot: the fs scope keeps
         // hidden files out of `**`.
         const temporary = `${filePath}.${randomHex(8)}.saving`
         try {
-          // `write_file` sends its bytes as a raw IPC body. `FileHandle.write` sends the same
-          // bytes as a JSON number array, which made a large save take minutes.
-          await tauriWriteFile(temporary, new Uint8Array(0))
-          const pending = new Uint8Array(TAURI_CHUNK_BYTES)
-          let used = 0
-          const flush = async () => {
-            if (used === 0) return
-            await tauriWriteFile(temporary, pending.subarray(0, used), {
-              append: true,
-              create: true
-            })
-            used = 0
-          }
-          await stream(async (chunk) => {
-            let offset = 0
-            while (offset < chunk.byteLength) {
-              const take = Math.min(TAURI_CHUNK_BYTES - used, chunk.byteLength - offset)
-              pending.set(chunk.subarray(offset, offset + take), used)
-              used += take
-              offset += take
-              if (used === TAURI_CHUNK_BYTES) await flush()
-            }
-          }, onProgress)
-          await flush()
+          await writeTauriPath(temporary, stream, onProgress)
           await rename(temporary, filePath)
         } catch (error) {
           await remove(temporary).catch(() => undefined)

@@ -66,15 +66,16 @@ describe('Tauri document IO helpers', () => {
     )
 
     expect(calls.map((call) => call.cmd)).toEqual([
+      'plugin:fs|lstat',
       'plugin:fs|write_file',
       'plugin:fs|write_file',
       'plugin:fs|rename'
     ])
-    const temporary = writePath(calls[0]?.options)
+    const temporary = writePath(calls[1]?.options)
     expect(temporary).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
-    expect(writePath(calls[1]?.options)).toBe(temporary)
-    expect(calls[1]?.args).toEqual(new Uint8Array([1, 2, 3, 4, 5, 6]))
-    expect(calls[2]?.args).toEqual({
+    expect(writePath(calls[2]?.options)).toBe(temporary)
+    expect(calls[2]?.args).toEqual(new Uint8Array([1, 2, 3, 4, 5, 6]))
+    expect(calls[3]?.args).toEqual({
       oldPath: temporary,
       newPath: '/tmp/document.fig',
       options: undefined
@@ -131,10 +132,54 @@ describe('Tauri document IO helpers', () => {
       }, 3)
     ).rejects.toThrow('disk full')
 
-    expect(calls.map((call) => call.cmd)).toEqual(['plugin:fs|write_file', 'plugin:fs|remove'])
-    const temporary = writePath(calls[0]?.options)
+    expect(calls.map((call) => call.cmd)).toEqual([
+      'plugin:fs|lstat',
+      'plugin:fs|write_file',
+      'plugin:fs|remove'
+    ])
+    const temporary = writePath(calls[1]?.options)
     expect(temporary).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
-    expect(calls[1]?.args).toEqual({ path: temporary, options: undefined })
+    expect(calls[2]?.args).toEqual({ path: temporary, options: undefined })
+  })
+
+  test('writes through a symlink instead of replacing it', async () => {
+    const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
+    await mockTauriIPC((cmd, args, options) => {
+      calls.push({ cmd, args, options })
+      if (cmd === 'plugin:fs|lstat') {
+        return {
+          isFile: false,
+          isDirectory: false,
+          isSymlink: true,
+          size: 0,
+          mtime: null,
+          atime: null,
+          birthtime: null,
+          readonly: false
+        }
+      }
+      return null
+    })
+    const write = createDocumentWriter({
+      state: { documentName: 'Document' },
+      getFilePath: () => '/tmp/document.fig',
+      getFileHandle: () => null,
+      getStorageBinding: () => null,
+      setSavedVersion: () => undefined,
+      setLastWriteTime: () => undefined
+    })
+
+    await write(async (sink) => {
+      await sink(new Uint8Array([1, 2, 3]))
+    }, 1)
+
+    expect(calls.map((call) => call.cmd)).toEqual([
+      'plugin:fs|lstat',
+      'plugin:fs|write_file',
+      'plugin:fs|write_file'
+    ])
+    expect(writePath(calls[1]?.options)).toBe('/tmp/document.fig')
+    expect(writePath(calls[2]?.options)).toBe('/tmp/document.fig')
   })
 
   test('removes the temporary file when an append write fails', async () => {
@@ -160,7 +205,12 @@ describe('Tauri document IO helpers', () => {
       }, 1)
     ).rejects.toThrow('disk full')
 
-    expect(calls).toEqual(['plugin:fs|write_file', 'plugin:fs|write_file', 'plugin:fs|remove'])
+    expect(calls).toEqual([
+      'plugin:fs|lstat',
+      'plugin:fs|write_file',
+      'plugin:fs|write_file',
+      'plugin:fs|remove'
+    ])
   })
 
   test('runs saves one after another', async () => {
