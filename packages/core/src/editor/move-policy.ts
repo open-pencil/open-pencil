@@ -18,6 +18,10 @@ export interface MoveChange {
  */
 export type MovePolicy = (change: MoveChange) => Partial<Vector> | null
 
+/** Changes with their position as a move policy decided it: an axis it refused is left out. */
+export type DecidedMove<T extends Partial<SceneNode>> = Omit<T, 'x' | 'y'> &
+  Partial<Pick<SceneNode, 'x' | 'y'>>
+
 /**
  * The host's move policy (`setMovePolicy`) and the scope of the host's own edits (`asHost`),
  * which neither the policy nor the host's restrictions narrow. Undo and redo replay what was
@@ -54,19 +58,18 @@ export function createMovePolicy(undo: Pick<UndoManager, 'isReplaying'>) {
     node: SceneNode,
     changes: T,
     preview = false
-  ): T {
+  ): DecidedMove<T> {
     if (!policy || hostDepth > 0 || undo.isReplaying) return changes
     if (changes.x === undefined && changes.y === undefined) return changes
     const to: Partial<Vector> = {}
     if (changes.x !== undefined) to.x = changes.x
     if (changes.y !== undefined) to.y = changes.y
     const decided = policy({ node, to, preview }) ?? {}
-    const rest: T = { ...changes }
-    delete rest.x
-    delete rest.y
-    if (decided.x !== undefined) rest.x = decided.x
-    if (decided.y !== undefined) rest.y = decided.y
-    return rest
+    const { x: _x, y: _y, ...rest } = changes
+    const result: DecidedMove<T> = rest
+    if (decided.x !== undefined) result.x = decided.x
+    if (decided.y !== undefined) result.y = decided.y
+    return result
   }
 
   return { setMovePolicy, isHostEdit, runAsHost, constrainMove }

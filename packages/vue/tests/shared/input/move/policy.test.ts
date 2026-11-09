@@ -68,3 +68,26 @@ test('a preview the host refuses shows the layer where the drag found it', () =>
   handleMoveMove(drag, 120, 20, 120, 20, editor)
   expect(editor.graph.getNode(piece.id)?.x).toBe(0)
 })
+
+test('the landing is decided once, and an axis the preview leaves out shows the start', () => {
+  const harness = createMoveHarness()
+  editor = harness.editor
+  editor.state.snappingPreferences = { geometry: false, objects: false, pixelGrid: false }
+  const piece = harness.node('RECTANGLE', harness.page, { x: 0, y: 0 })
+  // Each landing takes the next free slot; previews keep the layer on x alone.
+  const slots = [
+    { x: 100, y: 0 },
+    { x: 200, y: 0 }
+  ]
+  let landings = 0
+  editor.setMovePolicy(({ to, preview }) => (preview ? { x: to.x } : (slots[landings++] ?? null)))
+
+  editor.select([piece.id])
+  const drag = createSelectionMoveDrag(20, 20, 20, 20, editor, false)
+  if (drag.type !== 'move') throw new Error('Expected a move drag')
+  handleMoveMove(drag, 60, 80, 60, 80, editor)
+  expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 40, y: 0 })
+  handleMoveUp(drag, editor)
+  expect(landings).toBe(1)
+  expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 100, y: 0 })
+})

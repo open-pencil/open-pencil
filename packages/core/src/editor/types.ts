@@ -22,6 +22,7 @@ import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { DecidedMove } from '#core/editor/move-policy'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { PenPressEvent, PenReleaseEvent } from '#core/editor/shapes/pen/gesture'
@@ -336,7 +337,11 @@ export interface EditorContext {
   getTextEditor: () => TextEditor | null
   requestRender: () => void
   /** A change to a layer with its position as the host's move policy decides it (`setMovePolicy`). */
-  constrainMove: <T extends Partial<SceneNode>>(node: SceneNode, changes: T, preview?: boolean) => T
+  constrainMove: <T extends Partial<SceneNode>>(
+    node: SceneNode,
+    changes: T,
+    preview?: boolean
+  ) => DecidedMove<T>
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
   requestRefresh: () => void
   requestRepaint: () => void

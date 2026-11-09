@@ -7,13 +7,15 @@ const refused = (changes: Partial<SceneNode>) => changes.x === undefined && chan
 
 /**
  * Writes a drag's live preview of a layer where the host's move policy puts it, so the person
- * sees the constraint while dragging; a refused preview shows the layer where the drag found it.
+ * sees the constraint while dragging; a refused move, or an axis the policy leaves out, shows the
+ * layer where the drag found it.
  */
 export function previewMove(editor: Editor, id: string, to: Vector, start: Vector) {
   const node = editor.graph.getNode(id)
   if (!node) return
   const decided = editor.constrainMove(node, { x: to.x, y: to.y }, { preview: true })
-  editor.graph.updateNodePreview(id, refused(decided) ? { x: start.x, y: start.y } : decided)
+  // An axis the policy leaves out, or a refused move, shows where the drag found the layer.
+  editor.graph.updateNodePreview(id, { x: decided.x ?? start.x, y: decided.y ?? start.y })
 }
 
 /** Where the host's move policy puts a layer's landing; null when it refuses the move. */

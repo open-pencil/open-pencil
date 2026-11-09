@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { MovePolicyActions } from '#core/editor/move-policy'
+import type { DecidedMove, MovePolicyActions } from '#core/editor/move-policy'
 import type { EditorContext, Tool } from '#core/editor/types'
 import {
   offeredTool,
@@ -273,7 +273,7 @@ export function createReadOnlyActions(
     node: SceneNode,
     changes: T,
     options: { preview?: boolean } = {}
-  ): T {
+  ): DecidedMove<T> {
     return movePolicy.constrainMove(node, changes, options.preview ?? false)
   }
 
