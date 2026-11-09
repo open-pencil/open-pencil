@@ -57,6 +57,7 @@ function setMode(value: string) {
         </SelectTrigger>
       </div>
       <VariableNumberField
+        :round="panelNumber"
         v-else
         :data-test-id="axis === 'primary' ? 'layout-gap-input' : 'layout-cross-gap-input'"
         :aria-label="label"

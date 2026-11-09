@@ -29,6 +29,15 @@ test('position and size fields show two decimals', async () => {
   editor.canvas.assertNoErrors()
 })
 
+test('a bound size shows its variable to two decimals, at rest and while edited', async () => {
+  await scene.select((ids) => ids.bound)
+  await expect(field('Width')).toHaveAttribute('aria-valuenow', '100.4')
+  await field('Width').focus()
+  await expect(field('Width')).toHaveValue('100.4')
+  await field('Width').press('Escape')
+  editor.canvas.assertNoErrors()
+})
+
 test('a field left as it began keeps the layer’s exact value', async () => {
   await scene.select((ids) => ids.measured)
   const ids = await scene.ids()

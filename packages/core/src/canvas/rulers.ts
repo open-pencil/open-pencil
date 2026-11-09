@@ -164,7 +164,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx1 - r.panX) / r.zoom).toString(),
+      rulerEdgeLabel((selBounds.sx1 - r.panX) / r.zoom),
       Math.max(R, selBounds.sx1),
       0,
       'horizontal'
@@ -173,7 +173,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx2 - r.panX) / r.zoom).toString(),
+      rulerEdgeLabel((selBounds.sx2 - r.panX) / r.zoom),
       selBounds.sx2,
       0,
       'horizontal'
@@ -182,7 +182,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sy1 - r.panY) / r.zoom).toString(),
+      rulerEdgeLabel((selBounds.sy1 - r.panY) / r.zoom),
       0,
       Math.max(R, selBounds.sy1),
       'vertical'
@@ -191,7 +191,7 @@ export function drawRulers(
       r,
       canvas,
       font,
-      Math.round((selBounds.sy2 - r.panY) / r.zoom).toString(),
+      rulerEdgeLabel((selBounds.sy2 - r.panY) / r.zoom),
       0,
       selBounds.sy2,
       'vertical'
@@ -356,4 +356,9 @@ export function rulerStep(r: SkiaRenderer): number {
 
 export function rulerLabel(value: number): string {
   return Math.round(value).toString()
+}
+
+/** A selection edge on the ruler, to three decimals at any zoom, as Figma labels it (8000.375). */
+export function rulerEdgeLabel(value: number): string {
+  return String(Math.round(value * 1000) / 1000 + 0)
 }
