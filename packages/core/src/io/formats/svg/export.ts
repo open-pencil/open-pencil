@@ -198,7 +198,8 @@ function boxOutlineElement(
   if (node.independentCorners || hasSmoothCorners(node)) {
     return svg('path', { d: boxOutlinePath(node), ...attrs })
   }
-  const radius = round(node.cornerRadius)
+  // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
+  const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
   return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
 }
 

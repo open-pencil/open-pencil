@@ -332,6 +332,21 @@ describe('renderNodesToSVG()', () => {
     )
   })
 
+  test('rounded frame keeps a radius past its shorter side circular', () => {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 10,
+      cornerRadius: 20,
+      clipsContent: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', frame.id, { width: 100, height: 10 })
+    const result = exportSVGOrThrow(graph, [frame.id])
+    expect(result).toMatch(/<clipPath id="clip[^"]*">\s*<rect width="100" height="10" rx="5" ry="5"/)
+    expect(result).not.toContain('rx="20"')
+  })
+
   test('frame with independent corners clips its children to its outline', () => {
     const graph = makeSceneGraph('Page 1')
     const frame = graph.createNode('FRAME', firstPageId(graph), {
