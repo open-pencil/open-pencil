@@ -4,15 +4,12 @@ import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 // zoom: 100.375 and 251.631 across, 80.125 and 113.458 down for this layer.
 const editor = useEditorSetupWithClear('/?test&no-chrome')
 
-test('a fractional selection’s ruler labels show three decimals', async () => {
-  await editor.page.evaluate(() => {
+async function selectLayer(box: { x: number; y: number; width: number; height: number }) {
+  await editor.page.evaluate((box) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const layer = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
-      x: 100.375,
-      y: 80.125,
-      width: 151.256,
-      height: 33.333333,
+      ...box,
       fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, visible: true, opacity: 1 }]
     })
     store.state.zoom = 2
@@ -20,12 +17,25 @@ test('a fractional selection’s ruler labels show three decimals', async () => 
     store.state.panY = 0
     store.select([layer.id])
     store.requestRender()
-  })
+  }, box)
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.screenshotCanvasRegion()
-  expect(buffer).toMatchSnapshot('fractional-selection-rulers.png', {
-    maxDiffPixelRatio: 0,
-    threshold: 0
-  })
+}
+
+const exact = { maxDiffPixelRatio: 0, threshold: 0 }
+
+test('a fractional selection’s ruler labels show three decimals', async () => {
+  await selectLayer({ x: 100.375, y: 80.125, width: 151.256, height: 33.333333 })
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'fractional-selection-rulers.png',
+    exact
+  )
+})
+
+test('a narrow selection’s edge labels part rather than overlap', async () => {
+  await selectLayer({ x: 100.375, y: 80.125, width: 15.256, height: 6.333333 })
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'narrow-selection-rulers.png',
+    exact
+  )
 })
