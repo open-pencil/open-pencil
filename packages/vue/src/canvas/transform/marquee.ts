@@ -38,12 +38,13 @@ function marqueeHits(editor: Editor, d: DragMarquee, marquee: Rect): string[] {
  * many layers stutter.
  */
 export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy: number) {
-  editor.setMarquee({
+  d.rect = {
     x: Math.min(d.startX, cx),
     y: Math.min(d.startY, cy),
     width: Math.abs(cx - d.startX),
     height: Math.abs(cy - d.startY)
-  })
+  }
+  editor.setMarquee(d.rect)
 }
 
 /**
@@ -52,7 +53,8 @@ export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy
  */
 export function finishMarquee(editor: Editor, d: DragMarquee) {
   const container = d.containerId ? editor.graph.getNode(d.containerId) : undefined
-  const marquee = editor.state.marquee
+  // The drag's own rectangle: global marquee state may be left over from a cancelled gesture.
+  const marquee = d.rect ?? null
   const zoom = editor.state.zoom
   if (!marquee || !isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)) {
     if (d.selectsSection && container?.type === 'SECTION') editor.select([container.id])

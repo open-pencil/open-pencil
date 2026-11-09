@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 
 import { finishMarquee, handleMarqueeMove } from '#vue/canvas/transform/marquee'
+import type { DragMarquee } from '#vue/shared/input/types'
 
 let editor: Editor
 
@@ -35,6 +36,38 @@ describe('marquee selection', () => {
 
     finishMarquee(editor, drag)
     expect([...editor.state.selectedIds]).toEqual([frame.id])
+    expect(editor.state.marquee).toBeNull()
+  })
+
+  test('keeps the drawn rectangle on the drag itself', () => {
+    editor = createEditor()
+    const drag: DragMarquee = {
+      type: 'marquee',
+      startX: 0,
+      startY: 0,
+      selectsSection: false
+    }
+
+    handleMarqueeMove(editor, drag, 200, 120)
+
+    expect(drag.rect).toEqual({ x: 0, y: 0, width: 200, height: 120 })
+  })
+
+  test('selects nothing from a marquee a cancelled drag left behind', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    editor.graph.createNode('RECTANGLE', page, { width: 100, height: 100 })
+    editor.setMarquee({ x: -10, y: -10, width: 500, height: 500 })
+    const drag: DragMarquee = {
+      type: 'marquee',
+      startX: 200,
+      startY: 200,
+      selectsSection: false
+    }
+
+    finishMarquee(editor, drag)
+
+    expect([...editor.state.selectedIds]).toEqual([])
     expect(editor.state.marquee).toBeNull()
   })
 

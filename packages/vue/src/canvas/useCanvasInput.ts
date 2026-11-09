@@ -498,6 +498,7 @@ export function useCanvasInput(
     discardDrawnPreview(d)
     if (d.type === 'move') cancelMove(d, editor)
     else if (d.type === 'rotate' || d.type === 'rotate-selection') cancelRotationDrag(editor, d)
+    else if (d.type === 'marquee' && editor.state.marquee) editor.setMarquee(null)
     else cancelNodeEditDrag(d, editor)
   }
 
