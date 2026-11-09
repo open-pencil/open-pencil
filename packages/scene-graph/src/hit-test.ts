@@ -110,6 +110,14 @@ function takesEmptyArea(graph: SceneGraph, node: SceneNode, walk: HitWalk): bool
   return walk.instanceBodies && node.type === 'INSTANCE'
 }
 
+/**
+ * What a hit inside a container reports: the container itself when it is locked (a locked layer,
+ * where one is hit at all, stands in for everything inside it) or the walk stops at containers.
+ */
+function standIn(container: SceneNode, hit: SceneNode, deep: boolean): SceneNode {
+  return container.locked || !deep ? container : hit
+}
+
 function hitTestTransparentContainer(
   graph: SceneGraph,
   px: number,
@@ -123,12 +131,11 @@ function hitTestTransparentContainer(
     // A group has no area of its own, as in Figma: between its layers the click falls through to
     // whatever lies under the group.
     const childHit = hitTestChildren(graph, px, py, child.id, walk)
-    return childHit ? (walk.deep ? childHit : child) : null
+    return childHit ? standIn(child, childHit, walk.deep) : null
   }
 
   const childHit = hitTestChildren(graph, px, py, child.id, walk)
-  // A locked layer, where one is hit at all, stands in for everything inside it.
-  if (childHit) return child.locked ? child : childHit
+  if (childHit) return standIn(child, childHit, true)
 
   if (
     containsPoint(px, py, child, graph, walk.transformCache) &&
