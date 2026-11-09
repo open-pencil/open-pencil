@@ -368,7 +368,7 @@
   "libraryUpdateImpact": "影響を受けるインスタンス {affected} 件 · 代替バリアント {fallback} 件",
   "publishLibrary": "ライブラリを公開する",
   "publishingLibrary": "公開中…",
-  "publishLibraryHelp": "このファイルのコンポーネントを不変のリビジョンとして公開します。",
+  "publishLibraryHelp": "このファイルのコンポーネント、スタイル、変数を不変のリビジョンとして公開します。",
   "libraryId": "ライブラリ ID",
   "libraryName": "ライブラリ名",
   "revisionDescription": "リビジョンの説明",

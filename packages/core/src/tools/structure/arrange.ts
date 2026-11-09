@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { arrangeLayers } from '#core/layout/arrange/layers'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -71,7 +72,7 @@ Connectors between the layers are found automatically. Include a section and all
     const ids = args.ids ?? figma.currentPage.children.map((node) => node.id)
     if (ids.length === 0) return { error: 'No layers to arrange' }
     try {
-      const arranged = await arrangeLayers(figma.graph, ids, {
+      const arranged = await arrangeLayers(graphOf(figma), ids, {
         layout: args.mode,
         direction: args.direction,
         spacing: args.gap,

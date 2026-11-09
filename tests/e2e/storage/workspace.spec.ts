@@ -208,9 +208,11 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   // An exported .fig is a zip archive holding the document and its thumbnail.
   expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
 
+  // A new tab opens Home, which lists the bucket's documents once the bucket is chosen.
   file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+  await file.getByRole('menuitem', { name: /^New tab/ }).click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page.getByRole('button', { name: /^designs/ }).click()
   await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
 })
 

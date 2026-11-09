@@ -1,0 +1,1 @@
+- `CanvasRoot` takes pointer input and typing on its canvas, so `<CanvasRoot><CanvasSurface /></CanvasRoot>` is a working editor canvas; `:input="false"` keeps one that only draws, and the editor learns the canvas size without a `getViewportSize` option (#1838).

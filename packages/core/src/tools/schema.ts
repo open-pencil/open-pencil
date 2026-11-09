@@ -11,6 +11,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import { graphOf } from '#core/figma-api/graph'
 
 export type ToolCapability =
   | 'document:read'
@@ -153,7 +154,7 @@ export function getRawNodeOrError(
   figma: FigmaAPI,
   id: string
 ): { node: SceneNode } | { error: string } {
-  const node = figma.graph.getNode(id)
+  const node = graphOf(figma).getNode(id)
   return node ? { node } : nodeNotFound(id)
 }
 

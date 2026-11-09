@@ -120,4 +120,38 @@ describe('set_image_fill tool', () => {
     }
     expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
+
+  test('reads image_data given as a data URL', () => {
+    const { graph, figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+    const result = tool.execute(figma, {
+      id: node.id,
+      image_data: `data:image/png;base64,${PNG_MAGIC.toBase64()}`
+    }) as { imageHash: string }
+    expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
+  })
+
+  test('refuses a data URL whose Base64 was cut short', () => {
+    const { figma } = setup()
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
+    const result = tool.execute(figma, {
+      id: node.id,
+      image_data: `data:image/png;base64,${PNG_MAGIC.toBase64().slice(0, 9)}`
+    }) as { error?: string }
+    expect(result.error).toBe('image_data is neither valid Base64 nor a data URL')
+    const fills = expectFills(expectDefined(figma.getNodeById(node.id), 'shape').fills)
+    expect(fills.map((fill) => fill.type)).not.toContain('IMAGE')
+  })
 })

@@ -5,6 +5,12 @@ import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
 import type { SceneNode } from './types'
 
+/**
+ * What fitting a group reads: its layers and their parents, as the graph has them or as a resize
+ * plans them before writing.
+ */
+export type GroupFitGraph = Pick<SceneGraph, 'getNode' | 'rootId'>
+
 /** Where a layer sits, with a connector's ends, since a free end is in the parent's axes too. */
 type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'> &
   Partial<Pick<SceneNode, 'connectorStart' | 'connectorEnd'>>
@@ -81,7 +87,7 @@ function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
  * empty at `origin`, where Figma leaves it.
  */
 export function groupBounds(
-  graph: SceneGraph,
+  graph: GroupFitGraph,
   children: readonly SceneNode[],
   parentId: string,
   origin: Vector
@@ -116,7 +122,7 @@ function isTransformed(node: SceneNode): boolean {
  * box comes from its result's path, keeps its bounds.
  */
 function fittedBox(
-  graph: SceneGraph,
+  graph: GroupFitGraph,
   group: SceneNode,
   parentId: string,
   children: SceneNode[],
@@ -145,17 +151,19 @@ function unchanged(value: number, previous: number): boolean {
   return Math.abs(value - previous) <= FIT_TOLERANCE * Math.max(1, Math.abs(previous))
 }
 
-/** Moves the group to its children's bounds, shifting them back so they stay put. */
-function fitGroup(
-  graph: SceneGraph,
+/**
+ * The changes that fit `group` to `children`: its box in its parent's space, and each child moved
+ * back so it stays put on the canvas. Null when the fit changes nothing.
+ */
+export function groupFitChanges(
+  graph: GroupFitGraph,
   group: SceneNode,
   children: SceneNode[],
-  fit: GroupFit,
-  options: GroupFitOptions
-) {
-  if (!group.parentId) return
+  options: GroupFitOptions = {}
+): Map<string, Partial<SceneNode>> | null {
+  if (!group.parentId) return null
   const fitted = fittedBox(graph, group, group.parentId, children, options)
-  if (!fitted) return
+  if (!fitted) return null
   const { box, shift } = fitted
   // A rotated group's frame leaves rounding residue; a fit within it changes nothing.
   if (
@@ -164,15 +172,27 @@ function fitGroup(
     unchanged(box.width, group.width) &&
     unchanged(box.height, group.height)
   ) {
-    return
+    return null
   }
+  const changes = new Map<string, Partial<SceneNode>>([[group.id, box]])
+  for (const child of children) changes.set(child.id, shiftedBack(child, shift.x, shift.y))
+  return changes
+}
+
+/** Moves the group to its children's bounds, shifting them back so they stay put. */
+function fitGroup(
+  graph: SceneGraph,
+  group: SceneNode,
+  children: SceneNode[],
+  fit: GroupFit,
+  options: GroupFitOptions
+) {
+  const changes = groupFitChanges(graph, group, children, options)
+  if (!changes) return
   for (const node of [group, ...children]) {
     if (!fit.before.has(node.id)) fit.before.set(node.id, placement(node))
   }
-  graph.updateNode(group.id, box)
-  for (const child of children) {
-    graph.updateNode(child.id, shiftedBack(child, shift.x, shift.y))
-  }
+  for (const [id, change] of changes) graph.updateNode(id, change)
   for (const node of [group, ...children]) {
     const current = graph.getNode(node.id)
     if (current) fit.after.set(node.id, placement(current))

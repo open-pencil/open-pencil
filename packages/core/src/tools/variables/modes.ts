@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { SceneGraph, VariableCollection } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool, nodeIdInputSchema } from '#core/tools/schema'
 
 const collectionInputSchema = v.pipe(
@@ -61,7 +62,7 @@ export const setVariableMode = defineTool({
     )
   }),
   execute: (figma, args) => {
-    const collection = findCollection(figma.graph, args.collection)
+    const collection = findCollection(graphOf(figma), args.collection)
     if ('error' in collection) return collection
     const modeId = args.mode === null ? null : findModeId(collection, args.mode)
     if (modeId !== null && typeof modeId !== 'string') return modeId
@@ -83,11 +84,12 @@ export const setVariableMode = defineTool({
 })
 
 function layerModes(figma: FigmaAPI, id: string) {
-  const node = figma.graph.getNode(id)
+  const graph = graphOf(figma)
+  const node = graph.getNode(id)
   if (!node) return null
-  return [...figma.graph.variableCollections.values()].map((collection) => {
+  return [...graph.variableCollections.values()].map((collection) => {
     const own = node.variableModes[collection.id]
-    const modeId = figma.graph.getNodeVariableModeId(id, collection.id)
+    const modeId = graph.getNodeVariableModeId(id, collection.id)
     return {
       collection_id: collection.id,
       collection: collection.name,

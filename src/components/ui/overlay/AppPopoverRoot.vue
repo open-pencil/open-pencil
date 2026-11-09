@@ -10,17 +10,23 @@ import { useOverlayOpen, type OverlayKind } from '@open-pencil/vue/lifecycle/ove
 const {
   open = undefined,
   defaultOpen = false,
-  overlayKind = 'overlay'
+  overlayKind = 'overlay',
+  holdsKeys = true
 } = defineProps<{
   open?: boolean
   defaultOpen?: boolean
   /** `picker` for a fill or colour picker, which leaves undo and redo to the document. */
   overlayKind?: OverlayKind
+  /**
+   * False for a bar that shows beside the canvas without taking focus, such as FigJam's
+   * selection toolbar, so the canvas's shortcuts and nudging keep working while it shows.
+   */
+  holdsKeys?: boolean
 }>()
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
 const ownOpen = ref(defaultOpen)
 const shown = computed(() => open ?? ownOpen.value)
-useOverlayOpen(shown, overlayKind)
+useOverlayOpen(() => holdsKeys && shown.value, overlayKind)
 
 function updateOpen(value: boolean) {
   ownOpen.value = value

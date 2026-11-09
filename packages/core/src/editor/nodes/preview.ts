@@ -4,6 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
+import { restoredHuggedSize } from '#core/layout/apply'
 
 export interface NodePreview {
   readonly closed: boolean
@@ -107,8 +108,14 @@ export function createNodePreviewActions(
         function apply(direction: 'before' | 'after') {
           for (const edit of edits) {
             const update = () => graph.updateNode(edit.id, structuredClone(edit[direction]))
-            if (layoutOnly.has(edit.id)) graph.withLayoutMutations(update)
-            else update()
+            if (!layoutOnly.has(edit.id)) {
+              update()
+              continue
+            }
+            graph.withLayoutMutations(update)
+            // A size layout gave a frame comes back with the places it gave the frame's layers.
+            const node = graph.getNode(edit.id)
+            if (node) restoredHuggedSize(node)
           }
           ctx.requestRender()
         }

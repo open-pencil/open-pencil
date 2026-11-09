@@ -13,12 +13,12 @@ import {
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 
 /** Magnets Figma's plugin API takes with an `endpointNodeId`. */
@@ -59,7 +59,7 @@ function editConnector(
 ) {
   updateNode(target, internals, changes)
   const node = connector(target, internals)
-  if (node) layoutConnector(graph(target, internals), node)
+  if (node) layoutConnector(graphOf(target), node)
 }
 
 /**
@@ -72,7 +72,7 @@ function pluginEndpoint(target: ProxyThis, internals: NodeProxyInternals, end: C
   if (!endpoint) return undefined
   const position = { ...endpoint.position }
   if (endpoint.nodeId === null) {
-    return { endpointNodeId: graph(target, internals).pageOf(node.id) ?? '', position }
+    return { endpointNodeId: graphOf(target).pageOf(node.id) ?? '', position }
   }
   if (endpoint.magnet === 'NONE') return { endpointNodeId: endpoint.nodeId, position }
   const magnet = endpoint.magnet === 'ABSOLUTE' ? 'EDGE' : endpoint.magnet
@@ -93,7 +93,7 @@ function sceneEndpoint(
   value: PluginEndpoint
 ): ConnectorEndpoint {
   const setter = `in set_${end}`
-  const scene = graph(target, internals)
+  const scene = graphOf(target)
   const node = raw(target, internals)
   const { endpointNodeId, magnet, position } = value
   const page = scene.pageOf(node.id)
@@ -161,7 +161,7 @@ function straightEnd(endpoint: ConnectorEndpoint | null): ConnectorEndpoint | nu
 
 function plate(target: ProxyThis, internals: NodeProxyInternals): FigmaNodeProxy | undefined {
   const node = connector(target, internals)
-  const layer = node && connectorSublayers(graph(target, internals), node)?.labelBackground
+  const layer = node && connectorSublayers(graphOf(target), node)?.labelBackground
   return layer ? (target[internals.api] as NodeProxyHost).wrapNode(layer.id) : undefined
 }
 

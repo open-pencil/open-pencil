@@ -51,9 +51,9 @@ test('numeric, Boolean and comparison formulas survive fresh and patched .fig sa
     expect(node?.visible).toBe(i !== 0)
     const api = new FigmaAPI(current)
     for (const variable of current.variables.values()) {
-      const active = current.getActiveModeId(variable.collectionId)
-      if (variable.name === base.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(active, 10)
-      if (variable.name === enabled.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(active, false)
+      const mode = current.variableCollections.get(variable.collectionId)?.defaultModeId ?? ''
+      if (variable.name === base.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, 10)
+      if (variable.name === enabled.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, false)
     }
   }
 })

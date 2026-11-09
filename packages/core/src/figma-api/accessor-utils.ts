@@ -10,12 +10,13 @@ import { claimSlotContent, slotScope } from '@open-pencil/scene-graph/slots'
 import { regionFillChanges } from '@open-pencil/scene-graph/vector-network'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import { bindGraph, graphOf } from '#core/figma-api/graph'
+import { flushPendingComponentSync } from '#core/figma-api/pending-sync'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 export interface NodeProxyInternals {
   id: symbol
-  graph: symbol
   api: symbol
 }
 
@@ -25,13 +26,11 @@ export function nodeId(target: ProxyThis, internals: NodeProxyInternals): string
   return target[internals.id] as string
 }
 
-export function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
-  return target[internals.graph] as SceneGraph
-}
-
 export function raw(target: ProxyThis, internals: NodeProxyInternals): SceneNode {
   const id = nodeId(target, internals)
-  const node = graph(target, internals).getNode(id)
+  const graph = graphOf(target)
+  flushPendingComponentSync(graph, id)
+  const node = graph.getNode(id)
   if (!node) throw new Error(`Node ${id} has been removed`)
   return node
 }
@@ -43,15 +42,17 @@ export function raw(target: ProxyThis, internals: NodeProxyInternals): SceneNode
 export function strokeOwner(target: ProxyThis, internals: NodeProxyInternals): ProxyThis {
   const node = raw(target, internals)
   if (node.type !== 'CONNECTOR') return target
-  const line = connectorSublayers(graph(target, internals), node)?.line
+  const scene = graphOf(target)
+  const line = connectorSublayers(scene, node)?.line
   if (!line) return target
   const owner: ProxyThis = Object.create(target)
   owner[internals.id] = line.id
+  bindGraph(owner, scene)
   return owner
 }
 
 export function assertProxyEditable(target: ProxyThis, internals: NodeProxyInternals): void {
-  assertNodeEditable(graph(target, internals), nodeId(target, internals))
+  assertNodeEditable(graphOf(target), nodeId(target, internals))
 }
 
 /**
@@ -120,7 +121,7 @@ export function updateNode(
 ): void {
   assertProxyEditable(target, internals)
   applyLayerChanges(
-    graph(target, internals),
+    graphOf(target),
     nodeId(target, internals),
     changes,
     hostFitOptions(target, internals)

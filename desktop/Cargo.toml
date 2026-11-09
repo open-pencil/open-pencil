@@ -4,6 +4,8 @@ version = "0.17.0-beta.2"
 description = "OpenPencil desktop app"
 authors = ["Danila Poyarkov"]
 edition = "2021"
+license.workspace = true
+publish.workspace = true
 
 [features]
 default = []

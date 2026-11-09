@@ -67,9 +67,6 @@
       "#docs/*": [
         "./packages/docs/.vitepress/*"
       ],
-      "tinykeys": [
-        "./node_modules/tinykeys/dist/tinykeys.d.ts"
-      ],
       "@open-pencil/cli/library": [
         "./packages/cli/src/library/index.ts"
       ],

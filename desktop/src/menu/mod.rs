@@ -26,6 +26,9 @@ struct MenuEntry {
     id: Option<String>,
     label: Option<String>,
     accelerator: Option<String>,
+    /// The macOS accelerator where it differs from `accelerator`, as for Figma's distribute keys.
+    #[serde(rename = "macAccelerator")]
+    mac_accelerator: Option<String>,
     #[serde(default)]
     checkbox: bool,
     /// A feature the frontend turns on before the item shows (`set_native_menu_features`).
@@ -96,7 +99,14 @@ fn has_command_modifier(accelerator: &str) -> bool {
 /// commands need X11 automation that Wayland lacks, are left to the frontend's shortcuts, which
 /// skip text fields (`src/app/shell/keyboard/registry.ts`).
 fn native_accelerator(entry: &MenuEntry) -> Option<&str> {
-    let accelerator = entry.accelerator.as_deref()?;
+    let accelerator = if cfg!(target_os = "macos") {
+        entry
+            .mac_accelerator
+            .as_deref()
+            .or(entry.accelerator.as_deref())?
+    } else {
+        entry.accelerator.as_deref()?
+    };
     if cfg!(target_os = "linux") {
         let clipboard = matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
         if clipboard || !has_command_modifier(accelerator) {
@@ -405,12 +415,8 @@ pub fn install_app_menu<R: tauri::Runtime>(
     };
     #[cfg(target_os = "macos")]
     let app_menu = {
+        use tauri::Manager;
         let items = app_menu_file()?;
-        let mut check_updates =
-            MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
-        if let Some(accelerator) = &items.check_updates.accelerator {
-            check_updates = check_updates.accelerator(accelerator);
-        }
         let mut settings = MenuItemBuilder::new(&items.settings.label).id("settings");
         if let Some(accelerator) = &items.settings.accelerator {
             settings = settings.accelerator(accelerator);
@@ -419,13 +425,22 @@ pub fn install_app_menu<R: tauri::Runtime>(
         if let Some(accelerator) = &items.quit.accelerator {
             quit = quit.accelerator(accelerator);
         }
-        SubmenuBuilder::new(app, tauri::Manager::package_info(app).name.clone())
-            .item(&PredefinedMenuItem::about(
-                app,
-                Some(&items.about.label),
-                None,
-            )?)
-            .item(&check_updates.build(app)?)
+        let mut app_menu = SubmenuBuilder::new(app, app.package_info().name.clone()).item(
+            &PredefinedMenuItem::about(app, Some(&items.about.label), None)?,
+        );
+        // A package that delivers its own updates has no updater for this item to open.
+        if app
+            .state::<crate::capabilities::DesktopCapabilities>()
+            .self_update
+        {
+            let mut check_updates =
+                MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
+            if let Some(accelerator) = &items.check_updates.accelerator {
+                check_updates = check_updates.accelerator(accelerator);
+            }
+            app_menu = app_menu.item(&check_updates.build(app)?);
+        }
+        app_menu
             .separator()
             .item(&settings.build(app)?)
             .separator()
@@ -635,6 +650,7 @@ mod tests {
             id: Some(id.to_owned()),
             label: Some(id.to_owned()),
             accelerator: Some(accelerator.to_owned()),
+            mac_accelerator: None,
             checkbox: false,
             feature: None,
             sub: Vec::new(),
@@ -667,6 +683,20 @@ mod tests {
             native_accelerator(&entry("edit.undo", "CmdOrCtrl+Z")),
             Some("CmdOrCtrl+Z")
         );
+    }
+
+    #[test]
+    fn registers_the_macos_accelerator_on_macos_only() {
+        let distribute = MenuEntry {
+            mac_accelerator: Some("Ctrl+Alt+V".to_owned()),
+            ..entry("selection.distributeVertical", "Alt+Shift+V")
+        };
+        let expected = if cfg!(target_os = "macos") {
+            "Ctrl+Alt+V"
+        } else {
+            "Alt+Shift+V"
+        };
+        assert_eq!(native_accelerator(&distribute), Some(expected));
     }
 
     #[cfg(not(target_os = "linux"))]

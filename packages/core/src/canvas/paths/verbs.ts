@@ -1,4 +1,4 @@
-import type { CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
+import type { CanvasKit, Path, PathBuilder } from '@open-pencil/canvaskit'
 
 import type { PathSink } from '#core/vector/path-helpers'
 

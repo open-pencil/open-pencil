@@ -1,5 +1,7 @@
 import { noEditorProfileInputs, noFlatKiwiModules } from '#lint/rules/policy.ts'
+import { noHandRolledDataURLRule } from '#lint/rules/quality/data-url.ts'
 import {
+  noInterpolatedTailwindClassesRule,
   noPxTailwindValuesRule,
   noUnknownTailwindClassesRule
 } from '#lint/rules/quality/tailwind-classes.ts'
@@ -326,6 +328,7 @@ import {
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
+  noViteHotOutsideReload,
   noCoreBrowserGlobals,
   noZoomInSceneDrawing,
   noDirectGraphEmitterSubscriptions,
@@ -373,6 +376,8 @@ const plugin = {
     'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
     'no-px-tailwind-values': noPxTailwindValuesRule,
+    'no-hand-rolled-data-url': noHandRolledDataURLRule,
+    'no-interpolated-tailwind-classes': noInterpolatedTailwindClassesRule,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
     'no-typeof-window-check': noTypeofWindowCheck,
@@ -385,6 +390,7 @@ const plugin = {
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
+    'no-vite-hot-outside-reload': noViteHotOutsideReload,
     'no-local-json-object-aliases': noLocalJsonObjectAliases,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-zoom-in-scene-drawing': noZoomInSceneDrawing,

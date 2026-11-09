@@ -62,7 +62,7 @@ export function createRevisionCompactionService(
       .execute()
     let pruned = 0
     for (const { workspaceId } of workspaces) {
-      const start = await historyStart(options.policy, deploymentMode, workspaceId, now)
+      const start = await historyStart(database, options.policy, deploymentMode, workspaceId, now)
       if (!start) continue
       const deleted = await database
         .deleteFrom('documentVersion')

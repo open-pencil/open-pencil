@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -17,7 +17,7 @@ import {
 } from '#core/editor/eyedropper'
 import { TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 
 function solid(color: Color): Fill {
   return { type: 'SOLID', color, opacity: 1, visible: true }
@@ -33,7 +33,7 @@ describe('sampleSceneColor', () => {
   let renderer: SkiaRenderer
 
   beforeAll(async () => {
-    ck = await initCanvasKit()
+    ck = await getCanvasKit()
     renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
   })
   afterAll(() => renderer.destroy())
@@ -240,6 +240,6 @@ describe('tool registry', () => {
     const keys = Object.entries(TOOL_SHORTCUTS)
       .filter(([, tool]) => tool === 'EYEDROPPER')
       .map(([key]) => key)
-    expect(keys).toEqual(['KeyI'])
+    expect(keys).toEqual(['I'])
   })
 })

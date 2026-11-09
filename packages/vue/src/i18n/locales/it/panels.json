@@ -355,7 +355,7 @@
   "libraryUpdateImpact": "{affected} istanze interessate · {fallback} varianti sostitutive",
   "publishLibrary": "Pubblica libreria",
   "publishingLibrary": "Pubblicazione...",
-  "publishLibraryHelp": "Pubblica i componenti di questo file come revisione immutabile.",
+  "publishLibraryHelp": "Pubblica i componenti, gli stili e le variabili di questo file come revisione immutabile.",
   "libraryId": "Identificativo della libreria",
   "libraryName": "Nome della libreria",
   "revisionDescription": "Descrizione della revisione",

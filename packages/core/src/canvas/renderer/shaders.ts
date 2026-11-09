@@ -1,4 +1,12 @@
-import type { Blender, Canvas, CanvasKit, Paint, Rect, RuntimeEffect, Shader } from 'canvaskit-wasm'
+import type {
+  Blender,
+  Canvas,
+  CanvasKit,
+  Paint,
+  Rect,
+  RuntimeEffect,
+  Shader
+} from '@open-pencil/canvaskit'
 
 /** A shader kept while the uniforms it was made with, joined as `key`, still hold. */
 interface KeptShader {

@@ -2,7 +2,7 @@
 
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { fontManager, isVariableFont, FontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'

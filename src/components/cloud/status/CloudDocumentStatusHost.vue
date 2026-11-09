@@ -9,10 +9,12 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
+import { signInToEditCloudShare } from '@/app/cloud/links'
 import { cloudRoomPermissions, cloudRoomsRefused, rejoinRefusedRoom } from '@/app/cloud/rooms/live'
 import { showCloudServerOnHome } from '@/app/cloud/servers/store'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
+import { cloudGuestLinkTabs } from '@/app/cloud/sharing/link'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
 import { createStorageAdapter } from '@/app/integrations/storage'
@@ -23,6 +25,7 @@ import { resumeStorageSync } from '@/app/storage/sync'
 import CloudConflictDialog from '@/components/cloud/conflict/CloudConflictDialog.vue'
 
 import CloudDocumentStatus from './CloudDocumentStatus.vue'
+import CloudGuestStatus from './CloudGuestStatus.vue'
 
 /** The open document's Cloud status beside its name, and the choice when it conflicts. */
 const store = useEditorStore()
@@ -35,6 +38,8 @@ const ago = (iso: string | null | undefined) => (iso ? dates.relative(iso) : '')
 const savedAgo = computed(() => ago(meta.value?.lastSyncedAt) || null)
 const viewOnly = computed(() => cloudRoomPermissions.value.get(store) === 'view')
 const notLive = computed(() => cloudRoomsRefused.value.has(store))
+/** A tab opened from a link without an account has no Cloud file of its own to report on. */
+const guestLink = computed(() => cloudGuestLinkTabs.value.get(store) ?? null)
 /** Rejoining shows the document as the server holds it, so it waits for this tab's edits. */
 const canRejoin = computed(() => state.value === 'synced' && !store.hasUnsavedChanges())
 /**
@@ -139,4 +144,9 @@ function retry() {
       @later="resolving = false"
     />
   </template>
+  <CloudGuestStatus
+    v-else-if="guestLink"
+    :can-edit-signed-in="guestLink.canEditSignedIn"
+    @sign-in="signInToEditCloudShare(store)"
+  />
 </template>

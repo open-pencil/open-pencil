@@ -1,4 +1,4 @@
-import type { Path } from 'canvaskit-wasm'
+import type { Path } from '@open-pencil/canvaskit'
 
 import { ResourceCache } from '#core/cache/resource'
 

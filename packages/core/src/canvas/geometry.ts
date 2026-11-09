@@ -1,5 +1,4 @@
-import type { Path, PathBuilder } from 'canvaskit-wasm'
-
+import type { Path, PathBuilder } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { isOpenVectorNetwork } from '#core/vector/connectivity'

@@ -1,0 +1,17 @@
+# Keeps the commits third-party actions are pinned to current, with their version comments.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    # A release has a week to be found compromised and pulled before we take it.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']

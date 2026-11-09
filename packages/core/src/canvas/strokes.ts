@@ -1,5 +1,4 @@
-import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
-
+import type { Canvas, EmbindEnumEntity, Paint, Path } from '@open-pencil/canvaskit'
 import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
 import {

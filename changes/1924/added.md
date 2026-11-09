@@ -1,0 +1,1 @@
+- OpenPencil Cloud accounts can be deleted from the account page, after saving the files they would lose as one zip; an account that is the only admin of a workspace other people use hands it on first.

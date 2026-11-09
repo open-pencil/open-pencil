@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import type { Surface } from 'canvaskit-wasm'
+import type { Surface } from '@open-pencil/canvaskit'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -20,7 +20,7 @@ let renderer: SkiaRenderer
 let surface: Surface
 
 beforeAll(async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const made = ck.MakeSurface(64, 64)
   if (!made) throw new Error('Could not create CanvasKit surface')
   surface = made

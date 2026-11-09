@@ -2,9 +2,9 @@ import { compact } from 'es-toolkit'
 import { computed } from 'vue'
 
 import {
-  createCloudAIClient,
-  type CloudAIClient,
-  type CloudAITokenSource
+  createCloudServicesClient,
+  type CloudServicesClient,
+  type CloudServicesTokenSource
 } from '@open-pencil/cloud/client'
 import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
@@ -14,19 +14,19 @@ import { createCloudAITokens } from './tokens'
 
 export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
-/** The Home server's AI service, while someone is signed in there and it advertises one. */
+/** The Home server's services, while someone is signed in there and it advertises them. */
 const homeAI = computed(() => {
   const server = homeCloudServer.value
   if (!server) return null
   const connection = cloudConnection(server.id)
   const { discovery, account } = connection
-  if (connection.state !== 'signed-in' || !discovery?.ai || !account) return null
-  return { server, discovery, account, endpoint: discovery.ai.endpoint, connection }
+  if (connection.state !== 'signed-in' || !discovery?.services || !account) return null
+  return { server, discovery, account, endpoint: discovery.services.endpoint, connection }
 })
 
 export const cloudAIAvailable = computed(() => homeAI.value !== null)
 
-/** Who uses the Home server's AI service, so answers for an earlier sign-in can be told apart. */
+/** Who uses the Home server's services, so answers for an earlier sign-in can be told apart. */
 export const cloudAIIdentity = computed(() => {
   const home = homeAI.value
   return home ? `${home.server.id}:${home.account.id}` : null
@@ -36,20 +36,20 @@ export const cloudAIIdentity = computed(() => {
 export const cloudBillingURL = computed(() => homeAI.value?.discovery.billing?.portalURL ?? null)
 
 // Keyed by account too, so a token signed for one person is never sent for another.
-const tokenSources = new Map<string, CloudAITokenSource>()
+const tokenSources = new Map<string, CloudServicesTokenSource>()
 
-/** The Home server's AI service on a workspace's behalf, or `null` while it is unavailable. */
-export function cloudAIClient(workspaceId: string): CloudAIClient | null {
+/** The Home server's services on a workspace's behalf, or `null` while it is unavailable. */
+export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
   const home = homeAI.value
   if (!home || !workspaceId) return null
   const key = `${cloudAIIdentity.value}:${workspaceId}`
   let tokens = tokenSources.get(key)
   if (!tokens) {
     const api = cloudAPIClient(home.server, home.discovery)
-    tokens = createCloudAITokens(() => api.requestAIToken(workspaceId))
+    tokens = createCloudAITokens(() => api.requestServicesToken(workspaceId))
     tokenSources.set(key, tokens)
   }
-  return createCloudAIClient({ endpoint: home.endpoint, tokens, fetch: cloudFetch })
+  return createCloudServicesClient({ endpoint: home.endpoint, tokens, fetch: cloudFetch })
 }
 
 /**
@@ -63,7 +63,7 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   const checks = await Promise.allSettled(
     home.connection.workspaces.map(async (workspace) => {
       const entitlements = await api.getWorkspaceEntitlements(workspace.id)
-      return entitlements.features.cloudAI ? { id: workspace.id, name: workspace.name } : null
+      return entitlements.features.cloudServices ? { id: workspace.id, name: workspace.name } : null
     })
   )
   const failure = checks.find((check) => check.status === 'rejected')

@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
@@ -8,6 +7,7 @@ import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
+import { drawConstraintIndicators } from '#core/canvas/overlays/constraints'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { strokeNodeShape } from '#core/canvas/strokes'
 import {
@@ -101,6 +101,8 @@ function drawSingleSelection(
   // text keeps its path and start point, as in Figma; the text-edit overlay
   // outlines the lettering and draws the caret and selection along the path.
   if (editing && !isPathText) return
+
+  if (node.type !== 'CONNECTOR') drawConstraintIndicators(r, canvas, graph, node, preview)
 
   r.selectionPaint.setColor(r.outlineColor(node, graph))
   r.selectionPaint.setStrokeWidth(1 / r.zoom)

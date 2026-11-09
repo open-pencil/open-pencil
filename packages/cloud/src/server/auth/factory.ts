@@ -1,4 +1,5 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
+import { accountDeletionOptions } from '#cloud/server/account/deletion'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
@@ -115,12 +116,16 @@ export function createBetterAuthAdapter(
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
     // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,
-    // origin, last-administrator, and audit checks, nor the two endpoints Cloud's policy manages
+    // origin, last-administrator, and audit checks, nor the endpoints Cloud's policy manages
     // through its account routes; the server still calls them itself.
     disabledPaths: [
       ...Object.values(administration.endpoints).map((endpoint) => endpoint.path),
       passkeys.endpoints.deletePasskey.path,
-      twoStep.endpoints.disableTwoFactor.path
+      twoStep.endpoints.disableTwoFactor.path,
+      // Accounts are deleted through `/api/account/delete`, which an account awaiting approval
+      // cannot reach either.
+      CORE_AUTH_PATHS.deleteUser,
+      CORE_AUTH_PATHS.deleteUserCallback
     ],
     secret: config.authSecret,
     database: {
@@ -224,6 +229,7 @@ export function createBetterAuthAdapter(
         : undefined,
     user: {
       changeEmail: { enabled: emailChangeAvailable },
+      deleteUser: accountDeletionOptions(database),
       validateUserInfo: ({ source }) => {
         if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
           return { error: 'enrollment_closed', errorDescription: 'Cloud enrollment is closed' }
@@ -427,6 +433,14 @@ export function createBetterAuthAdapter(
         }
       })
       return response.url
+    },
+    async deleteAccount(headers, password) {
+      const { headers: answer } = await auth.api.deleteUser({
+        headers,
+        body: password ? { password } : {},
+        returnHeaders: true
+      })
+      return answer
     },
     async unlinkAuthenticationMethod(headers, methodId) {
       await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })

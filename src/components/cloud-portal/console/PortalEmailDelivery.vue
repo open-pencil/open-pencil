@@ -54,7 +54,8 @@ const kindLabels = computed<Record<string, string>>(() => ({
   'password-changed': messages.value.emailKindPasswordChanged,
   'email-change-requested': messages.value.emailKindEmailChangeRequested,
   'new-sign-in': messages.value.emailKindNewSignIn,
-  'two-step-changed': messages.value.emailKindTwoStepChanged
+  'two-step-changed': messages.value.emailKindTwoStepChanged,
+  'document-report': messages.value.emailKindDocumentReport
 }))
 /** What went wrong, or how many tries it took. */
 function delivery(email: PortalEmail) {

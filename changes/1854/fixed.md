@@ -1,0 +1,3 @@
+- Inline SVG in design JSX and Iconify icons place their artwork as pasted SVG does: a viewBox that does not start at zero no longer offsets or clips the artwork, and a viewBox of another aspect ratio is centered in the icon box, following `preserveAspectRatio`, instead of being stretched.
+- Pasted and imported SVG, and inline SVG in design JSX, apply a transform on the root `<svg>` about the center of its box after the viewBox, as browsers draw it.
+- Pasted and imported SVG scale stroke weights by the transforms of the elements they are drawn in, so a stroke inside a scaled group keeps its drawn thickness.

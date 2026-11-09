@@ -6,7 +6,14 @@ import { BOARD_GRID } from '#core/constants'
 import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
 
-import type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './types'
+import {
+  LAYER_EDIT_LEVELS,
+  PATH_EDIT_LEVELS,
+  type CanvasView,
+  type EditorProfile,
+  type EditorProfileInputs,
+  type EditorRestrictions
+} from './types'
 
 export const EDIT_VIEW: CanvasView = { id: 'edit' }
 
@@ -14,7 +21,8 @@ export const EDIT_VIEW: CanvasView = { id: 'edit' }
 export const NO_HOST_RESTRICTIONS: EditorRestrictions = {
   readOnly: false,
   tools: null,
-  pathEdits: 'all'
+  pathEdits: 'all',
+  layerEdits: 'all'
 }
 
 /** The tools a read-only document keeps, as Figma's toolbar shows while a version is viewed. */
@@ -26,6 +34,7 @@ type DocumentBehaviour = Pick<
   | 'edits'
   | 'tools'
   | 'pathEdits'
+  | 'layerEdits'
   | 'toolKeys'
   | 'snapGrid'
   | 'dotGrid'
@@ -45,6 +54,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     edits: true,
     tools: null,
     pathEdits: 'all',
+    layerEdits: 'all',
     toolKeys: TOOL_SHORTCUTS,
     snapGrid: 1,
     dotGrid: null,
@@ -59,6 +69,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     edits: true,
     tools: BOARD_TOOLS,
     pathEdits: 'all',
+    layerEdits: 'all',
     toolKeys: BOARD_TOOL_SHORTCUTS,
     snapGrid: BOARD_GRID,
     dotGrid: BOARD_GRID,
@@ -118,8 +129,16 @@ function restrict(profile: EditorProfile, restrictions: EditorRestrictions): Edi
     toolKeys: tools
       ? pickBy(profile.toolKeys, (tool) => !!tool && tools.has(tool))
       : profile.toolKeys,
-    pathEdits: restrictions.pathEdits === 'handles' ? 'handles' : profile.pathEdits
+    pathEdits: narrower(PATH_EDIT_LEVELS, profile.pathEdits, restrictions.pathEdits),
+    layerEdits: restrictions.readOnly
+      ? 'none'
+      : narrower(LAYER_EDIT_LEVELS, profile.layerEdits, restrictions.layerEdits)
   }
+}
+
+/** The narrower of two levels of a restriction, whose levels are listed widest first. */
+function narrower<L extends string>(levels: readonly L[], a: L, b: L): L {
+  return levels.indexOf(a) > levels.indexOf(b) ? a : b
 }
 
 /**

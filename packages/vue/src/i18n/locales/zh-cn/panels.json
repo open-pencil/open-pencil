@@ -349,7 +349,7 @@
   "libraryUpdateImpact": "{affected} 个受影响实例 · {fallback} 个备用变体",
   "publishLibrary": "发布库",
   "publishingLibrary": "正在发布…",
-  "publishLibraryHelp": "将此文件的组件发布为不可变修订版。",
+  "publishLibraryHelp": "将此文件的组件、样式和变量发布为不可变修订版。",
   "libraryId": "库 ID",
   "libraryName": "库名称",
   "revisionDescription": "修订说明",

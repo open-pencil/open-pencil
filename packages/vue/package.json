@@ -456,12 +456,12 @@
     "provenance": true
   },
   "peerDependencies": {
+    "@open-pencil/canvaskit": "workspace:*",
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": ">=0.41.1",
     "vue": "^3.5.41"
   },
   "peerDependenciesMeta": {
-    "canvaskit-wasm": {
+    "@open-pencil/canvaskit": {
       "optional": true
     }
   },
@@ -472,13 +472,13 @@
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@tanstack/hotkeys": "^0.24.0",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",
     "fuse.js": "^7.5.0",
     "nanostores": "^1.5.4",
     "reka-ui": "^2.10.5",
     "shaders": "4.0.4",
-    "tinykeys": "^3.1.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

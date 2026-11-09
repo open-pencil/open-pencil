@@ -1,14 +1,11 @@
-import { fromUint8Array } from 'js-base64'
-
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -23,6 +20,7 @@ import {
   textEffectsToCSS
 } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
+import { addPositioning, constraintSizes, placement } from './position'
 import { textCaseToCSS, textElementContent } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -107,8 +105,12 @@ function addSize(
   parent: SceneNode | undefined,
   css: FieldCSS
 ): void {
+  const placed = placement(node, parent)
   const sized = (axis: 'width' | 'height') =>
-    node[axis] > 0 && !hugs(node, axis) && !stretches(node, parent, axis)
+    node[axis] > 0 &&
+    !hugs(node, axis) &&
+    !stretches(node, parent, axis) &&
+    !(placed && constraintSizes(node, placed.parent, axis))
   if (sized('width')) style.width = css('width', px(node.width))
   if (sized('height')) style.height = css('height', px(node.height))
 }
@@ -128,28 +130,6 @@ function stretches(
   if (parent.layoutMode === 'GRID') return true
   const mainAxis = parent.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
   return axis !== mainAxis
-}
-
-/**
- * Place a layer at its coordinates when its parent does not lay it out: it is absolutely
- * positioned, or its parent frame has no auto layout. A frame without auto layout becomes the
- * containing block of the children it places.
- */
-function addPositioning(
-  style: DesignStyleDeclaration,
-  node: SceneNode,
-  parent: SceneNode | undefined
-): void {
-  const placed =
-    node.layoutPositioning === 'ABSOLUTE' ||
-    (parent !== undefined && parent.type !== 'CANVAS' && parent.layoutMode === 'NONE')
-  if (placed) {
-    style.position = 'absolute'
-    style.left = `${node.x}px`
-    style.top = `${node.y}px`
-  } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
-    style.position = 'relative'
-  }
 }
 
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
@@ -241,11 +221,6 @@ function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 
   if (node.itemSpacing > 0) style['row-gap'] = item
   style['column-gap'] = counter
-}
-
-/** Image bytes as a data URL of the type they are encoded in. */
-function imageDataURL(bytes: Uint8Array): string {
-  return `data:${imageMimeType(bytes)};base64,${fromUint8Array(bytes)}`
 }
 
 /**
@@ -503,14 +478,10 @@ function sceneNodeToDesignNode(
   const entered = tokens?.enter(node, inherited, root)
   const modes = entered?.modes ?? inherited
   const attrs = { ...attrsForNode(graph, node, includeSourceIds), ...entered?.attrs }
-  // A bound paint keeps the colour it was set with; the canvas draws its variable's value, so
-  // the styles do too, and a token reference then matches what is drawn.
-  const paints = resolvedPaintBindings(graph, node)
-  const drawn = paints.fills || paints.strokes ? { ...node, ...paints } : node
-  const css: FieldCSS = (field, literal) => tokens?.reference(drawn, field, modes) ?? literal
+  const css: FieldCSS = (field, literal) => tokens?.reference(node, field, modes) ?? literal
 
   if (node.type === 'TEXT') {
-    const content = textElementContent(drawn, styleFromTextNode(drawn, parent, css))
+    const content = textElementContent(node, styleFromTextNode(node, parent, css))
     return {
       type: 'element',
       tagName: content.tagName,
@@ -524,7 +495,7 @@ function sceneNodeToDesignNode(
 
   // An icon is one drawing, however many paths it has.
   if (VECTOR_SHAPES.has(node.type) || readIcon(node)) {
-    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(drawn, parent, css))
+    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(node, parent, css))
     if (vector) return vector
   }
 
@@ -543,7 +514,7 @@ function sceneNodeToDesignNode(
     }
   }
 
-  const style = styleFromSceneNode(drawn, parent, css)
+  const style = styleFromSceneNode(node, parent, css)
   const shader = layerShader(graph, node)
   if (shader) addShaderLayerStyle(style)
   return {

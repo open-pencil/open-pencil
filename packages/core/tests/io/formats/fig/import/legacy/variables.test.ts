@@ -224,8 +224,8 @@ describe('fig-import: variable asset refs', () => {
       [...graph.getAllNodes()].find((n) => n.type === 'TEXT' && n.text === 'browse'),
       'browse text node'
     )
-    expect(text.fills[0].color.r).toBeCloseTo(0.14)
-    expect(text.fills[0].color.g).toBeCloseTo(0.39)
-    expect(text.fills[0].color.b).toBeCloseTo(0.92)
+    // The fill binds Primary, and keeps the color it saved, Figma's cache of the variable.
+    expect(text.boundVariables['fills/0/color']).toBe(primary.id)
+    expect(text.fills[0].color).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 })

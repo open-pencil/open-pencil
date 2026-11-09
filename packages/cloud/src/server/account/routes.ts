@@ -10,7 +10,8 @@ import {
   parseCloudProfileUpdate,
   parseCloudPictureUpload,
   CLOUD_PICTURE_MAX_BYTES,
-  parseCloudSessionRevoke
+  parseCloudSessionRevoke,
+  parseCloudAccountDelete
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import {
@@ -28,6 +29,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { toUint8Array } from 'js-base64'
 
 import { createAccountActions } from './actions'
+import type { AccountDeletionService } from './deletion'
 
 /** Room for a Base64 picture and the JSON around it. */
 const PICTURE_BODY_BYTES = Math.ceil(CLOUD_PICTURE_MAX_BYTES / 3) * 4 + 1024
@@ -38,6 +40,7 @@ export type AccountRouteDependencies = {
   pictures: UserPictureService
   enrollment: EnrollmentService
   workspaces: WorkspaceService
+  deletion: AccountDeletionService
   resolveIdentity: CloudIdentityResolver
   resolveSession: CloudSessionResolver
   requireActiveSession: MiddlewareHandler<CloudAPIEnvironment>
@@ -205,6 +208,9 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
     .use('/api/account/sessions', requireActiveSession)
     .use('/api/account/sessions/*', requireActiveSession)
     .use('/api/account/sign-ins', requireActiveSession)
+    .use('/api/account/deletion', requireActiveSession)
+    .use('/api/account/delete', requireActiveSession)
+    .use('/api/account/delete', authenticatedMutationLimiter)
     .use('/api/account/profile', authenticatedMutationLimiter)
     .use('/api/account/profile/*', authenticatedMutationLimiter)
     .use('/api/account/sessions/*', authenticatedMutationLimiter)
@@ -286,6 +292,22 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       const signIns = await services.auth.signIns(context.req.raw.headers)
       if (!signIns) return context.json({ error: { code: 'unauthorized' as const } }, 401)
       return context.json({ signIns })
+    })
+    .get('/api/account/deletion', async (context) => {
+      return context.json({ deletion: await services.deletion.plan(context.get('actor').userId) })
+    })
+    .post('/api/account/delete', validatedJSON(parseCloudAccountDelete), async (context) => {
+      const result = await accountAction(
+        () =>
+          services.auth.deleteAccount(context.req.raw.headers, context.req.valid('json').password),
+        context
+      )
+      if (result instanceof Response) return result
+      // The session is gone with the account; the cookie that named it goes too.
+      for (const cookie of result.getSetCookie()) {
+        context.header('Set-Cookie', cookie, { append: true })
+      }
+      return context.json({ ok: true as const })
     })
     .get('/api/account/authentication', async (context) => {
       const result = await accountAction(

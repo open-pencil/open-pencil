@@ -355,7 +355,7 @@
   "libraryUpdateImpact": "{affected} instances affectées · {fallback} variantes de remplacement",
   "publishLibrary": "Publier la bibliothèque",
   "publishingLibrary": "Publication…",
-  "publishLibraryHelp": "Publiez les composants de ce fichier en tant que révision immuable.",
+  "publishLibraryHelp": "Publiez les composants, styles et variables de ce fichier en tant que révision immuable.",
   "libraryId": "ID de bibliothèque",
   "libraryName": "Nom de la bibliothèque",
   "revisionDescription": "Description de la révision",

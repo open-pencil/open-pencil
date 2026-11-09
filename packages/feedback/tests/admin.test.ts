@@ -16,6 +16,7 @@ const NOW = new Date('2026-10-20T12:00:00.000Z')
 const TABLES = [
   'usagePings',
   'pingNetworks',
+  'pingSteps',
   'waitlist',
   'githubStars',
   'releaseDownloads',
@@ -200,6 +201,23 @@ describe('metrics snapshot API', () => {
       { day: '2026-10-14', desktop: 0, web: 0 },
       { day: '2026-10-15', desktop: 400, web: 300 },
       { day: '2026-10-16', desktop: 0, web: 0 }
+    ])
+  })
+
+  test('installs follow the steps from their first day, padding the range with empty days', async () => {
+    await database()
+      .insertInto('pingSteps')
+      .values([
+        { day: '2026-10-12', app: 'desktop', step: '1', entered: 1, count: 4 },
+        { day: '2026-10-15', app: 'desktop', step: '2', entered: 1, count: 9 }
+      ])
+      .execute()
+
+    // The steps before the range still bound it: four installs started on Oct 12.
+    const { installs } = await snapshot('2026-10-15', '2026-10-16')
+    expect(installs).toEqual([
+      { day: '2026-10-15', new: 0, returning: 4, replayed: 5 },
+      { day: '2026-10-16', new: 0, returning: 0, replayed: 0 }
     ])
   })
 

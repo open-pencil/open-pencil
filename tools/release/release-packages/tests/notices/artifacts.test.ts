@@ -1,16 +1,22 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { assertNoticesPrepared, type NoticedArtifact } from '#release/notices/artifacts'
+import {
+  assertNoticesPrepared,
+  NOTICED_ARTIFACTS,
+  type NoticedArtifact
+} from '#release/notices/artifacts'
+
+import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 const ARTIFACT: NoticedArtifact = {
   name: 'engine.wasm',
   manifest: 'packages/engine/crate/Cargo.toml',
   deny: 'packages/engine/deny.toml',
   targets: ['wasm32-unknown-unknown'],
-  packageDirectory: 'packages/engine',
+  directory: 'packages/engine',
   notices: 'wasm/THIRD-PARTY-NOTICES.md'
 }
 
@@ -34,5 +40,18 @@ describe('prepared notices', () => {
     await expect(
       assertNoticesPrepared(prepared, ['packages/other'], [ARTIFACT])
     ).resolves.toBeUndefined()
+  })
+})
+
+describe('noticed artifacts', () => {
+  test("each cargo deny configuration checks the targets its artifact's notices cover", async () => {
+    const root = await resolveWorkspaceRoot(import.meta.dir)
+    for (const artifact of NOTICED_ARTIFACTS) {
+      const deny = Bun.TOML.parse(await readFile(join(root, artifact.deny), 'utf8'))
+      expect({ artifact: artifact.name, deny }).toMatchObject({
+        artifact: artifact.name,
+        deny: { graph: { targets: [...artifact.targets] } }
+      })
+    }
   })
 })

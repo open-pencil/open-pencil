@@ -152,6 +152,8 @@ describe('group resize reflows path text instead of squashing it', () => {
       y: 0,
       width: 256,
       height: 256,
+      flipX: false,
+      flipY: false,
       vectorNetwork: null,
       fillGeometry: [],
       strokeGeometry: copyGeometryPaths(text.strokeGeometry),
