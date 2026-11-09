@@ -1,12 +1,7 @@
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 /** A place the home tab lists documents from. */
-export type HomeLocation =
-  | { kind: 'recent'; id: 'recent' }
-  | { kind: 'workspace'; id: string }
-  | { kind: 'shared'; id: 'shared' }
-  | { kind: 'trash'; id: 'trash' }
-  | { kind: 'storage'; id: 'storage' }
+export type { HomeLocationView as HomeLocation } from '@/app/home/locations'
 
 export type HomeCloudAccount = {
   id: string
