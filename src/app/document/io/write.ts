@@ -137,6 +137,9 @@ export function createDocumentWriter({
       await stream.cancel()
       return false
     } catch (error) {
+      // A target that failed before reading the stream leaves its producer, such as the archive
+      // worker's port, waiting; a stream already read or cancelled ignores this.
+      await stream.cancel(error).catch(() => undefined)
       recordDocumentFailure({
         operation: 'save',
         format: 'fig',

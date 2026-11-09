@@ -15,7 +15,16 @@ function makeWritableHandle(name: string): FileSystemFileHandle {
   })
 }
 
-function createSaveHarness(handle: FileSystemFileHandle) {
+function createSaveHarness(
+  handle: FileSystemFileHandle,
+  buildFigStream: () => Promise<ReadableStream<Uint8Array>> = async () =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2, 3]))
+        controller.close()
+      }
+    })
+) {
   const state = {
     ...createDefaultEditorState('page'),
     documentName: 'Untitled'
@@ -24,13 +33,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   const actions = createSaveActions({
     state,
     version: () => 1,
-    buildFigStream: async () =>
-      new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.enqueue(new Uint8Array([1, 2, 3]))
-          controller.close()
-        }
-      }),
+    buildFigStream,
     getFilePath: () => null,
     setFilePath: vi.fn(),
     getFileHandle: () => handle,
@@ -131,5 +134,23 @@ describe('saved document identity', () => {
 
     await expect(actions.saveFigFile()).rejects.toThrow('write failed')
     expect(setSourceIdentity).not.toHaveBeenCalled()
+  })
+
+  test('lets go of the archive a refused write never read', async () => {
+    const handle = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name: 'refused.fig',
+      createWritable: vi.fn(async () => {
+        throw new DOMException('Not allowed in this context', 'NotAllowedError')
+      })
+    })
+    const cancelled = vi.fn()
+    const { actions } = createSaveHarness(
+      handle,
+      async () => new ReadableStream<Uint8Array>({ cancel: cancelled })
+    )
+
+    await expect(actions.saveFigFile()).rejects.toThrow('Not allowed')
+    expect(cancelled).toHaveBeenCalledTimes(1)
   })
 })

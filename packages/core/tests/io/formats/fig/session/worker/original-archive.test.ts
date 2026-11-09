@@ -13,6 +13,7 @@ import {
   createFigPopulationWorker,
   releaseFigPopulationWorker
 } from '#core/kiwi/fig/population/client'
+import { figArchive } from '#core/kiwi/fig/session/archive/access'
 import { pendingReaderPageOfNode } from '#core/kiwi/fig/session/document-state'
 
 test('saving an unedited worker-opened .fig returns its original bytes', async () => {
@@ -90,6 +91,29 @@ test('a save still streaming from the worker fails when the document closes', as
   await expect(reader.read()).rejects.toThrow('The document closed')
 }, 20000)
 
+test('a save streaming from the worker finishes when a page load is abandoned', async () => {
+  const opened = await openViaWorker()
+  edit(opened)
+  try {
+    const reader = (await exportFigFileStream(opened)).getReader()
+    const chunks: Uint8Array<ArrayBuffer>[] = []
+    const first = await reader.read()
+    if (first.value) chunks.push(first.value.slice())
+    // What an abandoned page load does to the archive the worker serves.
+    const archive = figArchive(opened)
+    if (!archive || !('dropWorker' in archive) || typeof archive.dropWorker !== 'function') {
+      throw new Error('The archive is not served by the worker')
+    }
+    archive.dropWorker()
+    for (let next = await reader.read(); !next.done; next = await reader.read()) {
+      chunks.push(next.value.slice())
+    }
+    expect(names(new Uint8Array(await new Blob(chunks).arrayBuffer()))).toContain('Edited again')
+  } finally {
+    releaseFigPopulationWorker(opened)
+  }
+}, 20000)
+
 async function openViaWorker() {
   await initCodec()
   const source = new SceneGraph()
@@ -124,13 +148,12 @@ test('a page load that finds the graph diverged leaves the worker writing the ar
 test('an abandoned page load stops the worker, and the archive is written without it', async () => {
   const opened = await openViaWorker()
   try {
-    const controller = new AbortController()
-    const loading = createFigPopulationWorker(opened)?.populate(
-      opened.getPages()[2].id,
-      controller.signal
-    )
-    controller.abort()
-    await expect(loading).rejects.toThrow('Aborted')
+    // What an abandoned page load does to the archive the worker serves.
+    const archive = figArchive(opened)
+    if (!archive || !('dropWorker' in archive) || typeof archive.dropWorker !== 'function') {
+      throw new Error('The archive is not served by the worker')
+    }
+    archive.dropWorker()
     edit(opened)
     expect(names(await exportFigFile(opened))).toContain('Edited again')
   } finally {

@@ -41,14 +41,24 @@ export function sendStream(stream: ReadableStream<Uint8Array>, port: MessagePort
 /**
  * The stream `sendStream` serves at the other end of `port`. Aborting `signal`, as when the
  * writing side's worker stops, fails the stream rather than leaving its reader waiting.
+ * `onClose` runs once when the stream ends, fails, or is cancelled.
  */
-export function receiveStream(port: MessagePort, signal?: AbortSignal): ReadableStream<Uint8Array> {
+export function receiveStream(
+  port: MessagePort,
+  { signal, onClose }: { signal?: AbortSignal; onClose?: () => void } = {}
+): ReadableStream<Uint8Array> {
+  let open = true
+  const close = () => {
+    port.close()
+    if (open) onClose?.()
+    open = false
+  }
   return new ReadableStream<Uint8Array>(
     {
       pull: (controller) =>
         new Promise<void>((resolve) => {
           const stop = () => {
-            port.close()
+            close()
             controller.error(signal?.reason)
             resolve()
           }
@@ -62,7 +72,7 @@ export function receiveStream(port: MessagePort, signal?: AbortSignal): Readable
             const message = event.data
             if (message.type === 'chunk') controller.enqueue(message.bytes)
             else {
-              port.close()
+              close()
               if (message.type === 'done') controller.close()
               else controller.error(new Error(message.message))
             }
@@ -72,7 +82,7 @@ export function receiveStream(port: MessagePort, signal?: AbortSignal): Readable
         }),
       cancel: () => {
         port.postMessage({ type: 'cancel' } satisfies PortStreamRequest)
-        port.close()
+        close()
       }
     },
     { highWaterMark: 0 }
