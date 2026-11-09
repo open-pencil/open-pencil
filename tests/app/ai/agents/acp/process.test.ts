@@ -83,13 +83,13 @@ describe('Tauri process helpers', () => {
     await process.child.kill()
   })
 
-  test('starts the agent with the PATH its lookup searched', async () => {
+  test('starts the agent in its workspace with the PATH its lookup searched', async () => {
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
           program: 'agent-cli',
           args: ['--stdio'],
-          options: { encoding: 'raw', env: { PATH: '/custom/agent/bin' } }
+          options: { encoding: 'raw', env: { PATH: '/custom/agent/bin' }, cwd: '/agent-workspace' }
         })
         return 45
       }
@@ -101,6 +101,7 @@ describe('Tauri process helpers', () => {
       args: ['--stdio'],
       logId: 'test',
       searchPath: '/custom/agent/bin',
+      cwd: '/agent-workspace',
       destroying: () => false,
       onUnexpectedClose: vi.fn()
     })

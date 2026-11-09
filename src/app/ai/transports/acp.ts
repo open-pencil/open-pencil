@@ -401,6 +401,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         args: this.agentDef.args,
         logId: this.agentDef.id,
         searchPath,
+        cwd: this.cwd,
         destroying: () => this.destroying,
         onUnexpectedClose: () => {
           if (!this.session) return

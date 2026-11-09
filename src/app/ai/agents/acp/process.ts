@@ -22,6 +22,11 @@ type ACPProcessOptions = {
   logId: string
   /** The `PATH` the agent starts with, from the lookup that found it; omitted keeps the app's. */
   searchPath?: string | null
+  /**
+   * The folder the agent runs in, the same one its sessions open in. Antigravity CLI adds its
+   * process folder to the session's workspace, which would otherwise be wherever the app started.
+   */
+  cwd?: string
   destroying: () => boolean
   onUnexpectedClose: () => void
 }
@@ -31,13 +36,15 @@ export async function spawnACPProcess({
   args,
   logId,
   searchPath = null,
+  cwd,
   destroying,
   onUnexpectedClose
 }: ACPProcessOptions): Promise<ACPProcess> {
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
-    env: searchPath ? { PATH: searchPath } : {}
+    env: searchPath ? { PATH: searchPath } : {},
+    cwd
   })
 
   const stdoutChunks: Uint8Array[] = []
