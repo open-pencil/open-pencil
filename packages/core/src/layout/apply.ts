@@ -4,9 +4,11 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { CONSTRAINT_PARENT_TYPES } from '@open-pencil/scene-graph/constraints'
 import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
 import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { constrainedChildRect, flipChanges } from '@open-pencil/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
+import { laidOutFlowBox } from './flow-edges'
 
 export type ComputeLayoutFn = (graph: SceneGraph, frameId: string) => void
 
@@ -183,11 +185,13 @@ function computedChildPosition(
   child: SceneNode,
   yogaChild: YogaNode,
   axis: 'x' | 'y',
+  origin: number,
   preservesImportedGeometry: boolean,
   keepsSaved: boolean
 ): number {
   if (preservesImportedGeometry) return child[axis]
-  const computed = axis === 'x' ? yogaChild.getComputedLeft() : yogaChild.getComputedTop()
+  const computed =
+    origin + (axis === 'x' ? yogaChild.getComputedLeft() : yogaChild.getComputedTop())
   if (child.type === 'INSTANCE' || !keepsSaved) return computed
   return child.derivedLayout?.[axis] ?? computed
 }
@@ -228,6 +232,7 @@ function updateChildFromYoga(
   frame: SceneNode,
   child: SceneNode,
   yogaChild: YogaNode,
+  origin: Vector,
   keepsSaved: boolean,
   computeLayout: ComputeLayoutFn
 ): void {
@@ -242,8 +247,22 @@ function updateChildFromYoga(
     graph,
     child.id,
     {
-      x: computedChildPosition(child, yogaChild, 'x', preservesImportedPosition, keepsSaved),
-      y: computedChildPosition(child, yogaChild, 'y', preservesImportedPosition, keepsSaved),
+      x: computedChildPosition(
+        child,
+        yogaChild,
+        'x',
+        origin.x,
+        preservesImportedPosition,
+        keepsSaved
+      ),
+      y: computedChildPosition(
+        child,
+        yogaChild,
+        'y',
+        origin.y,
+        preservesImportedPosition,
+        keepsSaved
+      ),
       width: computedChildSize(
         child,
         yogaChild,
@@ -301,13 +320,14 @@ export function applyYogaLayout(
   applyFrameSize(graph, frame, yogaNode, keepsSaved, computeLayout)
 
   const children = graph.getChildren(frame.id)
+  const box = laidOutFlowBox(yogaNode, frame)
   let yogaIndex = 0
   for (const child of children) {
-    if (yogaIndex >= yogaNode.getChildCount()) continue
-    const yogaChild = yogaNode.getChild(yogaIndex)
+    if (yogaIndex >= box.node.getChildCount()) continue
+    const yogaChild = box.node.getChild(yogaIndex)
     yogaIndex++
 
-    updateChildFromYoga(graph, frame, child, yogaChild, keepsSaved, computeLayout)
+    updateChildFromYoga(graph, frame, child, yogaChild, box.origin, keepsSaved, computeLayout)
 
     if (!child.visible) continue
     if (preservesImportedInstanceInternals(child)) continue
