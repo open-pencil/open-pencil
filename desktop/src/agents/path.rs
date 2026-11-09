@@ -36,6 +36,11 @@ pub fn candidate_dirs() -> Vec<PathBuf> {
         if let Some(appdata) = std::env::var_os("APPDATA").map(PathBuf::from) {
             dirs.push(appdata.join("npm"));
         }
+        if let Some(localappdata) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            dirs.push(localappdata.join("agy").join("bin"));
+        } else if let Some(home) = std::env::home_dir() {
+            dirs.push(home.join("AppData").join("Local").join("agy").join("bin"));
+        }
     }
     dirs
 }
