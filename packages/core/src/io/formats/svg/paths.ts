@@ -11,7 +11,7 @@ import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
 
 import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
-import { nodeHasRadius } from '#core/canvas/shapes'
+import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import type { PathSink } from '#core/vector/path-helpers'
 
 export function round(n: number, decimals = 2): number {
@@ -51,6 +51,7 @@ export function makePolygonPoints(node: SceneNode): string {
 }
 
 export const hasRadius = nodeHasRadius
+export const hasSmoothCorners = nodeHasSmoothCorners
 
 type RectOutlineNode = Pick<
   SceneNode,
@@ -173,6 +174,14 @@ function smoothRectPath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing
   return traceSmoothRect(sink, node, box) ? parts.join('') : roundedRectPath(node)
 }
 
+/**
+ * A box layer's outline as path data: its rectangle with its corner radii, smoothed as the canvas
+ * draws them. Frames, rectangles, and other box layers share it for fills, strokes, and clips.
+ */
+export function boxOutlinePath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing'>): string {
+  return node.cornerSmoothing > 0 ? smoothRectPath(node) : roundedRectPath(node)
+}
+
 /** What a layer's outline is drawn from. */
 export type OutlineNode = RectOutlineNode &
   Pick<
@@ -189,7 +198,7 @@ const FULL_ELLIPSE = { startingAngle: 0, endingAngle: Math.PI * 2, innerRadius: 
 export function nodeOutlinePath(node: OutlineNode): string | null {
   switch (node.type) {
     case 'RECTANGLE':
-      return node.cornerSmoothing > 0 ? smoothRectPath(node) : roundedRectPath(node)
+      return boxOutlinePath(node)
     case 'ELLIPSE':
       return arcPath({ ...node, arcData: node.arcData ?? FULL_ELLIPSE })
     case 'LINE':

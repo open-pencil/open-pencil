@@ -319,7 +319,6 @@
   "deleteWorkspace": "Arbeitsbereich löschen",
   "deleteWorkspaceHeading": "{workspace} löschen?",
   "deleteWorkspaceDescription": "Alle verlieren den Zugriff und seine Einladungen funktionieren nicht mehr. Nur ein leerer Arbeitsbereich kann gelöscht werden.",
-  "deleteWorkspaceTypeName": "Gib zur Bestätigung „{workspace}“ ein.",
   "dangerZone": "Gefahrenbereich",
   "leaveWorkspaceShort": "Verlassen",
   "deleteWorkspaceShort": "Löschen",

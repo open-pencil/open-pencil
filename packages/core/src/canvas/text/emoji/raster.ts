@@ -1,4 +1,4 @@
-import type { CanvasKit, Image, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, Image, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { NOTO_COLOR_EMOJI_FAMILY } from '#core/text/emoji'
 import { makeParagraphBuilder } from '#core/text/font/collection'

@@ -315,7 +315,6 @@
   "deleteWorkspace": "ワークスペースを削除",
   "deleteWorkspaceHeading": "{workspace} を削除しますか？",
   "deleteWorkspaceDescription": "全員がアクセスできなくなり、招待も無効になります。削除できるのは空のワークスペースだけです。",
-  "deleteWorkspaceTypeName": "確認のため「{workspace}」と入力してください。",
   "dangerZone": "危険な操作",
   "leaveWorkspaceShort": "退出",
   "deleteWorkspaceShort": "削除",

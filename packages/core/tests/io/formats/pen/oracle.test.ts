@@ -13,12 +13,8 @@ import {
   MATERIAL_SYMBOLS_PREFIXES
 } from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
-import {
-  comparePNGs,
-  createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
+import { comparePNGs, createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import { parsePenDocument } from '@open-pencil/pen'
@@ -136,7 +132,7 @@ describe('.pen frames against pen.dev', () => {
   for (const target of manifest.targets) {
     test(`${target.node} draws as pen.dev draws it`, async () => {
       const graph = await readProbes()
-      const codec = createCanvasKitRasterCodec(await initCanvasKit())
+      const codec = createCanvasKitRasterCodec(await getCanvasKit())
       const pen = await Bun.file(join(ORACLES, `${target.penNodeId}.png`)).bytes()
       const ours = await headlessRenderNodes(graph, graph.getPages()[0].id, [target.penNodeId])
       expect(ours).not.toBeNull()

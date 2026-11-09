@@ -1,6 +1,6 @@
 const layerTreeTheme = {
   slots: {
-    viewport: 'scrollbar-thin h-full overflow-y-auto px-1',
+    viewport: 'h-full overflow-y-auto px-1',
     row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent pr-1 text-left text-2xs text-surface hover:bg-hover',
     disclosure:
       'flex w-4 shrink-0 cursor-pointer items-center justify-center text-current transition-transform',

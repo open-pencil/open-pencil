@@ -5,7 +5,7 @@ const pageListTheme = {
     title: 'text-2xs font-semibold text-surface',
     add: 'cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
     body: 'min-h-0 flex-1 overflow-hidden',
-    viewport: 'scrollbar-thin h-full overflow-x-hidden overflow-y-auto px-1 pb-1',
+    viewport: 'h-full overflow-x-hidden overflow-y-auto px-1 pb-1',
     row: 'relative cursor-grab active:cursor-grabbing',
     dropIndicator: 'pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded-full bg-accent',
     renameRow: 'flex h-6 w-full items-center gap-1.5 rounded px-2',

@@ -1,4 +1,5 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
   isIdentityGradientTransform
@@ -200,7 +201,8 @@ const EFFECT_HELPERS: Record<Effect['type'], string> = {
   INNER_SHADOW: 'innerShadow',
   LAYER_BLUR: 'layerBlur',
   BACKGROUND_BLUR: 'backgroundBlur',
-  FOREGROUND_BLUR: 'foregroundBlur'
+  FOREGROUND_BLUR: 'foregroundBlur',
+  GLASS: 'glass'
 }
 
 function effectValue(effect: Effect): HelperCall {
@@ -217,6 +219,21 @@ function effectValue(effect: Effect): HelperCall {
         visible,
         blendMode: blendMode(effect.blendMode),
         showShadowBehindNode: effect.showShadowBehindNode
+      })
+    )
+  }
+  if (effect.type === 'GLASS') {
+    const lens = effect.glass ?? UNSET_GLASS
+    return helperCall(
+      EFFECT_HELPERS.GLASS,
+      options({
+        refraction: lens.refraction,
+        depth: lens.depth,
+        lightAngle: lens.lightAngle,
+        lightIntensity: lens.lightIntensity,
+        dispersion: lens.dispersion,
+        radius: effect.radius,
+        visible
       })
     )
   }

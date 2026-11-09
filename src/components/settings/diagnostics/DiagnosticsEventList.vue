@@ -106,7 +106,7 @@ const categoryOptions = computed(() => [
             </dl>
             <pre
               v-if="event.stack"
-              class="scrollbar-thin max-h-48 overflow-auto rounded border border-border bg-input p-2 whitespace-pre"
+              class="max-h-48 overflow-auto rounded border border-border bg-input p-2 whitespace-pre"
               >{{ event.stack }}</pre>
           </div>
         </CollapsibleContent>

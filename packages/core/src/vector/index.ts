@@ -15,8 +15,7 @@ export {
   splitSegmentAt
 } from './bezier'
 
-import type { CanvasKit, Path } from 'canvaskit-wasm'
-
+import type { CanvasKit, Path } from '@open-pencil/canvaskit'
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { GeometryCommand, readGeometryBlob } from '@open-pencil/scene-graph/geometry'
 

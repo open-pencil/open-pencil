@@ -1,4 +1,5 @@
 import type { ClientSideConnection, InitializeResponse, McpServer } from '@agentclientprotocol/sdk'
+import * as v from 'valibot'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
@@ -23,9 +24,30 @@ export interface OpenedAgentSession {
 
 type SessionConnection = Pick<ClientSideConnection, 'newSession' | 'unstable_resumeSession'>
 
+/** A JSON-RPC error, which ACP can reject with as a decoded object instead of an `Error`. */
+const acpErrorSchema = v.object({ code: v.number(), message: v.string() })
 /** ACP's `auth_required` error, which an agent returns for a session before sign-in. */
+const authRequiredSchema = v.object({ code: v.literal(-32000) })
+/** ACP's `resource_not_found` error, for a session the agent no longer has. */
+const resourceNotFoundSchema = v.object({ code: v.literal(-32002) })
+/**
+ * Codex reports a missing persisted thread as an internal error, and the ACP SDK moves the
+ * original message to `data.details` when it wraps one.
+ */
+const noRolloutSchema = v.pipe(v.string(), v.includes('no rollout found for thread id'))
+const codexMissingRolloutSchema = v.union([
+  v.object({ code: v.literal(-32603), message: noRolloutSchema }),
+  v.object({ code: v.literal(-32603), data: v.object({ details: noRolloutSchema }) })
+])
+
+/** The message of an `Error` or of a decoded ACP error, or the value as text. */
+export function acpErrorMessage(e: unknown): string {
+  if (e instanceof Error || v.is(acpErrorSchema, e)) return e.message
+  return String(e)
+}
+
 export function isAuthRequiredError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'code' in e && e.code === -32000
+  return v.is(authRequiredSchema, e)
 }
 
 /** The ACP agent a provider runs, when OpenPencil continues that agent's saved sessions. */
@@ -41,6 +63,12 @@ function canResume(agentDef: ACPAgentDef, initialized: InitializeResponse): bool
   )
 }
 
+/** Whether the agent confirms it no longer has the session; anything else may be retried. */
+function isMissingSession(error: unknown, agent: ACPAgentID): boolean {
+  if (v.is(resourceNotFoundSchema, error)) return true
+  return agent === 'codex' && v.is(codexMissingRolloutSchema, error)
+}
+
 /** The agent cannot continue the saved session, which a new session would not know. */
 export class AgentSessionResumeError extends Error {
   constructor(agentDef: ACPAgentDef, cause?: unknown) {
@@ -49,6 +77,20 @@ export class AgentSessionResumeError extends Error {
       { cause }
     )
     this.name = 'AgentSessionResumeError'
+  }
+}
+
+/**
+ * The agent did not continue the saved session this time, as when another process still holds it.
+ * The conversation keeps the session, so sending again or a new chat are both open.
+ */
+export class AgentSessionRetryError extends Error {
+  constructor(agentDef: ACPAgentDef, cause: unknown) {
+    super(
+      `${agentDef.name} could not continue this conversation's session. Try again, or start a new chat. ${agentDef.name} reported: ${acpErrorMessage(cause)}`,
+      { cause }
+    )
+    this.name = 'AgentSessionRetryError'
   }
 }
 
@@ -81,7 +123,9 @@ export async function openAgentSession(
     })
     return { sessionId: resume, model: result.models?.currentModelId ?? null, resumed: true }
   } catch (e) {
+    // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
+    if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
     if (isAuthRequiredError(e)) throw e
-    throw new AgentSessionResumeError(agentDef, e)
+    throw new AgentSessionRetryError(agentDef, e)
   }
 }

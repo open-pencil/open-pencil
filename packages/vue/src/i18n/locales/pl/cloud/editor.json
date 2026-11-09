@@ -323,7 +323,6 @@
   "deleteWorkspace": "Usuń obszar",
   "deleteWorkspaceHeading": "Usunąć {workspace}?",
   "deleteWorkspaceDescription": "Wszyscy stracą dostęp, a zaproszenia przestaną działać. Usunąć można tylko pusty obszar.",
-  "deleteWorkspaceTypeName": "Aby potwierdzić, wpisz „{workspace}”.",
   "dangerZone": "Strefa zagrożenia",
   "leaveWorkspaceShort": "Opuść",
   "deleteWorkspaceShort": "Usuń",

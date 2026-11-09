@@ -1,4 +1,4 @@
-import type { InputMatrix, Shader } from 'canvaskit-wasm'
+import type { InputMatrix, Shader } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledEffect } from '#core/canvas/renderer/shaders'

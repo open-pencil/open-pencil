@@ -7,10 +7,10 @@ import {
 } from '@open-pencil/core/vector'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import { repoPath } from '@open-pencil/test-support/paths'
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 const VECTORIZE_FIXTURES = repoPath('tests/fixtures/vectorize')
 
@@ -69,7 +69,7 @@ function createPNG(width: number, height: number, alpha = 255): Uint8Array {
 }
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 describe('preprocessForVectorize', () => {

@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -51,6 +51,7 @@ import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
+import { createMovePolicy } from './move-policy'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
 import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
@@ -282,6 +283,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   // Build the shared context
+  const movePolicy = createMovePolicy(undo)
   const ctx: EditorContext = {
     get graph() {
       return _graph
@@ -302,6 +304,7 @@ export function createEditor(options?: EditorOptions) {
     getRenderers: () => _renderers,
     getTextEditor: () => _textEditor,
     requestRender,
+    constrainMove: movePolicy.constrainMove,
     requestRefresh,
     requestRepaint,
     beginInteractiveEdit,
@@ -393,7 +396,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.cancelNodePreviews()
     if (state.editingTextId) text.commitTextEdit()
   }
-  const readOnly = createReadOnlyActions(ctx, {
+  const readOnly = createReadOnlyActions(ctx, movePolicy, {
     endLayerEdits,
     flushPendingStep: nodes.flushNudge,
     endEdits: () => {

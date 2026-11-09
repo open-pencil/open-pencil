@@ -4,12 +4,12 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 

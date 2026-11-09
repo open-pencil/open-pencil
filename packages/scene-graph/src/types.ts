@@ -257,8 +257,28 @@ export interface Stroke extends Fill {
   dashPattern?: number[]
 }
 
+/**
+ * A Glass effect's lens, in Figma's plugin terms: how far in from the edge it bends what is
+ * behind the layer (`depth`, 1 to 100 px) and how strongly (`refraction`, 0 to 1), the light it
+ * catches (`lightAngle` in degrees, 0 lighting the top edge, and `lightIntensity`, 0 to 1), and how
+ * far the colours split (`dispersion`, 0 to 1). The effect's `radius` frosts the glass.
+ */
+export interface GlassEffectParams {
+  refraction: number
+  depth: number
+  lightAngle: number
+  lightIntensity: number
+  dispersion: number
+}
+
 export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+  type:
+    | 'DROP_SHADOW'
+    | 'INNER_SHADOW'
+    | 'LAYER_BLUR'
+    | 'BACKGROUND_BLUR'
+    | 'FOREGROUND_BLUR'
+    | 'GLASS'
   color: Color
   offset: Vector
   radius: number
@@ -266,6 +286,8 @@ export interface Effect {
   visible: boolean
   blendMode?: BlendMode
   showShadowBehindNode?: boolean
+  /** Set on a `GLASS` effect, and only there. */
+  glass?: GlassEffectParams
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'

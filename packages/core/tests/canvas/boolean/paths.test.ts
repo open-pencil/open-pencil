@@ -2,7 +2,7 @@ import { describe, expect, spyOn, test } from 'bun:test'
 
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -15,7 +15,7 @@ import { asRenderer } from '#core-tests/canvas/helpers'
 import { graphOf } from '#core/figma-api/graph'
 
 async function createRenderer(): Promise<SkiaRenderer> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = {
     ck,
     nodePaths: new NodePathCaches(),

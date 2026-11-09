@@ -319,7 +319,6 @@
   "deleteWorkspace": "Supprimer l’espace",
   "deleteWorkspaceHeading": "Supprimer {workspace} ?",
   "deleteWorkspaceDescription": "Tout le monde perd l’accès et ses invitations cessent de fonctionner. Seul un espace vide peut être supprimé.",
-  "deleteWorkspaceTypeName": "Pour confirmer, saisissez « {workspace} ».",
   "dangerZone": "Zone de danger",
   "leaveWorkspaceShort": "Quitter",
   "deleteWorkspaceShort": "Supprimer",

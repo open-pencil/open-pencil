@@ -34,5 +34,7 @@
   "designTokensLeftOut": "Не вошли в дизайн-токены: {names}.",
   "designTokensAmbiguous": "Эти стили ссылаются на переменную, путь которой есть и в другой коллекции, поэтому другие инструменты могут прочитать не ту: {names}.",
   "designTokensImported": "Импортировано дизайн-токенов: {count}.",
-  "unsupportedVariableExpressions": "OpenPencil пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}."
+  "unsupportedVariableExpressions": "OpenPencil пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}.",
+  "savingDocument": "Сохранение документа…",
+  "saveFailedRetry": "Повторить сохранение"
 }

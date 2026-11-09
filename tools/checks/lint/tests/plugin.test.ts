@@ -91,6 +91,26 @@ test('storage rule permits data keys but rejects storage access', async () => {
   }
 })
 
+test('only the development reload module reads import.meta.hot', async () => {
+  const rule = 'no-vite-hot-outside-reload'
+  const cases = {
+    'src/app/shell/reload/vite.ts': ["import.meta.hot?.on('vite:ws:disconnect', () => {})", 0],
+    'src/app/ai/chat/use.ts': ["import.meta.hot?.on('vite:ws:disconnect', () => {})", 1],
+    'src/app/env.ts': ['export const dev = import.meta.env.DEV', 0]
+  } as const
+  const diagnostics = ruleDiagnostics(
+    await lintFiles(
+      Object.fromEntries(Object.entries(cases).map(([path, [source]]) => [path, source])),
+      { [`open-pencil/${rule}`]: 'error' }
+    ),
+    rule
+  )
+  for (const [path, [, count]] of Object.entries(cases)) {
+    const found = diagnostics.filter((diagnostic) => diagnostic.filename?.endsWith(path))
+    expect(found, path).toHaveLength(count)
+  }
+})
+
 describe('Vue template rules', () => {
   test('recognizes native title attributes from the Vue template AST', async () => {
     const reports = await runRule(

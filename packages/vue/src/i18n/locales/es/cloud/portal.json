@@ -167,7 +167,6 @@
     "many": "{count} archivos guardados."
   },
   "downloadFailed": "No se pudo descargar {names}.",
-  "deleteAccountConfirmLabel": "Para confirmar, escribe {email}",
   "deleteAccountConfirm": "Eliminar cuenta",
   "accountDeleted": "Tu cuenta está eliminada.",
   "accountArchiveName": "Archivos de {host}",

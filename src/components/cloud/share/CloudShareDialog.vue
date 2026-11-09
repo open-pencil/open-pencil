@@ -108,7 +108,6 @@ function submitInvite() {
           ? t.shareDescriptionInWorkspace({ workspace: workspace.name })
           : t.shareDescription
       "
-      :close-label="common.close"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col gap-5' }">
       <form v-if="canManage" :class="ui.invite()" @submit.prevent="submitInvite">
@@ -237,27 +236,28 @@ function submitInvite() {
       </section>
     </AppDialogBody>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <p v-if="!canManage" :class="ui.footnote()">
-        {{ t.shareCannotManage }}
-      </p>
-      <template v-else-if="link.access === 'link' && !link.copyable">
-        <Tip :label="t.shareResetLinkTip">
-          <AppButton variant="outline" @click="emit('resetLink')">
-            <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
-            {{ t.shareResetLink }}
-          </AppButton>
-        </Tip>
-      </template>
-      <AppButton v-else-if="link.access === 'link'" variant="outline" @click="emit('copyLink')">
-        <template #leading>
-          <icon-lucide-share-2 v-if="sendsLink" class="size-3.5" />
-          <icon-lucide-check v-else-if="copied" class="size-3.5" />
-          <icon-lucide-link v-else class="size-3.5" />
+    <AppDialogFooter>
+      <template #start>
+        <p v-if="!canManage" :class="ui.footnote()">
+          {{ t.shareCannotManage }}
+        </p>
+        <template v-else-if="link.access === 'link' && !link.copyable">
+          <Tip :label="t.shareResetLinkTip">
+            <AppButton variant="outline" @click="emit('resetLink')">
+              <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
+              {{ t.shareResetLink }}
+            </AppButton>
+          </Tip>
         </template>
-        {{ sendsLink ? t.shareSendLink : copied ? t.shareLinkCopied : t.shareCopyLink }}
-      </AppButton>
-      <span v-else />
+        <AppButton v-else-if="link.access === 'link'" variant="outline" @click="emit('copyLink')">
+          <template #leading>
+            <icon-lucide-share-2 v-if="sendsLink" class="size-3.5" />
+            <icon-lucide-check v-else-if="copied" class="size-3.5" />
+            <icon-lucide-link v-else class="size-3.5" />
+          </template>
+          {{ sendsLink ? t.shareSendLink : copied ? t.shareLinkCopied : t.shareCopyLink }}
+        </AppButton>
+      </template>
       <AppButton color="primary" variant="solid" @click="open = false">{{ common.done }}</AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
