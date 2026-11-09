@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import { corePackagePath } from '#core-tests/helpers/paths'
 import { unzipSync } from 'fflate'
 
 import { parseFigFile, exportFigFile } from '@open-pencil/core/io/formats/fig'
@@ -10,8 +11,6 @@ import { compressFigDataSync } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { heavy } from '@open-pencil/test-support/heavy'
-
-import { corePackagePath } from '#core-tests/helpers/paths'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 setDefaultTimeout(30_000)
 
@@ -38,9 +37,12 @@ function compressInWorker(message: {
   fileKind?: 'design' | 'board'
 }): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')), {
-      type: 'module'
-    })
+    const worker = new Worker(
+      pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')),
+      {
+        type: 'module'
+      }
+    )
     worker.onmessage = (event: MessageEvent<Uint8Array>) => {
       worker.terminate()
       resolve(event.data)
@@ -70,6 +72,22 @@ describe('fig export compression', () => {
     expect(
       new DataView(canvas.buffer, canvas.byteOffset, canvas.byteLength).getUint32(8, true)
     ).toBe(77)
+  })
+
+  test('archive message keeps a FigJam board header', async () => {
+    const archive = await compressInWorker({
+      kind: 'archive',
+      schemaDeflated: new Uint8Array([0x78, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]),
+      kiwiData: new Uint8Array([1, 2, 3, 4, 5]),
+      thumbnailPNG: new Uint8Array([1]),
+      metaJSON: '{"file_name":"Board"}',
+      images: [],
+      figKiwiVersion: 77,
+      fileKind: 'board'
+    })
+    const canvas = unzipSync(archive)['canvas.fig']
+    expect(canvas).toBeDefined()
+    expect(new TextDecoder().decode(canvas?.subarray(0, 8))).toBe('fig-jam.')
   })
 
   test('compressFigDataSync produces valid zip', async () => {

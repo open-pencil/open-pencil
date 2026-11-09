@@ -457,6 +457,7 @@ function compressViaWorker(...args: Parameters<typeof compressFigData>): Promise
     // buffers that may be shared with other views, causing "already detached" errors on
     // subsequent saves. Structured clone (the default) copies the data safely.
     worker.postMessage({
+      kind: 'archive',
       schemaDeflated,
       kiwiData,
       thumbnailPNG,
@@ -464,7 +465,7 @@ function compressViaWorker(...args: Parameters<typeof compressFigData>): Promise
       images: imageEntries,
       figKiwiVersion,
       compressionLevel,
-      kind
+      fileKind: kind
     })
   })
 }

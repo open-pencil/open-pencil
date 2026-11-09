@@ -81,3 +81,17 @@ fn write_fig_canvas(
     fig_kiwi.extend_from_slice(&zstd_data);
     Ok(fig_kiwi)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::write_fig_canvas;
+
+    #[test]
+    fn names_the_document_kind_in_its_header() {
+        let design = write_fig_canvas(Vec::new(), vec![1, 2, 3], 101, Some(3), false).unwrap();
+        assert_eq!(&design[..8], b"fig-kiwi");
+
+        let board = write_fig_canvas(Vec::new(), vec![1, 2, 3], 101, Some(3), true).unwrap();
+        assert_eq!(&board[..8], b"fig-jam.");
+    }
+}
