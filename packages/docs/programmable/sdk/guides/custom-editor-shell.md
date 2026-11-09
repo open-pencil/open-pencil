@@ -184,7 +184,7 @@ A host decides where the person's moves put layers with a move policy, which see
 editor.setMovePolicy(({ node, to }) => (letters.has(node.id) ? { x: to.x, y: node.y } : to))
 ```
 
-It returns where the layer goes, adjusted however the host likes, or `null` to keep it where it is. The host's own edits (`asHost`) and undo and redo pass it.
+It returns where the layer goes, adjusted however the host likes, or `null` to keep it where it is. It decides moves only: a resize or a rotation, which places the layer along with its new size or angle, passes it, as do the host's own edits (`asHost`) and undo and redo.
 
 `cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `onEscape` and `shortcuts`.
 
