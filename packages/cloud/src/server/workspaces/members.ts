@@ -108,7 +108,7 @@ function invitationContract(row: {
  * Passes the workspace to its longest-standing other admin when its owner leaves or stops being
  * an admin, so its limits come from someone still running it. The last-admin guard keeps one.
  */
-async function handOverOwnership(
+export async function handOverOwnership(
   database: Transaction<CloudDatabase>,
   workspaceId: string,
   leavingUserId: string

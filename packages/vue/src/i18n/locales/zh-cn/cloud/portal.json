@@ -138,6 +138,33 @@
   "accountId": "账号 ID",
   "accountIdDescription": "向管理员寻求账号相关帮助时，请提供此 ID。",
   "memberSince": "加入于 {date}",
+  "deleteAccount": "删除账号",
+  "deleteAccountDescription": "删除你的账号，以及只有你一人的工作区和其中的文件。此操作无法撤销。",
+  "deleteAccountOpen": "删除账号…",
+  "deleteAccountHeading": "删除你的账号？",
+  "deleteAccountIntro": "此操作无法撤销。将删除：",
+  "deleteAccountWorkspaces": {
+    "many": "{count} 个只有你一人的工作区及其文件"
+  },
+  "deleteAccountLeaves": "你在共享工作区中的成员身份（其中的文件留给其他成员）",
+  "deleteAccountSignIn": "你的登录方式、会话和头像。",
+  "deleteAccountBlockedHeading": "请先让其他人成为管理员",
+  "deleteAccountBlockedDescription": "你是这些工作区唯一的管理员，而其他人仍在使用它们。",
+  "deleteAccountDownload": "先下载你的文件",
+  "deleteAccountDownloadDescription": {
+    "many": "你将失去的 {count} 个文件，打包为一个 zip。"
+  },
+  "deleteAccountNothingToDownload": "你不会失去任何文件。",
+  "downloadAll": "全部下载",
+  "downloadProgress": "正在下载第 {done} 个，共 {total} 个…",
+  "downloadSaved": {
+    "many": "已保存 {count} 个文件。"
+  },
+  "downloadFailed": "无法下载 {names}。",
+  "deleteAccountConfirmLabel": "请输入 {email} 以确认",
+  "deleteAccountConfirm": "删除账号",
+  "accountDeleted": "你的账号已删除。",
+  "accountArchiveName": "来自 {host} 的文件",
   "activeSessions": "已登录的会话",
   "activeSessionsDescription": "退出任何你不认识的会话，它会立即结束。",
   "signOutOtherSessions": "退出其他会话",
@@ -403,6 +430,7 @@
   "errorLastMethod": "请至少保留一种登录方式。",
   "errorSessionNotFresh": "为了你的安全，请重新登录后再进行此更改。",
   "errorLastAdmin": "服务器至少需要一名管理员。",
+  "errorAccountSoleAdmin": "你仍是一个他人正在使用的工作区的唯一管理员。请先让其他人成为管理员。",
   "errorSelfAction": "你不能对自己的账号执行此操作。",
   "errorTwoStepRequired": "请先开启两步验证。",
   "errorNotAllowed": "你没有执行此操作的权限。",

@@ -146,6 +146,20 @@ A new email address is confirmed from that address through Better Auth's change-
 the old address is told which address is taking over. An approved enrollment follows the account
 to its new address, so the approval stays with the account.
 
+Deleting an account goes through Better Auth's `deleteUser`, reached only at
+`POST /api/account/delete`, which wants a session from the last ten minutes or the password. Its
+`beforeDelete` hook (`src/server/account/deletion.ts`) takes Cloud's part in one transaction, or
+refuses with `account_sole_admin` and changes nothing while the account is the only admin of a
+workspace other people belong to. Workspaces only the account belongs to lose their documents
+like any deleted document, and the cleanup worker removes each such workspace once retention has
+purged its last one; in the workspaces others keep the account drops out, and the longest-standing
+other admin becomes the owner whose plan the workspace draws on. Its document grants, invitation
+budget, plan, picture, sign-ins, MFA assurances and enrollment go, and invitations it sent are
+withdrawn; Better Auth removes the user with their sessions, sign-in methods, passkeys, and
+two-step secrets. `GET /api/account/deletion` says beforehand what would go and what stops it, and
+the account page's Download all saves, as one zip, the documents the account would lose: those
+workspaces' and the ones it created in workspaces it leaves.
+
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.
 

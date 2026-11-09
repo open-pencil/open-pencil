@@ -174,6 +174,35 @@ export const cloudPortalMessageDefaults = {
   accountId: 'Account ID',
   accountIdDescription: 'Give this to an administrator when you ask for help with your account.',
   memberSince: params('Member since {date}'),
+  deleteAccount: 'Delete account',
+  deleteAccountDescription:
+    'Deletes your account and the workspaces only you belong to, with their files. It can’t be undone.',
+  deleteAccountOpen: 'Delete account…',
+  deleteAccountHeading: 'Delete your account?',
+  deleteAccountIntro: 'This can’t be undone. Here’s what goes:',
+  deleteAccountWorkspaces: count({
+    one: '{count} workspace only you belong to, with its files',
+    many: '{count} workspaces only you belong to, with their files'
+  }),
+  deleteAccountLeaves: 'Your membership in shared workspaces, whose files stay with the others',
+  deleteAccountSignIn: 'Your sign-in methods, sessions, and picture.',
+  deleteAccountBlockedHeading: 'Make someone else an admin first',
+  deleteAccountBlockedDescription:
+    'You’re the only admin of these workspaces, and other people still use them.',
+  deleteAccountDownload: 'Download your files first',
+  deleteAccountDownloadDescription: count({
+    one: '{count} file you’d lose, saved in one zip.',
+    many: '{count} files you’d lose, saved in one zip.'
+  }),
+  deleteAccountNothingToDownload: 'You have no files to lose.',
+  downloadAll: 'Download all',
+  downloadProgress: params('Downloading {done} of {total}…'),
+  downloadSaved: count({ one: 'Saved {count} file.', many: 'Saved {count} files.' }),
+  downloadFailed: params('Couldn’t download {names}.'),
+  deleteAccountConfirmLabel: params('To confirm, type {email}'),
+  deleteAccountConfirm: 'Delete account',
+  accountDeleted: 'Your account is deleted.',
+  accountArchiveName: params('Files from {host}'),
 
   activeSessions: 'Signed-in sessions',
   activeSessionsDescription: 'Sign out any session you don’t recognize; it ends at once.',
@@ -502,6 +531,8 @@ export const cloudPortalMessageDefaults = {
   errorLastMethod: 'Keep at least one way to sign in.',
   errorSessionNotFresh: 'For your security, sign in again before making this change.',
   errorLastAdmin: 'The server needs at least one administrator.',
+  errorAccountSoleAdmin:
+    'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
   errorNotAllowed: 'You don’t have permission to do that.',
