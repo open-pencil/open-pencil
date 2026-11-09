@@ -109,9 +109,9 @@ jobs:
           done
           # The file the updater installs, and its signature.
           case "${{ matrix.updater }}" in
-            darwin-*) UPD=$(ls $B/macos/*.app.tar.gz 2>/dev/null | head -1); EXT=app.tar.gz ;;
-            windows-*) UPD=$(ls $B/nsis/*.exe 2>/dev/null | head -1); EXT=setup.exe ;;
-            linux-*) UPD=$(ls $B/appimage/*.AppImage 2>/dev/null | head -1); EXT=AppImage ;;
+            darwin-*) UPD=$(ls $B/macos/*.app.tar.gz 2>/dev/null | head -1 || true); EXT=app.tar.gz ;;
+            windows-*) UPD=$(ls $B/nsis/*.exe 2>/dev/null | head -1 || true); EXT=setup.exe ;;
+            linux-*) UPD=$(ls $B/appimage/*.AppImage 2>/dev/null | head -1 || true); EXT=AppImage ;;
           esac
           if [ -n "$UPD" ] && [ -f "$UPD.sig" ]; then
             cp "$UPD" "out/update-${{ matrix.updater }}.$EXT"
@@ -141,9 +141,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
-      - name: NDK
-        run: sdkmanager "ndk;27.0.12077973" "build-tools;34.0.0" "platforms;android-34"
+      - name: Android SDK packages
+        # The runner ships the SDK; accept its licences and add the NDK.
+        run: |
+          SDK="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDK" --licenses > /dev/null || true
+          "$SDK" "ndk;27.0.12077973" "build-tools;34.0.0" "platforms;android-34"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
