@@ -1,4 +1,4 @@
-import { open, remove, rename } from '@tauri-apps/plugin-fs'
+import { remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-fs'
 
 import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
 
@@ -39,15 +39,8 @@ function concatenate(chunks: readonly Uint8Array[]): Uint8Array {
   return bytes
 }
 
-/** Writes every byte of a chunk, since a platform write may accept only part of it. */
-async function writeAll(write: (bytes: Uint8Array) => Promise<number>, chunk: Uint8Array) {
-  let offset = 0
-  while (offset < chunk.byteLength) {
-    const written = await write(chunk.subarray(offset))
-    if (written <= 0) throw new Error('The save wrote no bytes')
-    offset += written
-  }
-}
+/** Bytes the Tauri writer hands to one raw IPC write; files are written in this many bytes. */
+const TAURI_CHUNK_BYTES = 8 * 1024 * 1024
 
 export function createDocumentWriter({
   state,
@@ -98,12 +91,30 @@ export function createDocumentWriter({
         // hidden files out of `**`.
         const temporary = `${filePath}.saving`
         try {
-          const file = await open(temporary, { write: true, create: true, truncate: true })
-          try {
-            await stream((chunk) => writeAll((bytes) => file.write(bytes), chunk), onProgress)
-          } finally {
-            await file.close()
+          // `write_file` sends its bytes as a raw IPC body. `FileHandle.write` sends the same
+          // bytes as a JSON number array, which made a large save take minutes.
+          await tauriWriteFile(temporary, new Uint8Array(0))
+          const pending = new Uint8Array(TAURI_CHUNK_BYTES)
+          let used = 0
+          const flush = async () => {
+            if (used === 0) return
+            await tauriWriteFile(temporary, pending.subarray(0, used), {
+              append: true,
+              create: true
+            })
+            used = 0
           }
+          await stream(async (chunk) => {
+            let offset = 0
+            while (offset < chunk.byteLength) {
+              const take = Math.min(TAURI_CHUNK_BYTES - used, chunk.byteLength - offset)
+              pending.set(chunk.subarray(offset, offset + take), used)
+              used += take
+              offset += take
+              if (used === TAURI_CHUNK_BYTES) await flush()
+            }
+          }, onProgress)
+          await flush()
           await rename(temporary, filePath)
         } catch (error) {
           await remove(temporary).catch(() => undefined)
