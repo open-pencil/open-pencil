@@ -5,8 +5,8 @@ export type RemoteLocation = {
   repo: string
 }
 
-const SCP_STYLE = /^(?:ssh:\/\/)?git@([^:/]+)[:/](.+?)(?:\.git)?\/?$/i
-const URL_STYLE = /^(?:https?|git):\/\/(?:[^@/]+@)?([^/]+)\/(.+?)(?:\.git)?\/?$/i
+const SCP_STYLE = /^(?:ssh:\/\/)?git@(?<host>[^:/]+)[:/](?<path>.+?)(?:\.git)?\/?$/i
+const URL_STYLE = /^(?:https?|git):\/\/(?:[^@/]+@)?(?<host>[^/]+)\/(?<path>.+?)(?:\.git)?\/?$/i
 
 /**
  * The owner and repository a git remote names, from the two forms remotes are written in:
@@ -16,9 +16,8 @@ const URL_STYLE = /^(?:https?|git):\/\/(?:[^@/]+@)?([^/]+)\/(.+?)(?:\.git)?\/?$/
 export function parseRemoteURL(url: string): RemoteLocation | null {
   const trimmed = url.trim()
   const found = SCP_STYLE.exec(trimmed) ?? URL_STYLE.exec(trimmed)
-  if (!found) return null
-  const host = found[1]
-  const path = found[2]
+  const host = found?.groups?.host
+  const path = found?.groups?.path
   if (host === undefined || path === undefined) return null
   const segments = path.split('/').filter((segment) => segment !== '')
   if (segments.length < 2) return null

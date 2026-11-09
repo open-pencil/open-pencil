@@ -11,7 +11,7 @@ export type RouteInfo = {
 }
 
 const PAGE_EXTENSION = /\.(?:vue|md|mdx)$/i
-const PAGES_DIRECTORY = /(?:^|\/)(?:app\/)?pages\/(.+)$/
+const PAGES_DIRECTORY = /(?:^|\/)(?:app\/)?pages\/(?<relative>.+)$/
 const PARAM_SEGMENT = /\[+\.{0,3}([^[\]]+)\]+/g
 
 /**
@@ -24,8 +24,7 @@ export function routesFromFiles(files: readonly string[]): RouteInfo[] {
   for (const file of files) {
     const normalized = file.replaceAll('\\', '/')
     const found = PAGES_DIRECTORY.exec(normalized)
-    if (!found) continue
-    const relative = found[1]
+    const relative = found?.groups?.relative
     if (relative === undefined || !PAGE_EXTENSION.test(relative)) continue
     const segments = relative
       .replace(PAGE_EXTENSION, '')
@@ -47,7 +46,7 @@ export function routesFromFiles(files: readonly string[]): RouteInfo[] {
 
 /** The parameter names a route spells, in order, from `[slug]`, `[...path]`, and `[[optional]]`. */
 export function paramNames(route: string): string[] {
-  return compact([...route.matchAll(PARAM_SEGMENT)].map((match) => match[1] ?? ''))
+  return compact([...route.matchAll(PARAM_SEGMENT)].map((match) => match[1]))
 }
 
 /**

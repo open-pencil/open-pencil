@@ -8,7 +8,7 @@ const DOCUMENT_SHELL = /<!doctype[^>]*>|<\/?html[^>]*>|<\/?head[^>]*>[\s\S]*?<\/
  * script setup stays empty until a caller has imports to add.
  */
 export function htmlToVueSFC(html: string): string {
-  const styles = [...html.matchAll(STYLE_BLOCK)].map((match) => match[1] ?? '').join('\n')
+  const styles = [...html.matchAll(STYLE_BLOCK)].map((match) => match[1]).join('\n')
   const body = BODY.exec(html)?.[1] ?? html.replace(DOCUMENT_SHELL, '')
   const template = body.trim()
   const parts = ['<template>', template, '</template>']
