@@ -12,6 +12,7 @@ import {
   DocumentConflictError,
   DocumentForbiddenError,
   DocumentNotFoundError,
+  DocumentPurgeFailedError,
   UploadInvalidError
 } from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
@@ -49,6 +50,10 @@ export function documentDomainError(context: Context, error: unknown): Response 
   }
   if (error instanceof StorageQuotaExceededError) {
     return context.json({ error: { code: 'storage_quota_exceeded' as const } }, 409)
+  }
+  // Reported where cleanup failed, so the request handler doesn't report it again.
+  if (error instanceof DocumentPurgeFailedError) {
+    return context.json({ error: { code: 'purge_failed' as const } }, 503)
   }
   if (error instanceof UploadInvalidError) {
     return context.json({ error: { code: 'invalid_upload' as const } }, 422)

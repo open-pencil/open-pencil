@@ -338,7 +338,7 @@ export const cloudMessageDefaults = {
   homeTrashDeleteForever: 'Delete forever',
   homeTrashDeleteForeverHeading: params('Delete “{name}” forever?'),
   homeTrashDeleteForeverDescription:
-    'It’s deleted from the server with its version history, for everyone. This can’t be undone.',
+    'It’s deleted with its version history, for everyone, and stops counting toward your storage. This can’t be undone.',
   homeTrashDeleteForeverFailed: params(
     'Couldn’t delete “{name}” forever. If it’s still in Trash, try again.'
   ),

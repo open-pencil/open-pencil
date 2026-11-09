@@ -1,4 +1,5 @@
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cleanupPassOptions,
@@ -19,7 +20,13 @@ const objects = createS3ObjectStore(config)
 try {
   const policy = createConfiguredCloudPolicy(config, database)
   const result = await runCleanup(
-    createCleanupServices(config, database, objects, policy),
+    createCleanupServices(
+      config,
+      database,
+      objects,
+      policy,
+      createCloudErrorReporter(config, 'node')
+    ),
     cleanupPassOptions(config)
   )
   console.log(JSON.stringify(result))

@@ -209,7 +209,7 @@
   "homeTrashRestoreFailed": "「{name}」を復元できませんでした。すでに完全に削除されている可能性があります。",
   "homeTrashDeleteForever": "完全に削除",
   "homeTrashDeleteForeverHeading": "「{name}」を完全に削除しますか？",
-  "homeTrashDeleteForeverDescription": "バージョン履歴とともにサーバーから削除され、誰も開けなくなります。この操作は取り消せません。",
+  "homeTrashDeleteForeverDescription": "バージョン履歴とともに全員から削除され、ストレージ使用量にも含まれなくなります。この操作は取り消せません。",
   "homeTrashDeleteForeverFailed": "「{name}」を完全に削除できませんでした。まだゴミ箱にある場合は、もう一度お試しください。",
   "homeTrashMoveDescription": "開けるすべての人にとってゴミ箱に移動します。しばらくの間はゴミ箱から復元できます。",
   "homeSignIn": "サインイン…",

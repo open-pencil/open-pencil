@@ -212,7 +212,7 @@
   "homeTrashRestoreFailed": "Impossible de restaurer « {name} ». Il a peut-être déjà été supprimé définitivement.",
   "homeTrashDeleteForever": "Supprimer définitivement",
   "homeTrashDeleteForeverHeading": "Supprimer « {name} » définitivement ?",
-  "homeTrashDeleteForeverDescription": "Il est supprimé du serveur avec son historique des versions, pour tout le monde. Cette action est irréversible.",
+  "homeTrashDeleteForeverDescription": "Il est supprimé avec son historique des versions, pour tout le monde, et ne compte plus dans votre stockage. Cette action est irréversible.",
   "homeTrashDeleteForeverFailed": "Impossible de supprimer « {name} » définitivement. S’il est encore dans la corbeille, réessayez.",
   "homeTrashMoveDescription": "Il part dans la corbeille pour toutes les personnes qui peuvent l’ouvrir. Vous pouvez le restaurer depuis la corbeille pendant un moment.",
   "homeSignIn": "Se connecter…",

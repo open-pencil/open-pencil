@@ -212,7 +212,7 @@
   "homeTrashRestoreFailed": "Impossibile ripristinare «{name}». Forse è già stato eliminato definitivamente.",
   "homeTrashDeleteForever": "Elimina definitivamente",
   "homeTrashDeleteForeverHeading": "Eliminare «{name}» definitivamente?",
-  "homeTrashDeleteForeverDescription": "Viene eliminato dal server con la cronologia delle versioni, per tutti. L’operazione non si può annullare.",
+  "homeTrashDeleteForeverDescription": "Viene eliminato con la cronologia delle versioni, per tutti, e non conta più nel tuo spazio di archiviazione. L’operazione non si può annullare.",
   "homeTrashDeleteForeverFailed": "Impossibile eliminare «{name}» definitivamente. Se è ancora nel cestino, riprova.",
   "homeTrashMoveDescription": "Finisce nel cestino per tutti quelli che possono aprirlo. Puoi ripristinarlo da lì per un po’.",
   "homeSignIn": "Accedi…",

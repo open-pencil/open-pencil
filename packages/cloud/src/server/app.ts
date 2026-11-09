@@ -181,7 +181,8 @@ export function createCloudApp(services: CloudServices) {
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config),
       documents: createAdminDocumentService(services.database, {
-        closeRooms: services.onDocumentTakenDown
+        closeRooms: services.onDocumentTakenDown,
+        purgeGraceMs: services.config.documentPurgeGraceMs
       }),
       reports: createAdminReportService(services.database)
     },
@@ -204,8 +205,11 @@ export function createCloudApp(services: CloudServices) {
     onVersionsChanged: services.onDocumentVersionsChanged,
     trash: {
       retentionMs: services.config.documentRetentionMs,
-      leaseDurationMs: services.config.cleanupLeaseDurationMs
-    }
+      purgeGraceMs: services.config.documentPurgeGraceMs,
+      leaseDurationMs: services.config.cleanupLeaseDurationMs,
+      reportError: services.reportError
+    },
+    reportError: services.reportError
   })
   const versions = createDocumentVersionService(services.database, services.objects, {
     policy,

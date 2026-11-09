@@ -10,6 +10,8 @@ import type { UploadCleanupResult, UploadCleanupService } from './uploads'
 export type CleanupWorkerOptions = {
   batchSize: number
   documentRetentionMs: number
+  /** How long a document deleted forever keeps its files; 0 when not given. */
+  documentPurgeGraceMs?: number
   intervalMs: number
   leaseDurationMs: number
   signal?: AbortSignal
@@ -37,7 +39,7 @@ export type CleanupWorker = {
 
 export type CleanupPassOptions = Pick<
   CleanupWorkerOptions,
-  'batchSize' | 'documentRetentionMs' | 'leaseDurationMs'
+  'batchSize' | 'documentRetentionMs' | 'documentPurgeGraceMs' | 'leaseDurationMs'
 >
 
 /** One cleanup pass, for runtimes that schedule passes themselves. */
@@ -52,7 +54,8 @@ export async function runCleanup(
   const documents = await cleanup.documents.cleanupDeletedDocuments({
     batchSize: options.batchSize,
     leaseDurationMs: options.leaseDurationMs,
-    retentionMs: options.documentRetentionMs
+    retentionMs: options.documentRetentionMs,
+    purgeGraceMs: options.documentPurgeGraceMs
   })
   const revisions = cleanup.revisions
     ? await cleanup.revisions.compactRevisions({

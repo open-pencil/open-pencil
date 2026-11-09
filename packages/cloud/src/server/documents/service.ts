@@ -45,6 +45,7 @@ import {
 } from '#cloud/server/documents/trash'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import { announceVersions, recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
+import type { CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
@@ -61,8 +62,10 @@ export type DocumentServiceOptions = {
   technicalMaximumUploadBytes?: number
   /** Called once a save adds a checkpoint to the document's history. */
   onVersionsChanged?: (documentId: string) => void
-  /** How long Trash keeps documents, and the cleanup lease deleting one for good takes. */
+  /** How long Trash keeps documents, the grace of one deleted forever, and the cleanup lease. */
   trash?: DocumentTrashOptions
+  /** Where cleanup the service runs itself, such as of expired uploads, reports a failure. */
+  reportError?: CloudErrorReporter
 }
 
 /** Whether the stored object is the file the upload declared, which the commit names again. */
@@ -82,7 +85,7 @@ export function createDocumentService(
   objects: ObjectStore,
   options: DocumentServiceOptions = {}
 ) {
-  const cleanup = createUploadCleanupService(database, objects)
+  const cleanup = createUploadCleanupService(database, objects, options.reportError)
   const quota = createStorageQuotaService(database)
   const images = createDocumentImages(database, objects, quota)
   const trash = createDocumentTrash(database, objects, options.trash ?? DEFAULT_TRASH_OPTIONS)

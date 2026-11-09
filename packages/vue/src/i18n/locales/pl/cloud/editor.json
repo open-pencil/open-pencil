@@ -215,7 +215,7 @@
   "homeTrashRestoreFailed": "Nie udało się przywrócić „{name}”. Może został już trwale usunięty.",
   "homeTrashDeleteForever": "Usuń na zawsze",
   "homeTrashDeleteForeverHeading": "Usunąć „{name}” na zawsze?",
-  "homeTrashDeleteForeverDescription": "Plik zostanie usunięty z serwera razem z historią wersji, dla wszystkich. Tej operacji nie można cofnąć.",
+  "homeTrashDeleteForeverDescription": "Plik zostanie usunięty razem z historią wersji, dla wszystkich, i przestanie się liczyć do Twojego miejsca. Tej operacji nie można cofnąć.",
   "homeTrashDeleteForeverFailed": "Nie udało się usunąć „{name}” na zawsze. Jeśli plik nadal jest w koszu, spróbuj ponownie.",
   "homeTrashMoveDescription": "Plik trafi do kosza dla wszystkich, którzy mogą go otworzyć. Przez jakiś czas możesz go stamtąd przywrócić.",
   "homeSignIn": "Zaloguj się…",

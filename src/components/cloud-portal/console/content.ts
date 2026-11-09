@@ -11,6 +11,8 @@ export function contentActions(
   report?: Pick<PortalReportRow, 'status' | 'share'>
 ): { action: PortalContentAction; label: string; separated?: boolean }[] {
   const items: { action: PortalContentAction; label: string; separated?: boolean }[] = []
+  // Out of everyone's sight, one deleted forever can only come back.
+  if (document.deletedForever) return [{ action: 'undelete', label: messages.undeleteDocument }]
   if (report?.status === 'open') {
     items.push({ action: 'dismiss', label: messages.dismissReport })
     items.push({ action: 'mark-handled', label: messages.markHandled })
@@ -52,6 +54,14 @@ export function contentConfirmation(
       heading: messages.restoreDocumentHeading({ name: document.name }),
       description: messages.restoreDocumentDescription,
       confirm: messages.restoreDocument,
+      reason: false
+    }
+  }
+  if (action === 'undelete') {
+    return {
+      heading: messages.undeleteHeading({ name: document.name }),
+      description: messages.undeleteDescription,
+      confirm: messages.undeleteDocument,
       reason: false
     }
   }

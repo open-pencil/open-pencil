@@ -212,7 +212,7 @@
   "homeTrashRestoreFailed": "No se pudo restaurar «{name}». Puede que ya se haya eliminado para siempre.",
   "homeTrashDeleteForever": "Eliminar para siempre",
   "homeTrashDeleteForeverHeading": "¿Eliminar «{name}» para siempre?",
-  "homeTrashDeleteForeverDescription": "Se elimina del servidor con su historial de versiones, para todos. No se puede deshacer.",
+  "homeTrashDeleteForeverDescription": "Se elimina con su historial de versiones, para todos, y deja de contar para tu almacenamiento. No se puede deshacer.",
   "homeTrashDeleteForeverFailed": "No se pudo eliminar «{name}» para siempre. Si sigue en la papelera, inténtalo de nuevo.",
   "homeTrashMoveDescription": "Pasa a la papelera para todos los que pueden abrirlo. Puedes restaurarlo desde allí durante un tiempo.",
   "homeSignIn": "Iniciar sesión…",

@@ -92,12 +92,17 @@ async function startConfiguredServer(
       })
     : undefined
   const cleanup = cleanupDatabase
-    ? startCleanupWorker(createCleanupServices(config, cleanupDatabase, objects, policy), {
-        ...cleanupPassOptions(config),
-        intervalMs: config.cleanupIntervalMs,
-        onError: (error) =>
-          void reportCloudError(reportError, 'Cleanup worker failed:', error, { source: 'cleanup' })
-      })
+    ? startCleanupWorker(
+        createCleanupServices(config, cleanupDatabase, objects, policy, reportError),
+        {
+          ...cleanupPassOptions(config),
+          intervalMs: config.cleanupIntervalMs,
+          onError: (error) =>
+            void reportCloudError(reportError, 'Cleanup worker failed:', error, {
+              source: 'cleanup'
+            })
+        }
+      )
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
