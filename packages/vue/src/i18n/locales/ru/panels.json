@@ -450,6 +450,7 @@
   "starRatio": "Соотношение",
   "spread": "Размах",
   "blur": "Размытие",
+  "showShadowBehind": "Показывать за прозрачными областями",
   "effectColor": "Цвет",
   "foregroundBlur": "Размытие переднего плана",
   "glass": "Стекло",

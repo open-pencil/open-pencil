@@ -444,6 +444,7 @@
   "starRatio": "Verhältnis",
   "spread": "Ausbreitung",
   "blur": "Unschärfe",
+  "showShadowBehind": "Hinter transparenten Bereichen anzeigen",
   "effectColor": "Farbe",
   "foregroundBlur": "Vordergrund-Weichzeichnung",
   "glass": "Glas",

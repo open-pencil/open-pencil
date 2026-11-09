@@ -444,6 +444,7 @@
   "starRatio": "Rapport",
   "spread": "Diffusion",
   "blur": "Flou",
+  "showShadowBehind": "Afficher derrière les zones transparentes",
   "effectColor": "Couleur",
   "foregroundBlur": "Flou de premier plan",
   "glass": "Verre",

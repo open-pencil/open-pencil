@@ -444,6 +444,7 @@
   "starRatio": "Rapporto",
   "spread": "Diffusione",
   "blur": "Sfocatura",
+  "showShadowBehind": "Mostra dietro le aree trasparenti",
   "effectColor": "Colore",
   "foregroundBlur": "Sfocatura primo piano",
   "glass": "Vetro",

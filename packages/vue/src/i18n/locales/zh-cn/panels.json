@@ -438,6 +438,7 @@
   "starRatio": "比例",
   "spread": "扩展",
   "blur": "模糊",
+  "showShadowBehind": "在透明区域后方显示",
   "effectColor": "颜色",
   "foregroundBlur": "前景模糊",
   "glass": "玻璃",

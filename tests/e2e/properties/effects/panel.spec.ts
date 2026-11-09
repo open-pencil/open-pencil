@@ -177,3 +177,42 @@ test('switch an effect to Glass and edit its labelled settings', async ({ page }
   await depth.press('Enter')
   await expect.poll(async () => (await glass())?.glass?.depth).toBe(12)
 })
+
+test('a drop shadow shows behind transparent areas until unchecked', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const id = await page.evaluate(() => {
+    const editor = window.openPencil?.getStore?.()
+    if (!editor) throw new Error('Editor unavailable')
+    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
+    editor.updateNode(id, {
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 12,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    editor.select([id])
+    return id
+  })
+  const showBehind = () =>
+    page.evaluate(
+      (id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0].showShadowBehindNode,
+      id
+    )
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  const checkbox = section.getByRole('checkbox', { name: 'Show behind transparent areas' })
+  await expect(checkbox).toBeChecked()
+  await checkbox.click()
+  await expect(checkbox).not.toBeChecked()
+  await expect.poll(showBehind).toBe(false)
+  await section.getByRole('heading', { name: 'Effects' }).click()
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(checkbox).toBeChecked()
+})

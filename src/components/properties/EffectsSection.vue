@@ -36,6 +36,7 @@ import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels, common } = useI18n()
@@ -170,7 +171,12 @@ function effectPreview(effect: Effect): Fill {
                     :fill="effectPreview(effect)"
                     class="size-full border-0"
                   />
-                  <icon-lucide-blend v-else class="size-3 text-muted" />
+                  <icon-lucide-gem v-else-if="effect.type === 'GLASS'" class="size-3 text-muted" />
+                  <icon-lucide-layers-2
+                    v-else-if="effect.type === 'BACKGROUND_BLUR'"
+                    class="size-3 text-muted"
+                  />
+                  <icon-lucide-droplets v-else class="size-3 text-muted" />
                 </button>
               </Tip>
 
@@ -332,6 +338,21 @@ function effectPreview(effect: Effect): Fill {
                 </PaintField>
               </PanelFieldGroup>
             </BindableValueRoot>
+
+            <label
+              v-if="effect.type === 'DROP_SHADOW'"
+              class="flex cursor-pointer items-center gap-2 text-xs text-surface"
+            >
+              <AppCheckbox
+                :model-value="effect.showShadowBehindNode !== false"
+                :ariaLabel="panels.showShadowBehind"
+                data-property="effect-show-behind"
+                @update:model-value="
+                  effectsCtx.commitEffect(index, { showShadowBehindNode: $event })
+                "
+              />
+              {{ panels.showShadowBehind }}
+            </label>
           </template>
 
           <template v-else-if="effect.type === 'GLASS'">

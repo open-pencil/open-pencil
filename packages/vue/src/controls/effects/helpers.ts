@@ -74,23 +74,27 @@ export function createEffectEditActions(
     editor.requestRender()
   }
 
-  function scrubEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
-    if (nodes.length === 0) return
-    effectsBeforeScrub.value ??= new Map(
+  function snapshot(nodes: readonly SceneNode[]): Map<string, EffectEditSnapshot> {
+    return new Map(
       nodes.map((node) => [
         node.id,
         { effects: copyEffects(node.effects), effectStyleId: node.effectStyleId }
       ])
     )
+  }
+
+  function scrubEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+    if (nodes.length === 0) return
+    effectsBeforeScrub.value ??= snapshot(nodes)
     apply(nodes, index, changes)
   }
 
+  /** Commits a scrub, or a change made in one step such as a checkbox, as one undo step. */
   function commitEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
     if (nodes.length === 0) return
-    const previous = effectsBeforeScrub.value
+    const previous = effectsBeforeScrub.value ?? snapshot(nodes)
     effectsBeforeScrub.value = null
     apply(nodes, index, changes)
-    if (!previous) return
     editor.undo.runBatch('Change effect', () => {
       for (const node of nodes) {
         const before = previous.get(node.id)

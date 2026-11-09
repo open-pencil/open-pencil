@@ -39,6 +39,7 @@
   "starRatio": "Proporción",
   "spread": "Esparcimiento",
   "blur": "Desenfoque",
+  "showShadowBehind": "Mostrar detrás de las áreas transparentes",
   "effectColor": "Color",
   "fill": "Relleno",
   "stroke": "Trazo",

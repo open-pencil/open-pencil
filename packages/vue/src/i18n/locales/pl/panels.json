@@ -450,6 +450,7 @@
   "starRatio": "Proporcja",
   "spread": "Rozproszenie",
   "blur": "Rozmycie",
+  "showShadowBehind": "Pokaż za przezroczystymi obszarami",
   "effectColor": "Kolor",
   "foregroundBlur": "Rozmycie pierwszego planu",
   "glass": "Szkło",

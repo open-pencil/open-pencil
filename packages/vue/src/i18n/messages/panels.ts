@@ -145,6 +145,7 @@ export const panelMessageDefaults = {
   starRatio: 'Ratio',
   spread: 'Spread',
   blur: 'Blur',
+  showShadowBehind: 'Show behind transparent areas',
   effectColor: 'Color',
 
   page: 'Page',
