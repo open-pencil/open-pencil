@@ -63,6 +63,7 @@ import type {
   FigmaVectorNode
 } from './node-types'
 import { startPendingLayout } from './pending-layout'
+import { flushPendingComponentSync, startPendingComponentSync } from './pending-sync'
 import {
   FigmaNodeProxy,
   INTERNAL_ID,
@@ -102,12 +103,19 @@ export interface FigmaAPIOptions {
   signal?: AbortSignal
   /** Reads the fonts the host has installed, before `listAvailableFontsAsync` lists them. */
   prepareFontList?: () => Promise<void>
+  /**
+   * Brings instances in line with the component edits made so far, for a host that syncs them
+   * after edits itself, as the editor does; reading a layer calls it first. Without one the API
+   * records edits and syncs their instances itself.
+   */
+  flushComponentSync?: () => void
 }
 
 export { FigmaNodeProxy } from './proxy'
 export { graphOf } from './graph'
 export { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 export { flushPendingLayout } from './pending-layout'
+export { flushPendingComponentSync } from './pending-sync'
 export type { FigmaEffect } from './effects'
 export type { ExportImageOptions } from './types'
 export { MAX_IMAGE_FETCH_BYTES, type ImageFetch } from './images'
@@ -178,6 +186,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
     if (options.loadPage)
       setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
+    startPendingComponentSync(graph, options.flushComponentSync)
     startPendingLayout(graph)
     const pages = graph.getPages()
     this.#currentPageId = pages[0]?.id ?? graph.rootId
@@ -271,6 +280,7 @@ export class FigmaAPI extends FigmaStyleMethods implements NodeProxyHost {
   }
 
   getNodeById(id: string): FigmaNodeProxy | null {
+    flushPendingComponentSync(this.#graph)
     const node = this.#graph.getNode(id)
     return node ? this.wrapNode(id) : null
   }

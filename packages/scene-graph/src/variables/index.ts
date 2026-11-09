@@ -380,14 +380,17 @@ function markBoundVariablesOverrideOnInstance(
   for (const instance of instances) graph.willChangeNode(instance)
   if (nearest) setInstanceOverride(nearest.instanceOverrides, nearest.id, nodeId, 'boundVariables')
   setInstanceOverride(owner.instanceOverrides, owner.id, nodeId, 'boundVariables')
+  // Each instance claims the binding it changed alone, so the layer's other bindings keep
+  // following their components, as Figma claims only the paint or effect a script edits.
   if (field)
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      nodeId,
-      bindingOverrideField(field),
-      node.boundVariables[field] ?? null
-    )
+    for (const instance of uniq(compact([nearest, owner])))
+      setInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        nodeId,
+        bindingOverrideField(field),
+        node.boundVariables[field] ?? null
+      )
   for (const instance of instances)
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
 }
