@@ -1,6 +1,6 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { lineHeightPixels } from '@open-pencil/scene-graph/text'
-import { containsRTLText } from '@open-pencil/scene-graph/text/direction'
+import { containsRTLText, resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
@@ -127,24 +127,71 @@ function fallbackSegments(line: SVGTextLine, from: number, to: number): Fallback
   return segments
 }
 
+interface DirectionalPiece {
+  from: number
+  to: number
+  /** Punctuation the canvas draws right-to-left, mirrored where it has a mirror image. */
+  mirrored?: boolean
+}
+
+/** Marks a piece right-to-left for a renderer's bidi, which then mirrors brackets in it. */
+const RIGHT_TO_LEFT_MARK = '\u200F'
+const MIRRORED_CHARACTER = /\p{Bidi_M}/u
+const LETTER = /\p{L}/u
+
+/** The direction of the nearest letter from `index` on, stepping by `step` within the line. */
+function nearestLetterDirection(
+  text: string,
+  line: SVGTextLine,
+  index: number,
+  step: 1 | -1
+): 'LTR' | 'RTL' | null {
+  for (let at = index; at >= line.start && at < line.end; at += step) {
+    if (LETTER.test(text[at])) return containsRTLText(text[at]) ? 'RTL' : 'LTR'
+  }
+  return null
+}
+
+/**
+ * Whether the canvas's bidi draws punctuation from `from` to `to` right-to-left: as the letters on
+ * both sides of it when they agree, otherwise as the paragraph.
+ */
+function isRightToLeftPunctuation(
+  node: SceneNode,
+  line: SVGTextLine,
+  from: number,
+  to: number
+): boolean {
+  const paragraph = resolveNodeTextDirection(node)
+  const before = nearestLetterDirection(node.text, line, from - 1, -1) ?? paragraph
+  const after = nearestLetterDirection(node.text, line, to, 1) ?? paragraph
+  return (before === after ? before : paragraph) === 'RTL'
+}
+
 /**
  * The characters from `from` to `to` as the pieces a renderer must not reorder across: the whole
- * stretch when it is left-to-right only, otherwise each word and each run of spaces. A stretch
- * that mixes directions is laid out by the canvas's bidi; placed word by word, each word keeps
- * the place the canvas gives it, and a renderer only orders the letters within it.
+ * stretch when it is left-to-right only, otherwise each word, each run of punctuation, and each
+ * run of spaces. A stretch that mixes directions is laid out by the canvas's bidi; placed piece
+ * by piece, each keeps the place the canvas gives it, and a renderer only orders the letters
+ * within a word. Brackets the canvas draws right-to-left are marked so a renderer mirrors them.
  */
 function directionalPieces(
   node: SceneNode,
   line: SVGTextLine,
   from: number,
   to: number
-): Array<{ from: number; to: number }> {
+): DirectionalPiece[] {
   const text = node.text.slice(from, to)
   if (!line.characters || !containsRTLText(text)) return [{ from, to }]
-  return Array.from(text.matchAll(/\s+|\S+/gu), (match) => ({
-    from: from + match.index,
-    to: from + match.index + match[0].length
-  }))
+  return Array.from(text.matchAll(/\s+|[\p{L}\p{M}\p{N}]+|[^\s\p{L}\p{M}\p{N}]+/gu), (match) => {
+    const start = from + match.index
+    const end = start + match[0].length
+    const mirrored =
+      MIRRORED_CHARACTER.test(match[0]) &&
+      !LETTER.test(match[0]) &&
+      isRightToLeftPunctuation(node, line, start, end)
+    return mirrored ? { from: start, to: end, mirrored } : { from: start, to: end }
+  })
 }
 
 function lineSpans(
@@ -171,13 +218,20 @@ function lineSpans(
       if (segment.to <= segment.from) continue
       const { fallback } = segment
       const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
-      for (const { from, to } of directionalPieces(node, line, segment.from, segment.to)) {
+      for (const { from, to, mirrored } of directionalPieces(
+        node,
+        line,
+        segment.from,
+        segment.to
+      )) {
         // Every span starts at its left edge, in either direction, since renderers disagree on
         // which side `text-anchor` and `direction` place. Without character edges the first
         // span of a line starts at the line's left edge, and the rest follow on from it.
         const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
         const position = left === null ? {} : { x: round(left), y }
-        spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
+        const shown = shownTextSlice(node, from, to)
+        const content = mirrored ? `${RIGHT_TO_LEFT_MARK}${shown}${RIGHT_TO_LEFT_MARK}` : shown
+        spans.push(svg('tspan', { ...position, ...attrs }, content))
       }
     }
   }
