@@ -6,7 +6,7 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnCommand, resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 import {
@@ -59,10 +59,12 @@ export interface AgentAuthCheck {
 
 export async function spawnAgentStreams(agent: ACPAgentDef): Promise<AgentStreams> {
   let closing = false
+  const target = await resolveSpawnTarget(agent)
   const { child, input, output } = await spawnACPProcess({
-    command: await resolveSpawnCommand(agent),
+    command: target.command,
     args: agent.args,
     logId: `${agent.id} sign-in`,
+    searchPath: target.searchPath,
     destroying: () => closing,
     onUnexpectedClose: () => undefined
   })

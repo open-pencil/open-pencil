@@ -34,6 +34,17 @@ export type DetectedAgent = {
   status: 'available' | 'needs-adapter' | 'not-installed'
 }
 
+let lastKnownSearchPath: string | null = null
+
+export function getLastKnownSearchPath(): string | null {
+  return lastKnownSearchPath
+}
+
+export interface SpawnTarget {
+  command: string
+  searchPath?: string
+}
+
 /**
  * The executable to spawn from a finished lookup. `null` means the lookup itself failed, so the
  * command is tried anyway. A lookup that did not find it refuses to start, so a missing agent is
@@ -47,13 +58,22 @@ export function spawnCommandFromLookup(
   return agent.command
 }
 
-export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
+export async function resolveSpawnTarget(agent: ACPAgentDef): Promise<SpawnTarget> {
   try {
-    return spawnCommandFromLookup(agent, (await lookupAgents()).executables)
+    const lookup = await lookupAgents()
+    lastKnownSearchPath = lookup.searchPath
+    return {
+      command: spawnCommandFromLookup(agent, lookup.executables),
+      searchPath: lookup.searchPath
+    }
   } catch (error) {
     if (error instanceof AgentNotInstalledError) throw error
-    return agent.command
+    return { command: agent.command, searchPath: lastKnownSearchPath ?? undefined }
   }
+}
+
+export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
+  return (await resolveSpawnTarget(agent)).command
 }
 
 export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {

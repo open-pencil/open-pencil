@@ -1,5 +1,6 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
+import { getLastKnownSearchPath } from '@/app/ai/agents/setup/discovery'
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { spawnAgentChild } from '@/app/tauri/children'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -20,6 +21,8 @@ type ACPProcessOptions = {
   command: string
   args: string[]
   logId: string
+  env?: Record<string, string>
+  searchPath?: string
   destroying: () => boolean
   onUnexpectedClose: () => void
 }
@@ -28,13 +31,20 @@ export async function spawnACPProcess({
   command: commandName,
   args,
   logId,
+  env = {},
+  searchPath,
   destroying,
   onUnexpectedClose
 }: ACPProcessOptions): Promise<ACPProcess> {
   const resolved = resolvePlatformCommand(commandName, args)
+  const processEnv: Record<string, string> = { ...env }
+  const effectivePath = searchPath ?? (getLastKnownSearchPath() ?? undefined)
+  if (effectivePath && !processEnv.PATH) {
+    processEnv.PATH = effectivePath
+  }
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
-    env: {}
+    env: processEnv
   })
 
   const stdoutChunks: Uint8Array[] = []

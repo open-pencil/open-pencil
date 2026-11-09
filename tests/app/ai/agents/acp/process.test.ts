@@ -83,6 +83,30 @@ describe('Tauri process helpers', () => {
     await process.child.kill()
   })
 
+  test('passes augmented searchPath to process environment', async () => {
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:shell|spawn') {
+        expect(args).toMatchObject({
+          program: 'agent-cli',
+          args: ['--stdio'],
+          options: { encoding: 'raw', env: { PATH: '/custom/agent/bin' } }
+        })
+        return 45
+      }
+      return null
+    })
+
+    const process = await spawnACPProcess({
+      command: 'agent-cli',
+      args: ['--stdio'],
+      logId: 'test',
+      searchPath: '/custom/agent/bin',
+      destroying: () => false,
+      onUnexpectedClose: vi.fn()
+    })
+    await process.child.kill()
+  })
+
   test('signals unexpected ACP process close to the output stream', async () => {
     const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
     const onUnexpectedClose = vi.fn()

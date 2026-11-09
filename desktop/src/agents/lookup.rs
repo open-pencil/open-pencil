@@ -182,7 +182,6 @@ fn lookup_with(
 #[tauri::command]
 pub async fn agent_lookup() -> Result<AgentLookup, String> {
     tauri::async_runtime::spawn_blocking(|| {
-        super::path::augment_process_path();
         let current = std::env::var("PATH").unwrap_or_default();
         let search_path = super::path::augment_path(&current, &super::path::candidate_dirs());
         let cwd = std::env::current_dir().unwrap_or_else(|_| Path::new("/").to_path_buf());
