@@ -66,7 +66,7 @@ import type {
   Surface,
   TextureSource,
   TypefaceFontProvider
-} from 'canvaskit-wasm'
+} from '@open-pencil/canvaskit'
 
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
 

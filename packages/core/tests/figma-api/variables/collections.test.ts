@@ -408,7 +408,7 @@ describe('node variable bindings', () => {
       defaultModeId: 'light',
       variableIds: []
     })
-    graphOf(api).setActiveMode('col1', 'dark')
+    graphOf(api).updateNode(api.currentPage.id, { variableModes: { col1: 'dark' } })
 
     const parent = api.createFrame()
     const child = api.createRectangle()

@@ -1,18 +1,22 @@
 import {
   createAdminAuditService,
+  createAdminDocumentService,
   createAdminEmailService,
   createAdminOperationsService,
+  createAdminReportService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
   type EnrollmentService
 } from '#cloud/admin'
 import {
+  CLOUD_API_MAX_BODY_BYTES,
   CLOUD_SERVICES_JWKS_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
+import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import {
   createCloudAPIRouter,
@@ -57,10 +61,12 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createDocumentReportService } from '#cloud/server/reports'
 import { createServicesTokenService, type ServicesSigningKey } from '#cloud/server/services'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
@@ -86,6 +92,8 @@ export type CloudServices = {
   relayURL?: string
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
+  /** Ends a taken-down document's live rooms, saving them for when it is restored. */
+  onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Reports errors no route handled, when the deployment configures error tracking. */
@@ -171,7 +179,11 @@ export function createCloudApp(services: CloudServices) {
           : undefined
       }),
       audit: createAdminAuditService(services.database),
-      operations: createAdminOperationsService(services.database, services.config)
+      operations: createAdminOperationsService(services.database, services.config),
+      documents: createAdminDocumentService(services.database, {
+        closeRooms: services.onDocumentTakenDown
+      }),
+      reports: createAdminReportService(services.database)
     },
     allowedOrigins,
     {
@@ -275,10 +287,17 @@ export function createCloudApp(services: CloudServices) {
     config: services.config,
     enrollment,
     workspaces,
+    deletion: createAccountDeletionService(services.database),
     resolveIdentity,
     resolveSession,
     requireActiveSession,
     authenticatedMutationLimiter
+  })
+  const reports = createDocumentReportService(services.database, {
+    sharing,
+    email: services.transactionalEmail,
+    adminRecipients: services.config.enrollmentAdminNotificationEmails,
+    publicURL: services.config.publicURL
   })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
@@ -289,6 +308,7 @@ export function createCloudApp(services: CloudServices) {
     entitlements,
     servicesTokens,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -299,6 +319,7 @@ export function createCloudApp(services: CloudServices) {
     versions,
     entitlements,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -316,6 +337,13 @@ export function createCloudApp(services: CloudServices) {
     .onError(cloudErrorHandler(services.reportError))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use(
+      '/api/*',
+      bodyLimit({
+        maxSize: CLOUD_API_MAX_BODY_BYTES,
+        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
+      })
+    )
     .use('*', async (context, next) => {
       await next()
       if (shouldPreventIndexing(context.req.path, services.config.indexingPolicy)) {

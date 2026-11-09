@@ -15,7 +15,7 @@ const BOUND_FILL: Fill = {
 }
 
 describe('node-scoped variable modes', () => {
-  test('renderer resolves paint bindings through the nearest mode scope', () => {
+  test('renderer draws the color a bound paint stores, which binding gives it in its mode', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'theme',
@@ -41,11 +41,13 @@ describe('node-scoped variable modes', () => {
     const darkFrame = graph.createNode('FRAME', page.id, {
       variableModes: { theme: 'dark' }
     })
-    const child = graph.createNode('RECTANGLE', darkFrame.id, {
-      fills: [BOUND_FILL],
-      boundVariables: { 'fills/0/color': 'background' }
-    })
-
+    const child = graph.createNode('RECTANGLE', darkFrame.id, { fills: [BOUND_FILL] })
+    graph.bindVariable(child.id, 'fills/0/color', 'background')
     expect(resolveFillColor(child.fills[0], 0, child, graph, 'srgb')).toEqual(DARK)
+
+    // A literal written over the bound paint draws as written while the binding stays, as Figma's.
+    graph.updateNode(child.id, { fills: [BOUND_FILL] })
+    expect(child.boundVariables['fills/0/color']).toBe('background')
+    expect(resolveFillColor(child.fills[0], 0, child, graph, 'srgb')).toEqual(LIGHT)
   })
 })

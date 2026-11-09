@@ -1,0 +1,1 @@
+- SDK hosts report UI floating over the canvas edges with `setViewportChrome`, which zoom to fit, zoom to selection, and a page's first view keep layers clear of; it defaults to 50 px at the bottom for a Figma-style toolbar (#1889).

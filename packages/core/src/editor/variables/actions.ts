@@ -443,11 +443,6 @@ export function createVariableActions(ctx: EditorContext) {
     return modeId
   }
 
-  function setActiveMode(collectionId: string, modeId: string) {
-    ctx.graph.setActiveMode(collectionId, modeId)
-    refreshVariables(collectionScope(collectionId))
-  }
-
   /**
    * Sets one mode's value. Calls that share a `coalesceKey`, such as the steps of one color picker
    * drag, undo together.
@@ -583,7 +578,6 @@ export function createVariableActions(ctx: EditorContext) {
     removeMode,
     renameMode,
     setDefaultMode,
-    duplicateMode,
-    setActiveMode
+    duplicateMode
   }
 }

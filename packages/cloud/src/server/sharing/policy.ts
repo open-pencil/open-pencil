@@ -1,6 +1,7 @@
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentForbiddenError } from '#cloud/server/documents/errors'
-import { CLOUD_FEATURE_KEYS, type CloudPolicy, type CloudPolicyContext } from '#cloud/server/policy'
+import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
+import { CLOUD_FEATURE_KEYS, type CloudPolicy } from '#cloud/server/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely } from 'kysely'
 
 export type SharingPolicyOptions = {
@@ -19,18 +20,12 @@ export function createSharingPolicy(
 ) {
   async function requireCapabilityLink(input: CapabilityLinkPolicyInput): Promise<void> {
     if (!options.policy) return
-    const document = await database
-      .selectFrom('document')
-      .select('workspaceId')
-      .where('id', '=', input.documentId)
-      .executeTakeFirstOrThrow()
-    const context: CloudPolicyContext = {
-      targetingKey: document.workspaceId,
-      actorId: input.actorId,
-      workspaceId: document.workspaceId,
-      documentId: input.documentId,
-      deploymentMode: options.deploymentMode ?? 'self-hosted'
-    }
+    const context = await workspacePolicyContext(
+      database,
+      { documentId: input.documentId },
+      { actorId: input.actorId, deploymentMode: options.deploymentMode ?? 'self-hosted' }
+    )
+    if (!context) throw new DocumentNotFoundError()
     // Whether guests may follow the link is checked when they do, so edit links still work for
     // people signed in to the server.
     if (!(await options.policy.boolean(CLOUD_FEATURE_KEYS.links, false, context))) {

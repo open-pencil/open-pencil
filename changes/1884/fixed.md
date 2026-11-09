@@ -1,0 +1,1 @@
+- Auto layout frames with negative padding place their children past the frame's edge as Figma does, instead of treating the padding as zero (#1884).

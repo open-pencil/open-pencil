@@ -1,7 +1,6 @@
 import {
   createRelayClientAssembler,
   decodeRelayClientFrame,
-  MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   type RelayClientFrame
 } from '#cloud/contract'
@@ -43,6 +42,8 @@ export type ConnectionRelay = {
   /** The one document the relay serves, when it serves one. */
   documentId?: string
   maximumMessageBytes: number
+  /** The most an editor's update may carry once its fragments are joined. */
+  maximumUpdateBytes: number
   authTimeoutMs: number
   /** Admits a newcomer whose ticket verified, or turns it away and answers null. */
   admit(socket: RelaySocket, authorization: RelayAuthorization): Promise<RelayPeer | null>
@@ -73,7 +74,7 @@ export function openRelayConnection(
   // Only an editor's writes can be large: a viewer's frames, and a peer's before it is
   // admitted, fit in one message, so nobody else can make the relay hold more.
   const assembler = createRelayClientAssembler(() =>
-    peer?.authorization.permission === 'edit' ? MAX_COLLAB_MESSAGE_BYTES : relay.maximumMessageBytes
+    peer?.authorization.permission === 'edit' ? relay.maximumUpdateBytes : relay.maximumMessageBytes
   )
   const authTimer = resumed
     ? undefined

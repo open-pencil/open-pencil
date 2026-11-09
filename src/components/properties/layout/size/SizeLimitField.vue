@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SelectTrigger } from 'reka-ui'
 
+import { panelNumber } from '@open-pencil/core/geometry'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
@@ -25,9 +26,10 @@ function handleSelect(value: string) {
 <template>
   <Tip :label="item.label">
     <VariableNumberField
+      :round="panelNumber"
       :icon="item.icon"
       :aria-label="item.label"
-      :model-value="Math.round(ctx.node[item.prop] ?? 0)"
+      :model-value="panelNumber(ctx.node[item.prop] ?? 0)"
       :min="0"
       :node-id="ctx.node.id"
       :binding-path="item.prop"

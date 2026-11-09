@@ -1,13 +1,9 @@
 import {
-  Align,
   Direction,
   Display,
-  Edge,
-  FlexDirection,
   Gutter,
   MeasureMode,
   Overflow,
-  Wrap,
   type Node as YogaNode
 } from 'yoga-layout'
 
@@ -25,8 +21,8 @@ import {
 } from './layout/axis-sizing'
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
+import { insertFlowBox, setFlexFlow, setFlowEdges } from './layout/flow-edges'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { primaryAxisGap, siblingOverlap } from './layout/item-spacing'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
@@ -54,12 +50,9 @@ import {
   configureNonTextLeaf,
   createYogaNode,
   freeYogaTree,
-  mapAlign,
   mapAlignSelf,
   mapGridTrack,
-  mapJustify,
   parentStretchedAxis,
-  layoutPadding,
   setLayoutPadding
 } from './layout/yoga-helpers'
 
@@ -216,12 +209,8 @@ function insertFlexChildren(
   graph: SceneGraph,
   direction: 'LTR' | 'RTL'
 ): void {
-  // Each in-flow child gives up the overlap after it, and the frame takes it back as trailing
-  // padding: a row then fits as many children as Figma's sum of sizes and negative gaps allows,
-  // every row starts at the frame's edge, and a hugging frame ends at its last child.
-  const overlap = siblingOverlap(parent)
-  const horizontal = parent.layoutMode === 'HORIZONTAL'
-  let hasInFlowChild = false
+  const box = insertFlowBox(yogaParent, parent)
+  const flow: YogaNode[] = []
   for (const node of graph.getChildren(parent.id)) {
     const child = asLaidOutIn(graph, node, parent)
     const yogaChild = createYogaNode()
@@ -232,18 +221,12 @@ function insertFlexChildren(
       yogaChild.setDisplay(Display.None)
     } else {
       configureInFlowChild(yogaChild, child, parent, graph, direction)
-      if (overlap > 0) yogaChild.setMargin(horizontal ? Edge.End : Edge.Bottom, -overlap)
-      hasInFlowChild = true
+      flow.push(yogaChild)
     }
 
-    yogaParent.insertChild(yogaChild, yogaParent.getChildCount())
+    box.insertChild(yogaChild, box.getChildCount())
   }
-  if (overlap > 0 && hasInFlowChild) {
-    const padding = layoutPadding(parent)
-    if (!horizontal) yogaParent.setPadding(Edge.Bottom, padding.bottom + overlap)
-    else if (direction === 'RTL') yogaParent.setPadding(Edge.Left, padding.left + overlap)
-    else yogaParent.setPadding(Edge.Right, padding.right + overlap)
-  }
+  setFlowEdges(yogaParent, box, parent, flow, direction)
 }
 
 function configureInFlowChild(
@@ -268,30 +251,9 @@ function configureFlexContainer(
   direction: Exclude<SceneNode['layoutDirection'], 'AUTO'>
 ): void {
   yogaNode.setDirection(direction === 'RTL' ? Direction.RTL : Direction.LTR)
-  yogaNode.setFlexDirection(
-    node.layoutMode === 'HORIZONTAL' ? FlexDirection.Row : FlexDirection.Column
-  )
-  yogaNode.setFlexWrap(node.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
-  yogaNode.setJustifyContent(mapJustify(node.primaryAxisAlign))
-  yogaNode.setAlignItems(mapAlign(node.counterAxisAlign))
+  setFlexFlow(yogaNode, node)
   if (node.clipsContent) yogaNode.setOverflow(Overflow.Hidden)
-
-  if (node.layoutWrap === 'WRAP' && node.counterAxisAlignContent === 'SPACE_BETWEEN') {
-    yogaNode.setAlignContent(Align.SpaceBetween)
-  }
-
   setLayoutPadding(yogaNode, node)
-
-  const primaryGap = primaryAxisGap(node)
-  yogaNode.setGap(
-    Gutter.Column,
-    node.layoutMode === 'HORIZONTAL' ? primaryGap : node.counterAxisSpacing
-  )
-  yogaNode.setGap(
-    Gutter.Row,
-    node.layoutMode === 'HORIZONTAL' ? node.counterAxisSpacing : primaryGap
-  )
-
   applyMinMaxConstraints(yogaNode, node)
 }
 

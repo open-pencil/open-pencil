@@ -1,6 +1,6 @@
-import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 import { pick } from 'es-toolkit'
 
+import type { CanvasKit, Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'

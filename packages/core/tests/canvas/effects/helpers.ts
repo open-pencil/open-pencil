@@ -1,6 +1,6 @@
 import { mock } from 'bun:test'
 
-import type { InputRect, Paint } from 'canvaskit-wasm'
+import type { InputRect, Paint } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'

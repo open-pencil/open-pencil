@@ -9,5 +9,6 @@ export { default as CloudSettingsSection } from '@/components/settings/cloud/Clo
 export { default as CloudHosts } from '../CloudHosts.vue'
 export { default as CloudShareButton } from '../share/CloudShareButton.vue'
 export { default as CloudDocumentStatusHost } from '../status/CloudDocumentStatusHost.vue'
+export { default as CloudReportButton } from '../report/CloudReportButton.vue'
 export { default as CloudVersionDialog } from '../versions/CloudVersionDialog.vue'
 export { default as CloudVersionHistory } from '../versions/CloudVersionHistory.vue'

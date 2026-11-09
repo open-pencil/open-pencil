@@ -1,15 +1,16 @@
 import { afterAll, describe, expect, test, mock } from 'bun:test'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type MaskType, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Canvas, InputRect, Paint } from 'canvaskit-wasm'
+import type { Canvas, InputRect, Paint } from '@open-pencil/canvaskit'
 
 import { renderNode } from '#core/canvas/scene'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { asCanvas, asRenderer } from './helpers'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 

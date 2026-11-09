@@ -4,10 +4,10 @@ import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas/renderer'
 test('diamond contours use Manhattan distance and dispose their retained program', async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(101, 101), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   const graph = new SceneGraph()
@@ -65,7 +65,7 @@ test('diamond contours use Manhattan distance and dispose their retained program
 })
 
 test('diamond gradients preserve transformed contours and intermediate stops', async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(100, 100), 'surface'))
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')

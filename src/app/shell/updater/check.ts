@@ -4,7 +4,7 @@ import type { Ref } from 'vue'
 
 import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
-import { isTauri } from '@/app/tauri/env'
+import { canSelfUpdate } from '@/app/tauri/capabilities'
 
 import { updateFailureText, type UpdaterMessages } from './messages'
 import { openUpdaterWindow } from './window'
@@ -20,7 +20,8 @@ let startupCheckStarted = false
 let updateCheckInFlight: Promise<void> | null = null
 
 export async function checkForAppUpdate(options: UpdateCheckOptions) {
-  if (!isTauri()) return
+  // Off in the browser and in packages whose store delivers updates.
+  if (!canSelfUpdate()) return
   if (updateCheckInFlight) return updateCheckInFlight
 
   const { silent = false, messages } = options
@@ -31,7 +32,7 @@ export async function checkForAppUpdate(options: UpdateCheckOptions) {
 }
 
 export async function scheduleStartupUpdateCheck(messages: Ref<UpdaterMessages>): Promise<void> {
-  if (startupCheckStarted || !isTauri()) return
+  if (startupCheckStarted || !canSelfUpdate()) return
   startupCheckStarted = true
   await promiseTimeout(STARTUP_UPDATE_CHECK_DELAY_MS)
   // Read after the delay so a switch flipped during it still skips the request.

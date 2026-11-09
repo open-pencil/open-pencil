@@ -347,3 +347,61 @@ test('Enter opens a selected vector’s path, but not one an instance draws from
   expect(await editedAfterEnter(ids.vector)).toBe(ids.vector)
   expect(await editedAfterEnter(ids.copy)).toBeNull()
 })
+
+// Figma desktop 126: undo after leaving opens the path again, then takes back its changes one by
+// one, and undo past the first change leaves it.
+test('undo after leaving vector edit mode opens the path again and steps back through it', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const zero = { x: 0, y: 0 }
+    const vector = store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Line',
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 1,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: zero, tangentEnd: zero }],
+        regions: []
+      }
+    })
+    store.enterNodeEditMode(vector.id)
+  })
+  await editor.canvas.waitForRender()
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+  const { mouse, keyboard } = editor.page
+  const end = () =>
+    editor.page.evaluate(() => {
+      const point = window.openPencil?.getStore?.().getNodeEditState()?.vertices[1]
+      return point ? [Math.round(point.x), Math.round(point.y)] : null
+    })
+
+  await mouse.move(box.x + 200, box.y + 100)
+  await mouse.down()
+  await mouse.move(box.x + 200, box.y + 140, { steps: 8 })
+  await mouse.up()
+  await keyboard.press('Enter')
+  expect(await end()).toBeNull()
+
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toEqual([200, 140])
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toEqual([200, 100])
+  await keyboard.press('ControlOrMeta+z')
+  expect(await end()).toBeNull()
+
+  for (let i = 0; i < 3; i++) await keyboard.press('ControlOrMeta+Shift+z')
+  expect(await end()).toBeNull()
+  const height = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const [line] = store?.graph.getChildren(store.state.currentPageId) ?? []
+    return Math.round(line?.height ?? 0)
+  })
+  expect(height).toBe(40)
+})

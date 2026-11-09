@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { noop } from 'es-toolkit'
 
 import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'
@@ -50,6 +50,7 @@ function setup() {
     getCk: () => null,
     loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
+    getViewportChrome: () => ({ left: 0, right: 0, top: 0, bottom: 0 }),
     icons: iconify,
     subscribeToGraph: () => undefined,
     resolveFigmaClipboardImages: null,

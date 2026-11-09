@@ -41,6 +41,79 @@ describe('recordEdit', () => {
     expect(editor.undo.undo()).toBe('Arrange')
   })
 
+  test('joins the step it responds to, so undo and redo take back both', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+
+    expect(editor.undo.undo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(40)
+  })
+
+  test('a response to a step undone before it ran changes nothing and records nothing', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.undo.undo()
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
+    // Redo is still there, as the response took nothing away.
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+  })
+
+  test('a response that comes after a nudge leaves the nudge as the newest step', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.select([card.id])
+    editor.nudgeSelected(5, 0)
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(42)
+    expect(editor.undo.undoLabel).toBe('Nudge')
+  })
+
+  test('an edit that awaits joins no step', async () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const options = { label: 'Snap', joinStep: editor.undo.peekUndo() }
+    await expect(
+      editor.recordEditAsync(options, async () => editor.graph.updateNode(card.id, { x: 40 }))
+    ).rejects.toThrow(TypeError)
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+    expect(editor.undo.undoLabel).toBe('Move')
+  })
+
+  test('history:changed passes the step it recorded or joined', () => {
+    const { editor, card } = setup()
+    const seen: unknown[] = []
+    editor.onEditorEvent('history:changed', (change, step) => seen.push([change, step?.label]))
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    editor.recordEdit({ label: 'Snap', joinStep: editor.undo.peekUndo() }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    editor.undo.undo()
+    // The joined change is reported too, so collaboration and saving follow it.
+    expect(seen).toEqual([
+      ['record', 'Move'],
+      ['join', 'Move'],
+      ['undo', undefined]
+    ])
+  })
+
   test('rolls back an edit that threw part way and leaves no step', () => {
     const { editor, pageId, card } = setup()
     let recorded: DocumentChange | undefined
@@ -234,8 +307,8 @@ describe('recordEditAsync', () => {
     expect(editor.graph.variables.get(gap.id)?.valuesByMode).not.toHaveProperty('extra')
   })
 
-  // Known gap: nothing tells whose write is whose across an await, so the open edit takes in a
-  // write made elsewhere meanwhile, such as the user's or a collaborator's.
+  // Known gap: nothing tells whose write is whose across an await, so the open edit takes in an
+  // edit the user makes meanwhile. A collaborator's and an undo stay out (`runOutsideEdits`).
   test.failing('leaves an edit made elsewhere while it awaits out of its step', async () => {
     const { editor, pageId, card } = setup()
     const other = editor.graph.createNode('RECTANGLE', pageId, { x: 0, width: 10, height: 10 })
@@ -251,9 +324,7 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(other.id)?.x).toBe(25)
   })
 
-  // Known gap: undo is not held back while an edit is open, so the open edit records the undo
-  // as its own change and undoing the edit replays the undone step.
-  test.failing('keeps an undo made while it awaits out of its step', async () => {
+  test('keeps an undo made while it awaits out of its step', async () => {
     const { editor, card } = setup()
     editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 25 }))
 
@@ -265,5 +336,34 @@ describe('recordEditAsync', () => {
 
     expect(editor.undo.undo()).toBe('Agent: resize')
     expect(editor.graph.getNode(card.id)).toMatchObject({ x: 0, width: 100 })
+  })
+
+  test('undoing it keeps a layer someone else put into a frame it created', async () => {
+    const { editor, pageId } = setup()
+    const download = Promise.withResolvers<undefined>()
+    let frameId = ''
+
+    const edit = editor.recordEditAsync({ label: 'Agent: frame' }, async () => {
+      const frame = editor.graph.createNode('FRAME', pageId, {
+        x: 100,
+        y: 50,
+        width: 200,
+        height: 200
+      })
+      frameId = frame.id
+      await editor.graph.waitOutsideEdit(download.promise)
+    })
+    const note = editor.recordEdit({ label: 'Add note' }, () =>
+      editor.graph.createNode('RECTANGLE', frameId, { x: 10, y: 20, width: 5, height: 5 })
+    )
+    download.resolve(undefined)
+    await edit
+
+    expect(editor.undo.undo()).toBe('Agent: frame')
+    expect(editor.graph.getNode(frameId)).toBeUndefined()
+    // The note moves out to the page and stays where it was on the canvas.
+    expect(editor.graph.getNode(note.id)).toMatchObject({ parentId: pageId, x: 110, y: 70 })
+    expect(editor.undo.undo()).toBe('Add note')
+    expect(editor.graph.getNode(note.id)).toBeUndefined()
   })
 })

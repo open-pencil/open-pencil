@@ -1,6 +1,6 @@
-import type { Path } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit'
 
+import type { Path } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'

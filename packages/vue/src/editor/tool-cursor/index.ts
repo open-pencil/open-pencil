@@ -1,4 +1,5 @@
 import type { Tool } from '@open-pencil/core'
+import { svgDataURL } from '@open-pencil/scene-graph/images'
 
 import commentCursorSVG from '#vue/shared/assets/cursors/comment.svg?raw'
 import eyedropperCursorSVG from '#vue/shared/assets/cursors/eyedropper.svg?raw'
@@ -8,7 +9,7 @@ import penCursorSVG from '#vue/shared/assets/cursors/pen.svg?raw'
 import pencilCursorSVG from '#vue/shared/assets/cursors/pencil.svg?raw'
 
 function svgCursor(svg: string, x: number, y: number, fallback: string): string {
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${x} ${y}, ${fallback}`
+  return `url("${svgDataURL(svg)}") ${x} ${y}, ${fallback}`
 }
 
 /** The pen nib, pointing at its tip. */

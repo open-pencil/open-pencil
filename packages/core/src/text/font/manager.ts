@@ -1,8 +1,8 @@
 /* eslint-disable max-lines -- font loading and registration share FontManager lifecycle state */
 
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import {
   faceLoadKey,

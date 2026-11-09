@@ -10,7 +10,7 @@ describe('PDF pages of flipped layers', () => {
     test(`${layer.name} gets a page the size of everything it covers`, async () => {
       const spec = { pageId: layer.pageId, nodeIds: [layer.nodeId], label: layer.name }
       const result = expectDefined(
-        await exportPDFDocument(layer.graph, [spec], { embedFonts: false })
+        await exportPDFDocument(layer.graph, [spec])
       )
       const [page] = result.pages
       expect(page?.width).toBeCloseTo(layer.bounds.maxX - layer.bounds.minX, 1)

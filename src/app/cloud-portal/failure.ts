@@ -43,6 +43,7 @@ export function usePortalFailureMessages() {
       last_authentication_method: value.errorLastMethod,
       session_not_fresh: value.errorSessionNotFresh,
       last_admin_required: value.errorLastAdmin,
+      account_sole_admin: value.errorAccountSoleAdmin,
       self_admin_action_forbidden: value.errorSelfAction,
       mfa_required: value.errorTwoStepRequired,
       invalid_enrollment_transition: value.errorAlreadyDecided,

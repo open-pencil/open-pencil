@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -81,7 +81,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
+import { createViewportActions, DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
 import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
@@ -90,8 +90,9 @@ export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({
-    onChange: () => emitEditorEvent('history:changed'),
-    onDiscard: () => emitEditorEvent('edit:discarded')
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
+    onDiscard: () => emitEditorEvent('edit:discarded'),
+    runReplay: (replay) => _graph.runOutsideEdits(replay)
   })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
   // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
@@ -103,6 +104,8 @@ export function createEditor(options?: EditorOptions) {
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
+  // Floating UI over the canvas edges, which fits keep clear of; the host reports where it sits.
+  let viewportChrome: ViewportInsets = { ...DEFAULT_VIEWPORT_CHROME }
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
@@ -256,10 +259,8 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync, isSyncingComponents } = createComponentSyncScheduler(
-    () => _graph,
-    requestRender
-  )
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+    createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -293,6 +294,7 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    getViewportChrome: () => viewportChrome,
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
@@ -370,8 +372,20 @@ export function createEditor(options?: EditorOptions) {
     deleteSelected: clipboard.deleteSelected,
     penCommit: shapes.penCommit
   })
+  const { cancelPenGesture, ...shapeActions } = shapes
+  const { cancelNodeEditChange, ...vectorEditActions } = vectorEdit
+  /**
+   * Takes back the gesture in progress, such as a press of the pen or a drag in vector edit mode,
+   * leaving no undo step or redo, and tells the canvas to drop it (`gesture:cancelled`). A host
+   * refuses what the person is doing so, from the gesture's own events, such as `pen:pressed`.
+   */
+  function cancelGesture() {
+    if (!cancelPenGesture()) cancelNodeEditChange()
+    emitEditorEvent('gesture:cancelled')
+  }
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
+    penPushHistory: shapes.penPushHistory,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
   function endLayerEdits() {
@@ -381,6 +395,7 @@ export function createEditor(options?: EditorOptions) {
   }
   const readOnly = createReadOnlyActions(ctx, {
     endLayerEdits,
+    flushPendingStep: nodes.flushNudge,
     endEdits: () => {
       endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
@@ -456,6 +471,8 @@ export function createEditor(options?: EditorOptions) {
     state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
+    // Snap targets are points on the document's pages, which are gone.
+    state.snapTargets = { points: [] }
     state.guides = { preview: null, hovered: null, selected: null, redline: null }
     state.layoutInsertIndicator = null
     state.dropTargetId = null
@@ -508,6 +525,7 @@ export function createEditor(options?: EditorOptions) {
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
     isSyncingComponents,
+    flushComponentSync,
     requestRender,
     requestRefresh,
     textSelectionChanged,
@@ -535,16 +553,26 @@ export function createEditor(options?: EditorOptions) {
       viewportSize.width = width
       viewportSize.height = height
     },
+    /** Floating UI over each canvas edge, in screen pixels, that zooming to fit keeps clear of. */
+    getViewportChrome: () => ({ ...viewportChrome }),
+    /**
+     * Records the floating UI over each canvas edge, such as a toolbar docked there, which zooming
+     * to fit and a page's first view keep clear of; Figma's bottom toolbar until a host reports.
+     */
+    setViewportChrome(chrome: ViewportInsets) {
+      viewportChrome = { ...chrome }
+    },
 
     // Canvas and frame guides
     ...guides,
     ...designIssues,
 
     // Shapes & tools
-    ...shapes,
+    ...shapeActions,
 
     // Vector edit mode: a path edited point by point, and the pen continuing a path
-    ...vectorEdit,
+    ...vectorEditActions,
+    cancelGesture,
     ...penResume,
     /**
      * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as

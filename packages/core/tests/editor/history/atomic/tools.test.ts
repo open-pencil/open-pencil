@@ -196,7 +196,6 @@ describe('atomic agent tools', () => {
     const variables = structuredClone(graph.variables)
     const collections = structuredClone(graph.variableCollections)
     const index = structuredClone(graph.instanceIndex)
-    const modes = structuredClone(graph.activeMode)
     const original = graph.getNode(instance.id)
     const def: ToolDef = {
       ...tool('set_opacity'),
@@ -230,7 +229,6 @@ describe('atomic agent tools', () => {
     expect(graph.variables).toEqual(variables)
     expect(graph.variableCollections).toEqual(collections)
     expect(graph.instanceIndex).toEqual(index)
-    expect(graph.activeMode).toEqual(modes)
     expect(graph.getNode(instance.id)).toBe(original)
     expect(undo.canUndo).toBe(false)
   })

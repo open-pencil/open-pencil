@@ -7,6 +7,8 @@ import {
 
 import { createLayoutRunner } from '#core/layout/mutations'
 
+import { flushPendingComponentSync } from './pending-sync'
+
 interface PendingLayout {
   impact: SceneMutationImpact
   flushing: boolean
@@ -40,6 +42,8 @@ export function startPendingLayout(graph: SceneGraph): void {
 
 /** Lays out the edits recorded since the last geometry read. */
 export function flushPendingLayout(graph: SceneGraph): void {
+  // Instances lay out what their components hold now.
+  flushPendingComponentSync(graph)
   const pending = pendingByGraph.get(graph)
   if (!pending || pending.flushing || pending.impact.changedNodeIds.size === 0) return
   const impact = structuredClone(pending.impact)

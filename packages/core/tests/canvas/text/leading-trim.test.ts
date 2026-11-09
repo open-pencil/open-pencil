@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'

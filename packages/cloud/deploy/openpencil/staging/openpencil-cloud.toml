@@ -19,6 +19,12 @@ notification_emails = ["admin@openpencil.dev"]
 [authentication.email_password]
 enabled = false
 
+# Deployment administrators confirm a second step before the admin console opens.
+[authentication.mfa]
+required_for_admins = true
+totp = true
+recovery_codes = true
+
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
 addresses = []
@@ -56,9 +62,9 @@ maximum_bytes = 107_374_182_400
 
 [entitlements.sharing]
 links = true
-guest_view = false
+guest_view = true
 guest_edit = false
-guest_presence = false
+guest_presence = true
 
 [entitlements.collaboration]
 enabled = true

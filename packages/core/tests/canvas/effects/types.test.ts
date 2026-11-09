@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { ImageFilter } from 'canvaskit-wasm'
+import type { ImageFilter } from '@open-pencil/canvaskit'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'

@@ -18,7 +18,8 @@ const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, invers
  * records its step in the same task as the change, or, while text is being edited or an edit is
  * being coalesced, such as a picker drag, when that edit ends. A change no step follows within
  * its task, with neither of those open, is one made outside the history; one an open edit makes
- * waits for that edit's step. An edit or batch that ends without one, rolled back, cancelled, or
+ * waits for that edit's step. A change applied outside edits (`SceneGraph.runOutsideEdits`), such
+ * as a collaborator's, is outside the history at once, even while an edit is open. An edit or batch that ends without one, rolled back, cancelled, or
  * changing nothing, undid what it changed, so the document is as the history says once no other
  * edit is still open.
  */
@@ -60,6 +61,10 @@ export function createDocumentChanges(editor: Editor) {
     revision.value++
     contentRevision = revision.value
     const at = contentRevision
+    if (editor.graph.isWritingOutsideEdits && !editor.undo.isReplaying) {
+      outsideRevision = at
+      return
+    }
     // Text editing, coalesced edits, and edits that await record their step when they end.
     if (editor.undo.isRecording) return
     if (editor.state.editingTextId !== null) {

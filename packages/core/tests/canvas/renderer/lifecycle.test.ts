@@ -2,9 +2,9 @@ import { expect, test, mock } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '#core/canvas'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'
-import type { Font, Paint, Surface } from 'canvaskit-wasm'
+import type { Font, Paint, Surface } from '@open-pencil/canvaskit'
 import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
 import { createRendererImages } from '#core/canvas/images/state'
 import { IssueMarkerStage } from '#core/canvas/issues/stage'
@@ -20,7 +20,7 @@ import { createTextCaches } from '#core/canvas/text/caches'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { asDouble, asRenderer } from '../helpers'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 const renderer = () => new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
 

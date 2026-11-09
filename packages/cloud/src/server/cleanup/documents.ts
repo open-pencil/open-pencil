@@ -213,6 +213,31 @@ async function removeDocumentMetadata(
         .execute()
     }
     await transaction.deleteFrom('document').where('id', '=', document.id).execute()
+    // A workspace whose account was deleted waits, with nobody in it, for its last document.
+    await transaction
+      .deleteFrom('workspace')
+      .where('id', '=', document.workspaceId)
+      .where((expression) =>
+        expression.and([
+          expression.not(
+            expression.exists(
+              expression
+                .selectFrom('workspaceMember')
+                .select('workspaceMember.userId')
+                .whereRef('workspaceMember.workspaceId', '=', 'workspace.id')
+            )
+          ),
+          expression.not(
+            expression.exists(
+              expression
+                .selectFrom('document')
+                .select('document.id')
+                .whereRef('document.workspaceId', '=', 'workspace.id')
+            )
+          )
+        ])
+      )
+      .execute()
     return { objectsDeleted, bytesReclaimed }
   })
 }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { fontManager } from '@open-pencil/core/text'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
@@ -19,7 +19,7 @@ afterEach(() => {
 })
 
 async function createEditorWithRenderer() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -120,7 +120,7 @@ describe('outlineStrokeSelected', () => {
     const outline = editor.graph.getNode([...editor.state.selectedIds][0] ?? '')
     const network = outline?.vectorNetwork
     if (!outline || !network) throw new Error('Expected an outline')
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const [path] = vectorNetworkToPath(ck, network)
     // The ellipse's centre and a point on the ring, in the outline's own box.
     expect(path?.contains(60 - outline.x, 35 - outline.y)).toBe(false)

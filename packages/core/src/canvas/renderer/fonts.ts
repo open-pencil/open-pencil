@@ -1,6 +1,6 @@
-import type { Font, TypefaceFontProvider } from 'canvaskit-wasm'
 import { uniqBy } from 'es-toolkit'
 
+import type { Font, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
 import { FIGJAM_TYPEFACES } from '@open-pencil/scene-graph/figjam'

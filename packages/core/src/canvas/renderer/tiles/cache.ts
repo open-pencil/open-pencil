@@ -1,5 +1,4 @@
-import type { Image as CKImage } from 'canvaskit-wasm'
-
+import type { Image as CKImage } from '@open-pencil/canvaskit'
 import { intersectVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'

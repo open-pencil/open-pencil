@@ -12,6 +12,7 @@ export {
   instanceSwapPropertyIds,
   remapCopiedReferences,
   resolvedReferences,
+  type CopiedReferenceOptions,
   type ReferenceResolvers
 } from './copied'
 export {
