@@ -312,3 +312,85 @@ export const noInterpolatedTailwindClassesRule = defineRule({
     }
   }
 })
+
+/** Utilities that name a physical side, by root, and the logical ones that follow the reading direction. */
+const LOGICAL_ROOTS: Record<string, string> = {
+  ml: 'ms',
+  mr: 'me',
+  pl: 'ps',
+  pr: 'pe',
+  left: 'inset-s',
+  right: 'inset-e',
+  start: 'inset-s',
+  end: 'inset-e',
+  'border-l': 'border-s',
+  'border-r': 'border-e',
+  'rounded-l': 'rounded-s',
+  'rounded-r': 'rounded-e',
+  'rounded-tl': 'rounded-ss',
+  'rounded-tr': 'rounded-se',
+  'rounded-bl': 'rounded-es',
+  'rounded-br': 'rounded-ee',
+  'scroll-ml': 'scroll-ms',
+  'scroll-mr': 'scroll-me',
+  'scroll-pl': 'scroll-ps',
+  'scroll-pr': 'scroll-pe',
+  'text-left': 'text-start',
+  'text-right': 'text-end',
+  'float-left': 'float-start',
+  'float-right': 'float-end',
+  'clear-left': 'clear-start',
+  'clear-right': 'clear-end'
+}
+
+/** The utility after a class's variants: `ml-2` in `data-[side=left]:hover:ml-2`. */
+function utilityStart(className: string): number {
+  let depth = 0
+  let start = 0
+  for (let index = 0; index < className.length; index++) {
+    const char = className[index]
+    if (char === '[' || char === '(') depth++
+    else if (char === ']' || char === ')') depth--
+    else if (char === ':' && depth === 0) start = index + 1
+  }
+  return start
+}
+
+/**
+ * The logical class for a class that names a physical side, such as `ms-2` for `ml-2`, or null.
+ * `start-*` and `end-*` are Tailwind's deprecated names for `inset-s-*` and `inset-e-*`.
+ */
+export function logicalClass(system: DesignSystem, className: string): string | null {
+  for (const candidate of system.parseCandidate(className)) {
+    if (candidate.kind === 'arbitrary') continue
+    const negative = candidate.root.startsWith('-')
+    const root = negative ? candidate.root.slice(1) : candidate.root
+    const logical = LOGICAL_ROOTS[root]
+    if (!logical) continue
+    const start = utilityStart(className)
+    const utility = className.slice(start)
+    const prefix = negative ? `-${root}` : root
+    const at = utility.indexOf(prefix)
+    if (at === -1) continue
+    const replaced = `${className.slice(0, start)}${utility.slice(0, at)}${negative ? '-' : ''}${logical}${utility.slice(at + prefix.length)}`
+    return system.candidatesToCss([replaced])[0] ? replaced : null
+  }
+  return null
+}
+
+/**
+ * Require the logical form of a utility that names a side, so the interface can follow a
+ * right-to-left reading direction: `ms-2`, `ps-2`, `inset-s-0`, `border-s`, `rounded-s`,
+ * `text-start`.
+ */
+export const noPhysicalSideTailwindClassesRule = defineClassRule(
+  'Require Tailwind utilities that name a side to follow the reading direction.',
+  (theme, className, file) => {
+    if (!INTERFACE_SOURCES.some((root) => file.startsWith(root) || file.includes(`/${root}`)))
+      return null
+    const logical = logicalClass(theme.system, className)
+    return logical
+      ? `use \`${logical}\` instead of \`${className}\` so the side follows the reading direction`
+      : null
+  }
+)

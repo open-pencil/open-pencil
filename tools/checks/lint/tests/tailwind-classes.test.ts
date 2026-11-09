@@ -149,6 +149,58 @@ describe('no-px-tailwind-values', () => {
   })
 })
 
+describe('no-physical-side-tailwind-classes', () => {
+  const sideRule = 'no-physical-side-tailwind-classes'
+
+  test('names the logical class for each utility that names a side', async () => {
+    const replacements = {
+      'ml-2': 'ms-2',
+      '-mr-1': '-me-1',
+      'hover:pl-3': 'hover:ps-3',
+      'data-[side=left]:pr-[1rem]': 'data-[side=left]:pe-[1rem]',
+      'left-0': 'inset-s-0',
+      '-right-1/2': '-inset-e-1/2',
+      'start-2': 'inset-s-2',
+      'border-l-2': 'border-s-2',
+      'border-r-border': 'border-e-border',
+      'rounded-tl-md': 'rounded-ss-md',
+      'rounded-r': 'rounded-e',
+      'text-left': 'text-start',
+      'float-right': 'float-end'
+    }
+    const accepted = [
+      'ms-2',
+      'inset-x-0',
+      'space-x-2',
+      'divide-x',
+      'border-x',
+      'mask-l-from-50%',
+      'text-center'
+    ]
+    const diagnostics = ruleDiagnostics(
+      await lintFiles(
+        {
+          'src/theme/rejected.ts': `export const theme = '${Object.keys(replacements).join(' ')}'\n`,
+          'src/theme/accepted.ts': `export const theme = '${accepted.join(' ')}'\n`,
+          'packages/vue/src/primitives/Demo/examples/Side.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`,
+          'packages/docs/.vitepress/theme/landing/Landing.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`
+        },
+        { [`open-pencil/${sideRule}`]: 'error' }
+      ),
+      sideRule
+    )
+    const named = diagnostics
+      .filter((item) => item.filename?.endsWith('rejected.ts'))
+      .map((item) => /use `([^`]+)` instead of `([^`]+)`/.exec(item.message)?.slice(1))
+    expect(Object.fromEntries(named.map((pair) => [pair?.[1], pair?.[0]]))).toEqual(replacements)
+    expect(
+      diagnostics
+        .filter((item) => !item.filename?.endsWith('rejected.ts'))
+        .map((item) => item.filename?.split('/').pop())
+    ).toEqual(['Side.vue'])
+  })
+})
+
 describe('no-interpolated-tailwind-classes', () => {
   const interpolatedRule = 'no-interpolated-tailwind-classes'
 
