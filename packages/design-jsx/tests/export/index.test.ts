@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
+import { glass, sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -405,6 +405,39 @@ describe('sceneNodeToJSX', () => {
     })
     expect(sceneNodeToJSX(node.id, graph)).toBe(
       '<Rectangle name="Glass" w={10} h={10} effects={[backgroundBlur(12)]} />'
+    )
+  })
+
+  test('effects: a glass effect exports as the glass() call that builds it', () => {
+    const graph = makeGraph()
+    const effect = glass({ refraction: 0.8, depth: 30, lightAngle: 15, radius: 2, visible: false })
+    expect(effect.glass).toEqual({
+      refraction: 0.8,
+      depth: 30,
+      lightAngle: 15,
+      lightIntensity: 0.5,
+      dispersion: 0
+    })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Lens',
+      width: 10,
+      height: 10,
+      effects: [effect]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toBe(
+      [
+        '<Rectangle name="Lens" w={10} h={10} effects={[',
+        '  glass({',
+        '    refraction: 0.8,',
+        '    depth: 30,',
+        '    lightAngle: 15,',
+        '    lightIntensity: 0.5,',
+        '    dispersion: 0,',
+        '    radius: 2,',
+        '    visible: false',
+        '  })',
+        ']} />'
+      ].join('\n')
     )
   })
 

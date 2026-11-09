@@ -204,6 +204,40 @@ describe('@open-pencil/fig NodeChange policy', () => {
     })
   })
 
+  test('reads a glass effect under the names Figma copies it with', () => {
+    // A rectangle's effect as Figma 126 copied it, set to refraction 0.11, depth 22, light 33° at
+    // 0.44, dispersion 0.55, and frost 6 through the plugin API.
+    const [effect] = convertEffects([
+      {
+        type: 'GLASS',
+        offset: { x: 0, y: 0 },
+        radius: 6,
+        visible: true,
+        blendMode: 'NORMAL',
+        spread: 0,
+        showShadowBehindNode: true,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        refractionRadius: 22,
+        specularAngle: 33,
+        specularIntensity: 0.4399999976158142,
+        bevelSize: 1,
+        chromaticAberration: 0.550000011920929,
+        refractionIntensity: 0.10999999940395355
+      }
+    ])
+    expect(effect).toMatchObject({
+      type: 'GLASS',
+      radius: 6,
+      glass: {
+        refraction: 0.10999999940395355,
+        depth: 22,
+        lightAngle: 33,
+        lightIntensity: 0.4399999976158142,
+        dispersion: 0.550000011920929
+      }
+    })
+  })
+
   test('preserves the translation of rotated and mirrored Figma instances', () => {
     const props = nodeChangeToProps(
       {

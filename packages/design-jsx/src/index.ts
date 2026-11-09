@@ -61,10 +61,12 @@ export {
   backgroundBlur,
   dropShadow,
   foregroundBlur,
+  glass,
   innerShadow,
   layerBlur,
   type BlurEffectOptions,
   type EffectColor,
+  type GlassEffectOptions,
   type ShadowEffectOptions
 } from './helpers/effects'
 
