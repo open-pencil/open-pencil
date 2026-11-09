@@ -177,6 +177,15 @@ editor.onEditorEvent('pen:released', ({ kind, segment }) => {
 editor.setSnapTargets({ points: [shapeStart, shapeEnd] })
 ```
 
+A host decides where the person's moves put layers with a move policy, which sees each drag's live preview as well as the move that lands, nudges and position edits included:
+
+```ts
+// Letters stay on their line; anything else moves as the person moves it.
+editor.setMovePolicy(({ node, to }) => (letters.has(node.id) ? { x: to.x, y: node.y } : to))
+```
+
+It returns where the layer goes, adjusted however the host likes, or `null` to keep it where it is. The host's own edits (`asHost`) and undo and redo pass it.
+
 `cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `onEscape` and `shortcuts`.
 
 ## Why this split works

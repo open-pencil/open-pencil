@@ -1,6 +1,7 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
+import type { MovePolicyActions } from '#core/editor/move-policy'
 import type { EditorContext, Tool } from '#core/editor/types'
 import {
   offeredTool,
@@ -172,6 +173,7 @@ export interface RestrictionEnds {
 
 export function createReadOnlyActions(
   ctx: EditorContext,
+  movePolicy: MovePolicyActions,
   { endEdits, endLayerEdits, endPathContinuation, pickTool, flushPendingStep }: RestrictionEnds
 ) {
   /**
@@ -179,8 +181,6 @@ export function createReadOnlyActions(
    * layers again, so undo and redo stop there, leaving only what was done since.
    */
   let fixedAt: Record<HistoryStep, UndoEntry | undefined> | null = null
-  /** How deep the host's own edits run (`asHost`), which its restrictions don't narrow. */
-  let hostDepth = 0
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
@@ -230,13 +230,7 @@ export function createReadOnlyActions(
    * callback that returns a promise throws, and its edits after the first await are refused.
    */
   function asHost<T>(run: () => T): T {
-    hostDepth++
-    let result: T
-    try {
-      result = run()
-    } finally {
-      hostDepth--
-    }
+    const result = movePolicy.runAsHost(run)
     if (isThenable(result)) {
       // The TypeError reports the mistake; the promise's own failure, such as an edit after the
       // await being refused, would only be an unhandled rejection on top of it.
@@ -249,7 +243,7 @@ export function createReadOnlyActions(
   /** The profile restrictions are judged by: the host's own edits run as if unrestricted. */
   function judgedProfile(): EditorProfile {
     const profile = resolveEditorProfile(ctx.state)
-    return hostDepth > 0 && profile.edits ? { ...profile, layerEdits: 'all' } : profile
+    return movePolicy.isHostEdit() && profile.edits ? { ...profile, layerEdits: 'all' } : profile
   }
 
   /**
@@ -274,5 +268,24 @@ export function createReadOnlyActions(
     return refusalFor(action, judgedProfile(), args, ctx.graph)
   }
 
-  return { actions: { setReadOnly, setHostRestrictions, asHost }, refusal, historyRefusal }
+  /** A change to a layer with its position as the host's move policy decides it, for front ends. */
+  function constrainMove<T extends Partial<SceneNode>>(
+    node: SceneNode,
+    changes: T,
+    options: { preview?: boolean } = {}
+  ): T {
+    return movePolicy.constrainMove(node, changes, options.preview ?? false)
+  }
+
+  return {
+    actions: {
+      setReadOnly,
+      setHostRestrictions,
+      asHost,
+      setMovePolicy: movePolicy.setMovePolicy,
+      constrainMove
+    },
+    refusal,
+    historyRefusal
+  }
 }

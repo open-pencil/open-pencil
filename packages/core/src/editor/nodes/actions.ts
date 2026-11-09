@@ -51,9 +51,10 @@ export function createNodeActions(ctx: EditorContext) {
     }
   }
 
-  function updateNode(id: string, changes: Partial<SceneNode>) {
+  function updateNode(id: string, requested: Partial<SceneNode>) {
     const node = ctx.graph.getNode(id)
     if (!node) return
+    const changes = ctx.constrainMove(node, requested)
     // Path-edit last so its reflowed glyphs win over auto-resize's glyph clear
     // (path text is textAutoResize NONE so they don't collide today).
     const nextChanges = styleDetachmentChanges(node, {
@@ -83,8 +84,9 @@ export function createNodeActions(ctx: EditorContext) {
     recordNodeUpdate(node, changes, label)
   }
 
-  function recordNodeUpdate(node: SceneNode, changes: Partial<SceneNode>, label: string) {
+  function recordNodeUpdate(node: SceneNode, requested: Partial<SceneNode>, label: string) {
     const { id } = node
+    const changes = ctx.constrainMove(node, requested)
     // Same ordering rationale as updateNode: reflowed path-text glyphs win.
     const nextChanges = styleDetachmentChanges(node, {
       ...changes,

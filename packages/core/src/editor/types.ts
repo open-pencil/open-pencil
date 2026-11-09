@@ -335,6 +335,8 @@ export interface EditorContext {
   getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A change to a layer with its position as the host's move policy decides it (`setMovePolicy`). */
+  constrainMove: <T extends Partial<SceneNode>>(node: SceneNode, changes: T, preview?: boolean) => T
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
   requestRefresh: () => void
   requestRepaint: () => void

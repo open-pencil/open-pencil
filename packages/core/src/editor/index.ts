@@ -57,6 +57,7 @@ export type { ShaderRasterizer } from './shaders/types'
 export { editsHandlesOnly } from './vector/limits'
 export type { NodeEditExitOptions, NodeEditOptions, NodeEditState } from './vector/types'
 export type { PenPress, PenPressEvent, PenPressKind, PenReleaseEvent } from './shapes/pen/gesture'
+export type { MoveChange, MovePolicy } from './move-policy'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
 export type {

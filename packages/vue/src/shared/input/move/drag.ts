@@ -15,6 +15,7 @@ export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import type { Editor } from '@open-pencil/core'
 
 import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
+import { previewMove, writeMove } from '#vue/shared/input/move/policy'
 import { applyMoveSnap } from '#vue/shared/input/move/snap'
 import type { DragMove } from '#vue/shared/input/types'
 
@@ -215,7 +216,7 @@ export function handleMoveMove(
       const previewX = Math.round(orig.x + dx)
       const previewY = Math.round(orig.y + dy)
       firstApplied ??= { dx: previewX - orig.x, dy: previewY - orig.y }
-      editor.graph.updateNodePositionPreview(id, previewX, previewY)
+      previewMove(editor, id, { x: previewX, y: previewY })
     }
     if (firstApplied) {
       d.appliedDx = firstApplied.dx
@@ -234,7 +235,7 @@ export function handleMoveMove(
   d.appliedDy = dy
 
   for (const [id, orig] of d.originals) {
-    editor.graph.updateNodePositionPreview(id, orig.x + dx, orig.y + dy)
+    previewMove(editor, id, { x: orig.x + dx, y: orig.y + dy })
   }
 
   editor.setDropTarget(dropTarget?.id ?? null)
@@ -270,7 +271,7 @@ function applyFinalPositions(d: DragMove, editor: Editor) {
   for (const [id, orig] of d.originals) {
     const position = { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy }
     // Laying out now would snap the layer back into its slot before it leaves the frame.
-    if (isLeavingAutoLayout(d, id, editor)) editor.graph.updateNode(id, position)
+    if (isLeavingAutoLayout(d, id, editor)) writeMove(editor, id, position)
     else editor.updateNode(id, position)
   }
 }
