@@ -13,6 +13,7 @@ import { preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
 import { preloadFonts } from '@/app/editor/fonts'
 import { registerInterfaceFont } from '@/app/editor/fonts/interface'
 import { reportErrorAction } from '@/app/reports/state'
+import { announceViteReloads } from '@/app/shell/reload/vite'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { toast } from '@/app/shell/ui'
@@ -34,6 +35,7 @@ export async function boot(): Promise<void> {
     // Before anything else starts a process, so a pid it stops can only be a leftover.
     void stopLeftoverAgentChildren()
   }
+  announceViteReloads()
   preloadCanvasKit()
   preloadFonts()
   const head = createHead()

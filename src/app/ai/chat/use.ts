@@ -26,7 +26,6 @@ import {
 } from '@/app/ai/chat/storage'
 import { designModelProfile } from '@/app/ai/models'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
-import { pageAsksBeforeLeaving } from '@/app/document/close/exit'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import {
   pexelsKeyStatus,
@@ -35,6 +34,7 @@ import {
   setUnsplashKey,
   setRememberCredentials
 } from '@/app/settings/credentials/media'
+import { onBeforeReload } from '@/app/shell/reload'
 
 const chatSession = createChatSessionManager({
   isConfigured,
@@ -59,26 +59,13 @@ const history = createConversationHistory({
 
 registerAIChatEffects(chatSession.markTransportDirty)
 
-// Stop the reply and save the conversation before the page goes. Vite awaits its listeners before
-// a development reload; `pagehide` cannot wait, so other reloads save what they can.
-async function saveBeforeViteReload() {
-  // An unsaved document makes the reload ask first. The conversation is saved before the question,
-  // and the chat keeps running for a user who stays; leaving stops the reply from `pagehide`.
-  if (pageAsksBeforeLeaving()) await history.flush()
-  else await history.dispose()
-}
-if (import.meta.hot) {
-  /* eslint-disable typescript-eslint/no-misused-promises -- Vite's client awaits custom event listeners (vite/dist/client/client.mjs, notifyListeners). */
-  import.meta.hot.on('vite:beforeFullReload', async ({ path }) => {
-    // Vite announces an edit to another HTML page, such as `updater.html`, to every page but
-    // reloads only that one; the editor is always `index.html`, so it keeps running.
-    if (path?.endsWith('.html') && path !== '/index.html') return
-    await saveBeforeViteReload()
-  })
-  // Vite reloads the page whenever its server comes back.
-  import.meta.hot.on('vite:ws:disconnect', saveBeforeViteReload)
-  /* eslint-enable typescript-eslint/no-misused-promises */
-}
+// Stop the reply and save the conversation before the page goes. An announced reload waits for
+// it; `pagehide` cannot, so other reloads save what they can.
+onBeforeReload(({ asks }) =>
+  // When leaving asks first, the conversation is saved before the question and the chat keeps
+  // running for a user who stays; leaving stops the reply from `pagehide`.
+  asks ? history.flush() : history.dispose()
+)
 if (IS_BROWSER) {
   useEventListener(window, 'pagehide', (event) => {
     // A page kept for back navigation comes back with its chat.

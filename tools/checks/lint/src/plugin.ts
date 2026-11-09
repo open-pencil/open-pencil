@@ -328,6 +328,7 @@ import {
 } from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
+  noViteHotOutsideReload,
   noCoreBrowserGlobals,
   noZoomInSceneDrawing,
   noDirectGraphEmitterSubscriptions,
@@ -389,6 +390,7 @@ const plugin = {
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-inline-tauri-imports': noInlineTauriImports,
     'no-direct-storage-access': noDirectStorageAccess,
+    'no-vite-hot-outside-reload': noViteHotOutsideReload,
     'no-local-json-object-aliases': noLocalJsonObjectAliases,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-zoom-in-scene-drawing': noZoomInSceneDrawing,
