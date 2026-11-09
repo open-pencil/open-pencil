@@ -99,3 +99,78 @@ describe('geometry reads after edits', () => {
     expect(updates).toBe(0)
   })
 })
+
+// Figma desktop lays out as a script edits: once a label is in a Hug button, the button already
+// has its hugged size, so a layer placed against it stays where the script put it, though the
+// script never read the button. `layout/auto-layout/absolute/constraints.test.ts` records the
+// same button in Figma.
+describe('geometry writes after edits', () => {
+  function button(api: ReturnType<typeof createAPI>) {
+    const frame = api.createFrame()
+    frame.layoutMode = 'HORIZONTAL'
+    frame.paddingLeft = frame.paddingRight = 16
+    frame.paddingTop = frame.paddingBottom = 12
+    frame.layoutSizingHorizontal = 'HUG'
+    frame.layoutSizingVertical = 'HUG'
+    const label = api.createRectangle()
+    label.resize(60, 24)
+    frame.appendChild(label)
+    return frame
+  }
+
+  test('a badge placed in a Hug button before any read stays where the script put it', () => {
+    const api = createAPI()
+    const frame = button(api)
+    const badge = api.createFrame()
+    badge.resize(24, 24)
+    frame.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    // 92 - 15.5: against the button's hugged width, without reading it first.
+    badge.x = 76.5
+    badge.y = -8.5
+    expect([frame.width, frame.height]).toEqual([92, 48])
+    expect([badge.x, badge.y]).toEqual([76.5, -8.5])
+  })
+
+  test('a layer stretched across a Hug button before any read keeps the size the script set', () => {
+    const api = createAPI()
+    const frame = button(api)
+    const bar = api.createRectangle()
+    frame.appendChild(bar)
+    bar.layoutPositioning = 'ABSOLUTE'
+    bar.constraints = { horizontal: 'STRETCH', vertical: 'MIN' }
+    bar.x = 0
+    bar.resize(92, 2)
+    expect([bar.x, bar.width]).toEqual([0, 92])
+  })
+
+  test('resizing a Hug button before any read moves its badge from the hugged size', () => {
+    const api = createAPI()
+    const frame = button(api)
+    const badge = api.createFrame()
+    badge.resize(24, 24)
+    frame.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    badge.x = 76.5
+    // The button is 92 wide when the script resizes it, so the badge moves by 200 - 92.
+    frame.resize(200, 48)
+    expect(badge.x).toBe(76.5 + 108)
+  })
+
+  test('a layer pinned left and top waits for the next read, so a build lays out once', () => {
+    const api = createAPI()
+    const row = hugRow(api)
+    const child = api.createRectangle()
+    child.resize(40, 20)
+    row.appendChild(child)
+    const pinned = api.createRectangle()
+    row.appendChild(pinned)
+    pinned.layoutPositioning = 'ABSOLUTE'
+    pinned.x = 300
+    // Nothing has laid the row out yet: it still has the size it was made at.
+    expect(graphOf(api).getNode(row.id)?.width).toBe(100)
+    expect(row.width).toBe(40)
+  })
+})
