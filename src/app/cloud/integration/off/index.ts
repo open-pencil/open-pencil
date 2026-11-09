@@ -1,11 +1,12 @@
 import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
+import type { CloudServicesClient } from '@open-pencil/cloud/client'
 import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 import type { CloudAccount } from '@/app/cloud/servers/store'
+import type { EditorStore } from '@/app/editor/session'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
 
 /**
@@ -27,7 +28,7 @@ export const cloudAIAvailable = computed(() => false)
 export const cloudAIIdentity = computed<string | null>(() => null)
 export const cloudBillingURL = computed<string | null>(() => null)
 
-export function cloudAIClient(): CloudAIClient | null {
+export function cloudAIClient(): CloudServicesClient | null {
   return null
 }
 
@@ -41,6 +42,11 @@ export function startCloud(): () => void {
 
 export function isCloudBinding(): boolean {
   return false
+}
+
+/** Save, as it is without Cloud. */
+export function saveDocument(store: EditorStore): Promise<unknown> {
+  return store.saveFigFile()
 }
 
 export function cloudDocumentAddress(): { path: string; query: Record<string, string> } | null {

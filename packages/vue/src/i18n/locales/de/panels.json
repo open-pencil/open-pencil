@@ -355,7 +355,7 @@
   "libraryUpdateImpact": "{affected} betroffene Instanzen · {fallback} Fallback-Varianten",
   "publishLibrary": "Bibliothek veröffentlichen",
   "publishingLibrary": "Veröffentlichung…",
-  "publishLibraryHelp": "Veröffentlichen Sie die Komponenten dieser Datei als unveränderliche Revision.",
+  "publishLibraryHelp": "Veröffentlichen Sie die Komponenten, Stile und Variablen dieser Datei als unveränderliche Revision.",
   "libraryId": "Bibliotheks-ID",
   "libraryName": "Bibliotheksname",
   "revisionDescription": "Revisionsbeschreibung",

@@ -1,0 +1,1 @@
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>\\</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>\\</kbd>) splits the canvas view to the right.

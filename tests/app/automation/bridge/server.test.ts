@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { agentStarted, endAgentSession, type AgentSession } from '@/app/automation/agents'
+import * as handlersModule from '@/app/automation/bridge/handlers'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
@@ -97,5 +98,37 @@ describe('automation bridge sessions', () => {
     openBridge()
     old.socket.closed()
     expect(agents()).toHaveLength(0)
+  })
+})
+
+/** A call that never finishes, as one waiting for the document does until it is cancelled. */
+function pending(): Promise<unknown> {
+  return new Promise<unknown>(() => {
+    // Never settles.
+  })
+}
+
+describe('automation bridge calls', () => {
+  test('closing a connection cancels the calls that came over it', async () => {
+    const signals: AbortSignal[] = []
+    const handlers = spyOn(handlersModule, 'createAutomationCommandHandlers').mockReturnValue({
+      handleRequest: (_store, _command, _args, signal) => {
+        if (signal) signals.push(signal)
+        return pending()
+      },
+      handleTargetCommand: pending
+    })
+    try {
+      const { socket } = openBridge()
+      void socket.request('1')
+      void socket.request('2')
+      expect(signals.map((signal) => signal.aborted)).toEqual([false, false])
+
+      socket.closed()
+
+      expect(signals.map((signal) => signal.aborted)).toEqual([true, true])
+    } finally {
+      handlers.mockRestore()
+    }
   })
 })

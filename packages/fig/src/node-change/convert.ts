@@ -24,6 +24,7 @@ import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibraryLayerId,
   extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
@@ -788,6 +789,7 @@ export function nodeChangeToProps(
     status: extractNodeStatus(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
+    libraryLayerId: extractLibraryLayerId(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
@@ -1329,8 +1331,8 @@ function extractFigmaSymbolMetadata(
   }
 }
 
-function extractSymbolId(nc: NodeChange): string {
+function extractSymbolId(nc: NodeChange): string | null {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
-  if (!sd?.symbolID) return ''
+  if (!sd?.symbolID) return null
   return guidToString(sd.symbolID)
 }

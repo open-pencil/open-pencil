@@ -80,6 +80,30 @@ describe('font lifecycle', () => {
     expect(manager.isNodeBlocked(graph, 'second')).toBe(false)
   })
 
+  test('reports the nodes whose last block ended, for the canvas to draw them again', () => {
+    const manager = new FontManager()
+    const graph = new SceneGraph()
+    const other = new SceneGraph()
+    const reports: Array<[SceneGraph, readonly string[]]> = []
+    const stop = manager.onNodesUnblocked((from, nodeIds) => reports.push([from, nodeIds]))
+    manager.blockNodesUntilFontsResolve(graph, ['first', 'second'])
+    manager.blockNodesUntilFontsResolve(graph, ['second'])
+    manager.unblockNodes(other, ['first'])
+    manager.unblockNodes(graph, ['first', 'second', 'never-blocked'])
+    // Another preparation still holds the second.
+    expect(reports).toEqual([[graph, ['first']]])
+    manager.unblockNodes(graph, ['second'])
+    manager.unblockNodes(graph, ['second'])
+    expect(reports).toEqual([
+      [graph, ['first']],
+      [graph, ['second']]
+    ])
+    stop()
+    manager.blockNodesUntilFontsResolve(graph, ['first'])
+    manager.unblockNodes(graph, ['first'])
+    expect(reports).toHaveLength(2)
+  })
+
   test('rejects a text picture observed before the font generation changed', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {

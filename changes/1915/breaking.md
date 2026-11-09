@@ -1,0 +1,1 @@
+- `IconPath` from `@open-pencil/core/icons` carries `fills`, `strokes`, and `tint` (the paints drawn in the icon's color) in place of `fill`, `fillOpacity`, `stroke`, `strokeWidth`, `strokeCap`, and `strokeJoin` strings; providers that build icon paths for a path filled in the icon's color can use `tintedIconPath`.

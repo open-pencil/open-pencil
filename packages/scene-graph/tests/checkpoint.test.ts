@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { captureTouchedCheckpoint } from '@open-pencil/scene-graph/checkpoint'
+import {
+  captureGraphCheckpoint,
+  captureTouchedCheckpoint
+} from '@open-pencil/scene-graph/checkpoint'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -144,5 +147,21 @@ describe('touched checkpoint', () => {
     checkpoint.restore()
     expect(frame.x).toBe(10)
     expect(graph.getAbsolutePosition(rect.id).x).toBe(15)
+  })
+})
+
+describe('graph checkpoint', () => {
+  test('restores which layers are connectors', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const kept = graph.createNode('CONNECTOR', page)
+    const checkpoint = captureGraphCheckpoint(graph)
+    const added = graph.createNode('CONNECTOR', page)
+    graph.deleteNode(kept.id)
+
+    checkpoint.restore()
+
+    expect([...graph.connectorIds]).toEqual([kept.id])
+    expect(graph.connectorIds.has(added.id)).toBe(false)
   })
 })

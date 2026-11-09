@@ -1,0 +1,1 @@
+- Cloud no longer looks people up by email or adds documents to someone's files without an accepted invitation, caps invitations at 100 sent and 5 received per address a day, stops share links of banned people, ends a document maker's access once they leave its workspace, and asks for the desktop sign-in code to be typed before approving.

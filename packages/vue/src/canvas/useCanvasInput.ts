@@ -82,6 +82,8 @@ export function useCanvasInput(
 ) {
   const drag = ref<DragState | null>(null)
   const profile = () => resolveEditorProfile(editor.state)
+  /** Whether layers may change: not in a read-only document, nor while the host keeps them. */
+  const editsLayers = () => profile().layerEdits === 'all'
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
   // layers move, resize, or rotate.
   watch(
@@ -151,11 +153,11 @@ export function useCanvasInput(
 
   // Handles that edit, which a read-only document does not offer.
   function autoLayoutHoverAt(cx: number, cy: number, mode: typeof editor.state.measurementMode) {
-    return mode === 'off' && profile().edits ? resolveAutoLayoutHover(cx, cy, editor) : null
+    return mode === 'off' && editsLayers() ? resolveAutoLayoutHover(cx, cy, editor) : null
   }
 
   function shapeHandleHoverAt(sx: number, sy: number, altKey: boolean) {
-    return profile().edits ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
+    return editsLayers() ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -232,7 +234,7 @@ export function useCanvasInput(
    */
   function onMultiClickDown(e: MouseEvent, clickCount: number) {
     const { cx, cy } = getCoords(e)
-    if (clickCount === 2 && profile().edits && valueEdit.start(cx, cy)) {
+    if (clickCount === 2 && editsLayers() && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
@@ -246,7 +248,7 @@ export function useCanvasInput(
   }
 
   function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
-    const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
+    const guideCursor = editsLayers() ? guideInput.updateHover(sx, sy) : null
     cursorOverride.value =
       guideCursor ??
       updateHoverCursor(
@@ -288,7 +290,7 @@ export function useCanvasInput(
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
     // Guides belong to the document, so a read-only one neither moves nor gains them.
-    const guidesEditable = e.button === 0 && profile().edits
+    const guidesEditable = e.button === 0 && editsLayers()
     if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
@@ -458,11 +460,9 @@ export function useCanvasInput(
     } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'resize-selection') commitSelectionResize(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState
-      if (penState?.pendingClose) {
-        editor.penCommit(true)
-      }
+      // Cleared first: a host that refuses the release cancels the gesture, which drops the drag.
       drag.value = null
+      editor.penRelease()
       return
     } else if (d.type === 'pencil-drag') finishPencilDrag(editor)
     else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
@@ -563,7 +563,8 @@ export function useCanvasInput(
     if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    drag.value.keepParents = held
+    // Where layers only move, they stay in their parents whatever the key.
+    drag.value.keepParents = held || profile().layerEdits === 'move'
     if (held) editor.setDropTarget(null)
   }
   useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
@@ -595,6 +596,9 @@ export function useCanvasInput(
     { capture: true }
   )
 
+  // A host that refused the gesture in progress (`cancelGesture`): the drag is undone as Escape
+  // undoes it, its preview put back.
+  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', cancelPointerInteraction)
   const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
     if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
       cancelPointerInteraction()
@@ -605,11 +609,17 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
   // A document that turns read-only mid-gesture drops the gesture and any open inline edit.
-  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
-    if (!readOnly) return
+  /** Abandons the gestures that change layers once layers may no longer change. */
+  function cancelLayerEdits() {
     valueEdit.cancel()
     canvasLabelEdit.cancel()
     cancelPointerInteraction()
+  }
+  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
+    if (readOnly) cancelLayerEdits()
+  })
+  const stopRestrictionsListener = editor.onEditorEvent('document:restrictions-changed', () => {
+    if (!editsLayers()) cancelLayerEdits()
   })
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
@@ -627,9 +637,11 @@ export function useCanvasInput(
       })
   )
   onScopeDispose(() => {
+    stopGestureListener()
     stopRotationListener()
     stopToolListener()
     stopReadOnlyListener()
+    stopRestrictionsListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
     // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.

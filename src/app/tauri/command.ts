@@ -8,7 +8,7 @@
  * `.cmd` directly fails with ENOENT. Routing through `cmd /c` lets the shell
  * resolve the shim via PATHEXT.
  *
- * `command` is the name of a shell scope entry in desktop/capabilities/default.json, and
+ * `command` is the name of a shell scope entry in desktop/capabilities/host-processes.json, and
  * each scope entry pins the whole command line. On Windows the entry for `name` is
  * `cmd-<name>`, which runs exactly `cmd /c <name> <args>`: a scope that let `cmd` take any
  * arguments would let the webview run any command.

@@ -14,6 +14,7 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
+import { sharedStyleLayers } from '@open-pencil/scene-graph/shared-styles'
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { variableAlias } from '../variable/bindings'
@@ -55,10 +56,9 @@ export function styleReferenceGuid(
   id: string
 ): GUID {
   if (!context.styleNodeIds) {
-    const styleNodeIds = new Map<string, string>()
-    for (const node of context.graph.getAllNodes())
-      if (node.sharedStyleType !== null && node.source.id) styleNodeIds.set(node.source.id, node.id)
-    context.styleNodeIds = styleNodeIds
+    context.styleNodeIds = new Map(
+      [...sharedStyleLayers(context.graph)].map(([id, node]) => [id, node.id])
+    )
   }
   const styleNodeId = context.styleNodeIds.get(id)
   const written = styleNodeId ? context.nodeIdToGuid?.get(styleNodeId) : undefined

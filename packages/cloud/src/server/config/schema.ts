@@ -136,11 +136,11 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(0)),
     30 * 24 * 60 * 60_000
   ),
-  /** The AI service editors reach with tokens this server signs; see `src/contract/ai.ts`. */
-  aiEndpoint: v.optional(httpURLSchema),
-  /** The PKCS #8 PEM of the P-256 key that signs AI service tokens. */
-  aiSigningKey: optionalTextSchema,
-  aiTokenLifetimeSeconds: v.optional(
+  /** The OpenPencil services editors reach with tokens this server signs; see `src/contract/services.ts`. */
+  servicesEndpoint: v.optional(httpURLSchema),
+  /** The PKCS #8 PEM of the P-256 key that signs service tokens. */
+  servicesSigningKey: optionalTextSchema,
+  servicesTokenLifetimeSeconds: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(60), v.maxValue(60 * 60)),
     10 * 60
   ),
@@ -189,6 +189,9 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
   if (config.deploymentAdminMFARequired && !config.totpEnabled && !config.passkeysEnabled) {
     throw new CloudConfigError('Deployment administrator MFA requires TOTP or passkeys')
   }
+  if (config.deployment === 'official' && !config.deploymentAdminMFARequired) {
+    throw new CloudConfigError('An official deployment requires MFA for deployment administrators')
+  }
   if (config.recoveryCodesEnabled && !config.totpEnabled) {
     throw new CloudConfigError('MFA recovery codes require TOTP')
   }
@@ -230,7 +233,7 @@ function validateEmailConfig(config: CloudServerConfig): void {
 }
 
 function validateServiceConfig(config: CloudServerConfig): void {
-  requireTogether(config, 'AI service', ['aiEndpoint', 'aiSigningKey'])
+  requireTogether(config, 'Services', ['servicesEndpoint', 'servicesSigningKey'])
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(
       'The internal API writes database entitlements, which static entitlements would hide'
@@ -238,10 +241,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
   }
   if (
     config.deployment === 'official' &&
-    config.aiEndpoint &&
-    new URL(config.aiEndpoint).protocol !== 'https:'
+    config.servicesEndpoint &&
+    new URL(config.servicesEndpoint).protocol !== 'https:'
   ) {
-    throw new CloudConfigError('Official AI service endpoint must use HTTPS')
+    throw new CloudConfigError('Official services endpoint must use HTTPS')
   }
 }
 
@@ -286,7 +289,7 @@ const DEFAULT_SECRET_NAMES = {
   smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
   smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
-  aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
+  servicesSigningKey: 'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY',
   internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN',
   posthogProjectAPIKey: 'POSTHOG_PROJECT_API_KEY'
 } as const
@@ -502,10 +505,10 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       v.strictObject({ source: v.literal('database') })
     ])
   ),
-  ai: v.optional(
+  services: v.optional(
     v.strictObject({
       endpoint: urlSchema,
-      signing_key: defaultReference(DEFAULT_SECRET_NAMES.aiSigningKey),
+      signing_key: defaultReference(DEFAULT_SECRET_NAMES.servicesSigningKey),
       token_lifetime_minutes: v.optional(
         v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(60)),
         10

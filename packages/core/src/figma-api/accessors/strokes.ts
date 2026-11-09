@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 
 import {
@@ -10,6 +10,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
 import {
   setDashPattern,
   setIndependentStrokeWeight,
@@ -23,10 +24,6 @@ type IndependentWeightField =
   | 'borderBottomWeight'
   | 'borderLeftWeight'
 
-function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
-  return target[internals.graph] as SceneGraph
-}
-
 function independentWeight(internals: NodeProxyInternals, field: IndependentWeightField) {
   return {
     get(this: ProxyThis): number {
@@ -34,7 +31,7 @@ function independentWeight(internals: NodeProxyInternals, field: IndependentWeig
     },
     set(this: ProxyThis, value: number) {
       assertProxyEditable(this, internals)
-      setIndependentStrokeWeight(graph(this, internals), nodeId(this, internals), field, value)
+      setIndependentStrokeWeight(graphOf(this), nodeId(this, internals), field, value)
     }
   }
 }
@@ -51,7 +48,7 @@ export function installStrokeNodeProxyAccessors(
       },
       set(this: ProxyThis, value: number) {
         assertProxyEditable(strokeOwner(this, internals), internals)
-        setStrokeWeight(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
+        setStrokeWeight(graphOf(this), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeAlign: {
@@ -60,7 +57,7 @@ export function installStrokeNodeProxyAccessors(
       },
       set(this: ProxyThis, value: SceneNode['strokeAlign']) {
         assertProxyEditable(strokeOwner(this, internals), internals)
-        setStrokeAlign(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
+        setStrokeAlign(graphOf(this), raw(strokeOwner(this, internals), internals), value)
       }
     },
     dashPattern: {
@@ -69,7 +66,7 @@ export function installStrokeNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly number[]) {
         assertProxyEditable(strokeOwner(this, internals), internals)
-        setDashPattern(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
+        setDashPattern(graphOf(this), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeCap: {

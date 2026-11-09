@@ -5,10 +5,9 @@ import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { buildIconData } from '#core/icons/svg'
-
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import { buildIconData } from '#core/icons/artwork'
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
 const BODIES: Record<string, string> = {
@@ -29,7 +28,10 @@ const provider: IconProvider = {
       const parsed = parseIconName(name)
       const body = BODIES[name]
       if (parsed && body)
-        found.set(name, buildIconData({ body }, parsed.prefix, parsed.iconName, 24, 24, size))
+        found.set(
+          name,
+          buildIconData({ body, width: 24, height: 24 }, parsed.prefix, parsed.iconName, size)
+        )
     }
     return found
   }

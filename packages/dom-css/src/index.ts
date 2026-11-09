@@ -11,6 +11,11 @@ export {
 } from './import/html'
 export { compileTailwindCSS } from './import/tailwind'
 export {
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule
+} from './import/font-faces'
+export {
   jsxToDesignDocument,
   jsxToSceneGraph,
   tailwindJSXToDesignDocument,

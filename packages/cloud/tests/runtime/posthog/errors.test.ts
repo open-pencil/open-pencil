@@ -1,7 +1,7 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 import { gunzipSync } from 'node:zlib'
 
-import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { parseCloudServerConfig } from '#cloud/server'
 import * as v from 'valibot'
 
@@ -31,12 +31,12 @@ function sentJSON(body: unknown): unknown {
 
 describe('PostHog error reporter', () => {
   test('is not created without error tracking', () => {
-    expect(createPostHogErrorReporter(config(), 'node')).toBeUndefined()
+    expect(createCloudErrorReporter(config(), 'node')).toBeUndefined()
   })
 
   test('sends an anonymous exception to the configured host as it is caught', async () => {
     const sent: { url: string; body: unknown }[] = []
-    const report = createPostHogErrorReporter(
+    const report = createCloudErrorReporter(
       config({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' }),
       'cloudflare',
       {
@@ -78,7 +78,7 @@ describe('PostHog error reporter', () => {
   test('logs a report PostHog refuses', async () => {
     const logged = spyOn(console, 'error').mockImplementation(() => undefined)
     try {
-      const report = createPostHogErrorReporter(
+      const report = createCloudErrorReporter(
         config({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_x' }),
         'node',
         {

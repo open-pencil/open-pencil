@@ -27,3 +27,4 @@ export {
 } from './font/glyphs'
 export { layerTextStyleChanges, shownTextStyle } from './character-style'
 export { markdownText, type MarkdownBase, type MarkdownText } from './markdown'
+export { installTextInkMeasurer, withTextInkMeasurer, type TextInkMeasurer } from './ink'

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, userEvent, within } from 'storybook/test'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
 import IconMailCheck from '~icons/lucide/mail-check'
@@ -71,9 +72,21 @@ export const TwoStepRecoveryCode = story(
 )
 export const ForgotPassword = story(`<PortalResetPassword :host="host" step="request" />`)
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
-export const ApproveDesktopSignIn = story(
-  `<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`
-)
+export const ApproveDesktopSignIn: Story = {
+  ...story(`<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`),
+  /** Approve waits for the code the app shows; another one, or none, leaves it off. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Enter the code the app shows' })
+    const approve = canvas.getByRole('button', { name: 'Approve' })
+    await expect(approve).toBeDisabled()
+    await userEvent.type(field, 'ABCD-EFGH')
+    await expect(approve).toBeDisabled()
+    await userEvent.clear(field)
+    await userEvent.type(field, 'wdjb mjht')
+    await expect(approve).toBeEnabled()
+  }
+}
 export const DesktopSignInApproved = story(`
   <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the OpenPencil app; it has already picked this up. You can close this tab.">
     <template #icon><IconCheck class="size-5" /></template>

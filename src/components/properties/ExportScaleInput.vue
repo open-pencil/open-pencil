@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { onDeactivated, ref, watch } from 'vue'
@@ -11,6 +10,7 @@ import { onDeactivated, ref, watch } from 'vue'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useInputUI } from '@/components/ui/input/input'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -83,7 +83,7 @@ function isActive(scale: number) {
         @keydown.enter.prevent="inputRef?.blur()"
         @keydown.escape.prevent="((text = `${modelValue}x`), inputRef?.blur())"
       />
-      <DropdownMenuRoot v-model:open="open">
+      <AppDropdownMenuRoot v-model:open="open">
         <DropdownMenuTrigger as-child>
           <button
             type="button"
@@ -108,7 +108,7 @@ function isActive(scale: number) {
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </div>
   </Tip>
 </template>

@@ -7,13 +7,15 @@ import {
 
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { ExportImageOptions } from '#core/figma-api/types'
+import type { RasterCodec } from '#core/io/formats/raster/pixels'
 import { findPageId } from '#core/io/subgraph'
 
 import type { ExportRequest } from './settings'
 
-/** What a host lends an export: its renderer, for raster formats. */
+/** What a host lends an export: its renderer, for raster formats, and its image codec. */
 export interface ExportHost {
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
+  rasterCodec?: RasterCodec
 }
 
 /** A layer or page as `exportAsync` writes it: bytes, an SVG string for `SVG_STRING`. */
@@ -42,13 +44,13 @@ export async function exportLayer(
         layerIds: request.svgIdAttribute,
         useAbsoluteBounds: request.useAbsoluteBounds
       })
-      if (svg === null) throw nothingToExport()
+      if (svg === null) throw noVisibleLayers()
       return request.format === 'SVG' ? new TextEncoder().encode(svg) : svg
     }
     case 'PDF': {
       const { exportPDFDocument } = await import('#core/io/formats/pdf/document')
       const pdf = await exportPDFDocument(graph, [{ pageId, nodeIds: ids }], { embedFonts: false })
-      if (!pdf || pdf.data.length === 0) throw nothingToExport()
+      if (!pdf || pdf.data.length === 0) throw noVisibleLayers()
       return pdf.data
     }
     case 'JSON_REST_V1':
@@ -71,7 +73,7 @@ async function exportImage(
   }
   const { exportBounds, oversizedRaster, rasterSize } = await import('#core/io/formats/raster')
   const bounds = exportBounds(graph, ids, request.useAbsoluteBounds)
-  if (!bounds) throw nothingToExport()
+  if (!bounds) return blankPixel(host, request.format)
   const constraint = request.constraint
   let scale = 1
   // Figma reads a scale of 0 as none.
@@ -96,7 +98,24 @@ async function exportImage(
   return data
 }
 
-/** Figma exports a hidden or empty layer as a blank pixel; OpenPencil has nothing to write. */
+/**
+ * What Figma exports a layer that draws nothing as, whatever the scale: one transparent pixel,
+ * black in a JPEG, which has no alpha (Figma desktop 126).
+ */
+function blankPixel(host: ExportHost, format: 'PNG' | 'JPG'): Uint8Array {
+  const pixel = { width: 1, height: 1, data: new Uint8Array(4) }
+  const encoded =
+    format === 'PNG' ? host.rasterCodec?.encodePNG(pixel) : host.rasterCodec?.encodeJPG(pixel)
+  if (!encoded) throw nothingToExport()
+  return encoded
+}
+
+/** A host with no image codec has no blank pixel to write for a layer that draws nothing. */
 function nothingToExport(): Error {
   return new Error('in exportAsync: The layer draws nothing to export')
+}
+
+/** Figma's words for a layer an SVG or PDF has nothing of (Figma desktop 126). */
+function noVisibleLayers(): Error {
+  return new Error('Failed to export node. This node may not have any visible layers.')
 }

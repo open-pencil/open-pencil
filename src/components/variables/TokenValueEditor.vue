@@ -247,7 +247,9 @@ const picker = computed(() => ({
   items: pickerItems.value,
   selected: alias.value,
   state: alias.value ? ('bound' as const) : ('unbound' as const),
-  triggerLabel: variables.value.useVariable,
+  // One of several modes names its mode, as the inspector's own picker does.
+  triggerLabel:
+    heading === 'mode' ? `${label}: ${variables.value.useVariable}` : variables.value.useVariable,
   searchPlaceholder: variables.value.searchVariables,
   emptyLabel: variables.value.noMatchingVariables,
   detachLabel: variables.value.detachVariable,

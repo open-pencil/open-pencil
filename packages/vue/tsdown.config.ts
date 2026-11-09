@@ -104,6 +104,7 @@ export default defineConfig({
     'editor/commands/index': './src/editor/commands/index.ts',
     'editor/events/index': './src/editor/events/index.ts',
     'editor/inline-rename/index': './src/editor/inline-rename/index.ts',
+    'editor/keyboard/index': './src/editor/keyboard/index.ts',
     'editor/menu-model/index': './src/editor/menu-model/index.ts',
     'editor/selection-capabilities/index': './src/editor/selection-capabilities/index.ts',
     'editor/selection-state/index': './src/editor/selection-state/index.ts',

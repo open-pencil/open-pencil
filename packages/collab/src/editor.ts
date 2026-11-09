@@ -4,11 +4,14 @@ import type {
   SceneGraph,
   SceneGraphEvents
 } from '@open-pencil/scene-graph'
+import type { HistoryChange, UndoEntry } from '@open-pencil/scene-graph/undo'
 import type { BindingScope } from '@open-pencil/scene-graph/variables'
 
 /** The editor events a room follows to send this peer's edits. */
 export interface CollabEditorEvents extends Omit<SceneGraphEvents, 'node:previewUpdated'> {
-  'history:changed': () => void
+  'history:changed': (change: HistoryChange, step?: UndoEntry) => void
+  /** An edit or batch ended without a step, rolled back or changing nothing. */
+  'edit:discarded': () => void
   'document:libraries-changed': () => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:kind-changed': (kind: DocumentKind) => void

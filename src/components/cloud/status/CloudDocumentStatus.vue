@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
@@ -7,6 +7,7 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import type { CloudSyncState } from '@/components/home/cloud/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import cloudStatusTheme from '@/theme/cloud/status'
@@ -83,7 +84,7 @@ const summary = computed(() => {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popoverOpen">
+  <AppPopoverRoot v-model:open="popoverOpen">
     <Tip :label="summary.label" as-child>
       <PopoverTrigger
         :class="ui.trigger()"
@@ -170,5 +171,5 @@ const summary = computed(() => {
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

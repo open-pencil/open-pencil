@@ -3,7 +3,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { UpdateNodeWithUndo } from '#core/editor/shapes/pen/draw'
-import type { NodeEditHandles, VectorHandleField } from '#core/vector/handle-selection'
+import type { ShownHandles, VectorHandleField } from '#core/vector/handle-selection'
 
 /** How a host opens a path for editing. */
 export interface NodeEditOptions {
@@ -14,8 +14,11 @@ export interface NodeEditOptions {
    * game whose canvas is the one path being shaped keeps it open.
    */
   keepOpen?: boolean
-  /** Which points show their handles; by default those near the selection, as in Figma. */
-  handles?: NodeEditHandles
+  /**
+   * Which points show their handles; by default those near the selection, as in Figma. Which
+   * handles may move is `pathEdits`' to say.
+   */
+  showHandles?: ShownHandles
 }
 
 /** How the host leaves vector edit mode. */
@@ -36,11 +39,8 @@ export interface NodeEditState extends NodeEditOverlayState {
   origBounds: Rect
   /** Session geometry as entered (page-absolute) — commit is a no-op when unchanged */
   origAbsNetwork: VectorNetwork
-  /** Session-local undo/redo stacks of geometry snapshots (Cmd+Z inside edit mode) */
-  history: VectorNetwork[]
-  future: VectorNetwork[]
-  /** Geometry at the last undo/redo restore; divergence invalidates `future` */
-  futureBaseline?: VectorNetwork | null
+  /** The path as the change in progress started, which cancelling the change puts back. */
+  changeStart: VectorNetwork | null
   /** Segments selected as segments, apart from their endpoints, as in Figma */
   selectedSegmentIndices: Set<number>
   draggedHandleInfo: {

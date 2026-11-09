@@ -45,7 +45,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'save_file',
       description:
-        'Save the current document to disk. An optional path must stay inside the configured MCP root.',
+        'Save the current document to a .fig file, or a .jam file for a board. An optional path must stay inside the configured MCP root.',
       effect: 'write',
       availability: 'default',
       capabilities: ['document:read', 'filesystem:write'],

@@ -134,7 +134,6 @@ export function createVariantActions(ctx: EditorContext) {
 
     const options = {
       label: 'Switch variant',
-      layerId: instanceId,
       push: false,
       onRecorded: pushSwitchStep
     }

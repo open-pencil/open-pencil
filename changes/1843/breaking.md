@@ -1,0 +1,5 @@
+- Cloud's AI service is now OpenPencil services, which will also cover image generation and search, all paid from the same credits. To upgrade:
+  - In the Cloud TOML, rename `[ai]` to `[services]` and `[entitlements.ai]` to `[entitlements.services]`, and rename the `OPENPENCIL_CLOUD_AI_SIGNING_KEY` secret to `OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY`.
+  - Anything that writes entitlements over the internal API sends `values.services`; `values.ai` is ignored.
+  - A service now accepts tokens with the audience `openpencil-services`, and editors request them from `POST /api/services/token`. Upgrade the services server together with Cloud: an older one refuses the new tokens.
+  - Editors from earlier betas look for the old discovery field and lose the OpenPencil AI provider against an upgraded Cloud until they update.

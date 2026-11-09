@@ -54,6 +54,23 @@ describe('canvas pane registry', () => {
     expect(state.panX).toBe(0)
   })
 
+  test('reports the active pane from the editor state and others from their own records', () => {
+    const state = createDefaultEditorState('page')
+    const registry = createCanvasPaneRegistry(state)
+    const first = registry.getActivePane()
+    const second = registry.splitPane(first.id, 'horizontal')
+    if (!second) throw new Error('Expected a second pane')
+
+    state.zoom = 2
+    expect(registry.getPaneView(second.id)?.zoom).toBe(2)
+    expect(registry.getPaneView(first.id)?.zoom).toBe(1)
+
+    registry.setActivePane(first.id)
+    state.zoom = 0.5
+    expect(registry.getPaneView(first.id)?.zoom).toBe(0.5)
+    expect(registry.getPaneView(second.id)?.zoom).toBe(2)
+  })
+
   test('refuses the last close and enforces the pane cap', () => {
     const registry = createCanvasPaneRegistry(createDefaultEditorState('page'))
     expect(registry.closePane(registry.activePaneId.value)).toBe(false)

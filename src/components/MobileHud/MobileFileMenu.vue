@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 
@@ -11,6 +10,7 @@ import { useMenuMessages } from '@open-pencil/vue/i18n'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -24,7 +24,7 @@ const itemCls = menuItem({
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <AppDropdownMenuRoot>
     <DropdownMenuTrigger as-child>
       <HudButton icon-only :label="menuMessages.file">
         <icon-lucide-menu class="size-3.5" />
@@ -45,5 +45,5 @@ const itemCls = menuItem({
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>
