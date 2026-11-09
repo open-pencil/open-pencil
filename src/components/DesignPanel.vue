@@ -230,9 +230,6 @@ const { panels } = useI18n()
       <!-- Presets size artboards; an icon is a glyph. -->
       <FramePresetSelect v-if="node.type === 'FRAME' && !readIcon(node)" />
 
-      <LivePageSection />
-      <LivePageDriftSection />
-
       <IconSection />
       <StickySection />
       <ShapeWithTextSection />
@@ -254,6 +251,11 @@ const { panels } = useI18n()
         <SelectionColorsSection />
       </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
+
+      <!-- A page is a property of the frame's content, so it follows the frame's own geometry and
+           styling rather than pushing them off the panel. -->
+      <LivePageSection />
+      <LivePageDriftSection />
 
       <ExportSection />
     </div>
