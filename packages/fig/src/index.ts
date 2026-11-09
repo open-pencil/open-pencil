@@ -42,6 +42,7 @@ export {
   figComponentUsePages,
   figRecordPages,
   patchFigArchive,
+  patchFigArchiveStream,
   patchFigRecords,
   type FigArchiveRecordInfo,
   type FigPatchedArchiveInput,
