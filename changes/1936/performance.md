@@ -1,0 +1,4 @@
+- Panning with the middle mouse button or Space follows the pointer within the navigation budget and settles to idle after the gesture, so tiles for the view left behind are not rendered.
+- Large documents leave out optional background tiles estimated to take longer than an idle frame, keeping the visible tiles and the coarser pyramid.
+- Image previews decode at the size they are shown, so opening a large photo no longer decodes every pixel for a thumbnail.
+- Dragging a marquee draws the selection box without rebuilding the selection and property panel on every pointer move; the selection applies on release, and editing one of several selected layers rebuilds only that layer's panel projection.
