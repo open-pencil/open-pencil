@@ -9,7 +9,7 @@ import {
   populateAllFigPages,
   populateFigPage
 } from '@open-pencil/core/io/formats/fig'
-import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer, writeFigArchive } from '@open-pencil/fig'
 import {
   initCodec,
   getCompiledSchema,
@@ -154,13 +154,13 @@ async function legacyImageArchive(): Promise<Uint8Array> {
     ackID: 0,
     nodeChanges: parsed.nodeChanges
   })
-  return compressFigDataSync(
-    deflateSync(getSchemaBytes()),
-    kiwi,
-    expectDefined(parsed.thumbnailPNG, 'thumbnail'),
-    parsed.metaJSON ?? '{}',
-    [{ name: `images/${LEGACY_NAME}`, data: PHOTO }]
-  )
+  return writeFigArchive({
+    schemaDeflated: deflateSync(getSchemaBytes()),
+    kiwiData: kiwi,
+    thumbnailPNG: expectDefined(parsed.thumbnailPNG, 'thumbnail'),
+    metaJSON: parsed.metaJSON ?? '{}',
+    images: [{ name: `images/${LEGACY_NAME}`, data: PHOTO }]
+  })
 }
 
 async function fixtureBytes(): Promise<Uint8Array> {

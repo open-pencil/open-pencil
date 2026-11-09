@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { Editor, EditorState } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
@@ -69,14 +69,18 @@ export function createDocumentSourceActions({
     return saved
   }
 
-  function buildFigFile() {
+  function figExportOptions() {
     const renderer = getRenderer()
-    return exportFigFile(editor.graph, {
+    return {
       ck: renderer?.ck,
       renderer: renderer ?? undefined,
       pageId: state.currentPageId,
       documentName: state.documentName
-    })
+    }
+  }
+
+  function buildFigStream() {
+    return exportFigFileStream(editor.graph, figExportOptions())
   }
 
   /**
@@ -116,7 +120,7 @@ export function createDocumentSourceActions({
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     version: changes.capture,
-    buildFigFile,
+    buildFigStream,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -146,8 +150,7 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
-      const data = await buildFigFile()
-      if (await writeFile(data, version)) changes.markSaved(revision)
+      if (await writeFile(await buildFigStream(), version)) changes.markSaved(revision)
     }
   })
 
@@ -263,7 +266,7 @@ export function createDocumentSourceActions({
    */
   async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
     const version = changes.capture()
-    await write(await buildFigFile())
+    await write(await exportFigFile(editor.graph, figExportOptions()))
     await recovery.markProtectedVersion(version)
     return true
   }

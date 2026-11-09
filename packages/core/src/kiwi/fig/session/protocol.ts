@@ -54,6 +54,8 @@ export interface FigSessionPatchArchiveRequest {
   requestId: string
   patch: FigRecordPatch
   input: FigPatchedArchiveInput
+  /** Where the patched archive streams, transferred: `receiveStream` reads it there. */
+  port: MessagePort
 }
 
 /** The graph diverged from the worker's: stop loading pages there, keep the archive. */
@@ -106,6 +108,7 @@ export type FigSessionResponse =
   | { type: 'archive-info-result'; requestId: string; info: FigArchiveRecordInfo }
   | { type: 'component-pages-result'; requestId: string; pageIds: string[] }
   | { type: 'record-pages-result'; requestId: string; pageIds: (string | null)[] }
-  | { type: 'patch-archive-result'; requestId: string; bytes: Uint8Array }
+  /** The archive is patched and streaming on the request's port. */
+  | { type: 'patch-archive-result'; requestId: string }
   | { type: 'archive-error'; requestId: string; error: string }
   | { type: 'disposed' }

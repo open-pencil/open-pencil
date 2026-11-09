@@ -1,10 +1,10 @@
 export { readFigFile, parseFigFile, type ParseFigFileOptions } from './read'
 export {
   exportFigFile,
-  compressFigData,
-  setFigArchiveAssembler,
-  type FigArchiveAssembler,
-  type FigArchiveParts,
+  exportFigFileStream,
+  setFigCanvasCompressor,
+  type FigCanvasCompressor,
+  type FigCanvasParts,
   type FigFileExtrasOptions
 } from './write'
 export { figThumbnailPageId } from './thumbnail-page'
