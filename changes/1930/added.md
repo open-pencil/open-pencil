@@ -1,1 +1,1 @@
-- Hosts decide where the person's moves put layers with `editor.setMovePolicy`, which sees each drag while it previews as well as the move it lands, and nudges and position edits too (#1930).
+- Hosts decide where the person's moves put layers with `editor.setMovePolicy`, which sees each drag while it previews as well as the move it lands, nudges, and X and Y typed in the position panel (#1930).

@@ -15,7 +15,7 @@ export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import type { Editor } from '@open-pencil/core'
 
 import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
-import { previewMove, writeMove } from '#vue/shared/input/move/policy'
+import { landingOf, previewMove } from '#vue/shared/input/move/policy'
 import { applyMoveSnap } from '#vue/shared/input/move/snap'
 import type { DragMove } from '#vue/shared/input/types'
 
@@ -216,7 +216,7 @@ export function handleMoveMove(
       const previewX = Math.round(orig.x + dx)
       const previewY = Math.round(orig.y + dy)
       firstApplied ??= { dx: previewX - orig.x, dy: previewY - orig.y }
-      previewMove(editor, id, { x: previewX, y: previewY })
+      previewMove(editor, id, { x: previewX, y: previewY }, orig)
     }
     if (firstApplied) {
       d.appliedDx = firstApplied.dx
@@ -235,7 +235,7 @@ export function handleMoveMove(
   d.appliedDy = dy
 
   for (const [id, orig] of d.originals) {
-    previewMove(editor, id, { x: orig.x + dx, y: orig.y + dy })
+    previewMove(editor, id, { x: orig.x + dx, y: orig.y + dy }, orig)
   }
 
   editor.setDropTarget(dropTarget?.id ?? null)
@@ -269,9 +269,16 @@ function isLeavingAutoLayout(d: DragMove, id: string, editor: Editor) {
 
 function applyFinalPositions(d: DragMove, editor: Editor) {
   for (const [id, orig] of d.originals) {
-    const position = { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy }
+    // Where the host's move policy puts it; a refused landing leaves it where it was.
+    const position = landingOf(editor, id, {
+      x: orig.x + d.appliedDx,
+      y: orig.y + d.appliedDy
+    }) ?? {
+      x: orig.x,
+      y: orig.y
+    }
     // Laying out now would snap the layer back into its slot before it leaves the frame.
-    if (isLeavingAutoLayout(d, id, editor)) writeMove(editor, id, position)
+    if (isLeavingAutoLayout(d, id, editor)) editor.graph.updateNode(id, position)
     else editor.updateNode(id, position)
   }
 }
@@ -338,11 +345,26 @@ export function cancelMove(d: DragMove, editor: Editor) {
   editor.requestRender()
 }
 
+/** Whether the host's move policy refuses where every dragged layer would land. */
+function landingRefused(d: DragMove, editor: Editor) {
+  return [...d.originals].every(
+    ([id, orig]) => !landingOf(editor, id, { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy })
+  )
+}
+
 export function handleMoveUp(d: DragMove, editor: Editor) {
   if (!d.dragStarted) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
+    return
+  }
+
+  // A move the host refuses changes nothing: not where the layers are, their parents, or order.
+  if (landingRefused(d, editor)) {
+    editor.setLayoutInsertIndicator(null)
+    editor.setSnapGuides([])
+    cancelMove(d, editor)
     return
   }
 

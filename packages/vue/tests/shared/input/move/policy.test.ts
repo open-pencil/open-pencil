@@ -31,3 +31,40 @@ test('a drag follows the move policy in its preview and as it lands', () => {
   editor.undoAction()
   expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 0, y: 100 })
 })
+
+test('a landing the host refuses changes nothing, not even the parent the drop was over', () => {
+  const harness = createMoveHarness()
+  editor = harness.editor
+  editor.state.snappingPreferences = { geometry: false, objects: false, pixelGrid: false }
+  const frame = harness.node('FRAME', harness.page, { x: 200, y: 0, width: 200, height: 200 })
+  const piece = harness.node('RECTANGLE', harness.page, { x: 0, y: 0 })
+  // Previews follow the pointer; the landing is refused.
+  editor.setMovePolicy(({ to, preview }) => (preview ? to : null))
+
+  editor.select([piece.id])
+  const drag = createSelectionMoveDrag(20, 20, 20, 20, editor, false)
+  if (drag.type !== 'move') throw new Error('Expected a move drag')
+  handleMoveMove(drag, 260, 60, 260, 60, editor)
+  expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 240, y: 40 })
+  handleMoveUp(drag, editor)
+  expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 0, y: 0, parentId: harness.page })
+  expect(harness.childIds(frame.id)).toEqual([])
+  expect(editor.undo.canUndo).toBe(false)
+})
+
+test('a preview the host refuses shows the layer where the drag found it', () => {
+  const harness = createMoveHarness()
+  editor = harness.editor
+  editor.state.snappingPreferences = { geometry: false, objects: false, pixelGrid: false }
+  const piece = harness.node('RECTANGLE', harness.page, { x: 0, y: 0 })
+  // Moves up to x = 50 are allowed; past it, refused.
+  editor.setMovePolicy(({ to }) => ((to.x ?? 0) <= 50 ? to : null))
+
+  editor.select([piece.id])
+  const drag = createSelectionMoveDrag(20, 20, 20, 20, editor, false)
+  if (drag.type !== 'move') throw new Error('Expected a move drag')
+  handleMoveMove(drag, 50, 20, 50, 20, editor)
+  expect(editor.graph.getNode(piece.id)?.x).toBe(30)
+  handleMoveMove(drag, 120, 20, 120, 20, editor)
+  expect(editor.graph.getNode(piece.id)?.x).toBe(0)
+})

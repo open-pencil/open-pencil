@@ -47,9 +47,8 @@ export function createMovePolicy(undo: Pick<UndoManager, 'isReplaying'>) {
 
   /**
    * `changes` to `node` with its position as the policy decides it; every other field as it was.
-   * A position the policy refuses is left out, so the layer stays where it is. Only a move is
-   * decided: a change that also resizes or turns the layer, as a resize or a rotation lands,
-   * places it as that edit worked it out, and passes.
+   * A position the policy refuses is left out, so the layer stays where it is. Callers ask it for
+   * moves alone, where the person means to move a layer: a drag, a nudge, a typed X or Y.
    */
   function constrainMove<T extends Partial<SceneNode>>(
     node: SceneNode,
@@ -58,9 +57,6 @@ export function createMovePolicy(undo: Pick<UndoManager, 'isReplaying'>) {
   ): T {
     if (!policy || hostDepth > 0 || undo.isReplaying) return changes
     if (changes.x === undefined && changes.y === undefined) return changes
-    const resizesOrTurns =
-      changes.width !== undefined || changes.height !== undefined || changes.rotation !== undefined
-    if (resizesOrTurns) return changes
     const to: Partial<Vector> = {}
     if (changes.x !== undefined) to.x = changes.x
     if (changes.y !== undefined) to.y = changes.y

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor, type MoveChange } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 let editor: Editor
@@ -26,44 +27,57 @@ function setup() {
 }
 
 describe('a move policy', () => {
-  test('decides where nudges and position edits put a layer; other fields pass as they are', () => {
+  test('decides where nudges put a layer', () => {
     const { rect, seen } = setup()
     editor.nudgeSelected(-10, 10)
     editor.flushNudge()
     expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ x: 0, y: 0 })
-
-    editor.updateNode(rect.id, { x: 30, y: 25, opacity: 0.5 })
-    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ x: 30, y: 0, opacity: 0.5 })
-    editor.updateNodeWithUndo(rect.id, { y: 3, fills: [] })
-    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ x: 30, y: 0, fills: [] })
-    expect(seen.at(-1)).toMatchObject({ to: { y: 3 }, preview: false })
+    expect(seen.at(-1)).toMatchObject({ to: { x: -10, y: 10 }, preview: false })
   })
 
-  test('a resize or a rotation landing is not a move: it places the layer as it worked it out', () => {
-    const { rect, seen } = setup()
-    const asked = seen.length
-    // A top-edge resize lands with a new y and height together.
-    editor.updateNode(rect.id, { y: -20, height: 60 })
-    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ y: -20, height: 60 })
-    editor.updateNodeWithUndo(rect.id, { x: 12, y: 8, rotation: 30 })
-    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ x: 12, y: 8, rotation: 30 })
-    expect(seen).toHaveLength(asked)
+  test('decides the position of a move a front end asks about, and leaves its other fields', () => {
+    const { rect } = setup()
+    const node = getNodeOrThrow(editor.graph, rect.id)
+    expect(editor.constrainMove(node, { x: 30, y: 25, opacity: 0.5 })).toEqual({
+      x: 30,
+      y: 0,
+      opacity: 0.5
+    })
+    expect(editor.constrainMove<Partial<SceneNode>>(node, { x: -5 }, { preview: true })).toEqual({
+      x: 0,
+      y: 0
+    })
   })
 
-  test('a refused move leaves the layer where it is, and other fields still change', () => {
+  test('a refused move leaves the position out, and other fields stay', () => {
     const { rect } = setup()
     editor.setMovePolicy(() => null)
-    editor.updateNode(rect.id, { x: 30, opacity: 0.5 })
-    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ x: 0, opacity: 0.5 })
+    const node = getNodeOrThrow(editor.graph, rect.id)
+    expect(editor.constrainMove<Partial<SceneNode>>(node, { x: 30, opacity: 0.5 })).toEqual({
+      opacity: 0.5
+    })
+  })
+
+  test('leaves edits that are not moves, such as a resize landing, to their own call', () => {
+    const { rect, seen } = setup()
+    const asked = seen.length
+    // A top-edge resize lands its new y and height through updateNode.
+    editor.updateNode(rect.id, { y: -20, height: 60 })
+    expect(getNodeOrThrow(editor.graph, rect.id)).toMatchObject({ y: -20, height: 60 })
+    expect(seen).toHaveLength(asked)
   })
 
   test("leaves the host's own edits and undo alone", () => {
     const { rect } = setup()
-    editor.asHost(() => editor.updateNode(rect.id, { y: 50 }))
+    editor.asHost(() => {
+      editor.nudgeSelected(0, 50)
+      editor.flushNudge()
+    })
     expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(50)
 
     editor.setMovePolicy(null)
-    editor.updateNodeWithUndo(rect.id, { y: 70 })
+    editor.nudgeSelected(0, 20)
+    editor.flushNudge()
     editor.setMovePolicy(() => ({ y: 0 }))
     editor.undoAction()
     expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(50)
