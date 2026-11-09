@@ -177,6 +177,48 @@ describe('geometry writes after edits', () => {
     expect([frame.width, badge.x]).toEqual([132, 130])
   })
 
+  test('a badge placed after a label grows inside a nested Hug frame stays where it was put', () => {
+    const api = createAPI()
+    const outer = button(api)
+    const inner = api.createFrame()
+    inner.layoutMode = 'HORIZONTAL'
+    inner.layoutSizingHorizontal = 'HUG'
+    inner.layoutSizingVertical = 'HUG'
+    outer.appendChild(inner)
+    const label = api.createRectangle()
+    label.resize(20, 24)
+    inner.appendChild(label)
+    const badge = api.createFrame()
+    badge.resize(24, 24)
+    outer.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    badge.x = 100
+    void outer.width
+    // The inner frame and the button both hug the label's growth before the badge is placed.
+    label.resize(60, 24)
+    badge.x = 150
+    expect(badge.x).toBe(150)
+  })
+
+  test('edits in another top-level frame leave a layer’s placement lazy', () => {
+    const api = createAPI()
+    const other = hugRow(api)
+    const grown = api.createRectangle()
+    other.appendChild(grown)
+    const frame = button(api)
+    void frame.width
+    const badge = api.createFrame()
+    frame.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    void frame.width
+    grown.resize(300, 20)
+    badge.x = 50
+    // The badge's frame shares only the page with the edit, so nothing laid the other row out.
+    expect(graphOf(api).getNode(other.id)?.width).not.toBe(300)
+  })
+
   // Figma desktop, 2026-11-09: rescaling the laid-out button by 2 doubles it and its badge.
   test('rescaling a laid-out Hug button scales its badge once', () => {
     const api = createAPI()

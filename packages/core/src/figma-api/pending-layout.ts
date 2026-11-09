@@ -61,19 +61,25 @@ function followsFrameSize(node: SceneNode): boolean {
   return node.horizontalConstraint !== 'MIN' || node.verticalConstraint !== 'MIN'
 }
 
+/** The layer and the layers above it, up to but not including its page. */
+function layoutChain(graph: SceneGraph, id: string): string[] {
+  const chain: string[] = []
+  for (let node = graph.getNode(id); node && node.type !== 'CANVAS';) {
+    chain.push(node.id)
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  }
+  return chain
+}
+
 /**
- * Whether the recorded edits touched the layer or a layer above it. A changed layer touches its
- * parent too: a flow child that grows makes its Hug frame grow, which moves the frame's
- * constrained layers.
+ * Whether laying out the recorded edits could reach the layer: an edit sits in the same frame as
+ * the layer, at any depth, since a layer that grows makes every Hug frame around it grow. Edits
+ * in another top-level frame share only the page with it, and leave it where it is.
  */
 function editsReach(graph: SceneGraph, impact: SceneMutationImpact, node: SceneNode): boolean {
-  const touched = new Set([...impact.currentParentIds, ...impact.previousParentIds])
-  for (const id of impact.changedNodeIds) {
-    touched.add(id)
-    const parentId = graph.getNode(id)?.parentId
-    if (parentId) touched.add(parentId)
-  }
-  return graph.closest(node.id, (current) => touched.has(current.id)) !== undefined
+  const above = new Set(layoutChain(graph, node.id))
+  const edited = [...impact.changedNodeIds, ...impact.currentParentIds, ...impact.previousParentIds]
+  return edited.some((id) => layoutChain(graph, id).some((current) => above.has(current)))
 }
 
 /**
