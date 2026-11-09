@@ -17,4 +17,13 @@ describe('coding agent setup prompt', () => {
       'install it: `npm i -g @google/gemini-cli`'
     )
   })
+
+  test('tells Antigravity CLI to install from its script and to start with agy', () => {
+    const prompt = codingAgentSetupPrompt('antigravity')
+    expect(prompt).toContain(
+      'If `agy` is not on my PATH, install it: `curl -fsSL https://antigravity.google/cli/install.sh | bash`'
+    )
+    expect(prompt).toContain('which agy')
+    expect(prompt).toContain('run `agy` and choose a sign-in method')
+  })
 })

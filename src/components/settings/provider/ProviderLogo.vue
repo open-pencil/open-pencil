@@ -35,6 +35,7 @@ const LOGOS: Record<string, Component> = {
   'acp:claude-code': IconClaudeCode,
   'acp:codex': IconCodex,
   'acp:cursor': IconCursor,
+  'acp:antigravity': IconGeminiCLI,
   'acp:gemini-cli': IconGeminiCLI,
   'acp:grok-build': IconGrok,
   'harness:pi': IconBot

@@ -15,6 +15,7 @@
         },
         { "name": "codex-acp", "cmd": "codex-acp", "args": false },
         { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
+        { "name": "agy", "cmd": "agy", "args": ["acp"] },
         { "name": "cursor-agent", "cmd": "cursor-agent", "args": ["acp"] },
         { "name": "grok", "cmd": "grok", "args": ["agent", "stdio"] },
         {
@@ -51,6 +52,7 @@
         },
         { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
         { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
+        { "name": "cmd-agy", "cmd": "cmd", "args": ["/c", "agy", "acp"] },
         { "name": "cmd-cursor-agent", "cmd": "cmd", "args": ["/c", "cursor-agent", "acp"] },
         { "name": "cmd-grok", "cmd": "cmd", "args": ["/c", "grok", "agent", "stdio"] },
         {

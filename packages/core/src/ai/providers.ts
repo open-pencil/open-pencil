@@ -1,6 +1,6 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor' | 'grok-build'
+export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'antigravity' | 'cursor' | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -63,6 +63,16 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     args: ['--acp'],
     setupURL: 'https://geminicli.com/docs/get-started/installation/',
     installCommand: 'npm i -g @google/gemini-cli'
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity CLI',
+    command: 'agy',
+    args: ['acp'],
+    setupURL: 'https://antigravity.google',
+    installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+    signIn: { via: 'acp', method: 'oauth-personal' },
+    resumesSessions: true
   },
   {
     id: 'cursor',

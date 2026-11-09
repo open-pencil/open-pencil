@@ -40,7 +40,22 @@ Sign in with ChatGPT from guided setup, or with `codex login`; both use the same
 
 An older adapter from the `@zed-industries/codex-acp` package also installs a `codex-acp` program. It neither reports nor signs in to your account, so guided setup asks you to install the supported one and to remove the older one or put it later on your `PATH`.
 
+## Antigravity CLI
+
+The Antigravity CLI (`agy`) is Google's unified AI development platform that succeeds Gemini CLI. It natively speaks ACP via `agy acp`, so there is no separate adapter.
+
+Install it from [Antigravity](https://antigravity.google):
+
+```sh
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+```
+
+Run `agy` once in a terminal to authenticate. In guided setup, choose **Antigravity CLI**.
+
 ## Gemini CLI
+
+> [!NOTE]
+> Google has transitioned individual users from Gemini CLI to the Antigravity CLI (`agy`). If you use an individual tier, prefer Antigravity CLI above.
 
 ```sh
 npm install -g @google/gemini-cli
