@@ -24,6 +24,8 @@ type Answers = {
   status?: string
   branches?: string
   diff?: string
+  remote?: string
+  defaultBranch?: string
   commitCode?: number
   commitStderr?: string
 }
@@ -49,6 +51,13 @@ function gateway(answers: Answers = {}): { transport: GitTransport; calls: Call[
     }
     if (payload.subcommand === 'diff') {
       return { code: 0, stdout: answers.diff ?? '', stderr: '' }
+    }
+    if (payload.subcommand === 'remote') {
+      return { code: 0, stdout: answers.remote ?? '', stderr: '' }
+    }
+    if (payload.subcommand === 'rev-parse') {
+      const name = answers.defaultBranch
+      return { code: 0, stdout: name === undefined ? '' : `origin/${name}`, stderr: '' }
     }
     if (payload.subcommand === 'commit') {
       return {
@@ -76,6 +85,35 @@ test('reads the branch and changes of the repository its source names', async ()
     { name: 'main', current: false }
   ])
   expect(calls.every((call) => call.repo === 'D:/Karbid2')).toBe(true)
+})
+
+test('a branch that tracks its own name lands where the remote says', async () => {
+  const { transport } = gateway({
+    status: STATUS,
+    remote: 'git@github.com:open-pencil/open-pencil.git',
+    defaultBranch: 'master'
+  })
+  const control = useSourceControl(ref('D:/Karbid2'), transport)
+
+  await control.refresh()
+
+  expect(control.baseBranch.value).toBe('master')
+  expect(control.compareLink.value).toBe(
+    'https://github.com/open-pencil/open-pencil/compare/master...feat/git-sync?expand=1'
+  )
+})
+
+test('an upstream of another name is the branch a pull request lands in', async () => {
+  const { transport } = gateway({
+    status: STATUS.replace('origin/feat/git-sync', 'origin/main'),
+    remote: 'git@github.com:open-pencil/open-pencil.git',
+    defaultBranch: 'master'
+  })
+  const control = useSourceControl(ref('D:/Karbid2'), transport)
+
+  await control.refresh()
+
+  expect(control.baseBranch.value).toBe('main')
 })
 
 test('follows a project switch instead of the repository it read first', async () => {
@@ -168,11 +206,13 @@ test('a commit stages everything, commits it, and reads the tree again', async (
     'status',
     'branch',
     'remote',
+    'rev-parse',
     'add',
     'commit',
     'status',
     'branch',
-    'remote'
+    'remote',
+    'rev-parse'
   ])
   expect(control.commitMessage.value).toBe('')
 })
@@ -201,7 +241,7 @@ test('fetching asks the remote and reads the branch again', async () => {
 
   expect(await control.fetchBranches()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['fetch', 'status', 'branch', 'remote'])
+  expect(calls.map((call) => call.subcommand)).toEqual(['fetch', 'status', 'branch', 'remote', 'rev-parse'])
 })
 
 test('pulling reads the tree again', async () => {
@@ -212,7 +252,7 @@ test('pulling reads the tree again', async () => {
 
   expect(await control.pull()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['pull', 'status', 'branch', 'remote'])
+  expect(calls.map((call) => call.subcommand)).toEqual(['pull', 'status', 'branch', 'remote', 'rev-parse'])
 })
 
 test('stashing parks the changes and reads the clean tree', async () => {
@@ -223,7 +263,7 @@ test('stashing parks the changes and reads the clean tree', async () => {
 
   expect(await control.stash()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['stash', 'status', 'branch', 'remote'])
+  expect(calls.map((call) => call.subcommand)).toEqual(['stash', 'status', 'branch', 'remote', 'rev-parse'])
 })
 
 test('a pull git refuses is reported with its own words', async () => {

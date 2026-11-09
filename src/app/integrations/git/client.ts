@@ -188,6 +188,26 @@ export async function readRemoteURL(
   return { ok: true, value: url === '' ? null : url }
 }
 
+/**
+ * The branch the repository's remote checks out by default, or null when it does not say. A
+ * feature branch pushed with `-u` tracks its own name, so where a pull request lands has to be
+ * asked of the remote rather than read off that branch.
+ */
+export async function readDefaultBranch(
+  repo: string,
+  remote = DEFAULT_GIT_REMOTE,
+  transport: GitTransport = invoke
+): Promise<GitOutcome<string | null>> {
+  const report = await runGit(repo, 'rev-parse', ['--abbrev-ref', `${remote}/HEAD`], transport)
+  if (!report.ok) return { ok: true, value: null }
+  const name = report.value.stdout.trim()
+  const prefix = `${remote}/`
+  // A remote without a recorded HEAD answers with the name it was asked about.
+  if (!name.startsWith(prefix) || name === `${remote}/HEAD`) return { ok: true, value: null }
+  const branch = name.slice(prefix.length).trim()
+  return { ok: true, value: branch === '' ? null : branch }
+}
+
 export async function fetchRemote(
   repo: string,
   transport: GitTransport = invoke

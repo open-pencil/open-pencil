@@ -11,6 +11,7 @@ import {
   pullFastForward,
   pushCurrentBranch,
   readFileDiff,
+  readDefaultBranch,
   readGitAvailability,
   readGitStatus,
   readRemoteURL,
@@ -19,8 +20,7 @@ import {
   switchBranch as switchToBranch
 } from './client'
 import type { ProgramTransport } from './gh'
-import { compareURL, parseRemoteURL } from './pr'
-import { openPullRequest } from './pulls'
+import { usePullRequest } from './request'
 import type { GitAvailability, GitBranch, GitFileKind, GitStatus, GitStatusEntry } from './schema'
 
 /** The patch the panel shows in place of the file list, and whether it is still being read. */
@@ -52,6 +52,8 @@ export function useSourceControl(
   const diff = shallowRef<GitDiff | null>(null)
   /** The remote the repository pushes to, once it has been read. */
   const remoteURL = shallowRef<string | null>(null)
+  /** The branch the remote checks out, which is where a pull request lands when nothing else says. */
+  const defaultBranch = shallowRef<string | null>(null)
   let openPath = ''
 
   /** The repository this surface answers for, read fresh so a project switch is followed. */
@@ -60,19 +62,12 @@ export function useSourceControl(
   const canCommit = computed(
     () => !busy.value && changedCount.value > 0 && commitMessage.value.trim() !== ''
   )
-
-  const headBranch = computed(() => status.value?.branch.head ?? null)
-  /** The branch a pull request would land in: the upstream's own name, or the usual default. */
-  const baseBranch = computed(() => {
-    const upstream = status.value?.branch.upstream ?? null
-    return upstream === null ? 'main' : upstream.split('/').slice(1).join('/') || 'main'
-  })
-  /** The page a pull request opens from, or null while the remote or the branch is unknown. */
-  const compareLink = computed(() => {
-    const remote = remoteURL.value === null ? null : parseRemoteURL(remoteURL.value)
-    const head = headBranch.value
-    if (remote === null || head === null) return null
-    return compareURL(remote, baseBranch.value, head)
+  const request = usePullRequest({
+    repository: path,
+    status,
+    remoteURL,
+    defaultBranch,
+    programTransport
   })
 
   // Another project's branch and files must never be drawn under this project's name.
@@ -82,6 +77,7 @@ export function useSourceControl(
     branches.value = []
     failure.value = null
     remoteURL.value = null
+    defaultBranch.value = null
     closeDiff()
   })
 
@@ -110,6 +106,7 @@ export function useSourceControl(
       branches.value = []
       failure.value = null
       remoteURL.value = null
+      defaultBranch.value = null
       return
     }
 
@@ -142,6 +139,10 @@ export function useSourceControl(
     const remote = await readRemoteURL(current, DEFAULT_GIT_REMOTE, transport)
     if (path.value !== current) return
     remoteURL.value = remote.ok ? remote.value : null
+
+    const fallback = await readDefaultBranch(current, DEFAULT_GIT_REMOTE, transport)
+    if (path.value !== current) return
+    defaultBranch.value = fallback.ok ? fallback.value : null
   }
 
   /** Stage everything, commit it, then read the tree again. */
@@ -219,18 +220,6 @@ export function useSourceControl(
     diff.value = null
   }
 
-  /**
-   * Open a pull request for the current branch, answering its address. A machine without `gh`,
-   * or one where it is not signed in, answers null so the caller falls back to the compare page.
-   */
-  const createPullRequest = (): Promise<string | null> => {
-    const current = path.value
-    const head = headBranch.value
-    return current === '' || head === null
-      ? Promise.resolve(null)
-      : openPullRequest({ repo: current, base: baseBranch.value, head }, programTransport)
-  }
-
   return {
     repository: path,
     availability,
@@ -243,9 +232,7 @@ export function useSourceControl(
     canCommit,
     diff,
     remoteURL,
-    compareLink,
-    baseBranch,
-    headBranch,
+    ...request,
     refresh,
     commit,
     push,
@@ -254,7 +241,6 @@ export function useSourceControl(
     pull,
     stash,
     showDiff,
-    closeDiff,
-    createPullRequest
+    closeDiff
   }
 }

@@ -1,6 +1,14 @@
 import { expect, test } from 'bun:test'
 
-import { fillRoute, parseRouteParams, routeURL, routesFromFiles } from '@/app/live-pages/routes'
+import { fillRoute, pagePaths, parseRouteParams, routeURL, routesFromFiles } from '@/app/live-pages/routes'
+
+test('page files are looked for under the project application directory', () => {
+  expect(pagePaths('')).toEqual(['pages', 'app/pages'])
+  expect(pagePaths('.')).toEqual(['pages', 'app/pages'])
+  expect(pagePaths('code')).toEqual(['code/pages', 'code/app/pages'])
+  expect(pagePaths('/code/')).toEqual(['code/pages', 'code/app/pages'])
+  expect(pagePaths('apps\\web')).toEqual(['apps/web/pages', 'apps/web/app/pages'])
+})
 
 test('a page file becomes the path the application serves', () => {
   expect(routesFromFiles(['pages/index.vue'])).toEqual([

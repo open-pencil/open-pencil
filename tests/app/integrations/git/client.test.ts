@@ -7,6 +7,7 @@ import {
   type GitTransport,
   listGitBranches,
   pullFastForward,
+  readDefaultBranch,
   readFileDiff,
   readFileHistory,
   readFileState,
@@ -282,5 +283,34 @@ describe('restoreFileFromCommit', () => {
 
     expect(outcome.ok).toBe(false)
     expect(calls).toEqual([])
+  })
+})
+
+describe('readDefaultBranch', () => {
+  test('reads the branch the remote checks out by default', async () => {
+    const { transport, calls } = recorder(report({ stdout: 'origin/master\n' }))
+    const outcome = await readDefaultBranch('/repo', 'origin', transport)
+
+    expect(outcome).toEqual({ ok: true, value: 'master' })
+    expect(calls).toEqual([
+      {
+        command: 'git_run',
+        args: { repo: '/repo', subcommand: 'rev-parse', args: ['--abbrev-ref', 'origin/HEAD'] }
+      }
+    ])
+  })
+
+  test('a remote without a recorded HEAD answers null rather than its own name', async () => {
+    const recorded = recorder(report({ stdout: 'origin/HEAD\n' }))
+    const absent = recorder(report({ code: 128, stderr: 'fatal: ambiguous argument' }))
+
+    expect(await readDefaultBranch('/repo', 'origin', recorded.transport)).toEqual({
+      ok: true,
+      value: null
+    })
+    expect(await readDefaultBranch('/repo', 'origin', absent.transport)).toEqual({
+      ok: true,
+      value: null
+    })
   })
 })

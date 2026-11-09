@@ -6,7 +6,7 @@ import { normalizePath } from '@/app/projects/schema'
 import { useProjects } from '@/app/projects/store'
 
 import { gridPosition } from './grid'
-import { fillRoute, routeURL, routesFromFiles, type RouteInfo } from './routes'
+import { fillRoute, pagePaths, routeURL, routesFromFiles, type RouteInfo } from './routes'
 import { pluginDataWithLivePage } from './schema'
 
 /** The frame one page opens in; a page is a desktop screen until it is resized. */
@@ -43,7 +43,7 @@ export function useLivePagesSource() {
     if (!current) return []
     const resolved = await readRepositoryRoot(current.repository)
     const repository = resolved.ok && resolved.value !== null ? resolved.value : current.repository
-    const listed = await runGit(repository, 'ls-files', ['--', 'pages', 'app/pages'])
+    const listed = await runGit(repository, 'ls-files', ['--', ...pagePaths(current.appDirectory)])
     if (!listed.ok) return []
     const files = listed.value.stdout
       .split('\n')

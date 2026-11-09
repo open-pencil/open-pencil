@@ -14,6 +14,22 @@ const PAGE_EXTENSION = /\.(?:vue|md|mdx)$/i
 const PAGES_DIRECTORY = /(?:^|\/)(?:app\/)?pages\/(?<relative>.+)$/
 const PARAM_SEGMENT = /\[+\.{0,3}([^[\]]+)\]+/g
 
+/** Where a Nuxt application keeps its pages, beside `app/pages` for Nuxt 4. */
+const PAGE_ROOTS = ['pages', 'app/pages']
+
+/**
+ * The pathspecs a project's page files sit at: the repository root, or the application directory
+ * a monorepo keeps them under, since `git ls-files` matches from the root it runs in.
+ */
+export function pagePaths(appDirectory: string): string[] {
+  const directory = appDirectory
+    .trim()
+    .replaceAll('\\', '/')
+    .replaceAll(/^\/+|\/+$/g, '')
+  if (directory === '' || directory === '.') return [...PAGE_ROOTS]
+  return PAGE_ROOTS.map((root) => `${directory}/${root}`)
+}
+
 /**
  * The routes a Nuxt application's page files declare. `pages/index.vue` serves `/`, a segment
  * in parentheses is a layout group and takes no part in the path, and a leading underscore marks
