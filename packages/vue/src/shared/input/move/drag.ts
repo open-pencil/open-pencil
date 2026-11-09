@@ -369,6 +369,14 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     cancelMove(d, editor)
     return
   }
+  // One it refuses among several: the drop changes no parent or order, so the layers it allows
+  // move within their parents and the one it refuses stays where it was.
+  if ([...landings.values()].some((landing) => landing === null)) {
+    d.keepParents = true
+    d.flows = undefined
+    editor.setLayoutInsertIndicator(null)
+    editor.setDropTarget(null)
+  }
 
   const indicator = editor.state.layoutInsertIndicator
   editor.setLayoutInsertIndicator(null)

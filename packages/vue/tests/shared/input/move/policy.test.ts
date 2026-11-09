@@ -91,3 +91,22 @@ test('the landing is decided once, and an axis the preview leaves out shows the 
   expect(landings).toBe(1)
   expect(editor.graph.getNode(piece.id)).toMatchObject({ x: 100, y: 0 })
 })
+
+test('a drop the host refuses for one of its layers changes no parent, and moves the others', () => {
+  const harness = createMoveHarness()
+  editor = harness.editor
+  editor.state.snappingPreferences = { geometry: false, objects: false, pixelGrid: false }
+  const frame = harness.node('FRAME', harness.page, { x: 200, y: 0, width: 300, height: 300 })
+  const kept = harness.node('RECTANGLE', harness.page, { x: 0, y: 0 })
+  const moved = harness.node('RECTANGLE', harness.page, { x: 0, y: 60 })
+  editor.setMovePolicy(({ node, to }) => (node.id === kept.id ? null : to))
+
+  editor.select([kept.id, moved.id])
+  const drag = createSelectionMoveDrag(20, 20, 20, 20, editor, false)
+  if (drag.type !== 'move') throw new Error('Expected a move drag')
+  handleMoveMove(drag, 260, 60, 260, 60, editor)
+  handleMoveUp(drag, editor)
+  expect(editor.graph.getNode(kept.id)).toMatchObject({ x: 0, y: 0, parentId: harness.page })
+  expect(editor.graph.getNode(moved.id)).toMatchObject({ x: 240, y: 100, parentId: harness.page })
+  expect(harness.childIds(frame.id)).toEqual([])
+})
