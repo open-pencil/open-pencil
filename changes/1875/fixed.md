@@ -1,0 +1,1 @@
+- Saving a `.fig` document after editing a component no longer moves the component above the other layers on its page, and loading pages no longer reorders the layers on the pages they read components from.

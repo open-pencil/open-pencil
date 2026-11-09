@@ -47,7 +47,9 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'email_unchanged',
   'email_change_unavailable',
   'current_session',
-  'picture_invalid'
+  'picture_invalid',
+  'account_sole_admin',
+  'last_admin_required'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -177,6 +179,39 @@ export const cloudSignInSchema = v.object({
 })
 export const cloudSignInsResponseSchema = v.object({ signIns: v.array(cloudSignInSchema) })
 
+/** A workspace an account deletion reads: one it would delete, or one that stops it. */
+export const cloudAccountDeletionWorkspaceSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string()
+})
+/** A document the account would lose, which Download all saves first. */
+export const cloudAccountDeletionDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string(),
+  workspaceName: v.string()
+})
+/**
+ * What deleting the account takes: the workspaces only it belongs to, which go with their
+ * documents; the ones it leaves to their other members; the ones it alone administers for other
+ * members, which stop the deletion until it makes someone else an admin; and the documents it
+ * would lose, those workspaces' and the ones it created in workspaces it leaves.
+ */
+export const cloudAccountDeletionSchema = v.object({
+  /** The account is the deployment's only administrator, which also stops the deletion. */
+  lastAdministrator: v.boolean(),
+  blockedBy: v.array(cloudAccountDeletionWorkspaceSchema),
+  deletes: v.array(cloudAccountDeletionWorkspaceSchema),
+  leaves: v.array(cloudAccountDeletionWorkspaceSchema),
+  documents: v.array(cloudAccountDeletionDocumentSchema)
+})
+export const cloudAccountDeletionResponseSchema = v.object({
+  deletion: cloudAccountDeletionSchema
+})
+/** The password, for a session that signed in too long ago to delete the account on its own. */
+export const cloudAccountDeleteSchema = v.object({
+  password: v.optional(v.pipe(v.string(), v.minLength(1)))
+})
+
 export function parseCloudProfileUpdate(input: unknown) {
   return v.parse(cloudProfileUpdateSchema, input)
 }
@@ -185,6 +220,9 @@ export function parseCloudPictureUpload(input: unknown) {
 }
 export function parseCloudEmailChange(input: unknown) {
   return v.parse(cloudEmailChangeSchema, input)
+}
+export function parseCloudAccountDelete(input: unknown) {
+  return v.parse(cloudAccountDeleteSchema, input)
 }
 export function parseCloudSessionRevoke(input: unknown) {
   return v.parse(cloudSessionRevokeSchema, input)
@@ -202,3 +240,4 @@ export type CloudProfile = v.InferOutput<typeof cloudProfileSchema>
 export type CloudSignInMethod = v.InferOutput<typeof cloudSignInMethodSchema>
 export type CloudAccountSession = v.InferOutput<typeof cloudAccountSessionSchema>
 export type CloudSignIn = v.InferOutput<typeof cloudSignInSchema>
+export type CloudAccountDeletion = v.InferOutput<typeof cloudAccountDeletionSchema>

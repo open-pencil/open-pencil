@@ -73,11 +73,10 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1200, height: 800 }),
 })
 ```
 
-Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. For a resizable editor, have `getViewportSize` return the current canvas container dimensions. `width` and `height` are not `EditorOptions` properties.
+Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. The canvas tells the editor its size as it draws, which zooming to fit and centring use; an editor with no canvas, such as one in a script, can pass `getViewportSize` instead.
 
 Icons come from Iconify by default. To serve them from elsewhere, such as a bundled or self-hosted set, pass an `IconProvider` from `@open-pencil/core/icons` as `icons`; the editor's commands, its icon picker, and its AI tools all use it.
 

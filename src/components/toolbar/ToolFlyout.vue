@@ -14,7 +14,8 @@ import IconChevronDown from '~icons/lucide/chevron-down'
 
 import type { EditorToolDef, Tool } from '@open-pencil/core'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { isToolbarToolActive } from '@open-pencil/vue/primitives/Toolbar'
+import { isToolbarToolActive, toolbarPopupSide } from '@open-pencil/vue/primitives/Toolbar'
+import type { ToolbarAlign, ToolbarSide } from '@open-pencil/vue/primitives/Toolbar'
 import {
   toolbarFlyoutItemTestId,
   toolbarFlyoutTestId,
@@ -38,6 +39,8 @@ const {
   toolIcons,
   toolLabels,
   toolShortcuts,
+  side = 'bottom',
+  align = 'start',
   ui,
   mobile = false
 } = defineProps<{
@@ -47,6 +50,10 @@ const {
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Readonly<Record<Tool, string>>
+  /** The canvas edge the toolbar is docked to; the menu opens away from it. */
+  side?: ToolbarSide
+  /** Where along its edge the toolbar sits. */
+  align?: ToolbarAlign
   ui?: ToolbarUI
   mobile?: boolean
 }>()
@@ -54,7 +61,10 @@ const {
 const toolbar = tv(toolbarTheme)
 const { editor } = useI18n()
 const triggerActive = computed(() => isToolbarToolActive(tool, activeTool))
-const styles = computed(() => toolbar({ active: triggerActive.value, mobile }))
+const styles = computed(() => toolbar({ active: triggerActive.value, mobile, side }))
+const popupSide = computed(() => toolbarPopupSide(side))
+/** A toolbar at the far end of its edge opens menus back toward the canvas. */
+const menuAlign = computed(() => (align === 'end' ? 'end' : 'start'))
 
 const emit = defineEmits<{
   select: [tool: Tool]
@@ -99,9 +109,9 @@ function flyoutItemClass() {
 
       <DropdownMenuPortal>
         <DropdownMenuContent
-          side="top"
+          :side="popupSide"
           :side-offset="8"
-          align="start"
+          :align="menuAlign"
           :class="styles.flyoutContent({ class: ui?.flyoutContent })"
         >
           <MenuScrollArea>

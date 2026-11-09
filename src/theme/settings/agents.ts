@@ -5,7 +5,7 @@ export default {
   slots: {
     help: 'text-xs leading-relaxed text-muted',
     status: 'flex items-center gap-2 text-xs text-surface',
-    spinner: `size-3.5 shrink-0 ${motionStyles.spinner}`,
+    spinner: ['size-3.5 shrink-0', motionStyles.spinner],
     list: 'flex flex-col gap-1.5',
     item: 'flex items-center gap-2 text-xs text-surface',
     readyIcon: 'size-3.5 shrink-0 text-success',

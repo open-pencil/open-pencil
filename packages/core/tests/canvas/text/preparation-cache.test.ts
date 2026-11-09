@@ -2,17 +2,17 @@ import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit } from 'canvaskit-wasm'
 
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
 import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { fontManager } from '#core/text/font/manager'
-import { repoPath } from '@open-pencil/test-support/paths'
 async function fixture(maxEntries = 8, maxUnits = 1000) {
   const ck = await initCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()
@@ -68,11 +68,11 @@ describe('text preparation cache', () => {
       ...f.ck,
       ParagraphBuilder: {
         ...f.ck.ParagraphBuilder,
-        MakeFromFontProvider(
-          ...args: Parameters<typeof f.ck.ParagraphBuilder.MakeFromFontProvider>
+        MakeFromFontCollection(
+          ...args: Parameters<typeof f.ck.ParagraphBuilder.MakeFromFontCollection>
         ) {
           builds++
-          return f.ck.ParagraphBuilder.MakeFromFontProvider(...args)
+          return f.ck.ParagraphBuilder.MakeFromFontCollection(...args)
         }
       }
     }

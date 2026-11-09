@@ -1,0 +1,1 @@
+- Saving an API key or token while the system credential store is locked or unreachable explains how to unlock or connect it, including the Snap package's `snap connect` command, instead of showing an untranslated error (#1925).

@@ -28,6 +28,8 @@ export interface NumberFieldProps {
   editPolicy?: NumberFieldEditPolicy
   /** Units a typed value may end with; the commit reports the one typed. */
   units?: readonly string[]
+  /** How a bound value is shown and edited from; see `NumberFieldRootProps.round`. */
+  round?: (value: number) => number
   ui?: NumberFieldUI
 }
 
@@ -71,6 +73,7 @@ const {
   bound,
   editPolicy,
   units,
+  round,
   ui
 } = defineProps<NumberFieldProps>()
 const accessibleLabel = computed(() => {
@@ -106,6 +109,7 @@ defineOptions({ inheritAttrs: false })
     :bound="bound"
     :edit-policy="editPolicy"
     :units="units"
+    :round="round"
     @update:model-value="(value: number, unit?: string) => emit('update:modelValue', value, unit)"
     @commit="(val: number, prev: number, unit?: string) => emit('commit', val, prev, unit)"
     @cancel="emit('cancel')"

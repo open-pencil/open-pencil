@@ -1,3 +1,4 @@
+import type { HotkeyChord } from '@tanstack/hotkeys'
 import type { Component } from 'vue'
 
 import type { EditorCommandId } from '#vue/editor/commands/types'
@@ -9,8 +10,9 @@ export interface MenuActionNode {
   id?: EditorCommandId
   label: string
   icon?: Component
+  /** The shortcut as this platform prints it (`formatShortcut`). */
   shortcut?: string
-  paletteShortcut?: string
+  paletteShortcut?: HotkeyChord
   action?: () => void
   disabled?: boolean
   testId?: TestId

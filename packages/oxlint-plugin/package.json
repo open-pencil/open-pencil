@@ -61,5 +61,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*"
   }
 }

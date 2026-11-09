@@ -110,7 +110,8 @@ export const cloudMessageDefaults = {
   saveStorageGroup: 'Storage',
   saveName: 'Name',
   saveQuotaHeading: 'This workspace is out of space',
-  saveQuotaDescription: 'Free some space or choose another workspace.',
+  saveQuotaOwnerDescription:
+    'Its owner’s plan is full across all their workspaces. Free some space, or choose a workspace someone else owns.',
   saveOfflineHeading: 'You’re offline',
   saveOfflineDescription:
     'Connect to the internet to save to Cloud. Nothing has changed on this device.',
@@ -147,6 +148,8 @@ export const cloudMessageDefaults = {
   shareAnyoneWithLink: 'Anyone with the link',
   shareLinkDetail: 'Anyone who has the link can open this file without signing in.',
   shareLinkSignInDetail: 'Anyone who has the link can open this file after signing in here.',
+  shareLinkGuestViewDetail:
+    'Anyone who has the link can view this file without signing in, and edit it after signing in here.',
   shareRestrictedDetail: 'Only the people and workspace above can open this file.',
   shareRestrictedNoLinksDetail:
     'Only the people and workspace above can open this file. Links are turned off for this workspace.',
@@ -183,6 +186,18 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  // Keeping a file without an account
+  draftHeading: 'Keep this file',
+  draftDescription: params<{ host: string }>(
+    'Sign up on {host} to keep it in the cloud and open it anywhere, or save it to this computer.'
+  ),
+  draftSignUp: 'Sign up',
+  draftSignIn: 'Sign in',
+  draftSaveOnDevice: 'Save to this computer',
+  draftKeepFailed: 'Couldn’t keep this file while you sign up. Save it to this computer instead.',
+  statusGuestDetail: 'You’re viewing as a guest; your changes won’t reach anyone.',
+  statusGuestCanEditDetail: 'You’re viewing as a guest. Sign in to edit this file.',
+  signInToEdit: 'Sign in to edit',
   statusNotLive: 'Not editing live',
   statusNotLiveDetail:
     'The server ended this tab’s live session, so edits no longer pass between it and others. Rejoin to see the latest version.',
@@ -314,7 +329,8 @@ export const cloudMessageDefaults = {
   homeCloudOnHost: params('OpenPencil Cloud · {host}'),
   homeUsageUsed: params('{used} used'),
   homeUsageOf: params('{used} of {total}'),
-  homeWorkspaceStorage: params('Workspace storage, {usage}'),
+  // Every workspace an account owns shares its plan's storage, so this counts all of them.
+  homeOwnerStorage: params('Storage on the owner’s plan, {usage}'),
   homeView: 'View',
   homeGrid: 'Grid',
   homeList: 'List',
@@ -375,6 +391,25 @@ export const cloudMessageDefaults = {
   versionsFailed: 'Couldn’t load the version history.',
   versionFailed: 'Couldn’t open this version.',
   versionChangeFailed: 'Couldn’t change the version history.',
+  reportFile: 'Report this file',
+  reportDescription: params(
+    'Tell the administrators of {host} what’s wrong with it. Only they see your report.'
+  ),
+  reportReason: 'What’s wrong',
+  reportReasonSpam: 'Spam or phishing',
+  reportReasonIllegal: 'Illegal content',
+  reportReasonCopyright: 'Copyright',
+  reportReasonHarassment: 'Harassment',
+  reportReasonOther: 'Something else',
+  reportDetails: 'Details',
+  reportDetailsPlaceholder: 'What should an administrator look at?',
+  reportEmail: 'Your email (optional)',
+  reportEmailHint: 'Only so an administrator can reply.',
+  reportSend: 'Send report',
+  reportSent: 'Report sent. Thank you.',
+  reportFailed: 'The report didn’t go through. Try again later.',
+  reportTooMany: 'This file can’t take more reports today. Try again tomorrow.',
+  reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const
 

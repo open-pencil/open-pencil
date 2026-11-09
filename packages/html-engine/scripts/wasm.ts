@@ -1,5 +1,6 @@
-// Builds the engine's WebAssembly module into wasm/, unless the sources it was built from are
-// unchanged: the crate, the workspace manifest and lockfile, and the pinned toolchain. Their hash
+// Builds the engine's WebAssembly module into wasm/ with Cargo's `wasm` profile, unless the
+// sources it was built from are unchanged: the crate, the workspace manifest and lockfile, and the
+// pinned toolchain. Their hash
 // is written beside the module, so CI can restore both from a cache and skip Cargo.
 //   bun scripts/wasm.ts [--check]
 import { existsSync } from 'node:fs'
@@ -42,15 +43,19 @@ async function sourcesHash(root: string): Promise<string> {
   const files = [
     join(root, 'Cargo.toml'),
     join(root, 'Cargo.lock'),
-    join(PACKAGE, 'rust-toolchain.toml'),
+    join(root, 'rust-toolchain.toml'),
     join(PACKAGE, 'crate', 'Cargo.toml'),
     ...[...new Bun.Glob('crate/src/**/*.rs').scanSync({ cwd: PACKAGE })].map((file) =>
       join(PACKAGE, file)
     )
-  ].sort()
+  ]
+  // Paths with forward slashes, so a module built on Windows matches its stamp elsewhere.
+  const sources = files
+    .map((file) => ({ file, name: relative(root, file).replaceAll('\\', '/') }))
+    .toSorted((a, b) => a.name.localeCompare(b.name))
   const hasher = new Bun.CryptoHasher('sha256')
-  for (const file of files) {
-    hasher.update(relative(root, file))
+  for (const { file, name } of sources) {
+    hasher.update(name)
     hasher.update('\0')
     hasher.update(await readFile(file))
     hasher.update('\0')
@@ -74,10 +79,24 @@ if ((await builtHash()) === hash) {
 } else if (process.argv.includes('--check')) {
   throw new Error('html-engine.wasm is missing or older than its sources; run bun run build:wasm')
 } else {
-  await cargo(['build', '--release', '--target', TARGET, '--manifest-path', 'crate/Cargo.toml'])
+  if (!Bun.which('cargo')) {
+    throw new Error(
+      'html-engine.wasm is missing or older than its sources, and building it needs Rust: ' +
+        'install rustup, or build it where Rust is and bring wasm/ along'
+    )
+  }
+  await cargo([
+    'build',
+    '--profile',
+    'wasm',
+    '--target',
+    TARGET,
+    '--manifest-path',
+    'crate/Cargo.toml'
+  ])
   await mkdir(join(PACKAGE, 'wasm'), { recursive: true })
   const target = await targetDirectory()
-  await copyFile(join(target, TARGET, 'release', 'open_pencil_html_engine.wasm'), OUTPUT)
+  await copyFile(join(target, TARGET, 'wasm', 'open_pencil_html_engine.wasm'), OUTPUT)
   await writeFile(STAMP, `${hash}\n`)
   process.stdout.write(`Built ${relative(root, OUTPUT)}\n`)
 }

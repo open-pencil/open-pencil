@@ -17,12 +17,12 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import {
   prepareFollowedFieldEdit,
   assertProxyEditable,
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
 import { atLeast } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
 
@@ -106,7 +106,7 @@ export function installLayoutNodeProxyAccessors(
       },
       set(this: ProxyThis, value: SceneNode['counterAxisAlignContent']) {
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'counterAxisAlignContent',
           'stack-counter-align-content'
@@ -137,7 +137,7 @@ export function installLayoutNodeProxyAccessors(
       },
       set(this: ProxyThis, value: { horizontal: string; vertical: string }) {
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'constraints',
           'vertical-constraint'
@@ -182,7 +182,7 @@ export function installLayoutNodeProxyAccessors(
 function setAspectRatioLock(target: ProxyThis, internals: NodeProxyInternals, locked: boolean) {
   assertProxyEditable(target, internals)
   const node = raw(target, internals)
-  if (!aspectRatioLockEditable(graph(target, internals), node)) return
+  if (!aspectRatioLockEditable(graphOf(target), node)) return
   updateNode(target, internals, {
     targetAspectRatio: locked ? lockedAspectRatioTarget(node.width, node.height) : null
   })
@@ -219,11 +219,11 @@ function layoutSizingAccessor(
   const property = axis === 'HORIZONTAL' ? 'layoutSizingHorizontal' : 'layoutSizingVertical'
   return {
     get(this: ProxyThis): LayoutSizing {
-      return layoutSizing(graph(this, internals), raw(this, internals), axis)
+      return layoutSizing(graphOf(this), raw(this, internals), axis)
     },
     set(this: ProxyThis, value: unknown) {
       if (!isLayoutSizing(value)) throw new TypeError(`Invalid ${property}: ${String(value)}`)
-      const sceneGraph = graph(this, internals)
+      const sceneGraph = graphOf(this)
       const node = raw(this, internals)
       const error = layoutSizingError(sceneGraph, node, value)
       if (error) throw new Error(`in set_${property}: ${error}`)

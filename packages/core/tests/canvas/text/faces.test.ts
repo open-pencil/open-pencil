@@ -12,8 +12,8 @@ import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, fontManager } from '#core/text/font/manager'
-import { WEB_FONT_PROVIDER_IDS } from '#core/text/web-font/resolver'
 import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
 import { attachFontProvider } from '../helpers'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
@@ -208,26 +208,13 @@ describe('text faces', () => {
         data: await fixtureFont('NotoSansSC-Regular.ttf')
       }
     }
-    const providers = fontManager.enabledOnlineFontProviders()
-    fontManager.setOnlineFontProviders({ google: true })
-    fontManager.setWebFontFetch(async (url) => {
-      if (url.startsWith('https://fonts.google.com/metadata/fonts'))
-        return Response.json({ familyMetadataList: [{ family: fontFamily, fonts: { '400': {} }, axes: [] }] })
-      if (url.startsWith('https://fonts.google.com/metadata/icons'))
-        return new Response(`)]}'\n${JSON.stringify({ families: [] })}`)
-      if (url.startsWith('https://fonts.googleapis.com/css2'))
-        return new Response(
-          Object.entries(files)
-            .map(
-              ([src, { range }]) =>
-                `@font-face { font-family: '${fontFamily}'; font-weight: 400; src: url(${src}) format('truetype'); unicode-range: ${range}; }`
-            )
-            .join('\n')
-        )
-      const file = Object.entries(files).find(([src]) => src === url)?.[1]
-      return file ? new Response(file.data.slice(0)) : new Response(null, { status: 404 })
-    })
-    try {
+    const google = fakeGoogleFonts([
+      {
+        family: fontFamily,
+        files: Object.entries(files).map(([url, { range, data }]) => ({ url, range, data }))
+      }
+    ])
+    await withGoogleFonts(google, async () => {
       await fontManager.loadFont(fontFamily, 'Regular', 'Faces 中文')
       expect(missingGlyphs(ck, fontProvider, fontFamily, 'Faces 中文')).toBe(0)
       // And paints them as the CJK file does on its own.
@@ -236,12 +223,7 @@ describe('text faces', () => {
         drawn(ck, fontProvider, { fontFamily: family, text, fontWeight: 400, italic: false })
       expect(paint(fontFamily, '中文')).toEqual(paint('Faces Test Han', '中文'))
       expect(paint(fontFamily, '中文')).not.toEqual(paint(fontFamily, ' '))
-    } finally {
-      fontManager.setWebFontFetch(null)
-      fontManager.setOnlineFontProviders(
-        Object.fromEntries(WEB_FONT_PROVIDER_IDS.map((id) => [id, providers.includes(id)]))
-      )
-    }
+    })
   })
 
   /**

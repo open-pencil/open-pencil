@@ -90,5 +90,7 @@
   "showVersionHistory": "Показать историю версий",
   "saveToVersionHistory": "Сохранить в историю версий…",
   "reportProblem": "Сообщить о проблеме…",
-  "supportOpenPencil": "Поддержать OpenPencil…"
+  "supportOpenPencil": "Поддержать OpenPencil…",
+  "newBoard": "Новая доска",
+  "toggleAIChat": "Переключить чат AI"
 }

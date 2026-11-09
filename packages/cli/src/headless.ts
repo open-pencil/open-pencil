@@ -1,7 +1,8 @@
 import { readFile, realpath } from 'node:fs/promises'
-import { dirname, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { flushPendingComponentSync } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
@@ -36,9 +37,35 @@ const io = new IORegistry(CLI_IO_FORMATS)
 function documentAssetReader(filePath: string) {
   return async (path: string): Promise<Uint8Array | null> => {
     const folder = await realpath(dirname(filePath))
-    const target = await realpath(resolve(folder, path)).catch(() => null)
-    if (!target?.startsWith(folder + sep)) return null
-    return new Uint8Array(await readFile(target))
+    return readWithin(folder, resolve(folder, path))
+  }
+}
+
+/** Whether `path` lies inside the folder `root`, which may be the filesystem root. */
+function isInside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
+/** The file at `path`, when it really lies inside `root`; null otherwise. */
+async function readWithin(root: string, path: string): Promise<Uint8Array | null> {
+  const target = await realpath(path).catch(() => null)
+  if (!target || !isInside(root, target)) return null
+  return new Uint8Array(await readFile(target))
+}
+
+/**
+ * Reads a document a document imports, such as a `.pen` library in a sibling folder, and the
+ * files it names. Imports may leave the document's folder, but not the working directory, which a
+ * repository's tooling runs from; a document outside the working directory imports only from its
+ * own folder.
+ */
+function documentImportReader(filePath: string) {
+  return async (path: string): Promise<Uint8Array | null> => {
+    const folder = await realpath(dirname(filePath))
+    const cwd = await realpath(process.cwd())
+    const root = folder === cwd || isInside(cwd, folder) ? cwd : folder
+    return readWithin(root, resolve(folder, path))
   }
 }
 
@@ -50,7 +77,8 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
-    readAsset: documentAssetReader(filePath)
+    readAsset: documentAssetReader(filePath),
+    readImport: documentImportReader(filePath)
   })
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
@@ -168,7 +196,12 @@ export function requirePage(graph: SceneGraph, pageName?: string) {
  * stand-in.
  */
 export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise<T>): Promise<T> {
-  const { result, impact } = await collectSceneMutation(graph, edit)
+  // Instances follow the components the edit changed, as the editor syncs them after an edit.
+  const { result, impact } = await collectSceneMutation(graph, async () => {
+    const value = await edit()
+    flushPendingComponentSync(graph)
+    return value
+  })
   const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
   if (textIds.length === 0) return result
   await prepareGraphFonts(graph, textIds)

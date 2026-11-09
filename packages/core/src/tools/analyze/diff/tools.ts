@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import { parseJSXAttributes, sceneNodeAttributes, sceneNodeToJSX } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
 import {
   toolNumber,
   nodeIdInputSchema,
@@ -61,9 +62,9 @@ export const diffCreate = defineTool({
     )
   }),
   execute: (figma, args) => {
-    if (!figma.graph.getNode(args.from)) return { error: `Node "${args.from}" not found` }
-    if (!figma.graph.getNode(args.to)) return { error: `Node "${args.to}" not found` }
-    const operations = treeOperations(figma.graph, args.from, args.to, {
+    if (!graphOf(figma).getNode(args.from)) return { error: `Node "${args.from}" not found` }
+    if (!graphOf(figma).getNode(args.to)) return { error: `Node "${args.to}" not found` }
+    const operations = treeOperations(graphOf(figma), args.from, args.to, {
       match: 'path',
       depth: args.depth ?? DEFAULT_DIFF_DEPTH
     })
@@ -88,9 +89,9 @@ export const diffShow = defineTool({
     )
   }),
   execute: (figma, args) => {
-    const node = figma.graph.getNode(args.id)
+    const node = graphOf(figma).getNode(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
-    const current = sceneNodeAttributes(node.id, figma.graph)
+    const current = sceneNodeAttributes(node.id, graphOf(figma))
     if (!current) return { error: `${node.type} nodes have no JSX attributes` }
     let proposed
     try {
@@ -109,7 +110,7 @@ export const diffShow = defineTool({
       added: changed.map(({ source }) => source)
     }
     // Check the change the way diff_apply would, so invalid values surface here.
-    const [plan] = planOperations(figma.graph, [operation], false)
+    const [plan] = planOperations(graphOf(figma), [operation], false)
     if (plan.result.error) return { error: plan.result.error }
     return { diff: formatOperations([operation]) }
   }

@@ -272,3 +272,43 @@ export const noPxTailwindValuesRule = defineClassRule(
     return `size \`${className}\` in rem so it follows the root font size: use the spacing scale (\`h-6.5\`), a theme size (\`text-2xs\`, \`rounded-md\`), or a rem value`
   }
 )
+
+/**
+ * Require a class list built from shared classes to be an array, as tailwind-variants takes it:
+ * `['size-3.5 shrink-0', motionStyles.spinner]`, not `` `size-3.5 shrink-0 ${motionStyles.spinner}` ``.
+ * Interpolating hides the composed classes from the class checks above and from Tailwind's editor
+ * tooling, and a missing space silently fuses two classes into one.
+ */
+export const noInterpolatedTailwindClassesRule = defineRule({
+  meta: {
+    type: 'problem',
+    docs: { description: 'Require class lists composed from shared classes to be arrays.' }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
+    // Whether each enclosing call is a class helper, innermost last. Arguments to other calls,
+    // such as the CSS values a theme module hands `EditorView.theme`, are not class lists.
+    const calls: boolean[] = []
+    return {
+      CallExpression(node) {
+        calls.push(isClassHelperCall(node))
+      },
+      'CallExpression:exit'() {
+        calls.pop()
+      },
+      TemplateLiteral(node) {
+        const innermost = calls.at(-1)
+        if (innermost === false || (innermost === undefined && !themeModule)) return
+        if (node.expressions.length === 0 || node.parent?.type === 'TaggedTemplateExpression')
+          return
+        if (!isClassString(node)) return
+        context.report({
+          node,
+          message:
+            "Compose Tailwind classes as an array, such as `['size-3.5', motionStyles.spinner]`, not by interpolating into a string."
+        })
+      }
+    }
+  }
+})

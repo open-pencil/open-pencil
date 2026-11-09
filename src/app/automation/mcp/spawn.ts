@@ -17,6 +17,7 @@ import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { APP_VERSION } from '@/app/runtime/version'
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
@@ -514,7 +515,13 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
   if (existing) {
     return existing
   }
+  // A sandboxed package cannot start the server; one the user runs is still found by
+  // its health check, as in the browser.
+  if (!canRunHostProcesses()) return null
+  return launchMCPServer(timing)
+}
 
+async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
   const lookup = await invoke<MCPLookup>('mcp_lookup')
   if (!lookup.available) return rememberStartupError(missingMCPError(lookup.searched))
 

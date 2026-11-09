@@ -51,6 +51,14 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
+export {
+  MAX_WEB_SEARCH_QUERY_LENGTH,
+  MAX_WEB_SEARCH_RESULTS,
+  setWebSearchProvider,
+  WebSearchRefusedError,
+  type WebSearchProvider,
+  type WebSearchResult
+} from './web-search'
 export { importMermaid, importSVG } from './create'
 export { arrangeNodes } from './structure'
 export {
