@@ -2,7 +2,12 @@ import { expect, test } from 'bun:test'
 
 import { isEqual } from 'es-toolkit/predicate'
 
-import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
+import {
+  exportFigFile,
+  exportFigFileStream,
+  populateFigPage,
+  stopFigReaderWorker
+} from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, readStreamBytes } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -109,6 +114,21 @@ test('a save streaming from the worker finishes when a page load is abandoned', 
       chunks.push(next.value.slice())
     }
     expect(names(new Uint8Array(await new Blob(chunks).arrayBuffer()))).toContain('Edited again')
+  } finally {
+    releaseFigPopulationWorker(opened)
+  }
+}, 20000)
+
+test('a document whose reader worker stopped loads its pages and saves on this thread', async () => {
+  const opened = await openViaWorker()
+  try {
+    stopFigReaderWorker(opened)
+    expect(createFigPopulationWorker(opened)).toBeNull()
+    const third = opened.getPages()[2]
+    expect(populateFigPage(opened, third.id)).toBe(true)
+    expect(opened.getChildren(third.id)).toHaveLength(1)
+    edit(opened)
+    expect(names(await exportFigFile(opened))).toContain('Edited again')
   } finally {
     releaseFigPopulationWorker(opened)
   }
