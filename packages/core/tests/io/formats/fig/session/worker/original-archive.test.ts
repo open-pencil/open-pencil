@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer, readStreamBytes } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -71,39 +71,23 @@ test('an edited worker-opened .fig is written by the worker with only its edit r
   }
 }, 20000)
 
-test('an edited worker-opened .fig is streamed through the worker without an archive copy', async () => {
+test('an edited worker-opened .fig streams from the worker as it is read', async () => {
   const opened = await openViaWorker()
   edit(opened)
   try {
-    const chunks: Uint8Array[] = []
-    let written = 0
-    let total = 0
-    await exportFigFileStream(
-      opened,
-      async (chunk) => {
-        chunks.push(chunk)
-      },
-      {
-        onProgress(bytes, expected) {
-          written = bytes
-          total = expected
-        }
-      }
-    )
-    const length = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
-    const bytes = new Uint8Array(length)
-    let offset = 0
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset)
-      offset += chunk.byteLength
-    }
-    expect(names(bytes)).toContain('Edited again')
-    expect(chunks.length).toBeGreaterThan(1)
-    expect(total).toBe(length)
-    expect(written).toBe(total)
+    expect(names(await readStreamBytes(await exportFigFileStream(opened)))).toContain('Edited again')
   } finally {
     releaseFigPopulationWorker(opened)
   }
+}, 20000)
+
+test('a save still streaming from the worker fails when the document closes', async () => {
+  const opened = await openViaWorker()
+  edit(opened)
+  const reader = (await exportFigFileStream(opened)).getReader()
+  expect((await reader.read()).done).toBe(false)
+  releaseFigPopulationWorker(opened)
+  await expect(reader.read()).rejects.toThrow('The document closed')
 }, 20000)
 
 async function openViaWorker() {

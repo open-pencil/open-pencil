@@ -3,7 +3,6 @@ import { isEqual } from 'es-toolkit/predicate'
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
-  type FigPatchedArchiveInput,
   type FigRecordPatch
 } from '@open-pencil/fig'
 import {
@@ -499,45 +498,14 @@ export function archiveImagesNamedForFigma(graph: SceneGraph): Promise<boolean> 
  * Write a document opened from a `.fig` as that archive with only its changed records
  * rewritten. The main thread serializes what changed; merging and compressing the rest happen
  * where the archive is held, the reader's worker in the browser. Null when the document did
- * not come from an archive, or changed in a way this path does not write.
+ * not come from an archive, or changed in a way this path does not write. The archive streams
+ * from where it is held, its unchanged images never copied into the page.
  */
 export async function writePatchedFigFile(
   source: SceneGraph,
   runtime: FigNodeChangeExportRuntime,
   options: FigFileExtrasOptions = {}
-): Promise<Uint8Array | null> {
-  const prepared = await prepareArchivePatch(source, runtime, options)
-  if (!prepared) return null
-  return prepared.archive.patch(prepared.patch, prepared.input)
-}
-
-/**
- * `writePatchedFigFile` written into `sink` chunk by chunk: the archive's unchanged images stay
- * in the worker and are copied as their stored byte ranges, never unpacked into the page.
- */
-export async function writePatchedFigFileStream(
-  source: SceneGraph,
-  runtime: FigNodeChangeExportRuntime,
-  options: FigFileExtrasOptions & { onProgress?: (written: number, total: number) => void },
-  sink: (chunk: Uint8Array) => void | Promise<void>
-): Promise<boolean> {
-  const prepared = await prepareArchivePatch(source, runtime, options)
-  if (!prepared) return false
-  await prepared.archive.patchStream(prepared.patch, prepared.input, sink, options.onProgress)
-  return true
-}
-
-interface PreparedArchivePatch {
-  archive: FigArchiveAccess
-  patch: FigRecordPatch
-  input: FigPatchedArchiveInput
-}
-
-async function prepareArchivePatch(
-  source: SceneGraph,
-  runtime: FigNodeChangeExportRuntime,
-  options: FigFileExtrasOptions
-): Promise<PreparedArchivePatch | null> {
+): Promise<ReadableStream<Uint8Array> | null> {
   const archive = figArchive(source)
   const changes = archiveChanges(source)
   const loaded = archiveRecords(source)
@@ -559,15 +527,11 @@ async function prepareArchivePatch(
   const imageNames = nameImagesForFigma(built.patch.records, built.graph.images)
   const extras = await figFileExtras(built.graph, imageNames, options)
   const archivedImages = new Set(info.imageHashes.map((hash) => `images/${hash}`))
-  return {
-    archive,
-    patch: built.patch,
-    input: {
-      thumbnailPNG: extras.thumbnailPNG,
-      metaJSON: extras.metaJSON,
-      images: extras.images.filter((image) => !archivedImages.has(image.name)),
-      compressionLevel: figCompressionLevel(source),
-      kind: source.documentKind
-    }
-  }
+  return archive.patch(built.patch, {
+    thumbnailPNG: extras.thumbnailPNG,
+    metaJSON: extras.metaJSON,
+    images: extras.images.filter((image) => !archivedImages.has(image.name)),
+    compressionLevel: figCompressionLevel(source),
+    kind: source.documentKind
+  })
 }

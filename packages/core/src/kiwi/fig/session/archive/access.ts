@@ -2,7 +2,6 @@ import {
   figArchiveComponentUsePages,
   figArchiveRecordPages,
   patchFigArchive,
-  patchFigArchiveStream,
   type FigArchiveRecordInfo,
   type FigPatchedArchiveInput,
   type FigRecordPatch
@@ -11,6 +10,7 @@ import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
+import { receiveStream } from '#core/kiwi/fig/session/port-stream'
 import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
 /**
@@ -18,9 +18,6 @@ import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/sessi
  * with only its changed records replaced. In the browser the reader's worker holds the archive
  * and does this work; elsewhere, or once that worker is gone, it runs where it is asked.
  */
-export type FigArchiveSink = (chunk: Uint8Array) => void | Promise<void>
-export type FigArchiveProgress = (written: number, total: number) => void
-
 export interface FigArchiveAccess {
   original(): Promise<Uint8Array>
   info(): Promise<FigArchiveRecordInfo>
@@ -28,14 +25,8 @@ export interface FigArchiveAccess {
   componentPages(componentIds: string[]): Promise<string[]>
   /** The archive GUID of the page each record is on, `null` for one on no page. */
   recordPages(recordIds: string[]): Promise<(string | null)[]>
-  patch(patch: FigRecordPatch, input: FigPatchedArchiveInput): Promise<Uint8Array>
-  /** The patched archive written into `sink` chunk by chunk, never assembled whole. */
-  patchStream(
-    patch: FigRecordPatch,
-    input: FigPatchedArchiveInput,
-    sink: FigArchiveSink,
-    onProgress?: FigArchiveProgress
-  ): Promise<void>
+  /** The archive with the patch applied, streaming from wherever the archive is held. */
+  patch(patch: FigRecordPatch, input: FigPatchedArchiveInput): Promise<ReadableStream<Uint8Array>>
   /** The document closed: release whatever holds the archive. */
   close(): void
 }
@@ -68,21 +59,7 @@ export function createFigArchiveOperations(bytes: ArrayBuffer, info: () => FigAr
     recordPages: (recordIds: string[]) =>
       figArchiveRecordPages(bytes, recordIds).map((pageId) => pageId ?? null),
     patch: async (patch: FigRecordPatch, input: FigPatchedArchiveInput) =>
-      patchFigArchive(bytes, patch, input, await loadFigDataCompressor(input.compressionLevel)),
-    patchStream: async (
-      patch: FigRecordPatch,
-      input: FigPatchedArchiveInput,
-      sink: FigArchiveSink,
-      onProgress?: FigArchiveProgress
-    ) =>
-      patchFigArchiveStream(
-        bytes,
-        patch,
-        input,
-        await loadFigDataCompressor(input.compressionLevel),
-        sink,
-        { onProgress }
-      )
+      patchFigArchive(bytes, patch, input, await loadFigDataCompressor(input.compressionLevel))
   }
 }
 
@@ -97,8 +74,6 @@ export function localFigArchive(
     componentPages: async (componentIds) => operations.componentPages(componentIds),
     recordPages: async (recordIds) => operations.recordPages(recordIds),
     patch: (patch, input) => operations.patch(patch, input),
-    patchStream: (patch, input, sink, onProgress) =>
-      operations.patchStream(patch, input, sink, onProgress),
     close: () => undefined
   }
 }
@@ -140,13 +115,6 @@ interface WaitingRequest {
   reject: (error: Error) => void
 }
 
-interface StreamingRequest {
-  sink: FigArchiveSink
-  onProgress?: FigArchiveProgress
-  resolve: () => void
-  reject: (error: Error) => void
-}
-
 /**
  * Archive operations answered by the reader's worker over its session port. The worker serves
  * the archive until the document closes, even after it stops loading pages. If it fails or is
@@ -158,7 +126,8 @@ export function workerFigArchive(
   fallback: () => FigArchiveAccess
 ): WorkerFigArchiveAccess {
   const pending = new Map<string, WaitingRequest>()
-  const streams = new Map<string, StreamingRequest>()
+  // Fails the archives still streaming from the worker once it stops serving them.
+  const served = new AbortController()
   let local: FigArchiveAccess | undefined
   let closed = false
   const toFallback = (): FigArchiveAccess => {
@@ -166,49 +135,15 @@ export function workerFigArchive(
     const access = fallback()
     local = access
     worker.terminate()
+    served.abort(new Error('The archive worker stopped'))
     for (const waiting of pending.values()) waiting.retry(access)
     pending.clear()
-    for (const stream of streams.values()) stream.reject(new Error('The archive worker stopped'))
-    streams.clear()
     return access
   }
   worker.addEventListener('error', () => toFallback())
   port.addEventListener('message', (event: MessageEvent<FigSessionResponse>) => {
-    const data = event.data
-    if (data.type === 'patch-archive-chunk') {
-      const stream = streams.get(data.requestId)
-      if (!stream) return
-      void (async () => {
-        try {
-          await stream.sink(data.bytes)
-          port.postMessage({ type: 'patch-archive-ack', requestId: data.requestId, ok: true })
-        } catch (error) {
-          streams.delete(data.requestId)
-          port.postMessage({ type: 'patch-archive-ack', requestId: data.requestId, ok: false })
-          stream.reject(error instanceof Error ? error : new Error(String(error)))
-        }
-      })()
-      return
-    }
-    if (data.type === 'patch-archive-progress') {
-      streams.get(data.requestId)?.onProgress?.(data.written, data.total)
-      return
-    }
-    if (data.type === 'patch-archive-done') {
-      const stream = streams.get(data.requestId)
-      if (!stream) return
-      streams.delete(data.requestId)
-      stream.resolve()
-      return
-    }
-    if (data.type === 'archive-error' && streams.has(data.requestId)) {
-      const stream = streams.get(data.requestId)
-      streams.delete(data.requestId)
-      stream?.reject(new Error(data.error))
-      return
-    }
-    if (!ARCHIVE_RESPONSES.has(data.type)) return
-    const response = data as ArchiveResponse
+    if (!ARCHIVE_RESPONSES.has(event.data.type)) return
+    const response = event.data as ArchiveResponse
     const waiting = pending.get(response.requestId)
     if (!waiting) return
     pending.delete(response.requestId)
@@ -219,7 +154,8 @@ export function workerFigArchive(
     message: DistributiveOmit<FigSessionRequest, 'requestId'>,
     type: T,
     read: (response: Extract<ArchiveResponse, { type: T }>) => Result,
-    onFallback: (access: FigArchiveAccess) => Promise<Result>
+    onFallback: (access: FigArchiveAccess) => Promise<Result>,
+    transfer: Transferable[] = []
   ): Promise<Result> => {
     if (closed) return Promise.reject(new Error('The document closed'))
     if (local) return onFallback(local)
@@ -234,7 +170,7 @@ export function workerFigArchive(
         },
         reject
       })
-      port.postMessage({ ...message, requestId })
+      port.postMessage({ ...message, requestId }, transfer)
     })
   }
   return {
@@ -266,21 +202,15 @@ export function workerFigArchive(
         (response) => response.pageIds,
         (access) => access.recordPages(recordIds)
       ),
-    patch: (patch, input) =>
-      ask(
-        { type: 'patch-archive', patch, input },
+    patch: (patch, input) => {
+      const channel = new MessageChannel()
+      return ask(
+        { type: 'patch-archive', patch, input, port: channel.port2 },
         'patch-archive-result',
-        (response) => response.bytes,
-        (access) => access.patch(patch, input)
-      ),
-    patchStream: (patch, input, sink, onProgress) => {
-      if (closed) return Promise.reject(new Error('The document closed'))
-      if (local) return local.patchStream(patch, input, sink, onProgress)
-      return new Promise<void>((resolve, reject) => {
-        const requestId = randomHex()
-        streams.set(requestId, { sink, onProgress, resolve, reject })
-        port.postMessage({ type: 'patch-archive-stream', requestId, patch, input })
-      })
+        () => receiveStream(channel.port1, served.signal),
+        (access) => access.patch(patch, input),
+        [channel.port2]
+      )
     },
     dropWorker: () => void toFallback(),
     close() {
@@ -288,8 +218,7 @@ export function workerFigArchive(
       closed = true
       for (const waiting of pending.values()) waiting.reject(new Error('The document closed'))
       pending.clear()
-      for (const stream of streams.values()) stream.reject(new Error('The document closed'))
-      streams.clear()
+      served.abort(new Error('The document closed'))
       if (local) return
       port.postMessage({ type: 'dispose' })
       port.close()
