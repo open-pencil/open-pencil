@@ -23,6 +23,19 @@ export {
   type WriteFigArchiveInput
 } from './archive'
 export {
+  copyZipEntries,
+  crc32,
+  readZipEntries,
+  renameFigArchiveStream,
+  writeFigArchiveStream,
+  writeZipStream,
+  type WriteFigArchiveStreamInput,
+  type ZipEntryInfo,
+  type ZipEntrySource,
+  type ZipSink,
+  type ZipStreamOptions
+} from './archive/zip'
+export {
   figArchiveComponentUsePages,
   figArchiveRecordInfo,
   figArchiveRecordPages,
