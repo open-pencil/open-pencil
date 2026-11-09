@@ -8,7 +8,7 @@ import { createReloadActions } from '@/app/document/io/read'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import { toast } from '@/app/shell/ui'
 
-function reloadHarness(unsaved: boolean) {
+function reloadHarness(unsaved: boolean, source: { path: string | null } = { path: null }) {
   const begin = vi.fn(() => ({
     id: 1,
     signal: new AbortController().signal,
@@ -17,7 +17,7 @@ function reloadHarness(unsaved: boolean) {
     fail: vi.fn(),
     cancel: vi.fn()
   }))
-  const getFilePath = vi.fn(() => null)
+  const getFilePath = vi.fn(() => source.path)
   const actions = createReloadActions({
     editor: asDouble<Editor>({ graph: {} }),
     state: asDouble({ documentName: 'Design', panX: 0, panY: 0, zoom: 1, currentPageId: '0:1' }),
@@ -62,6 +62,21 @@ describe('reloading a document that changed on disk', () => {
     await Bun.sleep(0)
     expect(begin).toHaveBeenCalledTimes(1)
     expect(stop).toHaveBeenCalledTimes(1)
+    expect(toast.toasts.value).toHaveLength(0)
+  })
+
+  test('drops an offer for a file the document has since left', async () => {
+    vi.spyOn(fig, 'stopFigReaderWorker').mockReturnValue(undefined)
+    const source = { path: '/designs/original.fig' as string | null }
+    const { actions, begin } = reloadHarness(true, source)
+
+    await actions.reloadFromDisk()
+    source.path = '/designs/copy.fig'
+    const [offer] = toast.toasts.value
+    offer?.action?.run(offer.id)
+    await Bun.sleep(0)
+
+    expect(begin).not.toHaveBeenCalled()
     expect(toast.toasts.value).toHaveLength(0)
   })
 })

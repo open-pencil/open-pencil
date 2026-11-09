@@ -124,10 +124,14 @@ export function createReloadActions({
    */
   function offerReload() {
     const messages = notificationMessages.get()
+    const path = getFilePath()
+    const handle = getFileHandle()
     const action = {
       label: messages.reloadDiscardingChanges,
       run: (toastId: number) => {
         toast.remove(toastId)
+        // An offer for a file the document has since left, as after Save As, reloads nothing.
+        if (getFilePath() !== path || getFileHandle() !== handle) return
         void reload()
       }
     }
