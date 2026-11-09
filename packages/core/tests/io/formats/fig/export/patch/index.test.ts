@@ -20,6 +20,7 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { setDefaultMode } from '@open-pencil/scene-graph/variables'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -29,6 +30,7 @@ import {
   hasPendingReaderPages,
   populateFigInternalPages
 } from '#core/kiwi/fig/session/document-state'
+import { reconcileVariableLayouts } from '#core/layout/variables'
 
 setDefaultTimeout(60_000)
 
@@ -524,16 +526,19 @@ describe('writing an edited document into its archive', () => {
     const fillOf = (saved: Uint8Array, name: string) =>
       [...recordsOf(saved).values()].find((record) => record.name === name)?.fillPaints?.[0]?.color
 
+    // As the editor sets a mode: bound paints refresh for the layers below it.
+    const setMode = (graph: SceneGraph, id: string, modes: Record<string, string>) => {
+      graph.updateNode(id, { variableModes: modes })
+      reconcileVariableLayouts(graph, { subtrees: [id] })
+    }
     const graph = await open(bytes)
-    graph.updateNode(layerNamed(graph, 'Panel').id, { variableModes: { [collection.id]: darkId } })
+    setMode(graph, layerNamed(graph, 'Panel').id, { [collection.id]: darkId })
     const panelDark = await exportFigFile(graph)
     expect(fillOf(panelDark, 'In panel')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
     expect(fillOf(panelDark, 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
 
     const reopened = await open(panelDark)
-    reopened.updateNode(reopened.getPages()[0].id, {
-      variableModes: { [collection.id]: darkId }
-    })
+    setMode(reopened, reopened.getPages()[0].id, { [collection.id]: darkId })
     const pageDark = await exportFigFile(reopened)
     expect(fillOf(pageDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
 
@@ -545,11 +550,11 @@ describe('writing an edited document into its archive', () => {
     const left = await open(panelDark)
     const inner = left.createNode('FRAME', layerNamed(left, 'Holder').id, { name: 'Inner' })
     left.reparentNode(layerNamed(left, 'On page').id, inner.id)
-    left.updateNode(layerNamed(left, 'Holder').id, { variableModes: { [collection.id]: lightId } })
-    left.updateNode(left.getPages()[0].id, { variableModes: { [collection.id]: darkId } })
+    setMode(left, layerNamed(left, 'Holder').id, { [collection.id]: lightId })
+    setMode(left, left.getPages()[0].id, { [collection.id]: darkId })
     const saved = await open(await exportFigFile(left))
     expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    saved.updateNode(layerNamed(saved, 'Holder').id, { variableModes: { [collection.id]: darkId } })
+    setMode(saved, layerNamed(saved, 'Holder').id, { [collection.id]: darkId })
     saved.reparentNode(layerNamed(saved, 'Inner').id, saved.getPages()[0].id)
     expect(fillOf(await exportFigFile(saved), 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
 
@@ -557,9 +562,48 @@ describe('writing an edited document into its archive', () => {
     const defaults = await open(bytes)
     populateFigInternalPages(defaults)
     setDefaultMode(defaults, collection.id, darkId)
+    reconcileVariableLayouts(defaults, { variables: [surface.id] })
     const defaultDark = await exportFigFile(defaults)
     expect(fillOf(defaultDark, 'On page')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
     expect(fillOf(defaultDark, 'Internal')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+  })
+
+  test('saves a bound paint a variable refreshed, though the variable is back as it was', async () => {
+    await initCodec()
+    const source = new SceneGraph()
+    const collection = source.createCollection('Theme')
+    const modeId = collection.defaultModeId
+    const brand = source.createVariable('brand', 'COLOR', collection.id, { r: 0, g: 0, b: 1, a: 1 })
+    const card = source.createNode('RECTANGLE', source.getPages()[0].id, {
+      name: 'Card',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    source.bindVariable(card.id, 'fills/0/color', brand.id)
+    // The paint's opacity was edited after it bound, which Figma keeps until the color changes.
+    source.updateNode(card.id, { fills: [{ ...card.fills[0], opacity: 0.4 }] })
+    const bytes = await exportFigFile(source)
+
+    const graph = await open(bytes)
+    // As a collaborator's values arrive: written into the variable, then reconciled.
+    const setBrand = (color: Color) => {
+      expectDefined(graph.variables.get(brand.id)).valuesByMode[modeId] = color
+      reconcileVariableLayouts(graph, { variables: [brand.id] })
+    }
+    setBrand({ r: 1, g: 0, b: 0, a: 1 })
+    expect(layerNamed(graph, 'Card').fills[0]).toMatchObject({
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1
+    })
+    setBrand({ r: 0, g: 0, b: 1, a: 1 })
+    // Each change refreshed the paint, discarding its edit, as Figma does.
+    expect(layerNamed(graph, 'Card').fills[0]).toMatchObject({
+      color: { r: 0, g: 0, b: 1, a: 1 },
+      opacity: 1
+    })
+
+    const saved = [...recordsOf(await exportFigFile(graph)).values()]
+    const record = expectDefined(saved.find((entry) => entry.name === 'Card'))
+    expect(record.fillPaints?.[0]).toMatchObject({ color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1 })
   })
 
   test('rewrites the variables when one changes', async () => {

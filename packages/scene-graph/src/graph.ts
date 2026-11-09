@@ -45,7 +45,13 @@ import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 /** Scopes that graph methods check while a caller's callback runs; scopes nest. */
-type GraphScope = 'preview' | 'sourceMetadata' | 'importedState' | 'layout' | 'derivedLayout'
+type GraphScope =
+  | 'preview'
+  | 'sourceMetadata'
+  | 'importedState'
+  | 'layout'
+  | 'derivedLayout'
+  | 'componentDerived'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
@@ -66,7 +72,8 @@ export class SceneGraph {
     sourceMetadata: 0,
     importedState: 0,
     layout: 0,
-    derivedLayout: 0
+    derivedLayout: 0,
+    componentDerived: 0
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
@@ -525,6 +532,19 @@ export class SceneGraph {
     this.withScope('derivedLayout', fn)
   }
 
+  /**
+   * Runs `fn` as values a copy takes from its component, such as the bound paints of a layer an
+   * instance copies, refreshed for it. Source metadata is preserved, and a save leaves them to the
+   * component rather than writing them as edits of the copy.
+   */
+  applyComponentDerivedDuring(fn: () => void): void {
+    this.withScope('componentDerived', () => this.preserveSourceMetadataDuring(fn))
+  }
+
+  get isApplyingComponentDerived(): boolean {
+    return this.scopeDepths.componentDerived > 0
+  }
+
   get isApplyingDerivedLayout(): boolean {
     return this.scopeDepths.derivedLayout > 0
   }
@@ -646,11 +666,19 @@ export class SceneGraph {
       this.scopeDepths.sourceMetadata === 0 && !this.isApplyingDerivedLayout
     )
     Object.assign(node, changes)
+    this.followListBindings(node, changes)
+    for (const key of absent) Reflect.deleteProperty(node, key)
+    this.publishNodeUpdate(id, changes)
+  }
+
+  /** Bindings of paints and effects a write sets follow the lists it wrote. */
+  private followListBindings(node: SceneNode, changes: Partial<SceneNode>): void {
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     if (changes.effects) removeStaleBindings(node, 'effects', changes)
-    for (const key of absent) Reflect.deleteProperty(node, key)
-    this.publishNodeUpdate(id, changes)
+    // A bound paint written keeps what it was given until its variable's color changes.
+    if ((changes.fills || changes.strokes) && !this.isApplyingImportedState)
+      Variables.recordWrittenBoundPaints(this, node, changes)
   }
 
   /** Marks fields an edit changed, unless metadata is being restored or layout is writing them. */
@@ -707,6 +735,8 @@ export class SceneGraph {
     )
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
+    // Bound paints show their variables in the modes the layer now sits in.
+    Variables.refreshMovedBoundPaints(this, nodeId, oldParentId)
   }
 
   /**
@@ -732,6 +762,8 @@ export class SceneGraph {
     node.parentId = parentId
     this.absPosCache.clear()
     this.emitter.emit('node:reordered', childId, parentId, at, previousParentId)
+    if (previousParentId !== parentId)
+      Variables.refreshMovedBoundPaints(this, childId, previousParentId)
   }
 
   deleteNode(id: string): void {
@@ -808,6 +840,8 @@ export class SceneGraph {
     // Copies point at one another, as a paste's do: an instance at a component cloned with it,
     // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
     remapCopiedReferences(this, ids)
+    // A copy placed in other modes than its source shows its bound paints there, as a move does.
+    if (clone) Variables.refreshMovedBoundPaints(this, clone.id, this.nodes.get(sourceId)?.parentId)
     return clone
   }
 
@@ -826,6 +860,7 @@ export class SceneGraph {
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
+    Variables.copyAppliedBoundPaints(src, clone)
     if (src.status) markSourceFieldsEdited(clone, ['status'])
     ids.set(src.id, clone.id)
 

@@ -80,8 +80,14 @@ export function trackArchiveChanges(graph: SceneGraph): void {
     collections: collectionsSnapshot(graph),
     settings: settingsSnapshot(graph)
   }
+  // What a copy takes from its component is saved with the component, not as the copy's edit.
   const touch = (id: string) => {
-    if (!graph.isApplyingImportedState && !graph.isApplyingDerivedLayout) entry.touched.add(id)
+    if (
+      !graph.isApplyingImportedState &&
+      !graph.isApplyingDerivedLayout &&
+      !graph.isApplyingComponentDerived
+    )
+      entry.touched.add(id)
   }
   const edits = () => !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout
   graph.observeNodeChanges({
