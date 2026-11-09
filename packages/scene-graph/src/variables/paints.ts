@@ -187,6 +187,11 @@ export function applyBoundPaintColorsIn(graph: SceneGraph, rootId: string): void
     if (hasBoundPaints(node)) refresh(graph, node, ALL_FORCED)
 }
 
+/** Refreshes the bound paints in this subtree whose variables now give their layers another color. */
+export function refreshBoundPaintsIn(graph: SceneGraph, rootId: string): void {
+  for (const node of subtreeNodes(graph, [rootId])) refreshBoundPaints(graph, node)
+}
+
 /**
  * Records, for the paint lists a write sets, the colors their variables give the layer now, so a
  * paint written with another color or opacity keeps it until that color changes.
