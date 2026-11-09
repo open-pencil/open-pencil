@@ -1,2 +1,1 @@
-- Loading a page of a `.fig` document keeps the order of the layers on the pages it reads components from, so edited saves keep the saved layer order.
-- Saving a `.fig` document with a thumbnail no longer changes the size of text in instances.
+- Saving a `.fig` document after editing a component no longer moves the component above the other layers on its page, and loading pages no longer reorders the layers on the pages they read components from.
