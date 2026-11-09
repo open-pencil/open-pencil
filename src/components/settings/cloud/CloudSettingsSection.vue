@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { cloudOfficialListed } from '@/app/cloud/availability'
 import { openCloudConnect } from '@/app/cloud/connect/flow'
@@ -27,7 +27,6 @@ import type { CloudServerEntry } from './types'
 
 /** The Cloud section of Settings: the saved servers with their live sessions, and their actions. */
 const t = useCloudMessages()
-const common = useCommonMessages()
 const entries = computed<CloudServerEntry[]>(() =>
   cloudServers.value.map((server) => {
     const connection = cloudConnection(server.id)
@@ -114,7 +113,6 @@ async function remove() {
           ? t.settingsDisconnectUnsavedDescription(removingShown.unsaved)
           : t.settingsDisconnectDescription
       "
-      :cancel-label="common.cancel"
       :confirm-label="
         removingShown?.unsaved ? t.settingsDisconnectAndDiscard : t.settingsDisconnect
       "

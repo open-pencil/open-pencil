@@ -1,3 +1,5 @@
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
+
 import {
   captureDocumentChange,
   emptyDocumentChange,
@@ -21,11 +23,22 @@ export interface RecordEditOptions {
    */
   ownStep?: boolean
   /**
+   * The step this edit responds to, which it joins rather than recording one, as a host snapping
+   * a dropped layer into place does: undo and redo take both back together. `history:changed`
+   * passes the step it recorded. Once that step is no longer the newest, undone or followed by
+   * another, or while a batch is open, the response comes too late: its changes are undone and
+   * nothing is recorded.
+   */
+  joinStep?: UndoEntry
+  /**
    * Receives what the edit changed, before its step closes; an edit that failed changed nothing,
    * as it is rolled back.
    */
   onRecorded?: (change: DocumentChange) => void
 }
+
+/** An edit that awaits records a step of its own: what it would join can move on meanwhile. */
+export type AsyncRecordEditOptions = Omit<RecordEditOptions, 'joinStep'>
 
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const pageId = options.pageId ?? ctx.state.currentPageId
@@ -33,8 +46,13 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
   /** Ends the edit; true when it left no step, rolled back or changing nothing. */
   return (failed: boolean): boolean => {
     const change = finish()
+    // A response whose step has moved on would change a document that is no longer the one it
+    // answered, so it goes back as a failed edit does.
+    const stale =
+      options.joinStep !== undefined &&
+      (ctx.undo.peekUndo() !== options.joinStep || ctx.undo.isBatching)
     // A failed edit leaves nothing half done: what it changed goes back, and no step is left.
-    if (failed) {
+    if (failed || stale) {
       if (!isEmptyDocumentChange(change)) restoreDocumentChange(ctx, change, 'before')
       options.onRecorded?.(emptyDocumentChange(pageId))
       return true
@@ -51,7 +69,8 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
         forward: () => restoreDocumentChange(ctx, change, 'after'),
         inverse: () => restoreDocumentChange(ctx, change, 'before')
       }
-      if (options.ownStep) ctx.undo.pushStep(entry)
+      if (options.joinStep) ctx.undo.extendLastStep(entry)
+      else if (options.ownStep) ctx.undo.pushStep(entry)
       else ctx.undo.push(entry)
     }
     options.onRecorded?.(change)
@@ -96,9 +115,13 @@ export function recordEdit<T>(ctx: EditorContext, options: RecordEditOptions, ru
  */
 export async function recordEditAsync<T>(
   ctx: EditorContext,
-  options: RecordEditOptions,
+  options: AsyncRecordEditOptions,
   run: () => Promise<T>
 ): Promise<T> {
+  // The step it would join can be undone or followed by another while it awaits.
+  if ('joinStep' in options) {
+    throw new TypeError('recordEditAsync records a step of its own; join a step with recordEdit')
+  }
   // Capturing can throw; the edit opens only once it has, so a failure never leaves it open.
   const finish = begin(ctx, { ...options, ownStep: true })
   const close = ctx.undo.openEdit()

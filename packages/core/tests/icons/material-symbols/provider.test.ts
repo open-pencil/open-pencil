@@ -89,7 +89,7 @@ describe('Material Symbols', () => {
     expect(thinTop).toBeGreaterThan(0)
     expect(thinBottom).toBeLessThan(40)
     expect(boldRight - boldLeft).toBeGreaterThan(thinRight - thinLeft)
-    expect(thin?.paths[0]?.fill).toBe('currentColor')
+    expect(thin?.paths[0]?.tint).toEqual(['fill'])
     // One region of closed contours, so the inner ones cut the house's holes.
     expect(thin?.paths[0]?.vectorNetwork.regions[0]?.loops.length).toBeGreaterThan(1)
   })

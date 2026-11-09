@@ -83,7 +83,8 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * 86_400_000,
+    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
   }
 }
 

@@ -26,6 +26,7 @@ function handleSelect(value: string) {
 <template>
   <Tip :label="item.label">
     <VariableNumberField
+      :round="panelNumber"
       :icon="item.icon"
       :aria-label="item.label"
       :model-value="panelNumber(ctx.node[item.prop] ?? 0)"

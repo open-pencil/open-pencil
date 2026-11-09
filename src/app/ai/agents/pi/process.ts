@@ -4,6 +4,7 @@ import * as v from 'valibot'
 import type { HarnessSidecarMessage, JSONValue } from '@open-pencil/harness'
 
 import { tokenUsageSchema } from '@/app/diagnostics/events/schema'
+import { spawnAgentChild } from '@/app/tauri/children'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 /** Any value `JSON.parse` produced is a JSONValue; only presence needs checking. */
@@ -108,7 +109,7 @@ export async function spawnHarnessProcess(options: {
     options.onUnexpectedClose()
   })
 
-  const child = await command.spawn()
+  const child = await spawnAgentChild(command)
   return {
     child,
     messages,

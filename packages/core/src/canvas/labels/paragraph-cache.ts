@@ -1,5 +1,10 @@
-import type { Canvas, CanvasKit, Font, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type {
+  Canvas,
+  CanvasKit,
+  Font,
+  Paragraph,
+  TypefaceFontProvider
+} from '@open-pencil/canvaskit'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'

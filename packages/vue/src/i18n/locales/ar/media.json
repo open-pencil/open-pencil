@@ -1,0 +1,20 @@
+{
+  "vectorization": "تحويل الصور إلى متجهات",
+  "vectorizationDescription": "أرسل طبقات الصور إلى Recraft أو fal.ai أو QuiverAI واستعد متجهات قابلة للتحرير. قد يفرض المزوّد رسومًا.",
+  "vectorizeProvider": "خدمة التحويل إلى متجهات",
+  "stockPhotos": "صور مخزنة",
+  "webSearch": "البحث على الويب",
+  "webSearchDescription": "بمفتاح Exa الخاص بك، يستطيع وكيل الذكاء الاصطناعي والوكلاء الذين يستخدمون أدوات OpenPencil البحث على الويب بأي نموذج، وتُحاسبك Exa بدلًا من استخدام أرصدة Cloud.",
+  "pexelsAPIKey": "مفتاح Pexels API (صور مخزنية)",
+  "unsplashAccessKey": "مفتاح وصول Unsplash",
+  "stockPhotoToolOptional": "اختياري — لأداة stock_photo",
+  "pexelsAlternativeOptional": "اختياري — بديل لـ Pexels",
+  "getPexelsAPIKey": "احصل على مفتاح Pexels API مجاني ←",
+  "getUnsplashAccessKey": "احصل على مفتاح وصول Unsplash مجاني ←",
+  "photoKeyWorks": "قبِل {service} هذا المفتاح.",
+  "photoKeyRejected": "رفض {service} هذا المفتاح. تحقق من أنك نسخته كاملًا.",
+  "unsplashKeyRejected": "رفض Unsplash هذا المفتاح. الصق مفتاح الوصول (Access Key) الخاص بتطبيقك، لا المفتاح السري (Secret key).",
+  "photoKeyRateLimited": "استنفد هذا المفتاح طلبات {service} لهذه الساعة. حاول مرة أخرى لاحقًا.",
+  "photoKeyUnreachable": "تعذّر الوصول إلى {service}. تحقق من اتصالك بالشبكة.",
+  "photoKeyCheckFailed": "لم يستجب {service} للاختبار. حاول مرة أخرى لاحقًا."
+}

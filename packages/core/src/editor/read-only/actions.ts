@@ -12,6 +12,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
+  // Applies component edits already made to their instances; it makes none of its own.
+  'flushComponentSync',
   'getChildren',
   'getCollection',
   'getCollectionCount',
@@ -47,6 +49,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'pageSwitchCount',
   'previewRenameSelected',
   // Recording only: what the edit runs is refused or allowed on its own.
+  'asHost',
+  'constrainMove',
   'recordEdit',
   'recordEditAsync',
   'resolveColorVariable',
@@ -93,6 +97,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setSelectedGuide',
   'setShapeHandleHover',
   'setSnapGuides',
+  'setSnapTargets',
+  'setMovePolicy',
   'setTransforming',
 
   // Viewport and pages
@@ -138,12 +144,11 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'prepareCopy',
 
   // Ending what was in progress
+  'cancelGesture',
   'cancelNodePreviews',
   'exitNodeEditMode',
   'flushNudge',
-  'nodeEditCancelDrag',
   'penCancel',
-  'penCancelPress',
   'pencilCancel',
 
   // Canvas, layout, and document lifecycle
@@ -196,3 +201,27 @@ export const PATH_EDIT_ACTIONS: ReadonlySet<string> = new Set([
   'setNodeEditNetwork',
   'undoAction'
 ])
+
+/**
+ * Editor actions that move layers within their parents, which a host that lets layers only move
+ * (`layerEdits: 'move'`) still offers, together with undo and redo of what they did.
+ */
+export const MOVE_ACTIONS: ReadonlySet<string> = new Set([
+  'commitMove',
+  'fitEnclosingGroups',
+  'nudgeSelected',
+  'redoAction',
+  'undoAction'
+])
+
+/**
+ * Editor actions that reorder a frame's children, which a host that lets layers only move still
+ * offers to rearrange the same children, as moving a layer along an auto layout flow does.
+ */
+export const REORDER_ACTIONS: ReadonlySet<string> = new Set(['setChildOrder'])
+
+/**
+ * Editor actions that update any field of a layer, which a host that lets layers only move still
+ * offers for a layer's position alone: a drag writes its final position through them.
+ */
+export const POSITION_ACTIONS: ReadonlySet<string> = new Set(['updateNode', 'updateNodeWithUndo'])

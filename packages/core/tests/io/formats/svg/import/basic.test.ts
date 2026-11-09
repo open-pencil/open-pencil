@@ -285,6 +285,25 @@ describe('import_svg', () => {
     expect(line?.strokes[0]?.weight).toBe(6)
   })
 
+  test('draws nothing in a shape with no fill or stroke, such as an icon bounding box', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M4 4h16v16H4z"/></svg>`
+    })) as { id: string }
+
+    const [box, shape] = graph.getChildren(result.id)
+    expect(box?.fills).toEqual([])
+    expect(shape?.fills).toHaveLength(1)
+  })
+
+  test('paints a gradient stroke as a gradient', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="10" height="10"><defs><linearGradient id="a"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs><rect x="1" y="1" width="8" height="8" fill="none" stroke="url(#a)" stroke-width="2"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.strokes[0]).toMatchObject({ type: 'GRADIENT_LINEAR', weight: 2 })
+  })
+
   test('paints currentColor in the color the SVG sets', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg width="10" height="10" color="#ff0000"><rect width="10" height="10" fill="currentColor"/></svg>`

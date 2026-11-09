@@ -41,6 +41,79 @@ describe('recordEdit', () => {
     expect(editor.undo.undo()).toBe('Arrange')
   })
 
+  test('joins the step it responds to, so undo and redo take back both', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+
+    expect(editor.undo.undo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(40)
+  })
+
+  test('a response to a step undone before it ran changes nothing and records nothing', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.undo.undo()
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    expect(editor.undo.canUndo).toBe(false)
+    // Redo is still there, as the response took nothing away.
+    expect(editor.undo.redo()).toBe('Move')
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+  })
+
+  test('a response that comes after a nudge leaves the nudge as the newest step', () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const step = editor.undo.peekUndo()
+    editor.select([card.id])
+    editor.nudgeSelected(5, 0)
+
+    editor.recordEdit({ label: 'Snap', joinStep: step }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    expect(editor.graph.getNode(card.id)?.x).toBe(42)
+    expect(editor.undo.undoLabel).toBe('Nudge')
+  })
+
+  test('an edit that awaits joins no step', async () => {
+    const { editor, card } = setup()
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    const options = { label: 'Snap', joinStep: editor.undo.peekUndo() }
+    await expect(
+      editor.recordEditAsync(options, async () => editor.graph.updateNode(card.id, { x: 40 }))
+    ).rejects.toThrow(TypeError)
+    expect(editor.graph.getNode(card.id)?.x).toBe(37)
+    expect(editor.undo.undoLabel).toBe('Move')
+  })
+
+  test('history:changed passes the step it recorded or joined', () => {
+    const { editor, card } = setup()
+    const seen: unknown[] = []
+    editor.onEditorEvent('history:changed', (change, step) => seen.push([change, step?.label]))
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 37 }))
+    editor.recordEdit({ label: 'Snap', joinStep: editor.undo.peekUndo() }, () =>
+      editor.graph.updateNode(card.id, { x: 40 })
+    )
+    editor.undo.undo()
+    // The joined change is reported too, so collaboration and saving follow it.
+    expect(seen).toEqual([
+      ['record', 'Move'],
+      ['join', 'Move'],
+      ['undo', undefined]
+    ])
+  })
+
   test('rolls back an edit that threw part way and leaves no step', () => {
     const { editor, pageId, card } = setup()
     let recorded: DocumentChange | undefined
@@ -292,22 +365,5 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(note.id)).toMatchObject({ parentId: pageId, x: 110, y: 70 })
     expect(editor.undo.undo()).toBe('Add note')
     expect(editor.graph.getNode(note.id)).toBeUndefined()
-  })
-
-  test('undoing it brings back the mode a collection it removed was showing', () => {
-    const { editor } = setup()
-    const collection = editor.graph.createCollection('Theme')
-    const dark = editor.graph.createMode(collection.id, 'Dark')
-    if (!dark) throw new Error('No Dark mode')
-    editor.graph.setActiveMode(collection.id, dark)
-
-    editor.recordEdit({ label: 'Agent: remove' }, () =>
-      editor.graph.removeCollection(collection.id)
-    )
-    expect(editor.undo.undo()).toBe('Agent: remove')
-    expect(editor.graph.activeMode.get(collection.id)).toBe(dark)
-
-    editor.undo.redo()
-    expect(editor.graph.activeMode.has(collection.id)).toBe(false)
   })
 })

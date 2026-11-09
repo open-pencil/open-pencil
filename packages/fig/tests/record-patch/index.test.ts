@@ -1,14 +1,18 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { parseFigBuffer, readStreamBytes, writeFigArchive, writeFigContainer } from '#fig/index'
 import {
   figComponentUsePages,
   figRecordPages,
+  patchFigArchive,
   patchFigMessage,
   patchFigRecords
 } from '#fig/record-patch/index'
 import { deflateSync } from 'fflate'
 
 import {
+  createNodeChangesMessage,
+  encodeMessage,
   getCompiledSchema,
   getSchemaBytes,
   initCodec,
@@ -197,5 +201,65 @@ describe('splicing an encoded message', () => {
       'Renamed again',
       'Added'
     ])
+  })
+})
+
+describe('writing the patched archive', () => {
+  const PATCH = { records: [], blobs: [], removed: [], replaceVariables: false }
+  const IMAGE = new Uint8Array(64 * 1024).map((_, index) => index % 251)
+  const input = {
+    thumbnailPNG: new Uint8Array([1]),
+    metaJSON: '{"file_name":"Patched"}',
+    images: [{ name: 'images/new', data: new Uint8Array([4, 5, 6]) }]
+  }
+  const document = () =>
+    encodeMessage(
+      createNodeChangesMessage(0, 0, [
+        { guid: guid(0), type: 'DOCUMENT', phase: 'CREATED', name: 'Doc' }
+      ])
+    )
+
+  beforeAll(async () => {
+    await initCodec()
+  })
+
+  test('passes the archive images through as views of it and adds the new ones', async () => {
+    const archive = writeFigArchive({
+      schemaDeflated: deflateSync(getSchemaBytes()),
+      kiwiData: document(),
+      thumbnailPNG: new Uint8Array(),
+      metaJSON: '{}',
+      images: [
+        { name: 'images/kept', data: IMAGE },
+        { name: 'images/new', data: new Uint8Array([7]) }
+      ]
+    })
+    const buffer = archive.slice().buffer
+    const reader = patchFigArchive(buffer, PATCH, input).getReader()
+    const chunks: Uint8Array[] = []
+    for (let next = await reader.read(); !next.done; next = await reader.read()) {
+      chunks.push(next.value)
+    }
+    const written = parseFigBuffer(
+      await new Blob(chunks.map((chunk) => chunk.slice())).arrayBuffer()
+    )
+
+    expect(chunks.some((chunk) => chunk.buffer === buffer)).toBe(true)
+    // An image the archive holds wins over a new one of the same name.
+    expect(Object.fromEntries(written.images)).toEqual({ kept: IMAGE, new: new Uint8Array([7]) })
+    expect(written.metaJSON).toBe(input.metaJSON)
+  })
+
+  test('writes a bare fig-kiwi file as an archive', async () => {
+    const bare = writeFigContainer({
+      schemaDeflated: deflateSync(getSchemaBytes()),
+      dataRaw: document()
+    })
+    const written = parseFigBuffer(
+      (await readStreamBytes(patchFigArchive(bare.slice().buffer, PATCH, input))).buffer
+    )
+
+    expect(written.nodeChanges.map((change) => change.name)).toEqual(['Doc'])
+    expect(written.images).toEqual([['new', new Uint8Array([4, 5, 6])]])
   })
 })

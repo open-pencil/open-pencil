@@ -2,7 +2,7 @@
 export default {
   slots: {
     panel: 'flex min-h-0 flex-1 flex-col',
-    list: 'scrollbar-thin min-h-0 flex-1 overflow-y-auto py-1',
+    list: 'min-h-0 flex-1 overflow-y-auto py-1',
     item: 'group/item relative px-2',
     // The line between markers runs through the gutter beside each entry.
     itemButton:
@@ -21,8 +21,6 @@ export default {
       'invisible absolute top-1.5 right-3 group-focus-within/item:visible group-hover/item:visible group-data-[selected]/item:visible group-data-[menu-open]/item:visible',
     more: 'flex justify-center px-3 py-2',
     status: 'px-4 py-3 text-xs text-muted',
-    menuIndicator: 'absolute left-2',
-    form: 'flex flex-col gap-3',
-    label: 'sr-only'
+    menuIndicator: 'absolute left-2'
   }
 } as const

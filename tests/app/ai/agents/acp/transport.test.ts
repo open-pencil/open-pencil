@@ -426,6 +426,11 @@ describe('formatConnectionError', () => {
     expect(msg).toBe('Something unexpected')
   })
 
+  test('decoded ACP errors keep the agent message', () => {
+    const error = { code: -32600, message: 'Session in use' }
+    expect(formatConnectionError(error)).toBe(error.message)
+  })
+
   test('non-Error values converted to string', () => {
     const msg = formatConnectionError('raw string error')
     expect(msg).toBe('raw string error')

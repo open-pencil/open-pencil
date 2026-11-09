@@ -16,6 +16,7 @@ import {
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
+import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import {
   createCloudAPIRouter,
@@ -180,7 +181,8 @@ export function createCloudApp(services: CloudServices) {
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config),
       documents: createAdminDocumentService(services.database, {
-        closeRooms: services.onDocumentTakenDown
+        closeRooms: services.onDocumentTakenDown,
+        purgeGraceMs: services.config.documentPurgeGraceMs
       }),
       reports: createAdminReportService(services.database)
     },
@@ -200,7 +202,14 @@ export function createCloudApp(services: CloudServices) {
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes,
-    onVersionsChanged: services.onDocumentVersionsChanged
+    onVersionsChanged: services.onDocumentVersionsChanged,
+    trash: {
+      retentionMs: services.config.documentRetentionMs,
+      purgeGraceMs: services.config.documentPurgeGraceMs,
+      leaseDurationMs: services.config.cleanupLeaseDurationMs,
+      reportError: services.reportError
+    },
+    reportError: services.reportError
   })
   const versions = createDocumentVersionService(services.database, services.objects, {
     policy,
@@ -286,6 +295,7 @@ export function createCloudApp(services: CloudServices) {
     config: services.config,
     enrollment,
     workspaces,
+    deletion: createAccountDeletionService(services.database),
     resolveIdentity,
     resolveSession,
     requireActiveSession,

@@ -127,11 +127,7 @@ async function save() {
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="messages.pictureTitle"
-      :description="messages.pictureDescription"
-      :close-label="messages.cancel"
-    />
+    <AppDialogHeader :heading="messages.pictureTitle" :description="messages.pictureDescription" />
     <AppDialogBody :ui="{ body: 'flex flex-col items-center gap-4' }">
       <AppAlert
         v-if="unreadable || error"
@@ -186,7 +182,7 @@ async function save() {
         />
       </SliderRoot>
     </AppDialogBody>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton type="button" @click="open = false">{{ messages.cancel }}</AppButton>
       <AppButton
         type="button"

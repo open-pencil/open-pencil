@@ -52,8 +52,24 @@ revision has its own object key.
 - Each upload names the revision it was based on, so a stale base is rejected instead of silently
   overwriting a newer revision. The client then chooses: take the Cloud revision, keep both, or
   replace it.
-- Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
-  the retention period passes.
+- Deleting a document moves it to Trash: `deleted_at` and `deleted_by` are set, and the cleanup
+  worker destroys revisions and objects once the retention period passes. `GET /api/trash` lists
+  what the person may restore across their workspaces, and `POST /api/trash/:documentId/restore`
+  clears the deletion while retention lasts and no cleanup has claimed the document. Restoring
+  needs the `delete` permission; deleting forever, `DELETE /api/trash/:documentId`, the `purge`
+  one, which the document's owner and workspace admins hold. A document in Trash keeps its bytes
+  in the workspace's usage, so restoring checks no quota.
+- Deleting forever (`markPurged` in `src/server/documents/purge.ts`) sets `purged_at` and
+  `purged_by`: the document leaves Trash, and the files only it holds come off the workspace's
+  usage at once, recorded in `purged_bytes`. Its files and rows stay through `purge_grace_days`, so
+  a server administrator can restore it from the console (`POST /api/admin/documents/:id/undelete`,
+  audited as `document.undeleted`), live in its workspace with its bytes counted again, unless the
+  workspace has nobody left in it. Cleanup then destroys it like a document past retention, taking
+  off the usage only what `purged_bytes` didn't, and storage reconciliation leaves such documents
+  out. With no grace, deleting forever destroys the document in the request. An account's deletion
+  deletes the documents of the workspaces only it belonged to forever, with the same grace.
+- Every document, upload, or compaction step cleanup can't finish is reported to error tracking
+  with source `cleanup`, by ID only, and retried by a later pass.
 - Images are stored once per workspace, keyed by the SHA-256 the object store verifies, and a stored
   revision leaves them out of its file: it lists the images it uses under the names the file gives
   them, and a download returns a link for each. Before a save the client asks which of its images
@@ -145,6 +161,22 @@ an administrator resetting them.
 A new email address is confirmed from that address through Better Auth's change-email link, and
 the old address is told which address is taking over. An approved enrollment follows the account
 to its new address, so the approval stays with the account.
+
+Deleting an account goes through Better Auth's `deleteUser`, reached only at
+`POST /api/account/delete`, which wants a session from the last ten minutes or the password. Its
+`beforeDelete` hook (`src/server/account/deletion.ts`) takes Cloud's part in one transaction, or
+refuses and changes nothing while the account is the only admin of a workspace other people
+belong to (`account_sole_admin`) or the deployment's only active administrator
+(`last_admin_required`). The same transaction deletes the user row, whose keys cascade to its
+sessions, sign-in methods, passkeys, and two-step secrets, so a failure leaves the account whole;
+Better Auth's own deletes after the hook then find nothing. Workspaces only the account belongs to lose their documents,
+deleted forever, and the cleanup worker removes each such workspace once it has destroyed
+the last of them after the grace; in the workspaces others keep the account drops out, and the longest-standing
+other admin becomes the owner whose plan the workspace draws on. Its document grants, invitation
+budget, plan, picture, sign-ins, MFA assurances and enrollment go, and invitations it sent are
+withdrawn. `GET /api/account/deletion` says beforehand what would go and what stops it, and
+the account page's Download all saves, as one zip, the documents the account would lose: those
+workspaces' and the ones it created in workspaces it leaves.
 
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.

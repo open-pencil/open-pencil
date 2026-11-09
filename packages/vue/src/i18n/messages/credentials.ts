@@ -11,6 +11,10 @@ export const credentialsMessageDefaults = {
   rememberDevice: 'Remember API keys on this device',
   sessionOnly: 'Keys are kept only until you close this session.',
   retryFailed: 'Could not reset credential access. Try again.',
+  storeLocked:
+    'The system credential store is locked. Unlock it, then choose Retry access in General settings.',
+  storeUnavailable:
+    'OpenPencil cannot reach the system credential store. On Linux, start a keyring such as GNOME Keyring; for the Snap, run “snap connect openpencil:password-manager-service”. Then choose Retry access in General settings.',
   storage: params('Credentials: {backend}'),
   backendNative: 'system credential store',
   backendBrowser: 'encrypted browser storage',

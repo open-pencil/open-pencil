@@ -98,7 +98,7 @@ describe('Figma export colour variable bindings', () => {
     }
   })
 
-  test("writes bound fields resolved for each node's mode, as Figma draws the stored value", async () => {
+  test("writes bound numbers resolved for each node's mode, and bound paints as stored", async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const theme = graph.createCollection('Theme')
@@ -109,7 +109,7 @@ describe('Figma export colour variable bindings', () => {
     const radius = graph.createVariable('Radius', 'FLOAT', theme.id, 12)
     radius.valuesByMode.dark = 16
     graph.setDefaultMode(theme.id, 'dark')
-    // Stale literals, as a graph bound without the editor keeps them.
+    // A stale number, as a graph bound without the editor keeps it; binding a paint colors it.
     const stale = { r: 1, g: 0, b: 0, a: 1 }
     const card = (name: string, variableModes: Record<string, string> = {}) => {
       const node = graph.createNode('FRAME', page.id, {
@@ -126,6 +126,9 @@ describe('Figma export colour variable bindings', () => {
     }
     const dark = card('Default mode')
     card('Light mode', { [theme.id]: light })
+    // A bound paint edited since is Figma's cache too, and saves as edited.
+    const [fill] = dark.fills
+    graph.updateNode(dark.id, { fills: [{ ...fill, opacity: 0.3 }] })
 
     const nodeChanges = decodeNodeChanges(new Uint8Array(await exportFigFile(graph)))
     const exported = (name: string) =>
@@ -142,13 +145,12 @@ describe('Figma export colour variable bindings', () => {
       b: expect.closeTo(0.15, 5),
       a: 1
     })
-    expect(defaultCard.fillPaints?.[0]?.opacity).toBeCloseTo(0.8, 5)
+    expect(defaultCard.fillPaints?.[0]?.opacity).toBeCloseTo(0.3, 5)
     const lightCard = exported('Light mode')
     expect(lightCard.cornerRadius).toBe(12)
     expect(lightCard.fillPaints?.[0]?.color).toEqual({ r: 1, g: 1, b: 1, a: 1 })
     expect(lightCard.fillPaints?.[0]?.opacity).toBe(1)
     // Export reads the document; it does not resolve bindings into it.
-    expect(graph.getNode(dark.id)?.fills[0]?.color).toEqual(stale)
     expect(graph.getNode(dark.id)?.cornerRadius).toBe(0)
   })
 })

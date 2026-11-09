@@ -2,14 +2,15 @@ import { describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 
 const BLACK = parseColor('#000000')
 
@@ -59,7 +60,7 @@ describe('placeIcon', () => {
       '<path fill="currentColor" d="M0 0h24v24H0M6 6v12h12V6z"/>'
     )
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
     try {
       const png = expectDefined(
@@ -91,6 +92,19 @@ describe('placeIcon', () => {
     } finally {
       renderer.destroy()
     }
+  })
+
+  test('paints gradient fills and strokes as gradients, kept out of the icon color', () => {
+    const { vectors } = insertIcon(
+      new SceneGraph(),
+      '<defs><linearGradient id="a"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>' +
+        '<path fill="url(#a)" stroke="url(#a)" stroke-width="2" stroke-linecap="round" d="M2 2h20v20H2z"/>'
+    )
+    const vector = expectDefined(vectors[0], 'vector')
+
+    expect(vector.fills[0]?.type).toBe('GRADIENT_LINEAR')
+    expect(vector.strokes[0]).toMatchObject({ type: 'GRADIENT_LINEAR', weight: 2, cap: 'ROUND' })
+    expect(readIconTint(vector)).toEqual([])
   })
 })
 

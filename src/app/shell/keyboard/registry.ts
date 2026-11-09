@@ -21,7 +21,7 @@ import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 export function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
   const { store, actions } = options
   // The menus' save actions, which commit a field being typed in before writing the file.
-  const saving = createSaveMenuActions(store)
+  const saving = createSaveMenuActions()
   const menuKeys = (id: string) => {
     const shortcut = appMenuShortcut(id)
     if (!shortcut) throw new Error(`Menu item '${id}' has no shortcut`)

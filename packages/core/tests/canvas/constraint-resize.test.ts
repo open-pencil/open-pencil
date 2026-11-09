@@ -2,7 +2,8 @@ import { expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -10,7 +11,7 @@ import { absoluteConstraintRecords } from '@open-pencil/test-support/fig/absolut
 import { FIXTURES } from '@open-pencil/test-support/paths'
 test('absolute resize constraints match native Figma pixels', async () => {
   const { graph, sources } = materializeDocument(absoluteConstraintRecords())
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
   const root = expectDefined(sources.get('1:4'))
   const decode = (bytes: Uint8Array) => {

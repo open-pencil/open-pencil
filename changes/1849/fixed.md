@@ -1,0 +1,1 @@
+- Saved Claude Code and Codex conversations stay resumable after the app reloads or a resume fails temporarily, and the error offers to try again or start a new chat.

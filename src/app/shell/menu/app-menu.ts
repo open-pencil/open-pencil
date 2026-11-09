@@ -178,7 +178,7 @@ export function useAppMenu() {
   const actions: Partial<Record<string, () => void>> = {
     ...createTabMenuActions(),
     'open-tour': openTourFromMenu,
-    ...createSaveMenuActions(store),
+    ...createSaveMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     settings: openSettingsDialog,

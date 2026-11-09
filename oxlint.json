@@ -121,6 +121,7 @@
     "open-pencil/no-core-framework-imports": "error",
     "open-pencil/no-inline-tauri-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
+    "open-pencil/no-vite-hot-outside-reload": "error",
     "open-pencil/no-local-json-object-aliases": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-zoom-in-scene-drawing": "error",

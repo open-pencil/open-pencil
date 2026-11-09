@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type {
   VectorVertex,
   VectorSegment,
@@ -14,7 +13,7 @@ import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import {
-  type NodeEditHandles,
+  type ShownHandles,
   handleVisibleVertices,
   regenerateFillGeometry,
   vectorHandleId,
@@ -44,7 +43,7 @@ export interface NodeEditOverlayState {
   hoveredRegion?: number | null
   selectedRegions?: Set<number>
   /** Which points show their handles; near the selection when unset. */
-  handles?: NodeEditHandles
+  showHandles?: ShownHandles
 }
 
 // Blue = rgb(59,130,246) ≈ 0.23, 0.51, 0.96

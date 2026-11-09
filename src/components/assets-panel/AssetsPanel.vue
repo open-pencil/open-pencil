@@ -385,7 +385,7 @@ async function insertSelectedAsset() {
       </SegmentedControl>
     </div>
 
-    <div class="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
       <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
         <h2 class="mb-1 px-1 text-2xs font-semibold text-muted">
           {{ group.pageName }}

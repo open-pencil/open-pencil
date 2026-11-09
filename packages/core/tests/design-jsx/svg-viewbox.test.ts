@@ -3,12 +3,8 @@ import { join } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderJSX } from '@open-pencil/core/design-jsx'
-import {
-  comparePNGs,
-  createCanvasKitRasterCodec,
-  initCanvasKit,
-  renderNodesToImage
-} from '@open-pencil/core/io/formats/raster'
+import { comparePNGs, createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -30,8 +26,16 @@ async function iconVector(jsx: string): Promise<SceneNode> {
   )
 }
 
+/** The vector's vertices in its frame, where it sits at its own bounds. */
+function placedVertices(vector: SceneNode): Vector[] {
+  return (vector.vectorNetwork?.vertices ?? []).map(({ x, y }) => ({
+    x: vector.x + x,
+    y: vector.y + y
+  }))
+}
+
 async function rectVertices(jsx: string): Promise<Vector[]> {
-  return (await iconVector(jsx)).vectorNetwork?.vertices.map(({ x, y }) => ({ x, y })) ?? []
+  return placedVertices(await iconVector(jsx))
 }
 
 describe('inline SVG viewBox origin', () => {
@@ -137,7 +141,7 @@ describe('inline SVG viewBox origin', () => {
     const graph = new SceneGraph()
     const [frame] = await renderJSX(graph, jsx)
     const page = expectDefined(graph.getPages()[0], 'page')
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
     try {
       const png = expectDefined(
@@ -173,10 +177,25 @@ describe('inline SVG viewBox origin', () => {
     const jsx =
       '<svg viewBox="0 0 50 100" size={100} preserveAspectRatio="none" transform="scale(2 1)"><line x1={0} y1={0} x2={10} y2={0} stroke="black" strokeWidth={4} transform="scale(0.5 1)" /></svg>'
     const vector = await iconVector(jsx)
-    expect(vector.vectorNetwork?.vertices.map(({ x, y }) => ({ x, y }))).toEqual([
+    expect(placedVertices(vector)).toEqual([
       { x: -50, y: 0 },
       { x: -30, y: 0 }
     ])
     expect(expectDefined(vector.strokes[0], 'stroke').weight).toBe(4)
+  })
+})
+
+describe('inline SVG paints', () => {
+  test('take gradient stops and opacities spelled as JSX props', async () => {
+    const vector = await iconVector(
+      `<svg viewBox="0 0 10 10" size={10}><defs><linearGradient id="g"><stop offset="0" stopColor="#ff0000" stopOpacity="0.5" /><stop offset="1" stopColor="#0000ff" /></linearGradient></defs><rect width={10} height={10} fill="url(#g)" fillOpacity="0.8" /></svg>`
+    )
+    const [fill] = vector.fills
+    expect(fill?.type).toBe('GRADIENT_LINEAR')
+    expect(fill?.opacity).toBeCloseTo(0.8)
+    expect(fill?.gradientStops?.map(({ color }) => [color.r, color.b, color.a])).toEqual([
+      [1, 0, 0.5],
+      [0, 1, 1]
+    ])
   })
 })

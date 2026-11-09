@@ -5,8 +5,7 @@ import { colorToFill } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import {
-  reconcileVariableBindings,
-  resolvedPaintBindings
+  reconcileVariableBindings
 } from '@open-pencil/scene-graph/variables'
 
 function must<T>(value: T | null | undefined, what: string): T {
@@ -191,7 +190,6 @@ test.each(['fills', 'strokes'] as const)(
     graph.syncInstance(placed.id)
 
     expect(nested().boundVariables).toEqual({})
-    expect(resolvedPaintBindings(graph, nested())[list]).toBeUndefined()
     expect(nested()[list][0].color).toEqual(literal[0].color)
   }
 )

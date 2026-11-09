@@ -1,6 +1,6 @@
-import type { BlendMode, Effect } from '@open-pencil/scene-graph'
+import type { BlendMode, Effect, GlassEffectParams } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { BLACK, TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 export type EffectColor = string | Color
@@ -20,6 +20,18 @@ export interface ShadowEffectOptions {
 export interface BlurEffectOptions {
   radius?: number
   visible?: boolean
+}
+
+/** A glass lens in Figma's terms, with `radius` frosting it. */
+export type GlassEffectOptions = Partial<GlassEffectParams> & BlurEffectOptions
+
+/** The lens a `glass()` call gets for each value it leaves out. */
+const DEFAULT_GLASS: GlassEffectParams = {
+  refraction: 0.5,
+  depth: 20,
+  lightAngle: -45,
+  lightIntensity: 0.5,
+  dispersion: 0
 }
 
 /** Radius of a shadow or blur that does not set one. */
@@ -77,4 +89,22 @@ export function backgroundBlur(radiusOrOptions?: number | BlurEffectOptions): Ef
 
 export function foregroundBlur(radiusOrOptions?: number | BlurEffectOptions): Effect {
   return blurEffect('FOREGROUND_BLUR', radiusOrOptions)
+}
+
+export function glass(options: GlassEffectOptions = {}): Effect {
+  return {
+    type: 'GLASS',
+    color: { ...BLACK },
+    offset: { x: 0, y: 0 },
+    radius: options.radius ?? 0,
+    spread: 0,
+    visible: options.visible ?? true,
+    glass: {
+      refraction: options.refraction ?? DEFAULT_GLASS.refraction,
+      depth: options.depth ?? DEFAULT_GLASS.depth,
+      lightAngle: options.lightAngle ?? DEFAULT_GLASS.lightAngle,
+      lightIntensity: options.lightIntensity ?? DEFAULT_GLASS.lightIntensity,
+      dispersion: options.dispersion ?? DEFAULT_GLASS.dispersion
+    }
+  }
 }

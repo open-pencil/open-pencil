@@ -27,7 +27,7 @@ const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
 const { isMobile } = useViewportKind()
-const { panels, common } = useI18n()
+const { panels } = useI18n()
 
 async function openPublish() {
   open.value = false
@@ -77,7 +77,6 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
     <AppDialogHeader
       :heading="panels.manageLibraries"
       :description="panels.manageLibrariesDescription"
-      :close-label="common.close"
     >
       <template #actions>
         <AppButton color="primary" variant="link" class="ml-auto" @click="openPublish">
@@ -175,8 +174,10 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             size="compact"
           />
         </AppDialogBody>
-        <AppDialogFooter :ui="{ footer: 'justify-between' }">
-          <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+        <AppDialogFooter>
+          <template #start>
+            <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+          </template>
           <AppButton
             color="primary"
             variant="solid"

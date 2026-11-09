@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   constraintFrame,

@@ -1,4 +1,4 @@
-import type { PathBuilder } from 'canvaskit-wasm'
+import type { PathBuilder } from '@open-pencil/canvaskit'
 
 import type { OutlineCommand } from '#core/text/font/glyphs'
 

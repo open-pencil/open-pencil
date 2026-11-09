@@ -149,3 +149,125 @@ describe('node.effects', () => {
     ).toThrow('Progressive blur is not supported')
   })
 })
+
+// Recorded on 2026-11-09 by assigning these effects in live Figma 126 through its plugin API.
+describe('glass effects', () => {
+  const glass = {
+    type: 'GLASS',
+    visible: true,
+    refraction: 0.5,
+    depth: 20,
+    lightAngle: -45,
+    lightIntensity: 0.5,
+    dispersion: 0.25,
+    radius: 4
+  } as const
+  const red = (opacity: number, visible = true) => ({
+    type: 'SOLID' as const,
+    color: { r: 1, g: 0, b: 0 },
+    opacity,
+    visible
+  })
+  const opacities = (rect: { fills: unknown }) =>
+    (rect.fills as { opacity: number }[]).map((fill) => fill.opacity)
+
+  test('reads back in Figma field order', () => {
+    expect(assign([glass]).effects).toEqual([
+      {
+        type: 'GLASS',
+        visible: true,
+        radius: 4,
+        boundVariables: {},
+        refraction: 0.5,
+        depth: 20,
+        lightAngle: -45,
+        lightIntensity: 0.5,
+        dispersion: 0.25
+      }
+    ])
+  })
+
+  test('keeps a depth outside 1 to 100 at the nearer end and any light angle', () => {
+    expect(assign([{ ...glass, depth: 0.5 }]).effects[0]).toMatchObject({ depth: 1 })
+    expect(assign([{ ...glass, depth: 1000 }]).effects[0]).toMatchObject({ depth: 100 })
+    expect(assign([{ ...glass, lightAngle: -400 }]).effects[0]).toMatchObject({ lightAngle: -400 })
+  })
+
+  test('names the field Figma refuses', () => {
+    const message = (problem: string) =>
+      `in set_effects: Property "effects" failed validation: ${problem}`
+    expect(() => assign([{ ...glass, refraction: 1.5 }])).toThrow(
+      message('Too big: expected number to be <=1 at [0].refraction')
+    )
+    expect(() => assign([{ ...glass, lightIntensity: 2 }])).toThrow(
+      message('Too big: expected number to be <=1 at [0].lightIntensity')
+    )
+    expect(() => assign([{ ...glass, dispersion: 2 }])).toThrow(
+      message('Too big: expected number to be <=1 at [0].dispersion')
+    )
+    expect(() => assign([{ ...glass, radius: -1 }])).toThrow(
+      message('Too small: expected number to be >=0 at [0].radius')
+    )
+    expect(() => assign([{ ...glass, blendMode: 'NORMAL' }])).toThrow(
+      message('Unrecognized key: "blendMode" at index 0')
+    )
+    expect(() => assign([glass, { ...glass, depth: 5 }])).toThrow(
+      message('Only one glass effect is allowed per node.')
+    )
+  })
+
+  test('turns a single opaque fill to 20%, or 10% when it is white, as it gains glass', () => {
+    const rect = createRectangle()
+    rect.fills = [red(1)]
+    rect.effects = [glass]
+    expect(opacities(rect)).toEqual([0.2])
+
+    const white = createRectangle()
+    white.fills = [{ type: 'SOLID', color: { r: 0.999, g: 0.999, b: 0.999 }, opacity: 1 }]
+    white.effects = [glass]
+    expect(opacities(white)).toEqual([0.1])
+
+    const hidden = createRectangle()
+    hidden.fills = [red(1, false)]
+    hidden.effects = [shadow]
+    hidden.effects = [shadow, glass]
+    expect(opacities(hidden)).toEqual([0.2])
+  })
+
+  test('leaves other fills, and a layer that had glass, as they are', () => {
+    const cases: [unknown[], unknown[]][] = [
+      [[red(0.99)], []],
+      [[red(1), red(1)], []],
+      [[], []],
+      [[red(1)], [{ ...glass, visible: false }]]
+    ]
+    for (const [fills, before] of cases) {
+      const rect = createRectangle()
+      Reflect.set(rect, 'effects', before)
+      Reflect.set(rect, 'fills', fills)
+      const kept = opacities(rect)
+      rect.effects = [glass]
+      expect(opacities(rect)).toEqual(kept)
+    }
+  })
+
+  test('binds only the frost radius', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    const collection = api.variables.createVariableCollection('Glass')
+    const size = api.variables.createVariable('Frost', collection, 'FLOAT')
+    expect(api.variables.setBoundVariableForEffect(glass, 'radius', size)).toEqual({
+      type: 'GLASS',
+      visible: true,
+      radius: 4,
+      boundVariables: { radius: { type: 'VARIABLE_ALIAS', id: size.id } },
+      refraction: 0.5,
+      depth: 20,
+      lightAngle: -45,
+      lightIntensity: 0.5,
+      dispersion: 0.25
+    })
+    expect(() => api.variables.setBoundVariableForEffect(glass, 'spread', size)).toThrow(
+      'in setBoundVariableForEffect: Property "field" failed validation: Invalid input: expected "radius"'
+    )
+  })
+})
