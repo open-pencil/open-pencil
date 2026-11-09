@@ -1,0 +1,1 @@
+- Keeps vector rendering correct when a replacement graph reuses node IDs.

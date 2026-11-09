@@ -1,5 +1,7 @@
 import type { Path } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import { ResourceCache } from '#core/cache/resource'
 
 /**
@@ -60,6 +62,7 @@ export class NodePathCaches {
   readonly sharedKeys: ResourceCache<string, string>
   private readonly caches: readonly NodePathCache[]
   private uncached: Path[][] = []
+  private graph: SceneGraph | null = null
 
   constructor(limits: PathCacheLimits = {}) {
     this.vector = createPathCache(limits)
@@ -86,6 +89,13 @@ export class NodePathCaches {
     if (!cache.set(key, paths)) this.uncached.push(paths)
   }
 
+  /** Node IDs are scoped to a graph; paths from another graph with reused IDs are not reusable. */
+  useGraph(graph: SceneGraph): void {
+    if (this.graph === graph) return
+    this.clear()
+    this.graph = graph
+  }
+
   /** Deletes every path built for a node. */
   invalidate(nodeId: string): void {
     for (const cache of this.caches) cache.delete(nodeId)
@@ -106,5 +116,6 @@ export class NodePathCaches {
     for (const cache of this.caches) cache.clear()
     this.sharedKeys.clear()
     this.releaseUncached()
+    this.graph = null
   }
 }
