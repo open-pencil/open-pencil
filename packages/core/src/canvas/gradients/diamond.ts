@@ -2,14 +2,19 @@ import type { InputMatrix, Shader } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledEffect } from '#core/canvas/renderer/shaders'
+import { defineShader, programUniforms, sksl } from '#core/canvas/sksl'
 
-const DIAMOND_GRADIENT = `
-uniform shader ramp;
-half4 main(float2 position) {
-  float2 distance = abs(position - float2(0.5));
-  return ramp.eval(float2(2.0 * (distance.x + distance.y), 0.0));
-}
-`
+/** Reads the ramp at twice the Manhattan distance from the centre of the unit square. */
+const DIAMOND_GRADIENT = defineShader('diamond gradient', {
+  uniforms: {},
+  children: ['ramp'],
+  body: sksl`
+    half4 main(float2 position) {
+      float2 distance = abs(position - float2(0.5));
+      return ramp.eval(float2(2.0 * (distance.x + distance.y), 0.0));
+    }
+  `
+})
 
 /** Use Skia's ordinary gradient ramp for stop interpolation and color management. */
 export function makeDiamondGradient(
@@ -18,13 +23,7 @@ export function makeDiamondGradient(
   positions: number[],
   localMatrix: InputMatrix
 ): Shader {
-  const effect = compiledEffect(
-    r.ck,
-    r.shaders,
-    'diamondGradient',
-    DIAMOND_GRADIENT,
-    'diamond gradient'
-  )
+  const effect = compiledEffect(r.ck, r.shaders, DIAMOND_GRADIENT)
   const ramp = r.ck.Shader.MakeLinearGradient(
     [0, 0],
     [1, 0],
@@ -33,7 +32,7 @@ export function makeDiamondGradient(
     r.ck.TileMode.Clamp
   )
   try {
-    return effect.makeShaderWithChildren([], [ramp], localMatrix)
+    return effect.makeShaderWithChildren(programUniforms(DIAMOND_GRADIENT, {}), [ramp], localMatrix)
   } finally {
     ramp.delete()
   }

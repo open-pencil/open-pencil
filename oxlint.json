@@ -112,6 +112,7 @@
     "open-pencil/no-px-tailwind-values": "error",
     "open-pencil/no-interpolated-tailwind-classes": "error",
     "open-pencil/no-hand-rolled-color": "error",
+    "open-pencil/no-raw-runtime-effect": "error",
     "open-pencil/no-hand-rolled-data-url": "error",
     "open-pencil/no-raw-console-format": "off",
     "open-pencil/no-typeof-window-check": "error",
@@ -273,6 +274,12 @@
       "files": ["packages/cloud/src/server/**/*.ts", "packages/cloud/src/admin/**/*.ts"],
       "rules": {
         "open-pencil/no-unvalidated-route-params": "error"
+      }
+    },
+    {
+      "files": ["packages/core/src/canvas/sksl/compile.ts"],
+      "rules": {
+        "open-pencil/no-raw-runtime-effect": "off"
       }
     },
     {

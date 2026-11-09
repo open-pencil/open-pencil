@@ -8,6 +8,8 @@ import type {
   Shader
 } from '@open-pencil/canvaskit'
 
+import { compileProgram, type SkslProgram } from '#core/canvas/sksl'
+
 /** A shader kept while the uniforms it was made with, joined as `key`, still hold. */
 interface KeptShader {
   key: string
@@ -16,95 +18,66 @@ interface KeptShader {
 
 /** Skia programs a renderer compiles on first use and keeps for the surface's lifetime. */
 export interface CompiledShaders {
-  diamondGradient: RuntimeEffect | null
-  pixelGridEffect: RuntimeEffect | null
-  pixelGrid: KeptShader | null
-  dotGridEffect: RuntimeEffect | null
-  dotGrid: KeptShader | null
-  glassRefraction: RuntimeEffect | null
-  glassLight: RuntimeEffect | null
-  linearBurn: Blender | null
-  linearDodge: Blender | null
+  effects: Map<SkslProgram, RuntimeEffect>
+  blenders: Map<SkslProgram, Blender>
+  kept: Map<SkslProgram, KeptShader>
 }
 
-type EffectSlot =
-  | 'diamondGradient'
-  | 'pixelGridEffect'
-  | 'dotGridEffect'
-  | 'glassRefraction'
-  | 'glassLight'
-type ShaderSlot = 'pixelGrid' | 'dotGrid'
-
 export function createCompiledShaders(): CompiledShaders {
-  return {
-    diamondGradient: null,
-    pixelGridEffect: null,
-    pixelGrid: null,
-    dotGridEffect: null,
-    dotGrid: null,
-    glassRefraction: null,
-    glassLight: null,
-    linearBurn: null,
-    linearDodge: null
-  }
+  return { effects: new Map(), blenders: new Map(), kept: new Map() }
 }
 
 export function releaseCompiledShaders(shaders: CompiledShaders): void {
-  shaders.diamondGradient?.delete()
-  shaders.diamondGradient = null
-  shaders.pixelGridEffect?.delete()
-  shaders.pixelGridEffect = null
-  shaders.pixelGrid?.shader.delete()
-  shaders.pixelGrid = null
-  shaders.dotGridEffect?.delete()
-  shaders.dotGridEffect = null
-  shaders.dotGrid?.shader.delete()
-  shaders.dotGrid = null
-  shaders.glassRefraction?.delete()
-  shaders.glassRefraction = null
-  shaders.glassLight?.delete()
-  shaders.glassLight = null
-  shaders.linearBurn?.delete()
-  shaders.linearBurn = null
-  shaders.linearDodge?.delete()
-  shaders.linearDodge = null
+  for (const effect of shaders.effects.values()) effect.delete()
+  for (const blender of shaders.blenders.values()) blender.delete()
+  for (const { shader } of shaders.kept.values()) shader.delete()
+  shaders.effects.clear()
+  shaders.blenders.clear()
+  shaders.kept.clear()
 }
 
-/** The program in `slot`, compiled from `source` the first time; `name` says what failed to compile. */
+/** `program`, compiled the first time this renderer draws with it. */
 export function compiledEffect(
   ck: CanvasKit,
   shaders: CompiledShaders,
-  slot: EffectSlot,
-  source: string,
-  name: string
+  program: SkslProgram
 ): RuntimeEffect {
-  const kept = shaders[slot]
+  const kept = shaders.effects.get(program)
   if (kept) return kept
-  let error = ''
-  const effect = ck.RuntimeEffect.Make(source, (message) => {
-    error = message
-  })
-  if (!effect) throw new Error(`Cannot compile the ${name}: ${error}`)
-  shaders[slot] = effect
+  const effect = compileProgram(ck, program)
+  shaders.effects.set(program, effect)
   return effect
 }
 
+/** The blender `program` makes, with no uniforms, made the first time this renderer uses it. */
+export function compiledBlender(
+  ck: CanvasKit,
+  shaders: CompiledShaders,
+  program: SkslProgram<Record<string, never>>
+): Blender {
+  const kept = shaders.blenders.get(program)
+  if (kept) return kept
+  const blender = compiledEffect(ck, shaders, program).makeBlender([])
+  shaders.blenders.set(program, blender)
+  return blender
+}
+
 /**
- * The shader in `slot`, made again from `effect` only when `uniforms` change, so repaints at the
- * same view, or tiles at the same zoom, share one.
+ * `program`'s shader, made again only when `uniforms` change, so repaints at the same view, or
+ * tiles at the same zoom, share one.
  */
 export function keptShader(
+  ck: CanvasKit,
   shaders: CompiledShaders,
-  slot: ShaderSlot,
-  effect: RuntimeEffect,
+  program: SkslProgram,
   uniforms: number[]
 ): Shader {
   const key = uniforms.join(',')
-  const kept = shaders[slot]
+  const kept = shaders.kept.get(program)
   if (kept?.key === key) return kept.shader
   kept?.shader.delete()
-  const shader = effect.makeShader(uniforms)
-  shaders[slot] = { key, shader }
+  const shader = compiledEffect(ck, shaders, program).makeShader(uniforms)
+  shaders.kept.set(program, { key, shader })
   return shader
 }
 

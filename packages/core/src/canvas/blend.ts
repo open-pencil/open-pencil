@@ -1,5 +1,8 @@
-import type { Blender, BlendMode as SkBlendMode, CanvasKit, Paint } from '@open-pencil/canvaskit'
+import type { BlendMode as SkBlendMode, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type { BlendMode } from '@open-pencil/scene-graph'
+
+import { compiledBlender } from '#core/canvas/renderer/shaders'
+import { defineBlender, sksl } from '#core/canvas/sksl'
 
 import type { SkiaRenderer } from './renderer'
 
@@ -14,11 +17,22 @@ const LINEAR_BLEND_COLORS: Record<LinearBlendMode, string> = {
   LINEAR_DODGE: 'min(src.rgb + dst.rgb, half3(alpha))'
 }
 
-function linearBlendSource(mode: LinearBlendMode): string {
-  return `half4 main(half4 src, half4 dst) {
-  half alpha = src.a + dst.a * (1 - src.a);
-  return half4(${LINEAR_BLEND_COLORS[mode]}, alpha);
-}`
+function linearBlender(mode: LinearBlendMode) {
+  return defineBlender(mode === 'LINEAR_BURN' ? 'plus darker blender' : 'plus lighter blender', {
+    uniforms: {},
+    body: sksl`
+      half4 main(half4 src, half4 dst) {
+        half alpha = src.a + dst.a * (1 - src.a);
+        return half4(${LINEAR_BLEND_COLORS[mode]}, alpha);
+      }
+    `
+  })
+}
+
+/** Skia has no blend mode for either: they are runtime blenders. */
+const LINEAR_BLENDERS = {
+  LINEAR_BURN: linearBlender('LINEAR_BURN'),
+  LINEAR_DODGE: linearBlender('LINEAR_DODGE')
 }
 
 export function figmaBlendModeToSkia(
@@ -63,27 +77,10 @@ export function figmaBlendModeToSkia(
 
 export function setPaintBlendMode(r: SkiaRenderer, paint: Paint, mode?: BlendMode): void {
   if (mode === 'LINEAR_BURN' || mode === 'LINEAR_DODGE') {
-    paint.setBlender(linearBlender(r, mode))
+    paint.setBlender(compiledBlender(r.ck, r.shaders, LINEAR_BLENDERS[mode]))
     return
   }
   paint.setBlendMode(figmaBlendModeToSkia(r.ck, mode))
-}
-
-/** Skia has no blend mode for either: they are runtime blenders, compiled once per renderer. */
-function linearBlender(r: SkiaRenderer, mode: LinearBlendMode): Blender {
-  if (mode === 'LINEAR_BURN') return (r.shaders.linearBurn ??= compileLinearBlender(r.ck, mode))
-  return (r.shaders.linearDodge ??= compileLinearBlender(r.ck, mode))
-}
-
-function compileLinearBlender(ck: CanvasKit, mode: LinearBlendMode): Blender {
-  let error = ''
-  const effect = ck.RuntimeEffect.MakeForBlender(linearBlendSource(mode), (message) => {
-    error = message
-  })
-  if (!effect) throw new Error(`Cannot compile ${mode} blender: ${error}`)
-  const blender = effect.makeBlender([])
-  effect.delete()
-  return blender
 }
 
 export function needsIsolatedBlendLayer(mode?: BlendMode): boolean {

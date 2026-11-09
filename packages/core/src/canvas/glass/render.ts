@@ -5,11 +5,12 @@ import { tracePath } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledEffect } from '#core/canvas/renderer/shaders'
 import { makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
+import { programUniforms } from '#core/canvas/sksl'
 
 import {
-  GLASS_LIGHT_SHADER,
+  GLASS_LIGHT,
   GLASS_MAX_SEGMENTS,
-  GLASS_REFRACTION_SHADER,
+  GLASS_REFRACTION,
   type GlassOutline,
   glassBackdropSigma,
   glassDepth,
@@ -194,17 +195,14 @@ export function renderGlassRefraction(
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
   const sigma = glassBackdropSigma(effect)
-  const program = compiledEffect(
-    r.ck,
-    r.shaders,
-    'glassRefraction',
-    GLASS_REFRACTION_SHADER,
-    'glass refraction'
-  )
   const blur = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
   const filter = r.ck.ImageFilter.MakeRuntimeShader(
-    program,
-    [...glassGeometryUniforms(outline, depth), glass.refraction, glass.dispersion],
+    compiledEffect(r.ck, r.shaders, GLASS_REFRACTION),
+    programUniforms(GLASS_REFRACTION, {
+      ...glassGeometryUniforms(outline, depth),
+      refraction: glass.refraction,
+      dispersion: glass.dispersion
+    }),
     'backdrop',
     glassSampleRadius(node, effect),
     blur
@@ -229,14 +227,13 @@ export function renderGlassLight(
   if (glass.lightIntensity <= 0) return
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
-  const program = compiledEffect(r.ck, r.shaders, 'glassLight', GLASS_LIGHT_SHADER, 'glass light')
   const filter = r.ck.ImageFilter.MakeRuntimeShader(
-    program,
-    [
+    compiledEffect(r.ck, r.shaders, GLASS_LIGHT),
+    programUniforms(GLASS_LIGHT, {
       ...glassGeometryUniforms(outline, depth),
-      ...glassLightAxis(glass.lightAngle),
-      glass.lightIntensity
-    ],
+      axis: glassLightAxis(glass.lightAngle),
+      intensity: glass.lightIntensity
+    }),
     'backdrop',
     1,
     null
