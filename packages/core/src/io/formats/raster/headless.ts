@@ -2,29 +2,19 @@ import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
+import { getCanvasKit } from '#core/canvaskit'
 import { withTextInkMeasurer } from '#core/text/ink'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
-let cachedCk: Promise<CanvasKit> | null = null
 let cachedRenderer: Promise<SkiaRenderer> | null = null
 
 /**
- * The process's one CanvasKit, started once even when callers arrive together: objects made by
- * one instance must never meet another instance's memory.
+ * The process's one CanvasKit, Core's, wherever it runs: objects made by one instance must never
+ * meet another instance's memory, and in an app it is the instance the canvas draws with.
  */
 export function initCanvasKit(): Promise<CanvasKit> {
-  cachedCk ??= loadCanvasKit().catch((error: unknown) => {
-    cachedCk = null
-    throw error
-  })
-  return cachedCk
-}
-
-async function loadCanvasKit(): Promise<CanvasKit> {
-  const CanvasKitInit = (await import('@open-pencil/canvaskit')).default
-  const ckURL = import.meta.resolve('@open-pencil/canvaskit')
-  return CanvasKitInit({ locateFile: (file: string) => new URL(file, ckURL).href })
+  return getCanvasKit()
 }
 
 /**
