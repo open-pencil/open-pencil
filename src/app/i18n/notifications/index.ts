@@ -2,7 +2,12 @@ import { createI18n, params } from '@nanostores/i18n'
 import type { ComponentsJSON } from '@nanostores/i18n'
 import { useStore } from '@nanostores/vue'
 
-import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue/i18n'
+import {
+  directedTranslations,
+  locale,
+  type Locale,
+  type TranslatedLocale
+} from '@open-pencil/vue/i18n'
 
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),
@@ -48,6 +53,7 @@ export const notificationMessageDefaults = {
 } as const
 
 const localeLoaders = {
+  ar: () => import('./locales/ar.json'),
   de: () => import('./locales/de.json'),
   es: () => import('./locales/es.json'),
   fr: () => import('./locales/fr.json'),
@@ -64,7 +70,7 @@ const appI18n = createI18n<Locale, 'en'>(locale, {
   async get(code): Promise<ComponentsJSON> {
     if (code === 'en') return {}
     const loaded = await localeLoaders[code]()
-    return { notifications: loaded.default }
+    return directedTranslations(code, { notifications: loaded.default })
   }
 })
 

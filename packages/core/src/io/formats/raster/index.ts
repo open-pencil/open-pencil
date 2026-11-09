@@ -15,8 +15,8 @@ export {
   type ExportFormat
 } from './render'
 export {
-  initCanvasKit,
   headlessRenderer,
+  withHeadlessExport,
   headlessRenderNodes,
   headlessRenderThumbnail
 } from './headless'

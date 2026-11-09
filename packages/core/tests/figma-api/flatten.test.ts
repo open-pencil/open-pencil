@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import { SkiaRenderer } from '#core/canvas'
 import { graphOf } from '#core/figma-api/graph'
 
 async function createRenderer() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   return { renderer: new SkiaRenderer(ck, surface), surface }

@@ -1,4 +1,4 @@
-import type { Surface } from 'canvaskit-wasm'
+import type { Surface } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 

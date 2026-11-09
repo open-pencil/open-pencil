@@ -42,7 +42,7 @@ test('color expressions survive fresh export, import, editing and patched export
   const importedBase = [...imported.variables.values()].find((v) => v.name === 'Base')
   const importedDerived = [...imported.variables.values()].find((v) => v.name === 'Derived')
   if (!importedBase || !importedDerived) throw new Error('Variables missing after import')
-  const mode = imported.getActiveModeId(importedBase.collectionId)
+  const mode = imported.variableCollections.get(importedBase.collectionId)?.defaultModeId ?? ''
   expect(imported.resolveColorVariable(importedDerived.id)).toEqual({ r: 1, g: 0, b: 0, a: 0.2 })
   importedBase.valuesByMode[mode] = { r: 0, g: 1, b: 0, a: 1 }
   const saved = await exportFigFile(imported)

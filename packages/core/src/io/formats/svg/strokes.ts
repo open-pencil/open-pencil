@@ -3,7 +3,13 @@ import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { SVGExportContext } from './defs'
 import { nextDefId } from './defs'
 import { svg, type SVGNode } from './node'
-import { nodeOutlinePath, round, shapeWithTextDetailsPath, shapeWithTextOutlinePath } from './paths'
+import {
+  boxOutlinePath,
+  nodeOutlinePath,
+  round,
+  shapeWithTextDetailsPath,
+  shapeWithTextOutlinePath
+} from './paths'
 
 type Attrs = Record<string, string | number | undefined>
 
@@ -26,7 +32,7 @@ function closedOutlinePath(node: SceneNode): string | null {
     case 'STAR':
       return nodeOutlinePath(node)
     default:
-      return nodeOutlinePath({ ...node, type: 'RECTANGLE' })
+      return boxOutlinePath(node)
   }
 }
 

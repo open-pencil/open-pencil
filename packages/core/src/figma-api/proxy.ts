@@ -34,6 +34,7 @@ import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from './paints'
+import { flushPendingComponentSync } from './pending-sync'
 import { installPluginDataMethods } from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installShapeWithTextAccessors } from './shape-with-text'
@@ -143,6 +144,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
   }
 
   #raw(): SceneNode {
+    flushPendingComponentSync(this.#graph, this[INTERNAL_ID])
     const n = this.#graph.getNode(this[INTERNAL_ID])
     if (!n) throw new Error(`Node ${this[INTERNAL_ID]} has been removed`)
     return n
@@ -259,6 +261,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
   }
 
   get children(): FigmaNodeProxy[] {
+    flushPendingComponentSync(this.#graph, this[INTERNAL_ID])
     return pluginChildren(this.#graph, this[INTERNAL_ID]).map((c) =>
       this[INTERNAL_API].wrapNode(c.id)
     )

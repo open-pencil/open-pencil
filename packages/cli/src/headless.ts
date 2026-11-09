@@ -2,10 +2,11 @@ import { readFile, realpath } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { flushPendingComponentSync } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
-import { headlessRenderer, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import {
   computeAllLayouts,
   installTextMeasurer,
@@ -21,8 +22,6 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import { printError } from '#cli/format'
-
-export { initCanvasKit }
 
 /** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
 export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]
@@ -195,7 +194,12 @@ export function requirePage(graph: SceneGraph, pageName?: string) {
  * stand-in.
  */
 export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise<T>): Promise<T> {
-  const { result, impact } = await collectSceneMutation(graph, edit)
+  // Instances follow the components the edit changed, as the editor syncs them after an edit.
+  const { result, impact } = await collectSceneMutation(graph, async () => {
+    const value = await edit()
+    flushPendingComponentSync(graph)
+    return value
+  })
   const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
   if (textIds.length === 0) return result
   await prepareGraphFonts(graph, textIds)

@@ -2,11 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import {
-  createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
+import { createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color, Rect } from '@open-pencil/scene-graph/primitives'
@@ -24,7 +21,7 @@ type VisualDiff = {
 let codec: ReturnType<typeof createCanvasKitRasterCodec>
 
 beforeAll(async () => {
-  codec = createCanvasKitRasterCodec(await initCanvasKit())
+  codec = createCanvasKitRasterCodec(await getCanvasKit())
 })
 
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }

@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { corePackagePath } from '#core-tests/helpers/paths'
-import type { CanvasKit, FontCollection, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, FontCollection, Paragraph, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 

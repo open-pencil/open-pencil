@@ -129,6 +129,17 @@ describe('roundtrip: export → re-import', () => {
           visible: true,
           blendMode: 'NORMAL'
         }
+      ],
+      effects: [
+        {
+          type: 'GLASS',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 0, y: 0 },
+          radius: 6,
+          spread: 0,
+          visible: true,
+          glass: { refraction: 0.75, depth: 22, lightAngle: 33, lightIntensity: 0.5, dispersion: 0.25 }
+        }
       ]
     })
 
@@ -351,6 +362,17 @@ describe('roundtrip: export → re-import', () => {
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
     expect(headerBg.effects[0].offset.y).toBe(4)
+  })
+
+  test('preserves a glass effect', () => {
+    const circle = expectDefined(reImportedNodes.find((n) => n.name === 'Circle'))
+    expect(circle.effects).toHaveLength(1)
+    expect(circle.effects[0]).toMatchObject({
+      type: 'GLASS',
+      radius: 6,
+      visible: true,
+      glass: { refraction: 0.75, depth: 22, lightAngle: 33, lightIntensity: 0.5, dispersion: 0.25 }
+    })
   })
 
   test('preserves dimensions', () => {

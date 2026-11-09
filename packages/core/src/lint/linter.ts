@@ -123,22 +123,14 @@ export class Linter {
     if (cached) return cached
     const raw = this.graph?.getNode(id)
     if (!this.graph || !raw) return undefined
-    const node = this.toLintNode(this.graph, raw)
+    const node = this.toLintNode(raw)
     node.parent = parent
     this.nodes.set(id, node)
     return node
   }
 
-  private toLintNode(graph: SceneGraph, raw: SceneNode): LintNode {
-    // Rules see the color a paint renders with, including a bound variable in this node's mode.
-    const paintColor = (
-      field: 'fills' | 'strokes',
-      index: number,
-      color: SceneNode['fills'][number]['color']
-    ) => {
-      const variableId = raw.boundVariables[`${field}/${index}/color`]
-      return (variableId && graph.resolveColorVariableForNode(raw.id, variableId)) || color
-    }
+  private toLintNode(raw: SceneNode): LintNode {
+    // Rules see the color a paint draws with, which a bound paint stores as its variable gave it.
     return {
       id: raw.id,
       name: raw.name,
@@ -171,16 +163,16 @@ export class Linter {
       textStyles: raw.type === 'TEXT' ? effectiveTextStyles(raw) : undefined,
       styleRunCount: raw.styleRuns.length,
       boundVariables: raw.boundVariables,
-      fills: raw.fills.map((f, index) => ({
+      fills: raw.fills.map((f) => ({
         type: f.type,
         visible: f.visible,
         opacity: f.opacity,
-        color: f.type === 'SOLID' ? paintColor('fills', index, f.color) : undefined
+        color: f.type === 'SOLID' ? f.color : undefined
       })),
-      strokes: raw.strokes.map((stroke, index) => ({
+      strokes: raw.strokes.map((stroke) => ({
         visible: stroke.visible,
         opacity: stroke.opacity,
-        color: paintColor('strokes', index, stroke.color)
+        color: stroke.color
       })),
       effects: raw.effects.map((effect) => ({
         type: effect.type,

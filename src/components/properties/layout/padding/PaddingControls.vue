@@ -26,6 +26,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
         class="mt-1.5 grid grid-cols-2 gap-1.5"
       >
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-horizontal-padding-input"
           :model-value="panelNumber(ctx.node.paddingLeft)"
           :min="0"
@@ -40,6 +41,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           </template>
         </VariableNumberField>
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-vertical-padding-input"
           :model-value="panelNumber(ctx.node.paddingTop)"
           :min="0"
@@ -57,6 +59,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
 
       <div v-else-if="ctx.isGrid || ctx.isFlex" class="mt-1.5 grid grid-cols-2 gap-1.5">
         <VariableNumberField
+          :round="panelNumber"
           v-for="side in paddingSides"
           :key="side.prop"
           :model-value="panelNumber(ctx.node[side.prop])"

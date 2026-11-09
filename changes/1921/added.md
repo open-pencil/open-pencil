@@ -1,0 +1,1 @@
+- Figma Glass effects keep their refraction, depth, light, dispersion, and frost through `.fig` files, the plugin API, and design JSX (`glass()`); they do not render yet.

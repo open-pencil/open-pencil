@@ -1,5 +1,4 @@
-import type { Canvas, ImageFilter } from 'canvaskit-wasm'
-
+import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'

@@ -1,5 +1,4 @@
-import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
-
+import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'

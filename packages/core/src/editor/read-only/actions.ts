@@ -12,6 +12,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
+  // Applies component edits already made to their instances; it makes none of its own.
+  'flushComponentSync',
   'getChildren',
   'getCollection',
   'getCollectionCount',
@@ -48,6 +50,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'previewRenameSelected',
   // Recording only: what the edit runs is refused or allowed on its own.
   'asHost',
+  'constrainMove',
   'recordEdit',
   'recordEditAsync',
   'resolveColorVariable',
@@ -95,6 +98,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setShapeHandleHover',
   'setSnapGuides',
   'setSnapTargets',
+  'setMovePolicy',
   'setTransforming',
 
   // Viewport and pages

@@ -2,14 +2,14 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 
 const WIDTH = 400
 const HEIGHT = 40
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const surface = expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'surface')
 const renderer = new SkiaRenderer(ck, surface)
 afterAll(() => renderer.destroy())

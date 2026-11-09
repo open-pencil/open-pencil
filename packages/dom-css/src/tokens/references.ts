@@ -107,7 +107,7 @@ export class DesignTokens {
 
   /**
    * Attributes that put an element in the modes the canvas draws it in, and the modes CSS then
-   * applies to it. An exported root takes the editor's active modes; below it, a node changes
+   * applies to it. An exported root takes the modes it is in; below it, a node changes
    * modes only where it sets one. Only a mode without its own condition can be set this way.
    */
   enter(

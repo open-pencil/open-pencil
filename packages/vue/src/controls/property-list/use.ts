@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { listBindingsAfterEdit, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { listBindingsAfterEdit } from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import { isNodeArrayMixed } from '#vue/controls/node-props/helpers'
@@ -44,12 +44,7 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
       isNodeArrayMixed(shownNodes.value, propKey) ||
       (propKey === 'fills' &&
         shownNodes.value.some(
-          (node) =>
-            node.type === 'VECTOR' &&
-            regionFillsDiffer(
-              node.vectorNetwork,
-              resolvedPaintBindings(editor.graph, node).fills ?? node.fills
-            )
+          (node) => node.type === 'VECTOR' && regionFillsDiffer(node.vectorNetwork, node.fills)
         ))
   )
   const items = computed<PropertyListItemFor<K>[]>(() => {

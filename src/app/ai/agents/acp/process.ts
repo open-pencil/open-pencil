@@ -1,6 +1,7 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { spawnAgentChild } from '@/app/tauri/children'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 export type TauriChild = {
@@ -69,7 +70,7 @@ export async function spawnACPProcess({
     }
   })
 
-  const child = await command.spawn()
+  const child = await spawnAgentChild(command)
 
   const output = new ReadableStream<Uint8Array>({
     async pull(controller) {

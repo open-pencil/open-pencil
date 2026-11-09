@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { fontManager } from '@open-pencil/core/text'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -20,7 +20,7 @@ afterEach(() => {
 })
 
 async function createEditorWithRenderer() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -129,7 +129,7 @@ describe('flattenSelected', () => {
     expect([vector.x, vector.y, vector.width, vector.height]).toEqual([0, 0, 120, 70])
     expect([vector.strokeWeight, vector.strokeAlign, vector.strokes.length]).toEqual([4, 'OUTSIDE', 1])
     expect(vector.fills.map((fill) => fill.visible)).toEqual([false])
-    const [path] = vectorNetworkToPath(await initCanvasKit(), network)
+    const [path] = vectorNetworkToPath(await getCanvasKit(), network)
     expect(path?.contains(60, 35)).toBe(true)
     expect(path?.contains(60, -2)).toBe(false)
     path?.delete()
