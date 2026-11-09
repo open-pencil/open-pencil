@@ -7,7 +7,7 @@ import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
 const BODIES: Record<string, string> = {

@@ -147,6 +147,8 @@ The server reports nothing unless you ask it to. Add an `[error_tracking]` table
 
 Back up PostgreSQL and the bucket together. To upgrade, build the new version, stop the old process, and start the new one: it applies migrations before it accepts requests. Migrations only move forward, so restore the database backup to roll back.
 
+Cloud's migrations started over before the first stable release. A database created by an earlier build, a pre-release or one built from source, cannot be upgraded to a build that has the new migrations: recreate it and the bucket's documents. Recreate the services server's database too, or drop its tables when it shares Cloud's, since its migrations started over as well.
+
 ## Hardening
 
 Replace every development credential, including the ones in the example Compose files. The [security checklist](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/security.md) covers the remaining checks.

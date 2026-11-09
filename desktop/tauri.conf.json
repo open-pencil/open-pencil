@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "category": "GraphicsAndDesign",
     "targets": "all",
     "createUpdaterArtifacts": true,
     "icon": [
@@ -78,11 +79,22 @@
       }
     ],
     "linux": {
+      "appimage": {
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
+      },
       "deb": {
-        "desktopTemplate": "linux/main.desktop"
+        "desktopTemplate": "linux/main.desktop",
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
       },
       "rpm": {
-        "desktopTemplate": "linux/main.desktop"
+        "desktopTemplate": "linux/main.desktop",
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
       }
     },
     "macOS": {

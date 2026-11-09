@@ -168,6 +168,11 @@ export function scaledChildRect(
   return constrainedChildRect(child, parentBefore, parentAfter, 'SCALE', 'SCALE')
 }
 
+/** How much a side grows; a flat side, as a straight line's, has nothing to scale along it. */
+function sideScale(original: number, size: number): number {
+  return original > 0 ? size / original : 1
+}
+
 export function scaleVectorNetworkForResize(
   vectorNetwork: VectorNetwork | null,
   originalWidth: number,
@@ -177,9 +182,8 @@ export function scaleVectorNetworkForResize(
 ): VectorNetwork | null {
   if (!vectorNetwork || (originalWidth <= 0 && originalHeight <= 0)) return null
 
-  // A flat side, as a straight line's, has nothing to scale along it.
-  const scaleX = originalWidth > 0 ? width / originalWidth : 1
-  const scaleY = originalHeight > 0 ? height / originalHeight : 1
+  const scaleX = sideScale(originalWidth, width)
+  const scaleY = sideScale(originalHeight, height)
   if (scaleX === 1 && scaleY === 1) return null
 
   return {
@@ -273,9 +277,10 @@ export function scaledGeometryChanges(
   width: number,
   height: number
 ): Partial<SceneNode> {
-  if (origWidth <= 0 || origHeight <= 0) return {}
-  const sx = width / origWidth
-  const sy = height / origHeight
+  if (origWidth <= 0 && origHeight <= 0) return {}
+  // A straight line's other side still scales.
+  const sx = sideScale(origWidth, width)
+  const sy = sideScale(origHeight, height)
   if (sx === 1 && sy === 1) return {}
 
   const changes: Partial<SceneNode> = {}
@@ -323,6 +328,38 @@ export function scaledGeometryChanges(
     changes.strokes = scaleStrokes(orig.strokes, sx, sy)
   }
   return changes
+}
+
+/** Copies of the geometry a resize may change, as the snapshot held it before the resize. */
+function snapshotGeometry(orig: ResizeSnapshot): Partial<SceneNode> {
+  return {
+    vectorNetwork: orig.vectorNetwork ? cloneVectorNetwork(orig.vectorNetwork) : null,
+    fillGeometry: copyGeometryPaths(orig.fillGeometry),
+    strokeGeometry: copyGeometryPaths(orig.strokeGeometry),
+    derivedTextGlyphs: copyDerivedGlyphs(orig.derivedTextGlyphs),
+    strokes: copyStrokes(orig.strokes),
+    textPathBox: orig.textPathBox ? { ...orig.textPathBox } : null
+  }
+}
+
+/** Whether a box of `size` scales the snapshot's geometry, a flat side left out. */
+function scalesGeometry(orig: ResizeSnapshot, size: Pick<Rect, 'width' | 'height'>): boolean {
+  return sideScale(orig.width, size.width) !== 1 || sideScale(orig.height, size.height) !== 1
+}
+
+/**
+ * A child's geometry for its constrained `box`, scaled from the snapshot. At a box that scales
+ * nothing, after an earlier frame of the same drag scaled it, the child takes its snapshot
+ * geometry again, as nothing else would undo that scaling.
+ */
+function constrainedGeometryChanges(
+  orig: ResizeSnapshot,
+  current: Pick<SceneNode, 'width' | 'height'>,
+  box: Pick<Rect, 'width' | 'height'>
+): Partial<SceneNode> {
+  if (scalesGeometry(orig, box))
+    return scaledGeometryChanges(orig, orig.width, orig.height, box.width, box.height)
+  return scalesGeometry(orig, current) ? snapshotGeometry(orig) : {}
 }
 
 export function collectResizeDescendants(
@@ -406,7 +443,7 @@ function placeConstrained(
     ...box,
     ...position,
     ...flipChanges(original, child, flipsX, flipsY),
-    ...scaledGeometryChanges(original, original.width, original.height, box.width, box.height)
+    ...constrainedGeometryChanges(original, child, box)
   })
   // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
   placeChildren(plan, child.id, original, child.layoutMode === 'NONE' ? box : child)

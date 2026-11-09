@@ -48,8 +48,9 @@ describe('fetchIcon', () => {
     const path = icon.paths[0]
     expect(path.vectorNetwork.vertices.length).toBeGreaterThan(3)
     expect(path.vectorNetwork.segments.length).toBeGreaterThan(3)
-    expect(path.fill).toBe('currentColor')
-    expect(path.stroke).toBeNull()
+    expect(path.fills).toHaveLength(1)
+    expect(path.strokes).toEqual([])
+    expect(path.tint).toEqual(['fill'])
   })
 
   networkTest('fetches lucide:heart (stroked icon)', async () => {
@@ -58,10 +59,8 @@ describe('fetchIcon', () => {
 
     const path = icon.paths[0]
     expect(path.vectorNetwork.vertices.length).toBeGreaterThan(3)
-    expect(path.stroke).toBe('currentColor')
-    expect(path.strokeWidth).toBe(2)
-    expect(path.strokeCap).toBe('round')
-    expect(path.strokeJoin).toBe('round')
+    expect(path.tint).toEqual(['stroke'])
+    expect(path.strokes[0]).toMatchObject({ weight: 2, cap: 'ROUND', join: 'ROUND' })
   })
 
   networkTest('scales to custom size', async () => {

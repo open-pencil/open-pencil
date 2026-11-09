@@ -1,0 +1,1 @@
+- Resizing a multi-selection by its handles with Snap to pixel grid on gives the box and its layers whole-pixel sides and keeps the edges the handle leaves, as in Figma, instead of moving the dragged edge onto the grid; pressing a handle without moving leaves the selection as it was (#1919).

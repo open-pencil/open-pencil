@@ -90,7 +90,7 @@ export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({
-    onChange: () => emitEditorEvent('history:changed'),
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
     onDiscard: () => emitEditorEvent('edit:discarded'),
     runReplay: (replay) => _graph.runOutsideEdits(replay)
   })
@@ -386,6 +386,7 @@ export function createEditor(options?: EditorOptions) {
   }
   const readOnly = createReadOnlyActions(ctx, {
     endLayerEdits,
+    flushPendingStep: nodes.flushNudge,
     endEdits: () => {
       endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })

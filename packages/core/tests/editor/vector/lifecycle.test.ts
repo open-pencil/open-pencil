@@ -243,7 +243,7 @@ test('a host can show the handles of every point, not only near the selection', 
   editor.enterNodeEditMode(vector.id)
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(new Set())
   editor.exitNodeEditMode(true)
-  editor.enterNodeEditMode(vector.id, { handles: 'all' })
+  editor.enterNodeEditMode(vector.id, { showHandles: 'all' })
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(
     new Set([0, 1, 2])
   )

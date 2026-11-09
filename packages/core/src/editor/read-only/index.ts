@@ -1,3 +1,4 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { EditorContext, Tool } from '#core/editor/types'
@@ -8,7 +9,13 @@ import {
   type EditorRestrictions
 } from '#core/editor/views'
 
-import { PATH_EDIT_ACTIONS, READ_ONLY_ACTIONS } from './actions'
+import {
+  MOVE_ACTIONS,
+  PATH_EDIT_ACTIONS,
+  POSITION_ACTIONS,
+  READ_ONLY_ACTIONS,
+  REORDER_ACTIONS
+} from './actions'
 
 /**
  * Raised by an edit the editor's restrictions refuse. Such an edit does nothing, as in Figma, so
@@ -37,21 +44,70 @@ export class FixedLayersError extends RefusedEditError {
   }
 }
 
+/** Raised by a change other than a move while the host lets layers only move (`layerEdits: 'move'`). */
+export class MoveOnlyLayersError extends RefusedEditError {
+  constructor() {
+    super("Can't change layers here; they can only be moved")
+    this.name = 'MoveOnlyLayersError'
+  }
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'then' in value &&
+    typeof value.then === 'function'
+  )
+}
+
+/** Whether an update changes nothing but where a layer is. */
+function movesOnly(args: readonly unknown[]): boolean {
+  const changes = args[1]
+  return (
+    typeof changes === 'object' &&
+    changes !== null &&
+    Object.keys(changes).every((key) => key === 'x' || key === 'y')
+  )
+}
+
+/** Whether a new child order holds the frame's own children and no others, just rearranged. */
+function rearrangesOnly(graph: Pick<SceneGraph, 'getNode'>, args: readonly unknown[]): boolean {
+  const [parentId, order] = args
+  const current = typeof parentId === 'string' ? graph.getNode(parentId)?.childIds : undefined
+  if (!current || !Array.isArray(order) || order.length !== current.length) return false
+  const children = new Set(current)
+  return new Set(order).size === order.length && order.every((id) => children.has(id))
+}
+
 /**
  * The error an action is refused with, or null when it may run: while the profile offers no
- * edits every action outside `READ_ONLY_ACTIONS` is refused, and while it offers no layer edits
- * so is every one outside those and `PATH_EDIT_ACTIONS`.
+ * edits every action outside `READ_ONLY_ACTIONS` is refused; while it offers no layer edits so
+ * is every one outside those and `PATH_EDIT_ACTIONS`; and while layers may only move, every one
+ * outside those and `MOVE_ACTIONS`, with `POSITION_ACTIONS` let through for positions alone and
+ * `REORDER_ACTIONS` for the same children rearranged.
  */
-export function refusalFor(action: string, profile: EditorProfile): RefusedEditError | null {
+export function refusalFor(
+  action: string,
+  profile: EditorProfile,
+  args: readonly unknown[] = [],
+  graph?: Pick<SceneGraph, 'getNode'>
+): RefusedEditError | null {
   if (READ_ONLY_ACTIONS.has(action)) return null
-  if (PATH_EDIT_ACTIONS.has(action)) return profile.edits ? null : new ReadOnlyDocumentError()
-  return layerEditRefusal(profile)
+  if (!profile.edits) return new ReadOnlyDocumentError()
+  if (profile.layerEdits === 'all') return null
+  if (profile.layerEdits === 'none')
+    return PATH_EDIT_ACTIONS.has(action) ? null : new FixedLayersError()
+  if (MOVE_ACTIONS.has(action) || (POSITION_ACTIONS.has(action) && movesOnly(args))) return null
+  if (REORDER_ACTIONS.has(action) && graph && rearrangesOnly(graph, args)) return null
+  return new MoveOnlyLayersError()
 }
 
 /** The error a change to layers is refused with, or null when the profile allows it. */
 export function layerEditRefusal(profile: EditorProfile): RefusedEditError | null {
   if (!profile.edits) return new ReadOnlyDocumentError()
   if (profile.layerEdits === 'none') return new FixedLayersError()
+  if (profile.layerEdits === 'move') return new MoveOnlyLayersError()
   return null
 }
 
@@ -61,14 +117,14 @@ export function layerEditRefusal(profile: EditorProfile): RefusedEditError | nul
  */
 export function guardEdits<T extends object>(
   editor: T,
-  refusal: (action: string) => RefusedEditError | null
+  refusal: (action: string, args: readonly unknown[]) => RefusedEditError | null
 ): T {
   const descriptors = Object.getOwnPropertyDescriptors(editor)
   for (const [name, descriptor] of Object.entries(descriptors)) {
     const action: unknown = descriptor.value
     if (typeof action !== 'function' || READ_ONLY_ACTIONS.has(name)) continue
     descriptor.value = (...args: unknown[]): unknown => {
-      const refused = refusal(name)
+      const refused = refusal(name, args)
       if (refused) throw refused
       return Reflect.apply(action, undefined, args)
     }
@@ -110,17 +166,21 @@ export interface RestrictionEnds {
   endPathContinuation: () => void
   /** Picks a tool as the toolbar does, committing a pen path in progress when it is not the pen. */
   pickTool: (tool: Tool) => void
+  /** Records a step still being gathered, such as a run of nudges, as undo would first. */
+  flushPendingStep: () => void
 }
 
 export function createReadOnlyActions(
   ctx: EditorContext,
-  { endEdits, endLayerEdits, endPathContinuation, pickTool }: RestrictionEnds
+  { endEdits, endLayerEdits, endPathContinuation, pickTool, flushPendingStep }: RestrictionEnds
 ) {
   /**
    * The newest undo and redo steps when layers became fixed. Stepping back to them would change
    * layers again, so undo and redo stop there, leaving only what was done since.
    */
   let fixedAt: Record<HistoryStep, UndoEntry | undefined> | null = null
+  /** How deep the host's own edits run (`asHost`), which its restrictions don't narrow. */
+  let hostDepth = 0
   /**
    * Opens the document read-only or editable again. Going read-only ends what is being edited and
    * drops a tool that would edit, as Figma does on opening version history.
@@ -143,8 +203,10 @@ export function createReadOnlyActions(
     restrictions: Partial<Pick<EditorRestrictions, 'tools' | 'pathEdits' | 'layerEdits'>>
   ): void {
     const fixing =
-      restrictions.layerEdits === 'none' && ctx.state.hostRestrictions.layerEdits !== 'none'
-    if (fixing) endLayerEdits()
+      restrictions.layerEdits !== undefined &&
+      restrictions.layerEdits !== 'all' &&
+      ctx.state.hostRestrictions.layerEdits === 'all'
+    if (restrictions.layerEdits !== undefined && restrictions.layerEdits !== 'all') endLayerEdits()
     ctx.state.hostRestrictions = { ...ctx.state.hostRestrictions, ...restrictions }
     if (fixing) fixedAt = { undo: ctx.undo.peekUndo(), redo: ctx.undo.peekRedo() }
     if (restrictions.layerEdits === 'all') fixedAt = null
@@ -160,21 +222,57 @@ export function createReadOnlyActions(
     ctx.requestRepaint()
   }
 
-  /** Why undo or redo is refused: a read-only document, or a step from before layers were fixed. */
-  function historyRefusal(step: HistoryStep): RefusedEditError | null {
+  /**
+   * Runs the host's own edit past its restrictions, which narrow what the person does on the
+   * canvas, with keys, and in panels: a game whose pieces only move still combines them from its
+   * own buttons. A read-only document still refuses it. The edit is undone like any other.
+   * It runs synchronously: past an await the person's input could run unrestricted too, so a
+   * callback that returns a promise throws, and its edits after the first await are refused.
+   */
+  function asHost<T>(run: () => T): T {
+    hostDepth++
+    let result: T
+    try {
+      result = run()
+    } finally {
+      hostDepth--
+    }
+    if (isThenable(result)) {
+      // The TypeError reports the mistake; the promise's own failure, such as an edit after the
+      // await being refused, would only be an unhandled rejection on top of it.
+      void Promise.resolve(result).catch(() => undefined)
+      throw new TypeError('asHost runs synchronous edits only; await outside it and call it again')
+    }
+    return result
+  }
+
+  /** The profile restrictions are judged by: the host's own edits run as if unrestricted. */
+  function judgedProfile(): EditorProfile {
     const profile = resolveEditorProfile(ctx.state)
+    return hostDepth > 0 && profile.edits ? { ...profile, layerEdits: 'all' } : profile
+  }
+
+  /**
+   * Why undo or redo is refused: a read-only document, or a step from before the host restricted
+   * layers, which would change them again.
+   */
+  function historyRefusal(step: HistoryStep): RefusedEditError | null {
+    const profile = judgedProfile()
     if (!profile.edits) return new ReadOnlyDocumentError()
     if (profile.layerEdits === 'all' || !fixedAt) return null
+    // A nudge the person just made is the step undo takes back, once it is recorded.
+    flushPendingStep()
     const next = step === 'undo' ? ctx.undo.peekUndo() : ctx.undo.peekRedo()
-    return next && next === fixedAt[step] ? new FixedLayersError() : null
+    if (!next || next !== fixedAt[step]) return null
+    return profile.layerEdits === 'move' ? new MoveOnlyLayersError() : new FixedLayersError()
   }
 
   /** Why an editor action is refused, if it is (`refusalFor`), undo and redo by their history. */
-  function refusal(action: string): RefusedEditError | null {
+  function refusal(action: string, args: readonly unknown[] = []): RefusedEditError | null {
     if (action === 'undoAction') return historyRefusal('undo')
     if (action === 'redoAction') return historyRefusal('redo')
-    return refusalFor(action, resolveEditorProfile(ctx.state))
+    return refusalFor(action, judgedProfile(), args, ctx.graph)
   }
 
-  return { actions: { setReadOnly, setHostRestrictions }, refusal, historyRefusal }
+  return { actions: { setReadOnly, setHostRestrictions, asHost }, refusal, historyRefusal }
 }
