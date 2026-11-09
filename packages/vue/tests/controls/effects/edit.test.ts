@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 
-import { createEffectEditActions } from '#vue/controls/effects/helpers'
+import { createEffectEditActions, type EffectEditSnapshot } from '#vue/controls/effects/helpers'
 
 const shadow = {
   type: 'DROP_SHADOW' as const,
@@ -22,7 +22,7 @@ describe('effect edits', () => {
       const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
         effects: [shadow]
       })
-      const actions = createEffectEditActions(editor, ref(null))
+      const actions = createEffectEditActions(editor, shallowRef<Map<string, EffectEditSnapshot> | null>(null))
       actions.commitEffect([node], 0, { showShadowBehindNode: false })
       expect(editor.graph.getNode(node.id)?.effects[0].showShadowBehindNode).toBe(false)
       editor.undo.undo()
@@ -38,7 +38,7 @@ describe('effect edits', () => {
       const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
         effects: [shadow]
       })
-      const actions = createEffectEditActions(editor, ref(null))
+      const actions = createEffectEditActions(editor, shallowRef<Map<string, EffectEditSnapshot> | null>(null))
       actions.scrubEffect([node], 0, { radius: 16 })
       actions.scrubEffect([node], 0, { radius: 20 })
       actions.commitEffect([node], 0, { radius: 24 })
