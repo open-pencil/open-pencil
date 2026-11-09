@@ -1,0 +1,1 @@
+- Saving a large document writes its `.fig` archive to disk as it is produced, so a save no longer needs memory for several copies of its images.
