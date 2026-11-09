@@ -1,6 +1,7 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { generateId, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { remapStyleRunReferences } from '@open-pencil/scene-graph/text'
 
@@ -401,11 +402,6 @@ function materializeReader(
   )
 }
 
-function compareOrderKeys(a: string, b: string): number {
-  if (a === b) return 0
-  return a < b ? -1 : 1
-}
-
 function pushTo(groups: Map<string, string[]>, key: string, id: string): void {
   const group = groups.get(key)
   if (group) group.push(id)
@@ -452,7 +448,7 @@ function mergeSavedOrder(
     let end = anchors.length
     while (below < end) {
       const middle = (below + end) >> 1
-      if (anchors[middle].key < key) below = middle + 1
+      if (compareOrderKeys(anchors[middle].key, key) < 0) below = middle + 1
       else end = middle
     }
     if (below === 0) pushTo(before, anchors[0].id, id)
