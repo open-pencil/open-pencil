@@ -188,14 +188,15 @@ export async function writeZipStream(
     const header = headerFor(entry)
     await sink(header)
     written += header.byteLength
+    options.onProgress?.(written, total)
     const bytes = entryBytes(entry)
     for (let start = 0; start < bytes.byteLength; start += CHUNK_BYTES) {
       const chunk = bytes.subarray(start, Math.min(start + CHUNK_BYTES, bytes.byteLength))
       await sink(chunk)
       written += chunk.byteLength
+      options.onProgress?.(written, total)
     }
     central.push({ entry, offset })
-    options.onProgress?.(written, total)
   }
 
   const directoryOffset = written
@@ -276,17 +277,22 @@ export function readZipEntries(bytes: Uint8Array): ZipEntryInfo[] {
   return entries
 }
 
-/** The entries of `bytes` as sources that copy their stored bytes unchanged. */
-export function copyZipEntries(bytes: Uint8Array): ZipEntrySource[] {
-  return readZipEntries(bytes).map((entry) => ({
+/** A source that copies an entry's stored bytes unchanged. */
+export function copyZipEntry(entry: ZipEntryInfo, source: Uint8Array): ZipEntrySource {
+  return {
     name: entry.name,
     method: entry.method as 0 | 8,
     crc: entry.crc,
     compressedSize: entry.compressedSize,
     uncompressedSize: entry.uncompressedSize,
-    source: bytes,
+    source,
     offset: entry.dataOffset
-  }))
+  }
+}
+
+/** The entries of `bytes` as sources that copy their stored bytes unchanged. */
+export function copyZipEntries(bytes: Uint8Array): ZipEntrySource[] {
+  return readZipEntries(bytes).map((entry) => copyZipEntry(entry, bytes))
 }
 
 /**

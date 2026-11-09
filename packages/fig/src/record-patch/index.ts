@@ -22,6 +22,7 @@ import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 
 import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
 import {
+  copyZipEntry,
   deflatedZipEntry,
   readZipEntries,
   storedZipEntry,
@@ -580,29 +581,13 @@ export async function patchFigArchiveStream(
   for (const entry of entries) {
     if (known.has(entry.name) || !entry.name.startsWith('images/') || added.has(entry.name))
       continue
-    output.push({
-      name: entry.name,
-      method: entry.method as 0 | 8,
-      crc: entry.crc,
-      compressedSize: entry.compressedSize,
-      uncompressedSize: entry.uncompressedSize,
-      source: archive,
-      offset: entry.dataOffset
-    })
+    output.push(copyZipEntry(entry, archive))
   }
   for (const image of input.images) output.push(storedZipEntry(image.name, image.data))
   // Entries this format does not know, such as a client's own metadata, travel with the save.
   for (const entry of entries) {
     if (known.has(entry.name) || entry.name.startsWith('images/')) continue
-    output.push({
-      name: entry.name,
-      method: entry.method as 0 | 8,
-      crc: entry.crc,
-      compressedSize: entry.compressedSize,
-      uncompressedSize: entry.uncompressedSize,
-      source: archive,
-      offset: entry.dataOffset
-    })
+    output.push(copyZipEntry(entry, archive))
   }
   await writeZipStream(output, sink, options)
 }

@@ -1,4 +1,5 @@
 export {
+  concatenateBytes,
   exportFigFile,
   exportFigFileStream,
   compressFigData,

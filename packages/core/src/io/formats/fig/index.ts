@@ -1,5 +1,6 @@
 export { readFigFile, parseFigFile, type ParseFigFileOptions } from './read'
 export {
+  concatenateBytes,
   exportFigFile,
   exportFigFileStream,
   compressFigData,

@@ -197,6 +197,11 @@ export async function exportFigFile(
     },
     options
   )
+  return concatenateBytes(chunks)
+}
+
+/** The bytes a streamed export produced, joined into the one buffer a byte-returning caller needs. */
+export function concatenateBytes(chunks: readonly Uint8Array[]): Uint8Array {
   let length = 0
   for (const chunk of chunks) length += chunk.byteLength
   const bytes = new Uint8Array(length)
