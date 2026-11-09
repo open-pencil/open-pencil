@@ -31,7 +31,7 @@ for (const theme of ['light', 'dark']) {
     const section = page.getByRole('region', { name: 'Effects', exact: true })
     await section.getByRole('button', { name: 'Expand effect settings' }).click()
     if (theme === 'light') await expect(section).toHaveScreenshot('inline-shadow-light.png')
-    const radius = section.getByRole('spinbutton', { name: 'Radius', exact: true })
+    const radius = section.getByRole('spinbutton', { name: 'Blur', exact: true })
     await radius.focus()
     await radius.fill('20')
     await radius.press('Enter')
@@ -55,7 +55,7 @@ for (const theme of ['light', 'dark']) {
       .toBe(12)
     await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
     await page.getByRole('option', { name: 'Layer blur', exact: true }).click()
-    await expect(section.getByRole('spinbutton', { name: 'Radius', exact: true })).toBeVisible()
+    await expect(section.getByRole('spinbutton', { name: 'Blur', exact: true })).toBeVisible()
     await section.getByRole('button', { name: 'Remove effect' }).click()
     await expect
       .poll(() =>
@@ -121,7 +121,7 @@ test('bind a shadow’s blur and colour to variables, and detach by typing', asy
     .poll(async () => Object.keys((await node()).bindings ?? {}).sort())
     .toEqual(['effects/0/color', 'effects/0/radius'])
 
-  const radius = section.getByRole('spinbutton', { name: 'Radius', exact: true })
+  const radius = section.getByRole('spinbutton', { name: 'Blur', exact: true })
   await radius.focus()
   const input = blur.locator('input')
   await input.fill('24')

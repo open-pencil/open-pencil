@@ -1,0 +1,1 @@
+- The Effects panel labels every shadow and blur setting (Position, Blur, Spread, Color), shows a shadow's color in the same field as fills and strokes, and no longer offers a blend mode for blurs, which have none in Figma (#1942).

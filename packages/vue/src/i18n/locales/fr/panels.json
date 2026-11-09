@@ -443,6 +443,7 @@
   "pointCount": "Nombre",
   "starRatio": "Rapport",
   "spread": "Diffusion",
+  "blur": "Flou",
   "effectColor": "Couleur",
   "foregroundBlur": "Flou de premier plan",
   "glass": "Verre",

@@ -449,6 +449,7 @@
   "pointCount": "Количество",
   "starRatio": "Соотношение",
   "spread": "Размах",
+  "blur": "Размытие",
   "effectColor": "Цвет",
   "foregroundBlur": "Размытие переднего плана",
   "glass": "Стекло",
