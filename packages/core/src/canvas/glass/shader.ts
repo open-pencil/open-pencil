@@ -15,6 +15,10 @@
  * lightens the other, fading in over 0.65 · D.
  */
 
+import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-graph'
+import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { blurSigma } from '@open-pencil/scene-graph/geometry'
+
 /** The most outline segments a non-box shape passes to the shaders. */
 export const GLASS_MAX_SEGMENTS = 128
 
@@ -241,4 +245,28 @@ export function glassLightAxis(lightAngle: number): [number, number] {
 /** The refraction depth Figma uses: never more than half the layer's shorter side. */
 export function glassDepth(depth: number, width: number, height: number): number {
   return Math.max(1e-3, Math.min(depth, Math.min(width, height) / 2))
+}
+
+export function glassParams(effect: Effect): GlassEffectParams {
+  return effect.glass ?? UNSET_GLASS
+}
+
+/**
+ * The low-pass Figma's glass always gives the backdrop, as a blur sigma in layer units: the one
+ * that draws a Figma export of glass over sharp stripes most closely here.
+ */
+const BACKDROP_SIGMA = 0.6
+
+/** The blur the refraction reads the backdrop through: the base low-pass and the frost. */
+export function glassBackdropSigma(effect: Effect): number {
+  return Math.hypot(BACKDROP_SIGMA, blurSigma(effect.radius))
+}
+
+/**
+ * How far past a point the refraction reads, in layer units: the displacement with dispersion's
+ * extra tenth, and the blur.
+ */
+export function glassSampleRadius(node: SceneNode, effect: Effect): number {
+  const depth = glassDepth(glassParams(effect).depth, node.width, node.height)
+  return depth * 1.1 + 3 * glassBackdropSigma(effect) + 1
 }

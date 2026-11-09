@@ -1,7 +1,5 @@
 import type { Canvas, ImageFilter, Path } from '@open-pencil/canvaskit'
-import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-graph'
-import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
-import { blurSigma } from '@open-pencil/scene-graph/geometry'
+import type { Effect, SceneNode } from '@open-pencil/scene-graph'
 
 import { tracePath } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -13,21 +11,13 @@ import {
   GLASS_MAX_SEGMENTS,
   GLASS_REFRACTION_SHADER,
   type GlassOutline,
+  glassBackdropSigma,
   glassDepth,
   glassGeometryUniforms,
-  glassLightAxis
+  glassLightAxis,
+  glassParams,
+  glassSampleRadius
 } from './shader'
-
-/**
- * The low-pass Figma's glass always gives the backdrop, as a blur sigma in layer units: the one
- * that draws a Figma export of glass over sharp stripes most closely here.
- */
-const BACKDROP_SIGMA = 0.6
-
-/** How far past the displacement the refraction reads: dispersion's extra tenth and the blur. */
-function sampleRadius(depth: number, sigma: number): number {
-  return depth * 1.1 + 3 * sigma + 1
-}
 
 /** One piece of an outline: a straight edge, or a cubic to flatten. */
 type OutlinePiece = number[]
@@ -189,10 +179,6 @@ function filterBackdrop(
   canvas.restore()
 }
 
-function glassParams(effect: Effect): GlassEffectParams {
-  return effect.glass ?? UNSET_GLASS
-}
-
 /**
  * Bends what lies behind the layer through its glass: refraction and dispersion over the
  * backdrop, frosted by the effect's radius. Drawn before the layer's fills.
@@ -207,7 +193,7 @@ export function renderGlassRefraction(
   const glass = glassParams(effect)
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
-  const sigma = Math.hypot(BACKDROP_SIGMA, blurSigma(effect.radius))
+  const sigma = glassBackdropSigma(effect)
   const program = compiledEffect(
     r.ck,
     r.shaders,
@@ -220,7 +206,7 @@ export function renderGlassRefraction(
     program,
     [...glassGeometryUniforms(outline, depth), glass.refraction, glass.dispersion],
     'backdrop',
-    sampleRadius(depth, sigma),
+    glassSampleRadius(node, effect),
     blur
   )
   try {
