@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -123,8 +123,8 @@ export const TargetedConfirmation: Story = {
 }
 
 /**
- * A dialog that is one form: Enter in the field submits, an empty name is caught in place, and a
- * failed submit shows why under the fields. The name starts empty each time it opens.
+ * A dialog that is one form: it opens on its field, an empty name is caught in place and takes
+ * focus back, Enter submits, and a failed submit shows why under the fields. The name starts empty each time it opens.
  */
 export const Form: Story = {
   render: () => ({
@@ -172,8 +172,11 @@ export const Form: Story = {
     const body = within(document.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
     const name = await body.findByLabelText('Name')
-    await userEvent.type(name, '{Enter}')
+    await expect(name).toHaveFocus()
+    // Submitting from the button leaves focus on it, until the invalid field takes it back.
+    await userEvent.click(body.getByRole('button', { name: 'Rename' }))
     await expect(name).toHaveAccessibleDescription('Enter a name.')
+    await waitFor(() => expect(name).toHaveFocus())
     await userEvent.type(name, 'Design{Enter}')
     await expect(body.getByText('The server could not be reached.')).toBeVisible()
     await userEvent.click(body.getByRole('button', { name: 'Cancel' }))

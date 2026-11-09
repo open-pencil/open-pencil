@@ -41,7 +41,7 @@ watch(open, (value) => {
   if (value) openings.value++
 })
 const blocked = computed(
-  () => confirmDisabled || (confirmText !== undefined && !typedMatches.value)
+  () => confirmDisabled || confirmLoading || (confirmText !== undefined && !typedMatches.value)
 )
 /**
  * Confirms, then closes. Reka's action closes first, so a caller that forgets its pending action

@@ -3,6 +3,7 @@ import { useTemplateRef, watch } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import { focusFirstInvalid } from '@/components/ui/input/form-field'
 
 import AppDialogBody from './AppDialogBody.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
@@ -74,7 +75,10 @@ function focusField(event: Event) {
 
 /** Enter in a field submits too, so a disabled or busy dialog ignores it there as well. */
 function submit() {
-  if (!submitDisabled && !saving) emit('submit')
+  if (submitDisabled || saving) return
+  emit('submit')
+  // A caller that found a field invalid has marked it by now; the person lands on it.
+  void focusFirstInvalid(form.value)
 }
 
 function cancel() {

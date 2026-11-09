@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, useId, type HTMLAttributes } from 'vue'
 
-import type { ComponentUI } from '@/components/ui/types'
-import theme from '@/theme/input/form-field'
+import { formField, type FormFieldUI } from './form-field'
 
 /**
  * A labelled control with its error, or else its hint, underneath. The control comes in the
@@ -31,13 +29,13 @@ const {
   /** False for a control that a `<label for>` can't name, such as a radio group or a select. */
   labelFor?: boolean
   class?: HTMLAttributes['class']
-  ui?: ComponentUI<typeof theme>
+  ui?: FormFieldUI
 }>()
 
 const generatedId = useId()
 const id = computed(() => givenId ?? generatedId)
 const cls = computed(() => {
-  const field = tv(theme)({ size })
+  const field = formField({ size })
   return {
     root: field.root({ class: [ui?.root, normalizeClass(className)] }),
     labelRow: field.labelRow({ class: ui?.labelRow }),

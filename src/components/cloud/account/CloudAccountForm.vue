@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRef, watch } from 'vue'
+import { computed, toRef, useTemplateRef, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -13,6 +13,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
+import { focusFirstInvalid } from '@/components/ui/input/form-field'
 
 /**
  * The email and password form for a Cloud server, in the editor's connect dialog and, larger, on
@@ -44,12 +45,16 @@ const form = useCloudAccountForm(
 )
 const { name, email, password, repeat } = form.fields
 const { errors } = form
-const submit = form.submit((credentials) => emit('submit', credentials))
+const root = useTemplateRef<HTMLFormElement>('root')
+const submit = form.submit(
+  (credentials) => emit('submit', credentials),
+  () => void focusFirstInvalid(root.value)
+)
 watch(() => mode, form.switchMode)
 </script>
 
 <template>
-  <form :id="id" :class="ui.form()" novalidate @submit.prevent="submit">
+  <form ref="root" :id="id" :class="ui.form()" novalidate @submit.prevent="submit">
     <fieldset :disabled="disabled" class="contents">
       <AppFormField
         v-if="mode === 'sign-up'"
