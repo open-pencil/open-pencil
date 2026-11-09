@@ -1,6 +1,6 @@
 import type { BlendMode, SceneGraph } from '@open-pencil/scene-graph'
 
-import { solid } from '../paints'
+import { linearGradient, solid } from '../paints'
 
 const BLENDS: BlendMode[] = ['MULTIPLY', 'SCREEN', 'OVERLAY', 'COLOR_DODGE', 'HUE', 'LUMINOSITY']
 
@@ -57,18 +57,15 @@ export function createWideGamutScene(graph: SceneGraph, pageId: string) {
     height: 320,
     isMask: true,
     maskType: 'LUMINANCE',
+    // Top to bottom.
     fills: [
-      {
-        type: 'GRADIENT_LINEAR',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        visible: true,
-        opacity: 1,
-        gradientStops: [
-          { color: { r: 0, g: 0, b: 0, a: 1 }, position: 0 },
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
+      linearGradient(
+        [
+          { r: 0, g: 0, b: 0, a: 1 },
+          { r: 1, g: 1, b: 1, a: 1 }
         ],
-        gradientTransform: { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
-      }
+        { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+      )
     ]
   })
   for (const [index, fill] of [solid(1, 0, 0.5), solid(0, 1, 1)].entries()) {
