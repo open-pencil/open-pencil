@@ -74,6 +74,8 @@ export function createInvitationService(
         'document.name as documentName'
       ])
       .where('documentInvitation.id', '=', invitationId)
+      // A taken-down document's invitations name nothing until it is restored.
+      .where('document.disabledAt', 'is', null)
       .executeTakeFirst()
     if (!invitation || !invitationTokenIsActive(invitation, input.token)) {
       throw new DocumentShareInvalidError()
@@ -239,18 +241,21 @@ export function createInvitationService(
       if (workspace) return { kind: 'workspace', ...workspace }
       const invitation = await database
         .selectFrom('documentInvitation')
+        .innerJoin('document', 'document.id', 'documentInvitation.documentId')
         .select([
-          'id',
-          'documentId',
-          'emailNormalized',
-          'permission',
-          'invitedBy',
-          'tokenHash',
-          'expiresAt',
-          'acceptedAt',
-          'revokedAt'
+          'documentInvitation.id',
+          'documentInvitation.documentId',
+          'documentInvitation.emailNormalized',
+          'documentInvitation.permission',
+          'documentInvitation.invitedBy',
+          'documentInvitation.tokenHash',
+          'documentInvitation.expiresAt',
+          'documentInvitation.acceptedAt',
+          'documentInvitation.revokedAt'
         ])
-        .where('id', '=', invitationId)
+        .where('documentInvitation.id', '=', invitationId)
+        // Refused, not consumed, while the document is taken down, so it works again on restore.
+        .where('document.disabledAt', 'is', null)
         .executeTakeFirst()
       if (
         !invitation ||

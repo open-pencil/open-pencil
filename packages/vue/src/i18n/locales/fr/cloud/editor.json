@@ -331,5 +331,22 @@
   "versionsFailed": "Impossible de charger l’historique des versions.",
   "versionFailed": "Impossible d’ouvrir cette version.",
   "versionChangeFailed": "Impossible de modifier l’historique des versions.",
-  "versionCopyName": "{name} (copie)"
+  "versionCopyName": "{name} (copie)",
+  "reportFile": "Signaler ce fichier",
+  "reportDescription": "Dites aux administrateurs de {host} ce qui ne va pas. Eux seuls verront votre signalement.",
+  "reportReason": "Le problème",
+  "reportReasonSpam": "Spam ou hameçonnage",
+  "reportReasonIllegal": "Contenu illégal",
+  "reportReasonCopyright": "Droit d’auteur",
+  "reportReasonHarassment": "Harcèlement",
+  "reportReasonOther": "Autre chose",
+  "reportDetails": "Détails",
+  "reportDetailsPlaceholder": "Que doit examiner un administrateur ?",
+  "reportEmail": "Votre e-mail (facultatif)",
+  "reportEmailHint": "Seulement pour qu’un administrateur puisse répondre.",
+  "reportSend": "Envoyer le signalement",
+  "reportSent": "Signalement envoyé. Merci.",
+  "reportFailed": "Le signalement n’a pas été envoyé. Réessayez plus tard.",
+  "reportTooMany": "Ce fichier ne peut plus être signalé aujourd’hui. Réessayez demain.",
+  "reportEmailInvalid": "Saisissez une adresse e-mail, ou laissez vide."
 }

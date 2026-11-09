@@ -391,6 +391,25 @@ export const cloudMessageDefaults = {
   versionsFailed: 'Couldn’t load the version history.',
   versionFailed: 'Couldn’t open this version.',
   versionChangeFailed: 'Couldn’t change the version history.',
+  reportFile: 'Report this file',
+  reportDescription: params(
+    'Tell the administrators of {host} what’s wrong with it. Only they see your report.'
+  ),
+  reportReason: 'What’s wrong',
+  reportReasonSpam: 'Spam or phishing',
+  reportReasonIllegal: 'Illegal content',
+  reportReasonCopyright: 'Copyright',
+  reportReasonHarassment: 'Harassment',
+  reportReasonOther: 'Something else',
+  reportDetails: 'Details',
+  reportDetailsPlaceholder: 'What should an administrator look at?',
+  reportEmail: 'Your email (optional)',
+  reportEmailHint: 'Only so an administrator can reply.',
+  reportSend: 'Send report',
+  reportSent: 'Report sent. Thank you.',
+  reportFailed: 'The report didn’t go through. Try again later.',
+  reportTooMany: 'This file can’t take more reports today. Try again tomorrow.',
+  reportEmailInvalid: 'Enter an email address, or leave it empty.',
   versionCopyName: params('{name} (copy)')
 } as const
 

@@ -1,0 +1,1 @@
+- `resolvedPaintBindings` (`@open-pencil/scene-graph/variables`) and `outlineColorInMode` (`@open-pencil/core/canvas`) are removed: bound paints hold their colors, so read `fills` and `strokes` directly.

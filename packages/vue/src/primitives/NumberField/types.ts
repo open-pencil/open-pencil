@@ -33,6 +33,11 @@ export interface NumberFieldRootProps {
    * unit listed here is read as that unit, not as a percent of `max`.
    */
   units?: readonly string[]
+  /**
+   * How the field shows a bound variable's value and starts editing from it, such as to the two
+   * decimals the Design panel shows; the variable keeps its exact value until an edit changes it.
+   */
+  round?: (value: number) => number
 }
 
 export interface NumberFieldRootEmits {

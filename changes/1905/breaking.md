@@ -1,0 +1,1 @@
+- `usePosition()` from `@open-pencil/vue/controls/position` no longer returns `x`, `y`, `width`, `height`, and `rotation`; read each with `panelProp('x')` and the like, which gives the value the panel shows, to two decimals, or `MIXED` (#1905).

@@ -4,7 +4,7 @@ import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { placeIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 import { renderNodesToHTML } from '#core/io/formats/html'
 
 const gradient: Fill = {

@@ -11,7 +11,7 @@ import {
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
 } from '#core/constants'
-import { createSceneGeometry, hasTransformHandles } from '#core/geometry'
+import { createSceneGeometry, hasTransformHandles, panelNumber } from '#core/geometry'
 
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
@@ -74,7 +74,7 @@ export function drawSingleSelectionSize(
   overlays: RenderOverlays,
   sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
-  const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
+  const sizeText = `${panelNumber(node.width)} × ${panelNumber(node.height)}`
   const pillColor = r.outlineColor(node, graph)
   const transform = frameLabelPlacement(node, graph, overlays.rotationPreview, {
     x: 0.5,
@@ -100,7 +100,7 @@ function drawMultiSelectionSize(
   maxY: number,
   sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
-  const sizeText = `${Math.round(maxX - minX)} × ${Math.round(maxY - minY)}`
+  const sizeText = `${panelNumber(maxX - minX)} × ${panelNumber(maxY - minY)}`
   const sx1 = minX * r.zoom + r.panX
   const sx2 = maxX * r.zoom + r.panX
   const sy2 = maxY * r.zoom + r.panY

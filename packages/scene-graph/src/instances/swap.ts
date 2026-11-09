@@ -7,6 +7,7 @@ import {
 import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
+import { applyBoundPaintColorsIn, refreshBoundPaintsIn } from '../variables/paints'
 import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
@@ -291,6 +292,8 @@ function cloneLayer(
   if (layer.childIds.length > 0) {
     cloneChildrenWithMapping(swap.graph, layer.id, clone.id)
   }
+  // A new copy shows its variables where it sits; overrides restored after this keep theirs.
+  applyBoundPaintColorsIn(swap.graph, clone.id)
   return clone
 }
 
@@ -395,6 +398,8 @@ function followLayers(swap: Swap, compParent: SceneNode, instParent: SceneNode):
       // A new copy takes the values the instances around it assign, as one a sync adds does.
       applyEnclosingAssignments(graph, copy)
       restoreOverrides(overrideScope(swap), copy)
+      // A mode restored on the copy changes what its unclaimed bound paints resolve to.
+      refreshBoundPaintsIn(graph, copy.id)
     }
   })
 }

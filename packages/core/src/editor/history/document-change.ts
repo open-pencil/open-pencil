@@ -70,11 +70,6 @@ export interface DocumentChange {
   children: Record<Side, ChildList[]>
   variables: RecordChange<Variable>[]
   collections: RecordChange<VariableCollection>[]
-  /**
-   * The mode each changed collection showed on each side, which the editor keeps apart from the
-   * collection, so undoing a collection's or a mode's removal shows the mode it showed.
-   */
-  activeModes: RecordChange<string>[]
 }
 
 /** Layers by id: the live graph's, or those captured before the edit. */
@@ -229,7 +224,6 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
   const created = new Set<string>()
   const variables: RecordCopies<Variable> = new Map()
   const collections: RecordCopies<VariableCollection> = new Map()
-  const activeModes: RecordCopies<string> = new Map()
   const impact = createSceneMutationImpact()
   let elsewhere: ReturnType<typeof createSceneMutationImpact> | null = null
   const layersAtPause = new Map<string, SceneNode>()
@@ -260,7 +254,6 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
         copyRecord(elsewhere ? variablesAtPause : variables, graph.variables, id)
       } else {
         copyRecord(elsewhere ? collectionsAtPause : collections, graph.variableCollections, id)
-        if (!elsewhere) copyRecord(activeModes, graph.activeMode, id)
       }
     },
     pause: () => {
@@ -306,13 +299,12 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
     const ids = new Set([...touchedIds(impact), ...captured.keys()])
     return buildDocumentChange(graph, pageId, ids, previous, created, {
       variables: recordChangesOf(variables, graph.variables),
-      collections: recordChangesOf(collections, graph.variableCollections),
-      activeModes: recordChangesOf(activeModes, graph.activeMode)
+      collections: recordChangesOf(collections, graph.variableCollections)
     })
   }
 }
 
-type RecordChanges = Pick<DocumentChange, 'variables' | 'collections' | 'activeModes'>
+type RecordChanges = Pick<DocumentChange, 'variables' | 'collections'>
 
 /**
  * The change of the touched layers `ids`, given each one's state before the edit in `previous`,
@@ -330,8 +322,7 @@ function buildDocumentChange(
   const change: DocumentChange = {
     ...emptyDocumentChange(pageId),
     variables: records.variables,
-    collections: records.collections,
-    activeModes: records.activeModes
+    collections: records.collections
   }
   const pageIds = new Set<string>()
   for (const id of ids) {
@@ -363,8 +354,7 @@ export function emptyDocumentChange(pageId: string): DocumentChange {
     updated: [],
     children: { before: [], after: [] },
     variables: [],
-    collections: [],
-    activeModes: []
+    collections: []
   }
 }
 
@@ -372,9 +362,7 @@ export function emptyDocumentChange(pageId: string): DocumentChange {
 export function recordChanges(graph: SceneGraph, checkpoint: TouchedCheckpoint): RecordChanges {
   return {
     variables: recordChangesOf(checkpoint.variables, graph.variables),
-    collections: recordChangesOf(checkpoint.variableCollections, graph.variableCollections),
-    // A property edit cannot change collections, so not the modes they show either.
-    activeModes: []
+    collections: recordChangesOf(checkpoint.variableCollections, graph.variableCollections)
   }
 }
 
@@ -424,8 +412,7 @@ export function isEmptyDocumentChange(change: DocumentChange): boolean {
     change.children.before.length === 0 &&
     change.children.after.length === 0 &&
     change.variables.length === 0 &&
-    change.collections.length === 0 &&
-    change.activeModes.length === 0
+    change.collections.length === 0
   )
 }
 
@@ -468,11 +455,6 @@ export function applyDocumentChange(graph: SceneGraph, change: DocumentChange, s
     graph.willChangeCollection(id)
   )
   restoreRecords(graph.variables, change.variables, side, (id) => graph.willChangeVariable(id))
-  for (const mode of change.activeModes) {
-    const modeId = mode[side]
-    if (modeId) graph.activeMode.set(mode.id, modeId)
-    else graph.activeMode.delete(mode.id)
-  }
   graph.preserveSourceMetadataDuring(() => {
     for (const node of restored) {
       const { parentId, childIds: _childIds, ...fields } = structuredClone(node)

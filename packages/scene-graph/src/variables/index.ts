@@ -8,6 +8,7 @@ import { bindingOverrideField, setInstanceOverride } from '../instances/override
 import { siblingOrderKeys } from '../order-keys'
 import type {
   Effect,
+  SceneNode,
   Variable,
   VariableCollection,
   VariableCollectionMode,
@@ -30,6 +31,7 @@ import {
   TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES
 } from './fields'
+import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'
 
@@ -76,9 +78,6 @@ export function removeVariable(graph: SceneGraph, id: string): void {
 export function addCollection(graph: SceneGraph, collection: VariableCollection): void {
   graph.willChangeCollection(collection.id)
   graph.variableCollections.set(collection.id, collection)
-  if (!graph.activeMode.has(collection.id)) {
-    graph.activeMode.set(collection.id, collection.defaultModeId)
-  }
 }
 
 function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
@@ -145,11 +144,6 @@ export function removeCollection(graph: SceneGraph, id: string): void {
   }
   graph.willChangeCollection(id)
   graph.variableCollections.delete(id)
-  graph.activeMode.delete(id)
-}
-
-export function setActiveMode(graph: SceneGraph, collectionId: string, modeId: string): void {
-  graph.activeMode.set(collectionId, modeId)
 }
 
 export function addMode(
@@ -201,9 +195,6 @@ export function removeMode(graph: SceneGraph, collectionId: string, modeId: stri
     if (!variable) continue
     graph.willChangeVariable(varId)
     variable.valuesByMode = omit(variable.valuesByMode, [modeId])
-  }
-  if (graph.activeMode.get(collectionId) === modeId) {
-    graph.activeMode.set(collectionId, collection.defaultModeId)
   }
 }
 
@@ -275,6 +266,30 @@ function assertEffectBinding(
   }
 }
 
+/** Checks a paint binding and drops the list's dead top-level binding it replaces. */
+function preparePaintBinding(
+  graph: SceneGraph,
+  node: SceneNode,
+  paint: { list: 'fills' | 'strokes'; index: number },
+  variable: Variable,
+  field: string
+): void {
+  // Color fields require COLOR variable type
+  if (variable.type !== 'COLOR') {
+    throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
+  }
+  // Validate index is within current array bounds
+  const currentLength = node[paint.list].length
+  if (paint.index >= currentLength) {
+    throw new Error(`Index ${paint.index} out of range for ${paint.list} (length ${currentLength})`)
+  }
+  // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
+  if (paint.list in node.boundVariables) {
+    graph.willChangeNode(node)
+    node.boundVariables = omit(node.boundVariables, [paint.list])
+  }
+}
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -290,25 +305,8 @@ export function bindVariable(
     throw new Error(`Variable "${variableId}" not found`)
   }
 
-  // Color fields require COLOR variable type
   const paint = paintBindingTarget(field)
-  if (paint) {
-    if (variable.type !== 'COLOR') {
-      throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
-    }
-    // Validate index is within current array bounds
-    const currentLength = node[paint.list].length
-    if (paint.index >= currentLength) {
-      throw new Error(
-        `Index ${paint.index} out of range for ${paint.list} (length ${currentLength})`
-      )
-    }
-    // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
-    if (paint.list in node.boundVariables) {
-      graph.willChangeNode(node)
-      node.boundVariables = omit(node.boundVariables, [paint.list])
-    }
-  }
+  if (paint) preparePaintBinding(graph, node, paint, variable, field)
 
   const effect = effectBindingTarget(field)
   if (effect) assertEffectBinding(node.effects, effect, variable.type, field)
@@ -349,6 +347,8 @@ export function bindVariable(
     boundVariables: { ...node.boundVariables },
     variableBindingScales: { ...node.variableBindingScales }
   })
+  // A paint takes its variable's color, alpha as opacity, when it binds, as Figma's does.
+  if (paint) applyBoundPaintColor(graph, node, field)
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
@@ -380,14 +380,17 @@ function markBoundVariablesOverrideOnInstance(
   for (const instance of instances) graph.willChangeNode(instance)
   if (nearest) setInstanceOverride(nearest.instanceOverrides, nearest.id, nodeId, 'boundVariables')
   setInstanceOverride(owner.instanceOverrides, owner.id, nodeId, 'boundVariables')
+  // Each instance claims the binding it changed alone, so the layer's other bindings keep
+  // following their components, as Figma claims only the paint or effect a script edits.
   if (field)
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      nodeId,
-      bindingOverrideField(field),
-      node.boundVariables[field] ?? null
-    )
+    for (const instance of uniq(compact([nearest, owner])))
+      setInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        nodeId,
+        bindingOverrideField(field),
+        node.boundVariables[field] ?? null
+      )
   for (const instance of instances)
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
 }
@@ -396,6 +399,7 @@ export * from './bindings'
 export * from './corners'
 export * from './formula'
 export * from './formula/schema'
+export * from './paints'
 export * from './schema'
 export * from './text'
 export * from './token'

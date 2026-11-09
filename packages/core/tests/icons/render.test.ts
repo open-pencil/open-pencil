@@ -9,7 +9,7 @@ import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 
 const BLACK = parseColor('#000000')
 
@@ -91,6 +91,19 @@ describe('placeIcon', () => {
     } finally {
       renderer.destroy()
     }
+  })
+
+  test('paints gradient fills and strokes as gradients, kept out of the icon color', () => {
+    const { vectors } = insertIcon(
+      new SceneGraph(),
+      '<defs><linearGradient id="a"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>' +
+        '<path fill="url(#a)" stroke="url(#a)" stroke-width="2" stroke-linecap="round" d="M2 2h20v20H2z"/>'
+    )
+    const vector = expectDefined(vectors[0], 'vector')
+
+    expect(vector.fills[0]?.type).toBe('GRADIENT_LINEAR')
+    expect(vector.strokes[0]).toMatchObject({ type: 'GRADIENT_LINEAR', weight: 2, cap: 'ROUND' })
+    expect(readIconTint(vector)).toEqual([])
   })
 })
 

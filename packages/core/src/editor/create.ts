@@ -90,7 +90,7 @@ export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager({
-    onChange: () => emitEditorEvent('history:changed'),
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
     onDiscard: () => emitEditorEvent('edit:discarded'),
     runReplay: (replay) => _graph.runOutsideEdits(replay)
   })
@@ -259,10 +259,8 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync, isSyncingComponents } = createComponentSyncScheduler(
-    () => _graph,
-    requestRender
-  )
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+    createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -374,6 +372,17 @@ export function createEditor(options?: EditorOptions) {
     deleteSelected: clipboard.deleteSelected,
     penCommit: shapes.penCommit
   })
+  const { cancelPenGesture, ...shapeActions } = shapes
+  const { cancelNodeEditChange, ...vectorEditActions } = vectorEdit
+  /**
+   * Takes back the gesture in progress, such as a press of the pen or a drag in vector edit mode,
+   * leaving no undo step or redo, and tells the canvas to drop it (`gesture:cancelled`). A host
+   * refuses what the person is doing so, from the gesture's own events, such as `pen:pressed`.
+   */
+  function cancelGesture() {
+    if (!cancelPenGesture()) cancelNodeEditChange()
+    emitEditorEvent('gesture:cancelled')
+  }
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
     penPushHistory: shapes.penPushHistory,
@@ -386,6 +395,7 @@ export function createEditor(options?: EditorOptions) {
   }
   const readOnly = createReadOnlyActions(ctx, {
     endLayerEdits,
+    flushPendingStep: nodes.flushNudge,
     endEdits: () => {
       endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
@@ -461,6 +471,8 @@ export function createEditor(options?: EditorOptions) {
     state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
+    // Snap targets are points on the document's pages, which are gone.
+    state.snapTargets = { points: [] }
     state.guides = { preview: null, hovered: null, selected: null, redline: null }
     state.layoutInsertIndicator = null
     state.dropTargetId = null
@@ -513,6 +525,7 @@ export function createEditor(options?: EditorOptions) {
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
     isSyncingComponents,
+    flushComponentSync,
     requestRender,
     requestRefresh,
     textSelectionChanged,
@@ -555,10 +568,11 @@ export function createEditor(options?: EditorOptions) {
     ...designIssues,
 
     // Shapes & tools
-    ...shapes,
+    ...shapeActions,
 
     // Vector edit mode: a path edited point by point, and the pen continuing a path
-    ...vectorEdit,
+    ...vectorEditActions,
+    cancelGesture,
     ...penResume,
     /**
      * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as

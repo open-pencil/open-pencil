@@ -368,6 +368,17 @@ describe('useEditorKeyboard', () => {
     expect(editor.state.nodeEditState?.segments[0]?.tangentStart).toEqual({ x: 0, y: 0 })
   })
 
+  test("a global host key runs while text is edited and stops the browser's own action", () => {
+    const ran: string[] = []
+    const editor = mountKeyboard({
+      shortcuts: [{ id: 'host-save', keys: 'Mod+S', run: () => ran.push('save'), global: true }]
+    })
+    const text = editor.createShape('TEXT', 0, 0, 100, 20)
+    editor.state.editingTextId = text
+    expect(press('KeyS', mod())).toBe(true)
+    expect(ran).toEqual(['save'])
+  })
+
   test("a preview leaves Space to its controls and still stops the browser's own Save", () => {
     const editor = mountKeyboard()
     editor.startPlay()

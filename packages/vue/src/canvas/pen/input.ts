@@ -20,13 +20,15 @@ function nearVertex(cx: number, cy: number, vertex: Vector, editor: Editor) {
 
 /**
  * The vertices the pen's next point lines up with, which in Figma are only the path's own: the
- * path being drawn with the one it continues, or the path being edited before the pen picks it up.
+ * path being drawn with the one it continues, or the path being edited before the pen picks it up;
+ * and the points the host adds (`setSnapTargets`).
  */
 function penSnapVertices(editor: Editor): readonly Vector[] {
+  const host = editor.state.snapTargets.points
   const penState = editor.state.penState
-  if (!penState) return editor.state.nodeEditState?.vertices ?? []
+  if (!penState) return [...(editor.state.nodeEditState?.vertices ?? []), ...host]
   const resumed = penState.resumedPath?.network.vertices ?? []
-  return [...resumed, ...penState.vertices]
+  return [...resumed, ...penState.vertices, ...host]
 }
 
 export function startPenInput(
@@ -47,34 +49,11 @@ export function startPenInput(
     return true
   }
 
-  // Each press, with its drag, is one undo step.
-  editor.penPushHistory()
+  // The editor decides what the press does and tells the host, which may refuse it.
   const press = { x: cx, y: cy }
-  const penState = editor.state.penState
-  if (penState && penState.vertices.length >= PEN_CLOSE_MIN_POINTS) {
-    const first = penState.vertices[0]
-    if (nearVertex(cx, cy, first, editor)) {
-      editor.penSetPendingClose(true)
-      editor.penSetClosingToFirst(true)
-      setDrag(createPenDrag(first, press))
-      cursorOverride.value = PEN_CURSOR
-      return true
-    }
-  }
-
-  // A press back on the last point drags its outgoing handle out again and keeps the one into it,
-  // rather than stacking a point there (Figma).
-  const last = penState?.vertices.at(-1)
-  if (penState && last && nearVertex(cx, cy, last, editor)) {
-    editor.penSetPendingClose(false)
-    setDrag(createPenDrag(last, press, penState.segments.at(-1)?.tangentEnd ?? { x: 0, y: 0 }))
-    cursorOverride.value = PEN_CURSOR
-    return true
-  }
-
-  editor.penSetPendingClose(false)
-  editor.penAddVertex(point.x, point.y)
-  setDrag(createPenDrag(point, press))
+  const pressed = editor.penPress(press, point)
+  if (!pressed) return true
+  setDrag(createPenDrag(pressed.anchor, press, pressed.incoming))
   cursorOverride.value = PEN_CURSOR
   return true
 }

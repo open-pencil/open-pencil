@@ -5,11 +5,10 @@ import { reactive, ref } from 'vue'
 import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { resolveVertexSnap } from '#vue/shared/input/snap'
-
-import { expectDefined } from '@open-pencil/test-support/assert'
 
 let editor: Editor
 
@@ -103,4 +102,25 @@ test('undo takes back pen points when the editor state is reactive', () => {
   expect(editor.state.penState?.vertices).toHaveLength(1)
   editor.redoAction()
   expect(editor.state.penState?.vertices).toHaveLength(2)
+})
+
+describe('host hooks on the pen', () => {
+  test('a press the host refuses starts no drag and places no point', () => {
+    setup()
+    editor.onEditorEvent('pen:pressed', ({ kind }) => {
+      if (kind === 'start') editor.cancelGesture()
+    })
+    const setDrag = mock()
+    startPenInput({ altKey: false }, 10, 10, editor, setDrag, ref<string | null>(null))
+    expect(setDrag).not.toHaveBeenCalled()
+    expect(editor.state.penState).toBeNull()
+  })
+
+  test('the next point lines up with the points the host adds', () => {
+    setup()
+    editor.setSnapTargets({ points: [{ x: 300, y: 40 }] })
+    click(0, 0)
+    click(297, 42)
+    expect(editor.state.penState?.vertices.at(-1)).toMatchObject({ x: 300, y: 40 })
+  })
 })

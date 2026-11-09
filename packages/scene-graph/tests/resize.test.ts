@@ -5,10 +5,8 @@ import {
   collectResizeDescendants,
   computeConstrainedResizeChanges,
   constrainedChildRect,
-  isConstraintEligible,
   scaledGeometryChanges
 } from '@open-pencil/scene-graph/resize'
-import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
 
 // Live Figma, 2026-10-10: a locked 100×50 rectangle at 50,50 in a 200×200 frame.
 const child = { x: 50, y: 50, width: 100, height: 50 }
@@ -110,9 +108,9 @@ describe('constraints keep fractional boxes', () => {
 
   test('Left & right that would leave no size keeps the child as it was', () => {
     const child = { x: 10, y: 10, width: 20, height: 16 }
-    expect(constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')).toEqual(
-      child
-    )
+    expect(
+      constrainedChildRect(child, frame, { width: 80, height: 100 }, 'STRETCH', 'MIN')
+    ).toEqual(child)
     expect(
       constrainedChildRect(child, frame, { width: 80.4, height: 100 }, 'STRETCH', 'MIN')
     ).toEqual(child)
@@ -168,13 +166,15 @@ describe('resizing a frame across zero', () => {
           { x: 0, y: 0 },
           { x: 20, y: 16 }
         ],
-        segments: [
-          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
-        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
         regions: []
       }
     })
-    const resize = (from: number, to: number, originals = collectResizeDescendants(graph, frame.id)) => {
+    const resize = (
+      from: number,
+      to: number,
+      originals = collectResizeDescendants(graph, frame.id)
+    ) => {
       if (!originals) throw new Error('Expected the vector')
       graph.updateNode(frame.id, { width: to })
       const changes = computeConstrainedResizeChanges(
@@ -196,6 +196,49 @@ describe('resizing a frame across zero', () => {
     resize(80, 100)
     expect(node()).toMatchObject({ x: 10, width: 40, flipX: false })
     expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 40, y: 16 })
+  })
+
+  test('a drag back to the starting size puts the path back as it started', () => {
+    const { graph, frame, resize, node } = stretched()
+    const originals = collectResizeDescendants(graph, frame.id)
+    resize(100, 200, originals)
+    resize(100, 100, originals)
+    expect(node()).toMatchObject({ x: 10, width: 20 })
+    expect(node().vectorNetwork?.vertices[1]).toEqual({ x: 20, y: 16 })
+  })
+
+  test('a flat line back at its length takes its path back, whatever its flat side became', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 100, height: 100 })
+    const line = graph.createNode('VECTOR', frame.id, {
+      x: 10,
+      y: 10,
+      width: 10,
+      height: 0,
+      horizontalConstraint: 'STRETCH',
+      verticalConstraint: 'STRETCH',
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    })
+    const originals = collectResizeDescendants(graph, frame.id)
+    if (!originals) throw new Error('Expected the line')
+    const resize = (width: number, height: number) => {
+      graph.updateNode(frame.id, { width, height })
+      const before = { width: 100, height: 100 }
+      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height }, originals)
+      for (const [id, change] of changes) graph.updateNode(id, change)
+    }
+    resize(110, 110)
+    resize(100, 120)
+    const node = graph.getNode(line.id)
+    expect(node).toMatchObject({ width: 10, height: 20 })
+    expect(node?.vectorNetwork?.vertices[1]).toEqual({ x: 10, y: 0 })
   })
 
   test('a drag turns the layer over once, from where it started', () => {
@@ -239,26 +282,156 @@ describe('saved stroke outlines through a resize', () => {
     expect(scaledGeometryChanges(vector(1), 10, 10, 20, 10).strokeGeometry).toEqual([])
     expect(scaledGeometryChanges(vector(0), 10, 10, 20, 10).strokeGeometry).toHaveLength(1)
   })
+
+  test('a flat line scales along its length, its zero side left as it is', () => {
+    const vertices = scaledGeometryChanges(vector(1), 10, 0, 30, 0).vectorNetwork?.vertices
+    expect(vertices?.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 0, y: 0 },
+      { x: 30, y: 0 }
+    ])
+  })
 })
 
-describe('which layers follow constraints', () => {
-  test('frame children outside auto layout flow, but not groups, top-level layers, or section children', () => {
-    const graph = makeSceneGraph()
-    const pageId = firstPageId(graph)
-    const topLevel = createRect(graph, pageId)
-    const frame = graph.createNode('FRAME', pageId, { layoutMode: 'NONE' })
-    const child = createRect(graph, frame.id)
-    const group = graph.createNode('GROUP', frame.id)
-    const section = graph.createNode('SECTION', pageId)
-    const inSection = createRect(graph, section.id)
-    expect(isConstraintEligible(graph, topLevel)).toBe(false)
-    expect(isConstraintEligible(graph, child)).toBe(true)
-    expect(isConstraintEligible(graph, group)).toBe(false)
-    expect(isConstraintEligible(graph, inSection)).toBe(false)
+// Live Figma, 2026-11-08: a group in a 300×220 frame holds a 40×30 layer at 60,50 and a 30×30 one
+// at 160,100. The group owns no constraints; each layer keeps its place in the frame by its own.
+describe('layers in groups through a frame resize', () => {
+  function grouped(kind: 'GROUP' | 'BOOLEAN_OPERATION' = 'GROUP') {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 300, height: 220 })
+    const group = graph.createNode(kind, frame.id, { x: 60, y: 50, width: 130, height: 80 })
+    const a = graph.createNode('RECTANGLE', group.id, { x: 0, y: 0, width: 40, height: 30 })
+    const b = graph.createNode('RECTANGLE', group.id, { x: 100, y: 50, width: 30, height: 30 })
+    let size = { width: 300, height: 220 }
+    const resize = (width: number, height: number) => {
+      const originals = collectResizeDescendants(graph, frame.id)
+      if (!originals) throw new Error('Expected the group')
+      graph.updateNode(frame.id, { width, height })
+      const changes = computeConstrainedResizeChanges(graph, frame.id, size, { width, height }, originals)
+      for (const [id, change] of changes) graph.updateNode(id, change)
+      size = { width, height }
+    }
+    /** A layer's box in the frame, through the groups holding it. */
+    const inFrame = (id: string) => {
+      const node = graph.getNode(id)
+      if (!node) throw new Error(`Expected ${id}`)
+      let { x, y } = node
+      for (let p = graph.getNode(node.parentId ?? ''); p && p.id !== frame.id; ) {
+        x += p.x
+        y += p.y
+        p = graph.getNode(p.parentId ?? '')
+      }
+      const round = (n: number) => Math.round(n * 100) / 100
+      return [round(x), round(y), round(node.width), round(node.height)]
+    }
+    return { graph, frame, group, a, b, resize, inFrame }
+  }
 
-    graph.updateNode(frame.id, { layoutMode: 'HORIZONTAL' })
-    expect(isConstraintEligible(graph, child)).toBe(false)
-    graph.updateNode(child.id, { layoutPositioning: 'ABSOLUTE' })
-    expect(isConstraintEligible(graph, child)).toBe(true)
+  test('each layer follows its own constraints and the group fits around them', () => {
+    const { graph, group, a, b, resize, inFrame } = grouped()
+    graph.updateNode(a.id, { horizontalConstraint: 'MAX', verticalConstraint: 'MAX' })
+    resize(400, 300)
+    expect(inFrame(a.id)).toEqual([160, 130, 40, 30])
+    expect(inFrame(b.id)).toEqual([160, 100, 30, 30])
+    expect(inFrame(group.id)).toEqual([160, 100, 40, 60])
+    resize(250, 180)
+    expect(inFrame(a.id)).toEqual([10, 10, 40, 30])
+    expect(inFrame(group.id)).toEqual([10, 10, 180, 120])
+  })
+
+  test('Left & right, Center, and Scale work in the frame, not the group', () => {
+    const stretch = grouped()
+    stretch.graph.updateNode(stretch.a.id, { horizontalConstraint: 'STRETCH', verticalConstraint: 'STRETCH' })
+    stretch.graph.updateNode(stretch.b.id, { horizontalConstraint: 'CENTER', verticalConstraint: 'CENTER' })
+    stretch.resize(400, 300)
+    expect(stretch.inFrame(stretch.a.id)).toEqual([60, 50, 140, 110])
+    expect(stretch.inFrame(stretch.b.id)).toEqual([210, 140, 30, 30])
+    expect(stretch.inFrame(stretch.group.id)).toEqual([60, 50, 180, 120])
+    stretch.resize(250, 180)
+    expect(stretch.inFrame(stretch.a.id)).toEqual([50, 40, 10, 10])
+    expect(stretch.graph.getNode(stretch.a.id)).toMatchObject({ flipX: true, flipY: true })
+    expect(stretch.inFrame(stretch.group.id)).toEqual([50, 40, 115, 70])
+
+    const scale = grouped()
+    for (const layer of [scale.a, scale.b]) {
+      scale.graph.updateNode(layer.id, { horizontalConstraint: 'SCALE', verticalConstraint: 'SCALE' })
+    }
+    scale.resize(400, 300)
+    expect(scale.inFrame(scale.a.id)).toEqual([80, 68.18, 53.33, 40.91])
+    expect(scale.inFrame(scale.b.id)).toEqual([213.33, 136.36, 40, 40.91])
+    expect(scale.inFrame(scale.group.id)).toEqual([80, 68.18, 173.33, 109.09])
+  })
+
+  test('a layer in a nested group pins to the frame, and both groups fit', () => {
+    const { graph, frame, group, resize, inFrame } = grouped()
+    const inner = graph.createNode('GROUP', group.id, { x: 80, y: 110, width: 80, height: 30 })
+    graph.updateNode(group.id, { height: 140 })
+    const c = graph.createNode('RECTANGLE', inner.id, {
+      x: 40,
+      y: 0,
+      width: 20,
+      height: 20,
+      horizontalConstraint: 'MAX',
+      verticalConstraint: 'MAX'
+    })
+    graph.createNode('RECTANGLE', inner.id, { x: 0, y: 10, width: 20, height: 20 })
+    expect(inFrame(c.id)).toEqual([180, 160, 20, 20])
+    resize(400, 300)
+    expect(inFrame(c.id)).toEqual([280, 240, 20, 20])
+    expect(inFrame(inner.id)).toEqual([140, 170, 160, 90])
+    expect(inFrame(group.id)).toEqual([60, 50, 240, 210])
+    expect(graph.getNode(frame.id)).toMatchObject({ width: 400, height: 300 })
+  })
+
+  test("a boolean's operands pin to the frame too", () => {
+    const { graph, group, a, resize, inFrame } = grouped('BOOLEAN_OPERATION')
+    graph.updateNode(a.id, { horizontalConstraint: 'MAX', verticalConstraint: 'MAX' })
+    resize(400, 300)
+    expect(inFrame(a.id)).toEqual([160, 130, 40, 30])
+    expect(inFrame(group.id)).toEqual([160, 100, 40, 60])
+  })
+
+  test('a drag places from where it began, so the group comes back with its layers', () => {
+    const { graph, frame, group, a, inFrame } = grouped()
+    graph.updateNode(a.id, { horizontalConstraint: 'MAX' })
+    const originals = collectResizeDescendants(graph, frame.id)
+    if (!originals) throw new Error('Expected the group')
+    const dragTo = (width: number) => {
+      graph.updateNode(frame.id, { width })
+      const before = { width: 300, height: 220 }
+      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height: 220 }, originals)
+      for (const [id, change] of changes) graph.updateNode(id, change)
+    }
+    dragTo(400)
+    expect(inFrame(group.id)).toEqual([160, 50, 40, 80])
+    dragTo(300)
+    expect(inFrame(group.id)).toEqual([60, 50, 130, 80])
+    expect(inFrame(a.id)).toEqual([60, 50, 40, 30])
+  })
+})
+
+describe('a boolean in a resized frame', () => {
+  test('keeps its box when no operand moves, as only the renderer measures its result', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 300, height: 220 })
+    // A subtraction whose result is smaller than its operands' bounds.
+    const boolean = graph.createNode('BOOLEAN_OPERATION', frame.id, {
+      x: 40,
+      y: 40,
+      width: 30,
+      height: 60,
+      booleanOperation: 'SUBTRACT'
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 60, height: 60 })
+    graph.createNode('RECTANGLE', boolean.id, { x: 30, width: 30, height: 60 })
+    const originals = collectResizeDescendants(graph, frame.id)
+    if (!originals) throw new Error('Expected the boolean')
+    const changes = computeConstrainedResizeChanges(
+      graph,
+      frame.id,
+      { width: 300, height: 220 },
+      { width: 400, height: 300 },
+      originals
+    )
+    expect(changes.get(boolean.id)).toEqual({ x: 40, y: 40, width: 30, height: 60 })
   })
 })

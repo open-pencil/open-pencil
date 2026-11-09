@@ -146,6 +146,22 @@ A new email address is confirmed from that address through Better Auth's change-
 the old address is told which address is taking over. An approved enrollment follows the account
 to its new address, so the approval stays with the account.
 
+Deleting an account goes through Better Auth's `deleteUser`, reached only at
+`POST /api/account/delete`, which wants a session from the last ten minutes or the password. Its
+`beforeDelete` hook (`src/server/account/deletion.ts`) takes Cloud's part in one transaction, or
+refuses and changes nothing while the account is the only admin of a workspace other people
+belong to (`account_sole_admin`) or the deployment's only active administrator
+(`last_admin_required`). The same transaction deletes the user row, whose keys cascade to its
+sessions, sign-in methods, passkeys, and two-step secrets, so a failure leaves the account whole;
+Better Auth's own deletes after the hook then find nothing. Workspaces only the account belongs to lose their documents
+like any deleted document, and the cleanup worker removes each such workspace once retention has
+purged its last one; in the workspaces others keep the account drops out, and the longest-standing
+other admin becomes the owner whose plan the workspace draws on. Its document grants, invitation
+budget, plan, picture, sign-ins, MFA assurances and enrollment go, and invitations it sent are
+withdrawn. `GET /api/account/deletion` says beforehand what would go and what stops it, and
+the account page's Download all saves, as one zip, the documents the account would lose: those
+workspaces' and the ones it created in workspaces it leaves.
+
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.
 
@@ -242,6 +258,27 @@ sign-ins. Administrators make and remove administrators, sign people out everywh
 with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
 removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.
 Every action asks once more.
+
+Anyone a share link lets in, guest or signed in, may report its document: why (spam or
+phishing, illegal content, copyright, harassment, or something else), what to look at, and,
+optionally, where to answer. `POST /api/shares/:shareId/reports` resolves the link as opening it
+does, so a wrong secret, a revoked link, or a server that turns guests away refuses the report,
+and its answer says only that it arrived. One reporter may report a link three times a day and a
+link gathers at most fifty reports a day (`src/server/reports/service.ts`), besides the public
+routes' per-address limit. Where email delivery is configured, each report emails the
+deployment's administrator notification addresses, the ones enrollment uses; without it, reports
+wait in the console's Reports list unannounced. The console's Reports list shows open reports first, with
+the document, its workspace and owner, and the link; from a report an administrator takes the
+document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
+Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
+to reported or taken-down ones. A document taken down (`document.disabled_at`) is out of reach
+for everyone, its owner included: access, listings, share links, invitations, and collaboration
+tickets all treat it as gone, and the relay admits nobody to its rooms even with a ticket issued
+before. Its live rooms close and are saved, and its collaboration epoch stays, so restoring it
+gives everything back, edits not yet in a revision included; its open reports count as acted on.
+Revoking a link from the console works as the owner's revocation does: the epoch moves on, so the
+link's guests lose their tickets while members keep editing. Each of these actions goes into the
+activity log.
 
 Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
 server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the

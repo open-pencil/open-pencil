@@ -70,6 +70,7 @@ function services() {
       restore: notUsed,
       duplicate: notUsed
     },
+    reports: { file: notUsed },
     sharing: {
       userProfile: async () => null,
       listShares: async () => [],

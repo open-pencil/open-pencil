@@ -1,4 +1,9 @@
+import { getNodeLocalMatrix } from '../coordinate'
+import type { SceneGraph } from '../graph'
+import { groupFitChanges } from '../group-bounds'
 import { enforcedAspectRatio } from '../layout/aspect-ratio'
+import Matrix, { type Mat3 } from '../matrix'
+import { FITTED_CONTAINER_TYPES } from '../node-defaults'
 import { constrainedChildRect, flipChanges } from '../resize'
 import type { SceneNode } from '../types'
 
@@ -12,25 +17,66 @@ export const PLACEMENT_FIELDS: ReadonlySet<string> = new Set([
   'flipY'
 ])
 
+/** The frame around the groups and booleans holding a layer, and their space mapped into its. */
+function frameAround(
+  graph: SceneGraph,
+  parent: SceneNode
+): { frame: SceneNode; toFrame: Mat3 } | null {
+  let toFrame = Matrix.identity()
+  const frame = graph.closest(parent.id, (node) => {
+    if (!FITTED_CONTAINER_TYPES.has(node.type)) return true
+    toFrame = Matrix.multiply(getNodeLocalMatrix(node), toFrame)
+    return false
+  })
+  return frame ? { frame, toFrame } : null
+}
+
 /**
  * The component's layer placed in the copy's parent: where its constraints put it when the
- * instance's frame has another size than the component's, as Figma resizes an instance.
+ * instance's frame has another size than the component's, as Figma resizes an instance. A group
+ * or boolean owns no constraints: it keeps the component's place, and a layer in it is placed in
+ * the frame around it and written back in the copy's group, which `fitCopiedGroup` then fits.
+ * Returns `source` itself when the layer stays where the component's is.
  */
 export function placedByConstraints(
+  graph: SceneGraph,
   source: SceneNode,
   compParent: SceneNode,
   instParent: SceneNode,
   factor: number
 ): SceneNode {
-  const before = { width: compParent.width * factor, height: compParent.height * factor }
-  if (before.width === instParent.width && before.height === instParent.height) return source
+  if (FITTED_CONTAINER_TYPES.has(source.type)) return source
+  const comp = frameAround(graph, compParent)
+  const inst = frameAround(graph, instParent)
+  if (!comp || !inst) return source
+  const before = { width: comp.frame.width * factor, height: comp.frame.height * factor }
+  if (before.width === inst.frame.width && before.height === inst.frame.height) return source
+  // `source` is at the copy's scale, so the component's groups map it at that scale too.
+  const toFrame = Matrix.multiply(
+    Matrix.scaled(factor, factor),
+    Matrix.multiply(comp.toFrame, Matrix.scaled(1 / factor, 1 / factor))
+  )
   const { flipsX, flipsY, ...box } = constrainedChildRect(
-    source,
+    { ...Matrix.mapPoint(toFrame, source), width: source.width, height: source.height },
     before,
-    instParent,
+    inst.frame,
     source.horizontalConstraint,
     source.verticalConstraint,
     enforcedAspectRatio(source)
   )
-  return { ...source, ...box, ...flipChanges(source, source, flipsX, flipsY) }
+  const back = Matrix.invert(inst.toFrame)
+  const position = back ? Matrix.mapPoint(back, box) : box
+  const placed = { ...source, ...box, ...position, ...flipChanges(source, source, flipsX, flipsY) }
+  const moved = [...PLACEMENT_FIELDS].some(
+    (key) => placed[key as keyof SceneNode] !== source[key as keyof SceneNode]
+  )
+  return moved ? placed : source
+}
+
+/** Fits a copied group or boolean to its layers after the sync placed them by their constraints. */
+export function fitCopiedGroup(graph: SceneGraph, groupId: string): void {
+  const group = graph.getNode(groupId)
+  if (!group || !FITTED_CONTAINER_TYPES.has(group.type)) return
+  const changes = groupFitChanges(graph, group, graph.getChildren(groupId))
+  for (const [id, change] of changes ?? []) graph.updateNode(id, change)
 }

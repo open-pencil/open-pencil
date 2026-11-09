@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 
 import {
+  panelNumber,
   panelPosition,
   panelPositionChange,
   panelRotation,
@@ -14,11 +15,11 @@ import { usePanelSize } from '#vue/controls/panel-size/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useEditor } from '#vue/editor/context'
 
+type PanelProp = 'x' | 'y' | 'rotation' | 'width' | 'height'
+
 /**
- * Returns position-related state and actions for the current selection.
- *
- * This composable is designed for property panels that edit x/y, size,
- * rotation, alignment, flipping, and multi-node transforms.
+ * The selection's X, Y, rotation, width, and height as the Design panel shows and edits them, and
+ * its align, flip, rotate, and Ignore auto layout actions.
  */
 export function usePosition() {
   const editor = useEditor()
@@ -30,13 +31,14 @@ export function usePosition() {
 
   // X, Y, and rotation read as Figma's panel shows them: the turned layer's box on the canvas and
   // its counterclockwise angle; see `panelPosition` and `panelRotation`.
-  function shown(target: SceneNode, key: 'x' | 'y' | 'rotation'): number {
-    if (key === 'rotation') return Math.round(panelRotation(target, editor.graph))
-    return Math.round(panelPosition(target, editor.graph)[key])
+  function shown(target: SceneNode, key: PanelProp): number {
+    if (key === 'rotation') return panelNumber(panelRotation(target, editor.graph))
+    if (key === 'x' || key === 'y') return panelNumber(panelPosition(target, editor.graph)[key])
+    return panelNumber(target[key])
   }
 
-  /** The shown value of every selected node, or MIXED when they differ. */
-  function panelProp(key: 'x' | 'y' | 'rotation') {
+  /** The value the panel shows for the selection, or MIXED when its layers show different ones. */
+  function panelProp(key: PanelProp) {
     return computed<MixedValue<number>>(() => {
       const values = nodes.value.map((target) => shown(target, key))
       if (values.length === 0) return 0
@@ -44,12 +46,6 @@ export function usePosition() {
       return values.every((value) => value === first) ? first : MIXED
     })
   }
-
-  const x = computed(() => (node.value ? shown(node.value, 'x') : 0))
-  const y = computed(() => (node.value ? shown(node.value, 'y') : 0))
-  const width = computed(() => node.value?.width ?? 0)
-  const height = computed(() => node.value?.height ?? 0)
-  const rotation = computed(() => (node.value ? shown(node.value, 'rotation') : 0))
 
   const scrub = usePropScrub(editor)
   const size = usePanelSize(editor)
@@ -123,11 +119,6 @@ export function usePosition() {
     prop,
     panelProp,
     ids,
-    x,
-    y,
-    width,
-    height,
-    rotation,
     rotates,
     inAutoLayout,
     ignoresAutoLayout,
