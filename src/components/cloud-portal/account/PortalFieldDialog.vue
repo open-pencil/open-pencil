@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import { ref, useId, watch } from 'vue'
+import { ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { portalForm } from '@/components/cloud-portal/ui'
-import AppButton from '@/components/ui/button/AppButton.vue'
-import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
-import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
-import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
-import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 /**
@@ -47,15 +42,13 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [value: string] }>()
 
-const ui = portalForm()
 const messages = useCloudPortalMessages()
-const id = useId()
 const value = ref(initial)
 const invalid = ref<string | null>(null)
-watch(open, (next) => {
-  value.value = next ? initial : ''
+function reset() {
+  value.value = initial
   invalid.value = null
-})
+}
 
 function submit() {
   const result = v.safeParse(schema, value.value)
@@ -69,32 +62,34 @@ function submit() {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" :close-label="messages.cancel" />
-    <form novalidate @submit.prevent="submit">
-      <AppDialogBody :ui="{ body: 'flex flex-col gap-3' }">
-        <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
-        <div :class="ui.field()">
-          <label :for="id" :class="ui.label()">{{ label }}</label>
-          <AppInput
-            :id="id"
-            v-model="value"
-            :type="type"
-            :autocomplete="autocomplete"
-            :maxlength="maxlength"
-            autofocus
-            :placeholder="placeholder"
-            :state="invalid ? 'invalid' : 'idle'"
-          />
-          <p v-if="invalid" :class="ui.error()">{{ invalid }}</p>
-        </div>
-      </AppDialogBody>
-      <AppDialogFooter :ui="{ footer: 'justify-between' }">
-        <AppButton type="button" @click="open = false">{{ messages.cancel }}</AppButton>
-        <AppButton type="submit" color="primary" variant="solid" :loading="saving">
-          {{ submitLabel }}
-        </AppButton>
-      </AppDialogFooter>
-    </form>
-  </AppDialogRoot>
+  <AppFormDialog
+    v-model:open="open"
+    :heading="heading"
+    :description="description"
+    :close-label="messages.cancel"
+    :cancel-label="messages.cancel"
+    :submit-label="submitLabel"
+    :error="error"
+    :error-heading="messages.errorTitle"
+    :saving="saving"
+    @open="reset"
+    @submit="submit"
+  >
+    <AppFormField :label="label" :error="invalid">
+      <template #default="{ id, invalid: hasError, describedBy }">
+        <AppInput
+          :id="id"
+          v-model="value"
+          :type="type"
+          :autocomplete="autocomplete"
+          :maxlength="maxlength"
+          autofocus
+          :placeholder="placeholder"
+          :state="hasError ? 'invalid' : 'idle'"
+          :aria-invalid="hasError || undefined"
+          :aria-describedby="describedBy"
+        />
+      </template>
+    </AppFormField>
+  </AppFormDialog>
 </template>

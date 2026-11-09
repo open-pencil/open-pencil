@@ -3,6 +3,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
 import AppConfirmationDialog from './AppConfirmationDialog.vue'
@@ -11,6 +13,7 @@ import AppDialogBody from './AppDialogBody.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
 import AppDialogHeader from './AppDialogHeader.vue'
 import AppDialogRoot from './AppDialogRoot.vue'
+import AppFormDialog from './AppFormDialog.vue'
 
 const meta = {
   title: 'Design System/Overlays/Dialog',
@@ -117,4 +120,108 @@ export const TargetedConfirmation: Story = {
       />
     `
   })
+}
+
+/**
+ * A dialog that is one form: Enter in the field submits, an empty name is caught in place, and a
+ * failed submit shows why under the fields. The name starts empty each time it opens.
+ */
+export const Form: Story = {
+  render: () => ({
+    components: { AppButton, AppFormDialog, AppFormField, AppInput },
+    setup() {
+      const open = ref(false)
+      const name = ref('')
+      const invalid = ref<string | null>(null)
+      const failed = ref<string | null>(null)
+      function reset() {
+        name.value = ''
+        invalid.value = null
+        failed.value = null
+      }
+      function submit() {
+        invalid.value = name.value.trim() ? null : 'Enter a name.'
+        if (!invalid.value) failed.value = 'The server could not be reached.'
+      }
+      return { open, name, invalid, failed, reset, submit }
+    },
+    template: `
+      <AppButton @click="open = true">Rename workspace</AppButton>
+      <AppFormDialog
+        v-model:open="open"
+        heading="Rename workspace"
+        description="Everyone in the workspace sees the new name."
+        close-label="Close"
+        cancel-label="Cancel"
+        submit-label="Rename"
+        :error="failed"
+        error-heading="Couldn't rename the workspace"
+        @open="reset"
+        @submit="submit"
+      >
+        <AppFormField label="Name" :error="invalid">
+          <template #default="{ id, invalid: hasError, describedBy }">
+            <AppInput :id="id" v-model="name" autofocus :state="hasError ? 'invalid' : 'idle'" :aria-invalid="hasError || undefined" :aria-describedby="describedBy" />
+          </template>
+        </AppFormField>
+      </AppFormDialog>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
+    const name = await body.findByLabelText('Name')
+    await userEvent.type(name, '{Enter}')
+    await expect(name).toHaveAccessibleDescription('Enter a name.')
+    await userEvent.type(name, 'Design{Enter}')
+    await expect(body.getByText('The server could not be reached.')).toBeVisible()
+    await userEvent.click(body.getByRole('button', { name: 'Cancel' }))
+    await expect(body.queryByRole('dialog')).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
+    await expect(await body.findByLabelText('Name')).toHaveValue('')
+  }
+}
+
+/**
+ * Deleting something that can't be brought back waits for its name, typed in any letter case;
+ * Enter confirms once it matches.
+ */
+export const TypedConfirmation: Story = {
+  render: () => ({
+    components: { AppButton, AppConfirmationDialog },
+    setup() {
+      const open = ref(false)
+      const deleted = ref(false)
+      return { open, deleted }
+    },
+    template: `
+      <AppButton color="error" @click="open = true">Delete workspace</AppButton>
+      <p v-if="deleted" class="mt-2 text-xs text-surface">Deleted</p>
+      <AppConfirmationDialog
+        v-model:open="open"
+        tone="danger"
+        heading="Delete Design team?"
+        description="Its files go to the trash for everyone."
+        cancel-label="Cancel"
+        confirm-label="Delete workspace"
+        confirm-text="Design team"
+        confirm-text-label="Type Design team to confirm"
+        @confirm="deleted = true"
+      />
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Delete workspace' }))
+    const dialog = within(await body.findByRole('alertdialog'))
+    const confirm = dialog.getByRole('button', { name: 'Delete workspace' })
+    await expect(confirm).toBeDisabled()
+    const typed = dialog.getByLabelText('Type Design team to confirm')
+    await userEvent.type(typed, 'design')
+    await expect(confirm).toBeDisabled()
+    await userEvent.type(typed, ' TEAM {Enter}')
+    await expect(canvas.getByText('Deleted')).toBeVisible()
+  }
 }

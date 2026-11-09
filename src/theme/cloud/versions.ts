@@ -21,8 +21,6 @@ export default {
       'invisible absolute top-1.5 right-3 group-focus-within/item:visible group-hover/item:visible group-data-[selected]/item:visible group-data-[menu-open]/item:visible',
     more: 'flex justify-center px-3 py-2',
     status: 'px-4 py-3 text-xs text-muted',
-    menuIndicator: 'absolute left-2',
-    form: 'flex flex-col gap-3',
-    label: 'sr-only'
+    menuIndicator: 'absolute left-2'
   }
 } as const

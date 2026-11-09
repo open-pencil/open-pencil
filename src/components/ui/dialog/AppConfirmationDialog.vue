@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import AppAlertDialogRoot from './AppAlertDialogRoot.vue'
+import AppConfirmTextField from './AppConfirmTextField.vue'
 import AppDialogBody from './AppDialogBody.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
+import { useDialogUI } from './ui'
 
 const {
   heading,
@@ -15,7 +17,9 @@ const {
   confirmLabel,
   tone = 'primary',
   confirmDisabled = false,
-  confirmLoading = false
+  confirmLoading = false,
+  confirmText,
+  confirmTextLabel = ''
 } = defineProps<{
   heading: string
   description?: string
@@ -24,15 +28,24 @@ const {
   tone?: 'neutral' | 'primary' | 'warning' | 'danger'
   confirmDisabled?: boolean
   confirmLoading?: boolean
+  /** What must be typed out before confirming, such as the name of what is deleted. */
+  confirmText?: string
+  confirmTextLabel?: string
 }>()
 
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>('open', { default: false })
+const cls = useDialogUI()
+const typedMatches = ref(false)
+const blocked = computed(
+  () => confirmDisabled || (confirmText !== undefined && !typedMatches.value)
+)
 /**
  * Confirms, then closes. Reka's action closes first, so a caller that forgets its pending action
  * when the dialog closes would lose it before the confirmation arrived.
  */
 function confirm() {
+  if (blocked.value) return
   emit('confirm')
   open.value = false
 }
@@ -45,14 +58,24 @@ const confirmColor = computed(() => {
 
 <template>
   <AppAlertDialogRoot v-model:open="open">
-    <div class="border-b border-border px-4 py-3">
-      <AlertDialogTitle class="text-sm font-semibold text-surface">{{ heading }}</AlertDialogTitle>
+    <div data-slot="dialog-header" :class="cls.header">
+      <AlertDialogTitle data-slot="dialog-title" :class="cls.title">{{ heading }}</AlertDialogTitle>
     </div>
-    <AppDialogBody v-if="description || $slots.default">
-      <AlertDialogDescription v-if="description" class="text-xs text-muted">{{
+    <AppDialogBody
+      v-if="description || confirmText !== undefined || $slots.default"
+      :ui="{ body: 'flex flex-col gap-3' }"
+    >
+      <AlertDialogDescription v-if="description" :class="cls.description">{{
         description
       }}</AlertDialogDescription>
-      <!-- What the person must do before confirming, such as typing a name. -->
+      <AppConfirmTextField
+        v-if="confirmText !== undefined"
+        v-model:matched="typedMatches"
+        :expected="confirmText"
+        :label="confirmTextLabel"
+        @enter="confirm"
+      />
+      <!-- Anything else the person fills in before confirming, such as a reason. -->
       <slot />
     </AppDialogBody>
     <AppDialogFooter>
@@ -64,7 +87,7 @@ const confirmColor = computed(() => {
       <AppButton
         :color="confirmColor"
         variant="solid"
-        :disabled="confirmDisabled"
+        :disabled="blocked"
         :loading="confirmLoading"
         @click="confirm"
         >{{ confirmLabel }}</AppButton

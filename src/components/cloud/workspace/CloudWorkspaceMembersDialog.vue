@@ -173,20 +173,8 @@ const confirmation = computed(() => {
         confirm: t.value.removeMemberConfirm
       }
 })
-/** Deleting can't be undone, so it waits for the workspace's name. */
-const typedName = ref('')
-watch(
-  () => confirming.value !== null,
-  (isOpen) => {
-    if (isOpen) typedName.value = ''
-  }
-)
-const confirmBlocked = computed(
-  () => confirmingShown.value?.kind === 'delete' && typedName.value.trim() !== workspaceName.trim()
-)
 function confirm() {
   const pending = confirming.value
-  if (confirmBlocked.value) return
   confirming.value = null
   if (pending?.kind === 'leave') emit('leave')
   else if (pending?.kind === 'delete') emit('delete')
@@ -445,21 +433,9 @@ function invite() {
     :description="confirmation?.description"
     :cancel-label="common.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
-    :confirm-disabled="confirmBlocked"
+    :confirm-text="confirmingShown?.kind === 'delete' ? workspaceName : undefined"
+    :confirm-text-label="t.deleteWorkspaceTypeName({ workspace: workspaceName })"
     @update:open="(isOpen) => !isOpen && (confirming = null)"
     @confirm="confirm"
-  >
-    <div v-if="confirmingShown?.kind === 'delete'" :class="ui.confirmName()">
-      <label for="cloud-workspace-delete-name" :class="ui.label()">
-        {{ t.deleteWorkspaceTypeName({ workspace: workspaceName }) }}
-      </label>
-      <AppInput
-        id="cloud-workspace-delete-name"
-        v-model="typedName"
-        autocomplete="off"
-        spellcheck="false"
-        @enter="confirm"
-      />
-    </div>
-  </AppConfirmationDialog>
+  />
 </template>

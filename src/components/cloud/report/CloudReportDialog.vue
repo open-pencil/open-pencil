@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import {
   DOCUMENT_REPORT_DESCRIPTION_MAX,
@@ -8,17 +8,11 @@ import {
 } from '@open-pencil/cloud/contract'
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
-import AppButton from '@/components/ui/button/AppButton.vue'
-import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
-import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
-import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
-import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-
-import { cloudReport } from './ui'
 
 /**
  * Reporting a document someone opened from a share link to the administrators of its server: why,
@@ -44,22 +38,16 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const ui = cloudReport()
 const t = useCloudMessages()
 const common = useCommonMessages()
 const reason = ref<DocumentReportReason>('spam-phishing')
 const description = ref('')
 const replyEmail = ref('')
-watch(
-  open,
-  (isOpen) => {
-    if (!isOpen) return
-    reason.value = 'spam-phishing'
-    description.value = ''
-    replyEmail.value = email ?? ''
-  },
-  { immediate: true }
-)
+function reset() {
+  reason.value = 'spam-phishing'
+  description.value = ''
+  replyEmail.value = email ?? ''
+}
 
 const reasons = computed(() => [
   { value: 'spam-phishing' as const, label: t.value.reportReasonSpam },
@@ -86,61 +74,52 @@ function send() {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="t.reportFile"
-      :description="t.reportDescription({ host })"
-      :close-label="common.close"
-    />
-    <AppDialogBody>
-      <form id="cloud-report" :class="ui.form()" novalidate @submit.prevent="send">
-        <div :class="ui.field()">
-          <span :class="ui.label()">{{ t.reportReason }}</span>
-          <AppSelect v-model="reason" :options="reasons" :label="t.reportReason" />
-        </div>
-        <div :class="ui.field()">
-          <label for="cloud-report-details" :class="ui.label()">{{ t.reportDetails }}</label>
-          <AppTextarea
-            id="cloud-report-details"
-            v-model="description"
-            :rows="4"
-            :maxlength="DOCUMENT_REPORT_DESCRIPTION_MAX"
-            :disabled="busy"
-            :placeholder="t.reportDetailsPlaceholder"
-          />
-        </div>
-        <div :class="ui.field()">
-          <label for="cloud-report-email" :class="ui.label()">{{ t.reportEmail }}</label>
-          <AppInput
-            id="cloud-report-email"
-            v-model="replyEmail"
-            type="email"
-            autocomplete="email"
-            :disabled="busy"
-            :aria-invalid="emailInvalid || undefined"
-          />
-          <span v-if="emailInvalid" :class="ui.error()">{{ t.reportEmailInvalid }}</span>
-          <span v-else :class="ui.note()">{{ t.reportEmailHint }}</span>
-        </div>
-        <AppAlert
-          v-if="failure"
-          tone="error"
-          :heading="failure === 'too-many' ? t.reportTooMany : t.reportFailed"
+  <AppFormDialog
+    v-model:open="open"
+    :heading="t.reportFile"
+    :description="t.reportDescription({ host })"
+    :close-label="common.close"
+    :cancel-label="common.cancel"
+    :submit-label="t.reportSend"
+    :error="failure === 'too-many' ? t.reportTooMany : failure ? t.reportFailed : null"
+    :saving="busy"
+    :submit-disabled="!ready"
+    @open="reset"
+    @cancel="emit('cancel')"
+    @submit="send"
+  >
+    <AppFormField :label="t.reportReason" :label-for="false">
+      <AppSelect v-model="reason" :options="reasons" :label="t.reportReason" />
+    </AppFormField>
+    <AppFormField :label="t.reportDetails">
+      <template #default="{ id }">
+        <AppTextarea
+          :id="id"
+          v-model="description"
+          :rows="4"
+          :maxlength="DOCUMENT_REPORT_DESCRIPTION_MAX"
+          :disabled="busy"
+          :placeholder="t.reportDetailsPlaceholder"
         />
-      </form>
-    </AppDialogBody>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <AppButton @click="emit('cancel')">{{ common.cancel }}</AppButton>
-      <AppButton
-        type="submit"
-        form="cloud-report"
-        color="primary"
-        variant="solid"
-        :loading="busy"
-        :disabled="!ready"
-      >
-        {{ t.reportSend }}
-      </AppButton>
-    </AppDialogFooter>
-  </AppDialogRoot>
+      </template>
+    </AppFormField>
+    <AppFormField
+      :label="t.reportEmail"
+      :error="emailInvalid ? t.reportEmailInvalid : null"
+      :hint="t.reportEmailHint"
+    >
+      <template #default="{ id, invalid, describedBy }">
+        <AppInput
+          :id="id"
+          v-model="replyEmail"
+          type="email"
+          autocomplete="email"
+          :disabled="busy"
+          :state="invalid ? 'invalid' : 'idle'"
+          :aria-invalid="invalid || undefined"
+          :aria-describedby="describedBy"
+        />
+      </template>
+    </AppFormField>
+  </AppFormDialog>
 </template>

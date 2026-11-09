@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { portalForm } from '@/components/cloud-portal/ui'
-import AppButton from '@/components/ui/button/AppButton.vue'
-import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
-import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
-import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
-import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppPasswordInput from '@/components/ui/input/AppPasswordInput.vue'
 
 /**
@@ -31,21 +26,17 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [passwords: { current: string; next: string }] }>()
 
-const ui = portalForm()
 const messages = useCloudPortalMessages()
 const current = ref('')
 const next = ref('')
 const repeat = ref('')
 const errors = ref<{ current?: string; next?: string; repeat?: string }>({})
-// Cleared as it opens: clearing as it closes would empty the fields during its exit animation.
-watch(open, (value) => {
-  if (value) {
-    current.value = ''
-    next.value = ''
-    repeat.value = ''
-    errors.value = {}
-  }
-})
+function reset() {
+  current.value = ''
+  next.value = ''
+  repeat.value = ''
+  errors.value = {}
+}
 
 /** What the server would turn down, caught before it is asked. */
 const schema = computed(() => {
@@ -94,58 +85,60 @@ function submit() {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="purpose === 'change' ? messages.changePasswordTitle : messages.confirmPasswordTitle"
-      :close-label="messages.cancel"
-    />
-    <form novalidate @submit.prevent="submit">
-      <AppDialogBody :ui="{ body: 'flex flex-col gap-3' }">
-        <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
-        <div :class="ui.field()">
-          <label for="portal-current-password" :class="ui.label()">
-            {{ messages.currentPassword }}
-          </label>
+  <AppFormDialog
+    v-model:open="open"
+    :heading="purpose === 'change' ? messages.changePasswordTitle : messages.confirmPasswordTitle"
+    :close-label="messages.cancel"
+    :cancel-label="messages.cancel"
+    :submit-label="purpose === 'change' ? messages.savePassword : messages.continue"
+    :error="error"
+    :error-heading="messages.errorTitle"
+    :saving="saving"
+    @open="reset"
+    @submit="submit"
+  >
+    <AppFormField :label="messages.currentPassword" :error="errors.current">
+      <template #default="{ id, invalid, describedBy }">
+        <AppPasswordInput
+          :id="id"
+          v-model="current"
+          autofocus
+          autocomplete="current-password"
+          :state="invalid ? 'invalid' : 'idle'"
+          :aria-invalid="invalid || undefined"
+          :aria-describedby="describedBy"
+        />
+      </template>
+    </AppFormField>
+    <template v-if="purpose === 'change'">
+      <AppFormField
+        :label="messages.newPassword"
+        :error="errors.next"
+        :hint="messages.passwordHint({ count: minimumPasswordLength })"
+      >
+        <template #default="{ id, invalid, describedBy }">
           <AppPasswordInput
-            id="portal-current-password"
-            v-model="current"
-            autocomplete="current-password"
-            :state="errors.current ? 'invalid' : 'idle'"
-          />
-          <p v-if="errors.current" :class="ui.error()">{{ errors.current }}</p>
-        </div>
-        <div v-if="purpose === 'change'" :class="ui.field()">
-          <label for="portal-next-password" :class="ui.label()">{{ messages.newPassword }}</label>
-          <AppPasswordInput
-            id="portal-next-password"
+            :id="id"
             v-model="next"
             autocomplete="new-password"
-            :state="errors.next ? 'invalid' : 'idle'"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
           />
-          <p v-if="errors.next" :class="ui.error()">{{ errors.next }}</p>
-          <p v-else :class="ui.hint()">
-            {{ messages.passwordHint({ count: minimumPasswordLength }) }}
-          </p>
-        </div>
-        <div v-if="purpose === 'change'" :class="ui.field()">
-          <label for="portal-repeat-password" :class="ui.label()">
-            {{ messages.repeatPassword }}
-          </label>
+        </template>
+      </AppFormField>
+      <AppFormField :label="messages.repeatPassword" :error="errors.repeat">
+        <template #default="{ id, invalid, describedBy }">
           <AppPasswordInput
-            id="portal-repeat-password"
+            :id="id"
             v-model="repeat"
             autocomplete="new-password"
-            :state="errors.repeat ? 'invalid' : 'idle'"
+            :state="invalid ? 'invalid' : 'idle'"
+            :aria-invalid="invalid || undefined"
+            :aria-describedby="describedBy"
           />
-          <p v-if="errors.repeat" :class="ui.error()">{{ errors.repeat }}</p>
-        </div>
-      </AppDialogBody>
-      <AppDialogFooter :ui="{ footer: 'justify-between' }">
-        <AppButton type="button" @click="open = false">{{ messages.cancel }}</AppButton>
-        <AppButton type="submit" color="primary" variant="solid" :loading="saving">
-          {{ purpose === 'change' ? messages.savePassword : messages.continue }}
-        </AppButton>
-      </AppDialogFooter>
-    </form>
-  </AppDialogRoot>
+        </template>
+      </AppFormField>
+    </template>
+  </AppFormDialog>
 </template>

@@ -10,8 +10,8 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
-import { portalForm } from '@/components/cloud-portal/ui'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -35,7 +35,6 @@ const emit = defineEmits<{
   revoke: [id: string, note?: string]
 }>()
 
-const form = portalForm()
 const messages = useCloudPortalMessages()
 const name = (request: AccessRequest) => request.name ?? request.email
 const labels = computed(() => ({
@@ -168,9 +167,10 @@ defineExpose({ reload: requests.reload })
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"
   >
-    <div :class="[form.field(), 'mt-3']">
-      <label for="portal-review-note" :class="form.label()">{{ messages.reviewNote }}</label>
-      <AppTextarea id="portal-review-note" v-model="note" :rows="2" maxlength="1000" />
-    </div>
+    <AppFormField :label="messages.reviewNote">
+      <template #default="{ id }">
+        <AppTextarea :id="id" v-model="note" :rows="2" maxlength="1000" />
+      </template>
+    </AppFormField>
   </AppConfirmationDialog>
 </template>
