@@ -3,7 +3,7 @@ import { useAsyncState, useNow } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { TrashedDocument } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
@@ -25,7 +25,6 @@ const { serverId, query = '' } = defineProps<{
 
 const { locale } = useI18n()
 const t = useCloudMessages()
-const common = useCommonMessages()
 const dates = useDateFormat()
 const now = useNow({ interval: 60_000 })
 
@@ -159,7 +158,6 @@ function purge() {
     v-model:open="confirming"
     :heading="t.homeTrashDeleteForeverHeading({ name: purging?.name ?? '' })"
     :description="t.homeTrashDeleteForeverDescription"
-    :cancel-label="common.cancel"
     :confirm-label="t.homeTrashDeleteForever"
     tone="danger"
     @confirm="purge"
