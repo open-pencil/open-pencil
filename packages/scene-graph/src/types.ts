@@ -1102,6 +1102,12 @@ export interface VariableCollectionMode {
   modeId: string
   name: string
   /**
+   * The library mode this one came from, for a mode of a collection copied from a library. A
+   * library that renames its mode renames this one with it, so the layers and the document set
+   * to it keep following the library (`library/resources.ts`).
+   */
+  libraryModeId?: string
+  /**
    * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
    * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.
    */

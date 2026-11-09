@@ -9,6 +9,7 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { isLibraryCollection, SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
@@ -159,5 +160,57 @@ describe('inserting library components', () => {
 
     expect(consumer.getNode(componentId)?.width).toBe(200)
     expect(consumer.getNode(instance?.id ?? '')?.width).toBe(200)
+  })
+})
+
+describe('renaming a library mode', () => {
+  test('renames the copy in place, so its layers and the document keep following the library', async () => {
+    const GREEN = { r: 0, g: 1, b: 0, a: 1 }
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const theme = graph.createCollection('Theme')
+    const light = theme.defaultModeId
+    graph.renameMode(theme.id, light, 'Light')
+    const dark = expectDefined(graph.createMode(theme.id, 'Dark'), 'library dark mode')
+    const surface = graph.createVariable('surface', 'COLOR', theme.id, RED)
+    graph.variables.set(surface.id, { ...surface, valuesByMode: { [light]: RED, [dark]: BLUE } })
+    const button = graph.createNode('COMPONENT', page.id, {
+      name: 'Button',
+      componentKey: 'button',
+      fills: [solid()]
+    })
+    graph.bindVariable(button.id, 'fills/0/color', surface.id)
+    const first = await publish(graph)
+
+    const consumer = new SceneGraph()
+    materializeLibraryAsset(consumer, first, 'button')
+    const copy = expectDefined(
+      [...consumer.variableCollections.values()].find(isLibraryCollection),
+      'collection copy'
+    )
+    const copyDark = expectDefined(
+      copy.modes.find((mode) => mode.name === 'Dark'),
+      'dark copy'
+    )
+    expect(copyDark.libraryModeId).toBe(dark)
+    consumer.setActiveMode(copy.id, copyDark.modeId)
+    const copySurface = expectDefined(
+      [...consumer.variables.values()].find((variable) => variable.name === 'surface'),
+      'surface copy'
+    )
+
+    // The library renames Dark to Night and gives it another value.
+    graph.renameMode(theme.id, dark, 'Night')
+    const changed = graph.variables.get(surface.id) ?? surface
+    graph.variables.set(surface.id, { ...changed, valuesByMode: { [light]: RED, [dark]: GREEN } })
+
+    updateLibraryDefinitions(consumer, await publish(graph, first.manifest.revisionId))
+
+    const updated = consumer.variableCollections.get(copy.id)
+    expect(updated?.modes.map((mode) => mode.name)).toEqual(['Light', 'Night'])
+    // The renamed mode is the one the document had, so its layers and choice still hold.
+    expect(updated?.modes.find((mode) => mode.name === 'Night')?.modeId).toBe(copyDark.modeId)
+    expect(consumer.activeMode.get(copy.id)).toBe(copyDark.modeId)
+    expect(consumer.resolveColorVariable(copySurface.id)).toEqual(GREEN)
   })
 })
