@@ -155,11 +155,12 @@ export function createSaveActions({
 
   /** A download builds its stream only once the person has chosen the name. */
   async function downloadBuilt(filename: string): Promise<boolean> {
+    setStorageBinding(null)
+    setDownloadName(filename)
+    // Named first, as the other targets are, so the archive's meta.json records the new name.
+    state.documentName = documentNameFromFigPath(filename)
     return withProgress(async (progress) => {
       const { stream, version } = await buildVersionedFigStream()
-      setStorageBinding(null)
-      setDownloadName(filename)
-      state.documentName = documentNameFromFigPath(filename)
       await download(filename, progress.track(stream))
       await onDownloadSuccess?.(version)
       return true
