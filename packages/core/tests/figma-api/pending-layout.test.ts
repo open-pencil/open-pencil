@@ -159,6 +159,39 @@ describe('geometry writes after edits', () => {
     expect(badge.x).toBe(76.5 + 108)
   })
 
+  // Figma desktop, 2026-11-09: the button hugs to 132 as soon as its label grows, so the badge
+  // placed after that stays at 130.
+  test('a badge placed after its button’s label grows stays where the script put it', () => {
+    const api = createAPI()
+    const frame = button(api)
+    const label = frame.children[0]
+    const badge = api.createFrame()
+    badge.resize(24, 24)
+    frame.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    badge.x = 76.5
+    void frame.width
+    label?.resize(100, 24)
+    badge.x = 130
+    expect([frame.width, badge.x]).toEqual([132, 130])
+  })
+
+  // Figma desktop, 2026-11-09: rescaling the laid-out button by 2 doubles it and its badge.
+  test('rescaling a laid-out Hug button scales its badge once', () => {
+    const api = createAPI()
+    const frame = button(api)
+    const badge = api.createFrame()
+    badge.resize(24, 24)
+    frame.appendChild(badge)
+    badge.layoutPositioning = 'ABSOLUTE'
+    badge.constraints = { horizontal: 'MAX', vertical: 'MIN' }
+    badge.x = 76.5
+    void frame.width
+    frame.rescale(2)
+    expect([frame.width, frame.height, badge.x, badge.width]).toEqual([184, 96, 153, 48])
+  })
+
   test('a layer pinned left and top waits for the next read, so a build lays out once', () => {
     const api = createAPI()
     const row = hugRow(api)

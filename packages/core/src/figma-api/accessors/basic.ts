@@ -43,6 +43,7 @@ import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
+import { restoredHuggedSize } from '#core/layout/apply'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -251,10 +252,16 @@ export function installBasicNodeProxyAccessors(
       assertEditable(this, internals)
       const scene = graphOf(this)
       const node = raw(this, internals)
-      flushPendingLayoutBefore(scene, node)
+      flushPendingLayoutBefore(scene, node, { placesChildren: true })
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+      // Its Hug frames' constrained layers are scaled with them, so the next hug moves them from the
+      // scaled size, not again from the size they had before.
+      for (const scaled of [node, ...descendants(scene, node)]) {
+        const current = scene.getNode(scaled.id)
+        if (current) restoredHuggedSize(current)
+      }
     },
     getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
       const top = topLevelFrame(graphOf(this), raw(this, internals))

@@ -61,13 +61,19 @@ function followsFrameSize(node: SceneNode): boolean {
   return node.horizontalConstraint !== 'MIN' || node.verticalConstraint !== 'MIN'
 }
 
-/** Whether the recorded edits touched the layer or a layer above it. */
+/**
+ * Whether the recorded edits touched the layer or a layer above it. A changed layer touches its
+ * parent too: a flow child that grows makes its Hug frame grow, which moves the frame's
+ * constrained layers.
+ */
 function editsReach(graph: SceneGraph, impact: SceneMutationImpact, node: SceneNode): boolean {
-  const touched = (id: string) =>
-    impact.changedNodeIds.has(id) ||
-    impact.currentParentIds.has(id) ||
-    impact.previousParentIds.has(id)
-  return graph.closest(node.id, (current) => touched(current.id)) !== undefined
+  const touched = new Set([...impact.currentParentIds, ...impact.previousParentIds])
+  for (const id of impact.changedNodeIds) {
+    touched.add(id)
+    const parentId = graph.getNode(id)?.parentId
+    if (parentId) touched.add(parentId)
+  }
+  return graph.closest(node.id, (current) => touched.has(current.id)) !== undefined
 }
 
 /**
