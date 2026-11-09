@@ -27,14 +27,20 @@ pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, Strin
         .and_then(|value| value.parse::<u32>().ok())
         .filter(|value| *value != 0)
         .unwrap_or(DEFAULT_FIG_KIWI_VERSION);
-    let compression_level = header("x-fig-compression-level")
-        .and_then(|value| value.parse::<i32>().ok());
+    let compression_level =
+        header("x-fig-compression-level").and_then(|value| value.parse::<i32>().ok());
     let board = header("x-fig-board") == Some("1");
     let schema_deflated = body[..schema_len].to_vec();
     let kiwi_data = body[schema_len..].to_vec();
 
     tauri::async_runtime::spawn_blocking(move || {
-        write_fig_canvas(schema_deflated, kiwi_data, version, compression_level, board)
+        write_fig_canvas(
+            schema_deflated,
+            kiwi_data,
+            version,
+            compression_level,
+            board,
+        )
     })
     .await
     .map_err(|error| error.to_string())?
