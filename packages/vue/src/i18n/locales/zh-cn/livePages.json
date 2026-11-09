@@ -1,0 +1,17 @@
+{
+  "title": "实时页面",
+  "url": "页面地址",
+  "urlPlaceholder": "本地开发服务器地址",
+  "link": "显示页面",
+  "unlink": "移除页面",
+  "reload": "重新加载页面",
+  "open": "在浏览器中打开",
+  "hint": "画框显示项目所运行应用中的这个地址。",
+  "openAll": "打开所有页面",
+  "copySelection": "复制文件和行号",
+  "selectedInPage": "已在页面中选中",
+  "exportVue": "导出为组件",
+  "openAllHint": "页面来自保存此文档的项目。",
+  "routeParams": "路由参数",
+  "routeParamsPlaceholder": "名称=值"
+}

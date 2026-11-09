@@ -1,0 +1,17 @@
+{
+  "title": "Página en vivo",
+  "url": "Dirección de la página",
+  "urlPlaceholder": "p. ej. http://localhost:3000/pricing",
+  "link": "Mostrar página",
+  "unlink": "Quitar página",
+  "reload": "Recargar página",
+  "open": "Abrir en el navegador",
+  "hint": "El marco muestra esta dirección de la aplicación que ejecuta el proyecto.",
+  "openAll": "Abrir todas las páginas",
+  "copySelection": "Copiar el archivo y la línea",
+  "selectedInPage": "Seleccionado en la página",
+  "exportVue": "Exportar como componente Vue",
+  "openAllHint": "Las páginas se leen del proyecto en el que se guarda este documento.",
+  "routeParams": "Parámetros de ruta",
+  "routeParamsPlaceholder": "slug=hola, id=42"
+}

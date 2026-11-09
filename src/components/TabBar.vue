@@ -100,6 +100,7 @@ function onClose(e: MouseEvent, tabId: string) {
           >
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
             <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
+            <icon-lucide-folder-git-2 v-else-if="tab.isProject" :class="baseStyles.icon()" />
             <component
               :is="DOCUMENT_KIND_ICONS[tab.fileKind]"
               v-else-if="tab.fileKind"

@@ -705,6 +705,31 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   }
 }
 
+export const vueSFCFormat: IOFormatAdapter<'vue-sfc'> = {
+  id: 'vue-sfc',
+  label: 'Vue SFC',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['vue'],
+  mimeTypes: ['text/plain'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { renderNodesToHTML } = await import('./formats/html')
+    const { htmlToVueSFC } = await import('./formats/vue-sfc/assemble')
+    const { html } = await renderNodesToHTML(request.graph, target.nodeIds, {}, request.fileName)
+    return {
+      format: 'vue-sfc',
+      mimeType: 'text/plain',
+      extension: 'vue',
+      data: htmlToVueSFC(html),
+      encoding: 'utf8'
+    }
+  }
+}
+
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
@@ -718,7 +743,8 @@ export const BUILTIN_IO_FORMATS = [
   pptxFormat,
   jsxFormat,
   tailwindJSXFormat,
-  htmlFormat
+  htmlFormat,
+  vueSFCFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

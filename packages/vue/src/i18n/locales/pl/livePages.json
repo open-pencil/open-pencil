@@ -1,0 +1,17 @@
+{
+  "title": "Strona na żywo",
+  "url": "Adres strony",
+  "urlPlaceholder": "np. http://localhost:3000/pricing",
+  "link": "Pokaż stronę",
+  "unlink": "Usuń stronę",
+  "reload": "Odśwież stronę",
+  "open": "Otwórz w przeglądarce",
+  "hint": "Rama pokazuje ten adres z aplikacji uruchamianej przez projekt.",
+  "openAll": "Otwórz wszystkie strony",
+  "copySelection": "Kopiuj plik i wiersz",
+  "selectedInPage": "Wybrano na stronie",
+  "exportVue": "Eksportuj jako komponent Vue",
+  "openAllHint": "Strony pochodzą z projektu, w którym zapisano ten dokument.",
+  "routeParams": "Parametry trasy",
+  "routeParamsPlaceholder": "slug=czesc, id=42"
+}

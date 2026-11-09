@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 
 import { getActiveEditorStoreOrNull, type EditorStore } from '@/app/editor/active-store'
 
-export type PropertiesTab = 'design' | 'code' | 'ai' | 'lint'
+export type PropertiesTab = 'design' | 'code' | 'ai' | 'lint' | 'git'
 
 /** The properties panel's tab; `ai` shows the chat. */
 export const propertiesTab = ref<PropertiesTab>('design')

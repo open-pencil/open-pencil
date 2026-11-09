@@ -41,6 +41,7 @@ import IconSection from './properties/IconSection.vue'
 import LayerTypeMenu from './properties/LayerTypeMenu.vue'
 import LayoutGridSection from './properties/layout/guides/LayoutGridSection.vue'
 import LayoutSection from './properties/layout/LayoutSection.vue'
+import LivePageSection from './properties/LivePageSection.vue'
 import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
@@ -227,6 +228,8 @@ const { panels } = useI18n()
 
       <!-- Presets size artboards; an icon is a glyph. -->
       <FramePresetSelect v-if="node.type === 'FRAME' && !readIcon(node)" />
+
+      <LivePageSection />
 
       <IconSection />
       <StickySection />

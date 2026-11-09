@@ -54,6 +54,7 @@ import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
+import ProjectWorkspace from '@/components/project/ProjectWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import LoadingScreen from '@/components/shell/LoadingScreen.vue'
 import TabBar from '@/components/TabBar.vue'
@@ -308,8 +309,13 @@ onUnmounted(() => {
     <CommandPalette />
     <TabBar />
     <HomeWorkspace
-      v-show="activeTab && activeTab.kind !== 'document'"
+      v-show="activeTab && activeTab.kind !== 'document' && activeTab.kind !== 'project'"
       @new-document="createDocumentTab"
+    />
+    <ProjectWorkspace
+      v-if="activeTab?.kind === 'project' && activeTab.project"
+      :key="activeTab.id"
+      :project="activeTab.project"
     />
     <CloudVersionDialog />
     <EditorWorkspace

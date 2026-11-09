@@ -1,0 +1,17 @@
+{
+  "title": "Pagina live",
+  "url": "Indirizzo della pagina",
+  "urlPlaceholder": "ad es. http://localhost:3000/pricing",
+  "link": "Mostra pagina",
+  "unlink": "Rimuovi pagina",
+  "reload": "Ricarica pagina",
+  "open": "Apri nel browser",
+  "hint": "La cornice mostra questo indirizzo dall’applicazione avviata dal progetto.",
+  "openAll": "Apri tutte le pagine",
+  "copySelection": "Copia file e riga",
+  "selectedInPage": "Selezionato nella pagina",
+  "exportVue": "Esporta come componente Vue",
+  "openAllHint": "Le pagine provengono dal progetto in cui è salvato questo documento.",
+  "routeParams": "Parametri del percorso",
+  "routeParamsPlaceholder": "slug=ciao, id=42"
+}

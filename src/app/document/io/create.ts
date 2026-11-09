@@ -74,6 +74,10 @@ export function createDocumentIOActions(
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
     getDocumentFileHandle: sourceState.getFileHandle,
+    /** Reads the file again, as when git replaced it under an open document. */
+    reloadDocumentFromDisk: () => {
+      void reloadFromDisk()
+    },
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
     hasWritableSource: sourceState.hasWritableSource,

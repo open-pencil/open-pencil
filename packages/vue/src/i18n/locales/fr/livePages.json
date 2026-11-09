@@ -1,0 +1,17 @@
+{
+  "title": "Page en direct",
+  "url": "Adresse de la page",
+  "urlPlaceholder": "p. ex. http://localhost:3000/pricing",
+  "link": "Afficher la page",
+  "unlink": "Retirer la page",
+  "reload": "Recharger la page",
+  "open": "Ouvrir dans le navigateur",
+  "hint": "Le cadre affiche cette adresse depuis l’application que lance le projet.",
+  "openAll": "Ouvrir toutes les pages",
+  "copySelection": "Copier le fichier et la ligne",
+  "selectedInPage": "Sélectionné dans la page",
+  "exportVue": "Exporter comme composant Vue",
+  "openAllHint": "Les pages viennent du projet dans lequel ce document est enregistré.",
+  "routeParams": "Paramètres de route",
+  "routeParamsPlaceholder": "slug=bonjour, id=42"
+}

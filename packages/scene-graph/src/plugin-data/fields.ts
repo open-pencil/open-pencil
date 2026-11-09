@@ -143,6 +143,13 @@ const okhclSchema: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   })
 })
 
+/** A page of the application a frame shows: the address its dev server answers on. */
+const livePageSchema = v.object({
+  url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048)),
+  label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120))),
+  mode: v.picklist(['live', 'snapshot'])
+})
+
 const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPublication> = v.object(
   {
     libraryId: v.string(),
@@ -220,6 +227,8 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   okhcl: jsonPluginDataField('okhcl', 'content', okhclSchema),
   /** How a main component or component set behaves as a control in preview. */
   behaviour: jsonPluginDataField('behaviour', 'content', behaviourSchema),
+  /** The page of the running application a frame shows, on a FRAME. */
+  livePage: jsonPluginDataField('livePage', 'content', livePageSchema),
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */
   icon: jsonPluginDataField('icon', 'content', iconSchema),
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */

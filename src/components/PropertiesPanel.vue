@@ -19,6 +19,7 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+import DocumentGitTab from './source-control/DocumentGitTab.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
@@ -74,6 +75,10 @@ const problemCount = computed(() => {
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
         </TabsTrigger>
+        <TabsTrigger value="git" data-test-id="properties-tab-git" :class="tabStyles.trigger()">
+          <icon-lucide-git-branch :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">{{ panels.git }}</span>
+        </TabsTrigger>
         <TabsTrigger value="ai" data-test-id="properties-tab-ai" :class="tabStyles.trigger()">
           <icon-lucide-sparkles :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.ai }}</span>
@@ -116,6 +121,15 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'code'"
       >
         <CodePanel :active="activeTab === 'code'" />
+      </TabsContent>
+
+      <TabsContent
+        value="git"
+        class="flex min-h-0 flex-1 flex-col"
+        :force-mount="true"
+        :hidden="activeTab !== 'git'"
+      >
+        <DocumentGitTab :active="activeTab === 'git'" />
       </TabsContent>
 
       <TabsContent

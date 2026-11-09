@@ -1,0 +1,272 @@
+import { invoke } from '@tauri-apps/api/core'
+import { dirname, relative } from 'pathe'
+import { computed, ref, shallowRef } from 'vue'
+
+import {
+  commitFile,
+  type GitFailure,
+  type GitTransport,
+  listGitBranches,
+  pullFastForward,
+  readFileHistory,
+  readFileState,
+  readGitStatus,
+  readRepositoryRoot,
+  restoreFileFromCommit,
+  switchBranch
+} from './client'
+import type { GitBranch, GitBranchState, GitCommitSummary, GitFileState } from './schema'
+
+/**
+ * The document the panel versions: where it saves, whether the file holds what is on screen, and
+ * how to read it back after git replaced it. An editor store satisfies this as it is.
+ */
+export type VersionedDocument = {
+  getDocumentFilePath: () => string | null
+  hasUnsavedChanges: () => boolean
+  saveFigFile: () => Promise<boolean>
+  reloadDocumentFromDisk: () => void
+}
+
+/**
+ * Git for one open document: the branch its repository is on, how the file itself stands against
+ * the last commit, and the actions that touch that file alone. The repository is found from the
+ * file, so any document saved inside a worktree is versioned without being registered anywhere.
+ */
+export function useDocumentGit(document: VersionedDocument, transport: GitTransport = invoke) {
+  /** Where the document saves; null while it has never been written to a file. */
+  const path = ref<string | null>(null)
+  /** The repository holding that file, or null when it is outside every repository. */
+  const root = ref<string | null>(null)
+  const branch = shallowRef<GitBranchState | null>(null)
+  /** How the file itself stands, which is what the panel acts on. */
+  const state = shallowRef<GitFileState | null>(null)
+  const branches = ref<GitBranch[]>([])
+  /** Other files the repository reports as changed, so one file's commit is not the whole story. */
+  const others = ref(0)
+  const history = ref<GitCommitSummary[]>([])
+  /** Whether the history has been read, so an empty list can be told from one not asked for. */
+  const historyLoaded = ref(false)
+  const reading = ref(false)
+  const busy = ref(false)
+  const failure = shallowRef<GitFailure | null>(null)
+  const commitMessage = ref('')
+
+  /** The document's path inside its repository, which is how git names the file. */
+  const relativePath = computed(() => {
+    const file = path.value
+    const repository = root.value
+    if (!file || !repository) return null
+    const inside = relative(repository, file)
+    return inside === '' || inside.startsWith('..') ? null : inside
+  })
+
+  /** Whether git can see this document at all, which is what the panel leads with. */
+  const versioned = computed(() => root.value !== null && relativePath.value !== null)
+
+  const canCommit = computed(
+    () =>
+      !busy.value &&
+      versioned.value &&
+      state.value !== null &&
+      state.value !== 'clean' &&
+      commitMessage.value.trim() !== ''
+  )
+
+  function forgetRepository(): void {
+    root.value = null
+    branch.value = null
+    state.value = null
+    branches.value = []
+    others.value = 0
+    history.value = []
+    historyLoaded.value = false
+  }
+
+  /** Read the document's repository, branch, and the file's own state again. */
+  async function refresh(): Promise<void> {
+    const file = document.getDocumentFilePath()
+    path.value = file
+    failure.value = null
+    if (!file) {
+      forgetRepository()
+      return
+    }
+    reading.value = true
+    try {
+      const resolved = await readRepositoryRoot(dirname(file), transport)
+      if (!resolved.ok) {
+        failure.value = resolved
+        forgetRepository()
+        return
+      }
+      if (resolved.value === null) {
+        forgetRepository()
+        return
+      }
+      root.value = resolved.value
+      const inside = relativePath.value
+      if (inside === null) {
+        forgetRepository()
+        return
+      }
+      const [status, fileState, list] = await Promise.all([
+        readGitStatus(resolved.value, transport),
+        readFileState(resolved.value, inside, transport),
+        listGitBranches(resolved.value, transport)
+      ])
+      if (!status.ok) {
+        failure.value = status
+        return
+      }
+      if (!fileState.ok) {
+        failure.value = fileState
+        return
+      }
+      branch.value = status.value.branch
+      state.value = fileState.value
+      others.value = status.value.entries.filter((entry) => entry.path !== inside).length
+      branches.value = list.ok ? list.value : []
+    } finally {
+      reading.value = false
+    }
+  }
+
+  async function run(action: () => Promise<void>): Promise<void> {
+    if (busy.value) return
+    busy.value = true
+    failure.value = null
+    try {
+      await action()
+    } finally {
+      busy.value = false
+    }
+  }
+
+  /** Git acts on the file, so what is on screen has to reach it first. */
+  async function saveBefore(): Promise<boolean> {
+    if (!document.hasUnsavedChanges()) return true
+    return document.saveFigFile()
+  }
+
+  /** Read the document again after git replaced its file, unless the person has edits in it. */
+  function reloadDocument(): void {
+    if (document.hasUnsavedChanges()) return
+    document.reloadDocumentFromDisk()
+  }
+
+  /** Commit this file alone, saving the document first so the commit holds what is on screen. */
+  async function commit(): Promise<void> {
+    const repository = root.value
+    const file = relativePath.value
+    if (!repository || !file || !canCommit.value) return
+    await run(async () => {
+      if (!(await saveBefore())) return
+      const outcome = await commitFile(repository, file, commitMessage.value, transport)
+      if (!outcome.ok) {
+        failure.value = outcome
+        return
+      }
+      commitMessage.value = ''
+      await refresh()
+    })
+  }
+
+  /** Bring the branch up to date, then show the file as git left it. */
+  async function sync(): Promise<void> {
+    const repository = root.value
+    if (!repository) return
+    await run(async () => {
+      if (!(await saveBefore())) return
+      const outcome = await pullFastForward(repository, transport)
+      if (!outcome.ok) {
+        failure.value = outcome
+        return
+      }
+      await refresh()
+      reloadDocument()
+    })
+  }
+
+  /** Switch the repository to another branch, showing the document as that branch holds it. */
+  async function switchTo(name: string): Promise<void> {
+    const repository = root.value
+    if (!repository) return
+    await run(async () => {
+      if (!(await saveBefore())) return
+      const outcome = await switchBranch(repository, name, false, transport)
+      if (!outcome.ok) {
+        failure.value = outcome
+        return
+      }
+      await refresh()
+      reloadDocument()
+    })
+  }
+
+  /** The versions of this file, newest first. */
+  async function loadHistory(): Promise<void> {
+    const repository = root.value
+    const file = relativePath.value
+    if (!repository || !file) return
+    await run(async () => {
+      const outcome = await readFileHistory(repository, file, transport)
+      if (!outcome.ok) {
+        failure.value = outcome
+        return
+      }
+      history.value = outcome.value
+      historyLoaded.value = true
+    })
+  }
+
+  /**
+   * Put the file back as it was at a commit. The caller asks first: the version replaces what the
+   * document holds, so anything unsaved goes with it.
+   */
+  async function restore(commitHash: string): Promise<void> {
+    const repository = root.value
+    const file = relativePath.value
+    if (!repository || !file) return
+    await run(async () => {
+      const outcome = await restoreFileFromCommit(repository, file, commitHash, transport)
+      if (!outcome.ok) {
+        failure.value = outcome
+        return
+      }
+      await refresh()
+      document.reloadDocumentFromDisk()
+    })
+  }
+
+  function dismissFailure(): void {
+    failure.value = null
+  }
+
+  return {
+    path,
+    root,
+    branch,
+    state,
+    branches,
+    others,
+    history,
+    historyLoaded,
+    reading,
+    busy,
+    failure,
+    commitMessage,
+    relativePath,
+    versioned,
+    canCommit,
+    refresh,
+    commit,
+    sync,
+    switchTo,
+    loadHistory,
+    restore,
+    dismissFailure
+  }
+}
+
+export type DocumentGit = ReturnType<typeof useDocumentGit>

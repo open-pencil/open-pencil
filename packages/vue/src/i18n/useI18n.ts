@@ -19,14 +19,17 @@ import {
   figJamMessages,
   filesMessages,
   fontsMessages,
+  livePageMessages,
   mediaMessages,
   menuMessages,
   pageMessages,
   panelMessages,
+  projectsMessages,
   recoveryMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
+  sourceControlMessages,
   statusMessages,
   storageMessages,
   toolMessages,
@@ -55,14 +58,17 @@ export const useEditorMessages = () => useI18nNamespace(editorMessages)
 export const useFigJamMessages = () => useI18nNamespace(figJamMessages)
 export const useFileMessages = () => useI18nNamespace(filesMessages)
 export const useFontMessages = () => useI18nNamespace(fontsMessages)
+export const useLivePageMessages = () => useI18nNamespace(livePageMessages)
 export const useMediaMessages = () => useI18nNamespace(mediaMessages)
 export const useMenuMessages = () => useI18nNamespace(menuMessages)
 export const usePageMessages = () => useI18nNamespace(pageMessages)
 export const usePanelMessages = () => useI18nNamespace(panelMessages)
+export const useProjectMessages = () => useI18nNamespace(projectsMessages)
 export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
 export const useShapeMessages = () => useI18nNamespace(shapeMessages)
+export const useSourceControlMessages = () => useI18nNamespace(sourceControlMessages)
 export const useStatusMessages = () => useI18nNamespace(statusMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)
@@ -86,6 +92,7 @@ export function useI18n() {
     editor: useEditorMessages(),
     files: useFileMessages(),
     fonts: useFontMessages(),
+    livePages: useLivePageMessages(),
     media: useMediaMessages(),
     menu: useMenuMessages(),
     pages: usePageMessages(),
@@ -93,6 +100,7 @@ export function useI18n() {
     recovery: useRecoveryMessages(),
     rename: useRenameMessages(),
     settings: useSettingsMessages(),
+    sourceControl: useSourceControlMessages(),
     storage: useStorageMessages(),
     tools: useToolMessages(),
     updates: useUpdateMessages(),

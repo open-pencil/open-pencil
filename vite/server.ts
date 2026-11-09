@@ -11,6 +11,15 @@ function ignoreMarkdownOutsideSource(path: string): boolean {
 }
 
 export const WATCH_IGNORED = [
+  // Editors that save atomically leave temp files beside the source; watching them fails EBUSY.
+  '**/*.tmpdir/**',
+  '**/*.tmp',
+  // Cargo writes and locks its artifacts here while the desktop app builds.
+  '**/target/**',
+  // Storybook builds into these folders; watching a bundle it rewrites fails EBUSY on Windows.
+  '**/storybook-static/**',
+  '**/dist/**',
+  '**/dist-metrics/**',
   '**/desktop/**',
   '**/packages/cli/**',
   '**/packages/mcp/**',

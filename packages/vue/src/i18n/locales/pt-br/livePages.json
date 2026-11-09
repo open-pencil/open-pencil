@@ -1,0 +1,17 @@
+{
+  "title": "Página ao vivo",
+  "url": "Endereço da página",
+  "urlPlaceholder": "ex.: http://localhost:3000/pricing",
+  "link": "Mostrar página",
+  "unlink": "Remover página",
+  "reload": "Recarregar página",
+  "open": "Abrir no navegador",
+  "hint": "O quadro mostra este endereço da aplicação que o projeto executa.",
+  "openAll": "Abrir todas as páginas",
+  "copySelection": "Copiar o arquivo e a linha",
+  "selectedInPage": "Selecionado na página",
+  "exportVue": "Exportar como componente Vue",
+  "openAllHint": "As páginas vêm do projeto em que este documento está salvo.",
+  "routeParams": "Parâmetros da rota",
+  "routeParamsPlaceholder": "slug=ola, id=42"
+}

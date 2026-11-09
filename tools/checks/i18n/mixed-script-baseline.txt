@@ -627,6 +627,8 @@ ja:diagnostics.reportProblemDescription
 ja:diagnostics.reportUnexpectedError
 ja:diagnostics.supportDescription
 ja:diagnostics.supportTitle
+ja:sourceControl.saveFirst
+ja:sourceControl.notVersioned
 zh-cn:ai.skillsDescription
 zh-cn:ai.notificationsHint
 zh-cn:ai.notificationsAllowHint
@@ -641,3 +643,5 @@ zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
 zh-cn:diagnostics.supportDescription
 zh-cn:diagnostics.supportTitle
+zh-cn:sourceControl.saveFirst
+zh-cn:sourceControl.notVersioned

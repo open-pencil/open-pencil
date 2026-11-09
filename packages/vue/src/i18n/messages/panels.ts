@@ -10,6 +10,7 @@ export const panelMessageDefaults = {
   design: 'Design',
   code: 'Code',
   ai: 'AI',
+  git: 'Git',
   assets: 'Assets',
   searchLocalComponents: 'Search local components',
   assetView: 'Asset view',

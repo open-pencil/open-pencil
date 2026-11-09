@@ -1,0 +1,17 @@
+{
+  "title": "ライブページ",
+  "url": "ページのアドレス",
+  "urlPlaceholder": "ローカル開発サーバーのアドレス",
+  "link": "ページを表示",
+  "unlink": "ページを削除",
+  "reload": "ページを再読み込み",
+  "open": "ブラウザーで開く",
+  "hint": "フレームは、プロジェクトが起動するアプリケーションのこのアドレスを表示します。",
+  "openAll": "すべてのページを開く",
+  "copySelection": "ファイルと行をコピー",
+  "selectedInPage": "ページ内で選択中",
+  "exportVue": "コンポーネントとして書き出す",
+  "openAllHint": "ページはこのドキュメントを保存したプロジェクトから読み込みます。",
+  "routeParams": "ルートのパラメーター",
+  "routeParamsPlaceholder": "名前=値"
+}

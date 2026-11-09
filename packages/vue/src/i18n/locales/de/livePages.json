@@ -1,0 +1,17 @@
+{
+  "title": "Live-Seite",
+  "url": "Seitenadresse",
+  "urlPlaceholder": "z. B. http://localhost:3000/pricing",
+  "link": "Seite anzeigen",
+  "unlink": "Seite entfernen",
+  "reload": "Seite neu laden",
+  "open": "Im Browser öffnen",
+  "hint": "Der Rahmen zeigt diese Adresse aus der Anwendung, die das Projekt startet.",
+  "openAll": "Alle Seiten öffnen",
+  "copySelection": "Datei und Zeile kopieren",
+  "selectedInPage": "In der Seite ausgewählt",
+  "exportVue": "Als Vue-Komponente exportieren",
+  "openAllHint": "Die Seiten stammen aus dem Projekt, in dem dieses Dokument gespeichert ist.",
+  "routeParams": "Routenparameter",
+  "routeParamsPlaceholder": "slug=hallo, id=42"
+}
