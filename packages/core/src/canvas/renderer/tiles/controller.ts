@@ -53,7 +53,7 @@ const TILE_FRAME_BUDGET_MS = 8
 const BACKGROUND_MAX_ESTIMATED_MS = TILE_FRAME_BUDGET_MS * 4
 /** Tile work per frame while the viewport moves, leaving the rest to input and presentation. */
 const NAVIGATION_TILE_BUDGET_MS = 2
-/** The one tile a moving frame may still afford past its budget; dearer tiles wait for idle. */
+/** The one tile a zooming frame may still afford past its budget; dearer tiles wait for idle. */
 const NAVIGATION_FIRST_TILE_LIMIT_MS = 4
 const MAXIMUM_TILE_JOBS_PER_FRAME = 128
 const TILE_OVERSCAN = 1
@@ -122,6 +122,12 @@ export class TiledSceneController {
    * once committed, tiles a pan reveals or an edit renews present as they land.
    */
   private committedLevel: number | null = null
+  /**
+   * A pan keeps the exact level while the view keeps revealing tiles it has not rendered yet, so
+   * the level may not commit during the gesture. Present the tiles that land instead of holding
+   * them back behind the page colour until it does.
+   */
+  private panPresentation = false
   /**
    * Set when a frame of background work evicted a tile its own plan needs: the cache cannot hold
    * the plan, so the stages stop rather than render each other out until the view changes.
@@ -199,11 +205,13 @@ export class TiledSceneController {
    * Renders due tiles within the frame's budget and presents the viewport from the cache: exact
    * tiles where they exist, the nearest level's tiles scaled where they do not, and the page
    * colour where no level has one, until its tile renders. Nothing is drawn straight from the
-   * scene, whose whole-page picture a large document cannot afford. Navigation keeps presenting
-   * and renders under a shorter budget: the exact level while panning or paused, and while the
-   * zoom level moves the quantized step at or above the scale, whose tiles outlive the frame and
-   * stand in, scaled by a fifth at most, until the exact level is complete; the retained backing
-   * plays no part. Idle time builds a pyramid of downsampled copies and a scene-rendered
+   * scene, whose whole-page picture a large document cannot afford. A zoom keeps presenting and
+   * renders under a shorter budget: the exact level while paused, and while the level moves the
+   * quantized step at or above the scale, whose tiles outlive the frame and stand in, scaled by a
+   * fifth at most, until the exact level is complete; the retained backing plays no part. A pan
+   * keeps the exact level: a visible tile with no stand-in is mandatory, and the tiles that land
+   * present as they land, because skipping one would leave the viewport at the page colour for the
+   * gesture. Idle time builds a pyramid of downsampled copies and a scene-rendered
    * backdrop around the viewport, so a zoom out finds scaled stand-ins.
    */
   renderFrame(
@@ -220,6 +228,8 @@ export class TiledSceneController {
       this.dotGrid = renderer.pageDotGrid
     }
     this.prepareGeneration(renderer, graph, contentGeneration, navigationGeneration)
+    if (renderer.navigationPhase === 'pan') this.panPresentation = true
+    else if (renderer.navigationPhase === 'zoom') this.panPresentation = false
     const viewport = {
       minX: -renderer.panX / renderer.zoom,
       minY: -renderer.panY / renderer.zoom,
@@ -293,7 +303,17 @@ export class TiledSceneController {
       },
       true
     ).visible
-    const presentation = this.presentLevel(visible, renderer.pageId, level, index.bounds())
+    const presentation = this.presentLevel(
+      visible,
+      renderer.pageId,
+      level,
+      index.bounds(),
+      this.panPresentation
+    )
+    // A committed level presents normally again, so a later pan starts from the whole view.
+    if (renderer.navigationPhase === 'idle' && this.committedLevel === level) {
+      this.panPresentation = false
+    }
     canvas.save()
     // Snapped to device pixels, an exact tile lands texel on pixel and copies rather than samples.
     canvas.translate(
@@ -347,19 +367,23 @@ export class TiledSceneController {
    * A level arrives whole: until every visible tile exists, those that do stay hidden behind
    * the nearest level, which the zoom just rendered, or behind the page colour when a page is
    * first shown, and the level is committed once they all exist, after which tiles present as
-   * they land.
+   * they land. A pan presents the tiles that land as they land: it keeps the exact level while
+   * the view keeps revealing new ones, so the whole level may not arrive until the pan stops.
    */
   private presentLevel(
     visible: TilePlan['visible'],
     pageId: string,
     level: number,
-    content: TileWorldBounds | null
+    content: TileWorldBounds | null,
+    presentPartial: boolean
   ): VisiblePresentation {
     if (this.committedLevel !== level && visible.every(({ tile }) => tile !== null)) {
       this.committedLevel = level
     }
     const presented =
-      this.committedLevel === level ? visible : visible.map(({ key }) => ({ key, tile: null }))
+      this.committedLevel === level || presentPartial
+        ? visible
+        : visible.map(({ key }) => ({ key, tile: null }))
     return resolveVisible(this.tileCache, presented, pageId, level, content)
   }
 
@@ -372,6 +396,7 @@ export class TiledSceneController {
     this.lastCoveredGeneration = ''
     this.lastLevel = null
     this.committedLevel = null
+    this.panPresentation = false
     this.lastContentChangeAt = Number.NEGATIVE_INFINITY
     this.backgroundWaiting = false
     this.pendingInvalidations = []
@@ -471,9 +496,10 @@ export class TiledSceneController {
   }
 
   /**
-   * How far past its budget a frame's first job may run: a moving frame keeps its fallback
-   * rather than a dear tile, an idle one always makes progress, or a tile dearer than any limit
-   * would never render and its stage never end.
+   * How far past its budget a frame's first job may run: a moving frame keeps its fallback rather
+   * than a dear tile, an idle one always makes progress, or a tile dearer than any limit would
+   * never render and its stage never end. A pan marks a visible tile with no stand-in as
+   * mandatory, so it runs regardless of this limit.
    */
   private firstJobLimit(): number {
     return this.navigationActive ? NAVIGATION_FIRST_TILE_LIMIT_MS : Number.POSITIVE_INFINITY
@@ -505,6 +531,9 @@ export class TiledSceneController {
         job.key.level !== backdropLevel &&
         job.key.level !== pageBackdrop?.level
     )
+    const checkFallback = this.panPresentation
+    const fallbackLevels = checkFallback ? this.tileCache.fallbackLevels(pageId, level) : []
+    const contentBounds = checkFallback ? index.bounds() : null
     const planOptions: TilePlanOptions = {
       pageId,
       level,
@@ -521,7 +550,10 @@ export class TiledSceneController {
           key,
           this.navigationActive
         ),
-      globalFallbackAvailable: true,
+      globalFallbackAvailable: !checkFallback,
+      visibleFallback: checkFallback
+        ? (key) => this.tileCache.findFallback(key, fallbackLevels, contentBounds) !== null
+        : undefined,
       maxBackgroundCostMs: BACKGROUND_MAX_ESTIMATED_MS
     }
     // Background stages wait for idle, a moving frame having only its budget to give, and for

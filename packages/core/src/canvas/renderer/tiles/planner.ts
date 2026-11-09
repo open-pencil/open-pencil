@@ -23,6 +23,11 @@ export interface TilePlanOptions {
   estimateCost: (key: TileKey) => number
   globalFallbackAvailable?: boolean
   /**
+   * Whether another cached level has a tile that can stand in for this visible key. A pan asks
+   * per tile, because skipping a dear tile with no stand-in would leave the viewport blank.
+   */
+  visibleFallback?: (key: TileKey) => boolean
+  /**
    * The dearest optional background job to plan, in milliseconds. The controller ties it to the
    * idle frame budget; tests and other callers may set their own.
    */
@@ -150,12 +155,16 @@ function planVisibleJobs(options: TilePlanOptions, visible: TilePlan['visible'])
   const jobs: TileJob[] = []
   for (const { key, tile } of visible) {
     if (tile?.contentGeneration === options.contentGeneration) continue
+    const fallback =
+      tile !== null ||
+      options.globalFallbackAvailable === true ||
+      options.visibleFallback?.(key) === true
     jobs.push({
       key,
       navigationGeneration: options.navigationGeneration,
       contentGeneration: options.contentGeneration,
-      priority: tile || options.globalFallbackAvailable ? 'visible' : 'mandatory',
-      fallbackAvailable: tile !== null || options.globalFallbackAvailable === true,
+      priority: fallback ? 'visible' : 'mandatory',
+      fallbackAvailable: fallback,
       estimatedCost: options.estimateCost(key)
     })
   }

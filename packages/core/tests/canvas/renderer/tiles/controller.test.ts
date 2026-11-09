@@ -252,7 +252,7 @@ describe('tile scheduling', () => {
     }
   })
 
-  test('counts areas no level covers and keeps a moving frame within its budget', () => {
+  test('pans over unbuilt tiles without leaving the viewport at the page colour', () => {
     const { graph, surface, renderer } = createGridScene()
     let time = 0
     const controller = new TiledSceneController({ now: () => (time += 10) })
@@ -269,19 +269,79 @@ describe('tile scheduling', () => {
       expect(idle.metrics.interruptibleCompleted).toBe(1)
       expect(idle.uncoveredAreaCount).toBe(visibleTiles)
 
-      // Panning, a job estimated over the budget is skipped and the holes stay page colour.
+      // A pan keeps the exact level but this view has no stand-in yet, so its tiles are
+      // mandatory. Skipping every dear tile would leave the viewport at the page colour.
       renderer.navigationPhase = 'pan'
-      const panning = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
-      expect(panning.metrics.interruptibleCompleted).toBe(0)
+      let panning = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      expect(
+        panning.metrics.interruptibleCompleted + panning.metrics.mandatoryCompleted
+      ).toBeGreaterThan(0)
+      let frames = 0
+      for (; !panning.covered && frames < 30; frames++) {
+        panning = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      }
+      expect(panning.covered).toBe(true)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('shows panning tiles as they land instead of hiding them until the level commits', () => {
+    const { graph, surface, renderer } = createGridScene()
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    try {
+      let idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 60 && idle.metrics.interruptibleCompleted === 0; frame++) {
+        idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      const visibleTiles = 3 * 2
+      expect(idle.metrics.interruptibleCompleted).toBe(1)
+
+      // The view keeps revealing new tiles, so the level never commits during the gesture. The
+      // tiles that do land must stay visible instead of waiting behind the page colour.
+      renderer.navigationPhase = 'pan'
+      let partial = false
+      for (let frame = 0; frame < 12; frame++) {
+        renderer.panX -= 100
+        const panning = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+        if (!panning.covered && panning.uncoveredAreaCount < visibleTiles) partial = true
+      }
+      expect(partial).toBe(true)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('skips dear tiles while zooming and shows the page colour instead', () => {
+    const { graph, surface, renderer } = createGridScene()
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    try {
+      // Idle, the first job may overrun the budget so the frame makes progress, once its
+      // chunk pictures are recorded.
+      let idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 60 && idle.metrics.interruptibleCompleted === 0; frame++) {
+        idle = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      const visibleTiles = 3 * 2
+      expect(idle.metrics.interruptibleCompleted).toBe(1)
+
+      // A moving zoom skips a dear tile and leaves its hole at the page colour.
+      renderer.navigationPhase = 'zoom'
+      const zooming = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
+      expect(zooming.metrics.interruptibleCompleted).toBe(0)
       // Every queued tile is too dear, and each is tried before the frame gives up.
-      expect(panning.metrics.skippedWithFallback).toBe(visibleTiles - 1)
-      expect(panning.fallbackTileCount).toBe(0)
-      expect(panning.uncoveredAreaCount).toBe(visibleTiles)
-      expect(panning.pending).toBe(true)
+      expect(zooming.metrics.skippedWithFallback).toBe(visibleTiles - 1)
+      expect(zooming.fallbackTileCount).toBe(0)
+      expect(zooming.uncoveredAreaCount).toBe(visibleTiles)
+      expect(zooming.pending).toBe(true)
 
       // Idle again, the level presents once its last tile renders.
       renderer.navigationPhase = 'idle'
-      let settled = panning
+      let settled = zooming
       for (let frame = 0; frame < 60 && !settled.covered; frame++) {
         settled = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
         expect(settled.uncoveredAreaCount).toBe(settled.covered ? 0 : visibleTiles)

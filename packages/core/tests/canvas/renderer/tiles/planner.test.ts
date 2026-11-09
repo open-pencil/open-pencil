@@ -63,6 +63,29 @@ test('never drops a visible tile for its estimated cost', () => {
   )
 })
 
+test('marks a visible tile mandatory only when no cached level stands in', () => {
+  const viewport = { minX: 0, minY: 0, maxX: 1000, maxY: 1000 }
+  const plan = (visibleFallback: () => boolean) =>
+    planTiles(new TileImageCache(), {
+      ...options(100),
+      pageBackdrop: undefined,
+      viewport,
+      globalFallbackAvailable: false,
+      visibleFallback
+    })
+
+  const covered = plan(() => true)
+  expect(covered.jobs.length).toBeGreaterThan(0)
+  expect(
+    covered.jobs.every((job) => job.priority === 'visible' && job.fallbackAvailable)
+  ).toBe(true)
+
+  const blank = plan(() => false)
+  expect(blank.jobs.every((job) => job.priority === 'mandatory' && !job.fallbackAvailable)).toBe(
+    true
+  )
+})
+
 test('skips overscan and backdrop tiles too dear for an idle frame', () => {
   const plan = planTiles(new TileImageCache(), {
     ...options(100),
