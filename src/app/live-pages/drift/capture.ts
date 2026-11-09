@@ -73,7 +73,10 @@ export function desktopPageCapture(transport: CaptureTransport = invoke): PageCa
     let raw: unknown
     try {
       raw = await transport(CAPTURE_COMMAND, { url: target.url, width, height })
-    } catch {
+    } catch (error) {
+      // A missing command and a browser that refused both answer "no picture"; the console keeps
+      // the reason, which the panel has no room for.
+      console.warn('[Drift] The page could not be drawn:', error)
       return null
     }
     const shot = v.safeParse(pageShotSchema, raw)
