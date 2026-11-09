@@ -2,30 +2,23 @@ import type { EditorState } from '@open-pencil/core'
 import { filesMessages } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
-import { bufferSource } from '@/app/document/io/bytes'
 import { isFileWriteRefused } from '@/app/document/io/capability'
 import { documentFileName, documentNameFromFigPath } from '@/app/document/io/names'
+import { startSaveProgress, type SaveProgress } from '@/app/document/io/save/feedback'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save/targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
-import { createDocumentWriter, type DocumentStream } from '@/app/document/io/write'
+import { createDocumentWriter } from '@/app/document/io/write'
 import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
 
-export interface SaveProgress {
-  written: number
-  total: number
-}
-
 type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
   state: SaveDocumentState
   /** The document's content revision, recorded as the saved version. */
   version: () => number
-  /** Builds the `.fig` and hands it to the target as it is produced. */
-  buildFigStream: DocumentStream
-  /** Reports a save in progress, and `null` once it ends. */
-  onSaveProgress?: (progress: SaveProgress | null) => void
+  /** The `.fig`, encoded and compressed, streaming as its target writes it. */
+  buildFigStream: () => Promise<ReadableStream<Uint8Array>>
   startWatchingFile: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
   onDownloadSuccess?: (version: number) => void | Promise<void>
@@ -47,7 +40,6 @@ export function createSaveActions({
   setSourceIdentity,
   setSavedVersion,
   setLastWriteTime,
-  onSaveProgress,
   startWatchingFile,
   onWriteSuccess,
   onDownloadSuccess
@@ -59,108 +51,114 @@ export function createSaveActions({
     getStorageBinding,
     setSavedVersion,
     setLastWriteTime,
+    onFileReplaced: startWatchingFile,
     onWriteSuccess
   })
 
-  function reportProgress(written: number, total: number) {
-    onSaveProgress?.({ written, total })
+  async function buildVersionedFigStream() {
+    const version = currentVersion()
+    return { stream: await buildFigStream(), version }
   }
 
-  async function withProgress<T>(save: () => Promise<T>): Promise<T> {
+  /** Runs a save the person waits for, showing its progress once it takes a while. */
+  async function withProgress<T>(save: (progress: SaveProgress) => Promise<T>): Promise<T> {
+    const progress = startSaveProgress()
     try {
-      return await save()
+      return await save(progress)
     } finally {
-      onSaveProgress?.(null)
+      progress.end()
     }
   }
 
-  function writeCurrent(version: number) {
-    onSaveProgress?.({ written: 0, total: 0 })
-    return writeFile(buildFigStream, version, reportProgress)
-  }
-
-  async function saveFigFile() {
-    return withProgress(async () => {
+  function saveFigFile() {
+    return withProgress(async (progress) => {
       const filePath = getFilePath()
       const fileHandle = getFileHandle()
       const storageBinding = getStorageBinding()
       const downloadName = getDownloadName()
       if (hasWritableSource()) {
-        const version = currentVersion()
-        const wrote = await writeCurrent(version)
+        const { stream, version } = await buildVersionedFigStream()
+        const wrote = await writeFile(progress.track(stream), version)
         if (wrote && !storageBinding) setSourceIdentity({ handle: fileHandle, path: filePath })
         return wrote
       }
-      if (downloadName) return downloadAs(downloadName)
+      if (downloadName) {
+        const { stream, version } = await buildVersionedFigStream()
+        await download(downloadName, progress.track(stream))
+        await onDownloadSuccess?.(version)
+        return true
+      }
       return saveFigFileAs()
     })
   }
 
   async function saveFigFileAs() {
-    return withProgress(async () => {
-      if (IS_TAURI) {
-        const path = await chooseTauriFigSavePath(state.documentKind)
-        if (!path) return false
-        setStorageBinding(null)
-        setFilePath(path)
-        setFileHandle(null)
-        state.documentName = documentNameFromFigPath(path)
-        const wrote = await writeCurrent(currentVersion())
-        if (wrote) {
-          setSourceIdentity({ handle: null, path })
-          // A file saved to disk is listed on Home like one opened from there.
-          rememberRecentFile(path, state.documentKind)
-        }
+    const { stream, version } = await buildVersionedFigStream()
+
+    if (IS_TAURI) {
+      const path = await chooseTauriFigSavePath(state.documentKind)
+      if (!path) return cancel(stream)
+      setStorageBinding(null)
+      setFilePath(path)
+      setFileHandle(null)
+      state.documentName = documentNameFromFigPath(path)
+      const wrote = await withProgress((progress) => writeFile(progress.track(stream), version))
+      if (wrote) {
+        setSourceIdentity({ handle: null, path })
+        // A file saved to disk is listed on Home like one opened from there.
+        rememberRecentFile(path, state.documentKind)
+      }
+      startWatchingFile()
+      return wrote
+    }
+
+    // The picker helper returns null when the browser has no File System Access API.
+    const handle = await chooseBrowserFigSaveHandle(state.documentKind)
+    if (handle) {
+      setStorageBinding(null)
+      setFileHandle(handle)
+      setFilePath(null)
+      state.documentName = documentNameFromFigPath(handle.name)
+      try {
+        const wrote = await withProgress((progress) => writeFile(progress.track(stream), version))
+        if (wrote) setSourceIdentity({ handle, path: null })
         startWatchingFile()
         return wrote
+      } catch (error) {
+        if (!isFileWriteRefused(error)) throw error
+        // The browser gave out the file but will not write to it: download it under that name,
+        // and forget the file, so the tab is not taken for it. The refused write may have read
+        // part of the stream, so the download writes the document again.
+        setFileHandle(null)
+        setSourceIdentity({ handle: null, path: null })
+        const again = await buildVersionedFigStream()
+        return downloadAs(handle.name, again.stream, again.version)
       }
+    }
 
-      // The picker helper returns null when the browser has no File System Access API.
-      const handle = await chooseBrowserFigSaveHandle(state.documentKind)
-      if (handle) {
-        setStorageBinding(null)
-        setFileHandle(handle)
-        setFilePath(null)
-        state.documentName = documentNameFromFigPath(handle.name)
-        try {
-          const wrote = await writeCurrent(currentVersion())
-          if (wrote) setSourceIdentity({ handle, path: null })
-          startWatchingFile()
-          return wrote
-        } catch (error) {
-          if (!isFileWriteRefused(error)) throw error
-          // The browser gave out the file but will not write to it: download it under that name,
-          // and forget the file, so the tab is not taken for it.
-          setFileHandle(null)
-          setSourceIdentity({ handle: null, path: null })
-          return downloadAs(handle.name)
-        }
-      }
-
-      const filename = prompt(
-        filesMessages.get().saveAsPrompt,
-        getDownloadName() ?? documentFileName('Untitled', state.documentKind)
-      )
-      if (!filename) return false
-      return downloadAs(filename)
-    })
+    const filename = prompt(
+      filesMessages.get().saveAsPrompt,
+      getDownloadName() ?? documentFileName('Untitled', state.documentKind)
+    )
+    if (!filename) return cancel(stream)
+    return downloadAs(filename, stream, version)
   }
 
-  async function downloadAs(filename: string): Promise<boolean> {
-    const version = currentVersion()
-    const chunks: Uint8Array[] = []
-    onSaveProgress?.({ written: 0, total: 0 })
-    await buildFigStream((chunk) => {
-      chunks.push(chunk)
-    }, reportProgress)
-    const blob = new Blob(
-      chunks.map((chunk) => bufferSource(chunk)),
-      { type: 'application/octet-stream' }
-    )
+  /** A save the person called off: the archive it was writing is let go. */
+  async function cancel(stream: ReadableStream<Uint8Array>): Promise<false> {
+    await stream.cancel()
+    return false
+  }
+
+  async function download(filename: string, stream: ReadableStream<Uint8Array>) {
+    downloadBlob(await new Response(stream).blob(), filename, 'application/octet-stream')
+  }
+
+  async function downloadAs(filename: string, stream: ReadableStream<Uint8Array>, version: number) {
     setStorageBinding(null)
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)
-    downloadBlob(blob, filename, 'application/octet-stream')
+    await withProgress((progress) => download(filename, progress.track(stream)))
     await onDownloadSuccess?.(version)
     return true
   }

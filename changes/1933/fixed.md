@@ -1,2 +1,2 @@
-- Saving a large document to a file writes its `.fig` archive as it is produced, so the save no longer needs memory for several copies of its images.
-- A failed or interrupted save keeps the previous document on disk, and a save that cannot finish stays visible with a retry.
+- Saving a large `.fig` writes the archive to its file, download, or Cloud as it is produced, so a desktop save of a document of several hundred megabytes no longer runs out of memory.
+- A desktop save that fails partway leaves the previous file in place, and a save that cannot finish stays visible with a retry instead of stopping silently.

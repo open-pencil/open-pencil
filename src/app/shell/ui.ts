@@ -91,7 +91,7 @@ function trim() {
   // arrive; ordinary messages give way first.
   while (toasts.value.length > TOAST_STACK_LIMIT) {
     const index = toasts.value.findIndex((entry) => !entry.sticky)
-    if (index < 0) return
+    if (index === -1) return
     toasts.value.splice(index, 1)
   }
 }

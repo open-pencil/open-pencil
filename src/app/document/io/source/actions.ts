@@ -12,16 +12,14 @@ import {
   figDownloadName,
   isFigArchiveName
 } from '@/app/document/io/names'
-import { createSaveActions, type SaveProgress } from '@/app/document/io/save/actions'
+import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
-import { notificationMessages } from '@/app/i18n/notifications'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
-import { toast, type ToastHandle } from '@/app/shell/ui'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -33,10 +31,6 @@ type DocumentSourceState = EditorState & {
 }
 
 export { createDocumentSourceState }
-
-function megabytes(bytes: number): string {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 type DocumentSourceOptions = DocumentSourceAccess & {
   editor: Editor
@@ -75,52 +69,18 @@ export function createDocumentSourceActions({
     return saved
   }
 
-  function buildFigFile() {
+  function figExportOptions() {
     const renderer = getRenderer()
-    return exportFigFile(editor.graph, {
+    return {
       ck: renderer?.ck,
       renderer: renderer ?? undefined,
       pageId: state.currentPageId,
       documentName: state.documentName
-    })
+    }
   }
 
-  /** The same document, handed to a file as it is produced instead of as one buffer. */
-  function buildFigStream(
-    sink: (chunk: Uint8Array) => void | Promise<void>,
-    onProgress?: (written: number, total: number) => void
-  ) {
-    const renderer = getRenderer()
-    return exportFigFileStream(editor.graph, sink, {
-      ck: renderer?.ck,
-      renderer: renderer ?? undefined,
-      pageId: state.currentPageId,
-      documentName: state.documentName,
-      onProgress
-    })
-  }
-
-  let saveToast: ToastHandle | null = null
-
-  function reportSaveProgress(progress: SaveProgress | null) {
-    if (!progress) {
-      saveToast?.dismiss()
-      saveToast = null
-      return
-    }
-    const amount = { value: progress.written, max: progress.total }
-    const label =
-      progress.total > 0
-        ? `${megabytes(progress.written)} / ${megabytes(progress.total)}`
-        : undefined
-    if (!saveToast) {
-      saveToast = toast.startProgress(notificationMessages.get().savingDocument, {
-        progress: amount,
-        progressLabel: label
-      })
-    } else {
-      saveToast.update({ progress: amount, progressLabel: label ?? null })
-    }
+  function buildFigStream() {
+    return exportFigFileStream(editor.graph, figExportOptions())
   }
 
   /**
@@ -161,7 +121,6 @@ export function createDocumentSourceActions({
     state,
     version: changes.capture,
     buildFigStream,
-    onSaveProgress: reportSaveProgress,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -191,7 +150,7 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
-      if (await writeFile(buildFigStream, version)) changes.markSaved(revision)
+      if (await writeFile(await buildFigStream(), version)) changes.markSaved(revision)
     }
   })
 
@@ -307,7 +266,7 @@ export function createDocumentSourceActions({
    */
   async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
     const version = changes.capture()
-    await write(await buildFigFile())
+    await write(await exportFigFile(editor.graph, figExportOptions()))
     await recovery.markProtectedVersion(version)
     return true
   }

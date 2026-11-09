@@ -105,7 +105,7 @@ describe('downloadBlob', () => {
 
     downloadBlob(new Uint8Array([0, 1, 2]).subarray(1), 'document.fig', 'application/octet-stream')
     // The anchor is removed and its URL revoked on a short timer; let it run before teardown.
-    await new Promise((resolve) => setTimeout(resolve, 150))
+    await Bun.sleep(150)
 
     const blob = captured.blob
     if (!blob) throw new Error('The download produced no blob')

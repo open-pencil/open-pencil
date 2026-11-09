@@ -1,23 +1,14 @@
-import { lstat, remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-fs'
+import { lstat, remove, rename, writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 
-import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
-import { concatenateBytes } from '@open-pencil/core/io/formats/fig'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
-import { bufferSource } from '@/app/document/io/bytes'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
 
 type WriteDocumentState = { documentName: string }
-
-/** Writes a document into a sink, reporting the bytes it has produced so far. */
-export type DocumentStream = (
-  sink: FigArchiveSink,
-  onProgress?: (written: number, total: number) => void
-) => Promise<void>
 
 type DocumentWriterOptions = {
   state: WriteDocumentState
@@ -26,39 +17,55 @@ type DocumentWriterOptions = {
   getStorageBinding: () => StorageDocumentBinding | null
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
+  /** A desktop save replaced the file, which a watcher on the old one may no longer see. */
+  onFileReplaced?: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
 }
 
-/** Bytes the Tauri writer hands to one raw IPC write; files are written in this many bytes. */
-const TAURI_CHUNK_BYTES = 8 * 1024 * 1024
+/** Where a save goes, taken when it is asked for, so a later retarget does not redirect it. */
+interface WriteTarget {
+  storage: StorageDocumentBinding | null
+  filePath: string | null
+  fileHandle: FileSystemFileHandle | null
+}
 
-/** Writes a stream into a desktop file as bounded raw request bodies. */
-async function writeTauriPath(
-  path: string,
-  stream: DocumentStream,
-  onProgress?: (written: number, total: number) => void
-): Promise<void> {
-  // `write_file` sends its bytes as a raw IPC body. `FileHandle.write` sends the same bytes as
-  // a JSON number array, which made a large save take minutes.
-  await tauriWriteFile(path, new Uint8Array(0))
-  const pending = new Uint8Array(TAURI_CHUNK_BYTES)
-  let used = 0
-  const flush = async () => {
-    if (used === 0) return
-    await tauriWriteFile(path, pending.subarray(0, used), { append: true, create: true })
-    used = 0
+/**
+ * Writes `stream` to `path` as raw request bodies, the first replacing what is there:
+ * `FileHandle.write` would send each chunk as a JSON number array.
+ */
+async function writeTauriFile(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  let append = false
+  await stream.pipeTo(
+    new WritableStream<Uint8Array>({
+      async write(chunk) {
+        await tauriWrite(path, chunk, { append })
+        append = true
+      }
+    })
+  )
+}
+
+/**
+ * Writes `stream` beside `path` and moves it over `path` once it is complete, so a save that fails
+ * partway leaves the file as it was. Each save has its own copy, without a leading dot, which the
+ * fs scope would refuse (`desktop/AGENTS.md`). A symbolic link is written through instead, so it
+ * keeps pointing at its target, as a save always did.
+ * @returns whether the file was replaced rather than written in place.
+ */
+async function saveTauriFile(path: string, stream: ReadableStream<Uint8Array>): Promise<boolean> {
+  if ((await lstat(path).catch(() => null))?.isSymlink) {
+    await writeTauriFile(path, stream)
+    return false
   }
-  await stream(async (chunk) => {
-    let offset = 0
-    while (offset < chunk.byteLength) {
-      const take = Math.min(TAURI_CHUNK_BYTES - used, chunk.byteLength - offset)
-      pending.set(chunk.subarray(offset, offset + take), used)
-      used += take
-      offset += take
-      if (used === TAURI_CHUNK_BYTES) await flush()
-    }
-  }, onProgress)
-  await flush()
+  const partial = `${path}.${randomHex(8)}.saving`
+  try {
+    await writeTauriFile(partial, stream)
+    await rename(partial, path)
+    return true
+  } catch (error) {
+    await remove(partial).catch(() => undefined)
+    throw error
+  }
 }
 
 export function createDocumentWriter({
@@ -68,6 +75,7 @@ export function createDocumentWriter({
   getStorageBinding,
   setSavedVersion,
   setLastWriteTime,
+  onFileReplaced,
   onWriteSuccess
 }: DocumentWriterOptions) {
   async function finishWrite(version: number): Promise<true> {
@@ -84,69 +92,33 @@ export function createDocumentWriter({
     return true
   }
 
-  interface WriteTarget {
-    storage: StorageDocumentBinding | null
-    filePath: string | null
-    fileHandle: FileSystemFileHandle | null
-  }
-
   async function writeNow(
-    stream: DocumentStream,
+    stream: ReadableStream<Uint8Array>,
     version: number,
-    target: WriteTarget,
-    onProgress?: (written: number, total: number) => void
+    { storage, filePath, fileHandle }: WriteTarget
   ): Promise<boolean> {
     try {
-      const { storage } = target
       if (storage) {
-        const chunks: Uint8Array[] = []
-        await stream((chunk) => {
-          chunks.push(chunk)
-        }, onProgress)
         await persistStorageCanvasLocally({
           ...storageLocationOf(storage),
           canvasId: storage.documentId,
           name: state.documentName || 'Untitled',
-          figBytes: concatenateBytes(chunks)
+          figBytes: await new Response(stream).blob()
         })
         return await finishWrite(version)
       }
-
-      const filePath = target.filePath
-      const fileHandle = target.fileHandle
       if (filePath && isTauri()) {
-        // A link keeps pointing at its target: the previous writer followed it, and replacing
-        // the link with a regular file would surprise the person who made it. Such a save is
-        // direct, so a failed one leaves a partial target as it always did.
-        const info = await lstat(filePath).catch(() => null)
-        if (info?.isSymlink) {
-          await writeTauriPath(filePath, stream, onProgress)
-          return await finishWrite(version)
-        }
-        // Replace the file only once every byte is written, so a failed export leaves the
-        // previous save intact. The temporary name has no leading dot: the fs scope keeps
-        // hidden files out of `**`.
-        const temporary = `${filePath}.${randomHex(8)}.saving`
-        try {
-          await writeTauriPath(temporary, stream, onProgress)
-          await rename(temporary, filePath)
-        } catch (error) {
-          await remove(temporary).catch(() => undefined)
-          throw error
-        }
-        return await finishWrite(version)
+        const replaced = await saveTauriFile(filePath, stream)
+        const finished = await finishWrite(version)
+        if (replaced) onFileReplaced?.()
+        return finished
       }
       if (fileHandle) {
-        const writable = await fileHandle.createWritable()
-        try {
-          await stream((chunk) => writable.write(bufferSource(chunk)), onProgress)
-          await writable.close()
-        } catch (error) {
-          await writable.abort().catch(() => undefined)
-          throw error
-        }
+        // The browser writes into a copy and swaps it in on close; a failure discards the copy.
+        await stream.pipeTo(await fileHandle.createWritable())
         return await finishWrite(version)
       }
+      await stream.cancel()
       return false
     } catch (error) {
       recordDocumentFailure({
@@ -159,25 +131,21 @@ export function createDocumentWriter({
     }
   }
 
-  /** A save waits for the one before it, so two streams never share a temporary file. */
+  /** A save waits for the one before it, so two never write the same file at once. */
   let queue: Promise<unknown> = Promise.resolve()
 
-  function writeFile(
-    stream: DocumentStream,
-    version: number,
-    onProgress?: (written: number, total: number) => void
-  ): Promise<boolean> {
+  /**
+   * Writes the `.fig` as `stream` produces it: the archive is never held whole, and a failure
+   * partway leaves the previous file in place. A write the document has no target for cancels it.
+   */
+  return function writeFile(stream: ReadableStream<Uint8Array>, version: number): Promise<boolean> {
     const target: WriteTarget = {
       storage: getStorageBinding(),
       filePath: getFilePath(),
       fileHandle: getFileHandle()
     }
-    const run = queue
-      .catch(() => undefined)
-      .then(() => writeNow(stream, version, target, onProgress))
+    const run = queue.catch(() => undefined).then(() => writeNow(stream, version, target))
     queue = run
     return run
   }
-
-  return writeFile
 }

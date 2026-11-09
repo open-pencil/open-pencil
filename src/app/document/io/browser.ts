@@ -1,7 +1,5 @@
 import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
-import { bufferSource } from '@/app/document/io/bytes'
-
 /**
  * Ceiling on a document fetched from a URL. Both the browser link and the automation
  * bridge accept an unbounded, caller-supplied URL, and buffering whatever the host
@@ -90,7 +88,8 @@ export async function fitPageToViewport(editor: ViewportEditor, signal?: AbortSi
 }
 
 export function downloadBlob(data: Uint8Array | Blob, filename: string, mime: string) {
-  const blob = data instanceof Blob ? data : new Blob([bufferSource(data)], { type: mime })
+  // A copy, not `data.buffer`: a view would download the whole buffer it looks into.
+  const blob = data instanceof Blob ? data : new Blob([data.slice()], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

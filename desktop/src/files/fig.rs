@@ -6,9 +6,10 @@ use tauri::ipc::{InvokeBody, Request, Response};
 const DEFAULT_COMPRESSION_LEVEL: i32 = 3;
 const DEFAULT_FIG_KIWI_VERSION: u32 = 101;
 
-/// Compresses the document into the `canvas.fig` entry of a save: `schemaDeflated` followed by
-/// `kiwiData` arrive as one raw request body, and the header names where the first ends. Images
-/// stay in the webview and are streamed into the ZIP there, so they never cross IPC.
+/// Compresses a save's document data into its `canvas.fig` entry on a blocking thread, since high
+/// zstd levels take seconds. `schemaDeflated` followed by `kiwiData` arrive as one raw request
+/// body, and `x-fig-schema-length` says where the first ends. The images stay in the webview,
+/// which writes the archive around the result, so they never cross IPC.
 #[tauri::command]
 pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, String> {
     let InvokeBody::Raw(body) = request.body() else {
@@ -25,11 +26,10 @@ pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, Strin
     }
     let version = header("x-fig-version")
         .and_then(|value| value.parse::<u32>().ok())
-        .filter(|value| *value != 0)
         .unwrap_or(DEFAULT_FIG_KIWI_VERSION);
     let compression_level =
         header("x-fig-compression-level").and_then(|value| value.parse::<i32>().ok());
-    let board = header("x-fig-board") == Some("1");
+    let board = header("x-fig-board") == Some("true");
     let schema_deflated = body[..schema_len].to_vec();
     let kiwi_data = body[schema_len..].to_vec();
 

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { testPath } from '#tests/helpers/paths'
 
 describe('Tauri fig export', () => {
-  test('compresses only the document data through the Tauri Rust command', async () => {
+  test('compresses the document data in Rust and writes the archive around it', async () => {
     const proc = Bun.spawn([process.execPath, testPath('helpers/tauri/fig-export-fixture.ts')], {
       stdout: 'pipe',
       stderr: 'pipe'

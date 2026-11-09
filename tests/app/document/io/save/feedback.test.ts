@@ -21,7 +21,7 @@ describe('save feedback', () => {
     const entry = toast.toasts.value[0]
     expect(entry?.sticky).toBe(true)
     entry?.action?.run(entry.id)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await Bun.sleep(0)
 
     expect(attempts).toBe(2)
     expect(toast.toasts.value).toHaveLength(0)
@@ -54,7 +54,7 @@ describe('save feedback', () => {
     await expect(saveWithFeedback(save, { key, isOpen: () => false })).resolves.toBe(false)
     const entry = toast.toasts.value[0]
     entry?.action?.run(entry.id)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await Bun.sleep(0)
 
     expect(attempts).toBe(1)
     expect(toast.toasts.value).toHaveLength(0)

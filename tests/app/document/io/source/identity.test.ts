@@ -11,11 +11,7 @@ function makeWritableHandle(name: string): FileSystemFileHandle {
   return asDouble<FileSystemFileHandle>({
     kind: 'file',
     name,
-    createWritable: vi.fn(async () => ({
-      write: vi.fn(async () => undefined),
-      close: vi.fn(async () => undefined),
-      abort: vi.fn(async () => undefined)
-    }))
+    createWritable: vi.fn(async () => new WritableStream<Uint8Array>())
   })
 }
 
@@ -28,9 +24,13 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   const actions = createSaveActions({
     state,
     version: () => 1,
-    buildFigStream: async (sink) => {
-      await sink(new Uint8Array([1, 2, 3]))
-    },
+    buildFigStream: async () =>
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array([1, 2, 3]))
+          controller.close()
+        }
+      }),
     getFilePath: () => null,
     setFilePath: vi.fn(),
     getFileHandle: () => handle,
@@ -104,6 +104,9 @@ describe('saved document identity', () => {
       'chosen.fig',
       'application/octet-stream'
     )
+    const downloaded = download.mock.calls[0]?.[0]
+    if (!(downloaded instanceof Blob)) throw new Error('Nothing was downloaded')
+    expect([...new Uint8Array(await downloaded.arrayBuffer())]).toEqual([1, 2, 3])
     expect(setSourceIdentity).toHaveBeenLastCalledWith({ handle: null, path: null })
   })
 

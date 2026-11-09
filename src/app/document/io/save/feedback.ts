@@ -1,5 +1,9 @@
 import { notificationMessages } from '@/app/i18n/notifications'
-import { toast } from '@/app/shell/ui'
+import { toast, type ToastHandle } from '@/app/shell/ui'
+import { formatBytes } from '@/components/ui/feedback/progress'
+
+/** How long a save runs before its progress shows, so quick saves never flash a toast. */
+const SAVE_PROGRESS_DELAY_MS = 1000
 
 /** What a failure belongs to, so a retry reaches the same document and a newer save can clear it. */
 export interface SaveFeedbackOptions {
@@ -46,5 +50,40 @@ export async function saveWithFeedback(
     )
     if (options.key) failureToasts.set(options.key, id)
     return false
+  }
+}
+
+/** A save in progress: the bytes it has written, shown once it takes long enough to notice. */
+export interface SaveProgress {
+  /** `stream` with its bytes counted as they are written. */
+  track(stream: ReadableStream<Uint8Array>): ReadableStream<Uint8Array>
+  /** The save finished or failed: the toast, if one showed, goes. */
+  end(): void
+}
+
+export function startSaveProgress(): SaveProgress {
+  let written = 0
+  let shown: ToastHandle | null = null
+  const label = () => formatBytes(written)
+  const timer = setTimeout(() => {
+    shown = toast.startProgress(notificationMessages.get().savingDocument, {
+      progressLabel: label()
+    })
+  }, SAVE_PROGRESS_DELAY_MS)
+  return {
+    track: (stream) =>
+      stream.pipeThrough(
+        new TransformStream<Uint8Array, Uint8Array>({
+          transform(chunk, controller) {
+            written += chunk.byteLength
+            shown?.update({ progressLabel: label() })
+            controller.enqueue(chunk)
+          }
+        })
+      ),
+    end() {
+      clearTimeout(timer)
+      shown?.dismiss()
+    }
   }
 }
