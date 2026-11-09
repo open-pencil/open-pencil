@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isCloudBinding, openCloudShare, saveDocument } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
+import { saveWithFeedback } from '@/app/document/io/save/feedback'
 import { useActiveEditorStoreRef, useEditorStore } from '@/app/editor/active-store'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { presenceOf, renameAgent as renameLocalAgent } from '@/app/presence/registry'
@@ -67,7 +68,11 @@ function createMobileHudContext() {
       action: () => createTab()
     },
     { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
-    { icon: IconSave, label: 'Save', action: () => void saveDocument(store) },
+    {
+      icon: IconSave,
+      label: 'Save',
+      action: () => void saveWithFeedback(() => saveDocument(store))
+    },
     { icon: IconImageDown, label: 'Export…', action: () => void store.exportSelection(1, 'png') },
     { icon: IconZoomIn, label: 'Zoom to fit', action: () => getCommand('view.zoomFit').run() }
   ]

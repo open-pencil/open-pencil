@@ -31,13 +31,19 @@ describe('Tauri document IO helpers', () => {
     expect(document?.getPages().length).toBeGreaterThan(0)
   })
 
-  test('writes document bytes through plugin-fs', async () => {
+  test('streams document bytes through a plugin-fs file handle', async () => {
     const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
-    await mockTauriIPC((cmd, args, options) => {
-      calls.push({ cmd, args, options })
+    await mockTauriIPC((cmd, args) => {
+      calls.push({ cmd, args, options: undefined })
+      if (cmd === 'plugin:fs|open') return 7
+      if (cmd === 'plugin:fs|write') {
+        const data = (args as { data: Uint8Array | number[] }).data
+        return ArrayBuffer.isView(data) ? data.byteLength : data.length
+      }
       return null
     })
     const savedVersions: number[] = []
+    const progress: Array<[number, number]> = []
     const write = createDocumentWriter({
       state: { documentName: 'Document' },
       getFilePath: () => '/tmp/document.fig',
@@ -47,19 +53,47 @@ describe('Tauri document IO helpers', () => {
       setLastWriteTime: () => undefined
     })
 
-    await write(new Uint8Array([1, 2, 3]), 42)
+    await write(
+      async (sink, onProgress) => {
+        await sink(new Uint8Array([1, 2, 3, 4]))
+        onProgress?.(4, 6)
+        await sink(new Uint8Array([5, 6]))
+        onProgress?.(6, 6)
+      },
+      42,
+      (written, total) => progress.push([written, total])
+    )
 
-    expect(calls).toHaveLength(1)
-    expect(calls[0]?.cmd).toBe('plugin:fs|write_file')
-    expect([...new Uint8Array(calls[0]?.args as ArrayBuffer)]).toEqual([1, 2, 3])
-    expect(calls[0]?.options).toEqual({
-      headers: { path: '%2Ftmp%2Fdocument.fig', options: undefined }
+    expect(calls.map((call) => call.cmd)).toEqual([
+      'plugin:fs|open',
+      'plugin:fs|write',
+      'plugin:fs|write',
+      'plugin:resources|close'
+    ])
+    expect(calls[0]?.args).toEqual({
+      path: '/tmp/document.fig',
+      options: { write: true, create: true, truncate: true }
     })
+    const written = calls
+      .filter((call) => call.cmd === 'plugin:fs|write')
+      .flatMap((call) => [...new Uint8Array((call.args as { data: ArrayBuffer }).data)])
+    expect(written).toEqual([1, 2, 3, 4, 5, 6])
+    expect(progress).toEqual([
+      [4, 6],
+      [6, 6]
+    ])
     expect(savedVersions).toEqual([42])
   })
 
   test('keeps a completed write successful when recovery cleanup fails', async () => {
-    await mockTauriIPC(() => null)
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:fs|open') return 7
+      if (cmd === 'plugin:fs|write') {
+        const data = (args as { data: Uint8Array | number[] }).data
+        return ArrayBuffer.isView(data) ? data.byteLength : data.length
+      }
+      return null
+    })
     const savedVersions: number[] = []
     const write = createDocumentWriter({
       state: { documentName: 'Document' },
@@ -71,7 +105,11 @@ describe('Tauri document IO helpers', () => {
       onWriteSuccess: () => Promise.reject(new Error('IndexedDB blocked'))
     })
 
-    await expect(write(new Uint8Array([1]), 17)).resolves.toBe(true)
+    await expect(
+      write(async (sink) => {
+        await sink(new Uint8Array([1]))
+      }, 17)
+    ).resolves.toBe(true)
     expect(savedVersions).toEqual([17])
   })
 

@@ -1,30 +1,26 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import { setFigArchiveAssembler } from '@open-pencil/core/io/formats/fig'
+import { setFigCanvasCompressor } from '@open-pencil/core/io/formats/fig'
 
 /**
- * The desktop app packs every `.fig` it writes in Rust, on a blocking thread, since high
- * compression levels take seconds (`build_fig_file`, `desktop/AGENTS.md`).
+ * The desktop app compresses a save's document data in Rust, on a blocking thread, since high
+ * compression levels take seconds (`compress_fig_canvas`, `desktop/AGENTS.md`). Only the schema
+ * and the encoded document cross IPC; the images are streamed into the archive from the webview.
  */
 export function installNativeFigArchives(): void {
-  setFigArchiveAssembler(
-    async (parts) =>
-      new Uint8Array(
-        await invoke<ArrayBuffer>('build_fig_file', {
-          file: {
-            schemaDeflated: Array.from(parts.schemaDeflated),
-            kiwiData: Array.from(parts.kiwiData),
-            thumbnailPng: Array.from(parts.thumbnailPNG),
-            metaJson: parts.metaJSON,
-            images: parts.images.map((image) => ({
-              name: image.name,
-              data: Array.from(image.data)
-            })),
-            figKiwiVersion: parts.figKiwiVersion,
-            compressionLevel: parts.compressionLevel,
-            board: parts.documentKind === 'board'
-          }
-        })
-      )
-  )
+  setFigCanvasCompressor(async (parts) => {
+    const body = new Uint8Array(parts.schemaDeflated.byteLength + parts.kiwiData.byteLength)
+    body.set(parts.schemaDeflated)
+    body.set(parts.kiwiData, parts.schemaDeflated.byteLength)
+    const bytes = await invoke<ArrayBuffer>('compress_fig_canvas', body, {
+      headers: {
+        'x-fig-schema-length': String(parts.schemaDeflated.byteLength),
+        'x-fig-version': String(parts.figKiwiVersion ?? 0),
+        'x-fig-compression-level':
+          parts.compressionLevel === undefined ? '' : String(parts.compressionLevel),
+        'x-fig-board': parts.documentKind === 'board' ? '1' : '0'
+      }
+    })
+    return new Uint8Array(bytes)
+  })
 }

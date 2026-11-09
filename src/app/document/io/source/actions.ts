@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { Editor, EditorState } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
@@ -12,14 +12,16 @@ import {
   figDownloadName,
   isFigArchiveName
 } from '@/app/document/io/names'
-import { createSaveActions } from '@/app/document/io/save/actions'
+import { createSaveActions, type SaveProgress } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
+import { toast, type ToastHandle } from '@/app/shell/ui'
 import { createCanvasId } from '@/app/storage/id'
 import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -31,6 +33,10 @@ type DocumentSourceState = EditorState & {
 }
 
 export { createDocumentSourceState }
+
+function megabytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 type DocumentSourceOptions = DocumentSourceAccess & {
   editor: Editor
@@ -79,6 +85,41 @@ export function createDocumentSourceActions({
     })
   }
 
+  /** The same document, handed to a file as it is produced instead of as one buffer. */
+  function buildFigStream(
+    sink: (chunk: Uint8Array) => void | Promise<void>,
+    onProgress?: (written: number, total: number) => void
+  ) {
+    const renderer = getRenderer()
+    return exportFigFileStream(editor.graph, sink, {
+      ck: renderer?.ck,
+      renderer: renderer ?? undefined,
+      pageId: state.currentPageId,
+      documentName: state.documentName,
+      onProgress
+    })
+  }
+
+  let saveToast: ToastHandle | null = null
+
+  function reportSaveProgress(progress: SaveProgress | null) {
+    if (!progress) {
+      saveToast?.dismiss()
+      saveToast = null
+      return
+    }
+    const amount = { value: progress.written, max: progress.total }
+    const label = `${megabytes(progress.written)} / ${megabytes(progress.total)}`
+    if (!saveToast) {
+      saveToast = toast.startProgress(notificationMessages.get().savingDocument, {
+        progress: amount,
+        progressLabel: label
+      })
+    } else {
+      saveToast.update({ progress: amount, progressLabel: label })
+    }
+  }
+
   /**
    * A write changes the file's time, which keys its Home preview, so the sharp cover is drawn
    * again for it; without it Home falls back to the small cover inside the file. An edit made
@@ -116,7 +157,8 @@ export function createDocumentSourceActions({
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     version: changes.capture,
-    buildFigFile,
+    buildFigStream,
+    onSaveProgress: reportSaveProgress,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -146,8 +188,7 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
-      const data = await buildFigFile()
-      if (await writeFile(data, version)) changes.markSaved(revision)
+      if (await writeFile(buildFigStream, version)) changes.markSaved(revision)
     }
   })
 

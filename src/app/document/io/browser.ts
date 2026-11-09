@@ -87,8 +87,8 @@ export async function fitPageToViewport(editor: ViewportEditor, signal?: AbortSi
   editor.zoomToFit()
 }
 
-export function downloadBlob(data: Uint8Array, filename: string, mime: string) {
-  const blob = new Blob([data.buffer as ArrayBuffer], { type: mime })
+export function downloadBlob(data: Uint8Array | Blob, filename: string, mime: string) {
+  const blob = data instanceof Blob ? data : new Blob([data.buffer as ArrayBuffer], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

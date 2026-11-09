@@ -13,7 +13,8 @@ function makeWritableHandle(name: string): FileSystemFileHandle {
     name,
     createWritable: vi.fn(async () => ({
       write: vi.fn(async () => undefined),
-      close: vi.fn(async () => undefined)
+      close: vi.fn(async () => undefined),
+      abort: vi.fn(async () => undefined)
     }))
   })
 }
@@ -27,7 +28,9 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   const actions = createSaveActions({
     state,
     version: () => 1,
-    buildFigFile: () => new Uint8Array([1, 2, 3]),
+    buildFigStream: async (sink) => {
+      await sink(new Uint8Array([1, 2, 3]))
+    },
     getFilePath: () => null,
     setFilePath: vi.fn(),
     getFileHandle: () => handle,
@@ -97,7 +100,7 @@ describe('saved document identity', () => {
 
     expect(await actions.saveFigFileAs()).toBe(true)
     expect(download).toHaveBeenCalledWith(
-      expect.any(Uint8Array),
+      expect.any(Blob),
       'chosen.fig',
       'application/octet-stream'
     )
