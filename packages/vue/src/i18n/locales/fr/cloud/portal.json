@@ -152,6 +152,8 @@
   "deleteAccountSignIn": "Vos méthodes de connexion, vos sessions et votre photo.",
   "deleteAccountBlockedHeading": "Nommez d’abord un autre administrateur",
   "deleteAccountBlockedDescription": "Vous êtes le seul administrateur de ces espaces de travail, et d’autres personnes les utilisent encore.",
+  "deleteAccountLastAdminHeading": "Nommez d’abord un autre administrateur du serveur",
+  "deleteAccountLastAdminDescription": "Vous êtes le seul administrateur de ce serveur. Sans administrateur, personne ne peut ouvrir sa console.",
   "deleteAccountDownload": "Téléchargez d’abord vos fichiers",
   "deleteAccountDownloadDescription": {
     "one": "{count} fichier que vous perdriez, dans un seul zip.",

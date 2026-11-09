@@ -17,6 +17,7 @@ type Args = {
 
 const EMAIL = 'ada@example.com'
 const deletion: CloudAccountDeletion = {
+  lastAdministrator: false,
   blockedBy: [],
   deletes: [
     { id: '00000000-0000-4000-8000-000000000001', name: 'Ada’s workspace' },
@@ -77,6 +78,16 @@ export const Blocked: Story = {
     await expect(within(dialog).queryByRole('textbox')).toBeNull()
     await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
     await expect(within(dialog).getByRole('alert')).toBeVisible()
+  }
+}
+
+/** The deployment's only administrator keeps the account until someone else is one. */
+export const LastAdministrator: Story = {
+  args: { deletion: { ...deletion, lastAdministrator: true } },
+  play: async () => {
+    const dialog = await within(document.body).findByRole('dialog')
+    await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
+    await expect(within(dialog).getByText('Make someone else a server admin first')).toBeVisible()
   }
 }
 

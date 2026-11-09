@@ -170,7 +170,11 @@ const archive = ref<PortalAccountArchive | null>(null)
 /** Whether the password dialog confirms deleting the account rather than an email change. */
 const passwordFor = ref<'email' | 'delete'>('email')
 
+/** Which opening of the dialog a download belongs to, so a stale one can't write into a newer. */
+let deleteSession = 0
+
 async function openDelete() {
+  deleteSession++
   deleteAccount.clear()
   deletion.value = null
   deletionLoadError.value = null
@@ -184,20 +188,30 @@ async function openDelete() {
 }
 
 async function downloadAll() {
+  const session = deleteSession
   const documents = deletion.value?.documents ?? []
+  const current = () => session === deleteSession
   archive.value = { done: 0, total: documents.length, saved: null, failed: [] }
-  const result = await saveAccountArchive(documents, {
-    apiURL: portal.discovery.apiURL,
-    archiveName: `${messages.value.accountArchiveName({ host: portal.host })}.zip`,
-    onProgress: ({ done, total }) => {
-      if (archive.value) archive.value = { ...archive.value, done, total }
+  try {
+    const result = await saveAccountArchive(documents, {
+      apiURL: portal.discovery.apiURL,
+      archiveName: `${messages.value.accountArchiveName({ host: portal.host })}.zip`,
+      onProgress: ({ done, total }) => {
+        if (current() && archive.value) archive.value = { ...archive.value, done, total }
+      }
+    })
+    if (!current()) return
+    archive.value = {
+      done: documents.length,
+      total: documents.length,
+      saved: result.saved,
+      failed: result.failed.map((document) => document.name)
     }
-  })
-  archive.value = {
-    done: documents.length,
-    total: documents.length,
-    saved: result.saved,
-    failed: result.failed.map((document) => document.name)
+  } catch (error) {
+    // Zipping or saving failed as a whole, such as out of memory; nothing was saved.
+    if (!current()) return
+    archive.value = null
+    portalToast.error(failures.api(error))
   }
 }
 

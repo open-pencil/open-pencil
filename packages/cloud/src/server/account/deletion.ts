@@ -13,6 +13,35 @@ export class AccountDeletionBlockedError extends Error {
   }
 }
 
+/** The account is the deployment's last administrator, so deleting it would lock the console. */
+export class AccountLastAdministratorError extends Error {
+  constructor() {
+    super('Cannot delete the last deployment administrator')
+    this.name = 'AccountLastAdministratorError'
+  }
+}
+
+/**
+ * Whether the account is an administrator of the deployment with no other active one, the
+ * check the console makes before banning or demoting one (`src/admin/users/service.ts`).
+ * Inside a transaction it locks the administrators' rows, so two of them can't both go at once.
+ */
+async function lastAdministrator(
+  database: Kysely<CloudDatabase> | Transaction<CloudDatabase>,
+  userId: string,
+  lock: boolean
+): Promise<boolean> {
+  let query = database
+    .selectFrom('user')
+    .select(['id', 'banned'])
+    .where('role', '=', 'admin')
+    .orderBy('id')
+  if (lock) query = query.forUpdate()
+  const administrators = await query.execute()
+  if (!administrators.some((row) => row.id === userId)) return false
+  return !administrators.some((row) => row.id !== userId && row.banned !== true)
+}
+
 type Membership = {
   workspaceId: string
   name: string
@@ -110,6 +139,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
               .orderBy('document.id')
               .execute()
       return {
+        lastAdministrator: await lastAdministrator(database, userId, false),
         blockedBy: blockedBy.map(workspaceSummary),
         deletes: deletes.map(workspaceSummary),
         leaves: leaves.map(workspaceSummary),
@@ -124,6 +154,9 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
      */
     async remove(user: { id: string; email: string }): Promise<void> {
       await database.transaction().execute(async (transaction) => {
+        if (await lastAdministrator(transaction, user.id, true)) {
+          throw new AccountLastAdministratorError()
+        }
         const workspaceIds = await transaction
           .selectFrom('workspaceMember')
           .select('workspaceId')
@@ -209,6 +242,10 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           .deleteFrom('enrollment')
           .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))
           .execute()
+        // The user row goes in the same transaction, with the sessions, sign-in methods, passkeys
+        // and two-step secrets its keys cascade to, so a failure leaves the account whole and
+        // signed in to try again. Better Auth's own deletes that follow then find nothing.
+        await transaction.deleteFrom('user').where('id', '=', user.id).execute()
       })
     }
   }
@@ -218,8 +255,9 @@ export type AccountDeletionService = ReturnType<typeof createAccountDeletionServ
 
 /**
  * Better Auth's `user.deleteUser` options: it checks the password, or that the session is fresh,
- * then runs `beforeDelete` outside any transaction of its own, so Cloud's may query; a refusal
- * reaches the client as `ACCOUNT_SOLE_ADMIN`.
+ * then runs `beforeDelete` outside any transaction of its own, so Cloud's may query. That
+ * transaction deletes the user too; a refusal reaches the client as `account_sole_admin` or
+ * `last_admin_required`.
  */
 export function accountDeletionOptions(database: Kysely<CloudDatabase>) {
   const deletion = createAccountDeletionService(database)
@@ -229,8 +267,13 @@ export function accountDeletionOptions(database: Kysely<CloudDatabase>) {
       try {
         await deletion.remove(user)
       } catch (error) {
-        if (!(error instanceof AccountDeletionBlockedError)) throw error
-        throw APIError.from('CONFLICT', { code: 'ACCOUNT_SOLE_ADMIN', message: error.message })
+        if (error instanceof AccountDeletionBlockedError) {
+          throw APIError.from('CONFLICT', { code: 'ACCOUNT_SOLE_ADMIN', message: error.message })
+        }
+        if (error instanceof AccountLastAdministratorError) {
+          throw APIError.from('CONFLICT', { code: 'LAST_ADMIN_REQUIRED', message: error.message })
+        }
+        throw error
       }
     }
   }

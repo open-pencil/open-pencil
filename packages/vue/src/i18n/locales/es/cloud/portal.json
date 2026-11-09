@@ -152,6 +152,8 @@
   "deleteAccountSignIn": "Tus métodos de inicio de sesión, sesiones y foto.",
   "deleteAccountBlockedHeading": "Primero nombra a otro administrador",
   "deleteAccountBlockedDescription": "Eres el único administrador de estos espacios de trabajo y otras personas aún los usan.",
+  "deleteAccountLastAdminHeading": "Primero nombra a otro administrador del servidor",
+  "deleteAccountLastAdminDescription": "Eres el único administrador de este servidor. Sin uno, nadie puede abrir su consola de administración.",
   "deleteAccountDownload": "Descarga primero tus archivos",
   "deleteAccountDownloadDescription": {
     "one": "{count} archivo que perderías, en un solo zip.",

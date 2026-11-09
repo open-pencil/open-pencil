@@ -133,6 +133,7 @@ describe('account deletion', () => {
         .execute()
 
       expect(await deletion(fixture, alice.sessionCookie)).toEqual({
+        lastAdministrator: false,
         blockedBy: [{ id: team, name: 'Team' }],
         deletes: [
           { id: empty, name: 'Empty' },
@@ -289,6 +290,46 @@ describe('account deletion', () => {
           .where('id', '=', account.userId)
           .execute()
       ).toEqual([])
+    } finally {
+      await fixture.close()
+    }
+  })
+
+  test('keeps the deployment’s last administrator', async () => {
+    const fixture = await createAccountAuthenticationFixture()
+    try {
+      const admin = await createVerifiedCredentialAccount(fixture, {
+        email: 'admin@example.com',
+        name: 'Admin',
+        password: PASSWORD,
+        approved: true
+      })
+      const other = await createVerifiedCredentialAccount(fixture, {
+        email: 'other@example.com',
+        name: 'Other',
+        password: PASSWORD,
+        approved: true
+      })
+      const promote = (userId: string, banned = false) =>
+        fixture.database
+          .updateTable('user')
+          .set({ role: 'admin', banned })
+          .where('id', '=', userId)
+          .execute()
+      await promote(admin.userId)
+      // A banned administrator can't sign in to the console, so it doesn't count.
+      await promote(other.userId, true)
+      expect((await deletion(fixture, admin.sessionCookie)).lastAdministrator).toBe(true)
+      const refused = await remove(fixture, admin.sessionCookie)
+      expect(refused.status).toBe(409)
+      expect((await responseJSON(refused, accountSecurityErrorResponseSchema)).error.code).toBe(
+        'last_admin_required'
+      )
+      expect(await fixture.database.selectFrom('enrollment').select('id').execute()).toHaveLength(2)
+
+      await promote(other.userId)
+      expect((await deletion(fixture, admin.sessionCookie)).lastAdministrator).toBe(false)
+      expect((await remove(fixture, admin.sessionCookie)).status).toBe(200)
     } finally {
       await fixture.close()
     }

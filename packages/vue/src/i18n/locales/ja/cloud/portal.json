@@ -150,6 +150,8 @@
   "deleteAccountSignIn": "ログイン方法、セッション、写真。",
   "deleteAccountBlockedHeading": "先に他の人を管理者にしてください",
   "deleteAccountBlockedDescription": "あなたはこれらのワークスペースの唯一の管理者で、他の人がまだ使っています。",
+  "deleteAccountLastAdminHeading": "先に他の人をサーバー管理者にしてください",
+  "deleteAccountLastAdminDescription": "あなたはこのサーバーの唯一の管理者です。管理者がいないと、誰も管理コンソールを開けません。",
   "deleteAccountDownload": "先にファイルをダウンロード",
   "deleteAccountDownloadDescription": {
     "many": "失うファイル {count} 件を 1 つの zip にまとめます。"

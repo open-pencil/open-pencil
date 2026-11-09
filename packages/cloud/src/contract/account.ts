@@ -48,7 +48,8 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'email_change_unavailable',
   'current_session',
   'picture_invalid',
-  'account_sole_admin'
+  'account_sole_admin',
+  'last_admin_required'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -196,6 +197,8 @@ export const cloudAccountDeletionDocumentSchema = v.object({
  * would lose, those workspaces' and the ones it created in workspaces it leaves.
  */
 export const cloudAccountDeletionSchema = v.object({
+  /** The account is the deployment's only administrator, which also stops the deletion. */
+  lastAdministrator: v.boolean(),
   blockedBy: v.array(cloudAccountDeletionWorkspaceSchema),
   deletes: v.array(cloudAccountDeletionWorkspaceSchema),
   leaves: v.array(cloudAccountDeletionWorkspaceSchema),

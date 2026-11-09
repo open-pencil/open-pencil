@@ -152,6 +152,8 @@
   "deleteAccountSignIn": "Deine Anmeldemethoden, Sitzungen und dein Bild.",
   "deleteAccountBlockedHeading": "Mach zuerst jemand anderen zum Admin",
   "deleteAccountBlockedDescription": "Du bist der einzige Admin dieser Arbeitsbereiche, und andere nutzen sie noch.",
+  "deleteAccountLastAdminHeading": "Mach zuerst jemand anderen zum Server-Admin",
+  "deleteAccountLastAdminDescription": "Du bist der einzige Administrator dieses Servers. Ohne einen kann niemand seine Admin-Konsole öffnen.",
   "deleteAccountDownload": "Lade deine Dateien zuerst herunter",
   "deleteAccountDownloadDescription": {
     "one": "{count} Datei, die du verlieren würdest, in einer ZIP-Datei.",

@@ -154,6 +154,8 @@
   "deleteAccountSignIn": "Twoje metody logowania, sesje i zdjęcie.",
   "deleteAccountBlockedHeading": "Najpierw nadaj komuś innemu rolę administratora",
   "deleteAccountBlockedDescription": "Jesteś jedynym administratorem tych obszarów roboczych, a inni wciąż z nich korzystają.",
+  "deleteAccountLastAdminHeading": "Najpierw nadaj komuś innemu rolę administratora serwera",
+  "deleteAccountLastAdminDescription": "Jesteś jedynym administratorem tego serwera. Bez niego nikt nie otworzy konsoli administracyjnej.",
   "deleteAccountDownload": "Najpierw pobierz swoje pliki",
   "deleteAccountDownloadDescription": {
     "one": "{count} plik, który byś stracił, w jednym archiwum zip.",

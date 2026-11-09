@@ -150,6 +150,8 @@
   "deleteAccountSignIn": "你的登录方式、会话和头像。",
   "deleteAccountBlockedHeading": "请先让其他人成为管理员",
   "deleteAccountBlockedDescription": "你是这些工作区唯一的管理员，而其他人仍在使用它们。",
+  "deleteAccountLastAdminHeading": "请先让其他人成为服务器管理员",
+  "deleteAccountLastAdminDescription": "你是此服务器唯一的管理员。没有管理员，任何人都无法打开其管理控制台。",
   "deleteAccountDownload": "先下载你的文件",
   "deleteAccountDownloadDescription": {
     "many": "你将失去的 {count} 个文件，打包为一个 zip。"

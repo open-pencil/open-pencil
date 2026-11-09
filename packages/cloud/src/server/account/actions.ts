@@ -13,6 +13,7 @@ const ACCOUNT_SECURITY_ERROR_CODES: Record<string, AccountSecurityErrorCode> = {
   SESSION_EXPIRED: 'session_not_fresh',
   CREDENTIAL_ACCOUNT_NOT_FOUND: 'session_not_fresh',
   ACCOUNT_SOLE_ADMIN: 'account_sole_admin',
+  LAST_ADMIN_REQUIRED: 'last_admin_required',
   CHANGE_EMAIL_DISABLED: 'email_change_unavailable',
   CURRENT_SESSION: 'current_session',
   EMAIL_UNCHANGED: 'email_unchanged'

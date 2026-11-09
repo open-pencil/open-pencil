@@ -46,7 +46,9 @@ watch(open, (value) => {
   if (value) typed.value = ''
 })
 
-const blocked = computed(() => (deletion?.blockedBy.length ?? 0) > 0)
+const blocked = computed(
+  () => Boolean(deletion?.lastAdministrator) || (deletion?.blockedBy.length ?? 0) > 0
+)
 const downloading = computed(() => archive !== null && archive.saved === null)
 const confirmed = computed(() => typed.value.trim().toLowerCase() === email.trim().toLowerCase())
 </script>
@@ -69,7 +71,13 @@ const confirmed = computed(() => typed.value.trim().toLowerCase() === email.trim
         <p v-else-if="!deletion" class="text-xs text-muted">{{ messages.loading }}</p>
         <template v-else>
           <AppAlert
-            v-if="blocked"
+            v-if="deletion.lastAdministrator"
+            tone="warning"
+            :heading="messages.deleteAccountLastAdminHeading"
+            :description="messages.deleteAccountLastAdminDescription"
+          />
+          <AppAlert
+            v-if="deletion.blockedBy.length > 0"
             tone="warning"
             :heading="messages.deleteAccountBlockedHeading"
             :description="messages.deleteAccountBlockedDescription"

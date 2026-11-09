@@ -189,6 +189,9 @@ export const cloudPortalMessageDefaults = {
   deleteAccountBlockedHeading: 'Make someone else an admin first',
   deleteAccountBlockedDescription:
     'You’re the only admin of these workspaces, and other people still use them.',
+  deleteAccountLastAdminHeading: 'Make someone else a server admin first',
+  deleteAccountLastAdminDescription:
+    'You’re this server’s only administrator. Without one, nobody can open its admin console.',
   deleteAccountDownload: 'Download your files first',
   deleteAccountDownloadDescription: count({
     one: '{count} file you’d lose, saved in one zip.',

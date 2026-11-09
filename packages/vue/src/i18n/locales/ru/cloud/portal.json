@@ -154,6 +154,8 @@
   "deleteAccountSignIn": "Ваши способы входа, сеансы и фото.",
   "deleteAccountBlockedHeading": "Сначала назначьте другого администратора",
   "deleteAccountBlockedDescription": "Вы единственный администратор этих рабочих пространств, а другие люди ими ещё пользуются.",
+  "deleteAccountLastAdminHeading": "Сначала назначьте другого администратора сервера",
+  "deleteAccountLastAdminDescription": "Вы единственный администратор этого сервера. Без администратора никто не сможет открыть его консоль.",
   "deleteAccountDownload": "Сначала скачайте свои файлы",
   "deleteAccountDownloadDescription": {
     "one": "{count} файл, который вы потеряете, одним zip-архивом.",
