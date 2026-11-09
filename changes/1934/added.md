@@ -1,0 +1,1 @@
+- A frame that shows a page of the running application keeps the page's picture as a baseline, and comparing says whether the page still looks the way it did when the picture was taken (#1934).
