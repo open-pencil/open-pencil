@@ -11,8 +11,8 @@ export type DocumentCleanupOptions = {
   leaseDurationMs: number
   /** How long a document stays in Trash before cleanup destroys it. */
   retentionMs: number
-  /** How long a document deleted forever keeps its files before cleanup destroys it. */
-  purgeGraceMs?: number
+  /** How long a document deleted forever keeps its files before cleanup destroys it; 0 is at once. */
+  purgeGraceMs: number
   now?: Date
 }
 
@@ -34,7 +34,7 @@ export type DocumentCleanupService = {
    */
   destroyPurgedDocument(
     documentId: string,
-    options: Pick<DocumentCleanupOptions, 'leaseDurationMs' | 'now'>
+    options: { leaseDurationMs: number; now?: Date }
   ): Promise<boolean>
 }
 
@@ -132,7 +132,7 @@ export function createDocumentCleanupService(
       const result = await clean({
         batchSize: input.batchSize,
         deletedBefore: new Date(now.getTime() - input.retentionMs),
-        purgedBefore: new Date(now.getTime() - (input.purgeGraceMs ?? 0)),
+        purgedBefore: new Date(now.getTime() - input.purgeGraceMs),
         staleBefore: new Date(now.getTime() - input.leaseDurationMs),
         now,
         claimId: crypto.randomUUID()

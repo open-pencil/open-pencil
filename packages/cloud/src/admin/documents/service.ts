@@ -286,8 +286,10 @@ export function createAdminDocumentService(
           .select(['id', 'workspaceId', 'purgedAt', 'purgedBytes', 'cleanupClaimId'])
           .where('id', '=', documentId)
           .forUpdate()
-          .executeTakeFirstOrThrow()
+          .executeTakeFirst()
+        // Cleanup may have destroyed it since the list was loaded.
         if (
+          !document ||
           document.purgedAt === null ||
           document.cleanupClaimId !== null ||
           new Date(document.purgedAt) <= graceSince(now)

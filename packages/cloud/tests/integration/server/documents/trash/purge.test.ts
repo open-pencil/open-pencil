@@ -34,10 +34,22 @@ function cleanupAt(context: Awaited<ReturnType<typeof trashApp>>, now: Date) {
   })
 }
 
-function restoreAsAdmin(context: Awaited<ReturnType<typeof trashApp>>, documentId: string) {
+function restoreAsAdmin(
+  context: Awaited<ReturnType<typeof trashApp>>,
+  documentId: string,
+  now?: Date
+) {
   return createAdminDocumentService(context.runtime.database, {
     purgeGraceMs: GRACE_MS
-  }).undelete('server-admin', documentId)
+  }).undelete('server-admin', documentId, now)
+}
+
+/** The code an administrator's restore was refused with, or null when it went through. */
+function refusal(context: Awaited<ReturnType<typeof trashApp>>, documentId: string, now?: Date) {
+  return restoreAsAdmin(context, documentId, now).then(
+    () => null,
+    (error: unknown) => (error instanceof AdminDomainError ? error.code : error)
+  )
 }
 
 describe('Deleting forever', () => {
@@ -222,20 +234,50 @@ describe('Deleting forever', () => {
         .where('id', '=', expired)
         .execute()
 
-      const refusal = (documentId: string) =>
-        restoreAsAdmin(context, documentId).then(
-          () => null,
-          (error: unknown) => (error instanceof AdminDomainError ? error.code : error)
-        )
-      expect(await refusal(expired)).toBe('document_not_restorable')
-      expect(await refusal(trashed)).toBe('document_not_restorable')
+      expect(await refusal(context, expired)).toBe('document_not_restorable')
+      expect(await refusal(context, trashed)).toBe('document_not_restorable')
 
       await context.purge(orphaned)
       await context.runtime.database
         .deleteFrom('workspaceMember')
         .where('workspaceId', '=', context.workspaceId)
         .execute()
-      expect(await refusal(orphaned)).toBe('workspace_gone')
+      expect(await refusal(context, orphaned)).toBe('workspace_gone')
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('restores up to the end of the grace, not after it or while cleanup holds the document', async () => {
+    const context = await trashApp()
+    try {
+      const inside = await context.create('Inside')
+      const claimed = await context.create('Claimed')
+      for (const document of [inside, claimed]) {
+        await context.remove(document)
+        await context.purge(document)
+      }
+      const { purgedAt } = await context.runtime.database
+        .selectFrom('document')
+        .select('purgedAt')
+        .where('id', '=', inside)
+        .executeTakeFirstOrThrow()
+      if (!purgedAt) throw new Error('Expected it deleted forever')
+      const cutoff = new Date(new Date(purgedAt).getTime() + GRACE_MS)
+
+      expect(await refusal(context, inside, cutoff)).toBe('document_not_restorable')
+      expect(await refusal(context, inside, new Date(cutoff.getTime() - 1))).toBeNull()
+
+      await context.runtime.database
+        .updateTable('document')
+        .set({ cleanupClaimId: crypto.randomUUID(), cleanupClaimedAt: new Date() })
+        .where('id', '=', claimed)
+        .execute()
+      expect(await refusal(context, claimed)).toBe('document_not_restorable')
+
+      // Destroyed since the console listed it.
+      await context.runtime.database.deleteFrom('document').where('id', '=', claimed).execute()
+      expect(await refusal(context, claimed)).toBe('document_not_restorable')
     } finally {
       await context.runtime.close()
     }
@@ -276,7 +318,8 @@ describe('Cleanup failures', () => {
       ).cleanupDeletedDocuments({
         batchSize: 10,
         leaseDurationMs: 60_000,
-        retentionMs: RETENTION_MS
+        retentionMs: RETENTION_MS,
+        purgeGraceMs: GRACE_MS
       })
       expect(result).toMatchObject({ claimed: 1, cleaned: 0, failed: 1 })
       expect(reports).toEqual([{ error: failure, context: { source: 'cleanup' } }])

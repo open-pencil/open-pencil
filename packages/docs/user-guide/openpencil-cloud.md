@@ -53,7 +53,7 @@ Every account starts with a workspace of its own. To work with a team, select **
 
 - **Members** lists who is in the workspace and when each person joined. Admins invite people by email as an admin, editor, or viewer, change roles, and remove people. Editors and admins change documents; viewers only look.
 - **Invited**, for admins, lists invitations nobody has accepted yet, with who sent each one and when it expires. An invitation arrives by email; if the server doesn't send email, copy the invitation link from the dialog and pass it on. Invitations expire after seven days. **Resend** sends one again with a new link, and the earlier link stops working; so does inviting the same address again.
-- **Settings** renames the workspace, and holds leaving and deleting it. Anyone can leave a workspace, except its last admin: make someone else an admin first. Admins can delete a workspace once it holds no documents. Deleted documents wait in Trash, and the workspace can be deleted once the server has removed them; **Delete forever** in Trash has them removed within days rather than at the end of their time in Trash.
+- **Settings** renames the workspace, and holds leaving and deleting it. Anyone can leave a workspace, except its last admin: make someone else an admin first. Admins can delete a workspace once it holds no documents. Deleted documents wait in Trash, and the workspace can be deleted once the server has removed them: at the end of their time in Trash, or, for one deleted forever, once its grace period has passed (7 days unless the server's administrators set another).
 
 Opening a workspace invitation works like a document invitation: sign in with the invited address, choose **Join workspace**, and Home shows the workspace.
 

@@ -10,8 +10,8 @@ import type { UploadCleanupResult, UploadCleanupService } from './uploads'
 export type CleanupWorkerOptions = {
   batchSize: number
   documentRetentionMs: number
-  /** How long a document deleted forever keeps its files; 0 when not given. */
-  documentPurgeGraceMs?: number
+  /** How long a document deleted forever keeps its files; 0 destroys it at once. */
+  documentPurgeGraceMs: number
   intervalMs: number
   leaseDurationMs: number
   signal?: AbortSignal
