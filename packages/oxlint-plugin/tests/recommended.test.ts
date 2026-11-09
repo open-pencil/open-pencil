@@ -61,7 +61,7 @@ describe('recommended', () => {
     expect(Object.values(PLUGINS).map((plugin) => plugin.meta?.name)).toEqual(
       domains.map((domain) => `@open-pencil/${domain}`)
     )
-    expect([...DOMAINS]).toEqual(domains)
+    expect(domains).toEqual([...DOMAINS])
     expect(Object.keys(manifest.exports).filter((path) => path !== './recommended')).toEqual(
       domains.map((domain) => `./${domain}`)
     )
