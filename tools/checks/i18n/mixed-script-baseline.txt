@@ -139,6 +139,7 @@ ja:commands.paletteDescription
 ja:credentials.apiKey
 ja:credentials.getAPIKey
 ja:credentials.rememberDevice
+ja:credentials.storeUnavailable
 ja:designCheck.ruleColorContrastHelp
 ja:designCheck.ruleMinTextSizeHelp
 ja:designCheck.ruleTouchTargetSizeHelp
@@ -371,6 +372,7 @@ zh-cn:commands.paletteDescription
 zh-cn:credentials.apiKey
 zh-cn:credentials.getAPIKey
 zh-cn:credentials.rememberDevice
+zh-cn:credentials.storeUnavailable
 zh-cn:designCheck.ruleColorContrastHelp
 zh-cn:designCheck.ruleMinTextSizeHelp
 zh-cn:designCheck.ruleTouchTargetSizeHelp
@@ -542,6 +544,7 @@ ja:cloudPortal.accountId
 ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
 ja:cloudPortal.pictureUnreadable
+ja:cloudPortal.noDocumentsFoundDescription
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -564,6 +567,7 @@ zh-cn:cloudPortal.accountIdDescription
 zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
 zh-cn:cloudPortal.pictureUnreadable
+zh-cn:cloudPortal.noDocumentsFoundDescription
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted

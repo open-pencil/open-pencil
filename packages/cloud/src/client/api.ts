@@ -47,9 +47,10 @@ import {
   type UpdateDocumentVersionInput,
   type SharedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  fileDocumentReportResponseSchema,
+  type FileDocumentReportInput,
   type UpdateDocumentShareInput,
   type AcceptedInvitation
 } from '#cloud/contract'
@@ -144,20 +145,6 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         servicesTokenSchema,
         options.onDiagnostic
       )
-    },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
-        options.onDiagnostic
-      )
-      return response.user
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
@@ -377,6 +364,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         }),
+        options.onDiagnostic
+      )
+    },
+    /** Reports the document a share link opens to the server's administrators. */
+    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
+      await parseResponse(
+        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
+        fileDocumentReportResponseSchema,
         options.onDiagnostic
       )
     },

@@ -32,7 +32,8 @@ import {
   type OnboardingGoal,
   type OnboardingAnswers,
   type PlannedModel,
-  uncoveredGoals
+  uncoveredGoals,
+  usableCurrentModels
 } from './plan'
 import { useOnboardingRoles } from './roles'
 import { useOnboardingSignIn } from './sign-in'
@@ -65,7 +66,12 @@ export function useAIOnboarding({
   subscriptionsAvailable = isTauri()
 }: AIOnboardingOptions = {}) {
   const answers = reactive<OnboardingAnswers>(initialAnswers())
-  const current = currentOnboardingModels(aiModelSettings.value)
+  // A configured model this app cannot run, such as an agent in a sandboxed package, does not
+  // count: chat would refuse it, so setup must not finish on it.
+  const current = usableCurrentModels(currentOnboardingModels(aiModelSettings.value), {
+    agentsAvailable,
+    subscriptionsAvailable
+  })
   const configured = [current.design, current.vision, current.review, current.fast].filter(
     (model): model is PlannedModel => model !== null && model !== 'design'
   )

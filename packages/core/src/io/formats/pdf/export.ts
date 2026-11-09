@@ -1,141 +1,74 @@
+import type { PDFDocument } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { computeContentBounds } from '#core/io/formats/raster'
-import { renderNodesToSVG, type SVGExportOptions, type SVGTextLayout } from '#core/io/formats/svg'
+import type { SkiaRenderer } from '#core/canvas'
+import { exportBounds, prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
+import { extractExportGraph } from '#core/io/subgraph'
 
-import { withPDFDOM, type SVGPageParser } from './dom'
-import {
-  cutFontInstances,
-  embeddedFontAlias,
-  planFontEmbedding,
-  registerEmbeddedFonts,
-  type PDFFallbackFontFile,
-  type PDFFontFace,
-  type PDFFontReport
-} from './fonts'
 import type { PDFPageSpec } from './plan'
+
+/**
+ * Resolution, in dots per inch of the page, of what PDF cannot draw as vectors and Skia draws as
+ * an image: blurs, shadows, noise, and shader fills. Twice the page's own 72 points per inch.
+ */
+export const PDF_RASTER_DPI = 144
 
 export interface PDFExportOptions {
   title?: string
-  /** The faces the text uses, to embed their files; without them text uses standard PDF fonts. */
-  fonts?: readonly PDFFontFace[]
-  /** Line breaks of text nodes as the editor laid them out, so paragraphs stay wrapped. */
-  textLayout?: SVGTextLayout
-  /** The files of fallback faces the text layout draws characters in, to embed them too. */
-  fallbackFile?: PDFFallbackFontFile
 }
 
 export interface PDFExportResult {
   data: Uint8Array
   /** The pages written, in order. Pages with nothing visible are skipped. */
   pages: Array<{ label?: string; width: number; height: number }>
-  /** Embedded and fallback faces, when `fonts` was given. */
-  fonts?: PDFFontReport
 }
 
-interface PreparedPage {
-  spec: PDFPageSpec
-  svgElement: Element
-  width: number
-  height: number
-}
-
-type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias'>
-
-function preparePage(
+/**
+ * A PDF with one page per spec, each sized to what its layers draw, drawn by the renderer as the
+ * canvas draws them: text in its embedded fonts, searchable, and everything else as vectors where
+ * PDF has them. Null when no page has anything visible. The renderer must have the pages' fonts
+ * and layout ready, as `exportPDFDocument` prepares them.
+ */
+export function renderPagesToPDF(
+  renderer: SkiaRenderer,
   graph: SceneGraph,
-  spec: PDFPageSpec,
-  svgOptions: PageSVGOptions,
-  parse: SVGPageParser
-): PreparedPage | null {
-  const svg = renderNodesToSVG(graph, spec.pageId, spec.nodeIds, {
-    xmlDeclaration: false,
-    ...svgOptions
-  })
-  if (!svg) return null
+  specs: readonly PDFPageSpec[],
+  options: PDFExportOptions = {}
+): PDFExportResult | null {
+  const doc = new renderer.ck.PDFDocument(options.title ?? '', 'OpenPencil', PDF_RASTER_DPI)
+  try {
+    const pages = specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    if (pages.length === 0) {
+      doc.abort()
+      return null
+    }
+    return { data: doc.close(), pages }
+  } finally {
+    doc.delete()
+  }
+}
 
-  const bounds = computeContentBounds(graph, spec.nodeIds)
+/** Draws the spec's layers on a page of their own, as PNG export draws them. */
+function drawPage(
+  doc: PDFDocument,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  spec: PDFPageSpec
+): PDFExportResult['pages'][number] | null {
+  const bounds = exportBounds(graph, spec.nodeIds)
   if (!bounds) return null
-
   const width = bounds.maxX - bounds.minX
   const height = bounds.maxY - bounds.minY
   if (width <= 0 || height <= 0) return null
 
-  const svgElement = parse(svg)
-  return svgElement ? { spec, svgElement, width, height } : null
-}
+  // Layers draw by themselves, without the page behind them, clipped by the frames around them.
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: spec.nodeIds })
+  if (!extracted.pageId) return null
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, spec.nodeIds)
 
-const orientationOf = (page: PreparedPage) => (page.width > page.height ? 'landscape' : 'portrait')
-
-/**
- * A PDF with one page per spec, each sized to its content. Null when no page has anything visible.
- */
-export function renderPagesToPDFDetailed(
-  graph: SceneGraph,
-  specs: readonly PDFPageSpec[],
-  options: PDFExportOptions = {}
-): Promise<PDFExportResult | null> {
-  return withPDFDOM((parse) => renderPages(graph, specs, options, parse))
-}
-
-async function renderPages(
-  graph: SceneGraph,
-  specs: readonly PDFPageSpec[],
-  options: PDFExportOptions,
-  parse: SVGPageParser
-): Promise<PDFExportResult | null> {
-  const embedding = options.fonts ? planFontEmbedding(options.fonts, options.fallbackFile) : null
-  const svgOptions: PageSVGOptions = {
-    textLayout: options.textLayout,
-    fontAlias: embedding ? embeddedFontAlias(embedding) : undefined
-  }
-  const preparePages = () =>
-    specs
-      .map((spec) => preparePage(graph, spec, svgOptions, parse))
-      .filter((page): page is PreparedPage => page !== null)
-  let prepared = preparePages()
-  if (prepared.length === 0) return null
-  const first = prepared[0]
-
-  // svg2pdf.js's `main` is a UMD build in a `"type": "module"` package with no `exports`, so
-  // Node loads it as ESM and it throws for want of a global jsPDF. Its ES build, the `module`
-  // file bundlers and Bun already pick, loads everywhere.
-  const [{ jsPDF }, { svg2pdf }] = await Promise.all([
-    import('jspdf'),
-    import('svg2pdf.js/dist/svg2pdf.es.min.js')
-  ])
-
-  const doc = new jsPDF({
-    orientation: orientationOf(first),
-    unit: 'pt',
-    format: [first.width, first.height],
-    compress: true
-  })
-
-  if (options.title) {
-    doc.setProperties({ title: options.title })
-  }
-
-  // The pages name the variable instances they draw, which are cut now. jsPDF reads a font file
-  // when it is registered, so a face it refuses is only known then. Either way, the pages are
-  // written again without the names of faces that are not embedded.
-  if (embedding) {
-    const cut = await cutFontInstances(embedding)
-    if (!registerEmbeddedFonts(doc, embedding) || !cut) prepared = preparePages()
-  }
-
-  for (const [index, page] of prepared.entries()) {
-    if (index > 0) doc.addPage([page.width, page.height], orientationOf(page))
-    await svg2pdf(page.svgElement, doc, { x: 0, y: 0, width: page.width, height: page.height })
-  }
-
-  return {
-    data: new Uint8Array(doc.output('arraybuffer')),
-    pages: prepared.map((page) => ({
-      label: page.spec.label,
-      width: page.width,
-      height: page.height
-    })),
-    ...(embedding ? { fonts: embedding.report } : {})
-  }
+  const canvas = doc.beginPage(width, height)
+  canvas.translate(-bounds.minX, -bounds.minY)
+  renderer.renderSceneToCanvas(canvas, extracted.graph, extracted.pageId)
+  doc.endPage()
+  return { label: spec.label, width, height }
 }

@@ -38,7 +38,7 @@ describe('touched checkpoint', () => {
     expect(graph.getNode(target)?.opacity).toBe(0.5)
   })
 
-  test('a rollback keeps identities, indexes, modes, and node order', () => {
+  test('a rollback keeps identities, indexes, and node order', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const frame = graph.createNode('FRAME', page)
@@ -46,20 +46,15 @@ describe('touched checkpoint', () => {
     const component = graph.createNode('COMPONENT', page)
     const instance = graph.createInstance(component.id, page)
     if (!instance) throw new Error('Missing instance')
-    const collection = graph.createCollection('Theme')
-    const dark = graph.createMode(collection.id, 'Dark')
-    if (!dark) throw new Error('Missing mode')
     const order = [...graph.nodes.keys()]
     const nodes = structuredClone(graph.nodes)
     const index = structuredClone(graph.instanceIndex)
-    const modes = structuredClone(graph.activeMode)
     const originals = new Map(graph.nodes)
 
     const checkpoint = captureTouchedCheckpoint(graph)
     graph.updateNode(rect.id, { opacity: 0.25 })
     graph.deleteNode(instance.id)
     graph.reparentNode(rect.id, page)
-    graph.setActiveMode(collection.id, dark)
     graph.createNode('ELLIPSE', frame.id)
     expect(() => checkpoint.assertPropertiesOnly()).toThrow('must not create or remove')
     checkpoint.restore()
@@ -68,7 +63,6 @@ describe('touched checkpoint', () => {
     expect(graph.nodes).toEqual(nodes)
     for (const [id, node] of originals) expect(graph.getNode(id)).toBe(node)
     expect(graph.instanceIndex).toEqual(index)
-    expect(graph.activeMode).toEqual(modes)
   })
 
   test('a node event without a report fails the edit', () => {

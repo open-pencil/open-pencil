@@ -1,0 +1,1 @@
+- Text links inside a library component point at the component's own layers after it is published, inserted, or updated, instead of at layers of the library file (#1906).

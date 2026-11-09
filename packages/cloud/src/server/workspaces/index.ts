@@ -1,5 +1,6 @@
 export {
   createWorkspaceMemberService,
+  handOverOwnership,
   WorkspaceAlreadyMemberError,
   WorkspaceForbiddenError,
   WorkspaceInvitationInvalidError,

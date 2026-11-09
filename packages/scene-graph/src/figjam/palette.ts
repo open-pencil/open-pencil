@@ -248,7 +248,7 @@ export function figJamOutlineColorName(color: Color | undefined): FigJamColorNam
  * How FigJam draws a section's title on a board, measured in FigJam: a pill in the colour of the
  * outline drawn on top, with white text on the palette's darkest colours and black on the rest;
  * null for a section without an outline from the palette. `colorOf` reads an outline's colour as
- * drawn, such as a variable's value in the active mode.
+ * drawn, such as a variable's value in the section's mode.
  */
 export function figJamSectionTitleColors(
   section: Pick<SceneNode, 'strokes'>,

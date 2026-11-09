@@ -1,7 +1,7 @@
-import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 import { watch } from 'vue'
 
+import type { CanvasKit, SkPicture } from '@open-pencil/canvaskit'
 import {
   recordJSXPreview,
   stageJSXPreview,

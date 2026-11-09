@@ -1,24 +1,10 @@
-import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ConstraintType } from '@open-pencil/scene-graph'
 
 import type { MIXED } from '#vue/controls/node-props/use'
 
 export type ConstraintAxis = 'horizontal' | 'vertical'
 export type ConstraintEdge = 'leading' | 'trailing'
 export type ConstraintValue = ConstraintType | typeof MIXED
-
-const CONSTRAINT_PARENT_TYPES = new Set<SceneNode['type']>([
-  'FRAME',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
-export function isConstraintEligible(graph: SceneGraph, node: SceneNode): boolean {
-  if (node.type === 'GROUP' || !node.parentId) return false
-  const parent = graph.getNode(node.parentId)
-  if (!parent || !CONSTRAINT_PARENT_TYPES.has(parent.type)) return false
-  return parent.layoutMode === 'NONE' || node.layoutPositioning === 'ABSOLUTE'
-}
 
 export function constraintPins(value: ConstraintValue): {
   leading: boolean

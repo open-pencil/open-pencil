@@ -27,7 +27,8 @@ const {
   nodeIds,
   bindingPath,
   bindingPaths,
-  units
+  units,
+  round
 } = defineProps<{
   modelValue: number | symbol
   min?: number
@@ -45,6 +46,8 @@ const {
   bindingPaths?: readonly NumberBindingPath[]
   /** Units a typed value may end with; the commit reports the one typed. */
   units?: readonly string[]
+  /** How a bound value is shown and edited from, as the unbound value the caller passes is. */
+  round?: (value: number) => number
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +92,7 @@ defineOptions({ inheritAttrs: false })
       :max="max"
       :step="step"
       :units="units"
+      :round="round"
       :ui="{ root: bindingStyles.root }"
       :data-property="bindingPath"
       :aria-label="accessibleLabel"
@@ -125,7 +129,7 @@ defineOptions({ inheritAttrs: false })
             :detach-label="panels.detachVariable"
             :create-label="
               panels.createNumberVariable({
-                value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
+                value: typeof modelValue === 'number' ? modelValue : 0
               })
             "
             :create-name-placeholder="panels.variableName"

@@ -31,7 +31,9 @@ export function makeFigmaFromStore(
     // The font manager lists the installed families once the host has read them.
     prepareFontList: async () => {
       await listFonts()
-    }
+    },
+    // The editor syncs instances after edits; a script's reads sync them at once, as in Figma.
+    flushComponentSync: () => store.flushComponentSync()
   })
   api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider

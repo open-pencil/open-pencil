@@ -8,7 +8,7 @@ import type {
   RectWidthStyle,
   RectWithDirection,
   ShapedLine
-} from 'canvaskit-wasm'
+} from '@open-pencil/canvaskit'
 
 import {
   figmaLineBox,

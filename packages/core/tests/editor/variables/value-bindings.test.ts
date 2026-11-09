@@ -31,10 +31,14 @@ test('text bound to a variable follows an edited value and its undo', () => {
   expect(text.text).toBe('Save')
 })
 
-test('bound text and visibility follow the mode the collection shows', () => {
+test('bound text and visibility follow a mode set on the page', () => {
   const { editor, copy, french, text } = boundText()
 
-  editor.setActiveMode(copy.id, french)
+  editor.updateNodeWithUndo(
+    editor.graph.getPages()[0].id,
+    { variableModes: { [copy.id]: french } },
+    'Set mode'
+  )
 
   expect(text.text).toBe('Enregistrer')
   expect(text.visible).toBe(false)

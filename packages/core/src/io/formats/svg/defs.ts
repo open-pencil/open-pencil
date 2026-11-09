@@ -1,4 +1,4 @@
-import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -13,26 +13,9 @@ import {
 import { drawnImageHash, imageDataURL } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { FontFaceRef } from '#core/text/font/faces'
-
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
-
-/**
- * A face text is drawn in, with what sets its axes: the font size the optical size follows unless
- * `opticalSizeFromFontSize` is off, and the axes the text sets.
- */
-export interface SVGFontRequest extends FontFaceRef {
-  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
-  file?: number
-  fontSize: number
-  variations: readonly FontVariation[]
-  opticalSizeFromFontSize: boolean
-}
-
-/** The family to name a font face by instead of its own, or null to keep the face. */
-export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -45,7 +28,6 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
-  fontAlias?: SVGFontAlias
   /**
    * When layers are written with their names as ids: how many have taken each name, and every id
    * given out so far, defs included, so no two elements share one.

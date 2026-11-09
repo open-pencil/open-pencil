@@ -189,6 +189,9 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
   if (config.deploymentAdminMFARequired && !config.totpEnabled && !config.passkeysEnabled) {
     throw new CloudConfigError('Deployment administrator MFA requires TOTP or passkeys')
   }
+  if (config.deployment === 'official' && !config.deploymentAdminMFARequired) {
+    throw new CloudConfigError('An official deployment requires MFA for deployment administrators')
+  }
   if (config.recoveryCodesEnabled && !config.totpEnabled) {
     throw new CloudConfigError('MFA recovery codes require TOTP')
   }

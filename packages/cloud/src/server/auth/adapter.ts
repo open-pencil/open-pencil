@@ -74,6 +74,12 @@ export interface CloudAuthAdapter {
   revokeSession(headers: Headers, sessionId: string): Promise<void>
   revokeOtherSessions(headers: Headers): Promise<void>
   signIns(headers: Headers): Promise<CloudSignIn[] | null>
+  /**
+   * Deletes the signed-in account through Better Auth, after Cloud removes what it keeps about
+   * it; a session that signed in a while ago gives its password. Answers the headers that clear the
+   * session cookie.
+   */
+  deleteAccount(headers: Headers, password?: string): Promise<Headers>
   migrate: () => Promise<void>
   schemaVersion: string
 }

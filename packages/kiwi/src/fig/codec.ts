@@ -155,7 +155,13 @@ export interface Paint {
 }
 
 export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+  type:
+    | 'DROP_SHADOW'
+    | 'INNER_SHADOW'
+    | 'LAYER_BLUR'
+    | 'BACKGROUND_BLUR'
+    | 'FOREGROUND_BLUR'
+    | 'GLASS'
   color?: Color
   offset?: Vector
   radius?: number
@@ -163,6 +169,18 @@ export interface Effect {
   spread?: number
   blendMode?: string
   showShadowBehindNode?: boolean
+  /** A glass effect's depth, which Figma's plugin API calls `depth`. */
+  refractionRadius?: number
+  /** A glass effect's `refraction`. */
+  refractionIntensity?: number
+  /** A glass effect's `lightAngle`, in degrees. */
+  specularAngle?: number
+  /** A glass effect's `lightIntensity`. */
+  specularIntensity?: number
+  /** A glass effect's `dispersion`. */
+  chromaticAberration?: number
+  /** Figma writes 1 on every glass effect and has no control for it. */
+  bevelSize?: number
   colorVar?: VariableDataEntry
   radiusVar?: VariableDataEntry
   spreadVar?: VariableDataEntry

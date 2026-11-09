@@ -3,6 +3,7 @@ import { isEqual, mapValues } from 'es-toolkit'
 import { componentPropertyDefinitions } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { remapInstanceOverrideState } from '../instances/overrides'
+import { remapStyleRunReferences } from '../text/references'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 
 /** How a layer's references to other layers are resolved anew. */
@@ -13,7 +14,18 @@ export interface ReferenceResolvers {
   layer: (id: string, component: string | null) => string
   /** The layer a connector's end follows now. */
   endpoint: (id: string) => string
+  /**
+   * The layer a text link names now. Without it links keep naming their layers, as Figma's
+   * duplicate and paste do (desktop 126); copies into another document, which lacks those
+   * layers, pass it.
+   */
+  link?: (id: string) => string
   variable: (id: string) => string
+}
+
+/** Copies placed in another document, whose text links must follow the copy. */
+export interface CopiedReferenceOptions {
+  followTextLinks?: boolean
 }
 
 function swapPropertyIds(definitions: readonly ComponentPropertyDefinition[]): string[] {
@@ -81,6 +93,14 @@ export function resolvedReferences(
     const nodeId = endpoint?.nodeId ? resolve.endpoint(endpoint.nodeId) : null
     if (endpoint && nodeId && nodeId !== endpoint.nodeId) changes[field] = { ...endpoint, nodeId }
   }
+  if (resolve.link) {
+    const styleRuns = remapStyleRunReferences(node.styleRuns, {
+      variable: (id) => id,
+      style: (id) => id,
+      node: resolve.link
+    })
+    if (!isEqual(styleRuns, node.styleRuns)) changes.styleRuns = styleRuns
+  }
   return changes
 }
 
@@ -90,17 +110,20 @@ export function resolvedReferences(
  * components an instance-swap property defaults to or is set to, and the layers a connector's
  * ends follow. `mappedIds` maps each copied layer to its copy, such as a library copy or a design
  * JSX render folded into the layers it replaces; a reference outside the copy stays as it is, and
- * so do variable IDs, since the copies keep their source's variables.
+ * so do variable IDs, since the copies keep their source's variables. Text links follow the copy
+ * only with `followTextLinks`.
  */
 export function remapCopiedReferences(
   graph: SceneGraph,
-  mappedIds: ReadonlyMap<string, string>
+  mappedIds: ReadonlyMap<string, string>,
+  options: CopiedReferenceOptions = {}
 ): void {
   const mapped = (id: string) => mappedIds.get(id) ?? id
   const resolve: ReferenceResolvers = {
     component: mapped,
     layer: mapped,
     endpoint: mapped,
+    link: options.followTextLinks ? mapped : undefined,
     variable: (id) => id
   }
   const copies = [...mappedIds.values()].flatMap((id) => graph.getNode(id) ?? [])

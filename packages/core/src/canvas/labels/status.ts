@@ -1,5 +1,4 @@
-import type { Canvas, Paragraph } from 'canvaskit-wasm'
-
+import type { Canvas, Paragraph } from '@open-pencil/canvaskit'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { StatusState } from '@open-pencil/scene-graph/statuses'

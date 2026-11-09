@@ -32,6 +32,8 @@ export function createConversationHistory<TChat extends HistoryChat>(
   // Weak, so the history does not keep a closed document's editor alive.
   let owner: WeakRef<ChatDocumentEditor> | null = null
   let operation: Promise<unknown> = Promise.resolve()
+  let disposed = false
+  let disposal: Promise<void> | null = null
   const session = createHistorySession(() => runtime.resetChat())
   const { flush, storageError } = createHistoryPersistence({
     store,
@@ -164,6 +166,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
 
   function ensureChat() {
     return serialize(async () => {
+      if (disposed) return null
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
       const resume = resumableSession(current.value)
@@ -198,6 +201,17 @@ export function createConversationHistory<TChat extends HistoryChat>(
 
   function initialize() {
     return serialize(loadDocument)
+  }
+  /**
+   * Saves the conversation and releases its agent before this runtime is replaced. No chat starts
+   * afterwards; a save that failed is tried again by the next call.
+   */
+  function dispose(): Promise<void> {
+    disposed = true
+    return (disposal ??= serialize(detach).catch((error: unknown) => {
+      disposal = null
+      throw error
+    }))
   }
   function newChat() {
     return serialize(async () => {
@@ -249,6 +263,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     busy,
     storageError,
     initialize,
+    dispose,
     ensureChat,
     flush,
     newChat,

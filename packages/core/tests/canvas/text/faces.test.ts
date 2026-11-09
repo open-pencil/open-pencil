@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'

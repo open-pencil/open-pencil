@@ -1,5 +1,4 @@
-import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
-
+import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'

@@ -1,6 +1,6 @@
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
@@ -10,7 +10,12 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+import {
+  fillsGainingGlass,
+  parseFigmaEffects,
+  toFigmaEffect,
+  type FigmaEffect
+} from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
 import {
   keepVideoPosters,
@@ -28,24 +33,19 @@ import {
 import { textStyleChanges } from '#core/text/character-style'
 
 /**
- * `node`'s fills as Figma's plugin API reads them, bound colours resolved and carrying the
- * variable they are bound to.
+ * `node`'s fills as Figma's plugin API reads them, each carrying the variable it is bound to. A
+ * bound paint reads as it stores its color and opacity, which its variable writes into it when it
+ * binds and whenever the color it gives the layer changes, as in Figma.
  */
-export function figmaFills(sceneGraph: SceneGraph, node: SceneNode): FigmaPaint[] {
+export function figmaFills(node: SceneNode): FigmaPaint[] {
   const bound = paintBindings(node, 'fills')
-  const fills = bound.size
-    ? (resolvedPaintBindings(sceneGraph, node).fills ?? node.fills)
-    : node.fills
-  return fills.map((fill, index) => toFigmaPaint(fill, bound.get(index)))
+  return node.fills.map((fill, index) => toFigmaPaint(fill, bound.get(index)))
 }
 
 /** `node`'s strokes as Figma's plugin API reads them, as {@link figmaFills} reads fills. */
-export function figmaStrokes(sceneGraph: SceneGraph, node: SceneNode): FigmaPaint[] {
+export function figmaStrokes(node: SceneNode): FigmaPaint[] {
   const bound = paintBindings(node, 'strokes')
-  const strokes = bound.size
-    ? (resolvedPaintBindings(sceneGraph, node).strokes ?? node.strokes)
-    : node.strokes
-  return strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
+  return node.strokes.map((stroke, index) => toFigmaPaint(stroke, bound.get(index)))
 }
 
 /**
@@ -115,13 +115,10 @@ export function installVisualNodeProxyAccessors(
       // regions are; setting it fills them all.
       get(this: ProxyThis): readonly FigmaPaint[] | symbol {
         const node = raw(this, internals)
-        const sceneGraph = graphOf(this)
-        if (node.type === 'VECTOR') {
-          // A region without paints of its own draws the layer's, its bound colors resolved.
-          const layer = resolvedPaintBindings(sceneGraph, node).fills ?? node.fills
-          if (regionFillsDiffer(node.vectorNetwork, layer)) return mixed
-        }
-        if (node.type !== 'TEXT') return Object.freeze(figmaFills(sceneGraph, node))
+        // A region without paints of its own draws the layer's.
+        if (node.type === 'VECTOR' && regionFillsDiffer(node.vectorNetwork, node.fills))
+          return mixed
+        if (node.type !== 'TEXT') return Object.freeze(figmaFills(node))
         const fills = getTextStyle(node, 'fills', mixed)
         // Text styles read for scripts already give Figma's paints.
         return typeof fills === 'symbol' ? fills : Object.freeze(fills as FigmaPaint[])
@@ -133,7 +130,7 @@ export function installVisualNodeProxyAccessors(
     strokes: {
       get(this: ProxyThis): readonly FigmaPaint[] {
         const owner = raw(strokeOwner(this, internals), internals)
-        return Object.freeze(figmaStrokes(graphOf(this), owner))
+        return Object.freeze(figmaStrokes(owner))
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
         setStrokes(this, internals, value, 'set_strokes')
@@ -158,7 +155,10 @@ export function installVisualNodeProxyAccessors(
         return Object.freeze(figmaEffects(raw(this, internals)))
       },
       set(this: ProxyThis, value: readonly FigmaEffect[]) {
-        updateNode(this, internals, { effects: parseFigmaEffects(value) })
+        const node = raw(this, internals)
+        const effects = parseFigmaEffects(value)
+        const fills = fillsGainingGlass(node.effects, effects, node.fills)
+        updateNode(this, internals, fills ? { effects, fills } : { effects })
         setEffectBindings(graphOf(this), raw(this, internals), value)
       }
     },

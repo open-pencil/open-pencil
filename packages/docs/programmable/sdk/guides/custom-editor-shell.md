@@ -125,19 +125,68 @@ editor.setHostRestrictions({ pathEdits: 'handles' })
 
 // Layers stay as they are: nothing moves, resizes, restyles, or is added or deleted, by the
 // canvas, the keys, or the editor's actions, which throw a `FixedLayersError`; vector edit mode
-// still reshapes a path. Lift it while the host builds the document itself.
+// still reshapes a path.
 editor.setHostRestrictions({ layerEdits: 'none' })
+
+// Layers only move, within their parents: dragging and arrow keys work, and everything else,
+// resizing and rotating included, throws a `MoveOnlyLayersError`.
+editor.setHostRestrictions({ layerEdits: 'move' })
+
+// The host's own edits run past its restrictions, which narrow what the person does; a read-only
+// document still refuses them. Undo takes them back like any other step. They run synchronously:
+// await outside `asHost`, not inside it.
+editor.asHost(() => editor.booleanOperationSelected('UNION'))
 
 // Open one path for editing and keep it open: clicking off it, Escape, Enter, another tool, or
 // another layer leave it open. Every point shows its handles.
-editor.enterNodeEditMode(nodeId, { keepOpen: true, handles: 'all' })
+editor.enterNodeEditMode(nodeId, { keepOpen: true, showHandles: 'all' })
 
 // The host ends it; so do switching pages, deleting the layer, replacing the document, and
 // going read-only.
 editor.exitNodeEditMode(true, { release: true })
 ```
 
+Undo and redo stop at the steps made before layers were restricted. A host that responds to the person's edits, such as snapping a dropped layer into place, records its response into their step with `recordEdit({ label, joinStep: step }, run)`, so one undo takes back both. `history:changed` says why history changed (`'record'`, `'join'`, `'undo'`, `'redo'`, or `'clear'`) and passes the step it recorded, so the host responds to new steps only. A response whose step was undone or followed by another before it ran changes nothing:
+
+```ts
+editor.onEditorEvent('history:changed', (change, step) => {
+  if (change !== 'record') return
+  queueMicrotask(() => editor.recordEdit({ label: 'Snap', joinStep: step }, snap))
+})
+```
+
 `setReadOnly(true)` is the strongest restriction: the document can be looked at, selected in, and copied from, and an open path closes.
+
+## Guiding what the person does
+
+A shell that judges input as it comes, such as a tracing game, follows the gesture in progress through editor events, in page coordinates, and refuses one with `cancelGesture()`: the gesture is taken back with no undo step and no redo, and the canvas drops it.
+
+```ts
+// Before a press of the pen acts: kind is 'start', 'point', 'redo-handle', or 'close'.
+editor.onEditorEvent('pen:pressed', ({ at, kind }) => {
+  if (kind === 'start' && !nearStart(at)) editor.cancelGesture()
+})
+
+// After the press placed its point or set up a close, before anything commits; segment is the
+// cubic it finished, the closing one for a close.
+editor.onEditorEvent('pen:released', ({ kind, segment }) => {
+  if (segment && !onShape(segment)) editor.cancelGesture()
+})
+
+// Points the pen and vector edit mode snap to, alongside the path's own.
+editor.setSnapTargets({ points: [shapeStart, shapeEnd] })
+```
+
+A host decides where the person's moves put layers with a move policy, which sees each drag's live preview as well as the move that lands, nudges, and X and Y typed in the position panel:
+
+```ts
+// Letters stay on their line; anything else moves as the person moves it.
+editor.setMovePolicy(({ node, to }) => (letters.has(node.id) ? { x: to.x, y: node.y } : to))
+```
+
+It returns where the layer goes, adjusted however the host likes, or `null` to keep it where it is; a drag it refuses changes nothing, not even the frame it was dropped over. It decides moves only: resizing, rotating, and edits through `updateNode` place layers as they say, and the host's own edits (`asHost`) and undo and redo pass it. A front end of its own asks it with `editor.constrainMove(node, changes)`.
+
+`cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `onEscape` and `shortcuts`.
 
 ## Why this split works
 

@@ -135,13 +135,4 @@ describe('variables in a room', () => {
       expect(guest.graph.variableCollections.get(ids.collection)?.name).toBe('Palette')
     })
   })
-
-  test('which mode a collection shows stays each viewer’s own', async () => {
-    await withRoom(async ({ host, guest, settle, ids }) => {
-      host.setActiveMode(ids.collection, ids.dark)
-      await settle()
-      expect(host.graph.activeMode.get(ids.collection)).toBe(ids.dark)
-      expect(guest.graph.activeMode.get(ids.collection)).toBeUndefined()
-    })
-  })
 })

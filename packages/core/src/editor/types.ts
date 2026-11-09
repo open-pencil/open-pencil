@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -14,7 +13,7 @@ import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
-import type { UndoManager } from '@open-pencil/scene-graph/undo'
+import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
@@ -22,9 +21,12 @@ import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { DecidedMove } from '#core/editor/move-policy'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { PenPressEvent, PenReleaseEvent } from '#core/editor/shapes/pen/gesture'
 import type { NodeEditState } from '#core/editor/vector/types'
+import type { ViewportInsets } from '#core/editor/viewport'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -134,6 +136,11 @@ export interface EditorViewState {
   selectedIds: Set<string>
   marquee: Rect | null
   snapGuides: SnapGuide[]
+  /**
+   * Points the host adds to what the pen and vector edit mode snap to, on the current page
+   * (`setSnapTargets`), such as where a traced shape starts and ends.
+   */
+  snapTargets: { points: Vector[] }
   guides: GuideOverlayState
   rotationPreview: RotationPreview | null
   dropTargetId: string | null
@@ -245,12 +252,24 @@ export interface EditorEvents extends SceneGraphEvents {
   /** The host's restrictions changed (`setHostRestrictions`); read them from the profile. */
   'document:restrictions-changed': () => void
   'document:kind-changed': (kind: DocumentKind) => void
-  'history:changed': () => void
+  /**
+   * Committed history changed: a new step was recorded, with the step; a change joined it
+   * (`'join'`); or undo, redo, or clearing ran. A host that responds to the person's edits
+   * responds to `'record'`, joining its response to the step (`recordEdit`'s `joinStep`); undo and
+   * redo bring back a document that was already responded to.
+   */
+  'history:changed': (change: HistoryChange, step?: UndoEntry) => void
   /**
    * An edit or batch ended without a step, rolled back or changing nothing, so what it changed
    * meanwhile is undone. The history is unchanged.
    */
   'edit:discarded': () => void
+  /** A press of the pen, before it acts; `cancelGesture` refuses it. */
+  'pen:pressed': (event: PenPressEvent) => void
+  /** The release ending a press of the pen, before it commits; `cancelGesture` takes it back. */
+  'pen:released': (event: PenReleaseEvent) => void
+  /** The gesture in progress was taken back (`cancelGesture`); the canvas drops what it holds. */
+  'gesture:cancelled': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
@@ -306,6 +325,8 @@ export interface EditorContext {
   ) => Promise<ArrayBuffer | null>
   resolveFigmaClipboardImages: FigmaClipboardImageResolver | null
   getViewportSize: () => { width: number; height: number }
+  /** Screen pixels of floating UI over each canvas edge, which fitted layers keep clear of. */
+  getViewportChrome: () => ViewportInsets
   getUserName: () => string
   icons: IconProvider
   getCk: () => CanvasKit | null
@@ -314,6 +335,12 @@ export interface EditorContext {
   getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A change to a layer with its position as the host's move policy decides it (`setMovePolicy`). */
+  constrainMove: <T extends Partial<SceneNode>>(
+    node: SceneNode,
+    changes: T,
+    preview?: boolean
+  ) => DecidedMove<T>
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
   requestRefresh: () => void
   requestRepaint: () => void

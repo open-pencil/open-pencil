@@ -1,0 +1,1 @@
+- `penCancelPress` and `nodeEditCancelDrag` are replaced by `cancelGesture`, which takes back whichever gesture is in progress (#1922).

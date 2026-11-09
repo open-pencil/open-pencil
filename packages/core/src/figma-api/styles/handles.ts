@@ -145,7 +145,7 @@ export class FigmaPaintStyle extends FigmaBaseStyle {
 
   get paints(): readonly FigmaPaint[] {
     const node = styleNode(this, 'get_paints')
-    return Object.freeze(figmaFills(hostOf(this).graph, node).map((paint) => Object.freeze(paint)))
+    return Object.freeze(figmaFills(node).map((paint) => Object.freeze(paint)))
   }
 
   set paints(value: readonly FigmaPaint[]) {

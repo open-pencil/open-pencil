@@ -9,6 +9,7 @@ import type {
   RequestImageUploadsInput,
   SharedDocument
 } from '#cloud/contract'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
 import type { CloudDatabase } from '#cloud/server/db'
 import {
@@ -49,7 +50,6 @@ const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const UPLOAD_LIFETIME_MS = 15 * 60 * 1000
 /** How many of a save's images are checked and landed at once. */
 const IMAGE_COMMIT_CONCURRENCY = 8
-const WRITABLE_ROLES = new Set(['admin', 'editor'])
 
 export type DocumentServiceOptions = {
   policy?: CloudPolicy
@@ -436,7 +436,7 @@ export function createDocumentService(
     ): Promise<DocumentSummary> {
       const role = await workspaceRole(database, userId, workspaceId)
       if (!role) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(role)) throw new DocumentForbiddenError()
+      if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
       const documentId = input.id ?? crypto.randomUUID()
       await insertDocument(database, {
         id: documentId,

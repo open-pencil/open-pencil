@@ -1,8 +1,8 @@
 import { whenever } from '@vueuse/core'
-import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import { nextFrame } from '#vue/shared/frame'

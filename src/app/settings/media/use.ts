@@ -5,6 +5,7 @@ import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
 
 import { vectorizeProviderID } from '@/app/editor/vectorize'
 import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import {
   checkMediaKey,
   exaKeyStatus,
@@ -96,7 +97,7 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
       }
       return !isDisposed()
     } catch (cause) {
-      if (!isDisposed()) saveError.value = cause instanceof Error ? cause.message : String(cause)
+      if (!isDisposed()) saveError.value = settingsErrorMessage(cause)
       return false
     } finally {
       busy.value = false

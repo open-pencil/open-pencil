@@ -3,17 +3,17 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import type { RenderChunk } from '#core/canvas/renderer/chunks'
 import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
 import { asRenderer, expectRgbaPixels } from '#core-tests/canvas/helpers'
 
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 function renderPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string, chunked: boolean) {

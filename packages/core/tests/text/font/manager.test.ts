@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, facesFromStyles } from '@open-pencil/core/text'

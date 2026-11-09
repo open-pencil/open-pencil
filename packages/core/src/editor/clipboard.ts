@@ -3,7 +3,10 @@ import { uniq } from 'es-toolkit'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
 import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import {
+  getAxisAlignedBoundsInParent,
+  getNodeLocalMatrix
+} from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
@@ -195,6 +198,13 @@ export function createClipboardActions(ctx: EditorContext) {
         if (created.length === 0) return null
 
         if (replacementTargets.length > 0) {
+          // The clipboard holds each layer as drawn on its canvas, and the import keeps that as
+          // the layer's transform in the target's frame: turn it back, as the in-app paste does.
+          const copied = created.flatMap((id) => {
+            const node = ctx.graph.getNode(id)
+            return node ? [getNodeLocalMatrix(node)] : []
+          })
+          placementActions.keepCanvasTransforms(created, copied)
           replaceTargetsWithCreated(ctx, created, replacementTargets, prevSelection, operation)
         } else {
           placementActions.placeForeignPaste(created, pasteTarget, cursorPos)

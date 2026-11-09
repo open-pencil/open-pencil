@@ -93,7 +93,7 @@ describe('SF Symbols', () => {
     const house = icons.get('sf-symbols:house')
     expect(house?.options).toEqual({ weight: 'bold', scale: 'medium', rendering: 'monochrome' })
     expect(house?.width).toBe(24)
-    expect(house?.paths.map((path) => path.fillOpacity)).toEqual([1, 0.498])
+    expect(house?.paths.map((path) => path.fills[0]?.opacity)).toEqual([1, 0.498])
   })
 
   test('places each layer at its opacity, which recoloring keeps', async () => {

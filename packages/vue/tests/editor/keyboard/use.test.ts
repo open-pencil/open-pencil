@@ -217,6 +217,60 @@ describe('useEditorKeyboard', () => {
     input.remove()
   })
 
+  test('leaves keys pressed in an open menu to the menu, and takes them once it is closing', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'open')
+    menu.tabIndex = -1
+    dom.document.body.appendChild(menu)
+    const pressInMenu = () =>
+      menu.dispatchEvent(
+        new dom.KeyboardEvent('keydown', {
+          code: 'KeyR',
+          key: 'r',
+          bubbles: true,
+          cancelable: true
+        })
+      )
+
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('SELECT')
+
+    menu.setAttribute('data-state', 'closed')
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    menu.remove()
+  })
+
+  test('keeps a key it takes from the item of a closing menu, which would act on it too', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'closed')
+    const item = dom.document.createElement('div')
+    item.setAttribute('role', 'menuitem')
+    menu.appendChild(item)
+    dom.document.body.appendChild(menu)
+    const itemKeys: string[] = []
+    item.addEventListener('keydown', (event) => {
+      if (event instanceof dom.KeyboardEvent) itemKeys.push(event.key)
+    })
+    const pressInItem = (code: string, key: string) =>
+      item.dispatchEvent(
+        new dom.KeyboardEvent('keydown', { code, key, bubbles: true, cancelable: true })
+      )
+
+    pressInItem('KeyR', 'r')
+    pressInItem('KeyQ', 'q')
+    // X arms a connector only on a board; in a design file it is the menu's.
+    pressInItem('KeyX', 'x')
+
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    expect(itemKeys).toEqual(['q', 'x'])
+    menu.remove()
+  })
+
   test('a host key that replaces an editor key carries its own view and history rules', () => {
     const ran: string[] = []
     const editor = mountKeyboard({
@@ -312,6 +366,17 @@ describe('useEditorKeyboard', () => {
 
     press('KeyZ', mod())
     expect(editor.state.nodeEditState?.segments[0]?.tangentStart).toEqual({ x: 0, y: 0 })
+  })
+
+  test("a global host key runs while text is edited and stops the browser's own action", () => {
+    const ran: string[] = []
+    const editor = mountKeyboard({
+      shortcuts: [{ id: 'host-save', keys: 'Mod+S', run: () => ran.push('save'), global: true }]
+    })
+    const text = editor.createShape('TEXT', 0, 0, 100, 20)
+    editor.state.editingTextId = text
+    expect(press('KeyS', mod())).toBe(true)
+    expect(ran).toEqual(['save'])
   })
 
   test("a preview leaves Space to its controls and still stops the browser's own Save", () => {

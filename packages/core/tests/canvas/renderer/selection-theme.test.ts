@@ -3,9 +3,9 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '#core/canvas'
 import { DEFAULT_SELECTION_THEME } from '#core/constants'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 function withRenderer(run: (renderer: SkiaRenderer) => void) {
   const surface = expectDefined(ck.MakeSurface(64, 64), 'surface')
