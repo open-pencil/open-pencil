@@ -16,7 +16,7 @@ export {
 } from './render'
 export {
   headlessRenderer,
-  headlessExportRenderer,
+  withHeadlessExport,
   headlessRenderNodes,
   headlessRenderThumbnail
 } from './headless'

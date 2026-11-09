@@ -36,19 +36,21 @@ export async function exportPDFDocument(
   specs: readonly PDFPageSpec[],
   { renderer: hostRenderer, ...options }: PDFDocumentOptions = {}
 ): Promise<PDFExportResult | null> {
-  const renderer =
-    hostRenderer ??
-    (await (await import('#core/io/formats/raster/headless')).headlessExportRenderer())
-  const byPage = groupBy(specs, (spec) => spec.pageId)
-  for (const [pageId, pageSpecs] of Object.entries(byPage)) {
-    await renderer.prepareForExport(
-      graph,
-      pageId,
-      pageSpecs.flatMap((spec) => spec.nodeIds)
+  const draw = async (renderer: SkiaRenderer) => {
+    const byPage = groupBy(specs, (spec) => spec.pageId)
+    for (const [pageId, pageSpecs] of Object.entries(byPage)) {
+      await renderer.prepareForExport(
+        graph,
+        pageId,
+        pageSpecs.flatMap((spec) => spec.nodeIds)
+      )
+    }
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () => renderPagesToPDF(renderer, graph, specs, options)
     )
   }
-  return withTextInkMeasurer(
-    (node) => renderer.measureTextInk(node),
-    () => renderPagesToPDF(renderer, graph, specs, options)
-  )
+  if (hostRenderer) return draw(hostRenderer)
+  const { withHeadlessExport } = await import('#core/io/formats/raster/headless')
+  return withHeadlessExport(draw)
 }

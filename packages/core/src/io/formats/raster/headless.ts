@@ -8,6 +8,8 @@ import { withTextInkMeasurer } from '#core/text/ink'
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
 let cachedRenderer: Promise<SkiaRenderer> | null = null
+/** The headless export holding the renderer, which the next one waits for. */
+let exporting: Promise<unknown> = Promise.resolve()
 
 /**
  * The one headless renderer a process keeps, fonts loaded: every renderer registers its own font
@@ -42,14 +44,22 @@ async function createRenderer(ck: CanvasKit): Promise<SkiaRenderer> {
 }
 
 /**
- * The headless renderer, ready to draw another document: paths kept by layer id belong to the
- * document drawn before, whose layers can share those ids.
+ * Runs `job` with the headless renderer to itself, after the exports before it finish, and clear
+ * of what they drew: the renderer keeps paths and pictures by layer id, which layers of another
+ * document can share, such as two copies read from one file. An export that prepared or drew
+ * while another one did could draw that one's shapes.
  */
-export async function headlessExportRenderer(): Promise<SkiaRenderer> {
-  const { renderer } = await getRenderer()
-  renderer.nodePaths.clear()
-  renderer.invalidateAllPictures()
-  return renderer
+export function withHeadlessExport<T>(
+  job: (renderer: SkiaRenderer, ck: CanvasKit) => Promise<T>
+): Promise<T> {
+  const run = exporting.then(async () => {
+    const { ck, renderer } = await getRenderer()
+    renderer.nodePaths.clear()
+    renderer.invalidateAllPictures()
+    return job(renderer, ck)
+  })
+  exporting = run.catch(() => undefined)
+  return run
 }
 
 export async function headlessRenderNodes(
@@ -64,21 +74,21 @@ export async function headlessRenderNodes(
     useAbsoluteBounds?: boolean
   } = {}
 ): Promise<Uint8Array | null> {
-  const ck = await getCanvasKit()
-  const renderer = await headlessExportRenderer()
-  await renderer.prepareForExport(graph, pageId, nodeIds)
-  // An export takes a text by its ink, as Figma's do.
-  return withTextInkMeasurer(
-    (node) => renderer.measureTextInk(node),
-    () =>
-      renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
-        scale: options.scale ?? 1,
-        format: options.format ?? 'PNG',
-        quality: options.quality,
-        trimTransparent: options.trimTransparent,
-        useAbsoluteBounds: options.useAbsoluteBounds
-      })
-  )
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, nodeIds)
+    // An export takes a text by its ink, as Figma's do.
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () =>
+        renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
+          scale: options.scale ?? 1,
+          format: options.format ?? 'PNG',
+          quality: options.quality,
+          trimTransparent: options.trimTransparent,
+          useAbsoluteBounds: options.useAbsoluteBounds
+        })
+    )
+  })
 }
 
 export async function headlessRenderThumbnail(
@@ -87,11 +97,11 @@ export async function headlessRenderThumbnail(
   width: number,
   height: number
 ): Promise<Uint8Array | null> {
-  const ck = await getCanvasKit()
-  const renderer = await headlessExportRenderer()
-  await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
-  return withTextInkMeasurer(
-    (node) => renderer.measureTextInk(node),
-    () => renderThumbnail(ck, renderer, graph, pageId, width, height)
-  )
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () => renderThumbnail(ck, renderer, graph, pageId, width, height)
+    )
+  })
 }
