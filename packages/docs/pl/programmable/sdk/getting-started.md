@@ -11,6 +11,8 @@ description: Podłącz @open-pencil/vue, utwórz edytor i skonfiguruj obszar rob
 bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
+Płótno wczytuje w czasie działania `canvaskit.wasm` z `@open-pencil/canvaskit/dist/` oraz dołączone fonty; jak je udostępnić, opisuje [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (po angielsku).
+
 SDK znajduje się w monorepo OpenPencil i jest publikowany jako pakiet `@open-pencil/vue`.
 
 ```ts

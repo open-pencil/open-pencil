@@ -11,6 +11,8 @@ description: Conecta @open-pencil/vue, crea un editor y configura el lienzo.
 bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
 
+El lienzo carga en tiempo de ejecución `canvaskit.wasm` de `@open-pencil/canvaskit/dist/` y las fuentes incluidas; cómo servirlos se explica en [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (en inglés).
+
 El SDK se encuentra en el monorepo de OpenPencil y se publica como paquete `@open-pencil/vue`.
 
 ```ts
