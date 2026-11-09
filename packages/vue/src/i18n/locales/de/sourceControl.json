@@ -6,7 +6,7 @@
   "changes": "Änderungen: {count}",
   "fetch": "Abrufen",
   "pull": "Aktualisieren",
-  "stash": "Änderungen verwerfen",
+  "stash": "Änderungen zwischenspeichern",
   "newBranch": "Neuer Branch",
   "branchName": "Branch-Name",
   "create": "Anlegen",
