@@ -52,8 +52,14 @@ revision has its own object key.
 - Each upload names the revision it was based on, so a stale base is rejected instead of silently
   overwriting a newer revision. The client then chooses: take the Cloud revision, keep both, or
   replace it.
-- Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
-  the retention period passes.
+- Deleting a document moves it to Trash: `deleted_at` and `deleted_by` are set, and the cleanup
+  worker removes revisions and objects once the retention period passes. `GET /api/trash` lists
+  what the person may restore across their workspaces, `POST /api/trash/:documentId/restore` clears
+  the deletion while retention lasts and no cleanup has claimed the document, and
+  `DELETE /api/trash/:documentId` hands it to the worker's own cleanup at once rather than a purge
+  of its own. Restoring needs the `delete` permission, deleting for good the `purge` one, which
+  the document's owner and workspace admins hold. A deleted document's bytes stay in the
+  workspace's usage until cleanup removes them, so restoring checks no quota.
 - Images are stored once per workspace, keyed by the SHA-256 the object store verifies, and a stored
   revision leaves them out of its file: it lists the images it uses under the names the file gives
   them, and a download returns a link for each. Before a save the client asks which of its images

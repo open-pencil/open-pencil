@@ -8,8 +8,14 @@ import { toast } from '@/app/shell/ui'
 import { deleteStoredDocument } from '@/app/storage/workspace/delete'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 
-/** Asks before a stored document is deleted for everyone who can open it. */
-const { location } = defineProps<{ location: StorageLocation }>()
+/**
+ * Asks before a stored document is deleted for everyone who can open it. `description` says what
+ * deleting does where the place keeps a Trash; without one it is gone for good.
+ */
+const { location, description } = defineProps<{
+  location: StorageLocation
+  description?: string
+}>()
 /** The document to ask about; set it to ask, and it is cleared once the dialog closes. */
 const document = defineModel<StorageDocument | null>('document', { default: null })
 const files = useFileMessages()
@@ -46,7 +52,7 @@ function confirm() {
   <AppConfirmationDialog
     v-model:open="open"
     :heading="files.deleteDocumentConfirmation({ name: target?.name ?? '' })"
-    :description="files.deleteDocumentDescription"
+    :description="description ?? files.deleteDocumentDescription"
     :cancel-label="common.cancel"
     :confirm-label="files.deleteDocument"
     tone="danger"

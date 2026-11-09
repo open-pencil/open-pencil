@@ -111,6 +111,27 @@ export function createDocumentRoutes(
     .get('/shared-documents', async (context) =>
       context.json({ documents: await service.listShared(context.get('actor').userId) })
     )
+    .get('/trash', async (context) =>
+      context.json({ documents: await service.trash.list(context.get('actor').userId) })
+    )
+    .post('/trash/:documentId/restore', documentParams, (context) =>
+      documentResponse(context, async () => {
+        await service.trash.restore(
+          context.get('actor').userId,
+          context.req.valid('param').documentId
+        )
+        return context.body(null, 204)
+      })
+    )
+    .delete('/trash/:documentId', documentParams, (context) =>
+      documentResponse(context, async () => {
+        await service.trash.purge(
+          context.get('actor').userId,
+          context.req.valid('param').documentId
+        )
+        return context.body(null, 204)
+      })
+    )
     .get('/workspaces/:workspaceId/documents', workspaceParams, async (context) => {
       const documents = await service.list(
         context.get('actor').userId,

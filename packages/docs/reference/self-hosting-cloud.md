@@ -137,7 +137,7 @@ Set `email.transport = "smtp"` with an `[email.smtp]` table, `"cloudflare"` on C
 
 Any S3-compatible store works; the project tests against SeaweedFS and Garage. Keep `object_storage.checksum_verification = "metadata"` for stores without native SHA-256 checksums: OpenPencil stores each document's digest as object metadata and verifies it before committing a revision. For Garage, set `region = "garage"` and `force_path_style = true`, and leave server-side encryption unset. For Cloudflare R2, use the endpoint `https://<account ID>.r2.cloudflarestorage.com` with `region = "auto"` and `force_path_style = false`.
 
-Revision keys are immutable, so bucket versioning isn't needed, but it isn't a backup either. Size `[workers.cleanup]` for your upload volume and retention, or set `enabled = false` and run `cleanup` from a scheduler.
+Revision keys are immutable, so bucket versioning isn't needed, but it isn't a backup either. Size `[workers.cleanup]` for your upload volume and retention, or set `enabled = false` and run `cleanup` from a scheduler. `[documents] retention_days` (30 by default) is how long a deleted document waits in Trash, where people can restore it, before cleanup deletes it for good; a document someone deletes forever from Trash goes at once.
 
 ## Error tracking
 

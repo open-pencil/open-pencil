@@ -21,6 +21,14 @@ export type DocumentCleanupResult = {
 
 export type DocumentCleanupService = {
   cleanupDeletedDocuments(options: DocumentCleanupOptions): Promise<DocumentCleanupResult>
+  /**
+   * Deletes one document in Trash for good now, as the cleanup worker would once its retention
+   * passed. False when it is not in Trash, is being cleaned already, or has a save in flight.
+   */
+  purgeDeletedDocument(
+    documentId: string,
+    options: Pick<DocumentCleanupOptions, 'leaseDurationMs' | 'now'>
+  ): Promise<boolean>
 }
 
 type ClaimedDocument = {
@@ -35,70 +43,92 @@ type StoredRevisionObject = {
   byteSize: number
 }
 
+/** Which deleted documents a pass claims: those deleted by `deletedBefore`, or only one. */
+type ClaimFilter = {
+  batchSize: number
+  deletedBefore: Date
+  staleBefore: Date
+  now: Date
+  claimId: string
+  documentId?: string
+}
+
 export function createDocumentCleanupService(
   database: Kysely<CloudDatabase>,
   objects: ObjectStore
 ): DocumentCleanupService {
+  async function clean(filter: ClaimFilter): Promise<DocumentCleanupResult> {
+    const documents = await claimDocuments(database, filter)
+    const result: DocumentCleanupResult = {
+      claimed: documents.length,
+      cleaned: 0,
+      failed: 0,
+      objectsDeleted: 0,
+      bytesReclaimed: 0
+    }
+    for (const document of documents) {
+      try {
+        const revisionObjects = await documentObjects(database, document.id)
+        for (const object of revisionObjects) await objects.delete(object.objectKey)
+        const reclaimed = await removeDocumentMetadata(
+          database,
+          document,
+          revisionObjects,
+          filter.deletedBefore,
+          filter.claimId
+        )
+        if (!reclaimed) continue
+        result.cleaned++
+        result.objectsDeleted += reclaimed.objectsDeleted
+        result.bytesReclaimed += reclaimed.bytesReclaimed
+      } catch {
+        result.failed++
+        await releaseClaim(database, document.id, filter.claimId)
+      }
+    }
+    return result
+  }
+
   return {
-    async cleanupDeletedDocuments(options) {
+    cleanupDeletedDocuments(options) {
       const now = options.now ?? new Date()
-      const retentionBefore = new Date(now.getTime() - options.retentionMs)
-      const staleBefore = new Date(now.getTime() - options.leaseDurationMs)
-      const claimId = crypto.randomUUID()
-      const documents = await claimDocuments(
-        database,
-        options.batchSize,
-        retentionBefore,
-        staleBefore,
+      return clean({
+        batchSize: options.batchSize,
+        deletedBefore: new Date(now.getTime() - options.retentionMs),
+        staleBefore: new Date(now.getTime() - options.leaseDurationMs),
         now,
-        claimId
-      )
-      const result: DocumentCleanupResult = {
-        claimed: documents.length,
-        cleaned: 0,
-        failed: 0,
-        objectsDeleted: 0,
-        bytesReclaimed: 0
-      }
-      for (const document of documents) {
-        try {
-          const revisionObjects = await documentObjects(database, document.id)
-          for (const object of revisionObjects) await objects.delete(object.objectKey)
-          const reclaimed = await removeDocumentMetadata(
-            database,
-            document,
-            revisionObjects,
-            retentionBefore,
-            claimId
-          )
-          if (!reclaimed) continue
-          result.cleaned++
-          result.objectsDeleted += reclaimed.objectsDeleted
-          result.bytesReclaimed += reclaimed.bytesReclaimed
-        } catch {
-          result.failed++
-          await releaseClaim(database, document.id, claimId)
-        }
-      }
-      return result
+        claimId: crypto.randomUUID()
+      })
+    },
+
+    async purgeDeletedDocument(documentId, options) {
+      const now = options.now ?? new Date()
+      const result = await clean({
+        batchSize: 1,
+        deletedBefore: now,
+        staleBefore: new Date(now.getTime() - options.leaseDurationMs),
+        now,
+        claimId: crypto.randomUUID(),
+        documentId
+      })
+      if (result.failed > 0) throw new Error('The document could not be deleted for good')
+      return result.cleaned > 0
     }
   }
 }
 
 async function claimDocuments(
   database: Kysely<CloudDatabase>,
-  batchSize: number,
-  retentionBefore: Date,
-  staleBefore: Date,
-  now: Date,
-  claimId: string
+  { batchSize, deletedBefore, staleBefore, now, claimId, documentId }: ClaimFilter
 ): Promise<ClaimedDocument[]> {
   return database.transaction().execute(async (transaction) => {
-    const candidates = await transaction
+    let candidates = transaction
       .selectFrom('document')
       .select(['id', 'workspaceId', 'deletedAt'])
       .where('deletedAt', 'is not', null)
-      .where('deletedAt', '<=', retentionBefore)
+      .where('deletedAt', '<=', deletedBefore)
+    if (documentId !== undefined) candidates = candidates.where('id', '=', documentId)
+    const rows = await candidates
       .where((expression) =>
         expression.or([
           expression('cleanupClaimId', 'is', null),
@@ -121,7 +151,7 @@ async function claimDocuments(
       .forUpdate()
       .skipLocked()
       .execute()
-    const claimed = candidates.filter(
+    const claimed = rows.filter(
       (document): document is ClaimedDocument => document.deletedAt !== null
     )
     if (claimed.length === 0) return []
@@ -166,7 +196,7 @@ async function removeDocumentMetadata(
   database: Kysely<CloudDatabase>,
   document: ClaimedDocument,
   objects: StoredRevisionObject[],
-  retentionBefore: Date,
+  deletedBefore: Date,
   claimId: string
 ): Promise<{ objectsDeleted: number; bytesReclaimed: number } | null> {
   return database.transaction().execute(async (transaction) => {
@@ -178,7 +208,7 @@ async function removeDocumentMetadata(
       .executeTakeFirst()
     if (
       !locked?.deletedAt ||
-      locked.deletedAt > retentionBefore ||
+      locked.deletedAt > deletedBefore ||
       locked.cleanupClaimId !== claimId
     ) {
       return null

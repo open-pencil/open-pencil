@@ -90,6 +90,8 @@ export interface DocumentTable {
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
   deletedAt: TimestampColumn | null
+  /** Who moved the document to Trash; empty when its account's deletion did. */
+  deletedBy: string | null
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
   /** Set while a deployment administrator has taken the document down; see migration 032. */

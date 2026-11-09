@@ -201,7 +201,11 @@ export function createCloudApp(services: CloudServices) {
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes,
-    onVersionsChanged: services.onDocumentVersionsChanged
+    onVersionsChanged: services.onDocumentVersionsChanged,
+    trash: {
+      retentionMs: services.config.documentRetentionMs,
+      leaseDurationMs: services.config.cleanupLeaseDurationMs
+    }
   })
   const versions = createDocumentVersionService(services.database, services.objects, {
     policy,

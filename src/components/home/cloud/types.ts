@@ -5,6 +5,7 @@ export type HomeLocation =
   | { kind: 'recent'; id: 'recent' }
   | { kind: 'workspace'; id: string }
   | { kind: 'shared'; id: 'shared' }
+  | { kind: 'trash'; id: 'trash' }
   | { kind: 'storage'; id: 'storage' }
 
 export type HomeCloudAccount = {
@@ -31,4 +32,17 @@ export type CloudDocumentRow = {
   /** Shared beyond the workspace, with people or a link. */
   shared?: boolean
   permission: 'edit' | 'view'
+}
+
+/** A document in Trash as Home lists it. */
+export type CloudTrashRow = {
+  id: string
+  name: string
+  kind?: DocumentKind
+  /** The workspace it was deleted from, when it was, and by whom. */
+  metadata: string
+  /** Whole days until it is deleted for good, at least 1 while it is still listed. */
+  daysLeft: number
+  /** The person may delete it for good now, not only restore it. */
+  canPurge: boolean
 }
