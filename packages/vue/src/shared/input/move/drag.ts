@@ -404,7 +404,13 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
-  const moved = hasMoved(d, editor)
+  // A landing the policy moves counts even where it kept every preview at the start.
+  const moved =
+    hasMoved(d, editor) ||
+    [...d.originals].some(([id, orig]) => {
+      const landing = landings.get(id)
+      return !!landing && ((landing.x ?? orig.x) !== orig.x || (landing.y ?? orig.y) !== orig.y)
+    })
 
   if (d.duplicated && !moved) {
     const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
