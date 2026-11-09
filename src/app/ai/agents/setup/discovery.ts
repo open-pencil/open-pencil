@@ -40,6 +40,10 @@ export function getLastKnownSearchPath(): string | null {
   return lastKnownSearchPath
 }
 
+export function setLastKnownSearchPath(path: string | null): void {
+  lastKnownSearchPath = path
+}
+
 export interface SpawnTarget {
   command: string
   searchPath?: string
