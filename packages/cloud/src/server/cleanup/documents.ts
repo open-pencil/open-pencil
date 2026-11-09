@@ -23,7 +23,8 @@ export type DocumentCleanupService = {
   cleanupDeletedDocuments(options: DocumentCleanupOptions): Promise<DocumentCleanupResult>
   /**
    * Deletes one document in Trash for good now, as the cleanup worker would once its retention
-   * passed. False when it is not in Trash, is being cleaned already, or has a save in flight.
+   * passed. False when it is not in Trash, is being cleaned already, or has a save in flight; a
+   * failure keeps it claimed, out of Trash, for the worker to finish.
    */
   purgeDeletedDocument(
     documentId: string,
@@ -83,7 +84,13 @@ export function createDocumentCleanupService(
         result.bytesReclaimed += reclaimed.bytesReclaimed
       } catch {
         result.failed++
-        await releaseClaim(database, document.id, filter.claimId)
+        // Deleting one for good may have removed some of its files already, while it is still in
+        // Trash: its claim stays, so it can't be restored, and the worker takes it over once its
+        // retention passes and the lease is stale. A document past retention can't be restored, so
+        // the scheduled pass lets the next one retry at once.
+        if (filter.documentId === undefined) {
+          await releaseClaim(database, document.id, filter.claimId)
+        }
       }
     }
     return result

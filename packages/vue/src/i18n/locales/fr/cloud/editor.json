@@ -213,7 +213,7 @@
   "homeTrashDeleteForever": "Supprimer définitivement",
   "homeTrashDeleteForeverHeading": "Supprimer « {name} » définitivement ?",
   "homeTrashDeleteForeverDescription": "Il est supprimé du serveur avec son historique des versions, pour tout le monde. Cette action est irréversible.",
-  "homeTrashDeleteForeverFailed": "Impossible de supprimer « {name} » définitivement. Réessayez.",
+  "homeTrashDeleteForeverFailed": "Impossible de terminer la suppression de « {name} ». Il reste hors de la corbeille et le serveur le supprimera plus tard.",
   "homeTrashMoveDescription": "Il part dans la corbeille pour toutes les personnes qui peuvent l’ouvrir. Vous pouvez le restaurer depuis la corbeille pendant un moment.",
   "homeSignIn": "Se connecter…",
   "homeStorage": "Stockage",

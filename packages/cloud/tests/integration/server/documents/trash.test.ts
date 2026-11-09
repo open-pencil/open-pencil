@@ -283,6 +283,24 @@ describe('Cloud Trash', () => {
     }
   })
 
+  test('keeps a document that failed to delete forever out of Trash', async () => {
+    const context = await trashApp()
+    try {
+      const document = await context.create('Half gone')
+      await context.withRevision(document)
+      await context.remove(document)
+      context.objects.store.delete = async () => {
+        throw new Error('The object store is down')
+      }
+
+      expect((await context.purge(document)).status).toBe(500)
+      expect(await context.trash()).toEqual([])
+      expect((await context.restore(document)).status).toBe(404)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('refuses to purge a live document', async () => {
     const context = await trashApp()
     try {

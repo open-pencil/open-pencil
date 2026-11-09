@@ -216,7 +216,7 @@
   "homeTrashDeleteForever": "Удалить навсегда",
   "homeTrashDeleteForeverHeading": "Удалить «{name}» навсегда?",
   "homeTrashDeleteForeverDescription": "Файл удаляется с сервера вместе с историей версий, для всех. Это нельзя отменить.",
-  "homeTrashDeleteForeverFailed": "Не удалось удалить «{name}» навсегда. Попробуйте ещё раз.",
+  "homeTrashDeleteForeverFailed": "Не удалось до конца удалить «{name}». Файл не вернётся в корзину, сервер удалит его позже.",
   "homeTrashMoveDescription": "Файл попадёт в корзину для всех, кто может его открыть. Какое-то время его можно будет оттуда восстановить.",
   "homeSignIn": "Войти…",
   "homeStorage": "Хранилище",

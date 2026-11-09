@@ -286,7 +286,7 @@
   "homeTrashDeleteForever": "Excluir para sempre",
   "homeTrashDeleteForeverHeading": "Excluir “{name}” para sempre?",
   "homeTrashDeleteForeverDescription": "Ele é excluído do servidor com o histórico de versões, para todos. Não dá para desfazer.",
-  "homeTrashDeleteForeverFailed": "Não foi possível excluir “{name}” para sempre. Tente de novo.",
+  "homeTrashDeleteForeverFailed": "Não foi possível terminar de excluir “{name}”. Ele fica fora da lixeira e o servidor o exclui depois.",
   "homeTrashMoveDescription": "Ele vai para a lixeira para todos que podem abri-lo. Você pode restaurá-lo de lá por um tempo.",
   "homeSignIn": "Entrar…",
   "homeStorage": "Armazenamento",

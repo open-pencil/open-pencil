@@ -213,7 +213,7 @@
   "homeTrashDeleteForever": "Endgültig löschen",
   "homeTrashDeleteForeverHeading": "„{name}“ endgültig löschen?",
   "homeTrashDeleteForeverDescription": "Die Datei wird mit ihrem Versionsverlauf für alle vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
-  "homeTrashDeleteForeverFailed": "„{name}“ konnte nicht endgültig gelöscht werden. Versuch es noch einmal.",
+  "homeTrashDeleteForeverFailed": "„{name}“ konnte nicht vollständig gelöscht werden. Die Datei bleibt aus dem Papierkorb entfernt, und der Server löscht sie später.",
   "homeTrashMoveDescription": "Die Datei landet für alle, die sie öffnen können, im Papierkorb. Dort kannst du sie eine Weile wiederherstellen.",
   "homeSignIn": "Anmelden…",
   "homeStorage": "Speicher",
