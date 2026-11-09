@@ -32,6 +32,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
+import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
@@ -348,8 +349,8 @@ function effectPreview(effect: Effect): Fill {
           </template>
 
           <template v-else-if="effect.type === 'GLASS'">
-            <div class="flex items-center gap-1.5">
-              <Tip :label="panels.glassLightAngle">
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassLightAngle">
                 <NumberField
                   suffix="°"
                   :inherit-binding="false"
@@ -362,9 +363,11 @@ function effectPreview(effect: Effect): Fill {
                   @commit="
                     effectsCtx.commitEffect(index, glassChange(effect, 'lightAngle', $event))
                   "
-                />
-              </Tip>
-              <Tip :label="panels.glassLightIntensity">
+                >
+                  <template #icon><icon-lucide-rotate-cw class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassLightIntensity">
                 <NumberField
                   suffix="%"
                   :inherit-binding="false"
@@ -385,11 +388,13 @@ function effectPreview(effect: Effect): Fill {
                       glassChange(effect, 'lightIntensity', fraction($event))
                     )
                   "
-                />
-              </Tip>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <Tip :label="panels.glassRefraction">
+                >
+                  <template #icon><icon-lucide-sun class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassRefraction">
                 <NumberField
                   suffix="%"
                   :inherit-binding="false"
@@ -410,9 +415,11 @@ function effectPreview(effect: Effect): Fill {
                       glassChange(effect, 'refraction', fraction($event))
                     )
                   "
-                />
-              </Tip>
-              <Tip :label="panels.glassDepth">
+                >
+                  <template #icon><icon-lucide-waves class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassDepth">
                 <NumberField
                   :inherit-binding="false"
                   :aria-label="panels.glassDepth"
@@ -424,11 +431,13 @@ function effectPreview(effect: Effect): Fill {
                     effectsCtx.scrubEffect(index, glassChange(effect, 'depth', $event))
                   "
                   @commit="effectsCtx.commitEffect(index, glassChange(effect, 'depth', $event))"
-                />
-              </Tip>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <Tip :label="panels.glassDispersion">
+                >
+                  <template #icon><icon-lucide-arrow-down-to-line class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassDispersion">
                 <NumberField
                   suffix="%"
                   :inherit-binding="false"
@@ -449,9 +458,11 @@ function effectPreview(effect: Effect): Fill {
                       glassChange(effect, 'dispersion', fraction($event))
                     )
                   "
-                />
-              </Tip>
-              <Tip :label="panels.glassFrost">
+                >
+                  <template #icon><icon-lucide-rainbow class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassFrost">
                 <VariableNumberField
                   :aria-label="panels.glassFrost"
                   :model-value="effect.radius"
@@ -462,9 +473,11 @@ function effectPreview(effect: Effect): Fill {
                   data-property="glass-frost"
                   @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
                   @commit="effectsCtx.commitEffect(index, { radius: $event })"
-                />
-              </Tip>
-            </div>
+                >
+                  <template #icon><icon-lucide-snowflake class="size-3" /></template>
+                </VariableNumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
           </template>
 
           <VariableNumberField

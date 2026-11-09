@@ -131,3 +131,49 @@ test('bind a shadow’s blur and colour to variables, and detach by typing', asy
     .toEqual({ bindings: { 'effects/0/color': expect.any(String) }, radius: 24 })
   await expect(blur).not.toHaveAttribute('data-bound')
 })
+
+test('switch an effect to Glass and edit its labelled settings', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const id = await page.evaluate(async () => {
+    const path = '/src/app/shell/theme.ts'
+    const module = await import(path)
+    module.useAppTheme().setTheme('light')
+    const editor = window.openPencil?.getStore?.()
+    if (!editor) throw new Error('Editor unavailable')
+    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
+    editor.updateNode(id, {
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 12,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    editor.select([id])
+    return id
+  })
+  const glass = () =>
+    page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0], id)
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
+  await page.getByRole('option', { name: 'Glass', exact: true }).click()
+  await expect.poll(async () => (await glass())?.type).toBe('GLASS')
+
+  for (const label of ['Light angle', 'Light intensity', 'Refraction', 'Depth', 'Dispersion']) {
+    await expect(section.getByText(label, { exact: true })).toBeVisible()
+  }
+  await expect(section.getByText('Frost', { exact: true })).toBeVisible()
+  await expect(section).toHaveScreenshot('inline-glass-light.png')
+
+  const depth = section.getByRole('spinbutton', { name: 'Depth', exact: true })
+  await depth.focus()
+  await depth.fill('12')
+  await depth.press('Enter')
+  await expect.poll(async () => (await glass())?.glass?.depth).toBe(12)
+})
