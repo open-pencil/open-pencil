@@ -338,7 +338,7 @@ export async function renameFigArchiveStream(
 
 function inflateEntry(bytes: Uint8Array, entry: ZipEntryInfo): Uint8Array {
   const compressed = bytes.subarray(entry.dataOffset, entry.dataOffset + entry.compressedSize)
-  // Imported lazily so the writer's normal path never pulls in the inflater.
+  // Only `meta.json` is normally deflated; images are stored and copied without inflating.
   return inflateSync(compressed)
 }
 
