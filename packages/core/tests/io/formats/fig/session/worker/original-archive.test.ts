@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { isEqual } from 'es-toolkit/predicate'
 
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -66,6 +66,41 @@ test('an edited worker-opened .fig is written by the worker with only its edit r
       original.map((record) => (record.name === 'Renamed' ? 'Renamed again' : record.name))
     )
     expect(written.filter((record, index) => !isEqual(record, original[index]))).toHaveLength(1)
+  } finally {
+    releaseFigPopulationWorker(opened)
+  }
+}, 20000)
+
+test('an edited worker-opened .fig is streamed through the worker without an archive copy', async () => {
+  const opened = await openViaWorker()
+  edit(opened)
+  try {
+    const chunks: Uint8Array[] = []
+    let written = 0
+    let total = 0
+    await exportFigFileStream(
+      opened,
+      async (chunk) => {
+        chunks.push(chunk)
+      },
+      {
+        onProgress(bytes, expected) {
+          written = bytes
+          total = expected
+        }
+      }
+    )
+    const length = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
+    const bytes = new Uint8Array(length)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    expect(names(bytes)).toContain('Edited again')
+    expect(chunks.length).toBeGreaterThan(1)
+    expect(total).toBe(length)
+    expect(written).toBe(total)
   } finally {
     releaseFigPopulationWorker(opened)
   }

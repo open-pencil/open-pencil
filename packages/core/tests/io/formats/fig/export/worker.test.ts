@@ -28,12 +28,14 @@ function canvasFigVersion(figData: Uint8Array): number {
 }
 
 function compressInWorker(message: {
+  kind?: 'archive' | 'canvas'
   schemaDeflated: Uint8Array
   kiwiData: Uint8Array
   thumbnailPNG: Uint8Array
   metaJSON: string
   images: Array<{ name: string; data: Uint8Array }>
   figKiwiVersion?: number
+  fileKind?: 'design' | 'board'
 }): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')), {
@@ -52,6 +54,24 @@ function compressInWorker(message: {
 }
 
 describe('fig export compression', () => {
+  test('canvas message compresses only the document into a fig-kiwi container', async () => {
+    const canvas = await compressInWorker({
+      kind: 'canvas',
+      schemaDeflated: new Uint8Array([0x78, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]),
+      kiwiData: new Uint8Array([1, 2, 3, 4, 5]),
+      thumbnailPNG: new Uint8Array(),
+      metaJSON: '{}',
+      images: [],
+      figKiwiVersion: 77,
+      fileKind: 'design'
+    })
+
+    expect(new TextDecoder().decode(canvas.subarray(0, 8))).toBe('fig-kiwi')
+    expect(
+      new DataView(canvas.buffer, canvas.byteOffset, canvas.byteLength).getUint32(8, true)
+    ).toBe(77)
+  })
+
   test('compressFigDataSync produces valid zip', async () => {
     await initCodec()
 

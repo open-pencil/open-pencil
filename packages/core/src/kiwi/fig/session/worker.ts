@@ -20,6 +20,39 @@ function respond(message: FigSessionResponse): void {
   port?.postMessage(message)
 }
 
+const streamAcks = new Map<string, (ok: boolean) => void>()
+
+async function answerPatchStream(
+  request: Extract<FigSessionRequest, { type: 'patch-archive-stream' }>
+): Promise<void> {
+  const { requestId } = request
+  try {
+    if (!archive) throw new Error('FIG session has no original archive')
+    await archive.patchStream(
+      request.patch,
+      request.input,
+      async (chunk) => {
+        // The writer hands out views of the archive it holds; transfer a copy, never that buffer.
+        const bytes = chunk.slice()
+        const ok = await new Promise<boolean>((resolve) => {
+          streamAcks.set(requestId, resolve)
+          port?.postMessage({ type: 'patch-archive-chunk', requestId, bytes }, [bytes.buffer])
+        })
+        streamAcks.delete(requestId)
+        if (!ok) throw new Error('The save stopped')
+      },
+      (written, total) => respond({ type: 'patch-archive-progress', requestId, written, total })
+    )
+    respond({ type: 'patch-archive-done', requestId })
+  } catch (error) {
+    respond({
+      type: 'archive-error',
+      requestId,
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
+
 function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): void {
   if (!session) throw new Error('FIG session has no retained reader')
   const { requestId } = request
@@ -75,6 +108,14 @@ async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
 
 function handleRequest(request: FigSessionRequest): void {
   try {
+    if (request.type === 'patch-archive-ack') {
+      streamAcks.get(request.requestId)?.(request.ok)
+      return
+    }
+    if (request.type === 'patch-archive-stream') {
+      void answerPatchStream(request)
+      return
+    }
     if (
       request.type === 'original-archive' ||
       request.type === 'archive-info' ||

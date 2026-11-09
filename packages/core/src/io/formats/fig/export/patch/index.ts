@@ -3,6 +3,7 @@ import { isEqual } from 'es-toolkit/predicate'
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
+  type FigPatchedArchiveInput,
   type FigRecordPatch
 } from '@open-pencil/fig'
 import {
@@ -505,6 +506,38 @@ export async function writePatchedFigFile(
   runtime: FigNodeChangeExportRuntime,
   options: FigFileExtrasOptions = {}
 ): Promise<Uint8Array | null> {
+  const prepared = await prepareArchivePatch(source, runtime, options)
+  if (!prepared) return null
+  return prepared.archive.patch(prepared.patch, prepared.input)
+}
+
+/**
+ * `writePatchedFigFile` written into `sink` chunk by chunk: the archive's unchanged images stay
+ * in the worker and are copied as their stored byte ranges, never unpacked into the page.
+ */
+export async function writePatchedFigFileStream(
+  source: SceneGraph,
+  runtime: FigNodeChangeExportRuntime,
+  options: FigFileExtrasOptions & { onProgress?: (written: number, total: number) => void },
+  sink: (chunk: Uint8Array) => void | Promise<void>
+): Promise<boolean> {
+  const prepared = await prepareArchivePatch(source, runtime, options)
+  if (!prepared) return false
+  await prepared.archive.patchStream(prepared.patch, prepared.input, sink, options.onProgress)
+  return true
+}
+
+interface PreparedArchivePatch {
+  archive: FigArchiveAccess
+  patch: FigRecordPatch
+  input: FigPatchedArchiveInput
+}
+
+async function prepareArchivePatch(
+  source: SceneGraph,
+  runtime: FigNodeChangeExportRuntime,
+  options: FigFileExtrasOptions
+): Promise<PreparedArchivePatch | null> {
   const archive = figArchive(source)
   const changes = archiveChanges(source)
   const loaded = archiveRecords(source)
@@ -526,11 +559,15 @@ export async function writePatchedFigFile(
   const imageNames = nameImagesForFigma(built.patch.records, built.graph.images)
   const extras = await figFileExtras(built.graph, imageNames, options)
   const archivedImages = new Set(info.imageHashes.map((hash) => `images/${hash}`))
-  return archive.patch(built.patch, {
-    thumbnailPNG: extras.thumbnailPNG,
-    metaJSON: extras.metaJSON,
-    images: extras.images.filter((image) => !archivedImages.has(image.name)),
-    compressionLevel: figCompressionLevel(source),
-    kind: source.documentKind
-  })
+  return {
+    archive,
+    patch: built.patch,
+    input: {
+      thumbnailPNG: extras.thumbnailPNG,
+      metaJSON: extras.metaJSON,
+      images: extras.images.filter((image) => !archivedImages.has(image.name)),
+      compressionLevel: figCompressionLevel(source),
+      kind: source.documentKind
+    }
+  }
 }
