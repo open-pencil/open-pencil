@@ -138,6 +138,8 @@ interface DirectionalPiece {
 const RIGHT_TO_LEFT_MARK = '\u200F'
 const MIRRORED_CHARACTER = /\p{Bidi_M}/u
 const LETTER = /\p{L}/u
+const HIGH_SURROGATE = /[\uD800-\uDBFF]/
+const LOW_SURROGATE = /[\uDC00-\uDFFF]/
 
 /** The direction of the nearest letter from `index` on, stepping by `step` within the line. */
 function nearestLetterDirection(
@@ -146,8 +148,15 @@ function nearestLetterDirection(
   index: number,
   step: 1 | -1
 ): 'LTR' | 'RTL' | null {
-  for (let at = index; at >= line.start && at < line.end; at += step) {
-    if (LETTER.test(text[at])) return containsRTLText(text[at]) ? 'RTL' : 'LTR'
+  let at = index
+  while (at >= line.start && at < line.end) {
+    // Stepping back onto the second half of a surrogate pair, read the pair from its first half.
+    if (step < 0 && at > line.start && LOW_SURROGATE.test(text[at])) {
+      if (HIGH_SURROGATE.test(text[at - 1])) at -= 1
+    }
+    const character = String.fromCodePoint(text.codePointAt(at) ?? 0)
+    if (LETTER.test(character)) return containsRTLText(character) ? 'RTL' : 'LTR'
+    at += step > 0 ? character.length : -1
   }
   return null
 }

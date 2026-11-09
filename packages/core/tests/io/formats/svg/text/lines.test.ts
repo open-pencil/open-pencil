@@ -85,6 +85,22 @@ describe('SVG text with laid-out lines', () => {
     expect(svg).toContain('<tspan x="0" y="18">font</tspan>')
   })
 
+  test('a bracket between right-to-left letters outside the 16-bit range is marked too', () => {
+    // Adlam letters take two UTF-16 units each; the bracket between them is right-to-left.
+    const text = 'a 𞤀(𞤀'
+    const edges = new Map([
+      [0, { left: 0, right: 10 }],
+      [1, { left: 10, right: 15 }],
+      [2, { left: 35, right: 45 }],
+      [4, { left: 30, right: 35 }],
+      [5, { left: 20, right: 30 }]
+    ])
+    const svg = exportText({ text }, [
+      { start: 0, end: text.length, x: 0, y: 18, width: 45, characters: edges }
+    ])
+    expect(svg).toContain('<tspan x="30" y="18">‏(‏</tspan>')
+  })
+
   test('left-to-right text stays one span per style and face', () => {
     const text = 'two words'
     const edges = new Map(
