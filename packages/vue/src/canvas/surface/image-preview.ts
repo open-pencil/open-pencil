@@ -37,9 +37,44 @@ export function imageMimeType(source: Uint8Array): string | null {
   return null
 }
 
+const JPEG_APP1 = 0xe1
+const EXIF_ORIENTATION_TAG = 0x0112
+
+/** The Exif Orientation in an APP1 segment at `at`, or null when the segment is not Exif. */
+function exifOrientation(
+  source: Uint8Array,
+  view: DataView,
+  at: number,
+  end: number
+): number | null {
+  const tiff = at + 10
+  if (
+    tiff + 8 > end ||
+    !hasBytes(source, at + 4, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00) // "Exif\0\0"
+  ) {
+    return null
+  }
+  const littleEndian = source[tiff] === 0x49 && source[tiff + 1] === 0x49
+  const bigEndian = source[tiff] === 0x4d && source[tiff + 1] === 0x4d
+  if (!littleEndian && !bigEndian) return null
+  const firstIFD = tiff + view.getUint32(tiff + 4, littleEndian)
+  if (firstIFD + 2 > end) return 1
+  const entries = view.getUint16(firstIFD, littleEndian)
+  for (let entry = 0; entry < entries; entry++) {
+    const offset = firstIFD + 2 + entry * 12
+    if (offset + 12 > end) return 1
+    if (view.getUint16(offset, littleEndian) === EXIF_ORIENTATION_TAG) {
+      return view.getUint16(offset + 8, littleEndian)
+    }
+  }
+  return 1
+}
+
 /**
  * The source's pixel size from its header, so a preview can ask the browser to decode at that
- * size instead of decoding the whole photo. Null when the header is not one this reads.
+ * size instead of decoding the whole photo. A JPEG is read the way Exif says it is shown, so a
+ * portrait photo stored sideways keeps its portrait shape. Null when the header is not one this
+ * reads.
  */
 export function imageDimensions(source: Uint8Array): { width: number; height: number } | null {
   const mime = imageMimeType(source)
@@ -70,6 +105,8 @@ function jpegSize(source: Uint8Array, offset: number): { width: number; height: 
 }
 
 function jpegDimensions(source: Uint8Array): { width: number; height: number } | null {
+  const view = new DataView(source.buffer, source.byteOffset, source.byteLength)
+  let orientation = 1
   let offset = 2
   while (offset + 9 <= source.length) {
     if (source[offset] !== 0xff) {
@@ -88,7 +125,18 @@ function jpegDimensions(source: Uint8Array): { width: number; height: number } |
     if (marker === 0xda) return null
     const length = (source[offset + 2] << 8) | source[offset + 3]
     if (length < 2) return null
-    if (isJpegFrame(marker)) return jpegSize(source, offset)
+    const end = Math.min(source.length, offset + 2 + length)
+    if (marker === JPEG_APP1) {
+      orientation = exifOrientation(source, view, offset, end) ?? orientation
+    }
+    if (isJpegFrame(marker)) {
+      const size = jpegSize(source, offset)
+      if (!size) return null
+      // Orientations 5 to 8 turn the photo a quarter, so its shown sides swap.
+      return orientation >= 5 && orientation <= 8
+        ? { width: size.height, height: size.width }
+        : size
+    }
     offset += 2 + length
   }
   return null
@@ -192,12 +240,11 @@ async function decodeAtTarget(
 }
 
 async function createFallbackBitmap(
-  source: Uint8Array,
+  source: Uint8Array<ArrayBuffer>,
   target: { width: number; height: number } | null
 ): Promise<ImageBitmap> {
-  const bytes = new Uint8Array(source.byteLength)
-  bytes.set(source)
-  const blob = new Blob([bytes])
+  // Blob copies the bytes synchronously, so the graph's bytes are never detached.
+  const blob = new Blob([source])
   if (!target) return createImageBitmap(blob)
   try {
     return await createImageBitmap(blob, {
@@ -224,7 +271,7 @@ export function createImagePreviewDecoder(): ImagePreviewDecoder {
   return {
     async decode(source, edge) {
       assertActive()
-      const data =
+      const data: Uint8Array<ArrayBuffer> =
         source.buffer instanceof ArrayBuffer
           ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength)
           : source.slice()

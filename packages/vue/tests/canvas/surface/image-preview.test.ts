@@ -34,6 +34,28 @@ function jpeg(width: number, height: number) {
   ])
 }
 
+/** A JPEG whose APP1 Exif segment names `orientation`, with a frame of `width` × `height`. */
+function exifJpeg(width: number, height: number, orientation: number) {
+  const exif = new Uint8Array([
+    0x45, 0x78, 0x69, 0x66, 0x00, 0x00, // "Exif\0\0"
+    0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00, // TIFF little-endian, IFD0 at 8
+    0x01, 0x00, // one entry
+    0x12, 0x01, // Orientation, 0x0112
+    0x03, 0x00, // SHORT
+    0x01, 0x00, 0x00, 0x00, // count 1
+    orientation, 0x00, 0x00, 0x00, // value and padding
+    0x00, 0x00, 0x00, 0x00 // no next IFD
+  ])
+  const frame = jpeg(width, height)
+  const length = exif.length + 2
+  const bytes = new Uint8Array(frame.length + 4 + exif.length)
+  bytes.set(frame.subarray(0, 2), 0)
+  bytes.set([0xff, 0xe1, length >> 8, length & 0xff], 2)
+  bytes.set(exif, 6)
+  bytes.set(frame.subarray(2), 6 + exif.length)
+  return bytes
+}
+
 function png(width: number, height: number) {
   const bytes = new Uint8Array(24)
   bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0)
@@ -71,6 +93,15 @@ test('reads the source size from the encoded header', () => {
   expect(imageDimensions(png(1600, 900))).toEqual({ width: 1600, height: 900 })
   expect(imageDimensions(webp(4096, 2731))).toEqual({ width: 4096, height: 2731 })
   expect(imageDimensions(new Uint8Array([1, 2, 3]))).toBeNull()
+})
+
+test('turns JPEG dimensions the way Exif says the photo is shown', () => {
+  // Orientations 5 to 8 turn the photo a quarter, so its shown width and height swap.
+  expect(imageDimensions(exifJpeg(4096, 2731, 6))).toEqual({ width: 2731, height: 4096 })
+  expect(imageDimensions(exifJpeg(4096, 2731, 8))).toEqual({ width: 2731, height: 4096 })
+  expect(imageDimensions(exifJpeg(4096, 2731, 3))).toEqual({ width: 4096, height: 2731 })
+  expect(imageDimensions(exifJpeg(4096, 2731, 1))).toEqual({ width: 4096, height: 2731 })
+  expect(imageDimensions(exifJpeg(40, 20, 9))).toEqual({ width: 40, height: 20 })
 })
 
 test('names the image type for the browser decoder', () => {
