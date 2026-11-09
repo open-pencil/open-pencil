@@ -117,7 +117,7 @@ describe('negative auto layout padding moves children past the frame edge', () =
   })
 
   test('a negative trailing padding keeps a negative gap between children', () => {
-    const { children } = frameWith(
+    const { frame, children } = frameWith(
       {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'HUG',
@@ -132,6 +132,7 @@ describe('negative auto layout padding moves children past the frame edge', () =
       ]
     )
     expect(children.map((child) => child.x)).toEqual([0, 34, 68])
+    expect(frame.width).toBe(104)
   })
 
   test('a negative gap leaves a hugging row with one child as wide as no gap does', () => {
@@ -214,6 +215,20 @@ describe('a wrapping frame wraps its rows in the box its negative padding grows'
       [30, -5],
       [70, -5],
       [-10, 39]
+    ])
+  })
+
+  test('a negative right padding and gap fit a fourth child in the row exactly', () => {
+    const { children } = frameWith(fixedWrap({ itemSpacing: -10 }), { paddingRight: -30 }, [
+      ...FOUR_SQUARES,
+      [40, 40]
+    ])
+    expect(positions(children)).toEqual([
+      [0, 0],
+      [30, 0],
+      [60, 0],
+      [90, 0],
+      [0, 40]
     ])
   })
 
