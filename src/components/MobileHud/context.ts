@@ -19,7 +19,7 @@ import type { FollowTarget } from '@/app/presence/types'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
-import { createTab } from '@/app/tabs'
+import { createTab, getTabForStore } from '@/app/tabs'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { toolIcons } from '@/components/icons'
 import { presenceRows } from '@/components/presence/rows'
@@ -71,7 +71,11 @@ function createMobileHudContext() {
     {
       icon: IconSave,
       label: 'Save',
-      action: () => void saveWithFeedback(() => saveDocument(store))
+      action: () =>
+        void saveWithFeedback(() => saveDocument(store), {
+          key: store,
+          isOpen: () => getTabForStore(store) !== undefined
+        })
     },
     { icon: IconImageDown, label: 'Export…', action: () => void store.exportSelection(1, 'png') },
     { icon: IconZoomIn, label: 'Zoom to fit', action: () => getCommand('view.zoomFit').run() }

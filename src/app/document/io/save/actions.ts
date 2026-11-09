@@ -75,6 +75,7 @@ export function createSaveActions({
   }
 
   function writeCurrent(version: number) {
+    onSaveProgress?.({ written: 0, total: 0 })
     return writeFile(buildFigStream, version, reportProgress)
   }
 
@@ -148,6 +149,7 @@ export function createSaveActions({
   async function downloadAs(filename: string): Promise<boolean> {
     const version = currentVersion()
     const chunks: Uint8Array[] = []
+    onSaveProgress?.({ written: 0, total: 0 })
     await buildFigStream((chunk) => {
       chunks.push(chunk)
     }, reportProgress)

@@ -14,6 +14,11 @@ function writePath(options: unknown): string | null {
   return path ? decodeURIComponent(path) : null
 }
 
+/** The JSON options plugin-fs sends with a raw `write_file` call. */
+function writeOptions(options: unknown): string | undefined {
+  return (options as { headers?: { options?: string } } | undefined)?.headers?.options
+}
+
 afterEach(async () => {
   await clearTauriMocks()
   Reflect.deleteProperty(globalThis, 'window')
@@ -74,6 +79,9 @@ describe('Tauri document IO helpers', () => {
     const temporary = writePath(calls[1]?.options)
     expect(temporary).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
     expect(writePath(calls[2]?.options)).toBe(temporary)
+    expect(writeOptions(calls[1]?.options)).toBeUndefined()
+    expect(writeOptions(calls[2]?.options)).toContain('"append":true')
+    expect(writeOptions(calls[2]?.options)).toContain('"create":true')
     expect(calls[2]?.args).toEqual(new Uint8Array([1, 2, 3, 4, 5, 6]))
     expect(calls[3]?.args).toEqual({
       oldPath: temporary,

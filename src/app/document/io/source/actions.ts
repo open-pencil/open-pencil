@@ -109,14 +109,17 @@ export function createDocumentSourceActions({
       return
     }
     const amount = { value: progress.written, max: progress.total }
-    const label = `${megabytes(progress.written)} / ${megabytes(progress.total)}`
+    const label =
+      progress.total > 0
+        ? `${megabytes(progress.written)} / ${megabytes(progress.total)}`
+        : undefined
     if (!saveToast) {
       saveToast = toast.startProgress(notificationMessages.get().savingDocument, {
         progress: amount,
         progressLabel: label
       })
     } else {
-      saveToast.update({ progress: amount, progressLabel: label })
+      saveToast.update({ progress: amount, progressLabel: label ?? null })
     }
   }
 
