@@ -46,7 +46,7 @@ const DOS_DATE = (1 << 5) | 1
 const CHUNK_BYTES = 1024 * 1024
 /** The largest offsets and entry count a ZIP without ZIP64 records can describe. */
 const MAX_CLASSIC_ZIP_BYTES = 0xffffffff
-const MAX_CLASSIC_ZIP_ENTRIES = 0xffff
+const MAX_CLASSIC_ZIP_ENTRIES = 0xfffe
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256)
@@ -174,7 +174,7 @@ export async function writeZipStream(
   options: ZipStreamOptions = {}
 ): Promise<void> {
   if (entries.length > MAX_CLASSIC_ZIP_ENTRIES) {
-    throw new Error('A ZIP archive can hold at most 65,535 entries')
+    throw new Error('A ZIP archive can hold at most 65,534 entries')
   }
   const total = totalBytes(entries)
   if (total > MAX_CLASSIC_ZIP_BYTES) {

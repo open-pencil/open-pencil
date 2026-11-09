@@ -124,7 +124,7 @@ describe('streaming .fig archives', () => {
   })
 
   it('rejects archives with more entries than a classic ZIP holds', async () => {
-    const entries = Array.from({ length: 65_536 }, (_, index) => ({
+    const entries = Array.from({ length: 65_535 }, (_, index) => ({
       name: `entry-${index}`,
       method: 0 as const,
       crc: 0,
@@ -133,7 +133,7 @@ describe('streaming .fig archives', () => {
       data: new Uint8Array(0)
     }))
 
-    await expect(writeZipStream(entries, () => undefined)).rejects.toThrow('65,535')
+    await expect(writeZipStream(entries, () => undefined)).rejects.toThrow('65,534')
   })
 
   it('rejects archives whose offsets no longer fit a classic ZIP', async () => {
