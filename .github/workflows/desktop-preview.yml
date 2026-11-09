@@ -37,11 +37,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
+          - platform: macos-14
             target: aarch64-apple-darwin
             label: macos-arm64
             updater: darwin-aarch64
-          - platform: macos-latest
+          - platform: macos-14
             target: x86_64-apple-darwin
             label: macos-intel
             updater: darwin-x86_64
@@ -82,6 +82,7 @@ jobs:
       - name: Build settings
         shell: bash
         run: |
+          echo "Signing key present: $([ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && echo yes || echo NO)"
           SIGNED=false
           [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && SIGNED=true
           cat > preview-config.json <<EOF
@@ -164,9 +165,9 @@ jobs:
           json.dump(d, open(p, 'w'), indent=2)
           EOF
       - name: Build and sign the APK
-        env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: |
+          export NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"
+          echo "Android keystore present: $([ -n "$ANDROID_KEYSTORE_B64" ] && echo yes || echo NO)"
           if [ -n "$ANDROID_KEYSTORE_B64" ]; then
             echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/lawha.jks"
             export LAWHA_KEYSTORE="$RUNNER_TEMP/lawha.jks" LAWHA_KEYSTORE_PASS="$ANDROID_KEYSTORE_PASSWORD"
