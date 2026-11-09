@@ -39,7 +39,7 @@ watch(
 <template>
   <AppConfirmationDialog
     :open="pending !== null"
-    tone="danger"
+    :tone="confirmation?.tone ?? 'danger'"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
     :cancel-label="messages.cancel"

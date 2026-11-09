@@ -139,7 +139,8 @@ export function createDocumentTrash(
         await lockInTrash(transaction, userId, documentId, now)
         await transaction
           .updateTable('document')
-          .set({ deletedAt: null, deletedBy: null })
+          // Changed now, so devices that deleted it stop hiding it (see `reconcileStorageDocuments`).
+          .set({ deletedAt: null, deletedBy: null, updatedAt: now })
           .where('id', '=', documentId)
           .execute()
       })

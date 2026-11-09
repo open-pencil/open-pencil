@@ -40,13 +40,21 @@ export function contentConfirmation(
   messages: Messages,
   action: PortalContentAction,
   document: PortalDocumentRow
-): { heading: string; description: string; confirm: string; reason: boolean } {
+): {
+  heading: string
+  description: string
+  confirm: string
+  reason: boolean
+  /** Bringing something back is no danger; taking it away is. */
+  tone: 'danger' | 'primary'
+} {
   if (action === 'take-down') {
     return {
       heading: messages.takeDownHeading({ name: document.name }),
       description: messages.takeDownDescription,
       confirm: messages.takeDown,
-      reason: true
+      reason: true,
+      tone: 'danger'
     }
   }
   if (action === 'restore') {
@@ -54,7 +62,8 @@ export function contentConfirmation(
       heading: messages.restoreDocumentHeading({ name: document.name }),
       description: messages.restoreDocumentDescription,
       confirm: messages.restoreDocument,
-      reason: false
+      reason: false,
+      tone: 'primary'
     }
   }
   if (action === 'undelete') {
@@ -62,7 +71,8 @@ export function contentConfirmation(
       heading: messages.undeleteHeading({ name: document.name }),
       description: messages.undeleteDescription,
       confirm: messages.undeleteDocument,
-      reason: false
+      reason: false,
+      tone: 'primary'
     }
   }
   if (action === 'revoke-link') {
@@ -70,13 +80,15 @@ export function contentConfirmation(
       heading: messages.revokeLinkHeading({ name: document.name }),
       description: messages.revokeLinkDescription,
       confirm: messages.revokeLink,
-      reason: false
+      reason: false,
+      tone: 'danger'
     }
   }
   return {
     heading: messages.suspendHeading({ name: document.owner?.name ?? '' }),
     description: messages.suspendDescription,
     confirm: messages.suspendAccount,
-    reason: true
+    reason: true,
+    tone: 'danger'
   }
 }

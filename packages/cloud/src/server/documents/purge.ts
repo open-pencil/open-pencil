@@ -43,7 +43,15 @@ export async function unmarkPurged(
 ): Promise<void> {
   await transaction
     .updateTable('document')
-    .set({ deletedAt: null, deletedBy: null, purgedAt: null, purgedBy: null, purgedBytes: 0 })
+    // Changed now, so devices that deleted it stop hiding it.
+    .set({
+      deletedAt: null,
+      deletedBy: null,
+      purgedAt: null,
+      purgedBy: null,
+      purgedBytes: 0,
+      updatedAt: new Date()
+    })
     .where('id', '=', document.id)
     .execute()
   if (document.purgedBytes > 0) {
