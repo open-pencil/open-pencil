@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -15,16 +15,11 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ signUp: []; signIn: []; saveOnDevice: [] }>()
 
 const t = useCloudMessages()
-const common = useCommonMessages()
 </script>
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="t.draftHeading"
-      :description="t.draftDescription({ host })"
-      :close-label="common.close"
-    />
+    <AppDialogHeader :heading="t.draftHeading" :description="t.draftDescription({ host })" />
     <AppDialogFooter>
       <template #start>
         <AppButton @click="emit('saveOnDevice')">{{ t.draftSaveOnDevice }}</AppButton>

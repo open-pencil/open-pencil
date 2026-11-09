@@ -50,7 +50,6 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
     <AppDialogHeader
       :heading="messages.authenticatorSetupTitle"
       :description="messages.authenticatorSetupScan"
-      :close-label="messages.cancel"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col items-center gap-4' }">
       <!-- The box keeps its size while the code renders, so the dialog does not jump. -->

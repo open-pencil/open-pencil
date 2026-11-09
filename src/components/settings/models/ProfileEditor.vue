@@ -385,7 +385,6 @@ async function remove() {
     data-test-id="delete-model-dialog"
     :heading="ai.deleteModel"
     :description="ai.deleteModelDescription"
-    :cancel-label="common.cancel"
     :confirm-label="ai.deleteModel"
     tone="danger"
     @confirm="remove"

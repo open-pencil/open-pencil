@@ -4,9 +4,11 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
@@ -31,11 +33,10 @@ const open = defineModel<boolean>('open', { default: false })
 const name = defineModel<string>('name', { default: '' })
 /** The chosen destination's key. */
 const destination = defineModel<string>('destination', { default: '' })
-const emit = defineEmits<{ save: []; cancel: [] }>()
+const emit = defineEmits<{ save: [] }>()
 
 const ui = saveTo()
 const t = useCloudMessages()
-const common = useCommonMessages()
 const saving = computed(() => state.kind === 'saving')
 const progress = computed(() =>
   state.kind === 'saving' && state.totalBytes > 0
@@ -68,12 +69,6 @@ const errors = computed(() => ({
     v-model:open="open"
     :heading="t.saveHeading"
     :description="t.saveDescription"
-    :close-label="common.close"
-    :cancel-label="common.cancel"
-    :submit-label="t.saveAction"
-    :saving="saving"
-    :submit-disabled="!name.trim() || !chosen || chosen.role === 'viewer'"
-    @cancel="emit('cancel')"
     @submit="emit('save')"
   >
     <fieldset :class="ui.stack()" :disabled="saving">
@@ -135,5 +130,17 @@ const errors = computed(() => ({
         {{ t.saveNote }}
       </p>
     </fieldset>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton
+        type="submit"
+        color="primary"
+        variant="solid"
+        :loading="saving"
+        :disabled="!name.trim() || !chosen || chosen.role === 'viewer'"
+      >
+        {{ t.saveAction }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

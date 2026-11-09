@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
 import {
   DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH,
@@ -8,7 +8,14 @@ import {
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
-import { versionDialog, versionsChanged } from '@/app/cloud/versions/history'
+import {
+  versionDialog,
+  versionDraft,
+  versionsChanged,
+  type VersionDialog
+} from '@/app/cloud/versions/history'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -21,10 +28,9 @@ import { useHeldContent } from '@/components/ui/overlay/held'
  */
 const t = useCloudMessages()
 const common = useCommonMessages()
-const name = ref('')
-const description = ref('')
 const busy = ref(false)
-const failed = ref(false)
+/** The opening whose save failed; a new opening is another object, so it starts without the alert. */
+const failedFor = shallowRef<VersionDialog | null>(null)
 
 const open = computed({
   get: () => versionDialog.value !== null,
@@ -34,21 +40,14 @@ const open = computed({
 })
 const shown = useHeldContent(versionDialog)
 const editing = computed(() => shown.value?.version ?? null)
-const trimmed = computed(() => name.value.trim())
-
-function fill() {
-  const dialog = versionDialog.value
-  name.value = dialog?.version?.name ?? ''
-  description.value = dialog?.version?.description ?? ''
-  failed.value = false
-}
+const trimmed = computed(() => versionDraft.value.name.trim())
 
 async function submit() {
   const dialog = versionDialog.value
-  if (!dialog || !trimmed.value) return
+  if (!dialog) return
   busy.value = true
-  failed.value = false
-  const input = { name: trimmed.value, description: description.value.trim() }
+  failedFor.value = null
+  const input = { name: trimmed.value, description: versionDraft.value.description.trim() }
   try {
     if (dialog.version) await editVersion(dialog.store, dialog.version, input)
     else await saveVersion(dialog.store, input)
@@ -56,7 +55,7 @@ async function submit() {
     versionDialog.value = null
   } catch (error) {
     console.warn('[Cloud] Saving to the version history failed:', error)
-    failed.value = true
+    failedFor.value = dialog
   } finally {
     busy.value = false
   }
@@ -67,20 +66,14 @@ async function submit() {
   <AppFormDialog
     v-model:open="open"
     :heading="editing ? t.editVersionInfo : t.addToVersionHistory"
-    :close-label="common.close"
-    :cancel-label="common.cancel"
-    :submit-label="common.save"
-    :error="failed ? t.versionChangeFailed : null"
-    :saving="busy"
-    :submit-disabled="!trimmed"
-    @open="fill"
+    :error="failedFor !== null && failedFor === shown ? t.versionChangeFailed : null"
     @submit="submit"
   >
     <AppFormField :label="t.versionTitle" label-hidden>
       <template #default="{ id }">
         <AppInput
           :id="id"
-          v-model="name"
+          v-model="versionDraft.name"
           autofocus
           :maxlength="DOCUMENT_VERSION_NAME_MAX_LENGTH"
           :disabled="busy"
@@ -92,12 +85,18 @@ async function submit() {
       <template #default="{ id }">
         <AppTextarea
           :id="id"
-          v-model="description"
+          v-model="versionDraft.description"
           :maxlength="DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH"
           :disabled="busy"
           :placeholder="t.versionDescription"
         />
       </template>
     </AppFormField>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton type="submit" color="primary" variant="solid" :loading="busy" :disabled="!trimmed">
+        {{ common.save }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

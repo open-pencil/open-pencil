@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import * as v from 'valibot'
-import { ref } from 'vue'
+import type * as v from 'valibot'
+import { useTemplateRef } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
-import AppFormField from '@/components/ui/input/AppFormField.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
+
+import PortalFieldDialogInput from './PortalFieldDialogInput.vue'
 
 /**
  * Changes one detail of the account, such as its name or email: the field starts from `initial`,
@@ -43,22 +45,7 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [value: string] }>()
 
 const messages = useCloudPortalMessages()
-const value = ref(initial)
-const invalid = ref<string | null>(null)
-function reset() {
-  value.value = initial
-  invalid.value = null
-}
-
-function submit() {
-  const result = v.safeParse(schema, value.value)
-  if (!result.success) {
-    invalid.value = result.issues[0].message
-    return
-  }
-  invalid.value = null
-  emit('submit', result.output)
-}
+const field = useTemplateRef('field')
 </script>
 
 <template>
@@ -66,30 +53,26 @@ function submit() {
     v-model:open="open"
     :heading="heading"
     :description="description"
-    :close-label="messages.cancel"
-    :cancel-label="messages.cancel"
-    :submit-label="submitLabel"
     :error="error"
     :error-heading="messages.errorTitle"
-    :saving="saving"
-    @open="reset"
-    @submit="submit"
+    @submit="field?.submit()"
   >
-    <AppFormField :label="label" :error="invalid">
-      <template #default="{ id, invalid: hasError, describedBy }">
-        <AppInput
-          :id="id"
-          v-model="value"
-          :type="type"
-          :autocomplete="autocomplete"
-          :maxlength="maxlength"
-          autofocus
-          :placeholder="placeholder"
-          :state="hasError ? 'invalid' : 'idle'"
-          :aria-invalid="hasError || undefined"
-          :aria-describedby="describedBy"
-        />
-      </template>
-    </AppFormField>
+    <PortalFieldDialogInput
+      ref="field"
+      :label="label"
+      :schema="schema"
+      :initial="initial"
+      :type="type"
+      :autocomplete="autocomplete"
+      :placeholder="placeholder"
+      :maxlength="maxlength"
+      @submit="emit('submit', $event)"
+    />
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton type="submit" color="primary" variant="solid" :loading="saving">
+        {{ submitLabel }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

@@ -4,7 +4,7 @@ import { ref, watch } from 'vue'
 
 import { iconLayerName } from '@open-pencil/scene-graph/icons'
 import { useIcon } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'
@@ -17,7 +17,6 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import theme from '@/theme/select/app'
 
 const panels = usePanelMessages()
-const common = useCommonMessages()
 const {
   frameId,
   name,
@@ -105,7 +104,6 @@ function confirmSwap() {
       :open="pendingSwap !== null"
       :heading="panels.swapEditedIconHeading"
       :description="panels.swapEditedIconDescription({ name: iconLayerName(swapShown ?? '') })"
-      :cancel-label="common.cancel"
       :confirm-label="panels.swapIcon"
       tone="warning"
       @update:open="(open: boolean) => !open && (pendingSwap = null)"

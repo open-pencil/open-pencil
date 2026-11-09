@@ -162,7 +162,6 @@ defineExpose({ reload: requests.reload })
     tone="danger"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="messages.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"

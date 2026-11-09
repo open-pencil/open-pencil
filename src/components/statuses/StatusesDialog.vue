@@ -132,7 +132,6 @@ function discard() {
   <AppDialog
     v-model:open="open"
     :heading="messages.statuses"
-    :close-label="common.close"
     size="md"
     data-test-id="statuses-dialog"
     @keydown="onKeydown"
@@ -260,7 +259,6 @@ function discard() {
     v-model:open="confirmingDiscard"
     :heading="messages.discardTitle"
     :description="messages.discardDescription"
-    :cancel-label="common.cancel"
     :confirm-label="messages.discard"
     tone="danger"
     @confirm="discard"

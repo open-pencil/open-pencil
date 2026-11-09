@@ -191,11 +191,7 @@ function invite() {
 
 <template>
   <AppDialogRoot v-model:open="open" size="md">
-    <AppDialogHeader
-      :heading="workspaceName"
-      :description="t.membersDescription"
-      :close-label="common.close"
-    />
+    <AppDialogHeader :heading="workspaceName" :description="t.membersDescription" />
     <AppDialogBody>
       <div :class="ui.stack()">
         <AppAlert v-if="failure" tone="error" :heading="failure" />
@@ -431,7 +427,6 @@ function invite() {
     tone="danger"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="common.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     :confirm-text="confirmingShown?.kind === 'delete' ? workspaceName : undefined"
     @update:open="(isOpen) => !isOpen && (confirming = null)"

@@ -119,11 +119,7 @@ async function finish(): Promise<void> {
 </script>
 
 <template>
-  <AppDialogHeader
-    :heading="header.heading"
-    :description="header.description"
-    :close-label="common.close"
-  >
+  <AppDialogHeader :heading="header.heading" :description="header.description">
     <template #actions>
       <AppButton v-if="phase === 'wizard'" size="xs" class="mr-1 ml-auto" @click="emit('advanced')">
         {{ ai.aiSetupAdvanced }}

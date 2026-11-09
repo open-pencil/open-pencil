@@ -7,6 +7,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import type { PortalAccountArchive } from '@/components/cloud-portal/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmTextField from '@/components/ui/dialog/AppConfirmTextField.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
@@ -35,33 +36,21 @@ const emit = defineEmits<{ downloadAll: []; confirm: [] }>()
 
 const messages = useCloudPortalMessages()
 const confirmed = ref(false)
-/** Counts openings, so the typed email starts empty each time, even mid close animation. */
-const openings = ref(0)
 
 const blocked = computed(
   () => Boolean(deletion?.lastAdministrator) || (deletion?.blockedBy.length ?? 0) > 0
 )
 const downloading = computed(() => archive !== null && archive.saved === null)
-function confirm() {
-  if (confirmed.value && !blocked.value) emit('confirm')
-}
 </script>
 
 <template>
   <AppFormDialog
     v-model:open="open"
-    tone="danger"
     :heading="messages.deleteAccountHeading"
     :description="messages.deleteAccountIntro"
-    :close-label="messages.cancel"
-    :cancel-label="messages.cancel"
-    :submit-label="messages.deleteAccountConfirm"
     :error="error"
     :error-heading="messages.errorTitle"
-    :saving="deleting"
-    :submit-disabled="!deletion || blocked || !confirmed || downloading"
-    @open="openings++"
-    @submit="confirm"
+    @submit="emit('confirm')"
   >
     <AppAlert
       v-if="loadError"
@@ -134,12 +123,20 @@ function confirm() {
         </AppButton>
       </div>
 
-      <AppConfirmTextField
-        v-if="!blocked"
-        :key="openings"
-        v-model:matched="confirmed"
-        :expected="email"
-      />
+      <!-- Starts empty each opening: the opener clears `deletion`, which remounts it. -->
+      <AppConfirmTextField v-if="!blocked" v-model:matched="confirmed" :expected="email" />
+    </template>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton
+        type="submit"
+        color="error"
+        variant="solid"
+        :loading="deleting"
+        :disabled="!deletion || blocked || !confirmed || downloading"
+      >
+        {{ messages.deleteAccountConfirm }}
+      </AppButton>
     </template>
   </AppFormDialog>
 </template>

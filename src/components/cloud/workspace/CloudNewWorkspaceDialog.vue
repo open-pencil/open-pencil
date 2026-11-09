@@ -1,20 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
-/** Naming a new workspace on a Cloud server; the person who creates it administers it. */
+/**
+ * Naming a new workspace on a Cloud server; the person who creates it administers it. The name is
+ * the opener's, which starts it empty.
+ */
 const { busy = false, failed = false } = defineProps<{ busy?: boolean; failed?: boolean }>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ create: [name: string]; cancel: [] }>()
+const name = defineModel<string>('name', { default: '' })
+const emit = defineEmits<{ create: [name: string] }>()
 
 const t = useCloudMessages()
-const common = useCommonMessages()
-const name = ref('')
 const trimmed = computed(() => name.value.trim())
 </script>
 
@@ -23,15 +27,8 @@ const trimmed = computed(() => name.value.trim())
     v-model:open="open"
     :heading="t.newWorkspaceHeading"
     :description="t.newWorkspaceDescription"
-    :close-label="common.close"
-    :cancel-label="common.cancel"
-    :submit-label="t.createWorkspace"
     :error="failed ? t.workspaceFailed : null"
-    :saving="busy"
-    :submit-disabled="!trimmed"
-    @open="name = ''"
-    @cancel="emit('cancel')"
-    @submit="trimmed && emit('create', trimmed)"
+    @submit="emit('create', trimmed)"
   >
     <AppFormField :label="t.workspaceName">
       <template #default="{ id }">
@@ -45,5 +42,11 @@ const trimmed = computed(() => name.value.trim())
         />
       </template>
     </AppFormField>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton type="submit" color="primary" variant="solid" :loading="busy" :disabled="!trimmed">
+        {{ t.createWorkspace }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

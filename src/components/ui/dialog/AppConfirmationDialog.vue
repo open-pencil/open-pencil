@@ -2,6 +2,8 @@
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
+import { useCommonMessages } from '@open-pencil/vue/i18n'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import AppAlertDialogRoot from './AppAlertDialogRoot.vue'
@@ -22,7 +24,8 @@ const {
 } = defineProps<{
   heading: string
   description?: string
-  cancelLabel: string
+  /** Cancel unless named otherwise. */
+  cancelLabel?: string
   confirmLabel: string
   tone?: 'neutral' | 'primary' | 'warning' | 'danger'
   confirmDisabled?: boolean
@@ -34,6 +37,7 @@ const {
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI()
+const common = useCommonMessages()
 const typedMatches = ref(false)
 /** Counts openings, so the typed field starts empty each time, even mid close animation. */
 const openings = ref(0)
@@ -84,7 +88,7 @@ const confirmColor = computed(() => {
     <AppDialogFooter>
       <AlertDialogCancel as-child>
         <AppButton color="neutral" variant="ghost" @click="emit('cancel')">{{
-          cancelLabel
+          cancelLabel ?? common.cancel
         }}</AppButton>
       </AlertDialogCancel>
       <AppButton

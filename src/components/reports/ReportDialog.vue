@@ -5,7 +5,9 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { ReportSendFailure } from '@/app/reports/send'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
@@ -46,7 +48,7 @@ const email = defineModel<string>('email', { default: '' })
 const includeActivity = defineModel<boolean>('includeActivity', { default: true })
 const attachDocument = defineModel<boolean>('attachDocument', { default: false })
 
-const { common, diagnostics: messages } = useI18n()
+const { diagnostics: messages } = useI18n()
 const ui = tv(reportsTheme)()
 
 const heading = computed(() =>
@@ -61,18 +63,12 @@ const description = computed(() =>
   <AppFormDialog
     v-model:open="open"
     size="md"
-    button-size="md"
     data-test-id="report-dialog"
     :heading="heading"
     :description="description"
-    :close-label="common.close"
-    :cancel-label="common.cancel"
-    :submit-label="messages.reportSend"
     :error="
       failure ? (failure === 'files' ? messages.reportFilesFailed : messages.reportFailed) : null
     "
-    :saving="sending"
-    :submit-disabled="!canSend || preparingDocument"
     @submit="emit('send')"
   >
     <AppFormField :label="kind === 'error' ? messages.reportNoteError : messages.reportNoteProblem">
@@ -119,5 +115,18 @@ const description = computed(() =>
       <pre :class="ui.preview()" data-test-id="report-preview">{{ preview }}</pre>
     </AppCollapsible>
     <AppAlert v-if="documentFailed" tone="error" :heading="messages.reportDocumentFailed" />
+    <template #footer>
+      <AppDialogCancel size="md" />
+      <AppButton
+        type="submit"
+        size="md"
+        color="primary"
+        variant="solid"
+        :loading="sending"
+        :disabled="!canSend || preparingDocument"
+      >
+        {{ messages.reportSend }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

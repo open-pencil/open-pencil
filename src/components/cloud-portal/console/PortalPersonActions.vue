@@ -130,7 +130,6 @@ function confirm() {
     :tone="confirmation?.tone"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="messages.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"

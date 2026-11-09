@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import {
   DOCUMENT_REPORT_DESCRIPTION_MAX,
   type DocumentReportReason
 } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
 import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -21,13 +23,10 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
  */
 const {
   host,
-  email = null,
   busy = false,
   failure = null
 } = defineProps<{
   host: string
-  /** The reporter's address when they are signed in, offered for a reply. */
-  email?: string | null
   busy?: boolean
   /** Why the last attempt did not go through, if it did not. */
   failure?: 'failed' | 'too-many' | null
@@ -35,20 +34,13 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{
   send: [report: { reason: DocumentReportReason; description: string; replyEmail?: string }]
-  cancel: []
 }>()
 
 const t = useCloudMessages()
-const common = useCommonMessages()
-const reason = ref<DocumentReportReason>('spam-phishing')
-const description = ref('')
-const replyEmail = ref('')
-function reset() {
-  reason.value = 'spam-phishing'
-  description.value = ''
-  replyEmail.value = email ?? ''
-}
-
+// The opener fills these for each report: the reason, what to look at, and where to answer.
+const reason = defineModel<DocumentReportReason>('reason', { default: 'spam-phishing' })
+const description = defineModel<string>('description', { default: '' })
+const replyEmail = defineModel<string>('replyEmail', { default: '' })
 const reasons = computed(() => [
   { value: 'spam-phishing' as const, label: t.value.reportReasonSpam },
   { value: 'illegal' as const, label: t.value.reportReasonIllegal },
@@ -64,7 +56,6 @@ const emailInvalid = computed(
 const ready = computed(() => description.value.trim() !== '' && !emailInvalid.value)
 
 function send() {
-  if (!ready.value) return
   emit('send', {
     reason: reason.value,
     description: description.value.trim(),
@@ -78,14 +69,7 @@ function send() {
     v-model:open="open"
     :heading="t.reportFile"
     :description="t.reportDescription({ host })"
-    :close-label="common.close"
-    :cancel-label="common.cancel"
-    :submit-label="t.reportSend"
     :error="failure === 'too-many' ? t.reportTooMany : failure ? t.reportFailed : null"
-    :saving="busy"
-    :submit-disabled="!ready"
-    @open="reset"
-    @cancel="emit('cancel')"
     @submit="send"
   >
     <AppFormField :label="t.reportReason" :label-for="false">
@@ -121,5 +105,11 @@ function send() {
         />
       </template>
     </AppFormField>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton type="submit" color="primary" variant="solid" :loading="busy" :disabled="!ready">
+        {{ t.reportSend }}
+      </AppButton>
+    </template>
   </AppFormDialog>
 </template>

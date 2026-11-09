@@ -10,6 +10,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import AppConfirmationDialog from './AppConfirmationDialog.vue'
 import AppDialog from './AppDialog.vue'
 import AppDialogBody from './AppDialogBody.vue'
+import AppDialogCancel from './AppDialogCancel.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
 import AppDialogHeader from './AppDialogHeader.vue'
 import AppDialogRoot from './AppDialogRoot.vue'
@@ -128,35 +129,33 @@ export const TargetedConfirmation: Story = {
  */
 export const Form: Story = {
   render: () => ({
-    components: { AppButton, AppFormDialog, AppFormField, AppInput },
+    components: { AppButton, AppDialogCancel, AppFormDialog, AppFormField, AppInput },
     setup() {
       const open = ref(false)
       const name = ref('')
       const invalid = ref<string | null>(null)
       const failed = ref<string | null>(null)
-      function reset() {
+      // The opener fills the fields, so each opening starts clean.
+      function openRename() {
         name.value = ''
         invalid.value = null
         failed.value = null
+        open.value = true
       }
       function submit() {
         invalid.value = name.value.trim() ? null : 'Enter a name.'
         if (!invalid.value) failed.value = 'The server could not be reached.'
       }
-      return { open, name, invalid, failed, reset, submit }
+      return { open, name, invalid, failed, openRename, submit }
     },
     template: `
-      <AppButton @click="open = true">Rename workspace</AppButton>
+      <AppButton @click="openRename">Rename workspace</AppButton>
       <AppFormDialog
         v-model:open="open"
         heading="Rename workspace"
         description="Everyone in the workspace sees the new name."
-        close-label="Close"
-        cancel-label="Cancel"
-        submit-label="Rename"
         :error="failed"
         error-heading="Couldn't rename the workspace"
-        @open="reset"
         @submit="submit"
       >
         <AppFormField label="Name" :error="invalid">
@@ -164,6 +163,10 @@ export const Form: Story = {
             <AppInput :id="id" v-model="name" autofocus :state="hasError ? 'invalid' : 'idle'" :aria-invalid="hasError || undefined" :aria-describedby="describedBy" />
           </template>
         </AppFormField>
+        <template #footer>
+          <AppDialogCancel />
+          <AppButton type="submit" color="primary" variant="solid">Rename</AppButton>
+        </template>
       </AppFormDialog>
     `
   }),
@@ -183,6 +186,52 @@ export const Form: Story = {
     await expect(body.queryByRole('dialog')).not.toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
     await expect(await body.findByLabelText('Name')).toHaveValue('')
+  }
+}
+
+/**
+ * Enter in a field submits only while the submit button can be pressed: a disabled or loading
+ * button blocks it, as the browser blocks a form's implicit submission.
+ */
+export const FormSubmitBlocked: Story = {
+  render: () => ({
+    components: { AppButton, AppDialogCancel, AppFormDialog, AppFormField, AppInput },
+    setup() {
+      const open = ref(false)
+      const name = ref('')
+      const sent = ref(0)
+      const saving = ref(false)
+      function submit() {
+        sent.value++
+        saving.value = true
+      }
+      return { open, name, sent, saving, submit }
+    },
+    template: `
+      <AppButton @click="open = true">New workspace</AppButton>
+      <p class="mt-2 text-xs text-surface" data-test-id="sent">Sent {{ sent }}</p>
+      <AppFormDialog v-model:open="open" heading="New workspace" @submit="submit">
+        <AppFormField label="Name">
+          <template #default="{ id }"><AppInput :id="id" v-model="name" autofocus /></template>
+        </AppFormField>
+        <template #footer>
+          <AppDialogCancel />
+          <AppButton type="submit" color="primary" variant="solid" :loading="saving" :disabled="!name.trim()">Create</AppButton>
+        </template>
+      </AppFormDialog>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'New workspace' }))
+    const name = await body.findByLabelText('Name')
+    await userEvent.type(name, '{Enter}')
+    await expect(canvas.getByText('Sent 0')).toBeVisible()
+    await userEvent.type(name, 'Design{Enter}')
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
+    await userEvent.type(name, '{Enter}')
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
   }
 }
 

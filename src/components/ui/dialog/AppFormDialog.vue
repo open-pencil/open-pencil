@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useTemplateRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 
-import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { focusFirstInvalid } from '@/components/ui/input/form-field'
 
@@ -13,53 +12,31 @@ import type { DialogVariants } from './ui'
 
 /**
  * A dialog that is one form: its fields in the default slot, why the last try failed under them,
- * and Cancel and the submit button in the footer. Enter in a field submits, and so does the
- * button, unless it is disabled or saving; the caller closes the dialog when it is done.
+ * and its buttons in the `footer` slot, usually `AppDialogCancel` and a `type="submit"` button.
+ * Enter in a field submits; a disabled or loading submit button stops that as it stops a click.
+ * The caller closes the dialog when it is done.
  */
 const {
   heading,
   description,
   closeLabel,
-  cancelLabel,
-  submitLabel,
   error = null,
   errorHeading,
-  saving = false,
-  submitDisabled = false,
-  tone = 'primary',
-  size = 'sm',
-  buttonSize = 'sm'
+  size = 'sm'
 } = defineProps<{
   heading: string
   description?: string
   closeLabel?: string
-  cancelLabel: string
-  submitLabel: string
   /**
    * Why the last submit failed. Shown as the alert's heading, or as its description under
    * `errorHeading` when there is one.
    */
   error?: string | null
   errorHeading?: string
-  saving?: boolean
-  submitDisabled?: boolean
-  /** Danger colours the submit button for something that cannot be undone. */
-  tone?: 'primary' | 'danger'
   size?: DialogVariants['size']
-  buttonSize?: 'sm' | 'md'
 }>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ submit: []; cancel: []; open: [] }>()
-
-// Callers fill their fields on `open`: clearing them as the dialog closes would empty them
-// during its exit animation.
-watch(
-  open,
-  (value) => {
-    if (value) emit('open')
-  },
-  { immediate: true }
-)
+const emit = defineEmits<{ submit: [] }>()
 
 const form = useTemplateRef<HTMLFormElement>('form')
 /**
@@ -73,17 +50,10 @@ function focusField(event: Event) {
   field.focus()
 }
 
-/** Enter in a field submits too, so a disabled or busy dialog ignores it there as well. */
 function submit() {
-  if (submitDisabled || saving) return
   emit('submit')
   // A caller that found a field invalid has marked it by now; the person lands on it.
   void focusFirstInvalid(form.value)
-}
-
-function cancel() {
-  emit('cancel')
-  open.value = false
 }
 </script>
 
@@ -100,19 +70,7 @@ function cancel() {
           :description="errorHeading ? error : undefined"
         />
       </AppDialogBody>
-      <AppDialogFooter>
-        <AppButton type="button" :size="buttonSize" @click="cancel">{{ cancelLabel }}</AppButton>
-        <AppButton
-          type="submit"
-          :size="buttonSize"
-          :color="tone === 'danger' ? 'error' : 'primary'"
-          variant="solid"
-          :loading="saving"
-          :disabled="submitDisabled"
-        >
-          {{ submitLabel }}
-        </AppButton>
-      </AppDialogFooter>
+      <AppDialogFooter v-if="$slots.footer"><slot name="footer" /></AppDialogFooter>
     </form>
   </AppDialogRoot>
 </template>

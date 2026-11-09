@@ -108,7 +108,6 @@ function submitInvite() {
           ? t.shareDescriptionInWorkspace({ workspace: workspace.name })
           : t.shareDescription
       "
-      :close-label="common.close"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col gap-5' }">
       <form v-if="canManage" :class="ui.invite()" @submit.prevent="submitInvite">

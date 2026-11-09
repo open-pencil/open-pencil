@@ -192,7 +192,6 @@ function importTokens() {
     size="md"
     :heading="variables.importDesignTokens"
     :description="variables.importTokensDescription"
-    :close-label="common.close"
     data-test-id="variables-import-dialog"
   >
     <div class="flex flex-col gap-3 text-xs">
