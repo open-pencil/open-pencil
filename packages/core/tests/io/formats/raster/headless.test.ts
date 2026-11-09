@@ -64,10 +64,9 @@ test('PNG exports of different documents at once draw their own vectors', async 
     headlessRenderNodes(graph, pageId, nodeIds, { useAbsoluteBounds: true })
   const alone = [await png(await vector(SQUARE)), await png(await vector(TRIANGLE))]
   expect(alone[0]).not.toEqual(alone[1])
-  expect(await Promise.all([png(await vector(SQUARE)), png(await vector(TRIANGLE))])).toEqual([
-    alone[0],
-    alone[1]
-  ])
+  // Both documents are read first, so the two exports start in the same step and overlap.
+  const [square, triangle] = await Promise.all([vector(SQUARE), vector(TRIANGLE)])
+  expect(await Promise.all([png(square), png(triangle)])).toEqual([alone[0], alone[1]])
 })
 
 test('PDF exports of different documents at once draw their own vectors', async () => {
@@ -75,8 +74,7 @@ test('PDF exports of different documents at once draw their own vectors', async 
     (await exportPDFDocument(graph, [{ pageId, nodeIds }]))?.data
   const alone = [await pdf(await vector(SQUARE)), await pdf(await vector(TRIANGLE))]
   expect(alone[0]).not.toEqual(alone[1])
-  expect(await Promise.all([pdf(await vector(SQUARE)), pdf(await vector(TRIANGLE))])).toEqual([
-    alone[0],
-    alone[1]
-  ])
+  // Both documents are read first, so the two exports start in the same step and overlap.
+  const [square, triangle] = await Promise.all([vector(SQUARE), vector(TRIANGLE)])
+  expect(await Promise.all([pdf(square), pdf(triangle)])).toEqual([alone[0], alone[1]])
 })
