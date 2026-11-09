@@ -8,15 +8,22 @@ afterEach(() => {
 })
 
 describe('save feedback', () => {
-  test('keeps a failed save visible with a retry action', async () => {
+  test('keeps a failed save visible and retries it', async () => {
+    let attempts = 0
     const save = async () => {
-      throw new Error('disk full')
+      attempts += 1
+      if (attempts === 1) throw new Error('disk full')
+      return true
     }
 
     await expect(saveWithFeedback(save)).resolves.toBe(false)
 
     const entry = toast.toasts.value[0]
     expect(entry?.sticky).toBe(true)
-    expect(entry?.action?.label).toBe('Retry save')
+    entry?.action?.run(entry.id)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(attempts).toBe(2)
+    expect(toast.toasts.value).toHaveLength(0)
   })
 })

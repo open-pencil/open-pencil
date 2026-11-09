@@ -134,6 +134,73 @@ describe('Tauri document IO helpers', () => {
     expect(calls[1]?.args).toEqual({ path: '/tmp/document.fig.saving', options: undefined })
   })
 
+  test('removes the temporary file when an append write fails', async () => {
+    const calls: string[] = []
+    let writes = 0
+    await mockTauriIPC((cmd) => {
+      calls.push(cmd)
+      if (cmd === 'plugin:fs|write_file' && ++writes === 2) throw new Error('disk full')
+      return null
+    })
+    const write = createDocumentWriter({
+      state: { documentName: 'Document' },
+      getFilePath: () => '/tmp/document.fig',
+      getFileHandle: () => null,
+      getStorageBinding: () => null,
+      setSavedVersion: () => undefined,
+      setLastWriteTime: () => undefined
+    })
+
+    await expect(
+      write(async (sink) => {
+        await sink(new Uint8Array(9 * 1024 * 1024))
+      }, 1)
+    ).rejects.toThrow('disk full')
+
+    expect(calls).toEqual(['plugin:fs|write_file', 'plugin:fs|write_file', 'plugin:fs|remove'])
+  })
+
+  test('runs saves one after another', async () => {
+    const order: string[] = []
+    let releaseFirst!: () => void
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    let firstStarted!: () => void
+    const firstDidStart = new Promise<void>((resolve) => {
+      firstStarted = resolve
+    })
+    await mockTauriIPC(() => null)
+    const write = createDocumentWriter({
+      state: { documentName: 'Document' },
+      getFilePath: () => '/tmp/document.fig',
+      getFileHandle: () => null,
+      getStorageBinding: () => null,
+      setSavedVersion: () => undefined,
+      setLastWriteTime: () => undefined
+    })
+
+    const first = write(async (sink) => {
+      order.push('first')
+      firstStarted()
+      await firstGate
+      await sink(new Uint8Array([1]))
+    }, 1)
+    await firstDidStart
+    const second = write(async (sink) => {
+      order.push('second')
+      await sink(new Uint8Array([2]))
+    }, 2)
+    await Promise.resolve()
+
+    expect(order).toEqual(['first'])
+
+    releaseFirst()
+    await first
+    await second
+    expect(order).toEqual(['first', 'second'])
+  })
+
   test('keeps a completed write successful when recovery cleanup fails', async () => {
     await mockTauriIPC(() => null)
     const savedVersions: number[] = []

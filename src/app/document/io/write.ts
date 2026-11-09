@@ -1,6 +1,7 @@
 import { remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-fs'
 
 import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
+import { concatenateBytes } from '@open-pencil/core/io/formats/fig'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { bufferSource } from '@/app/document/io/bytes'
@@ -27,18 +28,6 @@ type DocumentWriterOptions = {
   onWriteSuccess?: (version: number) => void | Promise<void>
 }
 
-function concatenate(chunks: readonly Uint8Array[]): Uint8Array {
-  let length = 0
-  for (const chunk of chunks) length += chunk.byteLength
-  const bytes = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return bytes
-}
-
 /** Bytes the Tauri writer hands to one raw IPC write; files are written in this many bytes. */
 const TAURI_CHUNK_BYTES = 8 * 1024 * 1024
 
@@ -52,23 +41,33 @@ export function createDocumentWriter({
   onWriteSuccess
 }: DocumentWriterOptions) {
   async function finishWrite(version: number): Promise<true> {
+    setLastWriteTime(Date.now())
     setSavedVersion(version)
     try {
       await onWriteSuccess?.(version)
     } catch (error) {
       console.warn('[Recovery] Cleanup after document write failed:', error)
     }
+    // The watcher ignores a change this recent; reset it after cleanup so a slow recovery
+    // snapshot cannot let the completed write look like an external edit.
+    setLastWriteTime(Date.now())
     return true
   }
 
-  async function writeFile(
+  interface WriteTarget {
+    storage: StorageDocumentBinding | null
+    filePath: string | null
+    fileHandle: FileSystemFileHandle | null
+  }
+
+  async function writeNow(
     stream: DocumentStream,
     version: number,
+    target: WriteTarget,
     onProgress?: (written: number, total: number) => void
   ): Promise<boolean> {
-    setLastWriteTime(Date.now())
     try {
-      const storage = getStorageBinding()
+      const { storage } = target
       if (storage) {
         const chunks: Uint8Array[] = []
         await stream((chunk) => {
@@ -78,13 +77,13 @@ export function createDocumentWriter({
           ...storageLocationOf(storage),
           canvasId: storage.documentId,
           name: state.documentName || 'Untitled',
-          figBytes: concatenate(chunks)
+          figBytes: concatenateBytes(chunks)
         })
         return await finishWrite(version)
       }
 
-      const filePath = getFilePath()
-      const fileHandle = getFileHandle()
+      const filePath = target.filePath
+      const fileHandle = target.fileHandle
       if (filePath && isTauri()) {
         // Replace the file only once every byte is written, so a failed export leaves the
         // previous save intact. The temporary name has no leading dot: the fs scope keeps
@@ -143,6 +142,26 @@ export function createDocumentWriter({
       })
       throw error
     }
+  }
+
+  /** A save waits for the one before it, so two streams never share a temporary file. */
+  let queue: Promise<unknown> = Promise.resolve()
+
+  function writeFile(
+    stream: DocumentStream,
+    version: number,
+    onProgress?: (written: number, total: number) => void
+  ): Promise<boolean> {
+    const target: WriteTarget = {
+      storage: getStorageBinding(),
+      filePath: getFilePath(),
+      fileHandle: getFileHandle()
+    }
+    const run = queue
+      .catch(() => undefined)
+      .then(() => writeNow(stream, version, target, onProgress))
+    queue = run
+    return run
   }
 
   return writeFile

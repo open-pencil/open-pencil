@@ -76,7 +76,7 @@ function push(
   )
   if (existing) {
     existing.count += 1
-    existing.action = action
+    if (action || !existing.sticky) existing.action = action
     if (sticky) existing.sticky = true
     return existing.id
   }
@@ -87,8 +87,12 @@ function push(
 }
 
 function trim() {
-  if (toasts.value.length > TOAST_STACK_LIMIT) {
-    toasts.value.splice(0, toasts.value.length - TOAST_STACK_LIMIT)
+  // A failure the person must act on stays until they dismiss it, even when newer messages
+  // arrive; ordinary messages give way first.
+  while (toasts.value.length > TOAST_STACK_LIMIT) {
+    const index = toasts.value.findIndex((entry) => !entry.sticky)
+    if (index < 0) return
+    toasts.value.splice(index, 1)
   }
 }
 
