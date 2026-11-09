@@ -4,12 +4,10 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
   buildFigKiwi,
-  figFileKind,
   type FigDataCompressor,
   type FigFileKind
 } from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 import {
   ByteBuffer,
   compileSchema,
@@ -20,17 +18,7 @@ import {
 } from '@open-pencil/kiwi/schema-runtime'
 import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 
-import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
-import {
-  copyZipEntry,
-  deflatedZipEntry,
-  readZipEntries,
-  storedZipEntry,
-  writeZipStream,
-  type ZipEntrySource,
-  type ZipSink,
-  type ZipStreamOptions
-} from '../archive/zip'
+import { readFigArchiveParts, streamFigArchive, type FigImageEntry } from '../archive'
 import { symbolDataOf, symbolOverridesOf } from '../instance-overrides/types'
 import { patchedRecord, type FigRecordFieldPatch } from './fields'
 
@@ -483,113 +471,35 @@ export function patchFigMessage(
   return concat(chunks)
 }
 
-/** Write the archive with the patch applied, in the archive's own schema. */
+/**
+ * The archive with the patch applied, in the archive's own schema, written as its reader asks for
+ * it. The document is patched and compressed before this returns; the archive's images then pass
+ * through as views of `bytes`, so a save holds them once.
+ */
 export function patchFigArchive(
   bytes: ArrayBuffer,
   patch: FigRecordPatch,
   input: FigPatchedArchiveInput,
   compress?: FigDataCompressor
-): Uint8Array {
+): ReadableStream<Uint8Array> {
   const parts = readFigArchiveParts(bytes)
   const kiwiData = patchFigMessage(parts.schemaDeflated, parts.dataRaw, patch)
   const archiveImages = new Set(parts.images.map(([hash]) => hash))
-  return writeFigArchive({
-    schemaDeflated: parts.schemaDeflated,
-    kiwiData,
+  return streamFigArchive({
+    canvasFig: buildFigKiwi(
+      parts.schemaDeflated,
+      kiwiData,
+      parts.figKiwiVersion,
+      compress,
+      input.kind ?? parts.kind
+    ),
     thumbnailPNG: input.thumbnailPNG,
     metaJSON: input.metaJSON,
     images: [
       ...parts.images.map(([name, data]) => ({ name: `images/${name}`, data })),
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
-    ],
-    figKiwiVersion: parts.figKiwiVersion,
-    compress,
-    kind: input.kind ?? parts.kind
+    ]
   })
-}
-
-function archiveName(name: string): string {
-  return `images/${name.replace(/^images\//, '')}`
-}
-
-/** Writes bytes a legacy raw container produced, in bounded chunks. */
-async function writeBytesStream(
-  bytes: Uint8Array,
-  sink: ZipSink,
-  options?: ZipStreamOptions
-): Promise<void> {
-  const chunkBytes = 1024 * 1024
-  for (let start = 0; start < bytes.byteLength; start += chunkBytes) {
-    const end = Math.min(start + chunkBytes, bytes.byteLength)
-    await sink(bytes.subarray(start, end))
-    options?.onProgress?.(end, bytes.byteLength)
-  }
-}
-
-/** The stored bytes of one ZIP entry, inflated only when the archive deflated it. */
-function entryData(
-  bytes: Uint8Array,
-  entry: ReturnType<typeof readZipEntries>[number]
-): Uint8Array {
-  const data = bytes.subarray(entry.dataOffset, entry.dataOffset + entry.compressedSize)
-  return entry.method === 8 ? inflateSync(data) : data
-}
-
-/**
- * `patchFigArchive` written straight into a sink: only `canvas.fig` is inflated and patched, and
- * every image the archive already holds is copied as the bytes it stores, never unpacked. This is
- * the path a save of a large opened document takes, so its memory follows the largest entry rather
- * than the whole file.
- */
-export async function patchFigArchiveStream(
-  bytes: ArrayBuffer,
-  patch: FigRecordPatch,
-  input: FigPatchedArchiveInput,
-  compress: FigDataCompressor,
-  sink: ZipSink,
-  options?: ZipStreamOptions
-): Promise<void> {
-  const archive = new Uint8Array(bytes)
-  // A legacy raw container is not a ZIP; the in-memory patch still writes a ZIP archive from it.
-  if (figFileKind(archive)) {
-    await writeBytesStream(patchFigArchive(bytes, patch, input, compress), sink, options)
-    return
-  }
-  const entries = readZipEntries(archive)
-  const canvasEntry = entries.find(
-    (entry) => entry.name === 'canvas.fig' || entry.name === 'canvas'
-  )
-  if (!canvasEntry) throw new Error('No canvas data found in .fig file')
-  const payload = parseFigKiwiContainer(entryData(archive, canvasEntry))
-  if (!payload) throw new Error('Invalid fig-kiwi container')
-
-  const patched = patchFigMessage(payload.schemaDeflated, payload.dataRaw, patch)
-  const canvasFig = buildFigKiwi(
-    payload.schemaDeflated,
-    patched,
-    payload.version,
-    compress,
-    input.kind ?? payload.kind
-  )
-  const added = new Set(input.images.map((image) => archiveName(image.name)))
-  const output: ZipEntrySource[] = [
-    storedZipEntry('canvas.fig', canvasFig),
-    storedZipEntry('thumbnail.png', input.thumbnailPNG),
-    deflatedZipEntry('meta.json', new TextEncoder().encode(input.metaJSON))
-  ]
-  const known = new Set(['canvas.fig', 'canvas', 'thumbnail.png', 'meta.json'])
-  for (const entry of entries) {
-    if (known.has(entry.name) || !entry.name.startsWith('images/') || added.has(entry.name))
-      continue
-    output.push(copyZipEntry(entry, archive))
-  }
-  for (const image of input.images) output.push(storedZipEntry(image.name, image.data))
-  // Entries this format does not know, such as a client's own metadata, travel with the save.
-  for (const entry of entries) {
-    if (known.has(entry.name) || entry.name.startsWith('images/')) continue
-    output.push(copyZipEntry(entry, archive))
-  }
-  await writeZipStream(output, sink, options)
 }
 
 /** The id of the nearest record of `type` from `id` up through its parents, itself included. */

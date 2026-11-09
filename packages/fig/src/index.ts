@@ -10,31 +10,26 @@ export {
 } from './document/materialize'
 export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
-  compressFigDataSync,
   figArchiveKind,
   figArchiveMetaJSON,
   parseFigBuffer,
   readFigArchiveMeta,
   renameFigArchive,
+  streamFigArchive,
   writeFigArchive,
+  type FigArchiveContents,
   type FigArchiveMeta,
   type FigImageEntry,
   type FigParseResult,
   type WriteFigArchiveInput
 } from './archive'
 export {
-  copyZipEntries,
-  crc32,
-  readZipEntries,
-  renameFigArchiveStream,
-  writeFigArchiveStream,
-  writeZipStream,
-  type WriteFigArchiveStreamInput,
-  type ZipEntryInfo,
-  type ZipEntrySource,
-  type ZipSink,
-  type ZipStreamOptions
-} from './archive/zip'
+  readZipDirectory,
+  zipEntryContents,
+  type FigRangeReader,
+  type ZipEntry
+} from './zip/directory'
+export { bytesStream, readStreamBytes, zipStream, type ZipStreamEntry } from './zip/stream'
 export {
   figArchiveComponentUsePages,
   figArchiveRecordInfo,
@@ -42,7 +37,6 @@ export {
   figComponentUsePages,
   figRecordPages,
   patchFigArchive,
-  patchFigArchiveStream,
   patchFigRecords,
   type FigArchiveRecordInfo,
   type FigPatchedArchiveInput,
@@ -52,11 +46,7 @@ export {
   type FigRecordFieldPatch,
   type FigRecordPatch
 } from './record-patch'
-export {
-  extractFigThumbnailFromReader,
-  type FigRangeReader,
-  type FigThumbnailLimits
-} from './thumbnail'
+export { extractFigThumbnailFromReader, type FigThumbnailLimits } from './thumbnail'
 export {
   effectiveFigmaRawNodeFields,
   effectiveFigmaSourcePayload,
