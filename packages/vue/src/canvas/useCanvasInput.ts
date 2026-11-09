@@ -596,14 +596,9 @@ export function useCanvasInput(
     { capture: true }
   )
 
-  // A host that refused the gesture in progress (`cancelGesture`): the drag goes with it.
-  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', () => {
-    const d = drag.value
-    if (!d) return
-    drag.value = null
-    cursorOverride.value = null
-    clearTransientInteractionFeedback()
-  })
+  // A host that refused the gesture in progress (`cancelGesture`): the drag is undone as Escape
+  // undoes it, its preview put back.
+  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', cancelPointerInteraction)
   const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
     if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
       cancelPointerInteraction()
