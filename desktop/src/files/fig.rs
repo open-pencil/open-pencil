@@ -1,51 +1,54 @@
-use serde::Deserialize;
-use std::io::{Cursor, Write};
+use std::io::Write;
 
-#[derive(Deserialize)]
-pub struct ImageEntry {
-    name: String,
-    data: Vec<u8>,
-}
+use tauri::ipc::{InvokeBody, Request, Response};
 
 /// The zstd level Figma itself saves with.
 const DEFAULT_COMPRESSION_LEVEL: i32 = 3;
+const DEFAULT_FIG_KIWI_VERSION: u32 = 101;
 
-/// The archive a save writes: the encoded document, its thumbnail and `meta.json`, the images it
-/// holds, and whether it is a FigJam board, which `.jam` marks only in the canvas header.
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FigFile {
+/// Compresses the document into the `canvas.fig` entry of a save: `schemaDeflated` followed by
+/// `kiwiData` arrive as one raw request body, and the header names where the first ends. Images
+/// stay in the webview and are streamed into the ZIP there, so they never cross IPC.
+#[tauri::command]
+pub async fn compress_fig_canvas(request: Request<'_>) -> Result<Response, String> {
+    let InvokeBody::Raw(body) = request.body() else {
+        return Err("compress_fig_canvas needs a raw request body".into());
+    };
+    let headers = request.headers();
+    let header = |name: &str| headers.get(name).and_then(|value| value.to_str().ok());
+    let schema_len: usize = header("x-fig-schema-length")
+        .ok_or("missing x-fig-schema-length")?
+        .parse()
+        .map_err(|_| "invalid x-fig-schema-length")?;
+    if schema_len > body.len() {
+        return Err("x-fig-schema-length is past the request body".into());
+    }
+    let version = header("x-fig-version")
+        .and_then(|value| value.parse::<u32>().ok())
+        .filter(|value| *value != 0)
+        .unwrap_or(DEFAULT_FIG_KIWI_VERSION);
+    let compression_level = header("x-fig-compression-level")
+        .and_then(|value| value.parse::<i32>().ok());
+    let board = header("x-fig-board") == Some("1");
+    let schema_deflated = body[..schema_len].to_vec();
+    let kiwi_data = body[schema_len..].to_vec();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        write_fig_canvas(schema_deflated, kiwi_data, version, compression_level, board)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+    .map(Response::new)
+}
+
+/// The `fig-kiwi` container Figma reads as a design's or board's document data.
+fn write_fig_canvas(
     schema_deflated: Vec<u8>,
     kiwi_data: Vec<u8>,
-    thumbnail_png: Vec<u8>,
-    meta_json: String,
-    images: Option<Vec<ImageEntry>>,
-    fig_kiwi_version: Option<u32>,
+    version: u32,
     compression_level: Option<i32>,
-    #[serde(default)]
     board: bool,
-}
-
-/// Writes the `.fig` or `.jam` archive on a blocking thread: high zstd levels take seconds on
-/// large documents, which would otherwise stall the window.
-#[tauri::command]
-pub async fn build_fig_file(file: FigFile) -> Result<tauri::ipc::Response, String> {
-    tauri::async_runtime::spawn_blocking(move || write_fig_file(file))
-        .await
-        .map_err(|e| e.to_string())?
-}
-
-fn write_fig_file(file: FigFile) -> Result<tauri::ipc::Response, String> {
-    let FigFile {
-        schema_deflated,
-        kiwi_data,
-        thumbnail_png,
-        meta_json,
-        images,
-        fig_kiwi_version,
-        compression_level,
-        board,
-    } = file;
+) -> Result<Vec<u8>, String> {
     let levels = zstd::compression_level_range();
     let level = compression_level
         .unwrap_or(DEFAULT_COMPRESSION_LEVEL)
@@ -61,7 +64,6 @@ fn write_fig_file(file: FigFile) -> Result<tauri::ipc::Response, String> {
     encoder.write_all(&kiwi_data).map_err(|e| e.to_string())?;
     let zstd_data = encoder.finish().map_err(|e| e.to_string())?;
 
-    let version: u32 = fig_kiwi_version.unwrap_or(101);
     let fig_kiwi_len = 8 + 4 + 4 + schema_deflated.len() + 4 + zstd_data.len();
     let mut fig_kiwi = Vec::with_capacity(fig_kiwi_len);
     // A FigJam board's `.jam` differs from a design's `.fig` only in this header.
@@ -71,33 +73,5 @@ fn write_fig_file(file: FigFile) -> Result<tauri::ipc::Response, String> {
     fig_kiwi.extend_from_slice(&schema_deflated);
     fig_kiwi.extend_from_slice(&(zstd_data.len() as u32).to_le_bytes());
     fig_kiwi.extend_from_slice(&zstd_data);
-
-    let buf = Cursor::new(Vec::new());
-    let mut zip = zip::ZipWriter::new(buf);
-    let options =
-        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-
-    zip.start_file("canvas.fig", options)
-        .map_err(|e| e.to_string())?;
-    zip.write_all(&fig_kiwi).map_err(|e| e.to_string())?;
-
-    zip.start_file("thumbnail.png", options)
-        .map_err(|e| e.to_string())?;
-    zip.write_all(&thumbnail_png).map_err(|e| e.to_string())?;
-
-    zip.start_file("meta.json", options)
-        .map_err(|e| e.to_string())?;
-    zip.write_all(meta_json.as_bytes())
-        .map_err(|e| e.to_string())?;
-
-    if let Some(image_entries) = images {
-        for entry in image_entries {
-            zip.start_file(&entry.name, options)
-                .map_err(|e| e.to_string())?;
-            zip.write_all(&entry.data).map_err(|e| e.to_string())?;
-        }
-    }
-
-    let result = zip.finish().map_err(|e| e.to_string())?;
-    Ok(tauri::ipc::Response::new(result.into_inner()))
+    Ok(fig_kiwi)
 }
