@@ -1,0 +1,22 @@
+import { afterEach, describe, expect, test } from 'bun:test'
+
+import { saveWithFeedback } from '@/app/document/io/save/feedback'
+import { toast } from '@/app/shell/ui'
+
+afterEach(() => {
+  for (const entry of toast.toasts.value) toast.remove(entry.id)
+})
+
+describe('save feedback', () => {
+  test('keeps a failed save visible with a retry action', async () => {
+    const save = async () => {
+      throw new Error('disk full')
+    }
+
+    await expect(saveWithFeedback(save)).resolves.toBe(false)
+
+    const entry = toast.toasts.value[0]
+    expect(entry?.sticky).toBe(true)
+    expect(entry?.action?.label).toBe('Retry save')
+  })
+})

@@ -9,10 +9,17 @@ export async function saveWithFeedback(save: () => Promise<unknown>): Promise<bo
   try {
     return (await save()) !== false
   } catch (error) {
+    const messages = notificationMessages.get()
     toast.error(
-      notificationMessages
-        .get()
-        .operationFailed({ error: error instanceof Error ? error.message : String(error) })
+      messages.operationFailed({ error: error instanceof Error ? error.message : String(error) }),
+      {
+        label: messages.saveFailedRetry,
+        run: (toastId) => {
+          toast.remove(toastId)
+          void saveWithFeedback(save)
+        }
+      },
+      { sticky: true }
     )
     return false
   }

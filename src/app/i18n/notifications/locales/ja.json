@@ -35,5 +35,6 @@
   "designTokensAmbiguous": "これらのスタイルは、別のコレクションにも同じパスがある変数を参照しているため、他のツールが別の変数を読み取る可能性があります: {names}",
   "designTokensImported": "{count} 個のデザイントークンを読み込みました。",
   "unsupportedVariableExpressions": "OpenPencil はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}",
-  "savingDocument": "ドキュメントを保存しています…"
+  "savingDocument": "ドキュメントを保存しています…",
+  "saveFailedRetry": "保存を再試行"
 }

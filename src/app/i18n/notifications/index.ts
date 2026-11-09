@@ -39,6 +39,7 @@ export const notificationMessageDefaults = {
   vectorizeFailed: params('{provider} could not vectorize this image: {error}'),
   savingDocument: 'Saving document…',
   operationFailed: params('Operation failed: {error}'),
+  saveFailedRetry: 'Retry save',
   storageConnected: 'Connected. Storage namespace is ready.',
   storageConnectionFailed: params('Could not connect to storage: {error}'),
   deepLinkLocateFile: params('Locate “{file}” to follow this link.'),

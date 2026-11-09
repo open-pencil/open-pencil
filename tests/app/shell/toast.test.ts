@@ -58,6 +58,18 @@ describe('toast progress', () => {
     expect(toastDuration(entryAt(1))).toBe(toast.ERROR_TOAST_DURATION)
   })
 
+  test('keeps a save failure until the person dismisses it', () => {
+    toast.error(
+      'Could not save the document',
+      { label: 'Retry save', run: () => undefined },
+      { sticky: true }
+    )
+
+    expect(toastDuration(entryAt())).toBe(0)
+    toast.remove(entryAt().id)
+    expect(toast.toasts.value).toHaveLength(0)
+  })
+
   test('ignores updates to a toast that was trimmed away', () => {
     const dropped = toast.startProgress('First download')
     for (let index = 0; index < 5; index += 1) toast.info(`Message ${index}`)
