@@ -213,7 +213,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         mode === 'side-by-side' ? 'grid-cols-2' : 'grid-cols-1'
       ]"
     >
-      <section class="flex min-h-0 flex-col border-r border-border p-4">
+      <section class="flex min-h-0 flex-col border-e border-border p-4">
         <h3 class="text-xs font-semibold text-surface">{{ panels.currentVersion }}</h3>
         <div class="flex flex-1 items-center justify-center">
           <LibraryComparisonPreview
@@ -237,7 +237,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
           />
         </div>
       </section>
-      <div class="absolute bottom-3 left-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
+      <div class="absolute bottom-3 inset-s-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
         <SegmentedControl
           v-model="mode"
           :options="modeOptions"
@@ -260,7 +260,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
           />
         </SliderRoot>
-        <span v-if="mode === 'overlay'" class="w-8 text-right text-3xs text-muted">
+        <span v-if="mode === 'overlay'" class="w-8 text-end text-3xs text-muted">
           {{ opacity[0] }}%
         </span>
       </div>

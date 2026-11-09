@@ -59,7 +59,7 @@ const item = menuItem({ justify: 'start' })
         <span class="truncate" :class="modified ? 'text-surface' : 'text-muted'">
           {{ modified ? panels.slotModified : panels.slotDefault }}
         </span>
-        <span class="ml-auto shrink-0 text-2xs text-muted">
+        <span class="ms-auto shrink-0 text-2xs text-muted">
           {{ panels.slotItemCount(itemCount) }}
         </span>
       </div>

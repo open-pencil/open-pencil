@@ -9,7 +9,7 @@ const splitterTheme = {
     direction: {
       horizontal: {
         handle: '-mx-1 w-2 cursor-col-resize',
-        divider: 'inset-y-0 left-1/2 w-px -translate-x-1/2'
+        divider: 'inset-y-0 inset-s-1/2 w-px -translate-x-1/2'
       },
       vertical: {
         handle: '-my-1 h-2 cursor-row-resize',

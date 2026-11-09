@@ -88,7 +88,7 @@ function isActive(scale: number) {
           <button
             type="button"
             :aria-label="label"
-            class="flex shrink-0 cursor-pointer items-center border-l border-border px-1.5 text-surface hover:bg-hover"
+            class="flex shrink-0 cursor-pointer items-center border-s border-border px-1.5 text-surface hover:bg-hover"
           >
             <icon-lucide-chevron-down class="size-3 text-muted" />
           </button>

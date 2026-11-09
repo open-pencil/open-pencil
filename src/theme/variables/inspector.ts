@@ -24,7 +24,7 @@ export default {
   variants: {
     /** Beside the token list on desktop; the whole panel, behind a back button, on mobile. */
     layout: {
-      side: { root: 'w-72 border-l border-border @6xl/tokens:w-80' },
+      side: { root: 'w-72 border-s border-border @6xl/tokens:w-80' },
       full: { root: 'min-h-0 w-full flex-1' }
     }
   },

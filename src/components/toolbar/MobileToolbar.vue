@@ -73,7 +73,7 @@ function navigationClass(disabled: boolean) {
   <div
     data-test-id="mobile-toolbar"
     data-canvas-obstacle
-    class="fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
+    class="fixed inset-s-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
     :style="{
       maxWidth: 'calc(100vw - 2rem)',
       bottom: `calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem)`

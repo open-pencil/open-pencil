@@ -6,11 +6,11 @@ export default {
     item: 'group/item relative px-2',
     // The line between markers runs through the gutter beside each entry.
     itemButton:
-      'grid w-full cursor-pointer grid-cols-[1.5rem_minmax(0,1fr)] gap-x-2 rounded-md px-1 py-1.5 pr-8 text-left text-xs outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted',
+      'grid w-full cursor-pointer grid-cols-[1.5rem_minmax(0,1fr)] gap-x-2 rounded-md px-1 py-1.5 pe-8 text-start text-xs outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted',
     marker: 'relative flex justify-center pt-0.5',
     ring: 'relative z-10 size-4 rounded-full border-2 border-muted bg-panel group-data-[selected]/item:border-accent',
     dot: 'relative z-10 mt-1 size-2 rounded-full bg-muted group-data-[selected]/item:bg-accent',
-    line: 'absolute top-0 bottom-[-0.75rem] left-1/2 w-px -translate-x-1/2 bg-border',
+    line: 'absolute top-0 bottom-[-0.75rem] inset-s-1/2 w-px -translate-x-1/2 bg-border',
     body: 'flex min-w-0 flex-col gap-0.5',
     title: 'min-w-0 truncate font-semibold text-surface',
     current: 'min-w-0 truncate font-semibold text-surface group-data-[selected]/item:text-accent',
@@ -18,9 +18,9 @@ export default {
     author: 'min-w-0 truncate text-2xs text-muted',
     time: 'text-2xs text-muted',
     actions:
-      'invisible absolute top-1.5 right-3 group-focus-within/item:visible group-hover/item:visible group-data-[selected]/item:visible group-data-[menu-open]/item:visible',
+      'invisible absolute top-1.5 inset-e-3 group-focus-within/item:visible group-hover/item:visible group-data-[selected]/item:visible group-data-[menu-open]/item:visible',
     more: 'flex justify-center px-3 py-2',
     status: 'px-4 py-3 text-xs text-muted',
-    menuIndicator: 'absolute left-2'
+    menuIndicator: 'absolute inset-s-2'
   }
 } as const

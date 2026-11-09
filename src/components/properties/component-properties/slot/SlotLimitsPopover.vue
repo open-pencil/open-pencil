@@ -54,7 +54,7 @@ function label(limit: SlotLimit): string {
             {{ panels.slotLimitIssueCount(issues) }}
           </span>
           <PopoverClose as-child>
-            <AppButton :aria-label="common.close" class="ml-auto">
+            <AppButton :aria-label="common.close" class="ms-auto">
               <icon-lucide-x class="size-3.5" />
             </AppButton>
           </PopoverClose>

@@ -24,7 +24,7 @@ const { common } = useI18n()
       @close="portalToast.remove(entry.id)"
     />
     <ToastViewport
-      class="fixed top-2 left-1/2 z-[9999] flex -translate-x-1/2 flex-col items-center gap-1.5"
+      class="fixed top-2 inset-s-1/2 z-[9999] flex -translate-x-1/2 flex-col items-center gap-1.5"
     />
   </ToastProvider>
 </template>

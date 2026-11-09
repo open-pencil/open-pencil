@@ -19,7 +19,7 @@ const { panels } = useI18n()
   >
     <BrandMark variant="app-icon" :appearance="resolvedAppTheme" decorative class="size-10" />
     <div
-      class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
+      class="absolute bottom-1/2 inset-s-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
     >
       <div
         class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] motion-reduce:animate-none rounded-full bg-surface/25"

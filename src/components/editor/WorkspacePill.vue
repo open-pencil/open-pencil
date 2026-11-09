@@ -29,7 +29,7 @@ const { editor } = useI18n()
 
 <template>
   <div
-    class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
+    class="absolute top-7 inset-s-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
     :data-mode="mode"
   >
     <BrandMark variant="app-icon" :appearance="resolvedAppTheme" class="size-6" />
@@ -38,7 +38,7 @@ const { editor } = useI18n()
       v-if="mode === 'collapsed'"
       :label="editor.showUI({ shortcut })"
       data-test-id="editor-show-ui"
-      class="ml-1"
+      class="ms-1"
       @click="emit('showUi')"
     >
       <icon-lucide-sidebar class="size-3.5" />
@@ -55,7 +55,7 @@ const { editor } = useI18n()
     </IconButton>
     <template v-else>
       <span
-        class="ml-1 flex h-5 items-center gap-1 rounded bg-accent/15 px-1.5 text-3xs font-medium text-primary"
+        class="ms-1 flex h-5 items-center gap-1 rounded bg-accent/15 px-1.5 text-3xs font-medium text-primary"
       >
         <icon-lucide-play class="size-3" />
         {{ editor.previewing }}

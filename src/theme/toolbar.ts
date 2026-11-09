@@ -37,13 +37,13 @@ const toolbarTheme = {
         flyoutTrigger: 'h-8 w-3'
       },
       left: {
-        dock: 'left-8 max-h-[calc(100%-3rem)] flex-col',
+        dock: 'inset-s-8 max-h-[calc(100%-3rem)] flex-col',
         bar: 'flex-col overflow-y-auto [scrollbar-width:none]',
         flyoutGroup: 'flex-col',
         flyoutTrigger: 'h-3 w-8'
       },
       right: {
-        dock: 'right-4 max-h-[calc(100%-3rem)] flex-col',
+        dock: 'inset-e-4 max-h-[calc(100%-3rem)] flex-col',
         bar: 'flex-col overflow-y-auto [scrollbar-width:none]',
         flyoutGroup: 'flex-col',
         flyoutTrigger: 'h-3 w-8'
@@ -51,11 +51,11 @@ const toolbarTheme = {
     },
     /** Where along its edge the toolbar sits, on the axis the dock's `data-orientation` names. */
     align: {
-      start: { dock: 'data-[orientation=horizontal]:left-8 data-[orientation=vertical]:top-8' },
+      start: { dock: 'data-[orientation=horizontal]:inset-s-8 data-[orientation=vertical]:top-8' },
       center: {
-        dock: 'data-[orientation=horizontal]:left-1/2 data-[orientation=horizontal]:-translate-x-1/2 data-[orientation=vertical]:top-1/2 data-[orientation=vertical]:-translate-y-1/2'
+        dock: 'data-[orientation=horizontal]:inset-s-1/2 data-[orientation=horizontal]:-translate-x-1/2 data-[orientation=vertical]:top-1/2 data-[orientation=vertical]:-translate-y-1/2'
       },
-      end: { dock: 'data-[orientation=horizontal]:right-4 data-[orientation=vertical]:bottom-4' }
+      end: { dock: 'data-[orientation=horizontal]:inset-e-4 data-[orientation=vertical]:bottom-4' }
     },
     active: {
       true: {
