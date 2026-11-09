@@ -3,6 +3,7 @@ import dedent from 'dedent'
 import { ACP_AGENTS, type ACPAgentID } from '@open-pencil/core/constants'
 
 import { MCP_INSTALL_COMMAND } from '@/app/automation/mcp/failure'
+import { detectUserAgent } from '@/app/tauri/command'
 import { CODING_AGENTS_GUIDE_URL } from '@/constants'
 
 const SIGN_IN: Record<ACPAgentID, string> = {
@@ -23,12 +24,19 @@ export function codingAgentGuideURL(agentID: ACPAgentID): string {
  * Markdown to paste into a coding agent the person already uses, asking it to install what
  * OpenPencil needs to start it. Written for the agent, so it stays in English.
  */
-export function codingAgentSetupPrompt(agentID: ACPAgentID): string {
+export function codingAgentSetupPrompt(
+  agentID: ACPAgentID,
+  userAgent: string = detectUserAgent()
+): string {
   const agent = ACP_AGENTS.find((candidate) => candidate.id === agentID)
   if (!agent) return ''
+  const isWindows = userAgent.includes('Windows')
+  const command = isWindows && agent.windowsInstallCommand
+    ? agent.windowsInstallCommand
+    : agent.installCommand
   // An agent without an npm package installs from its own setup page.
-  const install = agent.installCommand
-    ? `install it: \`${agent.installCommand}\``
+  const install = command
+    ? `install it: \`${command}\``
     : `install ${agent.name} from ${agent.setupURL}`
   return dedent`
     Help me connect ${agent.name} to OpenPencil, an open-source design editor. OpenPencil starts ${agent.name} through the Agent Client Protocol and gives it canvas tools through OpenPencil's local MCP server, so both need to be installed on this computer.

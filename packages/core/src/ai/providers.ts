@@ -14,6 +14,8 @@ export interface ACPAgentDef {
   /** The vendor's installation guide for the agent itself. */
   setupURL?: string
   installCommand?: string
+  /** Platform-specific install command for Windows shells (PowerShell / cmd). */
+  windowsInstallCommand?: string
   /**
    * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
    * the agent through `authenticate`; `terminal` methods run the agent's command with `args`,
@@ -68,9 +70,10 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     id: 'antigravity',
     name: 'Antigravity CLI',
     command: 'agy',
-    args: ['acp'],
+    args: ['acp', '--process-per-session'],
     setupURL: 'https://antigravity.google',
     installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+    windowsInstallCommand: 'irm https://antigravity.google/cli/install.ps1 | iex',
     signIn: { via: 'acp', method: 'oauth-personal' },
     resumesSessions: true
   },

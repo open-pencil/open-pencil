@@ -216,14 +216,22 @@ function adapterMismatch(agent: ACPAgentDef, setup: AgentSetupState): boolean {
 }
 
 /** The agent's install command to run by hand, or null where one click installs its adapter. */
-function manualAgentCommand(agent: ACPAgentDef, setup: AgentSetupState): string | null {
-  if (!agent.installCommand || setup.detected?.status === 'available') return null
+function manualAgentCommand(
+  agent: ACPAgentDef,
+  setup: AgentSetupState,
+  userAgent: string = detectUserAgent()
+): string | null {
+  const isWindows = userAgent.includes('Windows')
+  const command = isWindows && agent.windowsInstallCommand
+    ? agent.windowsInstallCommand
+    : agent.installCommand
+  if (!command || setup.detected?.status === 'available') return null
   const admin = setup.adapterNeedsAdmin === true
   const oneClick = setup.supported && setup.npm && !admin && setup.error !== 'install'
   if (oneClick && agent.adapterPackage) return null
-  return admin && !detectUserAgent().includes('Windows')
-    ? `sudo ${agent.installCommand}`
-    : agent.installCommand
+  return admin && !isWindows
+    ? `sudo ${command}`
+    : command
 }
 
 /** The MCP server's install command to run by hand, or null where one click installs it. */
@@ -235,7 +243,11 @@ function manualBridgeCommand(setup: AgentSetupState, bridge: CompanionCheck): st
   return bridge.ready || oneClick ? null : setup.bridgeCommand
 }
 
-export function agentSetupView(agent: ACPAgentDef, setup: AgentSetupState): AgentSetupView {
+export function agentSetupView(
+  agent: ACPAgentDef,
+  setup: AgentSetupState,
+  userAgent: string = detectUserAgent()
+): AgentSetupView {
   const bridgeAdmin = setup.bridgeNeedsAdmin === true
   const adapterAdmin = setup.adapterNeedsAdmin === true
   const bridgeInstallable = oneClickInstallable(setup.bridgeInstallable, setup.npm, bridgeAdmin)
@@ -252,14 +264,18 @@ export function agentSetupView(agent: ACPAgentDef, setup: AgentSetupState): Agen
     (status === 'needs-adapter' || (bridgeMissing && !bridgeInstallable && !bridgeAdmin))
   const needsAdmin = (status === 'needs-adapter' && adapterAdmin) || (bridgeMissing && bridgeAdmin)
   const mismatch = status === 'available' && adapterMismatch(agent, setup)
+  const isWindows = userAgent.includes('Windows')
+  const fallbackCommand = isWindows && agent.windowsInstallCommand
+    ? agent.windowsInstallCommand
+    : agent.installCommand
   return {
     bridge,
     canInstallAdapter: status === 'needs-adapter' && setup.npm && !adapterAdmin,
     busy: setup.installingAgent || setup.installingBridge,
     problem: setupProblem(setup.error, needsNpm, ['install', 'canvas-install'], needsAdmin),
     manualAgentCommand: mismatch
-      ? (agent.installCommand ?? null)
-      : manualAgentCommand(agent, setup),
+      ? (fallbackCommand ?? null)
+      : manualAgentCommand(agent, setup, userAgent),
     manualBridgeCommand: manualBridgeCommand(setup, bridge),
     account: accountView(setup, mismatch),
     adapterMismatch: mismatch

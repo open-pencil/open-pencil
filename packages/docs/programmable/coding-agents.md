@@ -46,8 +46,16 @@ The Antigravity CLI (`agy`) is Google's unified AI development platform that suc
 
 Install it from [Antigravity](https://antigravity.google):
 
+**macOS / Linux:**
+
 ```sh
 curl -fsSL https://antigravity.google/cli/install.sh | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://antigravity.google/cli/install.ps1 | iex
 ```
 
 Run `agy` once in a terminal to authenticate. In guided setup, choose **Antigravity CLI**.
