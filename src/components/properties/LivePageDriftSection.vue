@@ -6,7 +6,10 @@ import { locale, useLivePageMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { baselineMoment } from '@/app/live-pages/drift/format'
+import { DRIFT_SIDECAR_PATH } from '@/app/live-pages/drift/sidecar/model'
+import { usePageDriftSidecar } from '@/app/live-pages/drift/sidecar/use'
 import { usePageDrift } from '@/app/live-pages/drift/use'
+import { useLivePagesSource } from '@/app/live-pages/open'
 import { readLivePage } from '@/app/live-pages/schema'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -14,12 +17,23 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /**
  * The baseline of the page the selected frame shows: the picture kept for it, how the page stands
- * to it now, and the buttons that keep one and compare against it.
+ * to it now, the buttons that keep one and compare against it, and the copy the project holds so
+ * the pictures survive the document's own format.
  */
 const store = useEditorStore()
 const messages = useLivePageMessages()
 const activeLocale = useStore(locale)
 const { busy, failure, count, baselineOf, stateOf, keep, compare } = usePageDrift()
+const source = useLivePagesSource()
+const {
+  busy: sidecarBusy,
+  outcome: sidecarOutcome,
+  save: writeBaselines,
+  load: readBaselines
+} = usePageDriftSidecar({ repository: () => source.project.value?.repository ?? null })
+
+/** The repository the open document is saved in, which is where its baselines can be kept. */
+const repository = computed(() => source.project.value?.repository ?? null)
 
 /** The selected frame, once it shows a page: a plain frame has no page to compare. */
 const node = computed(() => {
@@ -51,6 +65,19 @@ const failureText = computed(() => {
   if (failure.value === 'not-drawn') return messages.value.baselineNotDrawn
   if (failure.value === 'not-saved') return messages.value.baselineNotSaved
   return ''
+})
+
+/** What the last move of the baselines to or from the project did, in the panel's words. */
+const sidecarText = computed(() => {
+  const outcome = sidecarOutcome.value
+  if (outcome === null) return ''
+  if (outcome.status === 'written') return messages.value.sidecarSaved({ path: DRIFT_SIDECAR_PATH })
+  if (outcome.status === 'restored') return messages.value.sidecarRestored
+  if (outcome.status === 'unchanged') return messages.value.sidecarUnchanged
+  if (outcome.status === 'empty') return messages.value.sidecarEmpty
+  if (outcome.status === 'missing') return messages.value.sidecarMissing
+  if (outcome.status === 'other-document') return messages.value.sidecarOtherDocument
+  return messages.value.sidecarUnavailable
 })
 
 async function keepBaseline(): Promise<void> {
@@ -117,5 +144,33 @@ async function compareEveryPage(): Promise<void> {
       :heading="failureText"
     />
     <p v-else class="mt-1.5 text-2xs leading-snug text-muted">{{ messages.baselineHint }}</p>
+
+    <div v-if="repository" class="mt-1.5 flex flex-wrap items-center gap-1.5">
+      <AppButton
+        size="sm"
+        variant="outline"
+        :disabled="sidecarBusy"
+        data-test-id="live-page-baselines-write"
+        @click="writeBaselines"
+      >
+        {{ messages.sidecarSave }}
+      </AppButton>
+      <AppButton
+        size="sm"
+        variant="outline"
+        :disabled="sidecarBusy"
+        data-test-id="live-page-baselines-read"
+        @click="readBaselines"
+      >
+        {{ messages.sidecarLoad }}
+      </AppButton>
+    </div>
+    <p
+      v-if="sidecarText"
+      class="mt-1 text-2xs leading-snug text-muted"
+      data-test-id="live-page-baselines-project"
+    >
+      {{ sidecarText }}
+    </p>
   </PanelSection>
 </template>

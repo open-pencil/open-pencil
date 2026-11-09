@@ -25,5 +25,14 @@
   "baselineHint": "Uma referência é uma imagem da página, comparada pela sua impressão digital. A imagem é capturada no desktop, em um navegador que já existe nesta máquina.",
   "baselineNotDrawn": "Não foi possível desenhar a página. Verifique se o projeto está em execução e se o Chrome, o Chromium ou o Edge está instalado.",
   "baselineNotSaved": "Não foi possível gravar as referências no documento.",
-  "baselineKept": "Há uma referência salva. Compare com a página para ver se ela ainda corresponde."
+  "baselineKept": "Há uma referência salva. Compare com a página para ver se ela ainda corresponde.",
+  "sidecarSave": "Gravar no projeto",
+  "sidecarLoad": "Ler do projeto",
+  "sidecarSaved": "Referências gravadas em {path}",
+  "sidecarRestored": "Referências lidas do projeto.",
+  "sidecarUnchanged": "O documento já contém as referências que o projeto guarda.",
+  "sidecarEmpty": "Este documento ainda não tem referências para gravar.",
+  "sidecarMissing": "O projeto não guarda referências para este documento.",
+  "sidecarOtherDocument": "As referências do projeto pertencem a outro documento.",
+  "sidecarUnavailable": "As referências são gravadas no projeto e lidas dele no aplicativo de desktop."
 }

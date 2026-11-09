@@ -2,6 +2,7 @@
 import { useSourceControlMessages } from '@open-pencil/vue/i18n'
 
 import { useSourceControl } from '@/app/integrations/git/use'
+import { useProjectBaselines } from '@/app/live-pages/drift/sidecar/use'
 import { useProjectRunner } from '@/app/projects/runner'
 import type { Project } from '@/app/projects/schema'
 import { openExternalLink } from '@/app/shell/ui'
@@ -10,13 +11,14 @@ import SourceControlPanel from '@/components/source-control/SourceControlPanel.v
 
 /**
  * A project's screen: the repository it belongs to, the source control of that repository, and
- * the application it holds — started from here and shown in place. The panel answers for the
+ * the application it holds вЂ” started from here and shown in place. The panel answers for the
  * project it is given, so switching tabs switches repository.
  */
 const { project } = defineProps<{ project: Project }>()
 
 const source = useSourceControlMessages()
 const control = useSourceControl(() => project.repository)
+const baselines = useProjectBaselines(() => project.repository)
 const {
   state: runState,
   output: runOutput,
@@ -34,6 +36,9 @@ function openApplication(): void {
 }
 
 async function openPullRequest(): Promise<void> {
+  // The request carries the pictures its pages were compared against, so a reviewer compares the
+  // pages against the same ones; a document with none, or a project that refused, answers first.
+  await baselines.publish()
   const created = await control.createPullRequest()
   const url = created ?? control.compareLink.value
   if (url !== null) void openExternalLink(url)

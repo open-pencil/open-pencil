@@ -25,29 +25,35 @@ export function emptyDriftFile(): DriftFile {
   return { version: 1, references: {} }
 }
 
+/** A baseline file as text, before anything in it is trusted. */
+const driftTextSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ references: v.optional(v.unknown()) })
+)
+
 /**
- * The baselines a document's sidecar holds. A file anyone can edit may be malformed or written by
- * an older version: a bad baseline is dropped rather than thrown on, and the rest is kept.
+ * The baselines a value holds, read one at a time. A file anyone can edit may be written by an
+ * older version: a bad baseline is dropped rather than thrown on, and the rest is kept.
  */
+export function parseReferences(value: unknown): Record<string, DriftReference> {
+  const references: Record<string, DriftReference> = {}
+  if (typeof value !== 'object' || value === null) return references
+  for (const [nodeId, entry] of Object.entries(value)) {
+    const reference = v.safeParse(driftReferenceSchema, entry)
+    if (reference.success) references[nodeId] = reference.output
+  }
+  return references
+}
+
+/** The baselines a document's file holds, read reference by reference. */
 export function parseDriftFile(text: string): DriftFile {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(text)
-  } catch (error) {
-    console.warn('[Drift] The baseline file is not JSON:', error)
+  const parsed = v.safeParse(driftTextSchema, text)
+  if (!parsed.success) {
+    console.warn('[Drift] The baseline file is not a baseline document:', parsed.issues[0].message)
     return emptyDriftFile()
   }
-  const file = v.safeParse(driftFileSchema, parsed)
-  if (file.success) return file.output
-  const references: Record<string, DriftReference> = {}
-  const candidate = (parsed as { references?: unknown }).references
-  if (typeof candidate === 'object' && candidate !== null) {
-    for (const [nodeId, value] of Object.entries(candidate)) {
-      const reference = v.safeParse(driftReferenceSchema, value)
-      if (reference.success) references[nodeId] = reference.output
-    }
-  }
-  return { version: 1, references }
+  return { version: 1, references: parseReferences(parsed.output.references) }
 }
 
 /** The file as it is written back, with one frame's baseline replaced. */

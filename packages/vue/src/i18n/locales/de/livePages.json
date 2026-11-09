@@ -25,5 +25,14 @@
   "baselineHint": "Eine Referenz ist ein Bild der Seite, verglichen über ihren Fingerabdruck. Das Bild wird auf dem Desktop in einem Browser aufgenommen, den dieser Rechner schon hat.",
   "baselineNotDrawn": "Die Seite konnte nicht gezeichnet werden. Prüfe, ob das Projekt läuft und ob Chrome, Chromium oder Edge installiert ist.",
   "baselineNotSaved": "Die Referenzen konnten nicht ins Dokument geschrieben werden.",
-  "baselineKept": "Eine Referenz ist vorhanden. Vergleiche sie mit der Seite, um zu sehen, ob die Seite noch übereinstimmt."
+  "baselineKept": "Eine Referenz ist vorhanden. Vergleiche sie mit der Seite, um zu sehen, ob die Seite noch übereinstimmt.",
+  "sidecarSave": "Ins Projekt schreiben",
+  "sidecarLoad": "Aus dem Projekt lesen",
+  "sidecarSaved": "Referenzen nach {path} geschrieben",
+  "sidecarRestored": "Referenzen aus dem Projekt gelesen.",
+  "sidecarUnchanged": "Das Dokument enthält bereits die Referenzen des Projekts.",
+  "sidecarEmpty": "Dieses Dokument hat noch keine Referenz zum Schreiben.",
+  "sidecarMissing": "Das Projekt enthält keine Referenzen für dieses Dokument.",
+  "sidecarOtherDocument": "Die Referenzen im Projekt gehören zu einem anderen Dokument.",
+  "sidecarUnavailable": "Referenzen werden in der Desktop-App in ein Projekt geschrieben und daraus gelesen."
 }

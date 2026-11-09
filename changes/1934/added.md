@@ -1,2 +1,3 @@
 - A frame shows a page of the project's running application, opens every route that application serves, and says which file an element picked in the page comes from (#1934).
 - A frame keeps the page's picture as a baseline, and comparing says whether the page still looks the way it did when the picture was taken (#1934).
+- A project keeps those pictures in `.opencanvas/drift.json`, reads them back into a document that lost them, and commits them with the pull request the panel opens (#1934).

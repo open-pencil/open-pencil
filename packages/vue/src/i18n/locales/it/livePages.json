@@ -25,5 +25,14 @@
   "baselineHint": "Un riferimento è un’immagine della pagina, confrontata tramite la sua impronta. L’immagine viene acquisita sul desktop, in un browser già installato su questa macchina.",
   "baselineNotDrawn": "Non è stato possibile disegnare la pagina. Controlla che il progetto sia in esecuzione e che Chrome, Chromium o Edge sia installato.",
   "baselineNotSaved": "Non è stato possibile scrivere i riferimenti nel documento.",
-  "baselineKept": "Un riferimento è conservato. Confrontalo con la pagina per vedere se corrisponde ancora."
+  "baselineKept": "Un riferimento è conservato. Confrontalo con la pagina per vedere se corrisponde ancora.",
+  "sidecarSave": "Scrivi nel progetto",
+  "sidecarLoad": "Leggi dal progetto",
+  "sidecarSaved": "Riferimenti scritti in {path}",
+  "sidecarRestored": "Riferimenti letti dal progetto.",
+  "sidecarUnchanged": "Il documento contiene già i riferimenti del progetto.",
+  "sidecarEmpty": "Questo documento non ha ancora riferimenti da scrivere.",
+  "sidecarMissing": "Il progetto non contiene riferimenti per questo documento.",
+  "sidecarOtherDocument": "I riferimenti del progetto appartengono a un altro documento.",
+  "sidecarUnavailable": "I riferimenti vengono scritti in un progetto e letti da esso nell’app desktop."
 }

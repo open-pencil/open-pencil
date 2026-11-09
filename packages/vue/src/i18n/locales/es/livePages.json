@@ -25,5 +25,14 @@
   "baselineHint": "Una referencia es una imagen de la página, comparada por su huella. La imagen se toma en el escritorio, con un navegador que ya esté instalado.",
   "baselineNotDrawn": "No se pudo dibujar la página. Comprueba que el proyecto esté en marcha y que Chrome, Chromium o Edge esté instalado.",
   "baselineNotSaved": "No se pudieron escribir las referencias en el documento.",
-  "baselineKept": "Hay una referencia guardada. Compárala con la página para ver si la página sigue coincidiendo."
+  "baselineKept": "Hay una referencia guardada. Compárala con la página para ver si la página sigue coincidiendo.",
+  "sidecarSave": "Escribir en el proyecto",
+  "sidecarLoad": "Leer del proyecto",
+  "sidecarSaved": "Referencias escritas en {path}",
+  "sidecarRestored": "Referencias leídas del proyecto.",
+  "sidecarUnchanged": "El documento ya contiene las referencias que guarda el proyecto.",
+  "sidecarEmpty": "Este documento aún no tiene referencias que escribir.",
+  "sidecarMissing": "El proyecto no guarda referencias para este documento.",
+  "sidecarOtherDocument": "Las referencias del proyecto pertenecen a otro documento.",
+  "sidecarUnavailable": "Las referencias se escriben en un proyecto y se leen de él en la aplicación de escritorio."
 }

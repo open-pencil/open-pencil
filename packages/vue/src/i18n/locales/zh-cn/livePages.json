@@ -25,5 +25,14 @@
   "baselineHint": "基准图是页面的图片，按指纹进行比较。图片在桌面版中、使用本机已有的浏览器拍摄。",
   "baselineNotDrawn": "无法绘制该页面。请确认项目正在运行，并已安装受支持的浏览器。",
   "baselineNotSaved": "无法将基准图写入文档。",
-  "baselineKept": "已经保存了基准图。与页面比较即可看出页面是否仍然一致。"
+  "baselineKept": "已经保存了基准图。与页面比较即可看出页面是否仍然一致。",
+  "sidecarSave": "写入项目",
+  "sidecarLoad": "从项目读取",
+  "sidecarSaved": "基准图已写入 {path}",
+  "sidecarRestored": "已从项目读取基准图。",
+  "sidecarUnchanged": "文档中已经包含项目保存的基准图。",
+  "sidecarEmpty": "此文档还没有可写入的基准图。",
+  "sidecarMissing": "项目中没有此文档的基准图。",
+  "sidecarOtherDocument": "项目中的基准图属于另一个文档。",
+  "sidecarUnavailable": "基准图在桌面应用中写入项目并从项目读取。"
 }
