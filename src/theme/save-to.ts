@@ -1,8 +1,6 @@
 /** Choosing where a document from this device goes: a Cloud workspace or the storage bucket. */
 export default {
   slots: {
-    field: 'flex flex-col gap-1.5',
-    label: 'text-2xs font-medium text-muted',
     server: 'mt-1 text-2xs font-medium text-muted',
     choices: 'flex flex-col gap-1.5',
     choice:

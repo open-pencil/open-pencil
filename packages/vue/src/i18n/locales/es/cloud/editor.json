@@ -300,7 +300,6 @@
   "deleteWorkspace": "Eliminar espacio",
   "deleteWorkspaceHeading": "¿Eliminar {workspace}?",
   "deleteWorkspaceDescription": "Todos pierden el acceso y sus invitaciones dejan de funcionar. Solo se puede eliminar un espacio vacío.",
-  "deleteWorkspaceTypeName": "Para confirmar, escribe «{workspace}».",
   "dangerZone": "Zona de peligro",
   "leaveWorkspaceShort": "Salir",
   "deleteWorkspaceShort": "Eliminar",

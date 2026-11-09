@@ -171,7 +171,6 @@
     "many": "Сохранено {count} файлов."
   },
   "downloadFailed": "Не удалось скачать: {names}.",
-  "deleteAccountConfirmLabel": "Для подтверждения введите {email}",
   "deleteAccountConfirm": "Удалить аккаунт",
   "accountDeleted": "Ваш аккаунт удалён.",
   "accountArchiveName": "Файлы с {host}",

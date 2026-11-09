@@ -289,7 +289,6 @@ onMounted(async () => {
       tone="danger"
       :heading="messages.removePictureHeading"
       :description="messages.removePictureDescription"
-      :cancel-label="messages.cancel"
       :confirm-label="messages.removePictureConfirm"
       :confirm-loading="removePicture.busy.value"
       @confirm="removePicture.run()"

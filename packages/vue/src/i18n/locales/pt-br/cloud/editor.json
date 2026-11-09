@@ -223,7 +223,6 @@
   "deleteWorkspace": "Excluir espaço de trabalho",
   "deleteWorkspaceHeading": "Excluir {workspace}?",
   "deleteWorkspaceDescription": "Todos perdem o acesso e os convites dele deixam de funcionar. Só é possível excluir um espaço de trabalho vazio.",
-  "deleteWorkspaceTypeName": "Para confirmar, digite “{workspace}”.",
   "dangerZone": "Zona de perigo",
   "leaveWorkspaceShort": "Sair",
   "deleteWorkspaceShort": "Excluir",

@@ -297,7 +297,6 @@
   "deleteWorkspace": "删除工作区",
   "deleteWorkspaceHeading": "删除 {workspace}？",
   "deleteWorkspaceDescription": "所有人都将失去访问权限，其邀请也会失效。只能删除空的工作区。",
-  "deleteWorkspaceTypeName": "请输入“{workspace}”以确认。",
   "dangerZone": "危险操作",
   "leaveWorkspaceShort": "退出",
   "deleteWorkspaceShort": "删除",

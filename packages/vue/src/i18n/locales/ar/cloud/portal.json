@@ -189,7 +189,6 @@
     "other": "حُفظ {count} ملف."
   },
   "downloadFailed": "تعذّر تنزيل {names}.",
-  "deleteAccountConfirmLabel": "للتأكيد، اكتب {email}",
   "deleteAccountConfirm": "حذف الحساب",
   "accountDeleted": "تم حذف حسابك.",
   "accountArchiveName": "ملفات من {host}",

@@ -9,7 +9,7 @@ export const designCheckTheme = {
     filters: 'flex min-w-0 flex-1 items-center gap-0.5',
     filter:
       'flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-2xs text-surface tabular-nums outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus data-[state=off]:text-muted data-[state=off]:[&_svg]:opacity-50',
-    list: 'scrollbar-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2',
+    list: 'min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2',
     status: 'px-3 py-2 text-2xs text-muted',
     // Group slots override the matching AppCollapsible slots.
     group: 'group/issue border-b border-border/60 last:border-b-0',

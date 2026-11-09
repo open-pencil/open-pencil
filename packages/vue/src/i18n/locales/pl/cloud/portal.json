@@ -171,7 +171,6 @@
     "many": "Zapisano {count} plików."
   },
   "downloadFailed": "Nie udało się pobrać: {names}.",
-  "deleteAccountConfirmLabel": "Aby potwierdzić, wpisz {email}",
   "deleteAccountConfirm": "Usuń konto",
   "accountDeleted": "Twoje konto zostało usunięte.",
   "accountArchiveName": "Pliki z {host}",

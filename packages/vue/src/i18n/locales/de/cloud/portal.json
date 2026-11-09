@@ -167,7 +167,6 @@
     "many": "{count} Dateien gespeichert."
   },
   "downloadFailed": "{names} konnte nicht heruntergeladen werden.",
-  "deleteAccountConfirmLabel": "Gib zur Bestätigung {email} ein",
   "deleteAccountConfirm": "Konto löschen",
   "accountDeleted": "Dein Konto ist gelöscht.",
   "accountArchiveName": "Dateien von {host}",
