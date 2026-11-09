@@ -9,6 +9,7 @@ This file holds the repository map and the rules that apply everywhere. Rules fo
 | Path                   | Owns                                                                                                                                                                                                                 | Guide                             |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing, plus the shared primitives formats need: color conversion and management, CSS value parsing, text/layout direction | `packages/scene-graph/AGENTS.md`  |
+| `packages/canvaskit`   | CanvasKit as OpenPencil ships it: pins a release of the `open-pencil/skia` fork (PDF backend and other patches) by commit and SHA-256, fetched on install; never built here | —                                 |
 | `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                                                                                                                                  | —                                 |
 | `packages/collab`      | How a collaboration room's Yjs document maps to and from a SceneGraph: layers, the shared layer tree, variables, document data; depends on scene-graph and yjs, no Vue or app code, and takes the editor as `CollabEditor`          | `packages/collab/AGENTS.md`       |
 | `packages/drawio`      | draw.io model, reader and writer for `.drawio`/`.dio` files and the diagrams draw.io PNG and SVG exports embed; no SceneGraph                                                                                        | —                                 |
@@ -95,7 +96,7 @@ Before using an unfamiliar dependency API or writing a replacement, inspect exis
 | Motion (use the Vue section) | https://motion.dev/llms.txt                                                                    |
 | Valibot                      | https://valibot.dev/llms.txt                                                                   |
 | es-toolkit                   | https://es-toolkit.dev/llms.txt                                                                |
-| CanvasKit                    | https://skia.org/docs/user/modules/canvaskit/ and installed `canvaskit-wasm/types/index.d.ts`. |
+| CanvasKit                    | https://skia.org/docs/user/modules/canvaskit/ and installed `@open-pencil/canvaskit/types/index.d.ts`. |
 
 VueUse serves HTML at its `llms.txt` URL; Tailwind CSS and Skia have no verified index. If an index disappears or returns HTML, fall back to official API documentation, not guessed methods or unofficial generated indexes.
 

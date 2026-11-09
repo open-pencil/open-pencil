@@ -3,7 +3,8 @@ import { resolve } from 'node:path'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
@@ -107,7 +108,7 @@ for (const edit of [
       editor.updateVariableValue(variable.id, collection.defaultModeId, 28)
     }
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
     try {
       const png = expectDefined(

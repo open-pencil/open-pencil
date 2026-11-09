@@ -2,12 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, graphFromPageSnapshot } from '@open-pencil/core'
-import {
-  comparePNGs,
-  createCanvasKitRasterCodec,
-  initCanvasKit,
-  renderRegionToImage
-} from '@open-pencil/core/io/formats/raster'
+import { comparePNGs, createCanvasKitRasterCodec, renderRegionToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 function setup() {
   const editor = createEditor()
@@ -76,7 +72,7 @@ describe('page snapshot graphs', () => {
     })
     const after = editor.snapshotPage(pageId)
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const codec = createCanvasKitRasterCodec(ck)
     const bounds = { minX: -10, minY: -10, maxX: 130, maxY: 90 }
     const render = async (snapshot: typeof before) =>

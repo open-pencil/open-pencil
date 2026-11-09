@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { noop } from 'es-toolkit'
 
 import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'

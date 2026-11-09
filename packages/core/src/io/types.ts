@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 

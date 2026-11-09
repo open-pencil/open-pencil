@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { imageSize } from '@open-pencil/scene-graph/images'
 
@@ -34,7 +34,7 @@ afterEach(() => {
 async function storeWithCanvas(graph?: SceneGraph): Promise<EditorStore> {
   const store = createEditorStore(graph)
   stores.push(store)
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(1, 1)
   if (!surface) throw new Error('Failed to create CanvasKit surface')
   store.setCanvasKit(ck, new SkiaRenderer(ck, surface))

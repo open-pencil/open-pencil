@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'

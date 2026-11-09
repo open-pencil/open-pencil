@@ -44,7 +44,7 @@ import {
 } from '@open-pencil/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext, SVGFontAlias } from './defs'
+import type { SVGExportContext } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -493,11 +493,6 @@ export interface SVGExportOptions {
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
    */
   textLayout?: SVGTextLayout
-  /**
-   * A family to name a font face by instead of its own, such as the one a PDF embeds the face's
-   * file under. Text in an aliased face is written in that family at normal weight and style.
-   */
-  fontAlias?: SVGFontAlias
   /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
   layerIds?: boolean
   /** Size the drawing to the layers' boxes rather than to everything they draw. */
@@ -523,7 +518,6 @@ export function renderNodesToSVG(
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
-    fontAlias: options.fontAlias,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 

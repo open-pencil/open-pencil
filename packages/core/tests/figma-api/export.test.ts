@@ -1,12 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-import {
-  createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit,
-  MAX_RASTER_PIXELS
-} from '#core/io/formats/raster'
+import { createCanvasKitRasterCodec, headlessRenderNodes, MAX_RASTER_PIXELS } from '#core/io/formats/raster'
+import { getCanvasKit } from '#core/canvaskit'
 import { graphOf } from '#core/figma-api/graph'
 
 // Figma's answers measured in Figma desktop 126.
@@ -230,7 +226,7 @@ describe('exportAsync', () => {
 
   test('exports a layer that draws nothing as one blank pixel, and refuses it as a vector', async () => {
     const figma = createAPI()
-    const codec = createCanvasKitRasterCodec(await initCanvasKit())
+    const codec = createCanvasKitRasterCodec(await getCanvasKit())
     figma.rasterCodec = codec
     figma.exportImage = (ids, options) =>
       headlessRenderNodes(graphOf(figma), options.pageId ?? figma.currentPageId, ids, options)

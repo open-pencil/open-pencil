@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'

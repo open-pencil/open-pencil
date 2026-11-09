@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 

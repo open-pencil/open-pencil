@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 

@@ -1,11 +1,12 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 

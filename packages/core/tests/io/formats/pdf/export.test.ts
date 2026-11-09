@@ -1,19 +1,29 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { unzlibSync } from 'fflate'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'
 
-import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
+const ARABIC_FAMILY = 'PDF Test Arabic'
 
-/** A page with a red square and a gradient, drawn without a browser DOM, as the CLI exports. */
-function card() {
-  const graph = new SceneGraph()
+beforeAll(async () => {
+  const inter = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Bold', inter)
+  const naskh = await Bun.file(join(FIXTURES, 'fonts', 'NotoNaskhArabic-Regular.ttf')).arrayBuffer()
+  await fontManager.markLoaded(ARABIC_FAMILY, 'Regular', naskh)
+})
+
+/** A frame with a red square and a gradient circle. */
+function card(graph: SceneGraph, name: string): SceneNode {
   const pageId = graph.getPages()[0].id
-  const frame = graph.createNode('FRAME', pageId, { name: 'Card', width: 120, height: 80 })
+  const frame = graph.createNode('FRAME', pageId, { name, width: 120, height: 80 })
   graph.createNode('RECTANGLE', frame.id, {
     width: 40,
     height: 40,
@@ -37,125 +47,112 @@ function card() {
       }
     ]
   })
-  return { graph, spec: { pageId, nodeIds: [frame.id], label: 'Card' } }
+  return frame
 }
 
-test('exports a PDF without a browser DOM, and leaves no DOM behind', async () => {
-  const { graph, spec } = card()
-  const result = await exportPDFDocument(graph, [spec], { embedFonts: false })
-  expect(new TextDecoder().decode(result?.data.slice(0, 5))).toBe('%PDF-')
-  expect(result?.pages).toEqual([{ label: 'Card', width: 120, height: 80 }])
-  expect('document' in globalThis).toBe(false)
-  expect('CSSStyleSheet' in globalThis).toBe(false)
-})
-
-test('exports several PDFs at once', async () => {
-  const exports = Array.from({ length: 3 }, () => {
-    const { graph, spec } = card()
-    return exportPDFDocument(graph, [spec], { embedFonts: false })
-  })
-  const results = await Promise.all(exports)
-  expect(results.map((result) => result?.pages.length)).toEqual([1, 1, 1])
-  expect('document' in globalThis).toBe(false)
-})
-
-test('embeds the fallback font that draws characters the text’s own font lacks', async () => {
-  const cjk = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
-  await fontManager.markLoaded('PDF Test CJK', 'Regular', cjk)
-  fontManager.setCJKFallbackFamily('PDF Test CJK')
+async function exportText(props: Partial<SceneNode>): Promise<string> {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const text = graph.createNode('TEXT', pageId, {
-    text: 'Hello 中文',
-    fontFamily: 'Inter',
     fontSize: 32,
-    textAutoResize: 'WIDTH_AND_HEIGHT'
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    ...props
   })
-  // Offline, so the fallback is the one loaded here and not a web font.
-  const providers = fontManager.enabledOnlineFontProviders()
-  fontManager.setOnlineFontProviders({})
-  try {
-    const result = await exportPDFDocument(
-      graph,
-      [{ pageId, nodeIds: [text.id], label: 'Text' }],
-      { embedFonts: true, layOutPages: true }
-    )
-    // Inter has no Chinese, which the canvas draws in a CJK fallback, the one loaded here or one
-    // another test loaded first; the PDF embeds that face too.
-    const embedded = result?.fonts?.embedded ?? []
-    expect(embedded).toHaveLength(2)
-    expect(embedded.filter((face) => !face.startsWith('Inter '))).toHaveLength(1)
-    expect(result?.fonts?.fallback).toEqual([])
-  } finally {
-    fontManager.setOnlineFontProviders(
-      Object.fromEntries(providers.map((provider) => [provider, true]))
-    )
-  }
-})
+  const result = await exportPDFDocument(graph, [{ pageId, nodeIds: [text.id] }])
+  return pdfObjects(expectDefined(result, 'PDF').data)
+}
 
-test('embeds each file of a split web font the text draws from', async () => {
-  const family = 'PDF Test Split'
-  const files = {
-    'https://fonts.gstatic.com/s/test/pdf-latin.ttf': {
-      range: 'U+0000-00FF',
-      data: await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-    },
-    'https://fonts.gstatic.com/s/test/pdf-han.ttf': {
-      range: 'U+4E00-9FFF',
-      data: await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+/** The PDF's objects as text, with its compressed streams inflated, one byte per character. */
+function pdfObjects(data: Uint8Array): string {
+  const raw = new TextDecoder('latin1').decode(data)
+  const parts = [raw]
+  for (const match of raw.matchAll(/(?<!end)stream\r?\n/g)) {
+    // Only streams their object's dictionary declares Flate-compressed.
+    const dictionary = raw.slice(raw.lastIndexOf(' obj', match.index), match.index)
+    if (!dictionary.includes('/FlateDecode')) continue
+    const start = match.index + match[0].length
+    const end = raw.indexOf('endstream', start)
+    parts.push(new TextDecoder('latin1').decode(unzlibSync(data.subarray(start, end))))
+  }
+  return parts.join('\n')
+}
+
+/** Every character the PDF maps its glyphs to: ToUnicode maps and ActualText spans. */
+function mappedCharacters(objects: string): Set<string> {
+  const characters = new Set<string>()
+  const add = (hex: string) => {
+    for (let i = 0; i + 4 <= hex.length; i += 4) {
+      characters.add(String.fromCharCode(Number.parseInt(hex.slice(i, i + 4), 16)))
     }
   }
-  const google = fakeGoogleFonts([
-    {
-      family,
-      files: Object.entries(files).map(([url, { range, data }]) => ({ url, range, data }))
+  for (const [, block] of objects.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+    for (const [, , to] of block.matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) add(to)
+  }
+  for (const [, block] of objects.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+    for (const [, from, to, first] of block.matchAll(
+      /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g
+    )) {
+      const count = Number.parseInt(to, 16) - Number.parseInt(from, 16)
+      const start = Number.parseInt(first, 16)
+      for (let i = 0; i <= count; i++) characters.add(String.fromCharCode(start + i))
     }
-  ])
-  await withGoogleFonts(google, async () => {
-      const graph = new SceneGraph()
-      const pageId = graph.getPages()[0].id
-      const text = graph.createNode('TEXT', pageId, {
-        text: 'Split 中文',
-        fontFamily: family,
-        fontSize: 32,
-        textAutoResize: 'WIDTH_AND_HEIGHT'
-      })
-      const result = await exportPDFDocument(
-        graph,
-        [{ pageId, nodeIds: [text.id], label: 'Text' }],
-        { embedFonts: true, layOutPages: true }
-      )
-      // The Chinese is in the family's second file, which the canvas draws it from. The first is
-      // variable, so it is embedded as the instance the text draws.
-      expect(result?.fonts?.embedded.toSorted()).toEqual([
-        `${family} Regular (file 2)`,
-        `${family} Regular (opsz 32, wght 400)`
-      ])
-  })
+  }
+  for (const [, hex] of objects.matchAll(/\/ActualText\s*<FEFF([0-9A-Fa-f]*)>/g)) add(hex)
+  return characters
+}
+
+test('draws a page the size of what its layers draw, as PNG export sizes it', async () => {
+  const graph = new SceneGraph()
+  const frame = card(graph, 'Card')
+  const result = expectDefined(
+    await exportPDFDocument(graph, [
+      { pageId: graph.getPages()[0].id, nodeIds: [frame.id], label: 'Card' }
+    ])
+  )
+  expect(new TextDecoder().decode(result.data.slice(0, 5))).toBe('%PDF-')
+  expect(result.pages).toEqual([{ label: 'Card', width: 120, height: 80 }])
 })
 
-test('asks a web font for the forms jsPDF writes Arabic letters in', async () => {
-  const family = 'PDF Test Arabic'
-  const fontURL = 'https://fonts.gstatic.com/s/test/pdf-arabic.ttf'
-  const naskh = await Bun.file(join(FIXTURES, 'fonts', 'NotoNaskhArabic-Regular.ttf')).arrayBuffer()
-  const google = fakeGoogleFonts([{ family, files: [{ url: fontURL, data: naskh }] }])
-  await withGoogleFonts(google, async () => {
-      const graph = new SceneGraph()
-      const pageId = graph.getPages()[0].id
-      const text = graph.createNode('TEXT', pageId, {
-        text: 'مرحبا',
-        fontFamily: family,
-        fontSize: 32,
-        textAutoResize: 'WIDTH_AND_HEIGHT'
-      })
-      await exportPDFDocument(graph, [{ pageId, nodeIds: [text.id], label: 'Text' }], {
-        embedFonts: true,
-        layOutPages: true
-      })
-      // jsPDF writes مرحبا as ﻣﺮﺣﺒﺎ, so a font subset to the typed letters alone would draw nothing.
-      const asked = google.stylesheets.map((url) => url.searchParams.get('text') ?? '')
-      expect(asked.some((characters) => [...'ﻣﺮﺣﺒﺎ'].every((form) => characters.includes(form)))).toBe(
-        true
-      )
-  })
+test('writes a page for each spec with something to draw', async () => {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const first = card(graph, 'First')
+  const second = card(graph, 'Second')
+  const hidden = card(graph, 'Hidden')
+  graph.updateNode(hidden.id, { visible: false })
+  const result = expectDefined(
+    await exportPDFDocument(graph, [
+      { pageId, nodeIds: [first.id], label: 'First' },
+      { pageId, nodeIds: [hidden.id], label: 'Hidden' },
+      { pageId, nodeIds: [second.id], label: 'Second' }
+    ])
+  )
+  expect(result.pages.map((page) => page.label)).toEqual(['First', 'Second'])
+  expect(pdfObjects(result.data)).toContain('/Count 2')
+})
+
+test('is null when no page has anything to draw', async () => {
+  const graph = new SceneGraph()
+  const hidden = card(graph, 'Hidden')
+  graph.updateNode(hidden.id, { visible: false })
+  expect(
+    await exportPDFDocument(graph, [
+      { pageId: graph.getPages()[0].id, nodeIds: [hidden.id] }
+    ])
+  ).toBeNull()
+})
+
+test('embeds a variable font as the TrueType instance the text draws, and keeps its text', async () => {
+  const objects = await exportText({ text: 'Hello', fontFamily: 'Inter', fontWeight: 700 })
+  expect(objects).toContain('/FontFile2')
+  expect(objects).not.toContain('/Type3')
+  for (const character of 'Helo') expect(mappedCharacters(objects)).toContain(character)
+})
+
+test('keeps Arabic as the letters it draws, joining forms included', async () => {
+  // The canvas draws each letter in the form its neighbours give it, glyphs no cmap maps back.
+  const objects = await exportText({ text: 'مرحبا بكم', fontFamily: ARABIC_FAMILY })
+  expect(objects).toContain('/FontFile2')
+  const mapped = mappedCharacters(objects)
+  for (const letter of 'مرحبابكم') expect(mapped).toContain(letter)
 })

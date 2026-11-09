@@ -4,16 +4,11 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { flippedCases } from '#core-tests/helpers/flipped-layers'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import {
-  computeContentBounds,
-  initCanvasKit,
-  renderNodesToImage,
-  renderThumbnail,
-  thumbnailFrame
-} from '@open-pencil/core/io/formats/raster'
+import { computeContentBounds, renderNodesToImage, renderThumbnail, thumbnailFrame } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
 
 afterAll(() => renderer.destroy())
