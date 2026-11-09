@@ -638,5 +638,8 @@
   "variableModesFromLibraries": "来自库",
   "variableModeAuto": "自动（{mode}）",
   "variableModeAutoMixed": "自动",
-  "variableModeHeading": "模式"
+  "variableModeHeading": "模式",
+  "scale": "缩放",
+  "scaleMultiplier": "缩放倍数",
+  "scaleAnchor": "缩放锚点"
 }

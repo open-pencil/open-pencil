@@ -645,5 +645,8 @@
   "variableModesFromLibraries": "Des bibliothèques",
   "variableModeAuto": "Auto ({mode})",
   "variableModeAutoMixed": "Auto",
-  "variableModeHeading": "Mode"
+  "variableModeHeading": "Mode",
+  "scale": "Mettre à l’échelle",
+  "scaleMultiplier": "Facteur d’échelle",
+  "scaleAnchor": "Ancre de mise à l’échelle"
 }

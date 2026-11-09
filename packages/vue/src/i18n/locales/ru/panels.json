@@ -652,5 +652,8 @@
   "variableModesFromLibraries": "Из библиотек",
   "variableModeAuto": "Авто ({mode})",
   "variableModeAutoMixed": "Авто",
-  "variableModeHeading": "Режим"
+  "variableModeHeading": "Режим",
+  "scale": "Масштаб",
+  "scaleMultiplier": "Множитель масштаба",
+  "scaleAnchor": "Точка привязки"
 }

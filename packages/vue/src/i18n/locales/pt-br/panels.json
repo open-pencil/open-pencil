@@ -645,5 +645,8 @@
   "brightness": "Brilho",
   "lightness": "Luminosidade",
   "chroma": "Croma",
-  "alpha": "Alfa"
+  "alpha": "Alfa",
+  "scale": "Escalar",
+  "scaleMultiplier": "Fator de escala",
+  "scaleAnchor": "Âncora de escala"
 }

@@ -22,6 +22,22 @@ const RESCALABLE_NODE_TYPES = new Set<SceneNode['type']>([
   'VECTOR'
 ])
 
+/** Whether a layer sits inside a component instance, which Figma's Scale tool does not reach. */
+export function isInsideInstance(
+  node: SceneNode,
+  graph: Pick<SceneGraph, 'getNode'>
+): boolean {
+  for (let parentId = node.parentId; parentId; parentId = graph.getNode(parentId)?.parentId ?? null) {
+    if (graph.getNode(parentId)?.type === 'INSTANCE') return true
+  }
+  return false
+}
+
+/** Whether a layer takes the Scale tool: a rescalable type that is not locked. */
+export function canRescaleNode(node: SceneNode): boolean {
+  return !node.locked && RESCALABLE_NODE_TYPES.has(node.type)
+}
+
 /** Scale a node tree from the root node's top-left, matching Figma's Scale tool. */
 export function rescaleNodeTree(graph: SceneGraph, rootId: string, scale: number): void {
   if (!Number.isFinite(scale)) throw new TypeError('Scale must be a finite number')

@@ -652,5 +652,8 @@
   "variableModesFromLibraries": "Z bibliotek",
   "variableModeAuto": "Automatycznie ({mode})",
   "variableModeAutoMixed": "Automatycznie",
-  "variableModeHeading": "Tryb"
+  "variableModeHeading": "Tryb",
+  "scale": "Skaluj",
+  "scaleMultiplier": "Mnożnik skali",
+  "scaleAnchor": "Punkt zakotwiczenia"
 }

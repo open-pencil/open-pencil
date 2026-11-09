@@ -42,6 +42,7 @@ import {
   cancelResizeDrag,
   commitSelectionResize
 } from '#vue/shared/input/resize/selection'
+import { applyScale } from '#vue/shared/input/scale'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
@@ -251,13 +252,15 @@ export function useCanvasInput(
     const guideCursor = editsLayers() ? guideInput.updateHover(sx, sy) : null
     cursorOverride.value =
       guideCursor ??
-      updateHoverCursor(
-        cx,
-        cy,
-        editor,
-        hitFns,
-        editor.state.measurementMode === 'deep' || hoverDeep(event)
-      )
+      (editor.state.activeTool === 'SCALE'
+        ? null
+        : updateHoverCursor(
+            cx,
+            cy,
+            editor,
+            hitFns,
+            editor.state.measurementMode === 'deep' || hoverDeep(event)
+          ))
     editor.setAutoLayoutHover(autoLayoutHoverAt(cx, cy, editor.state.measurementMode))
   }
 
@@ -439,6 +442,11 @@ export function useCanvasInput(
 
     if (d.type === 'sticky-scale') {
       applyStickyScale(d, cx, cy, editor, e.ctrlKey)
+      return
+    }
+
+    if (d.type === 'scale') {
+      applyScale(d, cx, cy, editor)
       return
     }
 

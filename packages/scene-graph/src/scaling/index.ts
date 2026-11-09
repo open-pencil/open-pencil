@@ -1,2 +1,2 @@
 export { scaleNodeChanges } from './node'
-export { rescaleNodeTree } from './tree'
+export { rescaleNodeTree, canRescaleNode, isInsideInstance } from './tree'

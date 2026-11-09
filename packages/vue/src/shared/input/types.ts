@@ -10,6 +10,7 @@ import type {
   VectorNetwork
 } from '@open-pencil/scene-graph'
 import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -138,6 +139,25 @@ export interface DragPan {
   startScreenY: number
   startPanX: number
   startPanY: number
+}
+
+/** A Scale-tool drag: text, strokes, effects, and geometry scale from the handle. */
+export interface DragScale {
+  type: 'scale'
+  handle: HandlePosition
+  startX: number
+  startY: number
+  /** The selection's bounds in page coordinates when the drag began. */
+  origRect: Rect
+  /** The roots being scaled and where each sits in its own parent. */
+  roots: Array<{ id: string; origin: Vector; toParent: Mat3 }>
+  /** Every layer of every root as the drag found it. */
+  originals: Map<string, SceneNode>
+  /** The scale and box the latest step reached. */
+  scale: number
+  rect: Rect
+  commit: () => void
+  cancel: () => void
 }
 
 export interface DragResize {
@@ -353,6 +373,7 @@ export type DragState =
   | DragPan
   | DragResize
   | DragResizeSelection
+  | DragScale
   | DragStickyScale
   | DragMarquee
   | DragRotate

@@ -45,6 +45,7 @@ import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
 import PositionSection from './properties/PositionSection.vue'
+import ScaleSection from './properties/ScaleSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
@@ -129,6 +130,7 @@ const { panels } = useI18n()
       </template>
     </PanelHeader>
     <StatusSection />
+    <ScaleSection v-if="activeTool === 'SCALE'" />
     <ComponentPropertiesSection />
     <PositionSection />
     <ConstraintsSection />
@@ -209,6 +211,7 @@ const { panels } = useI18n()
         </template>
       </PanelHeader>
 
+      <ScaleSection v-if="activeTool === 'SCALE'" />
       <TextContentSection v-if="node.type === 'TEXT'" :node-id="node.id" />
       <StatusSection />
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />

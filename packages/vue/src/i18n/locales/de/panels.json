@@ -645,5 +645,8 @@
   "variableModesFromLibraries": "Aus Bibliotheken",
   "variableModeAuto": "Automatisch ({mode})",
   "variableModeAutoMixed": "Automatisch",
-  "variableModeHeading": "Modus"
+  "variableModeHeading": "Modus",
+  "scale": "Skalieren",
+  "scaleMultiplier": "Skalierungsfaktor",
+  "scaleAnchor": "Skalierungsanker"
 }
