@@ -101,16 +101,20 @@ export function usePageDrift(options: PageDriftOptions = {}) {
       }))
   }
 
-  /** Run one action alone, reporting a document that refused the write rather than throwing. */
-  async function run<T>(work: () => Promise<T>): Promise<T | null> {
+  /**
+   * Run one action alone, reporting the reason nothing happened rather than throwing. Keeping a
+   * baseline can fail on the document; a comparison only fails on a page that would not draw.
+   */
+  async function run<T>(work: () => Promise<T>, reason: DriftFailure = 'not-saved'): Promise<T | null> {
     if (busy.value) return null
     busy.value = true
     failure.value = null
     try {
       return await work()
     } catch (error) {
-      console.warn('[Drift] The baselines could not be updated:', error)
-      failure.value = 'not-saved'
+      if (reason === 'not-drawn') console.warn('[Drift] The pages could not be compared:', error)
+      else console.warn('[Drift] The baselines could not be updated:', error)
+      failure.value = reason
       return null
     } finally {
       busy.value = false
@@ -156,7 +160,7 @@ export function usePageDrift(options: PageDriftOptions = {}) {
   async function compare(nodeId?: string): Promise<CompareOutcome[]> {
     const wanted = targets(nodeId)
     if (wanted.length === 0) return []
-    const compared = await run(() => comparePages(document.read(), wanted, capture))
+    const compared = await run(() => comparePages(document.read(), wanted, capture), 'not-drawn')
     if (compared === null) return []
     const states: Record<string, DriftState> = { ...outcomes.value }
     for (const outcome of compared) states[outcome.nodeId] = outcome.state

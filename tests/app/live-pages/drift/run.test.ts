@@ -43,3 +43,26 @@ test('a page that could not be captured has nothing to compare', async () => {
     { nodeId: 'frame-1', state: 'none' }
   ])
 })
+
+test('a capture that throws costs one page, not the comparison', async () => {
+  const file = await setBaseline(emptyDriftFile(), target, captureOf('first'))
+  const second = { nodeId: 'frame-2', url: 'http://localhost:3000/pricing' }
+  const compared = await comparePages(file, [target, second], async (requested) => {
+    if (requested.nodeId === second.nodeId) throw new Error('no browser')
+    return { bytes: new TextEncoder().encode('first'), width: 1440, height: 900 }
+  })
+
+  expect(compared).toEqual([
+    { nodeId: 'frame-1', state: 'same' },
+    { nodeId: 'frame-2', state: 'none' }
+  ])
+})
+
+test('a capture that throws leaves the baseline it could not replace', async () => {
+  const before = await setBaseline(emptyDriftFile(), target, captureOf('first'))
+  const after = await setBaseline(before, target, async () => {
+    throw new Error('no browser')
+  })
+
+  expect(after).toEqual(before)
+})

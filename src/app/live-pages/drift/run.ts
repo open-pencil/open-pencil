@@ -35,7 +35,7 @@ export async function setBaseline(
   target: BaselineTarget,
   capture: PageCapture
 ): Promise<DriftFile> {
-  const captured = await capture(target)
+  const captured = await captureOrNull(capture, target)
   if (captured === null) return file
   const reference: DriftReference = {
     nodeId: target.nodeId,
@@ -49,6 +49,22 @@ export async function setBaseline(
 }
 
 /**
+ * The picture a target answers, or null when it could not be drawn at all. A capture that throws
+ * is one page that did not arrive, not a comparison that never ran.
+ */
+async function captureOrNull(
+  capture: PageCapture,
+  target: BaselineTarget
+): Promise<CapturedPage | null> {
+  try {
+    return await capture(target)
+  } catch (error) {
+    console.warn('[Drift] A page could not be drawn:', target.url, error)
+    return null
+  }
+}
+
+/**
  * Compare every frame that shows a page with the baseline kept for it. A page that could not be
  * captured answers `none`, which reads as "nothing to compare" rather than as a drift.
  */
@@ -59,7 +75,7 @@ export async function comparePages(
 ): Promise<CompareOutcome[]> {
   const outcomes: CompareOutcome[] = []
   for (const target of targets) {
-    const captured = await capture(target)
+    const captured = await captureOrNull(capture, target)
     const digest = captured === null ? null : await digestOf(captured.bytes)
     outcomes.push({
       nodeId: target.nodeId,
