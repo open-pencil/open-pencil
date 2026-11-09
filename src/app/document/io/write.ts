@@ -2,6 +2,7 @@ import { remove, rename, writeFile as tauriWriteFile } from '@tauri-apps/plugin-
 
 import type { FigArchiveSink } from '@open-pencil/core/io/formats/fig'
 import { concatenateBytes } from '@open-pencil/core/io/formats/fig'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { bufferSource } from '@/app/document/io/bytes'
@@ -88,7 +89,7 @@ export function createDocumentWriter({
         // Replace the file only once every byte is written, so a failed export leaves the
         // previous save intact. The temporary name has no leading dot: the fs scope keeps
         // hidden files out of `**`.
-        const temporary = `${filePath}.saving`
+        const temporary = `${filePath}.${randomHex(8)}.saving`
         try {
           // `write_file` sends its bytes as a raw IPC body. `FileHandle.write` sends the same
           // bytes as a JSON number array, which made a large save take minutes.

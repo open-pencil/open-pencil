@@ -70,11 +70,12 @@ describe('Tauri document IO helpers', () => {
       'plugin:fs|write_file',
       'plugin:fs|rename'
     ])
-    expect(writePath(calls[0]?.options)).toBe('/tmp/document.fig.saving')
-    expect(writePath(calls[1]?.options)).toBe('/tmp/document.fig.saving')
+    const temporary = writePath(calls[0]?.options)
+    expect(temporary).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
+    expect(writePath(calls[1]?.options)).toBe(temporary)
     expect(calls[1]?.args).toEqual(new Uint8Array([1, 2, 3, 4, 5, 6]))
     expect(calls[2]?.args).toEqual({
-      oldPath: '/tmp/document.fig.saving',
+      oldPath: temporary,
       newPath: '/tmp/document.fig',
       options: undefined
     })
@@ -109,9 +110,9 @@ describe('Tauri document IO helpers', () => {
   })
 
   test('keeps the saved file when a stream fails', async () => {
-    const calls: Array<{ cmd: string; args: unknown }> = []
-    await mockTauriIPC((cmd, args) => {
-      calls.push({ cmd, args })
+    const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
+    await mockTauriIPC((cmd, args, options) => {
+      calls.push({ cmd, args, options })
       return null
     })
     const write = createDocumentWriter({
@@ -131,7 +132,9 @@ describe('Tauri document IO helpers', () => {
     ).rejects.toThrow('disk full')
 
     expect(calls.map((call) => call.cmd)).toEqual(['plugin:fs|write_file', 'plugin:fs|remove'])
-    expect(calls[1]?.args).toEqual({ path: '/tmp/document.fig.saving', options: undefined })
+    const temporary = writePath(calls[0]?.options)
+    expect(temporary).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
+    expect(calls[1]?.args).toEqual({ path: temporary, options: undefined })
   })
 
   test('removes the temporary file when an append write fails', async () => {
@@ -199,6 +202,42 @@ describe('Tauri document IO helpers', () => {
     await first
     await second
     expect(order).toEqual(['first', 'second'])
+  })
+
+  test('uses a different temporary file for each save', async () => {
+    const temporaryPaths = new Set<string>()
+    await mockTauriIPC((cmd, _args, options) => {
+      if (cmd === 'plugin:fs|write_file') {
+        const path = writePath(options)
+        if (path) temporaryPaths.add(path)
+      }
+      return null
+    })
+    const makeWriter = () =>
+      createDocumentWriter({
+        state: { documentName: 'Document' },
+        getFilePath: () => '/tmp/document.fig',
+        getFileHandle: () => null,
+        getStorageBinding: () => null,
+        setSavedVersion: () => undefined,
+        setLastWriteTime: () => undefined
+      })
+    const first = makeWriter()
+    const second = makeWriter()
+
+    await Promise.all([
+      first(async (sink) => {
+        await sink(new Uint8Array([1]))
+      }, 1),
+      second(async (sink) => {
+        await sink(new Uint8Array([2]))
+      }, 2)
+    ])
+
+    expect(temporaryPaths.size).toBe(2)
+    for (const path of temporaryPaths) {
+      expect(path).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
+    }
   })
 
   test('keeps a completed write successful when recovery cleanup fails', async () => {
