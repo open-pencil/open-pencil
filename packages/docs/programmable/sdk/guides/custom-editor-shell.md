@@ -157,6 +157,28 @@ editor.onEditorEvent('history:changed', (change, step) => {
 
 `setReadOnly(true)` is the strongest restriction: the document can be looked at, selected in, and copied from, and an open path closes.
 
+## Guiding what the person does
+
+A shell that judges input as it comes, such as a tracing game, follows the gesture in progress through editor events, in page coordinates, and refuses one with `cancelGesture()`: the gesture is taken back with no undo step and no redo, and the canvas drops it.
+
+```ts
+// Before a press of the pen acts: kind is 'start', 'point', 'redo-handle', or 'close'.
+editor.onEditorEvent('pen:pressed', ({ at, kind }) => {
+  if (kind === 'start' && !nearStart(at)) editor.cancelGesture()
+})
+
+// After the press placed its point or set up a close, before anything commits; segment is the
+// cubic it finished, the closing one for a close.
+editor.onEditorEvent('pen:released', ({ kind, segment }) => {
+  if (segment && !onShape(segment)) editor.cancelGesture()
+})
+
+// Points the pen and vector edit mode snap to, alongside the path's own.
+editor.setSnapTargets({ points: [shapeStart, shapeEnd] })
+```
+
+`cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `onEscape` and `shortcuts`.
+
 ## Why this split works
 
 - the SDK owns editor integration and reusable headless logic

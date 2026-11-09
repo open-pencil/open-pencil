@@ -33,9 +33,12 @@ export function createVectorEditActions(ctx: EditorContext, actions: VectorEditA
       const editState = getNodeEditState()
       if (editState) commitNodeEditChanges(editState)
     },
-    nodeEditCancelDrag: () => {
+    /** Puts back the path as the change in progress started, for `cancelGesture`; true when one was. */
+    cancelNodeEditChange: (): boolean => {
       const editState = getNodeEditState()
-      if (editState) history.cancel(editState)
+      if (!editState?.changeStart) return false
+      history.cancel(editState)
+      return true
     },
     enterNodeEditMode,
     exitNodeEditMode,

@@ -94,6 +94,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setSelectedGuide',
   'setShapeHandleHover',
   'setSnapGuides',
+  'setSnapTargets',
   'setTransforming',
 
   // Viewport and pages
@@ -139,12 +140,11 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'prepareCopy',
 
   // Ending what was in progress
+  'cancelGesture',
   'cancelNodePreviews',
   'exitNodeEditMode',
   'flushNudge',
-  'nodeEditCancelDrag',
   'penCancel',
-  'penCancelPress',
   'pencilCancel',
 
   // Canvas, layout, and document lifecycle
