@@ -57,6 +57,10 @@ const DENIED_FLAGS: &[&str] = &[
 /// the panel makes always runs them, which is what `commit` reports back on failure.
 const DENIED_COMMIT_FLAGS: &[&str] = &["--no-verify", "-n"];
 
+/// A denied flag a subcommand still knows under a safe meaning: `-c` names the branch `switch`
+/// creates, and only before the subcommand does it set git's own configuration.
+const ALLOWED_SUBCOMMAND_FLAGS: &[(&str, &str)] = &[("switch", "-c")];
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitRunReport {
@@ -208,7 +212,9 @@ fn validate_args(subcommand: &str, args: &[String]) -> Result<(), String> {
         if arg.contains('\0') {
             return Err("a git argument contains a null byte".to_string());
         }
-        let denied = DENIED_FLAGS.iter().any(|flag| matches_flag(arg, flag))
+        let denied = DENIED_FLAGS
+            .iter()
+            .any(|flag| matches_flag(arg, flag) && !is_allowed_for(subcommand, flag))
             || (subcommand == "commit"
                 && DENIED_COMMIT_FLAGS
                     .iter()
@@ -220,6 +226,13 @@ fn validate_args(subcommand: &str, args: &[String]) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// Whether `subcommand` gives a denied flag a meaning the panel may use.
+fn is_allowed_for(subcommand: &str, flag: &str) -> bool {
+    ALLOWED_SUBCOMMAND_FLAGS
+        .iter()
+        .any(|(allowed_for, allowed_flag)| *allowed_for == subcommand && *allowed_flag == flag)
 }
 
 /// A flag is denied both on its own and with an `=`-joined value: `--upload-pack` and
@@ -261,6 +274,15 @@ mod tests {
         assert!(validate_args("fetch", &args(&["--upload-pack=sh"])).is_err());
         assert!(validate_args("status", &args(&["-C", "/tmp"])).is_err());
         assert!(validate_args("diff", &args(&["--stat"])).is_ok());
+    }
+
+    #[test]
+    fn a_branch_is_created_with_the_switch_flag() {
+        assert!(validate_args("switch", &args(&["-c", "feature/pricing"])).is_ok());
+        assert!(validate_args("switch", &args(&["main"])).is_ok());
+        // Only `switch` gives `-c` its safe meaning: everywhere else it still sets config.
+        assert!(validate_args("commit", &args(&["-c", "core.pager=sh"])).is_err());
+        assert!(validate_args("branch", &args(&["-c", "old", "new"])).is_err());
     }
 
     #[test]
