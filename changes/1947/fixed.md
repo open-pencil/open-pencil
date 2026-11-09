@@ -1,0 +1,1 @@
+- Text in a font that loads after it is first drawn, such as a plugin's or a collaborator's text in a weight not used before, now appears once the font arrives instead of staying blank (#1947).
