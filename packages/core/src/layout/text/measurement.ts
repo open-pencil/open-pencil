@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { clampLayoutLength, MAX_FONT_SIZE } from '@open-pencil/scene-graph/layout'
 import { lineStepPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
 
 import { rangeCapHeight } from '#core/text/character-face'
@@ -18,7 +19,8 @@ export function estimateTextSize(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } {
-  const fontSize = node.fontSize || 14
+  // A size a file or script got wrong cannot decide how far the lines reach, which layout uses.
+  const fontSize = clampLayoutLength(node.fontSize || 14, MAX_FONT_SIZE)
   const family = node.fontFamily || 'Inter'
   const style = faceStyleKey({ ...node, fontWeight: node.fontWeight || 400 })
   const text = node.text || ''

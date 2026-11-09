@@ -67,6 +67,7 @@
   "fixFullRadius": "Użyj pełnego promienia",
   "fixConvertToFrame": "Przekształć w ramkę",
   "fixDeleteLayer": "Usuń warstwę",
+  "fixPlaceOnGrid": "Umieść na pełnych liniach siatki",
   "fixAll": "Popraw wszystkie ({count})",
   "ruleNoDefaultNames": "Domyślna nazwa warstwy",
   "ruleNoDefaultNamesHelp": "Opisowe nazwy ułatwiają znajdowanie, przekazywanie i ponowne użycie warstw.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Mieszane style tekstu",
   "ruleNoMixedStylesHelp": "Kilka stylów w jednej warstwie tekstu łatwo zepsuć podczas edycji.",
   "ruleNoDetachedInstances": "Wygląda jak komponent",
-  "ruleNoDetachedInstancesHelp": "Ta ramka wygląda jak element wielokrotnego użytku. Użyj instancji komponentu."
+  "ruleNoDetachedInstancesHelp": "Ta ramka wygląda jak element wielokrotnego użytku. Użyj instancji komponentu.",
+  "ruleInvalidGridPlacement": "Nieprawidłowe umieszczenie w siatce",
+  "ruleInvalidGridPlacementHelp": "Element siatki wymaga całej linii początkowej i rozpiętości co najmniej jednego toru; inaczej układ nie może go umieścić."
 }

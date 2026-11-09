@@ -67,6 +67,7 @@
   "fixFullRadius": "Usar raio total",
   "fixConvertToFrame": "Converter em frame",
   "fixDeleteLayer": "Excluir camada",
+  "fixPlaceOnGrid": "Colocar em linhas de grade inteiras",
   "fixAll": "Corrigir todos os {count}",
   "ruleNoDefaultNames": "Nome de camada padrão",
   "ruleNoDefaultNamesHelp": "Nomes descritivos facilitam encontrar, repassar e reutilizar as camadas.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Estilos de texto mistos",
   "ruleNoMixedStylesHelp": "Vários estilos em uma mesma camada de texto são fáceis de quebrar ao editar.",
   "ruleNoDetachedInstances": "Parece um componente",
-  "ruleNoDetachedInstancesHelp": "Este frame parece um elemento reutilizável. Use uma instância de componente."
+  "ruleNoDetachedInstancesHelp": "Este frame parece um elemento reutilizável. Use uma instância de componente.",
+  "ruleInvalidGridPlacement": "Posição de grade inválida",
+  "ruleInvalidGridPlacementHelp": "Um item de grade precisa de uma linha inicial inteira e uma extensão de pelo menos uma faixa; caso contrário, o layout não pode posicioná-lo."
 }

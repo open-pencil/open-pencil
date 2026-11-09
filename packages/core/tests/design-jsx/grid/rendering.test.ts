@@ -134,6 +134,24 @@ describe('grid layout rendering', () => {
     expect(children[0].gridPosition).toEqual({ column: 1, row: 1, columnSpan: 2, rowSpan: 2 })
   })
 
+  it('reports a span layout cannot use and keeps auto placement', async () => {
+    const g = makeSceneGraph()
+    const jsx = `
+      <Frame name="Grid" w={300} h={200} grid columns="1fr 1fr">
+        <Rectangle name="A" w={50} h={50} colStart={1} rowStart={1} colSpan={0} />
+      </Frame>
+    `
+    const [result] = await renderJSX(g, jsx)
+
+    expect(result.warnings).toEqual(['Invalid colSpan 0 on <rectangle> is ignored; expected >=1.'])
+    expect(g.getChildren(result.id)[0].gridPosition).toEqual({
+      column: 1,
+      row: 1,
+      columnSpan: 1,
+      rowSpan: 1
+    })
+  })
+
   it('grid + computeLayout positions children in cells', async () => {
     const g = makeSceneGraph()
     const tree = Frame(

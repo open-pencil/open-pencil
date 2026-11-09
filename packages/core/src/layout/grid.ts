@@ -7,8 +7,12 @@ import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direct
 import {
   configureAbsoluteChild,
   createYogaNode,
-  mapGridTrack,
-  setLayoutPadding
+  mapGridTracks,
+  setLayoutPadding,
+  setYogaGap,
+  setYogaGridPlacement,
+  setYogaHeight,
+  setYogaWidth
 } from './yoga-helpers'
 
 function configureAsGrid(
@@ -18,20 +22,20 @@ function configureAsGrid(
 ): void {
   yogaNode.setDisplay(Display.Grid)
   yogaNode.setDirection(direction === 'RTL' ? Direction.RTL : Direction.LTR)
-  yogaNode.setWidth(node.width)
+  setYogaWidth(yogaNode, node.width)
   if (node.gridTemplateRows.length > 0 || node.height > 0) {
-    yogaNode.setHeight(node.height)
+    setYogaHeight(yogaNode, node.height)
   }
 
   if (node.gridTemplateColumns.length > 0) {
-    yogaNode.setGridTemplateColumns(node.gridTemplateColumns.map(mapGridTrack))
+    yogaNode.setGridTemplateColumns(mapGridTracks(node.gridTemplateColumns))
   }
   if (node.gridTemplateRows.length > 0) {
-    yogaNode.setGridTemplateRows(node.gridTemplateRows.map(mapGridTrack))
+    yogaNode.setGridTemplateRows(mapGridTracks(node.gridTemplateRows))
   }
 
-  yogaNode.setGap(Gutter.Column, node.gridColumnGap)
-  yogaNode.setGap(Gutter.Row, node.gridRowGap)
+  setYogaGap(yogaNode, Gutter.Column, node.gridColumnGap)
+  setYogaGap(yogaNode, Gutter.Row, node.gridRowGap)
 
   setLayoutPadding(yogaNode, node)
 }
@@ -43,16 +47,15 @@ export function createGridChildNode(graph: SceneGraph, child: SceneNode): YogaNo
   } else {
     const pos = child.gridPosition
     if (pos) {
-      yogaChild.setGridColumnStart(pos.column)
-      yogaChild.setGridColumnEndSpan(pos.columnSpan)
-      yogaChild.setGridRowStart(pos.row)
-      yogaChild.setGridRowEndSpan(pos.rowSpan)
+      // Yoga's grid asserts on a placement its WASM build cannot lay out and then aborts the
+      // module, so a value an authored file or script got wrong is bounded here.
+      setYogaGridPlacement(yogaChild, pos)
     }
     // Each axis fills its cell on its own, as in Figma: grow for width, stretch for height.
     if (layoutSizing(graph, child, 'HORIZONTAL') === 'FILL') yogaChild.setWidthStretch()
-    else yogaChild.setWidth(child.width)
+    else setYogaWidth(yogaChild, child.width)
     if (layoutSizing(graph, child, 'VERTICAL') === 'FILL') yogaChild.setHeightStretch()
-    else yogaChild.setHeight(child.height)
+    else setYogaHeight(yogaChild, child.height)
   }
   return yogaChild
 }

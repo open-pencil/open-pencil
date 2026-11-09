@@ -1,0 +1,1 @@
+- Lint reports a grid item placed on a line or span layout cannot use, and its fix places the item on whole lines.

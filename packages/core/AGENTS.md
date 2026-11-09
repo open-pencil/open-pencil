@@ -19,6 +19,8 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 ## Layout
 
 - `@open-pencil/yoga-layout` supplies both flexbox and CSS Grid.
+- A value a document supplies that layout hands to Yoga goes through a `setYoga*` helper in `packages/core/src/layout/yoga-helpers.ts`, which bounds it to `@open-pencil/scene-graph/layout` limits: Yoga's WASM build aborts on a grid line or span it cannot place and leaks its stack pointer on any exception, corrupting every later layout (`packages/core/tests/layout/grid-layout.test.ts`).
+- Text measurement in a Yoga measure callback runs through `measuredSize` (`packages/core/src/layout/text/leaf.ts`), which reports a throwing or non-finite measurement as the size the text has (`packages/core/tests/layout/text-measure-failure.test.ts`).
 - Recompute layout after demo creation and for each materialized or imported page; scope computation to the affected page or subtree where possible.
 - The first Hug/Fill dimension mutation switches only that axis to Fixed; focus is non-destructive, and mode/value changes share one undo transaction.
 - Arranging layers runs through `packages/core/src/layout/arrange/`: `arrangeBoxes` runs an ELK layout (spread, compact, pack, flow, tree, radial, network), loaded on first use, `applyArrangement` moves the layers that draw it and joins their connectors, routing them when they flow, and `arrangeLayers` does both for layers already on a page, finding the connectors between them; importers and tools that arrange layers go through them, and connectors that pass through stored bend points use `bendConnectorThrough` (`packages/core/tests/layout/arrange/layers.test.ts`).

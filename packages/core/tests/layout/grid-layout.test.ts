@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('Grid Layout', () => {
   describe('basic grid', () => {
@@ -202,6 +202,27 @@ describe('Grid Layout', () => {
       const child = graph.getChildren(frame.id)[0]
       expect(child.y).toBe(0)
       expect(child.height).toBe(50)
+    })
+
+    test('a placement Yoga cannot lay out falls back to one it can', () => {
+      const graph = new SceneGraph()
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr(), fr()])
+      const zeroSpan = rect(graph, frame.id, 50, 50, {
+        gridPosition: { column: 1, row: 1, columnSpan: 0, rowSpan: -2 }
+      })
+      const fractional = rect(graph, frame.id, 50, 50, {
+        gridPosition: { column: 1.5, row: 1, columnSpan: 1.5, rowSpan: 1 }
+      })
+
+      // Yoga aborts its WASM module on these values, and every later layout then fails, so they
+      // are bounded before they reach it rather than stored back on the layer.
+      computeLayout(graph, frame.id)
+      computeLayout(graph, frame.id)
+
+      expect(getNodeOrThrow(graph, zeroSpan.id).x).toBe(0)
+      expect(getNodeOrThrow(graph, zeroSpan.id).y).toBe(0)
+      expect(getNodeOrThrow(graph, fractional.id).x).toBe(0)
+      expect(getNodeOrThrow(graph, fractional.id).y).toBe(0)
     })
   })
 

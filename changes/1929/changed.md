@@ -1,0 +1,1 @@
+- Layer tools and design JSX keep sizes, spacing, rotation, flex ratios, grid tracks, and font sizes within the bounds layout can place, and say so in each argument's description.

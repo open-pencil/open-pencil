@@ -67,6 +67,7 @@
   "fixFullRadius": "Vollen Radius verwenden",
   "fixConvertToFrame": "In Rahmen umwandeln",
   "fixDeleteLayer": "Ebene löschen",
+  "fixPlaceOnGrid": "Auf ganze Rasterlinien setzen",
   "fixAll": "Alle {count} beheben",
   "ruleNoDefaultNames": "Standardname der Ebene",
   "ruleNoDefaultNamesHelp": "Aussagekräftige Namen machen Ebenen leichter auffindbar, übergebbar und wiederverwendbar.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Gemischte Textstile",
   "ruleNoMixedStylesHelp": "Mehrere Stile in einer Textebene gehen beim Bearbeiten leicht kaputt.",
   "ruleNoDetachedInstances": "Sieht wie eine Komponente aus",
-  "ruleNoDetachedInstancesHelp": "Dieser Rahmen sieht wie ein wiederverwendbares Element aus. Verwende eine Komponenteninstanz."
+  "ruleNoDetachedInstancesHelp": "Dieser Rahmen sieht wie ein wiederverwendbares Element aus. Verwende eine Komponenteninstanz.",
+  "ruleInvalidGridPlacement": "Nicht layoutfähige Rasterposition",
+  "ruleInvalidGridPlacementHelp": "Ein Rasterelement braucht eine ganze Startlinie und eine Spanne von mindestens einer Spur; sonst kann das Layout es nicht platzieren."
 }

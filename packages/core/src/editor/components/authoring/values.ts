@@ -4,7 +4,7 @@ import { canCreateInstance } from '@open-pencil/scene-graph/instances'
 
 import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import type { EditorContext } from '#core/editor/types'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 
 import type { ExposableComponentField } from './context'
 

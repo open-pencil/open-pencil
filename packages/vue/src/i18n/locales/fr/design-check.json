@@ -67,6 +67,7 @@
   "fixFullRadius": "Utiliser un rayon complet",
   "fixConvertToFrame": "Convertir en cadre",
   "fixDeleteLayer": "Supprimer le calque",
+  "fixPlaceOnGrid": "Placer sur des lignes de grille entières",
   "fixAll": "Tout corriger ({count})",
   "ruleNoDefaultNames": "Nom de calque par défaut",
   "ruleNoDefaultNamesHelp": "Des noms descriptifs facilitent la recherche, la transmission et la réutilisation des calques.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Styles de texte mélangés",
   "ruleNoMixedStylesHelp": "Plusieurs styles dans un même calque de texte se cassent facilement à l’édition.",
   "ruleNoDetachedInstances": "Ressemble à un composant",
-  "ruleNoDetachedInstancesHelp": "Ce cadre ressemble à un élément réutilisable. Utilisez une instance de composant."
+  "ruleNoDetachedInstancesHelp": "Ce cadre ressemble à un élément réutilisable. Utilise une instance de composant.",
+  "ruleInvalidGridPlacement": "Placement de grille invalide",
+  "ruleInvalidGridPlacementHelp": "Un élément de grille a besoin d'une ligne de départ entière et d'une portée d'au moins une piste ; sinon, la mise en page ne peut pas le placer."
 }

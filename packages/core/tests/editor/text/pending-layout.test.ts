@@ -12,7 +12,7 @@ import {
   type PendingLayoutRenderer
 } from '#core/editor/text/pending-layout'
 import { createLayoutRunner } from '#core/layout/mutations'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 import { fontManager } from '#core/text/font/manager'
 import { fontResolver } from '#core/text/resolver'
 

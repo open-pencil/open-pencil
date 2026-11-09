@@ -40,6 +40,10 @@ const RULE_COPY: Partial<Record<string, RuleCopy>> = {
   'no-detached-instances': {
     title: 'ruleNoDetachedInstances',
     help: 'ruleNoDetachedInstancesHelp'
+  },
+  'invalid-grid-placement': {
+    title: 'ruleInvalidGridPlacement',
+    help: 'ruleInvalidGridPlacementHelp'
   }
 }
 
@@ -137,6 +141,15 @@ export function issueDetail(issue: DesignIssue, messages: Messages): string | nu
       })
       return parts.length > 0 ? parts.join(', ') : null
     }
+    case 'invalid-grid-placement': {
+      const row = numberAt(issue, 'row')
+      const column = numberAt(issue, 'column')
+      const rowSpan = numberAt(issue, 'rowSpan')
+      const columnSpan = numberAt(issue, 'columnSpan')
+      if (row === undefined || column === undefined) return null
+      if (rowSpan === undefined || columnSpan === undefined) return null
+      return `${formatNumber(row)}/${formatNumber(column)} · ${formatNumber(rowSpan)}×${formatNumber(columnSpan)}`
+    }
     default:
       return RULE_COPY[issue.ruleId] ? null : issue.message
   }
@@ -176,6 +189,7 @@ function fixLabel(fix: LintFix, messages: Messages): string {
   }
   if (fix.kind === 'convert-to-frame') return messages.fixConvertToFrame
   if (fix.kind === 'delete') return messages.fixDeleteLayer
+  if (fix.kind === 'set-grid-placement') return messages.fixPlaceOnGrid
   const changes = Object.entries(fix.changes)
   // Geometry changes only come from rounding to whole pixels.
   if (changes.length !== 1 || changes.some(([property]) => property in GEOMETRY_LABELS)) {

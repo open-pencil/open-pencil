@@ -80,6 +80,11 @@ const styles = designCheck()
           class="size-3"
           aria-hidden="true"
         />
+        <icon-lucide-layout-grid
+          v-else-if="row.action.kind === 'set-grid-placement'"
+          class="size-3"
+          aria-hidden="true"
+        />
         <icon-lucide-trash-2
           v-else-if="row.action.kind === 'delete'"
           class="size-3"

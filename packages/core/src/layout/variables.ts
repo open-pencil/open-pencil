@@ -5,7 +5,7 @@ import {
 } from '@open-pencil/scene-graph/variables'
 
 import { computeLayout, computeSubtreeLayouts } from '#core/layout'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 
 /**
  * Binding evaluation is derived work, not an additional history entry. The scope names what

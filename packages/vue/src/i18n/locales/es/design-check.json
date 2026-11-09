@@ -67,6 +67,7 @@
   "fixFullRadius": "Usar radio completo",
   "fixConvertToFrame": "Convertir en marco",
   "fixDeleteLayer": "Eliminar capa",
+  "fixPlaceOnGrid": "Colocar en líneas de cuadrícula enteras",
   "fixAll": "Corregir las {count}",
   "ruleNoDefaultNames": "Nombre de capa predeterminado",
   "ruleNoDefaultNamesHelp": "Los nombres descriptivos facilitan encontrar, entregar y reutilizar capas.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Estilos de texto mezclados",
   "ruleNoMixedStylesHelp": "Varios estilos en una capa de texto se rompen fácilmente al editar.",
   "ruleNoDetachedInstances": "Parece un componente",
-  "ruleNoDetachedInstancesHelp": "Este marco parece un elemento reutilizable. Usa una instancia de componente."
+  "ruleNoDetachedInstancesHelp": "Este marco parece un elemento reutilizable. Usa una instancia de componente.",
+  "ruleInvalidGridPlacement": "Posición de cuadrícula no válida",
+  "ruleInvalidGridPlacementHelp": "Un elemento de cuadrícula necesita una línea inicial entera y un tramo de al menos una pista; de lo contrario, el diseño no puede colocarlo."
 }

@@ -67,6 +67,7 @@
   "fixFullRadius": "Usa raggio completo",
   "fixConvertToFrame": "Converti in frame",
   "fixDeleteLayer": "Elimina livello",
+  "fixPlaceOnGrid": "Posiziona su linee della griglia intere",
   "fixAll": "Correggi tutti ({count})",
   "ruleNoDefaultNames": "Nome del livello predefinito",
   "ruleNoDefaultNamesHelp": "Nomi descrittivi rendono i livelli più facili da trovare, consegnare e riutilizzare.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "Stili di testo misti",
   "ruleNoMixedStylesHelp": "Più stili in un solo livello di testo si rompono facilmente durante la modifica.",
   "ruleNoDetachedInstances": "Sembra un componente",
-  "ruleNoDetachedInstancesHelp": "Questa cornice sembra un elemento riutilizzabile. Usa un’istanza di componente."
+  "ruleNoDetachedInstancesHelp": "Questo frame sembra un elemento riutilizzabile. Usa un'istanza di componente.",
+  "ruleInvalidGridPlacement": "Posizionamento della griglia non valido",
+  "ruleInvalidGridPlacementHelp": "Un elemento della griglia richiede una linea iniziale intera e una campata di almeno una traccia; altrimenti il layout non può posizionarlo."
 }

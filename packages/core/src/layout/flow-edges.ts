@@ -12,7 +12,15 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { primaryAxisGap, siblingOverlap } from './item-spacing'
-import { createYogaNode, layoutPadding, mapAlign, mapJustify } from './yoga-helpers'
+import {
+  createYogaNode,
+  layoutPadding,
+  mapAlign,
+  mapJustify,
+  setYogaGap,
+  setYogaMargin,
+  setYogaPadding
+} from './yoga-helpers'
 
 type Side = 'top' | 'right' | 'bottom' | 'left'
 
@@ -42,8 +50,8 @@ export function setFlexFlow(yogaNode: YogaNode, frame: SceneNode): void {
     yogaNode.setAlignContent(Align.SpaceBetween)
   }
   const primaryGap = primaryAxisGap(frame)
-  yogaNode.setGap(Gutter.Column, horizontal ? primaryGap : frame.counterAxisSpacing)
-  yogaNode.setGap(Gutter.Row, horizontal ? frame.counterAxisSpacing : primaryGap)
+  setYogaGap(yogaNode, Gutter.Column, horizontal ? primaryGap : frame.counterAxisSpacing)
+  setYogaGap(yogaNode, Gutter.Row, horizontal ? frame.counterAxisSpacing : primaryGap)
 }
 
 // Yoga clamps negative padding, while Figma lets it grow the box its children are laid out in past
@@ -102,9 +110,9 @@ export function setFlowEdges(
   const trailing = trailingSide(frame, direction)
   padding[trailing] += overlap
   for (const side of SIDES) {
-    yogaFrame.setPadding(PHYSICAL_EDGE[side], Math.max(0, padding[side]))
-    if (box !== yogaFrame) box.setMargin(PHYSICAL_EDGE[side], Math.min(0, padding[side]))
+    setYogaPadding(yogaFrame, PHYSICAL_EDGE[side], padding[side])
+    if (box !== yogaFrame) setYogaMargin(box, PHYSICAL_EDGE[side], Math.min(0, padding[side]))
   }
   if (overlap === 0) return
-  for (const child of flow) child.setMargin(PHYSICAL_EDGE[trailing], -overlap)
+  for (const child of flow) setYogaMargin(child, PHYSICAL_EDGE[trailing], -overlap)
 }

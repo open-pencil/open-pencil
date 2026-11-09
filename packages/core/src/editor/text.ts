@@ -8,8 +8,8 @@ import {
 } from '@open-pencil/scene-graph/instances/overrides'
 
 import { isNodeFontLoaded } from '#core/canvas/text'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { getTextMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
+import { getTextMeasurer, withTextMeasurer } from '#core/layout/text/measurement'
 import type { TextEditorState } from '#core/text/editor'
 import { hasGlyphOutlines } from '#core/text/font/glyphs'
 import { prepareTextFonts } from '#core/text/prepare'

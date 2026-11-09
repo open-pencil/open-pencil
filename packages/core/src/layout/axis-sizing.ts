@@ -3,6 +3,8 @@ import { Align, type Node as YogaNode } from 'yoga-layout'
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
+import { setYogaFlexGrow, setYogaHeight, setYogaMinSize, setYogaWidth } from './yoga-helpers'
+
 type Axis = 'width' | 'height'
 
 /**
@@ -108,7 +110,7 @@ export function setMainAxisSizing(
   grow: number
 ): void {
   if (grow > 0) {
-    yogaNode.setFlexGrow(grow)
+    setYogaFlexGrow(yogaNode, grow)
     yogaNode.setFlexShrink(1)
     yogaNode.setFlexBasis(0)
     return
@@ -116,8 +118,8 @@ export function setMainAxisSizing(
 
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') setYogaWidth(yogaNode, fixedValue)
+      else setYogaHeight(yogaNode, fixedValue)
       break
     case 'HUG':
       break
@@ -138,17 +140,14 @@ export function setCrossAxisSizing(
 ): void {
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') setYogaWidth(yogaNode, fixedValue)
+      else setYogaHeight(yogaNode, fixedValue)
       break
     case 'HUG':
       break
     case 'FILL':
       yogaNode.setAlignSelf(Align.Stretch)
-      if (fillKeepsSize) {
-        if (axis === 'width') yogaNode.setMinWidth(fixedValue)
-        else yogaNode.setMinHeight(fixedValue)
-      }
+      if (fillKeepsSize) setYogaMinSize(yogaNode, axis, fixedValue)
       break
   }
 }

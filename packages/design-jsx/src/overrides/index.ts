@@ -1,9 +1,16 @@
+import * as v from 'valibot'
+
 import type { Fill, SceneNode, ArcData, NodeType } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 import { parseCSSGridTracks, parseCSSNumber } from '@open-pencil/scene-graph/css'
 import {
   autoLayoutSizingFields,
+  clampFontSize,
+  clampGridTracks,
+  clampLayoutLength,
+  clampLayoutPosition,
   fillSizingFields,
+  MAX_LAYOUT_SPACING,
   parseAutoLayoutDirection,
   parseCounterAxisAlign,
   parsePrimaryAxisAlign
@@ -22,6 +29,7 @@ import {
   TEXT_DIRECTION
 } from '../enums'
 import { isShaderFill } from '../helpers/paints'
+import { gridLineValueSchema, gridSpanValueSchema, gridTrackCountValueSchema } from '../schema'
 import { applyEffectOverrides } from './effects'
 import { fillFromValue, isColor, isFillValue } from './fills'
 import { applyStateOverrides } from './state'
@@ -32,6 +40,48 @@ const WEIGHT_MAP: Record<string, number> = {
   normal: 400,
   medium: 500,
   bold: 700
+}
+
+/** The most points a polygon or star may be drawn with, as the layer stores it. */
+const MAX_POINT_COUNT = 1_000
+
+/** A size, radius, or growth as an element may set it: finite, non-negative, and bounded. */
+function layoutLengthProp(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? clampLayoutLength(value) : undefined
+}
+
+/** A gap or padding, which layout computes with directly. */
+function layoutSpacingProp(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? clampLayoutLength(value, MAX_LAYOUT_SPACING)
+    : undefined
+}
+
+/** A position that may lie outside its parent, such as an absolutely placed layer. */
+function layoutPositionProp(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? clampLayoutPosition(value)
+    : undefined
+}
+
+function fontSizeProp(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? clampFontSize(value) : undefined
+}
+
+/** What `schema` reads from `value`; undefined when it does not fit, as the warning reports. */
+function propValue<S extends v.GenericSchema>(
+  schema: S,
+  value: unknown
+): v.InferOutput<S> | undefined {
+  const parsed = v.safeParse(schema, value)
+  return parsed.success ? parsed.output : undefined
+}
+
+/** A share of a shape, such as a star's inner radius or an arc's hole, from none to all of it. */
+function shareOfShape(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : undefined
 }
 
 function parseDirection(value: unknown): SceneNode['textDirection'] | undefined {
@@ -66,16 +116,22 @@ export function applySizeOverrides(
 ): { w: unknown; h: unknown } {
   const w = designJSXProp(props, 'w')
   const h = designJSXProp(props, 'h')
-  if (typeof w === 'number') o.width = w
-  if (typeof h === 'number') o.height = h
+  const width = layoutLengthProp(w)
+  const height = layoutLengthProp(h)
+  if (width !== undefined) o.width = width
+  if (height !== undefined) o.height = height
 
   if (w === 'fill') Object.assign(o, fillSizingFields(parentLayout, 'HORIZONTAL'))
   if (h === 'fill') Object.assign(o, fillSizingFields(parentLayout, 'VERTICAL'))
 
-  if (props.x !== undefined) o.x = props.x as number
-  if (props.y !== undefined) o.y = props.y as number
-  if (props.top !== undefined) o.y = props.top as number
-  if (props.left !== undefined) o.x = props.left as number
+  const x = layoutPositionProp(props.x)
+  if (x !== undefined) o.x = x
+  const y = layoutPositionProp(props.y)
+  if (y !== undefined) o.y = y
+  const top = layoutPositionProp(props.top)
+  if (top !== undefined) o.y = top
+  const left = layoutPositionProp(props.left)
+  if (left !== undefined) o.x = left
 
   if (props.position === 'absolute') o.layoutPositioning = 'ABSOLUTE'
   const hasExplicitPosition =
@@ -164,15 +220,15 @@ function applyTransformOverrides(props: Record<string, unknown>, o: Partial<Scen
 }
 
 function applyPaddingOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
-  const p = designJSXProp(props, 'p')
-  if (typeof p === 'number') {
+  const p = layoutSpacingProp(designJSXProp(props, 'p'))
+  if (p !== undefined) {
     o.paddingTop = p
     o.paddingRight = p
     o.paddingBottom = p
     o.paddingLeft = p
   }
-  const px = props.px as number | undefined
-  const py = props.py as number | undefined
+  const px = layoutSpacingProp(props.px)
+  const py = layoutSpacingProp(props.py)
   if (px !== undefined) {
     o.paddingLeft = px
     o.paddingRight = px
@@ -181,10 +237,14 @@ function applyPaddingOverrides(props: Record<string, unknown>, o: Partial<SceneN
     o.paddingTop = py
     o.paddingBottom = py
   }
-  if (props.pt !== undefined) o.paddingTop = props.pt as number
-  if (props.pr !== undefined) o.paddingRight = props.pr as number
-  if (props.pb !== undefined) o.paddingBottom = props.pb as number
-  if (props.pl !== undefined) o.paddingLeft = props.pl as number
+  const pt = layoutSpacingProp(props.pt)
+  if (pt !== undefined) o.paddingTop = pt
+  const pr = layoutSpacingProp(props.pr)
+  if (pr !== undefined) o.paddingRight = pr
+  const pb = layoutSpacingProp(props.pb)
+  if (pb !== undefined) o.paddingBottom = pb
+  const pl = layoutSpacingProp(props.pl)
+  if (pl !== undefined) o.paddingLeft = pl
 }
 
 const PADDING_KEYS = ['p', 'padding', 'px', 'py', 'pt', 'pr', 'pb', 'pl'] as const
@@ -209,32 +269,43 @@ function applyGridOverrides(
 ): void {
   o.layoutMode = 'GRID'
 
-  if (typeof w === 'number') o.width = w
-  if (typeof h === 'number') o.height = h
+  const width = layoutLengthProp(w)
+  const height = layoutLengthProp(h)
+  if (width !== undefined) o.width = width
+  if (height !== undefined) o.height = height
 
   if (typeof props.columns === 'string') {
-    o.gridTemplateColumns = parseCSSGridTracks(props.columns)
-  } else if (typeof props.columns === 'number') {
-    o.gridTemplateColumns = Array.from({ length: props.columns }, () => ({
-      sizing: 'FR' as const,
-      value: 1
-    }))
+    o.gridTemplateColumns = clampGridTracks(parseCSSGridTracks(props.columns))
+  } else {
+    const columns = propValue(gridTrackCountValueSchema, props.columns)
+    if (columns !== undefined) {
+      o.gridTemplateColumns = Array.from({ length: columns }, () => ({
+        sizing: 'FR' as const,
+        value: 1
+      }))
+    }
   }
 
   if (typeof props.rows === 'string') {
-    o.gridTemplateRows = parseCSSGridTracks(props.rows)
-  } else if (typeof props.rows === 'number') {
-    o.gridTemplateRows = Array.from({ length: props.rows }, () => ({
-      sizing: 'FR' as const,
-      value: 1
-    }))
+    o.gridTemplateRows = clampGridTracks(parseCSSGridTracks(props.rows))
+  } else {
+    const rows = propValue(gridTrackCountValueSchema, props.rows)
+    if (rows !== undefined) {
+      o.gridTemplateRows = Array.from({ length: rows }, () => ({
+        sizing: 'FR' as const,
+        value: 1
+      }))
+    }
   }
 
-  if (typeof props.columnGap === 'number') o.gridColumnGap = props.columnGap
-  if (typeof props.rowGap === 'number') o.gridRowGap = props.rowGap
-  if (typeof props.gap === 'number') {
-    o.gridColumnGap = props.gap
-    o.gridRowGap = props.gap
+  const columnGap = layoutSpacingProp(props.columnGap)
+  if (columnGap !== undefined) o.gridColumnGap = columnGap
+  const rowGap = layoutSpacingProp(props.rowGap)
+  if (rowGap !== undefined) o.gridRowGap = rowGap
+  const gap = layoutSpacingProp(props.gap)
+  if (gap !== undefined) {
+    o.gridColumnGap = gap
+    o.gridRowGap = gap
   }
 
   if (props.rows === undefined && typeof h !== 'number') {
@@ -243,18 +314,17 @@ function applyGridOverrides(
 }
 
 function applyGridChildOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
-  const col = designJSXProp(props, 'colStart')
-  const row = designJSXProp(props, 'rowStart')
-  const colSpan = (props.colSpan as number | undefined) ?? 1
-  const rowSpan = (props.rowSpan as number | undefined) ?? 1
+  const col = propValue(gridLineValueSchema, designJSXProp(props, 'colStart'))
+  const row = propValue(gridLineValueSchema, designJSXProp(props, 'rowStart'))
+  if (col === undefined && row === undefined) return
 
-  if (col !== undefined || row !== undefined) {
-    o.gridPosition = {
-      column: (col as number | undefined) ?? 0,
-      row: (row as number | undefined) ?? 0,
-      columnSpan: colSpan,
-      rowSpan: rowSpan
-    }
+  o.gridPosition = {
+    column: col ?? 0,
+    row: row ?? 0,
+    // A span that is not a positive integer is left out as the warning reports: layout aborts
+    // on one, and auto placement is what the layer had before.
+    columnSpan: propValue(gridSpanValueSchema, props.colSpan) ?? 1,
+    rowSpan: propValue(gridSpanValueSchema, props.rowSpan) ?? 1
   }
 }
 
@@ -301,7 +371,8 @@ function applyLayoutOverrides(
   if (props.grid) {
     applyGridOverrides(props, o, w, h)
     applyPaddingOverrides(props, o)
-    if (props.grow !== undefined) o.layoutGrow = props.grow as number
+    const grow = layoutLengthProp(props.grow)
+    if (grow !== undefined) o.layoutGrow = grow
     return
   }
 
@@ -316,23 +387,26 @@ function applyLayoutOverrides(
   o.layoutDirection =
     parseDirection(props.flow ?? (!isText ? props.dir : undefined)) ?? o.layoutDirection
 
-  if (props.gap !== undefined) o.itemSpacing = props.gap as number
+  const gap = layoutSpacingProp(props.gap)
+  if (gap !== undefined) o.itemSpacing = gap
 
   if (props.wrap) {
     o.layoutWrap = 'WRAP'
-    if (props.rowGap !== undefined) o.counterAxisSpacing = props.rowGap as number
+    const rowGap = layoutSpacingProp(props.rowGap)
+    if (rowGap !== undefined) o.counterAxisSpacing = rowGap
   }
 
   applyLayoutAlignmentOverrides(props, o)
 
   applyPaddingOverrides(props, o)
 
-  if (props.grow !== undefined) o.layoutGrow = props.grow as number
+  const grow = layoutLengthProp(props.grow)
+  if (grow !== undefined) o.layoutGrow = grow
 }
 
 function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
-  const fontSize = designJSXProp(props, 'size')
-  if (typeof fontSize === 'number') o.fontSize = fontSize
+  const fontSize = fontSizeProp(designJSXProp(props, 'size'))
+  if (fontSize !== undefined) o.fontSize = fontSize
 
   const fontFamily = designJSXProp(props, 'font')
   if (typeof fontFamily === 'string') o.fontFamily = fontFamily
@@ -419,7 +493,7 @@ function applyTextOverrides(
 const FULL_TURN_DEGREES = 360
 
 function numberProp(value: unknown): number | undefined {
-  return typeof value === 'number' ? value : undefined
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 /**
@@ -429,7 +503,7 @@ function numberProp(value: unknown): number | undefined {
 function arcOverride(props: Record<string, unknown>): ArcData | null {
   const start = numberProp(props.startAngle)
   const end = numberProp(props.endAngle)
-  const innerRadius = numberProp(props.innerRadius)
+  const innerRadius = shareOfShape(props.innerRadius)
   if (start === undefined && end === undefined && innerRadius === undefined) return null
   const startDegrees = start ?? 0
   return {
@@ -447,10 +521,11 @@ export function shapeOverrides(
   const o: Partial<SceneNode> = {}
   if (nodeType === 'STAR' || nodeType === 'POLYGON') {
     const points = numberProp(props.pointCount) ?? numberProp(props.points)
-    if (points !== undefined) o.pointCount = points
+    if (points !== undefined)
+      o.pointCount = Math.min(MAX_POINT_COUNT, Math.max(1, Math.trunc(points)))
   }
   if (nodeType === 'STAR') {
-    const innerRadius = numberProp(props.innerRadius)
+    const innerRadius = shareOfShape(props.innerRadius)
     if (innerRadius !== undefined) o.starInnerRadius = innerRadius
   }
   if (nodeType === 'ELLIPSE') {

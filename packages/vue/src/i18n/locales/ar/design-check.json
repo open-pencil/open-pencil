@@ -67,6 +67,7 @@
   "fixFullRadius": "استخدام نصف القطر الكامل",
   "fixConvertToFrame": "تحويل إلى إطار",
   "fixDeleteLayer": "حذف الطبقة",
+  "fixPlaceOnGrid": "الوضع على خطوط الشبكة الكاملة",
   "fixAll": "إصلاح الكل ({count})",
   "ruleNoDefaultNames": "اسم طبقة افتراضي",
   "ruleNoDefaultNamesHelp": "الأسماء الوصفية تجعل العثور على الطبقات وتسليمها وإعادة استخدامها أسهل.",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "أنماط نص مختلطة",
   "ruleNoMixedStylesHelp": "تعدّد الأنماط في طبقة نص واحدة يجعلها سهلة الانكسار عند التعديل.",
   "ruleNoDetachedInstances": "تبدو كمكوّن",
-  "ruleNoDetachedInstancesHelp": "يبدو هذا الإطار عنصرًا قابلًا لإعادة الاستخدام. استخدم نسخة من مكوّن."
+  "ruleNoDetachedInstancesHelp": "يبدو هذا الإطار عنصرًا قابلًا لإعادة الاستخدام. استخدم نسخة من مكوّن.",
+  "ruleInvalidGridPlacement": "موضع شبكة لا يمكن تنسيقه",
+  "ruleInvalidGridPlacementHelp": "يحتاج عنصر الشبكة إلى خط بداية كامل وامتداد لا يقل عن مسار واحد؛ وإلا فلا يمكن للتنسيق وضعه."
 }

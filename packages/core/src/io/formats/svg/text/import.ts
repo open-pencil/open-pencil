@@ -12,7 +12,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { SVGElementLayer } from '#core/icons/types'
-import { measureTextForLayout } from '#core/layout/text-measurement'
+import { measureTextForLayout } from '#core/layout/text/measurement'
 import type {
   SVGVectorizeResult,
   VectorizedText,

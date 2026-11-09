@@ -13,7 +13,7 @@ import { assertNodeEditable } from '#core/editor/capabilities'
 import { bindGraph, graphOf } from '#core/figma-api/graph'
 import { flushPendingComponentSync } from '#core/figma-api/pending-sync'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 
 export interface NodeProxyInternals {
   id: symbol

@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { tryParseColor } from '@open-pencil/scene-graph/color'
 import { STICKY_COLORS } from '@open-pencil/scene-graph/generated'
+import { MAX_GRID_LINE, MAX_GRID_SPAN, MAX_GRID_TRACKS } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -52,6 +53,45 @@ export const placedOwnLayerPropsSchema = v.object({
   x: v.optional(v.number()),
   y: v.optional(v.number()),
   position: v.optional(v.picklist(['absolute']))
+})
+
+export const gridLineValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(0),
+  v.maxValue(MAX_GRID_LINE)
+)
+
+export const gridSpanValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(1),
+  v.maxValue(MAX_GRID_SPAN)
+)
+
+export const gridTrackCountValueSchema = v.pipe(
+  v.number(),
+  v.integer('expected a whole number'),
+  v.minValue(1),
+  v.maxValue(MAX_GRID_TRACKS)
+)
+
+const gridTracksOrCountSchema = v.union(
+  [v.string(), gridTrackCountValueSchema],
+  'expected a track list or a whole number of tracks'
+)
+
+/**
+ * The grid props any layer reads inside a grid. A placement or track count that does not fit is
+ * reported and left out, because one that reached layout aborts Yoga's WASM module.
+ */
+export const gridPropsSchema = v.object({
+  columns: v.optional(gridTracksOrCountSchema),
+  rows: v.optional(gridTracksOrCountSchema),
+  colStart: v.optional(gridLineValueSchema),
+  rowStart: v.optional(gridLineValueSchema),
+  colSpan: v.optional(gridSpanValueSchema),
+  rowSpan: v.optional(gridSpanValueSchema)
 })
 
 /** A colour as a string, or as the colour a `designVar()` resolves to. */
@@ -118,6 +158,9 @@ export function elementPropWarnings(
     // A choice of kinds names them; a single type or bound is Valibot's to name.
     if (issue.type === 'union' || issue.type === 'custom')
       return [`Invalid ${source}; ${issue.message}.`]
+    // A bound names what it takes, such as `>=1`; a check that names nothing, such as a whole
+    // number, carries its own wording instead.
+    if (!issue.expected) return [`Invalid ${source}; ${issue.message}.`]
     return [`Invalid ${source}; expected ${issue.expected}.`]
   })
 }

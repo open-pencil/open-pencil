@@ -9,7 +9,7 @@ import {
   measureTextForLayout,
   setTextMeasurer,
   type TextMeasurer
-} from '#core/layout/text-measurement'
+} from '#core/layout/text/measurement'
 
 const measurer =
   (width: number): TextMeasurer =>

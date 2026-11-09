@@ -75,6 +75,7 @@ export const designCheckMessageDefaults = {
   fixFullRadius: 'Use full radius',
   fixConvertToFrame: 'Convert to frame',
   fixDeleteLayer: 'Delete layer',
+  fixPlaceOnGrid: 'Place on whole grid lines',
   fixAll: params('Fix all {count}'),
   ruleNoDefaultNames: 'Default layer name',
   ruleNoDefaultNamesHelp: 'Descriptive names make layers easier to find, hand off and reuse.',
@@ -102,7 +103,11 @@ export const designCheckMessageDefaults = {
   ruleNoMixedStyles: 'Mixed text styles',
   ruleNoMixedStylesHelp: 'Several styles in one text layer are easy to break when editing.',
   ruleNoDetachedInstances: 'Looks like a component',
-  ruleNoDetachedInstancesHelp: 'This frame looks like a reusable element. Use a component instance.'
+  ruleNoDetachedInstancesHelp:
+    'This frame looks like a reusable element. Use a component instance.',
+  ruleInvalidGridPlacement: 'Unlayable grid placement',
+  ruleInvalidGridPlacementHelp:
+    'A grid item needs a whole start line and a span of at least one track; layout cannot place it otherwise.'
 } as const
 
 export const designCheckMessages = i18n('designCheck', designCheckMessageDefaults)

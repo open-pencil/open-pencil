@@ -1,7 +1,8 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
+import { clampLayoutLength } from '@open-pencil/scene-graph/layout'
 
-import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './text-measurement'
+import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './measurement'
 
 const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
@@ -69,10 +70,11 @@ export function textAutoResizeChanges(
     derivedTextHeight: null
   }
 
-  if (mode === 'WIDTH_AND_HEIGHT' && hasTextAutoWidthChange(changes) && measured.width > 0)
-    resized.width = measured.width
+  if (mode === 'WIDTH_AND_HEIGHT' && hasTextAutoWidthChange(changes) && measured.width > 0) {
+    resized.width = clampLayoutLength(measured.width)
+  }
   // A line height of zero makes text 0 px tall, as in Figma.
-  if (measured.height >= 0) resized.height = measured.height
+  if (measured.height >= 0) resized.height = clampLayoutLength(measured.height)
 
   return resized
 }

@@ -34,7 +34,7 @@ import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 import { fontManager } from '#core/text/font/manager'
 
 import { componentFromNode } from './components'

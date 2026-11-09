@@ -21,7 +21,7 @@ import {
 } from '#core/canvas/text/paint'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { autoWidthWrapWidth } from '#core/layout/text-measurement'
+import { autoWidthWrapWidth } from '#core/layout/text/measurement'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import { makeParagraphBuilder } from '#core/text/font/collection'

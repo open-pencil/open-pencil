@@ -32,7 +32,7 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { autoWidthWrapWidth } from '#core/layout/text-measurement'
+import { autoWidthWrapWidth } from '#core/layout/text/measurement'
 import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
 import { rangeCapHeight } from '#core/text/character-face'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'

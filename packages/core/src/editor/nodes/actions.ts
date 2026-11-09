@@ -16,7 +16,7 @@ import { refitContainers, refitGroupsAroundLayers } from '#core/editor/structure
 import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import type { EditorContext } from '#core/editor/types'
 import { createVariableBindingActions } from '#core/editor/variables/bindings'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import { createNodePreviewActions } from './preview'

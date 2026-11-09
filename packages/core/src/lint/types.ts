@@ -1,3 +1,5 @@
+import type { GridPosition } from '@open-pencil/scene-graph'
+
 export type Severity = 'error' | 'warning' | 'info' | 'off'
 
 export type Category =
@@ -40,6 +42,8 @@ export type LintFixProperty =
 export type LintFix =
   | { kind: 'bind-variable'; path: string; variableId: string; variableName: string }
   | { kind: 'set'; changes: Readonly<Partial<Record<LintFixProperty, number>>> }
+  /** Places the layer on the grid lines and spans layout can lay out, keeping its intent. */
+  | { kind: 'set-grid-placement'; placement: GridPosition }
   /** Turns a group into a frame in place, keeping its children, bounds and look. */
   | { kind: 'convert-to-frame' }
   /** Deletes the layer with its children. */
@@ -92,6 +96,7 @@ export interface LintNode {
   counterAxisSizing: string
   textAutoResize: string
   itemSpacing: number
+  gridPosition: GridPosition | null
   paddingTop: number
   paddingRight: number
   paddingBottom: number

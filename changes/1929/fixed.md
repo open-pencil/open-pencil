@@ -1,0 +1,1 @@
+- Text measurement that fails, and a grid item placed on a line or span layout cannot use, no longer break the layout engine: the text keeps the size it has and the placement is bounded to what layout can place.

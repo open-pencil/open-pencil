@@ -45,6 +45,26 @@ describe('stack alignment', () => {
   })
 })
 
+describe('grid placement', () => {
+  test('places a child by its start line, under either name', () => {
+    expect(propsToOverrides({ colStart: 2, rowStart: 3 }, false, 'GRID')).toMatchObject({
+      gridPosition: { column: 2, row: 3, columnSpan: 1, rowSpan: 1 }
+    })
+    expect(propsToOverrides({ col: 4, row: 5 }, false, 'GRID')).toMatchObject({
+      gridPosition: { column: 4, row: 5, columnSpan: 1, rowSpan: 1 }
+    })
+  })
+
+  test('spans the tracks a child names, and at least one', () => {
+    expect(propsToOverrides({ colStart: 1, colSpan: 3, rowSpan: 2 }, false, 'GRID')).toMatchObject({
+      gridPosition: { columnSpan: 3, rowSpan: 2 }
+    })
+    expect(propsToOverrides({ colStart: 1, colSpan: 0 }, false, 'GRID')).toMatchObject({
+      gridPosition: { columnSpan: 1 }
+    })
+  })
+})
+
 // A paint written as an object, as export writes an image, gives its transforms as Figma's rows or
 // as the matrix fields earlier exports printed.
 describe('paints written as objects', () => {

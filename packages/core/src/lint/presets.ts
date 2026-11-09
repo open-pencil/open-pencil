@@ -29,7 +29,9 @@ export const recommended: Preset = {
     'no-groups': 'info',
     'effect-style-required': 'info',
     'no-mixed-styles': 'info',
-    'no-detached-instances': 'off'
+    'no-detached-instances': 'off',
+    // Layout cannot place a grid item on a fractional line or a span below one.
+    'invalid-grid-placement': 'error'
   }
 }
 
@@ -56,7 +58,8 @@ export const accessibility: Preset = {
     'no-groups': 'off',
     'effect-style-required': 'off',
     'no-mixed-styles': 'off',
-    'no-detached-instances': 'off'
+    'no-detached-instances': 'off',
+    'invalid-grid-placement': 'off'
   }
 }
 export const presets: Record<string, Preset> = { recommended, strict, accessibility }

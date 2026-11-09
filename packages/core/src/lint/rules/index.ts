@@ -15,6 +15,7 @@ export { default as noGroups } from './no-groups'
 export { default as effectStyleRequired } from './effect-style-required'
 export { default as noMixedStyles } from './no-mixed-styles'
 export { default as noDetachedInstances } from './no-detached-instances'
+export { default as invalidGridPlacement } from './invalid-grid-placement'
 
 import type { Rule } from '#core/lint/types'
 
@@ -22,6 +23,7 @@ import colorContrast from './color-contrast'
 import consistentRadius from './consistent-radius'
 import consistentSpacing from './consistent-spacing'
 import effectStyleRequired from './effect-style-required'
+import invalidGridPlacement from './invalid-grid-placement'
 import minTextSize from './min-text-size'
 import noDeeplyNested from './no-deeply-nested'
 import noDefaultNames from './no-default-names'
@@ -53,5 +55,6 @@ export const allRules: Record<string, Rule> = {
   'no-groups': noGroups,
   'effect-style-required': effectStyleRequired,
   'no-mixed-styles': noMixedStyles,
-  'no-detached-instances': noDetachedInstances
+  'no-detached-instances': noDetachedInstances,
+  'invalid-grid-placement': invalidGridPlacement
 }

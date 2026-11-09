@@ -1,10 +1,11 @@
-import { isEmptyObject } from 'es-toolkit'
+import { isEmptyObject, isEqual } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { clampGridPosition } from '@open-pencil/scene-graph/layout'
 import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
-import type { LintFix, LintMessage } from './types'
+import type { LintFix, LintFixProperty, LintMessage } from './types'
 import { ownsComponentTree } from './utils'
 
 /** A fix for the layer it was reported on. A `LintMessage` with a `fix` is one. */
@@ -81,6 +82,26 @@ function hasAncestorIn(graph: SceneGraph, node: SceneNode, ids: ReadonlySet<stri
   return false
 }
 
+/** The value change a fix writes to its layer, or null when it no longer applies. */
+function valueChange(fix: LintFix, node: SceneNode): Partial<SceneNode> | null {
+  if (fix.kind === 'set-grid-placement') {
+    const current = node.gridPosition
+    if (!current) return null
+    const layable = clampGridPosition(current)
+    // A placement removed, made valid, or clamping somewhere else since the lint run is the
+    // user's to keep: only the placement the run flagged is replaced.
+    if (isEqual(current, layable) || !isEqual(layable, fix.placement)) return null
+    return { gridPosition: fix.placement }
+  }
+  if (fix.kind !== 'set') return null
+  const changed: Partial<Record<LintFixProperty, number>> = {}
+  for (const [property, value] of Object.entries(fix.changes)) {
+    const key = property as LintFixProperty
+    if (node[key] !== value) changed[key] = value
+  }
+  return isEmptyObject(changed) ? null : changed
+}
+
 /**
  * Applies fixes that still hold against the current graph. Changes to one layer merge into a
  * single update, and deletions run last so other fixes still find their layers. Returns the
@@ -95,19 +116,17 @@ export function applyLintFixes(target: LintFixTarget, requests: readonly LintFix
   for (const { nodeId, fix } of requests) {
     const node = graph.getNode(nodeId)
     if (!node) continue
+    const change = valueChange(fix, node)
+    if (change) {
+      updates.set(nodeId, { ...updates.get(nodeId), ...change })
+      applied++
+      continue
+    }
     switch (fix.kind) {
       case 'bind-variable':
         if (!canBind(graph, node, fix.path, fix.variableId)) continue
         target.bindVariable(nodeId, fix.path, fix.variableId)
         break
-      case 'set': {
-        const changes = Object.fromEntries(
-          Object.entries(fix.changes).filter(([key, value]) => Reflect.get(node, key) !== value)
-        )
-        if (isEmptyObject(changes)) continue
-        updates.set(nodeId, { ...updates.get(nodeId), ...changes })
-        break
-      }
       case 'convert-to-frame':
         if (node.type !== 'GROUP' || conversions.has(nodeId) || !canRestructure(graph, node))
           continue
@@ -118,6 +137,9 @@ export function applyLintFixes(target: LintFixTarget, requests: readonly LintFix
         if (node.visible || deletions.has(nodeId) || !canRestructure(graph, node)) continue
         deletions.add(nodeId)
         break
+      case 'set':
+      case 'set-grid-placement':
+        continue
     }
     applied++
   }

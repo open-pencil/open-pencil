@@ -18,7 +18,7 @@ import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 import { markdownText } from '#core/text/markdown'
 
 import { nodeOf, type NodeRef } from './behaviours'

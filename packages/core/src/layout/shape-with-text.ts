@@ -9,7 +9,7 @@ import {
   shapeWithTextLabelBox
 } from '@open-pencil/scene-graph/shape-with-text'
 
-import { measureTextForLayout } from './text-measurement'
+import { measureTextForLayout } from './text/measurement'
 
 /** The height a shape with text was given: what a user or script last set, else its own. */
 function givenHeight(shape: SceneNode): number {

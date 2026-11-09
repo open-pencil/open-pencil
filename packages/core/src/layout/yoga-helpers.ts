@@ -4,17 +4,85 @@ import Yoga, {
   GridTrackType,
   Justify,
   PositionType,
+  type Gutter,
   type Node as YogaNode
 } from 'yoga-layout'
 
-import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { enforcedAspectRatio, layoutSizingInParent } from '@open-pencil/scene-graph/layout'
+import type { GridPosition, GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  clampGridPosition,
+  clampGridTracks,
+  clampLayoutLength,
+  clampLayoutPosition,
+  enforcedAspectRatio,
+  layoutSizingInParent,
+  MAX_LAYOUT_FACTOR,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 const yogaConfig = Yoga.Config.create()
 yogaConfig.setPointScaleFactor(0)
 
 export function createYogaNode(): YogaNode {
   return Yoga.Node.create(yogaConfig)
+}
+
+/**
+ * Every number these helpers write stays inside layout's bounds. A document's sizes, positions,
+ * and spacing reach Yoga from files and scripts as well as from tools, and Yoga's WASM build
+ * aborts on some values and carries a non-finite one into every size it computes.
+ */
+export function setYogaWidth(node: YogaNode, value: number): void {
+  node.setWidth(clampLayoutLength(value))
+}
+
+export function setYogaHeight(node: YogaNode, value: number): void {
+  node.setHeight(clampLayoutLength(value))
+}
+
+/** A coordinate along an axis, which may lie outside the parent. */
+export function setYogaPosition(node: YogaNode, edge: Edge, value: number): void {
+  node.setPosition(edge, clampLayoutPosition(value))
+}
+
+/** The room a container keeps inside its border, as a CSS padding takes room. */
+export function setYogaPadding(node: YogaNode, edge: Edge, value: number): void {
+  node.setPadding(edge, clampLayoutLength(value, MAX_LAYOUT_SPACING))
+}
+
+/** The room a child keeps outside itself, negative where siblings overlap. */
+export function setYogaMargin(node: YogaNode, edge: Edge, value: number): void {
+  node.setMargin(edge, clampLayoutPosition(value, MAX_LAYOUT_SPACING))
+}
+
+/** The bounds layout holds a node to on one axis. */
+export function setYogaMinSize(node: YogaNode, axis: 'width' | 'height', value: number): void {
+  if (axis === 'width') node.setMinWidth(clampLayoutLength(value))
+  else node.setMinHeight(clampLayoutLength(value))
+}
+
+export function setYogaMaxSize(node: YogaNode, axis: 'width' | 'height', value: number): void {
+  if (axis === 'width') node.setMaxWidth(clampLayoutLength(value))
+  else node.setMaxHeight(clampLayoutLength(value))
+}
+
+/** The space between siblings: a gap, or the negative margin an overlap leaves. */
+export function setYogaGap(node: YogaNode, gutter: Gutter, value: number): void {
+  node.setGap(gutter, clampLayoutPosition(value, MAX_LAYOUT_SPACING))
+}
+
+/** A grid item's placement, which Yoga aborts the whole module on unless it can lay it out. */
+export function setYogaGridPlacement(node: YogaNode, position: GridPosition): void {
+  const placement = clampGridPosition(position)
+  node.setGridColumnStart(placement.column)
+  node.setGridColumnEndSpan(placement.columnSpan)
+  node.setGridRowStart(placement.row)
+  node.setGridRowEndSpan(placement.rowSpan)
+}
+
+/** The share of the free space a child takes, which layout adds up as a ratio. */
+export function setYogaFlexGrow(node: YogaNode, value: number): void {
+  node.setFlexGrow(clampLayoutLength(value, MAX_LAYOUT_FACTOR))
 }
 
 /**
@@ -42,10 +110,10 @@ function includedStrokeWeights(
 /** A layout container's padding, with the strokes it includes in layout added to each side. */
 export function setLayoutPadding(yogaNode: YogaNode, node: SceneNode): void {
   const padding = layoutPadding(node)
-  yogaNode.setPadding(Edge.Top, padding.top)
-  yogaNode.setPadding(Edge.Right, padding.right)
-  yogaNode.setPadding(Edge.Bottom, padding.bottom)
-  yogaNode.setPadding(Edge.Left, padding.left)
+  setYogaPadding(yogaNode, Edge.Top, padding.top)
+  setYogaPadding(yogaNode, Edge.Right, padding.right)
+  setYogaPadding(yogaNode, Edge.Bottom, padding.bottom)
+  setYogaPadding(yogaNode, Edge.Left, padding.left)
 }
 
 /** A layout container's padding on each side, with the strokes it includes in layout added. */
@@ -63,10 +131,10 @@ export function layoutPadding(
 
 export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): void {
   yogaChild.setPositionType(PositionType.Absolute)
-  yogaChild.setPosition(Edge.Left, child.x)
-  yogaChild.setPosition(Edge.Top, child.y)
-  yogaChild.setWidth(child.width)
-  yogaChild.setHeight(child.height)
+  setYogaPosition(yogaChild, Edge.Left, child.x)
+  setYogaPosition(yogaChild, Edge.Top, child.y)
+  setYogaWidth(yogaChild, child.width)
+  setYogaHeight(yogaChild, child.height)
 }
 
 export function configureNonTextLeaf(
@@ -79,18 +147,18 @@ export function configureNonTextLeaf(
   const h = child.height
 
   if (child.layoutGrow > 0) {
-    yogaChild.setFlexGrow(child.layoutGrow)
+    setYogaFlexGrow(yogaChild, child.layoutGrow)
     if (!stretchCross) {
-      if (isRow) yogaChild.setHeight(h)
-      else yogaChild.setWidth(w)
+      if (isRow) setYogaHeight(yogaChild, h)
+      else setYogaWidth(yogaChild, w)
     }
   } else {
     if (isRow) {
-      yogaChild.setWidth(w)
-      if (!stretchCross) yogaChild.setHeight(h)
+      setYogaWidth(yogaChild, w)
+      if (!stretchCross) setYogaHeight(yogaChild, h)
     } else {
-      yogaChild.setHeight(h)
-      if (!stretchCross) yogaChild.setWidth(w)
+      setYogaHeight(yogaChild, h)
+      if (!stretchCross) setYogaWidth(yogaChild, w)
     }
   }
 }
@@ -106,7 +174,7 @@ export function applyLockedAspectRatio(
   parent: SceneNode
 ): void {
   const ratio = enforcedAspectRatio(node)
-  if (ratio === null) return
+  if (ratio === null || !Number.isFinite(ratio) || ratio <= 0) return
   const width = layoutSizingInParent(parent, node, 'HORIZONTAL')
   const height = layoutSizingInParent(parent, node, 'VERTICAL')
   const primaryIsWidth = parent.layoutMode !== 'VERTICAL'
@@ -123,13 +191,13 @@ export function applyLockedAspectRatio(
 }
 
 export function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {
-  if (node.minWidth != null) yogaNode.setMinWidth(node.minWidth)
-  if (node.maxWidth != null) yogaNode.setMaxWidth(node.maxWidth)
-  if (node.minHeight != null) yogaNode.setMinHeight(node.minHeight)
-  if (node.maxHeight != null) yogaNode.setMaxHeight(node.maxHeight)
+  if (node.minWidth != null) setYogaMinSize(yogaNode, 'width', node.minWidth)
+  if (node.maxWidth != null) setYogaMaxSize(yogaNode, 'width', node.maxWidth)
+  if (node.minHeight != null) setYogaMinSize(yogaNode, 'height', node.minHeight)
+  if (node.maxHeight != null) setYogaMaxSize(yogaNode, 'height', node.maxHeight)
 }
 
-export function mapGridTrack(track: GridTrack): { type: GridTrackType; value: number } {
+function mapGridTrack(track: GridTrack): { type: GridTrackType; value: number } {
   switch (track.sizing) {
     case 'FR':
       return { type: GridTrackType.Fr, value: track.value }
@@ -138,6 +206,14 @@ export function mapGridTrack(track: GridTrack): { type: GridTrackType; value: nu
     default:
       return { type: GridTrackType.Auto, value: 0 }
   }
+}
+
+/** A template's tracks as Yoga sets them, bounded to what its WASM build lays out safely. */
+export function mapGridTracks(tracks: readonly GridTrack[]): Array<{
+  type: GridTrackType
+  value: number
+}> {
+  return clampGridTracks(tracks).map(mapGridTrack)
 }
 
 export function freeYogaTree(node: YogaNode): void {

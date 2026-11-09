@@ -9,7 +9,7 @@ import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
-import { estimateTextSize } from '#core/layout/text-measurement'
+import { estimateTextSize } from '#core/layout/text/measurement'
 import { fontManager } from '#core/text/font/manager'
 
 const run = (start: number, length: number, style: StyleRun['style']): StyleRun => ({

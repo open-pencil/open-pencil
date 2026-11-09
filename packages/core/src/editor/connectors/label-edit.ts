@@ -2,7 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { labelledConnector } from '@open-pencil/scene-graph/connectors'
 
 import type { EditorContext } from '#core/editor/types'
-import { measureTextForLayout } from '#core/layout/text-measurement'
+import { measureTextForLayout } from '#core/layout/text/measurement'
 
 /**
  * Sizes an empty connector label to the placeholder its canvas shows while it is typed into, as

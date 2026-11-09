@@ -70,7 +70,8 @@ export const lint = defineTool({
   name: 'lint',
   description:
     'Check the design for accessibility and consistency issues: low text contrast, small touch targets and text, ' +
-    'off-scale spacing and radius, colors that match a variable but are not bound, and structure hygiene. ' +
+    'off-scale spacing and radius, colors that match a variable but are not bound, grid items placed on lines or ' +
+    'spans layout cannot use, and structure hygiene. ' +
     'Findings are sorted by severity. A `fix` is safe to apply with lint_fix; `suggestions` change values and need judgment.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({ ...lintScopeInput, limit: analysisLimitInputSchema }),
@@ -90,7 +91,8 @@ export const lint = defineTool({
 export const lintFix = defineTool({
   name: 'lint_fix',
   description:
-    'Apply lint fixes: bind colors to the variable they match and round geometry to whole pixels. ' +
+    'Apply lint fixes: bind colors to the variable they match, round geometry to whole pixels, and place grid items ' +
+    'on whole lines. ' +
     'With suggestions: true, also apply each finding’s first suggestion (snap radius and spacing to the scale, ' +
     'raise text to the minimum size, convert groups to frames, delete hidden layers). ' +
     'Returns what was applied and what remains.',

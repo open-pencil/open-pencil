@@ -67,6 +67,7 @@
   "fixFullRadius": "使用完全圆角",
   "fixConvertToFrame": "转换为画框",
   "fixDeleteLayer": "删除图层",
+  "fixPlaceOnGrid": "放置到整数网格线上",
   "fixAll": "全部修复（{count}）",
   "ruleNoDefaultNames": "默认图层名称",
   "ruleNoDefaultNamesHelp": "描述性的名称让图层更易查找、交付和复用。",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "混合文字样式",
   "ruleNoMixedStylesHelp": "一个文字图层中的多种样式在编辑时容易被破坏。",
   "ruleNoDetachedInstances": "看起来像组件",
-  "ruleNoDetachedInstancesHelp": "这个画框看起来像可复用元素。请使用组件实例。"
+  "ruleNoDetachedInstancesHelp": "这个画框看起来像可复用元素。请使用组件实例。",
+  "ruleInvalidGridPlacement": "网格位置无法布局",
+  "ruleInvalidGridPlacementHelp": "网格元素需要整数起始线和至少一条轨道的跨度，否则布局无法放置它。"
 }

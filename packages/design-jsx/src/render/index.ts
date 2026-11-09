@@ -8,7 +8,7 @@ import { elementBindings, elementProps, elementSchema } from '../elements'
 import { ENUM_PROPS } from '../enums'
 import { DESIGN_JSX_HELPERS, designJSXHelpers } from '../helpers'
 import * as React from '../mini-react'
-import { elementPropWarnings } from '../schema'
+import { elementPropWarnings, gridPropsSchema } from '../schema'
 import type { DesignJSXServices } from '../services'
 import { TEXT_CONTENT_NAMES } from '../text-content'
 import { transformDesignJSXExpression } from '../transform'
@@ -57,6 +57,8 @@ function collectUnsupportedPropWarnings(
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
   const schema = elementSchema(tree.type)
   if (schema) warnings.push(...elementPropWarnings(schema, tree.props, element))
+  // Every layer reads a grid placement inside a grid, whatever element it is.
+  warnings.push(...elementPropWarnings(gridPropsSchema, tree.props, element))
   for (const [key, value] of Object.entries(tree.props)) {
     if (!supported.has(key) && !properties.includes(key)) {
       warnings.push(`Unsupported prop "${key}" on <${element}> is ignored.`)

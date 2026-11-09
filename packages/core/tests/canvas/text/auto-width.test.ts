@@ -11,8 +11,8 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { getCanvasKit } from '#core/canvaskit'
 import { FigmaAPI } from '#core/figma-api'
 import { computeAllLayouts } from '#core/layout'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { withTextMeasurer } from '#core/layout/text-measurement'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
+import { withTextMeasurer } from '#core/layout/text/measurement'
 import { fontManager } from '#core/text/font/manager'
 
 const MAX_WIDTH = 40

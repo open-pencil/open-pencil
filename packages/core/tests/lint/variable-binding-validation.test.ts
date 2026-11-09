@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }
@@ -84,6 +85,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       counterAxisSizing: 'FIXED',
       textAutoResize: 'NONE',
       itemSpacing: 0,
+      gridPosition: null,
       paddingTop: 0,
       paddingRight: 0,
       paddingBottom: 0,
@@ -134,6 +136,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       counterAxisSizing: 'FIXED',
       textAutoResize: 'NONE',
       itemSpacing: 0,
+      gridPosition: null,
       paddingTop: 0,
       paddingRight: 0,
       paddingBottom: 0,

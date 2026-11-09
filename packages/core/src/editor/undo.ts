@@ -6,7 +6,7 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 
 import { assertNodeEditable } from './capabilities'
 import {

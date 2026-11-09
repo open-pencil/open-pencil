@@ -151,6 +151,7 @@ export class Linter {
       counterAxisSizing: raw.counterAxisSizing,
       textAutoResize: raw.textAutoResize,
       itemSpacing: raw.itemSpacing,
+      gridPosition: raw.gridPosition ? { ...raw.gridPosition } : null,
       paddingTop: raw.paddingTop,
       paddingRight: raw.paddingRight,
       paddingBottom: raw.paddingBottom,

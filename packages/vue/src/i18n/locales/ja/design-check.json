@@ -67,6 +67,7 @@
   "fixFullRadius": "最大の角丸を使う",
   "fixConvertToFrame": "フレームに変換",
   "fixDeleteLayer": "レイヤーを削除",
+  "fixPlaceOnGrid": "グリッド線の整数位置に配置",
   "fixAll": "{count} 件すべて修正",
   "ruleNoDefaultNames": "デフォルトのレイヤー名",
   "ruleNoDefaultNamesHelp": "わかりやすい名前を付けると、レイヤーを探しやすく、受け渡しや再利用もしやすくなります。",
@@ -91,5 +92,7 @@
   "ruleNoMixedStyles": "混在したテキストスタイル",
   "ruleNoMixedStylesHelp": "1 つのテキストレイヤーに複数のスタイルがあると、編集時に崩れやすくなります。",
   "ruleNoDetachedInstances": "コンポーネントのようなフレーム",
-  "ruleNoDetachedInstancesHelp": "このフレームは再利用する要素に見えます。コンポーネントのインスタンスを使ってください。"
+  "ruleNoDetachedInstancesHelp": "このフレームは再利用する要素に見えます。コンポーネントのインスタンスを使ってください。",
+  "ruleInvalidGridPlacement": "レイアウトできないグリッド位置",
+  "ruleInvalidGridPlacementHelp": "グリッド項目には整数の開始線と 1 トラック以上のスパンが必要です。それ以外の値ではレイアウトできません。"
 }

@@ -15,7 +15,7 @@ import {
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text/auto-resize'
 
 function definitionsForInstance(
   ctx: Pick<EditorContext, 'graph'>,

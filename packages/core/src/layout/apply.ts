@@ -27,7 +27,25 @@ function preservesImportedHugCrossSize(
     )
 }
 
-type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'flipX' | 'flipY'>>
+export type LayoutGeometry = Partial<
+  Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'flipX' | 'flipY'>
+>
+
+/**
+ * The geometry changes to write back: only the values that differ, and none that layout could not
+ * use. A stored non-finite size can reach layout's arithmetic and overflow it, so the layer keeps
+ * the geometry it has rather than a value the document could not hold.
+ */
+export function layoutGeometryChanges(node: SceneNode, geometry: LayoutGeometry): LayoutGeometry {
+  const changes: LayoutGeometry = {}
+  for (const key of ['x', 'y', 'width', 'height', 'flipX', 'flipY'] as const) {
+    const value = geometry[key]
+    if (value === undefined) continue
+    if (typeof value === 'number' && !Number.isFinite(value)) continue
+    if (value !== node[key]) Object.assign(changes, { [key]: value })
+  }
+  return changes
+}
 
 /**
  * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
@@ -46,11 +64,7 @@ function writeLayoutGeometry(
   const node = graph.getNode(id)
   if (!node) return
   const from = before ?? { width: node.width, height: node.height }
-  const changes: LayoutGeometry = {}
-  for (const key of ['x', 'y', 'width', 'height', 'flipX', 'flipY'] as const) {
-    const value = geometry[key]
-    if (value !== undefined && value !== node[key]) Object.assign(changes, { [key]: value })
-  }
+  const changes = layoutGeometryChanges(node, geometry)
   if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
   if (!CONSTRAINT_PARENT_TYPES.has(node.type)) return
   // Laying out what a file holds, as a page opens or its fonts arrive, resizes a frame only where

@@ -20,7 +20,7 @@ import {
   SIZE_FONT_SIZE,
   VALUE_FONT_SIZE
 } from '#core/constants'
-import { withTextMeasurer } from '#core/layout/text-measurement'
+import { withTextMeasurer } from '#core/layout/text/measurement'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { resetFontCollection } from '#core/text/font/collection'
 import { fontManager } from '#core/text/font/manager'

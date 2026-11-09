@@ -9,7 +9,6 @@ import {
   type LintMessage
 } from '@open-pencil/core/lint'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 const BLUE = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
 const RED = { r: 0.9, g: 0.1, b: 0.1, a: 1 }
@@ -297,5 +296,71 @@ describe('editor structure fixes', () => {
 
     expect(getNodeOrThrow(editor.graph, group.id).type).toBe('FRAME')
     expect(editor.graph.getNode(hidden.id)).toBeUndefined()
+  })
+})
+
+describe('grid placement fixes', () => {
+  test('place a grid item on the lines and spans layout can use', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const grid = graph.createNode('FRAME', pageId, { layoutMode: 'GRID' })
+    const item = graph.createNode('RECTANGLE', grid.id, {
+      gridPosition: { column: 1.5, row: -2, columnSpan: 0, rowSpan: 900 }
+    })
+
+    const messages = lint(graph, 'invalid-grid-placement')
+    expect(applyLintFixes(graphFixTarget(graph), safeFixes(messages))).toBe(1)
+
+    expect(getNodeOrThrow(graph, item.id).gridPosition).toEqual({
+      column: 1,
+      row: 0,
+      columnSpan: 1,
+      rowSpan: 900
+    })
+    expect(lint(graph, 'invalid-grid-placement')).toEqual([])
+  })
+
+  test('keep a placement changed since the lint run', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const grid = graph.createNode('FRAME', pageId, { layoutMode: 'GRID' })
+    const item = graph.createNode('RECTANGLE', grid.id, {
+      gridPosition: { column: 0, row: 0, columnSpan: 0, rowSpan: 1 }
+    })
+    const messages = lint(graph, 'invalid-grid-placement')
+    graph.updateNode(item.id, { gridPosition: null })
+
+    expect(applyLintFixes(graphFixTarget(graph), safeFixes(messages))).toBe(0)
+    expect(getNodeOrThrow(graph, item.id).gridPosition).toBeNull()
+  })
+
+  test('keep a valid placement the layer was moved to since the lint run', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const grid = graph.createNode('FRAME', pageId, { layoutMode: 'GRID' })
+    const item = graph.createNode('RECTANGLE', grid.id, {
+      gridPosition: { column: 0, row: 0, columnSpan: 0, rowSpan: 1 }
+    })
+    const messages = lint(graph, 'invalid-grid-placement')
+    const moved = { column: 3, row: 2, columnSpan: 1, rowSpan: 2 }
+    graph.updateNode(item.id, { gridPosition: moved })
+
+    expect(applyLintFixes(graphFixTarget(graph), safeFixes(messages))).toBe(0)
+    expect(getNodeOrThrow(graph, item.id).gridPosition).toEqual(moved)
+  })
+
+  test('keep a different invalid placement the layer was moved to since the lint run', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const grid = graph.createNode('FRAME', pageId, { layoutMode: 'GRID' })
+    const item = graph.createNode('RECTANGLE', grid.id, {
+      gridPosition: { column: 0, row: 0, columnSpan: 0, rowSpan: 1 }
+    })
+    const messages = lint(graph, 'invalid-grid-placement')
+    const moved = { column: 5, row: 0, columnSpan: 0, rowSpan: 1 }
+    graph.updateNode(item.id, { gridPosition: moved })
+
+    expect(applyLintFixes(graphFixTarget(graph), safeFixes(messages))).toBe(0)
+    expect(getNodeOrThrow(graph, item.id).gridPosition).toEqual(moved)
   })
 })
