@@ -28,7 +28,8 @@ import {
   makePolygonPoints,
   roundedPolygonPath,
   hasRadius,
-  roundedRectPath,
+  hasSmoothCorners,
+  boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
 } from './paths'
@@ -178,24 +179,28 @@ function nodeShapeElements(
     case 'SHAPE_WITH_TEXT':
       return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
-    default: {
-      if (hasRadius(node)) {
-        if (node.independentCorners) {
-          return [svg('path', { d: roundedRectPath(node), ...common })]
-        }
-        return [
-          svg('rect', {
-            width: round(node.width),
-            height: round(node.height),
-            rx: round(node.cornerRadius),
-            ry: round(node.cornerRadius),
-            ...common
-          })
-        ]
-      }
-      return [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
-    }
+    default:
+      return [boxOutlineElement(node, common)]
   }
+}
+
+/**
+ * A box layer's outline as one element: a rect, a rect with `rx`/`ry` for one radius, or the
+ * shared box path for independent or smoothed corners, so fills and clips follow the same edge.
+ */
+function boxOutlineElement(
+  node: SceneNode,
+  attrs: Record<string, string | number | undefined>
+): SVGNode {
+  const width = round(node.width)
+  const height = round(node.height)
+  if (!hasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || hasSmoothCorners(node)) {
+    return svg('path', { d: boxOutlinePath(node), ...attrs })
+  }
+  // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
+  const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
+  return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
 }
 
 /**
@@ -258,13 +263,7 @@ function buildGroupAttrs(
   let clipId: string | undefined
   if (node.clipsContent && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
-    ctx.defs.push(
-      svg(
-        'clipPath',
-        { id: clipId },
-        svg('rect', { width: round(node.width), height: round(node.height) })
-      )
-    )
+    ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }
 
   return { attrs, clipId }
