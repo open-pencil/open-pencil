@@ -1,10 +1,12 @@
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 // Figma desktop (2026-11-09) labels a selection's edges on the rulers to three decimals at any
 // zoom: 100.375 and 251.631 across, 80.125 and 113.458 down for this layer.
 const editor = useEditorSetupWithClear('/?test&no-chrome')
 
-async function selectLayer(box: { x: number; y: number; width: number; height: number }) {
+async function selectLayer(box: Rect) {
   await editor.page.evaluate((box) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
