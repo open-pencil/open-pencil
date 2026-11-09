@@ -1,0 +1,1 @@
+- Deleted OpenPencil Cloud documents go to Trash on Home, which shows who deleted each one and how long it stays; restore it, or, as its owner or a workspace admin, delete it forever.
