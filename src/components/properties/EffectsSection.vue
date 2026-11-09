@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Effect, Fill } from '@open-pencil/scene-graph'
+import type { Effect, Fill, GlassEffectParams } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
+import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 import {
@@ -62,6 +63,20 @@ function updateEffectColor(
   update: () => void
 ) {
   if (applyPaintMutation(binding, flush, update)) commitPaintMutation(binding)
+}
+
+/** `effect` with one glass value changed, the rest kept. */
+function glassChange<K extends keyof GlassEffectParams>(
+  effect: Effect,
+  key: K,
+  value: GlassEffectParams[K]
+): Partial<Effect> {
+  return { glass: { ...(effect.glass ?? UNSET_GLASS), [key]: value } }
+}
+
+/** A percentage field's value as Figma's 0–1 glass amount. */
+function fraction(percent: number): number {
+  return Math.max(0, Math.min(1, percent / 100))
 }
 
 function effectPreview(effect: Effect): Fill {
@@ -160,7 +175,7 @@ function effectPreview(effect: Effect): Fill {
               <AppSelect
                 class="min-w-0 flex-1"
                 :model-value="effect.type"
-                :options="effectsCtx.effectOptions"
+                :options="effectsCtx.effectOptionsFor(items, index)"
                 :label="panels.effects"
                 data-property="effect-type"
                 @update:model-value="
@@ -176,7 +191,7 @@ function effectPreview(effect: Effect): Fill {
           class="flex flex-col gap-1.5 py-2"
           data-slot="effect-settings"
         >
-          <PanelFieldGroup :label="panels.blendMode">
+          <PanelFieldGroup v-if="effect.type !== 'GLASS'" :label="panels.blendMode">
             <AppSelect
               :model-value="effect.blendMode ?? 'NORMAL'"
               :groups="blendModeGroups"
@@ -330,6 +345,126 @@ function effectPreview(effect: Effect): Fill {
                 />
               </div>
             </BindableValueRoot>
+          </template>
+
+          <template v-else-if="effect.type === 'GLASS'">
+            <div class="flex items-center gap-1.5">
+              <Tip :label="panels.glassLightAngle">
+                <NumberField
+                  suffix="°"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassLightAngle"
+                  :model-value="(effect.glass ?? UNSET_GLASS).lightAngle"
+                  data-property="glass-light-angle"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(index, glassChange(effect, 'lightAngle', $event))
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(index, glassChange(effect, 'lightAngle', $event))
+                  "
+                />
+              </Tip>
+              <Tip :label="panels.glassLightIntensity">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassLightIntensity"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).lightIntensity * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-light-intensity"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'lightIntensity', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'lightIntensity', fraction($event))
+                    )
+                  "
+                />
+              </Tip>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <Tip :label="panels.glassRefraction">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassRefraction"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).refraction * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-refraction"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'refraction', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'refraction', fraction($event))
+                    )
+                  "
+                />
+              </Tip>
+              <Tip :label="panels.glassDepth">
+                <NumberField
+                  :inherit-binding="false"
+                  :aria-label="panels.glassDepth"
+                  :model-value="(effect.glass ?? UNSET_GLASS).depth"
+                  :min="1"
+                  :max="100"
+                  data-property="glass-depth"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(index, glassChange(effect, 'depth', $event))
+                  "
+                  @commit="effectsCtx.commitEffect(index, glassChange(effect, 'depth', $event))"
+                />
+              </Tip>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <Tip :label="panels.glassDispersion">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassDispersion"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).dispersion * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-dispersion"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'dispersion', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'dispersion', fraction($event))
+                    )
+                  "
+                />
+              </Tip>
+              <Tip :label="panels.glassFrost">
+                <VariableNumberField
+                  :aria-label="panels.glassFrost"
+                  :model-value="effect.radius"
+                  :min="0"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/radius`"
+                  data-property="glass-frost"
+                  @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+                  @commit="effectsCtx.commitEffect(index, { radius: $event })"
+                />
+              </Tip>
+            </div>
           </template>
 
           <VariableNumberField

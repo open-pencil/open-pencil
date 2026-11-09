@@ -43,6 +43,7 @@ de:panels.frame
 de:panels.framePresetCategoryDesktop
 de:panels.framePresetCategoryFigmaCommunity
 de:panels.framePresetCategoryTablet
+de:panels.glassDispersion
 de:panels.kerning
 de:panels.layout
 de:panels.linearGradient
@@ -166,6 +167,7 @@ fr:panels.document
 fr:panels.documentation
 fr:panels.export
 fr:panels.framePresetCategoryFigmaCommunity
+fr:panels.glassDispersion
 fr:panels.image
 fr:panels.libraryDestination
 fr:panels.maskTypeAlpha

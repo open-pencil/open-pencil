@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { DEFAULT_GLASS } from '@open-pencil/scene-graph/constants'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -16,7 +17,8 @@ const EFFECT_LABELS: Record<string, string> = {
   INNER_SHADOW: panels.value.innerShadow,
   LAYER_BLUR: panels.value.layerBlur,
   BACKGROUND_BLUR: panels.value.backgroundBlur,
-  FOREGROUND_BLUR: panels.value.foregroundBlur
+  FOREGROUND_BLUR: panels.value.foregroundBlur,
+  GLASS: panels.value.glass
 }
 
 export const EFFECT_TYPES = Object.keys(EFFECT_LABELS) as EffectType[]
@@ -24,6 +26,17 @@ export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
   value: t,
   label: EFFECT_LABELS[t]
 }))
+
+/**
+ * The effect types the row at `index` can switch to: a layer holds one glass effect at most, as
+ * in Figma, so glass is offered only to the row that has it or when no other row does.
+ */
+export function effectOptionsFor(effects: readonly Effect[], index: number) {
+  const glassElsewhere = effects.some((effect, i) => i !== index && effect.type === 'GLASS')
+  return glassElsewhere
+    ? EFFECT_OPTIONS.filter((option) => option.value !== 'GLASS')
+    : EFFECT_OPTIONS
+}
 
 export function isShadow(type: string) {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
@@ -103,6 +116,8 @@ export function createEffectControlActions(expandedIndex: Ref<number | null>) {
   ) {
     if (!node) return
     const changes: Partial<Effect> = { type }
+    if (type === 'GLASS') changes.glass = { ...DEFAULT_GLASS }
+    else if (node.effects[index].type === 'GLASS') changes.glass = undefined
     if (!isShadow(type)) {
       changes.offset = { x: 0, y: 0 }
       changes.spread = 0
