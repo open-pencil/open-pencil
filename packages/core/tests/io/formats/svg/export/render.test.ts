@@ -3,6 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { exportSVG, exportSVGOrThrow, renderNodesToSVGOrThrow } from './helpers'
 import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
+import { boxOutlinePath } from '#core/io/formats/svg/paths'
+
 // --- Full SVG export tests ---
 
 describe('renderNodesToSVG()', () => {
@@ -348,6 +350,42 @@ describe('renderNodesToSVG()', () => {
     })
     const result = exportSVGOrThrow(graph, [frame.id])
     expect(result).toMatch(/<clipPath id="clip[^"]*">\s*<path d="M8 0L100 0L100 36A4 4 0 0 1 96 40/)
+  })
+
+  test('smoothed frame fills, strokes, and clips its children along one smoothed outline', () => {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
+      width: 100,
+      height: 40,
+      cornerRadius: 16,
+      cornerSmoothing: 0.6,
+      clipsContent: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          weight: 2,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE'
+        }
+      ]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 100,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const outline = boxOutlinePath(frame)
+    const result = exportSVGOrThrow(graph, [frame.id])
+    const d = `d="${outline}"`
+    // The children's clip, the inside stroke's clip, the fill, and the stroke.
+    expect(result.split(d).length - 1).toBe(4)
+    expect(result).toContain(`<path ${d} fill="#FFFFFF"/>`)
+    expect(result).toContain(`<clipPath id="clip0">\n      <path ${d}/>`)
+    expect(result).toMatch(/<g clip-path="url\(#clip0\)">\s*<rect width="100" height="40"/)
+    expect(result).not.toContain('rx="16"')
   })
 
   test('hidden children excluded', () => {

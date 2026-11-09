@@ -28,7 +28,8 @@ import {
   makePolygonPoints,
   roundedPolygonPath,
   hasRadius,
-  roundedRectPath,
+  hasSmoothCorners,
+  boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
 } from './paths'
@@ -183,24 +184,22 @@ function nodeShapeElements(
   }
 }
 
-/** A frame or rectangle-like layer's box as one element, with its corner radii. */
+/**
+ * A box layer's outline as one element: a rect, a rect with `rx`/`ry` for one radius, or the
+ * shared box path for independent or smoothed corners, so fills and clips follow the same edge.
+ */
 function boxOutlineElement(
   node: SceneNode,
   attrs: Record<string, string | number | undefined>
 ): SVGNode {
-  if (hasRadius(node)) {
-    if (node.independentCorners) {
-      return svg('path', { d: roundedRectPath(node), ...attrs })
-    }
-    return svg('rect', {
-      width: round(node.width),
-      height: round(node.height),
-      rx: round(node.cornerRadius),
-      ry: round(node.cornerRadius),
-      ...attrs
-    })
+  const width = round(node.width)
+  const height = round(node.height)
+  if (!hasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || hasSmoothCorners(node)) {
+    return svg('path', { d: boxOutlinePath(node), ...attrs })
   }
-  return svg('rect', { width: round(node.width), height: round(node.height), ...attrs })
+  const radius = round(node.cornerRadius)
+  return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
 }
 
 /**
