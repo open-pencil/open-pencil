@@ -25,6 +25,9 @@ export async function applyImportedDocument(
     load?.signal.throwIfAborted()
     if (!prepared) throw new Error('Imported page preparation was superseded')
 
+    // The outgoing document's reader worker and archive copies go with it; the tab never returns
+    // to that graph, and a large document does not fit in a page twice.
+    editor.releaseGraphResources()
     editor.replaceGraph(imported)
     editor.undo.clear()
     editor.clearSelection()

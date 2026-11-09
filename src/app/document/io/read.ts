@@ -1,6 +1,7 @@
 import { filename } from 'pathe/utils'
 
 import { resolveEditorProfile, type Editor, type EditorState } from '@open-pencil/core'
+import { stopFigReaderWorker } from '@open-pencil/core/io/formats/fig'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -39,6 +40,7 @@ type ReloadActionsOptions = {
   state: ReloadDocumentState
   getFilePath: () => string | null
   getFileHandle: () => FileSystemFileHandle | null
+  hasUnsavedChanges: () => boolean
   markDocumentSaved: () => void
   preparationController: EditorPreparationController
 }
@@ -112,10 +114,37 @@ export function createReloadActions({
   state,
   getFilePath,
   getFileHandle,
+  hasUnsavedChanges,
   markDocumentSaved,
   preparationController
 }: ReloadActionsOptions) {
+  /**
+   * The file changed on disk while the document holds edits: they are kept, as VS Code keeps them,
+   * and the person may reload, which discards them.
+   */
+  function offerReload() {
+    const messages = notificationMessages.get()
+    const action = {
+      label: messages.reloadDiscardingChanges,
+      run: (toastId: number) => {
+        toast.remove(toastId)
+        void reload()
+      }
+    }
+    toast.warning(messages.fileChangedOnDisk({ name: state.documentName }), action, {
+      sticky: true
+    })
+  }
+
   async function reloadFromDisk() {
+    if (hasUnsavedChanges()) {
+      offerReload()
+      return
+    }
+    await reload()
+  }
+
+  async function reload() {
     const load = preparationController.begin({
       kind: 'document-reload',
       subject: state.documentName
@@ -123,9 +152,11 @@ export function createReloadActions({
     let succeeded = false
     try {
       const snapshot = captureReloadState(state)
+      // A large document does not fit in a page twice: the open one's reader worker stops first,
+      // and it keeps loading pages and writing its archive from the copy this thread holds.
+      stopFigReaderWorker(editor.graph)
       load.update({ phase: 'reading', detail: state.documentName })
       const imported = await readReloadSource({
-        documentName: state.documentName,
         filePath: getFilePath(),
         fileHandle: getFileHandle(),
         signal: load.signal
