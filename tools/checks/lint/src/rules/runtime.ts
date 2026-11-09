@@ -40,6 +40,36 @@ const noDirectStorageAccess = {
   }
 } satisfies RuleDefinition
 
+const noViteHotOutsideReload = {
+  meta: {
+    docs: {
+      description: 'Disallow import.meta.hot outside the module that announces development reloads'
+    }
+  },
+  create(context) {
+    if (normalizedFilename(context).endsWith('/src/app/shell/reload/vite.ts')) return {}
+    return {
+      MetaProperty(node) {
+        const parent = node.parent
+        if (
+          parent.type !== 'MemberExpression' ||
+          parent.object !== node ||
+          parent.computed ||
+          parent.property.type !== 'Identifier' ||
+          parent.property.name !== 'hot'
+        ) {
+          return
+        }
+        context.report({
+          node: parent,
+          message:
+            'Register reload work with onBeforeReload from @/app/shell/reload; only src/app/shell/reload/vite.ts reads import.meta.hot.'
+        })
+      }
+    }
+  }
+} satisfies RuleDefinition
+
 const noCoreBrowserGlobals = {
   meta: {
     docs: {
@@ -312,6 +342,7 @@ const maxCompositionRootLines = {
 
 export {
   noDirectStorageAccess,
+  noViteHotOutsideReload,
   noCoreBrowserGlobals,
   noZoomInSceneDrawing,
   noDirectGraphEmitterSubscriptions,

@@ -4,22 +4,28 @@ import {
   AgentSideConnection,
   ndJsonStream,
   PROTOCOL_VERSION,
+  RequestError,
   type Agent,
   type NewSessionRequest,
   type ResumeSessionRequest
 } from '@agentclientprotocol/sdk'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
+import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
+)
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex agent'
 )
 
 interface FakeAgentOptions {
@@ -27,6 +33,10 @@ interface FakeAgentOptions {
   answersSessions?: boolean
   /** Refuses every resume, as for a session the agent no longer has. */
   resumeFails?: boolean
+  /** An adapter error that the real ACP connection serializes before the client receives it. */
+  resumeError?: Error
+  /** A temporary refusal on the first resume, as when the old process still owns the session. */
+  resumeBusy?: boolean
   /** True for an automation token that is never read, as with a credential prompt left open. */
   tokenHangs?: boolean
   /**
@@ -42,6 +52,8 @@ interface FakeAgentOptions {
 function fakeAgents({
   answersSessions = true,
   resumeFails = false,
+  resumeError,
+  resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
   lookupWaits = false
@@ -75,7 +87,10 @@ function fakeAgents({
       },
       async unstable_resumeSession(params) {
         resumed.push(params)
-        if (resumeFails) throw new Error('No conversation found')
+        if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
+        if (resumeError) throw resumeError
+        if (resumeBusy && resumed.length === 1)
+          throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
       },
       async prompt(params) {
@@ -187,17 +202,19 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number } = {}
+  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef } = {}
 ) {
   const sessions: (string | null)[] = []
+  const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
-    agentDef: resuming,
+    agentDef: options.agentDef ?? resuming,
     startup: agents.startup,
     resume: options.resume,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
-    onSession: (id) => sessions.push(id)
+    onSession: (id) => sessions.push(id),
+    onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions }
+  return { transport: created, sessions, agentErrors }
 }
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
@@ -237,13 +254,65 @@ test('an agent that exits continues the same session when it starts again', asyn
 })
 
 test('a saved session the agent cannot continue is forgotten and no new session starts', async () => {
+  await diagnostics.clear()
   const agents = fakeAgents({ resumeFails: true })
   const { transport: chat, sessions } = transport(agents, { resume: 'saved' })
   await expect(send(chat, 'next')).rejects.toBeInstanceOf(Error)
   expect(sessions).toEqual([null])
   expect(agents.created).toEqual([])
   expect(agents.prompts).toEqual([])
+  expect(
+    (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')?.attributes
+  ).toMatchObject({ errorCode: '-32002' })
 })
+
+test('a missing Codex rollout is forgotten after ACP wraps it as an internal error', async () => {
+  const agents = fakeAgents({ resumeError: new Error('no rollout found for thread id saved') })
+  const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef: codex })
+  try {
+    await expect(send(chat, 'next')).rejects.toMatchObject({
+      cause: { name: 'AgentSessionResumeError', cause: { code: -32603 } }
+    })
+    expect(sessions).toEqual([null])
+    expect(agents.created).toEqual([])
+    expect(agents.prompts).toEqual([])
+    expect(agents.kills()).toBe(1)
+  } finally {
+    await chat.destroy()
+  }
+})
+
+test.each([resuming, codex])(
+  'a temporary resume refusal keeps the saved session for $id',
+  async (agentDef) => {
+    await diagnostics.clear()
+    const agents = fakeAgents({ resumeBusy: true })
+    const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef })
+    try {
+      await expect(send(chat, 'next')).rejects.toMatchObject({
+        message: expect.stringContaining('Try again, or start a new chat.'),
+        cause: {
+          name: 'AgentSessionRetryError',
+          cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+        }
+      })
+      expect(
+        (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')
+          ?.attributes
+      ).toMatchObject({ errorCode: '-32600' })
+      expect(sessions).toEqual([])
+      expect(agents.prompts).toEqual([])
+      expect(agents.kills()).toBe(1)
+
+      await send(chat, 'next', [message('user', 'earlier'), message('assistant', 'reply')])
+      expect(agents.resumed.map((request) => request.sessionId)).toEqual(['saved', 'saved'])
+      expect(agents.created).toEqual([])
+      expect(agents.prompts).toEqual(['next'])
+    } finally {
+      await chat.destroy()
+    }
+  }
+)
 
 test('an agent that never answers while starting does not keep the message waiting', async () => {
   const agents = fakeAgents({ answersSessions: false })
@@ -295,6 +364,38 @@ test('a session is not saved when its first prompt fails before the agent takes 
   expect(reply).toContainEqual(expect.objectContaining({ type: 'error' }))
   expect(reply).toContainEqual({ type: 'finish', finishReason: 'error' })
   expect(sessions).toEqual([])
+  await chat.destroy()
+})
+
+test('the chat shows what the agent answered, and diagnostics keep only its code', async () => {
+  const agents = fakeAgents({ resumeBusy: true })
+  const { transport: chat, agentErrors } = transport(agents, { resume: 'saved' })
+  try {
+    await expect(send(chat, 'next')).rejects.toThrow('Session in use')
+    expect(agentErrors).toHaveLength(1)
+    expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+      errorCode: '-32600',
+      message: null,
+      stack: null
+    })
+  } finally {
+    await chat.destroy()
+  }
+})
+
+test("a failed prompt shows the agent's answer, and diagnostics keep only its code", async () => {
+  const agents = fakeAgents({ turn: 'refused' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = await send(chat, 'first')
+  expect(reply).toContainEqual({
+    type: 'error',
+    errorText: 'Internal error'
+  })
+  expect(agentErrors).toHaveLength(1)
+  expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+    errorCode: '-32603',
+    message: null
+  })
   await chat.destroy()
 })
 
