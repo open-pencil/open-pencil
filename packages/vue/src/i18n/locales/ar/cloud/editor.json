@@ -227,7 +227,6 @@
   "deleteWorkspace": "حذف مساحة العمل",
   "deleteWorkspaceHeading": "حذف {workspace}؟",
   "deleteWorkspaceDescription": "سيفقد الجميع الوصول وتتوقف دعواتها عن العمل. لا يمكن حذف إلا مساحة عمل فارغة.",
-  "deleteWorkspaceTypeName": "للتأكيد، اكتب «{workspace}».",
   "dangerZone": "منطقة الخطر",
   "leaveWorkspaceShort": "مغادرة",
   "deleteWorkspaceShort": "حذف",
