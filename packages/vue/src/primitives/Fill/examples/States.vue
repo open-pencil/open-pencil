@@ -81,6 +81,15 @@ const provider: BindingProvider<Color> = {
           >
             <span class="absolute inset-0" :style="{ background: swatch.background }" />
           </FillSwatch>
+          <FillSwatch
+            v-slot="swatch"
+            :fill="solid"
+            ignore-binding
+            label="Picker row fill"
+            class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)]"
+          >
+            <span class="absolute inset-0" :style="{ background: swatch.background }" />
+          </FillSwatch>
         </BindableValueRoot>
       </div>
     </section>

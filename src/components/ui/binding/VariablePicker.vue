@@ -116,6 +116,7 @@ defineOptions({ inheritAttrs: false })
       <template #leading="{ item }">
         <FillSwatch
           v-if="color(item.value)"
+          ignore-binding
           :fill="{
             type: 'SOLID',
             visible: true,

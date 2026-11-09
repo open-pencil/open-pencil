@@ -31,6 +31,11 @@ export interface FillSwatchProps extends PrimitiveProps {
   fill: Fill
   /** Accessible name for the preview. */
   label?: string
+  /**
+   * Show `fill` as given inside a bound `BindableValueRoot`, instead of the bound variable's
+   * color: for swatches that preview other values, such as a variable picker's rows.
+   */
+  ignoreBinding?: boolean
 }
 
 export interface FillSwatchSlotProps {

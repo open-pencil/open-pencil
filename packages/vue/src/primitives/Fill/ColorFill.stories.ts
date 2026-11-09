@@ -29,6 +29,13 @@ export const StateMatrix: Story = {
     await expect(canvas.getByRole('img', { name: 'Bound token fill' })).toHaveAttribute(
       'data-bound'
     )
+    const pickerRow = canvas.getByRole('img', { name: 'Picker row fill' })
+    await expect(pickerRow).not.toHaveAttribute('data-bound')
+    await expect(pickerRow.style.getPropertyValue('--open-pencil-fill-swatch-background')).toBe(
+      canvas
+        .getByRole('img', { name: 'Solid fill' })
+        .style.getPropertyValue('--open-pencil-fill-swatch-background')
+    )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Gradient' }))
     await expect(canvas.getByRole('img', { name: 'Editable fill' })).toHaveAttribute(
