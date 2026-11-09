@@ -74,7 +74,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'Oxlint recommended configuration',
-    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['@open-pencil/runtime/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
   },
   {
     name: 'Cloud contract',

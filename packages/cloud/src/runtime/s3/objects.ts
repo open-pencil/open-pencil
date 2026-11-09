@@ -11,7 +11,7 @@ import {
   S3Client,
   UploadPartCommand
 } from '@aws-sdk/client-s3'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
 
 const CHECKSUM_METADATA_KEY = 'openpencil-sha256'

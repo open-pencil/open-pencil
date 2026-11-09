@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-raw-runtime-effect'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/no-raw-runtime-effect'
+const rules = { [rule]: 'error' }
 
-describe('no-raw-runtime-effect', () => {
+describe('@open-pencil/data/no-raw-runtime-effect', () => {
   test.each([
     'ck.RuntimeEffect.Make(source)',
     'ck.RuntimeEffect.MakeForBlender(source, onError)',

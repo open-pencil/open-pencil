@@ -351,68 +351,85 @@ import {
 } from '#lint/rules/structure.ts'
 import { noLocalJsonObjectAliases } from '#lint/rules/typescript.ts'
 
-/** The rules only this repository needs; `lint/plugin.js` adds `@open-pencil/oxlint-plugin`'s. */
-const plugin = {
-  meta: { name: 'open-pencil' },
-  rules: {
-    'no-inline-named-types': noInlineNamedTypes,
-    'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
-    'no-vue-style-blocks': noVueStyleBlocks,
-    'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
-    'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
-    'no-raw-overlay-roots-in-app': noRawOverlayRootsInApp,
-    'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
-    'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
-    'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,
-    'no-large-property-section-components': noLargePropertySectionComponents,
-    'no-raw-test-id-string-props': noRawTestIdStringProps,
-    'no-dynamic-data-test-id-in-vue': noDynamicDataTestIdInVue,
-    'no-test-id-helper-bind-in-vue': noTestIdHelperBindInVue,
-    'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
-    'no-raw-test-id-selectors-in-tests': noRawTestIdSelectorsInTests,
-    'no-generated-test-id-literals': noGeneratedTestIdLiterals,
-    'no-browser-side-effects-in-vue': noBrowserSideEffectsInVue,
-    'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
-    'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
-    'no-hardcoded-color-constants': noHardcodedColorConstants,
-    'no-unknown-tailwind-classes': noUnknownTailwindClassesRule,
-    'no-px-tailwind-values': noPxTailwindValuesRule,
-    'no-physical-side-tailwind-classes': noPhysicalSideTailwindClassesRule,
-    'no-hand-rolled-data-url': noHandRolledDataURLRule,
-    'no-interpolated-tailwind-classes': noInterpolatedTailwindClassesRule,
+/**
+ * The rules only this repository needs, by domain. `lint/<domain>.js` loads each domain as the
+ * `@open-pencil/<domain>` plugin, with `@open-pencil/oxlint-plugin`'s rules of the same domain.
+ */
+export const domains = {
+  data: {
     'no-hand-rolled-color': noHandRolledColor,
+    'no-hand-rolled-data-url': noHandRolledDataURLRule,
+    'no-hardcoded-color-constants': noHardcodedColorConstants
+  },
+  types: {
+    'no-inline-named-types': noInlineNamedTypes,
+    'no-local-json-object-aliases': noLocalJsonObjectAliases
+  },
+  runtime: {
+    'no-bun-globals-in-cli': noBunGlobalsInCli,
+    'no-core-browser-globals': noCoreBrowserGlobals,
+    'no-direct-storage-access': noDirectStorageAccess,
     'no-raw-console-format': noRawConsoleFormat,
     'no-typeof-window-check': noTypeofWindowCheck,
-    'no-vue-self-package-imports': noVueSelfPackageImports,
-    'no-cross-package-source-imports': noCrossPackageSourceImports,
-    'no-document-change-capture': noDocumentChangeCapture,
-    'no-core-self-package-imports': noCoreSelfPackageImports,
-    'no-inline-prompt-constants': noInlinePromptConstants,
-    'no-app-imports-in-packages': noAppImportsInPackages,
-    'no-core-framework-imports': noCoreFrameworkImports,
-    'no-inline-tauri-imports': noInlineTauriImports,
-    'no-direct-storage-access': noDirectStorageAccess,
-    'no-vite-hot-outside-reload': noViteHotOutsideReload,
-    'no-local-json-object-aliases': noLocalJsonObjectAliases,
-    'no-core-browser-globals': noCoreBrowserGlobals,
-    'no-zoom-in-scene-drawing': noZoomInSceneDrawing,
-    'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
-    'no-direct-open-pencil-browser-store': noDirectOpenPencilBrowserStore,
-    'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
-    'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
-    'no-composable-state-wrappers': noComposableStateWrappers,
-    'prefer-vueuse-intervals': preferVueUseIntervals,
-    'prefer-vueuse-timeouts': preferVueUseTimeouts,
-    'max-composition-root-lines': maxCompositionRootLines,
-    'vue-component-file-pascal-case': vueComponentFilePascalCase,
+    'no-vite-hot-outside-reload': noViteHotOutsideReload
+  },
+  security: {},
+  imports: {
+    'no-app-in-packages': noAppImportsInPackages,
+    'no-core-framework': noCoreFrameworkImports,
+    'no-core-self-package': noCoreSelfPackageImports,
+    'no-cross-package-source': noCrossPackageSourceImports,
+    'no-inline-tauri': noInlineTauriImports,
+    'no-vue-self-package': noVueSelfPackageImports
+  },
+  structure: {
     'component-namespace-casing': componentNamespaceCasing,
-    'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
     'no-flat-kiwi-modules': noFlatKiwiModules,
-    'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
-    'no-editor-profile-inputs': noEditorProfileInputs
-  } satisfies Record<string, PluginRule>
-}
-
-export default plugin
+    'non-component-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
+    'vue-component-file-pascal-case': vueComponentFilePascalCase
+  },
+  vue: {
+    'max-composition-root-lines': maxCompositionRootLines,
+    'no-browser-side-effects': noBrowserSideEffectsInVue,
+    'no-composable-state-wrappers': noComposableStateWrappers,
+    'no-document-query-selector': noDocumentQuerySelectorInVue,
+    'no-hardcoded-tip-labels': noHardcodedTipLabelsInVue,
+    'no-large-property-section-components': noLargePropertySectionComponents,
+    'no-native-title-attributes': noNativeTitleAttributesInVue,
+    'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
+    'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
+    'no-raw-overlay-roots': noRawOverlayRootsInApp,
+    'no-raw-svg-in-templates': noRawSvgInAppVueTemplates,
+    'no-style-blocks': noVueStyleBlocks,
+    'no-ui-helper-calls-in-templates': noUiHelperCallsInVueTemplates,
+    'prefer-vueuse-intervals': preferVueUseIntervals,
+    'prefer-vueuse-timeouts': preferVueUseTimeouts
+  },
+  'test-ids': {
+    'no-dynamic-attributes': noDynamicDataTestIdInVue,
+    'no-generated-literals': noGeneratedTestIdLiterals,
+    'no-helper-bind': noTestIdHelperBindInVue,
+    'no-invalid-attributes': noInvalidTestIdAttributes,
+    'no-raw-selectors-in-tests': noRawTestIdSelectorsInTests,
+    'no-raw-string-props': noRawTestIdStringProps
+  },
+  tailwind: {
+    'no-interpolated-classes': noInterpolatedTailwindClassesRule,
+    'no-physical-sides': noPhysicalSideTailwindClassesRule,
+    'no-px-values': noPxTailwindValuesRule,
+    'no-unknown-classes': noUnknownTailwindClassesRule
+  },
+  editor: {
+    'no-direct-browser-store': noDirectOpenPencilBrowserStore,
+    'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
+    'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
+    'no-direct-window-internals': noDirectOpenPencilWindowInternals,
+    'no-document-change-capture': noDocumentChangeCapture,
+    'no-inline-prompt-constants': noInlinePromptConstants,
+    'no-profile-inputs': noEditorProfileInputs,
+    'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
+    'no-zoom-in-scene-drawing': noZoomInSceneDrawing
+  }
+} satisfies Record<string, Record<string, PluginRule>>

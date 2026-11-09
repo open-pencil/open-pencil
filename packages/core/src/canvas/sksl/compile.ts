@@ -13,7 +13,7 @@ export interface CompiledProgram<U extends object = object> {
 
 /**
  * Compiles `program` with CanvasKit's SkSL compiler; throws with Skia's message when it does not
- * compile. The only place a runtime effect is made from source (`open-pencil/no-raw-runtime-effect`).
+ * compile. The only place a runtime effect is made from source (`@open-pencil/data/no-raw-runtime-effect`).
  */
 export function compileProgram<U extends object>(
   ck: CanvasKit,

@@ -1,4 +1,4 @@
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import { defineCommand } from 'citty'
 import * as v from 'valibot'
