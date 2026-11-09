@@ -327,7 +327,7 @@ export function applyYogaLayout(
     const yogaChild = box.node.getChild(yogaIndex)
     yogaIndex++
 
-    updateChildFromYoga(graph, frame, child, yogaChild, box, keepsSaved, computeLayout)
+    updateChildFromYoga(graph, frame, child, yogaChild, box.origin, keepsSaved, computeLayout)
 
     if (!child.visible) continue
     if (preservesImportedInstanceInternals(child)) continue
