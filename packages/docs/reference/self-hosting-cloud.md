@@ -92,6 +92,8 @@ On Cloudflare a Worker serves the API, the editor, and the server's own pages, a
 4. Migrate from a checkout, with that TOML as `OPENPENCIL_CLOUD_CONFIG` and a direct connection string as `DATABASE_URL`: `bun --filter @open-pencil/cloud migrate`. The Worker never migrates, so do this before every deploy.
 5. Build the site with `bun run build:packages && bun run build:cloud`, then deploy from the copy with `bunx wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud" --secrets-file secrets.json`, where `secrets.json` holds the secrets the TOML names.
 
+To keep collaboration rooms' storage in one region, name a Durable Object jurisdiction in the Worker's entry: `createCloudflareCloud(config, { relayJurisdiction: 'eu' })`. Set it before the first room opens, since rooms named in a jurisdiction are other objects than those named outside one.
+
 The operator commands below work the same way, from a checkout with a direct connection. The `[workers]` intervals don't apply: mail a request queues is sent when the request finishes, and the Cron Trigger handles the rest.
 
 ## The first administrator
@@ -141,7 +143,7 @@ Revision keys are immutable, so bucket versioning isn't needed, but it isn't a b
 
 ## Error tracking
 
-The server reports nothing unless you ask it to. Add an `[error_tracking]` table with `provider = "posthog"` to send errors no request handled, and failures of startup once the configuration parses, background work, cleanup, email delivery, and the collaboration relay, to PostHog error tracking. `host` defaults to PostHog's US Cloud, `https://us.i.posthog.com`; set `https://eu.i.posthog.com` or your own instance's address instead. The project API key defaults to `POSTHOG_PROJECT_API_KEY`. Each report carries the error's message and stack, the runtime, the deployment mode and host, where the error was caught, and for a request its method and route pattern. It names no account and creates no person in PostHog, and it leaves out the client's address and the request body, though an error's message can quote a value the failing code handled, such as a malformed ID in a database error. Errors are still logged either way.
+The server reports nothing unless you ask it to. Add an `[error_tracking]` table with `provider = "posthog"` to send errors no request handled, and failures of startup once the configuration parses, background work, cleanup, email delivery, and the collaboration relay, to PostHog error tracking. `host` defaults to PostHog's EU Cloud, `https://eu.i.posthog.com`; set `https://us.i.posthog.com` or your own instance's address instead. The project API key defaults to `POSTHOG_PROJECT_API_KEY`. Each report carries the error's message and stack, the runtime, the deployment mode and host, where the error was caught, and for a request its method, route pattern, and request ID. It names no account and creates no person in PostHog, and it leaves out the client's address and the request body, though an error's message can quote a value the failing code handled, such as a malformed ID in a database error. Errors are logged either way, one JSON line each with its `level`, `message`, `source`, method, route, and `requestId`: Cloudflare's ray ID when Cloudflare sent the request, else the `X-Request-Id` a proxy in front set, else a new one. The server answers every request with that ID as `X-Request-Id`.
 
 ## Backups and upgrades
 

@@ -9,6 +9,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
 - Errors no route handled, and failures of work a runtime owns, go through `reportCloudError` with the injected `CloudErrorReporter`; only runtimes create one, from the optional `[error_tracking]` table, so a deployment without it sends nothing (`src/runtime/posthog/errors.ts`, `tests/server/errors/handler.test.ts`).
+- Server code logs through `logCloud`, one structured line with fields rather than values in the message, and a request's lines and reports carry the `requestId` that `cloudRequestId` sets from `cf-ray` (`src/server/logging.ts`, `tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
 
 ## Data and security
@@ -26,6 +27,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - A table that refers to a `storage_object` row is named in `unreferencedObject`, which decides what the object sweep may delete; a collaboration room's snapshot is such a file (`src/server/cleanup/objects.ts`, `tests/integration/server/collaboration/persistence.test.ts`).
 - A revision's images live in `revision_image`; code that makes a revision from another copies them with `copyRevisionImages`, and a storage object a `workspace_image` holds is never unreferenced (`src/server/documents/images.ts`, `tests/integration/server/documents/images.test.ts`).
 - Add schema changes as a new numbered migration in `src/server/db/migrations/`, after the six domain migrations the schema starts from (`001_accounts` to `006_operations`) and built with `migrations/schema.ts`, registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth builds its own tables after Cloud's, once, and `auth_schema_version` records the version they were built for (`migrateCloudDatabase`, `tests/integration/server/db/auth-schema.test.ts`).
+- Migrations run while the previous release still serves, so they only expand: a drop, rename, retype, or newly required column waits for a release after the last code using it and is named in the migration's `contracts` (`CloudMigration`, `tests/integration/server/db/expand.test.ts`).
 - Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`open-pencil/no-cloud-raw-sql`).
 - Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`open-pencil/no-secret-in-query`, `open-pencil/no-secret-logging`, `open-pencil/no-dynamic-html`).
 

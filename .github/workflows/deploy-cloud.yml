@@ -1,14 +1,18 @@
 name: Deploy Cloud
 
 # Deploys an official OpenPencil Cloud deployment: packages/cloud/deploy/openpencil/<target>, with
-# the secrets and reviewers of the cloud-<target> GitHub environment.
+# the secrets and reviewers of the cloud-<target> GitHub environment. Run it from master or a
+# release tag for staging, and from a release tag for production (tools/ci/cloud-deploy/src/ref.ts).
+# The runbook is packages/cloud/deploy/openpencil/README.md.
 on:
   workflow_dispatch:
     inputs:
       target:
         description: Deployment
         type: choice
-        options: [staging]
+        options: [staging, production]
+
+run-name: Deploy Cloud ${{ inputs.target }} from ${{ github.ref_name }}
 
 concurrency:
   group: cloud-${{ inputs.target }}
@@ -27,13 +31,20 @@ jobs:
     env:
       DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
     steps:
+      # Master's history, to check the commit is on it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
+
+      - name: Check the ref may deploy to this target
+        env:
+          TARGET: ${{ inputs.target }}
+        run: bun tools/ci/cloud-deploy/src/ref.ts "$TARGET"
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - uses: ./.github/actions/setup/playwright

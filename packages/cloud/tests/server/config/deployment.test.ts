@@ -197,7 +197,7 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://us.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
 
     const inline = tracked.replace(
       'provider = "posthog"',

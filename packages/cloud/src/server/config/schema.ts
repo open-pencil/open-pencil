@@ -282,8 +282,8 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   return config
 }
 
-/** PostHog's US Cloud ingestion host. */
-const POSTHOG_DEFAULT_HOST = 'https://us.i.posthog.com'
+/** PostHog's EU Cloud ingestion host, where OpenPencil's own project is. */
+const POSTHOG_DEFAULT_HOST = 'https://eu.i.posthog.com'
 
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',

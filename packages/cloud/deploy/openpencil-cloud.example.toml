@@ -113,10 +113,10 @@ transport = "none"
 # [internal_api]
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
-# defaults to https://us.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
+# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
 # [error_tracking]
 # provider = "posthog"
-# host = "https://eu.i.posthog.com"
+# host = "https://us.i.posthog.com"
 
 [workers.email]
 batch_size = 50
