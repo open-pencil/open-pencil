@@ -14,7 +14,10 @@ afterAll(() => {
   for (const renderer of renderers) renderer.destroy()
 })
 
-/** A renderer at rest on `pageId`, counting the offscreen surfaces it makes. */
+/**
+ * A renderer at rest on `pageId`, counting the 8-bit offscreen surfaces it makes: the warm-up's
+ * own, not the half-float geometry maps the glass it draws makes.
+ */
 function settledRenderer(pageId: string, makesSurfaces = true) {
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(64, 64), 'surface'))
   renderers.push(renderer)
@@ -24,7 +27,7 @@ function settledRenderer(pageId: string, makesSurfaces = true) {
   const made = { count: 0 }
   const make = renderer.surface.makeSurface.bind(renderer.surface)
   renderer.surface.makeSurface = (info) => {
-    made.count++
+    if (info.colorType === ck.ColorType.RGBA_8888) made.count++
     // Typed as always made; a canvas that cannot allocate one makes none.
     return (makesSurfaces ? make(info) : null) as Surface
   }
