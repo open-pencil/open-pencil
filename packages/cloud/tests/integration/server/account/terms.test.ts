@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { ignoredSecurityNotices } from '#cloud-tests/helpers/account-authentication'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { cloudAccountStatusResponseSchema } from '#cloud/contract'
 import {
@@ -67,6 +68,44 @@ function accept(
     headers: { 'Content-Type': 'application/json', Origin: base.publicURL },
     body: JSON.stringify({ version })
   })
+}
+
+/** Signs up and in with a password on a deployment that requires the terms, before accepting. */
+async function signedUp(runtime: Awaited<ReturnType<typeof createCloudTestDatabase>>) {
+  let verificationURL = ''
+  const email = createTransactionalEmailService(runtime.database, {
+    encryptionSecret: requiring.authSecret,
+    from: 'cloud@example.com'
+  })
+  const enrollment = createEnrollmentService(runtime.database, {
+    publicURL: requiring.publicURL,
+    adminRecipients: [],
+    email
+  })
+  const auth = createBetterAuthAdapter(requiring, runtime.database, enrollment, {
+    email: {
+      ...ignoredSecurityNotices,
+      async sendVerification(input) {
+        verificationURL = input.url
+      },
+      sendPasswordReset: async () => undefined,
+      sendPasswordChanged: async () => undefined
+    }
+  })
+  const post = (path: string, body: object) =>
+    auth.handler(
+      new Request(new URL(`/api/auth${path}`, requiring.publicURL), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: requiring.publicURL },
+        body: JSON.stringify(body)
+      })
+    )
+  const credentials = { email: 'person@example.com', password: 'a sufficiently long password' }
+  await post('/sign-up/email', { ...credentials, name: 'Person' })
+  await auth.handler(new Request(verificationURL))
+  const signIn = await post('/sign-in/email', credentials)
+  const cookie = signIn.headers.get('set-cookie')?.split(';', 1)[0] ?? ''
+  return { auth, headers: new Headers({ Cookie: cookie }) }
 }
 
 describe('terms acceptance', () => {
@@ -138,27 +177,74 @@ describe('terms acceptance', () => {
     }
   })
 
-  test('lets an account with terms to accept leave, and nothing else', async () => {
+  test('lets an account with terms to accept read its documents, and nothing else', async () => {
     const runtime = await createCloudTestDatabase()
+    const objects = createMemoryObjectStore()
+    let accepted = true
     try {
       const app = createCloudApp({
         config: requiring,
         database: runtime.database,
         auth: createBetterAuthAdapter(requiring, runtime.database),
-        objects: {} as never,
+        objects: objects.store,
         resolveIdentity: async () => person,
-        resolveSession: async () => null,
+        resolveSession: async () => (accepted ? person : null),
         resolveAccountSession: async () => person
       })
-      const unknownDocument = '00000000-0000-4000-8000-000000000000'
-      // What leaving needs: what deleting the account takes, and each document to download.
-      expect((await app.request('/api/account/deletion')).status).toBe(200)
-      expect((await app.request(`/api/documents/${unknownDocument}`)).status).toBe(404)
-      // Everything else waits for the terms.
+      const post = (path: string, body: object) =>
+        app.request(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+      const { workspace } = await responseJSON(
+        await post('/api/workspaces', { name: 'Studio', slug: 'studio' }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const { document } = await responseJSON(
+        await post(`/api/workspaces/${workspace.id}/documents`, { name: 'Homepage' }),
+        v.object({ document: v.object({ id: v.string() }) })
+      )
+      // One save, as the editor makes it: an upload, then its commit.
+      const checksum = `${'A'.repeat(43)}=`
+      const upload = await responseJSON(
+        await post(`/api/documents/${document.id}/uploads`, {
+          baseRevisionId: null,
+          byteSize: 16,
+          checksum,
+          contentType: 'application/octet-stream'
+        }),
+        v.object({ id: v.string() })
+      )
+      const { objectKey } = await runtime.database
+        .selectFrom('upload')
+        .select('objectKey')
+        .where('id', '=', upload.id)
+        .executeTakeFirstOrThrow()
+      objects.put(objectKey, {
+        byteSize: 16,
+        checksum,
+        checksumVerification: 'native',
+        contentType: 'application/octet-stream'
+      })
+      expect((await post(`/api/uploads/${upload.id}/commit`, { checksum })).status).toBe(200)
+
+      // Then the terms change, and this account has not accepted them yet.
+      accepted = false
+      const deletion = await responseJSON(
+        await app.request('/api/account/deletion'),
+        v.object({ deletion: v.object({ documents: v.array(v.object({ id: v.string() })) }) })
+      )
+      expect(deletion.deletion.documents.map((entry) => entry.id)).toContain(document.id)
+      expect((await app.request(`/api/documents/${document.id}`)).status).toBe(200)
+
       expect((await app.request('/api/workspaces')).status).toBe(401)
-      expect((await app.request(`/api/documents/${unknownDocument}/versions`)).status).toBe(401)
+      expect((await app.request(`/api/documents/${document.id}/versions`)).status).toBe(401)
       expect(
-        (await app.request(`/api/documents/${unknownDocument}`, { method: 'DELETE' })).status
+        (await app.request(`/api/documents/${document.id}`, { method: 'DELETE' })).status
+      ).toBe(401)
+      expect(
+        (await post(`/api/workspaces/${workspace.id}/documents`, { name: 'Other' })).status
       ).toBe(401)
     } finally {
       await runtime.close()
@@ -166,43 +252,9 @@ describe('terms acceptance', () => {
   })
 
   test('gives a signed-in account no session until it accepts', async () => {
-    let verificationURL = ''
     const runtime = await createCloudTestDatabase()
-    const email = createTransactionalEmailService(runtime.database, {
-      encryptionSecret: requiring.authSecret,
-      from: 'cloud@example.com'
-    })
-    const enrollment = createEnrollmentService(runtime.database, {
-      publicURL: requiring.publicURL,
-      adminRecipients: [],
-      email
-    })
-    const auth = createBetterAuthAdapter(requiring, runtime.database, enrollment, {
-      email: {
-        ...ignoredSecurityNotices,
-        async sendVerification(input) {
-          verificationURL = input.url
-        },
-        sendPasswordReset: async () => undefined,
-        sendPasswordChanged: async () => undefined
-      }
-    })
-    const post = (path: string, body: object) =>
-      auth.handler(
-        new Request(new URL(`/api/auth${path}`, requiring.publicURL), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Origin: requiring.publicURL },
-          body: JSON.stringify(body)
-        })
-      )
-    const credentials = { email: 'person@example.com', password: 'a sufficiently long password' }
+    const { auth, headers } = await signedUp(runtime)
     try {
-      await post('/sign-up/email', { ...credentials, name: 'Person' })
-      await auth.handler(new Request(verificationURL))
-      const signIn = await post('/sign-in/email', credentials)
-      const cookie = signIn.headers.get('set-cookie')?.split(';', 1)[0] ?? ''
-      const headers = new Headers({ Cookie: cookie })
-
       const identity = await auth.resolveIdentity(headers)
       expect(identity).toMatchObject({ email: 'person@example.com' })
       expect(await auth.resolveSession(headers)).toBeNull()
@@ -215,6 +267,39 @@ describe('terms acceptance', () => {
         legal.termsVersion
       )
       expect(await auth.resolveSession(headers)).toMatchObject({ email: 'person@example.com' })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('lets an account with terms to accept delete itself', async () => {
+    const runtime = await createCloudTestDatabase()
+    const { auth, headers } = await signedUp(runtime)
+    try {
+      const app = createCloudApp({
+        config: requiring,
+        database: runtime.database,
+        auth,
+        objects: createMemoryObjectStore().store
+      })
+      expect(await auth.resolveSession(headers)).toBeNull()
+      const response = await app.request('/api/account/delete', {
+        method: 'POST',
+        headers: new Headers([
+          ...headers,
+          ['Content-Type', 'application/json'],
+          ['Origin', requiring.publicURL]
+        ]),
+        body: JSON.stringify({})
+      })
+      expect(response.status).toBe(200)
+      expect(
+        await runtime.database
+          .selectFrom('user')
+          .select('id')
+          .where('email', '=', 'person@example.com')
+          .executeTakeFirst()
+      ).toBeUndefined()
     } finally {
       await runtime.close()
     }

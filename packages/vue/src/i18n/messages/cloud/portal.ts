@@ -88,7 +88,8 @@ export const cloudPortalMessageDefaults = {
   acceptTerms: 'Accept and continue',
   declineTerms: 'Decline and sign out',
   termsLeaveHint: 'Don’t want to accept?',
-  termsLeave: 'Delete your account',
+  /** Opens deleting the account, whose dialog downloads every document first. */
+  termsLeave: 'Leave with your documents',
   termsChanged:
     'The terms changed while this page was open. Reload it to read the current version.',
   consentTerms: params('By continuing, you agree to the {terms}.'),

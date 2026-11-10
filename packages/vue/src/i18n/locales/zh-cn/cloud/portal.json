@@ -64,7 +64,7 @@
   "acceptTerms": "接受并继续",
   "declineTerms": "拒绝并退出登录",
   "termsLeaveHint": "不想接受？",
-  "termsLeave": "删除账户",
+  "termsLeave": "带着你的文档离开",
   "termsChanged": "此页面打开期间条款已更改。请重新加载以阅读当前版本。",
   "consentTerms": "继续即表示你同意{terms}。",
   "consentTermsAndPrivacy": "继续即表示你同意{terms}并知悉{privacy}。",
