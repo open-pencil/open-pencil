@@ -1,3 +1,4 @@
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
@@ -34,11 +35,12 @@ function pageHasHeavyEffects(graph: SceneGraph, pageId: string): boolean {
   return false
 }
 
-function warmUpLayer(type: SceneNode['type'], effects: Effect[]): SceneNode {
+/** A layer for the warm-up to draw: small, since programs do not depend on size. */
+function warmUpLayer(type: SceneNode['type'], effects: Effect[], size = 96): SceneNode {
   // One id per kind, so the renderer's caches keep a single entry for each.
   return createDefaultNode(() => `effect-warm-up:${type}`, type, {
-    width: 96,
-    height: 96,
+    width: size,
+    height: size,
     effects
   })
 }
@@ -63,6 +65,33 @@ function blurEffect(type: Effect['type'], radius: number, progressive: boolean):
   }
 }
 
+/** Draws each effect worth warming once at every warm-up scale. */
+function drawWarmUp(r: SkiaRenderer, canvas: Canvas): void {
+  const background = warmUpLayer('RECTANGLE', [blurEffect('BACKGROUND_BLUR', 40, true)])
+  const layer = blurEffect('LAYER_BLUR', 40, true)
+  const glass: Effect = {
+    ...blurEffect('GLASS', 4, false),
+    glass: { refraction: 0.8, depth: 20, lightAngle: -45, lightIntensity: 0.5, dispersion: 0.5 }
+  }
+  const glassBox = warmUpLayer('RECTANGLE', [glass], 16)
+  const glassEllipse = warmUpLayer('ELLIPSE', [glass], 16)
+  for (const scale of WARM_UP_SCALES) {
+    canvas.save()
+    canvas.scale(scale, scale)
+    applyClippedBlur(r, canvas, background, background.effects[0])
+    r.effectLayerPaint.setImageFilter(r.getCachedLayerBlur(layer, 96, 96, null))
+    canvas.saveLayer(r.effectLayerPaint, r.ck.LTRBRect(0, 0, 96, 96))
+    r.effectLayerPaint.setImageFilter(null)
+    canvas.drawRect(r.ck.LTRBRect(0, 0, 96, 96), r.auxFill)
+    canvas.restore()
+    for (const node of [glassBox, glassEllipse]) {
+      renderGlassRefraction(r, canvas, node, glass, null)
+      renderGlassLight(r, canvas, node, glass, null)
+    }
+    canvas.restore()
+  }
+}
+
 /**
  * Draws a progressive background blur, a progressive layer blur, and glass over a rectangle and
  * an ellipse off screen at several scales, so the first zoom over such layers does not stall
@@ -80,35 +109,18 @@ export function warmUpEffectPrograms(
   if (r.effectWarmUpCheckedPage === r.pageId) return
   r.effectWarmUpCheckedPage = r.pageId
   if (!pageHasHeavyEffects(graph, r.pageId)) return
-  r.effectProgramsWarm = true
   const surface = makeTileSurface(r, WARM_UP_SIZE)
+  // Without the surface, or if a draw fails, the page stays checked, so a failure is not retried
+  // every idle frame; the next page that needs warming tries again, and the programs are built
+  // when the canvas first draws them either way.
   if (!surface) return
-  const background = warmUpLayer('RECTANGLE', [blurEffect('BACKGROUND_BLUR', 40, true)])
-  const layer = blurEffect('LAYER_BLUR', 40, true)
-  const glass: Effect = {
-    ...blurEffect('GLASS', 4, false),
-    glass: { refraction: 0.8, depth: 20, lightAngle: -45, lightIntensity: 0.5, dispersion: 0.5 }
-  }
-  const glassBox = warmUpLayer('RECTANGLE', [glass])
-  const glassEllipse = warmUpLayer('ELLIPSE', [glass])
   try {
-    const canvas = surface.getCanvas()
-    for (const scale of WARM_UP_SCALES) {
-      canvas.save()
-      canvas.scale(scale, scale)
-      applyClippedBlur(r, canvas, background, background.effects[0])
-      r.effectLayerPaint.setImageFilter(r.getCachedLayerBlur(layer, 96, 96, null))
-      canvas.saveLayer(r.effectLayerPaint, r.ck.LTRBRect(0, 0, 96, 96))
-      r.effectLayerPaint.setImageFilter(null)
-      canvas.drawRect(r.ck.LTRBRect(0, 0, 96, 96), r.auxFill)
-      canvas.restore()
-      for (const node of [glassBox, glassEllipse]) {
-        renderGlassRefraction(r, canvas, node, glass, null)
-        renderGlassLight(r, canvas, node, glass, null)
-      }
-      canvas.restore()
-    }
+    drawWarmUp(r, surface.getCanvas())
     surface.flush()
+    r.effectProgramsWarm = true
+  } catch {
+    // Optional work: a failure must not interrupt the frame that ran it.
+    r.effectLayerPaint.setImageFilter(null)
   } finally {
     surface.delete()
   }
