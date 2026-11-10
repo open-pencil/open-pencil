@@ -40,7 +40,7 @@ function listStopClass(active: boolean) {
     @update="emit('update', $event)"
     v-slot="root"
   >
-    <div dir="ltr">
+    <div>
       <div class="mb-2 w-28">
         <AppSelect
           :model-value="root.subtype"
@@ -50,6 +50,7 @@ function listStopClass(active: boolean) {
       </div>
 
       <GradientEditorBar
+        dir="ltr"
         :stops="root.stops"
         :active-stop-index="root.activeStopIndex"
         :bar-background="root.barBackground"
@@ -89,6 +90,7 @@ function listStopClass(active: boolean) {
         </div>
         <GradientEditorStop
           v-for="(stop, idx) in root.stops"
+          dir="ltr"
           :key="idx"
           :stop="stop"
           :index="idx"

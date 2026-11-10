@@ -25,6 +25,12 @@
   [data-direction='reading']:where(:dir(rtl), [dir='rtl'], [dir='rtl'] *) {
     scale: -1 1;
   }
+
+  /* Code, keys, and output read left to right inside right-to-left text: 0.17.0-beta.2, ⌘N. */
+  :where(code, kbd, samp, pre) {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
 }
 
 /*

@@ -19,7 +19,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
 </script>
 
 <template>
-  <div class="flex items-start gap-1.5">
+  <div dir="ltr" class="flex items-start gap-1.5">
     <div class="min-w-0 flex-1">
       <div
         v-if="!ctx.showIndividualPadding && ctx.hasSymmetricPadding"

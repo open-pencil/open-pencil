@@ -185,6 +185,9 @@ describe('@open-pencil/tailwind/no-physical-sides', () => {
           'src/theme/rejected.ts': `export const theme = '${Object.keys(replacements).join(' ')}'\n`,
           'src/theme/accepted.ts': `export const theme = '${accepted.join(' ')}'\n`,
           'packages/vue/src/primitives/Demo/examples/Side.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`,
+          'src/components/Slots.vue': `${SCRIPT}<template><AppInput :ui="{ input: 'ml-2' }" /></template>\n`,
+          'src/components/curried.ts':
+            "import { tv } from 'tailwind-variants'\nexport const field = tv({ base: '' })({ class: ['ml-2'] })\n",
           'packages/docs/.vitepress/theme/landing/Landing.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`
         },
         { [sideRule]: 'error' }
@@ -199,7 +202,8 @@ describe('@open-pencil/tailwind/no-physical-sides', () => {
       diagnostics
         .filter((item) => !item.filename?.endsWith('rejected.ts'))
         .map((item) => item.filename?.split('/').pop())
-    ).toEqual(['Side.vue'])
+        .toSorted()
+    ).toEqual(['Side.vue', 'Slots.vue', 'curried.ts'])
   })
 })
 

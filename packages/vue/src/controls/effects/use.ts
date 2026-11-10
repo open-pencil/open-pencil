@@ -3,7 +3,7 @@ import { ref, shallowRef } from 'vue'
 import type { Effect } from '@open-pencil/scene-graph'
 
 import {
-  EFFECT_OPTIONS,
+  effectOptions,
   createDefaultEffect,
   effectOptionsFor,
   createEffectControlActions,
@@ -31,7 +31,10 @@ export function useEffectsControls() {
 
   return {
     expandedIndex,
-    effectOptions: EFFECT_OPTIONS,
+    /** The effect types, labelled in the current language. */
+    get effectOptions() {
+      return effectOptions()
+    },
     effectOptionsFor,
     createDefaultEffect,
     isShadow,

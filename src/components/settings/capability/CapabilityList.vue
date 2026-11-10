@@ -118,12 +118,14 @@ function isOpen(group: CapabilityGroup) {
                 @click="openLabel && emit('open', group.key, item.key)"
               >
                 <code
+                  dir="ltr"
                   class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
                   >{{ item.name }}</code
                 >
                 <!-- One line each, so text cut off is a hover away. -->
                 <Tip :label="item.description" as-child truncated>
                   <span
+                    dir="auto"
                     class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full"
                     >{{ item.description }}</span
                   >

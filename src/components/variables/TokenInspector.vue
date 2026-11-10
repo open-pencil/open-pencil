@@ -374,7 +374,7 @@ function cssNameDone(event: KeyboardEvent) {
             :state="cssNameInvalid ? 'invalid' : 'idle'"
             :aria-invalid="cssNameInvalid"
             :aria-describedby="cssNameInvalid ? cssNameErrorId : cssNameHintId"
-            :ui="{ input: 'font-mono pl-7' }"
+            :ui="{ input: 'font-mono ps-7' }"
             data-test-id="variables-css-name"
             @change="commitCSSName"
             @enter="cssNameDone"

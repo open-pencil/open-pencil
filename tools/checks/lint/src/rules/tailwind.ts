@@ -110,6 +110,13 @@ function boundClassStrings(expression: string): string[] {
   )
 }
 
+/** The class strings in a `:ui` binding: every slot's value is a class list. */
+function uiClassStrings(expression: string): string[] {
+  return [...expression.matchAll(/'([^']*)'|"([^"]*)"|`([^`$]*)`/g)].map(
+    ([, ...quoted]) => quoted.find((text) => text !== undefined) ?? ''
+  )
+}
+
 function propertyKey(node: ESTree.Node): string | null {
   if (node.type !== 'Property') return null
   if (node.key.type === 'Identifier') return node.key.name
@@ -149,8 +156,11 @@ function isClassString(node: ESTree.Node): boolean {
 
 const CLASS_HELPERS = new Set(['tv', 'twMerge', 'twJoin'])
 
+/** A class helper call, or a call of what `tv` returns: `tv(theme)({ class: [...] })`. */
 function isClassHelperCall(node: ESTree.CallExpression): boolean {
-  return node.callee.type === 'Identifier' && CLASS_HELPERS.has(node.callee.name)
+  const { callee } = node
+  if (callee.type === 'CallExpression') return isClassHelperCall(callee)
+  return callee.type === 'Identifier' && CLASS_HELPERS.has(callee.name)
 }
 
 /** Why a class is a problem for a rule, or null; `theme` builds the file's classes. */
@@ -200,6 +210,8 @@ function defineClassRule(description: string, problemFor: ClassCheck) {
               const expression = prop.exp?.type === 4 ? prop.exp.content : null
               if (prop.name === 'bind' && arg === 'class' && expression)
                 for (const text of boundClassStrings(expression)) check(node, text)
+              if (prop.name === 'bind' && arg === 'ui' && expression)
+                for (const text of uiClassStrings(expression)) check(node, text)
             }
           })
         },

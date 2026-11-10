@@ -12,20 +12,31 @@ type EffectType = Effect['type']
 
 const { panels } = useI18n()
 
-const EFFECT_LABELS: Record<string, string> = {
-  DROP_SHADOW: panels.value.dropShadow,
-  INNER_SHADOW: panels.value.innerShadow,
-  LAYER_BLUR: panels.value.layerBlur,
-  BACKGROUND_BLUR: panels.value.backgroundBlur,
-  FOREGROUND_BLUR: panels.value.foregroundBlur,
-  GLASS: panels.value.glass
+export const EFFECT_TYPES = [
+  'DROP_SHADOW',
+  'INNER_SHADOW',
+  'LAYER_BLUR',
+  'BACKGROUND_BLUR',
+  'FOREGROUND_BLUR',
+  'GLASS'
+] as const satisfies readonly EffectType[]
+
+/** Read when asked, so the labels follow the language once its translations load. */
+function effectLabels(): Record<(typeof EFFECT_TYPES)[number], string> {
+  return {
+    DROP_SHADOW: panels.value.dropShadow,
+    INNER_SHADOW: panels.value.innerShadow,
+    LAYER_BLUR: panels.value.layerBlur,
+    BACKGROUND_BLUR: panels.value.backgroundBlur,
+    FOREGROUND_BLUR: panels.value.foregroundBlur,
+    GLASS: panels.value.glass
+  }
 }
 
-export const EFFECT_TYPES = Object.keys(EFFECT_LABELS) as EffectType[]
-export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
-  value: t,
-  label: EFFECT_LABELS[t]
-}))
+export function effectOptions() {
+  const labels = effectLabels()
+  return EFFECT_TYPES.map((value) => ({ value, label: labels[value] }))
+}
 
 /**
  * The effect types the row at `index` can switch to: a layer holds one glass effect at most, as
@@ -33,11 +44,10 @@ export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
  * that scripts gave several keeps glass in each of those rows, so none shows a blank type.
  */
 export function effectOptionsFor(effects: readonly Effect[], index: number) {
-  if (effects.at(index)?.type === 'GLASS') return EFFECT_OPTIONS
+  const options = effectOptions()
+  if (effects.at(index)?.type === 'GLASS') return options
   const glassElsewhere = effects.some((effect, i) => i !== index && effect.type === 'GLASS')
-  return glassElsewhere
-    ? EFFECT_OPTIONS.filter((option) => option.value !== 'GLASS')
-    : EFFECT_OPTIONS
+  return glassElsewhere ? options.filter((option) => option.value !== 'GLASS') : options
 }
 
 export function isShadow(type: string) {
