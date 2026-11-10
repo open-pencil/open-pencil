@@ -6,6 +6,7 @@
 - **Text keeps its characters** through shaping: Arabic joining forms and ligatures in a PDF map back to the text they draw.
 - **Variable fonts embed as the instance they draw**, as TrueType rather than Type3 outlines.
 - **`ImageFilter.MakeRuntimeShader`**: a runtime shader effect as an image filter, sampling its input or, as a `saveLayer` backdrop filter, the backdrop. Under a scaled or rotated canvas it runs once per device pixel, with its coordinates still in the filter's own units, where upstream Skia runs it at those units' resolution and stretches the result.
+- **`ImageFilter.MakeRuntimeShaderWithInputs`**: the same with several inputs, each bound to one of the effect's uniform shaders by name, plus uniform shaders bound to shaders as they are, so an image of exact values, such as a half-float map, reaches the effect without being converted to the layer's color type.
 
 The API and types are otherwise CanvasKit's.
 

@@ -1,4 +1,4 @@
-import type { Canvas, ImageFilter, Path } from '@open-pencil/canvaskit'
+import type { Canvas, ImageFilter, Path, Shader } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
 
 import { tracePath } from '#core/canvas/paths/verbs'
@@ -6,6 +6,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
 import { makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 
+import { glassGeometryMap } from './map'
 import {
   GLASS_LIGHT,
   GLASS_MAX_SEGMENTS,
@@ -157,6 +158,41 @@ function glassOutline(r: SkiaRenderer, node: SceneNode, shape: Path | null): Gla
   })
 }
 
+/** How a glass shader finds the outline: the uniforms that say so, and the map it reads. */
+interface ShapeInputs {
+  uniforms: { useMap: number; mapOrigin: [number, number]; mapScale: number }
+  map: Shader
+  release: () => void
+}
+
+/**
+ * The geometry map of a non-box outline, which both glass shaders read, or, for a box or when no
+ * map can be drawn, a stand-in the shaders never read while they compute the outline instead.
+ */
+function shapeInputs(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  outline: GlassOutline,
+  depth: number
+): ShapeInputs {
+  const map = glassGeometryMap(r, canvas, node, outline, depth)
+  if (map) {
+    return {
+      uniforms: { useMap: 1, mapOrigin: map.origin, mapScale: map.scale },
+      map: map.shader,
+      // The renderer's map cache owns the shader.
+      release: () => undefined
+    }
+  }
+  const unused = r.ck.Shader.MakeColor(r.ck.TRANSPARENT, r.ck.ColorSpace.SRGB)
+  return {
+    uniforms: { useMap: 0, mapOrigin: [0, 0], mapScale: 1 },
+    map: unused,
+    release: () => unused.delete()
+  }
+}
+
 /** Draws `filter` over what lies behind the layer, inside its outline or inside `shape`. */
 function filterBackdrop(
   r: SkiaRenderer,
@@ -196,22 +232,25 @@ export function renderGlassRefraction(
   const sigma = glassBackdropSigma(effect)
   const blur = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
   const refraction = compiledProgram(r.ck, r.shaders, GLASS_REFRACTION)
-  const filter = r.ck.ImageFilter.MakeRuntimeShader(
+  const inputs = shapeInputs(r, canvas, node, outline, depth)
+  const filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
     refraction.effect,
     refraction.uniforms({
       ...glassGeometryUniforms(outline, depth),
+      ...inputs.uniforms,
       refraction: glass.refraction,
       dispersion: glass.dispersion
     }),
-    'backdrop',
+    { backdrop: blur },
     glassSampleRadius(node, effect),
-    blur
+    { geometryMap: inputs.map }
   )
   try {
-    filterBackdrop(r, canvas, node, filter, shape)
+    if (filter) filterBackdrop(r, canvas, node, filter, shape)
   } finally {
-    filter.delete()
+    filter?.delete()
     blur.delete()
+    inputs.release()
   }
 }
 
@@ -228,20 +267,23 @@ export function renderGlassLight(
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
   const light = compiledProgram(r.ck, r.shaders, GLASS_LIGHT)
-  const filter = r.ck.ImageFilter.MakeRuntimeShader(
+  const inputs = shapeInputs(r, canvas, node, outline, depth)
+  const filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
     light.effect,
     light.uniforms({
       ...glassGeometryUniforms(outline, depth),
+      ...inputs.uniforms,
       axis: glassLightAxis(glass.lightAngle),
       intensity: glass.lightIntensity
     }),
-    'backdrop',
+    { backdrop: null },
     1,
-    null
+    { geometryMap: inputs.map }
   )
   try {
-    filterBackdrop(r, canvas, node, filter, shape)
+    if (filter) filterBackdrop(r, canvas, node, filter, shape)
   } finally {
-    filter.delete()
+    filter?.delete()
+    inputs.release()
   }
 }

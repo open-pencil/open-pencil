@@ -24,6 +24,7 @@ import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 import { createImageFilterCache, createMaskFilterCache } from './effects'
+import { createGlassMapCache } from './glass/map'
 import { createRendererImages } from './images/state'
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
@@ -134,6 +135,7 @@ export class SkiaRenderer {
   readonly shaders = createCompiledShaders()
   imageFilterCache = createImageFilterCache()
   maskFilterCache = createMaskFilterCache()
+  glassMaps = createGlassMapCache()
   /** Dashes the overlay pass draws with, kept between frames. */
   readonly dashEffects = createDashEffectCache()
   private readonly colors = new Map<string, Float32Array>()

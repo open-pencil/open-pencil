@@ -35,7 +35,10 @@ function pageHasHeavyEffects(graph: SceneGraph, pageId: string): boolean {
   return false
 }
 
-/** A layer for the warm-up to draw: small, since programs do not depend on size. */
+/**
+ * A layer for the warm-up to draw. Programs do not depend on size, so it is small: a glass
+ * outline's geometry map covers the whole layer at each scale.
+ */
 function warmUpLayer(type: SceneNode['type'], effects: Effect[], size = 96): SceneNode {
   // One id per kind, so the renderer's caches keep a single entry for each.
   return createDefaultNode(() => `effect-warm-up:${type}`, type, {
