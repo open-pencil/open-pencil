@@ -2,11 +2,11 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { editedBlurRampLayout } from '#core/editor/blur-ramp-edit'
+import { editedBlurRampLayout } from '#core/editor/handles/blur-ramp'
 import type { BlurRampEdit } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 
-import { drawDot, polyline, strokeWithShadow } from './gradient-handles'
+import { drawDot, polyline, strokeWithShadow } from './gradient'
 
 /**
  * Figma's on-canvas progressive blur handles, shown while the blur's settings are open: a white

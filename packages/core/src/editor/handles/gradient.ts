@@ -9,7 +9,7 @@ import {
   type ViewportTransform
 } from '#core/geometry'
 
-import type { GradientEdit } from './types'
+import type { GradientEdit } from '#core/editor/types'
 
 /** The gradient paint being edited and the layer it belongs to, if it is still a gradient. */
 export function editedGradient(graph: SceneGraph, edit: GradientEdit | null | undefined) {

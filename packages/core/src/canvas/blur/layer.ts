@@ -8,8 +8,8 @@ import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { nodeOrientationMatrix } from '#core/geometry'
 import { mapVisualBounds } from '#core/geometry/render-bounds'
 
-import type { RenderOverlays, SkiaRenderer } from './renderer'
-import { subtreeVisualBounds } from './renderer/visual-bounds'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { subtreeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 
 /**
  * A layer blur's filter. It runs before the layer's rotation and flips are applied, so a

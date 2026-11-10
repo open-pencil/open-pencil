@@ -7,7 +7,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'
 
-import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './progressive-blur'
+import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
 import type { SkiaRenderer } from './renderer'
 
 /**

@@ -4,7 +4,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { getCachedMaskBlur } from '#core/canvas/effects'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { editedGradient, editedGradientLayout } from '#core/editor/gradient-edit'
+import { editedGradient, editedGradientLayout } from '#core/editor/handles/gradient'
 import type { GradientEdit } from '#core/editor/types'
 import { GRADIENT_HANDLE, type GradientHandleLayout, type RotationPreview } from '#core/geometry'
 

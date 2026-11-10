@@ -20,23 +20,23 @@ import {
   drawSnapMarks
 } from '#core/canvas/overlays'
 import { drawAIOverlays } from '#core/canvas/overlays/ai'
-import { drawBlurRampHandles } from '#core/canvas/overlays/blur-ramp-handles'
+import { drawBlurRampHandles } from '#core/canvas/overlays/handles/blur-ramp'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
-import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
+import { drawGradientHandles } from '#core/canvas/overlays/handles/gradient'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
-import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
+import { drawShapeHandles } from '#core/canvas/overlays/handles/shape'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { drawRulers } from '#core/canvas/rulers'
 import { RULER_SIZE } from '#core/constants'
-import { editedBlurRamp } from '#core/editor/blur-ramp-edit'
-import { editedGradient } from '#core/editor/gradient-edit'
+import { editedBlurRamp } from '#core/editor/handles/blur-ramp'
+import { editedGradient } from '#core/editor/handles/gradient'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
   return (

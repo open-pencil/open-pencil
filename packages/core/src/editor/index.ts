@@ -16,7 +16,7 @@ export { createDocumentGraph } from './document-settings'
 export { gridNudge } from './nudge'
 export { figJamColoredLayers, figJamToolbarKind, type FigJamToolbarKind } from './figjam/toolbar'
 export { createDefaultEditorSharedState } from './state/shared'
-export { editedGradient, editedGradientLayout } from './gradient-edit'
+export { editedGradient, editedGradientLayout } from './handles/gradient'
 export {
   blurRampHandleAt,
   BLUR_RAMP_HANDLE,
@@ -24,7 +24,7 @@ export {
   editedBlurRampLayout,
   type BlurRampHandle,
   type BlurRampLayout
-} from './blur-ramp-edit'
+} from './handles/blur-ramp'
 export type { SelectionSpacing } from './alignment'
 export type { MovePlace } from './undo'
 export type { AttachModifiers } from './connectors/attach'

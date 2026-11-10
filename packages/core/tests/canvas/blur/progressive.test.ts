@@ -12,7 +12,7 @@ import {
   levelWeights,
   makeProgressiveBlur,
   maskStops
-} from '#core/canvas/progressive-blur'
+} from '#core/canvas/blur/progressive'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
