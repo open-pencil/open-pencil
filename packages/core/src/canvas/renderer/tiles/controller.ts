@@ -101,6 +101,8 @@ export class TiledSceneController {
   private contentGeneration = -1
   /** The dot grid the cached tiles were painted with, which a document kind change replaces. */
   private dotGrid: number | null = null
+  /** The page colour under the cached tiles, which a theme or page background change replaces. */
+  private pageColor = ''
   private navigationGeneration = -1
   private navigationActive = false
   private cancelledJobs = 0
@@ -209,9 +211,12 @@ export class TiledSceneController {
   ): TiledSceneFrameResult {
     this.navigationGeneration = navigationGeneration
     this.navigationActive = this.isNavigationActive(renderer)
-    if (renderer.pageDotGrid !== this.dotGrid) {
+    const { r, g, b, a } = renderer.pageColor
+    const pageColor = `${r},${g},${b},${a}`
+    if (renderer.pageDotGrid !== this.dotGrid || pageColor !== this.pageColor) {
       this.invalidate()
       this.dotGrid = renderer.pageDotGrid
+      this.pageColor = pageColor
     }
     this.prepareGeneration(renderer, graph, contentGeneration, navigationGeneration)
     const viewport = {
