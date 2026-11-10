@@ -39,6 +39,8 @@ function serverClient(serverId: string) {
 // New workspace
 
 export const newWorkspaceOpen = ref(false)
+/** The name typed into the New workspace dialog; each opening starts it empty. */
+export const newWorkspaceName = ref('')
 export const newWorkspaceServerId = ref<string | null>(null)
 export const newWorkspaceBusy = ref(false)
 export const newWorkspaceFailure = ref<WorkspaceFailure | null>(null)
@@ -47,6 +49,7 @@ export function openNewWorkspace(serverId: string): void {
   newWorkspaceServerId.value = serverId
   newWorkspaceFailure.value = null
   newWorkspaceBusy.value = false
+  newWorkspaceName.value = ''
   newWorkspaceOpen.value = true
 }
 

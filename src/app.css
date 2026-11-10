@@ -6,6 +6,16 @@
 @import './theme/tokens.css';
 
 /*
+ * Every scroll container in the app takes the thin scrollbar; `scrollbar-none` still hides one,
+ * since utilities come after the base layer.
+ */
+@layer base {
+  * {
+    @apply scrollbar-thin;
+  }
+}
+
+/*
  * The interface size is the root font size: every interface size is in rem, so this one value
  * scales panels, text, and controls, while the canvas keeps drawing in screen pixels. A share of
  * 100% keeps the browser's own default font size as the starting point.

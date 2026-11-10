@@ -13,7 +13,7 @@ import {
   type FigmaRectangleNode
 } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer, writeFigArchive } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import type { GUID } from '@open-pencil/kiwi/fig'
@@ -89,13 +89,12 @@ function encodeArchive(parsed: ReturnType<typeof parseFigBuffer>): Uint8Array {
     ackID: 0,
     nodeChanges: parsed.nodeChanges
   })
-  return compressFigDataSync(
-    deflateSync(getSchemaBytes()),
-    kiwi,
-    expectDefined(parsed.thumbnailPNG, 'thumbnail'),
-    parsed.metaJSON ?? '{}',
-    []
-  )
+  return writeFigArchive({
+    schemaDeflated: deflateSync(getSchemaBytes()),
+    kiwiData: kiwi,
+    thumbnailPNG: expectDefined(parsed.thumbnailPNG, 'thumbnail'),
+    metaJSON: parsed.metaJSON ?? '{}'
+  })
 }
 
 /** The set's record: the one whose properties include a variant property. */

@@ -148,15 +148,22 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
     /** Takes a document down, or puts it back. */
     documentAction(
       id: string,
-      action: 'disable' | 'enable',
+      action: 'disable' | 'enable' | 'undelete',
       reason?: string,
       signal?: AbortSignal
     ) {
       return call(
-        (options) =>
-          action === 'disable'
-            ? admin.documents[':id'].disable.$post({ param: { id }, json: { reason } }, options)
-            : admin.documents[':id'].enable.$post({ param: { id } }, options),
+        (options) => {
+          if (action === 'disable') {
+            return admin.documents[':id'].disable.$post(
+              { param: { id }, json: { reason } },
+              options
+            )
+          }
+          return action === 'enable'
+            ? admin.documents[':id'].enable.$post({ param: { id } }, options)
+            : admin.documents[':id'].undelete.$post({ param: { id } }, options)
+        },
         adminMutationResponseSchema,
         signal
       )

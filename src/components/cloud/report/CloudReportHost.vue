@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+import type { DocumentReportReason } from '@open-pencil/cloud/contract'
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { cloudReport, sendCloudReport, type CloudReportInput } from '@/app/cloud/reports/file'
@@ -21,9 +22,17 @@ const open = computed({
     if (!value) cloudReport.value = null
   }
 })
-// A report starts clean as its dialog opens; the closing one keeps its alert.
+const reason = ref<DocumentReportReason>('spam-phishing')
+const description = ref('')
+const replyEmail = ref('')
+// A report starts clean as its dialog opens, offering the signed-in address for a reply; the
+// closing one keeps what it showed.
 watch(cloudReport, (draft, previous) => {
-  if (draft && draft !== previous) failure.value = null
+  if (!draft || draft === previous) return
+  failure.value = null
+  reason.value = 'spam-phishing'
+  description.value = ''
+  replyEmail.value = draft.email ?? ''
 })
 
 async function send(input: CloudReportInput) {
@@ -45,10 +54,11 @@ async function send(input: CloudReportInput) {
   <CloudReportDialog
     v-model:open="open"
     :host="shown?.host ?? ''"
-    :email="shown?.email ?? null"
+    v-model:reason="reason"
+    v-model:description="description"
+    v-model:reply-email="replyEmail"
     :busy="busy"
     :failure="failure"
     @send="send"
-    @cancel="open = false"
   />
 </template>

@@ -6,6 +6,7 @@ function absent(name: string) {
 }
 
 export const CloudSharedSection = absent('CloudSharedSection')
+export const CloudTrashSection = absent('CloudTrashSection')
 export const CloudWorkspaceSection = absent('CloudWorkspaceSection')
 export const CloudSettingsSection = absent('CloudSettingsSection')
 export const CloudHosts = absent('CloudHosts')

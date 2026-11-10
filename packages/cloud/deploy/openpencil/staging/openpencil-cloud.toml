@@ -41,6 +41,7 @@ checksum_verification = "metadata"
 
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 # OpenPencil services' staging Worker, which trusts this Cloud's tokens.
 [services]

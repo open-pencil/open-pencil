@@ -105,6 +105,39 @@ describe('createCloudAPIClient', () => {
     await expect(client.listSharedDocuments()).rejects.toThrow()
   })
 
+  test('lists Trash, restores, and deletes for good', async () => {
+    const trashed = {
+      id: documentId,
+      workspaceId,
+      workspaceName: 'Client work',
+      name: 'Homepage',
+      kind: 'board' as const,
+      deletedAt: '2026-01-02T00:00:00.000Z',
+      deletedBy: { name: 'Alice' },
+      purgeAt: '2026-02-01T00:00:00.000Z',
+      canPurge: false
+    }
+    const requests: string[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        const request = new Request(input, init)
+        requests.push(`${request.method} ${new URL(request.url).pathname}`)
+        return request.method === 'GET'
+          ? Response.json({ documents: [trashed] })
+          : new Response(null, { status: 204 })
+      }
+    })
+
+    expect(await client.listTrash()).toEqual([trashed])
+    await client.restoreDocument(documentId)
+    await client.purgeDocument(documentId)
+    expect(requests).toEqual([
+      'GET /api/trash',
+      `POST /api/trash/${documentId}/restore`,
+      `DELETE /api/trash/${documentId}`
+    ])
+  })
+
   test('creates upload sessions and commits revisions', async () => {
     const requests: Request[] = []
     const client = createCloudAPIClient('https://cloud.example.com/api/', {

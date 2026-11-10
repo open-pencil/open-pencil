@@ -170,7 +170,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
+    <AppDialogHeader :heading="heading" :description="description" />
 
     <AppDialogBody v-if="step === 'server' || step === 'checking'">
       <RadioGroupRoot v-if="choosing" v-model="kind" :aria-label="t.server" :class="ui.choices()">
@@ -331,7 +331,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
       </div>
     </AppDialogBody>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
+    <AppDialogFooter>
       <AppButton v-if="canGoBack" :disabled="busy" @click="emit('back')">
         {{ common.back }}
       </AppButton>

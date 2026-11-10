@@ -86,6 +86,7 @@ maximum_connections_per_room = 250
 
 [documents]
 retention_days = 14
+purge_grace_days = 0
 
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
@@ -160,6 +161,7 @@ describe('Cloud TOML deployment configuration', () => {
       cleanupIntervalMs: 45_000,
       cleanupLeaseDurationMs: 180_000,
       documentRetentionMs: 14 * 86_400_000,
+      documentPurgeGraceMs: 0,
       technicalLimits: {
         maximumUploadBytes: 104857600,
         maximumCollaborationMessageBytes: 524288,
