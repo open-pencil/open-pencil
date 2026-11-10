@@ -36,5 +36,7 @@
   "designTokensImported": "{count} Design-Tokens importiert.",
   "unsupportedVariableExpressions": "OpenPencil kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}.",
   "savingDocument": "Dokument wird gespeichert…",
-  "saveFailedRetry": "Erneut speichern"
+  "saveFailedRetry": "Erneut speichern",
+  "fileChangedOnDisk": "„{name}“ wurde auf dem Datenträger geändert. Deine nicht gespeicherten Änderungen bleiben erhalten; Speichern ersetzt die Datei.",
+  "reloadDiscardingChanges": "Neu laden"
 }

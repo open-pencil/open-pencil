@@ -69,7 +69,7 @@ describe('hitTest — hidden nodes', () => {
 })
 
 describe('hitTest — locked nodes', () => {
-  test('locked container returns itself, does not recurse deeper', () => {
+  test('a locked container and its layers are not hit', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     // A locked GROUP (transparent container) with a child at the same point
@@ -90,11 +90,9 @@ describe('hitTest — locked nodes', () => {
       height: 50
     })
 
-    // The point (75, 75) is inside the child rectangle inside the locked group.
-    // Since the group is locked, hitTest should return the GROUP (not the child).
-    const hit = graph.hitTest(75, 75)
-    expect(hit).not.toBeNull()
-    expect(hit?.id).toBe(group.id)
+    // The point (75, 75) is on the rectangle inside the locked group: neither is hit, as in Figma.
+    expect(graph.hitTest(75, 75)).toBeNull()
+    expect(graph.hitTestDeep(75, 75)).toBeNull()
   })
 
   test('unlocked container recurses to child', () => {

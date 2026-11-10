@@ -1,0 +1,1 @@
+- Reloading a large document after its file changed on disk no longer crashes the tab, and a document with unsaved edits keeps them, offering a reload that discards them.

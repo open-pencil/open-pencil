@@ -36,5 +36,7 @@
   "designTokensImported": "Импортировано дизайн-токенов: {count}.",
   "unsupportedVariableExpressions": "OpenPencil пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}.",
   "savingDocument": "Сохранение документа…",
-  "saveFailedRetry": "Повторить сохранение"
+  "saveFailedRetry": "Повторить сохранение",
+  "fileChangedOnDisk": "Файл «{name}» изменился на диске. Несохранённые изменения сохранены; при сохранении файл будет заменён.",
+  "reloadDiscardingChanges": "Перезагрузить"
 }

@@ -108,6 +108,18 @@ function grokDone(id: string, output: { OkayOutput: string } | { Error: string }
   }
 }
 
+/** Antigravity CLI titles an MCP call `Run mcp_<server>_<tool>` and adds a summary to its input. */
+function antigravityCall(id: string, name: string, args: Record<string, unknown>): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: id,
+    title: `Run ${name}`,
+    kind: 'other',
+    status: 'in_progress',
+    rawInput: { ...args, toolSummary: 'Inspect the node' }
+  }
+}
+
 function mcpText(value: unknown, isError?: boolean) {
   return {
     content: [{ type: 'text', text: JSON.stringify(value) }],
@@ -282,6 +294,20 @@ describe('an ACP turn in the chat', () => {
       type: 'tool-mcp__github__create_issue',
       input: { title: 'Bug' },
       state: 'done'
+    })
+  })
+
+  test('Antigravity CLI’s calls to OpenPencil’s tools show by name, without its summary', async () => {
+    const [own, other] = await transcript([
+      antigravityCall('agy-1', 'mcp_open-pencil_get_node', { id: '1:2' }),
+      { sessionUpdate: 'tool_call_update', toolCallId: 'agy-1', status: 'completed' },
+      antigravityCall('agy-2', 'mcp_github_create_issue', { title: 'Bug' })
+    ])
+    const call = shown(expectDefined(own, 'tool part'))
+    expect(call?.type).toBe('tool-get_node')
+    expect(call?.input).toEqual({ id: '1:2' })
+    expect(shown(expectDefined(other, 'tool part'))).toMatchObject({
+      type: 'tool-Run mcp_github_create_issue'
     })
   })
 

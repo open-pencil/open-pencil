@@ -498,9 +498,10 @@ export function createEditor(options?: EditorOptions) {
     unsubscribeFromGraph()
   }
 
-  function releaseGraphResources() {
-    releaseFigPopulationWorker(_graph)
-    releaseOriginalFigArchive(_graph)
+  /** Releases what a document opened from a `.fig` holds: the editor's own, or one it replaced. */
+  function releaseGraphResources(graph: SceneGraph = _graph) {
+    releaseFigPopulationWorker(graph)
+    releaseOriginalFigArchive(graph)
   }
 
   const editor = {

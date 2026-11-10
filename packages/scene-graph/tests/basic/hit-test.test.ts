@@ -148,10 +148,10 @@ describe('hitTest', () => {
     expect(graph.hitTest(50, 50, page)).toBeNull()
   })
 
-  test('locked node IS hittable (selection behavior)', () => {
+  test('a locked layer is invisible to the pointer, as in Figma', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
-    const rectId = graph.createNode('RECTANGLE', page, {
+    graph.createNode('RECTANGLE', page, {
       name: 'Locked',
       x: 0,
       y: 0,
@@ -159,9 +159,8 @@ describe('hitTest', () => {
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
       locked: true
-    }).id
-    // Locked nodes ARE returned by hit test (selection shows lock icon)
-    expect(graph.hitTest(50, 50, page)?.id).toBe(rectId)
+    })
+    expect(graph.hitTest(50, 50, page)).toBeNull()
   })
 
   test('zero-opacity node with visible fill IS hittable', () => {

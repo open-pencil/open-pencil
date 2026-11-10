@@ -112,7 +112,8 @@ describe('recorded render chunks', () => {
       maxX: 10,
       maxY: 10,
       nodeCount: 1,
-      estimatedCost: 1
+      estimatedCost: 1,
+      backdropReach: 0
     }
 
     expect(() => recordRenderChunk(renderer, graph, chunk)).toThrow('render failed')

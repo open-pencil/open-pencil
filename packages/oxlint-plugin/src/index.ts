@@ -10,6 +10,7 @@ import { preferEsToolkitRule } from '#oxlint-plugin/rules/quality/es-toolkit'
 import { noUnvalidatedJSONParseRule } from '#oxlint-plugin/rules/quality/json-parse'
 import { noModuleMockingRule } from '#oxlint-plugin/rules/quality/module-mocking'
 import { noReduceAccumulatorCopyRule } from '#oxlint-plugin/rules/quality/reduce-accumulator-copy'
+import { noRawRuntimeEffectRule } from '#oxlint-plugin/rules/quality/runtime-effect'
 import { valibotSchemaConventionsRule } from '#oxlint-plugin/rules/quality/valibot-schemas'
 import { noWidenThenAssertRule } from '#oxlint-plugin/rules/quality/widen-then-assert'
 import {
@@ -62,6 +63,7 @@ const plugin = definePlugin({
     'no-math-random': noMathRandom,
     'no-mixed-case-acronym-identifiers': noMixedCaseAcronymIdentifiers,
     'no-module-mocking': noModuleMockingRule,
+    'no-raw-runtime-effect': noRawRuntimeEffectRule,
     'no-raw-sql': noRawSQLRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
