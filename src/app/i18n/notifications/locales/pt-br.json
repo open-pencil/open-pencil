@@ -36,5 +36,7 @@
   "deepLinkNodeNotFound": "O nó “{node}” não foi encontrado em “{file}”.",
   "openQueuedFilesFailed": "Não foi possível abrir os arquivos entregues ao OpenPencil: {error}",
   "saveFailedRetry": "Tentar salvar novamente",
-  "savingDocument": "Salvando o documento…"
+  "savingDocument": "Salvando o documento…",
+  "fileChangedOnDisk": "“{name}” foi alterado no disco. Suas alterações não salvas são mantidas; salvar substitui o arquivo.",
+  "reloadDiscardingChanges": "Recarregar"
 }
