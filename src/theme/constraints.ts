@@ -26,9 +26,9 @@ const constraintsTheme = {
         pin: 'top-1/2 inset-e-1 h-7 w-4 -translate-y-1/2',
         pinMark: 'h-5 w-0.5'
       },
-      verticalLeading: { pin: 'top-1 inset-s-1/2 h-4 w-7 -translate-x-1/2', pinMark: 'h-0.5 w-5' },
+      verticalLeading: { pin: 'top-1 left-1/2 h-4 w-7 -translate-x-1/2', pinMark: 'h-0.5 w-5' },
       verticalTrailing: {
-        pin: 'bottom-1 inset-s-1/2 h-4 w-7 -translate-x-1/2',
+        pin: 'bottom-1 left-1/2 h-4 w-7 -translate-x-1/2',
         pinMark: 'h-0.5 w-5'
       },
       horizontalCenter: { pin: 'top-5.25 inset-s-6.75 h-6 w-4', pinMark: 'h-4 w-0.5' },

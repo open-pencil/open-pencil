@@ -53,7 +53,7 @@ const toolbarTheme = {
     align: {
       start: { dock: 'data-[orientation=horizontal]:inset-s-8 data-[orientation=vertical]:top-8' },
       center: {
-        dock: 'data-[orientation=horizontal]:inset-s-1/2 data-[orientation=horizontal]:-translate-x-1/2 data-[orientation=vertical]:top-1/2 data-[orientation=vertical]:-translate-y-1/2'
+        dock: 'data-[orientation=horizontal]:left-1/2 data-[orientation=horizontal]:-translate-x-1/2 data-[orientation=vertical]:top-1/2 data-[orientation=vertical]:-translate-y-1/2'
       },
       end: { dock: 'data-[orientation=horizontal]:inset-e-4 data-[orientation=vertical]:bottom-4' }
     },

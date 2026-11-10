@@ -343,6 +343,9 @@ const LOGICAL_ROOTS: Record<string, string> = {
   'clear-right': 'clear-end'
 }
 
+/** Position utilities that `-1/2` puts at the middle whichever side they measure from. */
+const CENTER_ROOTS = new Set(['left', 'right', 'start', 'end'])
+
 /** The utility after a class's variants: `ml-2` in `data-[side=left]:hover:ml-2`. */
 function utilityStart(className: string): number {
   let depth = 0
@@ -372,6 +375,9 @@ export function logicalClass(system: DesignSystem, className: string): string | 
     const prefix = negative ? `-${root}` : root
     const at = utility.indexOf(prefix)
     if (at === -1) continue
+    // Half the width from either side is the middle in both directions: `left-1/2` with
+    // `-translate-x-1/2` centers an element, and `inset-s-1/2` beside that physical translate would not.
+    if (CENTER_ROOTS.has(root) && utility.slice(at + prefix.length) === '-1/2') return null
     const replaced = `${className.slice(0, start)}${utility.slice(0, at)}${negative ? '-' : ''}${logical}${utility.slice(at + prefix.length)}`
     return system.candidatesToCss([replaced])[0] ? replaced : null
   }

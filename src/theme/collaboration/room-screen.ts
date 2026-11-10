@@ -21,7 +21,7 @@ export const roomScreenTheme = {
 /** A note across the top of the canvas, such as after leaving a room. */
 export const roomNoticeTheme = {
   slots: {
-    root: 'absolute top-3 inset-s-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-lg border border-border bg-panel px-3 py-2 shadow-sm',
+    root: 'absolute top-3 left-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-lg border border-border bg-panel px-3 py-2 shadow-sm',
     icon: 'size-4 shrink-0 text-muted',
     content: 'flex min-w-0 flex-col',
     title: 'text-xs font-medium text-surface',

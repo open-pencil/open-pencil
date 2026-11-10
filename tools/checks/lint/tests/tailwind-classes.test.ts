@@ -159,7 +159,7 @@ describe('no-physical-side-tailwind-classes', () => {
       'hover:pl-3': 'hover:ps-3',
       'data-[side=left]:pr-[1rem]': 'data-[side=left]:pe-[1rem]',
       'left-0': 'inset-s-0',
-      '-right-1/2': '-inset-e-1/2',
+      '-right-2': '-inset-e-2',
       'start-2': 'inset-s-2',
       'border-l-2': 'border-s-2',
       'border-r-border': 'border-e-border',
@@ -170,6 +170,8 @@ describe('no-physical-side-tailwind-classes', () => {
     }
     const accepted = [
       'ms-2',
+      'left-1/2',
+      '-right-1/2',
       'inset-x-0',
       'space-x-2',
       'divide-x',

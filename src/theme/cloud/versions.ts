@@ -10,7 +10,7 @@ export default {
     marker: 'relative flex justify-center pt-0.5',
     ring: 'relative z-10 size-4 rounded-full border-2 border-muted bg-panel group-data-[selected]/item:border-accent',
     dot: 'relative z-10 mt-1 size-2 rounded-full bg-muted group-data-[selected]/item:bg-accent',
-    line: 'absolute top-0 bottom-[-0.75rem] inset-s-1/2 w-px -translate-x-1/2 bg-border',
+    line: 'absolute top-0 bottom-[-0.75rem] left-1/2 w-px -translate-x-1/2 bg-border',
     body: 'flex min-w-0 flex-col gap-0.5',
     title: 'min-w-0 truncate font-semibold text-surface',
     current: 'min-w-0 truncate font-semibold text-surface group-data-[selected]/item:text-accent',
