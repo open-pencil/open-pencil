@@ -1,0 +1,1 @@
+- Colour previews across the properties panel are the same 16 px swatch, show transparency on a checkerboard, and show keyboard focus; colour rows such as an effect's, a layout grid's, and an icon's sit in the same field frame as fills (#1976).
