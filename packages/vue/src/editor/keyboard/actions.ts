@@ -10,20 +10,13 @@ export interface EditorKeyActionsOptions {
   editor: Editor
   runCommand: EditorCommands['runCommand']
   setOpacityTarget: EditorCommands['setOpacityTarget']
-  /**
-   * The host's own Escape, run once nothing in progress took it (a path, a pen or pencil stroke,
-   * a preview, a rotation, the eyedropper) and before the selection clears: return true when it
-   * handled the key, as closing a comment card does.
-   */
-  onEscape?: () => boolean
 }
 
 /** What the editor's keys do beyond running one command: Delete, Enter, Escape, Shift+A, digits. */
 export function createEditorKeyActions({
   editor,
   runCommand,
-  setOpacityTarget,
-  onEscape
+  setOpacityTarget
 }: EditorKeyActionsOptions) {
   function hasNodeEditSelection() {
     return (
@@ -97,7 +90,6 @@ export function createEditorKeyActions({
       else editor.penCancel()
       return
     }
-    if (onEscape?.()) return
     // Figma's Escape clears the selection at any depth; Shift+Enter is the way up a level.
     editor.exitContainers()
     editor.clearSelection()
