@@ -60,18 +60,18 @@ describe('effect program warm-up', () => {
     const { graph, pageId } = pageWith([progressive])
     const { renderer, made } = settledRenderer(pageId)
     renderer.navigationPhase = 'zoom'
-    warmUpEffectPrograms(renderer, graph, 'scene')
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
     renderer.navigationPhase = 'idle'
-    warmUpEffectPrograms(renderer, graph, 'overlays')
+    warmUpEffectPrograms(renderer, graph, 'overlays', 0)
     expect(made.count).toBe(0)
-    warmUpEffectPrograms(renderer, graph, 'scene')
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
     expect(renderer.effectProgramsWarm).toBe(true)
     expect(made.count).toBe(1)
     // Warm, it never draws again, on this page or another.
-    warmUpEffectPrograms(renderer, graph, 'scene')
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
     const other = pageWith([glass])
     renderer.pageId = other.pageId
-    warmUpEffectPrograms(renderer, other.graph, 'full')
+    warmUpEffectPrograms(renderer, other.graph, 'full', 0)
     expect(made.count).toBe(1)
   })
 
@@ -79,14 +79,28 @@ describe('effect program warm-up', () => {
     const plain = pageWith([{ ...progressive, progressive: undefined }])
     const hidden = pageWith([{ ...glass, visible: false }])
     const { renderer, made } = settledRenderer(plain.pageId)
-    warmUpEffectPrograms(renderer, plain.graph, 'full')
+    warmUpEffectPrograms(renderer, plain.graph, 'full', 0)
     renderer.pageId = hidden.pageId
-    warmUpEffectPrograms(renderer, hidden.graph, 'full')
+    warmUpEffectPrograms(renderer, hidden.graph, 'full', 0)
     expect(made.count).toBe(0)
     expect(renderer.effectProgramsWarm).toBe(false)
     const shiny = pageWith([glass])
     renderer.pageId = shiny.pageId
-    warmUpEffectPrograms(renderer, shiny.graph, 'full')
+    warmUpEffectPrograms(renderer, shiny.graph, 'full', 0)
+    expect(made.count).toBe(1)
+    expect(renderer.effectProgramsWarm).toBe(true)
+  })
+
+  test('scans a page found without such effects again once the document changes', () => {
+    const { graph, pageId } = pageWith([])
+    const { renderer, made } = settledRenderer(pageId)
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    const layer = expectDefined(graph.getChildren(graph.getChildren(pageId)[0].id)[0], 'layer')
+    graph.updateNode(layer.id, { effects: [glass] })
+    // Until the document's version moves on, the page counts as scanned.
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    expect(made.count).toBe(0)
+    warmUpEffectPrograms(renderer, graph, 'scene', 2)
     expect(made.count).toBe(1)
     expect(renderer.effectProgramsWarm).toBe(true)
   })
@@ -94,13 +108,13 @@ describe('effect program warm-up', () => {
   test('stays cold when no surface can be made, and tries again on the next page', () => {
     const first = pageWith([progressive])
     const { renderer, made } = settledRenderer(first.pageId, false)
-    warmUpEffectPrograms(renderer, first.graph, 'scene')
-    warmUpEffectPrograms(renderer, first.graph, 'scene')
+    warmUpEffectPrograms(renderer, first.graph, 'scene', 0)
+    warmUpEffectPrograms(renderer, first.graph, 'scene', 0)
     expect(made.count).toBe(1)
     expect(renderer.effectProgramsWarm).toBe(false)
     const second = pageWith([glass])
     renderer.pageId = second.pageId
-    warmUpEffectPrograms(renderer, second.graph, 'scene')
+    warmUpEffectPrograms(renderer, second.graph, 'scene', 0)
     expect(made.count).toBe(2)
   })
 })

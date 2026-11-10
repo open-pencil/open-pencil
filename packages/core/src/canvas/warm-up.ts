@@ -101,19 +101,26 @@ function drawWarmUp(r: SkiaRenderer, canvas: Canvas): void {
 export function warmUpEffectPrograms(
   r: SkiaRenderer,
   graph: SceneGraph,
-  renderLayer: RenderLayer
+  renderLayer: RenderLayer,
+  sceneVersion: number
 ): void {
   // Only once what is visible is drawn, with the view at rest.
   if (renderLayer === 'overlays' || r.effectProgramsWarm || r.tiledSceneBackgroundPending) return
-  if (!r.pageId || r.navigationPhase !== 'idle') return
-  if (r.effectWarmUpCheckedPage === r.pageId) return
-  r.effectWarmUpCheckedPage = r.pageId
-  if (!pageHasHeavyEffects(graph, r.pageId)) return
+  const pageId = r.pageId
+  if (!pageId || r.navigationPhase !== 'idle' || r.effectWarmUpFailedPage === pageId) return
+  // A page found without such effects is scanned again only once the document changes.
+  const scan = r.effectWarmUpScan
+  if (scan?.pageId === pageId && scan.sceneVersion === sceneVersion) return
+  r.effectWarmUpScan = { pageId, sceneVersion }
+  if (!pageHasHeavyEffects(graph, pageId)) return
   const surface = makeTileSurface(r, WARM_UP_SIZE)
-  // Without the surface, or if a draw fails, the page stays checked, so a failure is not retried
-  // every idle frame; the next page that needs warming tries again, and the programs are built
-  // when the canvas first draws them either way.
-  if (!surface) return
+  // Without the surface, or if a draw fails, the page is not tried again, so a failure is not
+  // retried every idle frame; another page that needs warming tries again, and the programs are
+  // built when the canvas first draws them either way.
+  if (!surface) {
+    r.effectWarmUpFailedPage = pageId
+    return
+  }
   try {
     drawWarmUp(r, surface.getCanvas())
     surface.flush()
@@ -121,6 +128,7 @@ export function warmUpEffectPrograms(
   } catch {
     // Optional work: a failure must not interrupt the frame that ran it.
     r.effectLayerPaint.setImageFilter(null)
+    r.effectWarmUpFailedPage = pageId
   } finally {
     surface.delete()
   }

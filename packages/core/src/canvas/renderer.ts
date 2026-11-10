@@ -206,8 +206,13 @@ export class SkiaRenderer {
   tiledSceneBackgroundPending = false
   /** WebGL has built the programs of progressive blurs and glass (`warmUpEffectPrograms`). */
   effectProgramsWarm = false
-  /** The page last checked for effects worth warming up, so each page is scanned once. */
-  effectWarmUpCheckedPage: string | null = null
+  /**
+   * The page and document version last found without effects worth warming up, so a page is
+   * scanned again only once the document changes.
+   */
+  effectWarmUpScan: { pageId: string; sceneVersion: number } | null = null
+  /** The page whose warm-up failed, which is not retried; another page may still warm up. */
+  effectWarmUpFailedPage: string | null = null
   tiledSceneCovered = false
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
 
