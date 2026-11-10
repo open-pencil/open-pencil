@@ -24,6 +24,26 @@ describe('cloudRequestId', () => {
   })
 })
 
+describe('nested servers', () => {
+  test('answer with the ID of the innermost server that named the request', async () => {
+    const inner = new Hono()
+      .use(
+        '*',
+        cloudRequestId(() => 'inner')
+      )
+      .get('/api', (c) => c.text('api'))
+    const outer = new Hono()
+      .use(
+        '*',
+        cloudRequestId(() => 'outer')
+      )
+      .get('/page', () => new Response('page'))
+      .all('*', (c) => inner.fetch(c.req.raw))
+    expect((await outer.request('/api')).headers.get('X-Request-Id')).toBe('inner')
+    expect((await outer.request('/page')).headers.get('X-Request-Id')).toBe('outer')
+  })
+})
+
 describe('logCloud', () => {
   test('writes one line of JSON at its level', () => {
     const logged = spyOn(console, 'warn').mockImplementation(() => undefined)

@@ -1,1 +1,2 @@
-- Cloud answers every request with an `X-Request-Id` (Cloudflare's ray ID behind Cloudflare) and logs errors as one JSON line carrying it, as its PostHog reports do; on Cloudflare, `createCloudflareCloud(config, { relayJurisdiction: 'eu' })` keeps collaboration rooms' storage in the EU.
+- Cloud answers every HTTP request with an `X-Request-Id` (Cloudflare's ray ID behind Cloudflare) and logs errors as structured lines carrying it, as its PostHog reports do.
+- On Cloudflare, `createCloudflareCloud(config, { relayJurisdiction: 'eu' })` runs collaboration rooms' Durable Objects in the EU; their updates and snapshots stay where the database and bucket are, so keeping data in the EU needs both there too.

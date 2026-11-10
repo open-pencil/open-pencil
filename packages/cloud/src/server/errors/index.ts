@@ -38,15 +38,19 @@ export function createLoggingErrorReporter(
   send?: CloudErrorReporter
 ): CloudErrorReporter {
   return async (error, context) => {
-    log({
-      level: 'error',
-      message: context.message ?? 'Failed',
-      source: context.source,
-      method: context.method,
-      route: context.route,
-      requestId: context.requestId,
-      error: loggedError(error)
-    })
+    try {
+      log({
+        level: 'error',
+        message: context.message ?? 'Failed',
+        source: context.source,
+        method: context.method,
+        route: context.route,
+        requestId: context.requestId,
+        error: loggedError(error)
+      })
+    } catch {
+      // A log that cannot be written must not stop the report or reject.
+    }
     await send?.(error, context)
   }
 }

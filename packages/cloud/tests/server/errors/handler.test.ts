@@ -89,6 +89,20 @@ describe('Cloud error handler', () => {
     ])
   })
 
+  test('still sends the report when the log cannot be written', async () => {
+    const sent: unknown[] = []
+    const report = createLoggingErrorReporter(
+      () => {
+        throw new Error('stdout closed')
+      },
+      async (error) => {
+        sent.push(error)
+      }
+    )
+    await report(failure, { source: 'background' })
+    expect(sent).toEqual([failure])
+  })
+
   test('answers an HTTP exception with its own response and reports nothing', async () => {
     const reported: Reported[] = []
     const response = await appReporting(reported).request('/api/limited')

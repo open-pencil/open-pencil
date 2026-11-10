@@ -107,7 +107,13 @@ describe('Cloud server', () => {
       expect(reported).toEqual([
         {
           error: failure,
-          context: { source: 'request', method: 'GET', route: '/*', message: 'Request failed' }
+          context: {
+            source: 'request',
+            method: 'GET',
+            route: '/*',
+            message: 'Request failed',
+            requestId: expect.any(String)
+          }
         }
       ])
     } finally {

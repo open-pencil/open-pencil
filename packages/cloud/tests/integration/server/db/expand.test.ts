@@ -84,6 +84,14 @@ describe('contractions', () => {
     ])
   })
 
+  test('lets a table it contracts lose columns, but not gain required ones', () => {
+    const before = new Map([column('document', 'name'), column('document', 'note')])
+    const after = new Map([column('document', 'owner', { nullable: false })])
+    expect(contractions(before, after, ['document'])).toEqual([
+      'document.owner added as required without a default'
+    ])
+  })
+
   test('allows what a migration declares it contracts', () => {
     const before = new Map([column('document', 'name'), column('share', 'id')])
     expect(contractions(before, new Map(), ['document.name', 'share'])).toEqual([])

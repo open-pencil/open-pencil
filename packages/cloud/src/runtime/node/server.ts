@@ -148,7 +148,8 @@ async function startConfiguredServer(
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
-    reportError
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const server = await listen(
     async (request) => cloudServer.fetch(request),

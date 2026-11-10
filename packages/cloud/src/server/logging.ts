@@ -56,7 +56,8 @@ export type ForwardedRequestId = (headers: Headers) => string | undefined
 /**
  * Names each request as the `requestId` variable, from what the runtime trusts in front of it
  * (such as Cloudflare's ray ID) or else a new UUID, and answers with it as `X-Request-Id` so a
- * person reporting a failure can quote it.
+ * person reporting a failure can quote it. Nested servers each name the request; the innermost
+ * one that answered keeps its ID on the response.
  */
 export function cloudRequestId(
   forwarded?: ForwardedRequestId
@@ -66,5 +67,10 @@ export function cloudRequestId(
     context.set('requestId', id)
     context.header('X-Request-Id', id)
     await next()
+    // A response the handler built itself, such as a page an inner server answered, misses the
+    // prepared header; one an inner layer named keeps its ID. A socket upgrade is left alone.
+    if (context.res.status !== 101 && !context.res.headers.has('X-Request-Id')) {
+      context.header('X-Request-Id', id)
+    }
   }
 }

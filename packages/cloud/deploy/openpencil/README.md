@@ -19,17 +19,20 @@ The values in `production/` marked "Replace" and these settings outside the repo
   the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
   Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7).
-- An EU bucket, with versioning that keeps noncurrent versions at least as long, if the provider
-  has it.
+- An EU bucket with versioning on, keeping noncurrent versions at least as long as the database's
+  restore window. Without it, cleanup's deletes are final: a restored database would name files
+  that are gone (see Backups and restores). If the provider has no versioning, copy the bucket to
+  a second one on the same schedule instead.
 - A Hyperdrive over the database's pooled connection with query caching off, since a cached read
   can miss the write just before it. Its ID goes in `production/wrangler.jsonc`.
 - Google's OAuth client allowing `https://cloud.openpencil.dev/api/auth/callback/google`, Email
   Routing sending from `cloud@openpencil.dev`, and the services Worker at
   `services.openpencil.dev` trusting this Cloud's keys.
 
-Rooms' Durable Objects run in Cloudflare's EU jurisdiction (`production/worker.ts`). An object
-named in a jurisdiction is a different object from one named outside it, so a deployment never
-changes its jurisdiction while rooms are open; their saved state is in the database either way.
+Rooms' Durable Objects run in Cloudflare's EU jurisdiction (`production/worker.ts`); the database
+and the bucket, which hold rooms' updates and snapshots, have to be in the EU too for the data to
+stay there. An object named in a jurisdiction is a different object from one named outside it, so
+a deployment never changes its jurisdiction while rooms are open.
 
 ## Deploying
 
@@ -67,22 +70,41 @@ A release whose migration is itself wrong is fixed forward with a new migration 
 
 ## Finding what failed
 
-Each request has an ID: Cloudflare's ray ID (the `cf-ray` response header), or on other runtimes
-the `X-Request-Id` the server answers with. Error log lines are JSON with `level`, `message`,
+Each HTTP response carries its request's ID as `X-Request-Id`: Cloudflare's ray ID, the same as
+its `cf-ray` header. Relay sockets have none; their errors log with `source` `relay`. Error log lines are JSON with `level`, `message`,
 `source`, `method`, `route`, `requestId`, and `error`; filter Workers Logs (Workers → the Worker →
 Observability) by `requestId`. The error's PostHog report carries the same ID as `request_id`.
 
 ## Backups and restores
 
-- **Database:** Neon keeps history for its restore window. To restore, create a branch at the time
-  before the damage, check it, then restore the production branch from it in the Neon console;
-  Hyperdrive keeps the same connection.
-- **Files:** revisions and images are immutable and named by their row, so a restored database finds
-  them unless cleanup removed them since. A document leaves Trash after 30 days or when deleted
-  forever, and cleanup destroys its files `purge_grace_days` later; until then administrators
-  restore it from the console's "Deleted forever" filter.
-- **Rooms:** a room's state is folded into the database when it closes; an open room's last
-  minutes live in its Durable Object only.
+What holds what:
+
+- **Database:** everything but file contents, including each open room's updates, which a room
+  saves about two seconds after an edit. Neon keeps history for its restore window.
+- **Bucket:** revision files, images, and rooms' snapshots, each named by the row that holds it.
+  Cleanup deletes the ones no row holds: a room's older snapshot when it compacts, and a deleted
+  document's files. A document left in Trash goes after 30 days; one deleted forever goes
+  `purge_grace_days` (7) later, and until then administrators restore it from the console's
+  "Deleted forever" filter. With bucket versioning, a deleted file's last version stays.
+- **Rooms' Durable Objects:** an open room's document in memory, which they write back to the
+  database and bucket.
+
+To restore the database to an earlier time:
+
+1. Take the Worker off the air: remove `cloud.openpencil.dev` from the Worker's Domains & Routes.
+   Then deploy the same release again with `wrangler deploy` in `production/`, as the workflow's
+   deploy step does: a new version restarts the rooms' objects and closes their sockets, so no room
+   keeps newer state than the restore and writes it back. There is no maintenance page; people see
+   the domain fail meanwhile.
+2. Create a Neon branch at the time before the damage, check it, and restore the production branch
+   from it in the Neon console. Hyperdrive keeps the same connection.
+3. Migrate it as the workflow's migrate step does (`bun --filter @open-pencil/cloud migrate` with
+   `production/openpencil-cloud.toml`, the direct connection, and the secrets the TOML names), so
+   the schema matches the deployed Worker even if the restore point predates a migration.
+4. For files the restored rows name that cleanup deleted since, restore their last noncurrent
+   version in the bucket (or copy them back from the second bucket). Each file's key is the `object_key`
+   of its `storage_object` row.
+5. Put the domain back and open a document saved before the restore point.
 
 ## Restore drill
 
@@ -93,5 +115,7 @@ Once a quarter, and after changing the database's provider or plan:
    `src/server/db/migrate.ts` that production has run.
 3. Point a local Cloud at the branch and the production bucket with read-only keys, sign in, and
    open a document saved before the branch's time.
-4. Delete the branch, and note the date, the time the restore took, and anything that failed in the
+4. Pick a file cleanup deleted since then, if any, and check its noncurrent version is still in the
+   bucket.
+5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.
