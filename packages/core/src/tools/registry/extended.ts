@@ -48,7 +48,7 @@ import {
   listAvailableFonts,
   listLibraries,
   listPages,
-  pageBounds,
+  getBounds,
   queryNodes,
   selectNodes,
   switchPage
@@ -57,15 +57,14 @@ import type { ToolDef } from '#core/tools/schema'
 import { getStatuses, setStatus } from '#core/tools/statuses'
 import {
   arrangeNodes,
-  cloneNode,
+  cloneNodes,
   flattenNodes,
   groupNodes,
   nodeAncestors,
   nodeBindings,
-  nodeBounds,
   nodeReplaceWith,
   nodeToComponent,
-  ungroupNode
+  ungroupNodes
 } from '#core/tools/structure'
 import {
   bindVariable,
@@ -106,7 +105,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   listLibraries,
   insertLibraryComponent,
   switchPage,
-  pageBounds,
+  getBounds,
   getComments,
   addComment,
   replyToComment,
@@ -141,12 +140,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setBlend,
   setImageFill,
   // Structure (advanced)
-  cloneNode,
+  cloneNodes,
   groupNodes,
-  ungroupNode,
+  ungroupNodes,
   flattenNodes,
   nodeToComponent,
-  nodeBounds,
   nodeAncestors,
   nodeBindings,
   nodeReplaceWith,

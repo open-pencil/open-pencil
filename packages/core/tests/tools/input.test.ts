@@ -58,7 +58,7 @@ describe('native tool input contracts', () => {
   test.each([
     { name: 'analyze_spacing', field: 'grid', invalid: [0, -1], valid: [0.5, 8] },
     { name: 'arrange', field: 'cols', invalid: [0, -1, 1.5], valid: [1, 3] },
-    { name: 'get_components', field: 'limit', invalid: [-1, 1.5], valid: [0, 50] },
+    { name: 'list_components', field: 'limit', invalid: [-1, 1.5], valid: [0, 50] },
     { name: 'update_node', field: 'font_weight', invalid: [99, 901], valid: [100, 900] }
   ])('$name validates $field before execution', ({ name, field, invalid, valid }) => {
     const input = getTool(name).input
@@ -97,7 +97,7 @@ describe('native tool input contracts', () => {
     const tool = getTool('create_shape')
     const args = v.parse(tool.input, { type: 'RECTANGLE', x: 0, y: 0, width: 10, height: 10 })
     expect(args.type).toBe('RECTANGLE')
-    expect(v.parse(getTool('get_components').input, {}).source).toBe('all')
+    expect(v.parse(getTool('list_components').input, {}).source).toBe('all')
     expect(v.safeParse(tool.input, { type: 'not-a-shape' }).success).toBe(false)
   })
 })

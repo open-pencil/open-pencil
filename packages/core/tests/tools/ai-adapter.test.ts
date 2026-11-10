@@ -240,8 +240,8 @@ describe('AI adapter', () => {
     const rect = figma.createRectangle()
     const id = rect.id
 
-    const deleteTool = adapterTool(tools, 'delete_node')
-    await deleteTool.execute({ id })
+    const deleteTool = adapterTool(tools, 'delete_nodes')
+    await deleteTool.execute({ ids: [id] })
 
     const getNode = adapterTool(tools, 'get_node')
     const result = (await getNode.execute({ id })) as { error: string }

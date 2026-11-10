@@ -73,4 +73,4 @@ Compares two documents page by page. Pages match by name and nodes by name path,
 
 ## Agents
 
-The same operations are available as the `diff_create`, `diff_show`, `diff_apply`, and `diff_visual` tools for the built-in AI chat and MCP clients. `diff_visual` returns its image to the model, so an agent can confirm that an edit touched only the intended region.
+The same operations are available as the `diff_nodes`, `preview_patch`, `apply_patch`, and `diff_pixels` tools for the built-in AI chat and MCP clients. `diff_pixels` returns its image to the model, so an agent can confirm that an edit touched only the intended region.

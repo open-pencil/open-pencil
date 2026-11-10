@@ -47,10 +47,10 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     export: handleExport,
     export_jsx: handleExportJSX,
     selection: handleSelection,
-    save_file: handleSaveFile,
-    close_file: handleCloseFile,
-    new_document: handleNewDocument,
-    open_file: handleOpenFile,
+    save_document: handleSaveFile,
+    close_document: handleCloseFile,
+    create_document: handleNewDocument,
+    open_document: handleOpenFile,
     activate_document: handleActivateDocument,
     undo: handleUndo,
     redo: handleRedo
@@ -83,7 +83,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
     }
-    if (command === 'list_recent_files') return handleListRecentFiles()
+    if (command === 'list_recent_documents') return handleListRecentFiles()
     if (command === 'agent_session_opened') {
       agentSessionOpened(args)
       return { ok: true, result: null }
@@ -96,7 +96,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    if (command === 'open_file' || command === 'new_document') {
+    if (command === 'open_document' || command === 'create_document') {
       const handler = commandHandlers[command]
       if (handler) return handler(resolveAutomationTarget(store, undefined), args)
     }

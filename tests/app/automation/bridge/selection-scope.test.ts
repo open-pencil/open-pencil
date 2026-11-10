@@ -59,7 +59,7 @@ describe('limitToSelection', () => {
   })
 
   test('rejects other tools and calls without a selection', () => {
-    expect(() => limitToSelection(store, 'delete_node', { id: ids.title })).toThrow(/unavailable/)
+    expect(() => limitToSelection(store, 'delete_nodes', { ids: [ids.title] })).toThrow(/unavailable/)
     store.clearSelection()
     expect(() => limitToSelection(store, 'get_selection', {})).toThrow(/Nothing is selected/)
   })

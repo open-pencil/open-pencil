@@ -7,7 +7,7 @@
   "webSearchDescription": "自分の Exa キーを使うと、AI エージェントと OpenPencil のツールを使うエージェントは、どのモデルでもウェブを検索でき、Cloud クレジットの代わりに Exa から直接請求されます。",
   "pexelsAPIKey": "PexelsのAPIキー (ストックフォト)",
   "unsplashAccessKey": "Unsplashのアクセスキー",
-  "stockPhotoToolOptional": "任意 — stock_photoツール用",
+  "stockPhotoToolOptional": "任意 — search_stock_photosツール用",
   "pexelsAlternativeOptional": "任意 — Pexelsの代替案",
   "getPexelsAPIKey": "Pexelsの無料APIキーを取得 →",
   "getUnsplashAccessKey": "Unsplashの無料アクセスキーを取得 →",

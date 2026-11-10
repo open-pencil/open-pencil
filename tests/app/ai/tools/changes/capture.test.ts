@@ -91,7 +91,7 @@ test('records nothing for calls that leave the page as it was', async () => {
 test('keeps an undo step per structural call and records removed layers', async () => {
   const card = store.graph.createNode('FRAME', store.state.currentPageId, { name: 'Card' })
 
-  await execute('delete_node', { id: card.id }, 'delete-call')
+  await execute('delete_nodes', { ids: [card.id] }, 'delete-call')
 
   const change = readToolChange('delete-call')
   expect(change?.nodeIds).toEqual([card.id])

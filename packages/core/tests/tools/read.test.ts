@@ -274,7 +274,7 @@ describe('pages not yet visited', () => {
       await getTool('query_nodes').execute(query.figma, { selector: '//COMPONENT', page: 'Later' })
     ).toMatchObject({ count: 1 })
     const components = lazyDocument()
-    expect(await getTool('get_components').execute(components.figma, {})).toMatchObject({
+    expect(await getTool('list_components').execute(components.figma, {})).toMatchObject({
       components: [{ name: 'Loaded button', page: 'Later' }]
     })
   })

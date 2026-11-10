@@ -171,7 +171,7 @@ test('reverts a turn while its edits are the newest on the undo stack', async ()
 test('a turn that ends with a view change, such as zoom to fit, stays revertable', async () => {
   // The agent often ends a run by framing its work; that edit belongs to the turn too.
   const { card, actions } = setup(async (tools) =>
-    tools.viewport_zoom_to_fit.execute?.({}, call('zoom'))
+    tools.zoom_to_fit.execute?.({}, call('zoom'))
   )
   await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
 

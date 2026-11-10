@@ -4,8 +4,8 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-const pathSet = ALL_TOOLS.find((tool) => tool.name === 'path_set')
-if (!pathSet) throw new Error('path_set tool missing')
+const pathSet = ALL_TOOLS.find((tool) => tool.name === 'set_path')
+if (!pathSet) throw new Error('set_path tool missing')
 
 function setup() {
   const graph = new SceneGraph()
@@ -14,7 +14,7 @@ function setup() {
   return { graph, figma, id: node.id }
 }
 
-describe('path_set', () => {
+describe('set_path', () => {
   test('writes a normalized vector network', () => {
     const { graph, figma, id } = setup()
     const path = JSON.stringify({
@@ -62,9 +62,9 @@ describe('path_set', () => {
   })
 })
 
-describe('path_transform', () => {
-  const pathTransform = ALL_TOOLS.find((tool) => tool.name === 'path_transform')
-  if (!pathTransform) throw new Error('path_transform tool missing')
+describe('transform_path', () => {
+  const pathTransform = ALL_TOOLS.find((tool) => tool.name === 'transform_path')
+  if (!pathTransform) throw new Error('transform_path tool missing')
 
   function line() {
     const { graph, figma, id } = setup()

@@ -48,7 +48,7 @@ function splitAutomationTarget(args: Record<string, unknown>): {
 
 type RPCResponse = { ok?: boolean; result?: unknown; target?: unknown; error?: string }
 
-/** The app's recent files; the server keeps only those `open_file` could reach. */
+/** The app's recent files; the server keeps only those `open_document` could reach. */
 const recentFilesResultSchema = v.object({
   files: v.array(v.object({ path: v.string(), name: v.string(), updated_at: v.string() }))
 })
@@ -254,7 +254,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   )
 
   register(
-    'save_file',
+    'save_document',
     {
       description: resolvedRoot
         ? 'Save the current document to a .fig file, or a .jam file for a board. If path is provided, it must be inside the configured MCP root.'
@@ -282,7 +282,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             : undefined
         const { target } = splitAutomationTarget(args)
         const result = await sendRPC({
-          command: 'save_file',
+          command: 'save_document',
           args: { ...target, path: safePath?.realPath }
         })
         const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
@@ -299,7 +299,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
 
   if (resolvedRoot) {
     register(
-      'open_file',
+      'open_document',
       {
         description: 'Open a .fig or .pen file from inside the configured MCP root.',
         inputSchema: v.strictObject({
@@ -316,7 +316,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const safe = await resolveSafePath(args.path, resolvedRoot)
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
-            command: 'open_file',
+            command: 'open_document',
             args: { ...target, path: safe.realPath }
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
@@ -330,9 +330,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       }
     )
 
-    register('list_recent_files', { inputSchema: v.strictObject({}) }, async () => {
+    register('list_recent_documents', { inputSchema: v.strictObject({}) }, async () => {
       try {
-        const res = await sendCommand(sendRPC, 'list_recent_files', {})
+        const res = await sendCommand(sendRPC, 'list_recent_documents', {})
         const { files } = v.parse(recentFilesResultSchema, res.result)
         const insideRoot = await Promise.all(
           files.map((file) =>
@@ -349,7 +349,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     })
 
     register(
-      'new_document',
+      'create_document',
       {
         description:
           'Create a new empty document with an optional save path inside the configured MCP root.',
@@ -370,7 +370,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
-            command: 'new_document',
+            command: 'create_document',
             args: { ...target, path: safePath?.realPath }
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
@@ -398,7 +398,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   register(
-    'close_file',
+    'close_document',
     {
       inputSchema: resolvedRoot
         ? v.strictObject({
@@ -430,7 +430,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         const rpcArgs: Record<string, unknown> = { ...target }
         if (args.unsaved) rpcArgs.unsaved = args.unsaved
         if (safePath) rpcArgs.path = safePath.realPath
-        const res = await sendCommand(sendRPC, 'close_file', rpcArgs)
+        const res = await sendCommand(sendRPC, 'close_document', rpcArgs)
         const closed = (res.result as { closed?: boolean } | undefined)?.closed === true
         return ok(withTarget({ closed }, res))
       } catch (e) {

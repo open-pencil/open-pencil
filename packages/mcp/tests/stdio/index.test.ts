@@ -145,7 +145,7 @@ describe('MCP stdio transport', () => {
         withTcp: true,
         socketPath: SOCKET_PATH,
         authToken: AUTH_TOKEN,
-        disabledTools: ['clone_node'],
+        disabledTools: ['clone_nodes'],
         enableEval: false,
         mcpRoot: null
       })
@@ -201,10 +201,10 @@ describe('MCP stdio transport', () => {
     const names = tools.map((t) => t.name)
     expect(names).toContain('create_shape')
     expect(names).toContain('get_page_tree')
-    expect(names).toContain('save_file')
+    expect(names).toContain('save_document')
     expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
-    expect(names).not.toContain('clone_node')
+    expect(names).not.toContain('clone_nodes')
     const createShape = expectDefined(
       tools.find((tool) => tool.name === 'create_shape'),
       'create_shape tool'
@@ -281,8 +281,8 @@ describe('MCP stdio transport', () => {
     )
   })
 
-  test('save_file via stdio succeeds', async () => {
-    const result = await requireClient().callTool({ name: 'save_file', arguments: {} })
+  test('save_document via stdio succeeds', async () => {
+    const result = await requireClient().callTool({ name: 'save_document', arguments: {} })
     expect(result.isError).not.toBe(true)
     const data = parseTextContent(result.content, v.object({ saved: v.boolean() }))
     expect(data.saved).toBe(true)
@@ -305,7 +305,7 @@ describe('MCP stdio transport', () => {
 
     expect(getNodeOrThrow(requireGraph(), id)).toBeDefined()
 
-    await requireClient().callTool({ name: 'delete_node', arguments: { id } })
+    await requireClient().callTool({ name: 'delete_nodes', arguments: { ids: [id] } })
     expect(requireGraph().getNode(id)).toBeUndefined()
   }, 10000)
 

@@ -31,7 +31,7 @@ Le jeton est conservé dans le stockage sécurisé des identifiants, pas dans le
 
 ## Outils
 
-Les outils couvrent lecture, création, modification, structure, variables, vecteurs, analyse, description, génération de code et images de stock. L’inspection comprend `get_jsx` pour la vue JSX aller-retour, `diff_create` pour les différences structurelles, `diff_visual` pour les différences de pixels et `describe` pour le rôle sémantique et la détection des problèmes de design. Chaque appel agit sur l’éditeur actif et participe à l’historique d’annulation lorsque cela s’applique.
+Les outils couvrent lecture, création, modification, structure, variables, vecteurs, analyse, description, génération de code et images de stock. L’inspection comprend `get_jsx` pour la vue JSX aller-retour, `diff_nodes` pour les différences structurelles, `diff_pixels` pour les différences de pixels et `describe` pour le rôle sémantique et la détection des problèmes de design. Chaque appel agit sur l’éditeur actif et participe à l’historique d’annulation lorsque cela s’applique.
 
 ## Compétences
 
@@ -41,7 +41,7 @@ Dans **Réglages → Compétences**, importez une compétence sous forme de ZIP 
 
 ## Vérification visuelle
 
-L’assistant peut vérifier visuellement son travail. Lorsque `export_image` est activé, il peut capturer une image après avoir créé ou modifié des designs et comparer le résultat à la demande initiale. Cela permet de repérer les problèmes de disposition, les éléments manquants et les écarts de couleur qu’une réponse purement textuelle laisserait passer. `diff_visual`, activé par défaut, compare un objet modifié à une copie de référence et renvoie les pixels et la zone modifiés ; l’assistant peut ainsi confirmer qu’une modification est restée dans sa cible.
+L’assistant peut vérifier visuellement son travail. Lorsque `export_image` est activé, il peut capturer une image après avoir créé ou modifié des designs et comparer le résultat à la demande initiale. Cela permet de repérer les problèmes de disposition, les éléments manquants et les écarts de couleur qu’une réponse purement textuelle laisserait passer. `diff_pixels`, activé par défaut, compare un objet modifié à une copie de référence et renvoie les pixels et la zone modifiés ; l’assistant peut ainsi confirmer qu’une modification est restée dans sa cible.
 
 ## Conseils
 

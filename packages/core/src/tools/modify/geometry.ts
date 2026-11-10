@@ -50,7 +50,7 @@ export const setRadius = defineTool({
 })
 
 export const setMinMax = defineTool({
-  name: 'set_minmax',
+  name: 'set_size_limits',
 
   description: 'Set min/max width and height constraints on a node.',
   execution: { kind: 'sync', mutation: 'properties' },

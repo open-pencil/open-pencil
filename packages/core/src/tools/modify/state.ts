@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const setBlend = defineTool({
-  name: 'set_blend',
+  name: 'set_blend_mode',
 
   description: 'Set blend mode of a node.',
   execution: { kind: 'sync', mutation: 'properties' },

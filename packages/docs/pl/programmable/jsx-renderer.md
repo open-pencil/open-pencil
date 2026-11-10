@@ -53,7 +53,7 @@ openpencil export design.fig -f jsx                   # Format OpenPencil
 openpencil export design.fig -f jsx --style tailwind  # Klasy Tailwind
 ```
 
-Wyeksportowany projekt można zmienić jak kod i ponownie wyrenderować. Eksport zapisuje ukryte i zablokowane warstwy, ograniczenia, limity rozmiaru, wielowarstwowe, gradientowe i obrazowe zalewy, obwiednie, efekty, maski oraz powiązania ze zmiennymi, więc renderowanie eksportu je odtwarza, a `diff_create` pokazuje zmiany każdego z nich. Tekst sformatowany wieloma stylami, ścieżki wektorowe, siatki układu, style współdzielone i definicje właściwości komponentów nie są jeszcze zapisywane. Egzemplarze są zapisywane jako ramki z zawartością, dzięki czemu wyeksportowany JSX jest samodzielny.
+Wyeksportowany projekt można zmienić jak kod i ponownie wyrenderować. Eksport zapisuje ukryte i zablokowane warstwy, ograniczenia, limity rozmiaru, wielowarstwowe, gradientowe i obrazowe zalewy, obwiednie, efekty, maski oraz powiązania ze zmiennymi, więc renderowanie eksportu je odtwarza, a `diff_nodes` pokazuje zmiany każdego z nich. Tekst sformatowany wieloma stylami, ścieżki wektorowe, siatki układu, style współdzielone i definicje właściwości komponentów nie są jeszcze zapisywane. Egzemplarze są zapisywane jako ramki z zawartością, dzięki czemu wyeksportowany JSX jest samodzielny.
 
 ## Porównanie zmian
 

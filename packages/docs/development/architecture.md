@@ -87,7 +87,7 @@ Tools are defined once in `packages/core/src/tools/`, split by domain: read, cre
 - **MCP server** — zod schemas, stdio + HTTP transports
 - **CLI** — available via the `eval` command, whose scripts get the `figma` Plugin API and the `openpencil` API
 
-90+ core tools + 3 MCP file management tools. Includes XPath query (`query_nodes`), JSX inspection (`get_jsx`, `diff_create`), semantic description (`describe`), and vision-based verification (`export_image` returns images to the model).
+90+ core tools + 3 MCP file management tools. Includes XPath query (`query_nodes`), JSX inspection (`get_jsx`, `diff_nodes`), semantic description (`describe`), and vision-based verification (`export_image` returns images to the model).
 
 ### Behaviours and Preview
 

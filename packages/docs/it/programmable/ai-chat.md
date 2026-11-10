@@ -33,7 +33,7 @@ Il token è conservato nell’archivio sicuro delle credenziali, non nelle norma
 
 Gli strumenti coprono lettura, creazione, modifica, struttura, variabili, vettori, analisi, descrizione, generazione di codice e immagini stock. Ogni chiamata agisce sull’editor attivo e partecipa alla cronologia quando applicabile.
 
-Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_create` i confronti strutturali, `diff_visual` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
+Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_nodes` i confronti strutturali, `diff_pixels` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
 
 ## Skill
 
@@ -43,7 +43,7 @@ In **Impostazioni → Skill** carica una skill come ZIP della sua cartella o com
 
 ## Verifica visiva
 
-L’assistente può verificare visivamente il proprio lavoro. Con `export_image` abilitato, cattura un’immagine dopo aver creato o modificato un design e controlla il risultato rispetto alla richiesta, individuando problemi di disposizione, elementi mancanti e colori sbagliati che una risposta solo testuale non rileverebbe. `diff_visual`, abilitato per impostazione predefinita, confronta un oggetto modificato con una copia di riferimento e restituisce i pixel e l’area cambiati, così l’assistente può confermare che la modifica sia rimasta nel bersaglio previsto.
+L’assistente può verificare visivamente il proprio lavoro. Con `export_image` abilitato, cattura un’immagine dopo aver creato o modificato un design e controlla il risultato rispetto alla richiesta, individuando problemi di disposizione, elementi mancanti e colori sbagliati che una risposta solo testuale non rileverebbe. `diff_pixels`, abilitato per impostazione predefinita, confronta un oggetto modificato con una copia di riferimento e restituisce i pixel e l’area cambiati, così l’assistente può confermare che la modifica sia rimasta nel bersaglio previsto.
 
 ## Lavorare su altre pagine
 

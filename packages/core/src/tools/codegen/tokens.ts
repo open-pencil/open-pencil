@@ -49,7 +49,7 @@ export async function exportTokenStylesheet(
 }
 
 export const designToTokens = defineTool({
-  name: 'design_to_tokens',
+  name: 'export_design_tokens',
   description:
     'Write the document variables as a stylesheet of CSS custom properties: defaults in :root, every other mode under its condition (a selector such as [data-theme="dark"] or an @media query), aliases as var() references. The tailwind format puts tokens with a Tailwind v4 namespace (--color-*, --spacing-*, --radius-*, --text-*, …) in @theme and adds a @custom-variant per mode. The dtcg format returns W3C design token files instead: one per collection mode, text and effect styles as typography and shadow tokens, and a resolver document; collection and type filters do not apply to it. Issues lists tokens or modes that could not be written.',
   execution: { kind: 'async', mutation: 'none' },

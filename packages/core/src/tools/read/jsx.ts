@@ -46,7 +46,7 @@ export const diffJSX = defineTool({
   description:
     'Structural diff between two nodes in JSX format. Shows added/removed children, changed props.',
   execution: { kind: 'sync', mutation: 'none' },
-  // Kept for `open-pencil diff jsx`; agents get diff_create, which also gives an appliable patch.
+  // Kept for `open-pencil diff jsx`; agents get diff_nodes, which also gives an appliable patch.
   exposure: { mcp: false, ai: false, webmcp: false },
   input: nodeComparisonInputSchema,
   execute: (figma, { from, to }) => {

@@ -25,11 +25,11 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   for (const tool of CORE_TOOLS) {
     if (isToolExposed(tool, 'ai')) expect(defaults).toContain(tool.name)
   }
-  expect(defaults).toContain('get_components')
+  expect(defaults).toContain('list_components')
   expect(defaults).toContain('list_libraries')
   expect(defaults).toContain('insert_library_component')
   for (const name of [
-    'get_comments',
+    'list_comments',
     'add_comment',
     'reply_to_comment',
     'resolve_comment',
@@ -48,13 +48,13 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   }
   // Moving the view stays the user's choice.
   expect(defaults).not.toContain('switch_page')
-  expect(defaults).not.toContain('node_to_component')
-  expect(enabledAIToolDefinitions({ node_to_component: true }).map((tool) => tool.name)).toContain(
-    'node_to_component'
+  expect(defaults).not.toContain('convert_to_components')
+  expect(enabledAIToolDefinitions({ convert_to_components: true }).map((tool) => tool.name)).toContain(
+    'convert_to_components'
   )
   expect(
-    enabledAIToolDefinitions({ get_components: false }).map((tool) => tool.name)
-  ).not.toContain('get_components')
+    enabledAIToolDefinitions({ list_components: false }).map((tool) => tool.name)
+  ).not.toContain('list_components')
   expect(enabledAIToolDefinitions({ unknown_tool: true }).map((tool) => tool.name)).not.toContain(
     'unknown_tool'
   )
@@ -62,20 +62,20 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
 
 test('each kind of agent keeps its own permissions through bulk changes and reset', () => {
   aiToolOverrides.value = {}
-  disabledMCPTools.value = ['node_to_component']
+  disabledMCPTools.value = ['convert_to_components']
   const ai = useToolAccessSettings('ai')
   const mcp = useToolAccessSettings('mcp')
-  expect(ai.disabled.value).toContain('node_to_component')
-  ai.disabled.value = ai.disabled.value.filter((name) => name !== 'node_to_component')
-  expect(disabledAITools.value).not.toContain('node_to_component')
-  expect(disabledMCPTools.value).toEqual(['node_to_component'])
+  expect(ai.disabled.value).toContain('convert_to_components')
+  ai.disabled.value = ai.disabled.value.filter((name) => name !== 'convert_to_components')
+  expect(disabledAITools.value).not.toContain('convert_to_components')
+  expect(disabledMCPTools.value).toEqual(['convert_to_components'])
   mcp.reset()
   expect(disabledMCPTools.value).toEqual([])
-  expect(disabledAITools.value).not.toContain('node_to_component')
+  expect(disabledAITools.value).not.toContain('convert_to_components')
   mcp.disabled.value = ['find_nodes']
   ai.reset()
   expect(aiToolOverrides.value).toEqual({})
-  expect(disabledAITools.value).toContain('node_to_component')
+  expect(disabledAITools.value).toContain('convert_to_components')
   expect(disabledMCPTools.value).toEqual(['find_nodes'])
 })
 

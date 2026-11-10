@@ -48,10 +48,10 @@ function setup() {
 }
 
 async function createPatch(figma: FigmaAPI, from: string, to: string): Promise<string> {
-  return expectDefined((await run<DiffResult>(figma, 'diff_create', { from, to })).diff, 'patch')
+  return expectDefined((await run<DiffResult>(figma, 'diff_nodes', { from, to })).diff, 'patch')
 }
 
-describe('diff_create and diff_apply', () => {
+describe('diff_nodes and apply_patch', () => {
   test('a patch from a modified copy makes the original match it', async () => {
     const { graph, figma, card, label, badge } = setup()
     const copy = card.clone()
@@ -72,12 +72,12 @@ describe('diff_create and diff_apply', () => {
     expect(patch).toContain(`@@ /Card/Badge #${badge.id} moved to 0`)
     expect(patch).toContain(`@@ /Card/Note added to #${card.id} at 2\n+<Text name="Note"`)
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch })
     expect(applied).toMatchObject({ applied: 4, failed: 0 })
     // Updates and moves keep their nodes; only the added note is new.
     expect(getNodeOrThrow(graph, card.id).childIds.slice(0, 2)).toEqual([badge.id, label.id])
     expect(getNodeOrThrow(graph, label.id).width).toBe(120)
-    expect(await run<DiffResult>(figma, 'diff_create', { from: card.id, to: copy.id })).toEqual({
+    expect(await run<DiffResult>(figma, 'diff_nodes', { from: card.id, to: copy.id })).toEqual({
       diff: null,
       message: 'No differences found'
     })
@@ -89,7 +89,7 @@ describe('diff_create and diff_apply', () => {
     const copy = card.clone()
     copy.opacity = 0.5
 
-    await run<ApplyResult>(figma, 'diff_apply', {
+    await run<ApplyResult>(figma, 'apply_patch', {
       patch: await createPatch(figma, card.id, copy.id)
     })
     expect(getNodeOrThrow(graph, card.id).opacity).toBe(0.5)
@@ -104,7 +104,7 @@ describe('diff_create and diff_apply', () => {
     const patch = await createPatch(figma, card.id, copy.id)
     label.resize(90, 20)
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch })
     expect(applied.error).toBe('Patch does not apply')
     expect(applied.results?.[0]?.error).toContain('w: expected w={80}, found w={90}')
     // The card still matched, but a stale patch must not half-apply.
@@ -120,7 +120,7 @@ describe('diff_create and diff_apply', () => {
       expectDefined(copy.children[0], 'copied label').resize(120, 24)
       const patch = (await createPatch(figma, card.id, copy.id)).replace('+w={120}', '+w={wide}')
 
-      const applied = await run<ApplyResult>(figma, 'diff_apply', { patch, force })
+      const applied = await run<ApplyResult>(figma, 'apply_patch', { patch, force })
       expect(applied.error).toBe('Patch does not apply')
       // The card's change was valid, but it must not land without the label's.
       expect(getNodeOrThrow(graph, card.id).opacity).toBe(1)
@@ -130,13 +130,13 @@ describe('diff_create and diff_apply', () => {
 
   test('rejects a patch that adds an attribute the node has since gained', async () => {
     const { figma, label } = setup()
-    const shown = await run<DiffResult>(figma, 'diff_show', {
+    const shown = await run<DiffResult>(figma, 'preview_patch', {
       id: label.id,
       attributes: 'opacity={0.5}'
     })
     label.opacity = 0.8
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', {
+    const applied = await run<ApplyResult>(figma, 'apply_patch', {
       patch: expectDefined(shown.diff, 'patch')
     })
     expect(applied.results?.[0]?.error).toContain('opacity: expected none, found opacity={0.8}')
@@ -147,7 +147,7 @@ describe('diff_create and diff_apply', () => {
     const copy = card.clone()
     copy.opacity = 0.25
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', {
+    const applied = await run<ApplyResult>(figma, 'apply_patch', {
       patch: await createPatch(figma, card.id, copy.id),
       dryRun: true
     })
@@ -160,7 +160,7 @@ describe('diff_create and diff_apply', () => {
     const copy = card.clone()
     expectDefined(copy.children[0], 'copied label').remove()
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', {
+    const applied = await run<ApplyResult>(figma, 'apply_patch', {
       patch: await createPatch(figma, card.id, copy.id)
     })
     expect(applied.results?.map((result) => result.status)).toEqual(['removed'])
@@ -171,7 +171,7 @@ describe('diff_create and diff_apply', () => {
     const { graph, figma, card } = setup()
     const patch = `@@ /Card #${card.id}\n+opacity={0.5}\n+bogus={1}`
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch })
     expect(applied.error).toBe('Patch does not apply')
     expect(applied.results?.[0]?.error).toBe('Unsupported attribute "bogus"')
     expect(getNodeOrThrow(graph, card.id).opacity).toBe(1)
@@ -190,7 +190,7 @@ describe('diff_create and diff_apply', () => {
       '+<Instance component="Missing" />'
     ].join('\n')
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch })
     expect(applied.error).toBe('Patch does not apply')
     expect(applied.results?.[0]?.error).toContain('component not found: Missing')
     expect(getNodeOrThrow(graph, card.id).opacity).toBe(1)
@@ -199,16 +199,16 @@ describe('diff_create and diff_apply', () => {
 
   test('reports a hunk it cannot read', async () => {
     const { figma } = setup()
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch: 'w={1}' })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch: 'w={1}' })
     expect(applied.error).toBe('Line 1: unexpected line: w={1}')
   })
 })
 
-describe('diff_show', () => {
-  test('previews attributes without changing the node, as a patch diff_apply applies', async () => {
+describe('preview_patch', () => {
+  test('previews attributes without changing the node, as a patch apply_patch applies', async () => {
     const { graph, figma, card } = setup()
 
-    const shown = await run<DiffResult>(figma, 'diff_show', {
+    const shown = await run<DiffResult>(figma, 'preview_patch', {
       id: card.id,
       attributes: 'bg="#FF0000" w={240} opacity={0.5}'
     })
@@ -218,7 +218,7 @@ describe('diff_show', () => {
     )
     expect(getNodeOrThrow(graph, card.id).width).toBe(200)
 
-    await run<ApplyResult>(figma, 'diff_apply', { patch })
+    await run<ApplyResult>(figma, 'apply_patch', { patch })
     const node = getNodeOrThrow(graph, card.id)
     expect(node.width).toBe(240)
     expect(node.opacity).toBe(0.5)
@@ -230,7 +230,7 @@ describe('diff_show', () => {
     ['opacity={half}', 'half is not defined']
   ])('rejects %p', async (attributes, error) => {
     const { figma, card } = setup()
-    const shown = await run<DiffResult>(figma, 'diff_show', { id: card.id, attributes })
+    const shown = await run<DiffResult>(figma, 'preview_patch', { id: card.id, attributes })
     expect(shown.error).toContain(error)
   })
 })

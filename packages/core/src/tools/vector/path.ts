@@ -19,7 +19,7 @@ function getVectorNode(
 }
 
 export const pathGet = defineTool({
-  name: 'path_get',
+  name: 'get_path',
   description: 'Get vector path data of a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
@@ -33,7 +33,7 @@ export const pathGet = defineTool({
 })
 
 export const pathSet = defineTool({
-  name: 'path_set',
+  name: 'set_path',
 
   description: 'Set vector path data on a node. Provide a VectorNetwork JSON.',
   execution: { kind: 'sync', mutation: 'document' },
@@ -85,7 +85,7 @@ function flipPath(vn: VectorNetwork, node: SceneNode, axis: 'horizontal' | 'vert
 }
 
 export const pathTransform = defineTool({
-  name: 'path_transform',
+  name: 'transform_path',
 
   description:
     "Scale, flip, or move a vector node's path points, in that order, without changing the node's box.",

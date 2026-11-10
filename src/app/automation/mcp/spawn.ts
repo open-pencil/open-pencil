@@ -530,7 +530,7 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
 
   // Scope file tools to the configured root, defaulting to the user's home.
   // The app bundle directory (Tauri executableDir) is read-only and cannot be
-  // used as a safe fallback for open_file, save_file, or export tools.
+  // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
   const resolved = resolvePlatformCommand(MCP_EXECUTABLE)
   const command = Command.create(resolved.command, resolved.args, {

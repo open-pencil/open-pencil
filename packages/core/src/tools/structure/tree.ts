@@ -7,7 +7,7 @@ import {
 } from '#core/tools/schema'
 
 export const nodeAncestors = defineTool({
-  name: 'node_ancestors',
+  name: 'get_ancestors',
   description: 'Get the ancestor chain from a node to the page root.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
@@ -28,7 +28,7 @@ export const nodeAncestors = defineTool({
 })
 
 export const nodeBindings = defineTool({
-  name: 'node_bindings',
+  name: 'get_bindings',
   description: 'Get variable bindings for a node.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },

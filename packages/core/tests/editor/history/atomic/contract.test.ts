@@ -110,7 +110,7 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
   set_variable: (_t, f) => ({ id: f.variables.color, mode: f.variables.mode, value: '#00ff00' }),
   set_text: (t) => ({ id: t.text, text: 'Changed text' }),
   set_font: (t) => ({ id: t.text, family: 'Inter', style: 'Regular', size: 20 }),
-  set_font_range: (t) => ({ id: t.text, start: 0, end: 5, size: 22, color: '#ff0000' }),
+  set_text_range: (t) => ({ id: t.text, start: 0, end: 5, size: 22, color: '#ff0000' }),
   set_text_properties: (t) => ({
     id: t.text,
     align_horizontal: 'CENTER',
@@ -120,8 +120,8 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     text_decoration: 'UNDERLINE'
   }),
   set_radius: (t) => ({ id: t.rect, radius: 6, top_left: 2 }),
-  set_minmax: (t) => ({ id: t.rect, min_width: 10, max_width: 90, min_height: 5, max_height: 80 }),
-  set_blend: (t) => ({ id: t.rect, mode: 'MULTIPLY' }),
+  set_size_limits: (t) => ({ id: t.rect, min_width: 10, max_width: 90, min_height: 5, max_height: 80 }),
+  set_blend_mode: (t) => ({ id: t.rect, mode: 'MULTIPLY' }),
   set_fill: (t) => ({ id: t.rect, color: '#00ff00' }),
   set_stroke: (t) => ({ id: t.rect, color: '#112233', weight: 2, align: 'CENTER' }),
   set_layout: (t) => ({
