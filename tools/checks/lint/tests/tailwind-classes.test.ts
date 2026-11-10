@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-const rule = 'no-unknown-tailwind-classes'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/tailwind/no-unknown-classes'
+const rules = { [rule]: 'error' }
 const SCRIPT = '<script setup lang="ts">\nconst ok = true\n</script>\n'
 
 /** One fixture per case, each in a theme module, so one Oxlint run checks them all. */
@@ -20,7 +20,7 @@ async function themeDiagnostics(classes: readonly string[]) {
   )
 }
 
-describe('no-unknown-tailwind-classes', () => {
+describe('@open-pencil/tailwind/no-unknown-classes', () => {
   const rejected = [
     'text-danger',
     'hover:border-border-strong',
@@ -104,8 +104,8 @@ test('checks SDK examples and the landing against the docs stylesheet that build
   expect(diagnostics.map((item) => item.filename?.split('/').pop())).toEqual(['Palette.vue'])
 })
 
-describe('no-px-tailwind-values', () => {
-  const pxRule = 'no-px-tailwind-values'
+describe('@open-pencil/tailwind/no-px-values', () => {
+  const pxRule = '@open-pencil/tailwind/no-px-values'
 
   test('rejects pixel lengths in arbitrary values in the app and the SDK', async () => {
     const classes = [
@@ -136,7 +136,7 @@ describe('no-px-tailwind-values', () => {
           'packages/vue/src/primitives/Demo/examples/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`,
           'packages/docs/.vitepress/theme/landing/Px.vue': `${SCRIPT}<template><p class="text-[11px]" /></template>\n`
         },
-        { [`open-pencil/${pxRule}`]: 'error' }
+        { [pxRule]: 'error' }
       ),
       pxRule
     )
@@ -149,8 +149,8 @@ describe('no-px-tailwind-values', () => {
   })
 })
 
-describe('no-physical-side-tailwind-classes', () => {
-  const sideRule = 'no-physical-side-tailwind-classes'
+describe('@open-pencil/tailwind/no-physical-sides', () => {
+  const sideRule = '@open-pencil/tailwind/no-physical-sides'
 
   test('names the logical class for each utility that names a side', async () => {
     const replacements = {
@@ -187,7 +187,7 @@ describe('no-physical-side-tailwind-classes', () => {
           'packages/vue/src/primitives/Demo/examples/Side.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`,
           'packages/docs/.vitepress/theme/landing/Landing.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`
         },
-        { [`open-pencil/${sideRule}`]: 'error' }
+        { [sideRule]: 'error' }
       ),
       sideRule
     )
@@ -203,8 +203,8 @@ describe('no-physical-side-tailwind-classes', () => {
   })
 })
 
-describe('no-interpolated-tailwind-classes', () => {
-  const interpolatedRule = 'no-interpolated-tailwind-classes'
+describe('@open-pencil/tailwind/no-interpolated-classes', () => {
+  const interpolatedRule = '@open-pencil/tailwind/no-interpolated-classes'
 
   test('rejects class lists interpolated in themes and class helpers', async () => {
     const diagnostics = ruleDiagnostics(
@@ -215,7 +215,7 @@ describe('no-interpolated-tailwind-classes', () => {
           'src/components/merge.ts': `import { twMerge } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const merged = twMerge(\`size-3.5 \${spin}\`)\n`,
           'src/components/join.ts': `import { twJoin } from 'tailwind-merge'\nconst spin = 'animate-spin'\nexport const joined = twJoin(\`size-3.5 \${spin}\`)\n`
         },
-        { [`open-pencil/${interpolatedRule}`]: 'error' }
+        { [interpolatedRule]: 'error' }
       ),
       interpolatedRule
     )
@@ -241,7 +241,7 @@ describe('no-interpolated-tailwind-classes', () => {
           // Outside a theme module, a template after a helper call is no longer inside it.
           'src/components/after.ts': `import { tv } from 'tailwind-variants'\nconst id = 'a'\nexport const ui = tv({ base: 'flex' })\nexport const key = \`\${id}:b\`\n`
         },
-        { [`open-pencil/${interpolatedRule}`]: 'error' }
+        { [interpolatedRule]: 'error' }
       ),
       interpolatedRule
     )

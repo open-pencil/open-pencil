@@ -2,7 +2,19 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "extends": ["./packages/oxlint-plugin/recommended.json"],
   "plugins": ["typescript", "import", "unicorn", "vue", "promise", "node"],
-  "jsPlugins": ["./lint/plugin.js", "eslint-plugin-compat"],
+  "jsPlugins": [
+    "./lint/data.js",
+    "./lint/editor.js",
+    "./lint/imports.js",
+    "./lint/runtime.js",
+    "./lint/security.js",
+    "./lint/structure.js",
+    "./lint/tailwind.js",
+    "./lint/test-ids.js",
+    "./lint/types.js",
+    "./lint/vue.js",
+    "eslint-plugin-compat"
+  ],
   "settings": {
     "browsers": ["chrome 111", "edge 111", "firefox 128", "safari 16.4", "ios_saf 16.4"]
   },
@@ -79,7 +91,7 @@
     "vue/prop-name-casing": "error",
     "vue/valid-define-options": "error",
     "vue/valid-next-tick": "error",
-    "open-pencil/no-inline-named-types": [
+    "@open-pencil/types/no-inline-named-types": [
       "error",
       {
         "Vector": "x:number,y:number",
@@ -89,63 +101,63 @@
         "Matrix": "m00:number,m01:number,m02:number,m10:number,m11:number,m12:number"
       }
     ],
-    "open-pencil/no-structuredclone-scene-arrays": "error",
-    "open-pencil/no-vue-style-blocks": "error",
-    "open-pencil/no-native-title-attributes-in-vue": "error",
-    "open-pencil/no-overlay-content-from-open-state": "error",
-    "open-pencil/no-raw-overlay-roots-in-app": "error",
-    "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
-    "open-pencil/no-raw-svg-in-app-vue-templates": "error",
-    "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
-    "open-pencil/no-large-property-section-components": "error",
-    "open-pencil/no-raw-test-id-string-props": "error",
-    "open-pencil/no-dynamic-data-test-id-in-vue": "error",
-    "open-pencil/no-test-id-helper-bind-in-vue": "error",
-    "open-pencil/no-invalid-test-id-attributes": "error",
-    "open-pencil/no-raw-test-id-selectors-in-tests": "error",
-    "open-pencil/no-generated-test-id-literals": "error",
-    "open-pencil/no-browser-side-effects-in-vue": "error",
-    "open-pencil/no-document-query-selector-in-vue": "error",
-    "open-pencil/no-direct-selection-tool-state-mutation": "error",
-    "open-pencil/no-hardcoded-color-constants": "error",
-    "open-pencil/no-unknown-tailwind-classes": "error",
-    "open-pencil/no-px-tailwind-values": "error",
-    "open-pencil/no-physical-side-tailwind-classes": "error",
-    "open-pencil/no-interpolated-tailwind-classes": "error",
-    "open-pencil/no-hand-rolled-color": "error",
-    "open-pencil/no-raw-runtime-effect": "error",
-    "open-pencil/no-hand-rolled-data-url": "error",
-    "open-pencil/no-raw-console-format": "off",
-    "open-pencil/no-typeof-window-check": "error",
-    "open-pencil/no-vue-self-package-imports": "error",
-    "open-pencil/no-cross-package-source-imports": "error",
-    "open-pencil/no-app-imports-in-packages": "error",
-    "open-pencil/no-core-framework-imports": "error",
-    "open-pencil/no-inline-tauri-imports": "error",
-    "open-pencil/no-direct-storage-access": "error",
-    "open-pencil/no-vite-hot-outside-reload": "error",
-    "open-pencil/no-local-json-object-aliases": "error",
-    "open-pencil/no-core-browser-globals": "error",
-    "open-pencil/no-zoom-in-scene-drawing": "error",
-    "open-pencil/no-direct-open-pencil-window-internals": "error",
-    "open-pencil/no-direct-open-pencil-browser-store": "error",
-    "open-pencil/max-composition-root-lines": [
+    "@open-pencil/editor/no-structuredclone-scene-arrays": "error",
+    "@open-pencil/vue/no-style-blocks": "error",
+    "@open-pencil/vue/no-native-title-attributes": "error",
+    "@open-pencil/vue/no-overlay-content-from-open-state": "error",
+    "@open-pencil/vue/no-raw-overlay-roots": "error",
+    "@open-pencil/vue/no-hardcoded-tip-labels": "error",
+    "@open-pencil/vue/no-raw-svg-in-templates": "error",
+    "@open-pencil/vue/no-ui-helper-calls-in-templates": "error",
+    "@open-pencil/vue/no-large-property-section-components": "error",
+    "@open-pencil/test-ids/no-raw-string-props": "error",
+    "@open-pencil/test-ids/no-dynamic-attributes": "error",
+    "@open-pencil/test-ids/no-helper-bind": "error",
+    "@open-pencil/test-ids/no-invalid-attributes": "error",
+    "@open-pencil/test-ids/no-raw-selectors-in-tests": "error",
+    "@open-pencil/test-ids/no-generated-literals": "error",
+    "@open-pencil/vue/no-browser-side-effects": "error",
+    "@open-pencil/vue/no-document-query-selector": "error",
+    "@open-pencil/editor/no-direct-selection-tool-state-mutation": "error",
+    "@open-pencil/data/no-hardcoded-color-constants": "error",
+    "@open-pencil/tailwind/no-unknown-classes": "error",
+    "@open-pencil/tailwind/no-px-values": "error",
+    "@open-pencil/tailwind/no-physical-sides": "error",
+    "@open-pencil/tailwind/no-interpolated-classes": "error",
+    "@open-pencil/data/no-hand-rolled-color": "error",
+    "@open-pencil/data/no-raw-runtime-effect": "error",
+    "@open-pencil/data/no-hand-rolled-data-url": "error",
+    "@open-pencil/runtime/no-raw-console-format": "off",
+    "@open-pencil/runtime/no-typeof-window-check": "error",
+    "@open-pencil/imports/no-vue-self-package": "error",
+    "@open-pencil/imports/no-cross-package-source": "error",
+    "@open-pencil/imports/no-app-in-packages": "error",
+    "@open-pencil/imports/no-core-framework": "error",
+    "@open-pencil/imports/no-inline-tauri": "error",
+    "@open-pencil/runtime/no-direct-storage-access": "error",
+    "@open-pencil/runtime/no-vite-hot-outside-reload": "error",
+    "@open-pencil/types/no-local-json-object-aliases": "error",
+    "@open-pencil/runtime/no-core-browser-globals": "error",
+    "@open-pencil/editor/no-zoom-in-scene-drawing": "error",
+    "@open-pencil/editor/no-direct-window-internals": "error",
+    "@open-pencil/editor/no-direct-browser-store": "error",
+    "@open-pencil/vue/max-composition-root-lines": [
       "error",
       {
         "max": 260
       }
     ],
-    "open-pencil/no-document-change-capture": "error",
-    "open-pencil/no-core-self-package-imports": "error",
-    "open-pencil/no-inline-prompt-constants": "error",
-    "open-pencil/no-direct-graph-emitter-subscriptions": "error",
-    "open-pencil/no-on-unmounted-in-composition-roots": "error",
-    "open-pencil/no-composable-state-wrappers": "error",
-    "open-pencil/prefer-vueuse-intervals": "error",
-    "open-pencil/prefer-vueuse-timeouts": "error",
-    "open-pencil/vue-component-file-pascal-case": "error",
-    "open-pencil/component-namespace-casing": "error",
-    "open-pencil/no-mixed-case-acronym-identifiers": [
+    "@open-pencil/editor/no-document-change-capture": "error",
+    "@open-pencil/imports/no-core-self-package": "error",
+    "@open-pencil/editor/no-inline-prompt-constants": "error",
+    "@open-pencil/editor/no-direct-graph-emitter-subscriptions": "error",
+    "@open-pencil/vue/no-on-unmounted-in-composition-roots": "error",
+    "@open-pencil/vue/no-composable-state-wrappers": "error",
+    "@open-pencil/vue/prefer-vueuse-intervals": "error",
+    "@open-pencil/vue/prefer-vueuse-timeouts": "error",
+    "@open-pencil/structure/vue-component-file-pascal-case": "error",
+    "@open-pencil/structure/component-namespace-casing": "error",
+    "@open-pencil/structure/no-mixed-case-acronym-identifiers": [
       "error",
       {
         "ignoredImports": [
@@ -172,12 +184,12 @@
         ]
       }
     ],
-    "open-pencil/non-component-source-directories-kebab-case": "error",
-    "open-pencil/no-component-root-sibling-folder": "error",
-    "open-pencil/no-flat-kiwi-modules": "error",
-    "open-pencil/no-bun-globals-in-cli": "error",
-    "open-pencil/no-top-level-prefixed-test-files": "error",
-    "open-pencil/no-editor-profile-inputs": "error",
+    "@open-pencil/structure/non-component-directories-kebab-case": "error",
+    "@open-pencil/structure/no-component-root-sibling-folder": "error",
+    "@open-pencil/structure/no-flat-kiwi-modules": "error",
+    "@open-pencil/runtime/no-bun-globals-in-cli": "error",
+    "@open-pencil/structure/no-top-level-prefixed-test-files": "error",
+    "@open-pencil/editor/no-profile-inputs": "error",
     "vue/no-deprecated-data-object-declaration": "error",
     "vue/no-deprecated-delete-set": "error",
     "vue/no-deprecated-events-api": "error",
@@ -185,17 +197,17 @@
     "vue/no-deprecated-vue-config-keycodes": "error",
     "vue/no-this-in-before-route-enter": "error",
     "vue/return-in-computed-property": "error",
-    "open-pencil/no-unvalidated-json-parse": "off",
-    "open-pencil/valibot-schema-conventions": "off",
-    "open-pencil/no-useless-pass-through-wrappers": "off",
-    "open-pencil/no-secret-in-query": "off",
-    "open-pencil/no-secret-logging": "off"
+    "@open-pencil/data/no-unvalidated-json-parse": "off",
+    "@open-pencil/data/valibot-schema-conventions": "off",
+    "@open-pencil/structure/no-useless-pass-through-wrappers": "off",
+    "@open-pencil/security/no-secret-in-query": "off",
+    "@open-pencil/security/no-secret-logging": "off"
   },
   "overrides": [
     {
       "files": ["packages/core/src/**"],
       "rules": {
-        "open-pencil/no-deep-parent-relative-imports": [
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
           "error",
           {
             "minDepth": 1,
@@ -207,7 +219,7 @@
     {
       "files": ["packages/mcp/src/**"],
       "rules": {
-        "open-pencil/no-deep-parent-relative-imports": [
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
           "error",
           {
             "minDepth": 1,
@@ -219,7 +231,7 @@
     {
       "files": ["packages/vue/src/**"],
       "rules": {
-        "open-pencil/no-deep-parent-relative-imports": [
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
           "error",
           {
             "minDepth": 1,
@@ -231,7 +243,7 @@
     {
       "files": ["packages/cli/src/**"],
       "rules": {
-        "open-pencil/no-deep-parent-relative-imports": [
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
           "error",
           {
             "minDepth": 1,
@@ -249,7 +261,7 @@
     {
       "files": ["packages/docs/.vitepress/theme/landing/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/no-app-imports-in-packages": "off"
+        "@open-pencil/imports/no-app-in-packages": "off"
       }
     },
     {
@@ -267,26 +279,26 @@
     {
       "files": ["packages/cloud/src/server/**/*.ts"],
       "rules": {
-        "open-pencil/no-raw-sql": "error",
-        "open-pencil/no-dynamic-html": "error"
+        "@open-pencil/data/no-raw-sql": "error",
+        "@open-pencil/security/no-dynamic-html": "error"
       }
     },
     {
       "files": ["packages/cloud/src/server/**/*.ts", "packages/cloud/src/admin/**/*.ts"],
       "rules": {
-        "open-pencil/no-unvalidated-route-params": "error"
+        "@open-pencil/security/no-unvalidated-route-params": "error"
       }
     },
     {
       "files": ["packages/core/src/canvas/sksl/compile.ts"],
       "rules": {
-        "open-pencil/no-raw-runtime-effect": "off"
+        "@open-pencil/data/no-raw-runtime-effect": "off"
       }
     },
     {
       "files": ["packages/feedback/src/**/*.ts"],
       "rules": {
-        "open-pencil/no-raw-sql": "error"
+        "@open-pencil/data/no-raw-sql": "error"
       }
     },
     {
@@ -296,7 +308,7 @@
         "packages/cloud/src/server/db/migrations/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-raw-sql": "off"
+        "@open-pencil/data/no-raw-sql": "off"
       }
     },
     {
@@ -307,14 +319,14 @@
         "src/app/integrations/storage/cloud/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-secret-in-query": "error",
-        "open-pencil/no-secret-logging": "error"
+        "@open-pencil/security/no-secret-in-query": "error",
+        "@open-pencil/security/no-secret-logging": "error"
       }
     },
     {
       "files": ["tools/ci/policy/src/**/*.ts"],
       "rules": {
-        "open-pencil/prefer-es-toolkit": "off"
+        "@open-pencil/data/prefer-es-toolkit": "off"
       }
     },
     {
@@ -331,27 +343,27 @@
         "packages/oxlint-plugin/tests/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-generated-test-id-literals": "off",
-        "open-pencil/no-hardcoded-color-constants": "off",
-        "open-pencil/no-mixed-case-acronym-identifiers": "off"
+        "@open-pencil/test-ids/no-generated-literals": "off",
+        "@open-pencil/data/no-hardcoded-color-constants": "off",
+        "@open-pencil/structure/no-mixed-case-acronym-identifiers": "off"
       }
     },
     {
       "files": ["src/**/*.ts", "packages/*/src/**/*.ts"],
       "rules": {
-        "open-pencil/no-useless-pass-through-wrappers": "error"
+        "@open-pencil/structure/no-useless-pass-through-wrappers": "error"
       }
     },
     {
       "files": ["**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/no-unvalidated-json-parse": "error"
+        "@open-pencil/data/no-unvalidated-json-parse": "error"
       }
     },
     {
       "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": [
+        "@open-pencil/data/valibot-schema-conventions": [
           "error",
           {
             "schemaModules": ["/packages/cloud/src/contract/"]
@@ -362,7 +374,7 @@
     {
       "files": ["tools/*/*/src/**/*.ts"],
       "rules": {
-        "open-pencil/valibot-schema-conventions": [
+        "@open-pencil/data/valibot-schema-conventions": [
           "error",
           {
             "placement": false
@@ -411,7 +423,7 @@
     {
       "files": ["packages/cli/src/commands/**"],
       "rules": {
-        "open-pencil/no-raw-console-format": "error"
+        "@open-pencil/runtime/no-raw-console-format": "error"
       }
     },
     {
@@ -433,19 +445,19 @@
     {
       "files": ["packages/scene-graph/src/constants.ts"],
       "rules": {
-        "open-pencil/no-hardcoded-color-constants": "off"
+        "@open-pencil/data/no-hardcoded-color-constants": "off"
       }
     },
     {
       "files": ["packages/scene-graph/src/images.ts"],
       "rules": {
-        "open-pencil/no-hand-rolled-data-url": "off"
+        "@open-pencil/data/no-hand-rolled-data-url": "off"
       }
     },
     {
       "files": ["packages/scene-graph/src/index.ts"],
       "rules": {
-        "open-pencil/no-direct-graph-emitter-subscriptions": "off"
+        "@open-pencil/editor/no-direct-graph-emitter-subscriptions": "off"
       }
     },
     {
