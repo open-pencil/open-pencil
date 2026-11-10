@@ -3,10 +3,12 @@ import { expect, test, type Page } from '@playwright/test'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { layerDriver } from '#tests/helpers/canvas/layers'
 import { getNodeById, getSelectedNode } from '#tests/helpers/store'
 
 let page: Page
 let canvas: CanvasHelper
+const layers = layerDriver(() => page)
 
 test.describe.configure({ mode: 'serial' })
 
@@ -43,28 +45,8 @@ test('K scales text and its stroke from a corner handle', async () => {
   await canvas.pressKey('k')
   expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SCALE')
 
-  const viewport = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = store.graph.getNode(id)
-    if (!node) return null
-    const abs = store.graph.getAbsolutePosition(id)
-    return {
-      handleX: (abs.x + node.width) * store.state.zoom + store.state.panX,
-      handleY: (abs.y + node.height) * store.state.zoom + store.state.panY
-    }
-  })
-  const box = await page.getByTestId('canvas-element').boundingBox()
-  if (!box) throw new Error('No canvas')
-  const handle = expectDefined(viewport, 'selection handle')
-  const hx = box.x + handle.handleX
-  const hy = box.y + handle.handleY
-
-  await page.mouse.move(hx, hy)
-  await page.mouse.down()
-  await page.mouse.move(hx + 120, hy + 40, { steps: 10 })
-  await page.mouse.up()
+  const handle = await layers.selectedCorner()
+  await canvas.drag(handle.x, handle.y, handle.x + 120, handle.y + 40)
   await canvas.waitForRender()
 
   const scaled = expectDefined(await getSelectedNode(page), 'scaled text')
@@ -115,25 +97,8 @@ test('scales a card and the text and stroke inside it', async () => {
   await canvas.waitForRender()
   await canvas.pressKey('k')
 
-  const viewport = await page.evaluate((frameId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const node = store.graph.getNode(frameId)
-    if (!node) return null
-    const abs = store.graph.getAbsolutePosition(frameId)
-    return {
-      handleX: (abs.x + node.width) * store.state.zoom + store.state.panX,
-      handleY: (abs.y + node.height) * store.state.zoom + store.state.panY
-    }
-  }, ids.frame)
-  const box = await page.getByTestId('canvas-element').boundingBox()
-  if (!box) throw new Error('No canvas')
-  const handle = expectDefined(viewport, 'frame handle')
-
-  await page.mouse.move(box.x + handle.handleX, box.y + handle.handleY)
-  await page.mouse.down()
-  await page.mouse.move(box.x + handle.handleX + 200, box.y + handle.handleY + 100, { steps: 10 })
-  await page.mouse.up()
+  const handle = await layers.selectedCorner()
+  await canvas.drag(handle.x, handle.y, handle.x + 200, handle.y + 100)
   await canvas.waitForRender()
 
   const frame = expectDefined(await getSelectedNode(page), 'scaled frame')
@@ -176,21 +141,9 @@ test('Escape abandons a Scale drag and the release changes nothing', async () =>
   const before = expectDefined(await getSelectedNode(page), 'rectangle')
   await canvas.pressKey('k')
 
-  const corner = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = store.graph.getNode(id)
-    if (!node) return null
-    const abs = store.graph.getAbsolutePosition(id)
-    return {
-      x: (abs.x + node.width) * store.state.zoom + store.state.panX,
-      y: (abs.y + node.height) * store.state.zoom + store.state.panY
-    }
-  })
+  const handle = await layers.selectedCorner()
   const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
-  const handle = expectDefined(corner, 'selection handle')
   await page.mouse.move(box.x + handle.x, box.y + handle.y)
   await page.mouse.down()
   await page.mouse.move(box.x + handle.x + 100, box.y + handle.y + 50, { steps: 10 })
@@ -199,7 +152,9 @@ test('Escape abandons a Scale drag and the release changes nothing', async () =>
   await canvas.waitForRender()
 
   const after = expectDefined(await getNodeById(page, before.id), 'rectangle')
-  expect({ width: after.width, height: after.height }).toEqual({
+  expect({ x: after.x, y: after.y, width: after.width, height: after.height }).toEqual({
+    x: before.x,
+    y: before.y,
     width: before.width,
     height: before.height
   })
