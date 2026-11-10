@@ -1,6 +1,12 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli' | 'cursor' | 'grok-build'
+export type ACPAgentID =
+  | 'claude-code'
+  | 'codex'
+  | 'gemini-cli'
+  | 'antigravity'
+  | 'cursor'
+  | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -14,6 +20,8 @@ export interface ACPAgentDef {
   /** The vendor's installation guide for the agent itself. */
   setupURL?: string
   installCommand?: string
+  /** The install command for Windows, run in PowerShell, where `installCommand` needs a POSIX shell. */
+  windowsInstallCommand?: string
   /**
    * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
    * the agent through `authenticate`; `terminal` methods run the agent's command with `args`,
@@ -63,6 +71,16 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     args: ['--acp'],
     setupURL: 'https://geminicli.com/docs/get-started/installation/',
     installCommand: 'npm i -g @google/gemini-cli'
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity CLI',
+    command: 'agy',
+    args: ['acp', '--process-per-session'],
+    setupURL: 'https://antigravity.google',
+    installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+    windowsInstallCommand: 'irm https://antigravity.google/cli/install.ps1 | iex',
+    resumesSessions: true
   },
   {
     id: 'cursor',

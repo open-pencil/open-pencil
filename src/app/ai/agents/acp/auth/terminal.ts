@@ -2,8 +2,9 @@ import { Command } from '@tauri-apps/plugin-shell'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred } from '@/app/runtime/deferred'
-import { resolveScopedCommand } from '@/app/tauri/command'
+import { platformCommandEnv, resolveScopedCommand } from '@/app/tauri/command'
 
 /** Long enough to sign in from a fresh browser, short enough not to leave a login waiting. */
 const SIGN_IN_TIMEOUT_MS = 5 * 60_000
@@ -47,8 +48,11 @@ export async function startTerminalSignIn(
   args: string[],
   onURL: (url: string) => void
 ): Promise<TerminalSignIn> {
+  const { searchPath } = await resolveSpawnTarget(agent)
   const resolved = resolveScopedCommand(signInScope(agent), agent.command, args)
-  const command = Command.create(resolved.command, resolved.args)
+  const command = Command.create(resolved.command, resolved.args, {
+    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) }
+  })
   const finished = createDeferred<undefined>()
   let closed = false
   let urlSeen = false
