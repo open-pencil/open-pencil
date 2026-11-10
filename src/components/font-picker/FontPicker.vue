@@ -78,7 +78,7 @@ function loadPreviewFont(family: string, source: string) {
         <span class="truncate" :class="{ 'text-muted': !modelValue }">{{
           modelValue || placeholder
         }}</span>
-        <icon-lucide-chevron-down class="size-3 shrink-0 text-muted" />
+        <icon-lucide-chevron-down :class="selectCls.chevron" />
       </button>
     </template>
 
