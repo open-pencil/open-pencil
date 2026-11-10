@@ -48,8 +48,9 @@ export function createLoggingErrorReporter(
         requestId: context.requestId,
         error: loggedError(error)
       })
-    } catch {
-      // A log that cannot be written must not stop the report or reject.
+    } catch (failure) {
+      // A writer that fails must not stop the report or reject; the console still gets both.
+      console.error('[Cloud] Writing a log line failed:', failure, error)
     }
     await send?.(error, context)
   }
