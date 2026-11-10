@@ -26,7 +26,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - A table that refers to a `storage_object` row is named in `unreferencedObject`, which decides what the object sweep may delete; a collaboration room's snapshot is such a file (`src/server/cleanup/objects.ts`, `tests/integration/server/collaboration/persistence.test.ts`).
 - A revision's images live in `revision_image`; code that makes a revision from another copies them with `copyRevisionImages`, and a storage object a `workspace_image` holds is never unreferenced (`src/server/documents/images.ts`, `tests/integration/server/documents/images.test.ts`).
 - Add schema changes as a new numbered migration in `src/server/db/migrations/`, after the six domain migrations the schema starts from (`001_accounts` to `006_operations`) and built with `migrations/schema.ts`, registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth builds its own tables after Cloud's, once, and `auth_schema_version` records the version they were built for (`migrateCloudDatabase`, `tests/integration/server/db/auth-schema.test.ts`).
-- Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`open-pencil/no-cloud-raw-sql`).
+- Raw SQL lives only in migrations and the reviewed helpers in `src/server/db/expressions.ts`; everything else uses typed Kysely queries (`@open-pencil/data/no-raw-sql`).
 - Cloud code keeps secrets out of query strings and logs, and the server never builds an HTML response from values (`@open-pencil/security/no-secret-in-query`, `@open-pencil/security/no-secret-logging`, `@open-pencil/security/no-dynamic-html`).
 
 ## Collaboration relay
