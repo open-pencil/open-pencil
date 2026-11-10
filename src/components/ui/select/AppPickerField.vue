@@ -47,7 +47,7 @@ const current = computed(() => items.find((item) => item.value === value.value))
         :class="styles.trigger()"
       >
         <span :class="styles.value()">{{ current?.label ?? placeholder ?? value }}</span>
-        <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+        <icon-lucide-chevron-down class="ms-1 size-3 shrink-0 text-muted" />
       </button>
     </template>
     <template v-if="$slots.leading" #leading="{ item }">

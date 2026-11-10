@@ -272,7 +272,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
             >
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-start"
                 @click="authoring.select(node.id)"
               >
                 <icon-lucide-component class="size-3.5 shrink-0 text-component" />
@@ -301,7 +301,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
       >
         <div :class="nestedStyles.header">
           <h3 class="text-xs font-semibold text-surface">{{ panels.nestedInstances }}</h3>
-          <AppButton :aria-label="common.close" class="ml-auto" @click="nestedOpen = false">
+          <AppButton :aria-label="common.close" class="ms-auto" @click="nestedOpen = false">
             <icon-lucide-x class="size-3.5" />
           </AppButton>
         </div>

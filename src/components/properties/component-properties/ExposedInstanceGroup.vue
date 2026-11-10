@@ -23,7 +23,7 @@ const { controls, setValue, setTextValue, flush } = useComponentProperties(() =>
 <template>
   <CollapsibleRoot v-if="controls.length" v-slot="{ open }" default-open>
     <CollapsibleTrigger
-      class="flex h-7 w-full items-center gap-1 text-left text-xs text-surface"
+      class="flex h-7 w-full items-center gap-1 text-start text-xs text-surface"
       :data-exposed-instance="name"
     >
       <icon-lucide-chevron-right
@@ -35,7 +35,7 @@ const { controls, setValue, setTextValue, flush } = useComponentProperties(() =>
       <span class="truncate">{{ name }}</span>
     </CollapsibleTrigger>
     <CollapsibleContent :class="collapsibleContentMotion">
-      <div class="flex flex-col gap-1 pl-4">
+      <div class="flex flex-col gap-1 ps-4">
         <ComponentPropertyRow v-for="control in controls" :key="control.id" :name="control.name">
           <ComponentPropertyControl
             :control="control"
