@@ -1,0 +1,1 @@
+- A document reloaded from disk returns to the page it showed with that page's layers, where the page showed empty, and opening a file on macOS no longer reloads it seconds later.
