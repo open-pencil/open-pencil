@@ -2,7 +2,7 @@ import { Command } from '@tauri-apps/plugin-shell'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { spawnAgentChild } from '@/app/tauri/children'
-import { resolvePlatformCommand } from '@/app/tauri/command'
+import { platformCommandEnv, resolvePlatformCommand } from '@/app/tauri/command'
 
 export type TauriChild = {
   write(data: number[]): Promise<void>
@@ -43,7 +43,7 @@ export async function spawnACPProcess({
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
-    env: searchPath ? { PATH: searchPath } : {},
+    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) },
     cwd
   })
 

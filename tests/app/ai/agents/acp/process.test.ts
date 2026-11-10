@@ -56,7 +56,7 @@ describe('Tauri process helpers', () => {
     expect(calls[2]?.args).toEqual({ cmd: 'killChild', pid: 42 })
   })
 
-  test('starts Windows ACP command shims through their cmd scope entry', async () => {
+  test('starts Windows ACP command shims through their cmd scope entry, skipping the workspace', async () => {
     Object.defineProperty(globalThis, 'navigator', {
       configurable: true,
       value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
@@ -66,7 +66,7 @@ describe('Tauri process helpers', () => {
         expect(args).toMatchObject({
           program: 'cmd-agent-cli',
           args: ['/c', 'agent-cli', '--stdio'],
-          options: { encoding: 'raw', env: {} }
+          options: { encoding: 'raw', env: { NoDefaultCurrentDirectoryInExePath: '1' } }
         })
         return 44
       }

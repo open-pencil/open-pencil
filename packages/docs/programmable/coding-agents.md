@@ -56,6 +56,8 @@ irm https://antigravity.google/cli/install.ps1 | iex
 
 Run `agy` once and choose a sign-in method. Antigravity CLI does not report the account it uses, so guided setup shows it as installed without a plan or email.
 
+Antigravity CLI 1.5.3 cannot call OpenPencil's larger tools, such as `create_shape`, `render`, and `set_layout`: it holds them back to load on demand and tells its model to call them through a `call_mcp_tool` tool it does not provide over ACP. It can read and inspect the canvas, but cannot build designs until Antigravity fixes this.
+
 ## Gemini CLI
 
 Google no longer lets individual Google accounts sign in to Gemini CLI; use [Antigravity CLI](#antigravity) with those.
