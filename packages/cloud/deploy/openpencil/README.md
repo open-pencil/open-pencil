@@ -2,10 +2,10 @@
 
 The OpenPencil team's own Cloud deployments, each a filled-in copy of `deploy/cloudflare`:
 
-| Target       | Address                        | Deploys from        | Data                                      |
-| ------------ | ------------------------------ | ------------------- | ----------------------------------------- |
-| `staging`    | `cloud-staging.openpencil.dev` | master or a release | Neon and its bucket in `us-east-2`        |
-| `production` | `cloud.openpencil.dev`         | a release tag only  | EU: Neon, the bucket, and the relay rooms |
+| Target       | Address                        | Deploys from        | Data                                             |
+| ------------ | ------------------------------ | ------------------- | ------------------------------------------------ |
+| `staging`    | `cloud-staging.openpencil.dev` | master or a release | Neon in `us-east-2`, R2 in eastern North America |
+| `production` | `cloud.openpencil.dev`         | a release tag only  | EU: Neon, R2, and the relay rooms                |
 
 The Deploy Cloud workflow (`.github/workflows/deploy-cloud.yml`) deploys a target with the secrets
 and reviewers of its `cloud-<target>` GitHub environment. It stops before building when the ref may
@@ -19,10 +19,9 @@ The values in `production/` marked "Replace" and these settings outside the repo
   the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
   Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7).
-- An EU bucket with versioning on, keeping noncurrent versions at least as long as the database's
-  restore window. Without it, cleanup's deletes are final: a restored database would name files
-  that are gone (see Backups and restores). If the provider has no versioning, copy the bucket to
-  a second one on the same schedule instead.
+- An R2 API token with Object Read & Write on the `openpencil-cloud` bucket only, whose keys are
+  `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
+  rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev`.
 - A Hyperdrive over the database's pooled connection with query caching off, since a cached read
   can miss the write just before it. Its ID goes in `production/wrangler.jsonc`.
 - Google's OAuth client allowing `https://cloud.openpencil.dev/api/auth/callback/google`, Email
@@ -85,7 +84,7 @@ What holds what:
   Cleanup deletes the ones no row holds: a room's older snapshot when it compacts, and a deleted
   document's files. A document left in Trash goes after 30 days; one deleted forever goes
   `purge_grace_days` (7) later, and until then administrators restore it from the console's
-  "Deleted forever" filter. With bucket versioning, a deleted file's last version stays.
+  "Deleted forever" filter. R2 keeps no versions, so a file cleanup deleted is gone.
 - **Rooms' Durable Objects:** an open room's document in memory, which they write back to the
   database and bucket.
 
@@ -101,9 +100,8 @@ To restore the database to an earlier time:
 3. Migrate it as the workflow's migrate step does (`bun --filter @open-pencil/cloud migrate` with
    `production/openpencil-cloud.toml`, the direct connection, and the secrets the TOML names), so
    the schema matches the deployed Worker even if the restore point predates a migration.
-4. For files the restored rows name that cleanup deleted since, restore their last noncurrent
-   version in the bucket (or copy them back from the second bucket). Each file's key is the `object_key`
-   of its `storage_object` row.
+4. Files the restored rows name that cleanup deleted since are gone; list them by the `object_key`
+   of their `storage_object` rows, and the documents holding them will not open.
 5. Put the domain back and open a document saved before the restore point.
 
 ## Restore drill
@@ -115,7 +113,5 @@ Once a quarter, and after changing the database's provider or plan:
    `src/server/db/migrate.ts` that production has run.
 3. Point a local Cloud at the branch and the production bucket with read-only keys, sign in, and
    open a document saved before the branch's time.
-4. Pick a file cleanup deleted since then, if any, and check its noncurrent version is still in the
-   bucket.
-5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
+4. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.

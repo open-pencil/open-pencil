@@ -33,12 +33,13 @@ addresses = []
 [authentication.providers.google]
 client_id = { from_env = "GOOGLE_CLIENT_ID" }
 
-# Replace with the EU bucket's endpoint, region, and name.
+# An R2 bucket in Cloudflare's EU jurisdiction, reached through its EU endpoint. Its CORS rules
+# allow GET, PUT, and HEAD from public_url; S3_* are an R2 API token's keys for this bucket alone.
 [object_storage]
-endpoint = "https://your-eu-bucket-endpoint.invalid"
-region = "eu-central-1"
+endpoint = "https://ca633c52af8f8351ed72fb5d12b423f0.eu.r2.cloudflarestorage.com"
+region = "auto"
 bucket = "openpencil-cloud"
-force_path_style = true
+force_path_style = false
 checksum_verification = "metadata"
 
 [documents]
