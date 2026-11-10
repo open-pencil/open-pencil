@@ -6,7 +6,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
-import { SIZE_PILL_HEIGHT, SIZE_PILL_PADDING_Y } from '#core/constants'
+import { BLACK, SIZE_PILL_HEIGHT, SIZE_PILL_PADDING_Y } from '#core/constants'
 import { createDefaultEditorState } from '#core/editor'
 
 const SIZE = 96
@@ -17,7 +17,6 @@ renderer.chromeFonts.label = new ck.Font(null, 11)
 renderer.chromeFonts.size = new ck.Font(null, 11)
 afterAll(() => renderer.destroy())
 
-const BLACK = { r: 0, g: 0, b: 0, a: 1 }
 const GREEN_THEME = { color: { r: 0, g: 1, b: 0, a: 1 }, foreground: BLACK }
 const LAYER = { x: 24, y: 16, width: 48, height: 32 }
 
