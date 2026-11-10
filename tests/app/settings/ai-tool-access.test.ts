@@ -49,9 +49,9 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   // Moving the view stays the user's choice.
   expect(defaults).not.toContain('switch_page')
   expect(defaults).not.toContain('convert_to_components')
-  expect(enabledAIToolDefinitions({ convert_to_components: true }).map((tool) => tool.name)).toContain(
-    'convert_to_components'
-  )
+  expect(
+    enabledAIToolDefinitions({ convert_to_components: true }).map((tool) => tool.name)
+  ).toContain('convert_to_components')
   expect(
     enabledAIToolDefinitions({ list_components: false }).map((tool) => tool.name)
   ).not.toContain('list_components')
