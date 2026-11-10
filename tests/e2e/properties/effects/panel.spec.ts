@@ -213,6 +213,7 @@ test('a drop shadow shows behind transparent areas until unchecked', async ({ pa
   await expect(checkbox).not.toBeChecked()
   await expect.poll(showBehind).toBe(false)
   await section.getByRole('heading', { name: 'Effects' }).click()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect(checkbox).not.toBeFocused()
+  await page.keyboard.press('ControlOrMeta+z')
   await expect(checkbox).toBeChecked()
 })

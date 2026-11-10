@@ -29,9 +29,11 @@ export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
 
 /**
  * The effect types the row at `index` can switch to: a layer holds one glass effect at most, as
- * in Figma, so glass is offered only to the row that has it or when no other row does.
+ * in Figma, so glass is offered only to a row that has it or when no other row does. A layer
+ * that scripts gave several keeps glass in each of those rows, so none shows a blank type.
  */
 export function effectOptionsFor(effects: readonly Effect[], index: number) {
+  if (effects.at(index)?.type === 'GLASS') return EFFECT_OPTIONS
   const glassElsewhere = effects.some((effect, i) => i !== index && effect.type === 'GLASS')
   return glassElsewhere
     ? EFFECT_OPTIONS.filter((option) => option.value !== 'GLASS')

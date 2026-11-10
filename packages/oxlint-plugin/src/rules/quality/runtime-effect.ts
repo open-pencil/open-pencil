@@ -12,7 +12,7 @@ export const noRawRuntimeEffectRule = defineRule({
     type: 'problem',
     docs: { description: 'Disallow compiling SkSL with RuntimeEffect.Make outside the compiler.' },
     messages: {
-      raw: 'Define the program with defineShader or defineBlender and draw it through compiledEffect, so the SkSL program tests compile it and check its uniforms.'
+      raw: "Compile SkSL only through the project's own compiler, where tests compile every program and check its uniforms."
     }
   },
   createOnce(context) {

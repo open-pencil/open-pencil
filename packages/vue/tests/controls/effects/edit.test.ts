@@ -4,16 +4,13 @@ import { shallowRef } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 
-import { createEffectEditActions, type EffectEditSnapshot } from '#vue/controls/effects/helpers'
+import {
+  createDefaultEffect,
+  createEffectEditActions,
+  type EffectEditSnapshot
+} from '#vue/controls/effects/helpers'
 
-const shadow = {
-  type: 'DROP_SHADOW' as const,
-  color: { r: 0, g: 0, b: 0, a: 0.25 },
-  offset: { x: 0, y: 4 },
-  radius: 12,
-  spread: 0,
-  visible: true
-}
+const shadow = { ...createDefaultEffect(), radius: 12 }
 
 describe('effect edits', () => {
   test('a change made in one step, such as a checkbox, is its own undo step', () => {
@@ -22,7 +19,10 @@ describe('effect edits', () => {
       const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
         effects: [shadow]
       })
-      const actions = createEffectEditActions(editor, shallowRef<Map<string, EffectEditSnapshot> | null>(null))
+      const actions = createEffectEditActions(
+        editor,
+        shallowRef<Map<string, EffectEditSnapshot> | null>(null)
+      )
       actions.commitEffect([node], 0, { showShadowBehindNode: false })
       expect(editor.graph.getNode(node.id)?.effects[0].showShadowBehindNode).toBe(false)
       editor.undo.undo()
@@ -38,7 +38,10 @@ describe('effect edits', () => {
       const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
         effects: [shadow]
       })
-      const actions = createEffectEditActions(editor, shallowRef<Map<string, EffectEditSnapshot> | null>(null))
+      const actions = createEffectEditActions(
+        editor,
+        shallowRef<Map<string, EffectEditSnapshot> | null>(null)
+      )
       actions.scrubEffect([node], 0, { radius: 16 })
       actions.scrubEffect([node], 0, { radius: 20 })
       actions.commitEffect([node], 0, { radius: 24 })
