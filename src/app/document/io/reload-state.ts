@@ -13,16 +13,22 @@ export function captureReloadState(state: EditorState): ReloadStateSnapshot {
   }
 }
 
-export function restoreReloadState(
+/**
+ * Returns a reloaded document to the page and viewport it showed. A reload reads only the first
+ * page's layers, so the page is opened through `switchPage`, which loads them: setting the page
+ * alone would show it empty, with its layers missing from the document.
+ */
+export async function restoreReloadState(
   editor: Editor,
   state: EditorState,
   snapshot: ReloadStateSnapshot
 ) {
   editor.clearSelection()
-  if (editor.graph.getNode(snapshot.pageId)) {
-    state.currentPageId = snapshot.pageId
-  } else {
-    state.currentPageId = editor.graph.getPages()[0]?.id ?? editor.graph.rootId
+  if (
+    snapshot.pageId !== state.currentPageId &&
+    editor.graph.getNode(snapshot.pageId)?.type === 'CANVAS'
+  ) {
+    await editor.switchPage(snapshot.pageId)
   }
   state.panX = snapshot.viewport.panX
   state.panY = snapshot.viewport.panY

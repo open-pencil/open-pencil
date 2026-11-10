@@ -170,7 +170,7 @@ export function createReloadActions({
         return
       }
       await applyImportedDocument(editor, imported, load)
-      restoreReloadState(editor, state, snapshot)
+      await restoreReloadState(editor, state, snapshot)
       editor.requestRender()
       markDocumentSaved()
       succeeded = true
