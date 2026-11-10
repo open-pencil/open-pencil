@@ -49,6 +49,9 @@ describe('SkSL uniforms', () => {
       expect(() => pack({ origin: [1, 2], segments: new Float32Array(8) })).toThrow(
         'The uniform probe needs a value for uniform depth'
       )
+      expect(() => pack({ origin: [1, 'x'], depth: 3, segments: new Float32Array(8) })).toThrow(
+        'Uniform origin of the uniform probe has no number at index 1'
+      )
     } finally {
       probe.effect.delete()
     }

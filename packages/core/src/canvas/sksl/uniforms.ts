@@ -62,8 +62,17 @@ export function packUniforms(
     if (given !== floats) {
       throw new Error(`Uniform ${name} of the ${program} takes ${floats} floats, not ${given}`)
     }
-    if (typeof value === 'number') packed.push(value)
-    else for (let i = 0; i < given; i++) packed.push(value[i])
+    if (typeof value === 'number') {
+      packed.push(value)
+      continue
+    }
+    for (let i = 0; i < given; i++) {
+      const element: unknown = value[i]
+      if (typeof element !== 'number') {
+        throw new TypeError(`Uniform ${name} of the ${program} has no number at index ${i}`)
+      }
+      packed.push(element)
+    }
   }
   return packed
 }
