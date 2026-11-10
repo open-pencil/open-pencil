@@ -104,6 +104,19 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
   }
 }
 
+function legalConfig(config: CloudDeploymentConfig) {
+  const legal = config.legal
+  if (!legal) return undefined
+  return {
+    termsURL: legal.terms_url,
+    privacyURL: legal.privacy_url,
+    termsVersion: legal.terms_version,
+    requireAcceptance: legal.require_acceptance,
+    abuseEmail: legal.abuse_email,
+    minimumAge: legal.minimum_age
+  }
+}
+
 function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   const tracking = config.error_tracking
   if (!tracking) return undefined
@@ -181,6 +194,7 @@ export function parseCloudDeploymentConfig(
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),
+    legal: legalConfig(config),
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })

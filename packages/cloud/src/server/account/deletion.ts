@@ -247,6 +247,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
         await transaction.deleteFrom('invitationSend').where('senderId', '=', user.id).execute()
         for (const table of [
           'accountEntitlement',
+          'termsAcceptance',
           'userPicture',
           'signIn',
           'mfaAssurance'

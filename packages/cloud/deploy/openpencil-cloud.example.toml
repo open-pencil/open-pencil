@@ -112,6 +112,17 @@ transport = "none"
 # bearer token defaults to OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
 # [internal_api]
 
+# Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
+# require_acceptance, each account accepts terms_version once before using the server, and again
+# whenever you change it. Leave the table out to show none.
+# [legal]
+# terms_url = "https://example.com/terms"
+# privacy_url = "https://example.com/privacy"
+# terms_version = "2026-01-01"
+# require_acceptance = true
+# abuse_email = "abuse@example.com"
+# minimum_age = 16
+
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
 # defaults to https://us.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
 # [error_tracking]

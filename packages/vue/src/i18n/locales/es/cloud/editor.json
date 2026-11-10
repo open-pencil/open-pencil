@@ -173,6 +173,8 @@
   "settingsSignedOut": "Sesión cerrada",
   "settingsWaitingForApproval": "Esperando a que un administrador apruebe tu cuenta",
   "settingsAccessClosed": "Un administrador ha rechazado o retirado tu acceso",
+  "settingsAcceptTerms": "Acepta los términos de este servidor para seguir usándolo",
+  "settingsReviewTerms": "Revisar términos",
   "settingsOptionsFor": "Opciones de {host}",
   "settingsAccountAndSecurity": "Cuenta y seguridad",
   "settingsShowOnHome": "Mostrar en Inicio",

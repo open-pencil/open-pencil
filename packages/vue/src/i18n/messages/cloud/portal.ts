@@ -80,6 +80,21 @@ export const cloudPortalMessageDefaults = {
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
   signOut: 'Sign out',
 
+  termsTitle: 'Accept the terms to continue',
+  termsDescription: params('{host} asks you to accept its Terms of Service before you use it.'),
+  termsOfService: 'Terms of Service',
+  privacyPolicy: 'Privacy Policy',
+  reportAbuse: 'Report abuse',
+  acceptTerms: 'Accept and continue',
+  declineTerms: 'Decline and sign out',
+  termsChanged:
+    'The terms changed while this page was open. Reload it to read the current version.',
+  consentTerms: 'By continuing, you agree to the Terms of Service.',
+  consentTermsAndPrivacy:
+    'By continuing, you agree to the Terms of Service and acknowledge the Privacy Policy.',
+  consentPrivacy: 'The Privacy Policy explains how this server handles your data.',
+  minimumAge: params('You must be at least {age} years old to use this server.'),
+
   twoStepTitle: 'Confirm it’s you',
   twoStepAuthenticator: 'Enter the 6-digit code from your authenticator app.',
   twoStepRecovery: 'Enter one of the recovery codes you saved. Each works once.',

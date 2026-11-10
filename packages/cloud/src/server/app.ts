@@ -18,6 +18,7 @@ import {
 } from '#cloud/contract'
 import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
+import { createTermsService } from '#cloud/server/account/terms'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -291,6 +292,7 @@ export function createCloudApp(services: CloudServices) {
 
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
+    terms: createTermsService(services.database, services.config),
     pictures,
     config: services.config,
     enrollment,

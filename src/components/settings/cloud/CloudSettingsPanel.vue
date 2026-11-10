@@ -35,15 +35,19 @@ const emit = defineEmits<{
   connect: [kind?: 'official' | 'self-hosted']
   signIn: [id: string]
   manageAccount: [id: string]
+  reviewTerms: [id: string]
   showOnHome: [id: string]
   signOut: [id: string]
   remove: [id: string]
 }>()
 
 const ui = cloudServers()
-/** Signed in, even to an account still waiting for approval or declined. */
+/** Signed in, even to an account still waiting for approval, declined, or with terms to accept. */
 const hasSession = (server: CloudServerEntry) =>
-  server.session === 'signed-in' || server.session === 'pending' || server.session === 'closed'
+  server.session === 'signed-in' ||
+  server.session === 'pending' ||
+  server.session === 'closed' ||
+  server.session === 'terms'
 const menuUI = menu()
 const t = useCloudMessages()
 const title = (server: CloudServerEntry) =>
@@ -116,6 +120,10 @@ const title = (server: CloudServerEntry) =>
               <icon-lucide-circle-x class="size-3 shrink-0" />
               {{ t.settingsAccessClosed }}
             </p>
+            <p v-else-if="server.session === 'terms'" :class="ui.expired()">
+              <icon-lucide-scroll-text class="size-3 shrink-0" />
+              {{ t.settingsAcceptTerms }}
+            </p>
             <p v-else-if="server.account && server.session === 'signed-in'" :class="ui.account()">
               <AccountAvatar
                 :id="server.account.id"
@@ -136,6 +144,14 @@ const title = (server: CloudServerEntry) =>
               @click="emit('signIn', server.id)"
             >
               {{ t.signIn }}
+            </AppButton>
+            <AppButton
+              v-else-if="server.session === 'terms'"
+              size="sm"
+              variant="outline"
+              @click="emit('reviewTerms', server.id)"
+            >
+              {{ t.settingsReviewTerms }}
             </AppButton>
             <AppDropdownMenuRoot :modal="false">
               <DropdownMenuTrigger as-child>

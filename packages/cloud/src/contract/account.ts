@@ -1,7 +1,17 @@
 import { isValid as isBase64 } from 'js-base64'
 import * as v from 'valibot'
 
-export const cloudAccountStateSchema = v.picklist(['active', 'pending', 'rejected', 'revoked'])
+/**
+ * Where an account stands: it may use the server, waits for an administrator, was refused or had
+ * its access taken back, or has to accept the server's current terms first.
+ */
+export const cloudAccountStateSchema = v.picklist([
+  'active',
+  'pending',
+  'rejected',
+  'revoked',
+  'terms'
+])
 export const cloudIdentitySchema = v.object({
   userId: v.string(),
   email: v.pipe(v.string(), v.email()),
@@ -15,6 +25,9 @@ export const cloudAccountStatusResponseSchema = v.object({
   user: cloudIdentitySchema,
   state: cloudAccountStateSchema
 })
+
+/** Accepting the server's terms: the version the person read, which must be the current one. */
+export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
 export const cloudAuthenticationProviderSchema = v.picklist(['credential', 'google', 'apple'])
 export const cloudAuthenticationMethodSchema = v.object({
@@ -49,7 +62,8 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'current_session',
   'picture_invalid',
   'account_sole_admin',
-  'last_admin_required'
+  'last_admin_required',
+  'terms_changed'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -81,6 +95,9 @@ export const cloudPasskeySchema = v.object({
 export const cloudPasskeysResponseSchema = v.object({ passkeys: v.array(cloudPasskeySchema) })
 export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
 
+export function parseCloudTermsAcceptance(input: unknown) {
+  return v.parse(cloudTermsAcceptanceSchema, input)
+}
 export function parseCloudMFAEnable(input: unknown) {
   return v.parse(cloudMFAEnableSchema, input)
 }
