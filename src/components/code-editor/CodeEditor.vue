@@ -232,5 +232,10 @@ defineExpose({ patchFromLayers })
 </script>
 
 <template>
-  <div ref="host" data-slot="code-editor" class="min-h-0 flex-1 overflow-hidden text-xs" />
+  <div
+    ref="host"
+    dir="ltr"
+    data-slot="code-editor"
+    class="min-h-0 flex-1 overflow-hidden text-xs"
+  />
 </template>

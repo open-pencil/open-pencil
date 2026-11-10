@@ -40,7 +40,7 @@ function listStopClass(active: boolean) {
     @update="emit('update', $event)"
     v-slot="root"
   >
-    <div>
+    <div dir="ltr">
       <div class="mb-2 w-28">
         <AppSelect
           :model-value="root.subtype"

@@ -5,6 +5,7 @@ import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
 import NumberField from '@/components/inputs/NumberField.vue'
+import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 
 interface StandardColorSliderProps {
   label: string
@@ -52,18 +53,20 @@ const styles = useColorSliderUI(
 <template>
   <div :class="styles.root.value">
     <span :class="styles.label.value">{{ label }}</span>
-    <ColorSliderRoot
-      :class="styles.slider.value"
-      :model-value="modelValue"
-      :channel="channel"
-      :color-space="colorSpace"
-      :step="step"
-      data-slot="slider"
-      @update:color="emit('update', $event)"
-    >
-      <ColorSliderTrack :class="styles.track.value" />
-      <ColorSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
-    </ColorSliderRoot>
+    <LeftToRight>
+      <ColorSliderRoot
+        :class="styles.slider.value"
+        :model-value="modelValue"
+        :channel="channel"
+        :color-space="colorSpace"
+        :step="step"
+        data-slot="slider"
+        @update:color="emit('update', $event)"
+      >
+        <ColorSliderTrack :class="styles.track.value" />
+        <ColorSliderThumb :class="styles.thumb.value" :style="{ background: thumbFill }" />
+      </ColorSliderRoot>
+    </LeftToRight>
     <NumberField
       :class="styles.input.value"
       :aria-label="label"
