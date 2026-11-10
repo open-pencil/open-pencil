@@ -117,6 +117,7 @@ export function renderFromEditorState(
       showPixelGrid: showsPixelGrid(profile, state),
       showSizeLabels: state.showSizeLabels,
       gradientEdit: state.gradientEdit,
+      blurRampEdit: state.blurRampEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
       editingTextId: state.editingTextId,

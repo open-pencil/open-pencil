@@ -15,7 +15,7 @@ const SHADOW_ALPHA = 0.35
 const SHADOW_BLUR = 1
 const POINTER_HALF_WIDTH = 3
 
-function polyline(r: SkiaRenderer, points: readonly Vector[], close: boolean) {
+export function polyline(r: SkiaRenderer, points: readonly Vector[], close: boolean) {
   const path = new r.ck.PathBuilder()
   points.forEach((point, index) =>
     index === 0 ? path.moveTo(point.x, point.y) : path.lineTo(point.x, point.y)
@@ -43,8 +43,11 @@ function ellipsePath(r: SkiaRenderer, ellipse: NonNullable<GradientHandleLayout[
   return path.detachAndDelete()
 }
 
-/** A white 1 px line over a soft shadow, as Figma draws the gradient's axis and ellipse. */
-function strokeWithShadow(r: SkiaRenderer, canvas: Canvas, path: Path) {
+/**
+ * A white 1 px line over a soft shadow, as Figma draws the gradient's axis and ellipse and a
+ * progressive blur's ramp. Takes the path and deletes it.
+ */
+export function strokeWithShadow(r: SkiaRenderer, canvas: Canvas, path: Path) {
   const paint = r.auxStroke
   paint.setPathEffect(null)
   paint.setStrokeWidth(1)
@@ -57,7 +60,8 @@ function strokeWithShadow(r: SkiaRenderer, canvas: Canvas, path: Path) {
   path.delete()
 }
 
-function drawDot(r: SkiaRenderer, canvas: Canvas, point: Vector) {
+/** A white handle dot over a soft shadow, as on a gradient's ends and a progressive blur's. */
+export function drawDot(r: SkiaRenderer, canvas: Canvas, point: Vector) {
   const paint = r.auxFill
   paint.setMaskFilter(getCachedMaskBlur(r, SHADOW_BLUR))
   paint.setColorComponents(0, 0, 0, SHADOW_ALPHA)

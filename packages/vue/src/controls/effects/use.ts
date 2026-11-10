@@ -8,6 +8,8 @@ import {
   effectOptionsFor,
   createEffectControlActions,
   createEffectEditActions,
+  blurKindChange,
+  isBlur,
   isShadow,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
@@ -35,6 +37,8 @@ export function useEffectsControls() {
     effectOptionsFor,
     createDefaultEffect,
     isShadow,
+    isBlur,
+    blurKindChange,
     /** Previews a change to one effect on every selected layer. */
     scrubEffect: (index: number, changes: Partial<Effect>) =>
       editActions.scrubEffect(nodes.value, index, changes),
