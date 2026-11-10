@@ -1,7 +1,7 @@
 import { motionStyles } from '@/theme/motion/styles'
 
 /** Room for a scrollbar on a part that never scrolls, matching the dialog body's. */
-const scrollbarGutter = 'overflow-hidden [scrollbar-gutter:stable]'
+const scrollbarGutter = 'overflow-hidden [scrollbar-gutter:stable_both-edges]'
 
 export default {
   slots: {
@@ -24,7 +24,7 @@ export default {
     description: 'text-xs text-muted',
     close:
       'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface',
-    body: ['min-h-0 flex-1 overflow-y-auto p-4', '[scrollbar-gutter:stable]'],
+    body: ['min-h-0 flex-1 overflow-y-auto p-4', '[scrollbar-gutter:stable_both-edges]'],
     /** Its actions sit at the end, Cancel first and the main action last. */
     footer: [
       'flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3',
