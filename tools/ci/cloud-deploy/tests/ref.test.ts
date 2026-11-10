@@ -29,17 +29,19 @@ describe('isOnMaster', () => {
   test('asks git whether master holds the checked-out commit', async () => {
     const asked: string[][] = []
     expect(
-      await isOnMaster(async (request) => {
-        asked.push([request.command, ...(request.args ?? [])])
+      await isOnMaster('/repo', async (request) => {
+        asked.push([request.cwd, request.command, ...(request.args ?? [])])
         return { stdout: '', stderr: '' }
       })
     ).toBe(true)
-    expect(asked).toEqual([['git', 'merge-base', '--is-ancestor', 'HEAD', 'origin/master']])
+    expect(asked).toEqual([
+      ['/repo', 'git', 'merge-base', '--is-ancestor', 'HEAD', 'origin/master']
+    ])
   })
 
   test('is false when git says it is not', async () => {
     expect(
-      await isOnMaster(async () => {
+      await isOnMaster('/repo', async () => {
         throw new Error('exit 1')
       })
     ).toBe(false)

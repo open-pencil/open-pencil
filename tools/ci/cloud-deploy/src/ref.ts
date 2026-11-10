@@ -27,11 +27,12 @@ export function refusal(target: string, ref: string): string | undefined {
  * Whether the checked-out commit is on master, so a tag pushed on any other branch deploys
  * nothing. Needs master's history, as a checkout with `fetch-depth: 0` has.
  */
-export async function isOnMaster(execute = runCommand): Promise<boolean> {
+export async function isOnMaster(cwd: string, execute = runCommand): Promise<boolean> {
   try {
     await execute({
       command: 'git',
-      args: ['merge-base', '--is-ancestor', 'HEAD', 'origin/master']
+      args: ['merge-base', '--is-ancestor', 'HEAD', 'origin/master'],
+      cwd
     })
     return true
   } catch {
@@ -43,7 +44,7 @@ if (import.meta.main) {
   const [target = ''] = process.argv.slice(2)
   const reason =
     refusal(target, process.env.GITHUB_REF ?? '') ??
-    ((await isOnMaster()) ? undefined : 'The commit to deploy is not on master')
+    ((await isOnMaster(process.cwd())) ? undefined : 'The commit to deploy is not on master')
   if (reason) {
     console.error(reason)
     process.exit(1)
