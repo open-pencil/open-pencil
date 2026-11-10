@@ -199,6 +199,11 @@ function bandBox(
   }
 }
 
+/** CanvasKit could not make a step of a progressive blur. */
+class ProgressiveBlurBuildError extends Error {
+  override name = 'ProgressiveBlurBuildError'
+}
+
 /** One opaque white pixel per CanvasKit, stretched over a box to keep only what lies inside it. */
 const cropImages = new WeakMap<CanvasKit, Image>()
 
@@ -225,22 +230,24 @@ function cropImage(ck: CanvasKit): Image {
  * Figma's progressive blur: each pixel blurred by the sigma the ramp reaches at it, in two passes
  * as Figma blurs. Each pass mixes plain blurs at a few levels, weighted per pixel by a gradient
  * along the ramp, and each level blurs only its band of the ramp. A plain ramp (`isPlainRamp`) is
- * drawn as a plain blur instead.
+ * drawn as a plain blur instead. Null, with nothing left allocated, when CanvasKit cannot make a
+ * step of it, so the layer draws unblurred rather than not at all.
  */
 export function makeProgressiveBlur(
   ck: CanvasKit,
   ramp: ProgressiveBlurRamp,
   tile: TileMode
-): ImageFilter {
+): ImageFilter | null {
   const levels = blurLevels(ramp.startSigma, ramp.endSigma)
   const stops = maskStops(levels, ramp.startSigma, ramp.endSigma)
   const weights = stops.map((t) =>
     levelWeights(levels, ramp.startSigma + (ramp.endSigma - ramp.startSigma) * t)
   )
   const made: ImageFilter[] = []
-  // CanvasKit types its factories as always making a filter, but a value it cannot use makes none.
+  // CanvasKit types its factories as always making a result, but a value it cannot use, such as a
+  // sigma too large for a float, makes none.
   const keep = (filter: ImageFilter | null) => {
-    if (!filter) throw new Error('CanvasKit could not make a progressive blur filter')
+    if (!filter) throw new ProgressiveBlurBuildError()
     made.push(filter)
     return filter
   }
@@ -294,18 +301,22 @@ export function makeProgressiveBlur(
   let filter: ImageFilter | null = null
   try {
     for (const level of levels.keys()) {
-      masks.push(
-        ck.Shader.MakeLinearGradient(
-          [ramp.start.x, ramp.start.y],
-          [ramp.end.x, ramp.end.y],
-          weights.map((weight) => ck.Color4f(0, 0, 0, weight[level])),
-          stops,
-          ck.TileMode.Clamp
-        )
-      )
+      // Typed as always made; at runtime a point CanvasKit cannot use makes none.
+      const mask = ck.Shader.MakeLinearGradient(
+        [ramp.start.x, ramp.start.y],
+        [ramp.end.x, ramp.end.y],
+        weights.map((weight) => ck.Color4f(0, 0, 0, weight[level])),
+        stops,
+        ck.TileMode.Clamp
+      ) as Shader | null
+      if (!mask) throw new ProgressiveBlurBuildError()
+      masks.push(mask)
     }
     filter = keep(ck.ImageFilter.MakeCompose(pass(along), pass(along === 'y' ? 'x' : 'y')))
     return filter
+  } catch (error) {
+    if (error instanceof ProgressiveBlurBuildError) return null
+    throw error
   } finally {
     // Each filter holds what it is made from, so only the result is kept, and none on failure.
     for (const part of made) if (part !== filter) part.delete()

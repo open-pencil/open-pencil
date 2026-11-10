@@ -7,7 +7,12 @@ import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { blurLevels, levelWeights, maskStops } from '#core/canvas/progressive-blur'
+import {
+  blurLevels,
+  levelWeights,
+  makeProgressiveBlur,
+  maskStops
+} from '#core/canvas/progressive-blur'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -193,6 +198,17 @@ describe('progressive blur levels', () => {
     expect(stops.at(-1)).toBe(1)
     for (const level of levels) expect(stops).toContainEqual(level / 4)
     expect(stops).toEqual([...stops].sort((a, b) => a - b))
+  })
+  test('make no filter, and keep nothing, when CanvasKit cannot blur that far', () => {
+    // A sigma too large for a float makes CanvasKit refuse the blur.
+    const ramp = {
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 100 },
+      startSigma: 0,
+      endSigma: 1e40,
+      bounds: { minX: 0, minY: 0, maxX: 100, maxY: 100 }
+    }
+    expect(makeProgressiveBlur(ck, ramp, ck.TileMode.Clamp)).toBeNull()
   })
 })
 
