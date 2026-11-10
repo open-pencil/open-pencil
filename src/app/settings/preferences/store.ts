@@ -103,6 +103,8 @@ export interface AppPreferences {
     animations: AnimationPreference
     accent: AccentPreference
     interfaceScale: InterfaceScale
+    /** Whether a right-to-left language mirrors the interface; left-to-right languages ignore it. */
+    mirrorInterface: boolean
   }
   chat: {
     reasoningDisplay: ReasoningDisplay
@@ -140,7 +142,12 @@ export interface AppPreferences {
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
-  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT }, interfaceScale: 100 },
+  appearance: {
+    animations: 'system',
+    accent: { ...DEFAULT_ACCENT },
+    interfaceScale: 100,
+    mirrorInterface: true
+  },
   chat: {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
@@ -188,6 +195,7 @@ const snapping = defaults.editing.snapping
 const appPreferencesSchema = section({
   appearance: section({
     interfaceScale: v.fallback(v.picklist(INTERFACE_SCALES), defaults.appearance.interfaceScale),
+    mirrorInterface: v.fallback(v.boolean(), defaults.appearance.mirrorInterface),
     animations: v.fallback(v.picklist(ANIMATION_PREFERENCES), defaults.appearance.animations),
     accent: v.fallback(accentPreferenceSchema, () => ({ ...DEFAULT_ACCENT }))
   }),
@@ -379,6 +387,13 @@ export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
   appPreferences.value = {
     ...appPreferences.value,
     appearance: { ...appPreferences.value.appearance, interfaceScale }
+  }
+}
+
+export function updateMirrorInterface(mirrorInterface: boolean): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    appearance: { ...appPreferences.value.appearance, mirrorInterface }
   }
 }
 
