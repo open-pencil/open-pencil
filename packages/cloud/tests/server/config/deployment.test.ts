@@ -186,6 +186,18 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('keeps deleted files under a prefix only when one is configured', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
+    const keeping = (prefix: string) =>
+      minimalSource.replace('[object_storage]', `[object_storage]\ndeleted_prefix = "${prefix}"`)
+    expect(parseCloudDeploymentTOML(keeping('deleted/'), environment).s3DeletedPrefix).toBe(
+      'deleted/'
+    )
+    for (const prefix of ['deleted', '/deleted/', 'Deleted/', 'a/b/', 'documents/']) {
+      expect(() => parseCloudDeploymentTOML(keeping(prefix), environment)).toThrow()
+    }
+  })
+
   test('reports server errors only when error tracking is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).errorTracking).toBeUndefined()
 
