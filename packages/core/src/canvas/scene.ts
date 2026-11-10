@@ -1,5 +1,5 @@
-import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
-import { type Effect, type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import type { Canvas } from '@open-pencil/canvaskit'
+import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { drawnBlurRadius, widestBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -14,6 +14,7 @@ import { fontManager } from '#core/text/font/manager'
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
+import { blurLayerBounds, blurredContent, layerBlurFilter, viewportLayerBounds } from './layer-blur'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -121,31 +122,6 @@ function isCulled(
   return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
 }
 
-/**
- * A layer blur's filter. It runs before the layer's rotation and flips are applied, so a
- * progressive blur's points are mapped through them from the layer's own coordinates, and what
- * the subtree draws is measured through them too.
- */
-function layerBlurFilter(
-  r: SkiaRenderer,
-  graph: SceneGraph,
-  node: SceneNode,
-  blur: Effect,
-  overlays: RenderOverlays
-): ImageFilter | null {
-  if (!blur.progressive) return r.getCachedLayerBlur(blur, node.width, node.height, null)
-  const preview = overlays.rotationPreview
-  const oriented = hasNodeTransform(projectedNode(node, preview))
-  const matrix = nodeOrientationMatrix(node, preview)
-  return r.getCachedLayerBlur(
-    blur,
-    node.width,
-    node.height,
-    subtreeVisualBounds(graph, node, matrix, preview),
-    oriented ? (point) => Matrix.mapPoint(matrix, point) : undefined
-  )
-}
-
 function applyNodeTransforms(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): void {
   // Most layers are neither rotated nor flipped: their orientation is the identity, not a call.
   if (!hasNodeTransform(projectedNode(node, overlays.rotationPreview))) return
@@ -194,16 +170,15 @@ function renderMaskNodeContent(
     const blurRadius = drawnBlurRadius(blur ? widestBlurRadius(blur) : 0)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, graph, node, blur, overlays) : null)
+    const content = blurredContent(graph, node, overlays)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
     canvas.saveLayer(
       r.opacityPaint,
       blurLayerBounds(
         r,
-        graph,
-        node,
         worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview),
         blurRadius,
-        overlays.rotationPreview
+        content
       )
     )
     r.opacityPaint.setImageFilter(null)
@@ -311,25 +286,6 @@ export function renderNodeSelf(
   canvas.restore()
 }
 
-function viewportLayerBounds(r: SkiaRenderer, world: Mat3, padding: number): Float32Array | null {
-  if (!r.boundEffectLayersToViewport) return null
-  const inverse = Matrix.invert(world)
-  if (!inverse) return null
-  const viewport = r.worldViewport
-  const bounds = mapVisualBounds(inverse, {
-    minX: viewport.x,
-    minY: viewport.y,
-    maxX: viewport.x + viewport.w,
-    maxY: viewport.y + viewport.h
-  })
-  return r.ck.LTRBRect(
-    bounds.minX - padding,
-    bounds.minY - padding,
-    bounds.maxX + padding,
-    bounds.maxY + padding
-  )
-}
-
 /**
  * The layer opens after the node's x/y translation and before its rotation and flips, so the
  * subtree is measured through its orientation matrix.
@@ -345,31 +301,6 @@ function nodeIsolationLayerBounds(
   if (viewportBounds) return viewportBounds
   const bounds = subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview)
   return r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
-}
-
-/**
- * The layer a layer blur draws into: what the subtree draws, and two blur radii around it, as far
- * as the blur spreads. It opens before the node's rotation and flips, so the subtree is measured
- * through them; its own box would cut off what a rotation moves above or left of it.
- */
-function blurLayerBounds(
-  r: SkiaRenderer,
-  graph: SceneGraph,
-  node: SceneNode,
-  world: Mat3,
-  radius: number,
-  preview?: RenderOverlays['rotationPreview']
-): Float32Array {
-  const viewportBounds = viewportLayerBounds(r, world, radius * 2)
-  if (viewportBounds) return viewportBounds
-  // Visual bounds already reach one blur radius past what the subtree draws.
-  const bounds = subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview)
-  return r.ck.LTRBRect(
-    bounds.minX - radius,
-    bounds.minY - radius,
-    bounds.maxX + radius,
-    bounds.maxY + radius
-  )
 }
 
 /**
@@ -437,12 +368,10 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, graph, node, layerBlur, overlays))
+    const content = blurredContent(graph, node, overlays)
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
     const blurRadius = drawnBlurRadius(widestBlurRadius(layerBlur))
-    canvas.saveLayer(
-      r.effectLayerPaint,
-      blurLayerBounds(r, graph, node, world(), blurRadius, overlays.rotationPreview)
-    )
+    canvas.saveLayer(r.effectLayerPaint, blurLayerBounds(r, world(), blurRadius, content))
   }
 
   applyNodeTransforms(canvas, node, overlays)

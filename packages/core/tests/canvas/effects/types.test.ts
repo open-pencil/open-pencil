@@ -3,8 +3,9 @@ import { describe, expect, mock, test } from 'bun:test'
 import { asCanvas, asDouble } from '#core-tests/canvas/helpers'
 
 import type { ImageFilter } from '@open-pencil/canvaskit'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { type Effect, SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
@@ -315,5 +316,48 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)
+  })
+})
+
+describe('progressive layer blur', () => {
+  test('blurs what a turned layer and its overflowing children draw, its ramp turned with it', () => {
+    // Children draw through the renderer, which this test only watches.
+    const r = createMockRenderer({ renderNode: mock(() => undefined) })
+    const canvas = createMockCanvas()
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const blur: Effect = {
+      type: 'LAYER_BLUR',
+      visible: true,
+      radius: 16,
+      color: { r: 0, g: 0, b: 0, a: 0 },
+      offset: { x: 0, y: 0 },
+      spread: 0,
+      progressive: { startRadius: 0, startOffset: { x: 0, y: 0.5 }, endOffset: { x: 1, y: 0.5 } }
+    }
+    const frame = graph.createNode('FRAME', page.id, {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 50,
+      rotation: 90,
+      clipsContent: false,
+      effects: [blur]
+    })
+    graph.createNode('RECTANGLE', frame.id, { x: 80, y: 0, width: 60, height: 20 })
+    renderNode(r, asCanvas(canvas), graph, frame.id, {})
+
+    const [, width, height, bounds, toFilter] = expectDefined(
+      mockCalls(r.getCachedLayerBlur)[0],
+      'layer blur call'
+    )
+    expect([width, height]).toEqual([100, 50])
+    // Turned about its centre, the frame's right side faces down: the child, reaching 40 past it,
+    // ends at y = 115, and the blur spreads 16 further.
+    expect(bounds).toEqual({ minX: 9, minY: -41, maxX: 91, maxY: 131 })
+    if (typeof toFilter !== 'function') throw new Error('expected the ramp mapping')
+    const end: unknown = toFilter({ x: 100, y: 25 })
+    // The ramp ends at the middle of the right side, which the turn carries below the centre.
+    expect(end).toMatchObject({ x: expect.closeTo(50, 6), y: expect.closeTo(75, 6) })
   })
 })

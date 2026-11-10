@@ -1,6 +1,6 @@
 import { uniq } from 'es-toolkit'
 
-import type { CanvasKit, Image, ImageFilter, TileMode } from '@open-pencil/canvaskit'
+import type { CanvasKit, Image, ImageFilter, Shader, TileMode } from '@open-pencil/canvaskit'
 import type { ProgressiveBlur } from '@open-pencil/scene-graph'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -238,7 +238,9 @@ export function makeProgressiveBlur(
     levelWeights(levels, ramp.startSigma + (ramp.endSigma - ramp.startSigma) * t)
   )
   const made: ImageFilter[] = []
-  const keep = (filter: ImageFilter) => {
+  // CanvasKit types its factories as always making a filter, but a value it cannot use makes none.
+  const keep = (filter: ImageFilter | null) => {
+    if (!filter) throw new Error('CanvasKit could not make a progressive blur filter')
     made.push(filter)
     return filter
   }
@@ -251,19 +253,11 @@ export function makeProgressiveBlur(
         { filter: ck.FilterMode.Nearest },
         ck.LTRBRect(0, 0, 1, 1),
         ck.LTRBRect(box.minX, box.minY, box.maxX, box.maxY)
-      ) as ImageFilter
+      )
     )
     return keep(ck.ImageFilter.MakeBlend(ck.BlendMode.DstIn, input, inside))
   }
-  const masks = levels.map((_, level) =>
-    ck.Shader.MakeLinearGradient(
-      [ramp.start.x, ramp.start.y],
-      [ramp.end.x, ramp.end.y],
-      weights.map((weight) => ck.Color4f(0, 0, 0, weight[level])),
-      stops,
-      ck.TileMode.Clamp
-    )
-  )
+  const masks: Shader[] = []
   // Each pass reads the image it is given, never another filter: Skia evaluates a filter input
   // once per use, so a second pass built on the first would redo the first for every level.
   const pass = (axis: 'x' | 'y'): ImageFilter => {
@@ -297,9 +291,24 @@ export function makeProgressiveBlur(
   // result as its image, made once.
   const along =
     Math.abs(ramp.end.y - ramp.start.y) >= Math.abs(ramp.end.x - ramp.start.x) ? 'y' : 'x'
-  const filter = keep(ck.ImageFilter.MakeCompose(pass(along), pass(along === 'y' ? 'x' : 'y')))
-  // Each filter holds what it is made from, so only the result needs keeping.
-  for (const part of made) if (part !== filter) part.delete()
-  for (const mask of masks) mask.delete()
-  return filter
+  let filter: ImageFilter | null = null
+  try {
+    for (const level of levels.keys()) {
+      masks.push(
+        ck.Shader.MakeLinearGradient(
+          [ramp.start.x, ramp.start.y],
+          [ramp.end.x, ramp.end.y],
+          weights.map((weight) => ck.Color4f(0, 0, 0, weight[level])),
+          stops,
+          ck.TileMode.Clamp
+        )
+      )
+    }
+    filter = keep(ck.ImageFilter.MakeCompose(pass(along), pass(along === 'y' ? 'x' : 'y')))
+    return filter
+  } finally {
+    // Each filter holds what it is made from, so only the result is kept, and none on failure.
+    for (const part of made) if (part !== filter) part.delete()
+    for (const mask of masks) mask.delete()
+  }
 }
