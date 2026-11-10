@@ -17,17 +17,18 @@ function reloadHarness(
   source: { path: string | null } = { path: null },
   markDocumentSaved: () => void = vi.fn()
 ) {
-  const begin = vi.fn(() => ({
+  const load = {
     id: 1,
     signal: new AbortController().signal,
     update: vi.fn(),
     complete: vi.fn(),
     fail: vi.fn(),
     cancel: vi.fn()
-  }))
+  }
+  const begin = vi.fn(() => load)
   const getFilePath = vi.fn(() => source.path)
   const actions = createReloadActions({
-    editor: asDouble<Editor>({ graph: {} }),
+    editor: asDouble<Editor>({ graph: {}, requestRender: vi.fn() }),
     state: asDouble({ documentName: 'Design', panX: 0, panY: 0, zoom: 1, currentPageId: '0:1' }),
     getFilePath,
     getFileHandle: () => null,
@@ -35,7 +36,7 @@ function reloadHarness(
     markDocumentSaved,
     preparationController: asDouble<EditorPreparationController>({ begin })
   })
-  return { actions, begin, getFilePath }
+  return { actions, begin, getFilePath, load }
 }
 
 afterEach(() => {
@@ -64,11 +65,17 @@ describe('reloading a document that changed on disk', () => {
       calls.push('restore')
     })
     const markDocumentSaved = vi.fn(() => calls.push('saved'))
-    const { actions } = reloadHarness(false, { path: '/designs/design.fig' }, markDocumentSaved)
+    const { actions, load } = reloadHarness(
+      false,
+      { path: '/designs/design.fig' },
+      markDocumentSaved
+    )
 
     await actions.reloadFromDisk()
 
     expect(calls).toEqual(['saved', 'restore'])
+    expect(load.fail).not.toHaveBeenCalled()
+    expect(load.complete).toHaveBeenCalledTimes(1)
   })
 
   test('keeps unsaved edits and offers to reload, which discards them', async () => {
