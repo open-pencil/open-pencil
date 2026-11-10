@@ -48,10 +48,17 @@ A release goes to staging first, and to production only once that run succeeded.
 does not wait, so watch the staging run to its end before starting production:
 
 ```sh
-gh workflow run deploy-cloud.yml --ref v0.18.0 -f target=staging
-gh run watch --exit-status "$(gh run list --workflow deploy-cloud.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
-gh workflow run deploy-cloud.yml --ref v0.18.0 -f target=production
+tag=v0.18.0
+gh workflow run deploy-cloud.yml --ref "$tag" -f target=staging && sleep 10 &&
+  run=$(gh run list --workflow deploy-cloud.yml --event workflow_dispatch --limit 20 \
+    --json databaseId,displayTitle \
+    --jq "[.[] | select(.displayTitle == \"Deploy Cloud staging from $tag\")][0].databaseId") &&
+  gh run watch --exit-status "$run" &&
+  gh workflow run deploy-cloud.yml --ref "$tag" -f target=production
 ```
+
+The staging run is found by its title, which names the target and tag, and production starts only
+when that run succeeded.
 
 The environment's reviewers approve each run before it starts.
 
@@ -65,9 +72,11 @@ schema, and stays on it after a rollback. A migration therefore only adds: no ta
 dropped, renamed, retyped, or newly required, and a column it adds to an existing table is nullable
 or has a default. `tests/integration/server/db/expand.test.ts` fails on anything else.
 
-Removing or tightening something takes two releases: the first stops using it, the second carries
-a migration that names it in `contracts` (see `CloudMigration` in `src/server/db/migrate.ts`).
-Never edit a migration that has shipped.
+Removing or tightening something takes two releases. Dropping, renaming, or retyping waits for a
+release after the last code that used it. Making a column required waits for a release whose code
+writes it on every insert, then fills the rows that lack it in the same migration that requires it,
+or gives it a default old code's inserts get. Either way the migration names it in `contracts` (see
+`CloudMigration` in `src/server/db/migrate.ts`).
 
 ## Rolling back
 
@@ -130,8 +139,9 @@ Once a quarter, and after changing the database's provider or plan:
 1. Create a Neon branch of production at a time an hour back.
 2. Check the branch's `kysely_migration` table names the latest migration in
    `src/server/db/migrate.ts` that production has run.
-3. Point a local Cloud at the branch and the production bucket with read-only keys, sign in, and
-   open a document saved before the branch's time.
-4. Check that a file cleanup deleted since then, if any, is under `deleted/`.
-5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
+3. For a few documents saved before the branch's time, check against the branch that every file
+   their revisions, images, and room snapshots refer to (by `storage_object.object_key`) is in the
+   production bucket, under its key or, if cleanup removed it since, under `deleted/`. A file only
+   under `deleted/` is what step 3 of a restore copies back.
+4. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.
