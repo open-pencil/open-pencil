@@ -6,11 +6,9 @@ import { DEFAULT_GLASS } from '@open-pencil/scene-graph/constants'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { useI18n } from '#vue/i18n/useI18n.js'
+import { panelMessages } from '#vue/i18n/messages'
 
 type EffectType = Effect['type']
-
-const { panels } = useI18n()
 
 export const EFFECT_TYPES = [
   'DROP_SHADOW',
@@ -23,13 +21,14 @@ export const EFFECT_TYPES = [
 
 /** Read when asked, so the labels follow the language once its translations load. */
 function effectLabels(): Record<(typeof EFFECT_TYPES)[number], string> {
+  const panels = panelMessages.get()
   return {
-    DROP_SHADOW: panels.value.dropShadow,
-    INNER_SHADOW: panels.value.innerShadow,
-    LAYER_BLUR: panels.value.layerBlur,
-    BACKGROUND_BLUR: panels.value.backgroundBlur,
-    FOREGROUND_BLUR: panels.value.foregroundBlur,
-    GLASS: panels.value.glass
+    DROP_SHADOW: panels.dropShadow,
+    INNER_SHADOW: panels.innerShadow,
+    LAYER_BLUR: panels.layerBlur,
+    BACKGROUND_BLUR: panels.backgroundBlur,
+    FOREGROUND_BLUR: panels.foregroundBlur,
+    GLASS: panels.glass
   }
 }
 

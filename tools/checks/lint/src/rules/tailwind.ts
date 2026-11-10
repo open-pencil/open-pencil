@@ -110,10 +110,16 @@ function boundClassStrings(expression: string): string[] {
   )
 }
 
-/** The class strings in a `:ui` binding: every slot's value is a class list. */
+/**
+ * The class strings in a `:ui` binding: every slot's value is a class list. Strings stand in a
+ * value's place (after `:`, `[`, `,`, `?`, `&&`, or `||`), so a compared value such as
+ * `align === 'text-left'` is not one; a template literal counts by the text around its
+ * interpolations.
+ */
 function uiClassStrings(expression: string): string[] {
-  return [...expression.matchAll(/'([^']*)'|"([^"]*)"|`([^`$]*)`/g)].map(
-    ([, ...quoted]) => quoted.find((text) => text !== undefined) ?? ''
+  const value = /(?<=(?:[:[,?]|&&|\|\|)\s*)(?:'([^']*)'|"([^"]*)"|`((?:[^`\\]|\\.)*)`)/g
+  return [...expression.matchAll(value)].map(([, single, double, template]) =>
+    template === undefined ? (single ?? double ?? '') : template.replaceAll(/\$\{[^}]*\}/g, ' ')
   )
 }
 
@@ -121,6 +127,25 @@ function propertyKey(node: ESTree.Node): string | null {
   if (node.type !== 'Property') return null
   if (node.key.type === 'Identifier') return node.key.name
   return node.key.type === 'Literal' && typeof node.key.value === 'string' ? node.key.value : null
+}
+
+/**
+ * Whether a property's value counts as a class list only under `class`: in a `compoundVariants`
+ * entry, whose other keys are conditions, and in a call of what `tv` returns, whose other keys
+ * are variants: `tv(theme)({ size, class: [...] })`.
+ */
+function isSelectedOnlyByKey(property: ESTree.Node, value: ESTree.Node): boolean {
+  if (property.type !== 'Property' || property.value !== value) return false
+  const entry = property.parent
+  if (entry?.type !== 'ObjectExpression') return false
+  const holder = entry.parent
+  if (holder?.type === 'ArrayExpression')
+    return propertyKey(holder.parent ?? entry) === 'compoundVariants'
+  return (
+    holder?.type === 'CallExpression' &&
+    holder.callee.type === 'CallExpression' &&
+    isClassHelperCall(holder)
+  )
 }
 
 /**
@@ -141,15 +166,7 @@ function isClassString(node: ESTree.Node): boolean {
       return false
     const key = propertyKey(parent)
     if (key === 'defaultVariants') return false
-    const entry = parent.parent
-    if (
-      key !== null &&
-      child === (parent.type === 'Property' ? parent.value : null) &&
-      entry?.type === 'ObjectExpression' &&
-      entry.parent?.type === 'ArrayExpression' &&
-      propertyKey(entry.parent.parent ?? entry) === 'compoundVariants'
-    )
-      return CLASS_KEYS.has(key)
+    if (key !== null && isSelectedOnlyByKey(parent, child)) return CLASS_KEYS.has(key)
   }
   return true
 }

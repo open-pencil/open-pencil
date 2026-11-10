@@ -185,6 +185,8 @@ describe('@open-pencil/tailwind/no-physical-sides', () => {
           'src/theme/rejected.ts': `export const theme = '${Object.keys(replacements).join(' ')}'\n`,
           'src/theme/accepted.ts': `export const theme = '${accepted.join(' ')}'\n`,
           'packages/vue/src/primitives/Demo/examples/Side.vue': `${SCRIPT}<template><p class="ml-2" /></template>\n`,
+          'src/components/Compared.vue': `${SCRIPT}<template><AppInput :ui="align === 'text-left' ? { input: 'ps-2' } : { input: 'pe-2' }" /></template>\n`,
+          'src/components/Template.vue': `${SCRIPT}<template><AppInput :ui="{ input: \`\${'extra'} ml-2\` }" /></template>\n`,
           'src/components/Slots.vue': `${SCRIPT}<template><AppInput :ui="{ input: 'ml-2' }" /></template>\n`,
           'src/components/curried.ts':
             "import { tv } from 'tailwind-variants'\nexport const field = tv({ base: '' })({ class: ['ml-2'] })\n",
@@ -203,7 +205,7 @@ describe('@open-pencil/tailwind/no-physical-sides', () => {
         .filter((item) => !item.filename?.endsWith('rejected.ts'))
         .map((item) => item.filename?.split('/').pop())
         .toSorted()
-    ).toEqual(['Side.vue', 'Slots.vue', 'curried.ts'])
+    ).toEqual(['Side.vue', 'Slots.vue', 'Template.vue', 'curried.ts'])
   })
 })
 
@@ -243,6 +245,8 @@ describe('@open-pencil/tailwind/no-interpolated-classes', () => {
           // CSS values a theme module hands another library are not class lists.
           'src/theme/editor.ts': `import { EditorView } from '@codemirror/view'\nconst gap = 8\nexport const theme = EditorView.theme({ '.cm-line': { padding: \`0 \${gap}px\` } })\n`,
           // Outside a theme module, a template after a helper call is no longer inside it.
+          // What tv returns takes variants beside its class.
+          'src/components/variants.ts': `import { tv } from 'tailwind-variants'\nconst size = 'sm'\nexport const ui = tv({ base: 'flex' })({ size: \`\${size}\` })\n`,
           'src/components/after.ts': `import { tv } from 'tailwind-variants'\nconst id = 'a'\nexport const ui = tv({ base: 'flex' })\nexport const key = \`\${id}:b\`\n`
         },
         { [interpolatedRule]: 'error' }
