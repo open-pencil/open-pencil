@@ -81,12 +81,11 @@ export function toolNodeIds(part: ToolCallPart): string[] {
   }
   if (part.state === 'output-available' && isRecord(part.output)) {
     const { output } = part
-    // A deleted node has nothing left to bring into view.
-    if (output.deleted === undefined) {
-      for (const key of ['id', 'ids', 'selection', 'results', 'created', 'clones']) {
-        for (const id of stringIds(output[key])) ids.add(id)
-      }
+    for (const key of ['id', 'ids', 'selection', 'results', 'created', 'clones']) {
+      for (const id of stringIds(output[key])) ids.add(id)
     }
+    // A deleted node has nothing left to bring into view.
+    for (const id of stringIds(output.deleted)) ids.delete(id)
   }
   return [...ids]
 }

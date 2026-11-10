@@ -76,7 +76,7 @@ describe('tool call display', () => {
         call({
           type: 'tool-delete_nodes',
           state: 'output-available',
-          input: {},
+          input: { ids: ['1:5'] },
           output: { deleted: ['1:5'] }
         })
       )

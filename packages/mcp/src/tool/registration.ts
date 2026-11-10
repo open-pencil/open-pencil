@@ -27,8 +27,8 @@ export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 export type MCPToolSettled = (context: ServerContext) => Promise<void>
 
 /**
- * The document and page a call targets when not the active ones. Every tool takes them, so they
- * carry no description: their names say it, and list_documents gives the IDs.
+ * The document and page a call targets when not the active ones. Every document tool takes them,
+ * so they carry no description: their names say it, and list_documents gives the IDs.
  */
 const automationTargetSchema = {
   document_id: v.optional(v.string()),
