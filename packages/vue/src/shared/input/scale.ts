@@ -21,7 +21,8 @@ import {
 } from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
-import { selectionResizeHandleAt } from '#vue/shared/input/resize/selection'
+import { lineEndAt } from '#vue/shared/input/line/end'
+import { selectionBox, selectionResizeHandleAt } from '#vue/shared/input/resize/selection'
 import {
   layerSnapSource,
   proportionalResizeDriver,
@@ -63,7 +64,10 @@ function boxPoint(d: DragScale, fraction: Vector): Vector {
   return { x: px, y: py }
 }
 
-/** The handle a press is on: a single layer's own, or the box of a multi-selection. */
+/**
+ * The handle a press is on: a single layer's own, where a line's ends stand for its sides, or the
+ * box of a multi-selection.
+ */
 function pressedHandle(
   cx: number,
   cy: number,
@@ -71,6 +75,8 @@ function pressedHandle(
   editor: Editor
 ): HandlePosition | null {
   if (editor.state.selectedIds.size > 1) return selectionResizeHandleAt(cx, cy, editor)
+  const lineEnd = lineEndAt(editor, cx, cy)
+  if (lineEnd) return lineEnd.end === 'end' ? 'e' : 'w'
   const hit = getHitHandleByMatrix(
     cx,
     cy,
@@ -108,7 +114,9 @@ export function tryStartScale(cx: number, cy: number, editor: Editor): DragScale
     startY: cy,
     origRect: single
       ? { x: single.x, y: single.y, width: single.width, height: single.height }
-      : computeBounds(roots.map((root) => getAxisAlignedWorldBounds(root, editor.graph))),
+      : // The box the handles are drawn on, locked layers included, as a resize takes it.
+        (selectionBox(editor) ??
+        computeBounds(roots.map((root) => getAxisAlignedWorldBounds(root, editor.graph)))),
     layer: single && layerPlacement ? { nodeId: single.id, origPlacement: layerPlacement } : null,
     placements,
     originals,
@@ -134,16 +142,41 @@ export function applyScale(
   { centred, disableSnapping }: ScaleModifiers
 ) {
   const d = toRaw(drag)
-  const { origRect, layer, handle } = d
-  if (origRect.width <= 0 || origRect.height <= 0) return
-  const aspect = origRect.width / origRect.height
+  const { origRect, layer } = d
+  if (origRect.width <= 0) return
   const canvasDelta = { x: cx - d.startX, y: cy - d.startY }
   const delta = layer
     ? canvasDeltaInLayer(layer.origPlacement, canvasDelta.x, canvasDelta.y)
     : canvasDelta
   // From the center, the handle's side moves by the pointer and the opposite one mirrors it.
   const reach = centred ? 2 : 1
-  const [dx, dy] = [delta.x * reach, delta.y * reach]
+  const scale =
+    origRect.height > 0
+      ? boxScale(d, delta.x * reach, delta.y * reach, editor, centred || disableSnapping)
+      : lineScale(d, delta.x * reach)
+  d.scale = Math.max(MIN_RESCALE, scale)
+  d.anchorFraction = centred ? { x: 0.5, y: 0.5 } : handleAnchor(d.handle)
+  d.anchor = boxPoint(d, d.anchorFraction)
+  previewScale(d, d.scale, editor)
+  editor.requestRepaint()
+}
+
+/** A line has no height: the end dragged along it sets its length, and the scale with it. */
+function lineScale(d: DragScale, dx: number): number {
+  const grown = d.handle === 'w' ? -dx : dx
+  return (d.origRect.width + grown) / d.origRect.width
+}
+
+/** The scale a box kept at its ratio takes, from the side that leads and snaps. */
+function boxScale(
+  d: DragScale,
+  dx: number,
+  dy: number,
+  editor: Editor,
+  disableSnapping: boolean
+): number {
+  const { origRect, layer, handle } = d
+  const aspect = origRect.width / origRect.height
   const source = layer
     ? layerSnapSource(
         { nodeId: layer.nodeId, handle, origRect, origPlacement: layer.origPlacement },
@@ -158,14 +191,10 @@ export function applyScale(
     aspect,
     source,
     editor,
-    disableSnapping || centred
+    disableSnapping
   )
   const driver = proportionalResizeDriver(handle, origRect, dx, dy, aspect)
-  d.scale = Math.max(MIN_RESCALE, rect[driver] / origRect[driver])
-  d.anchorFraction = centred ? { x: 0.5, y: 0.5 } : handleAnchor(handle)
-  d.anchor = boxPoint(d, d.anchorFraction)
-  previewScale(d, d.scale, editor)
-  editor.requestRepaint()
+  return rect[driver] / origRect[driver]
 }
 
 /** Shows every layer of the drag at `scale` about the drag's anchor. */

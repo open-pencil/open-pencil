@@ -2,9 +2,9 @@
 import { computed, ref, watch } from 'vue'
 
 import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { MIN_RESCALE, scaleRoots } from '@open-pencil/scene-graph/scaling'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
@@ -28,11 +28,27 @@ const ANCHOR_STOPS: Array<{ fraction: number; align: LayoutAlign & LayoutCounter
 const store = useEditorStore()
 const { panels, tools, common } = useI18n()
 
-/** The box of the layers the Scale tool scales, on the canvas. */
-const bounds = useSceneComputed<Rect | null>(() => {
-  const roots = scaleRoots(store.graph, store.getSelectedNodes())
-  if (roots.length === 0) return null
-  return computeBounds(roots.map((node) => getAxisAlignedWorldBounds(node, store.graph)))
+/** The box the Scale tool scales, and how it lies on the canvas. */
+interface ScaleBox {
+  width: number
+  height: number
+  /** Draws the box from its own (0,0)…(width,height) on the canvas. */
+  world: Mat3
+}
+
+/**
+ * The box the handles show: a single layer's own, turned as it is, as Figma reports its size, or
+ * the canvas box of a multi-selection, locked layers included.
+ */
+const bounds = useSceneComputed<ScaleBox | null>(() => {
+  const selected = store.getSelectedNodes()
+  if (scaleRoots(store.graph, selected).length === 0) return null
+  if (selected.length === 1) {
+    const [node] = selected
+    return { width: node.width, height: node.height, world: getWorldMatrix(node, store.graph) }
+  }
+  const box = computeBounds(selected.map((node) => getAxisAlignedWorldBounds(node, store.graph)))
+  return { width: box.width, height: box.height, world: Matrix.translated(box.x, box.y) }
 })
 
 // The factor counts from the size the selection had when the tool or the selection was picked.
@@ -74,7 +90,8 @@ function scaleBy(scale: number) {
   const box = bounds.value
   if (!box || !Number.isFinite(scale) || scale < MIN_RESCALE) return
   const { x, y } = store.state.scaleAnchor
-  store.scaleSelected(scale, { x: box.x + box.width * x, y: box.y + box.height * y })
+  const [ax, ay] = Matrix.mapPoints(box.world, [box.width * x, box.height * y])
+  store.scaleSelected(scale, { x: ax, y: ay })
 }
 
 function scaleToSize(value: number, axis: 'width' | 'height') {

@@ -176,6 +176,44 @@ describe('Scale tool input', () => {
     expect(current(right.id)).toMatchObject({ x: 225, y: 75, width: 75 })
   })
 
+  test("a line's end scales it from the other end", () => {
+    editor = createEditor()
+    const line = editor.graph.createNode('LINE', editor.state.currentPageId, {
+      width: 100,
+      height: 0,
+      strokeWeight: 2
+    })
+    editor.select([line.id])
+    const drag = tryStartScale(100, 0, editor)
+    if (!drag) throw new Error('No end handle')
+    applyScale(drag, 150, 0, editor, PLAIN)
+    drag.commit()
+    expect(current(line.id)).toMatchObject({ x: 0, width: 150, strokeWeight: 3 })
+  })
+
+  test('a multi-selection with a locked layer scales about the box its handles show', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const free = editor.graph.createNode('RECTANGLE', page, { width: 50, height: 50 })
+    const locked = editor.graph.createNode('RECTANGLE', page, {
+      x: 150,
+      y: 50,
+      width: 50,
+      height: 50,
+      locked: true
+    })
+    editor.select([free.id, locked.id])
+
+    // The 200×100 box scales 1.5× from its top-left; only the unlocked layer changes.
+    const drag = tryStartScale(200, 100, editor)
+    if (!drag) throw new Error('No handle')
+    applyScale(drag, 300, 150, editor, PLAIN)
+    drag.commit()
+
+    expect(current(free.id)).toMatchObject({ x: 0, y: 0, width: 75 })
+    expect(current(locked.id)).toMatchObject({ x: 150, width: 50 })
+  })
+
   test('a press on the layer itself moves it, as the Move tool would', () => {
     const { frame } = card()
     const fns: HitTestFns = {

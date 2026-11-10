@@ -66,7 +66,8 @@ const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type'
   'connector-draw',
   'connector-end',
   'connector-line',
-  'line-end'
+  'line-end',
+  'scale'
 ])
 
 export function useCanvasInput(
@@ -94,6 +95,7 @@ export function useCanvasInput(
         type === 'move' ||
           type === 'resize' ||
           type === 'resize-selection' ||
+          type === 'scale' ||
           type === 'rotate' ||
           type === 'rotate-selection'
       )
@@ -639,7 +641,8 @@ export function useCanvasInput(
           type === 'rotate' ||
           type === 'rotate-selection' ||
           type === 'shape-handle' ||
-          type === 'sticky-scale'
+          type === 'sticky-scale' ||
+          type === 'scale'
         )
           cancelPointerInteraction()
       })
