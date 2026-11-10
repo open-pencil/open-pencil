@@ -139,11 +139,15 @@ describe("an ACP chat's tool calls", () => {
 
   test('fail once the chat is gone, unless they name a document', async () => {
     const tab = createTab()
+    startAgentRun(tab.store, chat)
+    forgetAgentChat(chat)
     const agent = { session: 'session-1', kind: 'acp', chat }
 
-    await expect(request('close_document', { agent, unsaved: 'discard' })).rejects.toThrow(
-      'The chat this agent works for is closed'
-    )
+    for (const named of [{}, { document_id: '' }]) {
+      await expect(
+        request('close_document', { ...named, agent, unsaved: 'discard' })
+      ).rejects.toThrow('The chat this agent works for is closed')
+    }
     expect(getTabById(tab.id)).toBeDefined()
     expect((await request('undo', { agent, document_id: tab.id })).target?.documentId).toBe(tab.id)
   })

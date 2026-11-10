@@ -107,7 +107,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     // chat is gone, a late call must name one rather than land in whatever tab is in front.
     const chat = readAgentSession(rawArgs.agent)?.chat
     const chatStore = agentChatStore(chat)
-    if (chat !== undefined && !chatStore && typeof rawArgs.document_id !== 'string') {
+    const namesDocument = typeof rawArgs.document_id === 'string' && rawArgs.document_id.length > 0
+    if (chat !== undefined && !chatStore && !namesDocument) {
       throw new Error(
         'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
       )
