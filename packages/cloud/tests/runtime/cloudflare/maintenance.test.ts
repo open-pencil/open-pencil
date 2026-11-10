@@ -13,10 +13,13 @@ describe('maintenance', () => {
     expect(inMaintenance({})).toBe(false)
   })
 
-  test('answers 503 with a retry hint', async () => {
-    const response = maintenanceResponse()
+  test('answers 503 with a retry hint, named by its ray ID', async () => {
+    const response = maintenanceResponse(
+      new Request('https://cloud.example/api', { headers: { 'cf-ray': '8f1e2d3c4b5a6978-FRA' } })
+    )
     expect(response.status).toBe(503)
     expect(response.headers.get('Retry-After')).toBe('300')
+    expect(response.headers.get('X-Request-Id')).toBe('8f1e2d3c4b5a6978-FRA')
     expect(await response.text()).toContain('maintenance')
   })
 })

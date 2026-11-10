@@ -75,9 +75,10 @@ force_path_style = true
 checksum_verification = "metadata"
 # Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
 maximum_upload_bytes = 1073741824
-# Keep each file cleanup deletes under this prefix, so a database restored to an earlier time still
-# finds it, and expire the prefix with a lifecycle rule longer than the database's restore window.
-# Useful where the bucket keeps no versions, as on R2.
+# Keep each file cleanup deletes under this prefix, and expire the prefix with a lifecycle rule
+# longer than the database's restore window. After restoring the database to an earlier time, copy
+# deleted/<key> back to <key> for each file it names that is missing, before serving it. Useful
+# where the bucket keeps no versions, as on R2.
 # deleted_prefix = "deleted/"
 
 [collaboration]

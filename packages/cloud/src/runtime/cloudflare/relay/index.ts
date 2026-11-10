@@ -126,7 +126,7 @@ export function createCloudflareRelayObject(
 
     /** Accepts a socket that `relayRoute` sent here. */
     override async fetch(request: Request): Promise<Response> {
-      if (inMaintenance(this.env)) return maintenanceResponse()
+      if (inMaintenance(this.env)) return maintenanceResponse(request)
       const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
       const relay = await this.#sockets.open(documentId)

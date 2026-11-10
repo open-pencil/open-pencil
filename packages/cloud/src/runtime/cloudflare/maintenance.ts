@@ -1,3 +1,5 @@
+import { cloudflareRayId } from './logging'
+
 /**
  * The Worker variable that takes a deployment off the air, as the Deploy Cloud workflow's
  * `maintenance` input sets it: every request answers 503 and scheduled cleanup does nothing, while
@@ -13,10 +15,17 @@ export function inMaintenance(env: Record<string, unknown>): boolean {
 /** How a relay socket open when maintenance began is closed: the service restarts. */
 export const MAINTENANCE_CLOSE_CODE = 1012
 
-/** What every request gets meanwhile; clients retry, and nothing reaches the database. */
-export function maintenanceResponse(): Response {
+/**
+ * What every request gets meanwhile; clients retry, and nothing reaches the database. It names the
+ * request as other responses do, by its ray ID.
+ */
+export function maintenanceResponse(request: Request): Response {
   return new Response('OpenPencil Cloud is down for maintenance.', {
     status: 503,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '300' }
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Retry-After': '300',
+      'X-Request-Id': cloudflareRayId(request.headers) ?? crypto.randomUUID()
+    }
   })
 }

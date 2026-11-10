@@ -206,7 +206,7 @@ export function createCloudflareCloud(
 
   const worker: ExportedHandler<CloudflareCloudEnvironment> = {
     fetch: (request, env, context) =>
-      inMaintenance(env) ? maintenanceResponse() : router.fetch(request, env, context),
+      inMaintenance(env) ? maintenanceResponse(request) : router.fetch(request, env, context),
 
     async scheduled(_controller, env, context) {
       if (inMaintenance(env)) return
