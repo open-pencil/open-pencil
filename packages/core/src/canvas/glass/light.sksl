@@ -1,3 +1,6 @@
+uniform float2 axis;
+uniform float intensity;
+
 float light(float3 g) {
   float facing = dot(-g.yz, axis);
   float spread = clamp(2.2 * (abs(facing) - 0.44), 0.0, 1.0);

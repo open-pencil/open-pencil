@@ -1,3 +1,19 @@
+// The outline both glass shaders read: a box, or up to SEGMENTS segments grouped CHUNK to a
+// bounding circle, so a pixel can skip a chunk whose circle it is outside of.
+const int SEGMENTS = 128;
+const int CHUNK = 8;
+const int CHUNKS = SEGMENTS / CHUNK;
+
+uniform shader backdrop;
+uniform float2 origin;
+uniform float2 size;
+uniform float4 radii;
+uniform float isBox;
+uniform float depth;
+uniform float segmentCount;
+uniform float4 segments[SEGMENTS];
+uniform float4 chunks[CHUNKS];
+
 float boxDistance(float2 q, float2 h, float r) {
   float2 k = abs(q) - h + r;
   return length(max(k, 0.0)) + min(max(k.x, k.y), 0.0) - r;

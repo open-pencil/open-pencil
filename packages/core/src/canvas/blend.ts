@@ -2,7 +2,7 @@ import type { BlendMode as SkBlendMode, CanvasKit, Paint } from '@open-pencil/ca
 import type { BlendMode } from '@open-pencil/scene-graph'
 
 import { compiledBlender } from '#core/canvas/renderer/shaders'
-import { defineBlender, type SkslProgram } from '#core/canvas/sksl'
+import { defineBlender, type NoUniforms, type SkslProgram } from '#core/canvas/sksl'
 
 import plusDarkerSource from './blenders/plus-darker.sksl?raw'
 import plusLighterSource from './blenders/plus-lighter.sksl?raw'
@@ -11,9 +11,9 @@ import type { SkiaRenderer } from './renderer'
 type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
 
 /** Figma's plus darker and plus lighter: Skia has no blend mode for either. */
-const LINEAR_BLENDERS: Record<LinearBlendMode, SkslProgram<Record<string, never>>> = {
-  LINEAR_BURN: defineBlender('plus darker blender', { uniforms: {}, body: plusDarkerSource }),
-  LINEAR_DODGE: defineBlender('plus lighter blender', { uniforms: {}, body: plusLighterSource })
+const LINEAR_BLENDERS: Record<LinearBlendMode, SkslProgram<NoUniforms>> = {
+  LINEAR_BURN: defineBlender('plus darker blender', plusDarkerSource),
+  LINEAR_DODGE: defineBlender('plus lighter blender', plusLighterSource)
 }
 
 export function figmaBlendModeToSkia(

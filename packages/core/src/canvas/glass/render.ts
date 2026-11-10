@@ -3,9 +3,8 @@ import type { Effect, SceneNode } from '@open-pencil/scene-graph'
 
 import { tracePath } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { compiledEffect } from '#core/canvas/renderer/shaders'
+import { compiledProgram } from '#core/canvas/renderer/shaders'
 import { makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
-import { programUniforms } from '#core/canvas/sksl'
 
 import {
   GLASS_LIGHT,
@@ -196,9 +195,10 @@ export function renderGlassRefraction(
   const outline = glassOutline(r, node, shape)
   const sigma = glassBackdropSigma(effect)
   const blur = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
+  const refraction = compiledProgram(r.ck, r.shaders, GLASS_REFRACTION)
   const filter = r.ck.ImageFilter.MakeRuntimeShader(
-    compiledEffect(r.ck, r.shaders, GLASS_REFRACTION),
-    programUniforms(GLASS_REFRACTION, {
+    refraction.effect,
+    refraction.uniforms({
       ...glassGeometryUniforms(outline, depth),
       refraction: glass.refraction,
       dispersion: glass.dispersion
@@ -227,9 +227,10 @@ export function renderGlassLight(
   if (glass.lightIntensity <= 0) return
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
+  const light = compiledProgram(r.ck, r.shaders, GLASS_LIGHT)
   const filter = r.ck.ImageFilter.MakeRuntimeShader(
-    compiledEffect(r.ck, r.shaders, GLASS_LIGHT),
-    programUniforms(GLASS_LIGHT, {
+    light.effect,
+    light.uniforms({
       ...glassGeometryUniforms(outline, depth),
       axis: glassLightAxis(glass.lightAngle),
       intensity: glass.lightIntensity

@@ -1,3 +1,7 @@
+uniform float pitch;
+uniform float radius;
+uniform float shade;
+
 // One antialiased dot per grid point, with a dot at the origin.
 half4 main(float2 position) {
   float2 cell = position - pitch * floor(position / pitch + 0.5);

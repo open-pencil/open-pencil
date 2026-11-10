@@ -19,44 +19,42 @@ import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-gr
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import { blurSigma } from '@open-pencil/scene-graph/geometry'
 
-import { defineShader, type UniformValues } from '#core/canvas/sksl'
+import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
 import geometrySource from './geometry.sksl?raw'
 import lightSource from './light.sksl?raw'
 import refractionSource from './refraction.sksl?raw'
 
-/** The most outline segments a non-box shape passes to the shaders. */
+/**
+ * The most outline segments a non-box shape passes to the shaders, and how many consecutive ones
+ * share a bounding circle: `SEGMENTS` and `CHUNK` in `geometry.sksl`. Packing the uniforms throws
+ * when the arrays built from these no longer match the arrays the shaders declare.
+ */
 export const GLASS_MAX_SEGMENTS = 128
-
-/** How many consecutive segments share one bounding circle, which lets a pixel skip them. */
 const CHUNK = 8
 const CHUNKS = GLASS_MAX_SEGMENTS / CHUNK
 
 /** The outline both glass shaders read: a box, or segments grouped in bounding circles. */
-const GEOMETRY_UNIFORMS = {
-  origin: 'float2',
-  size: 'float2',
-  radii: 'float4',
-  isBox: 'float',
-  depth: 'float',
-  segmentCount: 'float',
-  segments: { type: 'float4', length: GLASS_MAX_SEGMENTS },
-  chunks: { type: 'float4', length: CHUNKS }
-} as const
+interface GeometryUniforms {
+  origin: Float2
+  size: Float2
+  radii: Float4
+  isBox: number
+  depth: number
+  segmentCount: number
+  segments: ArrayLike<number>
+  chunks: ArrayLike<number>
+}
 
-export const GLASS_REFRACTION = defineShader('glass refraction', {
-  uniforms: { ...GEOMETRY_UNIFORMS, refraction: 'float', dispersion: 'float' },
-  children: ['backdrop'],
-  constants: { CHUNK, CHUNKS },
-  body: [geometrySource, refractionSource]
-})
+export const GLASS_REFRACTION = defineShader<
+  GeometryUniforms & { refraction: number; dispersion: number }
+>('glass refraction', geometrySource, refractionSource)
 
-export const GLASS_LIGHT = defineShader('glass light', {
-  uniforms: { ...GEOMETRY_UNIFORMS, axis: 'float2', intensity: 'float' },
-  children: ['backdrop'],
-  constants: { CHUNK, CHUNKS },
-  body: [geometrySource, lightSource]
-})
+export const GLASS_LIGHT = defineShader<GeometryUniforms & { axis: Float2; intensity: number }>(
+  'glass light',
+  geometrySource,
+  lightSource
+)
 
 /** Where a glass layer's outline sits, in the layer's units: a box or flattened segments. */
 export interface GlassOutline {
@@ -70,10 +68,7 @@ export interface GlassOutline {
 }
 
 /** The uniforms both glass shaders open with. */
-export function glassGeometryUniforms(
-  outline: GlassOutline,
-  depth: number
-): UniformValues<typeof GEOMETRY_UNIFORMS> {
+export function glassGeometryUniforms(outline: GlassOutline, depth: number): GeometryUniforms {
   const segments = new Float32Array(GLASS_MAX_SEGMENTS * 4)
   segments.set(outline.segments.subarray(0, segments.length))
   return {

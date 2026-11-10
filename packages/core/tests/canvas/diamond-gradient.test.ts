@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas/renderer'
 test('diamond contours use Manhattan distance and dispose their retained program', async () => {
   const ck = await getCanvasKit()
@@ -24,7 +24,7 @@ test('diamond contours use Manhattan distance and dispose their retained program
     gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   }
   const node = graph.createNode('RECTANGLE', page.id, { width: 101, height: 101, fills: [fill] })
-  const effects = () => [...renderer.shaders.effects.values()]
+  const effects = () => [...renderer.shaders.programs.values()].map(({ effect }) => effect)
   let compiled = effects()
   try {
     const draw = () => {
@@ -62,7 +62,7 @@ test('diamond contours use Manhattan distance and dispose their retained program
     renderer.destroy()
   }
   expect(compiled.every((effect) => effect.isDeleted())).toBe(true)
-  expect(renderer.shaders.effects.size).toBe(0)
+  expect(renderer.shaders.programs.size).toBe(0)
 })
 
 test('diamond gradients preserve transformed contours and intermediate stops', async () => {

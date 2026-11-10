@@ -1,26 +1,20 @@
-/** How many floats each SkSL uniform type holds. */
-const TYPE_FLOATS = { float: 1, float2: 2, float3: 3, float4: 4 } as const
+import type { RuntimeEffect } from '@open-pencil/canvaskit'
 
-export type UniformType = keyof typeof TYPE_FLOATS
+export type Float2 = readonly [number, number]
+export type Float3 = readonly [number, number, number]
+export type Float4 = readonly [number, number, number, number]
 
-/** A uniform: one value of a type, or an array of `length` of them. */
-export type UniformSpec = UniformType | { readonly type: UniformType; readonly length: number }
+/** A uniform's value: a float, a vector, or an array's floats end to end. */
+export type UniformValue = number | ArrayLike<number>
 
-/** A program's uniforms in declaration order, which is the order Skia lays them out in. */
-export type UniformSpecs = Readonly<Record<string, UniformSpec>>
+/** What `U` must be to name a program's uniform values: each of its fields a uniform's value. */
+export type Uniforms<U> = { readonly [K in keyof U]: UniformValue }
 
-/** What each uniform type takes. */
-interface TypeValues {
-  float: number
-  float2: readonly [number, number]
-  float3: readonly [number, number, number]
-  float4: readonly [number, number, number, number]
+function isUniformValue(value: unknown): value is UniformValue {
+  return (
+    typeof value === 'number' || (typeof value === 'object' && value !== null && 'length' in value)
+  )
 }
-
-/** What a uniform takes: its type's value, or an array's floats end to end. */
-type UniformValue<S extends UniformSpec> = S extends UniformType ? TypeValues[S] : ArrayLike<number>
-
-export type UniformValues<U extends UniformSpecs> = { readonly [K in keyof U]: UniformValue<U[K]> }
 
 /** A uniform as Skia lays it out: where its floats start in the packed array, and how many. */
 export interface UniformSlot {
@@ -29,57 +23,47 @@ export interface UniformSlot {
   floats: number
 }
 
-function typeOf(spec: UniformSpec): UniformType {
-  return typeof spec === 'string' ? spec : spec.type
-}
-
-function floatsOf(spec: UniformSpec): number {
-  return TYPE_FLOATS[typeOf(spec)] * (typeof spec === 'string' ? 1 : spec.length)
-}
-
-/** The `uniform` lines that declare `uniforms` in SkSL. */
-export function uniformDeclarations(uniforms: UniformSpecs): string {
-  return Object.entries(uniforms)
-    .map(([name, spec]) =>
-      typeof spec === 'string'
-        ? `uniform ${spec} ${name};`
-        : `uniform ${spec.type} ${name}[${spec.length}];`
-    )
-    .join('\n')
-}
-
-/** Where each uniform's floats sit in the packed array, in declaration order. */
-export function uniformLayout(uniforms: UniformSpecs): UniformSlot[] {
-  let slot = 0
-  return Object.entries(uniforms).map(([name, spec]) => {
-    const floats = floatsOf(spec)
-    const entry = { name, slot, floats }
-    slot += floats
-    return entry
-  })
+/**
+ * The uniforms `effect` declares, as Skia's compiler reports them, in its layout order. A
+ * uniform's size is where the next one starts, since Skia reports no array lengths.
+ */
+export function uniformLayout(effect: RuntimeEffect): UniformSlot[] {
+  const total = effect.getUniformFloatCount()
+  const starts = Array.from({ length: effect.getUniformCount() }, (_, index) => ({
+    name: effect.getUniformName(index),
+    slot: effect.getUniform(index).slot
+  }))
+  return starts.map((uniform, index) => ({
+    ...uniform,
+    floats: (starts.at(index + 1)?.slot ?? total) - uniform.slot
+  }))
 }
 
 /**
- * `values` as the float array Skia takes, in declaration order. Throws when a value holds more or
- * fewer floats than its uniform, so a program and its caller cannot drift apart unnoticed.
+ * `values` as the float array Skia takes for uniforms laid out as `layout`. Throws, naming
+ * `program`, when a uniform has no value or one of the wrong size, or a value has no uniform, so
+ * a program and its caller cannot drift apart unnoticed.
  */
-export function packUniforms<U extends UniformSpecs>(
-  uniforms: U,
-  values: UniformValues<U>
+export function packUniforms(
+  program: string,
+  layout: readonly UniformSlot[],
+  values: object
 ): number[] {
+  const declared = new Set(layout.map((uniform) => uniform.name))
+  const unknown = Object.keys(values).find((name) => !declared.has(name))
+  if (unknown) throw new Error(`The ${program} declares no uniform ${unknown}`)
   const packed: number[] = []
-  for (const [name, spec] of Object.entries(uniforms)) {
-    const value: number | ArrayLike<number> = values[name]
-    const floats = floatsOf(spec)
-    if (typeof value === 'number') {
-      if (floats !== 1) throw new Error(`Uniform ${name} takes ${floats} floats, not 1`)
-      packed.push(value)
-      continue
+  for (const { name, floats } of layout) {
+    const value: unknown = Reflect.get(values, name)
+    if (!isUniformValue(value)) {
+      throw new Error(`The ${program} needs a value for uniform ${name}`)
     }
-    if (value.length !== floats) {
-      throw new Error(`Uniform ${name} takes ${floats} floats, not ${value.length}`)
+    const given = typeof value === 'number' ? 1 : value.length
+    if (given !== floats) {
+      throw new Error(`Uniform ${name} of the ${program} takes ${floats} floats, not ${given}`)
     }
-    packed.push(...Array.from(value))
+    if (typeof value === 'number') packed.push(value)
+    else for (let i = 0; i < given; i++) packed.push(value[i])
   }
   return packed
 }

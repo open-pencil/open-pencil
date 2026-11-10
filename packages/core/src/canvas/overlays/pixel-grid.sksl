@@ -1,3 +1,8 @@
+uniform float2 gridOffset;
+uniform float2 gridSpacing;
+uniform float4 lineColor;
+uniform float dpr;
+
 // One line per document pixel, decided per device pixel: the line for document pixel k sits on
 // device pixel round(offset + k · step), the same rounding a drawn rectangle would get.
 bool onLine(float device, float origin, float spacing) {

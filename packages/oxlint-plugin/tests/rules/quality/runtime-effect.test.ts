@@ -16,7 +16,7 @@ describe('no-raw-runtime-effect', () => {
   })
 
   test.each([
-    'compiledEffect(ck, shaders, PROGRAM)',
+    'compiledProgram(ck, shaders, PROGRAM)',
     'ck.Shader.MakeLinearGradient(start, end, colors, positions, mode)',
     'effect.makeShader(uniforms)'
   ])('accepts %s', async (source) => {

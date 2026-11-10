@@ -3,7 +3,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
-import { defineShader, programUniforms } from '#core/canvas/sksl'
+import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
 import pixelGridSource from './pixel-grid.sksl?raw'
 
@@ -27,10 +27,12 @@ export function pixelGridVisible(zoom: number, dpr: number): boolean {
  * device pixel round(offset + k · step), the same rounding a drawn rectangle would get. Computing
  * it in the shader keeps the grid one draw call, whatever the zoom or viewport.
  */
-const PIXEL_GRID = defineShader('pixel grid', {
-  uniforms: { gridOffset: 'float2', gridSpacing: 'float2', lineColor: 'float4', dpr: 'float' },
-  body: pixelGridSource
-})
+const PIXEL_GRID = defineShader<{
+  gridOffset: Float2
+  gridSpacing: Float2
+  lineColor: Float4
+  dpr: number
+}>('pixel grid', pixelGridSource)
 
 function lineColor(page: Color): Color {
   const luminance = 0.2126 * page.r + 0.7152 * page.g + 0.0722 * page.b
@@ -42,12 +44,11 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
   if (!pixelGridVisible(r.zoom, r.dpr)) return
   const color = lineColor(r.pageColor)
   const step = r.zoom * r.dpr
-  const uniforms = programUniforms(PIXEL_GRID, {
+  const shader = keptShader(r.ck, r.shaders, PIXEL_GRID, {
     gridOffset: [r.panX * r.dpr, r.panY * r.dpr],
     gridSpacing: [step, step],
     lineColor: [color.r, color.g, color.b, color.a],
     dpr: r.dpr
   })
-  const shader = keptShader(r.ck, r.shaders, PIXEL_GRID, uniforms)
   fillWithShader(canvas, r.auxFill, shader, r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight))
 }

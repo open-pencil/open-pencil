@@ -1,3 +1,6 @@
+uniform float refraction;
+uniform float dispersion;
+
 float edgeRamp(float s) { return max(0.19, clamp(1.12 * (s - 0.12), 0.0, 1.0)); }
 
 float roundedProfile(float s) {

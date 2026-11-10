@@ -1,3 +1,5 @@
+uniform shader ramp;
+
 // A diamond gradient over the unit square: the ramp read at twice the Manhattan distance from
 // the centre, so the corners of the square reach its end.
 half4 main(float2 position) {

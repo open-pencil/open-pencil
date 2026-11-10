@@ -1,34 +1,17 @@
-import {
-  packUniforms,
-  uniformDeclarations,
-  type UniformSpecs,
-  type UniformValues
-} from './uniforms'
+import type { Uniforms } from './uniforms'
 
-/**
- * A program's body: the SkSL of a `.sksl` file imported with `?raw`, or several, such as a
- * snippet two programs share and each one's own code, joined in order.
- */
-export type SkslBody = string | readonly string[]
-
-/** A Skia runtime program: its SkSL, and the uniforms and child shaders it declares. */
-export interface SkslProgram<U extends UniformSpecs = UniformSpecs> {
+/** A Skia runtime program, as complete SkSL: its uniforms and child shaders are declared in it. */
+export interface SkslProgram<U extends object = object> {
   /** What the program draws, as an error names it: "glass refraction". */
   readonly name: string
   readonly kind: 'shader' | 'blender'
-  readonly uniforms: U
-  /** Child shaders, in declaration order, as `makeShaderWithChildren` takes them. */
-  readonly children: readonly string[]
-  /** The whole program: declarations generated from the above, then the body. */
   readonly source: string
+  /** Type only: the values the program's uniforms take, never set. */
+  readonly uniforms?: U
 }
 
-interface ProgramParts<U extends UniformSpecs> {
-  uniforms: U
-  /** Integer constants the body reads, such as loop bounds, declared as `const int`. */
-  constants?: Readonly<Record<string, number>>
-  body: SkslBody
-}
+/** No uniforms. */
+export type NoUniforms = Readonly<Record<string, never>>
 
 /**
  * Every program defined, in the order modules defined them, so tests can compile each one the
@@ -36,59 +19,36 @@ interface ProgramParts<U extends UniformSpecs> {
  */
 const programs: SkslProgram[] = []
 
-function define<U extends UniformSpecs>(
+function define<U extends object>(
   name: string,
   kind: SkslProgram['kind'],
-  children: readonly string[],
-  { uniforms, constants = {}, body }: ProgramParts<U>
+  parts: readonly string[]
 ): SkslProgram<U> {
-  for (const [constant, value] of Object.entries(constants)) {
-    if (!Number.isInteger(value)) throw new Error(`Constant ${constant} of ${name} is not an int`)
-  }
-  const declarations = [
-    ...children.map((child) => `uniform shader ${child};`),
-    uniformDeclarations(uniforms),
-    ...Object.entries(constants).map(([constant, value]) => `const int ${constant} = ${value};`)
-  ]
-    .filter((line) => line.length > 0)
-    .join('\n')
-  const parts = typeof body === 'string' ? [body] : body
-  const program = {
-    name,
-    kind,
-    uniforms,
-    children,
-    source: `${[declarations, ...parts.map((part) => part.trim())].join('\n\n')}\n`
-  }
+  const program = { name, kind, source: `${parts.map((part) => part.trim()).join('\n\n')}\n` }
   programs.push(program)
   return program
 }
 
-/** A runtime shader: its body holds `half4 main(float2 position)` and what it calls. */
-export function defineShader<U extends UniformSpecs>(
+/**
+ * A runtime shader from the SkSL of `.sksl` files imported with `?raw`, joined in order, such as
+ * a snippet two programs share and each one's own code. `U` names the values its uniforms take.
+ */
+export function defineShader<U extends Uniforms<U> = NoUniforms>(
   name: string,
-  { children = [], ...parts }: ProgramParts<U> & { children?: readonly string[] }
+  ...parts: readonly string[]
 ): SkslProgram<U> {
-  return define(name, 'shader', children, parts)
+  return define(name, 'shader', parts)
 }
 
-/** A runtime blender: its body holds `half4 main(half4 src, half4 dst)`. */
-export function defineBlender<U extends UniformSpecs>(
+/** A runtime blender: its SkSL holds `half4 main(half4 src, half4 dst)`. */
+export function defineBlender<U extends Uniforms<U> = NoUniforms>(
   name: string,
-  parts: ProgramParts<U>
+  ...parts: readonly string[]
 ): SkslProgram<U> {
-  return define(name, 'blender', [], parts)
+  return define(name, 'blender', parts)
 }
 
 /** Every program the loaded modules define. */
 export function definedPrograms(): readonly SkslProgram[] {
   return programs
-}
-
-/** `program`'s uniforms as the float array Skia takes, checked against their declarations. */
-export function programUniforms<U extends UniformSpecs>(
-  program: SkslProgram<U>,
-  values: UniformValues<U>
-): number[] {
-  return packUniforms(program.uniforms, values)
 }

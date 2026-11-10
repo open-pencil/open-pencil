@@ -3,7 +3,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
-import { defineShader, programUniforms } from '#core/canvas/sksl'
+import { defineShader } from '#core/canvas/sksl'
 
 import dotGridSource from './dot-grid.sksl?raw'
 
@@ -21,10 +21,10 @@ const DOT_MIN_SPACING = 8
  * One dot per grid point, decided per device pixel, so the grid is a single draw at any zoom. It
  * puts a dot at its own origin, where the canvas is moved to draw it, so tiles at one zoom share it.
  */
-const DOT_GRID = defineShader('dot grid', {
-  uniforms: { pitch: 'float', radius: 'float', shade: 'float' },
-  body: dotGridSource
-})
+const DOT_GRID = defineShader<{ pitch: number; radius: number; shade: number }>(
+  'dot grid',
+  dotGridSource
+)
 
 /** The spacing FigJam shows at a zoom: the board grid, doubled until the dots stand apart. */
 export function dotGridSpacing(grid: number, zoom: number): number {
@@ -49,12 +49,11 @@ export function paintPageBackground(
   const zoom = scale / r.dpr
   const pitch = dotGridSpacing(r.pageDotGrid, zoom) * scale
   const diameter = Math.max(DOT_DIAMETER_UNITS * zoom, DOT_MIN_DIAMETER) * r.dpr
-  const shader = keptShader(
-    r.ck,
-    r.shaders,
-    DOT_GRID,
-    programUniforms(DOT_GRID, { pitch, radius: diameter / 2, shade: DOT_COLOR })
-  )
+  const shader = keptShader(r.ck, r.shaders, DOT_GRID, {
+    pitch,
+    radius: diameter / 2,
+    shade: DOT_COLOR
+  })
   canvas.save()
   canvas.translate(origin.x, origin.y)
   fillWithShader(canvas, r.auxFill, shader)
