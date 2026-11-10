@@ -31,7 +31,7 @@ export default {
       scrollbarGutter
     ],
     /** A separate action at the start, such as Delete or Copy codes; never Cancel. */
-    footerStart: 'mr-auto flex min-w-0 items-center gap-2',
+    footerStart: 'me-auto flex min-w-0 items-center gap-2',
     /** A strip of a dialog's own layout between header and footer, lined up with them. */
     pane: scrollbarGutter
   },
