@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { portalPublic } from '@/components/cloud-portal/ui'
+import { portalForm, portalPublic } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
@@ -29,9 +29,11 @@ const {
   error?: string | null
 }>()
 
-const emit = defineEmits<{ accept: []; decline: [] }>()
+const emit = defineEmits<{ accept: []; decline: []; leave: [] }>()
 
 const ui = portalPublic()
+// The aside's action, styled as signing in's own "Sign in" link.
+const form = portalForm({ size: 'lg' })
 const messages = useCloudPortalMessages()
 const description = computed(() => termsDescription(messages.value, legal, host))
 const links = computed(() => legalLinks(messages.value, legal))
@@ -65,6 +67,19 @@ const links = computed(() => legalLinks(messages.value, legal))
         @click="emit('decline')"
       >
         {{ messages.declineTerms }}
+      </AppButton>
+    </template>
+    <template #aside>
+      {{ messages.termsLeaveHint }}
+      <AppButton
+        size="lg"
+        color="primary"
+        variant="link"
+        :class="form.inlineLink()"
+        :disabled="accepting"
+        @click="emit('leave')"
+      >
+        {{ messages.termsLeave }}
       </AppButton>
     </template>
   </PortalNotice>

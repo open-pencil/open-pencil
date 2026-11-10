@@ -141,7 +141,7 @@ Revision keys are immutable, so bucket versioning isn't needed, but it isn't a b
 
 ## Terms and privacy
 
-The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. The server records which version each account accepted and when.
+The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when.
 
 ## Error tracking
 

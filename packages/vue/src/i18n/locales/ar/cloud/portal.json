@@ -72,6 +72,8 @@
   "reportAbuse": "الإبلاغ عن إساءة",
   "acceptTerms": "اقبل وتابع",
   "declineTerms": "ارفض وسجّل الخروج",
+  "termsLeaveHint": "لا تريد القبول؟",
+  "termsLeave": "احذف حسابك",
   "termsChanged": "تغيّرت الشروط أثناء فتح هذه الصفحة. أعد تحميلها لقراءة النسخة الحالية.",
   "consentTerms": "بالمتابعة، فإنك توافق على {terms}.",
   "consentTermsAndPrivacy": "بالمتابعة، فإنك توافق على {terms} وتقرّ بـ{privacy}.",

@@ -57,7 +57,7 @@ You can stop using the Service and delete your account at any time from your acc
 
 ## Changes to these terms
 
-We'll tell you about material changes before they take effect, and you'll be asked to accept the new version the next time you use the Service. The version date above changes with each version.
+We'll tell you about material changes before they take effect, and you'll be asked to accept the new version the next time you use the Service. If you don't accept it, you can still download your documents and delete your account. The version date above changes with each version.
 
 ## Law
 

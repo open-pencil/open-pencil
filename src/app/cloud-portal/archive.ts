@@ -21,6 +21,15 @@ const EXTENSIONS = { design: 'fig', board: 'jam' } as const satisfies Record<Doc
 
 export type AccountArchiveProgress = { done: number; total: number }
 
+/** How far Download all got: files saved so far of all of them, and the names it couldn't get. */
+export type PortalAccountArchive = {
+  done: number
+  total: number
+  /** Set once it finished: how many it saved. */
+  saved: number | null
+  failed: string[]
+}
+
 export type AccountArchiveResult = {
   saved: number
   /** The documents that could not be downloaded, which the archive leaves out. */

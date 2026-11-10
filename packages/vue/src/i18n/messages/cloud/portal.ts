@@ -87,6 +87,8 @@ export const cloudPortalMessageDefaults = {
   reportAbuse: 'Report abuse',
   acceptTerms: 'Accept and continue',
   declineTerms: 'Decline and sign out',
+  termsLeaveHint: 'Don’t want to accept?',
+  termsLeave: 'Delete your account',
   termsChanged:
     'The terms changed while this page was open. Reload it to read the current version.',
   consentTerms: params('By continuing, you agree to the {terms}.'),

@@ -48,6 +48,8 @@ export type AccountRouteDependencies = {
   resolveIdentity: CloudIdentityResolver
   resolveSession: CloudSessionResolver
   requireActiveSession: MiddlewareHandler<CloudAPIEnvironment>
+  /** Lets an account with terms to accept reach what leaving needs; see `resolveAccountSession`. */
+  requireAccountSession: MiddlewareHandler<CloudAPIEnvironment>
   authenticatedMutationLimiter: MiddlewareHandler<CloudAPIEnvironment>
 }
 
@@ -228,8 +230,8 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
     .use('/api/account/sessions', requireActiveSession)
     .use('/api/account/sessions/*', requireActiveSession)
     .use('/api/account/sign-ins', requireActiveSession)
-    .use('/api/account/deletion', requireActiveSession)
-    .use('/api/account/delete', requireActiveSession)
+    .use('/api/account/deletion', services.requireAccountSession)
+    .use('/api/account/delete', services.requireAccountSession)
     .use('/api/account/delete', authenticatedMutationLimiter)
     .use('/api/account/profile', authenticatedMutationLimiter)
     .use('/api/account/profile/*', authenticatedMutationLimiter)

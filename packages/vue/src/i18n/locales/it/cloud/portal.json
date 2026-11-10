@@ -63,6 +63,8 @@
   "reportAbuse": "Segnala un abuso",
   "acceptTerms": "Accetta e continua",
   "declineTerms": "Rifiuta ed esci",
+  "termsLeaveHint": "Non vuoi accettare?",
+  "termsLeave": "Elimina il tuo account",
   "termsChanged": "I termini sono cambiati mentre questa pagina era aperta. Ricaricala per leggere la versione attuale.",
   "consentTerms": "Continuando, accetti i {terms}.",
   "consentTermsAndPrivacy": "Continuando, accetti i {terms} e prendi atto dell’{privacy}.",

@@ -63,6 +63,8 @@
   "reportAbuse": "Zgłoś nadużycie",
   "acceptTerms": "Akceptuj i kontynuuj",
   "declineTerms": "Odrzuć i wyloguj się",
+  "termsLeaveHint": "Nie chcesz akceptować?",
+  "termsLeave": "Usuń konto",
   "termsChanged": "Warunki zmieniły się, gdy ta strona była otwarta. Odśwież ją, aby przeczytać aktualną wersję.",
   "consentTerms": "Kontynuując, akceptujesz {terms}.",
   "consentTermsAndPrivacy": "Kontynuując, akceptujesz {terms}. Sposób przetwarzania danych opisuje {privacy}.",

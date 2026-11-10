@@ -138,6 +138,33 @@ describe('terms acceptance', () => {
     }
   })
 
+  test('lets an account with terms to accept leave, and nothing else', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const app = createCloudApp({
+        config: requiring,
+        database: runtime.database,
+        auth: createBetterAuthAdapter(requiring, runtime.database),
+        objects: {} as never,
+        resolveIdentity: async () => person,
+        resolveSession: async () => null,
+        resolveAccountSession: async () => person
+      })
+      const unknownDocument = '00000000-0000-4000-8000-000000000000'
+      // What leaving needs: what deleting the account takes, and each document to download.
+      expect((await app.request('/api/account/deletion')).status).toBe(200)
+      expect((await app.request(`/api/documents/${unknownDocument}`)).status).toBe(404)
+      // Everything else waits for the terms.
+      expect((await app.request('/api/workspaces')).status).toBe(401)
+      expect((await app.request(`/api/documents/${unknownDocument}/versions`)).status).toBe(401)
+      expect(
+        (await app.request(`/api/documents/${unknownDocument}`, { method: 'DELETE' })).status
+      ).toBe(401)
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('gives a signed-in account no session until it accepts', async () => {
     let verificationURL = ''
     const runtime = await createCloudTestDatabase()
@@ -179,6 +206,9 @@ describe('terms acceptance', () => {
       const identity = await auth.resolveIdentity(headers)
       expect(identity).toMatchObject({ email: 'person@example.com' })
       expect(await auth.resolveSession(headers)).toBeNull()
+      expect(await auth.resolveAccountSession(headers)).toMatchObject({
+        email: 'person@example.com'
+      })
 
       await createTermsService(runtime.database, requiring).accept(
         identity?.userId ?? '',

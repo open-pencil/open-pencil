@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { usePortal } from '@/app/cloud-portal/context'
+import { usePortalAccountDeletion } from '@/app/cloud-portal/deletion'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
 import { continuationPath } from '@/app/cloud-portal/navigation'
 import { usePortalAction } from '@/app/cloud-portal/state'
+import PortalDeleteAccountDialog from '@/components/cloud-portal/account/PortalDeleteAccountDialog.vue'
 import PortalTerms from '@/components/cloud-portal/auth/PortalTerms.vue'
 
 /**
@@ -47,6 +49,10 @@ const {
   await router.replace({ name: 'welcome' })
 })
 const error = computed(() => acceptFailure.value ?? declineFailure.value)
+
+// Leaving without accepting: download every document, then delete the account. A session too old
+// to delete with says to sign in again, which brings the person back here.
+const deletion = usePortalAccountDeletion()
 </script>
 
 <template>
@@ -58,5 +64,18 @@ const error = computed(() => acceptFailure.value ?? declineFailure.value)
     :error="error"
     @accept="accept()"
     @decline="decline()"
+    @leave="deletion.show"
+  />
+  <PortalDeleteAccountDialog
+    v-if="portal.account.value"
+    v-model:open="deletion.open.value"
+    :email="portal.account.value.user.email"
+    :deletion="deletion.deletion.value"
+    :load-error="deletion.loadError.value"
+    :archive="deletion.archive.value"
+    :error="deletion.remove.error.value"
+    :deleting="deletion.remove.busy.value"
+    @download-all="deletion.downloadAll"
+    @confirm="deletion.remove.run()"
   />
 </template>

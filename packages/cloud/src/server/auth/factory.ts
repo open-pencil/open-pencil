@@ -344,12 +344,18 @@ export function createBetterAuthAdapter(
    * before it accepted the deployment's current terms when those are required.
    */
   async function resolveSession(headers: Headers) {
+    const identity = await resolveAccountSession(headers)
+    if (!identity || !(await terms.hasAccepted(identity.userId))) return null
+    return identity
+  }
+
+  /** The signed-in person while their account is approved, before or after accepting the terms. */
+  async function resolveAccountSession(headers: Headers) {
     const identity = await resolveIdentity(headers)
     if (!identity) return null
     if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(identity.email))) {
       return null
     }
-    if (!(await terms.hasAccepted(identity.userId))) return null
     return identity
   }
 
@@ -403,6 +409,7 @@ export function createBetterAuthAdapter(
     },
     resolveIdentity,
     resolveSession,
+    resolveAccountSession,
     async listAuthenticationMethods(headers) {
       const accounts = await auth.api.listUserAccounts({ headers })
       return accounts.map((account) => ({

@@ -26,6 +26,7 @@ const ui = portalPublic()
 <template>
   <PortalPublicLayout :host="host" :heading="heading" :description="description">
     <template v-if="$slots.description" #description><slot name="description" /></template>
+    <template v-if="$slots.aside" #aside><slot name="aside" /></template>
     <template #icon>
       <span :class="ui.tile({ tone })" aria-hidden="true"><slot name="icon" /></span>
     </template>

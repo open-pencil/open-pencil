@@ -63,6 +63,8 @@
   "reportAbuse": "不正利用を報告",
   "acceptTerms": "同意して続ける",
   "declineTerms": "同意せずにサインアウト",
+  "termsLeaveHint": "同意しない場合",
+  "termsLeave": "アカウントを削除",
   "termsChanged": "このページを開いている間に規約が変更されました。最新の内容を読むには再読み込みしてください。",
   "consentTerms": "続けると、{terms}に同意したことになります。",
   "consentTermsAndPrivacy": "続けると、{terms}に同意し、{privacy}を確認したことになります。",

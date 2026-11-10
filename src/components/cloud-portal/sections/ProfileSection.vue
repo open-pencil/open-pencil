@@ -5,17 +5,15 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
-import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { saveAccountArchive } from '@/app/cloud-portal/archive'
 import { usePortal } from '@/app/cloud-portal/context'
+import { usePortalAccountDeletion } from '@/app/cloud-portal/deletion'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
 import { portalURL } from '@/app/cloud-portal/navigation'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
 import { portalToast } from '@/app/cloud-portal/toast'
 import { useDateFormat } from '@/app/i18n/date'
-import type { PortalAccountArchive } from '@/components/cloud-portal/types'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 
 import PortalDeleteAccountDialog from '../account/PortalDeleteAccountDialog.vue'
@@ -147,7 +145,8 @@ const changeEmail = usePortalAction(async (email: string) => {
 
 const confirmPassword = usePortalAction(async (password: string) => {
   if (passwordFor.value === 'delete') {
-    await finishDeletion(password)
+    await deletion.finish(password)
+    passwordOpen.value = false
     return
   }
   const email = portal.account.value?.user.email ?? ''
@@ -163,83 +162,19 @@ const confirmPassword = usePortalAction(async (password: string) => {
   await requestEmail(pendingEmail)
 })
 
-const deleteOpen = ref(false)
-const deletion = ref<CloudAccountDeletion | null>(null)
-const deletionLoadError = ref<string | null>(null)
-const archive = ref<PortalAccountArchive | null>(null)
 /** Whether the password dialog confirms deleting the account rather than an email change. */
 const passwordFor = ref<'email' | 'delete'>('email')
 
-/** Which opening of the dialog a download belongs to, so a stale one can't write into a newer. */
-let deleteSession = 0
-
-async function openDelete() {
-  deleteSession++
-  deleteAccount.clear()
-  deletion.value = null
-  deletionLoadError.value = null
-  archive.value = null
-  deleteOpen.value = true
-  try {
-    deletion.value = (await portal.api.accountDeletion()).deletion
-  } catch (error) {
-    deletionLoadError.value = failures.api(error)
-  }
-}
-
-async function downloadAll() {
-  const session = deleteSession
-  const documents = deletion.value?.documents ?? []
-  const current = () => session === deleteSession
-  archive.value = { done: 0, total: documents.length, saved: null, failed: [] }
-  try {
-    const result = await saveAccountArchive(documents, {
-      apiURL: portal.discovery.apiURL,
-      archiveName: `${messages.value.accountArchiveName({ host: portal.host })}.zip`,
-      onProgress: ({ done, total }) => {
-        if (current() && archive.value) archive.value = { ...archive.value, done, total }
-      }
-    })
-    if (!current()) return
-    archive.value = {
-      done: documents.length,
-      total: documents.length,
-      saved: result.saved,
-      failed: result.failed.map((document) => document.name)
-    }
-  } catch (error) {
-    // Zipping or saving failed as a whole, such as out of memory; nothing was saved.
-    if (!current()) return
-    archive.value = null
-    portalToast.error(failures.api(error))
-  }
-}
-
-async function finishDeletion(password?: string) {
-  await portal.api.deleteAccount(password)
-  deleteOpen.value = false
-  passwordOpen.value = false
-  await portal.refreshAccount()
-  portalToast.info(messages.value.accountDeleted)
-  await router.replace({ name: 'welcome' })
-}
-
-const deleteAccount = usePortalAction(async () => {
-  try {
-    await finishDeletion()
-  } catch (error) {
-    if (!(error instanceof CloudPortalAPIError)) throw error
-    if (error.code === 'account_sole_admin') {
-      // Someone else's change stopped it meanwhile; show which workspaces need another admin.
-      deletion.value = (await portal.api.accountDeletion()).deletion
-      throw error
-    }
-    if (error.code !== 'session_not_fresh' || !loaded.data.value?.hasPassword) throw error
+const deletion = usePortalAccountDeletion({
+  confirmPassword() {
+    if (!loaded.data.value?.hasPassword) return false
     passwordFor.value = 'delete'
     confirmPassword.clear()
     passwordOpen.value = true
+    return true
   }
 })
+const deleteAccount = deletion.remove
 
 const busy = computed(
   () =>
@@ -281,7 +216,7 @@ onMounted(async () => {
       @change-email="openEmail"
       @choose-picture="choosePicture"
       @remove-picture="removeOpen = true"
-      @delete-account="openDelete"
+      @delete-account="deletion.show"
     />
     <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[2, 1]" />
     <AppConfirmationDialog
@@ -332,14 +267,14 @@ onMounted(async () => {
     />
     <PortalDeleteAccountDialog
       v-if="profile"
-      v-model:open="deleteOpen"
+      v-model:open="deletion.open.value"
       :email="profile.email"
-      :deletion="deletion"
-      :load-error="deletionLoadError"
-      :archive="archive"
+      :deletion="deletion.deletion.value"
+      :load-error="deletion.loadError.value"
+      :archive="deletion.archive.value"
       :error="deleteAccount.error.value"
       :deleting="deleteAccount.busy.value"
-      @download-all="downloadAll"
+      @download-all="deletion.downloadAll"
       @confirm="deleteAccount.run()"
     />
     <PortalPasswordDialog
