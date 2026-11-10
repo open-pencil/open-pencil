@@ -96,7 +96,7 @@ defineOptions({ inheritAttrs: false })
 
 <template>
   <NumberFieldRoot
-    v-slot="{ editing, actions, attrs: rootAttrs, placeholder: ph }"
+    v-slot="{ editing, actions, attrs: rootAttrs, placeholder: ph, draftValue }"
     :model-value="modelValue"
     :min="min"
     :max="max"
@@ -135,7 +135,12 @@ defineOptions({ inheritAttrs: false })
         </slot>
         <span v-if="label" class="text-2xs leading-none">{{ label }}</span>
       </span>
-      <NumberFieldInput :class="styles.field({ class: ui?.field })" />
+      <span v-if="editing" data-slot="sizer" :class="styles.sizer({ class: ui?.sizer })">
+        <span aria-hidden="true" :class="styles.field({ class: [ui?.field, styles.mirror()] })">{{
+          draftValue || ' '
+        }}</span>
+        <NumberFieldInput :class="styles.field({ class: ui?.field })" />
+      </span>
       <NumberFieldValue :class="styles.display({ class: ui?.display })">
         <template #default="display">
           <slot name="display" v-bind="display">
@@ -156,6 +161,8 @@ defineOptions({ inheritAttrs: false })
       <span v-if="editing && suffix" :class="styles.suffix({ class: ui?.suffix })">{{
         suffix
       }}</span>
+      <!-- The rest of the field keeps the text being edited focused, as the wide input used to. -->
+      <span v-if="editing" :class="styles.gap({ class: ui?.gap })" @pointerdown.prevent />
       <span
         v-if="slots.suffix"
         data-slot="trailing"

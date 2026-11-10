@@ -1,1 +1,2 @@
 - Colour previews across the properties panel are the same 16 px swatch, show transparency on a checkerboard, and show keyboard focus; colour rows such as an effect's, a layout grid's, and an icon's sit in the same field frame as fills (#1976).
+- Units such as % and px follow the number directly in panel fields, also while typing, instead of sitting at the field's far end (#1976).
