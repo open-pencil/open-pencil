@@ -5,6 +5,7 @@ import { createCloudServer } from '#cloud/runtime/site/server'
 import {
   cleanupPassOptions,
   cloudErrorHandler,
+  cloudRequestId,
   createCleanupServices,
   createCloudApp,
   createCloudAuthenticationRuntime,
@@ -25,6 +26,7 @@ import {
   type CloudflareCloudEnvironment,
   type PreparedCloudflareCloud
 } from './environment'
+import { cloudflareRayId } from './logging'
 import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
 import { assetSiteFiles } from './site'
 
@@ -161,6 +163,7 @@ export function createCloudflareCloud(
   const router = new Hono<{ Bindings: CloudflareCloudEnvironment }>()
     // Setup, relay routing, and the runtime around the app; the app reports its own errors.
     .onError((error, c) => cloudErrorHandler(keptAlive(reporter(), c.executionCtx))(error, c))
+    .use('*', cloudRequestId(cloudflareRayId))
     .get(RELAY_PATH, relayRoute(relayJurisdiction))
     .all('*', async (c) => {
       const prepared = await prepare(c.env)
@@ -187,7 +190,8 @@ export function createCloudflareCloud(
             runInBackground(relay(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
             runInBackground(relay(c.env, documentId).announceVersions(documentId)),
-          reportError: services.reporter
+          reportError: services.reporter,
+          forwardedRequestId: cloudflareRayId
         })
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),

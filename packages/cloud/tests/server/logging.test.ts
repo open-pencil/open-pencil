@@ -1,30 +1,40 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
-import { cloudRequestId, forwardedRequestId, loggedError } from '#cloud/server/logging'
+import { cloudRequestId, loggedError, logCloud } from '#cloud/server/logging'
 import { Hono } from 'hono'
 
-describe('forwardedRequestId', () => {
-  test('prefers Cloudflare’s ray ID over a proxy’s request ID', () => {
-    const headers = new Headers({ 'cf-ray': '8f1e2d3c4b5a6978-FRA', 'x-request-id': 'proxy-1' })
-    expect(forwardedRequestId(headers)).toBe('8f1e2d3c4b5a6978-FRA')
-    expect(forwardedRequestId(new Headers({ 'x-request-id': 'proxy-1' }))).toBe('proxy-1')
-  })
-
-  test('keeps neither when it is not shaped like one', () => {
-    const headers = new Headers({ 'cf-ray': 'not-a-ray', 'x-request-id': 'a b' })
-    expect(forwardedRequestId(headers)).toBeUndefined()
-  })
-})
+function appNaming(forwarded?: (headers: Headers) => string | undefined) {
+  return new Hono<{ Variables: { requestId: string } }>()
+    .use('*', cloudRequestId(forwarded))
+    .get('/', (context) => context.text(context.get('requestId')))
+}
 
 describe('cloudRequestId', () => {
-  test('makes an ID when nothing in front named the request', async () => {
-    const app = new Hono<{ Variables: { requestId: string } }>()
-      .use('*', cloudRequestId)
-      .get('/', (context) => context.text(context.get('requestId')))
-    const response = await app.request('/')
+  test('names the request as the runtime trusts it and answers with the ID', async () => {
+    const response = await appNaming(() => 'ray-1').request('/')
+    expect(response.headers.get('X-Request-Id')).toBe('ray-1')
+    expect(await response.text()).toBe('ray-1')
+  })
+
+  test('makes an ID when the runtime trusts nothing in front', async () => {
+    const response = await appNaming().request('/', { headers: { 'cf-ray': '8f1e2d3c4b5a6978' } })
     const id = response.headers.get('X-Request-Id')
     expect(id).toMatch(/^[0-9a-f-]{36}$/)
     expect(await response.text()).toBe(id ?? '')
+  })
+})
+
+describe('logCloud', () => {
+  test('writes one line of JSON at its level', () => {
+    const logged = spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      logCloud('warn', 'Giving up failed', { uploads: 2 })
+      expect(logged.mock.calls).toEqual([
+        [JSON.stringify({ uploads: 2, level: 'warn', message: 'Giving up failed' })]
+      ])
+    } finally {
+      logged.mockRestore()
+    }
   })
 })
 

@@ -1,4 +1,4 @@
-import { logCloud, loggedError, requestIdOf } from '#cloud/server/logging'
+import { loggedError, writeJSONLine, type CloudLogWriter } from '#cloud/server/logging'
 import type { Context, ErrorHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { routePath } from 'hono/route'
@@ -24,40 +24,59 @@ export type CloudErrorSource = (typeof CLOUD_ERROR_SOURCES)[number]
 export type CloudErrorContext = ErrorReportContext<CloudErrorSource>
 
 /**
- * Sends a caught error to the deployment's error tracking. Runtimes create one only when the
- * deployment configures error tracking; its promise never rejects.
+ * Logs a caught error and, when the deployment configures error tracking, sends it there. Runtimes
+ * create one with `createLoggingErrorReporter`; its promise never rejects.
  */
 export type CloudErrorReporter = ErrorReporter<CloudErrorSource>
 
-/** Logs a caught error as a structured line and reports it, when the deployment reports errors. */
+/**
+ * A reporter that writes the error as a structured line with the runtime's writer, then hands it
+ * to `send`, such as PostHog's, if the deployment has one.
+ */
+export function createLoggingErrorReporter(
+  log: CloudLogWriter,
+  send?: CloudErrorReporter
+): CloudErrorReporter {
+  return async (error, context) => {
+    log({
+      level: 'error',
+      message: context.message ?? 'Failed',
+      source: context.source,
+      method: context.method,
+      route: context.route,
+      requestId: context.requestId,
+      error: loggedError(error)
+    })
+    await send?.(error, context)
+  }
+}
+
+/** Without a reporter, errors are still logged, as lines of JSON. */
+const logOnly = createLoggingErrorReporter(writeJSONLine)
+
+/** Logs a caught error and reports it, through the runtime's reporter. */
 export function reportCloudError(
   reporter: CloudErrorReporter | undefined,
   message: string,
   error: unknown,
   context: CloudErrorContext
 ): Promise<void> {
-  logCloud('error', message, {
-    source: context.source,
-    method: context.method,
-    route: context.route,
-    requestId: context.requestId,
-    error: loggedError(error)
-  })
-  return reporter ? reporter(error, context) : Promise.resolve()
+  return (reporter ?? logOnly)(error, { ...context, message })
 }
 
 function requestContext(context: Context): CloudErrorContext {
+  const requestId: unknown = context.get('requestId')
   return {
     source: 'request',
     method: context.req.method,
     route: routePath(context),
-    requestId: requestIdOf(context)
+    ...(typeof requestId === 'string' && { requestId })
   }
 }
 
 /**
  * The app's last error handler, as Hono's default: an `HTTPException` answers with its response,
- * anything else is logged, reported, and answered with a 500.
+ * anything else is logged, reported, and answered with a 500 naming the request's `X-Request-Id`.
  */
 export function cloudErrorHandler(reporter: CloudErrorReporter | undefined): ErrorHandler {
   return (error, context) => {

@@ -5,7 +5,9 @@ import {
   cleanupPassOptions,
   createCleanupServices,
   createConfiguredCloudPolicy,
-  runCleanup
+  createLoggingErrorReporter,
+  runCleanup,
+  writeJSONLine
 } from '#cloud/server'
 
 import { loadNodeCloudServerConfig } from './config'
@@ -25,7 +27,7 @@ try {
       database,
       objects,
       policy,
-      createCloudErrorReporter(config, 'node')
+      createLoggingErrorReporter(writeJSONLine, createCloudErrorReporter(config, 'node'))
     ),
     cleanupPassOptions(config)
   )

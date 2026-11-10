@@ -5,8 +5,10 @@ export type ErrorReportContext<Source extends string = string> = {
   source: Source
   method?: string
   route?: string
-  /** Cloudflare's ray ID or the server's own request ID, which logs carry too. */
+  /** The request's ID, as `cloudRequestId` named it; logs carry it too. */
   requestId?: string
+  /** What failed, as the server's log says it; not sent to PostHog, whose report has the error. */
+  message?: string
 }
 
 /** Sends a caught error where it is seen; it never rejects. */

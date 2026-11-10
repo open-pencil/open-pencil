@@ -191,7 +191,7 @@ export function createRevisionCompactionService(
         result.objectsDeleted++
       } catch (error) {
         result.failed++
-        await report(`Deleting file ${object.id} failed:`, error)
+        await report(`Deleting file ${object.id} failed`, error)
       }
     }
   }
@@ -225,7 +225,7 @@ export function createRevisionCompactionService(
           result.bytesReclaimed += compacted.bytes
         } catch (error) {
           result.failed++
-          await report(`Compacting document ${documentId} failed:`, error)
+          await report(`Compacting document ${documentId} failed`, error)
         }
       }
       // Compaction just freed the images of the saves it deleted; the release lets their grace pass.
