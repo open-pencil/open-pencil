@@ -77,8 +77,12 @@ export interface MCPAgentSession {
   kind: MCPAgentKind
   /** The app chat the session belongs to, from its `x-openpencil-chat` header. */
   chat?: string
-  /** Whether the session gets `call_mcp_tool`, from its `x-openpencil-call-tool` header. */
-  callTool?: boolean
+  /**
+   * Whether the client loads tools only up to a total schema size, from its
+   * `x-openpencil-defers-tools` header: the session gets `call_mcp_tool`, and tool schemas
+   * leave out `document_id` and `page_id`, since its calls go to its chat's document.
+   */
+  defersTools?: boolean
 }
 
 export interface RegisterToolsOptions {
@@ -129,7 +133,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   const callable = new Map<string, CallableTool>()
   const register = <InputArgs extends v.GenericSchema>(
     name: string,
-    toolOptions: { description?: string; inputSchema: InputArgs },
+    toolOptions: { description?: string; inputSchema: InputArgs; advertised?: v.GenericSchema },
     handler: ToolCallback<ReturnType<typeof toolInputSchema<InputArgs>>>
   ) => {
     const descriptor = descriptors.get(name)
@@ -143,7 +147,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       name,
       {
         description: toolOptions.description ?? descriptor.description,
-        inputSchema: toolInputSchema(toolOptions.inputSchema),
+        inputSchema: toolInputSchema(toolOptions.inputSchema, toolOptions.advertised),
         annotations: toolAnnotations(descriptor.effect),
         _meta: { 'openpencil/capabilities': descriptor.capabilities }
       },
@@ -158,14 +162,14 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   for (const def of getMCPToolDefinitions()) {
+    const entries = resolvedRoot ? withFileInput(def.name, def.input.entries) : def.input.entries
     register(
       def.name,
       {
         description: def.description,
-        inputSchema: v.strictObject({
-          ...(resolvedRoot ? withFileInput(def.name, def.input.entries) : def.input.entries),
-          ...automationTargetSchema
-        })
+        inputSchema: v.strictObject({ ...entries, ...automationTargetSchema }),
+        // Still accepted, but every byte counts for a client that loads tools up to a size.
+        advertised: agentSession?.defersTools ? v.strictObject(entries) : undefined
       },
       async (args: Record<string, unknown>, context) => {
         try {
@@ -516,7 +520,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     async () => ok({ prompt: CODEGEN_PROMPT })
   )
 
-  if (agentSession?.callTool) registerCallTool(mcpServer, callable, options.onToolSettled)
+  if (agentSession?.defersTools) registerCallTool(mcpServer, callable, options.onToolSettled)
 }
 
 /** A registered tool as `call_mcp_tool` runs it: its input, and its handler. */

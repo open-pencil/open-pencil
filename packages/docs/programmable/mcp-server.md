@@ -163,7 +163,7 @@ Endpoints are available over both active transports:
 
 Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
 
-Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. An app chat's agent works on the chat's document unless a call names another. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
 ## AI Agent Skill
 

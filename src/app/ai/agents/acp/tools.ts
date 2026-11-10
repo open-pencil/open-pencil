@@ -69,10 +69,10 @@ export interface OwnToolsLink {
  */
 export async function linkOwnTools(
   authorizationToken: string | null,
-  options: { callTool?: boolean } = {}
+  options: { defersTools?: boolean } = {}
 ): Promise<OwnToolsLink> {
   const link = await linkChatAgent((chat) =>
-    buildACPMCPServers({ authorizationToken, chat, callTool: options.callTool })
+    buildACPMCPServers({ authorizationToken, chat, defersTools: options.defersTools })
   )
   const failures: string[] = []
   return {

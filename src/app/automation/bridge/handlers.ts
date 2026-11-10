@@ -1,6 +1,7 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { agentSessionOpened, endAgentSession } from '@/app/automation/agents'
+import { agentChatStore } from '@/app/ai/reply/run'
+import { agentSessionOpened, endAgentSession, readAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
@@ -102,7 +103,9 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     }
 
     const rawArgs = isUnknownRecord(args) ? args : {}
-    const target = resolveAutomationTarget(store, rawArgs)
+    // An ACP chat's agent works on the chat's document unless a call names another.
+    const chatStore = agentChatStore(readAgentSession(rawArgs.agent)?.chat)
+    const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
     return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs), signal)
   }
 

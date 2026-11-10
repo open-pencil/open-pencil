@@ -9,6 +9,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import { forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -37,7 +38,9 @@ function setupGlobals() {
     removeEventListener: vi.fn()
   })
   globalThis.document = asDouble<Document>({
-    fonts: { add: vi.fn(), ready: Promise.resolve() }
+    fonts: { add: vi.fn(), ready: Promise.resolve() },
+    // An agent's cursor looks for the canvas it follows; nothing renders here.
+    querySelector: () => null
   })
   globalThis.requestAnimationFrame = window.requestAnimationFrame
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
@@ -104,6 +107,33 @@ describe('activate_document', () => {
     await expect(request('activate_document', { document_id: 'missing' })).rejects.toThrow(
       'Document "missing" not found'
     )
+  })
+})
+
+describe("an ACP chat's tool calls", () => {
+  const chat = '0123456789abcdef0123456789abcdef'
+  afterEach(() => forgetAgentChat(chat))
+
+  test("go to the chat's document unless they name another", async () => {
+    // The agent's cursor glides over frames; here only where the calls land matters.
+    globalThis.requestAnimationFrame = () => 0
+    const chatTab = createTab()
+    startAgentRun(chatTab.store, chat)
+    const other = createTab()
+    expect(getActiveTabId()).toBe(other.id)
+    const shape = { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+    const agent = { session: 'session-1', kind: 'acp', chat }
+
+    const inChat = await request('tool', { name: 'create_shape', args: shape, agent })
+    const named = await request('tool', {
+      document_id: other.id,
+      name: 'create_shape',
+      args: shape,
+      agent
+    })
+
+    expect(inChat.target?.documentId).toBe(chatTab.id)
+    expect(named.target?.documentId).toBe(other.id)
   })
 })
 
@@ -535,9 +565,9 @@ describe('close_document and save_document never prompt', () => {
     await expect(request('save_document', { document_id: tab.id })).rejects.toThrow(
       'has not been saved to a file yet'
     )
-    await expect(request('close_document', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      'has not been saved to a file yet'
-    )
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow('has not been saved to a file yet')
     expect(getTabById(tab.id)).toBeDefined()
   })
 
@@ -596,7 +626,9 @@ describe('close_document and save_document never prompt', () => {
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes.pen')
     expect(tab.store.hasWritableSource()).toBe(true)
-    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow('"/tmp/notes.fig"')
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow(
+      '"/tmp/notes.fig"'
+    )
     expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBe('/tmp/notes.pen')
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -606,9 +638,9 @@ describe('close_document and save_document never prompt', () => {
     const commands = recordNativeFs()
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes')
-    await expect(request('close_document', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      '"/tmp/notes.fig"'
-    )
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow('"/tmp/notes.fig"')
     expect(fsWrites(commands)).toEqual([])
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -655,7 +687,9 @@ describe('close_document and save_document never prompt', () => {
 
   test('closing with save over a .pen browser handle does not open it for writing', async () => {
     const { tab, opened } = tabWithHandle('notes.pen')
-    await expect(request('close_document', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow()
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow()
     expect(opened.count).toBe(0)
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)

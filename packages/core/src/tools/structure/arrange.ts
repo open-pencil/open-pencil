@@ -8,15 +8,15 @@ export const arrangeNodes = defineTool({
   name: 'arrange',
 
   description: `Arrange layers so they stop overlapping or follow a structure. Modes:
-- spread (default): push overlapping layers apart, keeping each near where it was. Use it after creating layers that landed on each other.
-- compact: spread, then close the gaps, keeping the layers' relative places.
-- pack: pack the layers into rows in their order, as tidy as a page of screens or components.
-- grid, row, column: place them in a grid (cols), a row, or a column, in order, from the first layer.
-- flow: rank them along the connectors joining them, rerouting elbowed connectors with right-angled bends; for flowcharts, pipelines, and state machines.
-- tree: a tidy tree from its roots along the connectors; for sitemaps, org charts, and hierarchies.
-- radial: a tree in rings around its root; for mind maps.
-- network: joined layers near each other with no direction; for relationship maps.
-Connectors between the layers are found automatically. Include a section and all its children to lay them out inside it; a section given alone moves as one box. Layers outside chosen sections must share a parent. The arrangement keeps its top-left corner.`,
+- spread (default): push overlapping layers apart, each staying near where it was.
+- compact: spread, then close the gaps.
+- pack: rows in order, like a page of screens or components.
+- grid, row, column: in order from the first layer; grid takes cols.
+- flow: ranks along connectors, rerouting elbowed ones; flowcharts, pipelines, state machines.
+- tree: from its roots along connectors; sitemaps, org charts.
+- radial: a tree in rings; mind maps.
+- network: joined layers near each other; relationship maps.
+Connectors between the layers are found automatically. A section given with all its children is laid out inside; a section alone moves as one box. Layers outside chosen sections must share a parent. The top-left corner stays put.`,
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     ids: v.optional(

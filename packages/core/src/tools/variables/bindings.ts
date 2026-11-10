@@ -17,25 +17,19 @@ function unbind(figma: FigmaAPI, nodeId: string, field: string) {
 export const bindVariable = defineTool({
   name: 'bind_variable',
 
-  description:
-    'Bind a variable to a node property, or unbind it with a null variable_id. For fills/strokes color bindings use indexed format like "fills/0/color".',
+  description: 'Bind a variable to a node property, or unbind it with a null variable_id.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     node_id: nodeIdInputSchema,
     field: v.pipe(
       v.string(),
       v.description(
-        'Property field path. For fills/strokes use indexed format: "fills/0/color", "strokes/0/color". ' +
-          'For FLOAT scalars: "opacity", "width", "height", "cornerRadius", "fontSize", "letterSpacing", ' +
-          '"lineHeight", "itemSpacing", "strokeWeight", "paddingLeft/Right/Top/Bottom", "counterAxisSpacing", ' +
-          '"rotation", "x", "y", "minWidth", "maxWidth", "minHeight", "maxHeight", ' +
-          '"topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius", ' +
-          '"borderTopWeight", "borderBottomWeight", "borderLeftWeight", "borderRightWeight", ' +
-          '"gridRowGap", "gridColumnGap". ' +
-          'For STRING: "fontFamily". For STRING or FLOAT: "text", a number shown as text. ' +
-          'For BOOLEAN or STRING: "visible", text showing the layer unless empty or "false", "no", "off". ' +
-          'For effects use indexed format: "effects/0/color" (COLOR), "effects/0/radius", ' +
-          '"effects/0/spread", "effects/0/offsetX", "effects/0/offsetY" (FLOAT); a blur binds only radius.'
+        'Field path. COLOR: "fills/0/color", "strokes/0/color", "effects/0/color". ' +
+          'FLOAT: opacity, width, height, x, y, rotation, cornerRadius, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius, ' +
+          'fontSize, letterSpacing, lineHeight, itemSpacing, counterAxisSpacing, paddingLeft/Right/Top/Bottom, strokeWeight, ' +
+          'borderTopWeight, borderBottomWeight, borderLeftWeight, borderRightWeight, minWidth, maxWidth, minHeight, maxHeight, gridRowGap, gridColumnGap, ' +
+          '"effects/0/radius", "effects/0/spread", "effects/0/offsetX", "effects/0/offsetY" (a blur binds only radius). ' +
+          'STRING: fontFamily. STRING or FLOAT: text, a number shown as text. BOOLEAN or STRING: visible, where text shows the layer unless empty, "false", "no", or "off".'
       )
     ),
     variable_id: v.pipe(v.nullable(v.string()), v.description('Variable ID, or null to unbind'))

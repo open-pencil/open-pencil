@@ -191,10 +191,11 @@ export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
 export const MCP_CHAT_HEADER = 'x-openpencil-chat'
 
 /**
- * Request header an app chat sends, set to `1`, for an agent that calls deferred MCP tools through
- * a `call_mcp_tool` tool it does not provide itself, so the server provides it for the session.
+ * Request header an app chat sends, set to `1`, for an agent that loads MCP tools only up to a
+ * total schema size: the server keeps their schemas small and provides the `call_mcp_tool` the
+ * agent calls the rest through.
  */
-export const MCP_CALL_TOOL_HEADER = 'x-openpencil-call-tool'
+export const MCP_DEFERS_TOOLS_HEADER = 'x-openpencil-defers-tools'
 
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 

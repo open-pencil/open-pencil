@@ -169,7 +169,8 @@ export function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; t
   return { id: node.id, name: node.name, type: node.type }
 }
 
-export const nodeIdInputSchema = v.pipe(v.string(), v.description('Node ID'))
+/** A node's ID, under a name that says so; a description would only repeat it. */
+export const nodeIdInputSchema = v.string()
 export const nodeInputSchema = v.strictObject({ id: nodeIdInputSchema })
 export const nodeComparisonInputSchema = v.strictObject({
   from: v.pipe(v.string(), v.description('Source node ID')),

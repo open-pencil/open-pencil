@@ -67,7 +67,7 @@ function fakeAgents({
   let kills = 0
   let spawns = 0
   const searchPaths: (string | null | undefined)[] = []
-  const callTools: boolean[] = []
+  const defersTools: boolean[] = []
   const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
@@ -160,7 +160,7 @@ function fakeAgents({
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async (_token, linkOptions) => {
-      callTools.push(linkOptions?.callTool ?? false)
+      defersTools.push(linkOptions?.defersTools ?? false)
       return {
         chat: 'chat',
         mcpServers: [],
@@ -182,7 +182,7 @@ function fakeAgents({
     spawns: () => spawns,
     searchPaths,
     cwds,
-    callTools,
+    defersTools,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -264,7 +264,7 @@ test('an agent that defers MCP tools gets the server’s call_mcp_tool, others d
   const { transport: plain } = transport(agents)
   await send(plain, 'first')
   await plain.destroy()
-  expect(agents.callTools).toEqual([true, false])
+  expect(agents.defersTools).toEqual([true, false])
 })
 
 test('a saved session resumes without the instructions or the transcript', async () => {

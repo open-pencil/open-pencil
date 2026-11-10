@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 
 import {
   MCP_AGENT_HEADER,
-  MCP_CALL_TOOL_HEADER,
+  MCP_DEFERS_TOOLS_HEADER,
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -192,7 +192,17 @@ describe('MCP server', () => {
     const schemas = JSON.stringify(tools.map((tool) => tool.inputSchema))
     expect(schemas).not.toContain('$schema')
     expect(schemas).not.toContain('"additionalProperties":false')
+    expect(schemas).not.toContain('"required":[]')
     expect(schemas).not.toContain(String(Number.MAX_VALUE))
+    // The default is in the schema; its description need not repeat it.
+    const arrange = tools.find((tool) => tool.name === 'arrange')
+    expect(arrange?.inputSchema.properties?.mode).toMatchObject({
+      default: 'spread',
+      description: 'How to arrange them'
+    })
+    expect(tools.find((tool) => tool.name === 'get_node')?.inputSchema.properties).toHaveProperty(
+      'document_id'
+    )
     const layout = tools.find((tool) => tool.name === 'set_layout')
     expect(layout?.inputSchema.properties?.spacing).toEqual({
       type: 'number',
@@ -224,7 +234,10 @@ describe('MCP server', () => {
     expect(byName.get('list_recent_documents')?.capabilities).toEqual(['filesystem:read'])
     expect(byName.get('close_document')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
-    expect(byName.get('create_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
+    expect(byName.get('create_document')?.capabilities).toEqual([
+      'document:write',
+      'filesystem:write'
+    ])
     expect(byName.get('activate_document')?.effect).toBe('read')
     expect(byName.get('undo')?.capabilities).toEqual(['document:write'])
     expect(byName.get('redo')?.effect).toBe('write')
@@ -1013,7 +1026,7 @@ describe('MCP sessions as agents', () => {
 
   test('a session asking for call_mcp_tool runs tools through it, checking their arguments', async () => {
     await withAgentClient(
-      { [MCP_AGENT_HEADER]: 'acp', [MCP_CALL_TOOL_HEADER]: '1' },
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_DEFERS_TOOLS_HEADER]: '1' },
       async (client, browser) => {
         const { tools } = await client.listTools()
         expect(tools.map((tool) => tool.name)).toContain('call_mcp_tool')
@@ -1032,6 +1045,20 @@ describe('MCP sessions as agents', () => {
         // eval is off on this server, so it is not a tool the session can reach.
         expect((await call('eval', { code: '1' })).isError).toBe(true)
         expect(toolRequests(browser)).toEqual(['create_shape'])
+      }
+    )
+  })
+
+  test('a session whose client defers tools sees no target fields, and calls still take them', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_DEFERS_TOOLS_HEADER]: '1' },
+      async (client, browser) => {
+        const { tools } = await client.listTools()
+        const getNode = tools.find((tool) => tool.name === 'get_node')
+        expect(Object.keys(getNode?.inputSchema.properties ?? {})).toEqual(['id', 'depth'])
+        await client.callTool({ name: 'get_page_tree', arguments: { document_id: 'doc-2' } })
+        const request = browser.requests.find((item) => item.command === 'tool')
+        expect(request?.args).toMatchObject({ document_id: 'doc-2', name: 'get_page_tree' })
       }
     )
   })

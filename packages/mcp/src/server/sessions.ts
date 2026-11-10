@@ -9,7 +9,7 @@ import { withTimeout } from 'es-toolkit/promise'
 
 import {
   MCP_AGENT_HEADER,
-  MCP_CALL_TOOL_HEADER,
+  MCP_DEFERS_TOOLS_HEADER,
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
 
@@ -62,7 +62,7 @@ export function sessionOpener(header: (name: string) => string | undefined): MCP
   }
   const chat = header(MCP_CHAT_HEADER)
   if (chat && CHAT_ID.test(chat)) opener.chat = chat
-  if (header(MCP_CALL_TOOL_HEADER) === '1') opener.callTool = true
+  if (header(MCP_DEFERS_TOOLS_HEADER) === '1') opener.defersTools = true
   return opener
 }
 const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * 60_000
