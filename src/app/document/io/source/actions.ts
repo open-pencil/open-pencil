@@ -58,6 +58,7 @@ export function createDocumentSourceActions({
   getSavedVersion,
   setSavedVersion,
   setLastWriteTime,
+  setWriting,
   getRenderer
 }: DocumentSourceOptions) {
   const changes = createDocumentChanges(editor)
@@ -120,6 +121,7 @@ export function createDocumentSourceActions({
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     version: changes.capture,
+    hasUnsavedChanges: changes.hasUnsavedChanges,
     buildFigStream,
     getFilePath,
     setFilePath,
@@ -133,6 +135,7 @@ export function createDocumentSourceActions({
     setSourceIdentity,
     setSavedVersion,
     setLastWriteTime,
+    setWriting,
     startWatchingFile: () => {
       void startWatchingFile()
     },

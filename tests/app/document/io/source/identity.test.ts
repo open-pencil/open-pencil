@@ -23,7 +23,8 @@ function createSaveHarness(
         controller.enqueue(new Uint8Array([1, 2, 3]))
         controller.close()
       }
-    })
+    }),
+  hasUnsavedChanges: () => boolean = () => true
 ) {
   const state = {
     ...createDefaultEditorState('page'),
@@ -33,6 +34,7 @@ function createSaveHarness(
   const actions = createSaveActions({
     state,
     version: () => 1,
+    hasUnsavedChanges,
     buildFigStream,
     getFilePath: () => null,
     setFilePath: vi.fn(),
@@ -46,6 +48,7 @@ function createSaveHarness(
     setSourceIdentity,
     setSavedVersion: vi.fn(),
     setLastWriteTime: vi.fn(),
+    setWriting: vi.fn(),
     startWatchingFile: vi.fn()
   })
   return { actions, setSourceIdentity }
@@ -56,6 +59,21 @@ afterEach(() => {
 })
 
 describe('saved document identity', () => {
+  test('does not build a stream when the document has nothing to save', async () => {
+    const build = vi.fn(
+      async () =>
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.close()
+          }
+        })
+    )
+    const { actions } = createSaveHarness(makeWritableHandle('design.fig'), build, () => false)
+
+    await expect(actions.saveFigFile()).resolves.toBe(true)
+    expect(build).not.toHaveBeenCalled()
+  })
+
   test('tracks storage binding alongside local source identity', () => {
     const source = createDocumentSourceState()
     source.setSourceIdentity({ handle: null, path: '/tmp/local.fig' })

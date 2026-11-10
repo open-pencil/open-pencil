@@ -20,4 +20,6 @@ export type DocumentSourceAccess = {
   getSavedVersion: () => number
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
+  getWriting: () => boolean
+  setWriting: (writing: boolean) => void
 }

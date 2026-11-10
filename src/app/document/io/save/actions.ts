@@ -1,5 +1,6 @@
 import type { EditorState } from '@open-pencil/core'
 import { filesMessages } from '@open-pencil/vue/i18n'
+import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { isFileWriteRefused } from '@/app/document/io/capability'
@@ -13,10 +14,12 @@ import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
 
-type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
+type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion' | 'getWriting'> & {
   state: SaveDocumentState
   /** The document's content revision, recorded as the saved version. */
   version: () => number
+  /** Whether a manual save has anything to write. A saved document's Ctrl+S does nothing. */
+  hasUnsavedChanges: () => boolean
   /** The `.fig`, encoded and compressed, streaming as its target writes it. */
   buildFigStream: () => Promise<ReadableStream<Uint8Array>>
   startWatchingFile: () => void
@@ -27,6 +30,7 @@ type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
 export function createSaveActions({
   state,
   version: currentVersion,
+  hasUnsavedChanges,
   buildFigStream,
   getFilePath,
   setFilePath,
@@ -40,6 +44,7 @@ export function createSaveActions({
   setSourceIdentity,
   setSavedVersion,
   setLastWriteTime,
+  setWriting,
   startWatchingFile,
   onWriteSuccess,
   onDownloadSuccess
@@ -51,6 +56,7 @@ export function createSaveActions({
     getStorageBinding,
     setSavedVersion,
     setLastWriteTime,
+    setWriting,
     onFileReplaced: startWatchingFile,
     onWriteSuccess
   })
@@ -64,6 +70,9 @@ export function createSaveActions({
   async function withProgress<T>(save: (progress: SaveProgress) => Promise<T>): Promise<T> {
     const progress = startSaveProgress()
     try {
+      // Let the toast paint before the archive is encoded; a large document otherwise spends
+      // its first seconds with no feedback on screen. Tests run without a frame clock.
+      if (typeof requestAnimationFrame === 'function') await nextFrame()
       return await save(progress)
     } finally {
       progress.end()
@@ -71,6 +80,7 @@ export function createSaveActions({
   }
 
   function saveFigFile() {
+    if (!hasUnsavedChanges()) return Promise.resolve(true)
     const filePath = getFilePath()
     const fileHandle = getFileHandle()
     const storageBinding = getStorageBinding()

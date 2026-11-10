@@ -40,6 +40,7 @@ export function createDocumentIOActions(
     getFilePath: sourceState.getFilePath,
     getFileHandle: sourceState.getFileHandle,
     getLastWriteTime: sourceState.getLastWriteTime,
+    getWriting: sourceState.getWriting,
     reloadFromDisk: () => {
       void reloadFromDisk()
     }

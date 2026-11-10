@@ -127,6 +127,7 @@ describe('Tauri file actions', () => {
     const unwatch = await watchTauriFile(
       '/tmp/design.fig',
       () => 0,
+      () => false,
       () => calls.push('reload')
     )
     watcher.onEvent?.({ type: { modify: { kind: 'data' } } })
@@ -147,6 +148,28 @@ describe('Tauri file actions', () => {
     await watchTauriFile(
       '/tmp/design.fig',
       () => Date.now(),
+      () => false,
+      () => calls.push('reload')
+    )
+    watcher.onEvent?.({ type: { modify: { kind: 'data' } } })
+    expect(calls).toEqual([])
+
+    await clearTauriMocks()
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:fs|watch') {
+        watcher.onEvent = (
+          args as { onEvent: { onmessage: (event: unknown) => void } }
+        ).onEvent.onmessage
+        return 9
+      }
+      calls.push(cmd)
+      return null
+    })
+    calls.length = 0
+    await watchTauriFile(
+      '/tmp/design.fig',
+      () => 0,
+      () => true,
       () => calls.push('reload')
     )
     watcher.onEvent?.({ type: { modify: { kind: 'data' } } })
