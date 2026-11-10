@@ -156,7 +156,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
+  designCheck: { showOnCanvas: false, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,
     showResolved: false,

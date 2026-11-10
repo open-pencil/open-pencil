@@ -1,19 +1,32 @@
 import { afterEach, describe, expect, jest, test } from 'bun:test'
 
-import { nextTick, watch } from 'vue'
+import { nextTick, toRaw, watch } from 'vue'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 const stores: ReturnType<typeof createEditorStore>[] = []
+let previousPreferences: typeof appPreferences.value | undefined
 afterEach(() => {
   for (const store of stores.splice(0)) store.dispose()
+  if (previousPreferences) appPreferences.value = previousPreferences
+  previousPreferences = undefined
   jest.useRealTimers()
 })
 
+/** Canvas markers follow the preference, which a fresh profile now leaves off. */
+function setMarkersOnCanvas(showOnCanvas: boolean) {
+  previousPreferences ??= structuredClone(toRaw(appPreferences.value))
+  const preferences = structuredClone(toRaw(appPreferences.value))
+  preferences.designCheck.showOnCanvas = showOnCanvas
+  appPreferences.value = preferences
+}
+
 /** Two pages, each with text small enough for the design check to mark on the canvas. */
 function twoPagesWithIssues() {
+  setMarkersOnCanvas(true)
   const graph = new SceneGraph()
   const first = graph.getPages()[0]
   const second = graph.addPage('Second')
@@ -46,6 +59,22 @@ async function settleCheck() {
   jest.advanceTimersByTime(1000)
   await nextTick()
 }
+
+describe('canvas markers', () => {
+  test('stay off until the preference turns them on', async () => {
+    jest.useFakeTimers()
+    setMarkersOnCanvas(false)
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, { name: 'Caption', text: 'Caption', fontSize: 8 })
+    const store = createEditorStore(graph)
+    stores.push(store)
+    await nextTick()
+
+    expect(store.designCheck.snapshot.value).toBeNull()
+    expect(store.state.designIssues?.markers ?? []).toEqual([])
+  })
+})
 
 describe('the design check across a page switch', () => {
   test('checks the new page once, after the switch', async () => {

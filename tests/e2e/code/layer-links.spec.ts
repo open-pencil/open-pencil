@@ -71,6 +71,14 @@ async function openCode(page: Page) {
   await expect(codeLine(page, 'name="Swatch"')).toBeVisible()
 }
 
+/** Code underlines follow the design check, which runs while canvas markers are on. */
+async function showDesignIssues(page: Page) {
+  await page.evaluate(async () => {
+    const { setDesignIssuesOnCanvas } = await import('/src/app/settings/preferences/apply.ts')
+    setDesignIssuesOnCanvas(true)
+  })
+}
+
 function activeTags(page: Page) {
   return page.locator('[data-slot="code-editor"] .cm-layer-tag')
 }
@@ -90,6 +98,7 @@ function cardSize(page: Page) {
 
 test('the element around the cursor marks its tags and its layer', async () => {
   await buildScene(editor.page)
+  await showDesignIssues(editor.page)
   await openCode(editor.page)
 
   await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
@@ -121,6 +130,7 @@ test('the element around the cursor marks its tags and its layer', async () => {
 
 test('design issues are underlined on the property that causes them', async () => {
   await buildScene(editor.page)
+  await showDesignIssues(editor.page)
   await openCode(editor.page)
 
   const warning = editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')
@@ -134,6 +144,7 @@ for (const [format, swatch, finePrint] of [
 ] as const) {
   test(`generated ${format} links its elements and issues to their layers`, async () => {
     await buildScene(editor.page)
+    await showDesignIssues(editor.page)
     await openCode(editor.page)
     await editor.page.getByTestId('code-panel-source').click()
     await editor.page.getByRole('option', { name: format, exact: true }).click()
@@ -149,6 +160,7 @@ for (const [format, swatch, finePrint] of [
 
 test('links follow the code after a live edit', async () => {
   await buildScene(editor.page)
+  await showDesignIssues(editor.page)
   await openCode(editor.page)
 
   await codeLine(editor.page, 'name="Card"').click()
