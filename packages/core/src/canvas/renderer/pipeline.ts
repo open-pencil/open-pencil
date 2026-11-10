@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
@@ -150,6 +151,7 @@ export function renderFromEditorState(
     layer,
     interactive
   )
+  warmUpEffectPrograms(r, graph, layer)
 }
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {

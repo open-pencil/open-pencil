@@ -204,6 +204,10 @@ export class SkiaRenderer {
   tiledScenePending = false
   /** Tile work beyond the visible tiles remains; the frame loop keeps idle frames coming. */
   tiledSceneBackgroundPending = false
+  /** WebGL has built the programs of progressive blurs and glass (`warmUpEffectPrograms`). */
+  effectProgramsWarm = false
+  /** The page last checked for effects worth warming up, so each page is scanned once. */
+  effectWarmUpCheckedPage: string | null = null
   tiledSceneCovered = false
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
 
