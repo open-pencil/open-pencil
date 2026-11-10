@@ -1,0 +1,1 @@
+- `useEditorKeyboard` runs a host's shortcut before the editor's on the same key, and a shortcut that returns `false` leaves the key to the editor's; `onEscape` is removed in favour of an Escape shortcut that declines when the host has nothing to close (#1964).
