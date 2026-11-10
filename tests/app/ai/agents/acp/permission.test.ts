@@ -197,6 +197,19 @@ describe('permission for OpenPencil’s own tools', () => {
     })
   })
 
+  test('Antigravity CLI’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'Run mcp_open-pencil_get_node',
+      rawInput: { id: '1:2', toolSummary: 'Inspect the node' }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
   test('another server’s calls and the agent’s own tools are left to the person', () => {
     const approval = createOwnToolApproval()
     approval.noteUpdate({

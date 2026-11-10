@@ -11,14 +11,20 @@ function makeWritableHandle(name: string): FileSystemFileHandle {
   return asDouble<FileSystemFileHandle>({
     kind: 'file',
     name,
-    createWritable: vi.fn(async () => ({
-      write: vi.fn(async () => undefined),
-      close: vi.fn(async () => undefined)
-    }))
+    createWritable: vi.fn(async () => new WritableStream<Uint8Array>())
   })
 }
 
-function createSaveHarness(handle: FileSystemFileHandle) {
+function createSaveHarness(
+  handle: FileSystemFileHandle,
+  buildFigStream: () => Promise<ReadableStream<Uint8Array>> = async () =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2, 3]))
+        controller.close()
+      }
+    })
+) {
   const state = {
     ...createDefaultEditorState('page'),
     documentName: 'Untitled'
@@ -27,7 +33,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   const actions = createSaveActions({
     state,
     version: () => 1,
-    buildFigFile: () => new Uint8Array([1, 2, 3]),
+    buildFigStream,
     getFilePath: () => null,
     setFilePath: vi.fn(),
     getFileHandle: () => handle,
@@ -97,10 +103,13 @@ describe('saved document identity', () => {
 
     expect(await actions.saveFigFileAs()).toBe(true)
     expect(download).toHaveBeenCalledWith(
-      expect.any(Uint8Array),
+      expect.any(Blob),
       'chosen.fig',
       'application/octet-stream'
     )
+    const downloaded = download.mock.calls[0]?.[0]
+    if (!(downloaded instanceof Blob)) throw new Error('Nothing was downloaded')
+    expect([...new Uint8Array(await downloaded.arrayBuffer())]).toEqual([1, 2, 3])
     expect(setSourceIdentity).toHaveBeenLastCalledWith({ handle: null, path: null })
   })
 
@@ -125,5 +134,23 @@ describe('saved document identity', () => {
 
     await expect(actions.saveFigFile()).rejects.toThrow('write failed')
     expect(setSourceIdentity).not.toHaveBeenCalled()
+  })
+
+  test('lets go of the archive a refused write never read', async () => {
+    const handle = asDouble<FileSystemFileHandle>({
+      kind: 'file',
+      name: 'refused.fig',
+      createWritable: vi.fn(async () => {
+        throw new DOMException('Not allowed in this context', 'NotAllowedError')
+      })
+    })
+    const cancelled = vi.fn()
+    const { actions } = createSaveHarness(
+      handle,
+      async () => new ReadableStream<Uint8Array>({ cancel: cancelled })
+    )
+
+    await expect(actions.saveFigFile()).rejects.toThrow('Not allowed')
+    expect(cancelled).toHaveBeenCalledTimes(1)
   })
 })

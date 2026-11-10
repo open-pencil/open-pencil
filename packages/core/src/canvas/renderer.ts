@@ -207,7 +207,10 @@ export class SkiaRenderer {
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
 
   // What the overlays show and leave behind for hit testing.
-  /** Selections draw handles to drag; off while the canvas offers no edits. */
+  /**
+   * Selections draw handles to resize, rotate, and reshape; off while the canvas offers no edits
+   * or the host lets layers only move or not change (`layerEdits`), as the input then takes none.
+   */
   editHandles = true
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;

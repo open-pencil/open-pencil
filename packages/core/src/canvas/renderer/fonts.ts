@@ -140,7 +140,7 @@ function settleFontDemand(
       if (pending.keys.size === 0) r.textFonts.pending.delete(nodeId)
     }
     r.textFonts.pictureGenerations.delete(nodeId)
-    r.invalidateNodePicture(nodeId)
+    r.redrawNode(nodeId)
   }
 }
 

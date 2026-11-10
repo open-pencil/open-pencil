@@ -4,15 +4,14 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
-import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
-import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
-import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
+import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import saveToTheme from '@/theme/save-to'
 
@@ -34,11 +33,10 @@ const open = defineModel<boolean>('open', { default: false })
 const name = defineModel<string>('name', { default: '' })
 /** The chosen destination's key. */
 const destination = defineModel<string>('destination', { default: '' })
-const emit = defineEmits<{ save: []; cancel: [] }>()
+const emit = defineEmits<{ save: [] }>()
 
 const ui = saveTo()
 const t = useCloudMessages()
-const common = useCommonMessages()
 const saving = computed(() => state.kind === 'saving')
 const progress = computed(() =>
   state.kind === 'saving' && state.totalBytes > 0
@@ -67,27 +65,22 @@ const errors = computed(() => ({
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="t.saveHeading"
-      :description="t.saveDescription"
-      :close-label="common.close"
-    />
+  <AppFormDialog
+    v-model:open="open"
+    :heading="t.saveHeading"
+    :description="t.saveDescription"
+    @submit="emit('save')"
+  >
+    <fieldset :class="ui.stack()" :disabled="saving">
+      <AppFormField :label="t.saveName">
+        <template #default="{ id }">
+          <AppInput :id="id" v-model="name" />
+        </template>
+      </AppFormField>
 
-    <AppDialogBody>
-      <fieldset :class="ui.stack()" :disabled="saving">
-        <div :class="ui.field()">
-          <label for="save-to-name" :class="ui.label()">{{ t.saveName }}</label>
-          <AppInput id="save-to-name" v-model="name" />
-        </div>
-
-        <div :class="ui.field()">
-          <span id="save-to-destination" :class="ui.label()">{{ t.saveWhere }}</span>
-          <RadioGroupRoot
-            v-model="destination"
-            aria-labelledby="save-to-destination"
-            :class="ui.choices()"
-          >
+      <AppFormField :label="t.saveWhere" :label-for="false">
+        <template #default="{ labelId }">
+          <RadioGroupRoot v-model="destination" :aria-labelledby="labelId" :class="ui.choices()">
             <template v-for="group in groups" :key="group.id">
               <span v-if="groups.length > 1" :class="ui.server()">{{ group.label }}</span>
               <RadioGroupItem
@@ -105,50 +98,49 @@ const errors = computed(() => ({
               </RadioGroupItem>
             </template>
           </RadioGroupRoot>
-        </div>
+        </template>
+      </AppFormField>
 
-        <div v-if="state.kind === 'saving'" :class="ui.progress()" role="status">
-          <div :class="ui.progressTrack()">
-            <div :class="ui.progressBar()" :style="{ width: `${progress}%` }" />
-          </div>
-          <span :class="ui.progressText()">
-            {{
-              t.saveUploading({
-                sent: formatStorageBytes(state.sentBytes),
-                total: formatStorageBytes(state.totalBytes)
-              })
-            }}
-          </span>
+      <div v-if="state.kind === 'saving'" :class="ui.progress()" role="status">
+        <div :class="ui.progressTrack()">
+          <div :class="ui.progressBar()" :style="{ width: `${progress}%` }" />
         </div>
-        <AppAlert
-          v-else-if="state.kind === 'error' && state.reason === 'too-large'"
-          tone="error"
-          :heading="t.saveTooLargeHeading"
-          :description="t.saveTooLargeDescription({ limit: formatStorageBytes(state.limitBytes) })"
-        />
-        <AppAlert
-          v-else-if="state.kind === 'error'"
-          tone="error"
-          :heading="errors[state.reason].heading"
-          :description="errors[state.reason].description"
-        />
-        <p v-else :class="ui.note()">
-          {{ t.saveNote }}
-        </p>
-      </fieldset>
-    </AppDialogBody>
-
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <AppButton @click="emit('cancel')">{{ common.cancel }}</AppButton>
+        <span :class="ui.progressText()">
+          {{
+            t.saveUploading({
+              sent: formatStorageBytes(state.sentBytes),
+              total: formatStorageBytes(state.totalBytes)
+            })
+          }}
+        </span>
+      </div>
+      <AppAlert
+        v-else-if="state.kind === 'error' && state.reason === 'too-large'"
+        tone="error"
+        :heading="t.saveTooLargeHeading"
+        :description="t.saveTooLargeDescription({ limit: formatStorageBytes(state.limitBytes) })"
+      />
+      <AppAlert
+        v-else-if="state.kind === 'error'"
+        tone="error"
+        :heading="errors[state.reason].heading"
+        :description="errors[state.reason].description"
+      />
+      <p v-else :class="ui.note()">
+        {{ t.saveNote }}
+      </p>
+    </fieldset>
+    <template #footer>
+      <AppDialogCancel />
       <AppButton
+        type="submit"
         color="primary"
         variant="solid"
         :loading="saving"
         :disabled="!name.trim() || !chosen || chosen.role === 'viewer'"
-        @click="emit('save')"
       >
         {{ t.saveAction }}
       </AppButton>
-    </AppDialogFooter>
-  </AppDialogRoot>
+    </template>
+  </AppFormDialog>
 </template>

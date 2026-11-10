@@ -79,7 +79,9 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - A slot built from shared classes is an array, as Tailwind Variants takes it: `['size-3.5 shrink-0', motionStyles.spinner]`, never an interpolated template string (`open-pencil/no-interpolated-tailwind-classes`; `src/theme/dialog/index.ts`).
 - A family of parts keeps one theme in `src/theme/<family>/index.ts`, wraps it in `ui.ts` as `<family>` and `use<Family>UI`, and exports its parts from `index.ts`; a single component keeps `src/theme/<family>/<component>.ts` and a wrapper of the same name (`src/components/ui/table/ui.ts`, `src/components/ui/feedback/toast.ts`).
 - Compose a family's parts as components whose slots carry content, not data a part could render itself (`src/components/ui/table/`).
-- App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog/index.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs.
+- App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog/index.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs (`src/components/ui/dialog/Dialog.stories.ts`).
+- A dialog that is one form is an `AppFormDialog` with its buttons in the `footer` slot: `AppDialogCancel` and a `type="submit"` button, whose `disabled` or `loading` also stops Enter. Its fields start fresh each opening because the opener fills them before opening, or because they live in a child of the content, which unmounts once closed; never in a watch on `open`. An action that waits for a name typed out is an `AppConfirmationDialog` with `confirm-text` (`src/components/ui/dialog/Dialog.stories.ts`, Form, FormSubmitBlocked and TypedConfirmation).
+- Dialog footer actions sit at the end, Cancel first and the main action last; a separate action such as Delete goes in the footer's `start` slot, and a footer's `ui` cannot move them (`src/components/ui/dialog/Dialog.stories.ts`, FooterStartAction).
 - SDK property primitives, binding fields, commands, and i18n: `packages/vue/AGENTS.md`.
 
 ### Layout
@@ -107,7 +109,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - Content that is loading shows `AppSkeleton` placeholders in its own shape, which fade in after a moment so fast answers replace nothing; a refresh keeps what was shown, and an empty state appears only once a load finished with nothing in it (`src/components/ui/table/AppTablePlaceholder.vue`, `src/components/cloud-portal/layout/PortalPageSkeleton.vue`).
 - The toast service is for transient confirmations without a visible control to carry them, such as a copy from a menu or shortcut, or an action completed after its view closes. Never show a toast and an alert for the same event; partial saves and actionable failures must not disappear in a toast.
 - A copy button confirms in place, never with a toast: `AppCopyButton`, labelled or `icon`, turns its copy icon into a check and its label into the copied label. Text built when clicked is passed as a function, and the button emits `copied` and `failed`; do not hand-roll the copied state or icon swap (`src/components/ui/button/AppCopyButton.vue`).
-- Field validation stays inline in the shared field component with `aria-invalid`, error text before hints, and first-invalid-field focus.
+- A labelled control is an `AppFormField`, which gives the control its id, `aria-describedby`, and its error in place of its hint; validation stays inline there with `aria-invalid` and first-invalid-field focus (`src/components/ui/input/AppFormField.stories.ts`).
 - Ordinary labels such as Running/Stopped remain status text or badges. Destructive confirmation belongs in the shared confirmation dialog.
 
 ### Animations

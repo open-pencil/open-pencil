@@ -40,7 +40,9 @@ export const adminErrorCodeSchema = v.picklist([
   'last_admin_required',
   'self_admin_action_forbidden',
   'email_regeneration_unavailable',
-  'mfa_required'
+  'mfa_required',
+  'document_not_restorable',
+  'workspace_gone'
 ])
 
 export const adminErrorResponseSchema = v.object({
@@ -178,10 +180,16 @@ export const cloudAdminDocumentSchema = v.object({
   disabledAt: nullableTimestampSchema,
   disabledReason: v.nullable(v.string()),
   /** Reports about it still waiting for a decision. */
-  openReports: countSchema
+  openReports: countSchema,
+  /**
+   * When someone deleted it forever, and when cleanup destroys it; until then an administrator
+   * can still restore it. Servers from before Trash send neither.
+   */
+  purgedAt: v.optional(nullableTimestampSchema, null),
+  destroyedAt: v.optional(nullableTimestampSchema, null)
 })
-/** Which documents a list shows. */
-export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled'])
+/** Which documents a list shows: live ones, or those deleted forever an administrator can restore. */
+export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled', 'purged'])
 export const cloudAdminDocumentsResponseSchema = v.object({
   documents: v.array(cloudAdminDocumentSchema),
   ...listTotals(cloudAdminDocumentFilterSchema.options)

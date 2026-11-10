@@ -31,7 +31,7 @@ for (const theme of ['light', 'dark']) {
     const section = page.getByRole('region', { name: 'Effects', exact: true })
     await section.getByRole('button', { name: 'Expand effect settings' }).click()
     if (theme === 'light') await expect(section).toHaveScreenshot('inline-shadow-light.png')
-    const radius = section.getByRole('spinbutton', { name: 'Radius', exact: true })
+    const radius = section.getByRole('spinbutton', { name: 'Blur', exact: true })
     await radius.focus()
     await radius.fill('20')
     await radius.press('Enter')
@@ -55,7 +55,7 @@ for (const theme of ['light', 'dark']) {
       .toBe(12)
     await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
     await page.getByRole('option', { name: 'Layer blur', exact: true }).click()
-    await expect(section.getByRole('spinbutton', { name: 'Radius', exact: true })).toBeVisible()
+    await expect(section.getByRole('spinbutton', { name: 'Blur', exact: true })).toBeVisible()
     await section.getByRole('button', { name: 'Remove effect' }).click()
     await expect
       .poll(() =>
@@ -121,7 +121,7 @@ test('bind a shadow’s blur and colour to variables, and detach by typing', asy
     .poll(async () => Object.keys((await node()).bindings ?? {}).sort())
     .toEqual(['effects/0/color', 'effects/0/radius'])
 
-  const radius = section.getByRole('spinbutton', { name: 'Radius', exact: true })
+  const radius = section.getByRole('spinbutton', { name: 'Blur', exact: true })
   await radius.focus()
   const input = blur.locator('input')
   await input.fill('24')
@@ -130,4 +130,90 @@ test('bind a shadow’s blur and colour to variables, and detach by typing', asy
     .poll(node)
     .toEqual({ bindings: { 'effects/0/color': expect.any(String) }, radius: 24 })
   await expect(blur).not.toHaveAttribute('data-bound')
+})
+
+test('switch an effect to Glass and edit its labelled settings', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const id = await page.evaluate(async () => {
+    const path = '/src/app/shell/theme.ts'
+    const module = await import(path)
+    module.useAppTheme().setTheme('light')
+    const editor = window.openPencil?.getStore?.()
+    if (!editor) throw new Error('Editor unavailable')
+    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
+    editor.updateNode(id, {
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 12,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    editor.select([id])
+    return id
+  })
+  const glass = () =>
+    page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0], id)
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
+  await page.getByRole('option', { name: 'Glass', exact: true }).click()
+  await expect.poll(async () => (await glass())?.type).toBe('GLASS')
+
+  for (const label of ['Light angle', 'Light intensity', 'Refraction', 'Depth', 'Dispersion']) {
+    await expect(section.getByText(label, { exact: true })).toBeVisible()
+  }
+  await expect(section.getByText('Frost', { exact: true })).toBeVisible()
+  await expect(section).toHaveScreenshot('inline-glass-light.png')
+
+  const depth = section.getByRole('spinbutton', { name: 'Depth', exact: true })
+  await depth.focus()
+  await depth.fill('12')
+  await depth.press('Enter')
+  await expect.poll(async () => (await glass())?.glass?.depth).toBe(12)
+})
+
+test('a drop shadow shows behind transparent areas until unchecked', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const id = await page.evaluate(() => {
+    const editor = window.openPencil?.getStore?.()
+    if (!editor) throw new Error('Editor unavailable')
+    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
+    editor.updateNode(id, {
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 12,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    editor.select([id])
+    return id
+  })
+  const showBehind = () =>
+    page.evaluate(
+      (id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0].showShadowBehindNode,
+      id
+    )
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  const checkbox = section.getByRole('checkbox', { name: 'Show behind transparent areas' })
+  await expect(checkbox).toBeChecked()
+  await checkbox.click()
+  await expect(checkbox).not.toBeChecked()
+  await expect.poll(showBehind).toBe(false)
+  await section.getByRole('heading', { name: 'Effects' }).click()
+  await expect(checkbox).not.toBeFocused()
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(checkbox).toBeChecked()
 })

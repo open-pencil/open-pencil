@@ -23,7 +23,7 @@ export default {
     draftCard:
       'w-72 rounded-[1.25rem] p-0 focus-within:shadow-[0_0_0_1px_var(--color-accent),0_8px_30px_rgb(0_0_0/0.4)]',
     threadCard: 'flex min-h-0 flex-col',
-    thread: 'scrollbar-thin flex min-h-0 flex-col gap-3 overflow-y-auto px-3 py-2.5',
+    thread: 'flex min-h-0 flex-col gap-3 overflow-y-auto px-3 py-2.5',
     message: 'group/message grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5',
     messageMeta: 'flex h-6 min-w-0 items-center gap-1.5 text-xs',
     messageAuthor: 'min-w-0 truncate font-semibold text-surface',
@@ -36,10 +36,10 @@ export default {
     composer:
       'flex items-end gap-1 rounded-lg border border-border bg-input py-1 pr-1 pl-3 focus-within:border-panel-focus focus-within:ring-1 focus-within:ring-accent/25',
     composerInput:
-      'scrollbar-thin max-h-40 min-w-0 flex-1 resize-none bg-transparent py-0.5 text-xs leading-5 text-surface outline-none placeholder:text-muted',
+      'max-h-40 min-w-0 flex-1 resize-none bg-transparent py-0.5 text-xs leading-5 text-surface outline-none placeholder:text-muted',
     panel: 'flex min-h-0 flex-1 flex-col',
     panelSearch: 'shrink-0 border-b border-border px-3 py-2',
-    list: 'scrollbar-thin min-h-0 flex-1 overflow-y-auto',
+    list: 'min-h-0 flex-1 overflow-y-auto',
     item: 'group/item relative border-b border-border/60 hover:bg-hover data-[active]:bg-panel-selected-muted',
     itemButton:
       'flex w-full cursor-pointer flex-col gap-1 px-3 py-2.5 text-left text-xs outline-none focus-visible:bg-hover',

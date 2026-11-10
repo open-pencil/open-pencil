@@ -1,0 +1,1 @@
+- The desktop app can use Antigravity CLI (`agy`) as its design agent, with guided setup and saved chats that continue its session.

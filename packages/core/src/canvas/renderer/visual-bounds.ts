@@ -1,9 +1,10 @@
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { glassSampleRadius } from '#core/canvas/glass/shader'
 import { projectedNode, type RotationPreview } from '#core/geometry'
 import {
   localRenderBounds,
@@ -283,4 +284,39 @@ export function subtreeVisualRectInParent(
     width: bounds.maxX - bounds.minX,
     height: bounds.maxY - bounds.minY
   }
+}
+
+/**
+ * How far past what a node draws its effects read the canvas behind it, in page units: glass
+ * refraction and background blur sample the backdrop around each point they draw. 0 for none.
+ */
+function nodeBackdropReach(graph: SceneGraph, node: SceneNode): number {
+  let reach = 0
+  for (const effect of node.effects) {
+    if (!effect.visible) continue
+    if (effect.type === 'GLASS') reach = Math.max(reach, glassSampleRadius(node, effect))
+    if (effect.type === 'BACKGROUND_BLUR') {
+      reach = Math.max(reach, 3 * blurSigma(effect.radius) + 1)
+    }
+  }
+  if (reach === 0) return 0
+  const matrix = getWorldMatrix(node, graph)
+  return reach * Math.max(Math.hypot(matrix[0], matrix[3]), Math.hypot(matrix[1], matrix[4]))
+}
+
+/** The farthest backdrop reach of a node, or with `subtree` of it and its visible descendants. */
+export function backdropReach(graph: SceneGraph, node: SceneNode, subtree: boolean): number {
+  if (!subtree) return nodeBackdropReach(graph, node)
+  let reach = 0
+  const stack = [node]
+  while (stack.length > 0) {
+    const current = stack.pop()
+    if (!current?.visible) continue
+    reach = Math.max(reach, nodeBackdropReach(graph, current))
+    for (const childId of current.childIds) {
+      const child = graph.getNode(childId)
+      if (child) stack.push(child)
+    }
+  }
+  return reach
 }

@@ -1,0 +1,1 @@
+- Clicks and hover pass through locked layers on the canvas, as in Figma: a click reaches the layer underneath and a drag starts a marquee, while a right-click still selects a locked layer to unlock it (#1941).

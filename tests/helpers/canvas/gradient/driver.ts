@@ -13,9 +13,9 @@ export function gradientDriver(page: () => Page) {
   return {
     /** The gradient rectangle, selected, at 200% with its top-left 100 px into the canvas. */
     async show(type: GradientType) {
+      await showView(page(), { zoom: 2, panX: 100, panY: 100 })
       const { nodeId } = await scenes.build('createGradientScene', type)
       await page().evaluate((id) => window.openPencil?.getStore?.().select([id]), nodeId)
-      await showView(page(), { zoom: 2, panX: 100, panY: 100 })
       return nodeId
     },
 

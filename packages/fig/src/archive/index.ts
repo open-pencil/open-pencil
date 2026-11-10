@@ -14,8 +14,10 @@ import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fi
 import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
 import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
-import { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
-import { isPNG } from './thumbnail'
+import { figArchiveMetaSchema, type FigArchiveMetaJSON } from '../schema'
+import { isPNG } from '../thumbnail'
+import { readZipDirectory, zipEntryContents } from '../zip/directory'
+import { bytesStream, zipStream, type ZipStreamEntry } from '../zip/stream'
 
 export interface FigImageEntry {
   name: string
@@ -53,16 +55,31 @@ function isLikelyAsset(name: string): boolean {
   return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.json')
 }
 
-function findCanvasData(entries: Partial<Record<string, Uint8Array>>): Uint8Array | null {
-  const canonical = entries['canvas.fig'] ?? entries.canvas
-  if (canonical) return canonical
-
-  let largest: Uint8Array | null = null
-  for (const [name, data] of Object.entries(entries)) {
-    if (!data || isLikelyAsset(name)) continue
-    if (!largest || data.byteLength > largest.byteLength) largest = data
+/**
+ * Which entry holds the document: `canvas.fig`, or `canvas` in older files, or else the largest
+ * entry that is not an image or JSON.
+ */
+function canvasEntryName(
+  entries: ReadonlyArray<readonly [name: string, size: number]>
+): string | null {
+  for (const canonical of ['canvas.fig', 'canvas']) {
+    if (entries.some(([name]) => name === canonical)) return canonical
   }
-  return largest
+  let largest: { name: string; size: number } | null = null
+  for (const [name, size] of entries) {
+    if (isLikelyAsset(name) || (largest && largest.size >= size)) continue
+    largest = { name, size }
+  }
+  return largest?.name ?? null
+}
+
+function findCanvasData(entries: Partial<Record<string, Uint8Array>>): Uint8Array | null {
+  const name = canvasEntryName(
+    Object.entries(entries).flatMap(([entry, data]) =>
+      data ? [[entry, data.byteLength] as const] : []
+    )
+  )
+  return name === null ? null : (entries[name] ?? null)
 }
 
 function isCanonicalCanvasEntry(name: string): boolean {
@@ -168,6 +185,10 @@ function canvasParts(canvasData: Uint8Array) {
   }
 }
 
+/**
+ * A `.fig` file's parts, read through its ZIP directory: stored entries, as images are, stay views
+ * of `buffer` rather than copies, so patching a large archive does not hold its images twice.
+ */
 export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
   const bytes = new Uint8Array(buffer)
   const chunks = parseFigKiwiChunks(bytes)
@@ -175,27 +196,27 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
     const thumbnailPNG = chunks.slice(2).find(isPNG) ?? null
     return { ...canvasParts(bytes), images: [], thumbnailPNG, metaJSON: null }
   }
-  const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
-  const canonical = findCanvasData(canvasArchive)
-  const archive = unzipSync(
-    bytes,
-    canonical ? { filter: ({ name }) => !isCanonicalCanvasEntry(name) } : undefined
-  )
-  const canvasData = canonical ?? findCanvasData(archive)
-  if (!canvasData)
+  const entries = readZipDirectory(bytes)
+  if (!entries) throw new Error('Not a .fig file: neither a ZIP archive nor a fig-kiwi container')
+  const byName = new Map(entries.map((entry) => [entry.name, entry]))
+  const contents = (name: string | null) => {
+    const entry = name === null ? undefined : byName.get(name)
+    return entry ? zipEntryContents(bytes, entry) : null
+  }
+  const canvasData = contents(canvasEntryName(entries.map((entry) => [entry.name, entry.size])))
+  if (!canvasData) {
     throw new Error(
-      `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
+      `No canvas data found in .fig file. Entries: ${entries.map((entry) => entry.name).join(', ')}`
     )
-  const images = Object.entries(archive)
-    .filter(([name]) => name.startsWith('images/') && name !== 'images/')
-    .map(([name, data]) => [name.slice('images/'.length), data] as [string, Uint8Array])
+  }
+  const meta = contents('meta.json')
   return {
     ...canvasParts(canvasData),
-    images,
-    thumbnailPNG: archive['thumbnail.png'] ?? null,
-    metaJSON: Object.hasOwn(archive, 'meta.json')
-      ? new TextDecoder().decode(archive['meta.json'])
-      : null
+    images: entries
+      .filter((entry) => entry.name.startsWith('images/') && entry.name !== 'images/')
+      .map((entry) => [entry.name.slice('images/'.length), zipEntryContents(bytes, entry)]),
+    thumbnailPNG: contents('thumbnail.png'),
+    metaJSON: meta ? new TextDecoder().decode(meta) : null
   }
 }
 
@@ -246,63 +267,71 @@ const storedMetaSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), 
 
 /**
  * The archive with its `meta.json` recording `fileName`, every other entry's bytes and every
- * other key of `meta.json` as they were; the archive itself when it already records that name.
- * Null when its `meta.json` records no `file_name`, which only a full write can give it.
+ * other key of `meta.json` as they were, or the archive itself when it already records that name;
+ * entries the archive stores pass through as views of `bytes`. Null when its `meta.json` records
+ * no `file_name`, which only a full write can give it.
  */
-export function renameFigArchive(bytes: Uint8Array, fileName: string): Uint8Array | null {
-  if (parseFigKiwiChunks(bytes)) return null
-  const stored = unzipSync(bytes, { filter: ({ name }) => name === 'meta.json' })
-  if (!Object.hasOwn(stored, 'meta.json')) return null
-  const meta = v.safeParse(storedMetaSchema, new TextDecoder().decode(stored['meta.json']))
+export function renameFigArchive(
+  bytes: Uint8Array,
+  fileName: string
+): ReadableStream<Uint8Array> | null {
+  const entries = readZipDirectory(bytes)
+  const metaEntry = entries?.find((entry) => entry.name === 'meta.json')
+  if (!entries || !metaEntry) return null
+  const meta = v.safeParse(
+    storedMetaSchema,
+    new TextDecoder().decode(zipEntryContents(bytes, metaEntry))
+  )
   if (!meta.success || typeof meta.output.file_name !== 'string') return null
-  if (meta.output.file_name === fileName) return bytes
-  const renamed: Zippable = {}
-  for (const [name, data] of Object.entries(unzipSync(bytes))) {
-    renamed[name] =
-      name === 'meta.json'
-        ? new TextEncoder().encode(JSON.stringify({ ...meta.output, file_name: fileName }))
-        : [data, { level: 0 }]
-  }
-  return zipSync(renamed)
+  if (meta.output.file_name === fileName) return bytesStream(bytes)
+  const renamed = new TextEncoder().encode(JSON.stringify({ ...meta.output, file_name: fileName }))
+  return zipStream(
+    entries.map((entry) =>
+      entry === metaEntry
+        ? { name: entry.name, data: renamed, deflate: true }
+        : { name: entry.name, data: zipEntryContents(bytes, entry), deflate: entry.method !== 0 }
+    )
+  )
+}
+
+/** A complete `.fig` archive's parts, its document data already in its `fig-kiwi` container. */
+export interface FigArchiveContents {
+  canvasFig: Uint8Array
+  thumbnailPNG: Uint8Array
+  metaJSON: string
+  images?: readonly FigImageEntry[]
+}
+
+/** The entries of a `.fig` archive, in the order Figma writes them. */
+function figArchiveEntries(contents: FigArchiveContents): ZipStreamEntry[] {
+  return [
+    { name: 'canvas.fig', data: contents.canvasFig },
+    { name: 'thumbnail.png', data: contents.thumbnailPNG },
+    { name: 'meta.json', data: new TextEncoder().encode(contents.metaJSON), deflate: true },
+    ...(contents.images ?? []).map((image) => ({ name: image.name, data: image.data }))
+  ]
+}
+
+/**
+ * A `.fig` archive written as its reader asks for it, the images passing through as views of the
+ * bytes given, so a save never holds the archive whole.
+ */
+export function streamFigArchive(contents: FigArchiveContents): ReadableStream<Uint8Array> {
+  return zipStream(figArchiveEntries(contents))
 }
 
 /** Assemble a complete zipped `.fig` archive from an encoded Kiwi message and resources. */
 export function writeFigArchive(input: WriteFigArchiveInput): Uint8Array {
-  const canvasData = buildFigKiwi(
+  const canvasFig = buildFigKiwi(
     input.schemaDeflated,
     input.kiwiData,
     input.figKiwiVersion,
     input.compress,
     input.kind
   )
-  const entries: Zippable = {
-    'canvas.fig': [canvasData, { level: 0 }],
-    'thumbnail.png': [input.thumbnailPNG, { level: 0 }],
-    'meta.json': new TextEncoder().encode(input.metaJSON)
+  const entries: Zippable = {}
+  for (const entry of figArchiveEntries({ ...input, canvasFig })) {
+    entries[entry.name] = entry.deflate ? entry.data : [entry.data, { level: 0 }]
   }
-  for (const image of input.images ?? []) entries[image.name] = [image.data, { level: 0 }]
   return zipSync(entries)
-}
-
-/** Compatibility signature used by core while archive assembly migrates to this package. */
-export function compressFigDataSync(
-  schemaDeflated: Uint8Array,
-  kiwiData: Uint8Array,
-  thumbnailPNG: Uint8Array,
-  metaJSON: string,
-  imageEntries: FigImageEntry[],
-  figKiwiVersion?: number,
-  compress?: FigDataCompressor,
-  kind?: FigFileKind
-): Uint8Array {
-  return writeFigArchive({
-    schemaDeflated,
-    kiwiData,
-    thumbnailPNG,
-    metaJSON,
-    images: imageEntries,
-    figKiwiVersion,
-    compress,
-    kind
-  })
 }

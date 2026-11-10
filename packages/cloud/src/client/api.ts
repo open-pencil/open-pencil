@@ -18,6 +18,7 @@ import {
   documentVersionsSchema,
   restoredDocumentSchema,
   sharedDocumentSchema,
+  trashSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
@@ -46,6 +47,7 @@ import {
   type SaveDocumentVersionInput,
   type UpdateDocumentVersionInput,
   type SharedDocument,
+  type TrashedDocument,
   type InvitationPreview,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
@@ -190,6 +192,24 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** Documents in Trash the person may restore, across their workspaces, newest first. */
+    async listTrash(): Promise<TrashedDocument[]> {
+      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
+      return response.documents
+    },
+    async restoreDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
+        options.onDiagnostic
+      )
+    },
+    /** Deletes a document in Trash for good. */
+    async purgeDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async deleteDocument(documentId: string): Promise<void> {
       await responseBody(

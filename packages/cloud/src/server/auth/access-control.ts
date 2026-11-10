@@ -3,7 +3,8 @@ import { createAccessControl } from 'better-auth/plugins/access'
 
 export const accessStatements = {
   workspace: ['read', 'update', 'delete', 'invite', 'manage-members'],
-  document: ['create', 'read', 'edit', 'share', 'delete']
+  /** `delete` moves a document to Trash and back; `purge` deletes it from Trash for good. */
+  document: ['create', 'read', 'edit', 'share', 'delete', 'purge']
 } as const
 
 type AccessStatements = typeof accessStatements
@@ -22,7 +23,7 @@ export const accessControl = createAccessControl(accessStatements)
 export const workspaceRoles = {
   admin: accessControl.newRole({
     workspace: ['read', 'update', 'delete', 'invite', 'manage-members'],
-    document: ['create', 'read', 'edit', 'share', 'delete']
+    document: ['create', 'read', 'edit', 'share', 'delete', 'purge']
   }),
   editor: accessControl.newRole({
     workspace: ['read'],
@@ -37,10 +38,10 @@ export const workspaceRoles = {
 /**
  * What someone may do with one document through something other than workspace membership: being
  * its owner, or a grant made to them. A grant lets its holder edit and share, never delete the
- * owner's document.
+ * owner's document. Deleting from Trash for good is for the owner and workspace administrators.
  */
 export const documentRoles = {
-  owner: accessControl.newRole({ document: ['read', 'edit', 'share', 'delete'] }),
+  owner: accessControl.newRole({ document: ['read', 'edit', 'share', 'delete', 'purge'] }),
   editor: accessControl.newRole({ document: ['read', 'edit', 'share'] }),
   viewer: accessControl.newRole({ document: ['read'] })
 }

@@ -11,11 +11,13 @@ export type HomeLocationView =
   | { kind: 'recent'; id: 'recent' }
   | { kind: 'workspace'; id: string }
   | { kind: 'shared'; id: 'shared' }
+  | { kind: 'trash'; id: 'trash' }
   | { kind: 'storage'; id: 'storage' }
 
 const VIEWS = {
   recent: { kind: 'recent', id: 'recent' },
   shared: { kind: 'shared', id: 'shared' },
+  trash: { kind: 'trash', id: 'trash' },
   storage: { kind: 'storage', id: 'storage' }
 } as const satisfies Record<Exclude<HomeLocation['kind'], 'workspace'>, HomeLocationView>
 
@@ -28,8 +30,8 @@ function fromView(location: HomeLocationView): HomeLocation {
 }
 
 /**
- * Where Home can list documents from: Recent, the workspaces and shared documents of the server
- * Home shows when signed in to it, and storage. Until the person picks a place, Home shows
+ * Where Home can list documents from: Recent, the workspaces, shared documents, and Trash of the
+ * server Home shows when signed in to it, and storage. Until the person picks a place, Home shows
  * Recent, or the first workspace where this app keeps no recent files. A Cloud location the
  * account can no longer reach falls back to Recent.
  */
@@ -42,7 +44,9 @@ export function useHomeLocations() {
     const first = workspaces.value.at(0)
     if (defaultsToWorkspace.value && first) return { kind: 'workspace', id: first.id }
     const chosen = homeLocation.value
-    if (chosen.kind === 'shared' && !cloud.signedIn.value) return { kind: 'recent' }
+    if ((chosen.kind === 'shared' || chosen.kind === 'trash') && !cloud.signedIn.value) {
+      return { kind: 'recent' }
+    }
     if (chosen.kind === 'workspace' && !workspaces.value.some((entry) => entry.id === chosen.id)) {
       return { kind: 'recent' }
     }

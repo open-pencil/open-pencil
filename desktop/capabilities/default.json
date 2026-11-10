@@ -101,6 +101,16 @@
       ]
     },
     {
+      "identifier": "fs:allow-rename",
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }],
+      "deny": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
+    },
+    {
       "identifier": "fs:allow-exists",
       "allow": [
         { "path": "$HOME/.pi/agent/auth.json" },
