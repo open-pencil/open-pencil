@@ -14,6 +14,7 @@ import type { Context } from 'hono'
 import * as v from 'valibot'
 
 import type { CloudflareCloudEnvironment, PreparedCloudflareCloud } from '../environment'
+import { inMaintenance, MAINTENANCE_CLOSE_CODE, maintenanceResponse } from '../maintenance'
 import { createRelaySockets } from './sockets'
 
 /** What the Worker calls on a document's relay object. */
@@ -125,6 +126,7 @@ export function createCloudflareRelayObject(
 
     /** Accepts a socket that `relayRoute` sent here. */
     override async fetch(request: Request): Promise<Response> {
+      if (inMaintenance(this.env)) return maintenanceResponse()
       const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
       const relay = await this.#sockets.open(documentId)
@@ -135,6 +137,12 @@ export function createCloudflareRelayObject(
     }
 
     override async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+      // A socket from before maintenance began reaches the room no more: its editor reconnects
+      // once maintenance ends, and nothing it sends meanwhile is written.
+      if (inMaintenance(this.env)) {
+        socket.close(MAINTENANCE_CLOSE_CODE, 'Down for maintenance')
+        return
+      }
       await this.#sockets.message(socket, message)
     }
 

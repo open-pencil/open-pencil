@@ -21,7 +21,9 @@ The values in `production/` marked "Replace" and these settings outside the repo
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7).
 - An R2 API token with Object Read & Write on the `openpencil-cloud` bucket only, whose keys are
   `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
-  rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev`.
+  rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev` with any request header
+  (uploads send `Content-Type` and `x-amz-meta-openpencil-sha256`) and expose `ETag`, which
+  multipart uploads read for each part.
 - A Hyperdrive over the database's pooled connection with query caching off, since a cached read
   can miss the write just before it. Its ID goes in `production/wrangler.jsonc`.
 - Google's OAuth client allowing `https://cloud.openpencil.dev/api/auth/callback/google`, Email
@@ -91,10 +93,11 @@ What holds what:
 To restore the database to an earlier time:
 
 1. Take production off the air: run Deploy Cloud for `production` from the deployed tag with
-   **maintenance** checked. Every request then answers 503 and the cron's cleanup does nothing, so
-   nothing deletes what the restore brings back; the deploy restarts the rooms' objects and closes
-   their sockets, so no room keeps newer state than the restore and writes it back. It skips
-   migrating and the health check.
+   **maintenance** checked. Every request then answers 503, the cron's cleanup does nothing, so
+   nothing deletes what the restore brings back, and the rooms' objects refuse new sockets and
+   close any open one that sends a message, so no edit reaches the database. It skips migrating
+   and the health check. Wait five minutes after it finishes before restoring: Cloudflare may take
+   that long to move a busy room's object onto the new version.
 2. Create a Neon branch at the time before the damage, check it, and restore the production branch
    from it in the Neon console. Hyperdrive keeps the same connection.
 3. Files the restored rows name that cleanup deleted since are gone; list them by the `object_key`

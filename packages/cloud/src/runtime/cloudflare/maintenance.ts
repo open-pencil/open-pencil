@@ -10,6 +10,9 @@ export function inMaintenance(env: Record<string, unknown>): boolean {
   return env[MAINTENANCE_VARIABLE] === 'on'
 }
 
+/** How a relay socket open when maintenance began is closed: the service restarts. */
+export const MAINTENANCE_CLOSE_CODE = 1012
+
 /** What every request gets meanwhile; clients retry, and nothing reaches the database. */
 export function maintenanceResponse(): Response {
   return new Response('OpenPencil Cloud is down for maintenance.', {
