@@ -13,11 +13,11 @@ const numberFieldTheme = {
     display: 'flex min-w-0 flex-1 items-center overflow-hidden text-2xs select-none',
     mixed: 'flex-1 text-muted',
     value: 'min-w-0 flex-1 truncate text-surface',
-    trailing: 'flex shrink-0 items-center self-stretch',
+    trailing: 'flex shrink-0 items-center self-stretch pe-0.5',
     suffix: 'shrink-0 pe-1.5 text-muted'
   },
   variants: {
-    /** A trailing control, such as the variable button, brings its own spacing after the unit. */
+    /** Trailing controls are 20px boxes that bring their own spacing after the unit. */
     suffix: {
       true: { display: 'pe-0', suffix: 'pe-0.5' },
       false: { display: 'pe-1.5' }

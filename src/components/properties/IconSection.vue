@@ -86,7 +86,7 @@ function confirmSwap() {
               {{ iconLayerName(name) }}
               <span class="text-muted">{{ setName ?? name.slice(0, name.indexOf(':')) }}</span>
             </span>
-            <icon-lucide-chevron-down class="ms-1 size-3 shrink-0 text-muted" />
+            <icon-lucide-chevron-down :class="styles.chevron()" />
           </button>
         </template>
       </IconPicker>
