@@ -1,10 +1,8 @@
-import type { FigmaNodeProxy } from '#core/figma-api'
 import {
   nodeTraversalInput,
   nodeInputSchema,
   defineTool,
   getRawNodeOrError,
-  nodeNotFound,
   nodeSummary
 } from '#core/tools/schema'
 
@@ -26,45 +24,6 @@ export const nodeAncestors = defineTool({
       depth++
     }
     return { id: args.id, ancestors }
-  }
-})
-
-export const nodeChildren = defineTool({
-  name: 'node_children',
-  description: 'Get direct children of a node.',
-  execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
-  input: nodeInputSchema,
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return nodeNotFound(id)
-    return { id, children: node.children.map(nodeSummary) }
-  }
-})
-
-export const nodeTree = defineTool({
-  name: 'node_tree',
-  description: 'Get a node tree with types and hierarchy.',
-  execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
-  input: nodeTraversalInput('Max depth (default: unlimited)'),
-  execute: (figma, args) => {
-    const node = figma.getNodeById(args.id)
-    if (!node) return { error: `Node "${args.id}" not found` }
-    function buildTree(current: FigmaNodeProxy, depth: number): Record<string, unknown> {
-      const result: Record<string, unknown> = {
-        id: current.id,
-        name: current.name,
-        type: current.type
-      }
-      if (args.depth === undefined || depth < args.depth) {
-        const children = current.children
-        if (children.length > 0)
-          result.children = children.map((child) => buildTree(child, depth + 1))
-      }
-      return result
-    }
-    return buildTree(node, 0)
   }
 })
 

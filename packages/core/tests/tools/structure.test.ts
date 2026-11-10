@@ -30,18 +30,6 @@ describe('clone_node', () => {
   })
 })
 
-describe('rename_node', () => {
-  test('renames a node', () => {
-    const { figma } = setupToolTest()
-    const rect = figma.createRectangle()
-
-    const tool = getTool('rename_node')
-    tool.execute(figma, { id: rect.id, name: 'My Rectangle' })
-
-    expect(expectDefined(figma.getNodeById(rect.id), 'renamed rectangle').name).toBe('My Rectangle')
-  })
-})
-
 describe('reparent_node', () => {
   test('moves node into frame', () => {
     const { figma } = setupToolTest()

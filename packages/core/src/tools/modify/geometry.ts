@@ -2,42 +2,6 @@ import * as v from 'valibot'
 
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
-export const setRotation = defineTool({
-  name: 'set_rotation',
-
-  description: 'Set rotation angle of a node in degrees.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    angle: toolNumber(v.pipe(v.number(), v.description('Rotation angle in degrees')))
-  }),
-  execute: (figma, { id, angle }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.rotation = angle
-    return { id, rotation: angle }
-  }
-})
-
-export const setOpacity = defineTool({
-  name: 'set_opacity',
-
-  description: 'Set opacity of a node (0-1).',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    value: toolNumber(
-      v.pipe(v.number(), v.minValue(0), v.maxValue(1), v.description('Opacity (0-1)'))
-    )
-  }),
-  execute: (figma, { id, value }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.opacity = value
-    return { id, opacity: value }
-  }
-})
-
 export const setRadius = defineTool({
   name: 'set_radius',
 

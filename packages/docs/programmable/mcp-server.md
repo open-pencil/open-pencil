@@ -211,26 +211,23 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Read
 
-| Tool                   | Description                                                                                                                 |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `get_selection`        | Get the selected nodes, with their direct children by default; `depth` sets how many levels                                 |
-| `get_page_tree`        | Get the full node tree of the current page                                                                                  |
-| `get_current_page`     | Get the current page name and ID                                                                                            |
-| `get_node`             | Get detailed properties of a node by ID                                                                                     |
-| `find_nodes`           | Find nodes by name pattern and/or type                                                                                      |
-| `get_components`       | List all components in the document                                                                                         |
-| `list_pages`           | List all pages                                                                                                              |
-| `list_variables`       | List design variables                                                                                                       |
-| `list_collections`     | List variable collections                                                                                                   |
-| `list_fonts`           | List fonts used in the current page                                                                                         |
-| `list_available_fonts` | List font families the current host can render                                                                              |
-| `get_font_status`      | Report requested faces, loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
-| `page_bounds`          | Get bounding box of all objects on the current page                                                                         |
-| `node_bounds`          | Get bounding box of a node                                                                                                  |
-| `node_ancestors`       | Get ancestor chain of a node                                                                                                |
-| `node_children`        | Get direct children of a node                                                                                               |
-| `node_tree`            | Get the subtree rooted at a node                                                                                            |
-| `node_bindings`        | Get variable bindings on a node                                                                                             |
+| Tool                   | Description                                                                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_selection`        | Get the selected nodes, with their direct children by default; `depth` sets how many levels                                                                      |
+| `get_page_tree`        | Get the full node tree of the current page                                                                                                                       |
+| `get_current_page`     | Get the current page name and ID                                                                                                                                 |
+| `get_node`             | Get detailed properties of a node by ID                                                                                                                          |
+| `find_nodes`           | Find nodes by name pattern and/or type                                                                                                                           |
+| `get_components`       | List all components in the document                                                                                                                              |
+| `list_pages`           | List all pages                                                                                                                                                   |
+| `list_variables`       | List design variables, optionally by name or type                                                                                                                |
+| `list_collections`     | List variable collections                                                                                                                                        |
+| `list_available_fonts` | List font families the current host can render                                                                                                                   |
+| `get_font_status`      | Report the faces used on the page, optionally of one family: loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
+| `page_bounds`          | Get bounding box of all objects on the current page                                                                                                              |
+| `node_bounds`          | Get bounding box of a node                                                                                                                                       |
+| `node_ancestors`       | Get ancestor chain of a node                                                                                                                                     |
+| `node_bindings`        | Get variable bindings on a node                                                                                                                                  |
 
 ### Create
 
@@ -242,7 +239,6 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `create_connector`  | Join two layers, or a layer and a point, with a connector that follows them                     |
 | `create_page`       | Create a new page                                                                               |
 | `render`            | Render JSX to design nodes — create entire component trees in one call                          |
-| `create_component`  | Convert a frame/group into a component                                                          |
 | `create_instance`   | Create an instance of a component                                                               |
 | `create_slot`       | Make a frame inside a main component a slot                                                     |
 | `set_behaviour`     | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
@@ -257,54 +253,40 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `set_image_fill`      | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root                                                     |
 | `set_stroke`          | Set stroke color, weight, alignment                                                                                                                              |
 | `set_effects`         | Add shadow or blur effects                                                                                                                                       |
-| `update_node`         | Update position, size, opacity, corner radius, text, font                                                                                                        |
+| `update_node`         | Update position, size, rotation, opacity, corner radius, visibility, lock, name, text, font                                                                      |
 | `set_layout`          | Set auto-layout (flexbox) — direction, spacing, padding, alignment                                                                                               |
 | `set_constraints`     | Set resize constraints                                                                                                                                           |
-| `set_rotation`        | Set rotation angle in degrees                                                                                                                                    |
-| `set_opacity`         | Set opacity (0–1)                                                                                                                                                |
 | `set_radius`          | Set corner radius (uniform or per-corner)                                                                                                                        |
 | `set_minmax`          | Set min/max width and height constraints                                                                                                                         |
 | `set_text`            | Set text content of a `TEXT` node                                                                                                                                |
 | `set_font`            | Set font family and weight                                                                                                                                       |
 | `set_font_range`      | Set font properties on a character range                                                                                                                         |
-| `set_text_resize`     | Set text auto-resize mode (fixed/auto-width/auto-height)                                                                                                         |
-| `set_visible`         | Show or hide a node                                                                                                                                              |
 | `set_blend`           | Set blend mode                                                                                                                                                   |
-| `set_locked`          | Lock or unlock a node                                                                                                                                            |
-| `set_stroke_align`    | Set stroke alignment (inside/center/outside)                                                                                                                     |
 | `set_text_properties` | Set text layout: alignment, auto-resize, text case, decoration, truncation                                                                                       |
 | `set_layout_child`    | Configure auto-layout child: sizing, grow, alignment, absolute positioning                                                                                       |
-| `node_move`           | Move a node to a new position                                                                                                                                    |
-| `node_resize`         | Resize a node                                                                                                                                                    |
 | `node_replace_with`   | Replace a node with another node                                                                                                                                 |
 | `arrange`             | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
 
 ### Structure
 
-| Tool                | Description                         |
-| ------------------- | ----------------------------------- |
-| `delete_node`       | Delete a node                       |
-| `clone_node`        | Duplicate a node                    |
-| `rename_node`       | Rename a node                       |
-| `reparent_node`     | Move a node into a different parent |
-| `select_nodes`      | Select nodes by ID                  |
-| `group_nodes`       | Group nodes                         |
-| `ungroup_node`      | Ungroup a group                     |
-| `flatten_nodes`     | Flatten nodes into a single vector  |
-| `boolean_union`     | Boolean union of two or more nodes  |
-| `boolean_subtract`  | Boolean subtraction                 |
-| `boolean_intersect` | Boolean intersection                |
-| `boolean_exclude`   | Boolean exclusion                   |
+| Tool            | Description                                                       |
+| --------------- | ----------------------------------------------------------------- |
+| `delete_node`   | Delete a node                                                     |
+| `clone_node`    | Duplicate a node                                                  |
+| `reparent_node` | Move a node into a different parent                               |
+| `select_nodes`  | Select nodes by ID                                                |
+| `group_nodes`   | Group nodes                                                       |
+| `ungroup_node`  | Ungroup a group                                                   |
+| `flatten_nodes` | Flatten nodes into a single vector                                |
+| `boolean`       | Combine two or more nodes: union, subtract, intersect, or exclude |
 
 ### Vector Path
 
-| Tool         | Description                                   |
-| ------------ | --------------------------------------------- |
-| `path_get`   | Get the path data of a vector node            |
-| `path_set`   | Set the path data of a vector node            |
-| `path_scale` | Scale a vector path                           |
-| `path_flip`  | Flip a vector path horizontally or vertically |
-| `path_move`  | Translate a vector path                       |
+| Tool             | Description                                      |
+| ---------------- | ------------------------------------------------ |
+| `path_get`       | Get the path data of a vector node               |
+| `path_set`       | Set the path data of a vector node               |
+| `path_transform` | Scale, flip, or move the points of a vector path |
 
 ### Export
 
@@ -323,17 +305,16 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Variables
 
-| Tool                | Description                             |
-| ------------------- | --------------------------------------- |
-| `get_variable`      | Get a variable by ID or name            |
-| `find_variables`    | Find variables by name pattern or type  |
-| `create_variable`   | Create a new variable in a collection   |
-| `set_variable`      | Set a variable value in a mode          |
-| `delete_variable`   | Delete a variable                       |
-| `bind_variable`     | Bind a variable to a node property      |
-| `get_collection`    | Get a variable collection by ID or name |
-| `create_collection` | Create a new variable collection        |
-| `delete_collection` | Delete a variable collection            |
+| Tool                | Description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| `get_variable`      | Get a variable by ID or name                                               |
+| `create_variable`   | Create a new variable in a collection                                      |
+| `set_variable`      | Set a variable value in a mode                                             |
+| `delete_variable`   | Delete a variable                                                          |
+| `bind_variable`     | Bind a variable to a node property, or unbind it with a null `variable_id` |
+| `get_collection`    | Get a variable collection by ID or name                                    |
+| `create_collection` | Create a new variable collection                                           |
+| `delete_collection` | Delete a variable collection                                               |
 
 ### Analyze
 
@@ -351,7 +332,6 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | Tool          | Description                                                           |
 | ------------- | --------------------------------------------------------------------- |
 | `diff_create` | Patch that turns one node tree into another, as JSX attribute changes |
-| `diff_jsx`    | Structural diff between two nodes as design JSX                       |
 | `diff_show`   | Preview the patch that setting JSX attributes on a node would produce |
 | `diff_apply`  | Apply a patch after checking the nodes still match its old values     |
 | `diff_visual` | Pixel diff between two rendered nodes, returned as an image           |

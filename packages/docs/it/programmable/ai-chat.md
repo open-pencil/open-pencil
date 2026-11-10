@@ -33,7 +33,7 @@ Il token è conservato nell’archivio sicuro delle credenziali, non nelle norma
 
 Gli strumenti coprono lettura, creazione, modifica, struttura, variabili, vettori, analisi, descrizione, generazione di codice e immagini stock. Ogni chiamata agisce sull’editor attivo e partecipa alla cronologia quando applicabile.
 
-Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_create` e `diff_jsx` i confronti strutturali, `diff_visual` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
+Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_create` i confronti strutturali, `diff_visual` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
 
 ## Skill
 

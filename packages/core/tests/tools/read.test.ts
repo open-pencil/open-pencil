@@ -195,6 +195,26 @@ describe('get_font_status', () => {
   })
 })
 
+describe('get_font_status family', () => {
+  test('keeps only the faces of matching families', () => {
+    const { figma, graph } = setupToolTest()
+    const missing = figma.createText()
+    graph.updateNode(missing.id, { fontFamily: 'Unavailable Sans' })
+    const other = figma.createText()
+    graph.updateNode(other.id, { fontFamily: 'Elsewhere Serif' })
+
+    const result = getTool('get_font_status').execute(figma, { family: 'serif' }) as {
+      faithful: boolean
+      faces: Array<{ family: string }>
+      issues: Array<{ family: string }>
+    }
+
+    expect(result.faces.map((face) => face.family)).toEqual(['Elsewhere Serif'])
+    expect(result.issues.map((face) => face.family)).toEqual(['Elsewhere Serif'])
+    expect(result.faithful).toBe(false)
+  })
+})
+
 describe('get_node', () => {
   test('returns node details', async () => {
     const { figma } = setupToolTest()

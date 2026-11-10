@@ -114,16 +114,16 @@ describe('undo and redo', () => {
     const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
     await request('tool', {
       document_id: tab.id,
-      name: 'set_opacity',
-      args: { id: node, value: 0.5 }
+      name: 'update_node',
+      args: { id: node, opacity: 0.5 }
     })
 
     const undone = await request('undo', { document_id: tab.id })
-    expect(undone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(undone.result).toEqual({ applied: true, label: 'Agent: update_node' })
     expect(store.graph.getNode(node)?.opacity).toBe(1)
 
     const redone = await request('redo', { document_id: tab.id })
-    expect(redone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(redone.result).toEqual({ applied: true, label: 'Agent: update_node' })
     expect(store.graph.getNode(node)?.opacity).toBe(0.5)
   })
 
@@ -151,8 +151,8 @@ describe('undo and redo', () => {
     const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
     await request('tool', {
       document_id: tab.id,
-      name: 'set_opacity',
-      args: { id: node, value: 0.5 }
+      name: 'update_node',
+      args: { id: node, opacity: 0.5 }
     })
     store.setTool('PEN')
     store.penAddVertex(0, 0)

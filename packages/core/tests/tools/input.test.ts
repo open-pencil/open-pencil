@@ -47,11 +47,11 @@ describe('native tool input contracts', () => {
   test('direct execution validates and normalizes the same declared schema', () => {
     const { figma } = setupToolTest()
     const node = figma.createRectangle()
-    const tool = getTool('set_opacity')
-    tool.execute(figma, { id: node.id, value: '0.5' })
+    const tool = getTool('update_node')
+    tool.execute(figma, { id: node.id, opacity: '0.5' })
     expect(node.opacity).toBe(0.5)
-    expect(() => tool.execute(figma, { id: node.id, value: 'Infinity' })).toThrow()
-    expect(() => tool.execute(figma, { id: node.id, value: '  ' })).toThrow()
+    expect(() => tool.execute(figma, { id: node.id, opacity: 'Infinity' })).toThrow()
+    expect(() => tool.execute(figma, { id: node.id, opacity: '  ' })).toThrow()
     expect(node.opacity).toBe(0.5)
   })
 
@@ -74,15 +74,12 @@ describe('native tool input contracts', () => {
   })
 
   test.each([
-    'group_nodes',
-    'boolean_subtract',
-    'boolean_union',
-    'boolean_intersect',
-    'boolean_exclude'
-  ])('%s advertises and enforces at least two operands', (name) => {
+    { name: 'group_nodes', base: {} },
+    { name: 'boolean', base: { op: 'union' } }
+  ])('$name advertises and enforces at least two operands', ({ name, base }) => {
     const input = getTool(name).input
-    expect(v.safeParse(input, { ids: ['one'] }).success).toBe(false)
-    expect(v.safeParse(input, { ids: ['one', 'two'] }).success).toBe(true)
+    expect(v.safeParse(input, { ...base, ids: ['one'] }).success).toBe(false)
+    expect(v.safeParse(input, { ...base, ids: ['one', 'two'] }).success).toBe(true)
     const standard = toStandardJSONSchema(input)
     expect(standard['~standard'].jsonSchema.input({ target: 'draft-07' })).toMatchObject({
       properties: { ids: { minItems: 2 } }

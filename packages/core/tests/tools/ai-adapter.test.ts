@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { tool } from 'ai'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { ALL_TOOLS, toolsToAI } from '@open-pencil/core/tools'
+import { ALL_TOOLS, isToolExposed, toolsToAI } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, expectFills } from '@open-pencil/test-support/assert'
 type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
@@ -59,12 +59,11 @@ describe('AI adapter', () => {
     expect(Object.keys(tools)).toEqual(['default', 'other-interface'])
   })
 
-  test('generates tool for every definition', () => {
+  test('generates a tool for every definition exposed to AI', () => {
     const { tools } = setup()
-    for (const def of ALL_TOOLS) {
-      expect(tools[def.name]).toBeDefined()
-    }
-    expect(Object.keys(tools).length).toBe(ALL_TOOLS.length)
+    const exposed = ALL_TOOLS.filter((def) => isToolExposed(def, 'ai'))
+    expect(Object.keys(tools).toSorted()).toEqual(exposed.map((def) => def.name).toSorted())
+    expect(tools.diff_jsx).toBeUndefined()
   })
 
   test('each tool has description and execute', () => {

@@ -48,9 +48,9 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   }
   // Moving the view stays the user's choice.
   expect(defaults).not.toContain('switch_page')
-  expect(defaults).not.toContain('create_component')
-  expect(enabledAIToolDefinitions({ create_component: true }).map((tool) => tool.name)).toContain(
-    'create_component'
+  expect(defaults).not.toContain('node_to_component')
+  expect(enabledAIToolDefinitions({ node_to_component: true }).map((tool) => tool.name)).toContain(
+    'node_to_component'
   )
   expect(
     enabledAIToolDefinitions({ get_components: false }).map((tool) => tool.name)
@@ -62,20 +62,20 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
 
 test('each kind of agent keeps its own permissions through bulk changes and reset', () => {
   aiToolOverrides.value = {}
-  disabledMCPTools.value = ['create_component']
+  disabledMCPTools.value = ['node_to_component']
   const ai = useToolAccessSettings('ai')
   const mcp = useToolAccessSettings('mcp')
-  expect(ai.disabled.value).toContain('create_component')
-  ai.disabled.value = ai.disabled.value.filter((name) => name !== 'create_component')
-  expect(disabledAITools.value).not.toContain('create_component')
-  expect(disabledMCPTools.value).toEqual(['create_component'])
+  expect(ai.disabled.value).toContain('node_to_component')
+  ai.disabled.value = ai.disabled.value.filter((name) => name !== 'node_to_component')
+  expect(disabledAITools.value).not.toContain('node_to_component')
+  expect(disabledMCPTools.value).toEqual(['node_to_component'])
   mcp.reset()
   expect(disabledMCPTools.value).toEqual([])
-  expect(disabledAITools.value).not.toContain('create_component')
+  expect(disabledAITools.value).not.toContain('node_to_component')
   mcp.disabled.value = ['find_nodes']
   ai.reset()
   expect(aiToolOverrides.value).toEqual({})
-  expect(disabledAITools.value).toContain('create_component')
+  expect(disabledAITools.value).toContain('node_to_component')
   expect(disabledMCPTools.value).toEqual(['find_nodes'])
 })
 

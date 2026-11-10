@@ -196,27 +196,6 @@ export const setFontRange = defineTool({
   }
 })
 
-export const setTextResize = defineTool({
-  name: 'set_text_resize',
-
-  description: 'Set text auto-resize mode.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    mode: v.pipe(
-      v.picklist(['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT', 'TRUNCATE']),
-      v.description('Resize mode')
-    )
-  }),
-  fonts: (figma, { id }) => textFonts(figma, id),
-  execute: (figma, { id, mode }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.textAutoResize = mode
-    return { id, textAutoResize: mode }
-  }
-})
-
 export const setTextProperties = defineTool({
   name: 'set_text_properties',
 

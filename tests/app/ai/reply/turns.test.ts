@@ -76,7 +76,7 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
       startRun(store, 10)
       const width = widths[replies] ?? 500
       replies++
-      await tools.node_resize.execute?.({ id: nodeId, width, height: 60 }, call(`call-${replies}`))
+      await tools.update_node.execute?.({ id: nodeId, width, height: 60 }, call(`call-${replies}`))
       await finish?.(tools)
       chat.messages = [
         ...chat.messages,
@@ -313,7 +313,7 @@ test("undoing a reply's edit in the editor marks it, and the next request tells 
   await actions.submit(send('Try again'))
   expect(lastRequest(chat)).toStartWith('Try again')
   expect(lastRequest(chat)).toContain(UNDONE_CALLS_CONTEXT_MARKER)
-  expect(lastRequest(chat)).toContain('- node_resize (call-1)')
+  expect(lastRequest(chat)).toContain('- update_node (call-1)')
 
   await actions.submit(send('And once more'))
   expect(lastRequest(chat)).not.toContain(UNDONE_CALLS_CONTEXT_MARKER)
@@ -321,7 +321,7 @@ test("undoing a reply's edit in the editor marks it, and the next request tells 
 
 test('a reply with some edits undone marks only those, and can be restored or reverted', async () => {
   const { card, chat, actions } = setup(async (tools) =>
-    tools.set_opacity.execute?.({ id: card.id, value: 0.5 }, call('fade'))
+    tools.update_node.execute?.({ id: card.id, opacity: 0.5 }, call('fade'))
   )
   await actions.submit(send('Wider and fainter'))
   store.undoAction()
@@ -329,8 +329,8 @@ test('a reply with some edits undone marks only those, and can be restored or re
   expect(undone(chat, 'reply-1')).toEqual(['fade'])
   expect(turnEdits('reply-1')).toEqual({ count: 2, undone: 1, revertable: true, restorable: true })
   await actions.submit(send('Keep the width'))
-  expect(lastRequest(chat)).toContain('- set_opacity (fade)')
-  expect(lastRequest(chat)).not.toContain('node_resize')
+  expect(lastRequest(chat)).toContain('- update_node (fade)')
+  expect(lastRequest(chat)).not.toContain('(call-1)')
 })
 
 test('redoing an undone edit removes its mark, so nothing is reported', async () => {
@@ -355,8 +355,8 @@ test('an edit the model heard was undone, redone since, is reported as applying 
     metadata: {
       undo: {
         edits: [
-          { tool: 'node_resize', toolCallId: 'resize' },
-          { tool: 'set_opacity', toolCallId: 'fade' }
+          { tool: 'update_node', toolCallId: 'resize' },
+          { tool: 'update_node', toolCallId: 'fade' }
         ],
         undone: ['fade'],
         reported: { undone: ['resize'], in: 'request' }
@@ -370,8 +370,8 @@ test('an edit the model heard was undone, redone since, is reported as applying 
       messageId: 'reply',
       undone: ['fade'],
       calls: {
-        undone: [{ tool: 'set_opacity', toolCallId: 'fade' }],
-        redone: [{ tool: 'node_resize', toolCallId: 'resize' }]
+        undone: [{ tool: 'update_node', toolCallId: 'fade' }],
+        redone: [{ tool: 'update_node', toolCallId: 'resize' }]
       }
     }
   ])
@@ -389,7 +389,7 @@ test('sending a request again reports an undo from before it', async () => {
   await actions.resend(request, 'Much taller')
 
   expect(lastRequest(chat)).toStartWith('Much taller')
-  expect(lastRequest(chat)).toContain('- node_resize (call-1)')
+  expect(lastRequest(chat)).toContain('- update_node (call-1)')
 })
 
 test('restoring a reverted reply redoes its edits and removes the marks', async () => {
@@ -419,11 +419,11 @@ test('an edit undone while the agent works is noted on its next tool result', as
   const card = store.graph.createNode('FRAME', store.state.currentPageId, { name: 'Card' })
   const tools = createAITools(store)
   startRun(store, 10)
-  await tools.node_resize.execute?.({ id: card.id, width: 200, height: 60 }, call('resize'))
+  await tools.update_node.execute?.({ id: card.id, width: 200, height: 60 }, call('resize'))
   store.undoAction()
 
   const result = await tools.get_node.execute?.({ id: card.id }, call('read'))
-  expect(result).toMatchObject({ undoNote: expect.stringContaining('- node_resize (resize)') })
+  expect(result).toMatchObject({ undoNote: expect.stringContaining('- update_node (resize)') })
   // Told once: the next result carries no note.
   const again = await tools.get_node.execute?.({ id: card.id }, call('read-again'))
   expect(again).not.toHaveProperty('undoNote')
