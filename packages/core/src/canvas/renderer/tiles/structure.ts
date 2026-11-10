@@ -35,6 +35,17 @@ export interface PageTiles {
 type ChunkChange = { removed: RenderChunk[]; added: RenderChunk[]; reordered?: boolean }
 
 /**
+ * Marks the tiles under `bounds` for rendering again, and the tiles under every glass or
+ * background blur that reads the canvas there, since they drew what lay under it.
+ */
+function invalidateTiles(page: PageTiles, bounds: TileWorldBounds, contentGeneration: number) {
+  page.tileCache.invalidateBounds(page.pageId, bounds, contentGeneration)
+  for (const chunk of page.index.backdropsReaching(bounds)) {
+    page.tileCache.invalidateBounds(page.pageId, chunk, contentGeneration)
+  }
+}
+
+/**
  * Applies the layers' changes to the page: each chunk that drew a changed layer drops its
  * picture and takes its new bounds, and the tiles under its old bounds and its new ones are
  * marked for rendering again.
@@ -45,7 +56,7 @@ export function applyInvalidations(
   invalidations: readonly PendingInvalidation[],
   contentGeneration: number
 ): void {
-  const { index, pageId, pictureCache, tileCache } = page
+  const { index, pictureCache, tileCache } = page
   tileCache.advanceGeneration(contentGeneration)
   for (const invalidation of invalidations) {
     const before = invalidation.previousBounds
@@ -53,9 +64,7 @@ export function applyInvalidations(
     for (const chunk of chunks) pictureCache.invalidate(chunk.id)
     for (const chunk of chunks) index.updateNode(graph, chunk.nodeId)
     const after = index.getChunksDependingOnNode(invalidation.nodeId)
-    for (const bounds of [...before, ...after]) {
-      tileCache.invalidateBounds(pageId, bounds, contentGeneration)
-    }
+    for (const bounds of [...before, ...after]) invalidateTiles(page, bounds, contentGeneration)
   }
 }
 
@@ -89,9 +98,8 @@ export function applyStructureChanges(
     if (!changed) return false
     reordered ||= changed.reordered === true
     for (const chunk of changed.removed) pictureCache.invalidate(chunk.id)
-    for (const chunk of changed.removed)
-      tileCache.invalidateBounds(pageId, chunk, contentGeneration)
-    for (const chunk of changed.added) tileCache.invalidateBounds(pageId, chunk, contentGeneration)
+    for (const chunk of changed.removed) invalidateTiles(page, chunk, contentGeneration)
+    for (const chunk of changed.added) invalidateTiles(page, chunk, contentGeneration)
   }
   if (reordered) index.renumber(graph, pageId)
   return true

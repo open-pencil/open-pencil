@@ -21,7 +21,7 @@ The plugin is named `open-pencil`. Every rule is off until the configuration tur
 
 ## Recommended configuration
 
-`@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's own repositories extend: Oxlint's `typescript`, `import`, `unicorn`, `promise`, and `node` plugins with the built-in rules they follow, and every rule below except `no-raw-sql`, `no-dynamic-html`, and `no-unvalidated-route-params`, which fit only some code. Load the plugin beside it, since a configuration file cannot load a plugin for the one that extends it:
+`@open-pencil/oxlint-plugin/recommended` is the configuration OpenPencil's own repositories extend: Oxlint's `typescript`, `import`, `unicorn`, `promise`, and `node` plugins with the built-in rules they follow, and every rule below except `no-raw-sql`, `no-raw-runtime-effect`, `no-dynamic-html`, and `no-unvalidated-route-params`, which fit only some code. Load the plugin beside it, since a configuration file cannot load a plugin for the one that extends it:
 
 ```json
 {
@@ -47,6 +47,7 @@ An `extends` path resolves from the file that declares it, so a configuration in
 | `prefer-es-toolkit`          | Use `es-toolkit`'s `uniq` and `compact` instead of `Set` round trips and `filter(Boolean)`.                                                                                   |
 | `no-reduce-accumulator-copy` | Do not copy the accumulator on every `reduce` step.                                                                                                                           |
 | `no-raw-sql`                 | Use Kysely's typed query builder instead of `sql` templates. Turn it off for migrations and reviewed helpers.                                                                 |
+| `no-raw-runtime-effect`      | Compile SkSL only through the module that checks every program, not with `RuntimeEffect.Make`. Turn it off for that module.                                                   |
 
 ### Types
 

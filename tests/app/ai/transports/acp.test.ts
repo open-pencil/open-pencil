@@ -66,10 +66,14 @@ function fakeAgents({
   const killed = createDeferred<undefined>()
   let kills = 0
   let spawns = 0
+  const searchPaths: (string | null | undefined)[] = []
+  const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
   const spawn: ACPStartup['spawn'] = async (options) => {
     spawns++
+    searchPaths.push(options.searchPath)
+    cwds.push(options.cwd)
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
     const agent: Agent = {
@@ -148,9 +152,9 @@ function fakeAgents({
   }
 
   const startup: ACPStartup = {
-    resolveCommand: async (agent) => {
+    resolveTarget: async (agent) => {
       if (lookupWaits) await lookup.promise
-      return agent.command
+      return { command: agent.command, searchPath: '/lookup/bin' }
     },
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
@@ -172,6 +176,8 @@ function fakeAgents({
     killed: killed.promise,
     kills: () => kills,
     spawns: () => spawns,
+    searchPaths,
+    cwds,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -202,12 +208,13 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef } = {}
+  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
 ) {
   const sessions: (string | null)[] = []
   const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
     agentDef: options.agentDef ?? resuming,
+    cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
@@ -227,6 +234,16 @@ test('a new session gets the instructions once and is reported once the agent an
   expect(agents.prompts[0]?.endsWith('first')).toBe(true)
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])
+  await chat.destroy()
+})
+
+test('the agent starts in its workspace with the PATH its lookup searched', async () => {
+  const agents = fakeAgents()
+  const { transport: chat } = transport(agents, { cwd: '/agent-workspace' })
+  await send(chat, 'first')
+  expect(agents.searchPaths).toEqual(['/lookup/bin'])
+  expect(agents.cwds).toEqual(['/agent-workspace'])
+  expect(agents.created[0]?.cwd).toBe('/agent-workspace')
   await chat.destroy()
 })
 
