@@ -1,4 +1,4 @@
-import type { Canvas, Image, Shader } from '@open-pencil/canvaskit'
+import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -76,6 +76,8 @@ export function glassGeometryMap(
   const key = `${node.id}:${node.width}x${node.height}:${depth}:${scale}:${segmentsHash(outline.segments)}`
   const cached = r.glassMaps.get(key)
   if (cached) return cached
+  // Compiling may fail; nothing is made before it has.
+  const program = compiledProgram(r.ck, r.shaders, GLASS_GEOMETRY_MAP)
   const target = r.surface.imageInfo()
   const surface = makeOffscreenSurface(r, {
     width: Math.ceil(width * scale),
@@ -87,21 +89,23 @@ export function glassGeometryMap(
   })
   if (!surface) return null
   const origin: [number, number] = [-MAP_MARGIN, -MAP_MARGIN]
-  const program = compiledProgram(r.ck, r.shaders, GLASS_GEOMETRY_MAP)
-  const fill = program.effect.makeShader(
-    program.uniforms({
-      ...glassGeometryUniforms(outline, depth),
-      mapOrigin: origin,
-      mapScale: scale
-    })
-  )
-  const paint = new r.ck.Paint()
+  let fill: Shader | null = null
+  let paint: Paint | null = null
+  let image: Image | null = null
   try {
+    fill = program.effect.makeShader(
+      program.uniforms({
+        ...glassGeometryUniforms(outline, depth),
+        mapOrigin: origin,
+        mapScale: scale
+      })
+    )
+    paint = new r.ck.Paint()
     paint.setShader(fill)
     paint.setBlendMode(r.ck.BlendMode.Src)
     surface.getCanvas().drawPaint(paint)
     surface.flush()
-    const image = surface.makeImageSnapshot()
+    image = surface.makeImageSnapshot()
     const shader = image.makeShaderOptions(
       r.ck.TileMode.Clamp,
       r.ck.TileMode.Clamp,
@@ -110,10 +114,13 @@ export function glassGeometryMap(
     )
     const map: GlassGeometryMap = { image, shader, origin, scale }
     r.glassMaps.set(key, map)
+    // The cache owns the image now.
+    image = null
     return map
   } finally {
-    paint.delete()
-    fill.delete()
+    image?.delete()
+    paint?.delete()
+    fill?.delete()
     surface.delete()
   }
 }
