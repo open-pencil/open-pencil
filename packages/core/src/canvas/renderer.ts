@@ -898,9 +898,10 @@ export class SkiaRenderer {
     effect: Pick<Effect, 'radius' | 'progressive'>,
     width: number,
     height: number,
+    bounds: VisualBounds | null,
     toFilter?: (point: Vector) => Vector
   ): ImageFilter | null {
-    return Effects.getCachedLayerBlur(this, effect, width, height, toFilter)
+    return Effects.getCachedLayerBlur(this, effect, width, height, bounds, toFilter)
   }
 
   getCachedDecalBlur(sigma: number): ImageFilter | null {

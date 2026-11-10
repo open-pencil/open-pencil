@@ -230,7 +230,12 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     const blur = { radius: 5 }
     applyClippedBlur(r, asCanvas(canvas), node, blur)
 
-    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(blur, 100, 100)
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(blur, 100, 100, {
+      minX: 0,
+      minY: 0,
+      maxX: 100,
+      maxY: 100
+    })
 
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(
@@ -272,7 +277,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, undefined)
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-20, -20, 120, 120)
   })
@@ -307,7 +312,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, undefined)
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)
   })

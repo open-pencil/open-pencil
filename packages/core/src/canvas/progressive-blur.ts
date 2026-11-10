@@ -1,8 +1,8 @@
 import { uniq } from 'es-toolkit'
 
-import type { CanvasKit, ImageFilter, TileMode } from '@open-pencil/canvaskit'
+import type { CanvasKit, Image, ImageFilter, TileMode } from '@open-pencil/canvaskit'
 import type { ProgressiveBlur } from '@open-pencil/scene-graph'
-import { blurSigma } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
@@ -25,7 +25,15 @@ export interface ProgressiveBlurRamp {
   end: Vector
   startSigma: number
   endSigma: number
+  /**
+   * Where the blurred content lies, in the filter's coordinates. Each level blurs only the part of
+   * it its band of the ramp covers; without bounds, a band runs on without end across the ramp.
+   */
+  bounds: VisualBounds | null
 }
+
+/** How far a band reaches across the ramp when nothing bounds the content. */
+const UNBOUNDED = 1e7
 
 /**
  * The ramp a progressive blur draws in a `width` × `height` layer, its points mapped by `toFilter`
@@ -36,9 +44,11 @@ export function progressiveBlurRamp(
   radius: number,
   width: number,
   height: number,
+  bounds: VisualBounds | null,
   toFilter: (point: Vector) => Vector = (point) => point
 ): ProgressiveBlurRamp {
   return {
+    bounds,
     start: toFilter({
       x: progressive.startOffset.x * width,
       y: progressive.startOffset.y * height
@@ -114,9 +124,108 @@ export function isPlainRamp(ramp: ProgressiveBlurRamp): boolean {
 }
 
 /**
+ * Where along the ramp a level's weight is not zero, from 0 at the start to 1 at the end: between
+ * the levels below and above it, the lowest and highest reaching past the ends of the ramp.
+ */
+function levelBand(
+  ramp: ProgressiveBlurRamp,
+  levels: readonly number[],
+  level: number
+): [number, number] {
+  const below = levels.at(level - 1) ?? -Infinity
+  const above = levels.at(level + 1) ?? Infinity
+  const lower = level === 0 ? -Infinity : below
+  const along = (sigma: number) =>
+    Number.isFinite(sigma)
+      ? (sigma - ramp.startSigma) / (ramp.endSigma - ramp.startSigma)
+      : Math.sign(sigma) * Math.sign(ramp.endSigma - ramp.startSigma) * Infinity
+  const ends = [along(lower), along(above)]
+  return [Math.min(...ends), Math.max(...ends)]
+}
+
+/** The corners of `polygon` on the side of a line where `side` is not negative. */
+function clipPolygon(polygon: readonly Vector[], side: (point: Vector) => number): Vector[] {
+  const clipped: Vector[] = []
+  for (const [index, point] of polygon.entries()) {
+    const next = polygon[(index + 1) % polygon.length]
+    const here = side(point)
+    const there = side(next)
+    if (here >= 0) clipped.push(point)
+    if (here >= 0 !== there >= 0) {
+      const t = here / (here - there)
+      clipped.push({ x: point.x + (next.x - point.x) * t, y: point.y + (next.y - point.y) * t })
+    }
+  }
+  return clipped
+}
+
+/**
+ * The box around the part of the content whose place along the ramp lies between `from` and `to`,
+ * widened by `margin` filter units along the ramp; null when no content lies there.
+ */
+function bandBox(
+  ramp: ProgressiveBlurRamp,
+  from: number,
+  to: number,
+  margin: number
+): VisualBounds | null {
+  const direction = { x: ramp.end.x - ramp.start.x, y: ramp.end.y - ramp.start.y }
+  const lengthSquared = direction.x ** 2 + direction.y ** 2
+  const along = (point: Vector) =>
+    ((point.x - ramp.start.x) * direction.x + (point.y - ramp.start.y) * direction.y) /
+    lengthSquared
+  const slack = margin / Math.sqrt(lengthSquared)
+  const bounds = ramp.bounds ?? {
+    minX: -UNBOUNDED,
+    minY: -UNBOUNDED,
+    maxX: UNBOUNDED,
+    maxY: UNBOUNDED
+  }
+  let polygon: Vector[] = [
+    { x: bounds.minX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.maxY },
+    { x: bounds.minX, y: bounds.maxY }
+  ]
+  if (Number.isFinite(from))
+    polygon = clipPolygon(polygon, (point) => along(point) - (from - slack))
+  if (Number.isFinite(to)) polygon = clipPolygon(polygon, (point) => to + slack - along(point))
+  if (polygon.length === 0) return null
+  return {
+    minX: Math.min(...polygon.map((point) => point.x)),
+    minY: Math.min(...polygon.map((point) => point.y)),
+    maxX: Math.max(...polygon.map((point) => point.x)),
+    maxY: Math.max(...polygon.map((point) => point.y))
+  }
+}
+
+/** One opaque white pixel per CanvasKit, stretched over a box to keep only what lies inside it. */
+const cropImages = new WeakMap<CanvasKit, Image>()
+
+function cropImage(ck: CanvasKit): Image {
+  const kept = cropImages.get(ck)
+  if (kept) return kept
+  const image = ck.MakeImage(
+    {
+      width: 1,
+      height: 1,
+      alphaType: ck.AlphaType.Premul,
+      colorType: ck.ColorType.RGBA_8888,
+      colorSpace: ck.ColorSpace.SRGB
+    },
+    new Uint8Array([255, 255, 255, 255]),
+    4
+  )
+  if (!image) throw new Error('CanvasKit could not make the progressive blur crop image')
+  cropImages.set(ck, image)
+  return image
+}
+
+/**
  * Figma's progressive blur: each pixel blurred by the sigma the ramp reaches at it, in two passes
- * as Figma blurs. Each pass mixes plain blurs at a few levels, weighted per pixel by a
- * gradient along the ramp. A plain ramp (`isPlainRamp`) is drawn as a plain blur instead.
+ * as Figma blurs. Each pass mixes plain blurs at a few levels, weighted per pixel by a gradient
+ * along the ramp, and each level blurs only its band of the ramp. A plain ramp (`isPlainRamp`) is
+ * drawn as a plain blur instead.
  */
 export function makeProgressiveBlur(
   ck: CanvasKit,
@@ -128,6 +237,24 @@ export function makeProgressiveBlur(
   const weights = stops.map((t) =>
     levelWeights(levels, ramp.startSigma + (ramp.endSigma - ramp.startSigma) * t)
   )
+  const made: ImageFilter[] = []
+  const keep = (filter: ImageFilter) => {
+    made.push(filter)
+    return filter
+  }
+  const image = cropImage(ck)
+  // Only what lies inside `box` survives, so a blur of it does no work outside the box.
+  const crop = (input: ImageFilter | null, box: VisualBounds) => {
+    const inside = keep(
+      ck.ImageFilter.MakeImage(
+        image,
+        { filter: ck.FilterMode.Nearest },
+        ck.LTRBRect(0, 0, 1, 1),
+        ck.LTRBRect(box.minX, box.minY, box.maxX, box.maxY)
+      ) as ImageFilter
+    )
+    return keep(ck.ImageFilter.MakeBlend(ck.BlendMode.DstIn, input, inside))
+  }
   const masks = levels.map((_, level) =>
     ck.Shader.MakeLinearGradient(
       [ramp.start.x, ramp.start.y],
@@ -137,14 +264,16 @@ export function makeProgressiveBlur(
       ck.TileMode.Clamp
     )
   )
-  const made: ImageFilter[] = []
-  const keep = (filter: ImageFilter) => {
-    made.push(filter)
-    return filter
-  }
-  const pass = (axis: 'x' | 'y', input: ImageFilter | null): ImageFilter => {
+  // Each pass reads the image it is given, never another filter: Skia evaluates a filter input
+  // once per use, so a second pass built on the first would redo the first for every level.
+  const pass = (axis: 'x' | 'y'): ImageFilter => {
     let sum: ImageFilter | null = null
     for (const [level, sigma] of levels.entries()) {
+      const [from, to] = levelBand(ramp, levels, level)
+      const band = bandBox(ramp, from, to, 1)
+      // Blurring reads this far past the band; a band with no content adds nothing.
+      const reach = bandBox(ramp, from, to, 3 * sigma + 1)
+      if (!band || !reach) continue
       const blurred =
         sigma > 0
           ? keep(
@@ -152,22 +281,23 @@ export function makeProgressiveBlur(
                 axis === 'x' ? sigma : 0,
                 axis === 'y' ? sigma : 0,
                 tile,
-                input
+                crop(null, reach)
               )
             )
-          : input
-      const mask = keep(ck.ImageFilter.MakeShader(masks[level]))
+          : null
+      const mask = crop(keep(ck.ImageFilter.MakeShader(masks[level])), band)
       const term = keep(ck.ImageFilter.MakeBlend(ck.BlendMode.DstIn, blurred, mask))
       sum = sum ? keep(ck.ImageFilter.MakeBlend(ck.BlendMode.Plus, sum, term)) : term
     }
-    if (!sum) throw new Error('A progressive blur mixes at least one level')
-    return sum
+    // No band holds any content: the pass leaves the image as it is.
+    return sum ?? keep(ck.ImageFilter.MakeBlur(0, 0, tile, null))
   }
   // Figma blurs across the ramp first and along it second, so a pixel just past a steep ramp's
-  // end gathers pixels blurred less than itself.
+  // end gathers pixels blurred less than itself. Composed, the second pass takes the first's
+  // result as its image, made once.
   const along =
     Math.abs(ramp.end.y - ramp.start.y) >= Math.abs(ramp.end.x - ramp.start.x) ? 'y' : 'x'
-  const filter = pass(along, pass(along === 'y' ? 'x' : 'y', null))
+  const filter = keep(ck.ImageFilter.MakeCompose(pass(along), pass(along === 'y' ? 'x' : 'y')))
   // Each filter holds what it is made from, so only the result needs keeping.
   for (const part of made) if (part !== filter) part.delete()
   for (const mask of masks) mask.delete()

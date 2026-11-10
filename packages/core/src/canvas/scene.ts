@@ -123,21 +123,26 @@ function isCulled(
 
 /**
  * A layer blur's filter. It runs before the layer's rotation and flips are applied, so a
- * progressive blur's points are mapped through them from the layer's own coordinates.
+ * progressive blur's points are mapped through them from the layer's own coordinates, and what
+ * the subtree draws is measured through them too.
  */
 function layerBlurFilter(
   r: SkiaRenderer,
+  graph: SceneGraph,
   node: SceneNode,
   blur: Effect,
   overlays: RenderOverlays
 ): ImageFilter | null {
-  const oriented = hasNodeTransform(projectedNode(node, overlays.rotationPreview))
-  const matrix = oriented ? nodeOrientationMatrix(node, overlays.rotationPreview) : null
+  if (!blur.progressive) return r.getCachedLayerBlur(blur, node.width, node.height, null)
+  const preview = overlays.rotationPreview
+  const oriented = hasNodeTransform(projectedNode(node, preview))
+  const matrix = nodeOrientationMatrix(node, preview)
   return r.getCachedLayerBlur(
     blur,
     node.width,
     node.height,
-    matrix ? (point) => Matrix.mapPoint(matrix, point) : undefined
+    subtreeVisualBounds(graph, node, matrix, preview),
+    oriented ? (point) => Matrix.mapPoint(matrix, point) : undefined
   )
 }
 
@@ -189,7 +194,7 @@ function renderMaskNodeContent(
     const blurRadius = drawnBlurRadius(blur ? widestBlurRadius(blur) : 0)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays) : null)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, graph, node, blur, overlays) : null)
     canvas.saveLayer(
       r.opacityPaint,
       blurLayerBounds(
@@ -432,7 +437,7 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays))
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, graph, node, layerBlur, overlays))
     const blurRadius = drawnBlurRadius(widestBlurRadius(layerBlur))
     canvas.saveLayer(
       r.effectLayerPaint,
