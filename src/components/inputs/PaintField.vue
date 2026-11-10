@@ -10,7 +10,8 @@ export type PaintFieldUI = ComponentUI<typeof theme>
 export interface PaintFieldProps {
   /** The paint's opacity, 0 to 1; without it the field has no opacity input. */
   opacity?: number
-  opacityLabel: string
+  /** Names the opacity input; needed only with `opacity`. */
+  opacityLabel?: string
   class?: ClassValue
   ui?: PaintFieldUI
 }
@@ -64,8 +65,8 @@ const styles = computed(() => tv(paintFieldTheme)())
       :ui="{
         root: 'h-full rounded-none border-0 bg-transparent shadow-none',
         leading: 'hidden',
-        field: 'pl-1.5',
-        display: 'pl-1.5'
+        field: 'ps-1.5',
+        display: 'ps-1.5'
       }"
       data-property="opacity"
       @update:model-value="emit('update:opacity', Math.max(0, Math.min(1, $event / 100)))"

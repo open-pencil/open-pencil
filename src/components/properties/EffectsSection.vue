@@ -32,6 +32,7 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import { fillSwatchTrigger } from '@/components/ui/paint/swatch-trigger'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -40,6 +41,8 @@ import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels, common } = useI18n()
+// An effect's preview toggles its settings; it is a swatch for shadows and an icon otherwise.
+const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 const colorProvider = useColorBindingProvider()
 const blendModeGroups = useBlendModeGroups()
 const {
@@ -163,7 +166,7 @@ function effectPreview(effect: Effect): Fill {
                       : panels.expandEffectSettings
                   "
                   data-property="effect-expand"
-                  class="flex size-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-border bg-input p-0"
+                  :class="effectPreviewButton"
                   @click="effectsCtx.toggleExpand(index)"
                 >
                   <FillSwatch
