@@ -33,7 +33,9 @@ const legal = usePortalLegal()
           </slot>
           <div :class="ui.headingGroup()">
             <h1 id="portal-heading" :class="ui.title()">{{ heading }}</h1>
-            <p v-if="description" :class="ui.description()">{{ description }}</p>
+            <p v-if="description || $slots.description" :class="ui.description()">
+              <slot name="description">{{ description }}</slot>
+            </p>
           </div>
         </header>
         <div v-if="$slots.default" :class="ui.body()">

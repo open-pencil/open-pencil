@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -6,6 +8,8 @@ import { portalPublic } from '@/components/cloud-portal/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
+import PortalLinkedText from '../layout/PortalLinkedText.vue'
+import { legalLinks, termsDescription } from './legal'
 import PortalNotice from './PortalNotice.vue'
 
 /**
@@ -29,38 +33,19 @@ const emit = defineEmits<{ accept: []; decline: [] }>()
 
 const ui = portalPublic()
 const messages = useCloudPortalMessages()
+const description = computed(() => termsDescription(messages.value, legal, host))
+const links = computed(() => legalLinks(messages.value, legal))
 </script>
 
 <template>
-  <PortalNotice
-    :host="host"
-    :heading="messages.termsTitle"
-    :description="messages.termsDescription({ host })"
-  >
+  <PortalNotice :host="host" :heading="messages.termsTitle">
     <template #icon>
       <icon-lucide-scroll-text class="size-6" />
     </template>
-    <div :class="ui.documents()">
-      <a
-        v-if="legal.termsURL"
-        :href="legal.termsURL"
-        target="_blank"
-        rel="noreferrer"
-        :class="ui.document()"
-      >
-        {{ messages.termsOfService }}
-      </a>
-      <a
-        v-if="legal.privacyURL"
-        :href="legal.privacyURL"
-        target="_blank"
-        rel="noreferrer"
-        :class="ui.document()"
-      >
-        {{ messages.privacyPolicy }}
-      </a>
-    </div>
-    <AppAlert v-if="error" tone="error" :heading="messages.termsTitle" :description="error" />
+    <template #description>
+      <PortalLinkedText :text="description" :links="links" :link-class="ui.inlineLink()" />
+    </template>
+    <AppAlert v-if="error" tone="error" :heading="error" />
     <template #actions>
       <AppButton
         size="lg"

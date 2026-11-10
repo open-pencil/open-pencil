@@ -6,46 +6,28 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { portalPublic } from '@/components/cloud-portal/ui'
 
+import PortalLinkedText from '../layout/PortalLinkedText.vue'
+import { legalLinks, legalSentence } from './legal'
+
 /**
- * What signing in or up agrees to on this server: its terms and privacy policy, linked, and the
- * age it asks for. A server that names none shows nothing.
+ * What signing in or up agrees to on this server, in one short paragraph: its terms and privacy
+ * policy, linked where the sentence names them, and the age it asks for. A server that names none
+ * shows nothing.
  */
 const { legal } = defineProps<{ legal?: CloudLegalDiscovery }>()
 
 const ui = portalPublic()
 const messages = useCloudPortalMessages()
-const consent = computed(() => {
-  if (!legal) return null
-  if (legal.termsURL && legal.privacyURL) return messages.value.consentTermsAndPrivacy
-  if (legal.termsURL) return messages.value.consentTerms
-  if (legal.privacyURL) return messages.value.consentPrivacy
-  return null
-})
+const consent = computed(() => (legal ? legalSentence(messages.value, legal) : null))
+const age = computed(() =>
+  legal?.minimumAge ? messages.value.minimumAge({ age: String(legal.minimumAge) }) : null
+)
+const links = computed(() => legalLinks(messages.value, legal))
 </script>
 
 <template>
-  <div v-if="consent || legal?.minimumAge" :class="ui.note()">
-    <p v-if="consent">{{ consent }}</p>
-    <p v-if="legal?.minimumAge">{{ messages.minimumAge({ age: String(legal.minimumAge) }) }}</p>
-    <span v-if="legal?.termsURL || legal?.privacyURL" :class="ui.noteLinks()">
-      <a
-        v-if="legal.termsURL"
-        :href="legal.termsURL"
-        target="_blank"
-        rel="noreferrer"
-        :class="ui.noteLink()"
-      >
-        {{ messages.termsOfService }}
-      </a>
-      <a
-        v-if="legal.privacyURL"
-        :href="legal.privacyURL"
-        target="_blank"
-        rel="noreferrer"
-        :class="ui.noteLink()"
-      >
-        {{ messages.privacyPolicy }}
-      </a>
-    </span>
-  </div>
+  <p v-if="consent || age" :class="ui.note()">
+    <PortalLinkedText v-if="consent" :text="consent" :links="links" :link-class="ui.inlineLink()" />
+    {{ age }}
+  </p>
 </template>

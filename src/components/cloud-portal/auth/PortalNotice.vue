@@ -15,7 +15,8 @@ const {
 } = defineProps<{
   host: string
   heading: string
-  description: string
+  /** One sentence; the `description` slot replaces it when it needs links. */
+  description?: string
   tone?: 'neutral' | 'success' | 'waiting'
 }>()
 
@@ -24,6 +25,7 @@ const ui = portalPublic()
 
 <template>
   <PortalPublicLayout :host="host" :heading="heading" :description="description">
+    <template v-if="$slots.description" #description><slot name="description" /></template>
     <template #icon>
       <span :class="ui.tile({ tone })" aria-hidden="true"><slot name="icon" /></span>
     </template>

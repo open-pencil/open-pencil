@@ -81,7 +81,7 @@ export const cloudPortalMessageDefaults = {
   signOut: 'Sign out',
 
   termsTitle: 'Accept the terms to continue',
-  termsDescription: params('{host} asks you to accept its Terms of Service before you use it.'),
+  termsDescription: params('Read and accept the {terms} of {host} to continue.'),
   termsOfService: 'Terms of Service',
   privacyPolicy: 'Privacy Policy',
   reportAbuse: 'Report abuse',
@@ -89,11 +89,12 @@ export const cloudPortalMessageDefaults = {
   declineTerms: 'Decline and sign out',
   termsChanged:
     'The terms changed while this page was open. Reload it to read the current version.',
-  consentTerms: 'By continuing, you agree to the Terms of Service.',
-  consentTermsAndPrivacy:
-    'By continuing, you agree to the Terms of Service and acknowledge the Privacy Policy.',
-  consentPrivacy: 'The Privacy Policy explains how this server handles your data.',
-  minimumAge: params('You must be at least {age} years old to use this server.'),
+  consentTerms: params('By continuing, you agree to the {terms}.'),
+  consentTermsAndPrivacy: params(
+    'By continuing, you agree to the {terms} and acknowledge the {privacy}.'
+  ),
+  consentPrivacy: params('The {privacy} explains how this server handles your data.'),
+  minimumAge: params('You must be {age} or older.'),
 
   twoStepTitle: 'Confirm it’s you',
   twoStepAuthenticator: 'Enter the 6-digit code from your authenticator app.',

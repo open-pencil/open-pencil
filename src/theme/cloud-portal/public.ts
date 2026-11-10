@@ -17,11 +17,9 @@ export default {
     footer:
       'flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-6 text-xs text-muted',
     footerLink: 'hover:text-surface hover:underline',
-    note: 'flex flex-col gap-1 text-center text-xs text-pretty text-muted',
-    noteLinks: 'flex flex-wrap items-center justify-center gap-x-3',
-    noteLink: 'underline underline-offset-2 hover:text-surface',
-    documents: 'flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm',
-    document: 'text-primary underline-offset-2 hover:underline',
+    note: 'text-center text-xs text-pretty text-muted',
+    inlineLink:
+      'text-surface underline decoration-muted underline-offset-2 hover:decoration-surface',
     tile: 'flex size-12 items-center justify-center rounded-xl bg-panel-field text-muted',
     actions: 'flex flex-col gap-2'
   },
