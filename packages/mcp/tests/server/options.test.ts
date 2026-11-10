@@ -610,7 +610,9 @@ describe('MCP server with mcpRoot', () => {
         arguments: { document_id: 'doc-1', unsaved: 'discard' }
       })
       expect(result.isError).not.toBe(true)
-      expect(browser.requests.find((item) => item.command === 'close_document')?.args).toEqual({
+      expect(
+        browser.requests.find((item) => item.command === 'close_document')?.args
+      ).toMatchObject({
         document_id: 'doc-1',
         unsaved: 'discard'
       })
@@ -643,7 +645,7 @@ describe('MCP server with mcpRoot', () => {
       const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
       expect(undone.isError).not.toBe(true)
       expect(JSON.stringify(undone.content)).toContain('Agent: mock')
-      expect(browser.requests.find((item) => item.command === 'undo')?.args).toEqual({
+      expect(browser.requests.find((item) => item.command === 'undo')?.args).toMatchObject({
         document_id: 'doc-2'
       })
     })
@@ -677,7 +679,7 @@ describe('MCP server with mcpRoot', () => {
       const { realpath } = await import('node:fs/promises')
       const { dirname, basename } = await import('node:path')
       const canonicalPath = join(await realpath(dirname(savePath)), basename(savePath))
-      expect(request?.args).toEqual({ path: canonicalPath })
+      expect(request?.args).toMatchObject({ path: canonicalPath })
     })
   })
 
@@ -1092,6 +1094,26 @@ describe('MCP sessions as agents', () => {
         expect(agents).toMatchObject([
           { kind: 'acp', chat, call: 'exec-1' },
           { kind: 'acp', chat, call: 'toolu_1' }
+        ])
+      }
+    )
+  })
+
+  test("an ACP chat's document commands name the chat, so they reach its document", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        await client.callTool({ name: 'undo', arguments: {} })
+        await client.callTool({ name: 'save_document', arguments: {} })
+        await client.callTool({ name: 'close_document', arguments: { unsaved: 'discard' } })
+        const commands = browser.requests.filter((item) =>
+          ['undo', 'save_document', 'close_document'].includes(item.command)
+        )
+        expect(commands.map((item) => item.args)).toMatchObject([
+          { agent: { kind: 'acp', chat } },
+          { agent: { kind: 'acp', chat } },
+          { agent: { kind: 'acp', chat }, unsaved: 'discard' }
         ])
       }
     )

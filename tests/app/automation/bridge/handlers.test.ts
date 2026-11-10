@@ -134,6 +134,7 @@ describe("an ACP chat's tool calls", () => {
 
     expect(inChat.target?.documentId).toBe(chatTab.id)
     expect(named.target?.documentId).toBe(other.id)
+    expect((await request('undo', { agent })).target?.documentId).toBe(chatTab.id)
   })
 })
 

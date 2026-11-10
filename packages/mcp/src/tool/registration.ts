@@ -278,7 +278,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
         : v.strictObject({ ...automationTargetSchema })
     },
-    async (args: { path?: string; document_id?: string; page_id?: string }) => {
+    async (args: { path?: string; document_id?: string; page_id?: string }, context) => {
       try {
         const safePath =
           args.path !== undefined && resolvedRoot
@@ -287,7 +287,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         const { target } = splitAutomationTarget(args)
         const result = await sendRPC({
           command: 'save_document',
-          args: { ...target, path: safePath?.realPath }
+          args: { ...target, path: safePath?.realPath, agent: agent(context.mcpReq._meta) }
         })
         const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
@@ -419,19 +419,23 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
         : v.strictObject(closeEntries)
     },
-    async (args: {
-      unsaved?: 'error' | 'save' | 'discard'
-      path?: string
-      document_id?: string
-      page_id?: string
-    }) => {
+    async (
+      args: {
+        unsaved?: 'error' | 'save' | 'discard'
+        path?: string
+        document_id?: string
+        page_id?: string
+      },
+      context
+    ) => {
       try {
         const safePath =
           args.path !== undefined && resolvedRoot
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
         const { target } = splitAutomationTarget(args)
-        const rpcArgs: Record<string, unknown> = { ...target }
+        // An app chat's agent closes the chat's document unless it names another.
+        const rpcArgs: Record<string, unknown> = { ...target, agent: agent(context.mcpReq._meta) }
         if (args.unsaved) rpcArgs.unsaved = args.unsaved
         if (safePath) rpcArgs.path = safePath.realPath
         const res = await sendCommand(sendRPC, 'close_document', rpcArgs)
@@ -466,10 +470,13 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     register(
       command,
       { inputSchema: v.strictObject({ ...automationTargetSchema }) },
-      async (args) => {
+      async (args, context) => {
         try {
           const { target } = splitAutomationTarget(args)
-          const res = await sendCommand(sendRPC, command, target)
+          const res = await sendCommand(sendRPC, command, {
+            ...target,
+            agent: agent(context.mcpReq._meta)
+          })
           return ok(withTarget({ ...(res.result as RPCJSONObject | undefined) }, res))
         } catch (e) {
           return fail(e)
