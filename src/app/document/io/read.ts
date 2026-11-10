@@ -170,9 +170,11 @@ export function createReloadActions({
         return
       }
       await applyImportedDocument(editor, imported, load)
+      // Saved as read, before the page it showed loads: an edit made while it loads, such as a
+      // page rename, is not in the file.
+      markDocumentSaved()
       await restoreReloadState(editor, state, snapshot)
       editor.requestRender()
-      markDocumentSaved()
       succeeded = true
     } catch (error) {
       if (load.signal.aborted) return
