@@ -1,0 +1,1 @@
+- Cloud answers every request with an `X-Request-Id` (Cloudflare's ray ID behind Cloudflare) and logs errors as one JSON line carrying it, as its PostHog reports do; on Cloudflare, `createCloudflareCloud(config, { relayJurisdiction: 'eu' })` keeps collaboration rooms' storage in the EU.
