@@ -9,18 +9,18 @@ const numberFieldTheme = {
     leading:
       'flex shrink-0 items-center justify-center self-stretch px-1.25 text-muted select-none [&>*]:pointer-events-none',
     field:
-      'min-w-0 flex-1 cursor-text border-none bg-transparent pr-1.5 font-[inherit] text-2xs text-surface outline-none',
+      'min-w-0 flex-1 cursor-text border-none bg-transparent pe-1.5 font-[inherit] text-2xs text-surface outline-none',
     display: 'flex min-w-0 flex-1 items-center overflow-hidden text-2xs select-none',
     mixed: 'flex-1 text-muted',
     value: 'min-w-0 flex-1 truncate text-surface',
     trailing: 'flex shrink-0 items-center self-stretch',
-    suffix: 'shrink-0 pr-1.5 text-muted'
+    suffix: 'shrink-0 pe-1.5 text-muted'
   },
   variants: {
     /** A trailing control, such as the variable button, brings its own spacing after the unit. */
     suffix: {
-      true: { display: 'pr-0', suffix: 'pr-0.5' },
-      false: { display: 'pr-1.5' }
+      true: { display: 'pe-0', suffix: 'pe-0.5' },
+      false: { display: 'pe-1.5' }
     }
   }
 }

@@ -1,5 +1,5 @@
 import type { StandardSchemaWithJSON } from '@modelcontextprotocol/server'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import { mapValues, omitBy } from 'es-toolkit/object'
 import { isPlainObject } from 'es-toolkit/predicate'

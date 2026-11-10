@@ -10,6 +10,7 @@ import { nodeOrientationMatrix } from '#core/geometry'
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
 import { renderNoiseEffects } from './effects'
+import { renderGlassLight, renderGlassRefraction } from './glass/render'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,
@@ -37,7 +38,10 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 }
 
-/** `behind` draws drop shadows and background blur, `inner` inner shadows over fills, `front` noise. */
+/**
+ * `behind` draws drop shadows, background blur, and glass refraction, `inner` inner shadows and
+ * glass light over fills, `front` noise.
+ */
 export type EffectPass = 'behind' | 'inner' | 'front'
 
 /**
@@ -374,10 +378,12 @@ function renderInnerShadow(
  * Whether a shape draws its fills and inner shadows in a layer of their own. There each shadow
  * replaces the fill under it before taking the shape's outline, so the antialiased edge applies
  * once, as in Figma, rather than letting the fill show through. Blended fills and shadows mix with
- * what lies under the shape, so they keep drawing in place.
+ * what lies under the shape, so they keep drawing in place, and so does glass, whose light reads
+ * what lies under the shape through its fills.
  */
 export function isolatesInnerShadows(node: SceneNode): boolean {
   if (isLayerContainer(node) || !castsFromOwnShape(node)) return false
+  if (node.effects.some((effect) => effect.visible && effect.type === 'GLASS')) return false
   const shadows = node.effects.filter((effect) => effect.visible && effect.type === 'INNER_SHADOW')
   return (
     shadows.length > 0 &&
@@ -413,6 +419,14 @@ export function renderEffects(
       const shape =
         node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
       r.applyClippedBlur(canvas, node, blurSigma(effect.radius), shape)
+      shape?.delete()
+    }
+
+    if (effect.type === 'GLASS' && pass !== 'front') {
+      const shape =
+        node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
+      if (pass === 'behind') renderGlassRefraction(r, canvas, node, effect, shape)
+      else renderGlassLight(r, canvas, node, effect, shape)
       shape?.delete()
     }
 

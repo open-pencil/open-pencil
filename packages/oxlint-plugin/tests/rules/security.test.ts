@@ -3,26 +3,26 @@ import { describe, expect, test } from 'bun:test'
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
 async function diagnostics(rule: string, source: string) {
-  return ruleDiagnostics(await lint(source, { [`open-pencil/${rule}`]: 'error' }), rule)
+  return ruleDiagnostics(await lint(source, { [rule]: 'error' }), rule)
 }
 
-describe('no-dynamic-html', () => {
+describe('@open-pencil/security/no-dynamic-html', () => {
   test.each(['c.html(page)', 'c.html(`<p>` + name + `</p>`)', "c.html('<p>' + name + '</p>')"])(
     'rejects %s',
     async (source) => {
-      expect(await diagnostics('no-dynamic-html', source)).toHaveLength(1)
+      expect(await diagnostics('@open-pencil/security/no-dynamic-html', source)).toHaveLength(1)
     }
   )
 
   test.each(["c.html('<p>Done</p>')", 'c.html(`<p>Done</p>`, 200)', 'c.json(body)'])(
     'accepts %s',
     async (source) => {
-      expect(await diagnostics('no-dynamic-html', source)).toHaveLength(0)
+      expect(await diagnostics('@open-pencil/security/no-dynamic-html', source)).toHaveLength(0)
     }
   )
 })
 
-describe('no-secret-in-query', () => {
+describe('@open-pencil/security/no-secret-in-query', () => {
   test.each([
     "url.searchParams.set('secret', value)",
     "url.searchParams.append('token', value)",
@@ -31,7 +31,7 @@ describe('no-secret-in-query', () => {
     "new URLSearchParams({ 'secret': value })",
     `fetch(\`\${base}/share?token=\${value}\`)`
   ])('rejects %s', async (source) => {
-    expect(await diagnostics('no-secret-in-query', source)).toHaveLength(1)
+    expect(await diagnostics('@open-pencil/security/no-secret-in-query', source)).toHaveLength(1)
   })
 
   test.each([
@@ -41,11 +41,11 @@ describe('no-secret-in-query', () => {
     'new URLSearchParams({ server })',
     `fetch(\`\${base}/share#secret=\${value}\`)`
   ])('accepts %s', async (source) => {
-    expect(await diagnostics('no-secret-in-query', source)).toHaveLength(0)
+    expect(await diagnostics('@open-pencil/security/no-secret-in-query', source)).toHaveLength(0)
   })
 })
 
-describe('no-secret-logging', () => {
+describe('@open-pencil/security/no-secret-logging', () => {
   test.each([
     'console.log(token)',
     "console.error('[Cloud]', session.accessToken)",
@@ -58,7 +58,7 @@ describe('no-secret-logging', () => {
     "console.log('x: ' + session.accessToken)",
     'console.log(...[token])'
   ])('rejects %s', async (source) => {
-    expect(await diagnostics('no-secret-logging', source)).toHaveLength(1)
+    expect(await diagnostics('@open-pencil/security/no-secret-logging', source)).toHaveLength(1)
   })
 
   test.each([
@@ -69,22 +69,26 @@ describe('no-secret-logging', () => {
     `console.log(\`\${tokenizer.name}\`)`,
     'console.log({ documentId, size })'
   ])('accepts %s', async (source) => {
-    expect(await diagnostics('no-secret-logging', source)).toHaveLength(0)
+    expect(await diagnostics('@open-pencil/security/no-secret-logging', source)).toHaveLength(0)
   })
 })
 
-describe('no-unvalidated-route-params', () => {
+describe('@open-pencil/security/no-unvalidated-route-params', () => {
   test.each(["context.req.param('documentId')", 'c.req.param()', "c.req['param']('id')"])(
     'rejects %s',
     async (source) => {
-      expect(await diagnostics('no-unvalidated-route-params', source)).toHaveLength(1)
+      expect(
+        await diagnostics('@open-pencil/security/no-unvalidated-route-params', source)
+      ).toHaveLength(1)
     }
   )
 
   test.each(["context.req.valid('param').documentId", "c.req.query('page')", "url.param('id')"])(
     'accepts %s',
     async (source) => {
-      expect(await diagnostics('no-unvalidated-route-params', source)).toHaveLength(0)
+      expect(
+        await diagnostics('@open-pencil/security/no-unvalidated-route-params', source)
+      ).toHaveLength(0)
     }
   )
 })

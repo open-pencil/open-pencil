@@ -1,0 +1,6 @@
+// Figma's plus darker in premultiplied sRGB with source-over coverage: the sum less the overlap,
+// clamped at zero (live-measured).
+half4 main(half4 src, half4 dst) {
+  half alpha = src.a + dst.a * (1 - src.a);
+  return half4(max(src.rgb + dst.rgb - src.a * dst.a, half3(0)), alpha);
+}

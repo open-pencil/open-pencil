@@ -121,7 +121,7 @@ defineOptions({ inheritAttrs: false })
         <!-- A field's own control, such as Hug or a mode menu, sits beside its value; the variable
              button ends every field, so it lines up down the panel. -->
         <slot name="after-variable" />
-        <span class="flex items-center pr-1">
+        <span class="flex items-center pe-1">
           <VariableBindingPicker
             :trigger-label="panels.applyVariable"
             :search-placeholder="common.search"

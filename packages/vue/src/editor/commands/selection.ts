@@ -30,8 +30,7 @@ export function createSelectionCommands({
   capabilities,
   messages: t,
   otherPages,
-  moveSelectionToPage,
-  getOpacityTarget
+  moveSelectionToPage
 }: EditorCommandMapOptions): Record<SelectionCommandId, EditorCommand> {
   function arrangeSelection(options: Parameters<typeof editor.arrangeNodes>[1]) {
     void editor.arrangeNodes([...selection.selectedIds.value], options).catch((error: unknown) => {
@@ -465,17 +464,6 @@ export function createSelectionCommands({
       enabled: capabilities.canMoveToPage,
       run: () => {
         moveSelectionToPage(otherPages.value[0].id)
-      }
-    },
-    'selection.setOpacity': {
-      id: 'selection.setOpacity',
-      get label() {
-        return t.value.setOpacity
-      },
-      enabled: capabilities.canSetOpacity,
-      run: () => {
-        const target = getOpacityTarget()
-        editor.setOpacity(target.value, target.coalesceKey)
       }
     }
   }

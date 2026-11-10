@@ -105,7 +105,7 @@ export function renderFromEditorState(
   const { editChrome, live, edits } = profile
   r.pageDotGrid = profile.dotGrid
   r.sectionTitles = profile.sectionTitles
-  r.editHandles = edits
+  r.editHandles = edits && profile.layerEdits === 'all'
   render(
     r,
     graph,
