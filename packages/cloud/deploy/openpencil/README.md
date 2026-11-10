@@ -143,5 +143,8 @@ Once a quarter, and after changing the database's provider or plan:
    their revisions, images, and room snapshots refer to (by `storage_object.object_key`) is in the
    production bucket, under its key or, if cleanup removed it since, under `deleted/`. A file only
    under `deleted/` is what step 3 of a restore copies back.
-4. Delete the branch, and note the date, the time the restore took, and anything that failed in the
+4. Check at least one such file: a `storage_object` row on the branch that production's database no
+   longer has, whose copy must be under `deleted/`. If the hour had none, branch further back,
+   within the 14 days the copies stay.
+5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.

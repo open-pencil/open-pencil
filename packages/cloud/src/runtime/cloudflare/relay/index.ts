@@ -146,11 +146,15 @@ export function createCloudflareRelayObject(
       await this.#sockets.message(socket, message)
     }
 
+    // Under maintenance a closing socket leaves its room as it is: closing the room would save
+    // its state into a database that may be mid-restore.
     override async webSocketClose(socket: WebSocket) {
+      if (inMaintenance(this.env)) return
       await this.#sockets.closed(socket)
     }
 
     override async webSocketError(socket: WebSocket) {
+      if (inMaintenance(this.env)) return
       await this.#sockets.closed(socket)
     }
 
