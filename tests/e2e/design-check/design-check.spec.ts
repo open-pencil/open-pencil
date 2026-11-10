@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { setDesignIssuesOnCanvas } from '#tests/helpers/design-check'
+import { openAppMenu } from '#tests/helpers/menu'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
@@ -106,15 +108,6 @@ function highlightedNode(page: Page) {
   )
 }
 
-/** The canvas toggle is a profile preference. Tests that draw markers turn it on themselves. */
-async function setDesignIssuesOnCanvas(page: Page, show: boolean) {
-  await page.evaluate(async (enabled) => {
-    const preferencesModule = '/src/app/settings/preferences/apply.ts'
-    const { setDesignIssuesOnCanvas } = await import(preferencesModule)
-    setDesignIssuesOnCanvas(enabled)
-  }, show)
-}
-
 /** Checks settle shortly after edits; markers exist once the check has published them. */
 async function waitForMarkers(page: Page) {
   await expect
@@ -148,6 +141,8 @@ function selectedIds(page: Page) {
 
 test.afterEach(async () => {
   await editor.page.getByRole('tab', { name: 'Design' }).click()
+  // The editor page is shared, so each test starts from a fresh profile's markers-off default.
+  await setDesignIssuesOnCanvas(editor.page, false)
 })
 
 test('a fresh profile opens with canvas markers and page badges off', async () => {
@@ -166,15 +161,13 @@ test('a fresh profile opens with canvas markers and page badges off', async () =
     .toBe(0)
   await expect(editor.page.locator('[data-issue-severity]')).toHaveCount(0)
 
-  await editor.page.getByRole('menuitem', { name: 'View' }).click()
-  const designIssues = editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' })
-  await expect(designIssues).toHaveAttribute('aria-checked', 'false')
+  const view = await openAppMenu(editor.page, 'View')
+  await expect(view.getByRole('menuitemcheckbox', { name: 'Design issues' })).toHaveAttribute(
+    'aria-checked',
+    'false'
+  )
   await editor.page.keyboard.press('Escape')
-  await expect(designIssues).toBeHidden()
-  // The shared page's later row actions stay hidden while the menubar trigger keeps focus.
-  await editor.page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
-  })
+  await expect(view).toBeHidden()
 })
 
 test('Lint lists issues by rule and connects rows to the canvas', async () => {
