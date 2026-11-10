@@ -446,7 +446,7 @@ export function useCanvasInput(
     }
 
     if (d.type === 'scale') {
-      applyScale(d, cx, cy, editor)
+      applyScale(d, cx, cy, editor, { centred: e.altKey, disableSnapping: e.ctrlKey })
       return
     }
 

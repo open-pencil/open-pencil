@@ -154,6 +154,11 @@ export interface EditorViewState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  /**
+   * The point of the selection's box the Scale tool keeps in place, as fractions of its width and
+   * height: the center when the tool is picked, then where a drag or the panel's anchor puts it.
+   */
+  scaleAnchor: Vector
   /** A pointer move, resize, or rotation is in progress. */
   transforming: boolean
   measurementMode: MeasurementMode

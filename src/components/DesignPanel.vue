@@ -130,11 +130,11 @@ const { panels } = useI18n()
       </template>
     </PanelHeader>
     <StatusSection />
-    <ScaleSection v-if="activeTool === 'SCALE'" />
     <ComponentPropertiesSection />
     <PositionSection />
     <ConstraintsSection />
     <SelectionLayoutSection />
+    <ScaleSection v-if="activeTool === 'SCALE'" />
     <template v-if="freeStyle">
       <AppearanceSection />
       <TypographySection />
@@ -211,7 +211,6 @@ const { panels } = useI18n()
         </template>
       </PanelHeader>
 
-      <ScaleSection v-if="activeTool === 'SCALE'" />
       <TextContentSection v-if="node.type === 'TEXT'" :node-id="node.id" />
       <StatusSection />
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
@@ -242,6 +241,7 @@ const { panels } = useI18n()
         <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
         <LayoutSection v-if="layerResizes(node)" />
       </template>
+      <ScaleSection v-if="activeTool === 'SCALE'" />
       <template v-if="freeStyle">
         <AppearanceSection />
         <MaskSection />

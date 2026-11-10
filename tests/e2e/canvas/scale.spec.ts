@@ -145,20 +145,25 @@ test('scales a card and the text and stroke inside it', async () => {
   canvas.assertNoErrors()
 })
 
-test('the Scale panel multiplies the selection', async () => {
+test('the Scale panel scales about the anchor and hands back to Move', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 100, 50)
   await canvas.click(250, 225)
   await canvas.waitForRender()
+  const before = expectDefined(await getSelectedNode(page), 'rectangle')
   await canvas.pressKey('k')
 
-  const multiplier = page.getByRole('spinbutton', { name: 'Scale multiplier' })
-  await multiplier.click()
+  const factor = page.getByRole('textbox', { name: 'Scale multiplier' })
+  await factor.click()
+  await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type('2')
   await page.keyboard.press('Enter')
   await canvas.waitForRender()
 
+  // The anchor starts at the center, so the box grows around it, as in Figma.
   const scaled = expectDefined(await getSelectedNode(page), 'scaled rectangle')
   expect({ width: scaled.width, height: scaled.height }).toEqual({ width: 200, height: 100 })
+  expect({ x: scaled.x, y: scaled.y }).toEqual({ x: before.x - 50, y: before.y - 25 })
+  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SELECT')
   canvas.assertNoErrors()
 })

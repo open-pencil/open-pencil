@@ -5,161 +5,194 @@ import { resolveEditorProfile } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
-  getAbsolutePosition,
+  canvasDeltaInLayer,
   getAxisAlignedWorldBounds,
-  getParentWorldMatrix
+  placeScaledAbout,
+  selectionPlacement
 } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { canRescaleNode, isInsideInstance, scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+import {
+  MIN_RESCALE,
+  rescaleNodeChanges,
+  rescaleTargets,
+  scaleRoots
+} from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import { selectionResizeHandleAt } from '#vue/shared/input/resize/selection'
-import { proportionalResizeRect, selectionSnapSource } from '#vue/shared/input/resize/snap'
-import { subtree } from '#vue/shared/input/sticky/scale'
+import {
+  layerSnapSource,
+  proportionalResizeDriver,
+  proportionalResizeRect,
+  selectionSnapSource
+} from '#vue/shared/input/resize/snap'
 import type { DragScale } from '#vue/shared/input/types'
 
-const MIN_SCALE = 0.01
-
-interface ScaleRoot {
-  id: string
-  /** The root's top-left in page coordinates when the drag began. */
-  origin: { x: number; y: number }
-  /** Maps a page point into the root's parent's coordinates. */
-  toParent: Mat3
+/** How a pointer move scales: Alt from the box's center, Control without snapping. */
+export interface ScaleModifiers {
+  centred: boolean
+  disableSnapping: boolean
 }
 
-/** The selected layers that can scale, without those inside another selected layer. */
-function scaleRoots(nodes: readonly SceneNode[], editor: Editor): SceneNode[] {
-  const ids = new Set(nodes.map((node) => node.id))
-  return nodes.filter((node) => {
-    if (!canRescaleNode(node) || isInsideInstance(node, editor.graph)) return false
-    for (
-      let parentId = node.parentId;
-      parentId;
-      parentId = editor.graph.getNode(parentId)?.parentId ?? null
-    ) {
-      if (ids.has(parentId)) return false
-    }
-    return true
-  })
+/** Where along an axis a handle keeps the box: the far side from the one it moves, else the middle. */
+function keptAlong(movesStart: boolean, movesEnd: boolean): number {
+  if (movesStart) return 1
+  return movesEnd ? 0 : 0.5
 }
 
-function rootInParent(node: SceneNode, editor: Editor): ScaleRoot {
-  const parent = node.parentId ? editor.graph.getNode(node.parentId) : undefined
+/** The point of the box a handle keeps in place, as fractions of its width and height. */
+function handleAnchor(handle: HandlePosition): Vector {
   return {
-    id: node.id,
-    origin: getAbsolutePosition(node, editor.graph),
-    toParent: Matrix.invert(getParentWorldMatrix(parent, editor.graph)) ?? Matrix.identity()
+    x: keptAlong(handle.includes('w'), handle.includes('e')),
+    y: keptAlong(
+      handle === 'nw' || handle === 'n' || handle === 'ne',
+      handle === 'sw' || handle === 's' || handle === 'se'
+    )
   }
+}
+
+/** A point of the drag's box, given as fractions of its size, on the canvas. */
+function boxPoint(d: DragScale, fraction: Vector): Vector {
+  const { origRect, layer } = d
+  const x = fraction.x * origRect.width
+  const y = fraction.y * origRect.height
+  if (!layer) return { x: origRect.x + x, y: origRect.y + y }
+  const [px, py] = Matrix.mapPoints(layer.origPlacement.world, [x, y])
+  return { x: px, y: py }
+}
+
+/** The handle a press is on: a single layer's own, or the box of a multi-selection. */
+function pressedHandle(
+  cx: number,
+  cy: number,
+  roots: readonly SceneNode[],
+  editor: Editor
+): HandlePosition | null {
+  if (editor.state.selectedIds.size > 1) return selectionResizeHandleAt(cx, cy, editor)
+  const hit = getHitHandleByMatrix(
+    cx,
+    cy,
+    roots[0],
+    editor.graph,
+    editor.renderer?.zoom,
+    editor.state.rotationPreview
+  )
+  return hit?.handle ?? null
 }
 
 /**
- * Starts Figma's Scale drag from any handle of the selection. The box is the selection's bounds
- * in page coordinates; the roots are placed back into their own parents as they scale.
+ * Starts Figma's Scale drag from a handle of the selection. A single layer scales in its own
+ * frame, whatever its angle; several scale together in their box on the canvas.
  */
 export function tryStartScale(cx: number, cy: number, editor: Editor): DragScale | null {
   if (resolveEditorProfile(editor.state).layerEdits !== 'all') return null
-  const selected = editor.getSelectedNodes().filter((node) => canRescaleNode(node))
-  const roots = scaleRoots(selected, editor)
+  const roots = scaleRoots(editor.graph, editor.getSelectedNodes())
   if (roots.length === 0) return null
-
-  const handle =
-    roots.length === 1
-      ? (getHitHandleByMatrix(
-          cx,
-          cy,
-          roots[0],
-          editor.graph,
-          editor.renderer?.zoom,
-          editor.state.rotationPreview
-        )?.handle ?? null)
-      : selectionResizeHandleAt(cx, cy, editor)
+  const handle = pressedHandle(cx, cy, roots, editor)
   if (!handle) return null
 
+  const placements = new Map(roots.map((root) => [root.id, selectionPlacement(root, editor.graph)]))
   const originals = new Map<string, SceneNode>()
   for (const root of roots) {
-    for (const [id, node] of subtree(editor, root)) originals.set(id, node)
+    for (const node of rescaleTargets(editor.graph, root, { keepLocked: true }))
+      originals.set(node.id, { ...node })
   }
-  const origRect = computeBounds(roots.map((root) => getAxisAlignedWorldBounds(root, editor.graph)))
+  const single = roots.length === 1 && editor.state.selectedIds.size === 1 ? roots[0] : null
+  const layerPlacement = single && placements.get(single.id)
   const drag: DragScale = {
     type: 'scale',
     handle,
     startX: cx,
     startY: cy,
-    origRect,
-    roots: roots.map((root) => rootInParent(root, editor)),
+    origRect: single
+      ? { x: single.x, y: single.y, width: single.width, height: single.height }
+      : computeBounds(roots.map((root) => getAxisAlignedWorldBounds(root, editor.graph))),
+    layer: single && layerPlacement ? { nodeId: single.id, origPlacement: layerPlacement } : null,
+    placements,
     originals,
     scale: 1,
-    rect: origRect,
+    anchorFraction: handleAnchor(handle),
+    anchor: { x: cx, y: cy },
     commit: () => commitScale(drag, editor),
     cancel: () => cancelScale(drag, editor)
   }
+  drag.anchor = boxPoint(drag, drag.anchorFraction)
   return drag
 }
 
-/** Shows the selection scaled from the handle; only the commit records it. */
-export function applyScale(drag: DragScale, cx: number, cy: number, editor: Editor) {
+/**
+ * Shows the selection scaled from the handle; only the commit records it. The side the pointer
+ * leads snaps as a Shift-resize's does, and the scale follows it.
+ */
+export function applyScale(
+  drag: DragScale,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  { centred, disableSnapping }: ScaleModifiers
+) {
   const d = toRaw(drag)
-  const { origRect } = d
-  if (origRect.width === 0 || origRect.height === 0) return
+  const { origRect, layer, handle } = d
+  if (origRect.width <= 0 || origRect.height <= 0) return
   const aspect = origRect.width / origRect.height
-  const ids = new Set(d.roots.map((root) => root.id))
-  const source = selectionSnapSource(ids, editor.state.currentPageId)
-  // Figma's Scale tool does not snap to layers; the box is always proportional.
+  const canvasDelta = { x: cx - d.startX, y: cy - d.startY }
+  const delta = layer
+    ? canvasDeltaInLayer(layer.origPlacement, canvasDelta.x, canvasDelta.y)
+    : canvasDelta
+  // From the center, the handle's side moves by the pointer and the opposite one mirrors it.
+  const reach = centred ? 2 : 1
+  const [dx, dy] = [delta.x * reach, delta.y * reach]
+  const source = layer
+    ? layerSnapSource(
+        { nodeId: layer.nodeId, handle, origRect, origPlacement: layer.origPlacement },
+        editor
+      )
+    : selectionSnapSource(new Set(d.placements.keys()), editor.state.currentPageId)
   const rect = proportionalResizeRect(
-    d.handle,
+    handle,
     origRect,
-    cx - d.startX,
-    cy - d.startY,
+    dx,
+    dy,
     aspect,
     source,
     editor,
-    true
+    disableSnapping || centred
   )
-  const scale = Math.max(MIN_SCALE, rect.width / origRect.width)
-  d.scale = scale
-  d.rect = rect
-  const byId = new Map(d.roots.map((root) => [root.id, root]))
-  for (const [id, original] of d.originals) {
-    const root = byId.get(id)
-    const changes = scaleNodeChanges(original, scale, root === undefined)
-    if (root) {
-      const world = {
-        x: rect.x + (root.origin.x - origRect.x) * scale,
-        y: rect.y + (root.origin.y - origRect.y) * scale
-      }
-      const [x, y] = Matrix.mapPoints(root.toParent, [world.x, world.y])
-      changes.x = x
-      changes.y = y
-    }
-    editor.graph.updateNodePreview(id, changes)
-  }
+  const driver = proportionalResizeDriver(handle, origRect, dx, dy, aspect)
+  d.scale = Math.max(MIN_RESCALE, rect[driver] / origRect[driver])
+  d.anchorFraction = centred ? { x: 0.5, y: 0.5 } : handleAnchor(handle)
+  d.anchor = boxPoint(d, d.anchorFraction)
+  previewScale(d, d.scale, editor)
   editor.requestRepaint()
 }
 
-function restoreScale(d: DragScale, editor: Editor) {
-  const byId = new Set(d.roots.map((root) => root.id))
+/** Shows every layer of the drag at `scale` about the drag's anchor. */
+function previewScale(d: DragScale, scale: number, editor: Editor) {
   for (const [id, original] of d.originals) {
-    const changes = scaleNodeChanges(original, 1, !byId.has(id))
-    if (byId.has(id)) Object.assign(changes, { x: original.x, y: original.y })
+    const placement = d.placements.get(id)
+    const changes = rescaleNodeChanges(editor.graph, original, scale, placement !== undefined)
+    // Back at its own size, a layer takes back exactly the place it started from.
+    if (placement) {
+      const { x, y } = scale === 1 ? original : placeScaledAbout(placement, d.anchor, scale)
+      Object.assign(changes, { x, y })
+    }
     editor.graph.updateNodePreview(id, changes)
   }
 }
 
 function commitScale(drag: DragScale, editor: Editor) {
   const d = toRaw(drag)
-  restoreScale(d, editor)
+  previewScale(d, 1, editor)
   editor.setSnapGuides([])
-  if (d.scale !== 1) {
-    const nodes = d.roots.flatMap((root) => editor.graph.getNode(root.id) ?? [])
-    editor.scaleSelected(nodes, d.scale, d.origRect, d.rect)
-  }
+  editor.setScaleAnchor(d.anchorFraction)
+  if (d.scale !== 1) editor.scaleSelected(d.scale, d.anchor)
   editor.requestRender()
 }
 
 function cancelScale(drag: DragScale, editor: Editor) {
-  restoreScale(toRaw(drag), editor)
+  previewScale(toRaw(drag), 1, editor)
   editor.setSnapGuides([])
   editor.requestRender()
 }

@@ -1,31 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core'
-import { EDITOR_TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core'
+import { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS, type Editor } from '@open-pencil/core'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
 let editor: Editor
 
-afterEach(() => editor?.dispose())
-
-test('Scale is K and sits in the Move flyout', () => {
-  expect(TOOL_SHORTCUTS.K).toBe('SCALE')
-  expect(EDITOR_TOOLS.find((tool) => tool.key === 'SELECT')?.flyout).toContain('SCALE')
-})
-
-function setup() {
-  editor = createEditor()
-  const page = editor.state.currentPageId
-  const text = editor.graph.createNode('TEXT', page, {
-    x: 100,
-    y: 50,
-    width: 200,
-    height: 80,
-    text: 'Hello',
-    fontSize: 20,
-    strokeWeight: 2
-  })
-  return { text }
-}
+afterEach(() => editor.dispose())
 
 function current(id: string) {
   const node = editor.graph.getNode(id)
@@ -33,87 +14,157 @@ function current(id: string) {
   return node
 }
 
+test('Scale is K and sits in the Move flyout', () => {
+  editor = createEditor()
+  expect(TOOL_SHORTCUTS.K).toBe('SCALE')
+  expect(EDITOR_TOOLS.find((tool) => tool.key === 'SELECT')?.flyout).toContain('SCALE')
+})
+
+test('picking the Scale tool puts its anchor at the center, as Figma does', () => {
+  editor = createEditor()
+  editor.setScaleAnchor({ x: 0, y: 1 })
+  editor.setTool('SCALE')
+  expect(editor.state.scaleAnchor).toEqual({ x: 0.5, y: 0.5 })
+})
+
 describe('scaleSelected', () => {
-  test('scales a text layer font size and stroke weight as one undo step', () => {
-    const { text } = setup()
+  test('scales text size and stroke weight as one undo step', () => {
+    editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      x: 100,
+      y: 50,
+      width: 200,
+      height: 80,
+      text: 'Hello',
+      fontSize: 20,
+      strokeWeight: 2
+    })
+    editor.select([text.id])
 
-    editor.scaleSelected(
-      [current(text.id)],
-      2,
-      { x: 100, y: 50, width: 200, height: 80 },
-      { x: 100, y: 50, width: 400, height: 160 }
-    )
+    editor.scaleSelected(2, { x: 100, y: 50 })
 
-    expect(current(text.id).fontSize).toBe(40)
-    expect(current(text.id).strokeWeight).toBe(4)
-    expect(current(text.id).width).toBe(400)
-
+    expect(current(text.id)).toMatchObject({ x: 100, y: 50, width: 400, fontSize: 40, strokeWeight: 4 })
     editor.undo.undo()
-    expect(current(text.id).fontSize).toBe(20)
-    expect(current(text.id).strokeWeight).toBe(2)
-    expect(current(text.id).width).toBe(200)
+    expect(current(text.id)).toMatchObject({ width: 200, fontSize: 20, strokeWeight: 2 })
   })
 
   test('scales an auto layout frame padding, gap, and text', () => {
     editor = createEditor()
-    const page = editor.state.currentPageId
-    const frame = editor.graph.createNode('FRAME', page, {
-      x: 0,
-      y: 0,
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
       width: 100,
       height: 100,
       layoutMode: 'VERTICAL',
       paddingTop: 10,
-      paddingRight: 10,
-      paddingBottom: 10,
       paddingLeft: 10,
       itemSpacing: 10
     })
-    const text = editor.graph.createNode('TEXT', frame.id, {
-      x: 10,
-      y: 10,
-      width: 80,
-      height: 20,
-      text: 'Hi',
-      fontSize: 10
-    })
+    const text = editor.graph.createNode('TEXT', frame.id, { text: 'Hi', fontSize: 10 })
+    editor.select([frame.id])
 
-    editor.scaleSelected(
-      [current(frame.id)],
-      2,
-      { x: 0, y: 0, width: 100, height: 100 },
-      { x: 0, y: 0, width: 200, height: 200 }
-    )
+    editor.scaleSelected(2, { x: 0, y: 0 })
 
-    expect(current(frame.id).paddingTop).toBe(20)
-    expect(current(frame.id).itemSpacing).toBe(20)
+    expect(current(frame.id)).toMatchObject({ paddingTop: 20, itemSpacing: 20 })
     expect(current(text.id).fontSize).toBe(20)
   })
 
-  test('scales a multi-selection around the box anchor', () => {
+  test('scales layers in one parent as one box about the anchor', () => {
     editor = createEditor()
     const page = editor.state.currentPageId
-    const left = editor.graph.createNode('RECTANGLE', page, {
+    const left = editor.graph.createNode('RECTANGLE', page, { width: 50, height: 50 })
+    const right = editor.graph.createNode('RECTANGLE', page, { x: 100, width: 50, height: 50 })
+    editor.select([left.id, right.id])
+
+    // The center of their 150×50 box stays put.
+    editor.scaleSelected(2, { x: 75, y: 25 })
+
+    expect(current(left.id)).toMatchObject({ x: -75, y: -25, width: 100 })
+    expect(current(right.id)).toMatchObject({ x: 125, y: -25, width: 100 })
+  })
+
+  // Measured in Figma: a 200×100 frame scaled 1.5× from its top-left, then from its center.
+  test('leaves locked layers, and what they hold, at their size and place in the parent', () => {
+    editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      width: 200,
+      height: 100
+    })
+    const locked = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 100,
+      y: 50,
+      width: 40,
+      height: 20,
+      strokeWeight: 2,
+      locked: true
+    })
+    const lockedFrame = editor.graph.createNode('FRAME', frame.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      locked: true
+    })
+    const inside = editor.graph.createNode('RECTANGLE', lockedFrame.id, {
+      x: 5,
+      y: 5,
+      width: 10,
+      height: 10
+    })
+    const plain = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 150,
+      y: 10,
+      width: 20,
+      height: 20
+    })
+    editor.select([frame.id])
+
+    editor.scaleSelected(1.5, { x: 100, y: 50 })
+
+    expect(current(frame.id)).toMatchObject({ x: -50, y: -25, width: 300, height: 150 })
+    expect(current(locked.id)).toMatchObject({ x: 100, y: 50, width: 40, strokeWeight: 2 })
+    expect(current(lockedFrame.id)).toMatchObject({ x: 20, y: 20, width: 40 })
+    expect(current(inside.id)).toMatchObject({ x: 5, y: 5, width: 10 })
+    expect(current(plain.id)).toMatchObject({ x: 225, y: 15, width: 30 })
+  })
+
+  test('scales a turned layer in its own frame, keeping its angle and the anchor', () => {
+    editor = createEditor()
+    const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
       x: 0,
       y: 0,
-      width: 50,
-      height: 50
+      width: 200,
+      height: 100,
+      rotation: 30
     })
-    const right = editor.graph.createNode('RECTANGLE', page, {
-      x: 100,
-      y: 0,
-      width: 50,
-      height: 50
-    })
+    editor.select([rect.id])
+    const corner = (id: string) => {
+      const [x, y] = Matrix.mapPoints(getWorldMatrix(current(id), editor.graph), [0, 0])
+      return { x, y }
+    }
+    const anchor = corner(rect.id)
 
-    editor.scaleSelected(
-      [current(left.id), current(right.id)],
-      2,
-      { x: 0, y: 0, width: 150, height: 50 },
-      { x: 0, y: 0, width: 300, height: 100 }
-    )
+    editor.scaleSelected(1.2, anchor)
 
-    expect([current(left.id).x, current(left.id).width]).toEqual([0, 100])
-    expect([current(right.id).x, current(right.id).width]).toEqual([200, 100])
+    expect(current(rect.id).rotation).toBeCloseTo(30)
+    expect(current(rect.id).width).toBeCloseTo(240)
+    expect(current(rect.id).height).toBeCloseTo(120)
+    expect(corner(rect.id).x).toBeCloseTo(anchor.x)
+    expect(corner(rect.id).y).toBeCloseTo(anchor.y)
+  })
+
+  test('scales an instance by its occurrence scale and leaves its main component', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const component = editor.graph.createNode('COMPONENT', page, { width: 200, height: 100 })
+    editor.graph.createNode('TEXT', component.id, { text: 'Hi', fontSize: 20 })
+    const instance = editor.graph.createInstance(component.id, page, { x: 300 })
+    if (!instance) throw new Error('no instance')
+    editor.select([instance.id])
+
+    editor.scaleSelected(1.5, { x: 300, y: 0 })
+
+    const [text] = editor.graph.getChildren(instance.id)
+    expect(current(instance.id)).toMatchObject({ width: 300, componentScale: 1.5 })
+    expect(text.fontSize).toBe(30)
+    expect(current(component.id).width).toBe(200)
   })
 })

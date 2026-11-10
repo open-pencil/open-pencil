@@ -1,16 +1,12 @@
 import { pick } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAbsolutePosition, getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
 import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { canRescaleNode, isInsideInstance, rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
-import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 
 import { layerTheme, newLayerDefaults } from './shapes/defaults'
@@ -33,6 +29,7 @@ import {
   type RenameSelectionOptions
 } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
+import { scaleSelected } from './structure/scale'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
 
@@ -43,57 +40,6 @@ export function createStructureActions(ctx: EditorContext) {
 
   function isTopLevel(parentId: string | null): boolean {
     return !parentId || parentId === ctx.graph.rootId || parentId === ctx.state.currentPageId
-  }
-
-  /** The selected layers that are not inside another selected layer, and can be scaled. */
-  function scaleRoots(selectedNodes: readonly SceneNode[]): SceneNode[] {
-    const ids = new Set(selectedNodes.map((node) => node.id))
-    return selectedNodes.filter((node) => {
-      if (!canRescaleNode(node) || isInsideInstance(node, ctx.graph)) return false
-      for (let parentId = node.parentId; parentId;) {
-        if (ids.has(parentId)) return false
-        parentId = ctx.graph.getNode(parentId)?.parentId ?? null
-      }
-      return true
-    })
-  }
-
-  /**
-   * Scales the selected layers proportionally, as Figma's Scale tool does: text sizes, strokes,
-   * effects, radii, spacing, and geometry travel with the box, and the anchor stays put. The box
-   * is the old and new selection bounds in page coordinates.
-   */
-  function scaleSelected(
-    selectedNodes: readonly SceneNode[],
-    scale: number,
-    from: Rect,
-    to: Rect
-  ): void {
-    if (!Number.isFinite(scale) || scale <= 0 || scale === 1) return
-    const roots = scaleRoots(selectedNodes)
-    if (roots.length === 0) return
-    recordSubtreeEdit(
-      ctx,
-      'Scale',
-      roots.map((node) => node.id),
-      () => {
-        for (const root of roots) {
-          const node = ctx.graph.getNode(root.id)
-          if (!node) continue
-          const origin = getAbsolutePosition(node, ctx.graph)
-          const world = {
-            x: to.x + (origin.x - from.x) * scale,
-            y: to.y + (origin.y - from.y) * scale
-          }
-          const parent = node.parentId ? ctx.graph.getNode(node.parentId) : undefined
-          const toParent =
-            Matrix.invert(getParentWorldMatrix(parent, ctx.graph)) ?? Matrix.identity()
-          const [x, y] = Matrix.mapPoints(toParent, [world.x, world.y])
-          rescaleNodeTree(ctx.graph, node.id, scale)
-          ctx.graph.updateNode(node.id, { x, y })
-        }
-      }
-    )
   }
 
   /**
@@ -275,7 +221,8 @@ export function createStructureActions(ctx: EditorContext) {
     acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
     fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
-    scaleSelected,
+    scaleSelected: (nodes: readonly SceneNode[], scale: number, anchor: Vector) =>
+      scaleSelected(ctx, nodes, scale, anchor),
     reparentNodes,
     wrapSelectionInContainer,
     wrapInAutoLayout,

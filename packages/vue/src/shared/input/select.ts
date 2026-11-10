@@ -119,7 +119,23 @@ export function handleSelectDown(
   if (editor.state.editingTextId) editor.commitTextEdit()
 
   if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, fns, tryStartRotation, setDrag)) return
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
+}
 
+/**
+ * A press that took no handle: on a layer it selects and drags the selection, on nothing it starts
+ * a marquee.
+ */
+function pressLayers(
+  e: MouseEvent,
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
   const deep = e.metaKey || e.ctrlKey
   const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, fns, deep)
   if (!hit) {
@@ -140,8 +156,8 @@ export function handleSelectDown(
 }
 
 /**
- * A press with the Scale tool: a handle starts scaling, a layer press selects it, and an empty
- * press starts a marquee. The body of a selected layer never moves with this tool.
+ * A press with the Scale tool: a handle scales the selection, and anywhere else the press selects
+ * and moves layers as the Move tool's does, as in Figma.
  */
 export function handleScaleDown(
   e: MouseEvent,
@@ -164,12 +180,5 @@ export function handleScaleDown(
     setDrag(scaleDrag)
     return
   }
-
-  const deep = e.metaKey || e.ctrlKey
-  const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, fns, deep)
-  if (!hit) {
-    startMarquee(cx, cy, editor, setDrag)
-    return
-  }
-  selectOnPress(hit, e.shiftKey, true, editor)
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
 }

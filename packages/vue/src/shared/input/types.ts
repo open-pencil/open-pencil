@@ -10,7 +10,6 @@ import type {
   VectorNetwork
 } from '@open-pencil/scene-graph'
 import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -141,21 +140,28 @@ export interface DragPan {
   startPanY: number
 }
 
-/** A Scale-tool drag: text, strokes, effects, and geometry scale from the handle. */
+/** A Scale-tool drag: the selection scales evenly from a handle, text and strokes included. */
 export interface DragScale {
   type: 'scale'
   handle: HandlePosition
   startX: number
   startY: number
-  /** The selection's bounds in page coordinates when the drag began. */
+  /**
+   * The box the handle scales: a single layer's own, in its parent's axes, or a multi-selection's
+   * on the canvas.
+   */
   origRect: Rect
-  /** The roots being scaled and where each sits in its own parent. */
-  roots: Array<{ id: string; origin: Vector; toParent: Mat3 }>
-  /** Every layer of every root as the drag found it. */
+  /** The single layer that scales in its own frame, as it was when the drag began. */
+  layer: { nodeId: string; origPlacement: SelectionPlacement } | null
+  /** Each scaled layer's place when the drag began, by ID. */
+  placements: Map<string, SelectionPlacement>
+  /** Every layer the drag scales, as it found them; locked layers inside are left out. */
   originals: Map<string, SceneNode>
-  /** The scale and box the latest step reached. */
+  /** The scale the latest step reached. */
   scale: number
-  rect: Rect
+  /** The point the drag keeps in place: as fractions of the box, and on the canvas. */
+  anchorFraction: Vector
+  anchor: Vector
   commit: () => void
   cancel: () => void
 }

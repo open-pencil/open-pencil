@@ -1,139 +1,138 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { canRescaleNode, isInsideInstance } from '@open-pencil/scene-graph/scaling'
+import { MIN_RESCALE, scaleRoots } from '@open-pencil/scene-graph/scaling'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
+import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
+import LayoutAlignmentControl from '@/components/properties/layout/alignment/LayoutAlignmentControl.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
-type ScaleAnchor = 'nw' | 'n' | 'ne' | 'w' | 'c' | 'e' | 'sw' | 's' | 'se'
+/** The factors Figma's Scale field offers. */
+const SCALE_PRESETS = [0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 10] as const
+const ANCHOR_STOPS: Array<{ fraction: number; align: LayoutAlign & LayoutCounterAlign }> = [
+  { fraction: 0, align: 'MIN' },
+  { fraction: 0.5, align: 'CENTER' },
+  { fraction: 1, align: 'MAX' }
+]
 
 const store = useEditorStore()
-const { panels, tools } = useI18n()
-const anchor = ref<ScaleAnchor>('nw')
-const multiplier = ref(1)
+const { panels, tools, common } = useI18n()
 
+/** The box of the layers the Scale tool scales, on the canvas. */
 const bounds = useSceneComputed<Rect | null>(() => {
-  const nodes = store
-    .getSelectedNodes()
-    .filter((node) => canRescaleNode(node) && !isInsideInstance(node, store.graph))
-  if (nodes.length === 0) return null
-  return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, store.graph)))
+  const roots = scaleRoots(store.graph, store.getSelectedNodes())
+  if (roots.length === 0) return null
+  return computeBounds(roots.map((node) => getAxisAlignedWorldBounds(node, store.graph)))
 })
 
-const width = computed(() => bounds.value?.width ?? 0)
-const height = computed(() => bounds.value?.height ?? 0)
+// The factor counts from the size the selection had when the tool or the selection was picked.
+const startWidth = ref(0)
+watch(
+  () => [...store.state.selectedIds].join(','),
+  () => (startWidth.value = bounds.value?.width ?? 0),
+  { immediate: true }
+)
+const factor = computed(() => {
+  const width = bounds.value?.width ?? 0
+  return startWidth.value > 0 ? Math.round((width / startWidth.value) * 100) / 100 : 1
+})
 
-const ANCHORS: ScaleAnchor[] = ['nw', 'n', 'ne', 'w', 'c', 'e', 'sw', 's', 'se']
-
-const anchorLabels = computed<Record<ScaleAnchor, string>>(() => {
+const anchorCells = computed(() => {
   const rows = [panels.value.alignTop, panels.value.alignCenterVertically, panels.value.alignBottom]
   const columns = [
     panels.value.alignLeft,
     panels.value.alignCenterHorizontally,
     panels.value.alignRight
   ]
-  return {
-    nw: `${rows[0]} ${columns[0]}`,
-    n: `${rows[0]} ${columns[1]}`,
-    ne: `${rows[0]} ${columns[2]}`,
-    w: `${rows[1]} ${columns[0]}`,
-    c: `${rows[1]} ${columns[1]}`,
-    e: `${rows[1]} ${columns[2]}`,
-    sw: `${rows[2]} ${columns[0]}`,
-    s: `${rows[2]} ${columns[1]}`,
-    se: `${rows[2]} ${columns[2]}`
-  }
+  const { x, y } = store.state.scaleAnchor
+  return ANCHOR_STOPS.flatMap((row, rowIndex) =>
+    ANCHOR_STOPS.map((column, columnIndex) => ({
+      primary: column.align,
+      counter: row.align,
+      label: `${rows[rowIndex]} ${columns[columnIndex]}`,
+      active: column.fraction === x && row.fraction === y
+    }))
+  )
 })
 
-function anchored(from: Rect, scale: number): Rect {
-  const width = from.width * scale
-  const height = from.height * scale
-  const horizontal = anchor.value.includes('w')
-    ? from.x
-    : anchor.value.includes('e')
-      ? from.x + from.width - width
-      : from.x + (from.width - width) / 2
-  const vertical = anchor.value.includes('n')
-    ? from.y
-    : anchor.value.includes('s')
-      ? from.y + from.height - height
-      : from.y + (from.height - height) / 2
-  return { x: horizontal, y: vertical, width, height }
+function fractionOf(align: LayoutAlign | LayoutCounterAlign): number {
+  return ANCHOR_STOPS.find((stop) => stop.align === align)?.fraction ?? 0.5
 }
 
-function applyScale(scale: number) {
-  const nodes = store
-    .getSelectedNodes()
-    .filter((node) => canRescaleNode(node) && !isInsideInstance(node, store.graph))
-  const from = bounds.value
-  if (!from || nodes.length === 0 || !Number.isFinite(scale) || scale <= 0) return
-  store.scaleSelected(nodes, scale, from, anchored(from, scale))
-  multiplier.value = 1
-  store.requestRender()
+/** Scales the selection by `scale` about the anchor point of its box. */
+function scaleBy(scale: number) {
+  const box = bounds.value
+  if (!box || !Number.isFinite(scale) || scale < MIN_RESCALE) return
+  const { x, y } = store.state.scaleAnchor
+  store.scaleSelected(scale, { x: box.x + box.width * x, y: box.y + box.height * y })
 }
 
-function scaleByField(value: number, axis: 'width' | 'height') {
+function scaleToSize(value: number, axis: 'width' | 'height') {
   const size = bounds.value?.[axis]
-  if (!size) return
-  applyScale(value / size)
+  if (size) scaleBy(value / size)
+}
+
+/** A factor scales from the starting size, then hands back to the Move tool, as in Figma. */
+function setFactor(value: number) {
+  const width = bounds.value?.width
+  if (!width || startWidth.value <= 0) return
+  scaleBy((value * startWidth.value) / width)
+  store.setTool('SELECT')
 }
 </script>
 
 <template>
   <PanelSection v-if="bounds" :label="tools.scale">
+    <template #actions>
+      <IconButton :label="common.close" @click="store.setTool('SELECT')">
+        <icon-lucide-x class="size-3.5" />
+      </IconButton>
+    </template>
     <PanelGrid :columns="2">
       <NumberField
-        icon="×"
-        data-property="scale"
-        :aria-label="panels.scaleMultiplier"
-        :model-value="multiplier"
-        :min="0.01"
-        @update:model-value="multiplier = $event"
-        @commit="(value: number) => applyScale(value)"
-      />
-      <div
-        role="group"
-        :aria-label="panels.scaleAnchor"
-        class="grid w-fit grid-cols-3 gap-0.5 justify-self-end"
-      >
-        <IconButton
-          v-for="id in ANCHORS"
-          :key="id"
-          :label="anchorLabels[id]"
-          :active="anchor === id"
-          size="xs"
-          @click="anchor = id"
-        >
-          <span class="block size-1.5 rounded-full bg-current" />
-        </IconButton>
-      </div>
-    </PanelGrid>
-    <PanelGrid :columns="2" class="mt-1.5">
-      <NumberField
         icon="W"
-        data-property="width"
+        data-property="scale-width"
         :aria-label="panels.width"
-        :model-value="width"
-        :min="0.01"
-        @commit="(value: number) => scaleByField(value, 'width')"
+        :model-value="bounds.width"
+        :min="MIN_RESCALE"
+        @commit="(value: number) => scaleToSize(value, 'width')"
       />
       <NumberField
         icon="H"
-        data-property="height"
+        data-property="scale-height"
         :aria-label="panels.height"
-        :model-value="height"
-        :min="0.01"
-        @commit="(value: number) => scaleByField(value, 'height')"
+        :model-value="bounds.height"
+        :min="MIN_RESCALE"
+        @commit="(value: number) => scaleToSize(value, 'height')"
       />
     </PanelGrid>
+    <div class="mt-1.5 grid grid-cols-[minmax(0,1fr)_4.875rem] items-start gap-3">
+      <ExportScaleInput
+        data-property="scale"
+        :label="panels.scaleMultiplier"
+        :model-value="factor"
+        :presets="SCALE_PRESETS"
+        :clamp="(value: number) => Math.max(MIN_RESCALE, value)"
+        @update:model-value="setFactor"
+      />
+      <LayoutAlignmentControl
+        :label="panels.scaleAnchor"
+        :cells="anchorCells"
+        @select="
+          (primary, counter) =>
+            store.setScaleAnchor({ x: fractionOf(primary), y: fractionOf(counter) })
+        "
+      />
+    </div>
   </PanelSection>
 </template>
