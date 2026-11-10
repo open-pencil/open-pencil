@@ -122,6 +122,7 @@ export function drawSelectionLabels(
   const sizeFont = r.chromeFonts.size
   if (!labelFont || !sizeFont) return
   const activeOverlays = overlays ?? {}
+  if (activeOverlays.showSizeLabels === false) return
   const { nodes, minX, minY, maxX, maxY } = accumulateSelectionBounds(
     graph,
     selectedIds,

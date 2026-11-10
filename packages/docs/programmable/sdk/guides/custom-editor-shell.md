@@ -190,6 +190,22 @@ It returns where the layer goes, adjusted however the host likes, or `null` to k
 
 `cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `shortcuts`.
 
+## Styling the canvas
+
+The canvas's own chrome follows editor state, so a shell with a look of its own sets it there:
+
+```ts
+// Selection outlines, handles, the pen, and vector edit mode's points and handles, with the
+// text on its labels; the default blue when unset.
+editor.state.selectionTheme = { color: ink, foreground: paper }
+
+// No width × height label under the selection.
+editor.state.showSizeLabels = false
+
+// The page behind the layers. It is a document edit, so a restricted host makes it as the host.
+editor.asHost(() => editor.setPageColor(paper))
+```
+
 ## Why this split works
 
 - the SDK owns editor integration and reusable headless logic
