@@ -27,6 +27,12 @@ interface ToolIdentity {
 const OWN_PREFIX = `mcp__${OPEN_PENCIL_MCP_SERVER}__`
 const GROK_OWN_PREFIX = `${OPEN_PENCIL_MCP_SERVER}__`
 const ANTIGRAVITY_OWN_TITLE = `Run mcp_${OPEN_PENCIL_MCP_SERVER}_`
+/** The tool OpenPencil's MCP server gives agents that defer tools; see `ACPAgentDef.defersMCPTools`. */
+const CALL_TOOL = 'call_mcp_tool'
+const callToolInputSchema = v.object({
+  toolName: v.string(),
+  arguments: v.optional(v.record(v.string(), v.unknown()))
+})
 
 const codexMCPInputSchema = v.object({
   server: v.string(),
@@ -124,12 +130,15 @@ function grokIdentity(update: ToolCallReport): ToolIdentity | null {
  */
 function antigravityIdentity(update: ToolCallReport): ToolIdentity | null {
   if (!update.title?.startsWith(ANTIGRAVITY_OWN_TITLE)) return null
-  const input = v.safeParse(inputObjectSchema, update.rawInput)
-  return {
-    name: update.title.slice(ANTIGRAVITY_OWN_TITLE.length),
-    kind: 'own',
-    input: input.success ? omit(input.output, ['toolSummary']) : {}
+  const name = update.title.slice(ANTIGRAVITY_OWN_TITLE.length)
+  const parsed = v.safeParse(inputObjectSchema, update.rawInput)
+  const input = parsed.success ? omit(parsed.output, ['toolSummary']) : {}
+  // A deferred tool runs through the server's `call_mcp_tool`; show the tool it ran.
+  const called = name === CALL_TOOL ? v.safeParse(callToolInputSchema, input) : null
+  if (called?.success) {
+    return { name: called.output.toolName, kind: 'own', input: called.output.arguments ?? {} }
   }
+  return { name, kind: 'own', input }
 }
 
 function identify(update: ToolCallReport): ToolIdentity {

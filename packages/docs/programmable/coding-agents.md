@@ -56,7 +56,7 @@ irm https://antigravity.google/cli/install.ps1 | iex
 
 Run `agy` once and choose a sign-in method. Antigravity CLI does not report the account it uses, so guided setup shows it as installed without a plan or email.
 
-Antigravity CLI 1.5.3 cannot call OpenPencil's larger tools, such as `create_shape`, `render`, and `set_layout`: it holds them back to load on demand and tells its model to call them through a `call_mcp_tool` tool it does not provide over ACP. It can read and inspect the canvas, but cannot build designs until Antigravity fixes this.
+Antigravity CLI loads MCP tools only up to a total size and holds the rest back, telling its model to call them through a `call_mcp_tool` tool it does not provide over ACP. OpenPencil's MCP server provides that tool for Antigravity chats, so every OpenPencil tool stays in reach. The model sometimes asks to list its own MCP folder, `~/.gemini/antigravity-cli/mcp`, before it starts; declining ends its turn.
 
 ## Gemini CLI
 

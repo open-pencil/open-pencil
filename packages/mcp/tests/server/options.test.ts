@@ -7,7 +7,11 @@ import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
-import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
+import {
+  MCP_AGENT_HEADER,
+  MCP_CALL_TOOL_HEADER,
+  MCP_CHAT_HEADER
+} from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -181,6 +185,30 @@ describe('MCP server', () => {
       .map((tool) => tool.name)
       .sort()
     expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)
+  })
+
+  test('describes tool inputs without what tells a client nothing', async () => {
+    const { tools } = await client.listTools()
+    const schemas = JSON.stringify(tools.map((tool) => tool.inputSchema))
+    expect(schemas).not.toContain('$schema')
+    expect(schemas).not.toContain('"additionalProperties":false')
+    expect(schemas).not.toContain(String(Number.MAX_VALUE))
+    const layout = tools.find((tool) => tool.name === 'set_layout')
+    expect(layout?.inputSchema.properties?.spacing).toEqual({
+      type: 'number',
+      description: expect.any(String),
+      minimum: 0
+    })
+  })
+
+  test('still takes a number written as a string', async () => {
+    const created = await client.callTool({
+      name: 'create_shape',
+      arguments: { type: 'RECTANGLE', x: 0, y: 0, width: '40', height: 20 }
+    })
+    expect(created.isError).toBeFalsy()
+    const rectangle = [...graph.getAllNodes()].find((node) => node.type === 'RECTANGLE')
+    expect(rectangle?.width).toBe(40)
   })
 
   test('describes effects, capabilities, and runtime availability independently', () => {
@@ -975,6 +1003,44 @@ describe('MCP sessions as agents', () => {
         expect(openedNotice(browser)?.args).toMatchObject({ session: agent.session })
       }
     )
+  })
+
+  function toolRequests(browser: MockBrowser): unknown[] {
+    return browser.requests
+      .filter((item) => item.command === 'tool')
+      .map((item) => (item.args as { name?: unknown }).name)
+  }
+
+  test('a session asking for call_mcp_tool runs tools through it, checking their arguments', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CALL_TOOL_HEADER]: '1' },
+      async (client, browser) => {
+        const { tools } = await client.listTools()
+        expect(tools.map((tool) => tool.name)).toContain('call_mcp_tool')
+        const call = (toolName: string, args: Record<string, unknown>) =>
+          client.callTool({ name: 'call_mcp_tool', arguments: { toolName, arguments: args } })
+
+        const created = await call('create_shape', {
+          type: 'FRAME',
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 100
+        })
+        expect(created.isError).toBeFalsy()
+        expect((await call('create_shape', { type: 'FRAME', width: 'wide' })).isError).toBe(true)
+        // eval is off on this server, so it is not a tool the session can reach.
+        expect((await call('eval', { code: '1' })).isError).toBe(true)
+        expect(toolRequests(browser)).toEqual(['create_shape'])
+      }
+    )
+  })
+
+  test('other sessions do not get call_mcp_tool', async () => {
+    await withAgentClient({ [MCP_AGENT_HEADER]: 'acp' }, async (client) => {
+      const { tools } = await client.listTools()
+      expect(tools.map((tool) => tool.name)).not.toContain('call_mcp_tool')
+    })
   })
 
   test("an ACP chat's tool call names the chat and the call's id in it", async () => {

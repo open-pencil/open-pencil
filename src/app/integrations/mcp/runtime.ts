@@ -2,6 +2,7 @@ import type { McpServer } from '@agentclientprotocol/sdk'
 
 import {
   MCP_AGENT_HEADER,
+  MCP_CALL_TOOL_HEADER,
   MCP_CHAT_HEADER,
   OPEN_PENCIL_MCP_SERVER
 } from '@open-pencil/core/constants'
@@ -17,6 +18,8 @@ export type BuiltInMCPServerOptions = {
   authorizationToken: string | null
   /** The chat the agent works for, so the app sees when that agent reaches its tools. */
   chat?: string
+  /** Whether the agent needs the server's `call_mcp_tool`; see `ACPAgentDef.defersMCPTools`. */
+  callTool?: boolean
 }
 
 export function builtInMCPServer(options: BuiltInMCPServerOptions): McpServer {
@@ -28,6 +31,7 @@ export function builtInMCPServer(options: BuiltInMCPServerOptions): McpServer {
     headers: [
       { name: MCP_AGENT_HEADER, value: 'acp' },
       ...(options.chat ? [{ name: MCP_CHAT_HEADER, value: options.chat }] : []),
+      ...(options.callTool ? [{ name: MCP_CALL_TOOL_HEADER, value: '1' }] : []),
       ...(options.authorizationToken
         ? [{ name: 'Authorization', value: `Bearer ${options.authorizationToken}` }]
         : [])

@@ -25,7 +25,7 @@ export {
   type ToolInterface,
   type ToolExposure
 } from './schema'
-export { toolNumber } from './schema'
+export { toolNumber, toolNumberSchema } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type {
   ToolLogEntry,

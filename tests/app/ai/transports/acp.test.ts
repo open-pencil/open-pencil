@@ -67,6 +67,7 @@ function fakeAgents({
   let kills = 0
   let spawns = 0
   const searchPaths: (string | null | undefined)[] = []
+  const callTools: boolean[] = []
   const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
@@ -158,14 +159,17 @@ function fakeAgents({
     },
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
-    linkTools: async () => ({
-      chat: 'chat',
-      mcpServers: [],
-      meta: OWN_TOOLS_ALLOWED,
-      noteUpdate: () => undefined,
-      outcome: async () => ({ connected: true }),
-      stop: () => undefined
-    })
+    linkTools: async (_token, linkOptions) => {
+      callTools.push(linkOptions?.callTool ?? false)
+      return {
+        chat: 'chat',
+        mcpServers: [],
+        meta: OWN_TOOLS_ALLOWED,
+        noteUpdate: () => undefined,
+        outcome: async () => ({ connected: true }),
+        stop: () => undefined
+      }
+    }
   }
   return {
     startup,
@@ -178,6 +182,7 @@ function fakeAgents({
     spawns: () => spawns,
     searchPaths,
     cwds,
+    callTools,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -245,6 +250,21 @@ test('the agent starts in its workspace with the PATH its lookup searched', asyn
   expect(agents.cwds).toEqual(['/agent-workspace'])
   expect(agents.created[0]?.cwd).toBe('/agent-workspace')
   await chat.destroy()
+})
+
+test('an agent that defers MCP tools gets the server’s call_mcp_tool, others do not', async () => {
+  const antigravity = expectDefined(
+    ACP_AGENTS.find((agent) => agent.defersMCPTools),
+    'an agent that defers MCP tools'
+  )
+  const agents = fakeAgents()
+  const { transport: deferring } = transport(agents, { agentDef: antigravity })
+  await send(deferring, 'first')
+  await deferring.destroy()
+  const { transport: plain } = transport(agents)
+  await send(plain, 'first')
+  await plain.destroy()
+  expect(agents.callTools).toEqual([true, false])
 })
 
 test('a saved session resumes without the instructions or the transcript', async () => {

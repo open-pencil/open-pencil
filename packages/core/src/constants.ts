@@ -190,6 +190,12 @@ export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
  */
 export const MCP_CHAT_HEADER = 'x-openpencil-chat'
 
+/**
+ * Request header an app chat sends, set to `1`, for an agent that calls deferred MCP tools through
+ * a `call_mcp_tool` tool it does not provide itself, so the server provides it for the session.
+ */
+export const MCP_CALL_TOOL_HEADER = 'x-openpencil-call-tool'
+
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [

@@ -13,6 +13,9 @@ import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import { graphOf } from '#core/figma-api/graph'
 
+/** The number each `toolNumber` input takes, by the union that also takes a numeric string. */
+const toolNumberSchemas = new WeakMap<v.GenericSchema, v.GenericSchema>()
+
 export type ToolCapability =
   | 'document:read'
   | 'document:write'
@@ -188,7 +191,7 @@ export const positionInputs = {
 export function toolNumber(schema: v.GenericSchema<number, number> = v.number()) {
   // JSON Schema numbers are finite. Express that with representable bounds as well as at runtime.
   const finite = v.pipe(schema, v.minValue(-Number.MAX_VALUE), v.maxValue(Number.MAX_VALUE))
-  return v.union([
+  const input = v.union([
     finite,
     v.pipe(
       v.string(),
@@ -198,4 +201,14 @@ export function toolNumber(schema: v.GenericSchema<number, number> = v.number())
       finite
     )
   ])
+  toolNumberSchemas.set(input, finite)
+  return input
+}
+
+/**
+ * The number a `toolNumber` input takes, without the numeric string it also accepts, for
+ * describing the input to clients in less space; `undefined` for any other schema.
+ */
+export function toolNumberSchema(schema: v.GenericSchema): v.GenericSchema | undefined {
+  return toolNumberSchemas.get(schema)
 }

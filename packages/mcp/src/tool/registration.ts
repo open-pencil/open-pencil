@@ -2,13 +2,13 @@ import { Buffer } from 'node:buffer'
 import { resolve } from 'node:path'
 
 import type {
+  CallToolResult,
+  InputRequiredResult,
   McpServer,
   ToolCallback,
   ToolAnnotations,
   ServerContext
 } from '@modelcontextprotocol/server'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
 import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
@@ -20,18 +20,19 @@ import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
+import { toolInputSchema } from '#mcp/tool/schema'
 import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
 
 export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 export type MCPToolSettled = (context: ServerContext) => Promise<void>
 
+/**
+ * The document and page a call targets when not the active ones. Every tool takes them, so they
+ * carry no description: their names say it, and list_documents gives the IDs.
+ */
 const automationTargetSchema = {
-  document_id: v.optional(
-    v.pipe(v.string(), v.description('Optional OpenPencil document/tab ID to target'))
-  ),
-  page_id: v.optional(
-    v.pipe(v.string(), v.description('Optional page ID to target within the document'))
-  )
+  document_id: v.optional(v.string()),
+  page_id: v.optional(v.string())
 }
 
 function splitAutomationTarget(args: Record<string, unknown>): {
@@ -76,6 +77,8 @@ export interface MCPAgentSession {
   kind: MCPAgentKind
   /** The app chat the session belongs to, from its `x-openpencil-chat` header. */
   chat?: string
+  /** Whether the session gets `call_mcp_tool`, from its `x-openpencil-call-tool` header. */
+  callTool?: boolean
 }
 
 export interface RegisterToolsOptions {
@@ -123,19 +126,24 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
+  const callable = new Map<string, CallableTool>()
   const register = <InputArgs extends v.GenericSchema>(
     name: string,
     toolOptions: { description?: string; inputSchema: InputArgs },
-    handler: ToolCallback<ReturnType<typeof toStandardJSONSchema<InputArgs>>>
+    handler: ToolCallback<ReturnType<typeof toolInputSchema<InputArgs>>>
   ) => {
     const descriptor = descriptors.get(name)
     if (!descriptor) throw new Error(`Missing MCP tool descriptor for "${name}"`)
     if (!isToolEnabled(descriptor, policy)) return
+    callable.set(name, {
+      input: toolOptions.inputSchema,
+      run: async (args, context) => handler(args, context)
+    })
     mcpServer.registerTool(
       name,
       {
         description: toolOptions.description ?? descriptor.description,
-        inputSchema: toStandardJSONSchema(toolOptions.inputSchema),
+        inputSchema: toolInputSchema(toolOptions.inputSchema),
         annotations: toolAnnotations(descriptor.effect),
         _meta: { 'openpencil/capabilities': descriptor.capabilities }
       },
@@ -506,5 +514,56 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       inputSchema: v.strictObject({})
     },
     async () => ok({ prompt: CODEGEN_PROMPT })
+  )
+
+  if (agentSession?.callTool) registerCallTool(mcpServer, callable, options.onToolSettled)
+}
+
+/** A registered tool as `call_mcp_tool` runs it: its input, and its handler. */
+interface CallableTool {
+  input: v.GenericSchema
+  run: (args: unknown, context: ServerContext) => Promise<CallToolResult | InputRequiredResult>
+}
+
+const callToolInputSchema = v.strictObject({
+  toolName: v.pipe(v.string(), v.description('The OpenPencil tool, such as create_shape')),
+  arguments: v.optional(
+    v.pipe(v.record(v.string(), v.unknown()), v.description('The arguments its schema describes'))
+  )
+})
+
+/**
+ * Antigravity CLI holds back the tools past its schema budget and tells its model to call them
+ * through `call_mcp_tool`, which it does not provide over ACP; this is that tool. It runs only the
+ * tools this session registered, after checking the arguments as a direct call would.
+ */
+function registerCallTool(
+  mcpServer: McpServer,
+  callable: ReadonlyMap<string, CallableTool>,
+  onToolSettled: MCPToolSettled | undefined
+): void {
+  mcpServer.registerTool(
+    'call_mcp_tool',
+    {
+      description:
+        'Call an OpenPencil tool by name, with the arguments its schema describes. Use it for the OpenPencil tools that are not loaded as functions.',
+      inputSchema: toolInputSchema(callToolInputSchema),
+      annotations: toolAnnotations('write')
+    },
+    async ({ toolName, arguments: args = {} }, context) => {
+      try {
+        const tool = callable.get(toolName)
+        if (!tool) return fail(new Error(`No OpenPencil tool named "${toolName}"`))
+        const parsed = v.safeParse(tool.input, args)
+        if (!parsed.success) {
+          return fail(
+            new Error(`Invalid arguments for ${toolName}:\n${v.summarize(parsed.issues)}`)
+          )
+        }
+        return await tool.run(parsed.output, context)
+      } finally {
+        await onToolSettled?.(context)
+      }
+    }
   )
 }
