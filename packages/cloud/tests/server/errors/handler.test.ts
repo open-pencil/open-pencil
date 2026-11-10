@@ -1,6 +1,7 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
 import { cloudErrorHandler, type CloudErrorContext } from '#cloud/server/errors'
+import { cloudRequestId } from '#cloud/server/logging'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
@@ -39,6 +40,41 @@ describe('Cloud error handler', () => {
         route: '/api/documents/:id'
       })
       expect(logged).toHaveBeenCalledTimes(1)
+    } finally {
+      logged.mockRestore()
+    }
+  })
+
+  test('names the request by its ray ID in the log line, the report, and the response', async () => {
+    const logged = spyOn(console, 'error').mockImplementation(() => undefined)
+    const reported: Reported[] = []
+    try {
+      const app = new Hono()
+        .onError(
+          cloudErrorHandler(async (error, context) => {
+            reported.push({ error, context })
+          })
+        )
+        .use('*', cloudRequestId)
+        .get('/api/documents/:id', () => {
+          throw failure
+        })
+      const ray = '8f1e2d3c4b5a6978-FRA'
+      const response = await app.request('/api/documents/secret-id', {
+        headers: { 'cf-ray': ray }
+      })
+      expect(response.status).toBe(500)
+      expect(response.headers.get('X-Request-Id')).toBe(ray)
+      expect(reported[0]?.context.requestId).toBe(ray)
+      const [line] = logged.mock.calls[0] ?? []
+      expect(typeof line === 'string' ? JSON.parse(line) : line).toMatchObject({
+        level: 'error',
+        message: 'Request failed',
+        source: 'request',
+        route: '/api/documents/:id',
+        requestId: ray,
+        error: { name: 'Error', message: 'database unavailable' }
+      })
     } finally {
       logged.mockRestore()
     }

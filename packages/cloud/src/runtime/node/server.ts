@@ -58,7 +58,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
   try {
     return await startConfiguredServer(config, environment, options, reportError)
   } catch (error) {
-    await reportCloudError(reportError, 'Starting the server failed:', error, { source: 'setup' })
+    await reportCloudError(reportError, 'Starting the server failed', error, { source: 'setup' })
     throw error
   }
 }
@@ -98,7 +98,7 @@ async function startConfiguredServer(
           ...cleanupPassOptions(config),
           intervalMs: config.cleanupIntervalMs,
           onError: (error) =>
-            void reportCloudError(reportError, 'Cleanup worker failed:', error, {
+            void reportCloudError(reportError, 'Cleanup worker failed', error, {
               source: 'cleanup'
             })
         }
@@ -135,7 +135,7 @@ async function startConfiguredServer(
         leaseDurationMs: config.emailLeaseDurationMs,
         maximumAttempts: config.emailMaximumAttempts,
         onError: (error) =>
-          void reportCloudError(reportError, 'Email worker failed:', error, { source: 'email' })
+          void reportCloudError(reportError, 'Email worker failed', error, { source: 'email' })
       })
     : undefined
   const cloudServer = createCloudServer(app, {

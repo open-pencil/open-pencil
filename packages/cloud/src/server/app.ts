@@ -45,6 +45,7 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import { cloudErrorHandler, type CloudErrorReporter } from '#cloud/server/errors'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import { cloudRequestId } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
@@ -343,6 +344,7 @@ export function createCloudApp(services: CloudServices) {
 
   return new Hono<CloudEnvironment>()
     .onError(cloudErrorHandler(services.reportError))
+    .use('*', cloudRequestId)
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .use(

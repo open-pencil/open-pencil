@@ -1,3 +1,4 @@
+import { logCloud, loggedError, requestIdOf } from '#cloud/server/logging'
 import type { Context, ErrorHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { routePath } from 'hono/route'
@@ -18,7 +19,7 @@ export type CloudErrorSource = (typeof CLOUD_ERROR_SOURCES)[number]
 
 /**
  * What the server knows about a caught error; never who made the request or what it carried. For a
- * request: its method and the route pattern it matched, not the path with its IDs.
+ * request: its method, the route pattern it matched (not the path with its IDs), and its ID.
  */
 export type CloudErrorContext = ErrorReportContext<CloudErrorSource>
 
@@ -28,19 +29,30 @@ export type CloudErrorContext = ErrorReportContext<CloudErrorSource>
  */
 export type CloudErrorReporter = ErrorReporter<CloudErrorSource>
 
-/** Logs a caught error and reports it, when the deployment reports errors. */
+/** Logs a caught error as a structured line and reports it, when the deployment reports errors. */
 export function reportCloudError(
   reporter: CloudErrorReporter | undefined,
   message: string,
   error: unknown,
   context: CloudErrorContext
 ): Promise<void> {
-  console.error(`[Cloud] ${message}`, error)
+  logCloud('error', message, {
+    source: context.source,
+    method: context.method,
+    route: context.route,
+    requestId: context.requestId,
+    error: loggedError(error)
+  })
   return reporter ? reporter(error, context) : Promise.resolve()
 }
 
 function requestContext(context: Context): CloudErrorContext {
-  return { source: 'request', method: context.req.method, route: routePath(context) }
+  return {
+    source: 'request',
+    method: context.req.method,
+    route: routePath(context),
+    requestId: requestIdOf(context)
+  }
 }
 
 /**
@@ -50,7 +62,7 @@ function requestContext(context: Context): CloudErrorContext {
 export function cloudErrorHandler(reporter: CloudErrorReporter | undefined): ErrorHandler {
   return (error, context) => {
     if (error instanceof HTTPException) return error.getResponse()
-    void reportCloudError(reporter, 'Request failed:', error, requestContext(context))
+    void reportCloudError(reporter, 'Request failed', error, requestContext(context))
     return context.text('Internal Server Error', 500)
   }
 }

@@ -240,7 +240,7 @@ export function createRevisionCompactionService(
         result.bytesReclaimed += images.bytes
       } catch (error) {
         result.failed++
-        await report('Releasing unused images failed:', error)
+        await report('Releasing unused images failed', error)
       }
       await sweepObjects(now, input.batchSize, result)
       return result
