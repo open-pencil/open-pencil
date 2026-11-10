@@ -593,7 +593,7 @@ describe('renderJSX (string → scene graph)', () => {
 
     expect(result.warnings).toEqual([
       'Unsupported option "colour" in dropShadow() is ignored. Supported options: color, x, y, offset, radius, spread, visible, blendMode, showShadowBehindNode.',
-      'Unsupported option "amount" in backgroundBlur() is ignored. Supported options: radius, visible.'
+      'Unsupported option "amount" in backgroundBlur() is ignored. Supported options: radius, visible, startRadius, startOffset, endOffset.'
     ])
   })
 
