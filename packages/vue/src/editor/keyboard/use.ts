@@ -51,13 +51,13 @@ export interface EditorKeyboardOptions {
  */
 export function useEditorKeyboard(options: EditorKeyboardOptions = {}) {
   const editor = useEditor()
-  const { runCommand, setOpacityTarget } = useEditorCommands()
+  const { runCommand } = useEditorCommands()
   const overlays = useOpenOverlays()
   const activeElement = useActiveElement({ triggerOnRemoval: true })
   const inputFocused = computed(() => isInputElement(activeElement.value))
   const active = () => toValue(options.active ?? true)
 
-  const actions = createEditorKeyActions({ editor, runCommand, setOpacityTarget })
+  const actions = createEditorKeyActions({ editor, runCommand })
   const spaceHand = bindSpaceHandTool(inputFocused, editor, active)
   bindNudgeKeys(editor, overlays, (event) => !active() || !!options.ignore?.(event))
 

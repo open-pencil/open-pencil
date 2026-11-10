@@ -17,7 +17,6 @@
   "bringToFront": "置于顶层",
   "sendToBack": "置于底层",
   "moveToPage": "移动到页面",
-  "setOpacity": "设置不透明度",
   "zoomTo50": "缩放到 50%",
   "zoomTo100": "缩放到 100%",
   "zoomTo200": "缩放到 200%",

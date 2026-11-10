@@ -9,15 +9,10 @@ type EditorCommands = ReturnType<typeof useEditorCommands>
 export interface EditorKeyActionsOptions {
   editor: Editor
   runCommand: EditorCommands['runCommand']
-  setOpacityTarget: EditorCommands['setOpacityTarget']
 }
 
 /** What the editor's keys do beyond running one command: Delete, Enter, Escape, Shift+A, digits. */
-export function createEditorKeyActions({
-  editor,
-  runCommand,
-  setOpacityTarget
-}: EditorKeyActionsOptions) {
+export function createEditorKeyActions({ editor, runCommand }: EditorKeyActionsOptions) {
   function hasNodeEditSelection() {
     return (
       editor.state.nodeEditState &&
@@ -127,8 +122,7 @@ export function createEditorKeyActions({
     }
     opacityBuffer += digit
     if (opacityBuffer.length > 3) opacityBuffer = opacityBuffer.slice(-3)
-    setOpacityTarget(opacityFromBuffer(opacityBuffer), opacityCoalesceKey)
-    runCommand('selection.setOpacity')
+    editor.setOpacity(opacityFromBuffer(opacityBuffer), opacityCoalesceKey)
     clearTimeout(opacityResetTimer)
     opacityResetTimer = setTimeout(resetOpacityBuffer, 800)
   }

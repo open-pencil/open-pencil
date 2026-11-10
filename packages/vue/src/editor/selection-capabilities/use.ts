@@ -73,7 +73,6 @@ export function useSelectionCapabilities() {
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
     canCreateSlot: selection.canCreateSlot,
     canMoveToPage: useSceneComputed(() => hasSelection.value && editor.graph.getPages().length > 1),
-    canSetOpacity: computed(() => hasSelection.value),
     canSelectAll: useSceneComputed(
       () => editor.graph.getChildren(editor.state.currentPageId).length > 0
     ),
