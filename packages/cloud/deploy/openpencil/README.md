@@ -103,9 +103,12 @@ To restore the database to an earlier time:
    that long to move a busy room's object onto the new version.
 2. Create a Neon branch at the time before the damage, check it, and restore the production branch
    from it in the Neon console. Hyperdrive keeps the same connection.
-3. Bring back the files the restored rows name that cleanup deleted since: for each `object_key` in
-   `storage_object` missing from the bucket, copy `deleted/<object_key>` back to `<object_key>`
-   (any S3 client against the bucket's endpoint). Files deleted more than 14 days ago are gone.
+3. Bring back the files the restored database uses that cleanup deleted since: for each file a
+   revision (`document_revision`), an image (`workspace_image`, `revision_image`), or a room
+   snapshot (`document_room_snapshot`) refers to, through its `storage_object` row's `object_key`,
+   that the bucket lacks, copy `deleted/<object_key>` back to `<object_key>` with any S3 client
+   against the bucket's endpoint. Other `storage_object` rows can name files never written, such
+   as a snapshot whose upload failed; skip them. Files deleted more than 14 days ago are gone.
 4. Put production back: run Deploy Cloud again from the same tag without maintenance. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
    migration, deploys without the maintenance variable, and checks the pages answer.

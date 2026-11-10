@@ -77,8 +77,8 @@ checksum_verification = "metadata"
 maximum_upload_bytes = 1073741824
 # Keep each file cleanup deletes under this prefix, and expire the prefix with a lifecycle rule
 # longer than the database's restore window. After restoring the database to an earlier time, copy
-# deleted/<key> back to <key> for each file it names that is missing, before serving it. Useful
-# where the bucket keeps no versions, as on R2.
+# deleted/<key> back to <key> for each missing file a revision, image, or room snapshot refers to,
+# before serving it. Useful where the bucket keeps no versions, as on R2.
 # deleted_prefix = "deleted/"
 
 [collaboration]
