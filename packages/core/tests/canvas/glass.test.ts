@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
+import type { Image, Shader } from '@open-pencil/canvaskit'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
@@ -10,8 +11,13 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
-import { type GlassGeometryMap, glassGeometryMap } from '#core/canvas/glass/map'
+import {
+  createGlassMapCache,
+  type GlassGeometryMap,
+  glassGeometryMap
+} from '#core/canvas/glass/map'
 import type { GlassOutline } from '#core/canvas/glass/shader'
 
 const ck = await getCanvasKit()
@@ -283,6 +289,24 @@ describe('glass geometry map', () => {
     } finally {
       renderer.surface.makeSurface = make
     }
+  })
+
+  test('keeps no more than four of the largest maps, releasing the oldest', () => {
+    const cache = createGlassMapCache()
+    const released: string[] = []
+    const largest = (name: string): GlassGeometryMap => ({
+      image: asDouble<Image>({
+        width: () => 2048,
+        height: () => 2048,
+        delete: () => released.push(`${name} image`)
+      }),
+      shader: asDouble<Shader>({ delete: () => released.push(`${name} shader`) }),
+      origin: [0, 0],
+      scale: 1
+    })
+    for (const name of ['a', 'b', 'c', 'd', 'e']) cache.set(name, largest(name))
+    expect(cache.size).toBe(4)
+    expect(released).toEqual(['a shader', 'a image'])
   })
 
   test('is not drawn for a box, which the shaders compute exactly', () => {

@@ -17,6 +17,12 @@ const MAX_MAP_SIDE = 2048
 /** Maps kept between frames: one per glass layer and zoom step, a few spare. */
 const MAX_CACHED_MAPS = 32
 
+/**
+ * Pixel memory the kept maps may hold together: four of the largest, at 8 bytes a half-float
+ * pixel, so many large glass outlines or zoom steps evict maps rather than grow without bound.
+ */
+const MAX_CACHED_MAP_BYTES = 4 * MAX_MAP_SIDE * MAX_MAP_SIDE * 8
+
 /** A geometry map both glass shaders read, and where it lies in the layer. */
 export interface GlassGeometryMap {
   image: Image
@@ -32,6 +38,8 @@ export type GlassMapCache = ResourceCache<string, GlassGeometryMap>
 export function createGlassMapCache(): GlassMapCache {
   return new ResourceCache({
     maxEntries: MAX_CACHED_MAPS,
+    maxWeight: MAX_CACHED_MAP_BYTES,
+    weight: (map) => map.image.width() * map.image.height() * 8,
     dispose: (map) => {
       map.shader.delete()
       map.image.delete()
@@ -113,7 +121,11 @@ export function glassGeometryMap(
       r.ck.MipmapMode.None
     )
     const map: GlassGeometryMap = { image, shader, origin, scale }
-    r.glassMaps.set(key, map)
+    // A map the cache cannot hold is released, and the shaders walk the outline instead.
+    if (!r.glassMaps.set(key, map)) {
+      shader.delete()
+      return null
+    }
     // The cache owns the image now.
     image = null
     return map
