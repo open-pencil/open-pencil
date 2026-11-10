@@ -23,7 +23,8 @@ The values in `production/` marked "Replace" and these settings outside the repo
   `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
   rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev` with any request header
   (uploads send `Content-Type` and `x-amz-meta-openpencil-sha256`) and expose `ETag`, which
-  multipart uploads read for each part.
+  multipart uploads read for each part. Its `expire-deleted` lifecycle rule removes what
+  `deleted_prefix` keeps after 14 days, longer than the database's restore window.
 - A Hyperdrive over the database's pooled connection with query caching off, since a cached read
   can miss the write just before it. Its ID goes in `production/wrangler.jsonc`.
 - Google's OAuth client allowing `https://cloud.openpencil.dev/api/auth/callback/google`, Email
@@ -86,7 +87,9 @@ What holds what:
   Cleanup deletes the ones no row holds: a room's older snapshot when it compacts, and a deleted
   document's files. A document left in Trash goes after 30 days; one deleted forever goes
   `purge_grace_days` (7) later, and until then administrators restore it from the console's
-  "Deleted forever" filter. R2 keeps no versions, so a file cleanup deleted is gone.
+  "Deleted forever" filter. R2 keeps no versions, so the store copies each file it deletes under
+  `deleted/` first (`deleted_prefix`), where the bucket's `expire-deleted` rule removes it after 14
+  days on production and 7 on staging.
 - **Rooms' Durable Objects:** an open room's document in memory, which they write back to the
   database and bucket.
 
@@ -100,8 +103,9 @@ To restore the database to an earlier time:
    that long to move a busy room's object onto the new version.
 2. Create a Neon branch at the time before the damage, check it, and restore the production branch
    from it in the Neon console. Hyperdrive keeps the same connection.
-3. Files the restored rows name that cleanup deleted since are gone; list them by the `object_key`
-   of their `storage_object` rows, and the documents holding them will not open.
+3. Bring back the files the restored rows name that cleanup deleted since: for each `object_key` in
+   `storage_object` missing from the bucket, copy `deleted/<object_key>` back to `<object_key>`
+   (any S3 client against the bucket's endpoint). Files deleted more than 14 days ago are gone.
 4. Put production back: run Deploy Cloud again from the same tag without maintenance. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
    migration, deploys without the maintenance variable, and checks the pages answer.
@@ -116,5 +120,6 @@ Once a quarter, and after changing the database's provider or plan:
    `src/server/db/migrate.ts` that production has run.
 3. Point a local Cloud at the branch and the production bucket with read-only keys, sign in, and
    open a document saved before the branch's time.
-4. Delete the branch, and note the date, the time the restore took, and anything that failed in the
+4. Check that a file cleanup deleted since then, if any, is under `deleted/`.
+5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.

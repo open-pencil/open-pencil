@@ -1,2 +1,3 @@
 - Cloud answers every HTTP request with an `X-Request-Id` (Cloudflare's ray ID behind Cloudflare) and logs errors as structured lines carrying it, as its PostHog reports do.
 - On Cloudflare, `createCloudflareCloud(config, { relayJurisdiction: 'eu' })` runs collaboration rooms' Durable Objects in the EU; their updates and snapshots stay where the database and bucket are, so keeping data in the EU needs both there too.
+- Cloud's `[object_storage] deleted_prefix` keeps each file cleanup deletes under that prefix, for a lifecycle rule to expire, so a database restored to an earlier time still finds its files on buckets without versioning, such as R2.

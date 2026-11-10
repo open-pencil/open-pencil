@@ -41,6 +41,9 @@ region = "auto"
 bucket = "openpencil-cloud"
 force_path_style = false
 checksum_verification = "metadata"
+# R2 keeps no versions: a file cleanup deletes stays here until the bucket's expire-deleted rule
+# removes it after 14 days, longer than the database's restore window.
+deleted_prefix = "deleted/"
 
 [documents]
 retention_days = 30

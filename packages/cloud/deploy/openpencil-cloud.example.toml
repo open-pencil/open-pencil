@@ -75,6 +75,10 @@ force_path_style = true
 checksum_verification = "metadata"
 # Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
 maximum_upload_bytes = 1073741824
+# Keep each file cleanup deletes under this prefix, so a database restored to an earlier time still
+# finds it, and expire the prefix with a lifecycle rule longer than the database's restore window.
+# Useful where the bucket keeps no versions, as on R2.
+# deleted_prefix = "deleted/"
 
 [collaboration]
 # One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.

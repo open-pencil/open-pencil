@@ -40,6 +40,8 @@ region = "auto"
 bucket = "openpencil-cloud-staging"
 force_path_style = false
 checksum_verification = "metadata"
+# Kept until the bucket's expire-deleted rule removes them after 7 days.
+deleted_prefix = "deleted/"
 
 [documents]
 retention_days = 30
