@@ -225,17 +225,58 @@ describe('glass geometry map', () => {
   })
 
   test('gives way to walking the outline where no half-float surface can be made', () => {
-    const effect = glass({ depth: 30, lightIntensity: 1 })
-    const pixels = (read: (x: number, y: number) => number) =>
-      Array.from({ length: 256 * 256 }, (_, i) => read(i % 256, Math.floor(i / 256)))
-    const mapped = pixels(render(columns, { type: 'ELLIPSE', effects: [effect] }))
+    // A small frame: walking the outline at every pixel is what the map saves.
+    const reds = () => {
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0].id
+      const frame = graph.createNode('FRAME', page, { width: 64, height: 64, fills: [] })
+      for (let x = 0; x < 64; x++) {
+        graph.createNode('RECTANGLE', frame.id, {
+          x,
+          width: 1,
+          height: 64,
+          fills: [solid((x * 4) / 255, 0, 0)]
+        })
+      }
+      graph.createNode('ELLIPSE', frame.id, {
+        x: 8,
+        y: 8,
+        width: 48,
+        height: 48,
+        fills: [],
+        effects: [glass({ depth: 12, lightIntensity: 1 })]
+      })
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page, [frame.id], {
+          scale: 1,
+          format: 'PNG',
+          trimTransparent: false
+        })
+      )
+      const image = expectDefined(ck.MakeImageFromEncoded(png))
+      try {
+        const pixels = expectDefined(
+          image.readPixels(0, 0, {
+            width: 64,
+            height: 64,
+            alphaType: ck.AlphaType.Unpremul,
+            colorType: ck.ColorType.RGBA_8888,
+            colorSpace: ck.ColorSpace.SRGB
+          })
+        )
+        return Array.from({ length: 64 * 64 }, (_, i) => pixels[i * 4])
+      } finally {
+        image.delete()
+      }
+    }
+    const mapped = reds()
     const make = renderer.surface.makeSurface.bind(renderer.surface)
     renderer.surface.makeSurface = (info) =>
       info.colorType === ck.ColorType.RGBA_F16 ? null : make(info)
     try {
-      const walked = pixels(render(columns, { type: 'ELLIPSE', effects: [effect] }))
-      // Refraction still moves the backdrop: a pixel's red is no longer its own x.
-      expect(walked.some((red, i) => i % 256 > 40 && i % 256 < 216 && red !== i % 256)).toBe(true)
+      const walked = reds()
+      // Refraction still moves the backdrop: a pixel's red is no longer its column's.
+      expect(walked.some((red, i) => i % 64 > 12 && i % 64 < 52 && red !== (i % 64) * 4)).toBe(true)
       const mean =
         walked.reduce((sum, red, i) => sum + Math.abs(red - mapped[i]), 0) / walked.length
       expect(mean).toBeLessThan(0.5)
