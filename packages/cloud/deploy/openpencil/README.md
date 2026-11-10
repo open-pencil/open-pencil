@@ -38,13 +38,22 @@ a deployment never changes its jurisdiction while rooms are open.
 
 ## Deploying
 
-Staging first, then production, from the same tag:
+Staging deploys master whenever it needs to:
 
 ```sh
 gh workflow run deploy-cloud.yml --ref master -f target=staging
+```
+
+A release goes to staging first, and to production only once that run succeeded. `gh workflow run`
+does not wait, so watch the staging run to its end before starting production:
+
+```sh
 gh workflow run deploy-cloud.yml --ref v0.18.0 -f target=staging
+gh run watch --exit-status "$(gh run list --workflow deploy-cloud.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
 gh workflow run deploy-cloud.yml --ref v0.18.0 -f target=production
 ```
+
+The environment's reviewers approve each run before it starts.
 
 The workflow uploads the Worker's source maps, migrates the database over its direct connection,
 deploys the Worker, and checks that `/health`, `/ready`, and the pages answer 200.
