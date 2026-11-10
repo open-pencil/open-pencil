@@ -40,7 +40,7 @@ Connectors between the layers are found automatically. A section given with all 
           'radial',
           'network'
         ]),
-        v.description('How to arrange them (default: spread)')
+        v.description('How to arrange them')
       ),
       'spread'
     ),

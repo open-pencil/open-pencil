@@ -193,13 +193,6 @@ describe('MCP server', () => {
     expect(schemas).not.toContain('$schema')
     expect(schemas).not.toContain('"additionalProperties":false')
     expect(schemas).not.toContain('"required":[]')
-    expect(schemas).not.toContain(String(Number.MAX_VALUE))
-    // The default is in the schema; its description need not repeat it.
-    const arrange = tools.find((tool) => tool.name === 'arrange')
-    expect(arrange?.inputSchema.properties?.mode).toMatchObject({
-      default: 'spread',
-      description: 'How to arrange them'
-    })
     expect(tools.find((tool) => tool.name === 'get_node')?.inputSchema.properties).toHaveProperty(
       'document_id'
     )

@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
+import { toolJSONSchema } from '@open-pencil/core/tools'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
@@ -39,7 +38,7 @@ describe('create_shape', () => {
 
   test('names every supported node type in the tool description', () => {
     const tool = getTool('create_shape')
-    const property = toJSONSchema(tool.input, { typeMode: 'input' }).properties?.type
+    const property = toolJSONSchema(tool.input, { typeMode: 'input' }).properties?.type
     const supportedTypes = v.parse(
       v.array(v.string()),
       typeof property === 'object' ? property.enum : undefined

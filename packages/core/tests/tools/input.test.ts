@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
-import { toolNumber } from '@open-pencil/core/tools'
+import { toolNumber, toolStandardJSONSchema } from '@open-pencil/core/tools'
 
 import { getTool, setupToolTest } from '#core-tests/helpers/tools'
 describe('native tool input contracts', () => {
@@ -24,7 +22,7 @@ describe('native tool input contracts', () => {
     '\t\n'
   ])('rejects non-finite or invalid numeric input %s', async (value) => {
     expect(v.safeParse(schema, { value }).success).toBe(false)
-    const standard = toStandardJSONSchema(schema)
+    const standard = toolStandardJSONSchema(schema)
     expect((await standard['~standard'].validate({ value })).issues).toBeDefined()
   })
 
@@ -36,7 +34,7 @@ describe('native tool input contracts', () => {
   })
 
   test('JSON Schema advertises canonical numeric bounds and the string compatibility input', () => {
-    const standard = toStandardJSONSchema(schema)
+    const standard = toolStandardJSONSchema(schema)
     expect(standard['~standard'].jsonSchema.input({ target: 'draft-07' })).toMatchObject({
       properties: {
         value: { anyOf: [{ type: 'number', minimum: 0, maximum: 100 }, { type: 'string' }] }
@@ -80,14 +78,14 @@ describe('native tool input contracts', () => {
     const input = getTool(name).input
     expect(v.safeParse(input, { ...base, ids: ['one'] }).success).toBe(false)
     expect(v.safeParse(input, { ...base, ids: ['one', 'two'] }).success).toBe(true)
-    const standard = toStandardJSONSchema(input)
+    const standard = toolStandardJSONSchema(input)
     expect(standard['~standard'].jsonSchema.input({ target: 'draft-07' })).toMatchObject({
       properties: { ids: { minItems: 2 } }
     })
   })
 
   test('font weight bounds also appear in the generated schema', () => {
-    const standard = toStandardJSONSchema(getTool('update_node').input)
+    const standard = toolStandardJSONSchema(getTool('update_node').input)
     expect(standard['~standard'].jsonSchema.input({ target: 'draft-07' })).toMatchObject({
       properties: { font_weight: { anyOf: [{ minimum: 100, maximum: 900 }, { type: 'string' }] } }
     })

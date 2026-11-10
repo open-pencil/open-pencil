@@ -100,13 +100,10 @@ export const importDesignTokens = defineTool({
       v.description('Token files, each with its path (folders name collections) and JSON text')
     ),
     add_missing: v.optional(
-      v.pipe(v.boolean(), v.description('Add tokens that match no variable (default true)')),
+      v.pipe(v.boolean(), v.description('Add tokens that match no variable')),
       true
     ),
-    styles: v.optional(
-      v.pipe(v.boolean(), v.description('Make text and effect styles (default true)')),
-      true
-    )
+    styles: v.optional(v.pipe(v.boolean(), v.description('Make text and effect styles')), true)
   }),
   execute: async (figma, args) => {
     const tokens = await import('#core/io/formats/design-tokens')
