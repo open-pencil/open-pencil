@@ -229,23 +229,25 @@ export function renderGlassRefraction(
   const glass = glassParams(effect)
   const depth = glassDepth(glass.depth, node.width, node.height)
   const outline = glassOutline(r, node, shape)
+  const refraction = compiledProgram(r.ck, r.shaders, GLASS_REFRACTION)
+  // Drawing the map may fail; nothing else is made until it has.
+  const inputs = shapeInputs(r, canvas, node, outline, depth)
   const sigma = glassBackdropSigma(effect)
   const blur = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
-  const refraction = compiledProgram(r.ck, r.shaders, GLASS_REFRACTION)
-  const inputs = shapeInputs(r, canvas, node, outline, depth)
-  const filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
-    refraction.effect,
-    refraction.uniforms({
-      ...glassGeometryUniforms(outline, depth),
-      ...inputs.uniforms,
-      refraction: glass.refraction,
-      dispersion: glass.dispersion
-    }),
-    { backdrop: blur },
-    glassSampleRadius(node, effect),
-    { geometryMap: inputs.map }
-  )
+  let filter: ImageFilter | null = null
   try {
+    filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
+      refraction.effect,
+      refraction.uniforms({
+        ...glassGeometryUniforms(outline, depth),
+        ...inputs.uniforms,
+        refraction: glass.refraction,
+        dispersion: glass.dispersion
+      }),
+      { backdrop: blur },
+      glassSampleRadius(node, effect),
+      { geometryMap: inputs.map }
+    )
     if (filter) filterBackdrop(r, canvas, node, filter, shape)
   } finally {
     filter?.delete()
@@ -268,19 +270,20 @@ export function renderGlassLight(
   const outline = glassOutline(r, node, shape)
   const light = compiledProgram(r.ck, r.shaders, GLASS_LIGHT)
   const inputs = shapeInputs(r, canvas, node, outline, depth)
-  const filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
-    light.effect,
-    light.uniforms({
-      ...glassGeometryUniforms(outline, depth),
-      ...inputs.uniforms,
-      axis: glassLightAxis(glass.lightAngle),
-      intensity: glass.lightIntensity
-    }),
-    { backdrop: null },
-    1,
-    { geometryMap: inputs.map }
-  )
+  let filter: ImageFilter | null = null
   try {
+    filter = r.ck.ImageFilter.MakeRuntimeShaderWithInputs(
+      light.effect,
+      light.uniforms({
+        ...glassGeometryUniforms(outline, depth),
+        ...inputs.uniforms,
+        axis: glassLightAxis(glass.lightAngle),
+        intensity: glass.lightIntensity
+      }),
+      { backdrop: null },
+      1,
+      { geometryMap: inputs.map }
+    )
     if (filter) filterBackdrop(r, canvas, node, filter, shape)
   } finally {
     filter?.delete()

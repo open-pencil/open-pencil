@@ -224,6 +224,26 @@ describe('glass geometry map', () => {
     surface.delete()
   })
 
+  test('gives way to walking the outline where no half-float surface can be made', () => {
+    const effect = glass({ depth: 30, lightIntensity: 1 })
+    const pixels = (read: (x: number, y: number) => number) =>
+      Array.from({ length: 256 * 256 }, (_, i) => read(i % 256, Math.floor(i / 256)))
+    const mapped = pixels(render(columns, { type: 'ELLIPSE', effects: [effect] }))
+    const make = renderer.surface.makeSurface.bind(renderer.surface)
+    renderer.surface.makeSurface = (info) =>
+      info.colorType === ck.ColorType.RGBA_F16 ? null : make(info)
+    try {
+      const walked = pixels(render(columns, { type: 'ELLIPSE', effects: [effect] }))
+      // Refraction still moves the backdrop: a pixel's red is no longer its own x.
+      expect(walked.some((red, i) => i % 256 > 40 && i % 256 < 216 && red !== i % 256)).toBe(true)
+      const mean =
+        walked.reduce((sum, red, i) => sum + Math.abs(red - mapped[i]), 0) / walked.length
+      expect(mean).toBeLessThan(0.5)
+    } finally {
+      renderer.surface.makeSurface = make
+    }
+  })
+
   test('is not drawn for a box, which the shaders compute exactly', () => {
     const surface = expectDefined(ck.MakeSurface(8, 8), 'surface')
     expect(

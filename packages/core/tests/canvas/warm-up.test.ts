@@ -6,6 +6,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { GLASS_GEOMETRY_MAP } from '#core/canvas/glass/shader'
 import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 
 const ck = await getCanvasKit()
@@ -72,6 +73,9 @@ describe('effect program warm-up', () => {
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     expect(renderer.effectProgramsWarm).toBe(true)
     expect(made.count).toBe(1)
+    // Glass over an ellipse draws its geometry map, so that program is built too.
+    expect(renderer.shaders.programs.has(GLASS_GEOMETRY_MAP)).toBe(true)
+    expect(renderer.glassMaps.size).toBeGreaterThan(0)
     // Warm, it never draws again, on this page or another.
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     const other = pageWith([glass])

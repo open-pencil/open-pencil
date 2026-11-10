@@ -440,8 +440,11 @@ export class SkiaRenderer {
       }
     } else {
       this.tiledScene.destroy()
-      // Live textures belong to the old surface's context, so they go before it does.
+      // Live textures belong to the old surface's context, so they go before it does, as do glass
+      // geometry maps and the node pictures that may have recorded them.
       releaseLiveImages(this)
+      this.glassMaps.clear()
+      this.invalidateAllPictures()
     }
     this.surface.delete()
     this.surface = surface
