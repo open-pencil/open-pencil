@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
+import {
+  type ClassVisitor,
+  visitScript,
+  visitTemplateBinding
+} from '#lint/support/class-sources.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import {
   VUE_DIRECTIVE_NODE,
@@ -9,8 +14,8 @@ import {
   vueTemplateAst,
   walkVueTemplateAst
 } from '#lint/support/vue.ts'
+import type { TemplateLiteral } from '@oxc-project/types'
 import { defineRule } from '@oxlint/plugins'
-import type { ESTree } from '@oxlint/plugins'
 import { __unstable__loadDesignSystem } from '@tailwindcss/node'
 import { compact } from 'es-toolkit/array'
 
@@ -97,96 +102,45 @@ function classNames(text: string): string[] {
   return compact(text.split(/\s+/))
 }
 
-const CLASS_KEYS = new Set(['class', 'className'])
-
-/**
- * The class strings in a `:class` binding's source: array items and object keys, and values only
- * under `class`, since other keys pass arguments such as a variant (`menu({ justify: 'start' })`).
- */
-function boundClassStrings(expression: string): string[] {
-  const strings = /(?:([\w$]+)\s*:\s*)?(?:'([^']*)'|"([^"]*)"|`([^`$]*)`)/g
-  return [...expression.matchAll(strings)].flatMap(([, key, ...quoted]) =>
-    key && !CLASS_KEYS.has(key) ? [] : [quoted.find((text) => text !== undefined) ?? '']
-  )
+function isThemeModule(file: string): boolean {
+  return file.startsWith('src/theme/') || file.includes('/src/theme/')
 }
 
 /**
- * The class strings in a `:ui` binding: every slot's value is a class list. Strings stand in a
- * value's place (after `:`, `[`, `,`, `?`, `&&`, or `||`), so a compared value such as
- * `align === 'text-left'` is not one; a template literal counts by the text around its
- * interpolations.
+ * Every class list Tailwind reads in a file: in its script (`visitScript`), and in a Vue file the
+ * template's `class` attributes and `:class` and `:ui` bindings, handed to `templateText`
+ * without positions, since oxlint holds only the script's.
  */
-function uiClassStrings(expression: string): string[] {
-  const value = /(?<=(?:[:[,?]|&&|\|\|)\s*)(?:'([^']*)'|"([^"]*)"|`((?:[^`\\]|\\.)*)`)/g
-  return [...expression.matchAll(value)].map(([, single, double, template]) =>
-    template === undefined ? (single ?? double ?? '') : template.replaceAll(/\$\{[^}]*\}/g, ' ')
-  )
-}
-
-function propertyKey(node: ESTree.Node): string | null {
-  if (node.type !== 'Property') return null
-  if (node.key.type === 'Identifier') return node.key.name
-  return node.key.type === 'Literal' && typeof node.key.value === 'string' ? node.key.value : null
-}
-
-/**
- * Whether a property's value counts as a class list only under `class`: in a `compoundVariants`
- * entry, whose other keys are conditions, and in a call of what `tv` returns, whose other keys
- * are variants: `tv(theme)({ size, class: [...] })`.
- */
-function isSelectedOnlyByKey(property: ESTree.Node, value: ESTree.Node): boolean {
-  if (property.type !== 'Property' || property.value !== value) return false
-  const entry = property.parent
-  if (entry?.type !== 'ObjectExpression') return false
-  const holder = entry.parent
-  if (holder?.type === 'ArrayExpression')
-    return propertyKey(holder.parent ?? entry) === 'compoundVariants'
-  return (
-    holder?.type === 'CallExpression' &&
-    holder.callee.type === 'CallExpression' &&
-    isClassHelperCall(holder)
-  )
-}
-
-/**
- * Whether a string is a class list, following tailwind-variants: `defaultVariants` and the
- * conditions of `compoundVariants` entries select variants, and their `class` holds classes.
- * Type literals and module paths are not classes either.
- */
-function isClassString(node: ESTree.Node): boolean {
-  let child: ESTree.Node = node
-  for (let parent = node.parent; parent; child = parent, parent = parent.parent) {
-    if (parent.type === 'TSLiteralType') return false
-    if (
-      (parent.type === 'ImportDeclaration' ||
-        parent.type === 'ExportNamedDeclaration' ||
-        parent.type === 'ExportAllDeclaration') &&
-      parent.source === child
-    )
-      return false
-    const key = propertyKey(parent)
-    if (key === 'defaultVariants') return false
-    if (key !== null && isSelectedOnlyByKey(parent, child)) return CLASS_KEYS.has(key)
-  }
-  return true
-}
-
-const CLASS_HELPERS = new Set(['tv', 'twMerge', 'twJoin'])
-
-/** A class helper call, or a call of what `tv` returns: `tv(theme)({ class: [...] })`. */
-function isClassHelperCall(node: ESTree.CallExpression): boolean {
-  const { callee } = node
-  if (callee.type === 'CallExpression') return isClassHelperCall(callee)
-  return callee.type === 'Identifier' && CLASS_HELPERS.has(callee.name)
+function visitClassSources(
+  file: string,
+  source: string,
+  script: ClassVisitor,
+  templateText: (text: string) => void
+): void {
+  visitScript(source, file, isThemeModule(file), script)
+  if (!isVueSourceFile(file)) return
+  const template = vueTemplateAst(source, file)
+  if (!template) return
+  const binding: ClassVisitor = { text: ({ text }) => templateText(text) }
+  walkVueTemplateAst(template, (templateNode) => {
+    if (templateNode.type !== VUE_ELEMENT_NODE) return
+    for (const prop of templateNode.props) {
+      if (prop.type !== VUE_DIRECTIVE_NODE) {
+        if (prop.name === 'class' && prop.value) templateText(prop.value.content)
+        continue
+      }
+      const arg = prop.arg?.type === 4 ? prop.arg.content : null
+      const expression = prop.exp?.type === 4 ? prop.exp.content : null
+      if (prop.name === 'bind' && (arg === 'class' || arg === 'ui') && expression)
+        visitTemplateBinding(arg, expression, binding)
+    }
+  })
 }
 
 /** Why a class is a problem for a rule, or null; `theme` builds the file's classes. */
 type ClassCheck = (theme: Theme, className: string, file: string) => string | null
 
-/**
- * A rule over every class Tailwind reads: Vue class attributes and bindings, `tv`, `twMerge` and
- * `twJoin` calls, and theme modules under `src/theme/`.
- */
+/** A rule over every class Tailwind reads in a file (`visitClassSources`). */
 function defineClassRule(description: string, problemFor: ClassCheck) {
   return defineRule({
     meta: { type: 'problem', docs: { description } },
@@ -194,55 +148,29 @@ function defineClassRule(description: string, problemFor: ClassCheck) {
       const file = normalizedFilename(context)
       const theme = themeFor(file)
       if (!theme) return {}
-      const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
-
-      const check = (node: ESTree.Node, text: string) => {
-        for (const className of classNames(text)) {
-          const problem = problemFor(theme, className, file)
-          if (problem) context.report({ node, message: `Tailwind class: ${problem}.` })
-        }
-      }
-
-      function checkStrings(node: ESTree.Node) {
-        if (!isClassString(node)) return
-        if (node.type === 'Literal' && typeof node.value === 'string') check(node, node.value)
-        else if (node.type === 'TemplateLiteral')
-          for (const quasi of node.quasis) check(node, quasi.value.cooked ?? quasi.value.raw)
-      }
-
-      let helperDepth = 0
+      const { sourceCode } = context
+      const problems = (text: string) =>
+        compact(classNames(text).map((className) => problemFor(theme, className, file)))
       return {
-        Program(node) {
-          if (!isVueSourceFile(file)) return
-          const template = vueTemplateAst(context.sourceCode.getText(), file)
-          if (!template) return
-          walkVueTemplateAst(template, (templateNode) => {
-            if (templateNode.type !== VUE_ELEMENT_NODE) return
-            for (const prop of templateNode.props) {
-              if (prop.type !== VUE_DIRECTIVE_NODE) {
-                if (prop.name === 'class' && prop.value) check(node, prop.value.content)
-                continue
+        Program(program) {
+          visitClassSources(
+            file,
+            sourceCode.getText(),
+            {
+              text({ text, start, end }) {
+                const loc = {
+                  start: sourceCode.getLocFromIndex(start),
+                  end: sourceCode.getLocFromIndex(end)
+                }
+                for (const problem of problems(text))
+                  context.report({ loc, message: `Tailwind class: ${problem}.` })
               }
-              const arg = prop.arg?.type === 4 ? prop.arg.content : null
-              const expression = prop.exp?.type === 4 ? prop.exp.content : null
-              if (prop.name === 'bind' && arg === 'class' && expression)
-                for (const text of boundClassStrings(expression)) check(node, text)
-              if (prop.name === 'bind' && arg === 'ui' && expression)
-                for (const text of uiClassStrings(expression)) check(node, text)
+            },
+            (text) => {
+              for (const problem of problems(text))
+                context.report({ node: program, message: `Tailwind class: ${problem}.` })
             }
-          })
-        },
-        CallExpression(node) {
-          if (isClassHelperCall(node)) helperDepth++
-        },
-        'CallExpression:exit'(node: ESTree.CallExpression) {
-          if (isClassHelperCall(node)) helperDepth--
-        },
-        Literal(node) {
-          if (themeModule || helperDepth > 0) checkStrings(node)
-        },
-        TemplateLiteral(node) {
-          if (themeModule || helperDepth > 0) checkStrings(node)
+          )
         }
       }
     }
@@ -314,29 +242,20 @@ export const noInterpolatedTailwindClassesRule = defineRule({
     docs: { description: 'Require class lists composed from shared classes to be arrays.' }
   },
   create(context) {
+    const report = (literal: TemplateLiteral) =>
+      context.report({
+        loc: {
+          start: context.sourceCode.getLocFromIndex(literal.start),
+          end: context.sourceCode.getLocFromIndex(literal.end)
+        },
+        message:
+          "Compose Tailwind classes as an array, such as `['size-3.5', motionStyles.spinner]`, not by interpolating into a string."
+      })
+    const visitor: ClassVisitor = { interpolated: report }
     const file = normalizedFilename(context)
-    const themeModule = file.startsWith('src/theme/') || file.includes('/src/theme/')
-    // Whether each enclosing call is a class helper, innermost last. Arguments to other calls,
-    // such as the CSS values a theme module hands `EditorView.theme`, are not class lists.
-    const calls: boolean[] = []
     return {
-      CallExpression(node) {
-        calls.push(isClassHelperCall(node))
-      },
-      'CallExpression:exit'() {
-        calls.pop()
-      },
-      TemplateLiteral(node) {
-        const innermost = calls.at(-1)
-        if (innermost === false || (innermost === undefined && !themeModule)) return
-        if (node.expressions.length === 0 || node.parent?.type === 'TaggedTemplateExpression')
-          return
-        if (!isClassString(node)) return
-        context.report({
-          node,
-          message:
-            "Compose Tailwind classes as an array, such as `['size-3.5', motionStyles.spinner]`, not by interpolating into a string."
-        })
+      Program() {
+        visitScript(context.sourceCode.getText(), file, isThemeModule(file), visitor)
       }
     }
   }
