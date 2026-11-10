@@ -8,7 +8,8 @@ import type theme from '@/theme/paint/field'
 export type PaintFieldUI = ComponentUI<typeof theme>
 
 export interface PaintFieldProps {
-  opacity: number
+  /** The paint's opacity, 0 to 1; without it the field has no opacity input. */
+  opacity?: number
   opacityLabel: string
   class?: ClassValue
   ui?: PaintFieldUI
@@ -46,8 +47,13 @@ const styles = computed(() => tv(paintFieldTheme)())
     <div :class="styles.value({ class: ui?.value })" data-slot="value">
       <slot name="value" />
     </div>
-    <div :class="styles.divider({ class: ui?.divider })" data-slot="divider" />
+    <div
+      v-if="opacity !== undefined"
+      :class="styles.divider({ class: ui?.divider })"
+      data-slot="divider"
+    />
     <NumberField
+      v-if="opacity !== undefined"
       :inherit-binding="false"
       :class="styles.opacity({ class: ui?.opacity })"
       :aria-label="opacityLabel"

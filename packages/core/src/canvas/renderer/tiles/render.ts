@@ -13,9 +13,40 @@ import { rendererNow } from '#core/canvas/renderer/clock'
 
 import type { CachedTile } from './cache'
 import type { TileCostModel } from './cost'
-import { TILE_DEVICE_SIZE, type TileKey, tileWorldBounds } from './geometry'
+import { TILE_DEVICE_SIZE, type TileKey, type TileWorldBounds, tileWorldBounds } from './geometry'
 import type { TileJobResult } from './scheduler'
-import type { TileSurfacePool } from './surface-pool'
+import { makeTileSurface, type TileSurfacePool } from './surface-pool'
+
+/** The most device pixels a tile renders around itself for the backdrop effects drawn in it. */
+const MAX_BACKDROP_MARGIN = 512
+
+/** What a tile draws: the chunks over its region, and how far that region extends past it. */
+export interface TileRegion {
+  bounds: TileWorldBounds
+  /** Device pixels the region extends past the tile on every side. */
+  margin: number
+  chunks: RenderChunk[]
+}
+
+/**
+ * What `key`'s tile draws. Glass and background blur read the canvas around what they draw, so
+ * a tile they draw into also renders the chunks within their reach of it, and keeps the middle.
+ */
+export function tileRegion(index: RenderChunkIndex, key: TileKey): TileRegion {
+  const bounds = tileWorldBounds(key)
+  const chunks = index.search(bounds)
+  const reach = chunks.reduce((farthest, chunk) => Math.max(farthest, chunk.backdropReach), 0)
+  if (reach === 0) return { bounds, margin: 0, chunks }
+  const margin = Math.min(MAX_BACKDROP_MARGIN, Math.ceil(reach * key.level))
+  const extra = margin / key.level
+  const region = {
+    minX: bounds.minX - extra,
+    minY: bounds.minY - extra,
+    maxX: bounds.maxX + extra,
+    maxY: bounds.maxY + extra
+  }
+  return { bounds: region, margin, chunks: index.search(region) }
+}
 
 export interface RenderedTile {
   key: TileKey
@@ -50,11 +81,13 @@ export function renderTile(
   surfacePool: TileSurfacePool
 ): RenderedTile | null {
   const startedAt = rendererNow()
-  const bounds = tileWorldBounds(key)
-  const chunks = index.search(bounds)
+  const { bounds, margin, chunks } = tileRegion(index, key)
   if (chunks.length === 0) return emptyTile(key, rendererNow() - startedAt)
   const allocationStartedAt = rendererNow()
-  const surface = surfacePool.acquire(renderer)
+  const surface =
+    margin > 0
+      ? makeTileSurface(renderer, TILE_DEVICE_SIZE + 2 * margin)
+      : surfacePool.acquire(renderer)
   if (!surface) return null
   const allocationMs = rendererNow() - allocationStartedAt
   const canvas = surface.getCanvas()
@@ -94,7 +127,15 @@ export function renderTile(
     surface.flush()
     const flushMs = rendererNow() - flushStartedAt
     const snapshotStartedAt = rendererNow()
-    const image = surface.makeImageSnapshot()
+    const image =
+      margin > 0
+        ? surface.makeImageSnapshot([
+            margin,
+            margin,
+            margin + TILE_DEVICE_SIZE,
+            margin + TILE_DEVICE_SIZE
+          ])
+        : surface.makeImageSnapshot()
     const snapshotMs = rendererNow() - snapshotStartedAt
     return {
       key,
@@ -110,7 +151,8 @@ export function renderTile(
   } finally {
     canvas.restore()
     renderer.images.detailScale = previousDetail
-    surfacePool.release(surface)
+    if (margin > 0) surface.delete()
+    else surfacePool.release(surface)
   }
 }
 
@@ -228,7 +270,7 @@ export function deleteRenderedTile(tile: RenderedTile): void {
 }
 
 export function tileChunks(index: RenderChunkIndex, key: TileKey): RenderChunk[] {
-  return index.search(tileWorldBounds(key))
+  return tileRegion(index, key).chunks
 }
 
 /**

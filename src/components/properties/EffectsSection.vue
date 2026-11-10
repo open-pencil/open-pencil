@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Effect, Fill } from '@open-pencil/scene-graph'
+import type { Effect, Fill, GlassEffectParams } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
+import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { EffectBindingProperty } from '@open-pencil/scene-graph/variables'
 import {
@@ -16,6 +17,7 @@ import {
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
+import PaintField from '@/components/inputs/PaintField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import {
   commitDiscretePropertyListChange,
@@ -31,8 +33,10 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
+import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels, common } = useI18n()
@@ -62,6 +66,20 @@ function updateEffectColor(
   update: () => void
 ) {
   if (applyPaintMutation(binding, flush, update)) commitPaintMutation(binding)
+}
+
+/** `effect` with one glass value changed, the rest kept. */
+function glassChange<K extends keyof GlassEffectParams>(
+  effect: Effect,
+  key: K,
+  value: GlassEffectParams[K]
+): Partial<Effect> {
+  return { glass: { ...(effect.glass ?? UNSET_GLASS), [key]: value } }
+}
+
+/** A percentage field's value as Figma's 0–1 glass amount. */
+function fraction(percent: number): number {
+  return Math.max(0, Math.min(1, percent / 100))
 }
 
 function effectPreview(effect: Effect): Fill {
@@ -153,14 +171,19 @@ function effectPreview(effect: Effect): Fill {
                     :fill="effectPreview(effect)"
                     class="size-full border-0"
                   />
-                  <icon-lucide-blend v-else class="size-3 text-muted" />
+                  <icon-lucide-gem v-else-if="effect.type === 'GLASS'" class="size-3 text-muted" />
+                  <icon-lucide-layers-2
+                    v-else-if="effect.type === 'BACKGROUND_BLUR'"
+                    class="size-3 text-muted"
+                  />
+                  <icon-lucide-droplets v-else class="size-3 text-muted" />
                 </button>
               </Tip>
 
               <AppSelect
                 class="min-w-0 flex-1"
                 :model-value="effect.type"
-                :options="effectsCtx.effectOptions"
+                :options="effectsCtx.effectOptionsFor(items, index)"
                 :label="panels.effects"
                 data-property="effect-type"
                 @update:model-value="
@@ -176,7 +199,7 @@ function effectPreview(effect: Effect): Fill {
           class="flex flex-col gap-1.5 py-2"
           data-slot="effect-settings"
         >
-          <PanelFieldGroup :label="panels.blendMode">
+          <PanelFieldGroup v-if="effectsCtx.isShadow(effect.type)" :label="panels.blendMode">
             <AppSelect
               :model-value="effect.blendMode ?? 'NORMAL'"
               :groups="blendModeGroups"
@@ -190,8 +213,8 @@ function effectPreview(effect: Effect): Fill {
             />
           </PanelFieldGroup>
           <template v-if="effectsCtx.isShadow(effect.type)">
-            <div class="flex items-center gap-1.5">
-              <Tip :label="panels.xAxis">
+            <PanelFieldGroup :label="panels.position">
+              <PanelGrid :columns="2">
                 <VariableNumberField
                   icon="X"
                   :aria-label="panels.xAxis"
@@ -200,18 +223,12 @@ function effectPreview(effect: Effect): Fill {
                   :node-ids="selectedNodeIds"
                   :binding-path="`effects/${index}/offsetX`"
                   @update:model-value="
-                    effectsCtx.scrubEffect(index, {
-                      offset: { ...effect.offset, x: $event }
-                    })
+                    effectsCtx.scrubEffect(index, { offset: { ...effect.offset, x: $event } })
                   "
                   @commit="
-                    effectsCtx.commitEffect(index, {
-                      offset: { ...effect.offset, x: $event }
-                    })
+                    effectsCtx.commitEffect(index, { offset: { ...effect.offset, x: $event } })
                   "
                 />
-              </Tip>
-              <Tip :label="panels.yAxis">
                 <VariableNumberField
                   icon="Y"
                   :aria-label="panels.yAxis"
@@ -220,24 +237,19 @@ function effectPreview(effect: Effect): Fill {
                   :node-ids="selectedNodeIds"
                   :binding-path="`effects/${index}/offsetY`"
                   @update:model-value="
-                    effectsCtx.scrubEffect(index, {
-                      offset: { ...effect.offset, y: $event }
-                    })
+                    effectsCtx.scrubEffect(index, { offset: { ...effect.offset, y: $event } })
                   "
                   @commit="
-                    effectsCtx.commitEffect(index, {
-                      offset: { ...effect.offset, y: $event }
-                    })
+                    effectsCtx.commitEffect(index, { offset: { ...effect.offset, y: $event } })
                   "
                 />
-              </Tip>
-            </div>
+              </PanelGrid>
+            </PanelFieldGroup>
 
-            <div class="flex items-center gap-1.5">
-              <Tip :label="panels.radius">
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.blur">
                 <VariableNumberField
-                  icon="B"
-                  :aria-label="panels.radius"
+                  :aria-label="panels.blur"
                   :model-value="effect.radius"
                   :min="0"
                   :node-id="selectedNodeIds[0] ?? ''"
@@ -245,11 +257,12 @@ function effectPreview(effect: Effect): Fill {
                   :binding-path="`effects/${index}/radius`"
                   @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
                   @commit="effectsCtx.commitEffect(index, { radius: $event })"
-                />
-              </Tip>
-              <Tip :label="panels.spread">
+                >
+                  <template #icon><icon-lucide-droplet class="size-3" /></template>
+                </VariableNumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.spread">
                 <VariableNumberField
-                  icon="S"
                   :aria-label="panels.spread"
                   :model-value="effect.spread"
                   :node-id="selectedNodeIds[0] ?? ''"
@@ -257,9 +270,11 @@ function effectPreview(effect: Effect): Fill {
                   :binding-path="`effects/${index}/spread`"
                   @update:model-value="effectsCtx.scrubEffect(index, { spread: $event })"
                   @commit="effectsCtx.commitEffect(index, { spread: $event })"
-                />
-              </Tip>
-            </div>
+                >
+                  <template #icon><icon-lucide-expand class="size-3" /></template>
+                </VariableNumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
 
             <BindableValueRoot
               v-slot="binding"
@@ -268,83 +283,226 @@ function effectPreview(effect: Effect): Fill {
               :value="effect.color"
               batch-label="Change effect color"
             >
-              <div class="flex items-center gap-1.5" data-property="effect-color">
-                <ColorPicker
-                  :color="binding.resolvedValue ?? effect.color"
-                  @update="
-                    updateEffectColor(binding.actions, flush, () =>
-                      effectsCtx.updateColor(actions.patch, index, $event)
-                    )
-                  "
-                />
-                <PaintValue
-                  :color="effect.color"
-                  :resolved-color="binding.resolvedValue"
-                  :variable-name="binding.variable?.name ?? binding.bindingId"
-                  :unavailable-label="
-                    binding.state === 'unresolved' ? panels.unresolvedVariable : undefined
-                  "
-                  :label="panels.effectColor"
-                  @update="
-                    updateEffectColor(binding.actions, flush, () =>
-                      effectsCtx.updateColor(actions.patch, index, $event)
-                    )
-                  "
-                />
+              <PanelFieldGroup :label="panels.effectColor">
                 <!-- A bound colour takes its opacity from the variable, as in Figma. -->
-                <Tip
-                  v-if="!binding.variable && binding.state !== 'unresolved'"
-                  :label="panels.opacity"
-                >
-                  <NumberField
-                    class="w-14"
-                    suffix="%"
-                    :inherit-binding="false"
-                    :aria-label="panels.opacity"
-                    :model-value="Math.round(effect.color.a * 100)"
-                    :min="0"
-                    :max="100"
-                    data-property="effect-opacity"
-                    @update:model-value="
-                      effectsCtx.scrubEffect(index, {
-                        color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                      })
-                    "
-                    @commit="
-                      effectsCtx.commitEffect(index, {
-                        color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                      })
-                    "
-                  />
-                </Tip>
-                <VariableBindingPicker
-                  :trigger-label="panels.applyVariable"
-                  :search-placeholder="common.search"
-                  :empty-label="panels.noVariablesFound"
-                  :detach-label="panels.detachVariable"
-                  :create-label="
-                    panels.createColorVariable({ value: `#${colorToHexRaw(effect.color)}` })
+                <PaintField
+                  class="w-full flex-none"
+                  data-property="effect-color"
+                  :opacity="
+                    binding.variable || binding.state === 'unresolved' ? undefined : effect.color.a
                   "
-                  :create-name-placeholder="panels.variableName"
-                  :create-submit-label="panels.create"
-                />
-              </div>
+                  :opacity-label="panels.opacity"
+                  @update:opacity="
+                    effectsCtx.updateColor(actions.patch, index, { ...effect.color, a: $event })
+                  "
+                >
+                  <template #preview>
+                    <ColorPicker
+                      :color="binding.resolvedValue ?? effect.color"
+                      @update="
+                        updateEffectColor(binding.actions, flush, () =>
+                          effectsCtx.updateColor(actions.patch, index, $event)
+                        )
+                      "
+                    />
+                  </template>
+                  <template #value>
+                    <PaintValue
+                      :color="effect.color"
+                      :resolved-color="binding.resolvedValue"
+                      :variable-name="binding.variable?.name ?? binding.bindingId"
+                      :unavailable-label="
+                        binding.state === 'unresolved' ? panels.unresolvedVariable : undefined
+                      "
+                      :label="panels.effectColor"
+                      @update="
+                        updateEffectColor(binding.actions, flush, () =>
+                          effectsCtx.updateColor(actions.patch, index, $event)
+                        )
+                      "
+                    />
+                  </template>
+                  <template #binding>
+                    <VariableBindingPicker
+                      :trigger-label="panels.applyVariable"
+                      :search-placeholder="common.search"
+                      :empty-label="panels.noVariablesFound"
+                      :detach-label="panels.detachVariable"
+                      :create-label="
+                        panels.createColorVariable({ value: `#${colorToHexRaw(effect.color)}` })
+                      "
+                      :create-name-placeholder="panels.variableName"
+                      :create-submit-label="panels.create"
+                    />
+                  </template>
+                </PaintField>
+              </PanelFieldGroup>
             </BindableValueRoot>
+
+            <label
+              v-if="effect.type === 'DROP_SHADOW'"
+              class="flex cursor-pointer items-center gap-2 text-xs text-surface"
+            >
+              <AppCheckbox
+                :model-value="effect.showShadowBehindNode !== false"
+                :ariaLabel="panels.showShadowBehind"
+                data-property="effect-show-behind"
+                @update:model-value="
+                  effectsCtx.commitEffect(index, { showShadowBehindNode: $event })
+                "
+              />
+              {{ panels.showShadowBehind }}
+            </label>
           </template>
 
-          <VariableNumberField
-            v-else
-            class="w-24 flex-none"
-            icon="B"
-            :aria-label="panels.radius"
-            :model-value="effect.radius"
-            :min="0"
-            :node-id="selectedNodeIds[0] ?? ''"
-            :node-ids="selectedNodeIds"
-            :binding-path="`effects/${index}/radius`"
-            @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
-            @commit="effectsCtx.commitEffect(index, { radius: $event })"
-          />
+          <template v-else-if="effect.type === 'GLASS'">
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassLightAngle">
+                <NumberField
+                  suffix="°"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassLightAngle"
+                  :model-value="(effect.glass ?? UNSET_GLASS).lightAngle"
+                  data-property="glass-light-angle"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(index, glassChange(effect, 'lightAngle', $event))
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(index, glassChange(effect, 'lightAngle', $event))
+                  "
+                >
+                  <template #icon><icon-lucide-rotate-cw class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassLightIntensity">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassLightIntensity"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).lightIntensity * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-light-intensity"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'lightIntensity', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'lightIntensity', fraction($event))
+                    )
+                  "
+                >
+                  <template #icon><icon-lucide-sun class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassRefraction">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassRefraction"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).refraction * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-refraction"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'refraction', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'refraction', fraction($event))
+                    )
+                  "
+                >
+                  <template #icon><icon-lucide-waves class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassDepth">
+                <NumberField
+                  :inherit-binding="false"
+                  :aria-label="panels.glassDepth"
+                  :model-value="(effect.glass ?? UNSET_GLASS).depth"
+                  :min="1"
+                  :max="100"
+                  data-property="glass-depth"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(index, glassChange(effect, 'depth', $event))
+                  "
+                  @commit="effectsCtx.commitEffect(index, glassChange(effect, 'depth', $event))"
+                >
+                  <template #icon><icon-lucide-arrow-down-to-line class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+            <PanelGrid :columns="2">
+              <PanelFieldGroup :label="panels.glassDispersion">
+                <NumberField
+                  suffix="%"
+                  :inherit-binding="false"
+                  :aria-label="panels.glassDispersion"
+                  :model-value="Math.round((effect.glass ?? UNSET_GLASS).dispersion * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="glass-dispersion"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(
+                      index,
+                      glassChange(effect, 'dispersion', fraction($event))
+                    )
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(
+                      index,
+                      glassChange(effect, 'dispersion', fraction($event))
+                    )
+                  "
+                >
+                  <template #icon><icon-lucide-rainbow class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="panels.glassFrost">
+                <VariableNumberField
+                  :aria-label="panels.glassFrost"
+                  :model-value="effect.radius"
+                  :min="0"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/radius`"
+                  data-property="glass-frost"
+                  @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+                  @commit="effectsCtx.commitEffect(index, { radius: $event })"
+                >
+                  <template #icon><icon-lucide-snowflake class="size-3" /></template>
+                </VariableNumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+          </template>
+
+          <PanelGrid v-else :columns="2">
+            <PanelFieldGroup :label="panels.blur">
+              <VariableNumberField
+                :aria-label="panels.blur"
+                :model-value="effect.radius"
+                :min="0"
+                :node-id="selectedNodeIds[0] ?? ''"
+                :node-ids="selectedNodeIds"
+                :binding-path="`effects/${index}/radius`"
+                @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+                @commit="effectsCtx.commitEffect(index, { radius: $event })"
+              >
+                <template #icon><icon-lucide-droplet class="size-3" /></template>
+              </VariableNumberField>
+            </PanelFieldGroup>
+          </PanelGrid>
         </div>
       </div>
     </PanelSection>

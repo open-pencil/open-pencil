@@ -1,6 +1,6 @@
 import type { BlendMode, Effect, GlassEffectParams } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import { BLACK, TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { BLACK, DEFAULT_GLASS, TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 export type EffectColor = string | Color
@@ -26,13 +26,6 @@ export interface BlurEffectOptions {
 export type GlassEffectOptions = Partial<GlassEffectParams> & BlurEffectOptions
 
 /** The lens a `glass()` call gets for each value it leaves out. */
-const DEFAULT_GLASS: GlassEffectParams = {
-  refraction: 0.5,
-  depth: 20,
-  lightAngle: -45,
-  lightIntensity: 0.5,
-  dispersion: 0
-}
 
 /** Radius of a shadow or blur that does not set one. */
 const DEFAULT_EFFECT_RADIUS = 8
