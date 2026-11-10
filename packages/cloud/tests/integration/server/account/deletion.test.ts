@@ -114,6 +114,30 @@ describe('account deletion', () => {
           createdBy: bob.userId
         })
         .execute()
+      // A workspace Alice left, where a document she made is still hers through a grant.
+      const elsewhere = await workspace(fixture, 'Elsewhere', bob.userId, [[bob.userId, 'admin']])
+      const grantedDocument = await document(fixture, elsewhere, 'Brief', alice.userId)
+      const revokedDocument = await document(fixture, elsewhere, 'Draft', alice.userId)
+      await fixture.database
+        .insertInto('documentGrant')
+        .values([
+          {
+            id: crypto.randomUUID(),
+            documentId: grantedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId
+          },
+          {
+            id: crypto.randomUUID(),
+            documentId: revokedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId,
+            revokedAt: new Date()
+          }
+        ])
+        .execute()
       const invitation = crypto.randomUUID()
       await fixture.database
         .insertInto('workspaceInvitation')
@@ -141,6 +165,7 @@ describe('account deletion', () => {
         ],
         leaves: [{ id: shared, name: 'Shared' }],
         documents: [
+          { id: grantedDocument, name: 'Brief', workspaceName: 'Elsewhere' },
           { id: sharedDocument, name: 'Plan', workspaceName: 'Shared' },
           { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' }
         ]
