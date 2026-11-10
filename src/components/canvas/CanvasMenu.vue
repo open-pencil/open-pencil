@@ -150,7 +150,7 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <ContextMenuSub v-else-if="item.sub">
             <ContextMenuSubTrigger v-test-id="item.testId" :class="cls.item">
               <span>{{ item.label }}</span>
-              <IconChevronRight class="size-3.5 text-muted" />
+              <IconChevronRight class="size-3.5 text-muted rtl:-scale-x-100" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="cls.submenu">

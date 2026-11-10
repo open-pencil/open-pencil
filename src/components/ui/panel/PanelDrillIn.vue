@@ -56,7 +56,9 @@ function uncover(element: Element) {
       >
         <div v-if="parent" data-slot="header" :class="styles.header({ class: ui?.header })">
           <AppButton variant="ghost" size="sm" @click="emit('back')">
-            <template #leading><icon-lucide-chevron-left class="size-4" /></template>
+            <template #leading
+              ><icon-lucide-chevron-left class="size-4 rtl:-scale-x-100"
+            /></template>
             <span class="sr-only">{{ back }}:</span>
             {{ parent }}
           </AppButton>

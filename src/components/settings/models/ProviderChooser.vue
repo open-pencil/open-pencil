@@ -118,7 +118,7 @@ const groups = computed(() => {
             <AppBadge v-if="setUp.has(choice.id)" :ui="{ base: 'bg-hover text-surface' }">{{
               ai.modelProviderSetUp
             }}</AppBadge>
-            <icon-lucide-chevron-right class="size-3.5" />
+            <icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100" />
           </template>
         </AppActionRow>
       </div>

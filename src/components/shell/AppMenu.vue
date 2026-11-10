@@ -134,7 +134,7 @@ function runChosenAction() {
     <div v-if="!IS_TAURI" class="flex items-center px-1 pb-1">
       <div
         ref="menubar"
-        class="scrollbar-none min-w-0 flex-1 overflow-x-auto data-overflow-end:mask-r-from-[calc(100%-2rem)] data-overflow-start:mask-l-from-[calc(100%-2rem)]"
+        class="scrollbar-none min-w-0 flex-1 overflow-x-auto ltr:data-overflow-end:mask-r-from-[calc(100%-2rem)] ltr:data-overflow-start:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-end:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-start:mask-r-from-[calc(100%-2rem)]"
         :data-overflow-start="overflowStart || undefined"
         :data-overflow-end="overflowEnd || undefined"
       >
@@ -160,7 +160,7 @@ function runChosenAction() {
                     <MenubarSub v-else-if="hasMenuSubItems(item)">
                       <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
                         <span class="flex-1">{{ menuLabel(item) }}</span>
-                        <IconChevronRight class="size-3 text-muted" />
+                        <IconChevronRight class="size-3 text-muted rtl:-scale-x-100" />
                       </MenubarSubTrigger>
                       <MenubarPortal>
                         <MenubarSubContent :side-offset="4" :class="subMenuCls.content">
@@ -238,8 +238,8 @@ function runChosenAction() {
         :data-start="!overflowEnd || undefined"
         @click="scrollTowardHidden"
       >
-        <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
-        <icon-lucide-chevron-left v-else class="size-3.5" />
+        <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5 rtl:-scale-x-100" />
+        <icon-lucide-chevron-left v-else class="size-3.5 rtl:-scale-x-100" />
       </button>
     </div>
   </div>

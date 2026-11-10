@@ -44,7 +44,8 @@ const layerTreeTheme = {
     },
     expanded: {
       true: { disclosure: 'rotate-90' },
-      false: { disclosure: 'rotate-0' }
+      // Closed, it points to the end of the line: right, or left in a mirrored interface.
+      false: { disclosure: 'rotate-0 rtl:rotate-180' }
     },
     actionsVisible: {
       true: {},

@@ -34,7 +34,7 @@ function createFrame(preset: FramePreset) {
         class="flex h-9 w-full items-center gap-1.5 px-3 text-start text-2xs text-surface hover:bg-hover"
       >
         <icon-lucide-chevron-right
-          class="size-3 shrink-0 transition-transform data-[open]:rotate-90"
+          class="size-3 shrink-0 transition-transform data-[open]:rotate-90 rtl:-scale-x-100"
           :data-open="open || undefined"
           aria-hidden="true"
         />

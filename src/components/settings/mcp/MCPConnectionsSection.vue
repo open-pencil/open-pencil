@@ -135,7 +135,7 @@ async function remove() {
               <template #description>{{ item.transport.url }}</template>
               <template #trailing>
                 <span class="text-xs">{{ item.enabled ? common.enabled : common.disabled }}</span>
-                <icon-lucide-chevron-right class="size-3.5" />
+                <icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100" />
               </template>
             </AppActionRow>
           </div>

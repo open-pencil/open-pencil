@@ -27,7 +27,7 @@ const { controls, setValue, setTextValue, flush } = useComponentProperties(() =>
       :data-exposed-instance="name"
     >
       <icon-lucide-chevron-right
-        class="size-3 shrink-0 text-muted transition-transform data-[open]:rotate-90 motion-reduce:transition-none"
+        class="size-3 shrink-0 text-muted transition-transform data-[open]:rotate-90 motion-reduce:transition-none rtl:-scale-x-100"
         :data-open="open || undefined"
         aria-hidden="true"
       />

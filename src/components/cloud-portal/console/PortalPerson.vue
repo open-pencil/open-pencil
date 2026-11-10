@@ -87,7 +87,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 <template>
   <div class="flex max-w-3xl flex-col gap-6">
     <AppButton class="self-start" size="sm" variant="ghost" @click="emit('back')">
-      <template #leading><icon-lucide-arrow-left class="size-3.5" /></template>
+      <template #leading><icon-lucide-arrow-left class="size-3.5 rtl:-scale-x-100" /></template>
       {{ messages.backToPeople }}
     </AppButton>
 

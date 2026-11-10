@@ -36,6 +36,7 @@ import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
 import { BindingPill, VariablePicker } from '@/components/ui/binding'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -301,6 +302,8 @@ function aliasId(modeId: string): string | undefined {
 }
 
 /** The variable button at the end of a mode's value field, which points the value at a variable. */
+const startSide = useInlineSide('start')
+
 function aliasPicker(modeId: string, modeName: string) {
   return {
     items: aliasCandidates,
@@ -312,7 +315,7 @@ function aliasPicker(modeId: string, modeName: string) {
     searchPlaceholder: variables.value.searchVariables,
     emptyLabel: variables.value.noMatchingVariables,
     detachLabel: variables.value.detachVariable,
-    side: 'left' as const,
+    side: startSide.value,
     'data-test-id': 'variables-use-variable',
     onSelect: (id: string) => emit('alias', modeId, id),
     onDetach: () => emit('detach', modeId)

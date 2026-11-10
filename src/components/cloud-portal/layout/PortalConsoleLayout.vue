@@ -113,8 +113,8 @@ watch(
           :data-start="!overflowEnd || undefined"
           @click="scrollTowardHidden"
         >
-          <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
-          <icon-lucide-chevron-left v-else class="size-3.5" />
+          <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5 rtl:-scale-x-100" />
+          <icon-lucide-chevron-left v-else class="size-3.5 rtl:-scale-x-100" />
         </button>
       </div>
       <main :class="ui.main()">
