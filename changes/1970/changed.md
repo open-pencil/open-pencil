@@ -1,0 +1,1 @@
+- Menus inside panel fields, such as a size's Hug, a line height's Auto, and an export's scale, sit beside the variable button in one compact group and show hover, focus, and open states in both themes (#1970).

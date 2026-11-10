@@ -32,15 +32,18 @@ addresses = []
 [authentication.providers.google]
 client_id = { from_env = "GOOGLE_CLIENT_ID" }
 
+# An R2 bucket placed in eastern North America, near the database. Its CORS rules allow GET, PUT,
+# and HEAD from public_url; S3_* are an R2 API token's keys for this bucket alone.
 [object_storage]
-endpoint = "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech"
-region = "us-east-2"
+endpoint = "https://ca633c52af8f8351ed72fb5d12b423f0.r2.cloudflarestorage.com"
+region = "auto"
 bucket = "openpencil-cloud-staging"
-force_path_style = true
+force_path_style = false
 checksum_verification = "metadata"
 
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 # OpenPencil services' staging Worker, which trusts this Cloud's tokens.
 [services]

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SelectTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import { panelNumber } from '@open-pencil/core/geometry'
@@ -11,6 +10,8 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
+import { panelFieldBase } from '@/theme/panel/field/base'
 
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
@@ -39,22 +40,18 @@ function setMode(value: string) {
       <div
         v-if="auto"
         data-test-id="layout-gap-input"
-        class="flex h-6.5 items-center rounded border border-border bg-input focus-within:border-panel-focus"
+        :class="[panelFieldBase, 'flex items-center pe-0.5 text-2xs']"
       >
-        <span class="px-1.25 text-muted">
+        <span class="flex shrink-0 items-center px-1.25 text-muted">
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </span>
-        <span class="min-w-0 flex-1 truncate text-xs text-surface">{{ panels.auto }}</span>
-        <SelectTrigger
+        <span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span>
+        <SelectFieldTrigger
           data-test-id="layout-gap-menu"
-          :aria-label="label"
+          :label="label"
           :reference="anchor ?? undefined"
-          class="flex shrink-0 items-center self-stretch px-1 text-muted"
-          @pointerdown.stop
-        >
-          <icon-lucide-chevron-down class="size-3" />
-        </SelectTrigger>
+        />
       </div>
       <VariableNumberField
         :round="panelNumber"
@@ -73,16 +70,12 @@ function setMode(value: string) {
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </template>
-        <template v-if="allowAuto" #after-variable>
-          <SelectTrigger
+        <template v-if="allowAuto" #menu>
+          <SelectFieldTrigger
             data-test-id="layout-gap-menu"
-            :aria-label="label"
+            :label="label"
             :reference="anchor ?? undefined"
-            class="flex shrink-0 items-center self-stretch px-1 text-muted"
-            @pointerdown.stop
-          >
-            <icon-lucide-chevron-down class="size-3" />
-          </SelectTrigger>
+          />
         </template>
       </VariableNumberField>
     </div>

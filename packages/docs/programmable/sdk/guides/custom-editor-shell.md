@@ -47,7 +47,7 @@ if (!page) throw new Error('Expected an initial page')
 
 const editor = createEditor({
   graph,
-  state: reactive(createDefaultEditorState(page.id)),
+  state: reactive(createDefaultEditorState(page.id))
 })
 provideEditor(editor)
 </script>
@@ -88,9 +88,7 @@ provideEditor(editor)
       </CanvasRoot>
     </main>
 
-    <aside class="border-l">
-      Properties panel here
-    </aside>
+    <aside class="border-l">Properties panel here</aside>
   </div>
 </template>
 ```
@@ -105,11 +103,15 @@ provideEditor(editor)
 import { useEditorKeyboard } from '@open-pencil/vue/editor/keyboard'
 
 useEditorKeyboard({
-  shortcuts: [{ id: 'save', keys: 'Mod+S', run: () => save() }],
-  // Runs once nothing in progress took Escape, before the selection clears; true if handled.
-  onEscape: () => closeOpenPanel()
+  shortcuts: [
+    { id: 'save', keys: 'Mod+S', run: () => save() },
+    // Closes the shell's panel while one is open; otherwise declines, and the editor's Escape runs.
+    { id: 'close-panel', keys: 'Escape', run: () => (panelOpen.value ? closePanel() : false) }
+  ]
 })
 ```
+
+A shell's key on a key the editor uses runs first. Returning `false` declines the key, and the editor's own action runs instead, so a shell takes Escape only while it has something to close, or starts a pen path over before the editor would finish it.
 
 ## Limiting what the editor offers
 
@@ -186,7 +188,7 @@ editor.setMovePolicy(({ node, to }) => (letters.has(node.id) ? { x: to.x, y: nod
 
 It returns where the layer goes, adjusted however the host likes, or `null` to keep it where it is; a drag it refuses changes nothing, not even the frame it was dropped over. It decides moves only: resizing, rotating, and edits through `updateNode` place layers as they say, and the host's own edits (`asHost`) and undo and redo pass it. A front end of its own asks it with `editor.constrainMove(node, changes)`.
 
-`cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `onEscape` and `shortcuts`.
+`cancelGesture()` also puts back a drag in vector edit mode. Escape and other keys go through `useEditorKeyboard`'s `shortcuts`.
 
 ## Why this split works
 

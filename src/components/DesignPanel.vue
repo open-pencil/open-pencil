@@ -105,10 +105,7 @@ const { panels } = useI18n()
 
 <template>
   <!-- Frame tool presets replace selection properties, matching Figma. -->
-  <div
-    v-if="activeTool === 'FRAME'"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
-  >
+  <div v-if="activeTool === 'FRAME'" class="flex-1 overflow-x-hidden overflow-y-auto pb-4">
     <FramePresetsSection />
   </div>
 
@@ -116,7 +113,7 @@ const { panels } = useI18n()
   <div
     v-else-if="multiCount > 1"
     data-test-id="design-panel-multi"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+    class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PanelHeader>
       <template #icon>
@@ -152,7 +149,7 @@ const { panels } = useI18n()
     <div
       v-if="node"
       data-test-id="design-panel-single"
-      class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+      class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
     >
       <PanelHeader :component="isComponentType">
         <template #icon>
@@ -260,7 +257,7 @@ const { panels } = useI18n()
   <div
     v-if="activeTool !== 'FRAME' && multiCount <= 1 && !node"
     data-test-id="design-panel-empty"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+    class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />

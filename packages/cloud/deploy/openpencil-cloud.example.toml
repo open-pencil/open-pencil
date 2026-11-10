@@ -84,9 +84,12 @@ maximum_connections_per_room = 1000
 # URL, such as a separate proxy.
 # relay_url = "wss://relay.example.com/api/collaboration/relay"
 
-# How long deleted documents stay restorable.
+# How long deleted documents stay in Trash, where people can restore them, and how long one deleted
+# forever there keeps its files, out of sight, so a server administrator can still restore it
+# (0 destroys it at once).
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 [email]
 transport = "none"

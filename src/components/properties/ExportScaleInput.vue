@@ -14,6 +14,8 @@ import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import { useSelectFieldTriggerUI } from '@/components/ui/select/field-trigger'
+import { panelFieldBase } from '@/theme/panel/field/base'
 
 interface ExportScaleInputProps {
   presets: readonly number[]
@@ -38,9 +40,12 @@ onDeactivated(() => {
 watch(modelValue, (value) => (text.value = `${value}x`), { immediate: true })
 
 const inputClass = useInputUI({
-  size: 'sm',
-  ui: { base: 'min-w-0 flex-1 rounded-none border-0 bg-transparent focus:border-transparent' }
+  size: 'xs',
+  ui: {
+    base: 'h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-1.5 text-2xs focus:border-transparent focus:ring-0'
+  }
 }).base
+const trigger = useSelectFieldTriggerUI()
 const menuCls = useMenuUI({ content: 'min-w-[7rem]' })
 const itemCls = menuItem({ justify: 'between' })
 
@@ -64,9 +69,7 @@ function isActive(scale: number) {
 
 <template>
   <Tip :label="label" :disabled="!label">
-    <div
-      class="flex min-w-0 flex-1 overflow-hidden rounded border border-border bg-input focus-within:border-panel-focus"
-    >
+    <div :class="[panelFieldBase, 'flex min-w-0 flex-1 items-center overflow-hidden pe-0.5']">
       <input
         ref="inputRef"
         v-model="text"
@@ -85,12 +88,8 @@ function isActive(scale: number) {
       />
       <AppDropdownMenuRoot v-model:open="open">
         <DropdownMenuTrigger as-child>
-          <button
-            type="button"
-            :aria-label="label"
-            class="flex shrink-0 cursor-pointer items-center border-l border-border px-1.5 text-surface hover:bg-hover"
-          >
-            <icon-lucide-chevron-down class="size-3 text-muted" />
+          <button type="button" :aria-label="label" :class="trigger.root">
+            <icon-lucide-chevron-down :class="trigger.chevron" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuPortal v-if="portalActive">

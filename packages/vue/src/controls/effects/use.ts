@@ -5,6 +5,7 @@ import type { Effect } from '@open-pencil/scene-graph'
 import {
   EFFECT_OPTIONS,
   createDefaultEffect,
+  effectOptionsFor,
   createEffectControlActions,
   createEffectEditActions,
   isShadow,
@@ -31,6 +32,7 @@ export function useEffectsControls() {
   return {
     expandedIndex,
     effectOptions: EFFECT_OPTIONS,
+    effectOptionsFor,
     createDefaultEffect,
     isShadow,
     /** Previews a change to one effect on every selected layer. */

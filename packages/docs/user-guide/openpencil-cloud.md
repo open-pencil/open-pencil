@@ -39,9 +39,13 @@ The server emails you when your account is signed in from an address it has neve
 
 ## Find Documents on Home
 
-Home lists places in a sidebar: **Recent**, the workspaces of the server Home shows, **Shared with you**, and your storage bucket. On a phone the same places are in a menu above the documents. With more than one server connected, choose which one Home shows with **Show on Home** in Settings. At the server's own editor address, OpenPencil opens on Home, in your first workspace until you pick another place.
+Home lists places in a sidebar: **Recent**, the workspaces of the server Home shows, **Shared with you**, **Trash**, and your storage bucket. On a phone the same places are in a menu above the documents. With more than one server connected, choose which one Home shows with **Show on Home** in Settings. At the server's own editor address, OpenPencil opens on Home, in your first workspace until you pick another place.
 
 A workspace lists its documents with where each one stands, how much of the workspace's storage they use, and your role in it. Every account starts with a workspace of its own. **New design** creates a document in the workspace you are looking at, and says which one; in **Shared with you** it creates in your own workspace, and in Recent, or a workspace you can only view, it creates a file on your device. **Shared with you** lists documents people invited you to in workspaces you are not a member of.
+
+## Restore a Deleted Document
+
+Deleting a document in a workspace moves it to **Trash** for everyone who can open it. **Trash** in Home's sidebar lists the documents deleted from your workspaces, with the workspace each came from, when it was deleted and by whom, and how many days it has left; the server deletes it for good after that, 30 days unless its administrators set another period. **Restore** puts it back in its workspace with its version history. Anyone who could delete a document can restore it. Its owner and the workspace's admins can also select **Delete forever**: it leaves Trash and stops counting toward the workspace's storage at once, and can't be undone. The server removes it within a few days, 7 unless its administrators set another period, and until then only a server administrator can bring it back. A document in Trash still counts toward the workspace's storage until it is deleted forever or its time runs out.
 
 ## Work in a Team Workspace
 
@@ -49,7 +53,7 @@ Every account starts with a workspace of its own. To work with a team, select **
 
 - **Members** lists who is in the workspace and when each person joined. Admins invite people by email as an admin, editor, or viewer, change roles, and remove people. Editors and admins change documents; viewers only look.
 - **Invited**, for admins, lists invitations nobody has accepted yet, with who sent each one and when it expires. An invitation arrives by email; if the server doesn't send email, copy the invitation link from the dialog and pass it on. Invitations expire after seven days. **Resend** sends one again with a new link, and the earlier link stops working; so does inviting the same address again.
-- **Settings** renames the workspace, and holds leaving and deleting it. Anyone can leave a workspace, except its last admin: make someone else an admin first. Admins can delete a workspace once it holds no documents. Deleted documents are kept for a while before they are gone for good, and the workspace can be deleted after that.
+- **Settings** renames the workspace, and holds leaving and deleting it. Anyone can leave a workspace, except its last admin: make someone else an admin first. Admins can delete a workspace once it holds no documents. Deleted documents wait in Trash, and the workspace can be deleted once the server has removed them: at the end of their time in Trash, or, for one deleted forever, once its grace period has passed (7 days unless the server's administrators set another).
 
 Opening a workspace invitation works like a document invitation: sign in with the invited address, choose **Join workspace**, and Home shows the workspace.
 

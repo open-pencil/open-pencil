@@ -13,6 +13,7 @@ export type OnboardingGoal = (typeof ONBOARDING_GOALS)[number]
 export const ONBOARDING_AGENTS = [
   'acp:claude-code',
   'acp:codex',
+  'acp:antigravity',
   'acp:gemini-cli',
   'acp:cursor',
   'acp:grok-build',

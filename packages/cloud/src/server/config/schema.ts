@@ -136,6 +136,14 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(0)),
     30 * 24 * 60 * 60_000
   ),
+  /**
+   * How long a document deleted forever keeps its files and rows, out of everyone's sight, so a
+   * server administrator can still bring it back; 0 destroys it at once.
+   */
+  documentPurgeGraceMs: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(0)),
+    7 * 24 * 60 * 60_000
+  ),
   /** The OpenPencil services editors reach with tokens this server signs; see `src/contract/services.ts`. */
   servicesEndpoint: v.optional(httpURLSchema),
   /** The PKCS #8 PEM of the P-256 key that signs service tokens. */
@@ -472,9 +480,10 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   documents: v.optional(
     v.strictObject({
-      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30)
+      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30),
+      purge_grace_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 7)
     }),
-    { retention_days: 30 }
+    { retention_days: 30, purge_grace_days: 7 }
   ),
   email: emailSchema,
   workers: v.optional(

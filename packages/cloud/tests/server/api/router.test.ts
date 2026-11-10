@@ -27,6 +27,7 @@ function services() {
       cleanupExpiredUploads: async () => 0,
       list: async () => [],
       listShared: async () => [],
+      trash: { list: async () => [], restore: notUsed, purge: notUsed },
       usage: async () => ({ bytesUsed: 0, objectCount: 0, documentCount: 0 }),
       access: async () => ({
         permission: 'edit' as const,

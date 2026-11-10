@@ -28,7 +28,7 @@ import {
 } from '@/app/ai/agents/acp/session'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
-import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
@@ -41,14 +41,14 @@ type TauriChild = ACPProcess['child']
 
 /** What starting an agent reaches outside the transport, which tests replace. */
 export interface ACPStartup {
-  resolveCommand: typeof resolveSpawnCommand
+  resolveTarget: typeof resolveSpawnTarget
   spawn: typeof spawnACPProcess
   authToken: typeof getAutomationAuthToken
   linkTools: typeof linkOwnTools
 }
 
 const DEFAULT_STARTUP: ACPStartup = {
-  resolveCommand: resolveSpawnCommand,
+  resolveTarget: resolveSpawnTarget,
   spawn: spawnACPProcess,
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
@@ -392,7 +392,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
     const gaveUp = new AbortController()
     const spawning = (async () => {
-      const command = await this.startup.resolveCommand(this.agentDef)
+      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
       if (gaveUp.signal.aborted || abortSignal?.aborted) {
         throw new Error('The reply was stopped before the agent started.')
       }
@@ -400,6 +400,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         command,
         args: this.agentDef.args,
         logId: this.agentDef.id,
+        searchPath,
+        cwd: this.cwd,
         destroying: () => this.destroying,
         onUnexpectedClose: () => {
           if (!this.session) return

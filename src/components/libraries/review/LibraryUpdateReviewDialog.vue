@@ -12,13 +12,19 @@ import { toast } from '@/app/shell/ui'
 import LibraryComparisonPreview from '@/components/libraries/review/LibraryComparisonPreview.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot,
+  useDialogUI
+} from '@/components/ui/dialog'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const editor = useEditorStore()
+const dialog = useDialogUI()
 const service = useLibraryService()
-const { panels, common } = useI18n()
+const { panels } = useI18n()
 const preview = shallowRef<LibraryUpdatePreview | null>(null)
 const instanceIndex = ref(0)
 const mode = ref<'side-by-side' | 'overlay'>('side-by-side')
@@ -179,27 +185,35 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     <AppDialogHeader
       :heading="panels.reviewLibraryUpdate"
       :description="panels.reviewLibraryUpdateDescription"
-      :close-label="common.close"
     />
     <div
       v-if="request"
-      class="border-b border-border px-4 py-3 text-center text-sm font-medium text-surface"
+      :class="[
+        dialog.pane,
+        'border-b border-border px-4 py-3 text-center text-sm font-medium text-surface'
+      ]"
     >
       {{ preview?.graph.getNode(preview.updatedNodeId)?.name ?? panels.reviewLibraryUpdate }}
     </div>
     <div
       v-if="preview?.fallback"
       role="status"
-      class="border-b border-warning/40 bg-warning/10 px-4 py-2 text-xs text-warning"
+      :class="[
+        dialog.pane,
+        'border-b border-warning/40 bg-warning/10 px-4 py-2 text-xs text-warning'
+      ]"
     >
       {{ panels.libraryVariantFallbackWarning }}
     </div>
     <div
       v-if="preview"
-      class="relative grid min-h-0 flex-1 bg-canvas"
-      :class="mode === 'side-by-side' ? 'grid-cols-2' : 'grid-cols-1'"
+      :class="[
+        dialog.pane,
+        'relative grid min-h-0 flex-1 bg-canvas',
+        mode === 'side-by-side' ? 'grid-cols-2' : 'grid-cols-1'
+      ]"
     >
-      <section class="flex min-h-0 flex-col border-r border-border p-4">
+      <section class="flex min-h-0 flex-col border-e border-border p-4">
         <h3 class="text-xs font-semibold text-surface">{{ panels.currentVersion }}</h3>
         <div class="flex flex-1 items-center justify-center">
           <LibraryComparisonPreview
@@ -223,7 +237,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
           />
         </div>
       </section>
-      <div class="absolute bottom-3 left-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
+      <div class="absolute bottom-3 inset-s-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
         <SegmentedControl
           v-model="mode"
           :options="modeOptions"
@@ -246,7 +260,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
           />
         </SliderRoot>
-        <span v-if="mode === 'overlay'" class="w-8 text-right text-3xs text-muted">
+        <span v-if="mode === 'overlay'" class="w-8 text-end text-3xs text-muted">
           {{ opacity[0] }}%
         </span>
       </div>
@@ -254,37 +268,37 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     <div v-else class="flex min-h-0 flex-1 items-center justify-center text-xs text-muted">
       {{ loading ? panels.loadingUpdatePreview : panels.noLibraryUpdates }}
     </div>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <div class="flex items-center gap-2 text-xs text-muted">
-        <IconButton
-          :label="panels.previousLibraryInstance"
-          :disabled="applying || instanceIndex === 0"
-          @click="instanceIndex--"
-        >
-          <icon-lucide-chevron-left class="size-4" />
-        </IconButton>
-        <IconButton
-          :label="panels.nextLibraryInstance"
-          :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
-          @click="instanceIndex++"
-        >
-          <icon-lucide-chevron-right class="size-4" />
-        </IconButton>
-        {{
-          panels.libraryInstancePosition({
-            current: instanceIndex + 1,
-            total: request?.instanceIds.length ?? 0
-          })
-        }}
-      </div>
-      <div class="flex gap-2">
-        <AppButton variant="outline" :disabled="applying" @click="updateInstance">
-          {{ panels.updateInstance }}
-        </AppButton>
-        <AppButton color="primary" variant="solid" :disabled="applying" @click="updateAll">
-          {{ panels.updateAll }}
-        </AppButton>
-      </div>
+    <AppDialogFooter>
+      <template #start>
+        <div class="flex items-center gap-2 text-xs text-muted">
+          <IconButton
+            :label="panels.previousLibraryInstance"
+            :disabled="applying || instanceIndex === 0"
+            @click="instanceIndex--"
+          >
+            <icon-lucide-chevron-left class="size-4" />
+          </IconButton>
+          <IconButton
+            :label="panels.nextLibraryInstance"
+            :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
+            @click="instanceIndex++"
+          >
+            <icon-lucide-chevron-right class="size-4" />
+          </IconButton>
+          {{
+            panels.libraryInstancePosition({
+              current: instanceIndex + 1,
+              total: request?.instanceIds.length ?? 0
+            })
+          }}
+        </div>
+      </template>
+      <AppButton variant="outline" :disabled="applying" @click="updateInstance">
+        {{ panels.updateInstance }}
+      </AppButton>
+      <AppButton color="primary" variant="solid" :disabled="applying" @click="updateAll">
+        {{ panels.updateAll }}
+      </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

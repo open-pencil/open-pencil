@@ -47,6 +47,13 @@ async function mockLogin() {
   const calls: { cmd: string; args: unknown }[] = []
   let emit: (event: ShellEvent) => void = () => undefined
   await mockTauriIPC((cmd, args) => {
+    if (cmd === 'agent_lookup') {
+      return {
+        executables: { 'claude-agent-acp': '/lookup/bin/claude-agent-acp' },
+        versions: {},
+        searchPath: '/lookup/bin'
+      }
+    }
     calls.push({ cmd, args })
     if (cmd === 'plugin:shell|spawn') {
       emit = shellEvents(args)
@@ -64,7 +71,8 @@ describe('startTerminalSignIn', () => {
     const login = await startTerminalSignIn(claude, LOGIN_ARGS, (url) => urls.push(url))
     expect(shell.calls[0]?.args).toMatchObject({
       program: 'claude-agent-acp-sign-in',
-      args: LOGIN_ARGS
+      args: LOGIN_ARGS,
+      options: { env: { PATH: '/lookup/bin' } }
     })
     shell.emit({ event: 'Stdout', payload: 'Opening browser to sign in…' })
     shell.emit({ event: 'Stdout', payload: `If the browser didn't open, visit: ${PAGE}` })

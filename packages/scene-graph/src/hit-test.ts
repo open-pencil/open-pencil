@@ -93,11 +93,13 @@ interface HitWalk {
   deep: boolean
   pad: number
   instanceBodies: boolean
+  /** Whether locked layers are hit, as by a right-click; see `SelectableHitOptions.locked`. */
+  locked: boolean
   transformCache: Map<string, boolean>
 }
 
-function walkOf(deep: boolean, pad = 0, instanceBodies = false): HitWalk {
-  return { deep, pad, instanceBodies, transformCache: new Map() }
+function walkOf(deep: boolean, pad = 0, instanceBodies = false, locked = false): HitWalk {
+  return { deep, pad, instanceBodies, locked, transformCache: new Map() }
 }
 
 /** Whether a container's empty area under the point takes a click reaching past containers. */
@@ -106,6 +108,14 @@ function takesEmptyArea(graph: SceneGraph, node: SceneNode, walk: HitWalk): bool
   // counts, and an instance's when the click is a plain one.
   if (node.type === 'COMPONENT' || showsPaint(node) || ownsItsEmptyArea(graph, node)) return true
   return walk.instanceBodies && node.type === 'INSTANCE'
+}
+
+/**
+ * What a hit inside a container reports: the container itself when it is locked (a locked layer,
+ * where one is hit at all, stands in for everything inside it) or the walk stops at containers.
+ */
+function standIn(container: SceneNode, hit: SceneNode, deep: boolean): SceneNode {
+  return container.locked || !deep ? container : hit
 }
 
 function hitTestTransparentContainer(
@@ -121,14 +131,11 @@ function hitTestTransparentContainer(
     // A group has no area of its own, as in Figma: between its layers the click falls through to
     // whatever lies under the group.
     const childHit = hitTestChildren(graph, px, py, child.id, walk)
-    return childHit ? (walk.deep ? childHit : child) : null
+    return childHit ? standIn(child, childHit, walk.deep) : null
   }
 
   const childHit = hitTestChildren(graph, px, py, child.id, walk)
-  if (childHit) {
-    if (child.locked) return child
-    return childHit
-  }
+  if (childHit) return standIn(child, childHit, true)
 
   if (
     containsPoint(px, py, child, graph, walk.transformCache) &&
@@ -156,7 +163,9 @@ function hitTestChildren(
 
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
     const child = graph.nodes.get(parent.childIds[i])
-    if (!child || child.internalOnly || !child.visible) continue
+    // A locked layer and everything in it are invisible to a press and to hover, as in Figma: a
+    // click falls through to what lies under it, and a drag from it draws a marquee.
+    if (!child || child.internalOnly || !child.visible || (child.locked && !walk.locked)) continue
     if (CONTAINER_TYPES.has(child.type)) {
       if (OPAQUE_CONTAINER_TYPES.has(child.type) && !walk.deep) {
         // A plain click takes an instance or component anywhere in its box, with a fill or
@@ -240,12 +249,14 @@ function frameChildAt(
   container: SceneNode,
   px: number,
   py: number,
-  framesOpen = true
+  framesOpen = true,
+  locked = false
 ): SceneNode | null {
   const transformCache = new Map<string, boolean>()
   for (let i = container.childIds.length - 1; i >= 0; i--) {
     const child = graph.nodes.get(container.childIds[i])
     if (!child || child.internalOnly || !child.visible || child.type !== 'FRAME') continue
+    if (child.locked && !locked) continue
     // A board, such as a top-level frame in a section, keeps its empty area as background.
     if (opensByItself(graph, child, framesOpen) && !ownsItsEmptyArea(graph, child)) continue
     if (containsPoint(px, py, child, graph, transformCache)) return child
@@ -309,6 +320,11 @@ export interface SelectableHitOptions {
   framesOpen?: boolean
   /** The container a double-click entered, open along with its ancestors. */
   enteredId?: string | null
+  /**
+   * Whether locked layers are hit, each standing in for everything inside it: a right-click
+   * selects one, as in Figma, while a press and hover pass through it.
+   */
+  locked?: boolean
 }
 
 export function hitTestSelectable(
@@ -319,12 +335,12 @@ export function hitTestSelectable(
   selectedIds: ReadonlySet<string>,
   options: SelectableHitOptions = {}
 ): SceneNode | null {
-  const { pad = 0, framesOpen = true, enteredId = null } = options
+  const { pad = 0, framesOpen = true, enteredId = null, locked = false } = options
   // A plain click: the walk takes an instance's empty area whatever its fill.
-  const deepest = hitTestChildren(graph, px, py, scopeId, walkOf(true, pad, true))
+  const deepest = hitTestChildren(graph, px, py, scopeId, walkOf(true, pad, true, locked))
   if (!deepest) {
     const scope = graph.nodes.get(scopeId)
-    return scope ? frameChildAt(graph, scope, px, py, framesOpen) : null
+    return scope ? frameChildAt(graph, scope, px, py, framesOpen, locked) : null
   }
 
   const chain: SceneNode[] = []
@@ -336,13 +352,13 @@ export function hitTestSelectable(
   const opened = openedBySelection(graph, selectedIds, scopeId, framesOpen, enteredId)
 
   for (const node of chain) {
-    // A locked layer stands in for everything inside it.
+    // A locked layer, hit only with `locked`, stands in for everything inside it.
     if (node.locked) return node
     if (!opened.has(node.id) && !opensByItself(graph, node, framesOpen)) return node
   }
   const last = chain.at(-1)
   if (!last) return null
-  const frame = frameChildAt(graph, last, px, py, framesOpen)
+  const frame = frameChildAt(graph, last, px, py, framesOpen, locked)
   if (frame) return frame
   if (ownsItsEmptyArea(graph, last)) return last
   return opened.has(last.id) && !opensByItself(graph, last, framesOpen) ? last : null

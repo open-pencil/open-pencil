@@ -1,6 +1,7 @@
 import { normalizeEnrollmentEmail } from '#cloud/admin/enrollment/service'
 import type { CloudAccountDeletion } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { markPurged } from '#cloud/server/documents/purge'
 import { handOverOwnership } from '#cloud/server/workspaces'
 import { APIError } from 'better-auth'
 import type { Kysely, Transaction } from 'kysely'
@@ -99,8 +100,8 @@ const workspaceSummary = (membership: Membership) => ({
 /**
  * Deleting an account: what it takes, and the Cloud side of taking it. Better Auth removes the
  * user with their sessions, sign-in methods, passkeys, and two-step secrets; this removes what
- * Cloud keeps about them. Workspaces only they belong to go with their documents, which the
- * cleanup worker purges after its retention like any deleted document; in workspaces others keep
+ * Cloud keeps about them. Workspaces only they belong to go with their documents, deleted
+ * forever, which cleanup destroys once the deployment's grace passes; in workspaces others keep
  * they drop out, handing ownership, and so the plan the workspace draws on, to the
  * longest-standing other admin.
  */
@@ -183,6 +184,20 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
             .where('workspaceId', '=', workspaceId)
             .where('deletedAt', 'is', null)
             .execute()
+          // Nobody is left to restore them, so they are deleted forever, Trash included: out of
+          // sight now, and destroyed by cleanup once the deployment's grace passes.
+          const documents = await transaction
+            .selectFrom('document')
+            .select('id')
+            .where('workspaceId', '=', workspaceId)
+            .where('purgedAt', 'is', null)
+            .execute()
+          await markPurged(
+            transaction,
+            documents.map((document) => document.id),
+            null,
+            now
+          )
           await transaction
             .updateTable('workspaceInvitation')
             .set({ revokedAt: now })

@@ -24,6 +24,27 @@ type SceneResult<Builder> = Builder extends (...args: never[]) => infer Result
   ? Awaited<Result>
   : never
 
+/**
+ * Waits until the tiled scene covers the canvas with no tile work left, the background stages
+ * after the quiet spell included. A new scene's tiles take several frames on a slow machine, and
+ * a screenshot taken earlier shows the overlay over layers not drawn yet, or edges the background
+ * stages have still to redraw. A live preview never settles, so wait only for a scene at rest.
+ */
+export async function waitForSettledScene(page: Page) {
+  await page.waitForFunction(() => {
+    const store = window.openPencil?.getStore?.()
+    const renderer = store?.canvasRenderers.find((r) => r.tracksSceneSettlement)
+    return (
+      store?.state.navigation.phase === 'idle' &&
+      renderer &&
+      renderer.tiledSceneCovered &&
+      !renderer.tiledScenePending &&
+      !renderer.tiledSceneBackgroundPending &&
+      !renderer.tiledScene.hasPendingWork()
+    )
+  })
+}
+
 /** Shows the open page at `view`: its zoom, and where the canvas origin sits in the canvas. */
 export function showView(page: Page, view: ViewportTransform) {
   return page.evaluate((next) => {
@@ -39,16 +60,16 @@ export function showView(page: Page, view: ViewportTransform) {
 /**
  * The builders of a scene module, run in the page on the open page's graph. `moduleURL` is the
  * module's path on the dev server, such as `/tests/helpers/canvas/blend/scene.ts`; the module is
- * imported there, so a scene draws with the page's own SceneGraph. Building clears the selection
- * and redraws, and returns what the builder returned.
+ * imported there, so a scene draws with the page's own SceneGraph. Building clears the selection,
+ * waits for the redrawn scene to settle, and returns what the builder returned.
  */
 export function pageScene<Module>(page: () => Page, moduleURL: string) {
   return {
-    build<Name extends SceneName<Module>>(
+    async build<Name extends SceneName<Module>>(
       name: Name,
       ...args: SceneArgs<Module[Name]>
     ): Promise<SceneResult<Module[Name]>> {
-      return page().evaluate(
+      const built = await page().evaluate(
         async ({ url, builder, builderArgs }) => {
           const store = window.openPencil?.getStore?.()
           if (!store) throw new Error('OpenPencil store not initialized')
@@ -61,7 +82,9 @@ export function pageScene<Module>(page: () => Page, moduleURL: string) {
           return built
         },
         { url: moduleURL, builder: name, builderArgs: args }
-      ) as Promise<SceneResult<Module[Name]>>
+      )
+      await waitForSettledScene(page())
+      return built as SceneResult<Module[Name]>
     }
   }
 }
