@@ -1,1 +1,2 @@
 - `useEditorKeyboard` runs a host's shortcut before the editor's on the same key, and a shortcut that returns `false` leaves the key to the editor's; `onEscape` is removed in favour of an Escape shortcut that declines when the host has nothing to close (#1964).
+- The `selection.setOpacity` command, its `canSetOpacity` capability, and `useEditorCommands().setOpacityTarget` are removed; call `editor.setOpacity(value)` instead (#1964).
