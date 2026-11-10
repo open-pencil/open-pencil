@@ -16,6 +16,18 @@
 }
 
 /*
+ * An icon that points along the line of text (back and next, a submenu, a disclosure, a sidebar)
+ * says so with data-direction="reading" and turns around in a right-to-left interface, matched as
+ * Tailwind matches `rtl:`. One that names a canvas side says data-direction="physical" and keeps
+ * its direction (`@open-pencil/vue/icon-direction`).
+ */
+@layer base {
+  [data-direction='reading']:where(:dir(rtl), [dir='rtl'], [dir='rtl'] *) {
+    scale: -1 1;
+  }
+}
+
+/*
  * The interface size is the root font size: every interface size is in rem, so this one value
  * scales panels, text, and controls, while the canvas keeps drawing in screen pixels. A share of
  * 100% keeps the browser's own default font size as the starting point.

@@ -68,13 +68,13 @@ function pick(range: DateRange) {
     <RangeCalendarHeader :class="ui.header()">
       <RangeCalendarPrev as-child>
         <IconButton label="Previous month">
-          <icon-lucide-chevron-left class="size-3.5 rtl:-scale-x-100" />
+          <icon-lucide-chevron-left data-direction="reading" class="size-3.5" />
         </IconButton>
       </RangeCalendarPrev>
       <RangeCalendarHeading :class="ui.heading()" />
       <RangeCalendarNext as-child>
         <IconButton label="Next month">
-          <icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100" />
+          <icon-lucide-chevron-right data-direction="reading" class="size-3.5" />
         </IconButton>
       </RangeCalendarNext>
     </RangeCalendarHeader>

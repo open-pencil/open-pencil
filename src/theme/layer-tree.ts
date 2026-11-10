@@ -43,9 +43,9 @@ const layerTreeTheme = {
       false: {}
     },
     expanded: {
-      true: { disclosure: 'rotate-90' },
-      // Closed, it points to the end of the line: right, or left in a mirrored interface.
-      false: { disclosure: 'rotate-0 rtl:rotate-180' }
+      // Mirrored, the chevron points left and turns the other way to point down when open.
+      true: { disclosure: 'rotate-90 rtl:-rotate-90' },
+      false: { disclosure: 'rotate-0' }
     },
     actionsVisible: {
       true: {},

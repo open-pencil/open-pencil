@@ -276,14 +276,14 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             :disabled="applying || instanceIndex === 0"
             @click="instanceIndex--"
           >
-            <icon-lucide-chevron-left class="size-4 rtl:-scale-x-100" />
+            <icon-lucide-chevron-left data-direction="reading" class="size-4" />
           </IconButton>
           <IconButton
             :label="panels.nextLibraryInstance"
             :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
             @click="instanceIndex++"
           >
-            <icon-lucide-chevron-right class="size-4 rtl:-scale-x-100" />
+            <icon-lucide-chevron-right data-direction="reading" class="size-4" />
           </IconButton>
           {{
             panels.libraryInstancePosition({

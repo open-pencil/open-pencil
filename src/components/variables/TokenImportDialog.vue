@@ -217,7 +217,8 @@ function importTokens() {
           <div class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 px-3 py-1">
             <span class="truncate font-medium text-surface">{{ collection.name }}</span>
             <icon-lucide-arrow-right
-              class="size-3 text-muted rtl:-scale-x-100"
+              data-direction="reading"
+              class="size-3 text-muted"
               aria-hidden="true"
             />
             <AppSelect
@@ -235,7 +236,8 @@ function importTokens() {
             >
               <span class="truncate text-muted">{{ mode.name }}</span>
               <icon-lucide-arrow-right
-                class="size-3 text-muted rtl:-scale-x-100"
+                data-direction="reading"
+                class="size-3 text-muted"
                 aria-hidden="true"
               />
               <AppSelect

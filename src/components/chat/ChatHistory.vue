@@ -110,7 +110,7 @@ function closeMenu(event: Event) {
       <AppPopoverRoot v-model:open="open">
         <Tip :label="ai.chatHistory">
           <PopoverTrigger :class="triggerClass" :disabled="disabled" :aria-label="ai.chatHistory">
-            <icon-lucide-panel-left :class="[styles.icon(), 'rtl:-scale-x-100']" />
+            <icon-lucide-panel-left data-direction="reading" :class="styles.icon()" />
           </PopoverTrigger>
         </Tip>
         <PopoverPortal>

@@ -257,7 +257,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
             {{ methodLabels[method] }}
             <template #trailing>
               <icon-lucide-arrow-up-right v-if="desktop" class="size-3.5" />
-              <icon-lucide-chevron-right v-else class="size-3.5 rtl:-scale-x-100" />
+              <icon-lucide-chevron-right data-direction="reading" v-else class="size-3.5" />
             </template>
           </AppActionRow>
         </div>

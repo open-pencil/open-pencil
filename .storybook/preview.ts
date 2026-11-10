@@ -1,6 +1,7 @@
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
-import { watch } from 'vue'
+import { ConfigProvider } from 'reka-ui'
+import { computed, watch } from 'vue'
 
 // Points Core at the engine files the openPencil() Vite plugin serves.
 import '@/app/editor/canvas/canvaskit'
@@ -11,7 +12,34 @@ import '@/app.css'
 registerInterfaceFont()
 
 const preview: Preview = {
+  globalTypes: {
+    direction: {
+      description: 'Interface direction, as Arabic mirrors it',
+      toolbar: {
+        title: 'Direction',
+        icon: 'transfer',
+        items: [
+          { value: 'ltr', title: 'Left to right' },
+          { value: 'rtl', title: 'Right to left' }
+        ],
+        dynamicTitle: true
+      }
+    }
+  },
+  initialGlobals: { direction: 'ltr' },
   decorators: [
+    // As App.vue does: the document's direction for CSS, and Reka's for its components.
+    (story, context) => ({
+      components: { story, ConfigProvider },
+      setup() {
+        const dir = computed(() => (context.globals.direction === 'rtl' ? 'rtl' : 'ltr'))
+        watch(dir, (value) => document.documentElement.setAttribute('dir', value), {
+          immediate: true
+        })
+        return { dir }
+      },
+      template: '<ConfigProvider :dir="dir"><story /></ConfigProvider>'
+    }),
     withThemeByDataAttribute<Renderer>({
       themes: {
         dark: 'dark',

@@ -223,7 +223,7 @@ function discard() {
           <li v-for="(change, index) in impact" :key="index" class="flex items-center gap-1.5">
             <span class="tabular-nums">{{ messages.layerCount(change.count) }}</span>
             <span>{{ change.from }}</span>
-            <icon-lucide-arrow-right class="size-3 rtl:-scale-x-100" aria-hidden="true" />
+            <icon-lucide-arrow-right data-direction="reading" class="size-3" aria-hidden="true" />
             <span>{{ change.to ?? messages.noStatus }}</span>
           </li>
         </ul>

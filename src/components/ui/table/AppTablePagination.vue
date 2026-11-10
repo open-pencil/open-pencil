@@ -22,10 +22,10 @@ const cls = useTableUI(ui)
     <span :class="cls.range">{{ range }}</span>
     <div :class="cls.pages">
       <IconButton :label="previousLabel" :disabled="!canPrevious" @click="emit('previous')">
-        <icon-lucide-chevron-left class="size-3.5 rtl:-scale-x-100" />
+        <icon-lucide-chevron-left data-direction="reading" class="size-3.5" />
       </IconButton>
       <IconButton :label="nextLabel" :disabled="!canNext" @click="emit('next')">
-        <icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100" />
+        <icon-lucide-chevron-right data-direction="reading" class="size-3.5" />
       </IconButton>
     </div>
   </div>

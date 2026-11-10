@@ -70,7 +70,8 @@ function isOpen(group: CapabilityGroup) {
             class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <icon-lucide-chevron-right
-              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none rtl:-scale-x-100"
+              data-direction="reading"
+              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 rtl:group-data-[state=open]:-rotate-90 motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
@@ -129,8 +130,9 @@ function isOpen(group: CapabilityGroup) {
                 </Tip>
                 <span v-if="item.note" class="shrink-0 text-2xs text-warning">{{ item.note }}</span>
                 <icon-lucide-chevron-right
+                  data-direction="reading"
                   v-if="openLabel"
-                  class="size-3.5 shrink-0 text-muted rtl:-scale-x-100"
+                  class="size-3.5 shrink-0 text-muted"
                   aria-hidden="true"
                 />
               </component>

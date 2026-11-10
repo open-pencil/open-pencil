@@ -19,7 +19,7 @@ const tabBarTheme = {
     newIcon: 'size-4',
     scroll:
       'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus mx-0.5 data-start:order-first',
-    scrollIcon: 'size-3.5 rtl:-scale-x-100'
+    scrollIcon: 'size-3.5'
   },
   variants: {
     // Home is pinned first as an icon, the way Figma's desktop app shows it.

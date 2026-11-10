@@ -72,9 +72,13 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
         >
           <template #icon>
             <icon-lucide-panel-top v-if="side.icon === 'top'" class="size-3.5" />
-            <icon-lucide-panel-right v-else-if="side.icon === 'right'" class="size-3.5" />
+            <icon-lucide-panel-right
+              v-else-if="side.icon === 'right'"
+              data-direction="physical"
+              class="size-3.5"
+            />
             <icon-lucide-panel-bottom v-else-if="side.icon === 'bottom'" class="size-3.5" />
-            <icon-lucide-panel-left v-else class="size-3.5" />
+            <icon-lucide-panel-left v-else data-direction="physical" class="size-3.5" />
           </template>
         </VariableNumberField>
       </div>

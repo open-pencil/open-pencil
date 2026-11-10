@@ -78,7 +78,7 @@ const testId = (id: EditorCommandId) => `alignment-action-${id.replace('selectio
               :disabled="!getCommand('selection.arrangeSpread').enabled.value"
             >
               {{ menu.autoArrange }}
-              <icon-lucide-chevron-right :class="[menuCls.icon, 'rtl:-scale-x-100']" />
+              <icon-lucide-chevron-right data-direction="reading" :class="menuCls.icon" />
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent :side-offset="4" :class="menuCls.content">

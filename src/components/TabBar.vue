@@ -145,8 +145,12 @@ function onClose(e: MouseEvent, tabId: string) {
       :data-start="!overflowEnd || undefined"
       @click="scrollTowardHidden"
     >
-      <icon-lucide-chevron-right v-if="overflowEnd" :class="baseStyles.scrollIcon()" />
-      <icon-lucide-chevron-left v-else :class="baseStyles.scrollIcon()" />
+      <icon-lucide-chevron-right
+        v-if="overflowEnd"
+        data-direction="reading"
+        :class="baseStyles.scrollIcon()"
+      />
+      <icon-lucide-chevron-left v-else data-direction="reading" :class="baseStyles.scrollIcon()" />
     </button>
     <Tip :label="files.newFile" side="bottom">
       <button

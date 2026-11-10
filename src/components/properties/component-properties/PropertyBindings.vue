@@ -28,7 +28,8 @@ const panels = usePanelMessages()
       <CollapsibleTrigger as-child>
         <AppButton size="xs" variant="ghost" class="w-full justify-start gap-1">
           <icon-lucide-chevron-right
-            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 motion-reduce:transition-none rtl:-scale-x-100"
+            data-direction="reading"
+            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 rtl:data-[open]:-rotate-90 motion-reduce:transition-none"
             :data-open="open || undefined"
           />
           <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />

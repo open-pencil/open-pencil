@@ -77,7 +77,7 @@ const title = (server: CloudServerEntry) =>
           {{ t.productName }}
           <template #description>{{ t.settingsOfficialDescription }}</template>
           <template #trailing
-            ><icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
+            ><icon-lucide-chevron-right data-direction="reading" class="size-3.5"
           /></template>
         </AppActionRow>
         <AppActionRow @click="emit('connect', 'self-hosted')">
@@ -87,7 +87,7 @@ const title = (server: CloudServerEntry) =>
           {{ t.selfHostedLabel }}
           <template #description>{{ t.settingsSelfHostedDescription }}</template>
           <template #trailing
-            ><icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
+            ><icon-lucide-chevron-right data-direction="reading" class="size-3.5"
           /></template>
         </AppActionRow>
       </div>

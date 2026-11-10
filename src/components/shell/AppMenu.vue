@@ -160,7 +160,7 @@ function runChosenAction() {
                     <MenubarSub v-else-if="hasMenuSubItems(item)">
                       <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
                         <span class="flex-1">{{ menuLabel(item) }}</span>
-                        <IconChevronRight class="size-3 text-muted rtl:-scale-x-100" />
+                        <IconChevronRight data-direction="reading" class="size-3 text-muted" />
                       </MenubarSubTrigger>
                       <MenubarPortal>
                         <MenubarSubContent :side-offset="4" :class="subMenuCls.content">
@@ -238,8 +238,8 @@ function runChosenAction() {
         :data-start="!overflowEnd || undefined"
         @click="scrollTowardHidden"
       >
-        <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5 rtl:-scale-x-100" />
-        <icon-lucide-chevron-left v-else class="size-3.5 rtl:-scale-x-100" />
+        <icon-lucide-chevron-right data-direction="reading" v-if="overflowEnd" class="size-3.5" />
+        <icon-lucide-chevron-left data-direction="reading" v-else class="size-3.5" />
       </button>
     </div>
   </div>

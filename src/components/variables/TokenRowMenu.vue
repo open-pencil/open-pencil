@@ -63,7 +63,7 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
             <ContextMenuSubTrigger :class="menu.subTrigger" data-test-id="variables-move-to-group">
               <icon-lucide-folder-input :class="menu.icon" />
               <span class="flex-1">{{ variables.moveToGroup }}</span>
-              <icon-lucide-chevron-right :class="[menu.icon, 'rtl:-scale-x-100']" />
+              <icon-lucide-chevron-right data-direction="reading" :class="menu.icon" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="menu.content">

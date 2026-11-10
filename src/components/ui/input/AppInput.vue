@@ -44,6 +44,9 @@ const {
   state = 'idle'
 } = defineProps<AppInputProps>()
 
+/** Numbers, addresses, and passwords read left to right in a mirrored interface too. */
+const LEFT_TO_RIGHT_TYPES = new Set<AppInputProps['type']>(['number', 'url', 'email', 'password'])
+
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const input = useTemplateRef<HTMLInputElement>('input')
@@ -96,6 +99,7 @@ const emit = defineEmits<{
       :id="id"
       v-model="modelValue"
       :type="type"
+      :dir="LEFT_TO_RIGHT_TYPES.has(type) ? 'ltr' : undefined"
       :placeholder="placeholder"
       :aria-label="ariaLabel"
       :readonly="readonly"
