@@ -5,7 +5,7 @@ import { nextTick, toRaw, watch } from 'vue'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
-import { appPreferences } from '@/app/settings/preferences/store'
+import { appPreferences, parseAppPreferences } from '@/app/settings/preferences/store'
 
 const stores: ReturnType<typeof createEditorStore>[] = []
 let previousPreferences: typeof appPreferences.value | undefined
@@ -61,18 +61,33 @@ async function settleCheck() {
 }
 
 describe('canvas markers', () => {
-  test('stay off until the preference turns them on', async () => {
+  test('stay off when nothing is stored, and appear once turned on', async () => {
     jest.useFakeTimers()
-    setMarkersOnCanvas(false)
+    // This harness has no localStorage, so an empty profile is the value nothing stored parses to.
+    previousPreferences ??= structuredClone(toRaw(appPreferences.value))
+    appPreferences.value = parseAppPreferences(null)
+
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    graph.createNode('TEXT', page.id, { name: 'Caption', text: 'Caption', fontSize: 8 })
+    const text = graph.createNode('TEXT', page.id, {
+      name: 'Caption',
+      text: 'Caption',
+      fontSize: 8
+    })
     const store = createEditorStore(graph)
     stores.push(store)
     await nextTick()
 
+    expect(store.designCheck.enabled.value).toBe(false)
     expect(store.designCheck.snapshot.value).toBeNull()
     expect(store.state.designIssues?.markers ?? []).toEqual([])
+
+    setMarkersOnCanvas(true)
+    await nextTick()
+
+    expect((store.state.designIssues?.markers ?? []).map((marker) => marker.nodeId)).toEqual([
+      text.id
+    ])
   })
 })
 

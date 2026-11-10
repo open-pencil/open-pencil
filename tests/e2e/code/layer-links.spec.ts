@@ -74,7 +74,8 @@ async function openCode(page: Page) {
 /** Code underlines follow the design check, which runs while canvas markers are on. */
 async function showDesignIssues(page: Page) {
   await page.evaluate(async () => {
-    const { setDesignIssuesOnCanvas } = await import('/src/app/settings/preferences/apply.ts')
+    const preferencesModule = '/src/app/settings/preferences/apply.ts'
+    const { setDesignIssuesOnCanvas } = await import(preferencesModule)
     setDesignIssuesOnCanvas(true)
   })
 }

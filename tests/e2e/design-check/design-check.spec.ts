@@ -109,7 +109,8 @@ function highlightedNode(page: Page) {
 /** The canvas toggle is a profile preference. Tests that draw markers turn it on themselves. */
 async function setDesignIssuesOnCanvas(page: Page, show: boolean) {
   await page.evaluate(async (enabled) => {
-    const { setDesignIssuesOnCanvas } = await import('/src/app/settings/preferences/apply.ts')
+    const preferencesModule = '/src/app/settings/preferences/apply.ts'
+    const { setDesignIssuesOnCanvas } = await import(preferencesModule)
     setDesignIssuesOnCanvas(enabled)
   }, show)
 }
@@ -151,8 +152,11 @@ test.afterEach(async () => {
 
 test('a fresh profile opens with canvas markers and page badges off', async () => {
   await buildScene(editor.page)
-  // The check waits out the edit; markers would be published by then if the default were on.
-  await editor.page.waitForTimeout(500)
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => window.openPencil?.getStore?.().designCheck.enabled.value ?? null)
+    )
+    .toBe(false)
   await expect
     .poll(() =>
       editor.page.evaluate(
@@ -167,9 +171,10 @@ test('a fresh profile opens with canvas markers and page badges off', async () =
   await expect(designIssues).toHaveAttribute('aria-checked', 'false')
   await editor.page.keyboard.press('Escape')
   await expect(designIssues).toBeHidden()
-  // Later tests share this page; reload so the open menu does not leak into them.
-  await editor.page.reload()
-  await editor.canvas.waitForInit()
+  // The shared page's later row actions stay hidden while the menubar trigger keeps focus.
+  await editor.page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+  })
 })
 
 test('Lint lists issues by rule and connects rows to the canvas', async () => {
