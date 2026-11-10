@@ -90,19 +90,19 @@ What holds what:
 
 To restore the database to an earlier time:
 
-1. Take the Worker off the air: remove `cloud.openpencil.dev` from the Worker's Domains & Routes.
-   Then deploy the same release again with `wrangler deploy` in `production/`, as the workflow's
-   deploy step does: a new version restarts the rooms' objects and closes their sockets, so no room
-   keeps newer state than the restore and writes it back. There is no maintenance page; people see
-   the domain fail meanwhile.
+1. Take production off the air: run Deploy Cloud for `production` from the deployed tag with
+   **maintenance** checked. Every request then answers 503 and the cron's cleanup does nothing, so
+   nothing deletes what the restore brings back; the deploy restarts the rooms' objects and closes
+   their sockets, so no room keeps newer state than the restore and writes it back. It skips
+   migrating and the health check.
 2. Create a Neon branch at the time before the damage, check it, and restore the production branch
    from it in the Neon console. Hyperdrive keeps the same connection.
-3. Migrate it as the workflow's migrate step does (`bun --filter @open-pencil/cloud migrate` with
-   `production/openpencil-cloud.toml`, the direct connection, and the secrets the TOML names), so
-   the schema matches the deployed Worker even if the restore point predates a migration.
-4. Files the restored rows name that cleanup deleted since are gone; list them by the `object_key`
+3. Files the restored rows name that cleanup deleted since are gone; list them by the `object_key`
    of their `storage_object` rows, and the documents holding them will not open.
-5. Put the domain back and open a document saved before the restore point.
+4. Put production back: run Deploy Cloud again from the same tag without maintenance. It migrates
+   the restored database, so its schema matches the Worker even if the restore point predates a
+   migration, deploys without the maintenance variable, and checks the pages answer.
+5. Open a document saved before the restore point.
 
 ## Restore drill
 

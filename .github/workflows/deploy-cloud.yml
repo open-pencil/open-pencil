@@ -11,8 +11,12 @@ on:
         description: Deployment
         type: choice
         options: [staging, production]
+      maintenance:
+        description: Off the air (every request 503, no cleanup), for a database restore
+        type: boolean
+        default: false
 
-run-name: Deploy Cloud ${{ inputs.target }} from ${{ github.ref_name }}
+run-name: Deploy Cloud ${{ inputs.target }} from ${{ github.ref_name }}${{ inputs.maintenance && ' in maintenance' || '' }}
 
 concurrency:
   group: cloud-${{ inputs.target }}
@@ -74,7 +78,9 @@ jobs:
 
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.
+      # Under maintenance the database may be mid-restore; the deploy that ends it migrates.
       - name: Migrate the database
+        if: ${{ !inputs.maintenance }}
         env:
           OPENPENCIL_CLOUD_CONFIG: ${{ github.workspace }}/${{ env.DEPLOYMENT }}/openpencil-cloud.toml
           DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
@@ -111,8 +117,10 @@ jobs:
             deploy ${{ runner.temp }}/worker/worker.js --config wrangler.jsonc --no-bundle
             --assets ${{ github.workspace }}/dist-cloud
             --secrets-file ${{ runner.temp }}/cloud-secrets.json
+            ${{ inputs.maintenance && '--var OPENPENCIL_CLOUD_MAINTENANCE:on' || '' }}
 
       - name: Check the deployment
+        if: ${{ !inputs.maintenance }}
         env:
           CLOUD_URL: ${{ vars.CLOUD_URL }}
         # Only a 200 counts, and pages are asked for as a browser does (tools/ci/cloud-deploy/src/health.ts).

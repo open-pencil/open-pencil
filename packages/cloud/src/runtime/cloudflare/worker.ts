@@ -27,6 +27,7 @@ import {
   type PreparedCloudflareCloud
 } from './environment'
 import { cloudflareRayId } from './logging'
+import { inMaintenance, maintenanceResponse } from './maintenance'
 import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
 import { assetSiteFiles } from './site'
 
@@ -204,9 +205,11 @@ export function createCloudflareCloud(
     })
 
   const worker: ExportedHandler<CloudflareCloudEnvironment> = {
-    fetch: (request, env, context) => router.fetch(request, env, context),
+    fetch: (request, env, context) =>
+      inMaintenance(env) ? maintenanceResponse() : router.fetch(request, env, context),
 
     async scheduled(_controller, env, context) {
+      if (inMaintenance(env)) return
       try {
         await runScheduled(await prepare(env), env, context)
       } catch (error) {
