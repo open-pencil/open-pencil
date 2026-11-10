@@ -1,8 +1,12 @@
 import { isEqual, noop } from 'es-toolkit'
 
-import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
-import { drawnBlurRadius, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import {
+  drawnBlurRadius,
+  type VisualBounds,
+  widestBlurRadius
+} from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -355,7 +359,7 @@ export class SkiaRenderer {
     let expand = 0
     for (const e of node.effects) {
       if (!e.visible) continue
-      const blur = drawnBlurRadius(e.radius)
+      const blur = drawnBlurRadius(widestBlurRadius(e))
       const spread = e.spread
       const ox = Math.abs(e.offset.x)
       const oy = Math.abs(e.offset.y)
@@ -890,6 +894,15 @@ export class SkiaRenderer {
     return Effects.getCachedBlur(this, sigma)
   }
 
+  getCachedLayerBlur(
+    effect: Pick<Effect, 'radius' | 'progressive'>,
+    width: number,
+    height: number,
+    toFilter?: (point: Vector) => Vector
+  ): ImageFilter | null {
+    return Effects.getCachedLayerBlur(this, effect, width, height, toFilter)
+  }
+
   getCachedDecalBlur(sigma: number): ImageFilter | null {
     return Effects.getCachedDecalBlur(this, sigma)
   }
@@ -907,8 +920,13 @@ export class SkiaRenderer {
     return Effects.getCachedMaskBlur(this, sigma)
   }
 
-  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number, shape?: Path | null): void {
-    Effects.applyClippedBlur(this, canvas, node, sigma, shape)
+  applyClippedBlur(
+    canvas: Canvas,
+    node: SceneNode,
+    effect: Pick<Effect, 'radius' | 'progressive'>,
+    shape?: Path | null
+  ): void {
+    Effects.applyClippedBlur(this, canvas, node, effect, shape)
   }
 
   destroy(): void {

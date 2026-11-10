@@ -1,7 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { ImageFilter } from '@open-pencil/canvaskit'
+import { asCanvas, asDouble } from '#core-tests/canvas/helpers'
 
+import type { ImageFilter } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
@@ -9,7 +10,6 @@ import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
 
-import { asCanvas, asDouble } from '#core-tests/canvas/helpers'
 import {
   createMockCanvas,
   createMockRenderer,
@@ -214,7 +214,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     const blurFilter = asDouble<ImageFilter>({ kind: 'blur' })
     const r = createMockRenderer({
       clipNodeShape: mock(() => undefined),
-      getCachedBlur: mock(() => blurFilter)
+      getCachedLayerBlur: mock(() => blurFilter)
     })
     const canvas = createMockCanvas()
     const rect = new Float32Array([0, 0, 100, 100])
@@ -227,7 +227,10 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       effects: []
     })
 
-    applyClippedBlur(r, asCanvas(canvas), node, 5)
+    const blur = { radius: 5 }
+    applyClippedBlur(r, asCanvas(canvas), node, blur)
+
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(blur, 100, 100)
 
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(
@@ -269,8 +272,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    // Figma draws a blur radius as a Gaussian of 0.43 × radius.
-    expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(4.3))
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, undefined)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-20, -20, 120, 120)
   })
@@ -305,7 +307,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(8.6))
+    expect(r.getCachedLayerBlur).toHaveBeenCalledWith(node.effects[0], 100, 100, undefined)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)
   })

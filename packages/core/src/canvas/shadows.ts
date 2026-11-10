@@ -418,7 +418,7 @@ export function renderEffects(
     if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
       const shape =
         node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
-      r.applyClippedBlur(canvas, node, blurSigma(effect.radius), shape)
+      r.applyClippedBlur(canvas, node, effect, shape)
       shape?.delete()
     }
 

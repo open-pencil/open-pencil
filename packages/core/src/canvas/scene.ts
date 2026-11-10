@@ -1,7 +1,7 @@
-import type { Canvas } from '@open-pencil/canvaskit'
-import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
+import { type Effect, type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { drawnBlurRadius, widestBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
@@ -121,6 +121,26 @@ function isCulled(
   return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
 }
 
+/**
+ * A layer blur's filter. It runs before the layer's rotation and flips are applied, so a
+ * progressive blur's points are mapped through them from the layer's own coordinates.
+ */
+function layerBlurFilter(
+  r: SkiaRenderer,
+  node: SceneNode,
+  blur: Effect,
+  overlays: RenderOverlays
+): ImageFilter | null {
+  const oriented = hasNodeTransform(projectedNode(node, overlays.rotationPreview))
+  const matrix = oriented ? nodeOrientationMatrix(node, overlays.rotationPreview) : null
+  return r.getCachedLayerBlur(
+    blur,
+    node.width,
+    node.height,
+    matrix ? (point) => Matrix.mapPoint(matrix, point) : undefined
+  )
+}
+
 function applyNodeTransforms(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): void {
   // Most layers are neither rotated nor flipped: their orientation is the identity, not a call.
   if (!hasNodeTransform(projectedNode(node, overlays.rotationPreview))) return
@@ -166,13 +186,20 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
+    const blurRadius = drawnBlurRadius(blur ? widestBlurRadius(blur) : 0)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays) : null)
     canvas.saveLayer(
       r.opacityPaint,
-      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+      blurLayerBounds(
+        r,
+        graph,
+        node,
+        worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview),
+        blurRadius,
+        overlays.rotationPreview
+      )
     )
     r.opacityPaint.setImageFilter(null)
   }
@@ -316,6 +343,31 @@ function nodeIsolationLayerBounds(
 }
 
 /**
+ * The layer a layer blur draws into: what the subtree draws, and two blur radii around it, as far
+ * as the blur spreads. It opens before the node's rotation and flips, so the subtree is measured
+ * through them; its own box would cut off what a rotation moves above or left of it.
+ */
+function blurLayerBounds(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  world: Mat3,
+  radius: number,
+  preview?: RenderOverlays['rotationPreview']
+): Float32Array {
+  const viewportBounds = viewportLayerBounds(r, world, radius * 2)
+  if (viewportBounds) return viewportBounds
+  // Visual bounds already reach one blur radius past what the subtree draws.
+  const bounds = subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview)
+  return r.ck.LTRBRect(
+    bounds.minX - radius,
+    bounds.minY - radius,
+    bounds.maxX + radius,
+    bounds.maxY + radius
+  )
+}
+
+/**
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
  * node-edit mode, or left to a live island while the canvas previews.
  */
@@ -380,17 +432,11 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays))
+    const blurRadius = drawnBlurRadius(widestBlurRadius(layerBlur))
     canvas.saveLayer(
       r.effectLayerPaint,
-      viewportLayerBounds(r, world(), blurPadding) ??
-        r.ck.LTRBRect(
-          -blurPadding,
-          -blurPadding,
-          node.width + blurPadding,
-          node.height + blurPadding
-        )
+      blurLayerBounds(r, graph, node, world(), blurRadius, overlays.rotationPreview)
     )
   }
 
