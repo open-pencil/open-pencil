@@ -1,0 +1,1 @@
+- A coding agent's tool calls in an app chat go to the chat's document unless they name another, instead of the tab in front.
