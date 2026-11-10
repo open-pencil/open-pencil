@@ -103,8 +103,15 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     }
 
     const rawArgs = isUnknownRecord(args) ? args : {}
-    // An ACP chat's agent works on the chat's document unless a call names another.
-    const chatStore = agentChatStore(readAgentSession(rawArgs.agent)?.chat)
+    // An ACP chat's agent works on the chat's document unless a call names another; once the
+    // chat is gone, a late call must name one rather than land in whatever tab is in front.
+    const chat = readAgentSession(rawArgs.agent)?.chat
+    const chatStore = agentChatStore(chat)
+    if (chat !== undefined && !chatStore && typeof rawArgs.document_id !== 'string') {
+      throw new Error(
+        'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
+      )
+    }
     const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
     return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs), signal)
   }
