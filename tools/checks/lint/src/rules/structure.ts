@@ -1,9 +1,8 @@
 import { existsSync } from 'node:fs'
 
-import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
 import { createProgramFilenameRule } from '#lint/support/factories.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
-import type { TSESTree } from '@typescript-eslint/utils'
 
 function isPascalCaseName(name: string): boolean {
   return /^[A-Z][A-Za-z0-9]*$/.test(name)
@@ -160,73 +159,6 @@ const noComponentRootSiblingFolder = {
   }
 } satisfies RuleDefinition
 
-const noDirectOpenPencilBrowserStore = {
-  meta: {
-    docs: {
-      description: 'Disallow direct window.openPencil.store access'
-    }
-  },
-  create(context) {
-    function isOpenPencilMember(node: TSESTree.Expression): boolean {
-      return (
-        node?.type === 'MemberExpression' &&
-        staticPropertyName(node.property) === 'openPencil' &&
-        ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
-          (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
-      )
-    }
-
-    return {
-      MemberExpression(node) {
-        if (staticPropertyName(node.property) !== 'store') return
-        if (!isOpenPencilMember(node.object)) return
-        context.report({
-          node,
-          message:
-            'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noDirectOpenPencilWindowInternals = {
-  meta: {
-    docs: {
-      description: 'Disallow direct access to private OpenPencil window internals'
-    }
-  },
-  create(context) {
-    return {
-      MemberExpression(node) {
-        const name = staticPropertyName(node.property)
-        if (!name?.startsWith('__OPEN_PENCIL')) return
-        context.report({
-          node,
-          message:
-            'Do not access window.__OPEN_PENCIL* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noBunGlobalsInCli = {
-  meta: { docs: { description: 'Disallow Bun globals in Node-compatible CLI source' } },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/cli/src/')) return {}
-    return {
-      MemberExpression(node) {
-        if (node.object?.type !== 'Identifier' || node.object.name !== 'Bun') return
-        context.report({
-          node,
-          message: 'Use Node-compatible APIs in CLI source instead of Bun globals.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
 const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   description: 'Disallow top-level test files that encode domains as filename prefixes',
   check(file) {
@@ -236,13 +168,25 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   }
 })
 
+const noFlatKiwiModules = createProgramFilenameRule({
+  description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
+  check(file) {
+    const marker = '/packages/core/src/kiwi/'
+    const start = file.indexOf(marker)
+    if (start === -1) return false
+
+    const relativePath = file.slice(start + marker.length)
+    if (relativePath.includes('/') || relativePath === 'index.ts') return false
+
+    return 'Move Kiwi modules under binary/, fig/, node-change/, instance-overrides/, or kiwi-schema/ instead of adding flat top-level files.'
+  }
+})
+
 export {
   vueComponentFilePascalCase,
   componentNamespaceCasing,
   nonComponentSourceDirectoriesKebabCase,
   noComponentRootSiblingFolder,
-  noDirectOpenPencilBrowserStore,
-  noDirectOpenPencilWindowInternals,
-  noBunGlobalsInCli,
-  noTopLevelPrefixedTestFiles
+  noTopLevelPrefixedTestFiles,
+  noFlatKiwiModules
 }

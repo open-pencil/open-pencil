@@ -73,14 +73,14 @@ const downloading = computed(() => archive !== null && archive.saved === null)
         :description="messages.deleteAccountBlockedDescription"
       >
         <template #details>
-          <ul class="list-disc pl-4">
+          <ul class="list-disc ps-4">
             <li v-for="workspace in deletion.blockedBy" :key="workspace.id">
               {{ workspace.name }}
             </li>
           </ul>
         </template>
       </AppAlert>
-      <ul class="flex list-disc flex-col gap-1 pl-4 text-xs text-surface">
+      <ul class="flex list-disc flex-col gap-1 ps-4 text-xs text-surface">
         <li v-if="deletion.deletes.length > 0">
           {{ messages.deleteAccountWorkspaces(deletion.deletes.length) }}:
           {{ deletion.deletes.map((workspace) => workspace.name).join(', ') }}

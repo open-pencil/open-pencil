@@ -94,7 +94,7 @@ function loadPreviewFont(family: string, source: string) {
           family
         }}</span>
         <span
-          class="font-sans ml-auto shrink-0 rounded bg-input px-1.5 py-0.5 text-4xs uppercase text-muted"
+          class="font-sans ms-auto shrink-0 rounded bg-input px-1.5 py-0.5 text-4xs uppercase text-muted"
         >
           {{ source }}
         </span>

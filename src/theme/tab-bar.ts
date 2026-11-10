@@ -5,7 +5,7 @@ const tabBarTheme = {
     scroller:
       'scrollbar-none h-full min-w-0 scroll-px-8 overflow-x-auto data-overflow-end:mask-r-from-[calc(100%-2rem)] data-overflow-start:mask-l-from-[calc(100%-2rem)]',
     list: 'flex h-full items-end',
-    item: 'group/tab flex h-full max-w-48 min-w-24 items-center border-r border-border pr-3',
+    item: 'group/tab flex h-full max-w-48 min-w-24 items-center border-e border-border pe-3',
     trigger:
       'flex h-full min-w-0 cursor-pointer touch-manipulation items-center gap-1.5 px-3 text-2xs transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-panel-focus',
     icon: 'size-3 shrink-0 opacity-50',
@@ -25,7 +25,7 @@ const tabBarTheme = {
     // Home is pinned first as an icon, the way Figma's desktop app shows it.
     home: {
       true: {
-        item: 'max-w-none min-w-0 pr-0',
+        item: 'max-w-none min-w-0 pe-0',
         trigger: 'px-3.5'
       }
     },

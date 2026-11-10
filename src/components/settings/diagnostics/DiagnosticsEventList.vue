@@ -75,7 +75,7 @@ const categoryOptions = computed(() => [
     <SettingsGroup v-if="visible.length">
       <CollapsibleRoot v-for="event in visible" :key="event.id" data-slot="diagnostics-event">
         <CollapsibleTrigger
-          class="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-2xs hover:bg-hover"
+          class="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-start text-2xs hover:bg-hover"
         >
           <span class="flex min-w-0 items-center gap-2">
             <icon-lucide-circle-alert
@@ -97,7 +97,7 @@ const categoryOptions = computed(() => [
           <span class="shrink-0 text-muted">{{ dates.format(event.timestamp, 'clock') }}</span>
         </CollapsibleTrigger>
         <CollapsibleContent :class="collapsibleContentMotion">
-          <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-2xs text-muted">
+          <div class="space-y-1.5 px-3 pb-2.5 ps-8.5 font-mono text-2xs text-muted">
             <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               <template v-for="[name, value] in event.fields" :key="name">
                 <dt>{{ name }}</dt>

@@ -5,7 +5,7 @@ export default {
     // An undone call's text dims to the muted color, which still reads at 4.5:1.
     root: 'rounded-lg border border-border bg-canvas data-[undone=true]:**:text-muted',
     trigger:
-      'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent',
+      'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-start hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent',
     status:
       'flex size-4 shrink-0 items-center justify-center rounded-full data-[state=done]:bg-success/20 data-[state=done]:text-success data-[state=error]:bg-error/15 data-[state=error]:text-error data-[state=pending]:bg-accent/20 data-[state=pending]:text-primary',
     statusIcon: 'size-3',

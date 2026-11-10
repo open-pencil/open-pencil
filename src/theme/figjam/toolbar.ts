@@ -10,7 +10,7 @@ const figJamToolbarTheme = {
     popover: 'z-50 p-2',
     options: 'flex min-w-36 flex-col gap-0.5',
     option:
-      'flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-left text-xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[state=on]:bg-accent/15 data-[state=on]:text-primary',
+      'flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-start text-xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[state=on]:bg-accent/15 data-[state=on]:text-primary',
     optionIcon: 'size-4 shrink-0 text-muted',
     group: 'grid gap-2',
     groupLabel: 'text-2xs text-muted',

@@ -16,9 +16,9 @@ export default {
       'data-[today]:font-semibold data-[today]:text-primary',
       'data-[highlighted]:rounded-none data-[highlighted]:bg-accent/15',
       'data-[selected]:rounded-none data-[selected]:bg-accent/15',
-      'data-[selection-start]:rounded-l-md data-[selection-start]:bg-accent data-[selection-start]:text-on-accent',
-      'data-[selection-end]:rounded-r-md data-[selection-end]:bg-accent data-[selection-end]:text-on-accent',
-      'data-[highlighted-start]:rounded-l-md data-[highlighted-end]:rounded-r-md',
+      'data-[selection-start]:rounded-s-md data-[selection-start]:bg-accent data-[selection-start]:text-on-accent',
+      'data-[selection-end]:rounded-e-md data-[selection-end]:bg-accent data-[selection-end]:text-on-accent',
+      'data-[highlighted-start]:rounded-s-md data-[highlighted-end]:rounded-e-md',
       'data-[outside-view]:text-muted/50',
       'data-[unavailable]:cursor-default data-[unavailable]:text-muted/40 data-[unavailable]:hover:bg-transparent',
       'data-[disabled]:cursor-default data-[disabled]:text-muted/40 data-[disabled]:hover:bg-transparent'
