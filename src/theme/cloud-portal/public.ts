@@ -18,8 +18,7 @@ export default {
       'flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-6 text-xs text-muted',
     footerLink: 'hover:text-surface hover:underline',
     note: 'text-center text-xs text-pretty text-muted',
-    inlineLink:
-      'text-surface underline decoration-muted underline-offset-2 hover:decoration-surface',
+    inlineLink: 'underline underline-offset-2 hover:text-surface',
     tile: 'flex size-12 items-center justify-center rounded-xl bg-panel-field text-muted',
     actions: 'flex flex-col gap-2'
   },
