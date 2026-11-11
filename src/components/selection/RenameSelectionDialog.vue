@@ -63,7 +63,7 @@ function submit() {
 
 <template>
   <AppDialogRoot v-model:open="store.state.renameSelectionOpen" size="sm">
-    <AppDialogHeader :heading="title" :close-label="common.close" />
+    <AppDialogHeader :heading="title" />
     <AppDialogBody>
       <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
         <div class="min-w-0">

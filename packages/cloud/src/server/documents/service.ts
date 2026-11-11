@@ -38,8 +38,14 @@ import {
   workspaceRole
 } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import {
+  createDocumentTrash,
+  DEFAULT_TRASH_OPTIONS,
+  type DocumentTrashOptions
+} from '#cloud/server/documents/trash'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import { announceVersions, recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
+import type { CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
@@ -56,6 +62,10 @@ export type DocumentServiceOptions = {
   technicalMaximumUploadBytes?: number
   /** Called once a save adds a checkpoint to the document's history. */
   onVersionsChanged?: (documentId: string) => void
+  /** How long Trash keeps documents, the grace of one deleted forever, and the cleanup lease. */
+  trash?: DocumentTrashOptions
+  /** Where cleanup the service runs itself, such as of expired uploads, reports a failure. */
+  reportError?: CloudErrorReporter
 }
 
 /** Whether the stored object is the file the upload declared, which the commit names again. */
@@ -75,9 +85,10 @@ export function createDocumentService(
   objects: ObjectStore,
   options: DocumentServiceOptions = {}
 ) {
-  const cleanup = createUploadCleanupService(database, objects)
+  const cleanup = createUploadCleanupService(database, objects, options.reportError)
   const quota = createStorageQuotaService(database)
   const images = createDocumentImages(database, objects, quota)
+  const trash = createDocumentTrash(database, objects, options.trash ?? DEFAULT_TRASH_OPTIONS)
 
   /**
    * Makes a committed upload the document's current revision, unless it already was, and records
@@ -362,6 +373,9 @@ export function createDocumentService(
       return listSharedDocuments(database, userId)
     },
 
+    /** Trash: list what the person may restore, restore it, or delete it for good. */
+    trash,
+
     async usage(userId: string, workspaceId: string) {
       const role = await workspaceRole(database, userId, workspaceId)
       if (!role) throw new DocumentNotFoundError()
@@ -423,7 +437,7 @@ export function createDocumentService(
       }
       await database
         .updateTable('document')
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: new Date(), deletedBy: userId })
         .where('id', '=', documentId)
         .where('deletedAt', 'is', null)
         .execute()

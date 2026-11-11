@@ -92,11 +92,25 @@ const emit = defineEmits<{
 }>()
 
 defineOptions({ inheritAttrs: false })
+
+/**
+ * A press on the rest of the field, past the text being edited, keeps the input focused and puts
+ * the caret after the text, as a press past the text of a wide input does.
+ */
+function caretToEnd(event: PointerEvent) {
+  event.preventDefault()
+  const field = event.currentTarget
+  if (!(field instanceof HTMLElement)) return
+  const input = field.parentElement?.querySelector('input')
+  if (!input) return
+  input.focus()
+  input.setSelectionRange(input.value.length, input.value.length)
+}
 </script>
 
 <template>
   <NumberFieldRoot
-    v-slot="{ editing, actions, attrs: rootAttrs, placeholder: ph }"
+    v-slot="{ editing, actions, attrs: rootAttrs, placeholder: ph, draftValue }"
     :model-value="modelValue"
     :min="min"
     :max="max"
@@ -135,27 +149,44 @@ defineOptions({ inheritAttrs: false })
         </slot>
         <span v-if="label" class="text-2xs leading-none">{{ label }}</span>
       </span>
-      <NumberFieldInput :class="styles.field({ class: ui?.field })" />
+      <span v-if="editing" data-slot="sizer" :class="styles.sizer({ class: ui?.sizer })">
+        <span aria-hidden="true" :class="styles.field({ class: [ui?.field, styles.mirror()] })">{{
+          draftValue || ' '
+        }}</span>
+        <NumberFieldInput :class="styles.field({ class: ui?.field })" />
+      </span>
       <NumberFieldValue :class="styles.display({ class: ui?.display })">
         <template #default="display">
           <slot name="display" v-bind="display">
             <slot v-if="display.bound" name="bound" v-bind="display">
-              <span :class="styles.value({ class: ui?.value })">{{ display.value }}</span>
-              <span v-if="suffix" :class="styles.suffix({ class: ui?.suffix })">{{ suffix }}</span>
+              <span data-slot="number" :class="styles.value({ class: ui?.value })">{{
+                display.value
+              }}</span>
+              <span v-if="suffix" data-slot="unit" :class="styles.suffix({ class: ui?.suffix })">{{
+                suffix
+              }}</span>
             </slot>
             <span v-else-if="display.isMixed" :class="styles.mixed({ class: ui?.mixed })">
               {{ ph }}
             </span>
             <template v-else>
-              <span :class="styles.value({ class: ui?.value })">{{ display.value }}</span>
-              <span v-if="suffix" :class="styles.suffix({ class: ui?.suffix })">{{ suffix }}</span>
+              <span data-slot="number" :class="styles.value({ class: ui?.value })">{{
+                display.value
+              }}</span>
+              <span v-if="suffix" data-slot="unit" :class="styles.suffix({ class: ui?.suffix })">{{
+                suffix
+              }}</span>
             </template>
           </slot>
         </template>
       </NumberFieldValue>
-      <span v-if="editing && suffix" :class="styles.suffix({ class: ui?.suffix })">{{
-        suffix
-      }}</span>
+      <span
+        v-if="editing && suffix"
+        data-slot="unit"
+        :class="styles.suffix({ class: ui?.suffix })"
+        >{{ suffix }}</span
+      >
+      <span v-if="editing" :class="styles.gap({ class: ui?.gap })" @pointerdown="caretToEnd" />
       <span
         v-if="slots.suffix"
         data-slot="trailing"

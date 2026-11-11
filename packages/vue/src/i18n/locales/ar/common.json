@@ -41,5 +41,6 @@
   "tokens": "رموز",
   "clear": "مسح",
   "dismiss": "تجاهل",
-  "browserSupport": "التحقق من دعم المتصفح"
+  "browserSupport": "التحقق من دعم المتصفح",
+  "typeToConfirm": "للتأكيد، اكتب «{text}»."
 }

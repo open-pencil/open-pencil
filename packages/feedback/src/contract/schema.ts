@@ -52,6 +52,7 @@ export const AI_PROVIDERS = [
   'acp:claude-code',
   'acp:codex',
   'acp:gemini-cli',
+  'acp:antigravity',
   'acp:cursor',
   'acp:grok-build'
 ] as const

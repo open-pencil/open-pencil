@@ -14,12 +14,12 @@ const RESULT = {
 
 function search(args: Record<string, unknown>) {
   const { figma } = setupToolTest()
-  return getTool('web_search').execute(figma, args)
+  return getTool('search_web').execute(figma, args)
 }
 
 afterEach(() => setWebSearchProvider(null))
 
-describe('web_search tool', () => {
+describe('search_web tool', () => {
   test('asks the provider with a trimmed query and five results by default', async () => {
     const asked: unknown[] = []
     setWebSearchProvider({

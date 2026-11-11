@@ -8,6 +8,7 @@ import {
   relayServerMessages,
   type RelayServerFrame
 } from '#cloud/contract'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
 import type { RelayAuthorization } from './authorize'
@@ -130,7 +131,9 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     MAX_COLLAB_MESSAGE_BYTES
   )
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
-  const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
+  const report =
+    options.onError ??
+    ((message, error) => logCloud('error', message, { source: 'relay', error: loggedError(error) }))
 
   function send(socket: RelaySocket, frame: RelayServerFrame) {
     for (const message of relayServerMessages(frame)) socket.send(message)
@@ -205,7 +208,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       await log.save({ closing })
       return true
     } catch (error) {
-      report('Saving a collaboration room failed:', error)
+      report('Saving a collaboration room failed', error)
       // The room holds edits the store doesn't have; save again without waiting for another edit.
       // A closing room retries through `saveAndClose`.
       if (!closing && rooms.get(room.id) === room) {
@@ -395,7 +398,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         return undefined
       },
       (error: unknown) => {
-        report('Loading a collaboration room failed:', error)
+        report('Loading a collaboration room failed', error)
         peer.socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
       }
     )

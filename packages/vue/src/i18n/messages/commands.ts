@@ -53,7 +53,6 @@ export const commandMessageDefaults = {
   arrangeRadial: 'Radial map',
   arrangeNetwork: 'Network',
   moveToPage: 'Move to page',
-  setOpacity: 'Set opacity',
   zoomTo50: 'Zoom to 50%',
   zoomTo100: 'Zoom to 100%',
   zoomTo200: 'Zoom to 200%',

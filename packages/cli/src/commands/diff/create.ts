@@ -14,7 +14,7 @@ export default defineCommand({
   async run({ args }) {
     const { result } = await runToolData(
       args.file,
-      'diff_create',
+      'diff_nodes',
       { from: args.from, to: args.to, ...(args.depth ? { depth: Number(args.depth) } : {}) },
       args
     )

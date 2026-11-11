@@ -70,7 +70,7 @@ const itemCls = menuItem({ justify: 'between' })
               <component :is="operation.icon" class="size-3.5 shrink-0 text-muted" />
               <span>{{ getCommand(operation.id).label }}</span>
             </div>
-            <span class="ml-6 text-2xs text-muted">{{
+            <span class="ms-6 text-2xs text-muted">{{
               formatShortcut(editorCommandMetadata(operation.id).shortcut)
             }}</span>
           </DropdownMenuItem>

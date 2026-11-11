@@ -89,7 +89,7 @@ export function conversations(): Conversation[] {
           role: 'assistant',
           parts: [
             {
-              type: 'tool-rename_node',
+              type: 'tool-update_node',
               toolCallId: 'rename',
               state: 'output-error',
               input: { id: 'deleted-layer' },

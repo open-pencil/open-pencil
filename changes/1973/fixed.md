@@ -1,0 +1,1 @@
+- A dashed vector with several closed contours, such as a ring or a letter with a counter, dashes every contour instead of drawing all but the first solid (#1973).

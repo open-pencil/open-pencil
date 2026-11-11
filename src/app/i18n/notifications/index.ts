@@ -42,7 +42,13 @@ export const notificationMessageDefaults = {
   imageConvertedToVectors: 'Image converted to vectors.',
   vectorizeCredentialFailed: params('{error}. Update it in Settings → Image services.'),
   vectorizeFailed: params('{provider} could not vectorize this image: {error}'),
+  savingDocument: 'Saving document…',
   operationFailed: params('Operation failed: {error}'),
+  saveFailedRetry: 'Retry save',
+  fileChangedOnDisk: params(
+    '“{name}” changed on disk. Your unsaved changes are kept; saving replaces the file.'
+  ),
+  reloadDiscardingChanges: 'Reload',
   storageConnected: 'Connected. Storage namespace is ready.',
   storageConnectionFailed: params('Could not connect to storage: {error}'),
   deepLinkLocateFile: params('Locate “{file}” to follow this link.'),

@@ -28,6 +28,12 @@ describe('desktop file scope', () => {
       for (const path of refused) {
         const error = await writeNativeFile(path, 'not allowed')
         assert.match(error ?? '', /forbidden|not allowed/i, `${path} was writable`)
+        // A save moves its finished copy over the file, so moving one there is refused too.
+        const moved = await invokeNative('plugin:fs|rename', {
+          oldPath: join(documents, 'design.fig'),
+          newPath: path
+        }).then(() => null, String)
+        assert.match(moved ?? '', /forbidden|not allowed/i, `${path} took a moved file`)
       }
     } finally {
       rmSync(documents, { recursive: true, force: true })

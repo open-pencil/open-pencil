@@ -7,7 +7,7 @@
   "webSearchDescription": "Mit deinem eigenen Exa-Schlüssel können der KI-Agent und Agenten mit den Werkzeugen von OpenPencil mit jedem Modell im Web suchen, und Exa rechnet direkt mit dir ab, statt Cloud-Guthaben zu verbrauchen.",
   "pexelsAPIKey": "Pexels-API-Schlüssel",
   "unsplashAccessKey": "Unsplash-Zugriffsschlüssel",
-  "stockPhotoToolOptional": "Optional — Zugangsdaten für das stock_photo-Werkzeug",
+  "stockPhotoToolOptional": "Optional — Zugangsdaten für das search_stock_photos-Werkzeug",
   "pexelsAlternativeOptional": "Optional — Alternative zu Pexels",
   "getPexelsAPIKey": "Kostenlosen Pexels-API-Schlüssel abrufen →",
   "getUnsplashAccessKey": "Kostenlosen Unsplash-Zugriffsschlüssel abrufen →",

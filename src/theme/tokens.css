@@ -27,6 +27,11 @@
   }
 }
 
+/*
+ * The thin scrollbar: the standard properties, and WebKit's pseudo-elements for the Safari and
+ * Chrome versions in the browser baseline that predate them. The app applies it to every element
+ * (`src/app.css`); the docs site uses it where it needs it.
+ */
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;

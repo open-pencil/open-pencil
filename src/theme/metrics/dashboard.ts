@@ -6,7 +6,7 @@ export const metricsDashboardTheme = {
     barTitle: 'text-xs font-semibold whitespace-nowrap',
     barHost: 'truncate text-2xs text-muted max-sm:hidden',
     barMeta: 'truncate text-2xs text-muted max-sm:hidden',
-    barEnd: 'ml-auto flex items-center gap-2',
+    barEnd: 'ms-auto flex items-center gap-2',
     main: 'min-w-0 flex-1 overflow-y-auto',
     inner:
       'mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 transition-opacity md:px-6 data-[loading=true]:opacity-60',
@@ -62,9 +62,9 @@ export const metricsNetworksTheme = {
   slots: {
     table: 'w-full table-fixed text-xs',
     row: 'h-9 border-b border-border last:border-b-0 [&>th]:h-7 [&>th]:text-2xs [&>th]:font-normal [&>th]:text-muted',
-    asn: 'w-16 text-left text-muted tabular-nums',
-    name: 'truncate pr-3 text-left font-medium',
-    number: 'w-16 text-right tabular-nums'
+    asn: 'w-16 text-start text-muted tabular-nums',
+    name: 'truncate pe-3 text-start font-medium',
+    number: 'w-16 text-end tabular-nums'
   }
 } as const
 
@@ -74,7 +74,7 @@ export const metricsRangePickerTheme = {
     triggerSpan: 'text-muted tabular-nums max-sm:hidden',
     body: 'flex max-sm:flex-col',
     presets:
-      'flex w-40 flex-col gap-0.5 border-r border-border p-1.5 max-sm:w-auto max-sm:border-r-0 max-sm:border-b',
+      'flex w-40 flex-col gap-0.5 border-e border-border p-1.5 max-sm:w-auto max-sm:border-e-0 max-sm:border-b',
     preset:
       'flex h-7 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 text-xs outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus data-[selected=true]:font-semibold',
     calendar: 'p-3'

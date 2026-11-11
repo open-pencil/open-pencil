@@ -8,8 +8,12 @@ import type theme from '@/theme/paint/field'
 export type PaintFieldUI = ComponentUI<typeof theme>
 
 export interface PaintFieldProps {
-  opacity: number
-  opacityLabel: string
+  /** The paint's opacity, 0 to 1; without it the field has no opacity input. */
+  opacity?: number
+  /** Names the opacity input; needed only with `opacity`. */
+  opacityLabel?: string
+  /** The field it stands on: the properties panel's, or a form's bordered input. */
+  tone?: 'panel' | 'form'
   class?: ClassValue
   ui?: PaintFieldUI
 }
@@ -28,10 +32,16 @@ import { computed } from 'vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import paintFieldTheme from '@/theme/paint/field'
 
-const { opacity, opacityLabel, class: className, ui } = defineProps<PaintFieldProps>()
+const {
+  opacity,
+  opacityLabel,
+  tone = 'panel',
+  class: className,
+  ui
+} = defineProps<PaintFieldProps>()
 const emit = defineEmits<{ 'update:opacity': [opacity: number] }>()
 defineSlots<PaintFieldSlots>()
-const styles = computed(() => tv(paintFieldTheme)())
+const styles = computed(() => tv(paintFieldTheme)({ tone }))
 </script>
 
 <template>
@@ -46,8 +56,13 @@ const styles = computed(() => tv(paintFieldTheme)())
     <div :class="styles.value({ class: ui?.value })" data-slot="value">
       <slot name="value" />
     </div>
-    <div :class="styles.divider({ class: ui?.divider })" data-slot="divider" />
+    <div
+      v-if="opacity !== undefined"
+      :class="styles.divider({ class: ui?.divider })"
+      data-slot="divider"
+    />
     <NumberField
+      v-if="opacity !== undefined"
       :inherit-binding="false"
       :class="styles.opacity({ class: ui?.opacity })"
       :aria-label="opacityLabel"
@@ -58,8 +73,8 @@ const styles = computed(() => tv(paintFieldTheme)())
       :ui="{
         root: 'h-full rounded-none border-0 bg-transparent shadow-none',
         leading: 'hidden',
-        field: 'pl-1.5',
-        display: 'pl-1.5'
+        field: 'ps-1.5',
+        display: 'ps-1.5'
       }"
       data-property="opacity"
       @update:model-value="emit('update:opacity', Math.max(0, Math.min(1, $event / 100)))"

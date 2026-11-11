@@ -14,3 +14,10 @@ export class DocumentConflictError extends Error {
 export class UploadInvalidError extends Error {
   override readonly name = 'UploadInvalidError'
 }
+/**
+ * Destroying a document deleted forever with no grace failed. The failure, its cause, was
+ * reported where cleanup reports; the document is out of Trash, and cleanup tries again.
+ */
+export class DocumentPurgeFailedError extends Error {
+  override readonly name = 'DocumentPurgeFailedError'
+}

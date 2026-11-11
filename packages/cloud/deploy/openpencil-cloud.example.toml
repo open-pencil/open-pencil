@@ -75,6 +75,11 @@ force_path_style = true
 checksum_verification = "metadata"
 # Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
 maximum_upload_bytes = 1073741824
+# Keep each file cleanup deletes under this prefix, and expire the prefix with a lifecycle rule
+# longer than the database's restore window. After restoring the database to an earlier time, copy
+# deleted/<key> back to <key> for each missing file a revision, image, or room snapshot refers to,
+# before serving it. Useful where the bucket keeps no versions, as on R2.
+# deleted_prefix = "deleted/"
 
 [collaboration]
 # One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.
@@ -84,9 +89,12 @@ maximum_connections_per_room = 1000
 # URL, such as a separate proxy.
 # relay_url = "wss://relay.example.com/api/collaboration/relay"
 
-# How long deleted documents stay restorable.
+# How long deleted documents stay in Trash, where people can restore them, and how long one deleted
+# forever there keeps its files, out of sight, so a server administrator can still restore it
+# (0 destroys it at once).
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 [email]
 transport = "none"
@@ -110,10 +118,10 @@ transport = "none"
 # [internal_api]
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
-# defaults to https://us.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
+# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
 # [error_tracking]
 # provider = "posthog"
-# host = "https://eu.i.posthog.com"
+# host = "https://us.i.posthog.com"
 
 [workers.email]
 batch_size = 50

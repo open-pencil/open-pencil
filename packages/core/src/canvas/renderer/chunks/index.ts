@@ -2,7 +2,7 @@ import RBush from 'rbush'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 
 import {
   buildChunks,
@@ -33,6 +33,8 @@ export class RenderChunkIndex {
   private readonly chunkIdsByTop = new Map<string, Set<string>>()
   /** The bounds of every chunk, computed when asked and dropped when the chunks change. */
   private cachedBounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null | undefined
+  /** At least the largest backdrop reach of any chunk: it only grows until the index is reset. */
+  private maxBackdropReach = 0
 
   static build(
     graph: SceneGraph,
@@ -83,6 +85,7 @@ export class RenderChunkIndex {
 
   private register(chunk: RenderChunk, graph?: SceneGraph): void {
     this.chunks.set(chunk.id, chunk)
+    this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
     const ids = this.chunkIdsByNode.get(chunk.nodeId) ?? new Set<string>()
     ids.add(chunk.id)
     this.chunkIdsByNode.set(chunk.nodeId, ids)
@@ -401,6 +404,27 @@ export class RenderChunkIndex {
     return this.tree.search(bounds).sort((a, b) => a.painterOrder - b.painterOrder)
   }
 
+  /** The chunks whose glass or background blur reads some of `bounds` from the canvas. */
+  backdropsReaching(bounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'>): RenderChunk[] {
+    const reach = this.maxBackdropReach
+    if (reach === 0) return []
+    return this.tree
+      .search({
+        minX: bounds.minX - reach,
+        minY: bounds.minY - reach,
+        maxX: bounds.maxX + reach,
+        maxY: bounds.maxY + reach
+      })
+      .filter(
+        (chunk) =>
+          chunk.backdropReach > 0 &&
+          chunk.minX - chunk.backdropReach < bounds.maxX &&
+          chunk.minY - chunk.backdropReach < bounds.maxY &&
+          chunk.maxX + chunk.backdropReach > bounds.minX &&
+          chunk.maxY + chunk.backdropReach > bounds.minY
+      )
+  }
+
   updateNode(graph: SceneGraph, nodeId: string): number {
     const ids = this.chunkIdsByNode.get(nodeId)
     const node = graph.getNode(nodeId)
@@ -416,7 +440,11 @@ export class RenderChunkIndex {
         this.tree.insert(chunk)
         continue
       }
-      Object.assign(chunk, bounds, { context: chunkContext(graph, node) })
+      Object.assign(chunk, bounds, {
+        context: chunkContext(graph, node),
+        backdropReach: backdropReach(graph, node, chunk.kind === 'subtree')
+      })
+      this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
       this.tree.insert(chunk)
       this.cachedBounds = undefined
       updated++
@@ -477,6 +505,7 @@ export class RenderChunkIndex {
     this.dependenciesByChunk.clear()
     this.chunkIdsByTop.clear()
     this.cachedBounds = undefined
+    this.maxBackdropReach = 0
   }
 }
 

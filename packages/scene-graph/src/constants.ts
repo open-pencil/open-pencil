@@ -12,6 +12,14 @@ export const UNSET_GLASS: Readonly<GlassEffectParams> = {
   lightIntensity: 0,
   dispersion: 0
 }
+/** The lens a new glass effect starts with when nothing sets its values. */
+export const DEFAULT_GLASS: Readonly<GlassEffectParams> = {
+  refraction: 0.5,
+  depth: 20,
+  lightAngle: -45,
+  lightIntensity: 0.5,
+  dispersion: 0
+}
 export const DEFAULT_FONT_FAMILY = 'Inter'
 export const DEFAULT_STROKE_MITER_LIMIT = 4
 export const DEFAULT_STROKE_WEIGHT = 1

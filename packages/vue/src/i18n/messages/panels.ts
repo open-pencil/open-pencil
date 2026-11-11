@@ -145,6 +145,8 @@ export const panelMessageDefaults = {
   /** A star's inner radius as a share of its outer one. */
   starRatio: 'Ratio',
   spread: 'Spread',
+  blur: 'Blur',
+  showShadowBehind: 'Show behind transparent areas',
   effectColor: 'Color',
 
   page: 'Page',
@@ -378,6 +380,13 @@ export const panelMessageDefaults = {
   layerBlur: 'Layer blur',
   backgroundBlur: 'Background blur',
   foregroundBlur: 'Foreground blur',
+  glass: 'Glass',
+  glassLightAngle: 'Light angle',
+  glassLightIntensity: 'Light intensity',
+  glassRefraction: 'Refraction',
+  glassDepth: 'Depth',
+  glassDispersion: 'Dispersion',
+  glassFrost: 'Frost',
 
   maskType: 'Mask type',
   maskTypeAlpha: 'Alpha',

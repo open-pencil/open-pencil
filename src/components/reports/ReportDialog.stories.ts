@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, waitFor } from 'storybook/test'
+import { expect, fn, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 
 import type { ReportSendFailure } from '@/app/reports/send'
@@ -108,11 +108,8 @@ export const ProblemWithoutDescription: Story = {
   args: { kind: 'problem', canSend: false },
   play: async ({ canvasElement }) => {
     // The dialog renders in a portal on the document body.
-    await waitFor(() =>
-      expect(
-        canvasElement.ownerDocument.querySelector('[data-test-id="report-send"]')
-      ).toBeDisabled()
-    )
+    const body = within(canvasElement.ownerDocument.body)
+    await waitFor(() => expect(body.getByRole('button', { name: 'Send report' })).toBeDisabled())
   }
 }
 export const Sending: Story = { args: { sending: true } }

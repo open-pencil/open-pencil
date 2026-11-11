@@ -105,7 +105,7 @@ export function renderFromEditorState(
   const { editChrome, live, edits } = profile
   r.pageDotGrid = profile.dotGrid
   r.sectionTitles = profile.sectionTitles
-  r.editHandles = edits
+  r.editHandles = edits && profile.layerEdits === 'all'
   render(
     r,
     graph,
@@ -115,6 +115,7 @@ export function renderFromEditorState(
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
       showPixelGrid: showsPixelGrid(profile, state),
+      showSizeLabels: state.showSizeLabels,
       gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,

@@ -32,6 +32,7 @@ export function createDocumentIOActions(
     state,
     getFilePath: sourceState.getFilePath,
     getFileHandle: sourceState.getFileHandle,
+    hasUnsavedChanges: () => sourceActions.hasUnsavedChanges(),
     markDocumentSaved: () => sourceActions.markDocumentSaved(),
     preparationController
   })

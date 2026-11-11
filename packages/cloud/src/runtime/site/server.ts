@@ -1,5 +1,11 @@
 import { CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
-import { cloudErrorHandler, withIndexingPolicy, type CloudErrorReporter } from '#cloud/server'
+import {
+  cloudErrorHandler,
+  cloudRequestId,
+  withIndexingPolicy,
+  type CloudErrorReporter,
+  type ForwardedRequestId
+} from '#cloud/server'
 import { Hono } from 'hono'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
@@ -48,6 +54,8 @@ export type CloudServerOptions = {
   indexingPolicy: 'allow' | 'deny'
   /** Reports errors reading the site's files, when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
+  /** The request ID the runtime trusts from what stands in front of it; see `cloudRequestId`. */
+  forwardedRequestId?: ForwardedRequestId
 }
 
 function cacheControl(path: string): string {
@@ -62,9 +70,11 @@ function cacheControl(path: string): string {
  */
 export function createCloudServer(
   api: { fetch(request: Request): Response | Promise<Response> },
-  { site, indexingPolicy, reportError }: CloudServerOptions
+  { site, indexingPolicy, reportError, forwardedRequestId }: CloudServerOptions
 ) {
-  const server = new Hono().onError(cloudErrorHandler(reportError))
+  const server = new Hono()
+    .onError(cloudErrorHandler(reportError))
+    .use(cloudRequestId(forwardedRequestId))
   server.use(async (c, next) => {
     await next()
     c.res = withIndexingPolicy(c.res, c.req.path, indexingPolicy)

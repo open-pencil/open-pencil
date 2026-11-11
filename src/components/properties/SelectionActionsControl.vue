@@ -13,7 +13,7 @@ const maskCommand = getCommand('selection.toggleMask')
 </script>
 
 <template>
-  <div class="ml-auto flex items-center gap-1">
+  <div class="ms-auto flex items-center gap-1">
     <IconButton
       :label="maskCommand.label"
       :disabled="!maskCommand.enabled.value"

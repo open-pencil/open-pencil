@@ -80,7 +80,7 @@ const shownValue = computed(() => {
     <PopoverTrigger as-child>
       <button
         type="button"
-        class="group/row flex h-7 w-full min-w-0 items-center gap-1.5 rounded px-1.5 text-left text-xs hover:bg-hover data-[state=open]:bg-hover"
+        class="group/row flex h-7 w-full min-w-0 items-center gap-1.5 rounded px-1.5 text-start text-xs hover:bg-hover data-[state=open]:bg-hover"
         :data-property-row="name"
       >
         <PropertyTypeIcon :kind="kind" />
@@ -101,7 +101,7 @@ const shownValue = computed(() => {
           <PropertyTypeIcon :kind="kind" />
           <h3 class="truncate text-xs font-semibold text-surface">{{ name }}</h3>
           <PopoverClose as-child>
-            <AppButton :aria-label="common.close" class="ml-auto">
+            <AppButton :aria-label="common.close" class="ms-auto">
               <icon-lucide-x class="size-3.5" />
             </AppButton>
           </PopoverClose>

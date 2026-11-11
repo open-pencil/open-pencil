@@ -52,8 +52,24 @@ revision has its own object key.
 - Each upload names the revision it was based on, so a stale base is rejected instead of silently
   overwriting a newer revision. The client then chooses: take the Cloud revision, keep both, or
   replace it.
-- Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
-  the retention period passes.
+- Deleting a document moves it to Trash: `deleted_at` and `deleted_by` are set, and the cleanup
+  worker destroys revisions and objects once the retention period passes. `GET /api/trash` lists
+  what the person may restore across their workspaces, and `POST /api/trash/:documentId/restore`
+  clears the deletion while retention lasts and no cleanup has claimed the document. Restoring
+  needs the `delete` permission; deleting forever, `DELETE /api/trash/:documentId`, the `purge`
+  one, which the document's owner and workspace admins hold. A document in Trash keeps its bytes
+  in the workspace's usage, so restoring checks no quota.
+- Deleting forever (`markPurged` in `src/server/documents/purge.ts`) sets `purged_at` and
+  `purged_by`: the document leaves Trash, and the files only it holds come off the workspace's
+  usage at once, recorded in `purged_bytes`. Its files and rows stay through `purge_grace_days`, so
+  a server administrator can restore it from the console (`POST /api/admin/documents/:id/undelete`,
+  audited as `document.undeleted`), live in its workspace with its bytes counted again, unless the
+  workspace has nobody left in it. Cleanup then destroys it like a document past retention, taking
+  off the usage only what `purged_bytes` didn't, and storage reconciliation leaves such documents
+  out. With no grace, deleting forever destroys the document in the request. An account's deletion
+  deletes the documents of the workspaces only it belonged to forever, with the same grace.
+- Every document, upload, or compaction step cleanup can't finish is reported to error tracking
+  with source `cleanup`, by ID only, and retried by a later pass.
 - Images are stored once per workspace, keyed by the SHA-256 the object store verifies, and a stored
   revision leaves them out of its file: it lists the images it uses under the names the file gives
   them, and a download returns a link for each. Before a save the client asks which of its images
@@ -153,9 +169,9 @@ refuses and changes nothing while the account is the only admin of a workspace o
 belong to (`account_sole_admin`) or the deployment's only active administrator
 (`last_admin_required`). The same transaction deletes the user row, whose keys cascade to its
 sessions, sign-in methods, passkeys, and two-step secrets, so a failure leaves the account whole;
-Better Auth's own deletes after the hook then find nothing. Workspaces only the account belongs to lose their documents
-like any deleted document, and the cleanup worker removes each such workspace once retention has
-purged its last one; in the workspaces others keep the account drops out, and the longest-standing
+Better Auth's own deletes after the hook then find nothing. Workspaces only the account belongs to lose their documents,
+deleted forever, and the cleanup worker removes each such workspace once it has destroyed
+the last of them after the grace; in the workspaces others keep the account drops out, and the longest-standing
 other admin becomes the owner whose plan the workspace draws on. Its document grants, invitation
 budget, plan, picture, sign-ins, MFA assurances and enrollment go, and invitations it sent are
 withdrawn. `GET /api/account/deletion` says beforehand what would go and what stops it, and
@@ -432,7 +448,7 @@ Other capabilities are optional: a service lists each one it offers in its catal
 and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
 `search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
 title, date, author, and an excerpt; the contract names no search engine. The editor offers the
-model OpenPencil's `web_search` tool, which also reaches agents through OpenPencil's MCP server.
+model OpenPencil's `search_web` tool, which also reaches agents through OpenPencil's MCP server.
 It searches the services when the Design model runs on them and their catalog lists search, charged
 to the same account; the reference services server offers no search. In the desktop app, an Exa key saved
 under Settings › Integrations is used instead, whatever the model, and Exa bills its owner; Exa

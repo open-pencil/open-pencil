@@ -187,14 +187,18 @@ describe('account deletion', () => {
           [team, bob.userId]
         ])
       )
-      expect(
-        await database
-          .selectFrom('document')
-          .select('id')
-          .where('workspaceId', '=', solo)
-          .where('deletedAt', 'is', null)
-          .execute()
-      ).toEqual([])
+      // Nobody is left to restore them, so they are deleted forever, waiting out the grace.
+      const soloDocuments = await database
+        .selectFrom('document')
+        .select(['deletedAt', 'purgedAt', 'purgedBy'])
+        .where('workspaceId', '=', solo)
+        .execute()
+      expect(soloDocuments.length).toBeGreaterThan(0)
+      for (const document of soloDocuments) {
+        expect(document.deletedAt).not.toBeNull()
+        expect(document.purgedAt).not.toBeNull()
+        expect(document.purgedBy).toBeNull()
+      }
       expect(
         await database
           .selectFrom('document')
@@ -241,12 +245,13 @@ describe('account deletion', () => {
         'carol@example.com'
       ])
 
-      // The cleanup worker purges its documents after retention, then the workspace with them.
+      // The cleanup worker destroys its documents after the grace, then the workspace with them.
       const cleanup = createDocumentCleanupService(database, createMemoryObjectStore().store)
       await cleanup.cleanupDeletedDocuments({
         batchSize: 10,
         leaseDurationMs: 60_000,
         retentionMs: 0,
+        purgeGraceMs: 0,
         now: new Date(Date.now() + 1000)
       })
       expect(

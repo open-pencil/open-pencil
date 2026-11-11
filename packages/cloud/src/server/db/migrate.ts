@@ -7,20 +7,30 @@ import * as storage from './migrations/003_storage'
 import * as documents from './migrations/004_documents'
 import * as sharing from './migrations/005_sharing'
 import * as operations from './migrations/006_operations'
+import * as trash from './migrations/007_trash'
 import type { CloudDatabase } from './tables'
 
-const migrations: Record<string, Migration> = {
+/**
+ * A migration runs before the code it ships with, while the previous release still serves, so it
+ * only adds (expand): no table or column dropped, renamed, retyped, or newly required. One that
+ * must (contract) names each table or `table.column` it changes in `contracts`, and ships a
+ * release after the last code that used them (`tests/integration/server/db/expand.test.ts`).
+ */
+export type CloudMigration = Migration & { contracts?: readonly string[] }
+
+const migrations: Record<string, CloudMigration> = {
   '001_accounts': accounts,
   '002_workspaces': workspaces,
   '003_storage': storage,
   '004_documents': documents,
   '005_sharing': sharing,
-  '006_operations': operations
+  '006_operations': operations,
+  '007_trash': trash
 }
 
 /** Cloud's migrations, in order. */
 export class CloudMigrationProvider implements MigrationProvider {
-  async getMigrations(): Promise<Record<string, Migration>> {
+  async getMigrations(): Promise<Record<string, CloudMigration>> {
     return migrations
   }
 }
