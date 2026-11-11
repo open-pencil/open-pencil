@@ -2,7 +2,8 @@ name: Build native release CI image
 
 # Publishes ghcr.io/open-pencil/native-release-ci, the environment build.yml builds the Linux desktop
 # release in, and proves each build of it bundles the app before a release pins its digest. A pull
-# request's image is tagged with its commit only; master's also moves `ubuntu-22.04`.
+# request's image is tagged with its commit only; master's also moves `ubuntu-22.04`. A fork's pull
+# request, whose token cannot write packages, only builds it.
 
 on:
   workflow_dispatch:
@@ -25,6 +26,8 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/open-pencil/native-release-ci
+  # Pushed for master and this repository's pull requests, never a fork's.
+  PUBLISH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
   publish:
@@ -35,12 +38,14 @@ jobs:
       packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      published: ${{ env.PUBLISH }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        if: env.PUBLISH == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -52,15 +57,18 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: tools/ci/images/native-release
-          push: true
-          tags: ${{ env.IMAGE }}:${{ github.event.pull_request.head.sha || github.sha }}${{ github.event_name != 'pull_request' && format(',{0}:ubuntu-22.04', env.IMAGE) || '' }}
-          cache-from: type=gha,scope=native-release-image
-          cache-to: type=gha,scope=native-release-image,mode=max
+          push: ${{ env.PUBLISH == 'true' }}
+          # Only master moves the tag a rebuild means to replace, never a dispatch from elsewhere.
+          tags: ${{ env.IMAGE }}:${{ github.event.pull_request.head.sha || github.sha }}${{ github.ref == 'refs/heads/master' && format(',{0}:ubuntu-22.04', env.IMAGE) || '' }}
+          # No layer cache: each build installs the packages current that day, which is how a rebuild
+          # brings their security updates.
+          no-cache: true
 
   # An unsigned build of the app in the image, as the release builds it, without updater artifacts.
   bundle:
     name: Bundle the app in the image
     needs: publish
+    if: needs.publish.outputs.published == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
