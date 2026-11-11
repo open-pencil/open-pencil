@@ -63,6 +63,8 @@ describe('effect program warm-up', () => {
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     renderer.navigationPhase = 'idle'
     warmUpEffectPrograms(renderer, graph, 'overlays', 0)
+    // Not while an edit is under way either.
+    warmUpEffectPrograms(renderer, graph, 'scene', 0, true)
     expect(made.count).toBe(0)
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     expect(renderer.effectProgramsWarm).toBe(true)

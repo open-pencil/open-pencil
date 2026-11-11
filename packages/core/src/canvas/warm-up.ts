@@ -102,10 +102,13 @@ export function warmUpEffectPrograms(
   r: SkiaRenderer,
   graph: SceneGraph,
   renderLayer: RenderLayer,
-  sceneVersion: number
+  sceneVersion: number,
+  editing = false
 ): void {
-  // Only once what is visible is drawn, with the view at rest.
-  if (renderLayer === 'overlays' || r.effectProgramsWarm || r.tiledSceneBackgroundPending) return
+  // Only once what is visible is drawn, with the view at rest and no edit under way: building
+  // the programs would stall a drag, and the frame after the edit ends tries again.
+  if (renderLayer === 'overlays' || editing) return
+  if (r.effectProgramsWarm || r.tiledSceneBackgroundPending) return
   const pageId = r.pageId
   if (!pageId || r.navigationPhase !== 'idle' || r.effectWarmUpFailedPage === pageId) return
   // A page found without such effects is scanned again only once the document changes.

@@ -151,7 +151,7 @@ export function renderFromEditorState(
     layer,
     interactive
   )
-  warmUpEffectPrograms(r, graph, layer, state.sceneVersion)
+  warmUpEffectPrograms(r, graph, layer, state.sceneVersion, interactive)
 }
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
