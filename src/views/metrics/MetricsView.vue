@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { useNow } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { MAX_METRICS_RANGE_DAYS, type MetricsSnapshot } from '@open-pencil/feedback/contract'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
-import { utcToday } from '@/app/metrics/days'
+import { utcDayOfTimestamp } from '@/app/metrics/days'
 import { useMetricsSnapshot } from '@/app/metrics/load'
 import type { MetricsRange } from '@/app/metrics/range'
 import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
@@ -37,6 +38,7 @@ const {
   truncated,
   loading: inboxLoading,
   loaded: inboxLoaded,
+  current: inboxCurrent,
   failed: inboxFailed
 } = inbox
 const openReports = computed(() =>
@@ -69,7 +71,8 @@ async function setReportStatus(...args: Parameters<typeof triage.setStatus>) {
 }
 const inboxPanel = computed(() => ({
   reports: reports.value,
-  loaded: inboxLoaded.value,
+  // A new range shows the loading state, not the last range's reports or its empty state.
+  loaded: inboxLoaded.value && inboxCurrent.value,
   truncated: truncated.value,
   loadFailed: inboxFailed.value,
   statusFailed: triageFailed.value,
@@ -86,11 +89,13 @@ const inboxPanelEvents = {
   save: saveReport,
   reload: () => reload()
 }
-// Without the metrics' own dates, the reports page offers the longest range the API takes.
-const today = utcToday().toString()
-const earliest = utcToday()
-  .subtract({ days: MAX_METRICS_RANGE_DAYS - 1 })
-  .toString()
+// Without the metrics' own dates, the reports page offers the longest range the API takes,
+// moving on at UTC midnight while the page stays open.
+const now = useNow({ interval: 60_000 })
+const today = computed(() => utcDayOfTimestamp(now.value.toISOString()))
+const earliest = computed(() =>
+  today.value.subtract({ days: MAX_METRICS_RANGE_DAYS - 1 }).toString()
+)
 const refreshTab = () => (tab.value === 'reports' ? inbox.refresh() : refresh())
 const host = globalThis.location.host
 // Access's session may have run out; reloading the page signs in again.
@@ -138,7 +143,7 @@ const reload = () => globalThis.location.reload()
           <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
           Metrics
         </AppButton>
-        <MetricsRangePicker v-model="range" :today="today" :earliest="earliest" />
+        <MetricsRangePicker v-model="range" :today="today.toString()" :earliest="earliest" />
       </div>
       <ReportInboxPanel
         v-bind="inboxPanel"

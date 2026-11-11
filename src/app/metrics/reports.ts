@@ -1,6 +1,6 @@
 import { compact } from 'es-toolkit'
 import * as v from 'valibot'
-import { ref, shallowRef, watch, type Ref } from 'vue'
+import { computed, ref, shallowRef, watch, type Ref } from 'vue'
 
 import { createFeedbackClient } from '@open-pencil/feedback/client'
 import {
@@ -108,6 +108,11 @@ export function useReportInbox(range: Ref<MetricsRange>) {
   const failed = ref(false)
   /** The range `reports` belongs to. */
   let shownRange: MetricsRange | null = null
+  const shownFor = shallowRef<MetricsRange | null>(null)
+  /** `reports` are the selected range's, not another's still on screen while it loads. */
+  const current = computed(
+    () => shownFor.value?.start === range.value.start && shownFor.value.end === range.value.end
+  )
   let latest = 0
   /** Triage saved here, numbered, so a load that read the triage before a save doesn't undo it. */
   let saveCount = 0
@@ -127,6 +132,7 @@ export function useReportInbox(range: Ref<MetricsRange>) {
       })
       truncated.value = next.truncated
       shownRange = asked
+      shownFor.value = asked
       loaded.value = true
       failed.value = false
     } catch (error) {
@@ -137,6 +143,7 @@ export function useReportInbox(range: Ref<MetricsRange>) {
         reports.value = []
         truncated.value = false
         shownRange = null
+        shownFor.value = null
         loaded.value = false
       }
     } finally {
@@ -158,7 +165,7 @@ export function useReportInbox(range: Ref<MetricsRange>) {
   }
 
   watch(range, load)
-  return { reports, truncated, loading, loaded, failed, refresh: load, update }
+  return { reports, truncated, loading, loaded, current, failed, refresh: load, update }
 }
 
 /**
