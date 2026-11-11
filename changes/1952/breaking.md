@@ -1,0 +1,1 @@
+- Cloud's `[error_tracking]` reports go to PostHog's EU Cloud, `https://eu.i.posthog.com`, unless `host` names another; set `host = "https://us.i.posthog.com"` to keep a US project.

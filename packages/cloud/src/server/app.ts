@@ -45,6 +45,7 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import { cloudErrorHandler, type CloudErrorReporter } from '#cloud/server/errors'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import { cloudRequestId, type ForwardedRequestId } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
@@ -96,8 +97,10 @@ export type CloudServices = {
   onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
-  /** Reports errors no route handled, when the deployment configures error tracking. */
+  /** Logs errors no route handled, and reports them when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
+  /** The request ID this runtime trusts from what stands in front of it, such as `cf-ray`. */
+  forwardedRequestId?: ForwardedRequestId
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -343,6 +346,7 @@ export function createCloudApp(services: CloudServices) {
 
   return new Hono<CloudEnvironment>()
     .onError(cloudErrorHandler(services.reportError))
+    .use('*', cloudRequestId(services.forwardedRequestId))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .use(

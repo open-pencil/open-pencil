@@ -56,7 +56,8 @@ describe('@open-pencil/security/no-secret-logging', () => {
     'console.log({ token })',
     'console.log({ sessionCookie: value })',
     "console.log('x: ' + session.accessToken)",
-    'console.log(...[token])'
+    'console.log(...[token])',
+    "logCloud('warn', 'Signing in failed', { token })"
   ])('rejects %s', async (source) => {
     expect(await diagnostics('@open-pencil/security/no-secret-logging', source)).toHaveLength(1)
   })
@@ -67,7 +68,8 @@ describe('@open-pencil/security/no-secret-logging', () => {
     'logger.info(token)',
     'console.log(tokenCount)',
     `console.log(\`\${tokenizer.name}\`)`,
-    'console.log({ documentId, size })'
+    'console.log({ documentId, size })',
+    "logCloud('error', 'Request failed', { requestId, error: loggedError(error) })"
   ])('accepts %s', async (source) => {
     expect(await diagnostics('@open-pencil/security/no-secret-logging', source)).toHaveLength(0)
   })

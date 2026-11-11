@@ -150,7 +150,10 @@ describe('Deleting forever', () => {
       expect(response.status).toBe(503)
       expect(reports).toHaveLength(1)
       expect(reports[0]?.error).toBe(failure)
-      expect(reports[0]?.context).toEqual({ source: 'cleanup' })
+      expect(reports[0]?.context).toEqual({
+        source: 'cleanup',
+        message: expect.stringMatching(/^Cleaning up document [0-9a-f-]{36} failed$/)
+      })
       expect(context.objects.deletedKeys).toHaveLength(1)
       expect(await context.trash()).toEqual([])
       expect((await context.restore(document)).status).toBe(404)
@@ -322,7 +325,15 @@ describe('Cleanup failures', () => {
         purgeGraceMs: GRACE_MS
       })
       expect(result).toMatchObject({ claimed: 1, cleaned: 0, failed: 1 })
-      expect(reports).toEqual([{ error: failure, context: { source: 'cleanup' } }])
+      expect(reports).toEqual([
+        {
+          error: failure,
+          context: {
+            source: 'cleanup',
+            message: expect.stringMatching(/^Cleaning up document [0-9a-f-]{36} failed$/)
+          }
+        }
+      ])
       // Released, so the next pass tries again.
       expect(await context.row(document)).toBeDefined()
       expect(

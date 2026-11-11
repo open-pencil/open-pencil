@@ -3,6 +3,7 @@ import type { ObjectStore } from '#cloud/server/objects'
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
+  CopyObjectCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
@@ -68,6 +69,27 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         ...(nativeSHA256 ? { ChecksumMode: 'ENABLED' as const } : {})
       })
     )
+  }
+
+  /**
+   * Copies a file under the deleted prefix before it goes, so it outlives the delete until the
+   * bucket's lifecycle rule expires it. A file already gone, as when a cleanup pass retries, has
+   * nothing to keep.
+   */
+  async function keepDeleted(key: string, prefix: string): Promise<void> {
+    try {
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: config.s3Bucket,
+          Key: `${prefix}${key}`,
+          CopySource: `${config.s3Bucket}/${key.split('/').map(encodeURIComponent).join('/')}`,
+          MetadataDirective: 'COPY',
+          ...encryption(config)
+        })
+      )
+    } catch (error) {
+      if (!isNotFoundError(error)) throw error
+    }
   }
 
   return {
@@ -238,6 +260,7 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     },
 
     async delete(key) {
+      if (config.s3DeletedPrefix) await keepDeleted(key, config.s3DeletedPrefix)
       await client.send(new DeleteObjectCommand({ Bucket: config.s3Bucket, Key: key }))
     },
 

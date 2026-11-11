@@ -1,6 +1,11 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
-import { cloudErrorHandler, type CloudErrorContext } from '#cloud/server/errors'
+import {
+  cloudErrorHandler,
+  createLoggingErrorReporter,
+  type CloudErrorContext
+} from '#cloud/server/errors'
+import { cloudRequestId, type CloudLogLine } from '#cloud/server/logging'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
@@ -36,12 +41,66 @@ describe('Cloud error handler', () => {
       expect(reported[0]?.context).toEqual({
         source: 'request',
         method: 'GET',
-        route: '/api/documents/:id'
+        route: '/api/documents/:id',
+        message: 'Request failed'
       })
-      expect(logged).toHaveBeenCalledTimes(1)
+      // Logging is the runtime reporter's, which this stub is not.
+      expect(logged).not.toHaveBeenCalled()
     } finally {
       logged.mockRestore()
     }
+  })
+
+  test('logs with the runtime’s writer, naming the request in its line, report, and response', async () => {
+    const lines: CloudLogLine[] = []
+    const reported: Reported[] = []
+    const app = new Hono()
+      .onError(
+        cloudErrorHandler(
+          createLoggingErrorReporter(
+            (line) => lines.push(line),
+            async (error, context) => {
+              reported.push({ error, context })
+            }
+          )
+        )
+      )
+      .use(
+        '*',
+        cloudRequestId(() => 'ray-1')
+      )
+      .get('/api/documents/:id', () => {
+        throw failure
+      })
+    const response = await app.request('/api/documents/secret-id')
+    expect(response.status).toBe(500)
+    expect(response.headers.get('X-Request-Id')).toBe('ray-1')
+    expect(reported[0]?.context.requestId).toBe('ray-1')
+    expect(lines).toMatchObject([
+      {
+        level: 'error',
+        message: 'Request failed',
+        source: 'request',
+        method: 'GET',
+        route: '/api/documents/:id',
+        requestId: 'ray-1',
+        error: { name: 'Error', message: 'database unavailable' }
+      }
+    ])
+  })
+
+  test('still sends the report when the log cannot be written', async () => {
+    const sent: unknown[] = []
+    const report = createLoggingErrorReporter(
+      () => {
+        throw new Error('stdout closed')
+      },
+      async (error) => {
+        sent.push(error)
+      }
+    )
+    await report(failure, { source: 'background' })
+    expect(sent).toEqual([failure])
   })
 
   test('answers an HTTP exception with its own response and reports nothing', async () => {
@@ -58,6 +117,12 @@ describe('Cloud error handler', () => {
         throw new Error('broken')
       })
       expect((await app.request('/')).status).toBe(500)
+      const [line] = logged.mock.calls[0] ?? []
+      expect(typeof line === 'string' && JSON.parse(line)).toMatchObject({
+        level: 'error',
+        message: 'Request failed',
+        error: { message: 'broken' }
+      })
     } finally {
       logged.mockRestore()
     }
