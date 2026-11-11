@@ -29,7 +29,7 @@ import {
   type RenameSelectionOptions
 } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
-import { scaleSelected } from './structure/scale'
+import { scaleLayers } from './structure/scale'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
 
@@ -221,8 +221,9 @@ export function createStructureActions(ctx: EditorContext) {
     acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
     fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
-    scaleSelected: (nodes: readonly SceneNode[], scale: number, anchor: Vector) =>
-      scaleSelected(ctx, nodes, scale, anchor),
+    /** Scales these layers evenly about a canvas point, as Figma's Scale tool does. */
+    scaleLayers: (nodes: readonly SceneNode[], scale: number, anchor: Vector) =>
+      scaleLayers(ctx, nodes, scale, anchor),
     reparentNodes,
     wrapSelectionInContainer,
     wrapInAutoLayout,

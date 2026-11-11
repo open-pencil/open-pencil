@@ -69,7 +69,8 @@ export function useScaleControls() {
       cancel()
       startWidth.value = box.value?.width ?? 0
     },
-    { immediate: true }
+    // At once, so a field that commits right after the selection changes finds no edit to finish.
+    { immediate: true, flush: 'sync' }
   )
   const factor = computed(() => {
     const width = box.value?.width ?? 0

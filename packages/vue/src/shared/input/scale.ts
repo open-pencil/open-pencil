@@ -221,7 +221,9 @@ export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): Sca
       restore()
       const last = shown
       shown = null
-      if (last && last.scale !== 1) editor.scaleSelected(last.scale, last.anchor)
+      // The layers the edit began on, even if the selection has moved on since.
+      const roots = [...snapshot.roots.keys()].flatMap((id) => editor.graph.getNode(id) ?? [])
+      if (last && last.scale !== 1) editor.scaleLayers(roots, last.scale, last.anchor)
       editor.requestRender()
     },
     cancel() {

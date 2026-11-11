@@ -15,7 +15,7 @@ import type { EditorContext } from '#core/editor/types'
  * sizes, strokes, effects, radii, spacing, and geometry scale with them, each keeps its angle, and
  * the point stays put. Locked layers inside them keep their size and place in their parent.
  */
-export function scaleSelected(
+export function scaleLayers(
   ctx: EditorContext,
   nodes: readonly SceneNode[],
   scale: number,

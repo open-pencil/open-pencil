@@ -4,9 +4,15 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { snapshotScale } from '@open-pencil/scene-graph/scaling'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { applyScale, tryStartScale, type ScaleModifiers } from '#vue/shared/input/scale'
+import {
+  applyScale,
+  createScalePreview,
+  tryStartScale,
+  type ScaleModifiers
+} from '#vue/shared/input/scale'
 import { handleScaleDown, type HitTestFns } from '#vue/shared/input/select'
 import type { DragState } from '#vue/shared/input/types'
 
@@ -109,6 +115,21 @@ describe('Scale tool drags, as measured in Figma', () => {
 })
 
 describe('Scale tool input', () => {
+  test('a preview commits to the layers it began on, whatever is selected by then', () => {
+    const { frame } = card()
+    const other = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 300,
+      width: 50,
+      height: 50
+    })
+    const preview = createScalePreview(editor, snapshotScale(editor.graph, [current(frame.id)]))
+    preview.show(2, { x: 0, y: 0 })
+    editor.select([other.id])
+    preview.commit()
+    expect(current(frame.id).width).toBe(400)
+    expect(current(other.id).width).toBe(50)
+  })
+
   test('cancelling puts the layer back', () => {
     const { frame, text } = card()
     const drag = tryStartScale(200, 100, editor)

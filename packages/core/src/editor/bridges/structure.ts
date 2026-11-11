@@ -22,7 +22,7 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     outlineStrokeSelected: () => structure.outlineStrokeSelected(selection.getSelectedNodes()),
     /** Scales the selection evenly about a canvas point, as Figma's Scale tool does. */
     scaleSelected: (scale: number, anchor: Vector) =>
-      structure.scaleSelected(selection.getSelectedNodes(), scale, anchor),
+      structure.scaleLayers(selection.getSelectedNodes(), scale, anchor),
     ungroupSelected: () => structure.ungroupSelected(selection.getSelectedNode()),
     /** Switches a layer to another type in place, as Figma's layer type menu does. */
     convertLayerType: (nodeId: string, type: LayerType) => structure.convertLayerType(nodeId, type)
