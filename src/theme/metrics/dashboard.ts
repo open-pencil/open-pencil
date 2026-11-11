@@ -5,7 +5,6 @@ export const metricsDashboardTheme = {
   slots: {
     page: 'chart-theme flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',
-    barTitle: 'text-xs font-semibold whitespace-nowrap',
     barHost: 'truncate text-2xs text-muted max-sm:hidden',
     barMeta: 'truncate text-2xs text-muted max-sm:hidden',
     barEnd: 'ms-auto flex items-center gap-2',
@@ -94,5 +93,25 @@ export const metricsRetentionTheme = {
     statLabel: 'text-2xs text-muted',
     statValue:
       'flex h-7 items-center text-lg font-semibold tabular-nums data-[empty=true]:text-xs data-[empty=true]:font-normal data-[empty=true]:text-muted'
+  }
+} as const
+
+/** One report in the inbox's dialog: what the sender wrote, their build, files, steps, and triage. */
+export const metricsReportTheme = {
+  slots: {
+    body: 'flex flex-col gap-4 text-xs',
+    note: 'rounded-md bg-panel-field p-3 whitespace-pre-wrap',
+    error: 'font-mono text-2xs break-words text-error',
+    facts: 'grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5',
+    factLabel: 'text-muted',
+    factValue: 'min-w-0 break-words',
+    links: 'flex flex-wrap gap-x-3 gap-y-1',
+    link: 'text-accent underline-offset-2 hover:underline',
+    steps: 'flex max-h-64 flex-col overflow-y-auto font-mono text-2xs',
+    step: 'flex gap-2 border-b border-border py-1 last:border-b-0',
+    stepTime: 'shrink-0 text-muted tabular-nums',
+    stepLevel:
+      'shrink-0 data-[level=error]:text-error data-[level=warning]:text-warning text-muted',
+    handled: 'text-2xs text-muted'
   }
 } as const

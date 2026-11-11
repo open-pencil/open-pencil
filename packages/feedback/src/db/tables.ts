@@ -96,6 +96,14 @@ export interface RepoItemTable {
   updatedAt: string
 }
 
+export interface ReportTriageTable {
+  reportId: string
+  status: 'open' | 'replied' | 'closed'
+  note: string | null
+  handledBy: string
+  handledAt: string
+}
+
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
@@ -110,4 +118,5 @@ export interface FeedbackDatabase {
   sitePages: SitePagesTable
   siteCountries: SiteCountriesTable
   repoItems: RepoItemTable
+  reportTriage: ReportTriageTable
 }

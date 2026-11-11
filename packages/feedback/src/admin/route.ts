@@ -1,12 +1,15 @@
-import { metricsQuerySchema, reportFileNameSchema } from '#feedback/contract'
+import { metricsQuerySchema, reportFileNameSchema, reportTriageSchema } from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
-import { validatedQuery } from '#feedback/http/request'
+import { validatedJSON, validatedQuery } from '#feedback/http/request'
 import { reportFileKey } from '#feedback/reports/files'
 import { Hono } from 'hono'
 import * as v from 'valibot'
 
 import { requireAccess } from './access'
+import { fetchReportDetail, fetchReportInbox, saveReportTriage } from './reports'
 import { buildSnapshot } from './snapshot'
+
+const reportParamsSchema = v.object({ reportId: v.pipe(v.string(), v.uuid()) })
 
 const reportFileParamsSchema = v.object({
   reportId: v.pipe(v.string(), v.uuid()),
@@ -26,6 +29,31 @@ export function adminRoutes(services: FeedbackServices) {
       .get('/admin/api/snapshot', validatedQuery(metricsQuerySchema), async (c) => {
         c.header('Cache-Control', 'private, no-store')
         return c.json(await buildSnapshot(c.env, services, c.req.valid('query')), 200)
+      })
+      // The report inbox: reports from PostHog with the team's triage, for a range of days.
+      .get('/admin/api/reports', validatedQuery(metricsQuerySchema), async (c) => {
+        c.header('Cache-Control', 'private, no-store')
+        return c.json(await fetchReportInbox(c.env, services, c.req.valid('query')), 200)
+      })
+      .get('/admin/api/reports/:reportId', async (c) => {
+        const params = v.safeParse(reportParamsSchema, c.req.param())
+        if (!params.success) return c.body(null, 404)
+        const report = await fetchReportDetail(c.env, services, params.output.reportId)
+        if (!report) return c.body(null, 404)
+        c.header('Cache-Control', 'private, no-store')
+        return c.json(report, 200)
+      })
+      .put('/admin/api/reports/:reportId/triage', validatedJSON(reportTriageSchema), async (c) => {
+        const params = v.safeParse(reportParamsSchema, c.req.param())
+        if (!params.success) return c.body(null, 404)
+        await saveReportTriage(
+          c.env,
+          params.output.reportId,
+          c.req.valid('json'),
+          c.get('adminEmail') ?? 'unknown',
+          services.now()
+        )
+        return c.body(null, 204)
       })
       // A file attached to a report, linked from its PostHog event; always a download, never rendered.
       .get('/admin/reports/:reportId/files/:name', async (c) => {

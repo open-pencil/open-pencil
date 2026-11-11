@@ -10,6 +10,7 @@ The Cloudflare Worker behind `feedback.openpencil.dev`. It is operated by the Op
 | `PUT /reports/:id/files/:name` | Uploads one file the report declared, at its declared size, with the report's upload token. | The file in the EU R2 bucket `openpencil-reports`, deleted after 90 days. |
 | `GET /admin/reports/:id/files/:name` | Downloads a report's file, behind Cloudflare Access; the PostHog event links to it. | Nothing. |
 | `GET /admin/` | The team's metrics dashboard, built from the app's `metrics.html` (`bun run build:metrics` writes `dist-metrics/`, which Wrangler uploads as the Worker's assets), behind Cloudflare Access. | Nothing. |
+| `GET /admin/api/reports?start&end`, `GET /admin/api/reports/:id`, `PUT /admin/api/reports/:id/triage` | The dashboard's report inbox, behind Cloudflare Access: problem reports, and error reports with a note or an address, read from PostHog, with each one's attachments, steps, and the team's triage. | Only the triage, in D1: each report's status (open, replied, closed), an internal note, and who changed it when. The reports themselves stay in PostHog. |
 | `GET /admin/api/snapshot?start&end` | The metrics dashboard's data for a range of UTC days, behind Cloudflare Access. | Nothing; it reads pings, snapshots, and the waitlist from D1 (email domains only) and asks PostHog for usage. |
 | `POST /waitlist` | OpenPencil Cloud waitlist sign-ups from the website and the web app's Settings, checked by Turnstile and confirmed by email. | The address and optional note; unconfirmed sign-ups are removed after seven days. |
 

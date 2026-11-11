@@ -20,6 +20,7 @@ import type { MetricsRange } from '@/app/metrics/range'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { metricsDashboardTheme } from '@/theme/metrics/dashboard'
 
 import DailyChart from './DailyChart.vue'
@@ -51,16 +52,37 @@ const metricsDashboard = tv(metricsDashboardTheme)
 const {
   host,
   snapshot,
-  loading = false
+  loading = false,
+  openReports
 } = defineProps<{
   host: string
   snapshot: MetricsSnapshot
   /** Newer numbers are on their way; the current ones stay, dimmed. */
   loading?: boolean
+  /** How many reports in the range are open, once the inbox has loaded. */
+  openReports?: number
 }>()
 const range = defineModel<MetricsRange>('range', { required: true })
+/** The numbers, or the report inbox, which the `reports` slot holds. */
+const tab = defineModel<'metrics' | 'reports'>('tab', { default: 'metrics' })
 const emit = defineEmits<{ refresh: [] }>()
-defineSlots<{ /** A notice above the numbers, such as a failed refresh. */ alert?(): unknown }>()
+defineSlots<{
+  /** A notice above the numbers, such as a failed refresh. */
+  alert?(): unknown
+  /** The report inbox, shown on its tab. */
+  reports?(): unknown
+}>()
+
+const tabs = computed(() => [
+  { value: 'metrics', label: 'Metrics' },
+  { value: 'reports', label: openReports ? `Reports (${formatCount(openReports)})` : 'Reports' }
+])
+const tabValue = computed({
+  get: () => tab.value,
+  set: (value: string) => {
+    if (value === 'metrics' || value === 'reports') tab.value = value
+  }
+})
 
 const ui = metricsDashboard()
 const phrase = computed(() => rangePhrase(range.value))
@@ -226,7 +248,7 @@ const sharingNote = computed(() => {
   <div :class="ui.page()">
     <header :class="ui.bar()">
       <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">Metrics</span>
+      <SegmentedControl v-model="tabValue" :options="tabs" label="Dashboard" />
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
         <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
@@ -241,7 +263,10 @@ const sharingNote = computed(() => {
       </div>
     </header>
     <main :class="ui.main()">
-      <div :class="ui.inner()" :data-loading="loading" :aria-busy="loading">
+      <div v-if="tab === 'reports'" :class="ui.inner()">
+        <slot name="reports" />
+      </div>
+      <div v-else :class="ui.inner()" :data-loading="loading" :aria-busy="loading">
         <slot name="alert" />
         <div :class="ui.tiles()">
           <MetricsTile
