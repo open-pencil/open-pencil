@@ -18,16 +18,19 @@ export function figThumbnailSize(fig: Uint8Array): Size {
   return size
 }
 
-/** A `.fig` of four pages, each with one frame holding a rectangle, and its pages' IDs. */
+/**
+ * A `.fig` of four pages, each with one frame holding a rectangle, and its pages' IDs. The last
+ * page is the Cover, whose frame alone is 4:1, so a thumbnail shows which page it was drawn from.
+ */
 export async function writeFourPageFig() {
   const graph = new SceneGraph()
   const [first] = graph.getPages()
   first.name = 'Page 1'
-  const pages = [first, ...['Page 2', 'Page 3', 'Page 4'].map((name) => graph.addPage(name))]
+  const pages = [first, ...['Page 2', 'Page 3', 'Cover'].map((name) => graph.addPage(name))]
   for (const [index, page] of pages.entries()) {
     const frame = graph.createNode('FRAME', page.id, {
       name: `Frame ${index + 1}`,
-      width: 100,
+      width: page.name === 'Cover' ? 400 : 100,
       height: 100
     })
     graph.createNode('RECTANGLE', frame.id, { name: 'Box', width: 10, height: 10 })

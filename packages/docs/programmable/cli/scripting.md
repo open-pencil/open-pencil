@@ -89,7 +89,7 @@ cat transform.js | openpencil eval design.fig --stdin --write
 
 ## One page of a large file
 
-A `.fig` script loads every page before it runs, which takes a while for a file with tens of pages. `--page-id` loads only that page, from `openpencil pages design.fig --json`, and runs the script on it as `figma.currentPage`. Other pages have no layers until the script loads them, as in Figma's dynamic-page mode: `page.loadAsync()`, `figma.setCurrentPageAsync(page)`, `figma.getNodeByIdAsync(id)` and `figma.loadAllPagesAsync()` load them. `--write` and `--output` save every page, loaded or not. `openpencil tool call` takes the same option.
+A `.fig` script loads every page before it runs, which takes a while for a file with tens of pages. `--page-id` loads only that page, from `openpencil pages design.fig --json`, and runs the script on it as `figma.currentPage`. Other pages have no layers until the script loads them, as in Figma's dynamic-page mode: `page.loadAsync()`, `figma.setCurrentPageAsync(page)`, `figma.getNodeByIdAsync(id)` and `figma.loadAllPagesAsync()` load them. `figma.getNodeById(id)`, and tools that take layer IDs, find layers on loaded pages only, and `getNodeByIdAsync` cannot find a layer inside an instance on a page not loaded yet. `--write` and `--output` save every page, loaded or not. Removing a variable or collection unbinds only the layers on loaded pages, so call `figma.loadAllPagesAsync()` first. `openpencil tool call` takes the same option.
 
 ```sh
 openpencil eval design.fig --page-id 12:34 -c "return figma.currentPage.children.length"

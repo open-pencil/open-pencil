@@ -5,6 +5,7 @@ import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { flushPendingComponentSync } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import {
+  figThumbnailPageId,
   pendingFigPageOfNode,
   populateAllFigPages,
   populateFigPage
@@ -130,8 +131,16 @@ export const documentWriteOptions = {
 
 /** Save a headless document as `.fig`, with the thumbnail `export --format fig` renders. */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
+  // The thumbnail draws the Cover page, which a script run on one page may not have loaded.
+  const cover = figThumbnailPageId(graph.getPages())
+  if (cover) await loadDocumentPage(graph, cover)
   const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
   await writeFileAtomic(filePath, result.data, { symlink: 'follow' })
+}
+
+/** Loads a page not loaded yet with the fonts its text uses, as the editor prepares a page. */
+export async function loadDocumentPage(graph: SceneGraph, pageId: string): Promise<void> {
+  if (populateDocumentPage(graph, pageId)) await prepareGraphFonts(graph, [pageId])
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {

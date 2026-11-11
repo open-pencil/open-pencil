@@ -5,7 +5,6 @@ import {
   createCanvasKitRasterCodec,
   headlessRenderNodes
 } from '@open-pencil/core/io/formats/raster'
-import { prepareGraphFonts } from '@open-pencil/core/text'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -14,6 +13,7 @@ import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'
 import {
   editDocument,
   loadDocument,
+  loadDocumentPage,
   measureDocumentText,
   measureTextHeadlessly,
   populateDocumentPage,
@@ -28,9 +28,7 @@ import {
  */
 export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> {
   const figma = new FigmaAPI(graph, {
-    loadPage: async (id) => {
-      if (populateDocumentPage(graph, id)) await prepareGraphFonts(graph, [id])
-    },
+    loadPage: (id) => loadDocumentPage(graph, id),
     pageOfNode: (id) => pendingFigPageOfNode(graph, id)
   })
   const renderer = await measureTextHeadlessly()
