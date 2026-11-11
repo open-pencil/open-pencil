@@ -1,9 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import {
@@ -17,8 +19,6 @@ import {
   tileKeysForWorldBounds,
   tileWorldBounds
 } from '#core/canvas/renderer/tiles'
-
-import { expectRgbaPixels } from '#core-tests/canvas/helpers'
 
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
@@ -285,7 +285,9 @@ describe('tile rendering', () => {
       const navigating = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
       expect(navigating.metrics.cancelledJobs).toBeGreaterThan(0)
       expect(navigating.metrics.interruptibleCompleted).toBe(0)
-      expect(navigating.metrics.skippedWithFallback).toBeGreaterThan(0)
+      // A pan presents visible tiles as they land. The one completed exact tile has no
+      // lower-level stand-in here, so nothing is skipped with a fallback.
+      expect(navigating.metrics.skippedWithFallback).toBe(0)
       expect(navigating.pending).toBe(true)
 
       renderer.navigationPhase = 'idle'

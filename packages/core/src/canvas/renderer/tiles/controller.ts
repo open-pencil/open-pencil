@@ -202,6 +202,53 @@ export class TiledSceneController {
     return this.tileCache.budget()
   }
 
+  private beginFrame(
+    renderer: SkiaRenderer,
+    graph: SceneGraph,
+    contentGeneration: number,
+    navigationGeneration: number
+  ): void {
+    this.navigationGeneration = navigationGeneration
+    this.navigationActive = this.isNavigationActive(renderer)
+    if (renderer.pageDotGrid !== this.dotGrid) {
+      this.invalidate()
+      this.dotGrid = renderer.pageDotGrid
+    }
+    this.prepareGeneration(renderer, graph, contentGeneration, navigationGeneration)
+    if (renderer.navigationPhase === 'pan') this.panPresentation = true
+    else if (renderer.navigationPhase === 'zoom') this.panPresentation = false
+  }
+
+  /** The exact level to present, and the level the frame renders tiles at while a zoom moves. */
+  private frameLevel(renderer: SkiaRenderer): { level: number; renderLevel: number } {
+    const scale = renderer.zoom * renderer.dpr
+    const level = exactTileLevel(scale)
+    const zooming = renderer.navigationPhase === 'zoom' && level !== this.lastLevel
+    if (level !== this.lastLevel || this.navigationActive) this.backgroundSaturated = false
+    this.lastLevel = level
+    return { level, renderLevel: zooming ? tileLevel(scale) : level }
+  }
+
+  /** Presents the frame's level, and lets a committed level present whole again after a pan. */
+  private presentFrame(
+    renderer: SkiaRenderer,
+    visible: TilePlan['visible'],
+    level: number,
+    content: TileWorldBounds | null
+  ): VisiblePresentation {
+    const presentation = this.presentLevel(
+      visible,
+      renderer.pageId,
+      level,
+      content,
+      this.panPresentation
+    )
+    if (renderer.navigationPhase === 'idle' && this.committedLevel === level) {
+      this.panPresentation = false
+    }
+    return presentation
+  }
+
   /**
    * Renders due tiles within the frame's budget and presents the viewport from the cache: exact
    * tiles where they exist, the nearest level's tiles scaled where they do not, and the page
@@ -222,15 +269,7 @@ export class TiledSceneController {
     contentGeneration: number,
     navigationGeneration: number
   ): TiledSceneFrameResult {
-    this.navigationGeneration = navigationGeneration
-    this.navigationActive = this.isNavigationActive(renderer)
-    if (renderer.pageDotGrid !== this.dotGrid) {
-      this.invalidate()
-      this.dotGrid = renderer.pageDotGrid
-    }
-    this.prepareGeneration(renderer, graph, contentGeneration, navigationGeneration)
-    if (renderer.navigationPhase === 'pan') this.panPresentation = true
-    else if (renderer.navigationPhase === 'zoom') this.panPresentation = false
+    this.beginFrame(renderer, graph, contentGeneration, navigationGeneration)
     const viewport = {
       minX: -renderer.panX / renderer.zoom,
       minY: -renderer.panY / renderer.zoom,
@@ -245,12 +284,7 @@ export class TiledSceneController {
     // above the scale instead: its tiles serve every frame until the zoom crosses the next step,
     // and then stand in for the exact level, scaled down by a fifth at most. A zoom that pauses,
     // and a pan, render the exact level under the moving budget.
-    const scale = renderer.zoom * renderer.dpr
-    const level = exactTileLevel(scale)
-    const zooming = renderer.navigationPhase === 'zoom' && level !== this.lastLevel
-    const renderLevel = zooming ? tileLevel(scale) : level
-    if (level !== this.lastLevel || this.navigationActive) this.backgroundSaturated = false
-    this.lastLevel = level
+    const { level, renderLevel } = this.frameLevel(renderer)
     this.tileCache.setBudget(
       this.tileCacheBudget(
         viewportTileBytes(
@@ -304,17 +338,7 @@ export class TiledSceneController {
       },
       true
     ).visible
-    const presentation = this.presentLevel(
-      visible,
-      renderer.pageId,
-      level,
-      index.bounds(),
-      this.panPresentation
-    )
-    // A committed level presents normally again, so a later pan starts from the whole view.
-    if (renderer.navigationPhase === 'idle' && this.committedLevel === level) {
-      this.panPresentation = false
-    }
+    const presentation = this.presentFrame(renderer, visible, level, index.bounds())
     canvas.save()
     // Snapped to device pixels, an exact tile lands texel on pixel and copies rather than samples.
     canvas.translate(
