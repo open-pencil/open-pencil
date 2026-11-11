@@ -19,6 +19,7 @@ export type BaselineProject = {
 export type SidecarWrite =
   | { status: 'written'; frames: number }
   | { status: 'empty' }
+  | { status: 'other-document' }
   | { status: 'unavailable' }
 
 /** What reading them back did. */
@@ -35,15 +36,38 @@ export type SidecarOutcome = SidecarWrite | SidecarRead
 /**
  * Write the document's baselines into its project, so they outlive the document's own format and
  * travel with a commit. A document with no picture yet writes nothing: an empty sidecar would
- * erase the pictures a project already holds.
+ * erase the pictures a project already holds. What the project already holds is read first and
+ * kept, so a teammate's baselines survive the write; a sidecar that belongs to another document
+ * is refused rather than replaced, because it is the only copy of that document's pictures.
  */
 export async function writeBaselines(project: BaselineProject): Promise<SidecarWrite> {
   const file = project.document.read()
   const frames = Object.keys(file.references).length
   if (frames === 0) return { status: 'empty' }
   const files = project.files ?? desktopSidecarFiles()
-  const written = await files.write(project.repository, sidecarText(sidecarOf(file, project.name)))
-  return written ? { status: 'written', frames } : { status: 'unavailable' }
+  const held = await files.read(project.repository)
+  if (held === null) {
+    const written = await files.write(
+      project.repository,
+      sidecarText(sidecarOf(file, project.name))
+    )
+    return written ? { status: 'written', frames } : { status: 'unavailable' }
+  }
+  const sidecar = parseSidecar(held)
+  if (
+    sidecar.document !== undefined &&
+    project.name !== null &&
+    sidecar.document !== project.name
+  ) {
+    return { status: 'other-document' }
+  }
+  const merged = mergeBaselines(file, sidecar)
+  const written = await files.write(
+    project.repository,
+    sidecarText(sidecarOf(merged, project.name))
+  )
+  if (!written) return { status: 'unavailable' }
+  return { status: 'written', frames: Object.keys(merged.references).length }
 }
 
 /**

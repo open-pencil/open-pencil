@@ -43,6 +43,19 @@ test('frames are written in name order, so a commit diffs by its baselines', () 
   expect(JSON.parse(text).version).toBe(1)
 })
 
+test('the order is the code unit order every machine shares', () => {
+  // A collator that follows the runtime's language may weigh punctuation differently, which would
+  // make the same baselines produce a different file on another machine.
+  const text = sidecarText(
+    fileWith({
+      'a:b': referenceOf('a:b', '2026-11-09T12:00:00.000Z'),
+      'a-b': referenceOf('a-b', '2026-11-09T12:00:00.000Z')
+    })
+  )
+
+  expect(text.indexOf('"a-b"')).toBeLessThan(text.indexOf('"a:b"'))
+})
+
 test('a sidecar reads back with what it was written from', () => {
   const file = fileWith({ frame: referenceOf('frame', '2026-11-09T12:00:00.000Z') })
   const read = parseSidecar(sidecarText(sidecarOf(file, 'site.pen')))

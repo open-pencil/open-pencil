@@ -109,6 +109,63 @@ test('a folder that refuses the write answers so instead of throwing', async () 
   })
 })
 
+test('writing keeps the pictures the project already holds', async () => {
+  const { document } = documentOf({
+    version: 1,
+    references: { mine: referenceOf('mine', '2026-11-09T12:00:00.000Z') }
+  })
+  const held = JSON.stringify({
+    version: 1,
+    document: 'site.pen',
+    references: { theirs: referenceOf('theirs', '2026-11-08T12:00:00.000Z') }
+  })
+  const { files, state } = filesOf(held)
+
+  const written = await writeBaselines({ repository, document, name: 'site.pen', files })
+
+  expect(written).toEqual({ status: 'written', frames: 2 })
+  expect(Object.keys(parseSidecar(state.text ?? '').references).sort()).toEqual(['mine', 'theirs'])
+})
+
+test('the only copy of another document’s pictures is never replaced', async () => {
+  const { document } = documentOf({
+    version: 1,
+    references: { mine: referenceOf('mine', '2026-11-09T12:00:00.000Z') }
+  })
+  const held = JSON.stringify({
+    version: 1,
+    document: 'other.pen',
+    references: { theirs: referenceOf('theirs', '2026-11-08T12:00:00.000Z') }
+  })
+  const { files, state } = filesOf(held)
+
+  expect(await writeBaselines({ repository, document, name: 'site.pen', files })).toEqual({
+    status: 'other-document'
+  })
+  expect(state.written).toEqual([])
+  expect(state.text).toBe(held)
+})
+
+test('a pull request is not opened onto another document’s sidecar', async () => {
+  const { document } = documentOf({
+    version: 1,
+    references: { mine: referenceOf('mine', '2026-11-09T12:00:00.000Z') }
+  })
+  const { files } = filesOf(
+    JSON.stringify({
+      version: 1,
+      document: 'other.pen',
+      references: { theirs: referenceOf('theirs', '2026-11-08T12:00:00.000Z') }
+    })
+  )
+  const { git, commits } = gitOf('untracked')
+
+  expect(await publishBaselines({ repository, document, name: 'site.pen', files, git })).toBe(
+    'other-document'
+  )
+  expect(commits).toEqual([])
+})
+
 test('a project with no sidecar leaves the document alone', async () => {
   const { document, writes } = documentOf()
   const { files } = filesOf(null)

@@ -1,10 +1,12 @@
 import { ref, shallowRef } from 'vue'
 
-import { useEditorStore } from '@/app/editor/active-store'
-import { folderName, normalizePath } from '@/app/projects/schema'
+import { useEditorStore, type EditorStore } from '@/app/editor/active-store'
+import { folderName } from '@/app/projects/schema'
+import { getTabsSnapshot } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
 import { documentBaselines, type DriftDocument } from '../use'
+import { documentBelongsTo } from './document'
 import { desktopSidecarFiles, type SidecarFiles } from './files'
 import { projectSidecarGit } from './git'
 import { publishBaselines, type BaselinesPublish } from './publish'
@@ -80,20 +82,33 @@ export function documentNameOf(path: string | null): string | null {
  * project's to publish.
  */
 export function useProjectBaselines(repository: () => string) {
-  const store = useEditorStore()
   const files = desktopSidecarFiles()
   const git = projectSidecarGit()
 
+  /**
+   * The open document of this repository. The project's own screen makes the project tab the
+   * active one, and that tab carries no document, so the document tabs are asked directly rather
+   * than the active store: otherwise the pull request would silently go out without baselines.
+   */
+  function documentIn(root: string): { store: EditorStore; path: string } | null {
+    for (const tab of getTabsSnapshot()) {
+      if (tab.kind !== 'document') continue
+      const path = tab.store.getDocumentFilePath()
+      if (path !== null && documentBelongsTo(path, root)) return { store: tab.store, path }
+    }
+    return null
+  }
+
   async function publish(): Promise<BaselinesPublish> {
     const root = repository().trim()
-    const path = store.getDocumentFilePath()
-    if (root === '' || path === null) return 'empty'
-    if (!normalizePath(path).startsWith(`${normalizePath(root)}/`)) return 'empty'
+    if (root === '') return 'empty'
     if (!IS_TAURI) return 'unavailable'
+    const document = documentIn(root)
+    if (document === null) return 'empty'
     return publishBaselines({
       repository: root,
-      document: documentBaselines(store),
-      name: documentNameOf(path),
+      document: documentBaselines(document.store),
+      name: documentNameOf(document.path),
       files,
       git
     })

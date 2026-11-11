@@ -48,13 +48,21 @@ export function sidecarOf(file: DriftFile, document: string | null): DriftSideca
     : { version: 1, document, references: file.references }
 }
 
+/** The code unit order of two frame ids, which is the same in every language. */
+function byCodeUnit(left: string, right: string): number {
+  if (left < right) return -1
+  return left > right ? 1 : 0
+}
+
 /**
  * A sidecar as it is written. Frames are ordered by their ids rather than by when they were
- * pictures, so two commits of the same baselines differ only where a baseline did.
+ * pictures, so two commits of the same baselines differ only where a baseline did. The order is
+ * the code unit order, which is the same on every machine: a collator that follows the runtime's
+ * language would order the same ids differently, and the file would churn between them.
  */
 export function sidecarText(sidecar: DriftSidecar): string {
   const references = Object.fromEntries(
-    Object.entries(sidecar.references).sort(([left], [right]) => left.localeCompare(right))
+    Object.entries(sidecar.references).sort(([left], [right]) => byCodeUnit(left, right))
   )
   const ordered: DriftSidecar =
     sidecar.document === undefined

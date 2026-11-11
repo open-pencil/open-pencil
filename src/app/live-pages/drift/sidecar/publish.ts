@@ -3,7 +3,12 @@ import { DRIFT_SIDECAR_PATH } from './model'
 import { writeBaselines, type BaselineProject } from './run'
 
 /** What putting the baselines into a repository before a pull request did. */
-export type BaselinesPublish = 'committed' | 'unchanged' | 'empty' | 'unavailable'
+export type BaselinesPublish =
+  | 'committed'
+  | 'unchanged'
+  | 'empty'
+  | 'other-document'
+  | 'unavailable'
 
 export type PublishBaselinesInput = BaselineProject & {
   /** Git as the publish path reads it; the repository's own by default. */
@@ -18,6 +23,7 @@ export type PublishBaselinesInput = BaselineProject & {
 export async function publishBaselines(input: PublishBaselinesInput): Promise<BaselinesPublish> {
   const written = await writeBaselines(input)
   if (written.status === 'empty') return 'empty'
+  if (written.status === 'other-document') return 'other-document'
   if (written.status === 'unavailable') return 'unavailable'
   const git = input.git ?? projectSidecarGit()
   const state = await git.state(input.repository, DRIFT_SIDECAR_PATH)
