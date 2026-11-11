@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import { discoverPublicPackages } from '@open-pencil/package-artifacts-tools'
@@ -23,35 +23,42 @@ async function hasFile(path: string, hash: string): Promise<boolean> {
 }
 
 /**
- * Fetches the release a package's `release.json` pins into its `dist/`, checking each file
- * against its SHA-256. Files already there with the pinned hash are kept, so it downloads only on a
- * fresh checkout or when the pin changes. Returns the names it downloaded.
+ * Puts the files of `release` into a package's `dist/`, checking each against its SHA-256. Files
+ * already there with their pinned hash are kept, so it downloads only on a fresh checkout or when
+ * the pin changes. Nothing is written until every download matches its hash, and then files the
+ * release does not list are removed, since `dist/` is what the package publishes. Returns the
+ * names it downloaded.
  */
-export async function fetchRelease(
+export async function fetchFiles(
   packageDir: string,
+  release: Release,
   { download = downloadFromGitHub }: FetchOptions = {}
 ): Promise<string[]> {
-  const release = await readRelease(packageDir)
   const dist = join(packageDir, DIST)
   const missing: Array<[string, string]> = []
   for (const [name, hash] of Object.entries(release.files)) {
     if (!(await hasFile(join(dist, name), hash))) missing.push([name, hash])
   }
-  if (missing.length === 0) return []
-  await mkdir(dist, { recursive: true })
-  await Promise.all(
+  const downloaded = await Promise.all(
     missing.map(async ([name, hash]) => {
       const bytes = await download(release, name)
       const actual = sha256(bytes)
       if (actual !== hash) {
-        throw new Error(
-          `${name} of ${release.tag} has SHA-256 ${actual}; ${RELEASE_FILE} pins ${hash}`
-        )
+        throw new Error(`${name} of ${release.tag} has SHA-256 ${actual}; the pin names ${hash}`)
       }
-      await writeFile(join(dist, name), bytes)
+      return [name, bytes] as const
     })
   )
+  await mkdir(dist, { recursive: true })
+  await Promise.all(downloaded.map(([name, bytes]) => writeFile(join(dist, name), bytes)))
+  const stale = (await readdir(dist)).filter((name) => !Object.hasOwn(release.files, name))
+  await Promise.all(stale.map((name) => rm(join(dist, name), { recursive: true, force: true })))
   return missing.map(([name]) => name)
+}
+
+/** Fetches the release a package's `release.json` pins into its `dist/` (`fetchFiles`). */
+export async function fetchRelease(packageDir: string, options?: FetchOptions): Promise<string[]> {
+  return fetchFiles(packageDir, await readRelease(packageDir), options)
 }
 
 /** The directories of the workspace's published packages that pin a fork release. */

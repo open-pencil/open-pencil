@@ -562,12 +562,14 @@ function configureTextLeaf(
     }
 
     // Auto-width text keeps each line whole, as Figma's does, in a parent narrower than the text;
-    // only a width that layout or a max width sets wraps it.
-    const wraps = fillsWidth || child.maxWidth != null
+    // only a width that layout or a max width sets wraps it. Text that fills takes the width
+    // layout gives it, narrowed by its max width; other text wraps at its max width alone.
     measureByWidth(item, (width) => {
-      // Layout offers the room it has, which a max width narrows further, as Figma wraps at it.
-      const limit = Math.min(width ?? Infinity, child.maxWidth ?? Infinity)
-      const maxW = wraps && Number.isFinite(limit) ? limit : undefined
+      const limit = Math.min(
+        fillsWidth ? (width ?? Infinity) : Infinity,
+        child.maxWidth ?? Infinity
+      )
+      const maxW = Number.isFinite(limit) ? limit : undefined
       const cacheKey = maxW === undefined ? UNCONSTRAINED_KEY : Math.round(maxW)
       const cached = cache.get(cacheKey)
       if (cached) return cached

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -58,7 +59,21 @@ describe('fetchRelease', () => {
 
   test('refuses a file whose hash differs from its pin', async () => {
     await pin({ 'module.js': 'something else' })
-    expect(fetchRelease(dir, { download })).rejects.toThrow(/module\.js .* SHA-256/)
+    await expect(fetchRelease(dir, { download })).rejects.toThrow(/module\.js .* SHA-256/)
+  })
+
+  test('removes files of an earlier pin once the new files match', async () => {
+    await pin({ 'module.js': 'module' })
+    await mkdir(join(dir, 'dist'))
+    await writeFile(join(dir, 'dist', 'old.wasm'), 'old')
+    await fetchRelease(dir, { download })
+    expect((await readdir(join(dir, 'dist'))).toSorted()).toEqual(['module.js'])
+  })
+
+  test('writes nothing when a file fails its hash', async () => {
+    await pin({ 'module.js': 'module', 'NOTICES.md': 'something else' })
+    await expect(fetchRelease(dir, { download })).rejects.toThrow(/SHA-256/)
+    expect(existsSync(join(dir, 'dist', 'module.js'))).toBe(false)
   })
 
   test('rejects a release.json without a commit tag', async () => {
@@ -66,6 +81,6 @@ describe('fetchRelease', () => {
       join(dir, 'release.json'),
       JSON.stringify({ repository: 'open-pencil/example', tag: 'latest', files: {} })
     )
-    expect(readRelease(dir)).rejects.toThrow(/release\.json/)
+    await expect(readRelease(dir)).rejects.toThrow(/release\.json/)
   })
 })

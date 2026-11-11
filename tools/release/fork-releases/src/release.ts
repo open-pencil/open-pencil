@@ -16,8 +16,11 @@ const releaseSchema = v.object({
   repository: v.pipe(v.string(), v.regex(/^[\w.-]+\/[\w.-]+$/)),
   /** The release's tag, `<name>-<commit>`, made by the fork's workflow for each commit it builds. */
   tag: v.pipe(v.string(), v.regex(/^[\w.-]+-[0-9a-f]{40}$/)),
-  /** Each file of the release with its SHA-256. */
-  files: v.record(v.pipe(v.string(), v.regex(/^[\w.-]+$/)), sha256Schema)
+  /** Each file of the release with its SHA-256; a release has at least one. */
+  files: v.pipe(
+    v.record(v.pipe(v.string(), v.regex(/^[\w.-]+$/)), sha256Schema),
+    v.check((files) => Object.keys(files).length > 0, 'A release lists at least one file.')
+  )
 })
 
 export type Release = v.InferOutput<typeof releaseSchema>

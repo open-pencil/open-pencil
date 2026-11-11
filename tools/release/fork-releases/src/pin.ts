@@ -1,3 +1,4 @@
+import { type FetchOptions, fetchFiles } from './fetch'
 import { parseChecksums, readRelease, releaseFileURL, type Release, writeRelease } from './release'
 
 /** Reads a release's `SHA256SUMS`; from GitHub by default. */
@@ -10,17 +11,23 @@ async function checksumsFromGitHub(release: Pick<Release, 'repository' | 'tag'>)
   return response.text()
 }
 
+export interface PinOptions extends FetchOptions {
+  checksums?: ChecksumSource
+}
+
 /**
  * Points a package's `release.json` at another release of the same fork, with the files and
- * hashes its `SHA256SUMS` lists. Returns the new pin.
+ * hashes its `SHA256SUMS` lists, once every file has downloaded into `dist/` and matched its hash;
+ * a release that fails leaves the pin as it was. Returns the new pin.
  */
 export async function pinRelease(
   packageDir: string,
   tag: string,
-  checksums: ChecksumSource = checksumsFromGitHub
+  { checksums = checksumsFromGitHub, ...fetchOptions }: PinOptions = {}
 ): Promise<Release> {
   const { repository } = await readRelease(packageDir)
   const release = { repository, tag, files: parseChecksums(await checksums({ repository, tag })) }
+  await fetchFiles(packageDir, release, fetchOptions)
   await writeRelease(packageDir, release)
   return readRelease(packageDir)
 }

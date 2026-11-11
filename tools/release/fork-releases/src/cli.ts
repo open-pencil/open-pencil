@@ -38,7 +38,6 @@ await runMain(
         async run({ args }) {
           const dir = resolve(String(args.package))
           const release = await pinRelease(dir, String(args.tag))
-          await fetchRelease(dir)
           process.stdout.write(`Pinned ${release.tag}: ${Object.keys(release.files).join(', ')}\n`)
         }
       })
