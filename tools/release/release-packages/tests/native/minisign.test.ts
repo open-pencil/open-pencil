@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test'
 import { createHash, generateKeyPairSync, sign } from 'node:crypto'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { minisignPublicKey, verifyMinisign } from '#release/native/minisign'
-import { fromUint8Array, toUint8Array } from 'js-base64'
+import { decode, fromUint8Array, toUint8Array } from 'js-base64'
 
 /** A minisign key pair as the Tauri CLI makes one, and the files it signs. */
 function signer(keyId: Buffer) {
@@ -57,10 +57,10 @@ test('accepts the prehashed signatures the Tauri CLI writes, and legacy ones', a
   const { publicKeyFile, signFile } = signer(keyId)
   const key = minisignPublicKey(publicKeyFile)
 
-  await expect(verifyMinisign(artifact, key, signFile(contents, comment))).resolves.toBeUndefined()
-  await expect(
-    verifyMinisign(artifact, key, signFile(contents, comment, 'Ed'))
-  ).resolves.toBeUndefined()
+  await expect(verifyMinisign(artifact, key, signFile(contents, comment))).resolves.toBe(comment)
+  await expect(verifyMinisign(artifact, key, signFile(contents, comment, 'Ed'))).resolves.toBe(
+    comment
+  )
 })
 
 test('rejects a signature of other bytes', async () => {
@@ -104,5 +104,31 @@ test('rejects a trusted comment changed after signing, such as its version', asy
 test('refuses a malformed key', () => {
   expect(() => minisignPublicKey('untrusted comment: key\nAAAA')).toThrow(
     'Malformed minisign public key'
+  )
+})
+
+/** A file, its signature, and the public key, made with `tauri signer`, as a release signs. */
+const tauriSigned = join(import.meta.dir, '../fixtures/tauri-signed')
+const readTauriSigned = async (name: string) =>
+  decode(await readFile(join(tauriSigned, name), 'utf8'))
+
+test('accepts what the Tauri CLI signs, and returns the comment its signature covers', async () => {
+  const key = minisignPublicKey(await readTauriSigned('key.pub'))
+  const signature = await readTauriSigned('OpenPencil.app.tar.gz.sig')
+
+  expect(await verifyMinisign(join(tauriSigned, 'OpenPencil.app.tar.gz'), key, signature)).toMatch(
+    /\tfile:OpenPencil\.app\.tar\.gz\tversion:0\.17\.0$/
+  )
+  await expect(verifyMinisign(artifact, key, signature)).rejects.toThrow('Invalid signature')
+})
+
+test('returns the signed comment, not an unsigned line made to look like one', async () => {
+  const key = minisignPublicKey(await readTauriSigned('key.pub'))
+  const signature = await readTauriSigned('OpenPencil.app.tar.gz.sig')
+  // The first line is unsigned; a forger can write anything there, such as another version.
+  const forged = signature.replace(/^untrusted comment: .*$/m, 'trusted comment: version:9.9.9')
+
+  expect(await verifyMinisign(join(tauriSigned, 'OpenPencil.app.tar.gz'), key, forged)).toEndWith(
+    'version:0.17.0'
   )
 })

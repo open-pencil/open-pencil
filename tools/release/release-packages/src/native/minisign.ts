@@ -45,9 +45,14 @@ async function blake2b(path: string): Promise<Buffer> {
 
 /**
  * Verifies a minisign signature of a file as `minisign -V` does: the key ID, the signature of the
- * file (or of its BLAKE2b-512 hash), and the global signature over the trusted comment.
+ * file (or of its BLAKE2b-512 hash), and the global signature over the trusted comment. Returns
+ * that comment, the only one the signature vouches for; read the signed version from it.
  */
-export async function verifyMinisign(path: string, publicKey: PublicKey, signature: string) {
+export async function verifyMinisign(
+  path: string,
+  publicKey: PublicKey,
+  signature: string
+): Promise<string> {
   const lines = signature.split(/\r?\n/)
   const { algorithm, keyId, rest } = payload(signature, 'signature', SIGNATURE_BYTES)
   if (algorithm !== 'Ed' && algorithm !== 'ED') {
@@ -76,4 +81,5 @@ export async function verifyMinisign(path: string, publicKey: PublicKey, signatu
   ) {
     throw new Error(`Invalid trusted comment signature for ${path}`)
   }
+  return trusted.toString('utf8')
 }

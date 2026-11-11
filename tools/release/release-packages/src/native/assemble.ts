@@ -68,8 +68,8 @@ for (const [index, manifest] of manifests.entries()) {
     if (!asset.signed) continue
 
     const signature = (await readFile(join(source, `${asset.name}.sig`), 'utf8')).trim()
-    await verifyMinisign(join(source, asset.name), publicKey, decode(signature))
-    assertSignedVersion(decode(signature), version, asset.name)
+    const trusted = await verifyMinisign(join(source, asset.name), publicKey, decode(signature))
+    assertSignedVersion(trusted, version, asset.name)
 
     for (const platform of asset.updaterKeys) {
       if (platforms[platform]) throw new Error(`Duplicate updater platform: ${platform}`)

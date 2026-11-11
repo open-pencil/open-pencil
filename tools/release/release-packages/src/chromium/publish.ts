@@ -53,8 +53,8 @@ for (const target of chromiumTargets) {
 
     const path = join(artifacts, asset.name)
     const signature = (await readFile(`${path}.sig`, 'utf8')).trim()
-    await verifyMinisign(path, publicKey, decode(signature))
-    assertSignedVersion(decode(signature), version, asset.name)
+    const trusted = await verifyMinisign(path, publicKey, decode(signature))
+    assertSignedVersion(trusted, version, asset.name)
 
     for (const platform of asset.updaterKeys) {
       platforms[platform] = {
