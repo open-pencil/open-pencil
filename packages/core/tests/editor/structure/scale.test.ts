@@ -48,6 +48,24 @@ describe('scaleSelected', () => {
     expect(current(text.id)).toMatchObject({ width: 200, fontSize: 20, strokeWeight: 2 })
   })
 
+  test('scales how far the lines of a fixed-size text reach past it, and undo puts it back', () => {
+    editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'NONE',
+      derivedTextHeight: 60
+    })
+    editor.select([text.id])
+
+    editor.scaleSelected(2, { x: 0, y: 0 })
+
+    expect(current(text.id)).toMatchObject({ height: 40, fontSize: 40, derivedTextHeight: 120 })
+    editor.undo.undo()
+    expect(current(text.id)).toMatchObject({ height: 20, fontSize: 20, derivedTextHeight: 60 })
+  })
+
   test('undoing a scale keeps the selection, a later edit to the layer, and a layer added since', () => {
     editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
