@@ -19,19 +19,15 @@ export function createAutomationEvalHandler(makeFigma: FigmaFactory) {
     const code = (args as { code?: string }).code
     if (!code) throw new Error('Missing "code" in args')
     const figma = makeFigma(target.store, target.pageId, signal)
-    try {
-      const run = compileScript(code)
-      const result = await executeWithDocumentUndo(
-        target.store,
-        target.pageId,
-        automationUndoLabel('eval'),
-        () => run(figma),
-        signal
-      )
-      target.store.requestRender()
-      return { ok: true, result: result ?? null }
-    } finally {
-      figma.setRenderer(null)
-    }
+    const run = compileScript(code)
+    const result = await executeWithDocumentUndo(
+      target.store,
+      target.pageId,
+      automationUndoLabel('eval'),
+      () => run(figma),
+      signal
+    )
+    target.store.requestRender()
+    return { ok: true, result: result ?? null }
   }
 }

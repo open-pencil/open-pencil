@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test, vi } from 'bun:test'
 
 import type { Surface } from '@open-pencil/canvaskit'
 
@@ -120,6 +120,43 @@ describe('boolean operation bounds', () => {
       expect(resultSize()).toEqual([70, 70])
       // And the boolean takes the box of that result, as it does when an operand moves.
       expect(booleanNode && box(booleanNode)).toEqual([0, 0, 70, 70])
+    } finally {
+      editor.dispose()
+    }
+  })
+
+  test('scripts on the canvas measure with its renderer without listening to the graph', () => {
+    const editor = createEditor()
+    try {
+      editor.setCanvasKit(renderer.ck, renderer)
+      // The editor makes an API for every agent call, as it does for each script it runs.
+      const script = () =>
+        new FigmaAPI(editor.graph, {
+          renderer: () => editor.renderer,
+          flushComponentSync: editor.flushComponentSync
+        })
+      const first = script()
+      const square = (x: number) => {
+        const rect = first.createRectangle()
+        rect.x = x
+        rect.resize(50, 50)
+        return rect
+      }
+      const moving = square(20)
+      const intersect = first.intersect([square(0), moving], first.currentPage)
+      expect(box(intersect)).toEqual([20, 0, 30, 50])
+
+      const listen = vi.spyOn(editor.graph, 'onNodeEvents')
+      for (const x of [30, 40]) {
+        const figma = script()
+        expect(figma.renderer).toBe(editor.renderer)
+        const operand = figma.getNodeById(moving.id)
+        if (!operand) throw new Error('The operand is gone')
+        // The editor drops the boolean's kept result, so the script reads the new one.
+        operand.x = x
+        expect(box(intersect)).toEqual([x, 0, 50 - x, 50])
+      }
+      expect(listen).not.toHaveBeenCalled()
     } finally {
       editor.dispose()
     }

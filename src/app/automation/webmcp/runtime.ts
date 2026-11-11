@@ -26,22 +26,17 @@ export function startWebMCP(getStore: () => EditorStore): () => void {
         execute: async (def, args, signal) => {
           signal.throwIfAborted()
           if (def.mutates) {
-            const figma = makeFigmaFromStore(target.store, target.pageId)
-            try {
-              return {
-                ok: true,
-                result: await runEditorTool({
-                  store: target.store,
-                  figma,
-                  def,
-                  args,
-                  source: 'WebMCP',
-                  signal,
-                  isLive: () => getTabById(target.documentId)?.store === target.store
-                })
-              }
-            } finally {
-              figma.setRenderer(null)
+            return {
+              ok: true,
+              result: await runEditorTool({
+                store: target.store,
+                figma: makeFigmaFromStore(target.store, target.pageId),
+                def,
+                args,
+                source: 'WebMCP',
+                signal,
+                isLive: () => getTabById(target.documentId)?.store === target.store
+              })
             }
           }
           return handleTool(target, { name: def.name, args })

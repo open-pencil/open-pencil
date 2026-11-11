@@ -75,23 +75,19 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     libraryService.bindEditor(store)
     registerComponentCatalog(store.graph, libraryService)
     const figma = makeFigma(store, target.pageId, signal)
-    try {
-      const result = await runEditorTool({
-        store,
-        figma,
-        def,
-        args: toolArgs,
-        reply: replyOf(target, session),
-        signal
-      })
-      if (def.mutates) {
-        store.requestRender()
-        store.flashNodes(extractNodeIds(result))
-      }
-      return { result, edited: def.mutates }
-    } finally {
-      figma.setRenderer(null)
+    const result = await runEditorTool({
+      store,
+      figma,
+      def,
+      args: toolArgs,
+      reply: replyOf(target, session),
+      signal
+    })
+    if (def.mutates) {
+      store.requestRender()
+      store.flashNodes(extractNodeIds(result))
     }
+    return { result, edited: def.mutates }
   }
 }
 
