@@ -1,11 +1,11 @@
 import type { Editor } from '@open-pencil/core'
 import {
   isPluginDataEntry,
-  jsonPluginDataField,
+  OPEN_PENCIL_PLUGIN_DATA,
   withPluginData
 } from '@open-pencil/scene-graph/plugin-data'
 
-import { driftFileSchema, emptyDriftFile, parseDriftFile, type DriftFile } from './schema'
+import { emptyDriftFile, parseDriftFile, type DriftFile } from './schema'
 
 /**
  * What keeping baselines needs from the open document: its graph, and an edit that can be undone
@@ -18,7 +18,7 @@ export type DriftEditor = Pick<Editor, 'graph' | 'updateNodeWithUndo'>
  * already carries. They travel with the document and undo like any other edit, so a comparison
  * written by one person is what the next person compares against.
  */
-const driftField = jsonPluginDataField('drift', 'bookkeeping', driftFileSchema)
+const driftField = OPEN_PENCIL_PLUGIN_DATA.drift
 
 /**
  * The baselines the open document carries. A file anyone can edit is read reference by reference:

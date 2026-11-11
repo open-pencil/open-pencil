@@ -3,10 +3,10 @@ import { expect, test } from 'bun:test'
 import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { livePageSchema } from '@open-pencil/scene-graph/plugin-data'
 
 import {
   canShowLivePage,
-  livePageSchema,
   normalizeLiveURL,
   pageLabel,
   pluginDataWithLivePage,

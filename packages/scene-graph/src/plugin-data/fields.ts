@@ -28,6 +28,7 @@ import {
   withoutPluginData,
   type PluginDataKey
 } from './field'
+import { driftSchema, livePageSchema } from './schema'
 
 const DIRECTIONS = ['AUTO', 'LTR', 'RTL'] as const satisfies readonly (
   | TextDirection
@@ -143,13 +144,6 @@ const okhclSchema: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   })
 })
 
-/** A page of the application a frame shows: the address its dev server answers on. */
-const livePageSchema = v.object({
-  url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048)),
-  label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120))),
-  mode: v.picklist(['live', 'snapshot'])
-})
-
 const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPublication> = v.object(
   {
     libraryId: v.string(),
@@ -205,6 +199,8 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
   /** The statuses layers can be in, on the DOCUMENT node. */
   statuses: jsonPluginDataField('statuses', 'bookkeeping', statusWorkflowSchema),
+  /** The page baselines a document keeps, on the DOCUMENT node. */
+  drift: jsonPluginDataField('drift', 'bookkeeping', driftSchema),
   /** How tightly the document's `.fig` data is compressed, on the DOCUMENT node. */
   figCompression: textPluginDataField('figCompression', 'bookkeeping', FIG_COMPRESSIONS),
   /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */

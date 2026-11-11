@@ -1,24 +1,9 @@
 import * as v from 'valibot'
 
-/** Where a page stood when its picture was taken: what the frame shows, and when. */
-export const driftReferenceSchema = v.object({
-  nodeId: v.pipe(v.string(), v.minLength(1)),
-  url: v.pipe(v.string(), v.minLength(1)),
-  /** When the picture was taken, so a person can tell an old baseline from a new one. */
-  capturedAt: v.pipe(v.string(), v.minLength(1)),
-  width: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  height: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  /** SHA-256 of the picture's bytes, which is all a comparison needs to say it changed. */
-  digest: v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/))
-})
-export type DriftReference = v.InferOutput<typeof driftReferenceSchema>
+import { driftReferenceSchema, type driftSchema } from '@open-pencil/scene-graph/plugin-data'
 
-/** Every baseline the document keeps, keyed by the frame it belongs to. */
-export const driftFileSchema = v.object({
-  version: v.literal(1),
-  references: v.record(v.string(), driftReferenceSchema)
-})
-export type DriftFile = v.InferOutput<typeof driftFileSchema>
+export type DriftReference = v.InferOutput<typeof driftReferenceSchema>
+export type DriftFile = v.InferOutput<typeof driftSchema>
 
 /** An empty baseline, written when a document has not been compared yet. */
 export function emptyDriftFile(): DriftFile {

@@ -4,6 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   OPEN_PENCIL_PLUGIN_DATA,
   readPluginData,
+  type livePageSchema,
   withPluginData
 } from '@open-pencil/scene-graph/plugin-data'
 
@@ -24,13 +25,9 @@ export function pageLabel(text: string): string {
 /**
  * A page of the application a frame shows: the address the dev server answers on, the label the
  * layer tree names it by, and how the page stands to the canvas. The frame's own size is the
- * page's viewport, so a page is resized the way any other frame is.
+ * page's viewport, so a page is resized the way any other frame is. The shape is the scene graph's,
+ * which also stores it, so reading a page here and there cannot drift apart.
  */
-export const livePageSchema = v.object({
-  url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048)),
-  label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(LABEL_LIMIT))),
-  mode: v.picklist(['live', 'snapshot'])
-})
 export type LivePage = v.InferOutput<typeof livePageSchema>
 
 /**
