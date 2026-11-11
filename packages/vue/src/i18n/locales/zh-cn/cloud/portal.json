@@ -113,7 +113,7 @@
   "sessionsDescription": "你的账号在哪里登录过，以及登录时间。",
   "accessTokens": "访问令牌",
   "accessTokensDescription": "让脚本和 CI 以你的身份使用文档的令牌。",
-  "accessTokensIntro": "以 Authorization: Bearer <token> 发送令牌。它能以你的身份读取和保存文档，但不能更改登录方式、创建其他令牌或访问管理功能。",
+  "accessTokensIntro": "以 {header} 发送令牌。它能以你的身份读取和保存文档，但不能更改登录方式、创建其他令牌或访问管理功能。",
   "newAccessToken": "新建令牌",
   "accessTokenNameHint": "用途，例如发布示例。",
   "accessTokenExpiry": "有效期",

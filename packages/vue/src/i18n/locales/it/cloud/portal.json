@@ -113,7 +113,7 @@
   "sessionsDescription": "Dove è stato effettuato l’accesso al tuo account, e quando.",
   "accessTokens": "Token di accesso",
   "accessTokensDescription": "Token che permettono a script e CI di usare i tuoi documenti a tuo nome.",
-  "accessTokensIntro": "Invia un token come Authorization: Bearer <token>. Legge e salva documenti a tuo nome e non può cambiare il modo in cui accedi, creare altri token né raggiungere l’amministrazione.",
+  "accessTokensIntro": "Invia un token come {header}. Legge e salva documenti a tuo nome e non può cambiare il modo in cui accedi, creare altri token né raggiungere l’amministrazione.",
   "newAccessToken": "Nuovo token",
   "accessTokenNameHint": "Cosa lo usa, ad esempio Pubblica esempi.",
   "accessTokenExpiry": "Scade dopo",

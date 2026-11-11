@@ -553,7 +553,6 @@ ja:cloudPortal.pictureUnreadable
 ja:cloudPortal.noDocumentsFoundDescription
 ja:cloudPortal.accessTokenCreatedDescription
 ja:cloudPortal.accessTokensDescription
-ja:cloudPortal.accessTokensIntro
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -579,7 +578,6 @@ zh-cn:cloudPortal.pictureUnreadable
 zh-cn:cloudPortal.noDocumentsFoundDescription
 zh-cn:cloudPortal.accessTokenCreatedDescription
 zh-cn:cloudPortal.accessTokensDescription
-zh-cn:cloudPortal.accessTokensIntro
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted

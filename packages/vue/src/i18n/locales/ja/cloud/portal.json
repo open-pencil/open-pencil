@@ -113,7 +113,7 @@
   "sessionsDescription": "あなたのアカウントがサインインしている場所と、その日時です。",
   "accessTokens": "アクセストークン",
   "accessTokensDescription": "スクリプトや CI があなたとしてドキュメントを使うためのトークンです。",
-  "accessTokensIntro": "トークンは Authorization: Bearer <token> として送信します。あなたとしてドキュメントを読み書きできますが、サインイン方法の変更、他のトークンの作成、管理画面へのアクセスはできません。",
+  "accessTokensIntro": "トークンは {header} として送信します。あなたとしてドキュメントを読み書きできますが、サインイン方法の変更、他のトークンの作成、管理画面へのアクセスはできません。",
   "newAccessToken": "新しいトークン",
   "accessTokenNameHint": "用途（例：サンプルの公開）。",
   "accessTokenExpiry": "有効期限",

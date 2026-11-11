@@ -113,7 +113,7 @@
   "sessionsDescription": "Wo dein Konto angemeldet ist und wann es angemeldet war.",
   "accessTokens": "Zugriffstokens",
   "accessTokensDescription": "Tokens, mit denen Skripte und CI deine Dokumente in deinem Namen nutzen.",
-  "accessTokensIntro": "Sende ein Token als Authorization: Bearer <token>. Es liest und speichert Dokumente in deinem Namen und kann weder deine Anmeldung ändern, andere Tokens erstellen noch die Verwaltung erreichen.",
+  "accessTokensIntro": "Sende ein Token als {header}. Es liest und speichert Dokumente in deinem Namen und kann weder deine Anmeldung ändern, andere Tokens erstellen noch die Verwaltung erreichen.",
   "newAccessToken": "Neues Token",
   "accessTokenNameHint": "Wofür es verwendet wird, etwa Beispiele veröffentlichen.",
   "accessTokenExpiry": "Läuft ab nach",

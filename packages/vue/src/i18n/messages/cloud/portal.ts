@@ -149,7 +149,7 @@ export const cloudPortalMessageDefaults = {
   accessTokens: 'Access tokens',
   accessTokensDescription: 'Tokens that let scripts and CI use your documents as you.',
   accessTokensIntro:
-    'Send a token as Authorization: Bearer <token>. It reads and saves documents as you, and can’t change how you sign in, make other tokens, or reach administration.',
+    'Send a token as {header}. It reads and saves documents as you, and can’t change how you sign in, make other tokens, or reach administration.',
   newAccessToken: 'New token',
   accessTokenNameHint: 'What uses it, such as Publish examples.',
   accessTokenExpiry: 'Expires after',

@@ -33,6 +33,10 @@ const {
 const emit = defineEmits<{ create: []; revoke: [id: string] }>()
 
 const messages = useCloudPortalMessages()
+/** How a token is sent, shown as code inside the translated sentence where it falls. */
+const ACCESS_TOKEN_HEADER = 'Authorization: Bearer <token>'
+const HEADER_PLACEHOLDER = '{header}'
+const intro = computed(() => messages.value.accessTokensIntro.split(/(\{header\})/))
 const revoking = ref<PortalAccessToken | null>(null)
 const revokingShown = useHeldContent(revoking)
 
@@ -48,7 +52,6 @@ const table = usePortalRows(() => tokens, {
           icon: IconKeyRound,
           text: token.name,
           strong: true,
-          badge: token.expired ? messages.value.accessTokenExpired : null,
           detail: token.start ? `${token.start}…` : null
         })
     }),
@@ -62,9 +65,14 @@ const table = usePortalRows(() => tokens, {
       meta: { class: 'hidden w-32 whitespace-nowrap text-muted @xl/table:table-cell' },
       cell: ({ row: { original: token } }) => token.lastUsed ?? messages.value.accessTokenNeverUsed
     }),
-    column.accessor('expires', {
+    column.display({
+      id: 'expires',
       header: () => messages.value.columnExpires,
-      meta: { class: 'w-32 whitespace-nowrap text-muted' }
+      meta: { class: 'w-32 whitespace-nowrap text-muted' },
+      cell: ({ row: { original: token } }) =>
+        token.expired
+          ? h('span', { class: 'text-warning' }, messages.value.accessTokenExpired)
+          : token.expires
     }),
     column.display({
       id: 'actions',
@@ -104,7 +112,14 @@ function confirm() {
   <div class="flex max-w-3xl flex-col gap-6">
     <SettingsSection>
       <template #title>{{ messages.accessTokens }}</template>
-      <template #description>{{ messages.accessTokensIntro }}</template>
+      <template #description>
+        <template v-for="(part, index) in intro" :key="index">
+          <code v-if="part === HEADER_PLACEHOLDER" class="font-mono text-surface">{{
+            ACCESS_TOKEN_HEADER
+          }}</code>
+          <template v-else>{{ part }}</template>
+        </template>
+      </template>
       <template #actions>
         <AppButton size="sm" variant="outline" :disabled="busy" @click="emit('create')">
           <template #leading><icon-lucide-plus class="size-3.5" /></template>

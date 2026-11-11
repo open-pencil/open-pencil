@@ -122,7 +122,7 @@
   "sessionsDescription": "Onde a sua conta está conectada e desde quando.",
   "accessTokens": "Tokens de acesso",
   "accessTokensDescription": "Tokens que permitem que scripts e CI usem seus documentos em seu nome.",
-  "accessTokensIntro": "Envie um token como Authorization: Bearer <token>. Ele lê e salva documentos em seu nome e não pode alterar como você entra, criar outros tokens nem acessar a administração.",
+  "accessTokensIntro": "Envie um token como {header}. Ele lê e salva documentos em seu nome e não pode alterar como você entra, criar outros tokens nem acessar a administração.",
   "newAccessToken": "Novo token",
   "accessTokenNameHint": "O que o usa, por exemplo Publicar exemplos.",
   "accessTokenExpiry": "Expira após",

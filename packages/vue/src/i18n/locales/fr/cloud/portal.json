@@ -113,7 +113,7 @@
   "sessionsDescription": "Où votre compte est connecté, et depuis quand.",
   "accessTokens": "Jetons d’accès",
   "accessTokensDescription": "Des jetons qui permettent aux scripts et à la CI d’utiliser vos documents en votre nom.",
-  "accessTokensIntro": "Envoyez un jeton sous la forme Authorization: Bearer <token>. Il lit et enregistre des documents en votre nom, et ne peut ni modifier votre façon de vous connecter, ni créer d’autres jetons, ni accéder à l’administration.",
+  "accessTokensIntro": "Envoyez un jeton sous la forme {header}. Il lit et enregistre des documents en votre nom, et ne peut ni modifier votre façon de vous connecter, ni créer d’autres jetons, ni accéder à l’administration.",
   "newAccessToken": "Nouveau jeton",
   "accessTokenNameHint": "Ce qui l’utilise, par exemple Publier les exemples.",
   "accessTokenExpiry": "Expire après",

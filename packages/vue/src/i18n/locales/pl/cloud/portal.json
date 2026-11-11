@@ -113,7 +113,7 @@
   "sessionsDescription": "Gdzie i kiedy było zalogowane Twoje konto.",
   "accessTokens": "Tokeny dostępu",
   "accessTokensDescription": "Tokeny, dzięki którym skrypty i CI korzystają z Twoich dokumentów w Twoim imieniu.",
-  "accessTokensIntro": "Wysyłaj token jako Authorization: Bearer <token>. Odczytuje i zapisuje dokumenty w Twoim imieniu, ale nie może zmienić sposobu logowania, tworzyć innych tokenów ani wejść do administracji.",
+  "accessTokensIntro": "Wysyłaj token jako {header}. Odczytuje i zapisuje dokumenty w Twoim imieniu, ale nie może zmienić sposobu logowania, tworzyć innych tokenów ani wejść do administracji.",
   "newAccessToken": "Nowy token",
   "accessTokenNameHint": "Do czego służy, np. Publikowanie przykładów.",
   "accessTokenExpiry": "Wygasa po",
