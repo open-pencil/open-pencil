@@ -37,7 +37,7 @@ const deletion = usePortalAccountDeletion({
   onArchiveFailed: (message) => portalToast.error(message)
 })
 
-/** A page loaded before the server named its terms has none to show; reading them again does. */
+/** A page loaded before the server named its terms, or their version, has nothing to accept yet. */
 function reload() {
   globalThis.location.reload()
 }
@@ -45,7 +45,7 @@ function reload() {
 
 <template>
   <PortalTerms
-    v-if="legal"
+    v-if="legal?.termsVersion"
     :host="portal.host"
     :legal="legal"
     :accepting="busy"

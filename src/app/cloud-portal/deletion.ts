@@ -83,7 +83,10 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
   async function finish(password?: string) {
     await portal.api.deleteAccount(password)
     open.value = false
-    await portal.refreshAccount()
+    // The account is gone either way; a status check that fails now must not keep the page on it.
+    await portal.refreshAccount().catch(() => {
+      portal.account.value = null
+    })
     await options.onDeleted()
   }
 
