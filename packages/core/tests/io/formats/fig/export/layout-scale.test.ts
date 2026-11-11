@@ -1,7 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { readFixture } from '@open-pencil/test-support/fig/fixtures'
-import { nestedLayoutScaleFixtureSchema } from '@open-pencil/test-support/fig/schema'
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
@@ -9,6 +7,8 @@ import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { nestedLayoutScaleFixtureSchema } from '@open-pencil/test-support/fig/schema'
 
 const fixture = readFixture('nested-layout-scale.json', nestedLayoutScaleFixtureSchema)
 

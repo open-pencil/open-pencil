@@ -1,8 +1,7 @@
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 export function solid(r: number, g: number, b: number) {
   return [{ type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }]

@@ -2,10 +2,9 @@ import { expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { materializeDocument } from '@open-pencil/fig'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { absoluteConstraintRecords } from '@open-pencil/test-support/fig/absolute-constraints'
 import { FIXTURES } from '@open-pencil/test-support/paths'

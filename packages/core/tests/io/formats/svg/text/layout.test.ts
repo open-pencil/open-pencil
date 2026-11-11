@@ -1,8 +1,8 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import { renderNodesToSVG } from '#core/io/formats/svg'
