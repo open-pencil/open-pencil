@@ -40,13 +40,36 @@ test('only a page this machine serves is drawn', () => {
   }
 })
 
+test('the loopback rule answers what the native command answers', () => {
+  // The address forms a dev server is reached by, which the native rule takes: the short IPv4 form
+  // is normalized by the parser, and the bracketed IPv6 loopback stays bracketed in `hostname`.
+  for (const allowed of ['http://127.1/', 'http://[0:0:0:0:0:0:0:1]/']) {
+    expect(isLoopbackAddress(allowed)).toBe(true)
+  }
+  for (const refused of [
+    // Not an address the parser will take, and not a name the native rule treats as this machine.
+    'http://127.999.999.999/',
+    // An IPv4-mapped address is not the IPv6 loopback.
+    'http://[::ffff:127.0.0.1]/',
+    // Every interface, not this one.
+    'http://0.0.0.0:3000/',
+    // `localhost` over a scheme a page is not served with.
+    'ws://localhost:3000/'
+  ]) {
+    expect(isLoopbackAddress(refused)).toBe(false)
+  }
+})
+
 test('a picture is drawn at the frame size, within what the command takes', () => {
   expect(captureSize({ nodeId: 'f', url: 'http://localhost:3000' })).toEqual({
     width: 1440,
     height: 900
   })
   expect(captureSize({ ...target, width: 375, height: 812 })).toEqual({ width: 375, height: 812 })
-  expect(captureSize({ ...target, width: 375.4, height: 812.6 })).toEqual({ width: 375, height: 813 })
+  expect(captureSize({ ...target, width: 375.4, height: 812.6 })).toEqual({
+    width: 375,
+    height: 813
+  })
   expect(captureSize({ ...target, width: 4, height: 20000 })).toEqual({ width: 64, height: 4096 })
 })
 
@@ -87,7 +110,11 @@ test('a capture that failed, or answered nothing readable, has no picture', asyn
     throw new Error('no browser')
   })
   const unreadable = desktopPageCapture(async () => ({ bytes: '', width: 0, height: 0 }))
-  const notBase64 = desktopPageCapture(async () => ({ bytes: 'not base64!', width: 10, height: 10 }))
+  const notBase64 = desktopPageCapture(async () => ({
+    bytes: 'not base64!',
+    width: 10,
+    height: 10
+  }))
   expect(await refused(target)).toBeNull()
   expect(await unreadable(target)).toBeNull()
   expect(await notBase64(target)).toBeNull()

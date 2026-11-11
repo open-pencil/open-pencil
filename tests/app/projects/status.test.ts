@@ -70,35 +70,53 @@ test('a project added after the first read is read too', async () => {
 })
 
 test('statuses read for a list that changed meanwhile are dropped', async () => {
-  let markStarted: () => void = () => undefined
-  const started = new Promise<void>((resolve) => {
-    markStarted = resolve
+  // The read for the repository the list starts with is held open, so the list can change while
+  // that read is really in flight.
+  let markFirst: () => void = () => undefined
+  const firstStarted = new Promise<void>((resolve) => {
+    markFirst = resolve
   })
   let finish: (value: unknown) => void = () => undefined
   const answer = new Promise<unknown>((resolve) => {
     finish = resolve
   })
+  // The read that follows starts at once and then waits, so the panel can be looked at between the
+  // two reads: no timer is involved, and a slow machine cannot look before the answer arrived.
+  let markSecond: () => void = () => undefined
+  const secondStarted = new Promise<void>((resolve) => {
+    markSecond = resolve
+  })
+  let releaseSecond: () => void = () => undefined
+  const secondAnswer = new Promise<void>((resolve) => {
+    releaseSecond = resolve
+  })
   const transport: GitTransport = async (_command, args) => {
     const payload = args as { repo: string }
-    if (payload.repo !== karbid.repository) {
-      return new Promise<never>(() => {
-        // The new list's read never answers, so only the dropped read could write.
-      })
+    if (payload.repo === karbid.repository) {
+      markFirst()
+      return answer
     }
-    markStarted()
-    return answer
+    markSecond()
+    await secondAnswer
+    return { code: 0, stdout: PENCIL_STATUS, stderr: '' }
   }
 
   const list = ref<Project[]>([karbid])
   const statuses = useProjectStatuses(list, transport)
-  await started
+  await firstStarted
   list.value = [pencil]
   finish({ code: 0, stdout: KARBID_STATUS, stderr: '' })
-  await new Promise((resolve) => {
-    setTimeout(resolve, 10)
-  })
+  // Reads run one after another, so the next one starting means the dropped read has landed.
+  await secondStarted
 
   expect(statuses.statuses.value).toEqual({})
+
+  releaseSecond()
+  await statuses.refresh()
+
+  expect(statuses.statuses.value).toEqual({
+    [pencil.id]: { branch: 'feat/git-sync', changed: 2 }
+  })
 })
 
 test('a detached or unborn branch still reports its changes', () => {
