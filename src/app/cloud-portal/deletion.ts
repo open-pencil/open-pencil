@@ -1,5 +1,4 @@
 import { ref, type Ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
@@ -9,17 +8,26 @@ import { saveAccountArchive, type PortalAccountArchive } from './archive'
 import { usePortal } from './context'
 import { usePortalFailureMessages } from './failure'
 import { usePortalAction } from './state'
-import { portalToast } from './toast'
+
+export type PortalAccountDeletionOptions = {
+  /** The account is gone and nobody is signed in: the page says so and leaves. */
+  onDeleted(): unknown
+  /** Download all failed as a whole, such as out of memory, and saved nothing. */
+  onArchiveFailed(message: string): void
+  /**
+   * A session too old to delete with: show a password prompt and say whether it did. Without one,
+   * the failure asks to sign in again.
+   */
+  confirmPassword?(): boolean
+}
 
 /**
  * Deleting the signed-in account, as the account page and the terms page offer it: what goes,
- * downloading every document first, and the deletion itself. A session too old to delete with
- * asks `confirmPassword`, which shows a password prompt and says whether it did; without one,
- * the failure asks to sign in again.
+ * downloading every document first, and the deletion itself. It reports what happened; the page
+ * says so and moves on.
  */
-export function usePortalAccountDeletion(options: { confirmPassword?: () => boolean } = {}) {
+export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) {
   const portal = usePortal()
-  const router = useRouter()
   const messages = useCloudPortalMessages()
   const failures = usePortalFailureMessages()
   const open = ref(false)
@@ -67,17 +75,16 @@ export function usePortalAccountDeletion(options: { confirmPassword?: () => bool
       // Zipping or saving failed as a whole, such as out of memory; nothing was saved.
       if (!current()) return
       archive.value = null
-      portalToast.error(failures.api(error))
+      options.onArchiveFailed(failures.api(error))
     }
   }
 
-  /** Deletes the account, with the password when the session is too old, and leaves. */
+  /** Deletes the account, with the password when the session is too old. */
   async function finish(password?: string) {
     await portal.api.deleteAccount(password)
     open.value = false
     await portal.refreshAccount()
-    portalToast.info(messages.value.accountDeleted)
-    await router.replace({ name: 'welcome' })
+    await options.onDeleted()
   }
 
   const remove = usePortalAction(async () => {

@@ -146,7 +146,6 @@ const changeEmail = usePortalAction(async (email: string) => {
 const confirmPassword = usePortalAction(async (password: string) => {
   if (passwordFor.value === 'delete') {
     await deletion.finish(password)
-    passwordOpen.value = false
     return
   }
   const email = portal.account.value?.user.email ?? ''
@@ -166,6 +165,12 @@ const confirmPassword = usePortalAction(async (password: string) => {
 const passwordFor = ref<'email' | 'delete'>('email')
 
 const deletion = usePortalAccountDeletion({
+  async onDeleted() {
+    passwordOpen.value = false
+    portalToast.info(messages.value.accountDeleted)
+    await router.replace({ name: 'welcome' })
+  },
+  onArchiveFailed: (message) => portalToast.error(message),
   confirmPassword() {
     if (!loaded.data.value?.hasPassword) return false
     passwordFor.value = 'delete'
