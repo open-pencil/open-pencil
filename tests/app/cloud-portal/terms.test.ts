@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createApp, effectScope } from 'vue'
+import { effectScope } from 'vue'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
 
-import { PORTAL_CONTEXT, type PortalContext } from '@/app/cloud-portal/context'
-import { usePortalTerms } from '@/app/cloud-portal/terms'
+import { usePortalTerms, type PortalTermsServices } from '@/app/cloud-portal/terms'
 
 const legal = {
   termsURL: 'https://example.com/terms',
@@ -14,9 +13,12 @@ const legal = {
 }
 
 /** A portal whose accepting and signing out answer as each test says, recording the calls. */
-function portal(answers: { accept?: () => Promise<unknown>; signOut?: () => Promise<unknown> }) {
+function portal(answers: {
+  accept?: () => Promise<unknown>
+  signOut?: () => ReturnType<PortalTermsServices['auth']['signOut']>
+}) {
   const calls: string[] = []
-  const context = {
+  const context: PortalTermsServices = {
     discovery: { legal },
     api: {
       async acceptTerms(version: string) {
@@ -28,27 +30,25 @@ function portal(answers: { accept?: () => Promise<unknown>; signOut?: () => Prom
     auth: {
       async signOut() {
         calls.push('sign out')
-        return (await answers.signOut?.()) ?? { ok: true, value: undefined }
+        return (await answers.signOut?.()) ?? { ok: true as const, value: undefined }
       }
     },
     async refreshAccount() {
       calls.push('refresh')
       return null
     }
-  } as unknown as PortalContext
+  }
   return { context, calls }
 }
 
-function terms(context: PortalContext, outcomes: string[]) {
-  const app = createApp({})
-  app.provide(PORTAL_CONTEXT, context)
-  const scope = effectScope(true)
-  const value = app.runWithContext(() =>
-    scope.run(() =>
-      usePortalTerms({
+function terms(context: PortalTermsServices, outcomes: string[]) {
+  const value = effectScope(true).run(() =>
+    usePortalTerms(
+      {
         onAccepted: () => outcomes.push('accepted'),
         onSignedOut: () => outcomes.push('signed out')
-      })
+      },
+      context
     )
   )
   if (!value) throw new Error('The terms did not start')
@@ -69,7 +69,7 @@ describe('usePortalTerms', () => {
   test('shows only the latest attempt’s failure', async () => {
     const { context } = portal({
       accept: () => Promise.reject(new CloudPortalAPIError('domain', 'terms_changed')),
-      signOut: async () => ({ ok: false, failure: 'unavailable' })
+      signOut: async () => ({ ok: false as const, failure: 'unavailable' as const })
     })
     const outcomes: string[] = []
     const page = terms(context, outcomes)

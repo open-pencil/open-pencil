@@ -1,5 +1,9 @@
 import { computed } from 'vue'
 
+import type { CloudPortalClient } from '@open-pencil/cloud/client'
+import type { CloudDiscovery } from '@open-pencil/cloud/contract'
+
+import type { PortalAuth } from './auth'
 import { usePortal } from './context'
 import { usePortalFailureMessages } from './failure'
 import { usePortalAction } from './state'
@@ -11,13 +15,23 @@ export type PortalTermsOptions = {
   onSignedOut(): unknown
 }
 
+/** What accepting and declining reach of the portal. */
+export type PortalTermsServices = {
+  discovery: Pick<CloudDiscovery, 'legal'>
+  api: Pick<CloudPortalClient, 'acceptTerms'>
+  auth: Pick<PortalAuth, 'signOut'>
+  refreshAccount(): Promise<unknown>
+}
+
 /**
  * Accepting or declining the server's current terms. Accepting names the version this page loaded,
  * so terms replaced since then answer `terms_changed`, which asks for a reload; declining signs
  * out. Only the latest attempt's failure is shown. It reports what happened; the page moves on.
  */
-export function usePortalTerms(options: PortalTermsOptions) {
-  const portal = usePortal()
+export function usePortalTerms(
+  options: PortalTermsOptions,
+  portal: PortalTermsServices = usePortal()
+) {
   const { failure } = usePortalFailureMessages()
   const legal = computed(() => portal.discovery.legal)
 
