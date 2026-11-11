@@ -7,7 +7,6 @@ import {
 } from 'reka-ui'
 import type { Component } from 'vue'
 import IconCheck from '~icons/lucide/check'
-import IconChevronDown from '~icons/lucide/chevron-down'
 
 import { layerTypeOptions, type LayerType } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -16,10 +15,10 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { NODE_ICONS } from '@/components/icons'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 
 // Figma's layer type menu: a frame, a group, and a section switch to one another in place.
 const { node, icon } = defineProps<{ node: SceneNode; icon: Component | undefined }>()
@@ -43,17 +42,12 @@ const itemCls = menuItem({ justify: 'between' })
 
 <template>
   <AppDropdownMenuRoot v-model:open="popupOpen">
-    <Tip :label="panels.layerType">
-      <DropdownMenuTrigger as-child>
-        <button
-          :aria-label="panels.layerType"
-          class="-mx-1 -my-1.5 flex h-6 items-center gap-0.5 rounded-md px-1 text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
-        >
-          <component :is="icon" class="size-3.5" />
-          <IconChevronDown class="size-3" />
-        </button>
-      </DropdownMenuTrigger>
-    </Tip>
+    <DropdownMenuTrigger as-child>
+      <!-- The header row is shorter than the button, so it overhangs the row as an icon would. -->
+      <IconButton :label="panels.layerType" menu size="xs" class="-mx-1 -my-1.5">
+        <component :is="icon" class="size-3.5" />
+      </IconButton>
+    </DropdownMenuTrigger>
     <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="start" side="bottom" :side-offset="4" :class="menuCls.content">
         <MenuScrollArea>
