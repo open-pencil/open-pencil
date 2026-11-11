@@ -1,6 +1,7 @@
 import RBush from 'rbush'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 
@@ -24,6 +25,15 @@ export type {
   RenderChunkKind
 } from './build'
 
+function hasFiniteBounds(bounds: VisualBounds): boolean {
+  return (
+    Number.isFinite(bounds.minX) &&
+    Number.isFinite(bounds.minY) &&
+    Number.isFinite(bounds.maxX) &&
+    Number.isFinite(bounds.maxY)
+  )
+}
+
 export class RenderChunkIndex {
   private readonly tree = new RBush<RenderChunk>()
   private readonly chunks = new Map<string, RenderChunk>()
@@ -31,7 +41,7 @@ export class RenderChunkIndex {
   private readonly chunkIdsByDependency = new Map<string, Set<string>>()
   private readonly dependenciesByChunk = new Map<string, string[]>()
   private readonly chunkIdsByTop = new Map<string, Set<string>>()
-  /** The bounds of every chunk, computed when asked and dropped when the chunks change. */
+  /** The bounds of drawable chunks, computed when asked and dropped when the chunks change. */
   private cachedBounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null | undefined
   /** At least the largest backdrop reach of any chunk: it only grows until the index is reset. */
   private maxBackdropReach = 0
@@ -79,7 +89,8 @@ export class RenderChunkIndex {
 
   bulkLoad(chunks: RenderChunk[], graph?: SceneGraph): void {
     this.dispose()
-    this.tree.load(chunks)
+    this.tree.load(chunks.filter(hasFiniteBounds))
+    // Keep invalid chunks registered so edits can give them finite bounds again.
     for (const chunk of chunks) this.register(chunk, graph)
   }
 
@@ -96,7 +107,7 @@ export class RenderChunkIndex {
   }
 
   private unregister(chunk: RenderChunk): void {
-    this.tree.remove(chunk)
+    if (hasFiniteBounds(chunk)) this.tree.remove(chunk)
     this.chunks.delete(chunk.id)
     this.chunkIdsByNode.get(chunk.nodeId)?.delete(chunk.id)
     this.chunkIdsByTop.get(chunk.topId)?.delete(chunk.id)
@@ -132,7 +143,7 @@ export class RenderChunkIndex {
         ? buildChunks(graph, topId, topId, topIndex, countDescendants(graph, [topId]).counts)
         : []
     for (const chunk of added) {
-      this.tree.insert(chunk)
+      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
       this.register(chunk, graph)
     }
     if (removed.length > 0 || added.length > 0) this.cachedBounds = undefined
@@ -310,7 +321,7 @@ export class RenderChunkIndex {
     for (const [position, chunk] of built.entries()) {
       chunk.painterOrder = start + step * (position + 1)
       chunk.localOrder = chunk.painterOrder - topIndex * PAINTER_ORDER_SPAN
-      this.tree.insert(chunk)
+      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
       this.register(chunk, graph)
     }
     this.cachedBounds = undefined
@@ -382,11 +393,12 @@ export class RenderChunkIndex {
     }
   }
 
-  /** The world bounds all chunks lie in, or null for an empty page. */
+  /** The world bounds of finite chunks, or null when none can draw. */
   bounds(): Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null {
     if (this.cachedBounds !== undefined) return this.cachedBounds
     let bounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null = null
     for (const chunk of this.chunks.values()) {
+      if (!hasFiniteBounds(chunk)) continue
       bounds = bounds
         ? {
             minX: Math.min(bounds.minX, chunk.minX),
@@ -433,11 +445,11 @@ export class RenderChunkIndex {
     for (const id of ids) {
       const chunk = this.chunks.get(id)
       if (!chunk) continue
-      this.tree.remove(chunk)
+      if (hasFiniteBounds(chunk)) this.tree.remove(chunk)
       const bounds =
         chunk.kind === 'self' ? worldNodeVisualBounds(graph, node) : subtreeBounds(graph, nodeId)
       if (!bounds) {
-        this.tree.insert(chunk)
+        if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
         continue
       }
       Object.assign(chunk, bounds, {
@@ -445,7 +457,7 @@ export class RenderChunkIndex {
         backdropReach: backdropReach(graph, node, chunk.kind === 'subtree')
       })
       this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
-      this.tree.insert(chunk)
+      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
       this.cachedBounds = undefined
       updated++
     }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
@@ -25,7 +25,191 @@ function graphWithNodes(count: number): { graph: SceneGraph; pageId: string } {
   return { graph, pageId: page.id }
 }
 
+function graphWithStroke(
+  weight: number,
+  childCount = 0
+): { graph: SceneGraph; pageId: string; stroked: SceneNode; neighbour: SceneNode } {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  if (!page) throw new Error('Expected default page')
+  const stroked = graph.createNode('FRAME', page.id, {
+    width: 100,
+    height: 50,
+    strokeWeight: weight,
+    independentStrokeWeights: true,
+    borderBottomWeight: 1,
+    strokes: [
+      {
+        type: 'SOLID',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true,
+        weight,
+        align: 'CENTER'
+      }
+    ]
+  })
+  for (let at = 0; at < childCount; at++) {
+    graph.createNode('RECTANGLE', stroked.id, { x: at, width: 1, height: 1 })
+  }
+  const neighbour = graph.createNode('RECTANGLE', page.id, {
+    x: 200,
+    width: 50,
+    height: 50
+  })
+  return { graph, pageId: page.id, stroked, neighbour }
+}
+
+const PAGE_BOUNDS = { minX: -1_000, minY: -1_000, maxX: 1_000, maxY: 1_000 }
+const NON_FINITE_WEIGHTS = [Number.NaN, Number.POSITIVE_INFINITY]
+
 describe('render chunk spatial index', () => {
+  test.each(NON_FINITE_WEIGHTS)('keeps a neighbour searchable beside a %s stroke', (weight) => {
+    const { graph, pageId, stroked, neighbour } = graphWithStroke(weight)
+    const { index } = RenderChunkIndex.build(graph, pageId)
+    try {
+      expect(index.bounds()).toEqual({ minX: 200, minY: 0, maxX: 250, maxY: 50 })
+      expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toEqual([neighbour.id])
+      expect(index.getChunksDependingOnNode(stroked.id)).toHaveLength(1)
+      expect(index.hasTop(stroked.id)).toBe(true)
+    } finally {
+      index.dispose()
+    }
+  })
+
+  test('bulk loads only finite boxes, checking every coordinate', () => {
+    const { graph, pageId, stroked, neighbour } = graphWithStroke(2)
+    const { index } = RenderChunkIndex.build(graph, pageId)
+    const [strokedChunk] = index.getChunksForNode(stroked.id)
+    const [neighbourChunk] = index.getChunksForNode(neighbour.id)
+    if (!strokedChunk || !neighbourChunk) throw new Error('Expected two chunks')
+    try {
+      for (const coordinate of ['minX', 'minY', 'maxX', 'maxY'] as const) {
+        for (const value of [...NON_FINITE_WEIGHTS, Number.NEGATIVE_INFINITY]) {
+          index.bulkLoad([{ ...strokedChunk, [coordinate]: value }, neighbourChunk], graph)
+          expect(index.bounds()).toEqual({ minX: 200, minY: 0, maxX: 250, maxY: 50 })
+          expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toEqual([neighbour.id])
+          expect(index.size()).toBe(2)
+        }
+      }
+    } finally {
+      index.dispose()
+    }
+  })
+
+  test('an all-invalid page has no drawable bounds and recovers on an update', () => {
+    const { graph, pageId, stroked, neighbour } = graphWithStroke(Number.NaN)
+    graph.deleteNode(neighbour.id)
+    const { index } = RenderChunkIndex.build(graph, pageId)
+    try {
+      expect(index.bounds()).toBeNull()
+      expect(index.search(PAGE_BOUNDS)).toEqual([])
+      graph.updateNode(stroked.id, {
+        strokeWeight: 2,
+        strokes: stroked.strokes.map((stroke) => ({ ...stroke, weight: 2 }))
+      })
+      expect(index.updateNode(graph, stroked.id)).toBe(1)
+      expect(index.bounds()).not.toBeNull()
+      expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toEqual([stroked.id])
+    } finally {
+      index.dispose()
+    }
+  })
+
+  for (const childCount of [0, 40]) {
+    test.each(NON_FINITE_WEIGHTS)(
+      `updates a ${childCount ? 'self' : 'subtree'} chunk to a %s stroke and back`,
+      (weight) => {
+        const { graph, pageId, stroked, neighbour } = graphWithStroke(2, childCount)
+        const { index } = RenderChunkIndex.build(graph, pageId)
+        try {
+          expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toContain(stroked.id)
+          // Populate the aggregate cache before both transitions.
+          expect(index.bounds()).not.toBeNull()
+          graph.updateNode(stroked.id, {
+            strokeWeight: weight,
+            strokes: stroked.strokes.map((stroke) => ({ ...stroke, weight }))
+          })
+          expect(index.updateNode(graph, stroked.id)).toBe(1)
+          const bounds = index.bounds()
+          expect(bounds && Object.values(bounds).every(Number.isFinite)).toBe(true)
+          const found = index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)
+          expect(found).toContain(neighbour.id)
+          expect(found).not.toContain(stroked.id)
+          expect(index.getChunksForNode(stroked.id)).toHaveLength(1)
+
+          graph.updateNode(stroked.id, {
+            strokeWeight: 2,
+            strokes: stroked.strokes.map((stroke) => ({ ...stroke, weight: 2 }))
+          })
+          expect(index.updateNode(graph, stroked.id)).toBe(1)
+          expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toContain(stroked.id)
+          expect(index.bounds()?.minX).toBeLessThan(0)
+        } finally {
+          index.dispose()
+        }
+      }
+    )
+  }
+
+  test.each(NON_FINITE_WEIGHTS)(
+    'rebuilds a top with a %s stroke without poisoning its neighbour',
+    (weight) => {
+      const { graph, pageId, stroked, neighbour } = graphWithStroke(2)
+      const { index } = RenderChunkIndex.build(graph, pageId)
+      try {
+        index.bounds()
+        graph.updateNode(stroked.id, {
+          strokeWeight: weight,
+          strokes: stroked.strokes.map((stroke) => ({ ...stroke, weight }))
+        })
+        expect(index.rebuildTop(graph, pageId, stroked.id).added).toHaveLength(1)
+        expect(index.bounds()).toEqual({ minX: 200, minY: 0, maxX: 250, maxY: 50 })
+        expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).toEqual([neighbour.id])
+        expect(index.rebuildTop(graph, pageId, stroked.id).removed).toHaveLength(1)
+      } finally {
+        index.dispose()
+      }
+    }
+  )
+
+  test.each(NON_FINITE_WEIGHTS)('rebuilds a nested %s stroke under a split frame', (weight) => {
+    const { graph, pageId } = graphWithNodes(40)
+    const frame = graph.getChildren(pageId)[0]
+    if (!frame) throw new Error('Expected a split frame')
+    const { index } = RenderChunkIndex.build(graph, pageId)
+    try {
+      index.bounds()
+      const added = graph.createNode('RECTANGLE', frame.id, {
+        x: 900,
+        width: 10,
+        height: 10,
+        strokeWeight: weight,
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            weight,
+            align: 'CENTER'
+          }
+        ]
+      })
+      expect(index.rebuildFrom(graph, pageId, added.id)?.added).toHaveLength(1)
+      const bounds = index.bounds()
+      expect(bounds && Object.values(bounds).every(Number.isFinite)).toBe(true)
+      expect(index.search(PAGE_BOUNDS).map((chunk) => chunk.nodeId)).not.toContain(added.id)
+      expect(index.search({ minX: 0, minY: 0, maxX: 10, maxY: 10 }).length).toBeGreaterThan(0)
+      graph.deleteNode(added.id)
+      expect(
+        index.pruneUnder(graph, pageId, frame.id)?.removed.map((chunk) => chunk.nodeId)
+      ).toContain(added.id)
+    } finally {
+      index.dispose()
+    }
+  })
+
   test('splits oversized top-level subtrees into bounded chunks', () => {
     const { graph, pageId } = graphWithNodes(1_000)
     const { index, stats } = RenderChunkIndex.build(graph, pageId)
