@@ -96,24 +96,44 @@ export const metricsRetentionTheme = {
   }
 } as const
 
-/** One report in the inbox's dialog: what the sender wrote, their build, files, steps, and triage. */
-export const metricsReportTheme = {
+/**
+ * The report inbox: reports listed on the left, the one chosen read and triaged on the right, like
+ * a mail client. Below `md` one pane shows at a time.
+ */
+export const metricsInboxTheme = {
   slots: {
-    body: 'flex flex-col gap-4 text-xs',
-    note: 'rounded-md bg-panel-field p-3 whitespace-pre-wrap',
+    root: 'grid h-[calc(100dvh-9rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-panel md:grid-cols-[minmax(17rem,24rem)_1fr]',
+    listPane: 'flex min-h-0 flex-col border-border md:border-e data-[hidden=true]:max-md:hidden',
+    toolbar: 'flex flex-col gap-2 border-b border-border p-3',
+    list: 'min-h-0 flex-1 overflow-y-auto outline-none',
+    item: 'flex w-full cursor-pointer items-start gap-3 border-b border-border px-3 py-2.5 text-start hover:bg-hover/50 data-[selected=true]:bg-hover data-[selected=true]:shadow-[inset_2px_0_0_var(--color-accent)]',
+    itemIcon: 'mt-0.5 size-4 shrink-0 text-muted',
+    itemBody: 'flex min-w-0 flex-1 flex-col gap-0.5',
+    itemTitle: 'truncate text-xs font-medium text-surface',
+    itemMeta: 'flex min-w-0 items-center gap-1.5 text-2xs text-muted',
+    itemSender: 'truncate',
+    statusDot:
+      'size-1.5 shrink-0 rounded-full data-[status=open]:bg-warning data-[status=replied]:bg-success data-[status=closed]:bg-muted',
+    listEmpty: 'flex flex-1 items-center justify-center p-6',
+    detailPane: 'flex min-h-0 flex-col data-[hidden=true]:max-md:hidden',
+    detailBar: 'flex h-12 shrink-0 items-center gap-2 border-b border-border px-4',
+    detailBody: 'flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5',
+    kind: 'text-2xs font-medium tracking-wide text-muted uppercase',
+    message: 'text-sm leading-relaxed whitespace-pre-wrap text-surface',
     error: 'font-mono text-2xs break-words text-error',
-    facts: 'grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5',
-    factLabel: 'text-muted',
-    factValue: 'min-w-0 break-words',
-    reportId: 'font-mono text-2xs text-muted select-all',
-    links: 'flex flex-wrap gap-x-3 gap-y-1',
-    link: 'text-accent underline-offset-2 hover:underline',
-    expired: 'text-muted',
-    steps: 'flex max-h-64 flex-col overflow-y-auto font-mono text-2xs',
-    step: 'flex gap-2 border-b border-border py-1 last:border-b-0',
-    stepTime: 'shrink-0 text-muted tabular-nums',
-    stepLevel:
-      'shrink-0 data-[level=error]:text-error data-[level=warning]:text-warning text-muted',
-    handled: 'text-2xs text-muted'
+    facts: 'flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xs text-muted',
+    reportId: 'font-mono',
+    sectionTitle: 'mb-2 text-2xs font-medium text-muted',
+    files: 'flex flex-col overflow-hidden rounded-md border border-border',
+    file: 'flex h-10 items-center gap-2 border-b border-border px-3 text-xs last:border-b-0',
+    fileName: 'min-w-0 flex-1 truncate',
+    fileGone: 'text-2xs text-muted',
+    steps: 'flex flex-col font-mono text-2xs',
+    step: 'grid grid-cols-[4.5rem_1rem_1fr] items-baseline py-1',
+    stepTime: 'text-muted tabular-nums',
+    stepLevel: 'text-muted data-[level=error]:text-error data-[level=warning]:text-warning',
+    stepName: 'truncate text-surface',
+    stepsNote: 'text-2xs text-muted',
+    noteHint: 'mt-1 text-2xs text-muted'
   }
 } as const

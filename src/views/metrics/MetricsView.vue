@@ -45,48 +45,31 @@ const openReports = computed(() =>
   inboxLoaded.value ? reports.value.filter((report) => report.status === 'open').length : undefined
 )
 const triage = useReportTriage(inbox)
-const { selected, detail, detailFailed, saving, busy } = triage
-const dialogOpen = ref(false)
+const { selected, detail, detailFailed } = triage
 const saveFailed = ref(false)
-const triageFailed = ref(false)
 
-/** Counts the dialog's openings, so a save that finishes late never closes a later one. */
-let openings = 0
-
-function openReport(report: Parameters<typeof triage.open>[0]) {
-  openings++
-  saveFailed.value = false
-  dialogOpen.value = true
-  void triage.open(report)
-}
-async function saveReport(changes: Parameters<typeof triage.save>[0]) {
-  const opening = openings
-  const saved = await triage.save(changes)
-  if (opening !== openings || !dialogOpen.value) return
-  saveFailed.value = !saved
-  if (saved) dialogOpen.value = false
-}
-async function setReportStatus(...args: Parameters<typeof triage.setStatus>) {
-  triageFailed.value = !(await triage.setStatus(...args))
-}
 const inboxPanel = computed(() => ({
   reports: reports.value,
   // A new range shows the loading state, not the last range's reports or its empty state.
   loaded: inboxLoaded.value && inboxCurrent.value,
   truncated: truncated.value,
   loadFailed: inboxFailed.value,
-  statusFailed: triageFailed.value,
-  busy: busy.value,
   selected: selected.value,
   detail: detail.value,
   detailFailed: detailFailed.value,
-  saving: saving.value,
   saveFailed: saveFailed.value
 }))
+/** Saves a status or note change, and says so when one doesn't go through. */
+async function saved(change: Promise<boolean>) {
+  saveFailed.value = !(await change)
+}
 const inboxPanelEvents = {
-  open: openReport,
-  triage: setReportStatus,
-  save: saveReport,
+  select: (report: Parameters<typeof triage.open>[0]) => {
+    saveFailed.value = false
+    void triage.open(report)
+  },
+  status: (...args: Parameters<typeof triage.setStatus>) => saved(triage.setStatus(...args)),
+  note: (...args: Parameters<typeof triage.setNote>) => saved(triage.setNote(...args)),
   reload: () => reload()
 }
 // Without the metrics' own dates, the reports page offers the longest range the API takes,
@@ -114,11 +97,7 @@ const reload = () => globalThis.location.reload()
     @refresh="refreshTab"
   >
     <template #reports>
-      <ReportInboxPanel
-        v-bind="inboxPanel"
-        v-model:dialog-open="dialogOpen"
-        v-on="inboxPanelEvents"
-      />
+      <ReportInboxPanel v-bind="inboxPanel" v-on="inboxPanelEvents" />
     </template>
     <template v-if="failed" #alert>
       <AppAlert
@@ -145,11 +124,7 @@ const reload = () => globalThis.location.reload()
         </AppButton>
         <MetricsRangePicker v-model="range" :today="today.toString()" :earliest="earliest" />
       </div>
-      <ReportInboxPanel
-        v-bind="inboxPanel"
-        v-model:dialog-open="dialogOpen"
-        v-on="inboxPanelEvents"
-      />
+      <ReportInboxPanel v-bind="inboxPanel" v-on="inboxPanelEvents" />
     </div>
   </main>
   <main v-else-if="failed" class="flex h-full bg-canvas text-surface">

@@ -169,16 +169,16 @@ export function useReportInbox(range: Ref<MetricsRange>) {
 }
 
 /**
- * The report the team has open in the inbox's dialog, its steps as they load, and saving its
- * triage, from the dialog or straight from a row's menu. Saving returns whether it went through.
+ * The report the team has open in the inbox, its steps as they load, and saving its status and
+ * note where it is read. Saving returns whether it went through.
  */
-export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, 'update'>) {
+export function useReportTriage(
+  inbox: Pick<ReturnType<typeof useReportInbox>, 'update' | 'reports'>
+) {
   const selected = shallowRef<InboxReport | null>(null)
   const detail = shallowRef<ReportDetail | null>(null)
   const detailFailed = ref(false)
   const saving = ref(false)
-  /** The report a row's menu is saving. */
-  const busy = ref<string | null>(null)
 
   /** Counts each opening, so only the latest one's steps are shown, even for the same report. */
   let opening = 0
@@ -197,35 +197,39 @@ export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, '
     }
   }
 
-  async function save(triage: ReportTriage): Promise<boolean> {
-    const report = selected.value
-    if (!report) return false
-    saving.value = true
-    try {
-      const updated = await inbox.update(report.id, triage)
-      // The dialog shows who changed it last; another report may be open by now.
-      if (updated && selected.value?.id === report.id) selected.value = updated
-      return true
-    } catch (error) {
-      console.warn('The report could not be saved', error)
-      return false
-    } finally {
-      saving.value = false
+  /**
+   * Saves one change to a report's triage. Changes run one after another, each built from the
+   * report as the last save left it, so a status picked while a note saves keeps that note.
+   */
+  let queue: Promise<unknown> = Promise.resolve()
+  function apply(reportId: string, change: Partial<ReportTriage>): Promise<boolean> {
+    const run = async () => {
+      const current = inbox.reports.value.find((report) => report.id === reportId)
+      if (!current) return false
+      saving.value = true
+      try {
+        const updated = await inbox.update(reportId, {
+          status: change.status ?? current.status,
+          note: change.note === undefined ? current.triageNote : change.note
+        })
+        if (updated && selected.value?.id === reportId) selected.value = updated
+        return true
+      } catch (error) {
+        console.warn('The report could not be saved', error)
+        return false
+      } finally {
+        saving.value = false
+      }
     }
+    const result = queue.then(run)
+    queue = result
+    return result
   }
 
-  async function setStatus(report: InboxReport, status: ReportStatus): Promise<boolean> {
-    busy.value = report.id
-    try {
-      await inbox.update(report.id, { status, note: report.triageNote })
-      return true
-    } catch (error) {
-      console.warn('The report could not be saved', error)
-      return false
-    } finally {
-      busy.value = null
-    }
-  }
+  /** Moves a report to another status, keeping its note. */
+  const setStatus = (report: InboxReport, status: ReportStatus) => apply(report.id, { status })
+  /** Saves the team's note on a report, keeping its status. */
+  const setNote = (report: InboxReport, note: string | null) => apply(report.id, { note })
 
-  return { selected, detail, detailFailed, saving, busy, open, save, setStatus }
+  return { selected, detail, detailFailed, saving, open, setStatus, setNote }
 }

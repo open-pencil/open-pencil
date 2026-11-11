@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { ref, shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 
 import type { InboxReport, ReportDetail, ReportStatus } from '@open-pencil/feedback/contract'
 
-import ReportDetailDialog from './ReportDetailDialog.vue'
 import ReportInbox from './ReportInbox.vue'
 
 // Illustrative reports, as the feedback Worker answers the inbox.
@@ -91,23 +90,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The inbox's open reports, with search, filters, and each row's menu. */
-export const Inbox: Story = {
-  render: () => ({
-    components: { ReportInbox },
-    setup: () => {
-      const reports = shallowRef(REPORTS)
-      const setStatus = (report: InboxReport, status: ReportStatus) => {
-        reports.value = reports.value.map((each) =>
-          each.id === report.id ? { ...each, status } : each
-        )
-      }
-      return { reports, setStatus }
-    },
-    template: `<div class="h-150 max-w-5xl"><ReportInbox :reports="reports" @triage="setStatus" /></div>`
-  })
-}
-
 const DETAIL: ReportDetail = {
   ...REPORTS[0],
   stepsUnreadable: false,
@@ -133,11 +115,43 @@ const DETAIL: ReportDetail = {
   ]
 }
 
-/** One report open, its steps loaded, ready to triage. */
-export const Detail: Story = {
+/** The inbox as the team works through it: choosing, and changing a status, apply at once. */
+export const Inbox: Story = {
   render: () => ({
-    components: { ReportDetailDialog },
-    setup: () => ({ open: ref(true), report: DETAIL, detail: DETAIL }),
-    template: `<ReportDetailDialog v-model:open="open" :report="report" :detail="detail" />`
+    components: { ReportInbox },
+    setup: () => {
+      const reports = shallowRef(REPORTS)
+      const selected = shallowRef<InboxReport | null>(null)
+      const detail = computed(() =>
+        selected.value?.id === DETAIL.id
+          ? { ...DETAIL, ...selected.value }
+          : selected.value && { ...selected.value, steps: [], stepsUnreadable: false }
+      )
+      function update(report: InboxReport, change: Partial<InboxReport>) {
+        reports.value = reports.value.map((each) =>
+          each.id === report.id ? { ...each, ...change } : each
+        )
+        selected.value = reports.value.find((each) => each.id === report.id) ?? null
+      }
+      return {
+        reports,
+        selected,
+        detail,
+        select: (report: InboxReport) => (selected.value = report),
+        setStatus: (report: InboxReport, status: ReportStatus) => update(report, { status }),
+        setNote: (report: InboxReport, note: string | null) => update(report, { triageNote: note })
+      }
+    },
+    template: `
+      <div class="max-w-6xl">
+        <ReportInbox
+          :reports="reports"
+          :selected="selected"
+          :detail="detail"
+          @select="select"
+          @status="setStatus"
+          @note="setNote"
+        />
+      </div>`
   })
 }

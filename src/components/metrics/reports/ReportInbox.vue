@@ -1,137 +1,88 @@
 <script setup lang="ts">
-import { createColumnHelper } from '@tanstack/vue-table'
-import { compact } from 'es-toolkit'
-import { h, watch } from 'vue'
-import IconBug from '~icons/lucide/bug'
-import IconMessageSquare from '~icons/lucide/message-square'
+import { tv } from 'tailwind-variants'
+import { ref } from 'vue'
 
-import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
+import type { InboxReport, ReportDetail, ReportStatus } from '@open-pencil/feedback/contract'
 
-import { usePortalList, type PortalTableFeatures } from '@/app/cloud-portal/list'
-import { formatTime } from '@/app/metrics/format'
-import { reportInboxPage, type ReportInboxFilter } from '@/app/metrics/reports'
-import PortalRowMenu from '@/components/cloud-portal/table/PortalRowMenu.vue'
-import PortalStatusCell from '@/components/cloud-portal/table/PortalStatusCell.vue'
-import PortalTable from '@/components/cloud-portal/table/PortalTable.vue'
-import PortalTextCell from '@/components/cloud-portal/table/PortalTextCell.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import { metricsInboxTheme } from '@/theme/metrics/dashboard'
 
-import { REPORT_STATUS_LABELS, replyLink, reportBuild, type ReportAction } from './labels'
+import ReportList from './ReportList.vue'
+import ReportView from './ReportView.vue'
+
+const metricsInbox = tv(metricsInboxTheme)
 
 /**
- * The reports people sent in the range, open ones first shown, in the Cloud console's table:
- * what they wrote, who to write back to, their build, and where the team stands with each.
+ * The report inbox like a mail client: the reports on the left, the one chosen on the right,
+ * triaged where it is read. On a narrow page the list and the report take turns.
  */
-const { reports, busy = null } = defineProps<{
+const {
+  reports,
+  selected = null,
+  detail = null,
+  detailFailed = false,
+  saveFailed = false
+} = defineProps<{
   reports: InboxReport[]
-  /** The report whose triage is being saved. */
-  busy?: string | null
+  selected?: InboxReport | null
+  detail?: ReportDetail | null
+  detailFailed?: boolean
+  saveFailed?: boolean
 }>()
 const emit = defineEmits<{
-  open: [report: InboxReport]
-  triage: [report: InboxReport, status: ReportStatus]
+  select: [report: InboxReport]
+  status: [report: InboxReport, status: ReportStatus]
+  note: [report: InboxReport, note: string | null]
 }>()
 
-function actions(report: InboxReport) {
-  const items: { action: ReportAction; label: string; separated?: boolean }[] = [
-    { action: 'open', label: 'Open report' }
-  ]
-  if (report.email) items.push({ action: 'reply', label: 'Reply by email' })
-  if (report.status !== 'replied')
-    items.push({ action: 'replied', label: 'Mark as replied', separated: true })
-  if (report.status !== 'closed') items.push({ action: 'closed', label: 'Close' })
-  if (report.status !== 'open') items.push({ action: 'open-again', label: 'Reopen' })
-  return items
+const ui = metricsInbox()
+/** On a narrow page, whether the report shows instead of the list. */
+const reading = ref(false)
+
+function choose(report: InboxReport) {
+  reading.value = true
+  emit('select', report)
 }
-
-function select(action: ReportAction, report: InboxReport) {
-  if (action === 'open') emit('open', report)
-  else if (action === 'reply' && report.email) globalThis.location.assign(replyLink(report))
-  else if (action === 'open-again') emit('triage', report, 'open')
-  else if (action === 'replied' || action === 'closed') emit('triage', report, action)
-}
-
-const column = createColumnHelper<PortalTableFeatures, InboxReport>()
-const list = usePortalList<ReportInboxFilter, InboxReport>({
-  filter: 'open',
-  load: async (request) => reportInboxPage(reports, request),
-  rowId: (report) => report.id,
-  columns: column.columns([
-    column.display({
-      id: 'report',
-      header: () => 'Report',
-      // What the person wrote leads; an error with nothing written leads with the error itself.
-      cell: ({ row: { original: report } }) => {
-        const attached = report.files.filter((file) => !file.expired).map((file) => file.name)
-        return h(PortalTextCell, {
-          icon: report.kind === 'error' ? IconBug : IconMessageSquare,
-          text: report.note ?? report.error ?? 'No note',
-          strong: true,
-          detail:
-            compact([
-              report.note ? report.error : null,
-              attached.length ? `Attached ${attached.join(', ')}` : null
-            ]).join(' · ') || null
-        })
-      }
-    }),
-    column.display({
-      id: 'from',
-      header: () => 'From',
-      meta: { class: 'hidden w-1/5 @xl/table:table-cell' },
-      cell: ({ row: { original: report } }) =>
-        h(PortalTextCell, { text: report.email ?? 'No address', detail: reportBuild(report) })
-    }),
-    column.display({
-      id: 'received',
-      header: () => 'Received',
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' },
-      cell: ({ row: { original: report } }) => formatTime(report.receivedAt)
-    }),
-    column.display({
-      id: 'status',
-      header: () => 'Status',
-      meta: { class: 'w-28' },
-      cell: ({ row: { original: report } }) =>
-        h(PortalStatusCell, { statuses: [REPORT_STATUS_LABELS[report.status]] })
-    }),
-    column.display({
-      id: 'actions',
-      header: () => 'Actions',
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
-      cell: ({ row: { original: report } }) =>
-        h(PortalRowMenu<ReportAction>, {
-          label: `Actions for report ${report.id.slice(0, 8)}`,
-          items: actions(report),
-          disabled: busy === report.id,
-          onSelect: (action: ReportAction) => select(action, report)
-        })
-    })
-  ])
-})
-
-// The page holds the range's reports; the table pages through them again when they change.
-watch(
-  () => reports,
-  () => list.reload()
-)
-
-const filters: { value: ReportInboxFilter; label: string }[] = [
-  { value: 'open', label: 'Open' },
-  { value: 'replied', label: 'Replied' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'all', label: 'All' }
-]
 </script>
 
 <template>
-  <PortalTable
-    :list="list"
-    label="Reports"
-    search-label="Search reports"
-    :filters="filters"
-    empty-label="No reports"
-    empty-description="Problem reports, and error reports with a note or an address, show here."
-  >
-    <template #icon><icon-lucide-inbox class="size-5" /></template>
-  </PortalTable>
+  <div :class="ui.root()">
+    <div :class="ui.listPane()" :data-hidden="reading">
+      <ReportList
+        :reports="reports"
+        :selected-id="selected?.id ?? null"
+        @select="choose"
+        @preselect="(report) => emit('select', report)"
+      />
+    </div>
+    <div :class="ui.detailPane()" :data-hidden="!reading">
+      <template v-if="selected">
+        <AppButton
+          size="sm"
+          variant="ghost"
+          class="m-2 self-start md:hidden"
+          @click="reading = false"
+        >
+          <template #leading>
+            <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
+          </template>
+          Reports
+        </AppButton>
+        <ReportView
+          :report="selected"
+          :detail="detail"
+          :detail-failed="detailFailed"
+          :save-failed="saveFailed"
+          @status="(status) => emit('status', selected, status)"
+          @note="(note) => emit('note', selected, note)"
+        />
+      </template>
+      <div v-else class="flex flex-1 items-center justify-center">
+        <AppPlaceholder size="compact" :fill="false" label="Choose a report">
+          <template #icon><icon-lucide-inbox class="size-5" /></template>
+        </AppPlaceholder>
+      </div>
+    </div>
+  </div>
 </template>

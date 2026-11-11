@@ -2,9 +2,6 @@ import { compact } from 'es-toolkit'
 
 import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
 
-/** What a report's row menu can do. */
-export type ReportAction = 'open' | 'reply' | 'replied' | 'closed' | 'open-again'
-
 export const REPORT_STATUS_LABELS: Record<
   ReportStatus,
   { label: string; tone: 'neutral' | 'success' | 'warning' }
@@ -44,4 +41,15 @@ export function reportBuild(report: InboxReport): string {
 export function replyLink(report: InboxReport): string {
   const subject = `Your OpenPencil report ${report.id.slice(0, 8)}`
   return `mailto:${report.email ?? ''}?subject=${encodeURIComponent(subject)}`
+}
+
+/** A step's time of day in UTC, to the second, as the dashboard counts days: `09:41:58`. */
+export function stepTime(timestamp: string | null): string {
+  return timestamp ? new Date(timestamp).toISOString().slice(11, 19) : '—'
+}
+
+/** A step's level as a glyph: errors and warnings stand out, the rest stay quiet. */
+export function stepLevel(level: string | null): string {
+  if (level === 'error') return '●'
+  return level === 'warning' ? '▲' : '·'
 }

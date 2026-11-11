@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 
 import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
 
@@ -172,7 +172,7 @@ describe('report inbox state', () => {
   })
 
   test('shows the steps of the latest opening when the same report is reopened', async () => {
-    const triage = useReportTriage({ update: async () => null })
+    const triage = useReportTriage({ update: async () => null, reports: shallowRef([]) })
     const opened = report(A, 'open')
     const older = triage.open(opened)
     const newer = triage.open(opened)
@@ -187,5 +187,32 @@ describe('report inbox state', () => {
 
     expect(triage.detail.value?.id).toBe(A)
     expect(triage.detailFailed.value).toBe(false)
+  })
+
+  test('keeps a note being saved when a status is picked before it lands', async () => {
+    const reports = shallowRef([report(A, 'open')])
+    const sent: { status: string; note: string | null }[] = []
+    const triage = useReportTriage({
+      reports,
+      update: async (reportId, change) => {
+        sent.push(change)
+        await new Promise((resolve) => {
+          setTimeout(resolve, 5)
+        })
+        reports.value = reports.value.map((each) =>
+          each.id === reportId ? { ...each, status: change.status, triageNote: change.note } : each
+        )
+        return reports.value.find((each) => each.id === reportId) ?? null
+      }
+    })
+    const opened = report(A, 'open')
+    const note = triage.setNote(opened, 'Asked for the file')
+    const status = triage.setStatus(opened, 'replied')
+    await Promise.all([note, status])
+
+    expect(sent).toEqual([
+      { status: 'open', note: 'Asked for the file' },
+      { status: 'replied', note: 'Asked for the file' }
+    ])
   })
 })

@@ -1,63 +1,50 @@
 <script setup lang="ts">
-import type {
-  InboxReport,
-  ReportDetail,
-  ReportStatus,
-  ReportTriage
-} from '@open-pencil/feedback/contract'
+import type { InboxReport, ReportDetail, ReportStatus } from '@open-pencil/feedback/contract'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 
-import ReportDetailDialog from './ReportDetailDialog.vue'
 import ReportInbox from './ReportInbox.vue'
 
 /**
- * The report inbox with its notices and the dialog for one report: on the dashboard's Reports
- * tab, and on its own when the metrics could not load.
+ * The report inbox with its notices: on the dashboard's Reports tab, and on its own when the
+ * metrics could not load. Until the first load finishes it is not known to be empty.
  */
 const {
   reports,
   loaded = false,
   truncated = false,
   loadFailed = false,
-  statusFailed = false,
-  busy = null,
   selected = null,
   detail = null,
   detailFailed = false,
-  saving = false,
   saveFailed = false
 } = defineProps<{
   reports: InboxReport[]
-  /** The first load has finished; until then the inbox is not known to be empty. */
+  /** The selected range's reports have loaded. */
   loaded?: boolean
   truncated?: boolean
   loadFailed?: boolean
-  /** A status set from a row's menu did not save. */
-  statusFailed?: boolean
-  busy?: string | null
   selected?: InboxReport | null
   detail?: ReportDetail | null
   detailFailed?: boolean
-  saving?: boolean
+  /** The last status or note change did not save. */
   saveFailed?: boolean
 }>()
-const dialogOpen = defineModel<boolean>('dialogOpen', { default: false })
 const emit = defineEmits<{
-  open: [report: InboxReport]
-  triage: [report: InboxReport, status: ReportStatus]
-  save: [triage: ReportTriage]
+  select: [report: InboxReport]
+  status: [report: InboxReport, status: ReportStatus]
+  note: [report: InboxReport, note: string | null]
   reload: []
 }>()
 </script>
 
 <template>
   <AppAlert
-    v-if="loadFailed || statusFailed"
+    v-if="loadFailed"
     tone="warning"
-    :heading="loadFailed ? 'The reports could not load' : 'The report could not be saved'"
+    heading="The reports could not load"
     description="Your sign-in may have expired. Reload the page to sign in again."
   >
     <template #actions>
@@ -77,22 +64,12 @@ const emit = defineEmits<{
   <ReportInbox
     v-else-if="loaded"
     :reports="reports"
-    :busy="busy"
-    @open="(report) => emit('open', report)"
-    @triage="(report, status) => emit('triage', report, status)"
-  />
-  <ReportDetailDialog
-    v-if="selected"
-    v-model:open="dialogOpen"
-    :report="selected"
+    :selected="selected"
     :detail="detail"
     :detail-failed="detailFailed"
-    :saving="saving"
-    :error="
-      saveFailed
-        ? 'The report could not be saved. Your sign-in may have expired; reload the page.'
-        : null
-    "
-    @save="(changes) => emit('save', changes)"
+    :save-failed="saveFailed"
+    @select="(report) => emit('select', report)"
+    @status="(report, status) => emit('status', report, status)"
+    @note="(report, note) => emit('note', report, note)"
   />
 </template>
