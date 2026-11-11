@@ -41,15 +41,20 @@ test('a reload returns to the page on screen with its layers loaded', async () =
   await editor.switchPage(second.id)
   expect(editor.graph.getNode(frameId)).toBeDefined()
   editor.state.panX = 120
+  editor.state.panY = 80
   editor.state.zoom = 2
 
   const snapshot = captureReloadState(editor.state)
   await applyImportedDocument(editor, await readFirstPage(bytes))
+  editor.state.panX = 0
+  editor.state.panY = 0
+  editor.state.zoom = 1
   await restoreReloadState(editor, editor.state, snapshot)
 
   expect(editor.state.currentPageId).toBe(second.id)
   expect(editor.graph.getNode(frameId)?.parentId).toBe(second.id)
   expect(editor.state.panX).toBe(120)
+  expect(editor.state.panY).toBe(80)
   expect(editor.state.zoom).toBe(2)
 })
 
@@ -95,13 +100,18 @@ test('a reload whose file no longer has the page on screen stays on its first pa
   editors.push(editor)
   await applyImportedDocument(editor, await readFirstPage(bytes))
   editor.state.panX = 120
+  editor.state.panY = 80
   editor.state.zoom = 2
 
   const snapshot = { ...captureReloadState(editor.state), pageId: 'removed:1' }
   await applyImportedDocument(editor, await readFirstPage(bytes))
+  editor.state.panX = 0
+  editor.state.panY = 0
+  editor.state.zoom = 1
   await restoreReloadState(editor, editor.state, snapshot)
 
   expect(editor.state.currentPageId).toBe(editor.graph.getPages()[0]?.id)
   expect(editor.state.panX).toBe(120)
+  expect(editor.state.panY).toBe(80)
   expect(editor.state.zoom).toBe(2)
 })
