@@ -16,21 +16,23 @@ function diagnose(files: string[]) {
   if (!rule) throw new Error('Missing file prefix rule')
   const root = '/repo'
   const folder = join(root, 'src/runtime')
-  return rule.check({
-    type: 'folder',
-    path: root,
-    children: [
-      {
-        type: 'folder',
-        path: folder,
-        children: files.map((file) =>
-          file.endsWith('/')
-            ? { type: 'folder' as const, path: join(folder, file.slice(0, -1)), children: [] }
-            : { type: 'file' as const, path: join(folder, file) }
-        )
-      }
-    ]
-  }).diagnostics.map((diagnostic) => diagnostic.message)
+  return rule
+    .check({
+      type: 'folder',
+      path: root,
+      children: [
+        {
+          type: 'folder',
+          path: folder,
+          children: files.map((file) =>
+            file.endsWith('/')
+              ? { type: 'folder' as const, path: join(folder, file.slice(0, -1)), children: [] }
+              : { type: 'file' as const, path: join(folder, file) }
+          )
+        }
+      ]
+    })
+    .diagnostics.map((diagnostic) => diagnostic.message)
 }
 
 test('asks for a folder when a file sits beside files named after it', () => {

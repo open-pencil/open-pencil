@@ -50,7 +50,9 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
       // A folder names a domain its prefixed sibling files belong in, but is not one of them:
       // `cloud-portal/` beside `cloud/` is a domain of its own already.
       const folders = new Set(
-        children.filter((child) => child.type === 'folder').map((child) => path.basename(child.path))
+        children
+          .filter((child) => child.type === 'folder')
+          .map((child) => path.basename(child.path))
       )
       const groups = new Map<string, string[]>()
       const misplaced = new Map<string, string>()
