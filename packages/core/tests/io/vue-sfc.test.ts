@@ -20,3 +20,10 @@ test('markup without a document shell is the template itself', () => {
   expect(sfc).toContain('<template>\n<div data-layer="card">Hi</div>\n</template>')
   expect(sfc).not.toContain('<style>')
 })
+
+test('a stylesheet the markup carries moves out of the template', () => {
+  const sfc = htmlToVueSFC('<style>.card{color:red}</style><div class="card">Hi</div>')
+
+  expect(sfc).toContain('<template>\n<div class="card">Hi</div>\n</template>')
+  expect(sfc.match(/\.card\{color:red\}/g)).toHaveLength(1)
+})

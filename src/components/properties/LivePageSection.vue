@@ -8,7 +8,8 @@ import { pageOrigin, selectionLocation } from '@/app/live-pages/bridge'
 import { useLivePagesSource } from '@/app/live-pages/open'
 import { parseRouteParams } from '@/app/live-pages/routes'
 import { normalizeLiveURL, readLivePage } from '@/app/live-pages/schema'
-import { useLivePages, useLivePageSelection } from '@/app/live-pages/use'
+import { useLivePageSelection } from '@/app/live-pages/selection'
+import { useLivePages } from '@/app/live-pages/use'
 import { openExternalLink } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,7 +20,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 const store = useEditorStore()
 const messages = useLivePageMessages()
 const { setPage, link, reload } = useLivePages()
-const { selection } = useLivePageSelection()
+const { selectionOf } = useLivePageSelection()
 const { project, baseAddress, listRoutes, openAll: openPages } = useLivePagesSource()
 
 /** The selected frame, which is the only kind of layer a page can fill. */
@@ -32,10 +33,16 @@ const node = computed(() => {
 
 const page = computed(() => (node.value ? readLivePage(node.value) : null))
 
+/** The element this frame's page last reported, and nothing another frame's page reported. */
+const selection = computed(() => selectionOf(node.value?.id ?? null))
+
 const draft = ref('')
+// A frame starts from its own address, even when both frames are unlinked and both are empty:
+// watching the address alone would leave one frame's draft under another, one link away from being
+// written to the wrong frame.
 watch(
-  () => page.value?.url ?? '',
-  (url) => {
+  () => [node.value?.id ?? '', page.value?.url ?? ''] as const,
+  ([, url]) => {
     draft.value = url
   },
   { immediate: true }
@@ -82,9 +89,13 @@ function openPage(): void {
 
 async function openAll(): Promise<void> {
   if (opening.value || !canOpenAll.value) return
+  // The address and parameters the person started with: a frame or project chosen while the routes
+  // load must not be the one the pages open on.
+  const base = address.value
+  const params = parseRouteParams(paramsText.value)
   opening.value = true
   try {
-    openPages(await listRoutes(), address.value, parseRouteParams(paramsText.value))
+    openPages(await listRoutes(), base, params)
   } finally {
     opening.value = false
   }

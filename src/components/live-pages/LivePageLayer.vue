@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { resolveEditorProfile, type EditorProfileInputs, type EditorState } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 
 import { pageOrigin, readLiveSelection } from '@/app/live-pages/bridge'
 import { layerTransform } from '@/app/live-pages/placement'
-import { useLivePages, useLivePageSelection } from '@/app/live-pages/use'
+import { useLivePageSelection } from '@/app/live-pages/selection'
+import { useLivePages } from '@/app/live-pages/use'
 
 import LivePageFrame from './LivePageFrame.vue'
 
@@ -36,6 +37,7 @@ const { setSelection } = useLivePageSelection()
 const placement = computed(() => drawn ?? view)
 const transform = computed(() => layerTransform(placement.value))
 const interactive = computed(() => resolveEditorProfile(view).live !== null)
+const root = ref<HTMLElement | null>(null)
 
 /** The origins a selection may come from: only the pages this layer shows. */
 const origins = computed(() => {
@@ -47,10 +49,26 @@ const origins = computed(() => {
   return allowed
 })
 
+/**
+ * The frame whose page posted a message: the window a page reports from is its own iframe, so it
+ * names the frame even when two of them show the same application. A popup the page opened, or a
+ * frame that has navigated somewhere else, is not one of these and reports nothing.
+ */
+function reportingFrame(source: MessageEventSource | null): string | null {
+  if (source === null || root.value === null) return null
+  for (const frame of root.value.querySelectorAll<HTMLIFrameElement>(
+    '[data-test-id="live-page-iframe"]'
+  )) {
+    if (frame.contentWindow === source) return frame.dataset.nodeId ?? null
+  }
+  return null
+}
+
 function onMessage(event: MessageEvent): void {
-  if (!origins.value.has(event.origin)) return
+  const nodeId = reportingFrame(event.source)
+  if (nodeId === null || !origins.value.has(event.origin)) return
   const picked = readLiveSelection(event.data)
-  if (picked !== null) setSelection(picked)
+  if (picked !== null) setSelection(nodeId, picked)
 }
 
 useEventListener(window, 'message', onMessage)
@@ -64,6 +82,7 @@ function forwardWheel(event: WheelEvent) {
 
 <template>
   <div
+    ref="root"
     class="pointer-events-none absolute inset-0 overflow-hidden"
     data-test-id="live-pages"
     @wheel="forwardWheel"
@@ -72,6 +91,7 @@ function forwardWheel(event: WheelEvent) {
       <LivePageFrame
         v-for="entry in pages"
         :key="entry.nodeId"
+        :node-id="entry.nodeId"
         :page="entry.page"
         :placement="placementOf(entry)"
         :revision="revisionOf(entry.nodeId)"

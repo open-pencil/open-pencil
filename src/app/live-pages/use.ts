@@ -1,4 +1,4 @@
-import { computed, reactive, shallowRef } from 'vue'
+import { computed, reactive } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -12,8 +12,7 @@ import {
   pageLabel,
   pluginDataWithLivePage,
   readLivePage,
-  type LivePage,
-  type LiveSelection
+  type LivePage
 } from './schema'
 
 /** One frame on the current page that shows a page of the running application. */
@@ -29,17 +28,6 @@ export type LivePageEntry = {
  * page reloads without touching the address the person typed.
  */
 const reloads = reactive<Record<string, number>>({})
-
-/** The element last picked inside a page, which the panel shows and copies. */
-const selection = shallowRef<LiveSelection | null>(null)
-
-/** The element a page reported, whichever pane and page it was picked in. */
-export function useLivePageSelection() {
-  function setSelection(next: LiveSelection | null): void {
-    selection.value = next
-  }
-  return { selection, setSelection }
-}
 
 /**
  * The pages of the running application shown on the canvas: which frames show one, where they sit,
