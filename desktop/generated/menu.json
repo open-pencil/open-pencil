@@ -8,6 +8,10 @@
         "accelerator": "CmdOrCtrl+N"
       },
       {
+        "id": "new-board",
+        "label": "New Board"
+      },
+      {
         "id": "new-tab",
         "label": "New Tab",
         "accelerator": "CmdOrCtrl+T"
@@ -62,7 +66,7 @@
       {
         "id": "save-version",
         "label": "Save to Version History…",
-        "accelerator": "Alt+CmdOrCtrl+S",
+        "accelerator": "CmdOrCtrl+Alt+S",
         "feature": "cloud-document"
       },
       {
@@ -178,6 +182,18 @@
       {
         "id": "paste-as-layers",
         "label": "Paste as layers",
+        "feature": "document"
+      },
+      {
+        "id": "copy-properties",
+        "label": "Copy Properties",
+        "accelerator": "CmdOrCtrl+Alt+C",
+        "feature": "document"
+      },
+      {
+        "id": "paste-properties",
+        "label": "Paste Properties",
+        "accelerator": "CmdOrCtrl+Alt+V",
         "feature": "document"
       },
       {
@@ -317,7 +333,7 @@
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
-        "accelerator": "Alt+CmdOrCtrl+\\",
+        "accelerator": "CmdOrCtrl+Alt+\\",
         "checkbox": true,
         "feature": "document"
       },
@@ -393,6 +409,12 @@
         "feature": "document"
       },
       {
+        "id": "toggle-ai",
+        "label": "Toggle AI Chat",
+        "accelerator": "CmdOrCtrl+J",
+        "feature": "document"
+      },
+      {
         "id": "toggle-preview",
         "label": "Preview",
         "accelerator": "CmdOrCtrl+Alt+Enter",
@@ -421,6 +443,10 @@
         "id": "selection.frameSelection",
         "label": "Frame Selection",
         "accelerator": "CmdOrCtrl+Alt+G"
+      },
+      {
+        "id": "selection.wrapInSection",
+        "label": "Wrap in New Section"
       },
       {
         "id": "selection.ungroup",
@@ -632,12 +658,14 @@
       {
         "id": "selection.distributeHorizontal",
         "label": "Distribute Horizontal Spacing",
-        "accelerator": "Ctrl+Alt+H"
+        "accelerator": "Alt+Shift+H",
+        "macAccelerator": "Ctrl+Alt+H"
       },
       {
         "id": "selection.distributeVertical",
         "label": "Distribute Vertical Spacing",
-        "accelerator": "Ctrl+Alt+V"
+        "accelerator": "Alt+Shift+V",
+        "macAccelerator": "Ctrl+Alt+V"
       },
       {
         "type": "separator"
@@ -645,7 +673,8 @@
       {
         "id": "selection.tidyUp",
         "label": "Tidy Up",
-        "accelerator": "Ctrl+Alt+T"
+        "accelerator": "Ctrl+Alt+Shift+T",
+        "macAccelerator": "Ctrl+Alt+T"
       },
       {
         "id": "selection.packHorizontal",

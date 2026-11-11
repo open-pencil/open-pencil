@@ -68,6 +68,11 @@ export function constrainToAspectRatio(
  * edge gives a negative width or height, with `x` and `y` where the box's left and top edges
  * land, so the box comes out mirrored, as Figma flips a selection dragged through itself.
  */
+/** `size` at least a pixel long, keeping its sign. */
+export function atLeastOne(size: number): number {
+  return Math.sign(size || 1) * Math.max(Math.abs(size), 1)
+}
+
 export function signedResizeRect(
   handle: HandlePosition,
   origRect: Rect,

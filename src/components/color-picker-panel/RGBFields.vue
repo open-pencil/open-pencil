@@ -10,6 +10,7 @@ const { panels } = useI18n()
 
 <template>
   <div
+    dir="ltr"
     class="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-px overflow-hidden rounded border border-border bg-border"
   >
     <input

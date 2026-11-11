@@ -57,6 +57,14 @@ runs:
         key: bun-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
         restore-keys: bun-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-
 
+    # CanvasKit, the open-pencil/skia release packages/canvaskit/release.json pins. The install's
+    # postinstall keeps files whose hashes match the pin, so only a new pin downloads.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: packages/canvaskit/dist
+        key: canvaskit-${{ hashFiles('packages/canvaskit/release.json') }}
+        enableCrossOsArchive: true
+
     - name: Install dependencies
       shell: bash
       env:

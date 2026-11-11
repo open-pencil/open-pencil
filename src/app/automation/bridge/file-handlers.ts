@@ -31,7 +31,7 @@ const saveArgsSchema = v.object({ path: v.optional(v.string()) })
  * file `saveFigFile` will write: a desktop path, or the browser handle `createWritable` will
  * open. That handle is installed by Save As before the write, and the remembered identity is
  * updated only after success, so the two can differ. A stored document has no such file.
- * `open_file` reads `.fig` and `.jam` as that archive and any other extension, such as `.pen`,
+ * `open_document` reads `.fig` and `.jam` as that archive and any other extension, such as `.pen`,
  * as another format, so a mismatched destination is refused before a byte is written, and the
  * error names the path to retry with.
  */
@@ -121,7 +121,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   // Automation never opens the Save dialog: nobody may be there to answer it.
   async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
     const name = store.state.documentName
-    // close_file with unsaved "save" uses this too, so an existing file is checked the same way.
+    // close_document with unsaved "save" uses this too, so an existing file is checked the same way.
     assertAutomationSaveDestination(store, path || undefined)
     if (!path && !store.hasWritableSource()) throw unsavedDocumentError(store)
     if (path && files && !isTauri()) {
@@ -135,13 +135,13 @@ export function createFileHandlers(files?: AutomationFiles) {
   }
 
   async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path } = parseToolArgs('save_file', saveArgsSchema, args)
+    const { path } = parseToolArgs('save_document', saveArgsSchema, args)
     await saveWithoutPrompt(target.store, path)
     return { ok: true, result: { saved: true } }
   }
 
   async function handleCloseFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path, unsaved } = parseToolArgs('close_file', closeArgsSchema, args)
+    const { path, unsaved } = parseToolArgs('close_document', closeArgsSchema, args)
     const store = target.store
     if (store.hasUnsavedChanges()) {
       if (unsaved === 'error') {
@@ -157,7 +157,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   }
 
   async function handleNewDocument(_target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path } = parseToolArgs('new_document', saveArgsSchema, args)
+    const { path } = parseToolArgs('create_document', saveArgsSchema, args)
     const tab = createTab()
     if (path) {
       try {

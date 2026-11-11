@@ -1,6 +1,11 @@
 import type { Component } from 'vue'
 
-import type { CloudSignInMethod, WorkspaceRole } from '@open-pencil/cloud/contract'
+import type {
+  CloudAdminReportStatus,
+  CloudSignInMethod,
+  DocumentReportReason,
+  WorkspaceRole
+} from '@open-pencil/cloud/contract'
 
 export type PortalSection = {
   id: string
@@ -124,4 +129,54 @@ export type PortalServerStatus = {
   workspaces: number
   documents: number
   storedBytes: number
+}
+
+/** A document as the console lists it. */
+export type PortalDocumentRow = {
+  id: string
+  name: string
+  workspace: string
+  owner: { id: string; name: string; email: string } | null
+  updated: string
+  takenDown: boolean
+  /** Why an administrator took it down, when they said. */
+  takenDownReason: string | null
+  openReports: number
+  /** Someone deleted it forever; it is out of everyone's sight until cleanup destroys it. */
+  deletedForever: boolean
+  /** When cleanup destroys it, while an administrator can still restore it. */
+  destroyed: string | null
+}
+
+/** A report about a shared document, with the document it is about. */
+export type PortalReportRow = {
+  id: string
+  reason: DocumentReportReason
+  description: string
+  status: CloudAdminReportStatus
+  /** Who sent it: an account's name, or null for a guest. */
+  reporter: string | null
+  replyEmail: string | null
+  reportedOn: string
+  document: PortalDocumentRow
+  share: { id: string; revoked: boolean } | null
+}
+
+/** What an administrator may do about a reported or listed document. */
+export type PortalContentAction =
+  | 'take-down'
+  | 'restore'
+  | 'undelete'
+  | 'revoke-link'
+  | 'suspend-owner'
+  | 'dismiss'
+  | 'mark-handled'
+
+/** How far Download all got: files saved so far of all of them, and the names it couldn't get. */
+export type PortalAccountArchive = {
+  done: number
+  total: number
+  /** Set once it finished: how many it saved. */
+  saved: number | null
+  failed: string[]
 }

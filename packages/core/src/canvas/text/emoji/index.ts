@@ -1,5 +1,4 @@
-import type { Canvas, Image, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Image, Paint } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 

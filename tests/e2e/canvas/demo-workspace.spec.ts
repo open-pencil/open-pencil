@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { waitForSettledScene } from '#tests/helpers/canvas/page-scene'
 import { waitForDemo } from '#tests/helpers/demo'
 
 async function openDemo(page: Page) {
@@ -67,7 +68,7 @@ test('the tour opens on its first chapter, the rest below it', async ({ page }) 
   expect(opened.first.y).toBeGreaterThanOrEqual(0)
   expect(opened.first.x + opened.first.width).toBeLessThanOrEqual(box.width)
   expect(opened.first.y + opened.first.height).toBeLessThanOrEqual(box.height)
-  await canvas.waitForRender()
+  await waitForSettledScene(page)
   canvas.assertNoErrors()
   expect(await canvas.screenshotCanvasRegion(1200, 900)).toMatchSnapshot('demo-tour-dark.png', {
     maxDiffPixels: 100
@@ -101,7 +102,7 @@ test('the tour follows the app theme without becoming an edit', async ({ page })
   const light = await read()
   expect(light).toMatchObject({ chrome: 'Light', unsaved: false, undo: false })
   expect(light.page.r).toBeGreaterThan(0.9)
-  await canvas.waitForRender()
+  await waitForSettledScene(page)
   expect(await canvas.screenshotCanvasRegion(1200, 900)).toMatchSnapshot('demo-tour-light.png', {
     maxDiffPixels: 100
   })

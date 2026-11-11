@@ -1,7 +1,7 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.17.0-beta.2",
-  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
+  "version": "0.17.0-beta.3",
+  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the services server, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
     "directory": "packages/cloud"
   },
   "bin": {
-    "openpencil-ai-relay": "./dist/bin/ai-relay.mjs",
+    "openpencil-services": "./dist/bin/services.mjs",
     "openpencil-cloud": "./dist/bin/server.mjs"
   },
   "files": [
@@ -22,14 +22,13 @@
   "sideEffects": false,
   "imports": {
     "#cloud/admin": "./src/admin/index.ts",
-    "#cloud/ai-relay": "./src/ai-relay/index.ts",
+    "#cloud/services": "./src/services/index.ts",
     "#cloud/client": "./src/client/index.ts",
     "#cloud/contract": "./src/contract/index.ts",
     "#cloud/email": "./src/email/index.ts",
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
-    "#cloud/server/ai": "./src/server/ai/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
@@ -47,6 +46,8 @@
     "#cloud/server/policy": "./src/server/policy/index.ts",
     "#cloud/server/quota": "./src/server/quota/index.ts",
     "#cloud/server/rate-limit": "./src/server/rate-limit/index.ts",
+    "#cloud/server/reports": "./src/server/reports/index.ts",
+    "#cloud/server/services": "./src/server/services/index.ts",
     "#cloud/server/sharing": "./src/server/sharing/index.ts",
     "#cloud/server/workspaces": "./src/server/workspaces/index.ts",
     "#cloud/*": "./src/*.ts",
@@ -93,10 +94,10 @@
     "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
     "start": "node dist-standalone/server.mjs",
     "dev": "bun --watch src/runtime/node/main.ts",
-    "ai-relay": "bun src/runtime/node/ai-relay/main.ts",
+    "services": "bun src/runtime/node/services/main.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration",
-    "test:unit": "bun test tests/ai-relay tests/client tests/contract tests/email tests/runtime tests/server",
+    "test:unit": "bun test tests/client tests/contract tests/email tests/runtime tests/server tests/services",
     "test:integration": "bun test --max-concurrency 8 tests/integration",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",

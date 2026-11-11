@@ -1,7 +1,7 @@
 import type { EditorContext } from '#core/editor/types'
 import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '#core/vector'
 
-import { pushNodeEditHistory } from './history'
+import type { VectorEditHistory } from './history'
 import { editsHandlesOnly } from './limits'
 import { getLiveNetwork, setNodeEditNetwork } from './network'
 import type { NodeEditExitOptions, VectorEditActionDeps } from './types'
@@ -9,7 +9,8 @@ import type { NodeEditExitOptions, VectorEditActionDeps } from './types'
 export function createVectorEditSelectionActions(
   ctx: EditorContext,
   actions: VectorEditActionDeps,
-  exitNodeEditMode: (commit: boolean, options?: NodeEditExitOptions) => void
+  exitNodeEditMode: (commit: boolean, options?: NodeEditExitOptions) => void,
+  history: VectorEditHistory
 ) {
   function getNodeEditState() {
     return ctx.state.nodeEditState
@@ -34,7 +35,7 @@ export function createVectorEditSelectionActions(
   function nodeEditAlignVertices(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
     const es = getNodeEditState()
     if (!es || es.selectedVertexIndices.size < 2 || editsHandlesOnly(ctx.state)) return
-    pushNodeEditHistory(es)
+    history.begin(es)
 
     const indices = [...es.selectedVertexIndices]
     const prop = axis === 'horizontal' ? 'x' : 'y'
@@ -66,7 +67,7 @@ export function createVectorEditSelectionActions(
       (handlesOnly || (es.selectedVertexIndices.size === 0 && es.selectedSegmentIndices.size === 0))
     )
       return
-    pushNodeEditHistory(es)
+    history.begin(es)
     let live = getLiveNetwork(es)
 
     for (const handleId of es.selectedHandles) {
@@ -84,10 +85,7 @@ export function createVectorEditSelectionActions(
     // first, so undoing the delete brings back the path as it was just before.
     if (live.vertices.length === 0) {
       // The layer of a path the host keeps open stays, so its last points do too.
-      if (es.keepOpen) {
-        es.history.pop()
-        return
-      }
+      if (es.keepOpen) return
       const { nodeId } = es
       exitNodeEditMode(true)
       actions.select([nodeId])
@@ -109,7 +107,7 @@ export function createVectorEditSelectionActions(
   function nodeEditBreakAtVertex() {
     const es = getNodeEditState()
     if (!es || es.selectedVertexIndices.size === 0 || editsHandlesOnly(ctx.state)) return
-    pushNodeEditHistory(es)
+    history.begin(es)
     const [vertexIndex] = es.selectedVertexIndices
     const live = getLiveNetwork(es)
     const next = breakAtVertex(live, vertexIndex)

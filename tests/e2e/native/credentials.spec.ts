@@ -13,9 +13,9 @@ describe('native test credential isolation', () => {
     )
     const previousLaunch = await browser.execute(() => {
       // Probe the WebView itself, not an adapter, to verify profile isolation.
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access
+      // oxlint-disable-next-line @open-pencil/runtime/no-direct-storage-access
       const previous = localStorage.getItem('native-test-launch-marker')
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access
+      // oxlint-disable-next-line @open-pencil/runtime/no-direct-storage-access
       localStorage.setItem('native-test-launch-marker', 'present')
       return previous
     })

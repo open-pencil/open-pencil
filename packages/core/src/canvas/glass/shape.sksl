@@ -1,0 +1,17 @@
+// Where a pixel sits against the outline, as geometry() gives it: a box exactly, any other outline
+// read from a map of geometry() the renderer draws once per outline and scale, when it has one.
+uniform shader backdrop;
+uniform shader geometryMap;
+uniform float useMap;
+uniform float2 mapOrigin;
+uniform float mapScale;
+
+float3 shape(float2 p, float bend) {
+  if (isBox > 0.5 || useMap < 0.5) return geometry(p, bend);
+  // Back from the map's signed form to geometry()'s: the distance to the outline, and the
+  // direction away from its nearest point, which outside the outline points out.
+  float3 m = geometryMap.eval((p - mapOrigin) * mapScale).rgb;
+  float len = length(m.yz);
+  float2 inward = len > 1e-4 ? m.yz / len : float2(0.0);
+  return float3(abs(m.x), m.x >= 0.0 ? inward : -inward);
+}

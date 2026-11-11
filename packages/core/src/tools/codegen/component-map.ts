@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 interface ComponentInfo {
@@ -32,7 +33,7 @@ function collectInstanceCounts(figma: FigmaAPI, componentIds: Set<string>): Map<
 
   page.findAll((node) => {
     if (node.type !== 'INSTANCE') return false
-    const raw = figma.graph.getNode(node.id)
+    const raw = graphOf(figma).getNode(node.id)
     if (!raw?.componentId) return false
     if (componentIds.has(raw.componentId)) {
       counts.set(raw.componentId, (counts.get(raw.componentId) ?? 0) + 1)
@@ -84,14 +85,14 @@ function buildScreenInfo(
   let topLevelSections = 0
 
   const walk = (nodeId: string) => {
-    const node = figma.graph.getNode(nodeId)
+    const node = graphOf(figma).getNode(nodeId)
     if (!node) return
     if (node.type === 'SECTION') topLevelSections++
     if (node.type === 'INSTANCE' && node.componentId && componentIds.has(node.componentId)) {
       const entry = refs.get(node.componentId)
       if (entry) entry.count++
       else {
-        const component = figma.graph.getNode(node.componentId)
+        const component = graphOf(figma).getNode(node.componentId)
         refs.set(node.componentId, { name: component?.name ?? node.componentId, count: 1 })
       }
     }
@@ -111,7 +112,7 @@ function buildScreenInfo(
 }
 
 export const designToComponentMap = defineTool({
-  name: 'design_to_component_map',
+  name: 'export_component_map',
   description:
     'Analyze the document and return a structured component decomposition: components (with variants, props, instance counts), screens, and a dependency overview.',
   execution: { kind: 'async', mutation: 'none' },
@@ -133,7 +134,7 @@ export const designToComponentMap = defineTool({
 
     page.findAll((node) => {
       if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
-      const raw = figma.graph.getNode(node.id)
+      const raw = graphOf(figma).getNode(node.id)
       if (!raw) return false
 
       componentIds.add(raw.id)
@@ -143,9 +144,9 @@ export const designToComponentMap = defineTool({
         type: raw.type,
         width: raw.width,
         height: raw.height,
-        variants: detectVariants(raw, figma.graph),
+        variants: detectVariants(raw, graphOf(figma)),
         instanceCount: 0,
-        propCandidates: detectPropCandidates(raw, figma.graph),
+        propCandidates: detectPropCandidates(raw, graphOf(figma)),
         usedOnScreens: []
       })
       return false
@@ -158,7 +159,7 @@ export const designToComponentMap = defineTool({
 
     const screens: ScreenInfo[] = []
     const topFrames = page.children.filter((child) => {
-      const raw = figma.graph.getNode(child.id)
+      const raw = graphOf(figma).getNode(child.id)
       if (!raw) return false
       if (raw.type === 'COMPONENT' || raw.type === 'COMPONENT_SET') return false
       if (raw.type === 'SECTION') return false
@@ -166,7 +167,7 @@ export const designToComponentMap = defineTool({
     })
 
     for (const frame of topFrames) {
-      const raw = figma.graph.getNode(frame.id)
+      const raw = graphOf(figma).getNode(frame.id)
       if (!raw) continue
       const screen = buildScreenInfo(figma, raw, componentIds)
       screens.push(screen)
@@ -179,7 +180,7 @@ export const designToComponentMap = defineTool({
 
     const sections: { id: string; name: string; childCount: number }[] = []
     for (const child of page.children) {
-      const raw = figma.graph.getNode(child.id)
+      const raw = graphOf(figma).getNode(child.id)
       if (raw?.type === 'SECTION') {
         sections.push({ id: raw.id, name: raw.name, childCount: raw.childIds.length })
       }

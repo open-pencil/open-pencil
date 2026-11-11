@@ -10,7 +10,7 @@ import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-gr
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
 import { buildParagraph, isNodeFontLoaded, nodeFontReadiness, textVerticalOffset } from '#core/canvas/text'
@@ -117,7 +117,7 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
 }
 
 async function createTextRenderer() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
   const renderer = new SkiaRendererClass(ck, surface)
   return { renderer, surface }
@@ -418,7 +418,7 @@ describe('renderText headless visual', () => {
   })
 
   test('observes CanvasKit notdef glyphs for unsupported CJK text', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
     const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
@@ -447,7 +447,7 @@ describe('renderText headless visual', () => {
   })
 
   test('requests a CJK fallback for text whose face is substituted', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
     const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     await fontManager.markLoaded('Inter', 'Regular', interData)
@@ -498,7 +498,7 @@ describe('renderText headless visual', () => {
   })
 
   test('renders CJK text via fallback font through paragraph shaper', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
@@ -569,7 +569,7 @@ describe('renderText headless visual', () => {
   })
 
   test('renders linear gradient text through the canvas scene fill path', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
@@ -647,7 +647,7 @@ describe('renderText headless visual', () => {
   })
 
   test('renders Arabic text via fallback font through paragraph shaper', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
     const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()

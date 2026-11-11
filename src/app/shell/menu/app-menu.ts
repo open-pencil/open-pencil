@@ -16,15 +16,16 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
 import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { formatShortcutKeys, useEditorCommands } from '@open-pencil/vue/editor/commands'
 import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
-import { openTour } from '@/app/demo/document'
+import { openTourFromMenu } from '@/app/demo/document'
 import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openReportDialog } from '@/app/reports/state'
@@ -37,6 +38,7 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
 import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
@@ -48,10 +50,8 @@ import type {
   AppMenuIcon
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
-import { openFileDialog } from '@/app/shell/menu/use'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -76,17 +76,6 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   'zoom-out': IconZoomOut
 }
 
-function shortcutKeys(shortcut: string | undefined): string[] | undefined {
-  if (!shortcut) return undefined
-  const platform = shortcutPlatform()
-  return shortcut.split('+').map((key) => {
-    if (key === 'MOD') return platform === 'mac' ? '⌘' : 'Ctrl'
-    if (key === 'SHIFT') return platform === 'mac' ? '⇧' : 'Shift'
-    if (key === 'ALT') return platform === 'mac' ? '⌥' : 'Alt'
-    return key
-  })
-}
-
 function isVisible(entry: { target?: string; feature?: AppMenuFeature }): boolean {
   return entry.target !== 'native' && menuFeatureAvailable(entry.feature)
 }
@@ -105,9 +94,11 @@ export function useAppMenu() {
   } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
+  const { isMobile } = useViewportKind()
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-board': 'newBoard',
     'new-tab': 'newTab',
     open: 'open',
     'open-tour': 'openTour',
@@ -129,6 +120,8 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'paste-as-layers': 'pasteAsLayers',
+    'copy-properties': 'copyProperties',
+    'paste-properties': 'pasteProperties',
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
@@ -148,6 +141,7 @@ export function useAppMenu() {
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
     'toggle-preview': 'togglePreview',
+    'toggle-ai': 'toggleAIChat',
     theme: 'theme',
     'theme-light': 'themeLight',
     'theme-dark': 'themeDark',
@@ -182,20 +176,11 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => createTab(),
-    'new-tab': () => openNewFileTab(),
-    open: () => void openFileDialog(),
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
-    ...createSaveMenuActions(store),
+    ...createTabMenuActions(),
+    'open-tour': openTourFromMenu,
+    ...createSaveMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
-    close: () => {
-      if (activeTab.value) void closeTab(activeTab.value.id)
-    },
-    'previous-tab': () => switchAdjacentTab(-1),
-    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'report-problem': () => openReportDialog(),
@@ -205,7 +190,7 @@ export function useAppMenu() {
     'export-pptx': () => exportSelection('pptx'),
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
-    ...createSharedEditorMenuActions(setTheme)
+    ...createSharedEditorMenuActions(setTheme, isMobile)
   }
 
   function itemAction(item: AppMenuActionItem): (() => void) | undefined {
@@ -291,6 +276,9 @@ export function useAppMenu() {
       case 'view-split-right':
       case 'view-split-down':
         return store.visiblePaneCount.value >= store.panes.maxVisiblePanes
+      case 'copy-properties':
+      case 'paste-properties':
+        return store.state.selectedIds.size === 0
       default:
         return undefined
     }
@@ -335,10 +323,10 @@ export function useAppMenu() {
 
     if (entry.command) {
       return {
-        ...commandMenuItem(entry.command, appMenuShortcutLabel(entry.id)),
+        ...commandMenuItem(entry.command, appMenuShortcut(entry.id)),
         menuId: entry.id,
         palette: resolvePalette(entry),
-        paletteShortcut: entry.shortcut
+        paletteShortcut: appMenuShortcut(entry.id)
       }
     }
 
@@ -384,7 +372,7 @@ export function useAppMenu() {
       label: entry.palette?.label ?? entry.label,
       icon: entry.palette?.icon ?? fallbackIcon,
       shortcut: entry.paletteShortcut
-        ? { keys: shortcutKeys(entry.paletteShortcut) ?? [] }
+        ? { keys: formatShortcutKeys(entry.paletteShortcut) }
         : undefined,
       description: entry.palette?.description,
       keywords: entry.palette?.keywords,

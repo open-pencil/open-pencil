@@ -86,6 +86,7 @@ maximum_connections_per_room = 250
 
 [documents]
 retention_days = 14
+purge_grace_days = 0
 
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
@@ -160,6 +161,7 @@ describe('Cloud TOML deployment configuration', () => {
       cleanupIntervalMs: 45_000,
       cleanupLeaseDurationMs: 180_000,
       documentRetentionMs: 14 * 86_400_000,
+      documentPurgeGraceMs: 0,
       technicalLimits: {
         maximumUploadBytes: 104857600,
         maximumCollaborationMessageBytes: 524288,
@@ -184,6 +186,18 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('keeps deleted files under a prefix only when one is configured', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
+    const keeping = (prefix: string) =>
+      minimalSource.replace('[object_storage]', `[object_storage]\ndeleted_prefix = "${prefix}"`)
+    expect(parseCloudDeploymentTOML(keeping('deleted/'), environment).s3DeletedPrefix).toBe(
+      'deleted/'
+    )
+    for (const prefix of ['deleted', '/deleted/', 'Deleted/', 'a/b/', 'documents/']) {
+      expect(() => parseCloudDeploymentTOML(keeping(prefix), environment)).toThrow()
+    }
+  })
+
   test('reports server errors only when error tracking is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).errorTracking).toBeUndefined()
 
@@ -195,7 +209,7 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://us.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
 
     const inline = tracked.replace(
       'provider = "posthog"',
@@ -208,14 +222,14 @@ provider = "posthog"
     })
   })
 
-  test('advertises an AI service and billing portal only when configured', () => {
+  test('advertises services and a billing portal only when configured', () => {
     const plain = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
-    expect(plain.ai).toBeUndefined()
+    expect(plain.services).toBeUndefined()
     expect(plain.billing).toBeUndefined()
 
     const source = `${minimalSource}
-[ai]
-endpoint = "https://ai.example.com"
+[services]
+endpoint = "https://services.example.com"
 token_lifetime_minutes = 5
 
 [billing]
@@ -225,23 +239,26 @@ portal_url = "https://billing.example.com"
 `
     const withSecrets = {
       ...environment,
-      OPENPENCIL_CLOUD_AI_SIGNING_KEY: 'signing-key-pem',
+      OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: 'signing-key-pem',
       OPENPENCIL_CLOUD_SERVICE_TOKEN: 'service-token-with-at-least-32-characters'
     }
     const config = parseCloudDeploymentTOML(source, withSecrets)
     expect(config).toMatchObject({
-      aiEndpoint: 'https://ai.example.com',
-      aiSigningKey: 'signing-key-pem',
-      aiTokenLifetimeSeconds: 300,
+      servicesEndpoint: 'https://services.example.com',
+      servicesSigningKey: 'signing-key-pem',
+      servicesTokenLifetimeSeconds: 300,
       billingPortalURL: 'https://billing.example.com',
       internalServiceToken: 'service-token-with-at-least-32-characters'
     })
     const discovery = cloudDiscoveryFromConfig(config)
-    expect(discovery.ai).toEqual({ endpoint: 'https://ai.example.com', contractVersion: '1' })
+    expect(discovery.services).toEqual({
+      endpoint: 'https://services.example.com',
+      contractVersion: '1'
+    })
     expect(discovery.billing).toEqual({ portalURL: 'https://billing.example.com' })
 
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow(
-      'OPENPENCIL_CLOUD_AI_SIGNING_KEY'
+      'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY'
     )
     expect(() =>
       parseCloudDeploymentTOML(`${source}\n[entitlements]\nsource = "static"\n`, withSecrets)

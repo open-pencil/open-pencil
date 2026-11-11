@@ -2,15 +2,22 @@ import { handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { editedGradient, resolveEditorProfile, type Editor } from '@open-pencil/core'
+import {
+  editedBlurRamp,
+  editedGradient,
+  resolveEditorProfile,
+  type Editor
+} from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { tryStartBlurRampDrag } from '#vue/shared/input/blur-ramp'
 import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
 import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
 import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
+import { tryStartScale } from '#vue/shared/input/scale'
 import {
   createSelectionMoveDrag,
   pressSelects,
@@ -57,10 +64,13 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (!resolveEditorProfile(editor.state).edits) return false
+  if (resolveEditorProfile(editor.state).layerEdits !== 'all') return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
-  // An open gradient's handles replace the layer's selection handles, which then do not respond.
+  if (tryStartBlurRampDrag(editor, sx, sy, setDrag)) return true
+  // An open gradient's or blur's handles replace the layer's selection handles, which then do not
+  // respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
+  if (editedBlurRamp(editor.graph, editor.state.blurRampEdit)) return false
   if (tryStartShapeHandleDrag(editor, sx, sy, altKey, setDrag)) return true
   if (tryStartConnectorEndDrag(editor, sx, sy, setDrag)) return true
   if (tryStartConnectorLineDrag(editor, cx, cy, sx, sy, setDrag)) return true
@@ -119,7 +129,23 @@ export function handleSelectDown(
   if (editor.state.editingTextId) editor.commitTextEdit()
 
   if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, fns, tryStartRotation, setDrag)) return
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
+}
 
+/**
+ * A press that took no handle: on a layer it selects and drags the selection, on nothing it starts
+ * a marquee.
+ */
+function pressLayers(
+  e: MouseEvent,
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
   const deep = e.metaKey || e.ctrlKey
   const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, fns, deep)
   if (!hit) {
@@ -129,10 +155,40 @@ export function handleSelectDown(
 
   selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
-  // A read-only document moves nothing.
-  if (!resolveEditorProfile(editor.state).edits) return
+  // A read-only document, or one whose layers the host keeps as they are, moves nothing.
+  const layerEdits = resolveEditorProfile(editor.state).layerEdits
+  if (layerEdits === 'none') return
   if (selectionIsLocked(editor)) return
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.
-  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey))
+  // Where layers only move, Alt copies nothing and layers stay in their parents.
+  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all'))
+}
+
+/**
+ * A press with the Scale tool: a handle scales the selection, and anywhere else the press selects
+ * and moves layers as the Move tool's does, as in Figma.
+ */
+export function handleScaleDown(
+  e: MouseEvent,
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
+  if (editor.getNodeEditState()) {
+    handleNodeEditDown(e, cx, cy, editor, setDrag)
+    return
+  }
+  if (editor.state.editingTextId) editor.commitTextEdit()
+
+  const scaleDrag = tryStartScale(cx, cy, editor)
+  if (scaleDrag) {
+    setDrag(scaleDrag)
+    return
+  }
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
 }

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import { MIXED } from '#vue/controls/node-props/use'
 import { usePosition } from '#vue/controls/position/use'
 
@@ -14,25 +12,18 @@ const {
   rotate,
   isMulti,
   active,
-  prop: multiProp,
   panelProp,
-  x,
-  y,
-  rotation,
   rotates,
   inAutoLayout,
   ignoresAutoLayout,
   toggleIgnoreAutoLayout
 } = usePosition()
 
-const multiX = panelProp('x')
-const multiY = panelProp('y')
-const multiRotation = panelProp('rotation')
-const xValue = computed(() => (isMulti.value ? multiX.value : x.value))
-const yValue = computed(() => (isMulti.value ? multiY.value : y.value))
-const wValue = multiProp('width')
-const hValue = multiProp('height')
-const rotationValue = computed(() => (isMulti.value ? multiRotation.value : rotation.value))
+const xValue = panelProp('x')
+const yValue = panelProp('y')
+const wValue = panelProp('width')
+const hValue = panelProp('height')
+const rotationValue = panelProp('rotation')
 const actions = {
   updateProp,
   commitProp,

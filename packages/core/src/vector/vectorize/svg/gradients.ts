@@ -43,7 +43,7 @@ interface ParsedGradient {
 }
 
 /** Minimal structural view of the parsed XML nodes we read (DOM-compatible). */
-interface SVGQueryable {
+export interface SVGQueryable {
   getElementsByTagName(name: string): ArrayLike<SVGElementLike>
 }
 interface SVGElementLike extends SVGQueryable {
@@ -75,41 +75,63 @@ function readStops(gradient: SVGElementLike): RawStop[] {
   return stops.sort((a, b) => a.offset - b.offset)
 }
 
+/** The gradients an SVG defines, by `id`. */
+export type SVGGradients = ReadonlyMap<string, ParsedGradient>
+
+/** The `id` a gradient's `href` or `xlink:href` names, or null. */
+function hrefId(element: SVGElementLike): string | null {
+  const href = (element.getAttribute('href') ?? element.getAttribute('xlink:href'))?.trim()
+  return href?.startsWith('#') ? href.slice(1) : null
+}
+
 /**
- * Parse every gradient def in the SVG into a lookup by id, via an XML/DOM parse
- * (no hand-rolled markup parsing). Returns an empty map on parse failure so a
- * malformed SVG simply falls back to solid fills.
+ * Parse every gradient def into a lookup by id, via an XML/DOM parse (no hand-rolled markup
+ * parsing). A gradient takes the attributes and stops it leaves out from the gradient its `href`
+ * names, as SVG does. Takes markup or an already parsed root; malformed markup gives no
+ * gradients, so its paths fall back to solid fills.
  */
-export function parseSVGGradients(svg: string): Map<string, ParsedGradient> {
+export function parseSVGGradients(svg: string | SVGQueryable): Map<string, ParsedGradient> {
   const map = new Map<string, ParsedGradient>()
-  const doc: SVGQueryable | null = parseSVGDocument(svg)
+  const doc: SVGQueryable | null = typeof svg === 'string' ? parseSVGDocument(svg) : svg
   if (!doc) return map
 
+  const elements = new Map<string, { kind: ParsedGradient['kind']; element: SVGElementLike }>()
   for (const kind of ['linear', 'radial'] as const) {
-    const els = Array.from(doc.getElementsByTagName(`${kind}Gradient`))
-    for (const el of els) {
-      const id = el.getAttribute('id')
-      if (!id) continue
-      // SVG default gradientUnits is objectBoundingBox; vectorizers (Recraft/fal)
-      // set userSpaceOnUse explicitly.
-      const units =
-        el.getAttribute('gradientUnits') === 'userSpaceOnUse'
-          ? 'userSpaceOnUse'
-          : 'objectBoundingBox'
-      map.set(id, {
-        kind,
-        units,
-        transform: el.getAttribute('gradientTransform'),
-        stops: readStops(el),
-        x1: coord(el.getAttribute('x1'), 0),
-        y1: coord(el.getAttribute('y1'), 0),
-        x2: coord(el.getAttribute('x2'), units === 'objectBoundingBox' ? 1 : 0),
-        y2: coord(el.getAttribute('y2'), 0),
-        cx: coord(el.getAttribute('cx'), 0.5),
-        cy: coord(el.getAttribute('cy'), 0.5),
-        r: coord(el.getAttribute('r'), 0.5)
-      })
+    for (const element of Array.from(doc.getElementsByTagName(`${kind}Gradient`))) {
+      const id = element.getAttribute('id')
+      if (id && !elements.has(id)) elements.set(id, { kind, element })
     }
+  }
+
+  for (const [id, { kind, element }] of elements) {
+    // The element and the gradients its href leads to, nearest first; a cycle ends the chain.
+    const chain = [element]
+    for (let next = hrefId(element); next;) {
+      const target = elements.get(next)?.element
+      if (!target || chain.includes(target)) break
+      chain.push(target)
+      next = hrefId(target)
+    }
+    const attribute = (name: string) =>
+      chain.find((link) => link.getAttribute(name) !== null)?.getAttribute(name) ?? null
+    const stopsFrom = chain.find((link) => link.getElementsByTagName('stop').length > 0)
+    // SVG default gradientUnits is objectBoundingBox; vectorizers (Recraft/fal)
+    // set userSpaceOnUse explicitly.
+    const units =
+      attribute('gradientUnits') === 'userSpaceOnUse' ? 'userSpaceOnUse' : 'objectBoundingBox'
+    map.set(id, {
+      kind,
+      units,
+      transform: attribute('gradientTransform'),
+      stops: stopsFrom ? readStops(stopsFrom) : [],
+      x1: coord(attribute('x1'), 0),
+      y1: coord(attribute('y1'), 0),
+      x2: coord(attribute('x2'), units === 'objectBoundingBox' ? 1 : 0),
+      y2: coord(attribute('y2'), 0),
+      cx: coord(attribute('cx'), 0.5),
+      cy: coord(attribute('cy'), 0.5),
+      r: coord(attribute('r'), 0.5)
+    })
   }
   return map
 }
@@ -134,7 +156,7 @@ function gradientStops(stops: RawStop[]): GradientStop[] {
  */
 export function resolveGradientFill(
   fillRef: string | null,
-  gradients: Map<string, ParsedGradient>,
+  gradients: SVGGradients,
   elementTransform: string | null,
   viewport: SVGViewportMapping,
   nodeBounds: Rect

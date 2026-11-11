@@ -13,11 +13,13 @@ import {
   toolNodeIds,
   toolSource,
   toolSummary,
+  toolWebResults,
   type ToolCallPart
 } from '@/app/ai/chat/tool-calls/display'
 import { readToolChange } from '@/app/ai/tools/changes/store'
 import ChatToolChangeView from '@/components/chat/tool/ChatToolChangeView.vue'
 import ChatToolNodeChips from '@/components/chat/tool/ChatToolNodeChips.vue'
+import ChatToolWebResults from '@/components/chat/tool/ChatToolWebResults.vue'
 import { toolCallState } from '@/components/chat/tool/state'
 import { loadCodeViewer } from '@/components/code-editor/lazy'
 import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
@@ -25,12 +27,12 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
-import { chatToolTheme } from './ui'
+import { chatToolCardTheme } from './ui'
 
 /** `undone`: the user undid the call's edit, by Undo or the chat's Revert. */
 const { part, undone = false } = defineProps<{ part: ToolCallPart; undone?: boolean }>()
 const { ai } = useI18n()
-const ui = chatToolTheme()
+const ui = chatToolCardTheme()
 
 const state = computed(() => toolCallState(part))
 const name = computed(() => toolDisplayName(part))
@@ -38,10 +40,11 @@ const summary = computed(() => toolSummary(part))
 const source = computed(() => toolSource(part))
 const error = computed(() => toolErrorText(part))
 const image = computed(() => toolImage(part))
+const webResults = computed(() => toolWebResults(part))
 const nodeIds = computed(() => (state.value === 'pending' ? [] : toolNodeIds(part)))
 const hasInput = computed(() => toolHasInput(part))
 const output = computed(() => displayedToolOutput(part))
-// Error results such as `diff_apply`'s mismatch report stay inspectable next to the alert.
+// Error results such as `apply_patch`'s mismatch report stay inspectable next to the alert.
 const hasOutput = computed(() => output.value !== undefined)
 // Streaming source is worth watching; other pending calls have nothing to show yet.
 const expandable = computed(() => state.value !== 'pending' || source.value !== null)
@@ -53,7 +56,10 @@ const views = computed(() => {
   const available: { value: DetailView; label: string }[] = []
   if (change.value) available.push({ value: 'changes', label: ai.value.toolChanges })
   if (hasInput.value) available.push({ value: 'input', label: ai.value.toolInput })
-  if (hasOutput.value) available.push({ value: 'output', label: ai.value.toolOutput })
+  if (hasOutput.value) {
+    const label = webResults.value ? ai.value.webSearchSources : ai.value.toolOutput
+    available.push({ value: 'output', label })
+  }
   return available
 })
 const chosenView = ref<DetailView | null>(null)
@@ -141,6 +147,10 @@ function json(value: unknown): string {
           :src="image"
           :alt="summary || name"
           :class="ui.image()"
+        />
+        <ChatToolWebResults
+          v-else-if="shownView === 'output' && webResults"
+          :results="webResults"
         />
         <CodeViewer
           v-else-if="shownView === 'output'"

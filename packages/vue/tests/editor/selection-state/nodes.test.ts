@@ -4,7 +4,7 @@ import { computed, createApp, effectScope, ref, shallowReactive } from 'vue'
 
 import { createDefaultEditorState, createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -235,7 +235,7 @@ describe('selected-node preview projections', () => {
   })
 
   test('shows the selected characters style during a text edit', async () => {
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const surface = expectDefined(ck.MakeSurface(200, 200), 'surface')
     const renderer = new SkiaRenderer(ck, surface)
     const editor = createEditor()

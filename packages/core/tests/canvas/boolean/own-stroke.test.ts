@@ -4,10 +4,10 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { renderRow } from '#core-tests/helpers/figma-rows'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneGraph, Stroke } from '@open-pencil/scene-graph'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 

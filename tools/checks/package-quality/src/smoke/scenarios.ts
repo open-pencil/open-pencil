@@ -70,15 +70,15 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'Oxlint plugin',
-    code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
+    code: "const domains = ['data', 'imports', 'runtime', 'security', 'structure', 'types']; const plugins = await Promise.all(domains.map(async (domain) => (await import('@open-pencil/oxlint-plugin/' + domain)).default)); if (plugins.some((plugin, index) => plugin.meta.name !== '@open-pencil/' + domains[index] || Object.keys(plugin.rules).length === 0) || plugins.reduce((count, plugin) => count + Object.keys(plugin.rules).length, 0) < 30 || !plugins[0].rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
   },
   {
     name: 'Oxlint recommended configuration',
-    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['@open-pencil/runtime/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
   },
   {
     name: 'Cloud contract',
-    code: "const { CLOUD_AI_TOKEN_AUDIENCE, aiWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_AI_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(aiWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
+    code: "const { CLOUD_SERVICES_TOKEN_AUDIENCE, creditWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_SERVICES_TOKEN_AUDIENCE !== 'openpencil-services' || !safeParse(creditWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
   },
   {
     name: 'XPath query',

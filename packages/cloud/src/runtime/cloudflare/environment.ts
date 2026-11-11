@@ -1,13 +1,15 @@
-import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import {
-  loadAISigningKey,
+  createLoggingErrorReporter,
+  loadServicesSigningKey,
   parseCloudDeploymentTOML,
-  type AISigningKey,
+  type ServicesSigningKey,
   type CloudEnvironment,
   type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
 
+import { writeWorkersLogLine } from './logging'
 import type { CollaborationRelayRPC } from './relay'
 
 /** The bindings `deploy/cloudflare/wrangler.jsonc` gives the Worker and its relay objects. */
@@ -27,9 +29,9 @@ export type CloudflareCloudEnvironment = CloudflareCloudBindings & Record<string
 
 export type PreparedCloudflareCloud = {
   config: CloudServerConfig
-  aiSigningKey: AISigningKey | undefined
-  /** Set when the deployment configures error tracking. */
-  reportError: CloudErrorReporter | undefined
+  servicesSigningKey: ServicesSigningKey | undefined
+  /** Logs errors, and sends them to error tracking when the deployment configures it. */
+  reportError: CloudErrorReporter
 }
 
 /** The Worker's string variables and secrets, with `DATABASE_URL` from Hyperdrive. */
@@ -43,9 +45,12 @@ function configEnvironment(env: CloudflareCloudEnvironment): CloudEnvironment {
 }
 
 /**
- * Reads the deployment TOML once per isolate: its config and AI signing key stay the same for the
+ * Reads the deployment TOML once per isolate: its config and services signing key stay the same for the
  * Worker's lifetime. A failure is not kept, so the next request tries again.
  */
+/** Logs errors from before a config parsed, which has no error tracking to send them to. */
+const logOnly = createLoggingErrorReporter(writeWorkersLogLine)
+
 export function cloudflareCloudSetup(source: string) {
   let prepared: Promise<PreparedCloudflareCloud> | null = null
   /** Set once an attempt's config parses, so its later setup steps that fail can be reported. */
@@ -55,8 +60,11 @@ export function cloudflareCloudSetup(source: string) {
       // An attempt whose config fails to parse has no project to report to, not an earlier one's.
       reportError = undefined
       const config = parseCloudDeploymentTOML(source, configEnvironment(env))
-      reportError = createPostHogErrorReporter(config, 'cloudflare')
-      return { config, aiSigningKey: await loadAISigningKey(config), reportError }
+      reportError = createLoggingErrorReporter(
+        writeWorkersLogLine,
+        createCloudErrorReporter(config, 'cloudflare')
+      )
+      return { config, servicesSigningKey: await loadServicesSigningKey(config), reportError }
     })().catch((error: unknown) => {
       prepared = null
       throw error
@@ -65,7 +73,10 @@ export function cloudflareCloudSetup(source: string) {
   }
   return {
     prepare,
-    /** The reporter of the latest attempt, once its config parsed, if it configures error tracking. */
-    reporter: () => reportError
+    /**
+     * The reporter of the latest attempt once its config parsed, which also sends to error tracking
+     * when the config has it; before that, one that only logs.
+     */
+    reporter: () => reportError ?? logOnly
   }
 }

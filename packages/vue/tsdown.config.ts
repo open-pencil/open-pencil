@@ -87,6 +87,7 @@ export default defineConfig({
     'controls/position/index': './src/controls/position/index.ts',
     'controls/prop-scrub/index': './src/controls/prop-scrub/index.ts',
     'controls/property-list/index': './src/controls/property-list/index.ts',
+    'controls/scale/index': './src/controls/scale/index.ts',
     'controls/selection-colors/index': './src/controls/selection-colors/index.ts',
     'controls/selection-layout/index': './src/controls/selection-layout/index.ts',
     'controls/shader/index': './src/controls/shader/index.ts',

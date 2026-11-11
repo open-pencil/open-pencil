@@ -23,6 +23,7 @@ import {
 } from '@open-pencil/scene-graph/layout'
 
 import { useNodePreview } from '#vue/controls/node-preview/use'
+import { usePanelSize } from '#vue/controls/panel-size/use'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 import type { useI18n } from '#vue/i18n'
 
@@ -205,6 +206,7 @@ export function createLayoutActions({
   node: ComputedRef<SceneNode | null>
 }) {
   const preview = useNodePreview(editor)
+  const panelSize = usePanelSize(editor)
 
   function updateProp(key: NumericNodeProperty, value: number) {
     if (node.value) preview.update([node.value.id], { [key]: value }, `Change ${key}`)
@@ -263,13 +265,14 @@ export function createLayoutActions({
     const n = node.value
     if (!n) return
     const ratio = enforcedAspectRatio(n)
-    if (ratio === null) {
-      preview.update([n.id], { ...fixedAxisPatch(n, axis), [axis]: value }, `Change ${axis}`)
-      return
-    }
-    const size = sizeKeepingAspectRatio(ratio, axis, value)
-    const patch = { ...fixedAxisPatch(n, 'width'), ...fixedAxisPatch(n, 'height'), ...size }
-    preview.update([n.id], patch, `Change ${axis}`)
+    const size: Partial<Pick<SceneNode, LayoutAxis>> =
+      ratio === null ? { [axis]: value } : sizeKeepingAspectRatio(ratio, axis, value)
+    panelSize.update([n], size, () => {
+      // A layer with nothing inside also leaves Hug or Fill on the axes it sets.
+      const axes: LayoutAxis[] = ratio === null ? [axis] : ['width', 'height']
+      const patch = Object.assign({}, ...axes.map((each) => fixedAxisPatch(n, each)), size)
+      preview.update([n.id], patch, `Change ${axis}`)
+    })
   }
 
   function toggleAspectRatioLock() {
@@ -284,7 +287,13 @@ export function createLayoutActions({
   }
 
   function commitAxisSize(_axis: LayoutAxis, _value: number, _previous: number) {
+    panelSize.commit()
     preview.commit()
+  }
+
+  function cancelPreview() {
+    panelSize.cancel()
+    preview.cancel()
   }
 
   function setAlignment(primary: LayoutAlign, counter: LayoutCounterAlign) {
@@ -316,7 +325,7 @@ export function createLayoutActions({
   }
 
   return {
-    cancelPreview: preview.cancel,
+    cancelPreview,
     updateProp,
     updateSizeLimit,
     setSizeLimitToCurrent,

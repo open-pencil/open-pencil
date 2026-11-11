@@ -83,15 +83,20 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * 86_400_000,
+    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
   }
 }
 
 function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   return {
-    aiEndpoint: config.ai?.endpoint,
-    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
-    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
+    servicesEndpoint: config.services?.endpoint,
+    servicesSigningKey: config.services
+      ? requiredSecret(environment, config.services.signing_key)
+      : undefined,
+    servicesTokenLifetimeSeconds: config.services
+      ? config.services.token_lifetime_minutes * 60
+      : undefined,
     billingPortalURL: config.billing?.portal_url,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
@@ -171,6 +176,7 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
+    s3DeletedPrefix: config.object_storage.deleted_prefix,
     relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),

@@ -20,16 +20,16 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
-  AINotEntitledError,
-  createAIRoutes,
-  createAITokenService,
-  importAISigningKey,
-  loadAISigningKey,
-  type AIRouteEnvironment,
-  type AISigningKey,
-  type AITokenService,
-  type AITokenServiceOptions
-} from './ai'
+  ServicesNotEntitledError,
+  createServicesRoutes,
+  createServicesTokenService,
+  importServicesSigningKey,
+  loadServicesSigningKey,
+  type ServicesRouteEnvironment,
+  type ServicesSigningKey,
+  type ServicesTokenService,
+  type ServicesTokenServiceOptions
+} from './services'
 export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
@@ -45,9 +45,14 @@ export {
   type CloudSessionResolver,
   type AccountAuthenticationService,
   type AuthenticationEmailService,
-  workspaceAccessControl,
+  accessControl,
+  accessStatements,
+  documentRoleCan,
+  documentRoles,
+  workspaceRoleCan,
   workspaceRoles,
-  workspaceStatements
+  type AccessRequest,
+  type DocumentRole
 } from './auth'
 export {
   createCloudAPIRouter,
@@ -188,20 +193,36 @@ export {
 export {
   CLOUD_ERROR_SOURCES,
   cloudErrorHandler,
+  createLoggingErrorReporter,
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource
+  type CloudErrorSource,
+  createPostHogErrorReporter,
+  type ErrorReportContext,
+  type ErrorReporter,
+  type PostHogErrorReporterOptions
 } from './errors'
+export {
+  cloudRequestId,
+  logCloud,
+  loggedError,
+  writeJSONLine,
+  type CloudLogLine,
+  type CloudLogWriter,
+  type ForwardedRequestId
+} from './logging'
 export {
   createInternalRoutes,
   createInternalService,
-  parseSetWorkspaceEntitlements,
-  setWorkspaceEntitlementsSchema,
+  parseSetAccountEntitlements,
+  setAccountEntitlementsSchema,
   type InternalService,
-  type SetWorkspaceEntitlementsInput
+  type SetAccountEntitlementsInput
 } from './internal'
 export {
+  INVITATION_BUDGET,
+  InvitationLimitError,
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,
@@ -244,7 +265,7 @@ export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
   createConfiguredCloudPolicy,
-  createWorkspaceEntitlementRepository,
+  createAccountEntitlementRepository,
   DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
   createDefaultCloudPolicy,
@@ -288,3 +309,11 @@ export {
   type WorkspaceRouteEnvironment,
   type WorkspaceService
 } from './workspaces'
+export {
+  createDocumentReportService,
+  createPublicReportRoutes,
+  DOCUMENT_REPORT_BUDGET,
+  DocumentReportLimitError,
+  type DocumentReportService,
+  type DocumentReportServiceOptions
+} from './reports'

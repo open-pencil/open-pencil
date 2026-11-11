@@ -41,5 +41,6 @@
   "dismiss": "Zamknij",
   "browserSupport": "Sprawdź obsługę w przeglądarkach",
   "showPassword": "Pokaż hasło",
-  "hidePassword": "Ukryj hasło"
+  "hidePassword": "Ukryj hasło",
+  "typeToConfirm": "Aby potwierdzić, wpisz „{text}”."
 }

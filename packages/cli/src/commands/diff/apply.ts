@@ -66,7 +66,7 @@ export default defineCommand({
     const dryRun = !!args['dry-run']
     const { result, graph } = await runToolData(
       args.file,
-      'diff_apply',
+      'apply_patch',
       { patch: await readTextSource(args.patch), dryRun, force: !!args.force },
       args
     )

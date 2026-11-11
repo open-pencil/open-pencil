@@ -1,1 +1,0 @@
-- `EditorRestrictions` also has `tools` and `pathEdits`; build one from `NO_HOST_RESTRICTIONS`. `computeHandleVisibleVertices` moved to `@open-pencil/core/vector` (#1787).

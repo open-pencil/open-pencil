@@ -47,13 +47,21 @@ function fail(session: SaveToSession, failure: SaveFailure): void {
  * With nowhere to save yet, it signs in to the Cloud server this app knows, or opens the settings
  * where a place to save is set up. While a save is on its way, it shows that one instead.
  */
-export async function openSaveTo(store: EditorStore): Promise<void> {
+export async function openSaveTo(
+  store: EditorStore,
+  options: {
+    /** Keeps the choice to one storage profile, such as the Cloud server a draft signed up to. */
+    profileId?: string
+  } = {}
+): Promise<void> {
   const current = saveToSession.value
   if (current?.state.kind === 'saving' && !current.following.signal.aborted) {
     current.open = true
     return
   }
-  const destinations = await listSaveDestinations()
+  const destinations = (await listSaveDestinations()).filter(
+    (destination) => !options.profileId || destination.location.profileId === options.profileId
+  )
   const writable = destinations.filter(canSaveTo)
   const first = writable.at(0)
   if (!first) {

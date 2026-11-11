@@ -1,9 +1,10 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { figArchiveMetaJSON } from '@open-pencil/fig'
 import {
+  applyVariableModes,
   buildComponentPropIndex,
   exportCanvasGuides,
   figImageEntries,
@@ -492,6 +493,11 @@ export async function prepareFigExport(
     nodeSourceGuidValues,
     archived !== undefined
   )
+  // Pages set modes as layers do, through the collection and mode GUIDs just assigned.
+  for (const { page, canvasNc } of canvasEntries) {
+    const node = graph.getNode(page.id)
+    if (node) applyVariableModes({ graph, varIdToGuid, modeIdToGuid }, node, canvasNc)
+  }
   const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 
