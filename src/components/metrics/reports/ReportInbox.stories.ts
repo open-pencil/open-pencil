@@ -9,13 +9,22 @@ import ReportInbox from './ReportInbox.vue'
 // Illustrative reports, as the feedback Worker answers the inbox.
 const base: Pick<
   InboxReport,
-  'version' | 'arch' | 'browser' | 'error' | 'files' | 'triageNote' | 'handledBy' | 'handledAt'
+  | 'version'
+  | 'arch'
+  | 'browser'
+  | 'error'
+  | 'files'
+  | 'filesUnreadable'
+  | 'triageNote'
+  | 'handledBy'
+  | 'handledAt'
 > = {
   version: '0.16.0',
   arch: 'arm64',
   browser: 'unknown',
   error: null,
   files: [],
+  filesUnreadable: false,
   triageNote: null,
   handledBy: null,
   handledAt: null
@@ -34,7 +43,8 @@ const REPORTS: InboxReport[] = [
     files: [
       {
         name: 'document.fig',
-        url: 'https://feedback.openpencil.dev/admin/reports/0b7f3c1e-5d2a-4f61-9c3b-8e2a1d4f6a01/files/document.fig'
+        url: 'https://feedback.openpencil.dev/admin/reports/0b7f3c1e-5d2a-4f61-9c3b-8e2a1d4f6a01/files/document.fig',
+        expired: false
       }
     ],
     eventURL: 'https://eu.posthog.com/project/1/events/a/2026-11-11T09:42:00.000Z',
@@ -100,6 +110,7 @@ export const Inbox: Story = {
 
 const DETAIL: ReportDetail = {
   ...REPORTS[0],
+  stepsUnreadable: false,
   steps: [
     {
       name: 'document.opened',

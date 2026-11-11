@@ -46,14 +46,14 @@ export function adminRoutes(services: FeedbackServices) {
       .put('/admin/api/reports/:reportId/triage', validatedJSON(reportTriageSchema), async (c) => {
         const params = v.safeParse(reportParamsSchema, c.req.param())
         if (!params.success) return c.body(null, 404)
-        await saveReportTriage(
+        const saved = await saveReportTriage(
           c.env,
           params.output.reportId,
           c.req.valid('json'),
           c.get('adminEmail') ?? 'unknown',
           services.now()
         )
-        return c.body(null, 204)
+        return c.json(saved, 200)
       })
       // A file attached to a report, linked from its PostHog event; always a download, never rendered.
       .get('/admin/reports/:reportId/files/:name', async (c) => {

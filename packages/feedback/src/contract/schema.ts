@@ -521,6 +521,15 @@ export const reportTriageSchema = v.strictObject({
 })
 export type ReportTriage = v.InferOutput<typeof reportTriageSchema>
 
+/** Triage as saved: the status and note, and who changed them when. */
+export const reportTriageRecordSchema = v.object({
+  status: v.picklist(REPORT_STATUSES),
+  triageNote: v.nullable(v.string()),
+  handledBy: v.string(),
+  handledAt: v.pipe(v.string(), v.isoTimestamp())
+})
+export type ReportTriageRecord = v.InferOutput<typeof reportTriageRecordSchema>
+
 const nullableTextSchema = v.nullable(v.string())
 
 /** One report in the inbox: what the sender wrote and their build, from PostHog, and its triage. */
@@ -538,8 +547,13 @@ export const inboxReportSchema = v.object({
   browser: nullableTextSchema,
   /** For an error, its first exception as `Type: message`. */
   error: nullableTextSchema,
-  /** Attached files, each a download behind Cloudflare Access. */
-  files: v.array(v.object({ name: v.string(), url: v.string() })),
+  /**
+   * Attached files, each a download behind Cloudflare Access until retention deletes it after
+   * `REPORT_FILE_RETENTION_DAYS`; an expired one has no download left.
+   */
+  files: v.array(v.object({ name: v.string(), url: v.string(), expired: v.boolean() })),
+  /** PostHog's list of files couldn't be read, so `files` may not be all of them. */
+  filesUnreadable: v.boolean(),
   /** The report's event in PostHog. */
   eventURL: v.string(),
   status: v.picklist(REPORT_STATUSES),
@@ -570,6 +584,8 @@ export type InboxReportStep = v.InferOutput<typeof inboxReportStepSchema>
 /** One report with the steps that led up to it. */
 export const reportDetailSchema = v.object({
   ...inboxReportSchema.entries,
-  steps: v.array(inboxReportStepSchema)
+  steps: v.array(inboxReportStepSchema),
+  /** PostHog's list of steps couldn't be read, so none are shown rather than some. */
+  stepsUnreadable: v.boolean()
 })
 export type ReportDetail = v.InferOutput<typeof reportDetailSchema>

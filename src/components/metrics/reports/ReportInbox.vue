@@ -84,7 +84,7 @@ const list = usePortalList<ReportInboxFilter, InboxReport>({
       cell: ({ row: { original: report } }) =>
         h(PortalStatusCell, {
           statuses: [REPORT_STATUS_LABELS[report.status]],
-          detail: report.files.length ? 'Has files' : null
+          detail: report.files.some((file) => !file.expired) ? 'Has files' : null
         })
     }),
     column.display({

@@ -2,9 +2,15 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
 
-import type { InboxReport, ReportDetail, ReportTriage } from '@open-pencil/feedback/contract'
+import {
+  REPORT_FILE_RETENTION_DAYS,
+  REPORT_TRIAGE_NOTE_MAX_LENGTH,
+  type InboxReport,
+  type ReportDetail,
+  type ReportTriage
+} from '@open-pencil/feedback/contract'
 
-import { formatTime } from '@/app/metrics/format'
+import { formatCount, formatTime } from '@/app/metrics/format'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
@@ -43,11 +49,17 @@ const emit = defineEmits<{ save: [triage: ReportTriage] }>()
 const ui = metricsReport()
 const status = ref<string>(report.status)
 const note = ref(report.triageNote ?? '')
+// Fields start fresh each opening, from the report as saved, even for the one just canceled.
+watch(open, (isOpen) => {
+  if (!isOpen) return
+  status.value = report.status
+  note.value = report.triageNote ?? ''
+})
 watch(
-  () => report,
-  (next) => {
-    status.value = next.status
-    note.value = next.triageNote ?? ''
+  () => report.id,
+  () => {
+    status.value = report.status
+    note.value = report.triageNote ?? ''
   }
 )
 
@@ -90,9 +102,15 @@ function save() {
           <a :class="ui.link()" :href="report.eventURL" target="_blank" rel="noopener">
             Event in PostHog
           </a>
-          <a v-for="file in report.files" :key="file.name" :class="ui.link()" :href="file.url">
-            {{ file.name }}
-          </a>
+          <template v-for="file in report.files" :key="file.name">
+            <span v-if="file.expired" :class="ui.expired()">
+              {{ file.name }} (deleted after {{ REPORT_FILE_RETENTION_DAYS }} days)
+            </span>
+            <a v-else :class="ui.link()" :href="file.url">{{ file.name }}</a>
+          </template>
+          <span v-if="report.filesUnreadable" :class="ui.expired()">
+            Attached files couldn’t be read; see the event in PostHog
+          </span>
         </dd>
       </dl>
       <AppCollapsible
@@ -100,6 +118,9 @@ function save() {
       >
         <p v-if="detailFailed" :class="ui.handled()">The steps could not load.</p>
         <p v-else-if="!detail" :class="ui.handled()">Loading steps…</p>
+        <p v-else-if="detail.stepsUnreadable" :class="ui.handled()">
+          The steps couldn’t be read; see the event in PostHog.
+        </p>
         <p v-else-if="!detail.steps.length" :class="ui.handled()">No steps were sent.</p>
         <ol v-else :class="ui.steps()">
           <li v-for="(step, index) in detail.steps" :key="index" :class="ui.step()">
@@ -114,9 +135,17 @@ function save() {
       <AppFormField label="Status">
         <SegmentedControl v-model="status" :options="STATUS_OPTIONS" label="Status" />
       </AppFormField>
-      <AppFormField label="Internal note" hint="Only the team sees this.">
+      <AppFormField
+        label="Internal note"
+        :hint="`Only the team sees this. Up to ${formatCount(REPORT_TRIAGE_NOTE_MAX_LENGTH)} characters.`"
+      >
         <template #default="{ id }">
-          <AppTextarea :id="id" v-model="note" :rows="3" />
+          <AppTextarea
+            :id="id"
+            v-model="note"
+            :rows="3"
+            :maxlength="REPORT_TRIAGE_NOTE_MAX_LENGTH"
+          />
         </template>
       </AppFormField>
       <p v-if="report.handledBy" :class="ui.handled()">

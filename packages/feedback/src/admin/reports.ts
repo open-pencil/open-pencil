@@ -1,11 +1,13 @@
 import {
+  REPORT_FILE_RETENTION_DAYS,
   REPORT_INBOX_LIMIT,
   type InboxReport,
   type InboxReportStep,
   type MetricsQuery,
   type ReportDetail,
   type ReportInbox,
-  type ReportTriage
+  type ReportTriage,
+  type ReportTriageRecord
 } from '#feedback/contract'
 import { createFeedbackDatabase } from '#feedback/db'
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
@@ -71,24 +73,24 @@ WHERE event IN ('problem_reported', '$exception') AND properties.report_id = '${
 LIMIT 1`
 }
 
-/** A list property's items, whichever way PostHog returned it; anything unreadable is none. */
-function listItems<T extends v.GenericSchema>(
+/**
+ * A list property's items, whichever way PostHog returned it, or null when it can't be read whole:
+ * text that isn't JSON or an entry of the wrong shape. A partial list is never passed off as all.
+ */
+function readList<T extends v.GenericSchema>(
   value: v.InferOutput<typeof listSchema>,
   item: T
-): v.InferOutput<T>[] {
+): v.InferOutput<T>[] | null {
   if (value === null) return []
+  const list = v.array(item)
   const parsed = v.safeParse(
-    typeof value === 'string'
-      ? v.pipe(v.string(), v.parseJson(), v.array(v.unknown()))
-      : v.array(v.unknown()),
+    typeof value === 'string' ? v.pipe(v.string(), v.parseJson(), list) : list,
     value
   )
-  if (!parsed.success) return []
-  return parsed.output.flatMap((entry) => {
-    const one = v.safeParse(item, entry)
-    return one.success ? [one.output] : []
-  })
+  return parsed.success ? parsed.output : null
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Where the team opens an event in PostHog. */
 function eventURL(env: FeedbackBindings, uuid: string, receivedAt: string): string {
@@ -105,7 +107,8 @@ type TriageRow = {
 function toInboxReport(
   env: FeedbackBindings,
   row: ReportRow,
-  triage: TriageRow | undefined
+  triage: TriageRow | undefined,
+  now: Date
 ): InboxReport {
   const [
     uuid,
@@ -123,7 +126,10 @@ function toInboxReport(
     exceptions
   ] = row
   const receivedAt = new Date(seconds * 1000).toISOString()
-  const first = listItems(exceptions, exceptionSchema).at(0)
+  const first = readList(exceptions, exceptionSchema)?.at(0)
+  const fileURLs = readList(files, v.string())
+  // Retention deletes a report's files after this long, so older links would only answer 404.
+  const expired = now.getTime() - seconds * 1000 > REPORT_FILE_RETENTION_DAYS * DAY_MS
   return {
     id,
     kind: event === '$exception' ? 'error' : 'problem',
@@ -136,10 +142,12 @@ function toInboxReport(
     app,
     browser,
     error: first ? (first.value ? `${first.type}: ${first.value}` : first.type) : null,
-    files: listItems(files, v.string()).map((url) => ({
+    files: (fileURLs ?? []).map((url) => ({
       name: url.slice(url.lastIndexOf('/') + 1),
-      url
+      url,
+      expired
     })),
+    filesUnreadable: fileURLs === null,
     eventURL: eventURL(env, uuid, receivedAt),
     status: triage?.status ?? 'open',
     triageNote: triage?.note ?? null,
@@ -179,7 +187,7 @@ export async function fetchReportInbox(
     shown.map((row) => row[3])
   )
   return {
-    reports: shown.map((row) => toInboxReport(env, row, triage[row[3]])),
+    reports: shown.map((row) => toInboxReport(env, row, triage[row[3]], services.now())),
     truncated: rows.length > REPORT_INBOX_LIMIT
   }
 }
@@ -206,9 +214,11 @@ export async function fetchReportDetail(
     )
   ).at(0)
   const triage = await triageFor(env, [reportId])
+  const readSteps = readList(steps?.[0] ?? null, stepSchema)
   return {
-    ...toInboxReport(env, row, triage[reportId]),
-    steps: listItems(steps?.[0] ?? null, stepSchema).map((step): InboxReportStep => ({
+    ...toInboxReport(env, row, triage[reportId], services.now()),
+    stepsUnreadable: readSteps === null,
+    steps: (readSteps ?? []).map((step): InboxReportStep => ({
       name: step.$message,
       category: step.category ?? null,
       level: step.level ?? null,
@@ -217,14 +227,14 @@ export async function fetchReportDetail(
   }
 }
 
-/** Records where the team stands with a report, and who changed it. */
+/** Records where the team stands with a report, and who changed it, and answers what it saved. */
 export async function saveReportTriage(
   env: FeedbackBindings,
   reportId: string,
   triage: ReportTriage,
   handledBy: string,
   now: Date
-): Promise<void> {
+): Promise<ReportTriageRecord> {
   const row = {
     status: triage.status,
     note: triage.note || null,
@@ -236,4 +246,5 @@ export async function saveReportTriage(
     .values({ reportId, ...row })
     .onConflict((conflict) => conflict.column('reportId').doUpdateSet(row))
     .execute()
+  return { status: row.status, triageNote: row.note, handledBy, handledAt: row.handledAt }
 }

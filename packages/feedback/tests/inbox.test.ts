@@ -6,6 +6,7 @@ import {
   REPORT_INBOX_LIMIT,
   reportDetailSchema,
   reportInboxSchema,
+  reportTriageRecordSchema,
   type ReportDetail,
   type ReportInbox
 } from '#feedback/contract'
@@ -26,12 +27,18 @@ const FILE_URL = `https://feedback.openpencil.dev/admin/reports/${PROBLEM}/files
 function row(
   reportId: string,
   event: 'problem_reported' | '$exception',
-  extra: { note?: string | null; email?: string | null; files?: unknown; exceptions?: unknown } = {}
+  extra: {
+    note?: string | null
+    email?: string | null
+    files?: unknown
+    exceptions?: unknown
+    receivedAt?: string
+  } = {}
 ) {
   return [
     `uuid-${reportId.slice(0, 4)}`,
     event,
-    Date.parse('2026-10-19T08:30:00.000Z') / 1000,
+    Date.parse(extra.receivedAt ?? '2026-10-19T08:30:00.000Z') / 1000,
     reportId,
     extra.note ?? null,
     extra.email ?? null,
@@ -122,7 +129,8 @@ describe('report inbox', () => {
     const [problem, error] = reports
     expect(problem?.email).toBe('ana@example.com')
     expect(problem?.receivedAt).toBe('2026-10-19T08:30:00.000Z')
-    expect(problem?.files).toEqual([{ name: 'document.fig', url: FILE_URL }])
+    expect(problem?.files).toEqual([{ name: 'document.fig', url: FILE_URL, expired: false }])
+    expect(problem?.filesUnreadable).toBe(false)
     expect(problem?.eventURL).toBe(
       `https://eu.posthog.com/project/267806/events/uuid-1111/${encodeURIComponent('2026-10-19T08:30:00.000Z')}`
     )
@@ -132,6 +140,23 @@ describe('report inbox', () => {
     expect(sql).toContain("toDate('2026-10-14')")
     expect(sql).toContain("toDate('2026-10-20')")
     expect(sql).toContain('report_note')
+  })
+
+  test('marks files retention has deleted, and a file list it cannot read', async () => {
+    answerPostHog([
+      row(PROBLEM, 'problem_reported', {
+        files: [FILE_URL],
+        // More than REPORT_FILE_RETENTION_DAYS before NOW.
+        receivedAt: '2026-07-01T08:30:00.000Z'
+      }),
+      row(ERROR, '$exception', { note: 'Crashed', files: '[not json' })
+    ])
+
+    const [old, garbled] = (await inbox('2026-07-01', '2026-10-20')).reports
+
+    expect(old?.files).toEqual([{ name: 'document.fig', url: FILE_URL, expired: true }])
+    expect(garbled?.files).toEqual([])
+    expect(garbled?.filesUnreadable).toBe(true)
   })
 
   test('says when the range holds more reports than it lists', async () => {
@@ -154,12 +179,18 @@ describe('report inbox', () => {
     answerPostHog([row(PROBLEM, 'problem_reported', { note: 'Export hangs' })])
 
     expect((await triage(PROBLEM, { status: 'replied', note: 'Asked for the file' })).status).toBe(
-      204
+      200
     )
     service.setNow(new Date('2026-10-20T12:30:00.000Z'))
-    expect((await triage(PROBLEM, { status: 'closed', note: '  Fixed in 0.16.1  ' })).status).toBe(
-      204
-    )
+    const saved = await triage(PROBLEM, { status: 'closed', note: '  Fixed in 0.16.1  ' })
+    expect(saved.status).toBe(200)
+    // The answer is what was saved, so the dashboard shows who changed it without reloading.
+    expect(v.parse(reportTriageRecordSchema, await saved.json())).toEqual({
+      status: 'closed',
+      triageNote: 'Fixed in 0.16.1',
+      handledBy: 'dan@example.com',
+      handledAt: '2026-10-20T12:30:00.000Z'
+    })
 
     const [report] = (await inbox()).reports
     expect(report).toMatchObject({
@@ -183,34 +214,32 @@ describe('report inbox', () => {
 })
 
 describe('report detail', () => {
-  test('shows the steps that led up to the report', async () => {
+  /** PostHog answers the detail's report query, then its steps query with `steps`. */
+  function answerDetail(steps: unknown) {
     service.respond(POSTHOG_QUERY, (call) => {
       const sql = String(call.init?.body)
-      if (sql.includes('report_steps'))
-        return Response.json({
-          results: [
-            [
-              JSON.stringify([
-                {
-                  $message: 'document.opened',
-                  $timestamp: '2026-10-19T08:29:00.000Z',
-                  category: 'document',
-                  level: 'info'
-                },
-                { not: 'a step' }
-              ])
-            ]
-          ]
-        })
+      if (sql.includes('report_steps')) return Response.json({ results: [[steps]] })
       return Response.json({
         results: [row(PROBLEM, 'problem_reported', { note: 'Export hangs' })]
       })
     })
+  }
+
+  const STEP = {
+    $message: 'document.opened',
+    $timestamp: '2026-10-19T08:29:00.000Z',
+    category: 'document',
+    level: 'info'
+  }
+
+  test('shows the steps that led up to the report', async () => {
+    answerDetail(JSON.stringify([STEP]))
 
     const { status, report } = await detail(PROBLEM)
 
     expect(status).toBe(200)
     expect(report?.note).toBe('Export hangs')
+    expect(report?.stepsUnreadable).toBe(false)
     expect(report?.steps).toEqual([
       {
         name: 'document.opened',
@@ -221,6 +250,15 @@ describe('report detail', () => {
     ])
     // The ID reaches the query only after it was checked to be a UUID.
     expect(sentQueries().every((sql) => sql.includes(`'${PROBLEM}'`))).toBe(true)
+  })
+
+  test('says the steps could not be read rather than showing some of them', async () => {
+    answerDetail([STEP, { not: 'a step' }])
+
+    const { report } = await detail(PROBLEM)
+
+    expect(report?.steps).toEqual([])
+    expect(report?.stepsUnreadable).toBe(true)
   })
 
   test('answers 404 for a report PostHog does not have, or a malformed ID', async () => {

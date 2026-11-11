@@ -8,8 +8,7 @@ import { useMetricsSnapshot } from '@/app/metrics/load'
 import type { MetricsRange } from '@/app/metrics/range'
 import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 import MetricsDashboard from '@/components/metrics/MetricsDashboard.vue'
-import ReportDetailDialog from '@/components/metrics/reports/ReportDetailDialog.vue'
-import ReportInbox from '@/components/metrics/reports/ReportInbox.vue'
+import ReportInboxPanel from '@/components/metrics/reports/ReportInboxPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -47,17 +46,42 @@ const dialogOpen = ref(false)
 const saveFailed = ref(false)
 const triageFailed = ref(false)
 
+/** Counts the dialog's openings, so a save that finishes late never closes a later one. */
+let openings = 0
+
 function openReport(report: Parameters<typeof triage.open>[0]) {
+  openings++
   saveFailed.value = false
   dialogOpen.value = true
   void triage.open(report)
 }
 async function saveReport(changes: Parameters<typeof triage.save>[0]) {
-  saveFailed.value = !(await triage.save(changes))
-  if (!saveFailed.value) dialogOpen.value = false
+  const opening = openings
+  const saved = await triage.save(changes)
+  if (opening !== openings || !dialogOpen.value) return
+  saveFailed.value = !saved
+  if (saved) dialogOpen.value = false
 }
 async function setReportStatus(...args: Parameters<typeof triage.setStatus>) {
   triageFailed.value = !(await triage.setStatus(...args))
+}
+const inboxPanel = computed(() => ({
+  reports: reports.value,
+  truncated: truncated.value,
+  loadFailed: inboxFailed.value,
+  statusFailed: triageFailed.value,
+  busy: busy.value,
+  selected: selected.value,
+  detail: detail.value,
+  detailFailed: detailFailed.value,
+  saving: saving.value,
+  saveFailed: saveFailed.value
+}))
+const inboxPanelEvents = {
+  open: openReport,
+  triage: setReportStatus,
+  save: saveReport,
+  reload: () => reload()
 }
 const refreshTab = () => (tab.value === 'reports' ? inbox.refresh() : refresh())
 const host = globalThis.location.host
@@ -77,36 +101,10 @@ const reload = () => globalThis.location.reload()
     @refresh="refreshTab"
   >
     <template #reports>
-      <AppAlert
-        v-if="inboxFailed || triageFailed"
-        tone="warning"
-        :heading="inboxFailed ? 'The reports could not load' : 'The report could not be saved'"
-        description="Your sign-in may have expired. Reload the page to sign in again."
-      >
-        <template #actions>
-          <AppButton size="sm" variant="outline" @click="reload">Reload</AppButton>
-        </template>
-      </AppAlert>
-      <AppAlert
-        v-if="truncated"
-        tone="info"
-        heading="Only the newest 500 reports in this range are listed"
-        description="Choose a shorter range to see the rest."
-      />
-      <ReportInbox :reports="reports" :busy="busy" @open="openReport" @triage="setReportStatus" />
-      <ReportDetailDialog
-        v-if="selected"
-        v-model:open="dialogOpen"
-        :report="selected"
-        :detail="detail"
-        :detail-failed="detailFailed"
-        :saving="saving"
-        :error="
-          saveFailed
-            ? 'The report could not be saved. Your sign-in may have expired; reload the page.'
-            : null
-        "
-        @save="saveReport"
+      <ReportInboxPanel
+        v-bind="inboxPanel"
+        v-model:dialog-open="dialogOpen"
+        v-on="inboxPanelEvents"
       />
     </template>
     <template v-if="failed" #alert>
@@ -121,6 +119,25 @@ const reload = () => globalThis.location.reload()
       </AppAlert>
     </template>
   </MetricsDashboard>
+  <!-- The inbox loads on its own, so it stays reachable while the metrics are down. -->
+  <main
+    v-else-if="failed && tab === 'reports'"
+    class="h-full overflow-y-auto bg-canvas text-surface"
+  >
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 md:px-6">
+      <div>
+        <AppButton size="sm" variant="ghost" @click="tab = 'metrics'">
+          <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
+          Metrics
+        </AppButton>
+      </div>
+      <ReportInboxPanel
+        v-bind="inboxPanel"
+        v-model:dialog-open="dialogOpen"
+        v-on="inboxPanelEvents"
+      />
+    </div>
+  </main>
   <main v-else-if="failed" class="flex h-full bg-canvas text-surface">
     <AppPlaceholder
       size="page"
@@ -131,6 +148,7 @@ const reload = () => globalThis.location.reload()
       <template #icon><icon-lucide-cloud-off class="size-5" /></template>
       <template #action>
         <AppButton variant="outline" @click="reload">Reload</AppButton>
+        <AppButton variant="outline" @click="tab = 'reports'">Open reports</AppButton>
       </template>
     </AppPlaceholder>
   </main>

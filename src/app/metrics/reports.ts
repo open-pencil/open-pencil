@@ -6,10 +6,12 @@ import { createFeedbackClient } from '@open-pencil/feedback/client'
 import {
   reportDetailSchema,
   reportInboxSchema,
+  reportTriageRecordSchema,
   type InboxReport,
   type ReportDetail,
   type ReportStatus,
-  type ReportTriage
+  type ReportTriage,
+  type ReportTriageRecord
 } from '@open-pencil/feedback/contract'
 
 import type { PortalListPage, PortalListRequest } from '@/app/cloud-portal/list'
@@ -44,13 +46,17 @@ export async function fetchReportDetail(reportId: string): Promise<ReportDetail>
   return parsed(response, reportDetailSchema)
 }
 
-/** Saves where the team stands with a report. */
-export async function saveReportTriage(reportId: string, triage: ReportTriage): Promise<void> {
+/** Saves where the team stands with a report, and answers what was saved and by whom. */
+export async function saveReportTriage(
+  reportId: string,
+  triage: ReportTriage
+): Promise<ReportTriageRecord> {
   const response = await client().admin.api.reports[':reportId'].triage.$put({
     param: { reportId },
     json: triage
   })
-  if (response.status !== 204) throw new Error(`Saving the report answered ${response.status}`)
+  if (response.status !== 200) throw new Error(`Saving the report answered ${response.status}`)
+  return parsed(response, reportTriageRecordSchema)
 }
 
 const searchable = (report: InboxReport) =>
@@ -90,8 +96,9 @@ export function reportInboxPage(
 }
 
 /**
- * The inbox for the range as it changes. A newer request wins over one still in flight, and the
- * last reports stay while the next load or after one fails. `update` shows saved triage at once.
+ * The inbox for the range as it changes. A newer request wins over one still in flight. A failed
+ * refresh keeps the range's reports on screen; a failed load of another range clears them, so
+ * they never stand for days they don't cover. `update` saves triage and shows it at once.
  */
 export function useReportInbox(range: Ref<MetricsRange>) {
   const reports = shallowRef<InboxReport[]>([])
@@ -99,34 +106,55 @@ export function useReportInbox(range: Ref<MetricsRange>) {
   const loading = ref(false)
   const loaded = ref(false)
   const failed = ref(false)
+  /** The range `reports` belongs to. */
+  let shownRange: MetricsRange | null = null
   let latest = 0
+  /** Triage saved here, numbered, so a load that read the triage before a save doesn't undo it. */
+  let saveCount = 0
+  const saves = new Map<string, { count: number; record: ReportTriageRecord }>()
 
   async function load() {
     const request = ++latest
+    const asked = range.value
+    const savedBefore = saveCount
     loading.value = true
     try {
-      const next = await fetchReportInbox(range.value)
+      const next = await fetchReportInbox(asked)
       if (request !== latest) return
-      reports.value = next.reports
+      reports.value = next.reports.map((report) => {
+        const save = saves.get(report.id)
+        return save && save.count > savedBefore ? { ...report, ...save.record } : report
+      })
       truncated.value = next.truncated
+      shownRange = asked
       loaded.value = true
       failed.value = false
     } catch (error) {
       if (request !== latest) return
       console.warn('Reports could not load', error)
       failed.value = true
+      if (shownRange?.start !== asked.start || shownRange.end !== asked.end) {
+        reports.value = []
+        truncated.value = false
+        shownRange = null
+        loaded.value = false
+      }
     } finally {
       if (request === latest) loading.value = false
     }
   }
 
-  async function update(reportId: string, triage: ReportTriage) {
-    await saveReportTriage(reportId, triage)
-    reports.value = reports.value.map((report) =>
-      report.id === reportId
-        ? { ...report, status: triage.status, triageNote: triage.note || null }
-        : report
-    )
+  /** Saves triage and shows it, with who saved it, in place; returns the report as it now is. */
+  async function update(reportId: string, triage: ReportTriage): Promise<InboxReport | null> {
+    const saved = await saveReportTriage(reportId, triage)
+    saves.set(reportId, { count: ++saveCount, record: saved })
+    let updated: InboxReport | null = null
+    reports.value = reports.value.map((report) => {
+      if (report.id !== reportId) return report
+      updated = { ...report, ...saved }
+      return updated
+    })
+    return updated
   }
 
   watch(range, load)
@@ -145,19 +173,20 @@ export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, '
   /** The report a row's menu is saving. */
   const busy = ref<string | null>(null)
 
-  /** Whether `report` is still the one open, after a load another report may have overtaken. */
-  const stillOpen = (report: InboxReport) => selected.value?.id === report.id
+  /** Counts each opening, so only the latest one's steps are shown, even for the same report. */
+  let opening = 0
 
   async function open(report: InboxReport) {
+    const request = ++opening
     selected.value = report
     detail.value = null
     detailFailed.value = false
     try {
       const loaded = await fetchReportDetail(report.id)
-      if (stillOpen(report)) detail.value = loaded
+      if (request === opening) detail.value = loaded
     } catch (error) {
       console.warn('The report could not load', error)
-      if (stillOpen(report)) detailFailed.value = true
+      if (request === opening) detailFailed.value = true
     }
   }
 
@@ -166,7 +195,9 @@ export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, '
     if (!report) return false
     saving.value = true
     try {
-      await inbox.update(report.id, triage)
+      const updated = await inbox.update(report.id, triage)
+      // The dialog shows who changed it last; another report may be open by now.
+      if (updated && selected.value?.id === report.id) selected.value = updated
       return true
     } catch (error) {
       console.warn('The report could not be saved', error)

@@ -107,6 +107,7 @@ export const metricsReportTheme = {
     factValue: 'min-w-0 break-words',
     links: 'flex flex-wrap gap-x-3 gap-y-1',
     link: 'text-accent underline-offset-2 hover:underline',
+    expired: 'text-muted',
     steps: 'flex max-h-64 flex-col overflow-y-auto font-mono text-2xs',
     step: 'flex gap-2 border-b border-border py-1 last:border-b-0',
     stepTime: 'shrink-0 text-muted tabular-nums',
