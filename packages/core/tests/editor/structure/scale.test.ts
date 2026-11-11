@@ -146,6 +146,37 @@ describe('scaleSelected', () => {
       expect(current(text.id).derivedTextHeight).toBe(54)
     })
 
+    test('undo with no fonts puts back the reach the scale measured, not one the measure left', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const unmeasured = fixedText('a\nb\nc', 0)
+      editor.graph.updateNode(unmeasured.id, { derivedTextHeight: null })
+      const measured = fixedText('a\nb\nc', 36)
+      editor.select([unmeasured.id, measured.id])
+      editor.scaleSelected(0.6, { x: 0, y: 0 })
+      expect(current(unmeasured.id).derivedTextHeight).toBe(21)
+
+      setTextMeasurer(null)
+      editor.undo.undo()
+      expect(current(unmeasured.id)).toMatchObject({ fontSize: 10, derivedTextHeight: null })
+      expect(current(measured.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 36 })
+      editor.undo.redo()
+      expect(current(unmeasured.id).derivedTextHeight).toBe(21)
+      expect(current(measured.id).derivedTextHeight).toBe(21)
+    })
+
+    test('undo with no fonts keeps a reach the scale measured back to where it was', () => {
+      editor = createEditor()
+      setTextMeasurer((node) => ({ width: node.width, height: 36 }))
+      const text = fixedText('a\nb\nc', 36)
+      editor.scaleSelected(2, { x: 0, y: 0 })
+      expect(current(text.id).derivedTextHeight).toBe(36)
+
+      setTextMeasurer(null)
+      editor.undo.undo()
+      expect(current(text.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 36 })
+    })
+
     test('measures the reach at the width auto layout stretches the text to', () => {
       editor = createEditor()
       setTextMeasurer((node) => ({

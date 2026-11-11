@@ -31,6 +31,24 @@ function remeasureFixedTextReach(ctx: EditorContext, id: string): void {
   }
 }
 
+function recordCommittedReach(
+  ctx: EditorContext,
+  fields: ScaledFields[],
+  reachBefore: ReadonlyMap<string, number | null>
+): void {
+  for (const field of fields) {
+    const committed = ctx.graph.getNode(field.id)?.derivedTextHeight
+    const original = reachBefore.get(field.id)
+    if (committed === undefined || original === undefined) {
+      continue
+    }
+    if (committed !== original || 'derivedTextHeight' in field.after) {
+      field.before.derivedTextHeight = original
+      field.after.derivedTextHeight = committed
+    }
+  }
+}
+
 /**
  * Scales the layers evenly about a canvas point as one undo step, as Figma's Scale tool does: text
  * sizes, strokes, effects, radii, spacing, and geometry scale with them, each keeps its angle, and
@@ -83,6 +101,10 @@ export function scaleLayers(
     }
     ctx.requestRender()
   }
+  const reachBefore = new Map(
+    fields.map((field) => [field.id, ctx.graph.getNode(field.id)?.derivedTextHeight ?? null])
+  )
   apply('after')
+  recordCommittedReach(ctx, fields, reachBefore)
   ctx.undo.push({ label: 'Scale', forward: () => apply('after'), inverse: () => apply('before') })
 }
