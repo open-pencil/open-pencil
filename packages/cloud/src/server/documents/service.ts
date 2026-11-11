@@ -48,7 +48,8 @@ import { announceVersions, recordCheckpoint } from '#cloud/server/documents/vers
 import type { CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
-import { createStorageQuotaService } from '#cloud/server/quota'
+import { storageLimitReached } from '#cloud/server/policy/storage'
+import { createStorageQuotaService, StorageQuotaExceededError } from '#cloud/server/quota'
 import { isUndefined, limitAsync, omitBy, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -451,6 +452,9 @@ export function createDocumentService(
       const role = await workspaceRole(database, userId, workspaceId)
       if (!role) throw new DocumentNotFoundError()
       if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
+      if (await storageLimitReached(database, options.policy, { workspaceId })) {
+        throw new StorageQuotaExceededError('The owner holds their whole storage allowance')
+      }
       const documentId = input.id ?? crypto.randomUUID()
       await insertDocument(database, {
         id: documentId,

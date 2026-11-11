@@ -146,6 +146,7 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
       { onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: false }) }
     ),
     permission: first.permission,
+    readOnly: first.readOnly,
     guest: true,
     images: sharedCloudRoomImages(client, link.shareId, input)
   })

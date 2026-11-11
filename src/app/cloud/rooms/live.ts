@@ -35,6 +35,11 @@ import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
 export const cloudRoomPermissions = shallowRef<ReadonlyMap<EditorStore, 'edit' | 'view'>>(new Map())
+/**
+ * Tabs that view their room only because the document's owner holds their whole storage
+ * allowance, for the status beside the name to say so and how to get editing back.
+ */
+export const cloudRoomsAtStorageLimit = shallowRef<ReadonlySet<EditorStore>>(new Set())
 /** Tabs the relay turned away for good, for the status beside the name; they do not rejoin on their own. */
 export const cloudRoomsRefused = shallowRef<ReadonlySet<EditorStore>>(new Set())
 const starting = new WeakSet<EditorStore>()
@@ -44,6 +49,13 @@ function setPermission(store: EditorStore, permission: 'edit' | 'view' | null) {
   if (permission) next.set(store, permission)
   else next.delete(store)
   cloudRoomPermissions.value = next
+}
+
+function setAtStorageLimit(store: EditorStore, atLimit: boolean) {
+  const next = new Set(cloudRoomsAtStorageLimit.value)
+  if (atLimit) next.add(store)
+  else next.delete(store)
+  cloudRoomsAtStorageLimit.value = next
 }
 
 /**
@@ -202,6 +214,8 @@ export function openCloudDocumentRoom(
     roomId: string
     transport: JoinCollabRoom
     permission: 'edit' | 'view'
+    /** Why a tab that could edit only views: its owner holds their whole storage allowance. */
+    readOnly?: 'storage-limit'
     /** A guest from a link edits but has no account to save with. */
     guest?: boolean
     /**
@@ -231,11 +245,13 @@ export function openCloudDocumentRoom(
   const scope = effectScope(true)
   const uploads = scope.run(() => {
     setPermission(store, options.permission)
+    setAtStorageLimit(store, options.readOnly === 'storage-limit')
     // A viewer sees the room's edits and makes none, as Figma's view-only files do.
     store.setReadOnly(!canEdit)
     if (!canSave) store.state.autosaveEnabled = false
     onScopeDispose(() => {
       setPermission(store, null)
+      setAtStorageLimit(store, false)
       store.setReadOnly(false)
     })
     followRelay(store, session)
@@ -430,6 +446,7 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
         onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: true })
       }),
       permission: first.permission,
+      readOnly: first.readOnly,
       images: cloudRoomImages(target.client, binding.documentId, first.permission === 'edit'),
       roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
       onRestored: restart
