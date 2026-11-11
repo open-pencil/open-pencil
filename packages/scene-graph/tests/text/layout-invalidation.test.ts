@@ -196,10 +196,25 @@ describe('path text without glyph outlines', () => {
     expect(node.textPathData).toEqual(pathData)
   })
 
+  test('drops its path on a type edit after the path box update cleared its glyphs', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 200, height: 80 } })
+    graph.updateNode(node.id, { fontSize: 30 })
+    expect(node.textPathData).toBeNull()
+  })
+
   test('drops its path when its type changes alone', () => {
     const graph = new SceneGraph()
     const node = outlinelessPathText(graph)
     graph.updateNode(node.id, { fontSize: 24 })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when the update clears the path box', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: null })
     expect(node.textPathData).toBeNull()
   })
 })
