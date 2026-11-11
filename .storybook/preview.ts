@@ -1,7 +1,8 @@
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
+import { useTextDirection } from '@vueuse/core'
 import { ConfigProvider } from 'reka-ui'
-import { computed, watch } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 
 // Points Core at the engine files the openPencil() Vite plugin serves.
 import '@/app/editor/canvas/canvaskit'
@@ -33,9 +34,8 @@ const preview: Preview = {
       components: { story, ConfigProvider },
       setup() {
         const dir = computed(() => (context.globals.direction === 'rtl' ? 'rtl' : 'ltr'))
-        watch(dir, (value) => document.documentElement.setAttribute('dir', value), {
-          immediate: true
-        })
+        const documentDirection = useTextDirection()
+        watchEffect(() => (documentDirection.value = dir.value))
         return { dir }
       },
       template: '<ConfigProvider :dir="dir"><story /></ConfigProvider>'
