@@ -27,7 +27,7 @@ Until you accept, the editor can't open the server's documents, and **Settings â
 
 **Delete accountâ€¦**, at the bottom of **Profile**, lists what goes before you confirm: the workspaces only you belong to, with their files; your membership in shared workspaces, whose files stay with the others; and your sign-in methods, sessions, and picture. It can't be undone, and if you signed in a while ago the server asks for your password first.
 
-- **Download all** saves every file you'd lose in one zip first, and names any it couldn't download.
+- **Download all** saves, in one zip, the files in the workspaces that go with your account and the ones you created in shared workspaces, and names any it couldn't download. It leaves out documents in Trash, so restore any you want first; documents an administrator blocked; and documents other people created and shared with you.
 - If you are the only admin of a workspace other people still use, make one of them an admin first. The server's only administrator has to make someone else a server administrator first too.
 
 On the hosted service, the [Privacy Policy](./legal/privacy#deleting) says how long deleted files are kept before they are removed for good. A self-hosted server's operator sets its own periods.

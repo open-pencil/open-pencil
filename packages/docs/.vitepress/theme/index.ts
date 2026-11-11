@@ -1,4 +1,5 @@
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
+import { inBrowser } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 
 import '@shikijs/vitepress-twoslash/style.css'
@@ -14,12 +15,19 @@ import SdkPropsTable from './components/SdkPropsTable.vue'
 import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
 
+import { movedSection } from './moved-sections'
+
 import './tailwind.css'
 import './vars.css'
 
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
+    // An old link to a section that moved to its own page lands here with that section's `#`.
+    if (inBrowser) {
+      const moved = movedSection(location.pathname, location.hash)
+      if (moved) location.replace(moved)
+    }
     app.use(TwoslashFloatingVue)
     app.component('SdkCard', SdkCard)
     app.component('SdkCardGroup', SdkCardGroup)
