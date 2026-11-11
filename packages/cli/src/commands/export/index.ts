@@ -13,6 +13,7 @@ import { ok, printError } from '#cli/format'
 import {
   loadDocument,
   populateDocumentPage,
+  populateNodePage,
   populateWholeDocument,
   requirePage
 } from '#cli/headless'
@@ -173,14 +174,15 @@ async function writeExport(output: string, result: ExportResult) {
   if (assets.length > 0) console.log(ok(`Assets: ${assets.length} files`))
 }
 
-function prepareGraphForExport(
+async function prepareGraphForExport(
   graph: Awaited<ReturnType<typeof loadDocument>>,
   pageId: string,
   format: string,
   args: ExportArgs
-): boolean {
+): Promise<boolean> {
   const wholeDocument = (format === 'FIG' || format === 'PPTX') && !args.page && !args.node
-  if (wholeDocument || args.node) populateWholeDocument(graph)
+  if (wholeDocument) populateWholeDocument(graph)
+  else if (args.node) await populateNodePage(graph, args.node)
   else populateDocumentPage(graph, pageId)
   return wholeDocument
 }
@@ -224,7 +226,7 @@ async function exportFromFile(format: string, args: ExportArgs) {
     process.exit(1)
   }
 
-  const wholeDocument = prepareGraphForExport(graph, page.id, format, args)
+  const wholeDocument = await prepareGraphForExport(graph, page.id, format, args)
 
   const target = args.node
     ? { scope: 'node' as const, nodeId: args.node }

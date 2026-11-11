@@ -1,9 +1,11 @@
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { pendingFigPageOfNode } from '@open-pencil/core/io/formats/fig'
 import {
   createCanvasKitRasterCodec,
   headlessRenderNodes
 } from '@open-pencil/core/io/formats/raster'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -14,15 +16,23 @@ import {
   loadDocument,
   measureDocumentText,
   measureTextHeadlessly,
-  populateWholeDocument
+  populateDocumentPage,
+  populateWholeDocument,
+  requirePage
 } from '#cli/headless'
 
 /**
  * A Figma API over a headless document, with CanvasKit raster export and pixel decoding, and
- * the renderer that measures text measuring geometry, booleans, and flatten too.
+ * the renderer that measures text measuring geometry, booleans, and flatten too. A page not
+ * loaded yet loads with its fonts when the script asks for it, as in Figma's dynamic-page mode.
  */
 export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> {
-  const figma = new FigmaAPI(graph)
+  const figma = new FigmaAPI(graph, {
+    loadPage: async (id) => {
+      if (populateDocumentPage(graph, id)) await prepareGraphFonts(graph, [id])
+    },
+    pageOfNode: (id) => pendingFigPageOfNode(graph, id)
+  })
   const renderer = await measureTextHeadlessly()
   // The process's one renderer keeps paths by layer id, which another document's layers share.
   renderer.nodePaths.clear()
@@ -32,6 +42,23 @@ export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> 
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
   figma.rasterCodec = createCanvasKitRasterCodec(await getCanvasKit())
   return figma
+}
+
+/**
+ * Opens a document file for a script or a tool with every page loaded, or with `pageId` only that
+ * page, which then is the current page; the script loads the others as it asks for them.
+ */
+export async function openHeadlessFigma(
+  file: string,
+  pageId?: string
+): Promise<{ graph: SceneGraph; figma: FigmaAPI }> {
+  const graph = await loadDocument(file)
+  if (pageId) populateDocumentPage(graph, requirePage(graph, pageId, 'id').id)
+  else populateWholeDocument(graph)
+  await measureDocumentText(graph)
+  const figma = await createHeadlessFigma(graph)
+  if (pageId) figma.currentPage = figma.wrapNode(pageId)
+  return { graph, figma }
 }
 
 /**
@@ -50,10 +77,7 @@ export async function runToolData(
   }
   const tool = ALL_TOOLS.find((candidate) => candidate.name === name)
   if (!tool) throw new Error(`Unknown tool: ${name}`)
-  const graph = await loadDocument(requireFile(file))
-  populateWholeDocument(graph)
-  await measureDocumentText(graph)
-  const figma = await createHeadlessFigma(graph)
+  const { graph, figma } = await openHeadlessFigma(requireFile(file), targetArgs?.['page-id'])
   await tool.loadFonts(figma, args)
   return { result: await editDocument(graph, () => tool.execute(figma, args)), graph }
 }

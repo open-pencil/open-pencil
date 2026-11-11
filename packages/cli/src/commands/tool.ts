@@ -136,6 +136,11 @@ const call = defineCommand({
     },
     ...documentWriteOptions,
     ...appTargetOptions,
+    'page-id': {
+      ...appTargetOptions['page-id'],
+      description:
+        'Page ID to run on; with a file only that page loads, and others as the tool asks'
+    },
     json
   },
   async run({ args }) {

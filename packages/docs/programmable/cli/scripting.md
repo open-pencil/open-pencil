@@ -87,6 +87,14 @@ openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fi
 cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
+## One page of a large file
+
+A `.fig` script loads every page before it runs, which takes a while for a file with tens of pages. `--page-id` loads only that page, from `openpencil pages design.fig --json`, and runs the script on it as `figma.currentPage`. Other pages have no layers until the script loads them, as in Figma's dynamic-page mode: `page.loadAsync()`, `figma.setCurrentPageAsync(page)`, `figma.getNodeByIdAsync(id)` and `figma.loadAllPagesAsync()` load them. `--write` and `--output` save every page, loaded or not. `openpencil tool call` takes the same option.
+
+```sh
+openpencil eval design.fig --page-id 12:34 -c "return figma.currentPage.children.length"
+```
+
 ## Live app mode
 
 Omit the file path to run against the currently open document in the desktop app:

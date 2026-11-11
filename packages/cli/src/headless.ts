@@ -4,7 +4,11 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { flushPendingComponentSync } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import {
+  pendingFigPageOfNode,
+  populateAllFigPages,
+  populateFigPage
+} from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
 import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import {
@@ -142,6 +146,16 @@ export function populateWholeDocument(graph: SceneGraph): boolean {
   return changed
 }
 
+/**
+ * Loads the page holding the layer `nodeId`, which the archive finds by the layer's record, and
+ * every page for a layer with no record of its own, such as one inside an instance.
+ */
+export async function populateNodePage(graph: SceneGraph, nodeId: string): Promise<void> {
+  const pageId = await pendingFigPageOfNode(graph, nodeId)
+  if (pageId) populateDocumentPage(graph, pageId)
+  else if (!graph.getNode(nodeId)) populateWholeDocument(graph)
+}
+
 /** A string argument of an RPC command, such as its `page` or `format`. */
 function stringArg(args: unknown, key: string): string | undefined {
   if (!args || typeof args !== 'object' || Array.isArray(args)) return undefined
@@ -172,11 +186,12 @@ export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?:
   populateWholeDocument(graph)
 }
 
-export function requirePage(graph: SceneGraph, pageName?: string) {
+/** The page `pageName` names, by its ID with `by: 'id'`; the first page without one. */
+export function requirePage(graph: SceneGraph, pageName?: string, by: 'name' | 'id' = 'name') {
   const pages = graph.getPages()
-  const page = pageName ? pages.find((p) => p.name === pageName) : pages[0]
+  const page = pageName ? pages.find((p) => p[by] === pageName) : pages[0]
   if (!page) {
-    const available = pages.map((p) => `"${p.name}"`).join(', ')
+    const available = pages.map((p) => `"${p[by]}"`).join(', ')
     printError(
       pageName
         ? `Page "${pageName}" not found. Available pages: ${available || 'none'}.`

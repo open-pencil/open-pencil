@@ -6,15 +6,8 @@ import { compileScript } from '@open-pencil/core/tools'
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { printError } from '#cli/format'
-import {
-  documentWriteOptions,
-  editDocument,
-  loadDocument,
-  measureDocumentText,
-  populateWholeDocument,
-  writeFigDocument
-} from '#cli/headless'
-import { createHeadlessFigma } from '#cli/tool-data'
+import { documentWriteOptions, editDocument, writeFigDocument } from '#cli/headless'
+import { openHeadlessFigma } from '#cli/tool-data'
 
 function printResult(value: unknown, json: boolean) {
   if (json || !process.stdout.isTTY) {
@@ -45,6 +38,11 @@ export default defineCommand({
     stdin: { type: 'boolean', description: 'Read code from stdin' },
     ...documentWriteOptions,
     ...appTargetOptions,
+    'page-id': {
+      ...appTargetOptions['page-id'],
+      description:
+        'Page ID to run on; with a file only that page loads, and the script loads others as it asks'
+    },
     json: { type: 'boolean', description: 'Output as JSON' },
     quiet: { type: 'boolean', alias: 'q', description: 'Suppress output' }
   },
@@ -71,10 +69,7 @@ export default defineCommand({
     }
 
     const file = requireFile(args.file)
-    const graph = await loadDocument(file)
-    populateWholeDocument(graph)
-    await measureDocumentText(graph)
-    const figma = await createHeadlessFigma(graph)
+    const { graph, figma } = await openHeadlessFigma(file, args['page-id'])
 
     let result: unknown
     try {
