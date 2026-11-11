@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { CloudLegalDiscovery } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { portalForm } from '@/components/cloud-portal/ui'
@@ -10,6 +11,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalPublicLayout from '../layout/PortalPublicLayout.vue'
 import type { PortalSignInMethod } from '../types'
+import PortalLegalNote from './PortalLegalNote.vue'
 
 /**
  * Signing in to or joining a Cloud server with what it offers: social accounts, email and
@@ -23,7 +25,8 @@ const {
   approvalRequired = false,
   error = null,
   submitting = false,
-  returnsTo = null
+  returnsTo = null,
+  legal
 } = defineProps<{
   host: string
   mode: 'sign-in' | 'sign-up'
@@ -35,6 +38,8 @@ const {
   submitting?: boolean
   /** Where the person goes after signing in. */
   returnsTo?: 'desktop' | 'editor' | null
+  /** The server's terms and privacy policy, which continuing agrees to. */
+  legal?: CloudLegalDiscovery
 }>()
 
 const emit = defineEmits<{
@@ -125,6 +130,8 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
         {{ labels[method] }}
       </AppButton>
     </div>
+
+    <PortalLegalNote :legal="legal" />
 
     <template v-if="emailPassword?.signUp || signUp" #aside>
       {{ signUp ? messages.haveAccount : messages.newHere }}

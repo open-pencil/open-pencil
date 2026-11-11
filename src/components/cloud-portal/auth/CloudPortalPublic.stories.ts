@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
+import { provide } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
 import IconMailCheck from '~icons/lucide/mail-check'
@@ -7,10 +8,12 @@ import IconMonitorX from '~icons/lucide/monitor-x'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
+import { PORTAL_LEGAL } from '../layout/legal'
 import PortalDeviceApproval from './PortalDeviceApproval.vue'
 import PortalNotice from './PortalNotice.vue'
 import PortalResetPassword from './PortalResetPassword.vue'
 import PortalSignIn from './PortalSignIn.vue'
+import PortalTerms from './PortalTerms.vue'
 import PortalTwoFactor from './PortalTwoFactor.vue'
 
 const host = 'cloud.studio.example'
@@ -20,6 +23,7 @@ const components = {
   PortalNotice,
   PortalResetPassword,
   PortalSignIn,
+  PortalTerms,
   PortalTwoFactor,
   AppButton,
   IconCheck,
@@ -41,6 +45,26 @@ const story = (template: string): Story => ({
   render: () => ({ components, setup: () => ({ host }), template: frame(template) })
 })
 
+/** A server with its own terms, privacy policy, abuse address, and minimum age, as `[legal]` sets. */
+const legal = {
+  termsURL: 'https://studio.example/terms',
+  privacyURL: 'https://studio.example/privacy',
+  termsVersion: '2026-11-15',
+  requireAcceptance: true,
+  abuseEmail: 'abuse@studio.example',
+  minimumAge: 16
+}
+const legalStory = (template: string): Story => ({
+  render: () => ({
+    components,
+    setup: () => {
+      provide(PORTAL_LEGAL, legal)
+      return { host, legal }
+    },
+    template: frame(template)
+  })
+})
+
 export const SignIn = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
 )
@@ -52,6 +76,13 @@ export const SignInWithAnError = story(
 )
 export const SignUpWithApproval = story(
   `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" approval-required />`
+)
+export const SignUpWithTerms = legalStory(
+  `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" :legal="legal" />`
+)
+export const AcceptTerms = legalStory(`<PortalTerms :host="host" :legal="legal" />`)
+export const TermsChangedWhileReading = legalStory(
+  `<PortalTerms :host="host" :legal="legal" error="The terms changed while this page was open. Reload it to read the current version." />`
 )
 export const CheckYourEmail = story(`
   <PortalNotice :host="host" heading="Check your email" description="We sent a link to ana@studio.example. Open it on this device to finish creating your account.">

@@ -80,7 +80,8 @@ function reachableObjects(roots: object, depth = 4): Map<unknown, string> {
           next.push([attempt(() => Reflect.apply(member, value, [])), `${path}.${name}()`])
       }
       if (value instanceof Map || value instanceof Set || Array.isArray(value))
-        for (const [index, item] of [...value.values()].entries()) next.push([item, `${path}[${index}]`])
+        for (const [index, item] of [...value.values()].entries())
+          next.push([item, `${path}[${index}]`])
     }
     frontier = next
   }
@@ -89,8 +90,14 @@ function reachableObjects(roots: object, depth = 4): Map<unknown, string> {
 
 function members(value: object): [string | symbol, unknown][] {
   const found: [string | symbol, unknown][] = []
-  for (let owner: object | null = value; !BUILT_IN_PROTOTYPES.has(owner); owner = Object.getPrototypeOf(owner) as object | null)
-    if (owner) for (const key of Reflect.ownKeys(owner)) found.push([key, attempt(() => Reflect.get(value, key))])
+  for (
+    let owner: object | null = value;
+    !BUILT_IN_PROTOTYPES.has(owner);
+    owner = Object.getPrototypeOf(owner) as object | null
+  )
+    if (owner)
+      for (const key of Reflect.ownKeys(owner))
+        found.push([key, attempt(() => Reflect.get(value, key))])
   return found
 }
 
@@ -130,7 +137,9 @@ describe('the scripting surface is Figma’s Plugin API', () => {
     const reached = reachableObjects(roots)
     const layers = new Set<unknown>(graph.getAllNodes())
     expect(
-      [...reached].filter(([value]) => value instanceof SceneGraph || layers.has(value)).map(([, path]) => path)
+      [...reached]
+        .filter(([value]) => value instanceof SceneGraph || layers.has(value))
+        .map(([, path]) => path)
     ).toEqual([])
   })
 

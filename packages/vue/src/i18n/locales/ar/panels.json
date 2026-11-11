@@ -133,6 +133,11 @@
   "starRatio": "النسبة",
   "spread": "الانتشار",
   "blur": "التمويه",
+  "blurType": "نوع التمويه",
+  "uniformBlur": "موحد",
+  "progressiveBlur": "تدريجي",
+  "blurStart": "البداية",
+  "blurEnd": "النهاية",
   "showShadowBehind": "إظهار خلف المناطق الشفافة",
   "effectColor": "اللون",
   "page": "الصفحة",
@@ -394,7 +399,6 @@
   "effectSettings": "إعدادات التأثير",
   "expandEffectSettings": "توسيع إعدادات التأثير",
   "collapseEffectSettings": "طي إعدادات التأثير",
-  "toggleExportPreview": "تبديل معاينة التصدير",
   "dropShadow": "ظل خارجي",
   "innerShadow": "ظل داخلي",
   "layerBlur": "تمويه الطبقة",
@@ -679,5 +683,8 @@
   "brightness": "السطوع",
   "lightness": "الإضاءة",
   "chroma": "الصفاء اللوني",
-  "alpha": "ألفا"
+  "alpha": "ألفا",
+  "scale": "تحجيم",
+  "scaleMultiplier": "معامل التحجيم",
+  "scaleAnchor": "نقطة الارتكاز"
 }

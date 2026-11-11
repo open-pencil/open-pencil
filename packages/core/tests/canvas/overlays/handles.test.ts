@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
 import { createDefaultEditorState } from '#core/editor'
@@ -23,14 +23,16 @@ const BLACK = { r: 0, g: 0, b: 0, a: 1 }
 function cornerPixel(layers: number, levels: { layerEdits?: LayerEdits; readOnly?: boolean }) {
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')
-  const ids = Array.from({ length: layers }, (_, i) =>
-    graph.createNode('RECTANGLE', page.id, {
-      x: 16 + i * 12,
-      y: 16 + i * 12,
-      width: 20,
-      height: 20,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-    }).id
+  const ids = Array.from(
+    { length: layers },
+    (_, i) =>
+      graph.createNode('RECTANGLE', page.id, {
+        x: 16 + i * 12,
+        y: 16 + i * 12,
+        width: 20,
+        height: 20,
+        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      }).id
   )
   const state = createDefaultEditorState(page.id)
   state.pageColor = BLACK
@@ -69,9 +71,12 @@ describe.each([1, 2])('a selection of %i layer(s)', (layers) => {
     expect(cornerPixel(layers, {})).toEqual(WHITE_PIXEL)
   })
 
-  test.each(['move', 'none'] as const)('shows none while layers take layerEdits %s', (layerEdits) => {
-    expect(cornerPixel(layers, { layerEdits })).toEqual(BLACK_PIXEL)
-  })
+  test.each(['move', 'none'] as const)(
+    'shows none while layers take layerEdits %s',
+    (layerEdits) => {
+      expect(cornerPixel(layers, { layerEdits })).toEqual(BLACK_PIXEL)
+    }
+  )
 
   test('shows none in a read-only document', () => {
     expect(cornerPixel(layers, { readOnly: true })).toEqual(BLACK_PIXEL)

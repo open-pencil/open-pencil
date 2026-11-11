@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import type { PortalAccountArchive } from '@/components/cloud-portal/types'
+import type { PortalAccountArchive } from '@/app/cloud-portal/archive'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmTextField from '@/components/ui/dialog/AppConfirmTextField.vue'
 import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'

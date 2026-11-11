@@ -128,8 +128,8 @@ export class TileImageCache {
 
   /**
    * Marks every tile of `level` as used now, so it is evicted after everything else: the page
-   * copy is the stand-in of last resort, and a zoom that renders through the budget must not
-   * lose it to tiles it will discard at the next step.
+   * copy and the last complete level are the stand-ins of last resort, and a zoom that renders
+   * through the budget must not lose them to tiles it will discard at the next step.
    */
   touchLevel(pageId: string, level: number): void {
     const tiles = this.entriesByLevel.get(pageId)?.get(level)

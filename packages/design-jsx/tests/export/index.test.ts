@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { glass, sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
+import {
+  backgroundBlur,
+  glass,
+  sceneNodeAttributes,
+  sceneNodeToJSX,
+  selectionToJSX
+} from '#design-jsx/index'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -405,6 +411,34 @@ describe('sceneNodeToJSX', () => {
     })
     expect(sceneNodeToJSX(node.id, graph)).toBe(
       '<Rectangle name="Glass" w={10} h={10} effects={[backgroundBlur(12)]} />'
+    )
+  })
+
+  test('effects: a progressive blur exports as the call that builds it', () => {
+    const graph = makeGraph()
+    const effect = backgroundBlur({ radius: 20, startRadius: 2 })
+    expect(effect.progressive).toEqual({
+      startRadius: 2,
+      startOffset: { x: 0.5, y: 0 },
+      endOffset: { x: 0.5, y: 1 }
+    })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Fade',
+      width: 10,
+      height: 10,
+      effects: [effect]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toBe(
+      [
+        '<Rectangle name="Fade" w={10} h={10} effects={[',
+        '  backgroundBlur({',
+        '    radius: 20,',
+        '    startRadius: 2,',
+        '    startOffset: { x: 0.5, y: 0 },',
+        '    endOffset: { x: 0.5, y: 1 }',
+        '  })',
+        ']} />'
+      ].join('\n')
     )
   })
 

@@ -173,6 +173,8 @@
   "settingsSignedOut": "Disconnesso",
   "settingsWaitingForApproval": "In attesa che un amministratore approvi il tuo account",
   "settingsAccessClosed": "Un amministratore ha rifiutato o revocato il tuo accesso",
+  "settingsAcceptTerms": "Accetta i termini di questo server per continuare a usarlo",
+  "settingsReviewTerms": "Leggi i termini",
   "settingsOptionsFor": "Opzioni per {host}",
   "settingsAccountAndSecurity": "Account e sicurezza",
   "settingsShowOnHome": "Mostra in Home",

@@ -1,10 +1,16 @@
 import { afterAll, describe, expect, test } from 'bun:test'
-import { expectDefined } from '@open-pencil/test-support/assert'
+import { readFileSync } from 'node:fs'
+
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { cachedGlyphWidth, measureGlyphWidth, LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
-import { readFileSync } from 'node:fs'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
+
+import {
+  cachedGlyphWidth,
+  measureGlyphWidth,
+  LabelParagraphCache
+} from '#core/canvas/labels/paragraph-cache'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(8, 8), 'surface'))
@@ -22,7 +28,6 @@ test('a label is measured once per font and text', () => {
     font.delete()
   }
 })
-
 
 describe('label paragraph cache', () => {
   test('shapes labels with Inter and invalidates native paragraphs by font generation', () => {

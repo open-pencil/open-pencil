@@ -295,6 +295,13 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
+}
+
 export interface AccountEntitlementTable {
   userId: string
   values: unknown
@@ -419,6 +426,7 @@ export interface CloudDatabase {
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable

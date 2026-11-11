@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('absolute children in Yoga tree', () => {
   test('absolute children do not affect auto-layout flow', () => {

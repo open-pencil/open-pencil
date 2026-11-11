@@ -1,10 +1,9 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Surface } from '@open-pencil/canvaskit'
-
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import type { ImagePreview, ImagePreviewDecoder } from '#core/canvas/images/previews'
@@ -183,6 +182,34 @@ describe('tile scheduling', () => {
       expect(panning.covered).toBe(false)
       expect(panning.fallbackTileCount).toBeGreaterThan(0)
       expect(panning.fallbackTileCount).toBeLessThan(visibleTiles)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('keeps the last complete level while a zoom renders through the cache budget', () => {
+    const { graph, surface, renderer, pageId } = createGridScene()
+    const tileBytes = 512 * 512 * 4
+    // Room for a few viewports: a zoom that renders a new step every frame fills it within a
+    // few steps.
+    const controller = new TiledSceneController({
+      now: () => 0,
+      tileCacheBudget: () => 48 * tileBytes
+    })
+    try {
+      let result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      for (let frame = 0; frame < 30 && (result.pending || result.backgroundPending); frame++) {
+        result = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
+      }
+      expect(result.covered).toBe(true)
+
+      renderer.navigationPhase = 'zoom'
+      for (let step = 1; step <= 20; step++) {
+        renderer.zoom = 1.15 ** step
+        controller.renderFrame(renderer, surface.getCanvas(), graph, 1, step)
+        expect(controller.isRendered({ pageId, level: 1, x: 0, y: 0 })).toBe(true)
+      }
     } finally {
       controller.destroy()
       renderer.destroy()

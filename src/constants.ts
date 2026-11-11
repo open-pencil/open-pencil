@@ -106,6 +106,11 @@ export const MCP_SERVER_DOCS_URL = `${DOCS_ORIGIN}/programmable/mcp-server`
 export const CLOUD_DOCS_URL = `${DOCS_ORIGIN}/user-guide/openpencil-cloud`
 export const WEBMCP_DOCS_URL = `${MCP_SERVER_DOCS_URL}#webmcp`
 export const MCP_CONNECTIONS_DOCS_URL = `${DOCS_ORIGIN}/programmable/ai-chat#external-mcp-connections`
+/** The Help menu's links: the guides, the shortcut reference, the community, and the source. */
+export const DOCS_URL = `${DOCS_ORIGIN}/getting-started`
+export const KEYBOARD_SHORTCUTS_URL = `${DOCS_ORIGIN}/reference/keyboard-shortcuts`
+export const COMMUNITY_URL = 'https://discord.gg/4wXc9fuZfm'
+export const REPOSITORY_URL = 'https://github.com/open-pencil/open-pencil'
 export const CODING_AGENTS_GUIDE_URL = `${DOCS_ORIGIN}/programmable/coding-agents`
 export const PI_GUIDE_URL = `${CODING_AGENTS_GUIDE_URL}#pi`
 

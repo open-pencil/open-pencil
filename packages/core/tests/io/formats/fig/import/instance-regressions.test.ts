@@ -4,8 +4,13 @@ import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import {
+  childMatching,
+  childNamed,
+  collectAllNodes,
+  previewChild
+} from '@open-pencil/test-support/fig/traversal'
 import { readFixtureBytes } from '@open-pencil/test-support/paths'
-import { childMatching, childNamed, collectAllNodes, previewChild } from '@open-pencil/test-support/fig/traversal'
 
 import { computeContentBounds } from '#core/io/formats/raster'
 setDefaultTimeout(60_000)

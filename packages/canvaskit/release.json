@@ -1,9 +1,9 @@
 {
-  "skia": "8eaf2af598785dc1c2509a99cfe7e526c3f070fc",
+  "skia": "1b658c75d39ecf88f979275fde7d47c6a3eb9cb8",
   "files": {
     "THIRD-PARTY-NOTICES.md": "885ec03e9feafe74d061056775fee670a8859389317fa60ee91d6bb678822128",
-    "canvaskit.js": "63141700243ddb223e2c682ae489396e73297a1c667e5f96b16d6626adf5b24a",
-    "canvaskit.wasm": "b4d9684918d4c8532c49d096e1254fb51384752d705347ae7302f84d85d54bd2",
-    "index.d.ts": "4827e07504b79c0a878ec0ae9fb6325289be5c24aa201922a26d53c193c0d191"
+    "canvaskit.js": "23ac4e3d8272a1aec16f0c75fbf8b255db415ac911565c2bca8c99142ae17b69",
+    "canvaskit.wasm": "ddffed66b64166be0c582cf93846dd62bc83b3c3570c2aaf0e79de5f664c6c78",
+    "index.d.ts": "04c03f60b51ee4bf7fc9fcb846ffb34dd1058b73d3d6b5fe6fc507468f2e5c43"
   }
 }

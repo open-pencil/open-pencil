@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { createEditor, executeAtomicTool, type DocumentChange } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { diffFields } from '#core/editor/history/diff'
 import { isAtomicTool } from '#core/tools/schema'
@@ -130,7 +130,13 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     text_decoration: 'UNDERLINE'
   }),
   set_radius: (t) => ({ id: t.rect, radius: 6, top_left: 2 }),
-  set_size_limits: (t) => ({ id: t.rect, min_width: 10, max_width: 90, min_height: 5, max_height: 80 }),
+  set_size_limits: (t) => ({
+    id: t.rect,
+    min_width: 10,
+    max_width: 90,
+    min_height: 5,
+    max_height: 80
+  }),
   set_blend_mode: (t) => ({ id: t.rect, mode: 'MULTIPLY' }),
   set_fill: (t) => ({ id: t.rect, color: '#00ff00' }),
   set_stroke: (t) => ({ id: t.rect, color: '#112233', weight: 2, align: 'CENTER' }),

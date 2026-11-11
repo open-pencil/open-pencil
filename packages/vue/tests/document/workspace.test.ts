@@ -2,13 +2,12 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 
 import { defineComponent, h, type ComponentPublicInstance } from 'vue'
 
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import {
   useDocumentWorkspace,
   type DocumentWorkspaceItem,
   type DocumentWorkspaceSource
 } from '@open-pencil/vue/document/workspace'
-
-import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 type Deferred<Value> = {
   promise: Promise<Value>
   resolve(value: Value): void

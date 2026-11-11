@@ -79,8 +79,9 @@ Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain 
 | Key                          | Values                                                                                                                                                                    |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `appearance.theme`           | `dark`, `light`, `auto`                                                                                                                                                   |
-| `appearance.language`        | `en`, `ar`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `zh-CN`                                                                                                          |
+| `appearance.language`        | `en`, `ar`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `zh-CN`                                                                                                    |
 | `appearance.animations`      | `system`, `off`                                                                                                                                                           |
+| `appearance.mirrorInterface` | `true`, `false`: whether a right-to-left language such as Arabic mirrors the interface                                                                                    |
 | `appearance.accent`          | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
 | `editing.snapping.geometry`  | `true`, `false`                                                                                                                                                           |
 | `editing.snapping.objects`   | `true`, `false`                                                                                                                                                           |

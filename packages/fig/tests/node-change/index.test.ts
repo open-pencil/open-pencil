@@ -238,6 +238,38 @@ describe('@open-pencil/fig NodeChange policy', () => {
     })
   })
 
+  test('reads a progressive blur under the names Figma copies it with', () => {
+    // A rectangle's effects as Figma 126 copied them: a progressive layer blur from 3 at (0.1, 0.2)
+    // to 12 at (0.7, 0.9), and a normal one, which leaves the progressive fields out.
+    const [progressive, normal] = convertEffects([
+      {
+        type: 'FOREGROUND_BLUR',
+        offset: { x: 0, y: 0 },
+        radius: 12,
+        visible: true,
+        blendMode: 'NORMAL',
+        spread: 0,
+        showShadowBehindNode: true,
+        blurOpType: 'PROGRESSIVE',
+        startOffset: { x: 0.10000000149011612, y: 0.20000000298023224 },
+        endOffset: { x: 0.699999988079071, y: 0.8999999761581421 },
+        startRadius: 3,
+        color: { r: 0, g: 0, b: 0, a: 1 }
+      },
+      { type: 'FOREGROUND_BLUR', radius: 5, visible: true }
+    ])
+    expect(progressive).toMatchObject({
+      type: 'FOREGROUND_BLUR',
+      radius: 12,
+      progressive: {
+        startRadius: 3,
+        startOffset: { x: 0.10000000149011612, y: 0.20000000298023224 },
+        endOffset: { x: 0.699999988079071, y: 0.8999999761581421 }
+      }
+    })
+    expect(normal.progressive).toBeUndefined()
+  })
+
   test('preserves the translation of rotated and mirrored Figma instances', () => {
     const props = nodeChangeToProps(
       {

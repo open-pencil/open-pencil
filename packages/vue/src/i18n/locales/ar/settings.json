@@ -2,6 +2,8 @@
   "appearance": "المظهر",
   "interfaceScale": "حجم الواجهة",
   "interfaceScaleDescription": "تغيير حجم اللوحات والنصوص وعناصر التحكم دون تغيير تكبير لوحة الرسم.",
+  "mirrorInterface": "عكس اتجاه الواجهة",
+  "mirrorInterfaceDescription": "ترتيب اللوحات والقوائم وعناصر التحكم من اليمين إلى اليسار كما تُقرأ اللغة. تبقى لوحة الرسم والإحداثيات والكود من اليسار إلى اليمين.",
   "animations": "الحركات",
   "animationsSystem": "اتباع النظام",
   "animationsOff": "إيقاف",

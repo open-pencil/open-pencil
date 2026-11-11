@@ -225,7 +225,8 @@ async function testConnection() {
               configured ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit
+              }}<icon-lucide-chevron-right data-direction="reading" class="size-3.5"
             /></template>
           </AppActionRow>
           <AppButton

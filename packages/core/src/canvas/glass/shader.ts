@@ -23,7 +23,9 @@ import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
 import geometrySource from './geometry.sksl?raw'
 import lightSource from './light.sksl?raw'
+import mapSource from './map.sksl?raw'
 import refractionSource from './refraction.sksl?raw'
+import shapeSource from './shape.sksl?raw'
 
 /**
  * The most outline segments a non-box shape passes to the shaders, and how many consecutive ones
@@ -46,14 +48,31 @@ interface GeometryUniforms {
   chunks: ArrayLike<number>
 }
 
-export const GLASS_REFRACTION = defineShader<
-  GeometryUniforms & { refraction: number; dispersion: number }
->('glass refraction', geometrySource, refractionSource)
+/** Where the geometry map lies in the layer and how many map pixels a layer unit spans. */
+export interface GeometryMapUniforms {
+  mapOrigin: Float2
+  mapScale: number
+}
 
-export const GLASS_LIGHT = defineShader<GeometryUniforms & { axis: Float2; intensity: number }>(
+/** How both glass shaders find the outline: computed, or read from the geometry map. */
+export type ShapeUniforms = GeometryUniforms & GeometryMapUniforms & { useMap: number }
+
+export const GLASS_REFRACTION = defineShader<
+  ShapeUniforms & { refraction: number; dispersion: number }
+>('glass refraction', geometrySource, shapeSource, refractionSource)
+
+export const GLASS_LIGHT = defineShader<ShapeUniforms & { axis: Float2; intensity: number }>(
   'glass light',
   geometrySource,
+  shapeSource,
   lightSource
+)
+
+/** Draws geometry() into a map both glass shaders read, so neither walks the outline per pixel. */
+export const GLASS_GEOMETRY_MAP = defineShader<GeometryUniforms & GeometryMapUniforms>(
+  'glass geometry map',
+  geometrySource,
+  mapSource
 )
 
 /** Where a glass layer's outline sits, in the layer's units: a box or flattened segments. */

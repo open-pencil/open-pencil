@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
+
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import { SkiaRenderer } from '#core/canvas'
