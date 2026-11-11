@@ -39,6 +39,10 @@ async function openPullRequest(): Promise<void> {
   // The request carries the pictures its pages were compared against, so a reviewer compares the
   // pages against the same ones; a document with none, or a project that refused, answers first.
   await baselines.publish()
+  // A branch that exists only on this machine is not a pull request yet: the GitHub CLI does not
+  // publish one, and the comparison page has nothing to compare. The branch goes out first, and a
+  // push git refused is reported by the panel instead of a page opened on top of it.
+  if (!(await control.push())) return
   const created = await control.createPullRequest()
   const url = created ?? control.compareLink.value
   if (url !== null) void openExternalLink(url)
