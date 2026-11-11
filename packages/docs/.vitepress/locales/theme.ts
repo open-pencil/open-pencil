@@ -1,5 +1,5 @@
 import type { NavLabels, ProgrammableLabels, SidebarLabels } from '#docs/labels.ts'
-import { sdkSidebar } from '#docs/sdk-sidebar.ts'
+import { sdkSidebar } from '#docs/sdk/sidebar.ts'
 import {
   developmentSidebar,
   guideSidebar,
