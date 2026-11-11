@@ -63,6 +63,22 @@ describe('navigation settle', () => {
     expect(editor.state.navigation.phase).toBe('idle')
   })
 
+  test('disposing an older controller leaves a newer settle alone', async () => {
+    editor = createEditor()
+    const older = createNavigationSettle(editor, 5)
+    const newer = createNavigationSettle(editor, 30)
+
+    editor.setNavigationPhase('pan')
+    older.settle()
+    editor.setNavigationPhase('pan')
+    newer.settle()
+    older.dispose()
+
+    expect(editor.state.navigation.phase).toBe('settling')
+    await Bun.sleep(40)
+    expect(editor.state.navigation.phase).toBe('idle')
+  })
+
   test('disposing a settling navigation returns it to idle', async () => {
     editor = createEditor()
     const settle = createNavigationSettle(editor, 5)
