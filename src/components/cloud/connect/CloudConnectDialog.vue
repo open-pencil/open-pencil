@@ -257,7 +257,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
             {{ methodLabels[method] }}
             <template #trailing>
               <icon-lucide-arrow-up-right v-if="desktop" class="size-3.5" />
-              <icon-lucide-chevron-right v-else class="size-3.5" />
+              <icon-lucide-chevron-right data-direction="reading" v-else class="size-3.5" />
             </template>
           </AppActionRow>
         </div>
@@ -322,7 +322,7 @@ function submitAccount(credentials: CloudAccountCredentials) {
           :copy-label="t.copyCode"
           :copied-label="common.copied"
           look="command"
-          :ui="{ root: 'w-full py-3 pl-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
+          :ui="{ root: 'w-full py-3 ps-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
         />
         <p :class="ui.deviceStatus()" role="status">
           <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />

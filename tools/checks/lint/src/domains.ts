@@ -58,6 +58,7 @@ import {
   preferVueUseIntervals,
   preferVueUseTimeouts
 } from '#lint/rules/vue/composition.ts'
+import { iconDirection } from '#lint/rules/vue/icons.ts'
 import { noOverlayContentFromOpenState, noRawOverlayRootsInApp } from '#lint/rules/vue/overlays.ts'
 import { noLargePropertySectionComponents } from '#lint/rules/vue/size.ts'
 import {
@@ -109,6 +110,7 @@ export const domains = {
     'vue-component-file-pascal-case': vueComponentFilePascalCase
   },
   vue: {
+    'icon-direction': iconDirection,
     'max-composition-root-lines': maxCompositionRootLines,
     'no-browser-side-effects': noBrowserSideEffectsInVue,
     'no-composable-state-wrappers': noComposableStateWrappers,

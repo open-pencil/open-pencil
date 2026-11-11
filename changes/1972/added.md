@@ -1,0 +1,1 @@
+- In Arabic the interface reads right to left: panels swap sides and menus, lists, and dialogs mirror, while the canvas, numbers, colors, alignment, and code stay left to right. Mirror the interface in General settings turns it off.

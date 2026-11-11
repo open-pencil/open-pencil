@@ -74,7 +74,8 @@ function isOpen(group: CapabilityGroup) {
             ]"
           >
             <icon-lucide-chevron-right
-              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none"
+              data-direction="reading"
+              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 rtl:group-data-[state=open]:-rotate-90 motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
@@ -121,18 +122,21 @@ function isOpen(group: CapabilityGroup) {
                 @click="openLabel && emit('open', group.key, item.key)"
               >
                 <code
+                  dir="ltr"
                   class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
                   >{{ item.name }}</code
                 >
                 <!-- One line each, so text cut off is a hover away. -->
                 <Tip :label="item.description" as-child truncated>
                   <span
+                    dir="auto"
                     class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full"
                     >{{ item.description }}</span
                   >
                 </Tip>
                 <span v-if="item.note" class="shrink-0 text-2xs text-warning">{{ item.note }}</span>
                 <icon-lucide-chevron-right
+                  data-direction="reading"
                   v-if="openLabel"
                   class="size-3.5 shrink-0 text-muted"
                   aria-hidden="true"
