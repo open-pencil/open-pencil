@@ -924,11 +924,19 @@ export class SceneGraph {
     const parent = this.nodes.get(id)
     if (!parent) return []
     const result: Array<{ node: SceneNode; depth: number }> = []
-    for (const childId of parent.childIds) {
+    const pending = [{ node: parent, depth, index: 0 }]
+    while (pending.length > 0) {
+      const frame = pending.at(-1)
+      if (!frame) break
+      const childId = frame.node.childIds[frame.index++]
+      if (childId === undefined) {
+        pending.pop()
+        continue
+      }
       const child = this.nodes.get(childId)
       if (!child) continue
-      result.push({ node: child, depth })
-      if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
+      result.push({ node: child, depth: frame.depth })
+      if (child.childIds.length > 0) pending.push({ node: child, depth: frame.depth + 1, index: 0 })
     }
     return result
   }

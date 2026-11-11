@@ -473,3 +473,62 @@ describe('SceneGraph', () => {
     expect(graph.getInstances(comp.id)).toHaveLength(0)
   })
 })
+
+
+describe('flattenTree', () => {
+  test('keeps depth-first sibling order and the supplied depth', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const first = graph.createNode('FRAME', page)
+    const nested = graph.createNode('FRAME', first.id)
+    const leaf = graph.createNode('RECTANGLE', nested.id)
+    const sibling = graph.createNode('RECTANGLE', page)
+
+    expect(graph.flattenTree(page, 3)).toEqual([
+      { node: first, depth: 3 },
+      { node: nested, depth: 4 },
+      { node: leaf, depth: 5 },
+      { node: sibling, depth: 3 }
+    ])
+    expect(graph.flattenTree()).toEqual([
+      { node: getNodeOrThrow(graph, page), depth: 0 },
+      { node: first, depth: 1 },
+      { node: nested, depth: 2 },
+      { node: leaf, depth: 3 },
+      { node: sibling, depth: 1 }
+    ])
+    expect(graph.flattenTree('missing')).toEqual([])
+    expect(graph.flattenTree(leaf.id)).toEqual([])
+  })
+
+  test('flattens a wide subtree without spreading its descendants into a call', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const frame = graph.createNode('FRAME', page)
+    const leaf = graph.createNode('RECTANGLE', frame.id)
+    // Repeated entries isolate traversal from node creation and layout costs.
+    frame.childIds = Array.from({ length: 1_000_000 }, () => leaf.id)
+    const sibling = graph.createNode('RECTANGLE', page)
+
+    const result = graph.flattenTree(page)
+
+    expect(result).toHaveLength(1_000_002)
+    expect(result[0]).toEqual({ node: frame, depth: 0 })
+    expect(result[1_000_000]).toEqual({ node: leaf, depth: 1 })
+    expect(result[1_000_001]).toEqual({ node: sibling, depth: 0 })
+  })
+
+  test('flattens deeply nested nodes without recursive calls', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    let parent = graph.createNode('FRAME', page)
+    for (let index = 0; index < 30_000; index++) {
+      parent = graph.createNode('FRAME', parent.id)
+    }
+
+    const result = graph.flattenTree(page)
+
+    expect(result).toHaveLength(30_001)
+    expect(result.at(-1)).toEqual({ node: parent, depth: 30_000 })
+  })
+})
