@@ -686,5 +686,8 @@
   "brightness": "السطوع",
   "lightness": "الإضاءة",
   "chroma": "الصفاء اللوني",
-  "alpha": "ألفا"
+  "alpha": "ألفا",
+  "scale": "تحجيم",
+  "scaleMultiplier": "معامل التحجيم",
+  "scaleAnchor": "نقطة الارتكاز"
 }

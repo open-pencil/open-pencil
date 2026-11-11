@@ -142,6 +142,7 @@ export function renderFromEditorState(
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,
       codeFocusNodeId: state.codeFocusNodeId,
+      scaleTool: state.activeTool === 'SCALE',
       autoLayoutHover: state.autoLayoutHover,
       shapeHandleHover: state.shapeHandleHover,
       connectorTarget: state.connectorTarget

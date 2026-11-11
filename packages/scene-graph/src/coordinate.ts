@@ -425,6 +425,19 @@ export function placeInResizedBounds(
   return { x, y, width, height, rotation, flipX, flipY }
 }
 
+/**
+ * Where a layer lands, in its parent's space, when it scales evenly by `scale` about a canvas
+ * point, as Figma's Scale tool scales it: its angle and flips stay, and the point stays put.
+ */
+export function placeScaledAbout(
+  placement: SelectionPlacement,
+  anchor: Vector,
+  scale: number
+): LayerPlacement {
+  const from = { x: anchor.x, y: anchor.y, width: 1, height: 1 }
+  return placeInResizedBounds(placement, from, { ...from, width: scale, height: scale })
+}
+
 /** A canvas pointer movement along the layer's own axes, as its handles measure it. */
 export function canvasDeltaInLayer(placement: SelectionPlacement, dx: number, dy: number): Vector {
   const [a, b, , c, d] = placement.world

@@ -1,3 +1,5 @@
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import type { createSelectionActions } from '#core/editor/selection'
 import type { createStructureActions } from '#core/editor/structure'
 import type { LayerType } from '#core/editor/structure/layer-type'
@@ -18,6 +20,9 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     flattenSelected: () => structure.flattenSelected(selection.getSelectedNodes()),
     outlineTextSelected: () => structure.outlineTextSelected(selection.getSelectedNodes()),
     outlineStrokeSelected: () => structure.outlineStrokeSelected(selection.getSelectedNodes()),
+    /** Scales the selection evenly about a canvas point, as Figma's Scale tool does. */
+    scaleSelected: (scale: number, anchor: Vector) =>
+      structure.scaleLayers(selection.getSelectedNodes(), scale, anchor),
     ungroupSelected: () => structure.ungroupSelected(selection.getSelectedNode()),
     /** Switches a layer to another type in place, as Figma's layer type menu does. */
     convertLayerType: (nodeId: string, type: LayerType) => structure.convertLayerType(nodeId, type)

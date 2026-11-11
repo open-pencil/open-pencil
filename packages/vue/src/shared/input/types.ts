@@ -12,9 +12,11 @@ import type {
 import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
+import type { ScaleSnapshot } from '@open-pencil/scene-graph/scaling'
 
 import type { FlowDrag } from '#vue/shared/input/flow-reorder'
 import type { LayerSizing } from '#vue/shared/input/resize/sizing'
+import type { ScalePreview } from '#vue/shared/input/scale'
 
 export interface DragDraw {
   type: 'draw'
@@ -138,6 +140,32 @@ export interface DragPan {
   startScreenY: number
   startPanX: number
   startPanY: number
+}
+
+/** A Scale-tool drag: the selection scales evenly from a handle, text and strokes included. */
+export interface DragScale {
+  type: 'scale'
+  handle: HandlePosition
+  startX: number
+  startY: number
+  /**
+   * The box the handle scales: a single layer's own, in its parent's axes, or a multi-selection's
+   * on the canvas.
+   */
+  origRect: Rect
+  /** The single layer that scales in its own frame, as it was when the drag began. */
+  layer: { nodeId: string; origPlacement: SelectionPlacement } | null
+  /** The layers the drag scales, as it found them. */
+  snapshot: ScaleSnapshot
+  /** The scale shown so far, recorded on commit. */
+  preview: ScalePreview
+  /** The scale the latest step reached. */
+  scale: number
+  /** The point the drag keeps in place: as fractions of the box, and on the canvas. */
+  anchorFraction: Vector
+  anchor: Vector
+  commit: () => void
+  cancel: () => void
 }
 
 export interface DragResize {
@@ -363,6 +391,7 @@ export type DragState =
   | DragPan
   | DragResize
   | DragResizeSelection
+  | DragScale
   | DragStickyScale
   | DragMarquee
   | DragRotate

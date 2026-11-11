@@ -658,5 +658,8 @@
   "variableModesFromLibraries": "Dalle librerie",
   "variableModeAuto": "Auto ({mode})",
   "variableModeAutoMixed": "Auto",
-  "variableModeHeading": "Modalità"
+  "variableModeHeading": "Modalità",
+  "scale": "Scala",
+  "scaleMultiplier": "Fattore di scala",
+  "scaleAnchor": "Ancoraggio scala"
 }
