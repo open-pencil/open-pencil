@@ -211,6 +211,13 @@ describe('path text without glyph outlines', () => {
     expect(node.textPathData).toBeNull()
   })
 
+  test('drops its path when the update repeats the path box it already has', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 100, height: 40 } })
+    expect(node.textPathData).toBeNull()
+  })
+
   test('drops its path when the update clears the path box', () => {
     const graph = new SceneGraph()
     const node = outlinelessPathText(graph)

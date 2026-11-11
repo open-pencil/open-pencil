@@ -41,7 +41,7 @@ export function textCacheInvalidationChanges(
     // preview keeps them until that workflow commits or an actual shaping edit occurs.
     const onlyPathBoxResize =
       !!node.textPathData && keys.every((key) => key === 'width' || key === 'height')
-    const placesPath = !!changes.textPathBox
+    const placesPath = keys.includes('textPathBox') && !!changes.textPathBox
     if (node.derivedTextGlyphs && !onlyPathBoxResize) {
       invalidated.derivedTextGlyphs = null
     }
