@@ -69,6 +69,12 @@ pub async fn project_start<R: tauri::Runtime>(
 
     let mut child = spawn(&folder, &command)?;
     let pid = child.id();
+    // The entry goes in before the thread that waits for the exit starts: a program that exits at
+    // once then finds its own entry and removes it, rather than leaving a dead id that a later
+    // read reports as running and a later stop signals.
+    if let Ok(mut running) = processes.lock() {
+        running.insert(id.clone(), pid);
+    }
     if let Some(stdout) = child.stdout.take() {
         let window = app.clone();
         let project = id.clone();
@@ -84,17 +90,15 @@ pub async fn project_start<R: tauri::Runtime>(
     let project = id.clone();
     std::thread::spawn(move || {
         let code = child.wait().ok().and_then(|status| status.code());
-        // The entry goes first: a process that already exited must never be killed again, and
-        // its id may belong to another process by then.
-        if let Ok(mut running) = processes.lock() {
-            running.remove(&project);
+        // A replaced or stopped run leaves the screen showing whatever holds the project now, so
+        // its exit is not news the screen is waiting for; only a run that still owns the entry
+        // reports one.
+        if !forget_own(&processes, &project, pid) {
+            return;
         }
         let _ = window.emit("project-exit", ExitPayload { id: project, code });
     });
 
-    if let Ok(mut running) = state.0.lock() {
-        running.insert(id, pid);
-    }
     Ok(pid)
 }
 
@@ -138,6 +142,20 @@ fn stop(processes: &Arc<Mutex<HashMap<String, u32>>>, id: &str) {
     if let Some(pid) = pid {
         kill_tree(pid);
     }
+}
+
+/// Forget the project's run when the entry is this run's own, answering whether it was. A project
+/// started again holds the newer process id, and a run stopped on purpose has no entry at all: the
+/// id may already belong to somebody else, so only an entry that is still ours goes.
+fn forget_own(processes: &Arc<Mutex<HashMap<String, u32>>>, id: &str, pid: u32) -> bool {
+    let Ok(mut running) = processes.lock() else {
+        return false;
+    };
+    if running.get(id) != Some(&pid) {
+        return false;
+    }
+    running.remove(id);
+    true
 }
 
 /// Whether the command came from the editor window, which is the only one that runs an application.
@@ -321,7 +339,47 @@ fn as_line(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{as_line, forward_lines, validate_command, validate_folder, MAX_LINE_LENGTH};
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+
+    use super::{
+        as_line, forget_own, forward_lines, validate_command, validate_folder, MAX_LINE_LENGTH,
+    };
+
+    fn processes(entries: &[(&str, u32)]) -> Arc<Mutex<HashMap<String, u32>>> {
+        let map: HashMap<String, u32> = entries
+            .iter()
+            .map(|(id, pid)| ((*id).to_owned(), *pid))
+            .collect();
+        Arc::new(Mutex::new(map))
+    }
+
+    #[test]
+    fn a_run_that_exits_forgets_its_own_entry() {
+        let running = processes(&[("karbid", 7)]);
+
+        assert!(forget_own(&running, "karbid", 7));
+        assert!(running.lock().expect("the lock is held by nobody").is_empty());
+    }
+
+    #[test]
+    fn a_replaced_run_leaves_the_entry_of_the_one_that_replaced_it() {
+        let running = processes(&[("karbid", 2)]);
+
+        // The first run woke after the second one was started and recorded.
+        assert!(!forget_own(&running, "karbid", 1));
+        assert_eq!(
+            running.lock().expect("the lock is held by nobody").get("karbid"),
+            Some(&2)
+        );
+    }
+
+    #[test]
+    fn a_run_that_was_stopped_reports_no_exit_of_its_own() {
+        let running = processes(&[]);
+
+        assert!(!forget_own(&running, "karbid", 7));
+    }
 
     fn lines_of(output: &[u8]) -> Vec<String> {
         let mut lines = Vec::new();
