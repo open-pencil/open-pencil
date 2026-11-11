@@ -105,7 +105,10 @@ export function usePageDrift(options: PageDriftOptions = {}) {
    * Run one action alone, reporting the reason nothing happened rather than throwing. Keeping a
    * baseline can fail on the document; a comparison only fails on a page that would not draw.
    */
-  async function run<T>(work: () => Promise<T>, reason: DriftFailure = 'not-saved'): Promise<T | null> {
+  async function run<T>(
+    work: () => Promise<T>,
+    reason: DriftFailure = 'not-saved'
+  ): Promise<T | null> {
     if (busy.value) return null
     busy.value = true
     failure.value = null

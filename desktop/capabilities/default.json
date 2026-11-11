@@ -57,11 +57,7 @@
     },
     {
       "identifier": "fs:allow-read-file",
-      "allow": [
-        { "path": "**" },
-        { "path": "$APPLOCALDATA/**" },
-        { "path": "**/.opencanvas/**" }
-      ]
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }, { "path": "**/.opencanvas/**" }]
     },
     {
       "identifier": "fs:allow-stat",
@@ -96,11 +92,7 @@
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [
-        { "path": "**" },
-        { "path": "$APPLOCALDATA/**" },
-        { "path": "**/.opencanvas/**" }
-      ],
+      "allow": [{ "path": "**" }, { "path": "$APPLOCALDATA/**" }, { "path": "**/.opencanvas/**" }],
       "deny": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },

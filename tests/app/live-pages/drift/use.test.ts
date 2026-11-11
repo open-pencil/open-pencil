@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
 import { ref } from 'vue'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { digestOf } from '@/app/live-pages/drift/compare'
 import { baselineMoment } from '@/app/live-pages/drift/format'
