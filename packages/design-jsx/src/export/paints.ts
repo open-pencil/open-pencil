@@ -237,6 +237,19 @@ function effectValue(effect: Effect): HelperCall {
       })
     )
   }
+  if (effect.progressive) {
+    const { startRadius, startOffset, endOffset } = effect.progressive
+    return helperCall(
+      EFFECT_HELPERS[effect.type],
+      options({
+        radius: effect.radius,
+        startRadius,
+        startOffset: { x: startOffset.x, y: startOffset.y },
+        endOffset: { x: endOffset.x, y: endOffset.y },
+        visible
+      })
+    )
+  }
   return helperCall(
     EFFECT_HELPERS[effect.type],
     visible === undefined ? effect.radius : { radius: effect.radius, visible }

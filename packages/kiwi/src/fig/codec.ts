@@ -176,6 +176,13 @@ export interface Effect {
   chromaticAberration?: number
   /** Figma writes 1 on every glass effect and has no control for it. */
   bevelSize?: number
+  /** `PROGRESSIVE` on a progressive blur; a normal blur leaves it out. */
+  blurOpType?: 'NORMAL' | 'PROGRESSIVE'
+  /** Where a progressive blur starts and ends, as fractions of the layer's size. */
+  startOffset?: Vector
+  endOffset?: Vector
+  /** A progressive blur's radius at its start; `radius` is the radius at its end. */
+  startRadius?: number
   colorVar?: VariableDataEntry
   radiusVar?: VariableDataEntry
   spreadVar?: VariableDataEntry

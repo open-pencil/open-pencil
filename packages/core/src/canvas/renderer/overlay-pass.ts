@@ -23,18 +23,20 @@ import { drawAIOverlays } from '#core/canvas/overlays/ai'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
-import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
+import { drawBlurRampHandles } from '#core/canvas/overlays/handles/blur-ramp'
+import { drawGradientHandles } from '#core/canvas/overlays/handles/gradient'
+import { drawShapeHandles } from '#core/canvas/overlays/handles/shape'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
-import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { drawRulers } from '#core/canvas/rulers'
 import { RULER_SIZE } from '#core/constants'
-import { editedGradient } from '#core/editor/gradient-edit'
+import { editedBlurRamp } from '#core/editor/handles/blur-ramp'
+import { editedGradient } from '#core/editor/handles/gradient'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
   return (
@@ -70,6 +72,37 @@ function suppressedIssueIds(overlays: RenderOverlays): Set<string> {
   if (overlays.editingTextId) ids.add(overlays.editingTextId)
   if (overlays.nodeEditState) ids.add(overlays.nodeEditState.nodeId)
   return ids
+}
+
+/**
+ * The selection and its handles, or, while a gradient or a progressive blur is edited, that
+ * paint's or blur's handles in their place, as Figma shows them. A previewing canvas shows neither.
+ */
+function drawSelectionOrEditHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays
+): void {
+  if (!overlays.playing && editedGradient(graph, overlays.gradientEdit)) {
+    drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
+    return
+  }
+  if (!overlays.playing && editedBlurRamp(graph, overlays.blurRampEdit)) {
+    drawBlurRampHandles(r, canvas, graph, overlays.blurRampEdit, overlays.rotationPreview)
+    return
+  }
+  drawSelection(r, canvas, graph, selectedIds, overlays)
+  if (!overlays.transforming && r.editHandles)
+    drawShapeHandles(
+      r,
+      canvas,
+      graph,
+      selectedIds,
+      overlays.shapeHandleHover,
+      overlays.rotationPreview
+    )
 }
 
 /**
@@ -144,22 +177,7 @@ export function drawOverlayPass(
   drawConnectorTarget(r, canvas, graph, overlays.connectorTarget, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')
-  // While a gradient is edited, Figma shows its handles instead of the layer's selection; a
-  // previewing canvas shows neither.
-  if (!overlays.playing && editedGradient(graph, overlays.gradientEdit))
-    drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
-  else {
-    drawSelection(r, canvas, graph, selectedIds, overlays)
-    if (!overlays.transforming && r.editHandles)
-      drawShapeHandles(
-        r,
-        canvas,
-        graph,
-        selectedIds,
-        overlays.shapeHandleHover,
-        overlays.rotationPreview
-      )
-  }
+  drawSelectionOrEditHandles(r, canvas, graph, selectedIds, overlays)
   if (measuring) drawMeasurements(r, canvas, graph, selectedIds, overlays.hoveredNodeId)
   r.profiler.endPhase('render:selection')
 

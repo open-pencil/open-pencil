@@ -5,7 +5,7 @@ import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
-import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
+import type { BlurRampEdit, GradientEdit, PencilState, ShapeHandleHover } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -51,6 +51,8 @@ export interface RenderOverlays {
   showSizeLabels?: boolean
   /** The gradient whose handles to draw in place of the selection. */
   gradientEdit?: GradientEdit | null
+  /** The progressive blur whose start and end handles to draw in place of the selection. */
+  blurRampEdit?: BlurRampEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
   editingTextId?: string | null

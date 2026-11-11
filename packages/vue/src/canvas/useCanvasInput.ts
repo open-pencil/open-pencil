@@ -60,6 +60,7 @@ import { handleNodeEditMarqueeMove, handleNodeEditMove } from '#vue/shared/input
 const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type']>([
   'draw',
   'gradient',
+  'blur-ramp',
   'rotate',
   'rotate-selection',
   'connector-draw',
@@ -341,6 +342,11 @@ export function useCanvasInput(
 
     if (d.type === 'gradient' || d.type === 'shape-handle') {
       d.update(sx, sy, e.shiftKey)
+      return
+    }
+
+    if (d.type === 'blur-ramp') {
+      d.update(sx, sy)
       return
     }
 

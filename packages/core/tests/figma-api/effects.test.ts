@@ -144,9 +144,85 @@ describe('node.effects', () => {
 
   test('reports Figma effects OpenPencil does not model yet', () => {
     expect(() => assign([{ type: 'NOISE' }])).toThrow('NOISE effects are not supported')
+  })
+})
+
+// Recorded on 2026-11-10 by assigning these effects in live Figma 126 through its plugin API.
+describe('progressive blurs', () => {
+  const progressive = {
+    type: 'LAYER_BLUR',
+    visible: true,
+    blurType: 'PROGRESSIVE',
+    radius: 10,
+    startRadius: 2,
+    startOffset: { x: 0.5, y: 0 },
+    endOffset: { x: 0.5, y: 1 }
+  } as const
+
+  test('read back in Figma field order, layer and background alike', () => {
+    for (const type of ['LAYER_BLUR', 'BACKGROUND_BLUR'] as const) {
+      expect(assign([{ ...progressive, type }]).effects).toEqual([
+        {
+          type,
+          visible: true,
+          radius: 10,
+          boundVariables: {},
+          blurType: 'PROGRESSIVE',
+          startRadius: 2,
+          startOffset: { x: 0.5, y: 0 },
+          endOffset: { x: 0.5, y: 1 }
+        }
+      ])
+    }
+  })
+
+  test('keep a start radius over 100 at 100, any end radius, and offsets beyond the layer', () => {
+    const [effect] = assign([
+      {
+        ...progressive,
+        radius: 500,
+        startRadius: 500,
+        startOffset: { x: -0.5, y: 2 },
+        endOffset: { x: 3, y: -1 }
+      }
+    ]).effects
+    expect(effect).toMatchObject({
+      radius: 500,
+      startRadius: 100,
+      startOffset: { x: -0.5, y: 2 },
+      endOffset: { x: 3, y: -1 }
+    })
+  })
+
+  test('need every progressive field, and a normal blur takes none of them', () => {
+    const message = (problem: string) =>
+      `in set_effects: Property "effects" failed validation: ${problem}`
+    expect(() => assign([{ ...progressive, startRadius: -1 }])).toThrow(
+      message('Too small: expected number to be >=0 at [0].startRadius')
+    )
+    for (const field of ['startRadius', 'startOffset', 'endOffset'] as const) {
+      const { [field]: _, ...missing } = progressive
+      expect(() => assign([missing])).toThrow('set_effects')
+    }
     expect(() =>
-      assign([{ type: 'LAYER_BLUR', blurType: 'PROGRESSIVE', radius: 4, visible: true }])
-    ).toThrow('Progressive blur is not supported')
+      assign([{ type: 'LAYER_BLUR', visible: true, blurType: 'NORMAL', radius: 4, startRadius: 2 }])
+    ).toThrow(message('Unrecognized key: "startRadius" at index 0'))
+  })
+
+  test('survive a radius binding', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    const collection = api.variables.createVariableCollection('Blur')
+    const size = api.variables.createVariable('End', collection, 'FLOAT')
+    expect(api.variables.setBoundVariableForEffect(progressive, 'radius', size)).toEqual({
+      type: 'LAYER_BLUR',
+      visible: true,
+      radius: 10,
+      boundVariables: { radius: { type: 'VARIABLE_ALIAS', id: size.id } },
+      blurType: 'PROGRESSIVE',
+      startRadius: 2,
+      startOffset: { x: 0.5, y: 0 },
+      endOffset: { x: 0.5, y: 1 }
+    })
   })
 })
 

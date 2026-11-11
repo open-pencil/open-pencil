@@ -1,0 +1,1 @@
+- Figma's progressive blurs render on the canvas and in exports, keep their settings through `.fig` files, the plugin API, and design JSX, and can be switched on and edited in the Effects panel, with start and end handles on the canvas (#1965).
