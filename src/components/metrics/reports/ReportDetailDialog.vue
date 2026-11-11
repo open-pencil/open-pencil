@@ -103,7 +103,7 @@ function save() {
           <span v-else>No address left</span>
         </dd>
         <dt :class="ui.factLabel()">Report ID</dt>
-        <dd :class="ui.factValue()">{{ report.id }}</dd>
+        <dd :class="[ui.factValue(), ui.reportId()]">{{ report.id }}</dd>
         <dt :class="ui.factLabel()">Links</dt>
         <dd :class="[ui.factValue(), ui.links()]">
           <a :class="ui.link()" :href="report.eventURL" target="_blank" rel="noopener">
@@ -140,7 +140,13 @@ function save() {
         </ol>
       </AppCollapsible>
       <AppFormField label="Status">
-        <SegmentedControl v-model="status" :options="STATUS_OPTIONS" label="Status" />
+        <SegmentedControl
+          v-model="status"
+          :options="STATUS_OPTIONS"
+          label="Status"
+          size="md"
+          :ui="{ root: 'self-start' }"
+        />
       </AppFormField>
       <AppFormField
         label="Internal note"

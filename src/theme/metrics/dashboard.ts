@@ -105,6 +105,7 @@ export const metricsReportTheme = {
     facts: 'grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5',
     factLabel: 'text-muted',
     factValue: 'min-w-0 break-words',
+    reportId: 'font-mono text-2xs text-muted select-all',
     links: 'flex flex-wrap gap-x-3 gap-y-1',
     link: 'text-accent underline-offset-2 hover:underline',
     expired: 'text-muted',

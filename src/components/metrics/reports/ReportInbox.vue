@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
+import { compact } from 'es-toolkit'
 import { h, watch } from 'vue'
+import IconBug from '~icons/lucide/bug'
+import IconMessageSquare from '~icons/lucide/message-square'
 
 import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
 
@@ -56,13 +59,20 @@ const list = usePortalList<ReportInboxFilter, InboxReport>({
     column.display({
       id: 'report',
       header: () => 'Report',
-      cell: ({ row: { original: report } }) =>
-        h(PortalTextCell, {
-          text: report.kind === 'error' ? 'Error' : 'Problem',
+      // What the person wrote leads; an error with nothing written leads with the error itself.
+      cell: ({ row: { original: report } }) => {
+        const attached = report.files.filter((file) => !file.expired).map((file) => file.name)
+        return h(PortalTextCell, {
+          icon: report.kind === 'error' ? IconBug : IconMessageSquare,
+          text: report.note ?? report.error ?? 'No note',
           strong: true,
-          quote: report.note,
-          detail: report.error
+          detail:
+            compact([
+              report.note ? report.error : null,
+              attached.length ? `Attached ${attached.join(', ')}` : null
+            ]).join(' · ') || null
         })
+      }
     }),
     column.display({
       id: 'from',
@@ -82,10 +92,7 @@ const list = usePortalList<ReportInboxFilter, InboxReport>({
       header: () => 'Status',
       meta: { class: 'w-28' },
       cell: ({ row: { original: report } }) =>
-        h(PortalStatusCell, {
-          statuses: [REPORT_STATUS_LABELS[report.status]],
-          detail: report.files.some((file) => !file.expired) ? 'Has files' : null
-        })
+        h(PortalStatusCell, { statuses: [REPORT_STATUS_LABELS[report.status]] })
     }),
     column.display({
       id: 'actions',

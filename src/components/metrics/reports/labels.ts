@@ -14,11 +14,30 @@ export const REPORT_STATUS_LABELS: Record<
   closed: { label: 'Closed', tone: 'neutral' }
 }
 
-/** The sender's build in a few words, such as “0.16.0 · desktop · macos arm64”. */
+const PLATFORM_NAMES: Record<string, string> = {
+  macos: 'macOS',
+  windows: 'Windows',
+  linux: 'Linux',
+  ios: 'iOS',
+  android: 'Android'
+}
+const APP_NAMES: Record<string, string> = { desktop: 'Desktop app', web: 'Web app' }
+const BROWSER_NAMES: Record<string, string> = {
+  chrome: 'Chrome',
+  edge: 'Edge',
+  firefox: 'Firefox',
+  safari: 'Safari',
+  opera: 'Opera'
+}
+/** A recorded name as people read it; one the dashboard doesn't know shows as recorded. */
+const named = (names: Record<string, string>, value: string | null) =>
+  value === null ? null : (names[value] ?? value)
+
+/** The sender's build in a few words, such as “0.16.0 · Desktop app · macOS arm64”. */
 export function reportBuild(report: InboxReport): string {
-  const system = compact([report.platform, report.arch]).join(' ')
-  const browser = report.browser === 'unknown' ? null : report.browser
-  return compact([report.version, report.app, system, browser]).join(' · ')
+  const system = compact([named(PLATFORM_NAMES, report.platform), report.arch]).join(' ')
+  const browser = report.browser === 'unknown' ? null : named(BROWSER_NAMES, report.browser)
+  return compact([report.version, named(APP_NAMES, report.app), system, browser]).join(' · ')
 }
 
 /** A new email to the sender, its subject naming the report so the reply can be found again. */
