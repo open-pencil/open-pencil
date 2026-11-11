@@ -184,7 +184,7 @@ async function save() {
         <SliderThumb
           :class="[
             'block size-3.5 rounded-full border border-accent bg-panel shadow',
-            focusStyles.thumb
+            focusStyles.ringStrong
           ]"
         />
       </SliderRoot>

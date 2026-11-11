@@ -10,7 +10,7 @@ export default {
     // The offset keeps the ring clear of the gradient under the thumb.
     thumb: [
       'block size-3.5 rounded-full border-2 border-white shadow-sm ring-offset-1',
-      focusStyles.thumb
+      focusStyles.ringStrong
     ],
     input: 'w-14 flex-none shrink-0'
   },
