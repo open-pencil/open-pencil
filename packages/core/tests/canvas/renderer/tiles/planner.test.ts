@@ -76,9 +76,9 @@ test('marks a visible tile mandatory only when no cached level stands in', () =>
 
   const covered = plan(() => true)
   expect(covered.jobs.length).toBeGreaterThan(0)
-  expect(
-    covered.jobs.every((job) => job.priority === 'visible' && job.fallbackAvailable)
-  ).toBe(true)
+  expect(covered.jobs.every((job) => job.priority === 'visible' && job.fallbackAvailable)).toBe(
+    true
+  )
 
   const blank = plan(() => false)
   expect(blank.jobs.every((job) => job.priority === 'mandatory' && !job.fallbackAvailable)).toBe(
@@ -90,8 +90,37 @@ test('skips overscan and backdrop tiles too dear for an idle frame', () => {
   const plan = planTiles(new TileImageCache(), {
     ...options(100),
     pageBackdrop: undefined,
-    overscanTiles: 1
+    overscanTiles: 1,
+    backdrop: { level: 0.5, overscanTiles: 1 }
   })
 
   expect(plan.jobs).toEqual([])
+})
+
+test('skips a backdrop ring too dear for an idle frame', () => {
+  const plan = planTiles(new TileImageCache(), {
+    ...options(100),
+    pageBackdrop: undefined,
+    overscanTiles: 0,
+    backdrop: { level: 0.5, overscanTiles: 1 }
+  })
+
+  expect(plan.jobs).toEqual([])
+})
+
+test('keeps cheap overscan and backdrop tiles', () => {
+  const overscan = planTiles(new TileImageCache(), {
+    ...options(1),
+    pageBackdrop: undefined,
+    overscanTiles: 1
+  })
+  const backdrop = planTiles(new TileImageCache(), {
+    ...options(1),
+    pageBackdrop: undefined,
+    overscanTiles: 0,
+    backdrop: { level: 0.5, overscanTiles: 1 }
+  })
+
+  expect(overscan.jobs.length).toBeGreaterThan(0)
+  expect(backdrop.jobs.length).toBeGreaterThan(0)
 })

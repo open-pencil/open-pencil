@@ -3,8 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { computed, createApp, effectScope, ref, shallowReactive } from 'vue'
 
 import { createDefaultEditorState, createEditor } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { EDITOR_KEY } from '#vue/editor/context'
 import { createSelectedNodeState, useSelectedNodeState } from '#vue/editor/selection-state/nodes'
@@ -203,10 +206,12 @@ describe('selected-node preview projections', () => {
       editor.updateNodeWithUndo(first.id, { x: 40 })
       expect(selection.nodes.value[0]).not.toBe(beforeFirst)
       expect(selection.nodes.value[1]).toBe(beforeSecond)
+      const afterFirst = selection.nodes.value[0]
 
       editor.updateNodeWithUndo(second.id, { x: 70 })
       await Promise.resolve()
 
+      expect(selection.nodes.value[0]).toBe(afterFirst)
       expect(selection.nodes.value.map((node) => node.x)).toEqual([40, 70])
     } finally {
       fixture.dispose()
@@ -226,6 +231,40 @@ describe('selected-node preview projections', () => {
       expect(selection.node.value).not.toBe(editing)
     } finally {
       fixture.dispose()
+    }
+  })
+
+  test('shows the selected characters style during a text edit', async () => {
+    const ck = await initCanvasKit()
+    const surface = expectDefined(ck.MakeSurface(200, 200), 'surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    const editor = createEditor()
+    editor.setCanvasKit(ck, renderer)
+    await renderer.loadFonts()
+    const selection = createSelectedNodeState(editor)
+    try {
+      const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+        text: 'Hello world',
+        width: 200,
+        height: 20,
+        fontSize: 14
+      })
+      editor.select([text.id])
+      editor.startTextEditing(text.id)
+      const state = expectDefined(editor.textEditor?.state, 'text editor state')
+      state.selectionAnchor = 6
+      state.cursor = 11
+      editor.textSelectionChanged()
+
+      expect(selection.node.value?.fontSize).toBe(14)
+      editor.updateNodeWithUndo(text.id, { fontSize: 30 }, 'Change fontSize')
+
+      expect(selection.node.value?.fontSize).toBe(30)
+      expect(editor.graph.getNode(text.id)?.fontSize).toBe(14)
+    } finally {
+      selection.dispose()
+      editor.dispose()
+      renderer.destroy()
     }
   })
 

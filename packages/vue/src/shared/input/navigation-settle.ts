@@ -9,27 +9,54 @@ export interface NavigationSettle {
   dispose: () => void
 }
 
+interface SharedSettle {
+  timer: ReturnType<typeof setTimeout> | null
+  /** The controller whose settle is pending; a stale timer or disposal must not end a newer one. */
+  owner: object | null
+}
+
+const sharedSettles = new WeakMap<Editor, SharedSettle>()
+
+function sharedSettle(editor: Editor): SharedSettle {
+  let shared = sharedSettles.get(editor)
+  if (!shared) {
+    shared = { timer: null, owner: null }
+    sharedSettles.set(editor, shared)
+  }
+  return shared
+}
+
 /**
- * Marks navigation as settling, then idle once no gesture has come for `delayMs`. A gesture that
- * starts meanwhile sets its own phase, so the pending settle leaves it alone.
+ * Marks navigation as settling, then idle once no gesture has come for `delayMs`. All controllers
+ * of one editor share the pending settle, so a wheel timer cannot end a pan's newer settle.
  */
 export function createNavigationSettle(
   editor: Editor,
   delayMs = NAVIGATION_SETTLE_DELAY_MS
 ): NavigationSettle {
-  let timer: ReturnType<typeof setTimeout> | null = null
+  const token = {}
+  const shared = sharedSettle(editor)
 
+  function clearTimer() {
+    if (shared.timer === null) return
+    clearTimeout(shared.timer)
+    shared.timer = null
+  }
+
+  /** A new gesture cancels whatever settle was pending, whichever controller started it. */
   function cancel() {
-    if (timer === null) return
-    clearTimeout(timer)
-    timer = null
+    clearTimer()
+    shared.owner = null
   }
 
   function settle() {
-    cancel()
+    clearTimer()
+    shared.owner = token
     editor.setNavigationPhase('settling')
-    timer = setTimeout(() => {
-      timer = null
+    shared.timer = setTimeout(() => {
+      shared.timer = null
+      if (shared.owner !== token) return
+      shared.owner = null
       if (editor.state.navigation.phase !== 'settling') return
       editor.setNavigationPhase('idle')
       editor.requestRepaint()
@@ -38,10 +65,11 @@ export function createNavigationSettle(
 
   /**
    * Stops a canvas from leaving navigation settling for good when it unmounts mid-gesture. A
-   * newer gesture that took the phase over keeps it.
+   * newer gesture or settle that took the phase over keeps it.
    */
   function dispose() {
-    const pending = timer !== null
+    if (shared.owner !== token) return
+    const pending = shared.timer !== null
     cancel()
     if (!pending || editor.state.navigation.phase !== 'settling') return
     editor.setNavigationPhase('idle')

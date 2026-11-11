@@ -66,7 +66,11 @@ export function createSelectedNodeState(
       for (const id of ids) dirty.add(id)
     }
     for (const id of projections.keys())
-      if (!editor.state.selectedIds.has(id)) projections.delete(id)
+      if (!editor.state.selectedIds.has(id)) {
+        projections.delete(id)
+        dirty.delete(id)
+      }
+    for (const id of dirty) if (!editor.state.selectedIds.has(id)) dirty.delete(id)
     return ids.flatMap((id) => {
       const source = editor.graph.getNode(id)
       if (!source) {

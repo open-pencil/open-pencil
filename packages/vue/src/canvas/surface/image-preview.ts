@@ -211,7 +211,8 @@ function scaledImageDecoder(): ScaledImageDecoderConstructor | null {
 async function decodeAtTarget(
   source: Uint8Array,
   mime: string,
-  target: { width: number; height: number }
+  target: { width: number; height: number },
+  dimensions: { width: number; height: number }
 ): Promise<ImageBitmap | null> {
   const Decoder = scaledImageDecoder()
   if (!Decoder) return null
@@ -233,6 +234,15 @@ async function decodeAtTarget(
       decoded.image.close()
     }
   } catch {
+    // Chromium 111 rejects a JPEG target below 1/64 of the source area before any frame is
+    // decoded. Retry at no less than one eighth, where its scaled decoder still accepts it.
+    if (mime === 'image/jpeg') {
+      const width = Math.max(target.width, Math.ceil(dimensions.width / 8))
+      const height = Math.max(target.height, Math.ceil(dimensions.height / 8))
+      if (width !== target.width || height !== target.height) {
+        return decodeAtTarget(source, mime, { width, height }, dimensions)
+      }
+    }
     return null
   } finally {
     decoder?.close()
@@ -279,8 +289,9 @@ export function createImagePreviewDecoder(): ImagePreviewDecoder {
       const target = dimensions ? previewSize(dimensions.width, dimensions.height, edge) : null
       const mime = imageMimeType(data)
       const bitmap =
-        (target && mime ? await decodeAtTarget(data, mime, target) : null) ??
-        (await createFallbackBitmap(data, target))
+        (target && mime && dimensions
+          ? await decodeAtTarget(data, mime, target, dimensions)
+          : null) ?? (await createFallbackBitmap(data, target))
       const originalWidth = dimensions?.width ?? bitmap.width
       const originalHeight = dimensions?.height ?? bitmap.height
 

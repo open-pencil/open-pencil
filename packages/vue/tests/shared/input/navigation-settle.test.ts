@@ -46,6 +46,23 @@ describe('navigation settle', () => {
     expect(editor.state.navigation.phase).toBe('pan')
   })
 
+  test('a pending settle from one controller cannot end another controller settle', async () => {
+    editor = createEditor()
+    const wheel = createNavigationSettle(editor, 5)
+    const pan = createNavigationSettle(editor, 30)
+
+    editor.setNavigationPhase('pan')
+    wheel.settle()
+    editor.setNavigationPhase('pan')
+    pan.settle()
+
+    await Bun.sleep(12)
+    expect(editor.state.navigation.phase).toBe('settling')
+
+    await Bun.sleep(30)
+    expect(editor.state.navigation.phase).toBe('idle')
+  })
+
   test('disposing a settling navigation returns it to idle', async () => {
     editor = createEditor()
     const settle = createNavigationSettle(editor, 5)

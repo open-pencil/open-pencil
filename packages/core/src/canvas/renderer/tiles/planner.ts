@@ -57,7 +57,7 @@ const PAGE_BACKDROP_TILES = 4
  * tile estimated dearer than a few idle frames would land as one long, uninterruptible draw, so
  * the plan leaves it out instead.
  */
-const BACKGROUND_MAX_ESTIMATED_MS = 32
+export const BACKGROUND_MAX_ESTIMATED_MS = 32
 
 function affordableBackgroundJobs(jobs: TileJob[], maxCostMs: number): TileJob[] {
   return jobs.filter((job) => job.estimatedCost <= maxCostMs)
