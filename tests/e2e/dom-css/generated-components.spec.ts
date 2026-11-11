@@ -1,6 +1,6 @@
 import type { ViteDevServer } from 'vite'
 
-import { serveComponent } from '#tests/helpers/dom-css/component-app'
+import { serveComponent } from '#tests/helpers/dom-css/components/app'
 import {
   disclosureGraph,
   numberFieldGraph,
@@ -10,7 +10,7 @@ import {
   switchGraph,
   tabsGraph,
   textFieldGraph
-} from '#tests/helpers/dom-css/component-graphs'
+} from '#tests/helpers/dom-css/components/graphs'
 
 import { expect, test } from '../fixtures'
 

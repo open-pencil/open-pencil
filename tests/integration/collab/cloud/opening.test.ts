@@ -20,7 +20,7 @@ import {
   runCleanups,
   startRelay,
   until
-} from '#tests/helpers/collab/cloud-rooms'
+} from '#tests/helpers/collab/cloud'
 
 afterEach(runCleanups)
 

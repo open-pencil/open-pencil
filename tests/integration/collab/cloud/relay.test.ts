@@ -18,7 +18,7 @@ import {
   startRelay,
   until,
   type Relay
-} from '#tests/helpers/collab/cloud-rooms'
+} from '#tests/helpers/collab/cloud'
 import { startTestRelay } from '#tests/helpers/collab/relay-server'
 
 const documentId = crypto.randomUUID()
