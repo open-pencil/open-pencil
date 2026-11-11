@@ -203,8 +203,7 @@
         "@webgpu/types": "0.1.21",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "valibot": "^1.5.0",
+        "@open-pencil/fork-releases-tools": "workspace:*",
       },
     },
     "packages/cli": {
@@ -322,6 +321,7 @@
         "@open-pencil/mermaid": "workspace:*",
         "@open-pencil/pen": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
+        "@open-pencil/taffy": "workspace:*",
         "@tauri-apps/api": "^2.12.1",
         "@valibot/to-json-schema": "^1.8.0",
         "@xmldom/xmldom": "^0.9.12",
@@ -357,7 +357,6 @@
         "unifont": "1.0.3",
         "valibot": "^1.5.0",
         "woff2-encoder": "2.0.0",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
       },
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
@@ -707,6 +706,13 @@
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
+    "packages/taffy": {
+      "name": "@open-pencil/taffy",
+      "version": "0.17.0-beta.4",
+      "devDependencies": {
+        "@open-pencil/fork-releases-tools": "workspace:*",
+      },
+    },
     "packages/test-support": {
       "name": "@open-pencil/test-support",
       "version": "0.17.0-beta.1",
@@ -988,6 +994,18 @@
       "name": "@open-pencil/visual-oracles-tools",
       "dependencies": {
         "citty": "^0.1.6",
+      },
+    },
+    "tools/release/fork-releases": {
+      "name": "@open-pencil/fork-releases-tools",
+      "version": "0.0.0",
+      "bin": {
+        "fork-release": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "citty": "^0.1.6",
+        "valibot": "^1.5.0",
       },
     },
     "tools/release/package-artifacts": {
@@ -1867,6 +1885,8 @@
 
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
 
+    "@open-pencil/fork-releases-tools": ["@open-pencil/fork-releases-tools@workspace:tools/release/fork-releases"],
+
     "@open-pencil/harness": ["@open-pencil/harness@workspace:packages/harness"],
 
     "@open-pencil/html-engine": ["@open-pencil/html-engine@workspace:packages/html-engine"],
@@ -1902,6 +1922,8 @@
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
 
     "@open-pencil/secret-scan-tools": ["@open-pencil/secret-scan-tools@workspace:tools/checks/secret-scan"],
+
+    "@open-pencil/taffy": ["@open-pencil/taffy@workspace:packages/taffy"],
 
     "@open-pencil/tauri-menu-tools": ["@open-pencil/tauri-menu-tools@workspace:tools/generate/tauri-menu"],
 

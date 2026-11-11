@@ -1,20 +1,37 @@
-import Yoga, {
-  Align,
-  Edge,
-  GridTrackType,
-  Justify,
-  PositionType,
-  type Node as YogaNode
-} from 'yoga-layout'
-
 import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { enforcedAspectRatio, layoutSizingInParent } from '@open-pencil/scene-graph/layout'
+import {
+  type AlignContent,
+  type AlignItems,
+  type GridTrack as LayoutTrack,
+  LayoutNode
+} from '@open-pencil/taffy'
 
-const yogaConfig = Yoga.Config.create()
-yogaConfig.setPointScaleFactor(0)
+/**
+ * A layout node with auto layout's defaults where they differ from CSS's, as Figma lays layers
+ * out: children stack in a column and never shrink below their size, wrapped lines pack at the
+ * start, and a box has no automatic minimum size.
+ */
+export function createLayoutNode(): LayoutNode {
+  return new LayoutNode({
+    flexDirection: 'column',
+    flexShrink: 0,
+    alignContent: 'flex-start',
+    minWidth: 0,
+    minHeight: 0
+  })
+}
 
-export function createYogaNode(): YogaNode {
-  return Yoga.Node.create(yogaConfig)
+/**
+ * Measures a leaf, such as text, by the width layout gives it: the width layout fixed, else a
+ * definite width it has room for, else none, when it is sized to its content.
+ */
+export function measureByWidth(
+  layoutNode: LayoutNode,
+  measure: (width: number | undefined) => { width: number; height: number }
+): void {
+  layoutNode.measure = (known, available) =>
+    measure(known.width ?? (typeof available.width === 'number' ? available.width : undefined))
 }
 
 /**
@@ -40,12 +57,8 @@ function includedStrokeWeights(
 }
 
 /** A layout container's padding, with the strokes it includes in layout added to each side. */
-export function setLayoutPadding(yogaNode: YogaNode, node: SceneNode): void {
-  const padding = layoutPadding(node)
-  yogaNode.setPadding(Edge.Top, padding.top)
-  yogaNode.setPadding(Edge.Right, padding.right)
-  yogaNode.setPadding(Edge.Bottom, padding.bottom)
-  yogaNode.setPadding(Edge.Left, padding.left)
+export function setLayoutPadding(layoutNode: LayoutNode, node: SceneNode): void {
+  layoutNode.style.padding = layoutPadding(node)
 }
 
 /** A layout container's padding on each side, with the strokes it includes in layout added. */
@@ -61,16 +74,15 @@ export function layoutPadding(
   }
 }
 
-export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): void {
-  yogaChild.setPositionType(PositionType.Absolute)
-  yogaChild.setPosition(Edge.Left, child.x)
-  yogaChild.setPosition(Edge.Top, child.y)
-  yogaChild.setWidth(child.width)
-  yogaChild.setHeight(child.height)
+export function configureAbsoluteChild(item: LayoutNode, child: SceneNode): void {
+  item.style.position = 'absolute'
+  item.style.inset = { left: child.x, top: child.y }
+  item.style.width = child.width
+  item.style.height = child.height
 }
 
 export function configureNonTextLeaf(
-  yogaChild: YogaNode,
+  item: LayoutNode,
   child: SceneNode,
   isRow: boolean,
   stretchCross: boolean
@@ -79,18 +91,18 @@ export function configureNonTextLeaf(
   const h = child.height
 
   if (child.layoutGrow > 0) {
-    yogaChild.setFlexGrow(child.layoutGrow)
+    item.style.flexGrow = child.layoutGrow
     if (!stretchCross) {
-      if (isRow) yogaChild.setHeight(h)
-      else yogaChild.setWidth(w)
+      if (isRow) item.style.height = h
+      else item.style.width = w
     }
   } else {
     if (isRow) {
-      yogaChild.setWidth(w)
-      if (!stretchCross) yogaChild.setHeight(h)
+      item.style.width = w
+      if (!stretchCross) item.style.height = h
     } else {
-      yogaChild.setHeight(h)
-      if (!stretchCross) yogaChild.setWidth(w)
+      item.style.height = h
+      if (!stretchCross) item.style.width = w
     }
   }
 }
@@ -101,7 +113,7 @@ export function configureNonTextLeaf(
  * the parent's edge. An axis that hugs keeps its own size.
  */
 export function applyLockedAspectRatio(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   node: SceneNode,
   parent: SceneNode
 ): void {
@@ -117,79 +129,85 @@ export function applyLockedAspectRatio(
   else if (cross === 'FILL') drivesWidth = !primaryIsWidth
   else return
   if ((drivesWidth ? height : width) === 'HUG') return
-  yogaNode.setAspectRatio(ratio)
-  if (drivesWidth) yogaNode.setHeight('auto')
-  else yogaNode.setWidth('auto')
+  layoutNode.style.aspectRatio = ratio
+  if (drivesWidth) layoutNode.style.height = 'auto'
+  else layoutNode.style.width = 'auto'
+  // The ratio sizes the parent's cross axis over Fill across it, where CSS stretches instead.
+  const followsAcross = drivesWidth === primaryIsWidth
+  const alignSelf =
+    layoutNode.style.alignSelf ?? (stretchesAcross(node, parent) ? 'stretch' : undefined)
+  if (followsAcross && alignSelf === 'stretch') layoutNode.style.alignSelf = 'flex-start'
 }
 
-export function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {
-  if (node.minWidth != null) yogaNode.setMinWidth(node.minWidth)
-  if (node.maxWidth != null) yogaNode.setMaxWidth(node.maxWidth)
-  if (node.minHeight != null) yogaNode.setMinHeight(node.minHeight)
-  if (node.maxHeight != null) yogaNode.setMaxHeight(node.maxHeight)
+export function applyMinMaxConstraints(layoutNode: LayoutNode, node: SceneNode): void {
+  if (node.minWidth != null) layoutNode.style.minWidth = node.minWidth
+  if (node.maxWidth != null) layoutNode.style.maxWidth = node.maxWidth
+  if (node.minHeight != null) layoutNode.style.minHeight = node.minHeight
+  if (node.maxHeight != null) layoutNode.style.maxHeight = node.maxHeight
 }
 
-export function mapGridTrack(track: GridTrack): { type: GridTrackType; value: number } {
+export function mapGridTrack(track: GridTrack): LayoutTrack {
   switch (track.sizing) {
     case 'FR':
-      return { type: GridTrackType.Fr, value: track.value }
+      return `${track.value}fr`
     case 'FIXED':
-      return { type: GridTrackType.Points, value: track.value }
+      return track.value
     default:
-      return { type: GridTrackType.Auto, value: 0 }
+      return 'auto'
   }
 }
 
-export function freeYogaTree(node: YogaNode): void {
-  for (let i = node.getChildCount() - 1; i >= 0; i--) {
-    freeYogaTree(node.getChild(i))
-  }
-  if ('free' in node) (node as { free(): void }).free()
-}
-
-export function mapJustify(align: string): Justify {
+export function mapJustify(align: string): AlignContent {
   switch (align) {
     case 'CENTER':
-      return Justify.Center
+      return 'center'
     case 'MAX':
-      return Justify.FlexEnd
+      return 'flex-end'
     case 'SPACE_BETWEEN':
-      return Justify.SpaceBetween
+      return 'space-between'
     default:
-      return Justify.FlexStart
+      return 'flex-start'
   }
 }
 
-export function mapAlign(align: string): Align {
+export function mapAlign(align: string): AlignItems {
   switch (align) {
     case 'CENTER':
-      return Align.Center
+      return 'center'
     case 'MAX':
-      return Align.FlexEnd
+      return 'flex-end'
     case 'STRETCH':
-      return Align.Stretch
+      return 'stretch'
     case 'BASELINE':
-      return Align.Baseline
+      return 'baseline'
     default:
-      return Align.FlexStart
+      return 'flex-start'
   }
 }
 
-export function mapAlignSelf(alignSelf: string): Align | null {
+export function mapAlignSelf(alignSelf: string): AlignItems | null {
   switch (alignSelf) {
     case 'MIN':
-      return Align.FlexStart
+      return 'flex-start'
     case 'CENTER':
-      return Align.Center
+      return 'center'
     case 'MAX':
-      return Align.FlexEnd
+      return 'flex-end'
     case 'STRETCH':
-      return Align.Stretch
+      return 'stretch'
     case 'BASELINE':
-      return Align.Baseline
+      return 'baseline'
     default:
       return null
   }
+}
+
+/** Whether a child stretches across its auto layout parent, by its own alignment or the parent's. */
+function stretchesAcross(child: SceneNode, parent: SceneNode): boolean {
+  return (
+    child.layoutAlignSelf === 'STRETCH' ||
+    (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
+  )
 }
 
 /** The axis a frame's auto layout parent stretches it along, if any. */

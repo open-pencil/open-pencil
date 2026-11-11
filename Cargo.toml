@@ -19,3 +19,9 @@ lto = true
 codegen-units = 1
 strip = true
 panic = "abort"
+
+# Taffy from open-pencil/taffy's `openpencil/taffy` branch: the commit Blitz pins plus the layout
+# fixes that wait on upstream (its OPENPENCIL.md), so HTML import and auto layout, which runs on
+# that branch's release in packages/taffy, share one Taffy. Move `rev` with packages/taffy's pin.
+[patch."https://github.com/DioxusLabs/taffy"]
+taffy = { git = "https://github.com/open-pencil/taffy", rev = "1f71b6eb16afb91a38547f89c5b1873edb1156c6" }

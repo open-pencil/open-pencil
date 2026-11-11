@@ -6,7 +6,7 @@ import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
-describe('absolute children in Yoga tree', () => {
+describe('absolute children in the layout tree', () => {
   test('absolute children do not affect auto-layout flow', () => {
     const graph = new SceneGraph()
     const frame = autoFrame(graph, pageId(graph), {
