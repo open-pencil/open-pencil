@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS, type Editor } from '@open-pencil/core'
+import type { TextPathData } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -46,6 +47,55 @@ describe('scaleSelected', () => {
     expect(current(text.id)).toMatchObject({ x: 100, y: 50, width: 400, fontSize: 40, strokeWeight: 4 })
     editor.undo.undo()
     expect(current(text.id)).toMatchObject({ width: 200, fontSize: 20, strokeWeight: 2 })
+  })
+
+  test('keeps text on a path on its path, and undo brings back its size on the path', () => {
+    editor = createEditor()
+    const textPathData: TextPathData = {
+      network: {
+        vertices: [
+          { x: 0, y: 100 },
+          { x: 400, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 100, y: -80 }, tangentEnd: { x: -100, y: -80 } }
+        ],
+        regions: []
+      },
+      normalizedSize: { x: 400, y: 160 },
+      tValue: 0,
+      forward: true
+    }
+    const glyphs = [
+      { commandsBlob: new Uint8Array(4), x: 30, y: 90, fontSize: 32, rotation: -0.4 },
+      { commandsBlob: new Uint8Array(4), x: 50, y: 82, fontSize: 32, rotation: -0.3 }
+    ]
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 400,
+      height: 160,
+      text: 'Lorem',
+      fontSize: 32,
+      textPathData,
+      textPathBox: { x: 0, y: 0, width: 400, height: 160 },
+      derivedTextGlyphs: glyphs
+    })
+    editor.select([text.id])
+
+    editor.scaleSelected(2, { x: 0, y: 0 })
+
+    expect(current(text.id)).toMatchObject({
+      fontSize: 64,
+      textPathData,
+      textPathBox: { width: 800, height: 320 },
+      derivedTextGlyphs: [{ x: 60, y: 180, fontSize: 64 }, { x: 100, y: 164, fontSize: 64 }]
+    })
+    editor.undo.undo()
+    expect(current(text.id)).toMatchObject({
+      fontSize: 32,
+      textPathData,
+      textPathBox: { width: 400, height: 160 },
+      derivedTextGlyphs: glyphs
+    })
   })
 
   test('undoing a scale keeps the selection, a later edit to the layer, and a layer added since', () => {
