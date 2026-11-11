@@ -1,1 +1,0 @@
-- Cloud servers can link their own terms, privacy policy, abuse address, and minimum age through a `[legal]` table, shown at sign-up and in the portal's footer; with `require_acceptance`, each account accepts the current `terms_version` before using the server, and again when it changes.
