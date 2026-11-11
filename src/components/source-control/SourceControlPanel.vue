@@ -162,7 +162,7 @@ function createBranch(): void {
       <div v-if="diff" class="flex min-h-0 flex-col gap-1.5">
         <div class="flex items-center gap-1.5">
           <IconButton class="size-6" :label="labels.backToFiles" @click="emit('closeDiff')">
-            <icon-lucide-arrow-left class="size-3" />
+            <icon-lucide-arrow-left data-direction="reading" class="size-3" />
           </IconButton>
           <span class="truncate text-2xs text-surface">{{ diff.path }}</span>
         </div>
