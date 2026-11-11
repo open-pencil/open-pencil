@@ -103,6 +103,9 @@ describe('account deletion', () => {
       const soloDocument = await document(fixture, solo, 'Sketch', alice.userId)
       await document(fixture, solo, 'Old', alice.userId, new Date())
       const sharedDocument = await document(fixture, shared, 'Plan', alice.userId)
+      // In the workspace that blocks deleting until someone else administers it.
+      const teamDocument = await document(fixture, team, 'Roadmap', alice.userId)
+      await document(fixture, team, 'Backlog', bob.userId)
       const bobsDocument = await document(fixture, shared, 'Notes', bob.userId)
       await fixture.database
         .insertInto('documentGrant')
@@ -167,7 +170,8 @@ describe('account deletion', () => {
         documents: [
           { id: grantedDocument, name: 'Brief', workspaceName: 'Elsewhere' },
           { id: sharedDocument, name: 'Plan', workspaceName: 'Shared' },
-          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' }
+          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' },
+          { id: teamDocument, name: 'Roadmap', workspaceName: 'Team' }
         ]
       })
       const blocked = await remove(fixture, alice.sessionCookie)

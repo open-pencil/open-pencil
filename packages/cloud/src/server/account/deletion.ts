@@ -111,8 +111,9 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
       const { deletes, blockedBy, leaves } = classify(await memberships(database, userId))
       const deleted = deletes.map((membership) => membership.workspaceId)
       const left = leaves.map((membership) => membership.workspaceId)
+      const blocked = blockedBy.map((membership) => membership.workspaceId)
       // What the account can still download: everything in workspaces that go with it, and what
-      // it created in workspaces it leaves or reaches only through a grant of its own.
+      // it created in workspaces it leaves, keeps an admin role in, or reaches only by a grant.
       const documents = await database
         .selectFrom('document')
         .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
@@ -126,6 +127,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
               expression('document.createdBy', '=', userId),
               expression.or([
                 ...(left.length > 0 ? [expression('document.workspaceId', 'in', left)] : []),
+                ...(blocked.length > 0 ? [expression('document.workspaceId', 'in', blocked)] : []),
                 expression(
                   'document.id',
                   'in',
