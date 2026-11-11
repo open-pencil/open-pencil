@@ -2,6 +2,7 @@ import { useEditorKeyboard, type EditorShortcut } from '@open-pencil/vue/editor/
 
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
+import type { EditorStore } from '@/app/editor/active-store'
 import {
   copySelectionProperties,
   pasteClipboardProperties
@@ -138,5 +139,23 @@ export function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[]
 
 /** The editor's keyboard from the SDK, with the app's own keys added. */
 export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
-  useEditorKeyboard({ shortcuts: appShortcuts(options) })
+  useEditorKeyboard({
+    shortcuts: appShortcuts(options),
+    ignore: keysHeldWhilePreparing(options.store)
+  })
+}
+
+/**
+ * Whether the editor's own keys wait: a document with a loader over it is being read or replaced,
+ * so a key pressed now edits the document that is about to go away, and its edit — a nudge, a
+ * delete, a paste — is thrown away with it while the reload marks the file saved.
+ *
+ * A font retry is not that: the document is the one on screen and only its text is being laid
+ * out, which is the same reason the canvas keeps drawing and its loader stays away during one.
+ */
+export function keysHeldWhilePreparing(store: EditorStore): () => boolean {
+  return () => {
+    const preparation = store.state.preparation
+    return preparation !== null && preparation.kind !== 'font-retry'
+  }
 }
