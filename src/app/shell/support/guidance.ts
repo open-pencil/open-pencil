@@ -89,6 +89,14 @@ function issueLink(
   return { label: 'Report a problem', url: `${ISSUE_URL}?${params.toString()}` }
 }
 
+/**
+ * A new GitHub issue on the bug report form, filled in with the app's version and platform: where
+ * a build that sends no reports of its own, such as a self-hosted Cloud's editor, points people.
+ */
+export function problemReportIssueURL(env: SupportEnvironment): string {
+  return issueLink(env, 'bug: ', environmentDetails(env)).url
+}
+
 function requirementsLink(): SupportLink {
   return { label: 'System requirements', url: SYSTEM_REQUIREMENTS_URL }
 }
