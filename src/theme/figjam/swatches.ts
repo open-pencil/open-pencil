@@ -2,8 +2,9 @@ import { focusStyles } from '../focus/styles'
 
 const swatchesTheme = {
   slots: {
-    // Wide enough apart that a focused swatch's outline stays clear of its neighbours.
-    root: 'grid grid-cols-11 justify-items-center gap-2',
+    // Far enough apart that a focused swatch's outline stays clear of its neighbours; eleven to a
+    // row at most, wrapping where the panel or the window is narrower.
+    root: 'flex max-w-64 flex-wrap gap-2',
     // The chosen swatch is ringed in the accent, so focus is an outline clear of that ring.
     swatch: ['size-4 cursor-pointer rounded-full border border-border', focusStyles.outline],
     none: 'flex items-center justify-center bg-transparent text-muted'

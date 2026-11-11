@@ -11,7 +11,8 @@ const figJamToolbarTheme = {
     triggerText: 'max-w-24 truncate text-xs text-surface',
     chevron: 'size-3 shrink-0',
     dot: 'size-4 shrink-0 rounded-full border border-border',
-    popover: 'z-50 p-2',
+    // No wider than the window allows, so a palette inside wraps rather than being cut off.
+    popover: 'z-50 max-w-(--reka-popover-content-available-width) p-2',
     options: 'flex min-w-36 flex-col gap-0.5',
     option:
       'flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-start text-xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[state=on]:bg-accent/15 data-[state=on]:text-primary',
