@@ -51,6 +51,8 @@ watch(
 /** An address the app cannot load is shown as invalid, but never blocks an empty field. */
 const typed = computed(() => draft.value.trim() !== '')
 const valid = computed(() => !typed.value || normalizeLiveURL(draft.value) !== '')
+/** The element that explains a refused address, which the field points at while it holds one. */
+const URL_ERROR_ID = 'live-page-url-error'
 const canApply = computed(() => {
   const target = node.value
   if (!target || !valid.value || !typed.value) return false
@@ -134,12 +136,25 @@ async function copySelection(): Promise<void> {
         type="url"
         :placeholder="messages.urlPlaceholder"
         :aria-label="messages.url"
+        :aria-invalid="valid ? undefined : true"
+        :aria-describedby="valid ? undefined : URL_ERROR_ID"
         :state="valid ? 'idle' : 'invalid'"
         tone="panel"
         data-test-id="live-page-url"
         @enter="apply"
       />
     </PanelFieldGroup>
+
+    <!-- Said before the hint, so the reason a refused address is not used is read first. -->
+    <p
+      v-if="!valid"
+      :id="URL_ERROR_ID"
+      class="mt-1 text-2xs text-error"
+      role="alert"
+      data-test-id="live-page-url-error"
+    >
+      {{ messages.urlInvalid }}
+    </p>
 
     <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
       <AppButton

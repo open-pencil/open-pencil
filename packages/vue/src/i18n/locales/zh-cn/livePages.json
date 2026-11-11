@@ -2,6 +2,7 @@
   "title": "实时页面",
   "url": "页面地址",
   "urlPlaceholder": "本地开发服务器地址",
+  "urlInvalid": "应用无法打开此页面地址。",
   "link": "显示页面",
   "unlink": "移除页面",
   "reload": "重新加载页面",

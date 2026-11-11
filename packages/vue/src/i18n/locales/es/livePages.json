@@ -2,6 +2,7 @@
   "title": "Página en vivo",
   "url": "Dirección de la página",
   "urlPlaceholder": "p. ej. http://localhost:3000/pricing",
+  "urlInvalid": "La aplicación no puede abrir esta dirección de página.",
   "link": "Mostrar página",
   "unlink": "Quitar página",
   "reload": "Recargar página",

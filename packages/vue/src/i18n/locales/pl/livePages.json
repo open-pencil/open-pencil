@@ -2,6 +2,7 @@
   "title": "Strona na żywo",
   "url": "Adres strony",
   "urlPlaceholder": "np. http://localhost:3000/pricing",
+  "urlInvalid": "Aplikacja nie może otworzyć tego adresu strony.",
   "link": "Pokaż stronę",
   "unlink": "Usuń stronę",
   "reload": "Odśwież stronę",

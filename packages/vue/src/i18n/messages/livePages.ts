@@ -6,6 +6,7 @@ export const livePageMessageDefaults = {
   title: 'Live page',
   url: 'Page address',
   urlPlaceholder: 'http://localhost:3000/pricing',
+  urlInvalid: 'The app cannot open this page address.',
   link: 'Show page',
   unlink: 'Remove page',
   reload: 'Reload page',

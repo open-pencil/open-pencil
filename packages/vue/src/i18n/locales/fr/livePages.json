@@ -2,6 +2,7 @@
   "title": "Page en direct",
   "url": "Adresse de la page",
   "urlPlaceholder": "p. ex. http://localhost:3000/pricing",
+  "urlInvalid": "L’application ne peut pas ouvrir cette adresse de page.",
   "link": "Afficher la page",
   "unlink": "Retirer la page",
   "reload": "Recharger la page",

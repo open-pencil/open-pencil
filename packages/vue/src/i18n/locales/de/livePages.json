@@ -2,6 +2,7 @@
   "title": "Live-Seite",
   "url": "Seitenadresse",
   "urlPlaceholder": "z. B. http://localhost:3000/pricing",
+  "urlInvalid": "Diese Seitenadresse kann die App nicht öffnen.",
   "link": "Seite anzeigen",
   "unlink": "Seite entfernen",
   "reload": "Seite neu laden",
