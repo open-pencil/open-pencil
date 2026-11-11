@@ -145,6 +145,8 @@ export function applyScale(
     origRect.height > 0
       ? boxScale(d, delta.x * reach, delta.y * reach, editor, centred || disableSnapping)
       : lineScale(d, delta.x * reach)
+  // A degenerate frame can give no finite scale; the preview keeps its last step.
+  if (!Number.isFinite(scale)) return
   d.scale = Math.max(MIN_RESCALE, scale)
   d.anchorFraction = centred ? { x: 0.5, y: 0.5 } : handleAnchor(d.handle)
   d.anchor = boxPoint(d, d.anchorFraction)

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { defineComponent, h, reactive } from 'vue'
+import { defineComponent, h, nextTick, reactive } from 'vue'
 
 import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -80,6 +80,24 @@ describe('Scale panel controls', () => {
     control.cancel()
     expect(current(frame)).toMatchObject({ x: 0, y: 0, width: 200 })
     expect(current(text).fontSize).toBe(20)
+  })
+
+  test('a selection change mid-scrub puts the layers back and leaves the new ones alone', async () => {
+    const { control, frame } = mountScale()
+    const other = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      x: 300,
+      width: 50,
+      height: 50
+    })
+    control.previewSize('width', 400)
+    editor.select([other.id])
+    await nextTick()
+    expect(current(frame)).toMatchObject({ x: 0, y: 0, width: 200 })
+
+    control.previewSize('width', 100)
+    control.commitSize('width', 100)
+    expect(current(frame).width).toBe(200)
+    expect(current(other.id).width).toBe(100)
   })
 
   test('the factor counts from the size the selection had when picked', () => {

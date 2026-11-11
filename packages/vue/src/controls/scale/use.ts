@@ -58,11 +58,17 @@ export function useScaleControls() {
     }
   })
 
-  // The factor counts from the size the selection had when the tool or the selection was picked.
+  let edit: ScaleEdit | null = null
+
+  // The factor counts from the size the selection had when the tool or the selection was picked;
+  // a scrub still open on the layers before goes back rather than reach the new ones.
   const startWidth = ref(0)
   watch(
     () => [...selectedIds.value].join(','),
-    () => (startWidth.value = box.value?.width ?? 0),
+    () => {
+      cancel()
+      startWidth.value = box.value?.width ?? 0
+    },
     { immediate: true }
   )
   const factor = computed(() => {
@@ -70,8 +76,6 @@ export function useScaleControls() {
     return startWidth.value > 0 ? Math.round((width / startWidth.value) * 100) / 100 : 1
   })
   const anchor = computed(() => editor.state.scaleAnchor)
-
-  let edit: ScaleEdit | null = null
 
   function begin(): ScaleEdit | null {
     if (edit) return edit
