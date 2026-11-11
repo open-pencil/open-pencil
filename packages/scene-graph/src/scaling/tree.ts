@@ -83,18 +83,13 @@ export function rescaleNodeChanges(
 }
 
 /** Scale a node tree from the root node's top-left, matching Figma's `rescale()`. */
-export function rescaleNodeTree(
-  graph: SceneGraph,
-  rootId: string,
-  scale: number,
-  options?: RescaleOptions
-): void {
+export function rescaleNodeTree(graph: SceneGraph, rootId: string, scale: number): void {
   if (!Number.isFinite(scale)) throw new TypeError('Scale must be a finite number')
   if (scale < MIN_RESCALE) throw new RangeError(`Scale must be at least ${MIN_RESCALE}`)
   const root = graph.getNode(rootId)
   if (!root || !RESCALABLE_NODE_TYPES.has(root.type))
     throw new Error('rescale() is not supported on this node')
-  for (const node of rescaleTargets(graph, root, options)) {
+  for (const node of rescaleTargets(graph, root)) {
     graph.updateNode(node.id, rescaleNodeChanges(graph, node, scale, node.id === rootId))
   }
 }

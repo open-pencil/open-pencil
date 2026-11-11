@@ -12,9 +12,11 @@ import type {
 import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
+import type { ScaleSnapshot } from '@open-pencil/scene-graph/scaling'
 
 import type { FlowDrag } from '#vue/shared/input/flow-reorder'
 import type { LayerSizing } from '#vue/shared/input/resize/sizing'
+import type { ScalePreview } from '#vue/shared/input/scale'
 
 export interface DragDraw {
   type: 'draw'
@@ -153,10 +155,10 @@ export interface DragScale {
   origRect: Rect
   /** The single layer that scales in its own frame, as it was when the drag began. */
   layer: { nodeId: string; origPlacement: SelectionPlacement } | null
-  /** Each scaled layer's place when the drag began, by ID. */
-  placements: Map<string, SelectionPlacement>
-  /** Every layer the drag scales, as it found them; locked layers inside are left out. */
-  originals: Map<string, SceneNode>
+  /** The layers the drag scales, as it found them. */
+  snapshot: ScaleSnapshot
+  /** The scale shown so far, recorded on commit. */
+  preview: ScalePreview
   /** The scale the latest step reached. */
   scale: number
   /** The point the drag keeps in place: as fractions of the box, and on the canvas. */

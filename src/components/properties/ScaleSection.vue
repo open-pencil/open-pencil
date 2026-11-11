@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { MIN_RESCALE, scaleRoots } from '@open-pencil/scene-graph/scaling'
+import { MIN_RESCALE } from '@open-pencil/scene-graph/scaling'
+import { useScaleControls } from '@open-pencil/vue/controls/scale'
 import { useI18n } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -31,41 +28,8 @@ const ANCHOR_STOPS: Array<{ fraction: number; align: LayoutAlign & LayoutCounter
 
 const store = useEditorStore()
 const { panels, tools, common } = useI18n()
-
-/** The box the Scale tool scales, and how it lies on the canvas. */
-interface ScaleBox {
-  width: number
-  height: number
-  /** Draws the box from its own (0,0)…(width,height) on the canvas. */
-  world: Mat3
-}
-
-/**
- * The box the handles show: a single layer's own, turned as it is, as Figma reports its size, or
- * the canvas box of a multi-selection, locked layers included.
- */
-const bounds = useSceneComputed<ScaleBox | null>(() => {
-  const selected = store.getSelectedNodes()
-  if (scaleRoots(store.graph, selected).length === 0) return null
-  if (selected.length === 1) {
-    const [node] = selected
-    return { width: node.width, height: node.height, world: getWorldMatrix(node, store.graph) }
-  }
-  const box = computeBounds(selected.map((node) => getAxisAlignedWorldBounds(node, store.graph)))
-  return { width: box.width, height: box.height, world: Matrix.translated(box.x, box.y) }
-})
-
-// The factor counts from the size the selection had when the tool or the selection was picked.
-const startWidth = ref(0)
-watch(
-  () => [...store.state.selectedIds].join(','),
-  () => (startWidth.value = bounds.value?.width ?? 0),
-  { immediate: true }
-)
-const factor = computed(() => {
-  const width = bounds.value?.width ?? 0
-  return startWidth.value > 0 ? Math.round((width / startWidth.value) * 100) / 100 : 1
-})
+const scale = useScaleControls()
+const { box, factor, anchor } = scale
 
 const anchorCells = computed(() => {
   const rows = [panels.value.alignTop, panels.value.alignCenterVertically, panels.value.alignBottom]
@@ -74,13 +38,12 @@ const anchorCells = computed(() => {
     panels.value.alignCenterHorizontally,
     panels.value.alignRight
   ]
-  const { x, y } = store.state.scaleAnchor
   return ANCHOR_STOPS.flatMap((row, rowIndex) =>
     ANCHOR_STOPS.map((column, columnIndex) => ({
       primary: column.align,
       counter: row.align,
       label: `${rows[rowIndex]} ${columns[columnIndex]}`,
-      active: column.fraction === x && row.fraction === y
+      active: column.fraction === anchor.value.x && row.fraction === anchor.value.y
     }))
   )
 })
@@ -89,47 +52,36 @@ function fractionOf(align: LayoutAlign | LayoutCounterAlign): number {
   return ANCHOR_STOPS.find((stop) => stop.align === align)?.fraction ?? 0.5
 }
 
-/** Scales the selection by `scale` about the anchor point of its box. */
-function scaleBy(scale: number) {
-  const box = bounds.value
-  if (!box || !Number.isFinite(scale) || scale < MIN_RESCALE) return
-  const { x, y } = store.state.scaleAnchor
-  const [ax, ay] = Matrix.mapPoints(box.world, [box.width * x, box.height * y])
-  store.scaleSelected(scale, { x: ax, y: ay })
-}
-
-function scaleToSize(value: number, axis: 'width' | 'height') {
-  const size = bounds.value?.[axis]
-  if (size) scaleBy(value / size)
-}
-
-/** A factor scales from the size the selection started at. */
-function setFactor(value: number) {
-  const width = bounds.value?.width
-  if (!width || startWidth.value <= 0) return
-  scaleBy((value * startWidth.value) / width)
-}
-
 const { open: presetsOpen, portalActive } = useRetainedPopup()
 const factorAnchor = ref<HTMLElement | null>(null)
-// The factor the field shows while it is scrubbed, before the release scales the selection.
+// The factor the field shows while it is scrubbed, as the canvas follows it.
 const draftFactor = ref<number | null>(null)
 const typingFactor = ref(false)
+
+function previewFactor(value: number) {
+  draftFactor.value = value
+  scale.previewFactor(value)
+}
 
 /** A typed factor hands back to the Move tool, as in Figma; a scrub or a preset stays. */
 function commitFactor(value: number) {
   draftFactor.value = null
-  setFactor(value)
+  scale.commitFactor(value)
   if (typingFactor.value) store.setTool('SELECT')
 }
 
+function cancelFactor() {
+  draftFactor.value = null
+  scale.cancel()
+}
+
 function pickPreset(value: unknown) {
-  if (typeof value === 'number') setFactor(value)
+  if (typeof value === 'number') scale.commitFactor(value)
 }
 </script>
 
 <template>
-  <PanelSection v-if="bounds" :label="tools.scale">
+  <PanelSection v-if="box" :label="tools.scale">
     <template #actions>
       <IconButton :label="common.close" @click="store.setTool('SELECT')">
         <icon-lucide-x class="size-3.5" />
@@ -140,17 +92,21 @@ function pickPreset(value: unknown) {
         icon="W"
         data-property="scale-width"
         :aria-label="panels.width"
-        :model-value="bounds.width"
+        :model-value="box.width"
         :min="MIN_RESCALE"
-        @commit="(value: number) => scaleToSize(value, 'width')"
+        @update:model-value="scale.previewSize('width', $event)"
+        @commit="(value: number) => scale.commitSize('width', value)"
+        @cancel="scale.cancel"
       />
       <NumberField
         icon="H"
         data-property="scale-height"
         :aria-label="panels.height"
-        :model-value="bounds.height"
+        :model-value="box.height"
         :min="MIN_RESCALE"
-        @commit="(value: number) => scaleToSize(value, 'height')"
+        @update:model-value="scale.previewSize('height', $event)"
+        @commit="(value: number) => scale.commitSize('height', value)"
+        @cancel="scale.cancel"
       />
     </PanelGrid>
     <PanelGrid :columns="2" class="mt-1.5">
@@ -168,9 +124,9 @@ function pickPreset(value: unknown) {
             :step="0.01"
             :units="['x']"
             @editing-change="typingFactor = $event"
-            @update:model-value="draftFactor = $event"
+            @update:model-value="previewFactor"
             @commit="(value: number) => commitFactor(value)"
-            @cancel="draftFactor = null"
+            @cancel="cancelFactor"
           >
             <template #icon>
               <icon-lucide-scaling class="size-3.5" />
@@ -196,8 +152,7 @@ function pickPreset(value: unknown) {
         :label="panels.scaleAnchor"
         :cells="anchorCells"
         @select="
-          (primary, counter) =>
-            store.setScaleAnchor({ x: fractionOf(primary), y: fractionOf(counter) })
+          (primary, counter) => scale.setAnchor({ x: fractionOf(primary), y: fractionOf(counter) })
         "
       />
     </PanelGrid>

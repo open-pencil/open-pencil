@@ -7,3 +7,4 @@ export {
   scaleRoots,
   type RescaleOptions
 } from './tree'
+export { scaledSnapshotChanges, snapshotScale, type ScaleSnapshot } from './snapshot'

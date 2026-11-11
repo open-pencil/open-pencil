@@ -159,6 +159,11 @@
       "import": "./dist/controls/property-list/index.js",
       "default": "./dist/controls/property-list/index.js"
     },
+    "./controls/scale": {
+      "types": "./dist/controls/scale/index.d.ts",
+      "import": "./dist/controls/scale/index.js",
+      "default": "./dist/controls/scale/index.js"
+    },
     "./controls/selection-colors": {
       "types": "./dist/controls/selection-colors/index.d.ts",
       "import": "./dist/controls/selection-colors/index.js",

@@ -4,20 +4,16 @@ import type { Editor } from '@open-pencil/core'
 import { resolveEditorProfile } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import {
-  canvasDeltaInLayer,
-  getAxisAlignedWorldBounds,
-  placeScaledAbout,
-  selectionPlacement
-} from '@open-pencil/scene-graph/coordinate'
+import { canvasDeltaInLayer, getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import {
   MIN_RESCALE,
-  rescaleNodeChanges,
-  rescaleTargets,
-  scaleRoots
+  scaledSnapshotChanges,
+  scaleRoots,
+  snapshotScale,
+  type ScaleSnapshot
 } from '@open-pencil/scene-graph/scaling'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
@@ -99,14 +95,9 @@ export function tryStartScale(cx: number, cy: number, editor: Editor): DragScale
   const handle = pressedHandle(cx, cy, roots, editor)
   if (!handle) return null
 
-  const placements = new Map(roots.map((root) => [root.id, selectionPlacement(root, editor.graph)]))
-  const originals = new Map<string, SceneNode>()
-  for (const root of roots) {
-    for (const node of rescaleTargets(editor.graph, root, { keepLocked: true }))
-      originals.set(node.id, { ...node })
-  }
+  const snapshot = snapshotScale(editor.graph, roots)
   const single = roots.length === 1 && editor.state.selectedIds.size === 1 ? roots[0] : null
-  const layerPlacement = single && placements.get(single.id)
+  const layerPlacement = single && snapshot.roots.get(single.id)
   const drag: DragScale = {
     type: 'scale',
     handle,
@@ -118,8 +109,8 @@ export function tryStartScale(cx: number, cy: number, editor: Editor): DragScale
         (selectionBox(editor) ??
         computeBounds(roots.map((root) => getAxisAlignedWorldBounds(root, editor.graph)))),
     layer: single && layerPlacement ? { nodeId: single.id, origPlacement: layerPlacement } : null,
-    placements,
-    originals,
+    snapshot,
+    preview: createScalePreview(editor, snapshot),
     scale: 1,
     anchorFraction: handleAnchor(handle),
     anchor: { x: cx, y: cy },
@@ -157,8 +148,7 @@ export function applyScale(
   d.scale = Math.max(MIN_RESCALE, scale)
   d.anchorFraction = centred ? { x: 0.5, y: 0.5 } : handleAnchor(d.handle)
   d.anchor = boxPoint(d, d.anchorFraction)
-  previewScale(d, d.scale, editor)
-  editor.requestRepaint()
+  d.preview.show(d.scale, d.anchor)
 }
 
 /** A line has no height: the end dragged along it sets its length, and the scale with it. */
@@ -182,7 +172,7 @@ function boxScale(
         { nodeId: layer.nodeId, handle, origRect, origPlacement: layer.origPlacement },
         editor
       )
-    : selectionSnapSource(new Set(d.placements.keys()), editor.state.currentPageId)
+    : selectionSnapSource(new Set(d.snapshot.roots.keys()), editor.state.currentPageId)
   const rect = proportionalResizeRect(
     handle,
     origRect,
@@ -197,31 +187,57 @@ function boxScale(
   return rect[driver] / origRect[driver]
 }
 
-/** Shows every layer of the drag at `scale` about the drag's anchor. */
-function previewScale(d: DragScale, scale: number, editor: Editor) {
-  for (const [id, original] of d.originals) {
-    const placement = d.placements.get(id)
-    const changes = rescaleNodeChanges(editor.graph, original, scale, placement !== undefined)
-    // Back at its own size, a layer takes back exactly the place it started from.
-    if (placement) {
-      const { x, y } = scale === 1 ? original : placeScaledAbout(placement, d.anchor, scale)
-      Object.assign(changes, { x, y })
+/**
+ * A Scale edit shown on the canvas while a drag or a scrubbed field changes it, and recorded as one
+ * undo step when it ends. Every step scales the snapshot, not the step before it.
+ */
+export interface ScalePreview {
+  /** Shows the layers at `scale` about a canvas point. */
+  show(scale: number, anchor: Vector): void
+  /** Puts the layers back and records the last step shown, if it changed anything. */
+  commit(): void
+  /** Puts the layers back as the snapshot found them. */
+  cancel(): void
+}
+
+export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): ScalePreview {
+  let shown: { scale: number; anchor: Vector } | null = null
+  const place = (scale: number, anchor: Vector) => {
+    for (const [id, changes] of scaledSnapshotChanges(editor.graph, snapshot, scale, anchor))
+      editor.graph.updateNodePreview(id, changes)
+  }
+  const restore = () => {
+    if (shown) place(1, shown.anchor)
+  }
+  return {
+    show(scale, anchor) {
+      shown = { scale, anchor }
+      place(scale, anchor)
+      editor.requestRepaint()
+    },
+    commit() {
+      restore()
+      const last = shown
+      shown = null
+      if (last && last.scale !== 1) editor.scaleSelected(last.scale, last.anchor)
+      editor.requestRender()
+    },
+    cancel() {
+      restore()
+      shown = null
+      editor.requestRender()
     }
-    editor.graph.updateNodePreview(id, changes)
   }
 }
 
 function commitScale(drag: DragScale, editor: Editor) {
   const d = toRaw(drag)
-  previewScale(d, 1, editor)
   editor.setSnapGuides([])
   editor.setScaleAnchor(d.anchorFraction)
-  if (d.scale !== 1) editor.scaleSelected(d.scale, d.anchor)
-  editor.requestRender()
+  d.preview.commit()
 }
 
 function cancelScale(drag: DragScale, editor: Editor) {
-  previewScale(toRaw(drag), 1, editor)
   editor.setSnapGuides([])
-  editor.requestRender()
+  toRaw(drag).preview.cancel()
 }

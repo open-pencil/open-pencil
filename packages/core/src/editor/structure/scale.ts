@@ -1,7 +1,11 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { placeScaledAbout, selectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import { MIN_RESCALE, rescaleNodeTree, scaleRoots } from '@open-pencil/scene-graph/scaling'
+import {
+  MIN_RESCALE,
+  scaledSnapshotChanges,
+  scaleRoots,
+  snapshotScale
+} from '@open-pencil/scene-graph/scaling'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
@@ -20,18 +24,13 @@ export function scaleSelected(
   if (!Number.isFinite(scale) || scale < MIN_RESCALE || scale === 1) return
   const roots = scaleRoots(ctx.graph, nodes)
   if (roots.length === 0) return
+  const changes = scaledSnapshotChanges(ctx.graph, snapshotScale(ctx.graph, roots), scale, anchor)
   recordSubtreeEdit(
     ctx,
     'Scale',
     roots.map((node) => node.id),
     () => {
-      for (const root of roots) {
-        const node = ctx.graph.getNode(root.id)
-        if (!node) continue
-        const { x, y } = placeScaledAbout(selectionPlacement(node, ctx.graph), anchor, scale)
-        rescaleNodeTree(ctx.graph, node.id, scale, { keepLocked: true })
-        ctx.graph.updateNode(node.id, { x, y })
-      }
+      for (const [id, change] of changes) ctx.graph.updateNode(id, change)
     }
   )
 }
