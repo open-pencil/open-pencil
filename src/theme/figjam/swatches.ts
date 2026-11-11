@@ -3,7 +3,8 @@ import { focusStyles } from '../focus/styles'
 const swatchesTheme = {
   slots: {
     root: 'grid grid-cols-11 justify-items-center gap-0.75',
-    swatch: ['size-4 cursor-pointer rounded-full border border-border', focusStyles.ring],
+    // The chosen swatch is ringed in the accent, so focus is an outline clear of that ring.
+    swatch: ['size-4 cursor-pointer rounded-full border border-border', focusStyles.outline],
     none: 'flex items-center justify-center bg-transparent text-muted'
   },
   variants: {
