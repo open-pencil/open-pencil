@@ -62,8 +62,8 @@ export function createDocumentSourceActions({
 }: DocumentSourceOptions) {
   const changes = createDocumentChanges(editor)
 
-  async function saveAndTrack(save: () => Promise<boolean>) {
-    const revision = changes.capture()
+  async function saveAndTrack(save: () => Promise<boolean>, version?: number) {
+    const revision = version ?? changes.capture()
     const saved = await save()
     if (saved) changes.markSaved(revision)
     return saved
@@ -260,17 +260,6 @@ export function createDocumentSourceActions({
     return saved
   }
 
-  /**
-   * Hand the document to `write`, such as an MCP server saving it to a path a browser cannot
-   * reach, and count it saved as a download is. Where the document saves next does not change.
-   */
-  async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
-    const version = changes.capture()
-    await write(await exportFigFile(editor.graph, figExportOptions()))
-    await recovery.markProtectedVersion(version)
-    return true
-  }
-
   /** Upload the document to storage as a new stored document and keep editing it there. */
   async function saveFigFileToStorage(location: StorageLocation): Promise<boolean> {
     const saved = await saveToNewTarget(() => {
@@ -305,8 +294,14 @@ export function createDocumentSourceActions({
     setStorageDocumentSource,
     setPlannedFilePath,
     saveFigFileToPath,
-    saveFigFileCopy: (write: (data: Uint8Array) => Promise<void>) =>
-      saveAndTrack(() => saveFigFileCopy(write)),
+    saveFigFileCopy: (write: (data: Uint8Array) => Promise<void>) => {
+      const version = changes.capture()
+      return saveAndTrack(async () => {
+        await write(await exportFigFile(editor.graph, figExportOptions()))
+        await recovery.markProtectedVersion(version)
+        return true
+      }, version)
+    },
     saveFigFileToStorage,
     startWatchingCurrentFile,
     disposeDocumentIO,
