@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
-import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
+import { scopeLibraryUpdateGroups } from '@/app/libraries/updates/groups'
 
 describe('library update page scopes', () => {
   test('filters grouped updates to the current page', () => {
