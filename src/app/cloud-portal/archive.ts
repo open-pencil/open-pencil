@@ -114,7 +114,15 @@ export async function saveAccountArchive(
       // Some embedded browsers hand out a file but refuse to write it: build the zip in memory.
       if (!isFileWriteRefused(error)) throw error
     }
-    if (writable) return streamArchive(documents, fetchDocument, writable, options)
+    if (writable) {
+      try {
+        return await streamArchive(documents, fetchDocument, writable, options)
+      } catch (error) {
+        // Some refuse only once written to. The zip is built in memory instead, fetching the
+        // documents again, which costs little since a refusal comes with the first write.
+        if (options.signal?.aborted || !isFileWriteRefused(error)) throw error
+      }
+    }
   }
   return bufferArchive(documents, fetchDocument, options)
 }

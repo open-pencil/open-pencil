@@ -192,6 +192,26 @@ describe('account archive', () => {
     expect(saved).toEqual(['Files.zip'])
   })
 
+  test('builds the zip in memory when the picked file refuses its first write', async () => {
+    const saved: string[] = []
+    const result = await saveAccountArchive([{ id: id(1), name: 'Plan', workspaceName: 'Solo' }], {
+      apiURL: `${ORIGIN}/api`,
+      archiveName: 'Files.zip',
+      fetch: server([{ id: id(1), name: 'Plan', kind: 'design', bytes: new Uint8Array([1]) }]),
+      save: (_bytes, name) => saved.push(name),
+      pickFile: async () => ({
+        createWritable: async () =>
+          new WritableStream<Uint8Array>({
+            write() {
+              throw new DOMException('Refused', 'NotAllowedError')
+            }
+          })
+      })
+    })
+    expect(result?.saved).toBe(1)
+    expect(saved).toEqual(['Files.zip'])
+  })
+
   test('saves nothing when no document arrives', async () => {
     const saved: string[] = []
     const result = await saveAccountArchive([{ id: id(1), name: 'Lost', workspaceName: 'Solo' }], {
