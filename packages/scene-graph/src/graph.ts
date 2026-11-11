@@ -919,6 +919,10 @@ export class SceneGraph {
     return Instances.getInstances(this, componentId)
   }
 
+  /**
+   * The descendants of a layer in depth-first order with their depths. A path never holds more
+   * layers than the graph does, so a parent cycle in bad data stops descending instead of hanging.
+   */
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
@@ -935,7 +939,9 @@ export class SceneGraph {
       const child = this.nodes.get(frame.node.childIds[frame.index++])
       if (!child) continue
       result.push({ node: child, depth: frame.depth })
-      if (child.childIds.length > 0) pending.push({ node: child, depth: frame.depth + 1, index: 0 })
+      if (child.childIds.length > 0 && pending.length < this.nodes.size) {
+        pending.push({ node: child, depth: frame.depth + 1, index: 0 })
+      }
     }
     return result
   }

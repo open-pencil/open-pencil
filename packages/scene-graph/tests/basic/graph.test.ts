@@ -474,7 +474,6 @@ describe('SceneGraph', () => {
   })
 })
 
-
 describe('flattenTree', () => {
   test('keeps depth-first sibling order and the supplied depth', () => {
     const graph = new SceneGraph()
@@ -530,5 +529,19 @@ describe('flattenTree', () => {
 
     expect(result).toHaveLength(30_001)
     expect(result.at(-1)).toEqual({ node: parent, depth: 30_000 })
+  })
+
+  test('stops descending at a parent cycle in bad data', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const outer = graph.createNode('FRAME', page)
+    const inner = graph.createNode('FRAME', outer.id)
+    graph.createNode('RECTANGLE', inner.id)
+    inner.childIds.push(outer.id)
+
+    const depths = graph.flattenTree(page).map(({ depth }) => depth)
+
+    expect(depths.length).toBeLessThan(graph.nodes.size * 3)
+    expect(Math.max(...depths)).toBeLessThan(graph.nodes.size)
   })
 })
