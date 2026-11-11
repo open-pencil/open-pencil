@@ -209,6 +209,27 @@ describe('@open-pencil/tailwind/no-physical-sides', () => {
   })
 })
 
+describe('theme module class lists', () => {
+  const sideRule = '@open-pencil/tailwind/no-physical-sides'
+
+  test('skip variant selections and read only the class of a compound variant', async () => {
+    const theme = [
+      'export default {',
+      '  slots: { root: "ml-1" },',
+      '  variants: { size: { sm: { root: "mr-2" } } },',
+      '  defaultVariants: { size: "ml-3" },',
+      '  compoundVariants: [{ size: "ml-4", class: { root: "ml-5" } }]',
+      '}'
+    ].join('\n')
+    const diagnostics = ruleDiagnostics(
+      await lintFiles({ 'src/theme/variants.ts': `${theme}\n` }, { [sideRule]: 'error' }),
+      sideRule
+    )
+    const named = diagnostics.map((item) => /instead of `([^`]+)`/.exec(item.message)?.[1])
+    expect(named.toSorted()).toEqual(['ml-1', 'ml-5', 'mr-2'])
+  })
+})
+
 describe('@open-pencil/tailwind/no-interpolated-classes', () => {
   const interpolatedRule = '@open-pencil/tailwind/no-interpolated-classes'
 
