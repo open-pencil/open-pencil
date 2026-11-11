@@ -130,18 +130,30 @@ describe('Scale tool input', () => {
     expect(current(other.id).width).toBe(50)
   })
 
-  test('a preview leaves a document that replaced its own alone', () => {
+  /** A selected card whose Scale preview shows it at 2×, then a document with the same layer ids. */
+  function previewThenReplace() {
     const { frame } = card()
+    const original = editor.graph
     const preview = createScalePreview(editor, snapshotScale(editor.graph, [current(frame.id)]))
     preview.show(2, { x: 0, y: 0 })
-    // Another document with the same layer, as a reopened file has.
+    // Another document with the same layer, as a reopened file has: it loads at 400 wide.
     const replacement = new SceneGraph()
     for (const node of editor.graph.getAllNodes())
       replacement.nodes.set(node.id, structuredClone(node))
     editor.replaceGraph(replacement)
+    return { frame, original, preview }
+  }
+
+  test('cancelled after its document is replaced, a preview puts that document back only', () => {
+    const { frame, original, preview } = previewThenReplace()
     preview.cancel()
+    expect(original.getNode(frame.id)?.width).toBe(200)
+    expect(current(frame.id).width).toBe(400)
+  })
+
+  test('committed after its document is replaced, a preview records nothing in the new one', () => {
+    const { frame, preview } = previewThenReplace()
     preview.commit()
-    // The copy was taken mid-preview at 400 wide, and stays as it loaded.
     expect(current(frame.id).width).toBe(400)
     expect(editor.undo.canUndo).toBe(false)
   })

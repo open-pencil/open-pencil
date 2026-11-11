@@ -58,12 +58,12 @@ describe('scaleSelected', () => {
     editor.select([frame.id])
     editor.scaleSelected(2, { x: 0, y: 0 })
 
-    // As a collaborator's edits arrive: outside the history.
-    editor.graph.updateNode(frame.id, { name: 'Renamed' })
+    // As a collaborator's edits arrive: outside the history, one to a field Scale leaves as is.
+    editor.graph.updateNode(frame.id, { name: 'Renamed', strokeMiterLimit: 10 })
     const added = editor.graph.createNode('RECTANGLE', frame.id, { width: 10, height: 10 })
 
     editor.undo.undo()
-    expect(current(frame.id)).toMatchObject({ width: 100, name: 'Renamed' })
+    expect(current(frame.id)).toMatchObject({ width: 100, name: 'Renamed', strokeMiterLimit: 10 })
     expect([...editor.state.selectedIds]).toEqual([frame.id])
     expect(editor.graph.getNode(added.id)?.parentId).toBe(frame.id)
   })

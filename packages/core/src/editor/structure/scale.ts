@@ -1,4 +1,4 @@
-import { pick } from 'es-toolkit'
+import { isEqual, pick } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -38,8 +38,12 @@ export function scaleLayers(
   const fields: ScaledFields[] = [...changes].flatMap(([id, after]) => {
     const node = ctx.graph.getNode(id)
     if (!node) return []
-    const keys = Object.keys(after) as (keyof SceneNode)[]
-    return [{ id, before: structuredClone(pick(node, keys)), after }]
+    // Only the fields the scale changes, so undo leaves others' edits to the rest alone.
+    const keys = (Object.keys(after) as (keyof SceneNode)[]).filter(
+      (key) => !isEqual(node[key], after[key])
+    )
+    if (keys.length === 0) return []
+    return [{ id, before: structuredClone(pick(node, keys)), after: pick(after, keys) }]
   })
   const apply = (side: 'before' | 'after') => {
     for (const field of fields) {

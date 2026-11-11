@@ -203,11 +203,11 @@ export interface ScalePreview {
 }
 
 export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): ScalePreview {
-  // The document the snapshot was taken from: once another replaces it, nothing here touches either.
+  // The document the snapshot was taken from. Restoring always reaches it, even once another
+  // replaces it, so it never keeps a scale nobody recorded; showing and committing stop there.
   const graph = editor.graph
   let shown: { scale: number; anchor: Vector } | null = null
   const place = (scale: number, anchor: Vector) => {
-    if (editor.graph !== graph) return
     for (const [id, changes] of scaledSnapshotChanges(graph, snapshot, scale, anchor))
       graph.updateNodePreview(id, changes)
   }
@@ -216,6 +216,7 @@ export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): Sca
   }
   return {
     show(scale, anchor) {
+      if (editor.graph !== graph) return
       shown = { scale, anchor }
       place(scale, anchor)
       editor.requestRepaint()
