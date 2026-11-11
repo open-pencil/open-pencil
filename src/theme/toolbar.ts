@@ -6,13 +6,13 @@ const toolbarTheme = {
     dock: 'absolute z-10 flex',
     bar: 'flex min-h-0 min-w-0 gap-0.5 rounded-xl bg-panel p-1 shadow-(--floating-bar-shadow) *:shrink-0',
     button: [
-      'flex size-8 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none',
+      'flex size-8 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors',
       focusStyles.ring
     ],
     icon: 'size-4',
     flyoutGroup: 'flex items-center',
     flyoutTrigger: [
-      'flex cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none data-[state=open]:bg-hover data-[state=open]:text-surface',
+      'flex cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors data-[state=open]:bg-hover data-[state=open]:text-surface',
       focusStyles.ring
     ],
     flyoutTriggerIcon: 'size-2.5',
@@ -22,12 +22,12 @@ const toolbarTheme = {
     flyoutItemIcon: 'size-3.5',
     flyoutItemLabel: 'flex-1',
     navigationAction: [
-      'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm outline-none select-none disabled:pointer-events-none',
+      'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm select-none disabled:pointer-events-none',
       focusStyles.ring
     ],
     navigationIcon: 'size-3.5',
     action: [
-      'flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface',
+      'flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted transition-colors select-none active:bg-hover active:text-surface',
       focusStyles.ring
     ],
     actionIcon: 'size-4'

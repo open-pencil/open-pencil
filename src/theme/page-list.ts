@@ -20,7 +20,7 @@ const pageListTheme = {
     divider: 'my-1 flex cursor-pointer items-center px-2',
     dividerLine: 'h-px flex-1 bg-border',
     item: [
-      'flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 text-start text-2xs outline-none',
+      'flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 text-start text-2xs',
       focusStyles.ring
     ],
     label: 'min-w-0 flex-1 truncate',

@@ -1,9 +1,6 @@
 import { focusStyles } from '../focus/styles'
 
-const NAME = [
-  'min-w-0 cursor-default truncate text-start text-2xs text-surface outline-none',
-  focusStyles.ring
-]
+const NAME = ['min-w-0 cursor-default truncate text-start text-2xs text-surface', focusStyles.ring]
 
 /** People in a room, each followed by their agents. */
 export default {

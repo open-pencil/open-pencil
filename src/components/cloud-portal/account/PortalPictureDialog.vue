@@ -140,7 +140,7 @@ async function save() {
       <div
         v-show="!unreadable"
         :class="[
-          'relative size-60 cursor-grab touch-none overflow-hidden rounded bg-canvas outline-none select-none active:cursor-grabbing',
+          'relative size-60 cursor-grab touch-none overflow-hidden rounded bg-canvas select-none active:cursor-grabbing',
           focusStyles.ring
         ]"
         tabindex="0"
@@ -183,7 +183,7 @@ async function save() {
         </SliderTrack>
         <SliderThumb
           :class="[
-            'block size-3.5 rounded-full border border-accent bg-panel shadow outline-none',
+            'block size-3.5 rounded-full border border-accent bg-panel shadow',
             focusStyles.thumb
           ]"
         />

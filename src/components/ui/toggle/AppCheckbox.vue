@@ -32,7 +32,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
     :aria-describedby="ariaDescribedby"
     :disabled="disabled"
     :class="[
-      'flex size-4 shrink-0 items-center justify-center rounded border border-border bg-panel-field text-on-accent outline-none transition-colors hover:border-accent/60 data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=indeterminate]:border-accent data-[state=indeterminate]:bg-accent disabled:opacity-50',
+      'flex size-4 shrink-0 items-center justify-center rounded border border-border bg-panel-field text-on-accent transition-colors hover:border-accent/60 data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=indeterminate]:border-accent data-[state=indeterminate]:bg-accent disabled:opacity-50',
       focusStyles.ring
     ]"
     @update:model-value="(value) => emit('update:modelValue', value === true)"

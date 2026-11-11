@@ -8,7 +8,7 @@ import { motionStyles } from '../motion/styles'
 export default {
   slots: {
     meter: [
-      'flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface',
+      'flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 text-3xs text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface',
       focusStyles.ring
     ],
     miniBar: 'flex h-1.5 w-5 shrink-0 overflow-hidden rounded-full bg-border',

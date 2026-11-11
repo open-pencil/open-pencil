@@ -4,7 +4,7 @@ export default {
   slots: {
     choices: 'flex flex-col gap-2',
     choice: [
-      'group flex w-full items-center gap-3 rounded-lg border border-border bg-panel-field px-3 py-2.5 text-start outline-none hover:bg-panel-field-hover data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted',
+      'group flex w-full items-center gap-3 rounded-lg border border-border bg-panel-field px-3 py-2.5 text-start hover:bg-panel-field-hover data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted',
       focusStyles.ring
     ],
     choiceIcon:

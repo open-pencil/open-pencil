@@ -3,7 +3,7 @@ import { focusStyles } from '../focus/styles'
 const switchTheme = {
   slots: {
     root: [
-      'relative inline-flex shrink-0 cursor-pointer items-center rounded-full border border-border bg-panel-field outline-none transition-colors hover:border-muted data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[disabled]:cursor-default data-[disabled]:opacity-50',
+      'relative inline-flex shrink-0 cursor-pointer items-center rounded-full border border-border bg-panel-field transition-colors hover:border-muted data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[disabled]:cursor-default data-[disabled]:opacity-50',
       focusStyles.ring
     ],
     thumb:

@@ -3,7 +3,7 @@ import { focusStyles } from '../focus/styles'
 export default {
   slots: {
     trigger: [
-      'flex h-6 shrink-0 items-center gap-1 rounded px-1 text-muted outline-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state-sync=conflict]:bg-warning-bg data-[state-sync=conflict]:text-warning data-[state-sync=error]:text-error data-[state-sync=view]:bg-panel-field data-[state-sync=view]:text-surface data-[state-sync=not-live]:bg-warning-bg data-[state-sync=not-live]:text-warning',
+      'flex h-6 shrink-0 items-center gap-1 rounded px-1 text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state-sync=conflict]:bg-warning-bg data-[state-sync=conflict]:text-warning data-[state-sync=error]:text-error data-[state-sync=view]:bg-panel-field data-[state-sync=view]:text-surface data-[state-sync=not-live]:bg-warning-bg data-[state-sync=not-live]:text-warning',
       focusStyles.ring
     ],
     triggerLabel: 'text-2xs font-medium',

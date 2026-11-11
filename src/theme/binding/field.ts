@@ -7,7 +7,7 @@ const bindingFieldTheme = {
     pill: 'flex h-4.5 min-w-0 flex-1 items-center overflow-hidden rounded-sm bg-surface/10 px-1 text-surface outline-none',
     pillLabel: 'min-w-0 flex-1 truncate text-2xs font-medium',
     trigger: [
-      'flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-transparent text-muted outline-none hover:bg-surface/10 hover:text-surface data-[open]:bg-surface/10 data-[open]:text-surface disabled:opacity-0 data-[disabled]:opacity-0',
+      'flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-transparent bg-transparent text-muted hover:bg-surface/10 hover:text-surface data-[open]:bg-surface/10 data-[open]:text-surface disabled:opacity-0 data-[disabled]:opacity-0',
       focusStyles.ring
     ],
     createForm: 'flex items-center gap-1.5 p-1',

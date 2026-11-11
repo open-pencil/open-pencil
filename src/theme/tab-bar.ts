@@ -9,7 +9,7 @@ const tabBarTheme = {
     list: 'flex h-full items-end',
     item: 'group/tab flex h-full max-w-48 min-w-24 items-center border-e border-border pe-3',
     trigger: [
-      'flex h-full min-w-0 cursor-pointer touch-manipulation items-center gap-1.5 px-3 text-2xs transition-colors outline-none select-none',
+      'flex h-full min-w-0 cursor-pointer touch-manipulation items-center gap-1.5 px-3 text-2xs transition-colors select-none',
       focusStyles.ring
     ],
     icon: 'size-3 shrink-0 opacity-50',
@@ -21,12 +21,12 @@ const tabBarTheme = {
     closeIcon: 'size-3',
     dirtyDot: 'size-1.5 shrink-0 rounded-full bg-accent',
     newTab: [
-      'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors outline-none hover:bg-hover hover:text-surface ms-1.75',
+      'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors hover:bg-hover hover:text-surface ms-1.75',
       focusStyles.ring
     ],
     newIcon: 'size-4',
     scroll: [
-      'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors outline-none hover:bg-hover hover:text-surface mx-0.5 data-start:order-first',
+      'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center self-center rounded text-muted transition-colors hover:bg-hover hover:text-surface mx-0.5 data-start:order-first',
       focusStyles.ring
     ],
     scrollIcon: 'size-3.5'

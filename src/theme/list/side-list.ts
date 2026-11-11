@@ -10,7 +10,7 @@ export default {
     actions: 'flex items-center gap-0.5',
     items: 'flex flex-col gap-0.5',
     item: [
-      'group flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded border-none bg-transparent px-2 text-start text-xs text-muted outline-none transition-colors hover:bg-hover hover:text-surface data-[active=true]:bg-hover data-[active=true]:text-surface',
+      'group flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded border-none bg-transparent px-2 text-start text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[active=true]:bg-hover data-[active=true]:text-surface',
       focusStyles.ring
     ],
     icon: 'size-3.5 shrink-0',

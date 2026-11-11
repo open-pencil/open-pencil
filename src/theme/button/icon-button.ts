@@ -7,7 +7,7 @@ export default {
   // A button that opens a menu or popover reads as open while it is (`aria-expanded`); its
   // trigger's own `data-state` is replaced by the button's on and off.
   base: [
-    'flex cursor-pointer items-center justify-center bg-transparent text-muted outline-none hover:bg-hover hover:text-surface aria-expanded:bg-hover aria-expanded:text-surface [&_svg]:pointer-events-none',
+    'flex cursor-pointer items-center justify-center bg-transparent text-muted hover:bg-hover hover:text-surface aria-expanded:bg-hover aria-expanded:text-surface [&_svg]:pointer-events-none',
     focusStyles.ring
   ],
   variants: {

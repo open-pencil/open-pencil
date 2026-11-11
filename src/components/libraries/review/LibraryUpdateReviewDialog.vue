@@ -259,7 +259,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
           </SliderTrack>
           <SliderThumb
             :class="[
-              'block size-3.5 rounded-full border border-accent bg-panel shadow outline-none',
+              'block size-3.5 rounded-full border border-accent bg-panel shadow',
               focusStyles.thumb
             ]"
           />

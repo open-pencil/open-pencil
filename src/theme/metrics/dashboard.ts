@@ -78,7 +78,7 @@ export const metricsRangePickerTheme = {
     presets:
       'flex w-40 flex-col gap-0.5 border-e border-border p-1.5 max-sm:w-auto max-sm:border-e-0 max-sm:border-b',
     preset: [
-      'flex h-7 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 text-xs outline-none hover:bg-hover data-[selected=true]:font-semibold',
+      'flex h-7 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 text-xs hover:bg-hover data-[selected=true]:font-semibold',
       focusStyles.ring
     ],
     calendar: 'p-3'

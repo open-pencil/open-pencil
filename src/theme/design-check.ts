@@ -10,7 +10,7 @@ export const designCheckTheme = {
     toolbarRow: 'flex min-w-0 items-center gap-1',
     filters: 'flex min-w-0 flex-1 items-center gap-0.5',
     filter: [
-      'flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-2xs text-surface tabular-nums outline-none hover:bg-hover data-[state=off]:text-muted data-[state=off]:[&_svg]:opacity-50',
+      'flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-2xs text-surface tabular-nums hover:bg-hover data-[state=off]:text-muted data-[state=off]:[&_svg]:opacity-50',
       focusStyles.ring
     ],
     list: 'min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2',
@@ -35,7 +35,7 @@ export const designCheckTheme = {
     rowDetail: 'flex max-w-[50%] min-w-0 shrink items-center gap-1.5 text-muted tabular-nums',
     rowDetailText: 'truncate',
     rowAction: [
-      'absolute top-1/2 inset-e-1.5 hidden h-5 -translate-y-1/2 cursor-pointer items-center rounded bg-panel px-1.5 text-primary shadow-[0_0_0_1px_var(--color-border)] outline-none group-focus-within/row:flex group-hover/row:flex hover:bg-hover',
+      'absolute top-1/2 inset-e-1.5 hidden h-5 -translate-y-1/2 cursor-pointer items-center rounded bg-panel px-1.5 text-primary shadow-[0_0_0_1px_var(--color-border)] group-focus-within/row:flex group-hover/row:flex hover:bg-hover',
       focusStyles.ring
     ],
     contrastSwatch:

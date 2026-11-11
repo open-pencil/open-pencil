@@ -5,7 +5,7 @@ const constraintsTheme = {
     root: 'grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-1.5',
     diagram: 'relative h-16 w-18 rounded border border-border bg-panel-field',
     pin: [
-      'absolute flex cursor-pointer items-center justify-center rounded-sm border border-transparent bg-transparent text-muted outline-none hover:bg-hover hover:text-surface',
+      'absolute flex cursor-pointer items-center justify-center rounded-sm border border-transparent bg-transparent text-muted hover:bg-hover hover:text-surface',
       focusStyles.ring
     ],
     pinMark: 'block rounded-full bg-current',

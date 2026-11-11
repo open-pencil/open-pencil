@@ -402,7 +402,7 @@ async function insertSelectedAsset() {
                 :draggable="!!asset.componentId"
                 :aria-busy="insertingAssetId === asset.id"
                 :class="[
-                  'group/asset rounded text-start text-xs text-surface outline-none hover:bg-hover',
+                  'group/asset rounded text-start text-xs text-surface hover:bg-hover',
                   focusStyles.ring,
                   assetView === 'grid'
                     ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'

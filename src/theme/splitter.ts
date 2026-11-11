@@ -2,7 +2,7 @@ import { focusStyles } from './focus/styles'
 
 const splitterTheme = {
   slots: {
-    handle: ['group relative z-10 shrink-0 touch-none outline-none', focusStyles.ring],
+    handle: ['group relative z-10 shrink-0 touch-none', focusStyles.ring],
     divider:
       'pointer-events-none absolute bg-border transition-colors group-data-[state=drag]:bg-accent group-data-[state=hover]:bg-accent group-focus-visible:bg-accent'
   },

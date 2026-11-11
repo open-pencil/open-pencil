@@ -11,7 +11,7 @@ const layerTreeTheme = {
     label: 'flex min-w-0 flex-1 items-center gap-1.5',
     actions: 'flex shrink-0 items-center gap-0.5',
     action: [
-      'flex size-4 items-center justify-center rounded text-current outline-none hover:bg-white/15',
+      'flex size-4 items-center justify-center rounded text-current hover:bg-white/15',
       focusStyles.ring
     ],
     actionIcon: 'size-3',

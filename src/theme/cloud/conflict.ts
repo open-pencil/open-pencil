@@ -12,7 +12,7 @@ export default {
     versionMeta: 'truncate text-2xs text-muted',
     options: 'mt-4 flex flex-col gap-1.5',
     option: [
-      'group flex w-full items-start gap-2.5 rounded-lg border border-border px-3 py-2.5 text-start outline-none hover:bg-hover data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted data-[tone=danger]:data-[state=checked]:border-error-border data-[tone=danger]:data-[state=checked]:bg-error-bg',
+      'group flex w-full items-start gap-2.5 rounded-lg border border-border px-3 py-2.5 text-start hover:bg-hover data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted data-[tone=danger]:data-[state=checked]:border-error-border data-[tone=danger]:data-[state=checked]:bg-error-bg',
       focusStyles.ring
     ],
     optionMark:

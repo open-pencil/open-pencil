@@ -8,7 +8,7 @@ import { focusStyles } from '../focus/styles'
 const selectFieldTriggerTheme = {
   slots: {
     root: [
-      'flex h-5 shrink-0 cursor-pointer items-center justify-center gap-0.5 rounded-sm border border-transparent bg-transparent text-3xs text-muted outline-none hover:bg-surface/10 hover:text-surface focus:text-surface data-[state=open]:bg-surface/10 data-[state=open]:text-surface',
+      'flex h-5 shrink-0 cursor-pointer items-center justify-center gap-0.5 rounded-sm border border-transparent bg-transparent text-3xs text-muted hover:bg-surface/10 hover:text-surface focus:text-surface data-[state=open]:bg-surface/10 data-[state=open]:text-surface',
       focusStyles.ring
     ],
     chevron: 'size-3 shrink-0'

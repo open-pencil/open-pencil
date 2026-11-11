@@ -4,7 +4,7 @@ const segmentedControlTheme = {
   slots: {
     root: 'inline-flex items-center gap-0.5 rounded bg-panel-field p-0.5 hover:bg-panel-field-hover',
     item: [
-      'flex h-5 min-w-max flex-auto cursor-pointer items-center justify-center gap-1 rounded-sm text-muted outline-none hover:bg-hover hover:text-surface data-[state=on]:bg-hover data-[state=on]:text-surface data-[state=on]:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50',
+      'flex h-5 min-w-max flex-auto cursor-pointer items-center justify-center gap-1 rounded-sm text-muted hover:bg-hover hover:text-surface data-[state=on]:bg-hover data-[state=on]:text-surface data-[state=on]:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50',
       focusStyles.ring
     ]
   },
