@@ -11,7 +11,7 @@ This is a draft awaiting legal review. It is not in force, and it changes before
 
 Version: 2026-11-15
 
-This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by [operator legal name], [address], the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](../privacy). A Cloud server someone else runs has its own operator and policy.
+This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico, [address], the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](../privacy). A Cloud server someone else runs has its own operator and policy.
 
 ## Where your data is
 
@@ -26,9 +26,9 @@ The Service's database, file storage, and live collaboration run in the European
 | Workspaces, members, sharing links, invitations, and the email addresses you invite | To share documents | Until removed, or the workspace is deleted |
 | Sign-in history: time, method, IP address, and browser | To show you your sessions and warn you of new sign-ins | Until you delete your account |
 | Which version of the terms you accepted, and when | To show you agreed | Until you delete your account |
-| Reports about shared documents, and what administrators did about them | To handle abuse | [period] |
+| Reports about shared documents, and what administrators did about them | To handle abuse | 1 year after the report is closed |
 | Rate-limit counters, by IP address or account | To protect the Service | Up to a day |
-| Usage of services credits | To apply your monthly allowance | [period] |
+| Usage of services credits | To apply your monthly allowance | 12 months |
 
 We don't sell your data, show ads, or use your documents to train models.
 
@@ -55,7 +55,9 @@ When you use hosted services such as AI chat, what you send is forwarded to the 
 
 ## Your rights
 
-You can see and download your documents, change your account details, and delete your account from your account settings. Under the GDPR you can also ask us for a copy of your data, to correct or erase it, to restrict or object to processing, and you can complain to your data protection authority. Write to [privacy contact].
+You can see and download your documents, change your account details, and delete your account from your account settings. Under the GDPR you can also ask us for a copy of your data, to correct or erase it, to restrict or object to processing, and you can complain to your data protection authority. Write to [privacy@openpencil.dev](mailto:privacy@openpencil.dev).
+
+Because we are based in Mexico, Mexico's Federal Law on the Protection of Personal Data Held by Private Parties also applies. Its rights of access, rectification, cancellation, and opposition (ARCO) work the same way: write to the address above, and we answer within 20 days. You can complain to the Mexican data protection authority, the Secretaría Anticorrupción y Buen Gobierno.
 
 Legal bases: running the Service you signed up for (contract), keeping it secure and fixing errors (legitimate interests), and meeting legal obligations.
 
@@ -65,4 +67,4 @@ We'll tell you about material changes before they take effect. The version date 
 
 ## Contact
 
-[privacy contact] · [operator legal name], [address]
+[privacy@openpencil.dev](mailto:privacy@openpencil.dev) · Alena Poyarkova, [address]
