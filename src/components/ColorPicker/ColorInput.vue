@@ -18,13 +18,22 @@ const fieldAttrs = computed(() => ({ ...attrs, class: normalizeClass(attrs.class
 const {
   editable = false,
   color,
-  okhcl = null
+  okhcl = null,
+  tone = 'panel'
 } = defineProps<{
   color: Color
   editable?: boolean
   okhcl?: OkHCLControls | null
+  /** The field it stands on, as `PaintField`'s `tone`. */
+  tone?: 'panel' | 'form'
+}>()
+defineSlots<{
+  /** A variable button at the field's end. */
+  binding?(): unknown
 }>()
 const emit = defineEmits<{ update: [color: Color]; openChange: [open: boolean] }>()
+// The hex reads at the size of the field's other text.
+const hexSize = computed(() => (tone === 'form' ? 'text-xs' : 'text-2xs'))
 </script>
 
 <template>
@@ -36,7 +45,7 @@ const emit = defineEmits<{ update: [color: Color]; openChange: [open: boolean] }
   >
     <template #default="{ editable: isEditable, hex, actions, okhcl: okhclControls }">
       <!-- A paint row's frame, so a colour reads alike wherever the panel edits one. -->
-      <PaintField v-bind="fieldAttrs">
+      <PaintField v-bind="fieldAttrs" :tone="tone">
         <template #preview>
           <ColorPicker
             :color="color"
@@ -49,15 +58,19 @@ const emit = defineEmits<{ update: [color: Color]; openChange: [open: boolean] }
           <input
             v-if="isEditable"
             data-test-id="color-hex-input"
-            class="min-w-0 flex-1 border-none bg-transparent font-mono text-2xs text-surface outline-none"
+            :class="[
+              'min-w-0 flex-1 border-none bg-transparent font-mono text-surface outline-none',
+              hexSize
+            ]"
             :value="hex"
             maxlength="6"
             @change="actions.updateFromHex(inputValue($event))"
           />
-          <span v-else class="min-w-0 flex-1 truncate font-mono text-2xs text-muted">
+          <span v-else :class="['min-w-0 flex-1 truncate font-mono text-muted', hexSize]">
             {{ hex }}
           </span>
         </template>
+        <template v-if="$slots.binding" #binding><slot name="binding" /></template>
       </PaintField>
     </template>
   </ColorInputRoot>
