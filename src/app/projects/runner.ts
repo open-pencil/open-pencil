@@ -95,26 +95,52 @@ export function useProjectRunner(
 ) {
   const run = runOf(toValue(project).id)
 
+  /** Whether the application is running or on its way, which is one at a time. */
+  const active = computed(() => run.state.value === 'starting' || run.state.value === 'running')
+
   async function attach(id: string): Promise<void> {
     run.detach()
-    const stops = [
-      await events.listenOutput((event) => {
-        if (event.id !== id) return
-        run.output.value = [...run.output.value, event.line].slice(-MAX_OUTPUT_LINES)
-      }),
-      await events.listenExit((event) => {
-        if (event.id !== id) return
-        run.state.value = 'stopped'
-        run.exitCode.value = event.code
-        run.detach()
-      })
-    ]
-    run.detach = () => stops.forEach((stop) => stop())
+    const stops: (() => void)[] = []
+    // Bound before the listeners are, so a listener that fails to bind leaves nothing behind: an
+    // exit that arrives meanwhile stops what was already bound instead of leaking it.
+    run.detach = () => {
+      for (const stop of stops.splice(0)) stop()
+    }
+    try {
+      stops.push(
+        await events.listenOutput((event) => {
+          if (event.id !== id) return
+          run.output.value = [...run.output.value, event.line].slice(-MAX_OUTPUT_LINES)
+        })
+      )
+      stops.push(
+        await events.listenExit((event) => {
+          if (event.id !== id) return
+          run.state.value = 'stopped'
+          run.exitCode.value = event.code
+          run.detach()
+        })
+      )
+    } catch (error) {
+      run.detach()
+      throw error
+    }
+  }
+
+  /**
+   * Say a run that was starting is now running. A process that exited before its start command
+   * answered has already moved the run to stopped, and its exit code is what the panel should
+   * show, so a run that is no longer starting keeps the state it reached.
+   */
+  function markStarted(): void {
+    if (run.state.value === 'starting') run.state.value = 'running'
   }
 
   async function start(): Promise<boolean> {
     const target = toValue(project)
     if (target.startCommand.trim() === '') return false
+    // One application at a time: a second press must not clear the output of a run that is up.
+    if (active.value) return false
     run.state.value = 'starting'
     run.failure.value = null
     run.exitCode.value = null
@@ -127,7 +153,7 @@ export function useProjectRunner(
         directory: applicationFolder(target),
         command: target.startCommand
       })
-      run.state.value = 'running'
+      markStarted()
       return true
     } catch (error) {
       run.detach()
@@ -171,7 +197,7 @@ export function useProjectRunner(
     output: run.output,
     failure: run.failure,
     exitCode: run.exitCode,
-    running: computed(() => run.state.value === 'starting' || run.state.value === 'running'),
+    running: active,
     address: computed(() => applicationAddress(toValue(project), run.output.value)),
     start,
     stop

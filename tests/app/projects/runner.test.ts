@@ -78,7 +78,7 @@ test('a project without a start command starts nothing', async () => {
 })
 
 test('keeps what the application prints and reads its address from it', async () => {
-  const app = project('D:/app')
+  const app = project('D:/app-prints')
   const fired = events()
   const { transport } = recorder()
   const runner = useProjectRunner(app, transport, fired.listeners)
@@ -105,7 +105,7 @@ test('the address the command names wins over the printed one', () => {
 })
 
 test('an exit ends the run and keeps its code', async () => {
-  const app = project('D:/app')
+  const app = project('D:/app-exit')
   const fired = events()
   const { transport } = recorder()
   const runner = useProjectRunner(app, transport, fired.listeners)
@@ -119,7 +119,7 @@ test('an exit ends the run and keeps its code', async () => {
 })
 
 test('stopping asks the native side and leaves the run idle', async () => {
-  const app = project('D:/app')
+  const app = project('D:/app-stop')
   const { transport, calls } = recorder()
   const runner = useProjectRunner(app, transport, events().listeners)
   await runner.start()
@@ -131,7 +131,7 @@ test('stopping asks the native side and leaves the run idle', async () => {
 })
 
 test('a start the native side refuses is reported', async () => {
-  const app = project('D:/app')
+  const app = project('D:/app-refused')
   const transport: ProjectRunnerTransport = async () => {
     throw new Error('the project path is not a directory')
   }
@@ -149,7 +149,7 @@ test('a project at the repository root runs there', () => {
 })
 
 test('a reloaded window picks the run it left up again', async () => {
-  const app = project('D:/app')
+  const app = project('D:/app-reload')
   const fired = events()
   const transport: ProjectRunnerTransport = async (command) =>
     command === 'project_run' ? 42 : null
@@ -168,4 +168,63 @@ test('a project that runs nothing stays idle when its screen mounts', async () =
   await settle()
 
   expect(runner.state.value).toBe('idle')
+})
+
+test('a second start leaves the run that is up alone', async () => {
+  const app = project('D:/app-twice')
+  const fired = events()
+  const { transport, calls } = recorder()
+  const runner = useProjectRunner(app, transport, fired.listeners)
+  await runner.start()
+  fired.output(app.id, '  ➜  Local:   http://localhost:5173/')
+
+  expect(await runner.start()).toBe(false)
+
+  expect(calls.filter(([command]) => command === 'project_start')).toHaveLength(1)
+  expect(runner.output.value).toHaveLength(1)
+  expect(runner.state.value).toBe('running')
+})
+
+test('a process that exits before its start command answers stays stopped', async () => {
+  const app = project('D:/app-fast-exit')
+  const fired = events()
+  let release = (): void => undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const transport: ProjectRunnerTransport = async (command) => {
+    if (command === 'project_run') return null
+    if (command === 'project_start') await held
+    return 42
+  }
+  const runner = useProjectRunner(app, transport, fired.listeners)
+  await settle()
+
+  const starting = runner.start()
+  await settle()
+  // The listeners are bound before the command is sent, so the exit reaches the run first.
+  fired.exit(app.id, 1)
+  release()
+  await starting
+
+  expect(runner.state.value).toBe('stopped')
+  expect(runner.exitCode.value).toBe(1)
+  expect(runner.running.value).toBe(false)
+})
+
+test('a listener that fails to bind leaves the one already bound behind', async () => {
+  const app = project('D:/app-half-bound')
+  const stopped: string[] = []
+  const listeners: ProjectRunnerEvents = {
+    listenOutput: async () => () => stopped.push('output'),
+    listenExit: async () => {
+      throw new Error('the window refused the listener')
+    }
+  }
+  const runner = useProjectRunner(app, recorder().transport, listeners)
+
+  expect(await runner.start()).toBe(false)
+
+  expect(stopped).toEqual(['output'])
+  expect(runner.state.value).toBe('failed')
 })

@@ -10,6 +10,7 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import { CloudVersionHistory } from '@/components/cloud/integration'
 import propertiesTabsTheme from '@/theme/panel/properties-tabs'
@@ -39,6 +40,15 @@ const lints = computed(() => resolveEditorProfile(store.state).lint)
 // A board opened on the Lint tab shows Design instead.
 watchEffect(() => {
   if (!lints.value && activeTab.value === 'lint') activeTab.value = 'design'
+})
+
+/**
+ * Versioning needs the host process the desktop app starts: a browser build has no repository to
+ * read, so the tab would only tell the person to save a file git cannot see.
+ */
+const git = computed(() => canRunHostProcesses())
+watchEffect(() => {
+  if (!git.value && activeTab.value === 'git') activeTab.value = 'design'
 })
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
@@ -75,7 +85,12 @@ const problemCount = computed(() => {
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
         </TabsTrigger>
-        <TabsTrigger value="git" data-test-id="properties-tab-git" :class="tabStyles.trigger()">
+        <TabsTrigger
+          v-if="git"
+          value="git"
+          data-test-id="properties-tab-git"
+          :class="tabStyles.trigger()"
+        >
           <icon-lucide-git-branch :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.git }}</span>
         </TabsTrigger>
@@ -124,6 +139,7 @@ const problemCount = computed(() => {
       </TabsContent>
 
       <TabsContent
+        v-if="git"
         value="git"
         class="flex min-h-0 flex-1 flex-col"
         :force-mount="true"

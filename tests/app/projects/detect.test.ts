@@ -74,6 +74,24 @@ test('the dev script wins over start, and its port becomes the start URL', async
   expect(project.name).toBe('my-app')
 })
 
+test('the port a command names is read in the forms dev servers take it', async () => {
+  const cases = [
+    ['vite --port 5173', 'http://127.0.0.1:5173'],
+    ['vite --port=4000', 'http://127.0.0.1:4000'],
+    ['next dev -p 3001', 'http://127.0.0.1:3001'],
+    ['PORT=8080 node server.js', 'http://127.0.0.1:8080'],
+    ['vite', '']
+  ] as const
+
+  for (const [command, url] of cases) {
+    const io = detector(
+      { 'D:/app/package.json': JSON.stringify({ name: 'my-app', scripts: { dev: command } }) },
+      { kind: 'repository', root: 'D:/app' }
+    )
+    expect(projectOf(await detectProject(io, 'D:/app')).startUrl).toBe(url)
+  }
+})
+
 test('a repository without a manifest is still a project, just without a start command', async () => {
   const project = projectOf(
     await detectProject(detector({}, { kind: 'repository', root: 'D:/designs' }), 'D:/designs')

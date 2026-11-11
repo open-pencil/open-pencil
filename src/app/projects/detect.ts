@@ -36,7 +36,11 @@ const packageManifestSchema = v.object({
 })
 type PackageManifest = v.InferOutput<typeof packageManifestSchema>
 
-const PORT_FLAG = /--port[ =](\d{2,5})/
+/**
+ * A port a start command names, in the forms dev servers are started with: `--port 3000`,
+ * `--port=3000`, the short `-p 3000`, and a `PORT=3000` in front of the command.
+ */
+const PORT_FLAG = /(?:--port[= ]|-p[= ]|PORT=)(\d{2,5})(?!\d)/
 
 /**
  * Turn a chosen folder into a project: the repository root comes from git, so opening a

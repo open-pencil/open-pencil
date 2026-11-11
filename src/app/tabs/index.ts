@@ -202,7 +202,11 @@ export function openProjectTab(project: Project): Tab {
  */
 export function syncProjectTab(project: Project): void {
   const existing = findProjectTab(tabsRef.value, project.id)
-  if (existing) existing.project = project
+  if (!existing) return
+  existing.project = project
+  // `tabsRef` is shallow, so a field changed in place is invisible to the tab's name until the
+  // list itself is told: a rename would wait for the next tab change to reach the open screen.
+  triggerRef(tabsRef)
 }
 
 /** A project removed from Home has nothing left to show, so its screen closes with it. */

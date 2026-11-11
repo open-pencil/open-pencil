@@ -1,6 +1,12 @@
 import { expect, test } from 'bun:test'
 
-import { fillRoute, pagePaths, parseRouteParams, routeURL, routesFromFiles } from '@/app/live-pages/routes'
+import {
+  fillRoute,
+  pagePaths,
+  parseRouteParams,
+  routeURL,
+  routesFromFiles
+} from '@/app/live-pages/routes'
 
 test('page files are looked for under the project application directory', () => {
   expect(pagePaths('')).toEqual(['pages', 'app/pages'])
@@ -56,6 +62,15 @@ test('a route takes the values it needs, encoded', () => {
   expect(fillRoute('/blog/[slug]', {})).toBeNull()
   expect(fillRoute('/blog/[slug]/[id]', { slug: 'a' })).toBeNull()
   expect(fillRoute('/about', {})).toBe('/about')
+})
+
+test('an optional parameter left empty takes its segment with it', () => {
+  expect(fillRoute('/blog/[[slug]]', {})).toBe('/blog')
+  expect(fillRoute('/blog/[[slug]]', { slug: 'hi' })).toBe('/blog/hi')
+  expect(fillRoute('/docs/[[...path]]', {})).toBe('/docs')
+  // A required parameter is still required, however the other one is written.
+  expect(fillRoute('/blog/[slug]/[[page]]', { slug: 'a' })).toBe('/blog/a')
+  expect(fillRoute('/blog/[[slug]]/[page]', {})).toBeNull()
 })
 
 test('parameter values are read as a person types them', () => {

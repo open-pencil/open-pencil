@@ -13,6 +13,10 @@ export type RouteInfo = {
 const PAGE_EXTENSION = /\.(?:vue|md|mdx)$/i
 const PAGES_DIRECTORY = /(?:^|\/)(?:app\/)?pages\/(?<relative>.+)$/
 const PARAM_SEGMENT = /\[+\.{0,3}([^[\]]+)\]+/g
+/** A parameter a route serves without: `[[slug]]`, and `[[...path]]` for a catch-all. */
+const OPTIONAL_PARAM_SEGMENT = /\[\[\.{0,3}([^[\]]+)\]\]/g
+/** A segment that is nothing but one optional parameter, which goes entirely when left empty. */
+const OPTIONAL_ONLY_SEGMENT = /^\[\[\.{0,3}([^[\]]+)\]\]$/
 
 /** Where a Nuxt application keeps its pages, beside `app/pages` for Nuxt 4. */
 const PAGE_ROOTS = ['pages', 'app/pages']
@@ -65,14 +69,33 @@ export function paramNames(route: string): string[] {
   return compact([...route.matchAll(PARAM_SEGMENT)].map((match) => match[1]))
 }
 
+/** The parameter names a route serves without, which `[[name]]` spells. */
+export function optionalParamNames(route: string): string[] {
+  return compact([...route.matchAll(OPTIONAL_PARAM_SEGMENT)].map((match) => match[1]))
+}
+
 /**
- * The route a set of parameter values makes, or null while one the route needs is missing. Values
- * are encoded, so a value never becomes another path segment.
+ * The route a set of parameter values makes, or null while one the route needs is missing. An
+ * optional parameter may stay empty: a segment that is only that parameter leaves the path, so
+ * `[[slug]]` on `/blog` serves `/blog`, and no slash is left doubled. Values are encoded, so a
+ * value never becomes another path segment.
  */
 export function fillRoute(route: string, values: Readonly<Record<string, string>>): string | null {
-  const names = paramNames(route)
-  if (names.some((name) => (values[name] ?? '').trim() === '')) return null
-  return route.replace(PARAM_SEGMENT, (_, name: string) => encodeURIComponent(values[name] ?? ''))
+  const optional = new Set(optionalParamNames(route))
+  const given = (name: string): string | undefined => {
+    const value = (values[name] ?? '').trim()
+    return value === '' ? undefined : encodeURIComponent(values[name] ?? '')
+  }
+  const segments: string[] = []
+  for (const segment of route.split('/')) {
+    const names = paramNames(segment)
+    const missing = names.filter((name) => given(name) === undefined)
+    if (missing.some((name) => !optional.has(name))) return null
+    const only = OPTIONAL_ONLY_SEGMENT.exec(segment)?.[1]
+    if (only !== undefined && missing.includes(only)) continue
+    segments.push(segment.replace(PARAM_SEGMENT, (_, name: string) => given(name) ?? ''))
+  }
+  return segments.join('/')
 }
 
 /**
