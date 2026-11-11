@@ -11,7 +11,7 @@ float light(float3 g) {
 
 half4 main(float2 p) {
   half4 color = backdrop.eval(p);
-  float3 g = geometry(p, 0.0);
+  float3 g = shape(p, 0.0);
   if (g.x >= 1.5) return half4(clamp(color.rgb + light(g) * color.a, 0.0, color.a), color.a);
   half3 sum = half3(0.0);
   float count = 0.0;

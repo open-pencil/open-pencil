@@ -6,6 +6,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { GLASS_GEOMETRY_MAP } from '#core/canvas/glass/shader'
 import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 
 const ck = await getCanvasKit()
@@ -14,7 +15,10 @@ afterAll(() => {
   for (const renderer of renderers) renderer.destroy()
 })
 
-/** A renderer at rest on `pageId`, counting the offscreen surfaces it makes. */
+/**
+ * A renderer at rest on `pageId`, counting the 8-bit offscreen surfaces it makes: the warm-up's
+ * own, not the half-float geometry maps the glass it draws makes.
+ */
 function settledRenderer(pageId: string, makesSurfaces = true) {
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(64, 64), 'surface'))
   renderers.push(renderer)
@@ -24,7 +28,7 @@ function settledRenderer(pageId: string, makesSurfaces = true) {
   const made = { count: 0 }
   const make = renderer.surface.makeSurface.bind(renderer.surface)
   renderer.surface.makeSurface = (info) => {
-    made.count++
+    if (info.colorType === ck.ColorType.RGBA_8888) made.count++
     // Typed as always made; a canvas that cannot allocate one makes none.
     return (makesSurfaces ? make(info) : null) as Surface
   }
@@ -69,6 +73,9 @@ describe('effect program warm-up', () => {
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     expect(renderer.effectProgramsWarm).toBe(true)
     expect(made.count).toBe(1)
+    // Glass over an ellipse draws its geometry map, so that program is built too.
+    expect(renderer.shaders.programs.has(GLASS_GEOMETRY_MAP)).toBe(true)
+    expect(renderer.glassMaps.size).toBeGreaterThan(0)
     // Warm, it never draws again, on this page or another.
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     const other = pageWith([glass])
