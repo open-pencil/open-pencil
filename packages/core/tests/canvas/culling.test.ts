@@ -115,6 +115,28 @@ describe('canvas culling', () => {
     expect(renderer.drawCounts.culled).toBe(1)
   })
 
+  test('keeps a flipped text whose lines reach down into the viewport from a box above it', () => {
+    const graph = new SceneGraph()
+    const lines = {
+      width: 100,
+      height: 12,
+      text: 'Line',
+      derivedTextHeight: 20,
+      x: 1000,
+      y: 885,
+      textAlignVertical: 'BOTTOM'
+    } as const
+    const flipped = graph.createNode('TEXT', pageId(graph), { ...lines, flipY: true })
+    const upright = graph.createNode('TEXT', pageId(graph), lines)
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, flipped.id, {})
+    renderNode(renderer, asCanvas(createCanvas()), graph, upright.id, {})
+
+    expect(rendered).toEqual([flipped.id])
+    expect(renderer.drawCounts.culled).toBe(1)
+  })
+
   test('uses world bounds for children of transformed instances', () => {
     const graph = new SceneGraph()
     const instance = graph.createNode('INSTANCE', pageId(graph), {

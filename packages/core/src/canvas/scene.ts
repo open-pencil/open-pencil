@@ -100,7 +100,7 @@ function isCulled(
 
   const vp = r.worldViewport
   const bw = node.width
-  if (frame || projectedNode(node, preview).rotation !== 0) {
+  if (frame || hasNodeTransform(projectedNode(node, preview))) {
     const bounds = mapVisualBounds(
       worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview),
       {
