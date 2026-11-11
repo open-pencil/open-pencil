@@ -37,7 +37,12 @@ type Answers = {
 }
 
 /** A gateway that records what the tab asked and answers from one set of values. */
-function gateway(answers: Answers = {}): { transport: GitTransport; calls: Call[] } {
+function gateway(answers: Answers = {}): {
+  transport: GitTransport
+  calls: Call[]
+  /** The answers itself, so a test can change what git says between reads. */
+  answers: Answers
+} {
   const calls: Call[] = []
   const transport: GitTransport = async (command, args) => {
     if (command === 'git_repository_root') {
@@ -65,7 +70,7 @@ function gateway(answers: Answers = {}): { transport: GitTransport; calls: Call[
     }
     return { code: 0, stdout: '', stderr: '' }
   }
-  return { transport, calls }
+  return { transport, calls, answers }
 }
 
 type DocumentOptions = {
@@ -236,14 +241,12 @@ test('restoring a version replaces the file and reads the document again, edits 
   expect(events).toEqual(['reload'])
 })
 
-test('the history of the file is read on demand and kept', async () => {
+test('reading the panel reads the versions of the file with it', async () => {
   const { document } = versionedDocument()
-  const { transport } = gateway({ status: STATUS, fileState: '', log: `${COMMIT}\n` })
+  const { transport, calls } = gateway({ status: STATUS, fileState: '', log: `${COMMIT}\n` })
   const git = useDocumentGit(document, transport)
-  await git.refresh()
 
-  expect(git.historyLoaded.value).toBe(false)
-  await git.loadHistory()
+  await git.refresh()
 
   expect(git.historyLoaded.value).toBe(true)
   expect(git.history.value).toEqual([
@@ -254,4 +257,61 @@ test('the history of the file is read on demand and kept', async () => {
       subject: 'feat: catalog'
     }
   ])
+  // The versions are asked for by the file's name inside its repository, which only this read has.
+  expect(calls.find((call) => call.subcommand === 'log')?.args?.slice(-2)).toEqual(['--', INSIDE])
+})
+
+test('the history button reads the versions again without reading the rest of the panel', async () => {
+  const { document } = versionedDocument()
+  const box = gateway({ status: STATUS, fileState: '' })
+  const git = useDocumentGit(document, box.transport)
+  await git.refresh()
+
+  box.answers.log = `${COMMIT}\n`
+  await git.loadHistory()
+
+  expect(box.calls.filter((call) => call.subcommand === 'log')).toHaveLength(2)
+  expect(git.history.value.map((commit) => commit.subject)).toEqual(['feat: catalog'])
+})
+
+test('committing reads the versions again, so the commit just made is listed', async () => {
+  const { document } = versionedDocument()
+  const box = gateway({ status: STATUS, fileState: ' M design/catalog.fig\0' })
+  const git = useDocumentGit(document, box.transport)
+  await git.refresh()
+  expect(git.history.value).toEqual([])
+
+  box.answers.log = `${COMMIT}\n`
+  git.commitMessage.value = 'feat: catalog'
+  await git.commit()
+
+  expect(git.history.value.map((commit) => commit.subject)).toEqual(['feat: catalog'])
+})
+
+test('a read that a newer one overtook leaves the panel to the newer one', async () => {
+  const { document } = versionedDocument()
+  const box = gateway({ status: STATUS, fileState: '' })
+  let release = (): void => undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let first = true
+  // The first read answers as the repository the document used to be in, and lands last.
+  const transport: GitTransport = async (command, args) => {
+    if (command === 'git_repository_root' && first) {
+      first = false
+      await held
+      return 'D:/Karbid1'
+    }
+    return box.transport(command, args)
+  }
+  const git = useDocumentGit(document, transport)
+
+  const slow = git.refresh()
+  await git.refresh()
+  release()
+  await slow
+
+  expect(git.root.value).toBe(ROOT)
+  expect(git.versioned.value).toBe(true)
 })

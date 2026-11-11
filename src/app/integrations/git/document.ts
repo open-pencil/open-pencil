@@ -51,6 +51,8 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
   const busy = ref(false)
   const failure = shallowRef<GitFailure | null>(null)
   const commitMessage = ref('')
+  /** Counts reads, so one a newer read overtook is dropped instead of applied to the panel. */
+  let reads = 0
 
   /** The document's path inside its repository, which is how git names the file. */
   const relativePath = computed(() => {
@@ -83,9 +85,14 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
     historyLoaded.value = false
   }
 
-  /** Read the document's repository, branch, and the file's own state again. */
+  /**
+   * Read everything the panel shows again: the repository, its branches, how the file itself
+   * stands, and the versions of it. The history is read here rather than beside this call because
+   * it is asked for by the file's path inside its repository, which only this read knows.
+   */
   async function refresh(): Promise<void> {
     const file = document.getDocumentFilePath()
+    const mine = ++reads
     path.value = file
     failure.value = null
     if (!file) {
@@ -95,6 +102,9 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
     reading.value = true
     try {
       const resolved = await readRepositoryRoot(dirname(file), transport)
+      // The document was saved somewhere else, or read again, while git looked: that later read
+      // owns the panel, and this one would only show what is no longer open.
+      if (mine !== reads) return
       if (!resolved.ok) {
         failure.value = resolved
         forgetRepository()
@@ -115,6 +125,7 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
         readFileState(resolved.value, inside, transport),
         listGitBranches(resolved.value, transport)
       ])
+      if (mine !== reads) return
       if (!status.ok) {
         failure.value = status
         return
@@ -127,6 +138,7 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
       state.value = fileState.value
       others.value = status.value.entries.filter((entry) => entry.path !== inside).length
       branches.value = list.ok ? list.value : []
+      await readHistory(() => mine === reads)
     } finally {
       reading.value = false
     }
@@ -204,20 +216,27 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
     })
   }
 
-  /** The versions of this file, newest first. */
-  async function loadHistory(): Promise<void> {
+  /**
+   * Read the versions of the file the repository currently shows. `stillWanted` lets a read that
+   * a newer one overtook leave the panel to that one instead of writing a stale list into it.
+   */
+  async function readHistory(stillWanted: () => boolean = () => true): Promise<void> {
     const repository = root.value
     const file = relativePath.value
     if (!repository || !file) return
-    await run(async () => {
-      const outcome = await readFileHistory(repository, file, transport)
-      if (!outcome.ok) {
-        failure.value = outcome
-        return
-      }
-      history.value = outcome.value
-      historyLoaded.value = true
-    })
+    const outcome = await readFileHistory(repository, file, transport)
+    if (!stillWanted()) return
+    if (!outcome.ok) {
+      failure.value = outcome
+      return
+    }
+    history.value = outcome.value
+    historyLoaded.value = true
+  }
+
+  /** The versions of this file, newest first, without reading the rest of the panel again. */
+  async function loadHistory(): Promise<void> {
+    await run(readHistory)
   }
 
   /**

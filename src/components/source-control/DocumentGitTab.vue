@@ -40,12 +40,13 @@ function setCommitMessage(value: string): void {
 }
 
 // Saving a document to a new place moves it to another repository, and the tab follows the name.
+// One read fills the whole tab: `refresh` reads the file's versions as well, and asked for them
+// apart it would do so before it knew which repository the file belongs to.
 watch(
   () => [active, store.state.documentName] as const,
   ([shown]) => {
     if (!shown) return
     void refresh()
-    void loadHistory()
   },
   { immediate: true }
 )
