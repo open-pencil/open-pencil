@@ -104,7 +104,7 @@
     "services": "bun src/runtime/node/services/main.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration",
-    "test:unit": "bun test tests/client tests/contract tests/email tests/runtime tests/server tests/services",
+    "test:unit": "bun test tests/client tests/contract tests/email tests/errors tests/runtime tests/server tests/services",
     "test:integration": "bun test --max-concurrency 8 tests/integration",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",
