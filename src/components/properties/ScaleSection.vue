@@ -8,14 +8,18 @@ import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { MIN_RESCALE, scaleRoots } from '@open-pencil/scene-graph/scaling'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
-import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
 import LayoutAlignmentControl from '@/components/properties/layout/alignment/LayoutAlignmentControl.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
+import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
+import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 /** The factors Figma's Scale field offers. */
 const SCALE_PRESETS = [0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 10] as const
@@ -99,12 +103,28 @@ function scaleToSize(value: number, axis: 'width' | 'height') {
   if (size) scaleBy(value / size)
 }
 
-/** A factor scales from the starting size, then hands back to the Move tool, as in Figma. */
+/** A factor scales from the size the selection started at. */
 function setFactor(value: number) {
   const width = bounds.value?.width
   if (!width || startWidth.value <= 0) return
   scaleBy((value * startWidth.value) / width)
-  store.setTool('SELECT')
+}
+
+const { open: presetsOpen, portalActive } = useRetainedPopup()
+const factorAnchor = ref<HTMLElement | null>(null)
+// The factor the field shows while it is scrubbed, before the release scales the selection.
+const draftFactor = ref<number | null>(null)
+const typingFactor = ref(false)
+
+/** A typed factor hands back to the Move tool, as in Figma; a scrub or a preset stays. */
+function commitFactor(value: number) {
+  draftFactor.value = null
+  setFactor(value)
+  if (typingFactor.value) store.setTool('SELECT')
+}
+
+function pickPreset(value: unknown) {
+  if (typeof value === 'number') setFactor(value)
 }
 </script>
 
@@ -134,14 +154,41 @@ function setFactor(value: number) {
       />
     </PanelGrid>
     <div class="mt-1.5 grid grid-cols-[minmax(0,1fr)_4.875rem] items-start gap-3">
-      <ExportScaleInput
-        data-property="scale"
-        :label="panels.scaleMultiplier"
+      <AppSelectRoot
+        v-model:open="presetsOpen"
         :model-value="factor"
-        :presets="SCALE_PRESETS"
-        :clamp="(value: number) => Math.max(MIN_RESCALE, value)"
-        @update:model-value="setFactor"
-      />
+        @update:model-value="pickPreset"
+      >
+        <div ref="factorAnchor" class="min-w-0">
+          <NumberField
+            data-property="scale"
+            :aria-label="panels.scaleMultiplier"
+            :model-value="draftFactor ?? factor"
+            :min="MIN_RESCALE"
+            :step="0.01"
+            suffix="x"
+            @editing-change="typingFactor = $event"
+            @update:model-value="draftFactor = $event"
+            @commit="(value: number) => commitFactor(value)"
+            @cancel="draftFactor = null"
+          >
+            <template #icon>
+              <icon-lucide-scaling class="size-3.5" />
+            </template>
+            <template #suffix>
+              <SelectFieldTrigger
+                :label="panels.scaleMultiplier"
+                :reference="factorAnchor ?? undefined"
+              />
+            </template>
+          </NumberField>
+        </div>
+        <AppSelectContent v-if="portalActive" align="end">
+          <AppSelectItem v-for="preset in SCALE_PRESETS" :key="preset" :value="preset">
+            {{ preset }}x
+          </AppSelectItem>
+        </AppSelectContent>
+      </AppSelectRoot>
       <LayoutAlignmentControl
         :label="panels.scaleAnchor"
         :cells="anchorCells"

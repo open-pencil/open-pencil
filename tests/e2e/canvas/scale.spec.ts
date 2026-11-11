@@ -4,6 +4,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { layerDriver } from '#tests/helpers/canvas/layers'
+import { propertyField } from '#tests/helpers/properties'
 import { getNodeById, getSelectedNode } from '#tests/helpers/store'
 
 let page: Page
@@ -118,7 +119,7 @@ test('the Scale panel scales about the anchor and hands back to Move', async () 
   const before = expectDefined(await getSelectedNode(page), 'rectangle')
   await canvas.pressKey('k')
 
-  const factor = page.getByRole('textbox', { name: 'Scale multiplier' })
+  const factor = page.getByRole('spinbutton', { name: 'Scale multiplier' })
   await factor.click()
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type('2')
@@ -130,6 +131,23 @@ test('the Scale panel scales about the anchor and hands back to Move', async () 
   expect({ width: scaled.width, height: scaled.height }).toEqual({ width: 200, height: 100 })
   expect({ x: scaled.x, y: scaled.y }).toEqual({ x: before.x - 50, y: before.y - 25 })
   expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SELECT')
+  canvas.assertNoErrors()
+})
+
+test('scrubbing the Scale factor scales the selection and stays in the tool', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(200, 200, 100, 50)
+  await canvas.click(250, 225)
+  await canvas.waitForRender()
+  const before = expectDefined(await getSelectedNode(page), 'rectangle')
+  await canvas.pressKey('k')
+
+  await canvas.dragNumberField(propertyField(page, 'scale'), 40)
+
+  const scaled = expectDefined(await getSelectedNode(page), 'scaled rectangle')
+  expect(scaled.width).toBeGreaterThan(before.width)
+  expect(scaled.width / scaled.height).toBeCloseTo(before.width / before.height)
+  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SCALE')
   canvas.assertNoErrors()
 })
 
