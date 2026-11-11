@@ -7,7 +7,7 @@ import { useProjects } from '@/app/projects/store'
 
 import { gridPosition } from './grid'
 import { fillRoute, pagePaths, routeURL, routesFromFiles, type RouteInfo } from './routes'
-import { pluginDataWithLivePage } from './schema'
+import { normalizeLiveURL, pageLabel, pluginDataWithLivePage } from './schema'
 
 /** The frame one page opens in; a page is a desktop screen until it is resized. */
 export const PAGE_WIDTH = 1440
@@ -62,7 +62,9 @@ export function useLivePagesSource() {
     base = baseAddress.value,
     params: Readonly<Record<string, string>> = {}
   ): number {
-    const address = base.trim()
+    // The address a project was configured with is text a person typed; a frame keeps the address
+    // the page really has, or none at all.
+    const address = normalizeLiveURL(base)
     if (address === '' || routes.length === 0) return 0
     const pageId = store.state.currentPageId
     let index = 0
@@ -82,7 +84,8 @@ export function useLivePagesSource() {
         store.updateNodeWithUndo(
           id,
           {
-            pluginData: pluginDataWithLivePage(node, { url, label: path, mode: 'live' })
+            // A route filled with a value can name a path longer than a frame's label holds.
+            pluginData: pluginDataWithLivePage(node, { url, label: pageLabel(path), mode: 'live' })
           },
           'Link page'
         )

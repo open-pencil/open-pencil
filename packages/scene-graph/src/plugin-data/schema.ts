@@ -5,9 +5,16 @@ import * as v from 'valibot'
  * reader can share a schema with the writer without going through the registry.
  */
 
-/** A page of the application a frame shows: the address its dev server answers on. */
+/** The one kind of address a page is: the application's own, over HTTP. */
+const PAGE_ADDRESS = /^https?:\/\//i
+
+/**
+ * A page of the application a frame shows: the address its dev server answers on. The scheme is
+ * part of the shape rather than a rule the panel keeps, so a document that names another one —
+ * `javascript:` in a file from somewhere else — is a frame that draws its own layers.
+ */
 export const livePageSchema = v.object({
-  url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048)),
+  url: v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(2048), v.regex(PAGE_ADDRESS)),
   label: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120))),
   mode: v.picklist(['live', 'snapshot'])
 })

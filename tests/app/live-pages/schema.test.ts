@@ -19,6 +19,10 @@ function frameOf(graph: SceneGraph) {
   return graph.createNode('FRAME', page.id, { name: 'Pricing', width: 1440, height: 900 })
 }
 
+/** An address a document from somebody else could carry, which is the one a page must refuse. */
+// eslint-disable-next-line no-script-url -- What the test is about is refusing this address.
+const SCRIPT_ADDRESS = 'javascript:alert(1)'
+
 test('a plain frame shows its own layers', () => {
   const frame = frameOf(new SceneGraph())
   expect(readLivePage(frame)).toBeNull()
@@ -59,6 +63,24 @@ test('an entry of the wrong shape reads as no page', () => {
   expect(v.safeParse(livePageSchema, { url: '' }).success).toBe(false)
 })
 
+test('a frame that names another kind of address shows its own layers', () => {
+  // A `.fig` file can carry any string here; the frame must not be the thing that loads it.
+  const frame = frameOf(new SceneGraph())
+  const entries = [
+    {
+      pluginId: 'open-pencil',
+      key: 'livePage',
+      value: `{"url":"${SCRIPT_ADDRESS}","mode":"live"}`
+    }
+  ]
+
+  expect(readLivePage({ ...frame, pluginData: entries })).toBeNull()
+  expect(v.safeParse(livePageSchema, { url: SCRIPT_ADDRESS, mode: 'live' }).success).toBe(false)
+  expect(v.safeParse(livePageSchema, { url: 'http://localhost:3000', mode: 'live' }).success).toBe(
+    true
+  )
+})
+
 test('a layer name longer than a page label still keeps the page readable', () => {
   const graph = new SceneGraph()
   const frame = frameOf(graph)
@@ -91,4 +113,6 @@ test('an address this app cannot load answers empty', () => {
   expect(normalizeLiveURL('   ')).toBe('')
   expect(normalizeLiveURL('file:///etc/passwd')).toBe('')
   expect(normalizeLiveURL('data:text/html,hi')).toBe('')
+  expect(normalizeLiveURL(SCRIPT_ADDRESS)).toBe('')
+  expect(normalizeLiveURL('ftp://localhost/file')).toBe('')
 })
