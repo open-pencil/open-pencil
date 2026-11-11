@@ -63,8 +63,19 @@ async function call(
   try {
     return { ok: true, value: await transport(command, args) }
   } catch (error) {
-    return failure(0, '', error instanceof Error ? error.message : 'git is unavailable.')
+    return failure(0, '', refusalOf(error))
   }
+}
+
+/**
+ * What a refused command said. The gateway refuses with its own sentence — a repository without
+ * `.git`, a flag the panel may not send — and Tauri hands that back as a plain string rather than
+ * an `Error`, so reading only `Error.message` would replace every reason with "git is unavailable".
+ */
+function refusalOf(error: unknown): string {
+  if (error instanceof Error && error.message.trim() !== '') return error.message
+  const said = typeof error === 'string' ? error.trim() : ''
+  return said === '' ? 'git is unavailable.' : said
 }
 
 /**

@@ -414,3 +414,26 @@ describe('readDefaultBranch', () => {
     })
   })
 })
+describe('a gateway that refuses', () => {
+  test('answers with what it said, which Tauri hands back as a plain string', async () => {
+    const transport: GitTransport = async () => {
+      throw 'no .git in D:/designs; open the repository root'
+    }
+    const outcome = await runGit('D:/designs', 'status', [], transport)
+
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) throw new Error('expected a failure')
+    expect(outcome.summary).toBe('no .git in D:/designs; open the repository root')
+  })
+
+  test('answers with a reason even when nothing was said', async () => {
+    const transport: GitTransport = async () => {
+      throw ''
+    }
+    const outcome = await runGit('/repo', 'status', [], transport)
+
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) throw new Error('expected a failure')
+    expect(outcome.summary).toBe('git is unavailable.')
+  })
+})
