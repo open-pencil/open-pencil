@@ -14,7 +14,6 @@ import SdkFieldGroup from './components/SdkFieldGroup.vue'
 import SdkPropsTable from './components/SdkPropsTable.vue'
 import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
-
 import { movedSection } from './moved-sections'
 
 import './tailwind.css'

@@ -11,7 +11,8 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'restore-a-deleted-document': '/cloud/documents#restore-a-deleted-document',
     'save-a-document-to-cloud': '/cloud/documents#save-a-document-to-cloud',
     'where-a-document-stands': '/cloud/documents#where-a-document-stands',
-    'when-a-document-changed-in-two-places': '/cloud/documents#when-a-document-changed-in-two-places',
+    'when-a-document-changed-in-two-places':
+      '/cloud/documents#when-a-document-changed-in-two-places',
     'version-history': '/cloud/documents#version-history',
     'document-links': '/cloud/documents#document-links',
     'work-in-a-team-workspace': '/cloud/sharing#work-in-a-team-workspace',
