@@ -152,7 +152,13 @@ const call = defineCommand({
       }
       const def = findTool(args.name)
       const toolArgs = await readToolArgs(args)
-      const { result, graph } = await runToolData(args.file, def.name, toolArgs, args)
+      const { result, graph } = await runToolData(
+        args.file,
+        def.name,
+        toolArgs,
+        args,
+        args['page-id']
+      )
       if (args.json) console.log(JSON.stringify(result, null, 2))
       else printResult(result)
 

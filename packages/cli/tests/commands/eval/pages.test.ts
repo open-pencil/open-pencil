@@ -3,34 +3,12 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { writeFourPageFig } from '#cli-tests/helpers/fig'
 import { runCLI } from '#cli-tests/helpers/run'
-
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { loadDocument, populateWholeDocument } from '#cli/headless'
 
 setDefaultTimeout(60_000)
-
-/** Four pages, each with one frame holding a rectangle; returns the file and its pages' IDs. */
-async function writePages() {
-  const graph = new SceneGraph()
-  const [first] = graph.getPages()
-  first.name = 'Page 1'
-  const pages = [first, ...['Page 2', 'Page 3', 'Page 4'].map((name) => graph.addPage(name))]
-  for (const [index, page] of pages.entries()) {
-    const frame = graph.createNode('FRAME', page.id, {
-      name: `Frame ${index + 1}`,
-      width: 100,
-      height: 100
-    })
-    graph.createNode('RECTANGLE', frame.id, { name: 'Box', width: 10, height: 10 })
-  }
-  const path = join(await mkdtemp(join(tmpdir(), 'open-pencil-eval-pages-')), 'pages.fig')
-  await Bun.write(path, (await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', graph)).data)
-  const loaded = await loadDocument(path)
-  return { path, pageIds: loaded.getPages().map((page) => page.id) }
-}
 
 /** Each page's frame, by name, with the names of the layers in it. */
 async function framesByPage(path: string) {
@@ -46,7 +24,7 @@ async function framesByPage(path: string) {
 
 describe('eval CLI --page-id on a file', () => {
   test('runs on that page and loads the others when the script asks for them', async () => {
-    const { path, pageIds } = await writePages()
+    const { path, pageIds } = await writeFourPageFig()
     const whole = await loadDocument(path)
     populateWholeDocument(whole)
     const page4Frame = whole.getChildren(pageIds[3])[0].id
@@ -76,7 +54,7 @@ describe('eval CLI --page-id on a file', () => {
   })
 
   test('saves the pages the script never loaded', async () => {
-    const { path, pageIds } = await writePages()
+    const { path, pageIds } = await writeFourPageFig()
     const output = join(await mkdtemp(join(tmpdir(), 'open-pencil-eval-pages-out-')), 'out.fig')
 
     const { exitCode } = await runCLI([
@@ -100,7 +78,7 @@ describe('eval CLI --page-id on a file', () => {
   })
 
   test('rejects a page the document does not have', async () => {
-    const { path } = await writePages()
+    const { path } = await writeFourPageFig()
 
     const { exitCode, stderr } = await runCLI([
       'eval',

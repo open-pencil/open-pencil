@@ -62,14 +62,16 @@ export async function openHeadlessFigma(
 }
 
 /**
- * Run a Core tool against the running app, or headlessly against a document file.
- * Headless runs return the loaded graph so mutating commands can write it back.
+ * Run a Core tool against the running app, or headlessly against a document file, with only the
+ * page `pageId` loaded when one is given. Headless runs return the loaded graph so mutating
+ * commands can write it back.
  */
 export async function runToolData(
   file: string | undefined,
   name: string,
   args: Record<string, unknown>,
-  targetArgs?: AppTargetCLIArgs
+  targetArgs?: AppTargetCLIArgs,
+  pageId?: string
 ): Promise<{ result: unknown; graph: SceneGraph | null }> {
   if (isAppMode(file)) {
     const target = targetArgs ? appTargetRPCArgs(targetArgs) : {}
@@ -77,7 +79,7 @@ export async function runToolData(
   }
   const tool = ALL_TOOLS.find((candidate) => candidate.name === name)
   if (!tool) throw new Error(`Unknown tool: ${name}`)
-  const { graph, figma } = await openHeadlessFigma(requireFile(file), targetArgs?.['page-id'])
+  const { graph, figma } = await openHeadlessFigma(requireFile(file), pageId)
   await tool.loadFonts(figma, args)
   return { result: await editDocument(graph, () => tool.execute(figma, args)), graph }
 }
