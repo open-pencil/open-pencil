@@ -13,7 +13,7 @@ export default {
     headCell: 'h-7 w-8 text-center text-3xs font-medium text-muted',
     cell: 'p-0 text-center',
     day: [
-      'mx-auto flex size-8 cursor-pointer items-center justify-center rounded-md tabular-nums outline-none',
+      'mx-auto flex size-8 cursor-pointer items-center justify-center rounded-md tabular-nums',
       'hover:bg-hover',
       focusStyles.ring,
       'data-[today]:font-semibold data-[today]:text-primary',
