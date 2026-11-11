@@ -58,7 +58,7 @@ const described = part({
 })
 
 const searched = part({
-  type: 'tool-web_search',
+  type: 'tool-search_web',
   toolCallId: 'web-search',
   state: 'output-available',
   input: { query: 'SaaS pricing page best practices 2030', numResults: 3 },

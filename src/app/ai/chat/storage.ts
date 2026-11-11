@@ -145,7 +145,7 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     void refreshAIProviderStatus()
     markTransportDirty()
   })
-  // `web_search` follows the saved Exa key and the Design model's Cloud workspace, for the chat
+  // `search_web` follows the saved Exa key and the Design model's Cloud workspace, for the chat
   // and for agents reaching OpenPencil's tools.
   watch(
     () =>

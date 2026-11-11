@@ -311,6 +311,19 @@ describe('an ACP turn in the chat', () => {
     })
   })
 
+  test('Antigravity CLI’s calls through call_mcp_tool show as the tool they ran', async () => {
+    const [call] = await transcript([
+      antigravityCall('agy-1', 'mcp_open-pencil_call_mcp_tool', {
+        toolName: 'create_shape',
+        arguments: { type: 'FRAME', width: 200, height: 100 }
+      })
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-create_shape',
+      input: { type: 'FRAME', width: 200, height: 100 }
+    })
+  })
+
   test('an agent’s own tools keep its title and output', async () => {
     const [call] = await transcript([
       {

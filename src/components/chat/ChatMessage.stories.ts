@@ -54,22 +54,22 @@ const partlyUndoneMessage: UIMessage = {
   metadata: {
     undo: {
       edits: [
-        { tool: 'node_resize', toolCallId: 'resize' },
-        { tool: 'set_opacity', toolCallId: 'fade' }
+        { tool: 'update_node', toolCallId: 'resize' },
+        { tool: 'update_node', toolCallId: 'fade' }
       ],
       undone: ['fade']
     }
   },
   parts: [
     {
-      type: 'tool-node_resize',
+      type: 'tool-update_node',
       toolCallId: 'resize',
       state: 'output-available',
       input: { id: '0:1', width: 200, height: 60 },
       output: { id: '0:1' }
     },
     {
-      type: 'tool-set_opacity',
+      type: 'tool-update_node',
       toolCallId: 'fade',
       state: 'output-available',
       input: { id: '0:1', value: 0.5 },

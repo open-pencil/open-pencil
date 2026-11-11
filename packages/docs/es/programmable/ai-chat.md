@@ -41,9 +41,9 @@ En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como 
 
 ## Verificación visual
 
-El asistente puede comprobar su trabajo visualmente. Con `export_image` activada, captura una imagen tras crear o modificar diseños y la compara con lo que se pidió. `diff_visual`, activada por defecto, compara un objeto editado con una copia de referencia y devuelve los píxeles y la región que cambiaron, de modo que el asistente puede confirmar que la edición se limitó a su objetivo.
+El asistente puede comprobar su trabajo visualmente. Con `export_image` activada, captura una imagen tras crear o modificar diseños y la compara con lo que se pidió. `diff_pixels`, activada por defecto, compara un objeto editado con una copia de referencia y devuelve los píxeles y la región que cambiaron, de modo que el asistente puede confirmar que la edición se limitó a su objetivo.
 
-Las herramientas de inspección incluyen `get_jsx`, `diff_create` y `diff_jsx` para diferencias estructurales, `diff_visual` para diferencias de píxeles y `describe` para el rol semántico y la detección de problemas de diseño.
+Las herramientas de inspección incluyen `get_jsx`, `diff_nodes` para diferencias estructurales, `diff_pixels` para diferencias de píxeles y `describe` para el rol semántico y la detección de problemas de diseño.
 
 ## Consejos
 

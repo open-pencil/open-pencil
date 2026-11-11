@@ -44,9 +44,9 @@ function treeOperations(
 }
 
 export const diffCreate = defineTool({
-  name: 'diff_create',
+  name: 'diff_nodes',
   description:
-    'Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with diff_apply.',
+    'Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with apply_patch.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
     ...nodeComparisonInputSchema.entries,
@@ -75,9 +75,9 @@ export const diffCreate = defineTool({
 })
 
 export const diffShow = defineTool({
-  name: 'diff_show',
+  name: 'preview_patch',
   description:
-    'Preview setting JSX attributes on a node, without changing it. Returns the patch, which diff_apply applies.',
+    'Preview setting JSX attributes on a node, without changing it. Returns the patch, which apply_patch applies.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -109,7 +109,7 @@ export const diffShow = defineTool({
       removed: changed.flatMap(({ name }) => sources.get(name) ?? []),
       added: changed.map(({ source }) => source)
     }
-    // Check the change the way diff_apply would, so invalid values surface here.
+    // Check the change the way apply_patch would, so invalid values surface here.
     const [plan] = planOperations(graphOf(figma), [operation], false)
     if (plan.result.error) return { error: plan.result.error }
     return { diff: formatOperations([operation]) }
@@ -117,14 +117,14 @@ export const diffShow = defineTool({
 })
 
 export const diffApply = defineTool({
-  name: 'diff_apply',
+  name: 'apply_patch',
   description:
-    "Apply a patch from diff_create, diff_show, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
+    "Apply a patch from diff_nodes, preview_patch, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     patch: v.pipe(
       v.string(),
-      v.description('Patch text from diff_create, diff_show, or diff_changes')
+      v.description('Patch text from diff_nodes, preview_patch, or diff_changes')
     ),
     dryRun: v.optional(
       v.pipe(v.boolean(), v.description('Check and report changes without applying')),

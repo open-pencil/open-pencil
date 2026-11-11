@@ -1,5 +1,3 @@
-// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import { defineCommand } from 'citty'
 import * as v from 'valibot'
 
@@ -7,6 +5,7 @@ import {
   ALL_TOOLS,
   isToolExposed,
   toolChangesDocument,
+  toolJSONSchema,
   type ToolDef
 } from '@open-pencil/core/tools'
 
@@ -75,7 +74,7 @@ const describe = defineCommand({
   run({ args }) {
     try {
       const def = findTool(args.name)
-      const schema = toJSONSchema(def.input, { errorMode: 'ignore' })
+      const schema = toolJSONSchema(def.input, { errorMode: 'ignore' })
       if (args.json) {
         const info = { name: def.name, effect: effectOf(def), description: def.description, schema }
         console.log(JSON.stringify(info, null, 2))
