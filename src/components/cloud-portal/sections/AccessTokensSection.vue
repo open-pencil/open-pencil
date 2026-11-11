@@ -36,6 +36,8 @@ function portalToken(token: CloudAccessToken): PortalAccessToken {
 const tokens = computed(() => (list.data.value ?? []).map(portalToken))
 
 const creating = ref(false)
+/** Counts openings: each mounts the dialog afresh, so its fields start empty. */
+const openings = ref(0)
 const created = ref<string | null>(null)
 const create = usePortalAction(async (input: CloudAccessTokenCreate) => {
   created.value = (await portal.api.createAccessToken(input)).token
@@ -49,9 +51,12 @@ const revoke = usePortalAction(async (id: string) => {
 function startCreating() {
   create.clear()
   created.value = null
+  openings.value++
   creating.value = true
 }
 function setCreating(open: boolean) {
+  // A token being made stays on screen until it arrives, so it is never made out of sight.
+  if (!open && create.busy.value) return
   creating.value = open
   // The token is gone from the page once its dialog closes.
   if (!open) created.value = null
@@ -82,6 +87,7 @@ const loading = computed(() => {
       @revoke="(id) => revoke.run(id)"
     />
     <PortalAccessTokenDialog
+      :key="openings"
       :open="creating"
       :busy="create.busy.value"
       :error="create.error.value"

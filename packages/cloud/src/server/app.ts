@@ -73,8 +73,23 @@ import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
-/** Where administration is mounted; personal access tokens never reach it. */
+/** Where administration is mounted. */
 const ADMIN_API_PATH = '/api/admin'
+/**
+ * The routes a personal access token reaches: workspaces and their documents, uploads, versions,
+ * sharing, and Trash, and who it signs in as. Anything else, such as services tokens that spend
+ * credits or administration, takes a session, including routes added later.
+ */
+const ACCESS_TOKEN_API_PATHS = [
+  '/api/session',
+  '/api/workspaces',
+  '/api/documents',
+  '/api/uploads',
+  '/api/shared-documents',
+  '/api/trash'
+]
+const acceptsAccessToken = (path: string) =>
+  ACCESS_TOKEN_API_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 export type CloudServices = {
   config: CloudServerConfig
   database: Kysely<CloudDatabase>
@@ -280,16 +295,16 @@ export function createCloudApp(services: CloudServices) {
     return next()
   }
   /**
-   * The document API's caller: a session, or else a personal access token. Administration takes
-   * sessions alone, and account routes never get here, so a token reaches nothing but documents.
+   * The API's caller: a session, or else a personal access token on the routes that take one
+   * (`ACCESS_TOKEN_API_PATHS`); account routes never get here.
    */
   const requireActiveActor = async (context: Context, next: () => Promise<void>) => {
     if (context.get('actor')) return next()
     const actor =
       (await resolveSession(context.req.raw)) ??
-      (context.req.path.startsWith(ADMIN_API_PATH)
-        ? null
-        : await services.auth.resolveAccessToken(context.req.raw.headers))
+      (acceptsAccessToken(context.req.path)
+        ? await services.auth.resolveAccessToken(context.req.raw.headers)
+        : null)
     if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
     context.set('actor', actor)
     return next()

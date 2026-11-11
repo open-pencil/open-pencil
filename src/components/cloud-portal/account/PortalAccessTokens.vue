@@ -9,6 +9,7 @@ import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
@@ -117,7 +118,9 @@ function confirm() {
         :loading-label="messages.loading"
       >
         <template #empty>
-          <p class="text-center text-xs text-muted">{{ messages.noAccessTokens }}</p>
+          <AppPlaceholder :label="messages.noAccessTokens">
+            <template #icon><icon-lucide-key-round class="size-5" /></template>
+          </AppPlaceholder>
         </template>
       </AppDataTable>
     </SettingsSection>

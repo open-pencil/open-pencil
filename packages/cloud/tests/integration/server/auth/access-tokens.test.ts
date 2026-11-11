@@ -84,6 +84,12 @@ describe('personal access tokens', () => {
       ).status
     ).toBe(401)
     expect((await send('/api/admin/users', { token })).status).toBe(401)
+    // Services tokens spend the account's credits, so they take a session.
+    expect(
+      (await send('/api/services/token', { body: { workspaceId: crypto.randomUUID() }, token }))
+        .status
+    ).toBe(401)
+    expect((await send('/api/session', { token })).status).toBe(200)
     expect((await send('/api/auth/api-key/list', { token })).status).toBe(404)
     expect(
       (

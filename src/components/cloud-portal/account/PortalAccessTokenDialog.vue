@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import {
   CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH,
@@ -38,16 +38,15 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [input: CloudAccessTokenCreate] }>()
 
 const messages = useCloudPortalMessages()
+// The section mounts the dialog afresh for each opening, so its fields start empty.
 const name = ref('')
 const days = ref('90')
 const copied = ref(false)
-// Fields start fresh each opening.
-watch(open, (isOpen) => {
-  if (!isOpen) return
-  name.value = ''
-  days.value = '90'
-  copied.value = false
-})
+
+/** The token can't be shown again, so Escape or a click outside leaves it until it is copied. */
+function keepUncopied(event: Event) {
+  if (!copied.value) event.preventDefault()
+}
 
 const expiries = computed(() => [
   { value: '30', label: messages.value.accessTokenExpires30Days },
@@ -63,7 +62,13 @@ function submit() {
 </script>
 
 <template>
-  <AppDialogRoot v-if="created" v-model:open="open" size="sm">
+  <AppDialogRoot
+    v-if="created"
+    v-model:open="open"
+    size="sm"
+    @escape-key-down="keepUncopied"
+    @pointer-down-outside="keepUncopied"
+  >
     <AppDialogHeader
       :heading="messages.accessTokenCreatedTitle"
       :description="messages.accessTokenCreatedDescription"
