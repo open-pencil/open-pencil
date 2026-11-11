@@ -928,12 +928,11 @@ export class SceneGraph {
     while (pending.length > 0) {
       const frame = pending.at(-1)
       if (!frame) break
-      const childId = frame.node.childIds[frame.index++]
-      if (childId === undefined) {
+      if (frame.index >= frame.node.childIds.length) {
         pending.pop()
         continue
       }
-      const child = this.nodes.get(childId)
+      const child = this.nodes.get(frame.node.childIds[frame.index++])
       if (!child) continue
       result.push({ node: child, depth: frame.depth })
       if (child.childIds.length > 0) pending.push({ node: child, depth: frame.depth + 1, index: 0 })
