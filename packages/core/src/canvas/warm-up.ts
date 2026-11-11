@@ -1,4 +1,4 @@
-import type { Canvas } from '@open-pencil/canvaskit'
+import type { Canvas, Surface } from '@open-pencil/canvaskit'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
@@ -116,15 +116,16 @@ export function warmUpEffectPrograms(
   if (scan?.pageId === pageId && scan.sceneVersion === sceneVersion) return
   r.effectWarmUpScan = { pageId, sceneVersion }
   if (!pageHasHeavyEffects(graph, pageId)) return
-  const surface = makeTileSurface(r, WARM_UP_SIZE)
-  // Without the surface, or if a draw fails, the page is not tried again, so a failure is not
-  // retried every idle frame; another page that needs warming tries again, and the programs are
-  // built when the canvas first draws them either way.
-  if (!surface) {
-    r.effectWarmUpFailedPage = pageId
-    return
-  }
+  // Without the surface, or if making it or a draw fails, the page is not tried again, so a
+  // failure is not retried every idle frame; another page that needs warming tries again, and
+  // the programs are built when the canvas first draws them either way.
+  let surface: Surface | null = null
   try {
+    surface = makeTileSurface(r, WARM_UP_SIZE)
+    if (!surface) {
+      r.effectWarmUpFailedPage = pageId
+      return
+    }
     drawWarmUp(r, surface.getCanvas())
     surface.flush()
     r.effectProgramsWarm = true
@@ -133,6 +134,6 @@ export function warmUpEffectPrograms(
     r.effectLayerPaint.setImageFilter(null)
     r.effectWarmUpFailedPage = pageId
   } finally {
-    surface.delete()
+    surface?.delete()
   }
 }

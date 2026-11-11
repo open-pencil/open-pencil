@@ -119,4 +119,24 @@ describe('effect program warm-up', () => {
     warmUpEffectPrograms(renderer, second.graph, 'scene', 0)
     expect(made.count).toBe(2)
   })
+
+  test('keeps a failed draw from the frame and does not retry it on that page', () => {
+    const { graph, pageId } = pageWith([progressive])
+    const { renderer, made } = settledRenderer(pageId)
+    const cleared: unknown[] = []
+    const setImageFilter = renderer.effectLayerPaint.setImageFilter.bind(renderer.effectLayerPaint)
+    renderer.effectLayerPaint.setImageFilter = (filter) => {
+      cleared.push(filter)
+      setImageFilter(filter)
+    }
+    renderer.getCachedLayerBlur = () => {
+      throw new Error('cannot make the blur')
+    }
+    expect(() => warmUpEffectPrograms(renderer, graph, 'scene', 0)).not.toThrow()
+    expect(renderer.effectProgramsWarm).toBe(false)
+    expect(cleared.at(-1)).toBeNull()
+    // A failed page stays failed, even once the document changes.
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    expect(made.count).toBe(1)
+  })
 })
