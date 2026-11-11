@@ -241,7 +241,7 @@ export function drawnLayerBlurReach(node: SceneNode): number {
   let reach = 0
   for (const effect of node.effects) {
     if (effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')) {
-      reach = Math.max(reach, blurReach(effect.radius))
+      reach = Math.max(reach, blurReach(widestBlurRadius(effect)))
     }
   }
   return reach
