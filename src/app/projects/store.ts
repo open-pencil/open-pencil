@@ -6,7 +6,8 @@ import {
   configureProject,
   parseProjects,
   removeProject,
-  renameProject
+  renameProject,
+  storedProjects
 } from './list'
 import { type Project } from './schema'
 
@@ -22,7 +23,9 @@ export function useProjects() {
   const projects = computed(() => parseProjects(stored.value))
 
   function write(next: Project[]): void {
-    stored.value = next
+    // A record this build cannot read travels back out with the write: renaming one project must
+    // not be what deletes another one a later build would have understood.
+    stored.value = storedProjects(next, stored.value)
   }
 
   function add(project: Project): void {

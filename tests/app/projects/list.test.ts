@@ -5,7 +5,9 @@ import {
   configureProject,
   parseProjects,
   removeProject,
-  renameProject
+  renameProject,
+  storedProjects,
+  unreadableProjects
 } from '@/app/projects/list'
 import { createProject } from '@/app/projects/schema'
 
@@ -14,7 +16,14 @@ const other = createProject({ repository: 'D:/Other' })
 
 test('a broken record is dropped instead of taking the list down', () => {
   const parsed = parseProjects([
-    { id: 'p1', name: 'Karbid', repository: 'D:/Karbid2', appDirectory: '', startCommand: '', startUrl: '' },
+    {
+      id: 'p1',
+      name: 'Karbid',
+      repository: 'D:/Karbid2',
+      appDirectory: '',
+      startCommand: '',
+      startUrl: ''
+    },
     { id: '', name: 'broken' },
     'not a project',
     null
@@ -65,4 +74,23 @@ test('configuring a project keeps its id and replaces only what changed', () => 
   expect(configured[0]?.id).toBe(karbid.id)
   expect(configured[0]?.startCommand).toBe('pnpm dev')
   expect(configured[0]?.startUrl).toBe('')
+})
+test('a record this build cannot read is written back with the rest', () => {
+  if (!karbid) throw new Error('expected a project')
+  const unreadable = { id: 'p9', name: 'from a later build', repository: 'D:/Newer', extra: 1 }
+  const stored = [karbid, { id: '', name: 'broken' }, unreadable]
+
+  const written = storedProjects([{ ...karbid, name: 'Renamed' }], stored)
+
+  expect(written).toHaveLength(3)
+  expect(written[0]).toMatchObject({ name: 'Renamed' })
+  expect(written).toContain(unreadable)
+})
+
+test('only the records that do not parse are kept', () => {
+  if (!karbid) throw new Error('expected a project')
+  const hand = { id: '', name: 'broken' }
+
+  expect(unreadableProjects([karbid, hand])).toEqual([hand])
+  expect(unreadableProjects('not a list')).toEqual([])
 })

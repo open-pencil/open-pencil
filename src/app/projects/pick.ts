@@ -5,15 +5,7 @@ import { readRepositoryRoot } from '@/app/integrations/git/client'
 
 import { detectProject, type RepositoryRootAnswer } from './detect'
 import type { ProjectImportIo } from './import'
-
-/** Read a UTF-8 file, or answer null when it is missing or unreadable. */
-async function readText(path: string): Promise<string | null> {
-  try {
-    return new TextDecoder().decode(await readFile(path))
-  } catch {
-    return null
-  }
-}
+import { readTextOrMissing } from './reads'
 
 /**
  * Git's answer for the picked folder. A gateway failure means git could not be asked at all,
@@ -33,5 +25,8 @@ export const desktopProjectImport: ProjectImportIo = {
     const picked = await open({ directory: true, multiple: false, title })
     return typeof picked === 'string' && picked !== '' ? picked : null
   },
-  detect: (folder) => detectProject({ repositoryRoot, readText }, folder)
+  // A manifest this app may not read is thrown rather than reported as missing, so adding the
+  // project says why it has no start command instead of quietly detecting nothing.
+  detect: (folder) =>
+    detectProject({ repositoryRoot, readText: (path) => readTextOrMissing(path, readFile) }, folder)
 }

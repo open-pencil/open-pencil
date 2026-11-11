@@ -17,6 +17,20 @@ export function parseProjects(stored: unknown): Project[] {
   )
 }
 
+/**
+ * The records this build cannot read, kept as they were written. A build older than the schema, or
+ * one that writes a newer field, would otherwise lose them on the next rename of another project.
+ */
+export function unreadableProjects(stored: unknown): unknown[] {
+  if (!Array.isArray(stored)) return []
+  return stored.filter((entry) => !v.safeParse(projectSchema, entry).success)
+}
+
+/** The list as it is stored: this build's projects, then the records it could not read. */
+export function storedProjects(list: readonly Project[], previous: unknown): unknown[] {
+  return [...list, ...unreadableProjects(previous)]
+}
+
 /** Add a project, or replace the record with its id so one repository never appears twice. */
 export function addProject(list: readonly Project[], project: Project): Project[] {
   const existing = list.findIndex((entry) => entry.id === project.id)
