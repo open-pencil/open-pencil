@@ -109,7 +109,6 @@
         "y-protocols": "^1.0.7",
         "yaml": "^2.9.0",
         "yjs": "^13.6.32",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
         "zod": "^4.6.5",
       },
       "devDependencies": {
@@ -5431,8 +5430,6 @@
     "yoctocolors": ["yoctocolors@2.2.0", "", {}, "sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg=="],
 
     "yoctocolors-cjs": ["yoctocolors-cjs@2.1.3", "", {}, "sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw=="],
-
-    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.3", "", {}, "sha512-L1mWkFxQIGFYULih376hVel5lLU+E8UYIaX/5VR1cBbtk7oeF4HDpfGttZ5BSH9ofnOpxeOh2V5yv2ZgOKc5Yw=="],
 
     "youch": ["youch@4.1.0-beta.10", "", { "dependencies": { "@poppinss/colors": "^4.1.5", "@poppinss/dumper": "^0.6.4", "@speed-highlight/core": "^1.2.7", "cookie": "^1.0.2", "youch-core": "^0.3.3" } }, "sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ=="],
 
