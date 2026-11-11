@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { snapshotScale } from '@open-pencil/scene-graph/scaling'
@@ -128,6 +128,22 @@ describe('Scale tool input', () => {
     preview.commit()
     expect(current(frame.id).width).toBe(400)
     expect(current(other.id).width).toBe(50)
+  })
+
+  test('a preview leaves a document that replaced its own alone', () => {
+    const { frame } = card()
+    const preview = createScalePreview(editor, snapshotScale(editor.graph, [current(frame.id)]))
+    preview.show(2, { x: 0, y: 0 })
+    // Another document with the same layer, as a reopened file has.
+    const replacement = new SceneGraph()
+    for (const node of editor.graph.getAllNodes())
+      replacement.nodes.set(node.id, structuredClone(node))
+    editor.replaceGraph(replacement)
+    preview.cancel()
+    preview.commit()
+    // The copy was taken mid-preview at 400 wide, and stays as it loaded.
+    expect(current(frame.id).width).toBe(400)
+    expect(editor.undo.canUndo).toBe(false)
   })
 
   test('cancelling puts the layer back', () => {

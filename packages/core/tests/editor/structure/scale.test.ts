@@ -48,6 +48,26 @@ describe('scaleSelected', () => {
     expect(current(text.id)).toMatchObject({ width: 200, fontSize: 20, strokeWeight: 2 })
   })
 
+  test('undoing a scale keeps the selection, a later edit to the layer, and a layer added since', () => {
+    editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      width: 100,
+      height: 100,
+      name: 'Card'
+    })
+    editor.select([frame.id])
+    editor.scaleSelected(2, { x: 0, y: 0 })
+
+    // As a collaborator's edits arrive: outside the history.
+    editor.graph.updateNode(frame.id, { name: 'Renamed' })
+    const added = editor.graph.createNode('RECTANGLE', frame.id, { width: 10, height: 10 })
+
+    editor.undo.undo()
+    expect(current(frame.id)).toMatchObject({ width: 100, name: 'Renamed' })
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+    expect(editor.graph.getNode(added.id)?.parentId).toBe(frame.id)
+  })
+
   test('scales an auto layout frame padding, gap, and text', () => {
     editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {

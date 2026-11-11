@@ -203,10 +203,13 @@ export interface ScalePreview {
 }
 
 export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): ScalePreview {
+  // The document the snapshot was taken from: once another replaces it, nothing here touches either.
+  const graph = editor.graph
   let shown: { scale: number; anchor: Vector } | null = null
   const place = (scale: number, anchor: Vector) => {
-    for (const [id, changes] of scaledSnapshotChanges(editor.graph, snapshot, scale, anchor))
-      editor.graph.updateNodePreview(id, changes)
+    if (editor.graph !== graph) return
+    for (const [id, changes] of scaledSnapshotChanges(graph, snapshot, scale, anchor))
+      graph.updateNodePreview(id, changes)
   }
   const restore = () => {
     if (shown) place(1, shown.anchor)
@@ -221,10 +224,11 @@ export function createScalePreview(editor: Editor, snapshot: ScaleSnapshot): Sca
       restore()
       const last = shown
       shown = null
-      // The layers the edit began on, even if the selection has moved on since.
-      const roots = [...snapshot.roots.keys()].flatMap((id) => editor.graph.getNode(id) ?? [])
-      if (last && last.scale !== 1) editor.scaleLayers(roots, last.scale, last.anchor)
       editor.requestRender()
+      // The layers the edit began on, even if the selection has moved on since.
+      if (!last || last.scale === 1 || editor.graph !== graph) return
+      const roots = [...snapshot.roots.keys()].flatMap((id) => graph.getNode(id) ?? [])
+      editor.scaleLayers(roots, last.scale, last.anchor)
     },
     cancel() {
       restore()
