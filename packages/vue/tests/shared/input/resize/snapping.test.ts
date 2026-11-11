@@ -50,7 +50,12 @@ describe('resize snapping preferences', () => {
     applyResize(drag, drag.startX + 0.6, drag.startY + 0.6, false, editor)
     commitResizePreview(drag, editor)
 
-    expect(editor.graph.getNode(nodeId)).toMatchObject({ x: 10.25, y: 20.25, width: 101, height: 81 })
+    expect(editor.graph.getNode(nodeId)).toMatchObject({
+      x: 10.25,
+      y: 20.25,
+      width: 101,
+      height: 81
+    })
   })
 
   test('preserves fractional edges when pixel snapping is disabled', () => {
@@ -70,7 +75,12 @@ describe('resize snapping preferences', () => {
     applyResize(drag, drag.startX + 6.3, drag.startY + 7.4, false, editor)
     commitResizePreview(drag, editor)
 
-    expect(editor.graph.getNode(nodeId)).toMatchObject({ x: 10.25, y: 20.25, width: 106, height: 87 })
+    expect(editor.graph.getNode(nodeId)).toMatchObject({
+      x: 10.25,
+      y: 20.25,
+      width: 106,
+      height: 87
+    })
   })
 
   test('rounds the size from the west edge, keeping the east edge', () => {

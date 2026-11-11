@@ -4,7 +4,6 @@ import {
   expectSaveLoadedOnlyInternalPages,
   snapshotNodes
 } from '#core-tests/helpers/fig/save-contract'
-import { heavy } from '@open-pencil/test-support/heavy'
 import { unzipSync } from 'fflate'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
@@ -12,8 +11,9 @@ import { isZstdCompressed } from '@open-pencil/kiwi/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import { imageSize } from '@open-pencil/scene-graph/images'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { heavy } from '@open-pencil/test-support/heavy'
 
 import {
   type Mismatch,

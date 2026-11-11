@@ -56,8 +56,12 @@ describe('font fallback coverage indexing', () => {
   })
 
   test('uses UTF-16 style-run indices after a surrogate pair', async () => {
-    const cjkData = await Bun.file(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')).arrayBuffer()
-    const latinData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const cjkData = await Bun.file(
+      repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+    ).arrayBuffer()
+    const latinData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     const cjkFamily = `CJKRunBase_${Date.now()}`
     const latinFamily = `CJKRunOverride_${Date.now()}`
     await fontManager.markLoaded(cjkFamily, 'Regular', cjkData)

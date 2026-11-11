@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import type { CanvasKit } from '@open-pencil/canvaskit'
-
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
+import { getCanvasKit } from '#core/canvaskit'
 import { createEditor } from '#core/editor/create'
 import {
   applySampledColor,
@@ -17,7 +17,6 @@ import {
 } from '#core/editor/eyedropper'
 import { TOOL_SHORTCUTS } from '#core/editor/tool-registry'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
-import { getCanvasKit } from '#core/canvaskit'
 
 function solid(color: Color): Fill {
   return { type: 'SOLID', color, opacity: 1, visible: true }

@@ -1,10 +1,10 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
-import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '@open-pencil/test-support/heavy'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '@open-pencil/test-support/heavy'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { readerDiagnostics, registerReaderSession } from '#core/kiwi/fig/session/document-state'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
