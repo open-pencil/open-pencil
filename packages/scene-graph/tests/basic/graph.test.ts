@@ -545,4 +545,18 @@ describe('flattenTree', () => {
       [leaf.id, 2]
     ])
   })
+
+  test('walks a layer with children once when bad data links it repeatedly', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    let parent = graph.createNode('FRAME', page)
+    for (let index = 0; index < 40; index++) {
+      const child = graph.createNode('FRAME', parent.id)
+      parent.childIds.push(child.id)
+      parent = child
+    }
+    graph.createNode('RECTANGLE', parent.id)
+
+    expect(graph.flattenTree(page)).toHaveLength(42)
+  })
 })

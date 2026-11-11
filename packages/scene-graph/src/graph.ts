@@ -920,8 +920,8 @@ export class SceneGraph {
   }
 
   /**
-   * The descendants of a layer in depth-first order with their depths. A child already on the path
-   * to it is skipped, so a parent cycle in bad data ends the walk instead of hanging it.
+   * The descendants of a layer in depth-first order with their depths. Each layer with children is
+   * walked once, so a cycle or repeated links in bad data cannot hang it or repeat its subtree.
    */
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
@@ -929,20 +929,21 @@ export class SceneGraph {
     if (!parent) return []
     const result: Array<{ node: SceneNode; depth: number }> = []
     const pending = [{ node: parent, depth, index: 0 }]
-    const onPath = new Set([parent])
+    const walked = new Set([parent])
     while (pending.length > 0) {
       const frame = pending.at(-1)
       if (!frame) break
       if (frame.index >= frame.node.childIds.length) {
-        onPath.delete(frame.node)
         pending.pop()
         continue
       }
       const child = this.nodes.get(frame.node.childIds[frame.index++])
-      if (!child || onPath.has(child)) continue
+      if (!child) continue
+      const container = child.childIds.length > 0
+      if (container && walked.has(child)) continue
       result.push({ node: child, depth: frame.depth })
-      if (child.childIds.length > 0) {
-        onPath.add(child)
+      if (container) {
+        walked.add(child)
         pending.push({ node: child, depth: frame.depth + 1, index: 0 })
       }
     }
