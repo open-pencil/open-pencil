@@ -94,6 +94,7 @@ function activate(pin: PinItem, event: MouseEvent) {
 <template>
   <div
     role="group"
+    dir="ltr"
     :aria-label="panels.constraints"
     data-slot="diagram"
     :data-scale="horizontal === 'SCALE' || vertical === 'SCALE' || undefined"
