@@ -1,0 +1,1 @@
+- Keyboard focus looks the same across the app: fields show it on their border and every other control with a thin ring in the focus colour, instead of the soft accent halo some buttons, lists, and collapsibles drew (#1983).

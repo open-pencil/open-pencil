@@ -1,6 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
   slots: {
-    root: 'shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50',
+    root: [
+      'shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50',
+      focusStyles.ring
+    ],
     swatch: 'size-full',
     preview: 'pointer-events-none absolute inset-0'
   },
