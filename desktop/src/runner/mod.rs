@@ -22,6 +22,9 @@ const MAX_LINE_BYTES: usize = MAX_LINE_LENGTH * 4;
 /// The longest start command a project may hold: a package script, not a program of its own.
 const MAX_COMMAND_LENGTH: usize = 2000;
 
+/// The window the editor runs in, which is the only one that may run a project's application.
+const EDITOR_WINDOW: &str = "main";
+
 /// The processes the app started, by project: a second start replaces the first, and leaving the
 /// app stops them all.
 #[derive(Default)]
@@ -46,11 +49,17 @@ struct ExitPayload {
 #[tauri::command]
 pub async fn project_start<R: tauri::Runtime>(
     app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
     state: tauri::State<'_, RunnerState>,
     id: String,
     directory: String,
     command: String,
 ) -> Result<u32, String> {
+    // A shell command runs only when the editor asks and the build allows host programs: the
+    // updater's window and any other webview have no business starting one.
+    require_editor_window(&window)?;
+    capabilities.require_host_processes()?;
     let folder = validate_folder(&directory)?;
     let command = validate_command(&command)?;
     let processes = Arc::clone(&state.0);
@@ -129,6 +138,16 @@ fn stop(processes: &Arc<Mutex<HashMap<String, u32>>>, id: &str) {
     if let Some(pid) = pid {
         kill_tree(pid);
     }
+}
+
+/// Whether the command came from the editor window, which is the only one that runs an application.
+fn require_editor_window<R: tauri::Runtime>(
+    window: &tauri::WebviewWindow<R>,
+) -> Result<(), String> {
+    if window.label() == EDITOR_WINDOW {
+        return Ok(());
+    }
+    Err("only the editor window runs an application".to_owned())
 }
 
 /// A project folder must be absolute and exist, so a command never runs somewhere the app picked.

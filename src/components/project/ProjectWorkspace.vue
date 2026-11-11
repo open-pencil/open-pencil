@@ -6,6 +6,7 @@ import { useProjectBaselines } from '@/app/live-pages/drift/sidecar/use'
 import { useProjectRunner } from '@/app/projects/runner'
 import type { Project } from '@/app/projects/schema'
 import { openExternalLink } from '@/app/shell/ui'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import ProjectApplication from '@/components/project/ProjectApplication.vue'
 import SourceControlPanel from '@/components/source-control/SourceControlPanel.vue'
 
@@ -94,6 +95,7 @@ async function openPullRequest(): Promise<void> {
         :output="runOutput"
         :failure="runFailure"
         :exit-code="exitCode"
+        :available="canRunHostProcesses()"
         @start="startApplication"
         @stop="stopApplication"
         @open="openApplication"

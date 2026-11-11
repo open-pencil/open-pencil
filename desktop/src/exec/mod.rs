@@ -31,10 +31,12 @@ pub struct ProgramReport {
 /// Run one allow-listed program in `cwd` and answer what it printed.
 #[tauri::command]
 pub async fn run_program(
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
     program: String,
     args: Option<Vec<String>>,
     cwd: String,
 ) -> Result<ProgramReport, String> {
+    capabilities.require_host_processes()?;
     let program = validate_program(&program)?;
     let folder = validate_folder(&cwd)?;
     let args = args.unwrap_or_default();

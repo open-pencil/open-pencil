@@ -82,10 +82,12 @@ pub struct GitAvailability {
 /// Run one allow-listed git subcommand in `repo`.
 #[tauri::command]
 pub async fn git_run(
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
     repo: String,
     subcommand: String,
     args: Option<Vec<String>>,
 ) -> Result<GitRunReport, String> {
+    capabilities.require_host_processes()?;
     let repo = validate_repo(&repo)?;
     validate_subcommand(&subcommand)?;
     let args = args.unwrap_or_default();
@@ -100,8 +102,12 @@ pub async fn git_run(
 
 /// Report whether `git` is installed, so the panel can explain itself before offering actions.
 #[tauri::command]
-pub fn git_version() -> GitAvailability {
-    match which::which("git") {
+pub fn git_version(
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
+) -> Result<GitAvailability, String> {
+    // Asking whether git exists means running it, which a build without host processes may not do.
+    capabilities.require_host_processes()?;
+    Ok(match which::which("git") {
         Ok(path) => GitAvailability {
             available: true,
             version: read_version(&path),
@@ -112,7 +118,7 @@ pub fn git_version() -> GitAvailability {
             version: None,
             path: None,
         },
-    }
+    })
 }
 
 /// The repository root that holds `folder`, or null when the folder is not inside one.
@@ -120,7 +126,11 @@ pub fn git_version() -> GitAvailability {
 /// Adding a project starts from a folder the person picked, which need not be a repository
 /// root, so this cannot go through `git_run`: that command refuses a folder without `.git`.
 #[tauri::command]
-pub async fn git_repository_root(folder: String) -> Result<Option<String>, String> {
+pub async fn git_repository_root(
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
+    folder: String,
+) -> Result<Option<String>, String> {
+    capabilities.require_host_processes()?;
     let folder = validate_folder(&folder)?;
     tauri::async_runtime::spawn_blocking(move || repository_root(&folder))
         .await

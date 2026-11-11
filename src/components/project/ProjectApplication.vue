@@ -19,7 +19,8 @@ const {
   address,
   output,
   failure,
-  exitCode = null
+  exitCode = null,
+  available = true
 } = defineProps<{
   command: string
   state: ProjectRunState
@@ -27,6 +28,8 @@ const {
   output: readonly string[]
   failure: string | null
   exitCode?: number | null
+  /** Whether this build may start host programs at all, as a package may switch them off. */
+  available?: boolean
 }>()
 
 const emit = defineEmits<{ start: []; stop: []; open: [] }>()
@@ -37,7 +40,7 @@ const labels = useProjectMessages()
 const reloads = ref(0)
 
 const running = computed(() => state === 'starting' || state === 'running')
-const canStart = computed(() => command.trim() !== '' && !running.value)
+const canStart = computed(() => available && command.trim() !== '' && !running.value)
 /** The frame shows a running application that has named its address. */
 const previewing = computed(() => state === 'running' && address !== '')
 

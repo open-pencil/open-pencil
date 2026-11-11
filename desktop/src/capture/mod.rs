@@ -50,7 +50,14 @@ pub struct PageShot {
 
 /// Take one page's picture at the size a frame shows it.
 #[tauri::command]
-pub async fn capture_page(url: String, width: u32, height: u32) -> Result<PageShot, String> {
+pub async fn capture_page(
+    capabilities: tauri::State<'_, crate::capabilities::DesktopCapabilities>,
+    url: String,
+    width: u32,
+    height: u32,
+) -> Result<PageShot, String> {
+    // Taking a picture means starting a browser, which a build without host processes may not do.
+    capabilities.require_host_processes()?;
     let target = validate_target(&url)?;
     validate_size(width, height)?;
     tauri::async_runtime::spawn_blocking(move || capture(&target, width, height))
