@@ -28,6 +28,7 @@ flowchart LR
 | `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
 | `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
+| `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
 | `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 

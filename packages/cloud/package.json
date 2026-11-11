@@ -26,6 +26,7 @@
     "#cloud/client": "./src/client/index.ts",
     "#cloud/contract": "./src/contract/index.ts",
     "#cloud/email": "./src/email/index.ts",
+    "#cloud/errors": "./src/errors/index.ts",
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
@@ -77,6 +78,12 @@
       "bun": "./src/runtime/node/index.ts",
       "import": "./dist/runtime-node.mjs",
       "default": "./dist/runtime-node.mjs"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "bun": "./src/errors/index.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
     },
     "./server": {
       "types": "./dist/server.d.ts",
