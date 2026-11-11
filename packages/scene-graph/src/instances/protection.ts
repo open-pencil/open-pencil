@@ -77,13 +77,13 @@ export function isProtectedSyncField(
 
 export function enclosingInstanceOverrideFields(graph: SceneGraph, node: SceneNode): Set<string>[] {
   const fields: Set<string>[] = []
-  let parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  while (parent) {
-    if (parent.type === 'INSTANCE') {
-      fields.push(new Set(parent.instanceOverrides.descendants.get(node.id)?.keys()))
+  if (!node.parentId) return fields
+  graph.closest(node.parentId, (ancestor) => {
+    if (ancestor.type === 'INSTANCE') {
+      fields.push(new Set(ancestor.instanceOverrides.descendants.get(node.id)?.keys()))
     }
-    parent = parent.parentId ? graph.nodes.get(parent.parentId) : undefined
-  }
+    return false
+  })
   return fields
 }
 

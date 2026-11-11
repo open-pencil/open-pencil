@@ -298,7 +298,7 @@ export function useCanvasInput(
       hoverCanvasTool({ event: e, ...coords }, toolContext)
     }
 
-    if (drag.value) moveCanvasDrag(drag.value, e, coords, dragMoveContext)
+    if (drag.value) moveCanvasDrag(drag.value, e, () => getCoords(e), dragMoveContext)
   }
 
   function onMouseUp() {

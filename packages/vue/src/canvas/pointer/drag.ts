@@ -66,13 +66,16 @@ export interface CanvasDragMoveContext {
   spaceHeld: () => boolean
 }
 
-/** Moves a drag in progress to the pointer at `coords`, by its kind. */
+/**
+ * Moves a drag in progress to the pointer, by its kind. `pointer` is read after panning is ruled
+ * out, so a host's cursor callback that moved the viewport is already reflected.
+ */
 // Dispatching the full drag union is intentionally centralized here.
 // eslint-disable-next-line complexity
 export function moveCanvasDrag(
   d: DragState,
   e: MouseEvent,
-  coords: { sx: number; sy: number; cx: number; cy: number },
+  pointer: () => { sx: number; sy: number; cx: number; cy: number },
   { editor, guideInput, transform, spaceHeld }: CanvasDragMoveContext
 ): void {
   if (d.type === 'pan') {
@@ -80,7 +83,7 @@ export function moveCanvasDrag(
     return
   }
 
-  const { sx, sy, cx, cy } = coords
+  const { sx, sy, cx, cy } = pointer()
 
   if (d.type === 'gradient' || d.type === 'shape-handle') {
     d.update(sx, sy, e.shiftKey)
