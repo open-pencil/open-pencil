@@ -1,1 +1,0 @@
-- Added a Scale tool that resizes text, strokes, effects, radii, spacing, and vector geometry proportionally, as in Figma.
