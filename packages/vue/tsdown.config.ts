@@ -7,7 +7,9 @@ import vue from 'unplugin-vue/rolldown'
 
 const require = createRequire(import.meta.url)
 
-const packageJSON = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+const packageJSON = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+) as {
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
 }
@@ -161,7 +163,7 @@ export default defineConfig({
   },
   deps: {
     alwaysBundle: BUNDLED.flatMap((name) => [name, new RegExp(`^${name.replaceAll('/', '\\/')}/`)]),
-    neverBundle: [...external, /^node:/    ],
+    neverBundle: [...external, /^node:/],
     onlyBundle: false
   },
   plugins: [atlaskitSubpathResolver(), raw(), vue()],

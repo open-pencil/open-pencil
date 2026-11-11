@@ -2,10 +2,10 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import { once, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   createIconifyProvider,
   createIconSetsProvider,
@@ -13,12 +13,16 @@ import {
   MATERIAL_SYMBOLS_PREFIXES
 } from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
-import { comparePNGs, createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import {
+  comparePNGs,
+  createCanvasKitRasterCodec,
+  headlessRenderNodes
+} from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import { parsePenDocument } from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { iconSetSchema } from '#core/icons/schema'
 

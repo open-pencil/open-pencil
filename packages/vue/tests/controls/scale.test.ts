@@ -21,7 +21,10 @@ afterEach(() => {
 function mountScale() {
   // The app's state is reactive, so the panel follows the scene as it changes.
   const graph = new SceneGraph()
-  editor = createEditor({ graph, state: reactive(createDefaultEditorState(graph.getPages()[0].id)) })
+  editor = createEditor({
+    graph,
+    state: reactive(createDefaultEditorState(graph.getPages()[0].id))
+  })
   const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
     width: 200,
     height: 100

@@ -11,7 +11,7 @@ This is a draft awaiting legal review. It is not in force, and it changes before
 
 Version: 2026-11-15
 
-These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by [operator legal name], [address] ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
+These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico, [address] ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
 
 ## Your account
 
@@ -49,7 +49,7 @@ The Service is provided as is. We work to keep it available and your data safe, 
 
 ## Liability
 
-To the extent the law allows, we aren't liable for indirect or consequential losses, and our total liability for any claim is limited to [amount]. Nothing in these terms limits liability that can't be limited by law, or your rights as a consumer.
+To the extent the law allows, we aren't liable for indirect or consequential losses, and our total liability for any claim is limited to the greater of what you paid us in the 12 months before the claim and US$100. Nothing in these terms limits liability that can't be limited by law, or your rights as a consumer.
 
 ## Ending
 
@@ -61,8 +61,8 @@ We'll tell you about material changes before they take effect, and you'll be ask
 
 ## Law
 
-These terms are governed by the laws of [country], and disputes go to the courts of [place], except where consumer law gives you the right to bring a claim where you live.
+These terms are governed by the laws of Mexico, and disputes go to the courts of Mexico City, except where consumer law gives you the right to bring a claim where you live.
 
 ## Contact
 
-[contact email] · Abuse: [abuse@openpencil.dev](mailto:abuse@openpencil.dev)
+Support: [support@openpencil.dev](mailto:support@openpencil.dev) · Legal: [legal@openpencil.dev](mailto:legal@openpencil.dev) · Abuse: [abuse@openpencil.dev](mailto:abuse@openpencil.dev)

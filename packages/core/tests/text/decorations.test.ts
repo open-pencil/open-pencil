@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import { toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { savedDecoratedGlyphs, textDecorationRects } from '#core/text/decorations'
 

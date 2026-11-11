@@ -1,11 +1,11 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { sharedGoldPreviewFixture } from '@open-pencil/test-support/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import {

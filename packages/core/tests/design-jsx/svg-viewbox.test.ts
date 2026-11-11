@@ -2,9 +2,13 @@ import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderJSX } from '@open-pencil/core/design-jsx'
-import { comparePNGs, createCanvasKitRasterCodec, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderJSX } from '@open-pencil/core/design-jsx'
+import {
+  comparePNGs,
+  createCanvasKitRasterCodec,
+  renderNodesToImage
+} from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'

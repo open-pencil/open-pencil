@@ -1,14 +1,14 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
+import { asRenderer, expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import type { RenderChunk } from '#core/canvas/renderer/chunks'
 import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
-
-import { asRenderer, expectRgbaPixels } from '#core-tests/canvas/helpers'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 

@@ -1,5 +1,6 @@
-import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
 import type { DefaultTheme } from 'vitepress'
+
+import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
 
 export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
   {
@@ -9,8 +10,8 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
       { text: labels.features, link: `${prefix}/overview/features` },
       { text: labels.comparison, link: `${prefix}/overview/comparison` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.privacy, link: '/overview/privacy' },
-    ],
+      { text: labels.privacy, link: '/overview/privacy' }
+    ]
   },
   {
     // The hosted service's own documents, in English: a Cloud server someone else runs has its own.
@@ -18,22 +19,22 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
     items: [
       { text: labels.cloudTerms, link: '/overview/legal/terms' },
       { text: labels.cloudPrivacy, link: '/overview/legal/privacy' },
-      { text: labels.subprocessors, link: '/overview/legal/subprocessors' },
-    ],
-  },
+      { text: labels.subprocessors, link: '/overview/legal/subprocessors' }
+    ]
+  }
 ]
 
 export const userGuideSidebar = (
   prefix: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: labels.gettingAround,
     items: [
       { text: labels.canvasNav, link: `${prefix}/user-guide/canvas-navigation` },
       { text: labels.selection, link: `${prefix}/user-guide/selection-and-manipulation` },
-      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` },
-    ],
+      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
+    ]
   },
   {
     text: labels.creatingContent,
@@ -44,8 +45,8 @@ export const userGuideSidebar = (
       { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
       // English only until translated; locales link to the canonical page.
       { text: labels.icons, link: '/user-guide/icons' },
-      { text: labels.photos, link: '/user-guide/photos' },
-    ],
+      { text: labels.photos, link: '/user-guide/photos' }
+    ]
   },
   {
     text: labels.organizing,
@@ -54,8 +55,8 @@ export const userGuideSidebar = (
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
       // English only until translated; locales link to the canonical page.
       { text: labels.openPencilCloud, link: '/user-guide/openpencil-cloud' },
-      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' },
-    ],
+      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
+    ]
   },
   {
     text: labels.advanced,
@@ -64,14 +65,14 @@ export const userGuideSidebar = (
       { text: labels.components, link: `${prefix}/user-guide/components` },
       { text: labels.variables, link: `${prefix}/user-guide/variables` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
-    ],
-  },
+      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' }
+    ]
+  }
 ]
 
 export const programmableSidebar = (
   prefix: string,
-  labels: ProgrammableLabels,
+  labels: ProgrammableLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: labels.overview,
@@ -94,19 +95,19 @@ export const programmableSidebar = (
             { text: 'Coding agents', link: '/programmable/coding-agents' },
             {
               text: 'BYOK Compatibility',
-              link: '/programmable/byok-provider-compatibility',
-            },
+              link: '/programmable/byok-provider-compatibility'
+            }
           ]
         : []),
-      { text: labels.collaboration, link: `${prefix}/programmable/collaboration` },
-    ],
-  },
+      { text: labels.collaboration, link: `${prefix}/programmable/collaboration` }
+    ]
+  }
 ]
 
 export const referenceSidebar = (
   prefix: string,
   label: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: label,
@@ -118,15 +119,15 @@ export const referenceSidebar = (
       { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
       ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
       { text: 'File Format', link: '/reference/file-format' },
-      { text: 'Self-hosting Cloud', link: '/reference/self-hosting-cloud' },
-    ],
-  },
+      { text: 'Self-hosting Cloud', link: '/reference/self-hosting-cloud' }
+    ]
+  }
 ]
 
 export const developmentSidebar = (
   prefix: string,
   label: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: label,
@@ -146,9 +147,9 @@ export const developmentSidebar = (
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
-            { text: 'Vector Conversion', link: '/development/vector-conversion' },
+            { text: 'Vector Conversion', link: '/development/vector-conversion' }
           ]
-        : []),
-    ],
-  },
+        : [])
+    ]
+  }
 ]

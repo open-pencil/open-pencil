@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { captureDocumentChange } from '#core/editor/history/document-change'
 

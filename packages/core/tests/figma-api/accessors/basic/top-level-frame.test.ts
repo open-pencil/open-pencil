@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { graphOf } from '#core/figma-api/graph'
 
-import { createAPI } from '#core-tests/helpers/figma-api'// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+import { createAPI } from '#core-tests/helpers/figma-api' // Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+
+import { graphOf } from '#core/figma-api/graph'
 
 describe('getTopLevelFrame', () => {
   test('is the container a layer sits in at the top of its page or section', () => {

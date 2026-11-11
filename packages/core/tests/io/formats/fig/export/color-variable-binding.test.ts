@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { inflateSync, unzipSync } from 'fflate'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
@@ -9,6 +8,7 @@ import { parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 import { ByteBuffer, compileSchema, decodeBinarySchema } from '@open-pencil/kiwi/schema-runtime'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color, GUID } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 interface DecodedPaint {
   color?: Color
