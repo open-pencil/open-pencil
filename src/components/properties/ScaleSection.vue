@@ -153,20 +153,20 @@ function pickPreset(value: unknown) {
         @commit="(value: number) => scaleToSize(value, 'height')"
       />
     </PanelGrid>
-    <div class="mt-1.5 grid grid-cols-[minmax(0,1fr)_4.875rem] items-start gap-3">
+    <PanelGrid :columns="2" class="mt-1.5">
       <AppSelectRoot
         v-model:open="presetsOpen"
         :model-value="factor"
         @update:model-value="pickPreset"
       >
-        <div ref="factorAnchor" class="min-w-0">
+        <div ref="factorAnchor" class="min-w-0 self-start">
           <NumberField
             data-property="scale"
             :aria-label="panels.scaleMultiplier"
             :model-value="draftFactor ?? factor"
             :min="MIN_RESCALE"
             :step="0.01"
-            suffix="x"
+            :units="['x']"
             @editing-change="typingFactor = $event"
             @update:model-value="draftFactor = $event"
             @commit="(value: number) => commitFactor(value)"
@@ -174,6 +174,9 @@ function pickPreset(value: unknown) {
           >
             <template #icon>
               <icon-lucide-scaling class="size-3.5" />
+            </template>
+            <template #display="{ value }">
+              <span class="min-w-0 flex-1 truncate text-surface">{{ value }}x</span>
             </template>
             <template #suffix>
               <SelectFieldTrigger
@@ -197,6 +200,6 @@ function pickPreset(value: unknown) {
             store.setScaleAnchor({ x: fractionOf(primary), y: fractionOf(counter) })
         "
       />
-    </div>
+    </PanelGrid>
   </PanelSection>
 </template>
