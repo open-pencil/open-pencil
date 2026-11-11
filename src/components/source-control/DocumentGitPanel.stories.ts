@@ -64,7 +64,7 @@ const failure: GitFailure = {
 }
 
 const meta = {
-  title: 'App/Source control/Document',
+  title: 'App/Source Control/Document',
   component: DocumentGitPanel,
   parameters: {
     docs: {
@@ -75,7 +75,7 @@ const meta = {
     }
   },
   args: {
-    path: 'D:/Karbid2/design/catalog.fig',
+    path: 'designs/site/design/catalog.fig',
     branch,
     state: 'modified',
     branches,

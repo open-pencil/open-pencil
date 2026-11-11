@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test'
 import {
   applicationAddress,
   applicationFolder,
+  stopProjectRun,
   useProjectRunner,
   type ProjectRunnerEvents,
   type ProjectRunnerTransport
@@ -227,4 +228,17 @@ test('a listener that fails to bind leaves the one already bound behind', async 
 
   expect(stopped).toEqual(['output'])
   expect(runner.state.value).toBe('failed')
+})
+test('a project that is removed takes its running application with it', async () => {
+  const app = project('D:/app-removed')
+  const { transport, calls } = recorder()
+  const runner = useProjectRunner(app, transport, events().listeners)
+  await runner.start()
+  calls.length = 0
+
+  await stopProjectRun(app.id, transport)
+
+  expect(calls).toEqual([['project_stop', { id: app.id }]])
+  expect(runner.state.value).toBe('idle')
+  expect(runner.running.value).toBe(false)
 })

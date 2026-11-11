@@ -62,7 +62,8 @@ const branchName = ref('')
 const branch = computed(() => status?.branch ?? null)
 const changedCount = computed(() => status?.entries.length ?? 0)
 const behind = computed(() => branch.value?.behind ?? 0)
-const hasUpstream = computed(() => branch.value?.upstream !== null)
+/** Whether there is an upstream to pull from and push to, which a read branch answers. */
+const hasUpstream = computed(() => (branch.value?.upstream ?? null) !== null)
 const canCommit = computed(() => !busy && changedCount.value > 0 && commitMessage.trim() !== '')
 /** Untracked and ignored paths carry no status pair, so the list shows only modified kinds. */
 const showsStatusPair = (kind: string) =>

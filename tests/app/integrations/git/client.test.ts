@@ -89,7 +89,8 @@ describe('readGitAvailability', () => {
 
     expect(outcome.ok).toBe(false)
     if (outcome.ok) throw new Error('expected a failure')
-    expect(outcome.summary).toBe('git is not installed or not on PATH.')
+    // An answer that is not git's own failure, rather than the sentence it happens to carry.
+    expect(outcome.code).toBe(0)
   })
 })
 

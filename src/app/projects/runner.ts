@@ -203,3 +203,23 @@ export function useProjectRunner(
     stop
   }
 }
+
+/**
+ * Stop whatever a project runs, for a project that is no longer listed. The screen that started it
+ * is gone with the project, so nothing of its own would ever ask for the stop.
+ */
+export async function stopProjectRun(
+  id: string,
+  transport: ProjectRunnerTransport = invoke
+): Promise<void> {
+  const run = runOf(id)
+  run.detach()
+  run.state.value = 'idle'
+  run.exitCode.value = null
+  try {
+    await transport('project_stop', { id })
+  } catch (error) {
+    // A project that runs nothing needs no stopping; the removal goes ahead either way.
+    console.warn('[Runner] Stopping a removed project failed:', error)
+  }
+}

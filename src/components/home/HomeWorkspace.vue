@@ -18,6 +18,7 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import { desktopProjectImport } from '@/app/projects/pick'
+import { stopProjectRun } from '@/app/projects/runner'
 import type { Project } from '@/app/projects/schema'
 import { useProjectStatuses } from '@/app/projects/status'
 import { useProjectImport } from '@/app/projects/use'
@@ -93,6 +94,9 @@ function renameProject(id: string, name: string): void {
 }
 
 function removeProject(id: string): void {
+  // A project that is gone from the list takes its application with it: nothing else would
+  // ever ask for that run to stop.
+  void stopProjectRun(id)
   removeStoredProject(id)
   void closeProjectTab(id)
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 
 import { useCommonMessages, useSourceControlMessages } from '@open-pencil/vue/i18n'
 
@@ -83,9 +83,14 @@ const stateLabel = computed(() => {
   return words[state]
 })
 
-/** The commit a restore would go back to; set it to ask, and it is cleared once closed. */
+/** The commit a restore would go back to, set while the dialog asks for confirmation. */
 const restoring = shallowRef<GitCommitSummary | null>(null)
 const asking = ref(false)
+// Cleared once the dialog closes, so the next one opens on its own commit instead of showing the
+// hash of the last one for a moment.
+watch(asking, (open) => {
+  if (!open) restoring.value = null
+})
 
 function askRestore(commit: GitCommitSummary): void {
   restoring.value = commit

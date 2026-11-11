@@ -55,7 +55,7 @@ const changedStatus: GitStatus = {
       kind: 'changed',
       index: '.',
       worktree: 'M',
-      path: 'designs/karbid-design-system/project/tokens.json'
+      path: 'designs/site/project/tokens.json'
     },
     {
       kind: 'renamed',
