@@ -35,7 +35,8 @@ test('writes only fields an instance can override, and rejects a layer name seve
   expect(box?.type).toBe('FRAME')
   expect(box?.x).toBe(0)
   const stored = graph.getNode(created.id)?.instanceOverrides.descendants.get(box?.id ?? '')
-  for (const field of ['childIds', 'parentId', 'type', 'x']) expect(stored?.has(field)).not.toBe(true)
+  for (const field of ['childIds', 'parentId', 'type', 'x'])
+    expect(stored?.has(field)).not.toBe(true)
   await expect(
     renderJSX(graph, `<Instance of="Pair" overrides={{ 'Dot:opacity': 0.5 }} />`)
   ).rejects.toThrow('ambiguous')

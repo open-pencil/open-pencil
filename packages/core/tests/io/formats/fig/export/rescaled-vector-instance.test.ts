@@ -1,7 +1,5 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { createEditor } from '#core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
@@ -10,6 +8,9 @@ import { derivedSymbolDataOf } from '@open-pencil/fig/instance-overrides'
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { createEditor } from '#core/editor'
 
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
@@ -29,7 +30,11 @@ const DIAMOND = [
 /** A closed outline through `points`; the encoder flips y, as glyph outlines are y-up. */
 function outlineBlob(points: readonly (readonly [number, number])[]): Uint8Array {
   return encodePathCommandsBlob([
-    ...points.map(([x, y], index) => ({ type: index === 0 ? ('M' as const) : ('L' as const), x, y: -y })),
+    ...points.map(([x, y], index) => ({
+      type: index === 0 ? ('M' as const) : ('L' as const),
+      x,
+      y: -y
+    })),
     { type: 'Z' as const }
   ])
 }

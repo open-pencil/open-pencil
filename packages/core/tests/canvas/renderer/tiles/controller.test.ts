@@ -1,10 +1,9 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import type { Surface } from '@open-pencil/canvaskit'
-
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import type { ImagePreview, ImagePreviewDecoder } from '#core/canvas/images/previews'

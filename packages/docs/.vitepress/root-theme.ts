@@ -1,7 +1,7 @@
 import type { DefaultTheme } from 'vitepress'
 
 import { EN, EN_PROG } from './labels.ts'
-import { sdkSidebar } from './sdk-sidebar.ts'
+import { sdkSidebar } from './sdk/sidebar.ts'
 import {
   cloudSidebar,
   developmentSidebar,

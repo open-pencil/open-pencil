@@ -10,14 +10,15 @@ import {
   PL,
   PL_PROG,
   RU,
-  RU_PROG,
+  RU_PROG
 } from '#docs/labels.ts'
+
 import { localeThemeConfig } from './theme.ts'
 
 export const docsLocales = {
   root: {
     label: 'English',
-    lang: 'en',
+    lang: 'en'
   },
   de: {
     label: 'Deutsch',
@@ -33,11 +34,11 @@ export const docsLocales = {
         reference: 'Referenz',
         development: 'Entwicklung',
         cloud: 'Cloud',
-        openApp: 'App öffnen',
+        openApp: 'App öffnen'
       },
       DE,
-      DE_PROG,
-    ),
+      DE_PROG
+    )
   },
   it: {
     label: 'Italiano',
@@ -53,11 +54,11 @@ export const docsLocales = {
         reference: 'Riferimento',
         development: 'Sviluppo',
         cloud: 'Cloud',
-        openApp: 'Apri app',
+        openApp: 'Apri app'
       },
       IT,
-      IT_PROG,
-    ),
+      IT_PROG
+    )
   },
   fr: {
     label: 'Français',
@@ -73,11 +74,11 @@ export const docsLocales = {
         reference: 'Référence',
         development: 'Développement',
         cloud: 'Cloud',
-        openApp: "Ouvrir l'app",
+        openApp: "Ouvrir l'app"
       },
       FR,
-      FR_PROG,
-    ),
+      FR_PROG
+    )
   },
   es: {
     label: 'Español',
@@ -93,11 +94,11 @@ export const docsLocales = {
         reference: 'Referencia',
         development: 'Desarrollo',
         cloud: 'Cloud',
-        openApp: 'Abrir app',
+        openApp: 'Abrir app'
       },
       ES,
-      ES_PROG,
-    ),
+      ES_PROG
+    )
   },
   pl: {
     label: 'Polski',
@@ -113,11 +114,11 @@ export const docsLocales = {
         reference: 'Referencja',
         development: 'Rozwój',
         cloud: 'Cloud',
-        openApp: 'Otwórz app',
+        openApp: 'Otwórz app'
       },
       PL,
-      PL_PROG,
-    ),
+      PL_PROG
+    )
   },
   ru: {
     label: 'Русский',
@@ -133,10 +134,10 @@ export const docsLocales = {
         reference: 'Справочник',
         development: 'Разработка',
         cloud: 'Cloud',
-        openApp: 'Открыть приложение',
+        openApp: 'Открыть приложение'
       },
       RU,
-      RU_PROG,
-    ),
-  },
+      RU_PROG
+    )
+  }
 }

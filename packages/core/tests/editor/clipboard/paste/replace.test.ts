@@ -4,8 +4,8 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** What copying a layer of `source` puts on the clipboard, as in-app paste reads it. */
 async function copied(source: Editor, id: string) {
