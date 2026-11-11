@@ -1,1 +1,0 @@
-- A script that places a right-pinned or stretched layer in a new Hug frame without reading it first, through MCP tools, `eval`, or the AI tools, keeps the layer where it put it, as in Figma, instead of the frame's later hug moving it (#1932).

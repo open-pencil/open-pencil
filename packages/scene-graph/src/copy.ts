@@ -50,12 +50,16 @@ export function copyStroke(s: Stroke): Stroke {
 }
 
 export function copyEffect(e: Effect): Effect {
-  return {
-    ...e,
-    color: { ...e.color },
-    offset: { ...e.offset },
-    ...(e.glass ? { glass: { ...e.glass } } : {})
+  const copy: Effect = { ...e, color: { ...e.color }, offset: { ...e.offset } }
+  if (e.glass) copy.glass = { ...e.glass }
+  if (e.progressive) {
+    copy.progressive = {
+      startRadius: e.progressive.startRadius,
+      startOffset: { ...e.progressive.startOffset },
+      endOffset: { ...e.progressive.endOffset }
+    }
   }
+  return copy
 }
 
 export function copyStyleRun(r: StyleRun): StyleRun {

@@ -1,16 +1,24 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
+import type { Image, Shader } from '@open-pencil/canvaskit'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import {
   SceneGraph,
   type Effect,
   type GlassEffectParams,
   type SceneNode
 } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { asDouble } from '@open-pencil/test-support/doubles'
+
+import {
+  createGlassMapCache,
+  type GlassGeometryMap,
+  glassGeometryMap
+} from '#core/canvas/glass/map'
+import type { GlassOutline } from '#core/canvas/glass/shader'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -171,5 +179,141 @@ describe('glass draws as Figma does', () => {
     for (const [index, figma] of FIGMA_CIRCLE_DISPLACEMENT.entries()) {
       expect(Math.abs(moved[index] - figma)).toBeLessThanOrEqual(1.5)
     }
+  })
+})
+
+describe('glass geometry map', () => {
+  // A diamond inside a 100px layer: corners at the middle of each side.
+  const diamond: GlassOutline = {
+    origin: [0, 0],
+    size: [100, 100],
+    radii: [0, 0, 0, 0],
+    isBox: false,
+    segments: new Float32Array([50, 0, 100, 50, 100, 50, 50, 100, 50, 100, 0, 50, 0, 50, 50, 0])
+  }
+  const layer = { id: 'map-diamond', width: 100, height: 100 } as SceneNode
+
+  function at(map: GlassGeometryMap, x: number, y: number): number[] {
+    const [cx, cy] = [(x - map.origin[0]) * map.scale, (y - map.origin[1]) * map.scale]
+    const pixel = map.image.readPixels(Math.floor(cx), Math.floor(cy), {
+      width: 1,
+      height: 1,
+      colorType: ck.ColorType.RGBA_F32,
+      alphaType: ck.AlphaType.Premul,
+      colorSpace: ck.ColorSpace.SRGB
+    })
+    return Array.from(expectDefined(pixel, 'map pixel')).slice(0, 3)
+  }
+
+  test('holds the signed distance to the outline and the direction into it', () => {
+    const surface = expectDefined(ck.MakeSurface(8, 8), 'surface')
+    const map = expectDefined(
+      glassGeometryMap(renderer, surface.getCanvas(), layer, diamond, 60),
+      'map'
+    )
+    expect(map.scale).toBe(1)
+    const inward = [-Math.SQRT1_2, Math.SQRT1_2]
+    // Inside, 10 / √2 from the upper right edge.
+    const [inside, ix, iy] = at(map, 60.5, 20.5)
+    expect(inside).toBeCloseTo(10 / Math.SQRT2, 1)
+    expect([ix, iy].map((v) => Math.round(v * 100) / 100)).toEqual(
+      inward.map((v) => Math.round(v * 100) / 100)
+    )
+    // Outside, 30 / √2 past the same edge: negative, still pointing in.
+    const [outside, ox, oy] = at(map, 90.5, 10.5)
+    expect(outside).toBeCloseTo(-30 / Math.SQRT2, 1)
+    expect([ox, oy].map((v) => Math.round(v * 100) / 100)).toEqual(
+      inward.map((v) => Math.round(v * 100) / 100)
+    )
+    // The same outline at the same zoom step reads the map already drawn.
+    expect(glassGeometryMap(renderer, surface.getCanvas(), layer, diamond, 60)).toBe(map)
+    surface.delete()
+  })
+
+  test('gives way to walking the outline where no half-float surface can be made', () => {
+    // A small frame: walking the outline at every pixel is what the map saves.
+    const reds = () => {
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0].id
+      const frame = graph.createNode('FRAME', page, { width: 64, height: 64, fills: [] })
+      for (let x = 0; x < 64; x++) {
+        graph.createNode('RECTANGLE', frame.id, {
+          x,
+          width: 1,
+          height: 64,
+          fills: [solid((x * 4) / 255, 0, 0)]
+        })
+      }
+      graph.createNode('ELLIPSE', frame.id, {
+        x: 8,
+        y: 8,
+        width: 48,
+        height: 48,
+        fills: [],
+        effects: [glass({ depth: 12, lightIntensity: 1 })]
+      })
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page, [frame.id], {
+          scale: 1,
+          format: 'PNG',
+          trimTransparent: false
+        })
+      )
+      const image = expectDefined(ck.MakeImageFromEncoded(png))
+      try {
+        const pixels = expectDefined(
+          image.readPixels(0, 0, {
+            width: 64,
+            height: 64,
+            alphaType: ck.AlphaType.Unpremul,
+            colorType: ck.ColorType.RGBA_8888,
+            colorSpace: ck.ColorSpace.SRGB
+          })
+        )
+        return Array.from({ length: 64 * 64 }, (_, i) => pixels[i * 4])
+      } finally {
+        image.delete()
+      }
+    }
+    const mapped = reds()
+    const make = renderer.surface.makeSurface.bind(renderer.surface)
+    renderer.surface.makeSurface = (info) =>
+      info.colorType === ck.ColorType.RGBA_F16 ? null : make(info)
+    try {
+      const walked = reds()
+      // Refraction still moves the backdrop: a pixel's red is no longer its column's.
+      expect(walked.some((red, i) => i % 64 > 12 && i % 64 < 52 && red !== (i % 64) * 4)).toBe(true)
+      const mean =
+        walked.reduce((sum, red, i) => sum + Math.abs(red - mapped[i]), 0) / walked.length
+      expect(mean).toBeLessThan(0.5)
+    } finally {
+      renderer.surface.makeSurface = make
+    }
+  })
+
+  test('keeps no more than four of the largest maps, releasing the oldest', () => {
+    const cache = createGlassMapCache()
+    const released: string[] = []
+    const largest = (name: string): GlassGeometryMap => ({
+      image: asDouble<Image>({
+        width: () => 2048,
+        height: () => 2048,
+        delete: () => released.push(`${name} image`)
+      }),
+      shader: asDouble<Shader>({ delete: () => released.push(`${name} shader`) }),
+      origin: [0, 0],
+      scale: 1
+    })
+    for (const name of ['a', 'b', 'c', 'd', 'e']) cache.set(name, largest(name))
+    expect(cache.size).toBe(4)
+    expect(released).toEqual(['a shader', 'a image'])
+  })
+
+  test('is not drawn for a box, which the shaders compute exactly', () => {
+    const surface = expectDefined(ck.MakeSurface(8, 8), 'surface')
+    expect(
+      glassGeometryMap(renderer, surface.getCanvas(), layer, { ...diamond, isBox: true }, 60)
+    ).toBeNull()
+    surface.delete()
   })
 })

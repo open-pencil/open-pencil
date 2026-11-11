@@ -6,12 +6,21 @@ const switchTheme = {
   },
   variants: {
     size: {
-      sm: { root: 'h-4 w-7 p-0.5', thumb: 'size-3 data-[state=checked]:translate-x-3' },
-      md: { root: 'h-5 w-9 p-0.5', thumb: 'size-4 data-[state=checked]:translate-x-4' }
+      sm: {
+        root: 'h-4 w-7 p-0.5',
+        thumb: 'size-3 data-[state=checked]:translate-x-3 rtl:data-[state=checked]:-translate-x-3'
+      },
+      md: {
+        root: 'h-5 w-9 p-0.5',
+        thumb: 'size-4 data-[state=checked]:translate-x-4 rtl:data-[state=checked]:-translate-x-4'
+      }
     },
     state: {
       idle: {},
-      mixed: { root: 'border-accent/60 bg-accent/20', thumb: 'translate-x-1.5 bg-accent' }
+      mixed: {
+        root: 'border-accent/60 bg-accent/20',
+        thumb: 'translate-x-1.5 bg-accent rtl:-translate-x-1.5'
+      }
     }
   },
   defaultVariants: {

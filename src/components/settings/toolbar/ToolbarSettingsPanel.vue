@@ -16,6 +16,7 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ToolbarLayoutEditor from '@/components/settings/toolbar/ToolbarLayoutEditor.vue'
 import { useToolbarAlignOptions, useToolbarSideOptions } from '@/components/toolbar/dock'
+import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const { settings } = useI18n()
@@ -64,30 +65,34 @@ function reset() {
       <template #description>{{ settings.toolbarDescription }}</template>
       <SettingsGroup>
         <SettingsRow :label="settings.toolbarPosition" class="max-sm:flex-col max-sm:items-stretch">
-          <SegmentedControl
-            v-model="side"
-            :options="sideOptions"
-            :label="settings.toolbarPosition"
-            data-test-id="settings-toolbar-position"
-          >
-            <template #option="{ option }">
-              <span class="flex items-center gap-1.5">
-                <component :is="sideIcon(option.value)" class="size-3.5" />
-                {{ option.label }}
-              </span>
-            </template>
-          </SegmentedControl>
+          <LeftToRight>
+            <SegmentedControl
+              v-model="side"
+              :options="sideOptions"
+              :label="settings.toolbarPosition"
+              data-test-id="settings-toolbar-position"
+            >
+              <template #option="{ option }">
+                <span class="flex items-center gap-1.5">
+                  <component :is="sideIcon(option.value)" class="size-3.5" />
+                  {{ option.label }}
+                </span>
+              </template>
+            </SegmentedControl>
+          </LeftToRight>
         </SettingsRow>
         <SettingsRow
           :label="settings.toolbarAlignment"
           class="max-sm:flex-col max-sm:items-stretch"
         >
-          <SegmentedControl
-            v-model="align"
-            :options="alignOptions"
-            :label="settings.toolbarAlignment"
-            data-test-id="settings-toolbar-alignment"
-          />
+          <LeftToRight>
+            <SegmentedControl
+              v-model="align"
+              :options="alignOptions"
+              :label="settings.toolbarAlignment"
+              data-test-id="settings-toolbar-alignment"
+            />
+          </LeftToRight>
         </SettingsRow>
       </SettingsGroup>
       <ToolbarLayoutEditor v-model="layout" />

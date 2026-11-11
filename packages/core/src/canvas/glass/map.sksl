@@ -1,0 +1,28 @@
+// The map shape() reads: geometry() at each pixel's centre, a pixel being 1 / mapScale layer
+// units from mapOrigin, stored signed so it blends smoothly across the outline: the distance
+// negative outside and the direction always pointing in, in a half-float image.
+uniform float2 mapOrigin;
+uniform float mapScale;
+
+// 1 inside the outline by the nonzero rule, -1 outside.
+float side(float2 p) {
+  int winding = 0;
+  for (int i = 0; i < SEGMENTS; i++) {
+    if (float(i) >= segmentCount) break;
+    float2 a = segments[i].xy;
+    float2 b = segments[i].zw;
+    if ((a.y <= p.y) != (b.y <= p.y)) {
+      float cross = (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y);
+      if (b.y > a.y && cross > 0.0) winding += 1;
+      if (b.y < a.y && cross < 0.0) winding -= 1;
+    }
+  }
+  return winding != 0 ? 1.0 : -1.0;
+}
+
+half4 main(float2 position) {
+  float2 p = mapOrigin + position / mapScale;
+  float3 g = geometry(p, 0.0);
+  float sign = side(p);
+  return half4(sign * g.x, sign * g.yz, 1.0);
+}

@@ -1,6 +1,11 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { blurSigma, unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import {
+  blurSigma,
+  unionVisualBounds,
+  type VisualBounds,
+  widestBlurRadius
+} from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import { glassSampleRadius } from '#core/canvas/glass/shader'
@@ -66,7 +71,7 @@ function nodeBackdropReach(graph: SceneGraph, node: SceneNode): number {
     if (!effect.visible) continue
     if (effect.type === 'GLASS') reach = Math.max(reach, glassSampleRadius(node, effect))
     if (effect.type === 'BACKGROUND_BLUR') {
-      reach = Math.max(reach, 3 * blurSigma(effect.radius) + 1)
+      reach = Math.max(reach, 3 * blurSigma(widestBlurRadius(effect)) + 1)
     }
   }
   if (reach === 0) return 0

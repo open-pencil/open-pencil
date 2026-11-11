@@ -497,6 +497,12 @@ export class TiledSceneController {
     const backdropLevel = tileLevel((level / BACKDROP_LEVEL_RATIO) * (1 - 1e-9))
     const pageBackdrop = pageBackdropPlan(index.bounds(), level)
     if (pageBackdrop) this.tileCache.touchLevel(pageId, pageBackdrop.level)
+    // The last complete level is what a zoom stands on until the new one is whole: at a zoom
+    // from fit there is no coarser page copy, and the levels a zoom passes through would
+    // otherwise evict it within a few steps and leave holes at the edges of the view.
+    if (this.committedLevel !== null && this.committedLevel !== level) {
+      this.tileCache.touchLevel(pageId, this.committedLevel)
+    }
     this.cancelledJobs += this.scheduler.discard(
       (job) =>
         job.kind !== 'downsample' &&

@@ -436,7 +436,6 @@
   "effectSettings": "Настройки эффекта",
   "expandEffectSettings": "Развернуть настройки эффекта",
   "collapseEffectSettings": "Свернуть настройки эффекта",
-  "toggleExportPreview": "Показать/скрыть предпросмотр экспорта",
   "untitled": "Без названия",
   "xAxis": "Ось X",
   "yAxis": "Ось Y",
@@ -450,6 +449,11 @@
   "starRatio": "Соотношение",
   "spread": "Размах",
   "blur": "Размытие",
+  "blurType": "Тип размытия",
+  "uniformBlur": "Равномерное",
+  "progressiveBlur": "Прогрессивное",
+  "blurStart": "Начало",
+  "blurEnd": "Конец",
   "showShadowBehind": "Показывать за прозрачными областями",
   "effectColor": "Цвет",
   "foregroundBlur": "Размытие переднего плана",
@@ -661,5 +665,8 @@
   "variableModesFromLibraries": "Из библиотек",
   "variableModeAuto": "Авто ({mode})",
   "variableModeAutoMixed": "Авто",
-  "variableModeHeading": "Режим"
+  "variableModeHeading": "Режим",
+  "scale": "Масштаб",
+  "scaleMultiplier": "Множитель масштаба",
+  "scaleAnchor": "Точка привязки"
 }

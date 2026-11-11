@@ -6,26 +6,36 @@ import { DEFAULT_GLASS } from '@open-pencil/scene-graph/constants'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { useI18n } from '#vue/i18n/useI18n.js'
+import { panelMessages } from '#vue/i18n/messages'
 
 type EffectType = Effect['type']
 
-const { panels } = useI18n()
+export const EFFECT_TYPES = [
+  'DROP_SHADOW',
+  'INNER_SHADOW',
+  'LAYER_BLUR',
+  'BACKGROUND_BLUR',
+  'FOREGROUND_BLUR',
+  'GLASS'
+] as const satisfies readonly EffectType[]
 
-const EFFECT_LABELS: Record<string, string> = {
-  DROP_SHADOW: panels.value.dropShadow,
-  INNER_SHADOW: panels.value.innerShadow,
-  LAYER_BLUR: panels.value.layerBlur,
-  BACKGROUND_BLUR: panels.value.backgroundBlur,
-  FOREGROUND_BLUR: panels.value.foregroundBlur,
-  GLASS: panels.value.glass
+/** Read when asked, so the labels follow the language once its translations load. */
+function effectLabels(): Record<(typeof EFFECT_TYPES)[number], string> {
+  const panels = panelMessages.get()
+  return {
+    DROP_SHADOW: panels.dropShadow,
+    INNER_SHADOW: panels.innerShadow,
+    LAYER_BLUR: panels.layerBlur,
+    BACKGROUND_BLUR: panels.backgroundBlur,
+    FOREGROUND_BLUR: panels.foregroundBlur,
+    GLASS: panels.glass
+  }
 }
 
-export const EFFECT_TYPES = Object.keys(EFFECT_LABELS) as EffectType[]
-export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
-  value: t,
-  label: EFFECT_LABELS[t]
-}))
+export function effectOptions() {
+  const labels = effectLabels()
+  return EFFECT_TYPES.map((value) => ({ value, label: labels[value] }))
+}
 
 /**
  * The effect types the row at `index` can switch to: a layer holds one glass effect at most, as
@@ -33,15 +43,32 @@ export const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({
  * that scripts gave several keeps glass in each of those rows, so none shows a blank type.
  */
 export function effectOptionsFor(effects: readonly Effect[], index: number) {
-  if (effects.at(index)?.type === 'GLASS') return EFFECT_OPTIONS
+  const options = effectOptions()
+  if (effects.at(index)?.type === 'GLASS') return options
   const glassElsewhere = effects.some((effect, i) => i !== index && effect.type === 'GLASS')
-  return glassElsewhere
-    ? EFFECT_OPTIONS.filter((option) => option.value !== 'GLASS')
-    : EFFECT_OPTIONS
+  return glassElsewhere ? options.filter((option) => option.value !== 'GLASS') : options
 }
 
 export function isShadow(type: string) {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
+}
+
+/** Whether `type` is a layer or background blur, which can be uniform or progressive. */
+export function isBlur(type: string) {
+  return type === 'LAYER_BLUR' || type === 'FOREGROUND_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+export type BlurKind = 'UNIFORM' | 'PROGRESSIVE'
+
+/**
+ * The change that makes a blur uniform or progressive. A blur turned progressive starts as Figma
+ * desktop 126 starts it: from no blur at the top centre to its radius at the bottom centre.
+ */
+export function blurKindChange(kind: BlurKind): Partial<Effect> {
+  if (kind === 'UNIFORM') return { progressive: undefined }
+  return {
+    progressive: { startRadius: 0, startOffset: { x: 0.5, y: 0 }, endOffset: { x: 0.5, y: 1 } }
+  }
 }
 
 export function createDefaultEffect(): Effect {
@@ -124,6 +151,8 @@ export function createEffectControlActions(expandedIndex: Ref<number | null>) {
     const changes: Partial<Effect> = { type }
     if (type === 'GLASS') changes.glass = { ...DEFAULT_GLASS }
     else if (node.effects[index].type === 'GLASS') changes.glass = undefined
+    // Only a blur can be progressive; a blur changed to the other kind keeps its ramp.
+    if (!isBlur(type) && node.effects[index].progressive) changes.progressive = undefined
     if (!isShadow(type)) {
       changes.offset = { x: 0, y: 0 }
       changes.spread = 0
