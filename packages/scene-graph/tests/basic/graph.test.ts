@@ -531,17 +531,18 @@ describe('flattenTree', () => {
     expect(result.at(-1)).toEqual({ node: parent, depth: 30_000 })
   })
 
-  test('stops descending at a parent cycle in bad data', () => {
+  test('skips a child already on the path in bad data', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     const outer = graph.createNode('FRAME', page)
     const inner = graph.createNode('FRAME', outer.id)
-    graph.createNode('RECTANGLE', inner.id)
-    inner.childIds.push(outer.id)
+    const leaf = graph.createNode('RECTANGLE', inner.id)
+    inner.childIds.push(outer.id, inner.id, inner.id)
 
-    const depths = graph.flattenTree(page).map(({ depth }) => depth)
-
-    expect(depths.length).toBeLessThan(graph.nodes.size * 3)
-    expect(Math.max(...depths)).toBeLessThan(graph.nodes.size)
+    expect(graph.flattenTree(page).map(({ node, depth }) => [node.id, depth])).toEqual([
+      [outer.id, 0],
+      [inner.id, 1],
+      [leaf.id, 2]
+    ])
   })
 })
