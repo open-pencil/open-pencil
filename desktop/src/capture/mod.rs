@@ -154,10 +154,14 @@ fn wait(child: &mut Child, browser: &Path) -> Result<(), String> {
             Ok(Some(_)) => return Ok(()),
             Ok(None) => {}
             Err(error) => {
+                // A browser that cannot be watched is stopped all the same, rather than left to
+                // finish a picture nobody is waiting for.
+                let _ = child.kill();
+                let _ = child.wait();
                 return Err(format!(
                     "{} could not be watched: {error}",
                     browser.display()
-                ))
+                ));
             }
         }
         if started.elapsed() > CAPTURE_TIMEOUT {
@@ -295,15 +299,33 @@ struct TempFolder {
 
 impl TempFolder {
     fn new() -> Result<Self, String> {
-        let stamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|elapsed| elapsed.as_millis())
-            .unwrap_or_default();
-        let path =
-            std::env::temp_dir().join(format!("openpencil-capture-{}-{stamp}", std::process::id()));
-        fs::create_dir_all(path.join("profile"))
-            .map_err(|error| format!("the picture has nowhere to be written: {error}"))?;
-        Ok(Self { path })
+        let base = std::env::temp_dir();
+        // A folder that is really this capture's own: `create_dir` fails when the name is taken, so
+        // two captures never write one picture over the other's, and the name is a nanosecond stamp
+        // with an attempt count rather than a moment anyone can aim at.
+        for attempt in 0..100u32 {
+            let stamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|elapsed| elapsed.as_nanos())
+                .unwrap_or_default();
+            let path = base.join(format!(
+                "openpencil-capture-{}-{stamp}-{attempt}",
+                std::process::id()
+            ));
+            match fs::create_dir(&path) {
+                Ok(()) => {
+                    fs::create_dir(path.join("profile")).map_err(|error| {
+                        format!("the picture has nowhere to be written: {error}")
+                    })?;
+                    return Ok(Self { path });
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => {
+                    return Err(format!("the picture has nowhere to be written: {error}"))
+                }
+            }
+        }
+        Err("no folder was free for the picture after a hundred tries".to_owned())
     }
 
     fn path(&self) -> &Path {
@@ -347,7 +369,7 @@ mod tests {
 
     use url::Url;
 
-    use super::{arguments, base64, validate_size, validate_target};
+    use super::{arguments, base64, validate_size, validate_target, TempFolder};
 
     #[test]
     fn only_an_address_on_this_machine_is_taken() {
@@ -408,5 +430,17 @@ mod tests {
             .iter()
             .any(|arg| arg == "--screenshot=/tmp/openpencil/page.png"));
         assert_eq!(args.last().expect("the address is last"), target.as_str());
+    }
+
+    #[test]
+    fn two_captures_never_share_a_folder() {
+        let first = TempFolder::new().expect("a temp folder of its own");
+        let second = TempFolder::new().expect("a temp folder of its own");
+
+        // The name is made for one capture only, and the folder is created exclusively: a second
+        // capture either gets another name or fails, never the first one's folder.
+        assert_ne!(first.path(), second.path());
+        assert!(first.path().join("profile").is_dir());
+        assert!(second.path().join("profile").is_dir());
     }
 }

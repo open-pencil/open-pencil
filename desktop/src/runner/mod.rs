@@ -6,7 +6,7 @@
 //! sees it, and forwards what it prints to the window that started it.
 
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
@@ -16,6 +16,9 @@ use tauri::{AppHandle, Emitter, Manager};
 
 /// A line longer than this is cut, so a runaway program cannot fill the window's memory.
 const MAX_LINE_LENGTH: usize = 2000;
+/// The most bytes one line may hold before the rest of it is dropped. A character takes at most
+/// four bytes, so this bounds what a line costs while it is being read as well as when it is shown.
+const MAX_LINE_BYTES: usize = MAX_LINE_LENGTH * 4;
 /// The longest start command a project may hold: a package script, not a program of its own.
 const MAX_COMMAND_LENGTH: usize = 2000;
 
@@ -224,30 +227,91 @@ fn kill_tree(pid: u32) {
 }
 
 fn forward<R: tauri::Runtime>(app: AppHandle<R>, id: String, stream: impl Read + Send + 'static) {
-    for line in BufReader::new(stream).lines().map_while(Result::ok) {
-        let line = if line.chars().count() > MAX_LINE_LENGTH {
-            line.chars().take(MAX_LINE_LENGTH).collect()
-        } else {
-            line
+    forward_lines(stream, |line| {
+        app.emit(
+            "project-output",
+            OutputPayload {
+                id: id.clone(),
+                line,
+            },
+        )
+        .is_ok()
+    })
+}
+
+/// Pass each line of `stream` to `emit`, which answers false when the window is gone.
+///
+/// The stream is read as bytes and decoded lossily: a command run through `cmd` on Windows prints
+/// in the OEM code page, where a byte that is not UTF-8 is ordinary — reading `lines()` would end
+/// the whole stream there and the program would meet a broken pipe on its next write. A line is
+/// cut after [`MAX_LINE_BYTES`] bytes rather than read whole, so a program that prints one endless
+/// line costs a fixed amount of memory and the lines after it still arrive.
+fn forward_lines(stream: impl Read, mut emit: impl FnMut(String) -> bool) {
+    let mut reader = BufReader::new(stream);
+    let mut chunk = [0u8; 8192];
+    let mut line: Vec<u8> = Vec::new();
+    let mut cut = false;
+    loop {
+        let filled = match reader.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(filled) => filled,
+            Err(_) => break,
         };
-        if app
-            .emit(
-                "project-output",
-                OutputPayload {
-                    id: id.clone(),
-                    line,
-                },
-            )
-            .is_err()
-        {
-            break;
+        for &byte in &chunk[..filled] {
+            if byte == b'\n' {
+                // The `\r` of a Windows line ending belongs to the ending, not to the line.
+                if line.last() == Some(&b'\r') {
+                    line.pop();
+                }
+                if !emit(as_line(&line)) {
+                    return;
+                }
+                line.clear();
+                cut = false;
+                continue;
+            }
+            if cut {
+                continue;
+            }
+            if line.len() >= MAX_LINE_BYTES {
+                cut = true;
+                continue;
+            }
+            line.push(byte);
         }
+    }
+    // A last line without its newline is still a line, as it is in a terminal.
+    if !line.is_empty() || cut {
+        if line.last() == Some(&b'\r') {
+            line.pop();
+        }
+        emit(as_line(&line));
+    }
+}
+
+/// The bytes of one line as the window shows it: decoded even when they are not UTF-8, and no
+/// longer than [`MAX_LINE_LENGTH`] characters.
+fn as_line(bytes: &[u8]) -> String {
+    let text = String::from_utf8_lossy(bytes);
+    if text.chars().count() > MAX_LINE_LENGTH {
+        text.chars().take(MAX_LINE_LENGTH).collect()
+    } else {
+        text.into_owned()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{validate_command, validate_folder};
+    use super::{as_line, forward_lines, validate_command, validate_folder, MAX_LINE_LENGTH};
+
+    fn lines_of(output: &[u8]) -> Vec<String> {
+        let mut lines = Vec::new();
+        forward_lines(output, |line| {
+            lines.push(line);
+            true
+        });
+        lines
+    }
 
     #[test]
     fn a_project_folder_must_be_absolute_and_exist() {
@@ -262,5 +326,52 @@ mod tests {
         assert!(validate_command("   ").is_err());
         assert!(validate_command("vite\0").is_err());
         assert_eq!(validate_command("  pnpm dev  ").unwrap(), "pnpm dev");
+    }
+
+    #[test]
+    fn every_line_of_the_output_reaches_the_window() {
+        assert_eq!(
+            lines_of(b"VITE v8 ready\r\n  Local: http://localhost:5173/\n"),
+            vec![
+                "VITE v8 ready".to_owned(),
+                "  Local: http://localhost:5173/".to_owned()
+            ]
+        );
+    }
+
+    #[test]
+    fn a_last_line_without_its_newline_is_still_a_line() {
+        assert_eq!(lines_of(b"done"), vec!["done".to_owned()]);
+    }
+
+    #[test]
+    fn output_that_is_not_utf8_keeps_coming() {
+        // `cmd` prints in the OEM code page: 0xE9 is not UTF-8, and the line after it matters more
+        // than the byte.
+        let lines = lines_of(b"caf\xe9 pr\xeat\nsecond line\n");
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].starts_with("caf"));
+        assert_eq!(lines[1], "second line");
+    }
+
+    #[test]
+    fn an_endless_line_is_cut_and_the_stream_continues() {
+        let mut output = vec![b'x'; 50_000];
+        output.extend_from_slice(b"\nafter\n");
+
+        let lines = lines_of(&output);
+
+        // The cut line arrives once, at the cap, and the line behind it is not lost with it.
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].chars().count(), MAX_LINE_LENGTH);
+        assert_eq!(lines[1], "after");
+    }
+
+    #[test]
+    fn a_line_is_cut_to_the_length_the_window_shows() {
+        assert_eq!(
+            as_line(&vec![b'x'; MAX_LINE_LENGTH + 10]).chars().count(),
+            MAX_LINE_LENGTH
+        );
     }
 }
