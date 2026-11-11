@@ -4,20 +4,28 @@ import { openReportDialog, REPORTS_ENABLED } from '@/app/reports/state'
 import { APP_VERSION } from '@/app/runtime/version'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { detectEnvironment } from '@/app/shell/support/gate'
-import { problemReportIssueURL } from '@/app/shell/support/guidance'
+import { problemReportIssueURL, type EditorSite } from '@/app/shell/support/guidance'
 import { openExternalLink } from '@/app/shell/ui'
 import {
   COMMUNITY_URL,
   DOCS_URL,
+  IS_CLOUD_SITE,
   KEYBOARD_SHORTCUTS_URL,
   releaseNotesURL,
-  REPOSITORY_URL
+  REPOSITORY_URL,
+  WEB_APP_ORIGIN
 } from '@/constants'
 
 function open(url: string) {
   openExternalLink(url).catch((error: unknown) => {
     console.warn('[Menu] Failed to open a link', error)
   })
+}
+
+/** Where this editor was loaded from, for the bug report's platform. */
+function editorSite(): EditorSite {
+  if (IS_CLOUD_SITE) return 'cloud'
+  return globalThis.location.origin === WEB_APP_ORIGIN ? 'web-app' : 'other'
 }
 
 /**
@@ -30,7 +38,7 @@ function reportProblem() {
     openReportDialog()
     return
   }
-  void detectEnvironment().then((env) => open(problemReportIssueURL(env)))
+  void detectEnvironment().then((env) => open(problemReportIssueURL(env, editorSite())))
 }
 
 /** The Help menu's actions, the same in the web app's menu and the desktop app's. */

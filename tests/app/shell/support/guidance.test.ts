@@ -178,12 +178,25 @@ describe('problem report without the report service', () => {
   test('opens the bug report form with the platform and environment filled in', () => {
     const url = new URL(
       problemReportIssueURL(
-        environment({ host: 'desktop', os: 'macos', osVersion: '15.1', browser: 'safari' })
+        environment({ host: 'desktop', os: 'macos', osVersion: '15.1', browser: 'safari' }),
+        'other'
       )
     )
     expect(url.origin + url.pathname).toBe('https://github.com/open-pencil/open-pencil/issues/new')
     expect(url.searchParams.get('template')).toBe('bug_report.yml')
     expect(url.searchParams.get('platform')).toBe('macOS (Tauri)')
     expect(url.searchParams.get('logs')).toContain('OS: macos 15.1')
+  })
+
+  test('names a browser elsewhere than the web app without its address', () => {
+    const url = new URL(
+      problemReportIssueURL(environment({ os: 'linux', browser: 'firefox' }), 'cloud')
+    )
+    expect(url.searchParams.get('platform')).toBe('Web (self-hosted or other address)')
+    expect(url.searchParams.get('logs')).toContain('Editor: served by a Cloud server')
+    const official = new URL(
+      problemReportIssueURL(environment({ os: 'linux', browser: 'firefox' }), 'web-app')
+    )
+    expect(official.searchParams.get('platform')).toBe('Web (app.openpencil.dev)')
   })
 })
