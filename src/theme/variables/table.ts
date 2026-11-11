@@ -24,11 +24,14 @@ export default {
     /** A token's type, or that a formula gives its value. */
     icon: 'size-3 shrink-0 text-muted',
     /** The CSS name as its own column, from 42rem of list width. */
-    cssColumn: 'hidden truncate font-mono text-2xs text-muted @2xl/tokens-list:block',
+    // CSS names read left to right, `--color-primary`, aligned with the column in either direction.
+    cssColumn:
+      'hidden truncate font-mono text-2xs text-muted rtl:[direction:ltr] rtl:text-end @2xl/tokens-list:block',
     /** The CSS name column's title, in the header's own font like the others. */
     headerCssColumn: 'hidden @2xl/tokens-list:block',
     /** The CSS name under the token name, below 42rem of list width. */
-    cssStacked: 'truncate font-mono text-2xs text-muted @2xl/tokens-list:hidden',
+    cssStacked:
+      'truncate font-mono text-2xs text-muted rtl:[direction:ltr] rtl:text-end @2xl/tokens-list:hidden',
     value:
       'flex min-w-0 animate-in items-center gap-1.5 truncate font-mono text-2xs fade-in duration-150 motion-reduce:animate-none',
     /** An alias: its target's name, as wide as the name, and what it gives. */

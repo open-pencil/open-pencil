@@ -136,6 +136,11 @@
   "starRatio": "Proporção",
   "spread": "Propagação",
   "blur": "Desfoque",
+  "blurType": "Tipo de desfoque",
+  "uniformBlur": "Uniforme",
+  "progressiveBlur": "Progressivo",
+  "blurStart": "Início",
+  "blurEnd": "Fim",
   "showShadowBehind": "Mostrar atrás das áreas transparentes",
   "effectColor": "Cor",
   "page": "Página",
@@ -373,7 +378,6 @@
   "effectSettings": "Configurações do efeito",
   "expandEffectSettings": "Expandir configurações do efeito",
   "collapseEffectSettings": "Recolher configurações do efeito",
-  "toggleExportPreview": "Alternar prévia da exportação",
   "dropShadow": "Sombra projetada",
   "innerShadow": "Sombra interna",
   "layerBlur": "Desfoque da camada",
@@ -654,5 +658,8 @@
   "brightness": "Brilho",
   "lightness": "Luminosidade",
   "chroma": "Croma",
-  "alpha": "Alfa"
+  "alpha": "Alfa",
+  "scale": "Escalar",
+  "scaleMultiplier": "Fator de escala",
+  "scaleAnchor": "Âncora de escala"
 }

@@ -1,3 +1,5 @@
+import { focusStyles } from '../focus/styles'
+
 /** A side list of places, drawn like the Settings dialog's sections: groups split by rules, headings, 28px rows with icons. */
 export default {
   slots: {
@@ -7,7 +9,10 @@ export default {
     title: 'text-2xs font-semibold text-muted',
     actions: 'flex items-center gap-0.5',
     items: 'flex flex-col gap-0.5',
-    item: 'group flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded border-none bg-transparent px-2 text-start text-xs text-muted outline-none transition-colors hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 data-[active=true]:bg-hover data-[active=true]:text-surface',
+    item: [
+      'group flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded border-none bg-transparent px-2 text-start text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[active=true]:bg-hover data-[active=true]:text-surface',
+      focusStyles.ring
+    ],
     icon: 'size-3.5 shrink-0',
     label: 'min-w-0 flex-1 truncate',
     trailing: 'flex shrink-0 items-center gap-1.5 text-2xs text-muted tabular-nums',

@@ -44,7 +44,10 @@ const SHADOW_OPTIONS = {
 
 const BLUR_OPTIONS = {
   radius: true,
-  visible: true
+  visible: true,
+  startRadius: true,
+  startOffset: true,
+  endOffset: true
 } satisfies OptionKeys<BlurEffectOptions>
 
 const GLASS_OPTIONS = {

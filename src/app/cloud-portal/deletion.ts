@@ -37,7 +37,7 @@ const download = {
   archive: ref<PortalAccountArchive | null>(null),
   /** The documents the last download set out to save. */
   covered: shallowRef<ReadonlySet<string>>(new Set()),
-  running: false
+  running: shallowRef(false)
 }
 
 export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) {
@@ -53,7 +53,10 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
    */
   const accountId = computed(() => portal.account.value?.user.userId ?? null)
   const archive = computed<PortalAccountArchive | null>(() => {
-    if (download.owner.value !== accountId.value) return null
+    if (download.owner.value !== accountId.value) {
+      // Another account's download still runs in this tab: busy, with nothing of it shown.
+      return download.running.value ? { done: 0, total: 0, saved: null, failed: [] } : null
+    }
     const current = download.archive.value
     if (!current || current.saved === null || !deletion.value) return current
     const missing = deletion.value.documents
@@ -82,8 +85,8 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
   const finishing = ref(false)
 
   async function downloadAll() {
-    if (download.running || finishing.value || remove.busy.value) return
-    download.running = true
+    if (download.running.value || finishing.value || remove.busy.value) return
+    download.running.value = true
     download.owner.value = accountId.value
     const documents = deletion.value?.documents ?? []
     download.covered.value = new Set(documents.map((document) => document.id))
@@ -109,16 +112,17 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
         failed: result.failed.map((document) => document.name)
       }
     } catch (error) {
-      // Zipping or saving failed as a whole, such as out of memory or a full disk.
+      // Zipping or saving failed as a whole (out of memory, a full disk): nothing was saved.
       download.archive.value = null
       options.onArchiveFailed(failures.api(error))
     } finally {
-      download.running = false
+      download.running.value = false
     }
   }
 
   /** Deletes the account, with the password when the session is too old. */
   async function finish(password?: string) {
+    const deleted = accountId.value
     finishing.value = true
     try {
       await portal.api.deleteAccount(password)
@@ -126,8 +130,9 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
       finishing.value = false
     }
     open.value = false
-    // The account's download goes with it, unless one is still running, which keeps its own state.
-    if (!download.running) {
+    // The deleted account's download goes with it, unless one is still running, which keeps its
+    // state; another account's is left alone.
+    if (!download.running.value && download.owner.value === deleted) {
       download.owner.value = null
       download.archive.value = null
       download.covered.value = new Set()

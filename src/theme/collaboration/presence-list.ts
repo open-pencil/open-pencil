@@ -1,5 +1,6 @@
-const NAME =
-  'min-w-0 cursor-default truncate text-start text-2xs text-surface outline-none focus-visible:ring-1 focus-visible:ring-panel-focus'
+import { focusStyles } from '../focus/styles'
+
+const NAME = ['min-w-0 cursor-default truncate text-start text-2xs text-surface', focusStyles.ring]
 
 /** People in a room, each followed by their agents. */
 export default {

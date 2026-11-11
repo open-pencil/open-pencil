@@ -4,7 +4,6 @@ const int SEGMENTS = 128;
 const int CHUNK = 8;
 const int CHUNKS = SEGMENTS / CHUNK;
 
-uniform shader backdrop;
 uniform float2 origin;
 uniform float2 size;
 uniform float4 radii;

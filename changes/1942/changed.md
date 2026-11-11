@@ -1,4 +1,0 @@
-- The Effects panel labels every shadow and blur setting: Position, Blur, Spread, and Color (#1942).
-- Shadow colors use the same color field as fills and strokes (#1942).
-- Each effect type has its own icon in the Effects panel (#1942).
-- Blurs no longer offer a blend mode, which they do not have in Figma (#1942).

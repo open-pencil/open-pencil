@@ -5,6 +5,7 @@ import type {
   Stroke,
   Effect,
   GlassEffectParams,
+  ProgressiveBlur,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
@@ -191,17 +192,34 @@ export function convertStrokes(
 
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
-  return effects.map((e) => ({
-    type: e.type,
-    color: convertColor(e.color),
-    offset: e.offset ?? { x: 0, y: 0 },
-    radius: e.radius ?? 0,
-    spread: e.spread ?? 0,
-    visible: e.visible ?? true,
-    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
-    showShadowBehindNode: e.showShadowBehindNode ?? true,
-    ...(e.type === 'GLASS' ? { glass: convertGlass(e) } : {})
-  }))
+  return effects.map((e) => {
+    const effect: Effect = {
+      type: e.type,
+      color: convertColor(e.color),
+      offset: e.offset ?? { x: 0, y: 0 },
+      radius: e.radius ?? 0,
+      spread: e.spread ?? 0,
+      visible: e.visible ?? true,
+      blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
+      showShadowBehindNode: e.showShadowBehindNode ?? true
+    }
+    if (e.type === 'GLASS') effect.glass = convertGlass(e)
+    if (e.blurOpType === 'PROGRESSIVE' && isBlur(e.type)) effect.progressive = convertProgressive(e)
+    return effect
+  })
+}
+
+function isBlur(type: KiwiEffect['type']): boolean {
+  return type === 'FOREGROUND_BLUR' || type === 'LAYER_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+/** A progressive blur's ramp, top centre to bottom centre where the archive leaves it out. */
+function convertProgressive(e: KiwiEffect): ProgressiveBlur {
+  return {
+    startRadius: e.startRadius ?? 0,
+    startOffset: { ...(e.startOffset ?? { x: 0.5, y: 0 }) },
+    endOffset: { ...(e.endOffset ?? { x: 0.5, y: 1 }) }
+  }
 }
 
 /** A glass effect's lens from the archive's names for its fields (`refractionRadius` is depth). */

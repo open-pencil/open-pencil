@@ -6,12 +6,14 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 import StrokeDashControls from './StrokeDashControls.vue'
 import StrokeGeometryControls from './StrokeGeometryControls.vue'
 
+const startSide = useInlineSide('start')
 const { stroke } = defineProps<{ stroke?: Stroke }>()
 const emit = defineEmits<{ patch: [changes: Partial<Stroke>] }>()
 const { panels, common } = useI18n()
@@ -32,7 +34,7 @@ const styles = usePopoverUI({
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.strokeSettings"

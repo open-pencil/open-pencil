@@ -34,7 +34,11 @@ function setJoin(value: string) {
             <icon-lucide-minus v-if="option.value === 'NONE'" class="size-3" />
             <icon-lucide-circle v-else-if="option.value === 'ROUND'" class="size-2.5" />
             <icon-lucide-square v-else-if="option.value === 'SQUARE'" class="size-2.5" />
-            <icon-lucide-arrow-right v-else-if="option.value === 'ARROW_LINES'" class="size-3" />
+            <icon-lucide-arrow-right
+              v-else-if="option.value === 'ARROW_LINES'"
+              data-direction="physical"
+              class="size-3"
+            />
             <icon-lucide-triangle v-else class="size-2.5" />
           </Tip>
         </template>

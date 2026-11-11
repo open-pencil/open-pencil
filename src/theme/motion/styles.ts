@@ -23,10 +23,10 @@ export const drillInTransition = {
   duration: { enter: 150, leave: 100 },
   enterActiveClass:
     '*:transition-[opacity,translate] *:duration-150 *:ease-out motion-reduce:*:transition-none',
-  enterFromClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0',
+  enterFromClass: '*:translate-x-3 rtl:*:-translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0',
   leaveActiveClass:
     '*:transition-[opacity,translate] *:duration-100 *:ease-in motion-reduce:*:transition-none',
-  leaveToClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0'
+  leaveToClass: '*:translate-x-3 rtl:*:-translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0'
 } as const
 
 /** One view replacing another in place, such as an inspector switching to another item. */
