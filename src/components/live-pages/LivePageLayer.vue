@@ -68,7 +68,7 @@ function forwardWheel(event: WheelEvent) {
     data-test-id="live-pages"
     @wheel="forwardWheel"
   >
-    <div class="absolute top-0 left-0 origin-top-left" :style="{ transform }">
+    <div class="absolute top-0 inset-s-0 origin-top-left" :style="{ transform }">
       <LivePageFrame
         v-for="entry in pages"
         :key="entry.nodeId"

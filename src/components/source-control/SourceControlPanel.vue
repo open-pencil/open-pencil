@@ -92,7 +92,7 @@ function createBranch(): void {
         <span v-if="changedCount > 0">{{ labels.changes({ count: changedCount }) }}</span>
         <span v-else>{{ labels.clean }}</span>
 
-        <div class="ml-auto flex items-center gap-0.5">
+        <div class="ms-auto flex items-center gap-0.5">
           <IconButton class="size-6" :label="labels.fetch" :disabled="busy" @click="emit('fetch')">
             <icon-lucide-cloud-download class="size-3" />
           </IconButton>
@@ -176,7 +176,7 @@ function createBranch(): void {
         >
           <button
             type="button"
-            class="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-hover focus-visible:outline-2 focus-visible:outline-panel-focus"
+            class="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-start hover:bg-hover focus-visible:outline-2 focus-visible:outline-panel-focus"
             @click="emit('openDiff', entry)"
           >
             <span class="w-3 shrink-0 text-2xs text-muted">
@@ -220,7 +220,7 @@ function createBranch(): void {
         data-test-id="source-control-pull-request"
         @click="emit('pullRequest')"
       >
-        <icon-lucide-git-pull-request class="mr-1 size-3" />
+        <icon-lucide-git-pull-request class="me-1 size-3" />
         {{ labels.createPullRequest }}
       </AppButton>
 

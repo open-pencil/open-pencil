@@ -67,7 +67,7 @@ const placeholder = computed(() =>
   <section class="flex min-h-0 min-w-0 flex-col">
     <div class="flex flex-wrap items-center gap-2">
       <h2 class="text-xs font-medium text-muted">{{ labels.application }}</h2>
-      <div class="ml-auto flex items-center gap-1">
+      <div class="ms-auto flex items-center gap-1">
         <AppButton
           v-if="running"
           variant="outline"

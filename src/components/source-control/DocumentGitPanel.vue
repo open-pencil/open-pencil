@@ -118,7 +118,7 @@ function shortHash(hash: string): string {
         </span>
         <span v-if="others > 0">{{ labels.otherChanges({ count: others }) }}</span>
 
-        <div class="ml-auto flex items-center gap-0.5">
+        <div class="ms-auto flex items-center gap-0.5">
           <IconButton class="size-6" :label="labels.pull" :disabled="busy" @click="emit('sync')">
             <icon-lucide-cloud-download class="size-3" />
           </IconButton>
@@ -167,7 +167,7 @@ function shortHash(hash: string): string {
         <div class="flex items-center gap-1.5">
           <h3 class="text-2xs text-muted">{{ labels.history }}</h3>
           <IconButton
-            class="ml-auto size-6"
+            class="ms-auto size-6"
             :label="labels.historyRefresh"
             :disabled="busy"
             @click="emit('history')"

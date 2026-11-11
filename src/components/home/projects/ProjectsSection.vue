@@ -82,7 +82,7 @@ function cancelRename(): void {
       </div>
       <AppButton
         variant="outline"
-        class="ml-auto shrink-0"
+        class="ms-auto shrink-0"
         :loading="busy"
         data-test-id="home-add-project"
         @click="emit('add')"
@@ -146,7 +146,7 @@ function cancelRename(): void {
         <template v-else>
           <button
             type="button"
-            class="flex min-w-0 flex-1 items-center gap-2 rounded text-left focus-visible:outline-2 focus-visible:outline-panel-focus"
+            class="flex min-w-0 flex-1 items-center gap-2 rounded text-start focus-visible:outline-2 focus-visible:outline-panel-focus"
             @click="emit('open', row.project)"
           >
             <span class="min-w-0 flex-1">
