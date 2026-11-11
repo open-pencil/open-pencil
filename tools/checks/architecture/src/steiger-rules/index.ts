@@ -33,8 +33,15 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
       const folderRel = relativePath(root.path, folder.path)
       const groups = new Map<string, string[]>()
       const names = new Set<string>()
+      const folders = new Set<string>()
       for (const child of folder.children ?? []) {
-        if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        // A folder names a domain its prefixed sibling files belong in, but is not one of them:
+        // `cloud-portal/` beside `cloud/` is a domain of its own already.
+        if (child.type === 'folder') {
+          folders.add(path.basename(child.path))
+          continue
+        }
+        if (!TEXT_EXTENSIONS.has(path.extname(child.path))) continue
         names.add(fileStem(child.path))
         const prefix = filePrefix(child.path)
         if (!prefix) continue
@@ -43,16 +50,24 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
         groups.set(prefix, files)
       }
       for (const [prefix, files] of groups) {
+        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        // `variants/` beside `variant-set.ts` already is the domain folder the file belongs in.
+        const folderName = [prefix, `${prefix}s`].find((name) => folders.has(name))
+        if (folderName) {
+          diagnostics.push({
+            message: `Move the ${prefix}-* files into the ${folderName}/ folder beside them.`,
+            location: { path: folder.path }
+          })
+          continue
+        }
         // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
         // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
-        const named = names.has(prefix) || names.has(`${prefix}s`)
-        if (files.length < 3 && !named) continue
-        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
-        const base = names.has(prefix) ? prefix : `${prefix}s`
+        const fileName = [prefix, `${prefix}s`].find((name) => names.has(name))
+        if (files.length < 3 && !fileName) continue
         diagnostics.push({
-          message: named
-            ? `Use a ${prefix}/ domain folder instead of ${base} beside ${prefix}-* files.`
-            : `Use a ${prefix}/ domain folder instead of sibling ${prefix}-* files.`,
+          message: fileName
+            ? `Make ${prefix}/ a domain folder for ${fileName} and the ${prefix}-* files beside it.`
+            : `Group the sibling ${prefix}-* files in a ${prefix}/ domain folder.`,
           location: { path: folder.path }
         })
       }
