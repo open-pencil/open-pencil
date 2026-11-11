@@ -25,7 +25,8 @@ export type VersionedDocument = {
   getDocumentFilePath: () => string | null
   hasUnsavedChanges: () => boolean
   saveFigFile: () => Promise<boolean>
-  reloadDocumentFromDisk: () => void
+  /** Reads the file again, answering once the document holds what the file holds. */
+  reloadDocumentFromDisk: () => Promise<void>
 }
 
 /**
@@ -161,10 +162,14 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
     return document.saveFigFile()
   }
 
-  /** Read the document again after git replaced its file, unless the person has edits in it. */
-  function reloadDocument(): void {
+  /**
+   * Read the document again after git replaced its file, unless the person has edits in it. The
+   * wait matters: the panel stays busy, and its buttons disabled, until the document really holds
+   * the version git left behind.
+   */
+  async function reloadDocument(): Promise<void> {
     if (document.hasUnsavedChanges()) return
-    document.reloadDocumentFromDisk()
+    await document.reloadDocumentFromDisk()
   }
 
   /** Commit this file alone, saving the document first so the commit holds what is on screen. */
@@ -196,7 +201,7 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
         return
       }
       await refresh()
-      reloadDocument()
+      await reloadDocument()
     })
   }
 
@@ -212,7 +217,7 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
         return
       }
       await refresh()
-      reloadDocument()
+      await reloadDocument()
     })
   }
 
@@ -254,7 +259,9 @@ export function useDocumentGit(document: VersionedDocument, transport: GitTransp
         return
       }
       await refresh()
-      document.reloadDocumentFromDisk()
+      // The version the person asked for replaces what is on screen whatever it held, so the read
+      // happens here rather than through `reloadDocument`, and it is waited for as well.
+      await document.reloadDocumentFromDisk()
     })
   }
 

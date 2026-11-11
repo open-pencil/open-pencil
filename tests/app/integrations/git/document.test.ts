@@ -79,6 +79,8 @@ type DocumentOptions = {
   unsaved?: boolean
   /** Whether saving the document writes its file. */
   saves?: boolean
+  /** A reload that waits for this, as reading a large document off the disk does. */
+  reloadHeld?: Promise<void>
 }
 
 /** A document that reports its file and records what git asked of it. */
@@ -91,8 +93,9 @@ function versionedDocument(options: DocumentOptions = {}) {
       events.push('save')
       return options.saves ?? true
     },
-    reloadDocumentFromDisk: () => {
+    reloadDocumentFromDisk: async () => {
       events.push('reload')
+      await options.reloadHeld
     }
   }
   return { document, events }
@@ -314,4 +317,35 @@ test('a read that a newer one overtook leaves the panel to the newer one', async
 
   expect(git.root.value).toBe(ROOT)
   expect(git.versioned.value).toBe(true)
+})
+test('a sync is not done until the document holds what the pull left behind', async () => {
+  let release = (): void => undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const { document, events } = versionedDocument({ reloadHeld: held })
+  const { transport } = gateway({ status: STATUS, fileState: ' M design/catalog.fig\0' })
+  const git = useDocumentGit(document, transport)
+  await git.refresh()
+
+  let done = false
+  const syncing = git.sync().then(() => {
+    done = true
+    return done
+  })
+  // The read of the file is what the test holds; everything before it has finished by then.
+  for (let tick = 0; tick < 200 && !events.includes('reload'); tick += 1) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+  }
+  expect(events).toContain('reload')
+  expect(done).toBe(false)
+  expect(git.busy.value).toBe(true)
+
+  release()
+  await syncing
+
+  expect(done).toBe(true)
+  expect(git.busy.value).toBe(false)
 })
