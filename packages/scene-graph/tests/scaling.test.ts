@@ -76,6 +76,27 @@ describe('scaling text on a path', () => {
     ])
   })
 
+  test.each([[[]], [null]])(
+    'scales the path box and keeps the path of path text saved without glyphs %p',
+    (derivedTextGlyphs) => {
+      const graph = new SceneGraph()
+      const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+        width: 400,
+        height: 160,
+        text: 'Lorem',
+        fontSize: 32,
+        textPathData: structuredClone(curve),
+        textPathBox: { x: 10, y: 20, width: 400, height: 160 },
+        derivedTextGlyphs
+      })
+
+      graph.updateNode(text.id, scaleNodeChanges(text, 2, false))
+
+      expect(text.textPathData).toEqual(curve)
+      expect(text.textPathBox).toEqual({ x: 20, y: 40, width: 800, height: 320 })
+    }
+  )
+
   test('leaves flat text to drop its glyphs and lay out again', () => {
     const graph = new SceneGraph()
     const text = graph.createNode('TEXT', graph.getPages()[0].id, {

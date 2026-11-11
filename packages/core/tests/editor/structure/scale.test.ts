@@ -98,6 +98,49 @@ describe('scaleSelected', () => {
     })
   })
 
+  test('keeps the path of path text saved without glyph outlines through scale and undo', () => {
+    editor = createEditor()
+    const textPathData: TextPathData = {
+      network: {
+        vertices: [
+          { x: 0, y: 100 },
+          { x: 400, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 100, y: -80 }, tangentEnd: { x: -100, y: -80 } }
+        ],
+        regions: []
+      },
+      normalizedSize: { x: 400, y: 160 },
+      tValue: 0,
+      forward: true
+    }
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 400,
+      height: 160,
+      text: 'Lorem',
+      fontSize: 32,
+      textPathData,
+      textPathBox: { x: 0, y: 0, width: 400, height: 160 },
+      derivedTextGlyphs: []
+    })
+    editor.select([text.id])
+
+    editor.scaleSelected(2, { x: 0, y: 0 })
+
+    expect(current(text.id)).toMatchObject({
+      fontSize: 64,
+      textPathData,
+      textPathBox: { width: 800, height: 320 }
+    })
+    editor.undo.undo()
+    expect(current(text.id)).toMatchObject({
+      fontSize: 32,
+      textPathData,
+      textPathBox: { width: 400, height: 160 }
+    })
+  })
+
   test('undoing a scale keeps the selection, a later edit to the layer, and a layer added since', () => {
     editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {

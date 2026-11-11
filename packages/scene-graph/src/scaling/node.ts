@@ -121,7 +121,7 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
 }
 
 function scaledPathText(node: SceneNode, scale: number): Partial<SceneNode> {
-  if (!followsPath(node)) {
+  if (!node.textPathData && !followsPath(node)) {
     return {}
   }
   const box = node.textPathBox
