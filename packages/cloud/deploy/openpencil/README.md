@@ -136,15 +136,15 @@ To restore the database to an earlier time:
 
 Once a quarter, and after changing the database's provider or plan:
 
-1. Create a Neon branch of production at a time an hour back.
-2. Check the branch's `kysely_migration` table names the latest migration in
+1. Eight days before, save a throwaway document in a team workspace on production, then delete it
+   forever. Cleanup destroys its files when the 7-day grace ends, copying them under `deleted/`.
+2. Once it has, create a Neon branch of production at an hour before that cleanup run, which is
+   within the restore window: the branch still has the document's `storage_object` rows.
+3. Check the branch's `kysely_migration` table names the latest migration in
    `src/server/db/migrate.ts` that production has run.
-3. For a few documents saved before the branch's time, check against the branch that every file
-   their revisions, images, and room snapshots refer to (by `storage_object.object_key`) is in the
-   production bucket, under its key or, if cleanup removed it since, under `deleted/`. A file only
-   under `deleted/` is what step 3 of a restore copies back.
-4. Check at least one such file: a `storage_object` row on the branch that production's database no
-   longer has, whose copy must be under `deleted/`. If the hour had none, branch further back,
-   within the 14 days the copies stay.
+4. For that document and a few others saved before the branch's time, check that every file their
+   revisions, images, and room snapshots refer to (by `storage_object.object_key`) is in the
+   production bucket, under its key or under `deleted/`. The throwaway document's files must be
+   under `deleted/` only: that is what step 3 of a restore copies back.
 5. Delete the branch, and note the date, the time the restore took, and anything that failed in the
    team's drill log.
