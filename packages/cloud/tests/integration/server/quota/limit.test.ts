@@ -124,4 +124,22 @@ describe('an owner at their storage limit', () => {
       await context.runtime.close()
     }
   })
+
+  test('lands no upload offered before it got there', async () => {
+    const context = await seed(MAXIMUM_BYTES - 10)
+    try {
+      const offer = await context.documents.createUpload('owner', context.documentId, upload)
+      // Another workspace of theirs fills the allowance, or their plan shrinks, meanwhile.
+      await context.runtime.database
+        .updateTable('workspaceStorageUsage')
+        .set({ committedBytes: MAXIMUM_BYTES })
+        .where('workspaceId', '=', context.workspaceId)
+        .execute()
+      await expect(
+        context.documents.commitUpload('owner', offer.id, { checksum: upload.checksum, images: [] })
+      ).rejects.toBeInstanceOf(StorageQuotaExceededError)
+    } finally {
+      await context.runtime.close()
+    }
+  })
 })

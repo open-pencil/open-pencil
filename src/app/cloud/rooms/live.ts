@@ -298,6 +298,22 @@ export function openCloudDocumentRoom(
  * The relay connection for a room, presenting the ticket just issued first and a fresh one from
  * `next` before each expires.
  */
+/**
+ * Whether a refreshed ticket keeps the tab in the room it joined as it joined it. A restore
+ * moves the document to a new room, and access that changed, as when the owner fills or frees
+ * their storage, needs the room joined again with it; either ends this one.
+ */
+export function keepsRoom(
+  first: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>,
+  next: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>
+): boolean {
+  return (
+    next.roomId === first.roomId &&
+    next.permission === first.permission &&
+    next.readOnly === first.readOnly
+  )
+}
+
 export function cloudRelayTransport(
   url: string,
   first: CollaborationTicket,
@@ -310,8 +326,7 @@ export function cloudRelayTransport(
     async ticket() {
       const ticket = unused ?? (await next())
       unused = null
-      // A restore moves the document to a new room; this one has nothing left to join.
-      if (ticket.roomId !== first.roomId) return null
+      if (!keepsRoom(first, ticket)) return null
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
     onRestored: events.onRestored,

@@ -133,17 +133,38 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
   // Without a room nothing else sets the permission, and a reused tab may have been view-only.
   store.setReadOnly(resolution.permission === 'view')
   if (!discovery.capabilities.collaboration) return 'opened'
+  await joinShareRoom(store, link, client, input)
+  return 'opened'
+}
+
+/**
+ * Puts a link's tab into the document's room with the access its ticket grants. The tab joins
+ * again when that access changes, as when the owner fills or frees their storage, or when the
+ * document is restored to a version and moves to a new room.
+ */
+async function joinShareRoom(
+  store: EditorStore,
+  link: CloudShareLink,
+  client: Awaited<ReturnType<typeof shareLinkClient>>['client'],
+  input: { secret: string; guestName: string; guestId: string }
+): Promise<void> {
   const first = await client.getSharedCollaborationTicket(link.shareId, input)
   // The tab may have closed while the ticket was on its way.
-  if (first.provider !== 'relay' || !first.serverURL || !getTabForStore(store)) return 'opened'
+  if (first.provider !== 'relay' || !first.serverURL || !getTabForStore(store)) return
   const room = openCloudDocumentRoom(store, {
     roomId: first.roomId,
     transport: cloudRelayTransport(
       first.serverURL,
       first,
       () => client.getSharedCollaborationTicket(link.shareId, input),
-      // A guest has no account to save with, so leaving is all a refusal changes.
-      { onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: false }) }
+      {
+        onRestored: () => {
+          room.stop()
+          void joinShareRoom(store, link, client, input)
+        },
+        // A guest has no account to save with, so leaving is all a refusal changes.
+        onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: false })
+      }
     ),
     permission: first.permission,
     readOnly: first.readOnly,
@@ -151,5 +172,4 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
     images: sharedCloudRoomImages(client, link.shareId, input)
   })
   stopWithTab(store, room)
-  return 'opened'
 }

@@ -92,6 +92,17 @@ export function createDocumentService(
   const trash = createDocumentTrash(database, objects, options.trash ?? DEFAULT_TRASH_OPTIONS)
 
   /**
+   * Refuses to land an upload once its document's owner holds their whole storage allowance, as
+   * when their plan shrank after the upload was offered; an upload already landed is not landed
+   * again, so retrying one stays as it was.
+   */
+  async function refuseAtStorageLimit(documentId: string): Promise<void> {
+    if (await storageLimitReached(database, options.policy, { documentId })) {
+      throw new StorageQuotaExceededError('The owner holds their whole storage allowance')
+    }
+  }
+
+  /**
    * Makes a committed upload the document's current revision, unless it already was, and records
    * the checkpoint the save adds, if any. Whether the history gained one.
    */
@@ -328,6 +339,7 @@ export function createDocumentService(
     if (!canEditDocument(access)) throw new DocumentForbiddenError()
     if (input.checksum !== upload.checksum) throw new UploadInvalidError()
     if (upload.status !== 'committed') {
+      await refuseAtStorageLimit(upload.documentId)
       const checkpointed =
         upload.kind === 'image'
           ? await finalizeUpload(upload, input.multipart, (stored) =>
@@ -593,6 +605,9 @@ export function createDocumentService(
       }
       for (const commit of uploads) {
         if (rows.get(commit.uploadId)?.checksum !== commit.checksum) throw new UploadInvalidError()
+      }
+      if ([...rows.values()].some((row) => row.status !== 'committed')) {
+        await refuseAtStorageLimit(documentId)
       }
       // Each image is its own object, so a few are checked and landed at once, each once however
       // often the request names it.

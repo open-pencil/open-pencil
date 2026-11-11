@@ -164,9 +164,11 @@ function retry() {
       @later="resolving = false"
     />
   </template>
+  <!-- A link's copy has no Cloud file of its own; it reports a guest's view or a full owner. -->
   <CloudGuestStatus
-    v-else-if="guestLink"
-    :can-edit-signed-in="guestLink.canEditSignedIn"
+    v-else-if="guestLink || atStorageLimit"
+    :can-edit-signed-in="guestLink?.canEditSignedIn ?? false"
+    :at-storage-limit="atStorageLimit"
     @sign-in="signInToEditCloudShare(store)"
   />
 </template>
