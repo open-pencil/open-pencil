@@ -45,7 +45,7 @@ This file holds the repository map and the rules that apply everywhere. Rules fo
 - `bun run tauri dev` — desktop app with hot reload.
 - A fresh worktree needs `bun install` and `bun run build:packages` before docs, Storybook, or any workflow that resolves workspace subpath exports; without the package builds those resolve to missing `packages/*/dist` targets.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
-- `bun run format` — format and sort imports across the repository; `.oxfmtrc.json` names what it leaves alone and why. `bun run lint` runs Oxlint over the repository, skipping only the `lint/` plugin shims (which load the plugin's source on purpose), Wrangler's generated types, and the Vue SDK's standalone example (styled with its own CSS), then its type-aware rules over `src` and `packages/*/src`; tests and `test-support` are type-checked by `check:test-types`.
+- `bun run format` — format and sort imports across the repository; `.oxfmtrc.jsonc` names what it leaves alone and why. `bun run lint` runs Oxlint over the repository, skipping only the `lint/` plugin shims (which load the plugin's source on purpose), Wrangler's generated types, and the Vue SDK's standalone example (styled with its own CSS), then its type-aware rules over `src` and `packages/*/src`; tests and `test-support` are type-checked by `check:test-types`.
 - `bun run test:unit` / `bun run test` / `bun run test:storybook` — engine/unit, app Playwright, and Storybook Playwright suites. See `tests/AGENTS.md` for server selection and worktree ports.
 - `bun open-pencil --help` — current CLI command list.
 
