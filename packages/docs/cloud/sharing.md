@@ -35,7 +35,7 @@ Opening a workspace invitation works like a document invitation: sign in with th
 
 Opening a Cloud document joins its live session: everyone who has it open sees each other's cursors and edits as they happen. One person's app saves the document for everyone, so editing together never makes your changes conflict with someone else's.
 
-People who open a link without an account, where the server allows it, join under the name OpenPencil gives them, or the one they chose. They edit when the link allows it, but their app never saves to the server; someone signed in who can edit saves for them.
+People who open a link without an account, where the server allows it, join under the name OpenPencil gives them, or the one they chose. They edit when the link allows it, but their app never saves to the server; someone signed in who can edit saves for them. Until such a person opens the document, the live session keeps the guests' edits, and the saved document and its version history catch up once they do.
 
 ## Report a Shared Document
 
