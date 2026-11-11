@@ -146,19 +146,19 @@ async function streamArchive(
       if (entry) yield entry
     }
     // Ending the source with an error aborts the file instead of closing it on an empty zip.
-    if (failed.length === documents.length) throw new NothingSaved()
+    if (failed.length === documents.length) throw new NothingSavedError()
   }
   try {
     await downloadZip(entries()).body?.pipeTo(writable, { signal: options.signal })
   } catch (error) {
-    if (!(error instanceof NothingSaved)) throw error
+    if (!(error instanceof NothingSavedError)) throw error
   }
   return { saved: documents.length - failed.length, failed }
 }
 
 /** Every document failed, so the picked file is left unwritten. */
-class NothingSaved extends Error {
-  override readonly name = 'NothingSaved'
+class NothingSavedError extends Error {
+  override readonly name = 'NothingSavedError'
 }
 
 /** Builds the zip in memory, a few documents at a time, and saves it once all arrived. */
