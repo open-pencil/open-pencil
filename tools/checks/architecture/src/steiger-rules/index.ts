@@ -25,41 +25,59 @@ import {
   type Rule
 } from './support.ts'
 
+/**
+ * The longest sibling folder a file's name starts with, as `folder-` or, for a plural folder, its
+ * singular: `cloud-portal-settings.ts` belongs in `cloud-portal/` even beside `cloud/`.
+ */
+function domainFolderFor(stem: string, folders: Set<string>) {
+  let best: { folder: string; prefix: string } | undefined
+  for (const folder of folders) {
+    for (const prefix of folder.endsWith('s') ? [folder, folder.slice(0, -1)] : [folder]) {
+      if (!stem.startsWith(`${prefix}-`)) continue
+      if (!best || prefix.length > best.prefix.length) best = { folder, prefix }
+    }
+  }
+  return best
+}
+
 const preferDomainFoldersOverFilenamePrefixes: Rule = {
   name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
   check(root) {
     const diagnostics: Diagnostic[] = []
     for (const folder of collectFolders(root)) {
       const folderRel = relativePath(root.path, folder.path)
+      const children = folder.children ?? []
+      // A folder names a domain its prefixed sibling files belong in, but is not one of them:
+      // `cloud-portal/` beside `cloud/` is a domain of its own already.
+      const folders = new Set(
+        children.filter((child) => child.type === 'folder').map((child) => path.basename(child.path))
+      )
       const groups = new Map<string, string[]>()
+      const misplaced = new Map<string, string>()
       const names = new Set<string>()
-      const folders = new Set<string>()
-      for (const child of folder.children ?? []) {
-        // A folder names a domain its prefixed sibling files belong in, but is not one of them:
-        // `cloud-portal/` beside `cloud/` is a domain of its own already.
-        if (child.type === 'folder') {
-          folders.add(path.basename(child.path))
+      for (const child of children) {
+        if (child.type === 'folder' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        const stem = fileStem(child.path)
+        names.add(stem)
+        const prefix = filePrefix(child.path)
+        if (!prefix || FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        // `variants/` beside `variant-set.ts` already is the domain folder the file belongs in.
+        const domain = domainFolderFor(stem, folders)
+        if (domain) {
+          misplaced.set(domain.prefix, domain.folder)
           continue
         }
-        if (!TEXT_EXTENSIONS.has(path.extname(child.path))) continue
-        names.add(fileStem(child.path))
-        const prefix = filePrefix(child.path)
-        if (!prefix) continue
         const files = groups.get(prefix) ?? []
         files.push(child.path)
         groups.set(prefix, files)
       }
+      for (const [prefix, folderName] of misplaced) {
+        diagnostics.push({
+          message: `Move the ${prefix}-* files into the ${folderName}/ folder beside them.`,
+          location: { path: folder.path }
+        })
+      }
       for (const [prefix, files] of groups) {
-        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
-        // `variants/` beside `variant-set.ts` already is the domain folder the file belongs in.
-        const folderName = [prefix, `${prefix}s`].find((name) => folders.has(name))
-        if (folderName) {
-          diagnostics.push({
-            message: `Move the ${prefix}-* files into the ${folderName}/ folder beside them.`,
-            location: { path: folder.path }
-          })
-          continue
-        }
         // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
         // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
         const fileName = [prefix, `${prefix}s`].find((name) => names.has(name))

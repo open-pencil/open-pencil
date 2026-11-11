@@ -9,6 +9,10 @@ const rule = openPencilArchitecturePlugin.ruleDefinitions.find(
 
 /** Entries ending in `/` are folders; the rest are files. */
 function check(files: string[]) {
+  return diagnose(files).length
+}
+
+function diagnose(files: string[]) {
   if (!rule) throw new Error('Missing file prefix rule')
   const root = '/repo'
   const folder = join(root, 'src/runtime')
@@ -26,7 +30,7 @@ function check(files: string[]) {
         )
       }
     ]
-  }).diagnostics.length
+  }).diagnostics.map((diagnostic) => diagnostic.message)
 }
 
 test('asks for a folder when a file sits beside files named after it', () => {
@@ -49,6 +53,18 @@ test('asks to move prefixed files into the folder named after their domain', () 
   expect(check(['variants/', 'variant-set.ts'])).toBe(1)
   expect(check(['labels/', 'label-cache.test.ts'])).toBe(1)
   expect(check(['sdk/', 'sdk-sidebar.ts'])).toBe(1)
+})
+
+test('names the longest folder a compound prefix belongs in', () => {
+  expect(diagnose(['cloud-portal/', 'cloud-portal-settings.ts'])).toEqual([
+    'Move the cloud-portal-* files into the cloud-portal/ folder beside them.'
+  ])
+  expect(diagnose(['cloud/', 'cloud-portal/', 'cloud-portal-settings.ts'])).toEqual([
+    'Move the cloud-portal-* files into the cloud-portal/ folder beside them.'
+  ])
+  expect(diagnose(['sign-in/', 'sign-in-form.ts', 'sign-out.ts'])).toEqual([
+    'Move the sign-in-* files into the sign-in/ folder beside them.'
+  ])
 })
 
 test('accepts folders that share a prefix, since each is a domain already', () => {
