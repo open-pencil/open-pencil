@@ -53,6 +53,7 @@ export function adminRoutes(services: FeedbackServices) {
           c.get('adminEmail') ?? 'unknown',
           services.now()
         )
+        c.header('Cache-Control', 'private, no-store')
         return c.json(saved, 200)
       })
       // A file attached to a report, linked from its PostHog event; always a download, never rendered.

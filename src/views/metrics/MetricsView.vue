@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import { MAX_METRICS_RANGE_DAYS, type MetricsSnapshot } from '@open-pencil/feedback/contract'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
+import { utcToday } from '@/app/metrics/days'
 import { useMetricsSnapshot } from '@/app/metrics/load'
 import type { MetricsRange } from '@/app/metrics/range'
 import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 import MetricsDashboard from '@/components/metrics/MetricsDashboard.vue'
+import MetricsRangePicker from '@/components/metrics/MetricsRangePicker.vue'
 import ReportInboxPanel from '@/components/metrics/reports/ReportInboxPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -67,6 +69,7 @@ async function setReportStatus(...args: Parameters<typeof triage.setStatus>) {
 }
 const inboxPanel = computed(() => ({
   reports: reports.value,
+  loaded: inboxLoaded.value,
   truncated: truncated.value,
   loadFailed: inboxFailed.value,
   statusFailed: triageFailed.value,
@@ -83,6 +86,11 @@ const inboxPanelEvents = {
   save: saveReport,
   reload: () => reload()
 }
+// Without the metrics' own dates, the reports page offers the longest range the API takes.
+const today = utcToday().toString()
+const earliest = utcToday()
+  .subtract({ days: MAX_METRICS_RANGE_DAYS - 1 })
+  .toString()
 const refreshTab = () => (tab.value === 'reports' ? inbox.refresh() : refresh())
 const host = globalThis.location.host
 // Access's session may have run out; reloading the page signs in again.
@@ -125,11 +133,12 @@ const reload = () => globalThis.location.reload()
     class="h-full overflow-y-auto bg-canvas text-surface"
   >
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 md:px-6">
-      <div>
+      <div class="flex items-center justify-between gap-2">
         <AppButton size="sm" variant="ghost" @click="tab = 'metrics'">
           <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
           Metrics
         </AppButton>
+        <MetricsRangePicker v-model="range" :today="today" :earliest="earliest" />
       </div>
       <ReportInboxPanel
         v-bind="inboxPanel"

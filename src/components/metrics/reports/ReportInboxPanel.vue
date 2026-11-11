@@ -8,6 +8,7 @@ import type {
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 
 import ReportDetailDialog from './ReportDetailDialog.vue'
 import ReportInbox from './ReportInbox.vue'
@@ -18,6 +19,7 @@ import ReportInbox from './ReportInbox.vue'
  */
 const {
   reports,
+  loaded = false,
   truncated = false,
   loadFailed = false,
   statusFailed = false,
@@ -29,6 +31,8 @@ const {
   saveFailed = false
 } = defineProps<{
   reports: InboxReport[]
+  /** The first load has finished; until then the inbox is not known to be empty. */
+  loaded?: boolean
   truncated?: boolean
   loadFailed?: boolean
   /** A status set from a row's menu did not save. */
@@ -66,7 +70,12 @@ const emit = defineEmits<{
     heading="Only the newest 500 reports in this range are listed"
     description="Choose a shorter range to see the rest."
   />
+  <div v-if="!loaded && !loadFailed" class="flex flex-col gap-2" aria-busy="true">
+    <span class="sr-only">Loading reports…</span>
+    <AppSkeleton v-for="row in 4" :key="row" class="h-12 w-full" />
+  </div>
   <ReportInbox
+    v-else-if="loaded"
     :reports="reports"
     :busy="busy"
     @open="(report) => emit('open', report)"

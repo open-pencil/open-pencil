@@ -49,17 +49,24 @@ const emit = defineEmits<{ save: [triage: ReportTriage] }>()
 const ui = metricsReport()
 const status = ref<string>(report.status)
 const note = ref(report.triageNote ?? '')
+/** The fields as last filled from the report, to tell the person's edits from a saved change. */
+let filled = { status: report.status as string, note: report.triageNote ?? '' }
+function fill() {
+  filled = { status: report.status, note: report.triageNote ?? '' }
+  status.value = filled.status
+  note.value = filled.note
+}
+const edited = () => status.value !== filled.status || note.value !== filled.note
 // Fields start fresh each opening, from the report as saved, even for the one just canceled.
 watch(open, (isOpen) => {
-  if (!isOpen) return
-  status.value = report.status
-  note.value = report.triageNote ?? ''
+  if (isOpen) fill()
 })
+watch(() => report.id, fill)
+// A save from an earlier opening that lands now updates fields the person hasn't touched since.
 watch(
-  () => report.id,
+  () => [report.status, report.triageNote],
   () => {
-    status.value = report.status
-    note.value = report.triageNote ?? ''
+    if (!edited()) fill()
   }
 )
 
