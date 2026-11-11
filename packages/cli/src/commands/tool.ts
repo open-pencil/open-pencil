@@ -9,7 +9,7 @@ import {
   type ToolDef
 } from '@open-pencil/core/tools'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { bold, dim, entity, fmtList, kv, printError, warn } from '#cli/format'
 import { documentWriteOptions, writeFigDocument } from '#cli/headless'
 import { readTextSource } from '#cli/input'
@@ -135,12 +135,7 @@ const call = defineCommand({
       description: 'Read tool arguments from a JSON file, or - for stdin'
     },
     ...documentWriteOptions,
-    ...appTargetOptions,
-    'page-id': {
-      ...appTargetOptions['page-id'],
-      description:
-        'Page ID to run on; with a file only that page loads, and others as the tool asks'
-    },
+    ...pageOptions('current page'),
     json
   },
   async run({ args }) {
@@ -152,13 +147,7 @@ const call = defineCommand({
       }
       const def = findTool(args.name)
       const toolArgs = await readToolArgs(args)
-      const { result, graph } = await runToolData(
-        args.file,
-        def.name,
-        toolArgs,
-        args,
-        args['page-id']
-      )
+      const { result, graph } = await runToolData(args.file, def.name, toolArgs, args)
       if (args.json) console.log(JSON.stringify(result, null, 2))
       else printResult(result)
 

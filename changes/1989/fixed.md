@@ -1,0 +1,1 @@
+- `openpencil tree`, `find`, and `query` with `--page-id` read that page of the running app instead of ignoring it.

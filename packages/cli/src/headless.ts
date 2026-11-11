@@ -26,6 +26,7 @@ import {
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
+import type { RequestedPage } from '#cli/app/target'
 import { printError } from '#cli/format'
 
 /** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
@@ -172,9 +173,22 @@ function stringArg(args: unknown, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined
 }
 
-function populateRequestedPage(graph: SceneGraph, pageName?: string): void {
-  const pages = graph.getPages()
-  const page = pageName ? pages.find((candidate) => candidate.name === pageName) : pages[0]
+/** The page an RPC command's `page_id` or `page` names, as the command picks it. */
+function rpcPage(args: unknown): RequestedPage | undefined {
+  const id = stringArg(args, 'page_id')
+  if (id) return { id }
+  const name = stringArg(args, 'page')
+  return name ? { name } : undefined
+}
+
+function findPage(graph: SceneGraph, page: RequestedPage) {
+  return graph
+    .getPages()
+    .find((candidate) => ('id' in page ? candidate.id === page.id : candidate.name === page.name))
+}
+
+function populateRequestedPage(graph: SceneGraph, requested?: RequestedPage): void {
+  const page = requested ? findPage(graph, requested) : graph.getPages()[0]
   if (page) populateDocumentPage(graph, page.id)
 }
 
@@ -182,28 +196,31 @@ export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?:
   if (command === 'pages' || command === 'variables') return
   // A stylesheet holds only variables, which load with the document; pages can take minutes.
   if (command === 'tokens' && stringArg(args, 'format') !== 'dtcg') return
-  if (command === 'tree') {
-    populateRequestedPage(graph, stringArg(args, 'page'))
+  if (command === 'tree' || command === 'analyze_overlaps') {
+    populateRequestedPage(graph, rpcPage(args))
     return
   }
   if (command === 'find' || command === 'query') {
-    const pageName = stringArg(args, 'page')
-    if (pageName) populateRequestedPage(graph, pageName)
+    const page = rpcPage(args)
+    if (page) populateRequestedPage(graph, page)
     else populateWholeDocument(graph)
     return
   }
   populateWholeDocument(graph)
 }
 
-/** The page `pageName` names, by its ID with `by: 'id'`; the first page without one. */
-export function requirePage(graph: SceneGraph, pageName?: string, by: 'name' | 'id' = 'name') {
+/** The page `--page` or `--page-id` names, or the first page without either. */
+export function requirePage(graph: SceneGraph, requested?: RequestedPage) {
   const pages = graph.getPages()
-  const page = pageName ? pages.find((p) => p[by] === pageName) : pages[0]
+  const page = requested ? findPage(graph, requested) : pages[0]
   if (!page) {
-    const available = pages.map((p) => `"${p[by]}"`).join(', ')
+    const label = requested && ('id' in requested ? requested.id : requested.name)
+    const available = pages
+      .map((p) => `"${requested && 'id' in requested ? p.id : p.name}"`)
+      .join(', ')
     printError(
-      pageName
-        ? `Page "${pageName}" not found. Available pages: ${available || 'none'}.`
+      label
+        ? `Page "${label}" not found. Available pages: ${available || 'none'}.`
         : 'Document has no pages.'
     )
     process.exit(1)

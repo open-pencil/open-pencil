@@ -116,6 +116,42 @@ describe('documents CLI', () => {
   })
 })
 
+describe('--page and --page-id', () => {
+  const documents = [
+    {
+      id: 'doc-2',
+      name: 'Landing',
+      active: true,
+      current_page_id: '0:1',
+      current_page_name: 'Page 1',
+      pages: [
+        { id: '0:1', name: 'Page 1' },
+        { id: '0:2', name: 'Worklist' }
+      ]
+    }
+  ]
+
+  test('a page name reaches the app as the page ID, for reads, scripts, and tools alike', async () => {
+    responses.set('list_documents', { documents })
+    responses.set('tree', { page: { id: '0:2', name: 'Worklist', type: 'CANVAS' }, children: [] })
+    await cli(['tree', '--page', 'Worklist'])
+    await cli(['eval', '--page', 'Worklist', '-c', 'return 1'])
+    await cli(['tool', 'call', 'get_selection', '--page', 'Worklist'])
+    expect(requests.filter((request) => request.command !== 'list_documents')).toEqual([
+      { command: 'tree', args: { page_id: '0:2' } },
+      { command: 'eval', args: { code: 'return 1', page_id: '0:2' } },
+      { command: 'tool', args: { page_id: '0:2', name: 'get_selection', args: {} } }
+    ])
+  })
+
+  test('cannot be passed together', async () => {
+    const both = await cli(['find', '--page', 'Worklist', '--page-id', '0:2'])
+    expect(both.exitCode).toBe(1)
+    expect(both.stderr).toContain('--page and --page-id cannot be used together.')
+    expect(requests).toEqual([])
+  })
+})
+
 describe('history CLI', () => {
   test('reports the undone change', async () => {
     responses.set('undo', { applied: true, label: 'Agent: update_node' })

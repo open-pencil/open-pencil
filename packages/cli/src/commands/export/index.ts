@@ -5,10 +5,9 @@ import { defineCommand } from 'citty'
 import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/core/io'
-import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
+import { appPageTargetRPCArgs, pageOptions, requestedPage } from '#cli/app/target'
 import { ok, printError } from '#cli/format'
 import {
   loadDocument,
@@ -66,33 +65,16 @@ async function writeAndLog(path: string, content: string | Uint8Array) {
   console.log(ok(`Exported ${path} (${(size / 1024).toFixed(1)} KB)`))
 }
 
-/** The app addresses pages by ID, so look the `--page` name up in the target document. */
-async function appPageId(args: ExportArgs, pageName: string): Promise<string> {
-  const { documents } = await rpc<{ documents: AutomationDocumentSummary[] }>('list_documents')
-  const documentId = args['document-id']
-  const document = documents.find((doc) => (documentId ? doc.id === documentId : doc.active))
-  if (!document) {
-    printError(documentId ? `Document "${documentId}" not found.` : 'No active document.')
-    process.exit(1)
-  }
-  const page = document.pages.find((candidate) => candidate.name === pageName)
-  if (!page) {
-    const available = document.pages.map((candidate) => candidate.name).join(', ')
-    printError(`Page "${pageName}" not found. Available: ${available}`)
-    process.exit(1)
-  }
-  return page.id
+/** Exits when `--node` comes with `--page` or `--page-id`, which name what to export too. */
+function rejectNodeWithPage(args: ExportArgs) {
+  if (!args.node || !requestedPage(args)) return
+  printError(`${args.page ? '--page' : '--page-id'} and --node cannot be used together.`)
+  process.exit(1)
 }
 
 async function appExportTarget(args: ExportArgs) {
-  const target = appTargetRPCArgs(args)
-  if (!args.page) return target
-  if (args.node || args['page-id']) {
-    printError(`--page and ${args.node ? '--node' : '--page-id'} cannot be used together.`)
-    process.exit(1)
-  }
-  target.page_id = await appPageId(args, args.page)
-  return target
+  rejectNodeWithPage(args)
+  return appPageTargetRPCArgs(args)
 }
 
 async function exportViaApp(format: string, args: ExportArgs) {
@@ -180,7 +162,8 @@ async function prepareGraphForExport(
   format: string,
   args: ExportArgs
 ): Promise<boolean> {
-  const wholeDocument = (format === 'FIG' || format === 'PPTX') && !args.page && !args.node
+  const wholeDocument =
+    (format === 'FIG' || format === 'PPTX') && !requestedPage(args) && !args.node
   if (wholeDocument) populateWholeDocument(graph)
   else if (args.node) await populateNodePage(graph, args.node)
   else populateDocumentPage(graph, pageId)
@@ -217,14 +200,11 @@ async function exportFromFile(format: string, args: ExportArgs) {
   const file = requireFile(args.file)
   const graph = await loadDocument(file)
   const pages = graph.getPages()
-  const page = requirePage(graph, args.page)
+  rejectNodeWithPage(args)
+  const requested = requestedPage(args)
+  const page = requirePage(graph, requested)
 
   const defaultName = basename(file, extname(file))
-
-  if (args.page && args.node) {
-    printError('--page and --node cannot be used together.')
-    process.exit(1)
-  }
 
   const wholeDocument = await prepareGraphForExport(graph, page.id, format, args)
 
@@ -263,7 +243,7 @@ async function exportFromFile(format: string, args: ExportArgs) {
     basename(output)
   )
   await writeExport(output, result)
-  console.log(ok(`Target: ${targetLabel(args.page, args.node, wholeDocument)}`))
+  console.log(ok(`Target: ${targetLabel(requested && page.name, args.node, wholeDocument)}`))
 }
 
 export default defineCommand({
@@ -295,15 +275,10 @@ export default defineCommand({
       description: 'Quality 0-100 for JPG/WEBP (default: 90)',
       required: false
     },
-    page: {
-      type: 'string',
-      description:
-        'Export a specific page by name (FIG, PPTX, and Storybook default to the whole document)',
-      required: false
-    },
+    ...pageOptions('first page; FIG, PPTX, and Storybook export the whole document'),
     node: {
       type: 'string',
-      description: 'Export a specific node by ID (cannot be combined with --page)',
+      description: 'Export a specific node by ID (cannot be combined with --page or --page-id)',
       required: false
     },
     style: {
@@ -362,8 +337,7 @@ export default defineCommand({
     },
     thumbnail: { type: 'boolean', description: 'Export page thumbnail instead of full render' },
     width: { type: 'string', description: 'Thumbnail width (default: 1920)', default: '1920' },
-    height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' },
-    ...appTargetOptions
+    height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' }
   },
   async run({ args }) {
     const format = args.format.toUpperCase()
