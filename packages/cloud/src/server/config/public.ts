@@ -61,6 +61,7 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     services: config.servicesEndpoint
       ? { endpoint: config.servicesEndpoint, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION }
       : undefined,
-    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined
+    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined,
+    legal: config.legal
   })
 }

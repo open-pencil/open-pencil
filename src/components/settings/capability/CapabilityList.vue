@@ -5,6 +5,7 @@ import { useId } from 'vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
+import { focusStyles } from '@/theme/focus/styles'
 
 import type { CapabilityGroup, CapabilityItem } from './types'
 
@@ -67,7 +68,10 @@ function isOpen(group: CapabilityGroup) {
             />
           </span>
           <CollapsibleTrigger
-            class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            :class="[
+              'group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start',
+              focusStyles.ring
+            ]"
           >
             <icon-lucide-chevron-right
               data-direction="reading"

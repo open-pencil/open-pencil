@@ -1,6 +1,18 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  // Everything is formatted except what is laid out by hand, by another tool, or by a generator.
   "ignorePatterns": [
+    // Prose, hand-wrapped and translated.
+    "**/*.md",
+    // Workflows and configuration laid out by hand; Cargo's TOML follows Rust's conventions.
+    "**/*.{yml,yaml}",
+    "**/*.toml",
+    // Bun rewrites manifests in its own layout on every install.
+    "**/package.json",
+    // Generated or captured.
+    "packages/feedback/worker-configuration.d.ts",
+    "packages/demos/.webreel/",
+    "packages/scene-graph/tests/connectors/*.json",
     "packages/mermaid/src/upstream/",
     "tools/release/release-packages/src/notices/rust.hbs"
   ],

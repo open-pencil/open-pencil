@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-import { renderNodesToHTML } from '#core/io/formats/html'
+
 import { graphOf } from '#core/figma-api/graph'
+import { renderNodesToHTML } from '#core/io/formats/html'
 
 describe('tokens in HTML export', () => {
   test('a standalone page defines every token its layers use', async () => {

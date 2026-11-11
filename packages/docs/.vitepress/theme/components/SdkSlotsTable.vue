@@ -14,7 +14,7 @@ defineProps<{
 const columns = [
   { key: 'name', label: 'Slot', kind: 'code' },
   { key: 'props', label: 'Props', kind: 'chip' },
-  { key: 'description', label: 'Description', kind: 'description' },
+  { key: 'description', label: 'Description', kind: 'description' }
 ] as const
 </script>
 

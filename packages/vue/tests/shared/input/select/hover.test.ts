@@ -2,7 +2,11 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { boundEndpoint, createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
+import {
+  boundEndpoint,
+  createConnector,
+  layoutConnector
+} from '@open-pencil/scene-graph/connectors'
 import { createSticky } from '@open-pencil/scene-graph/generated'
 
 import {

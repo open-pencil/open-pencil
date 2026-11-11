@@ -38,6 +38,11 @@ export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
   resolveSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The signed-in person while their account is approved, whether or not it accepted the current
+   * terms: enough to leave, by downloading its documents and deleting the account.
+   */
+  resolveAccountSession(headers: Headers): Promise<CloudActor | null>
   listAuthenticationMethods(headers: Headers): Promise<CloudAuthenticationMethodRecord[]>
   changePassword(
     headers: Headers,

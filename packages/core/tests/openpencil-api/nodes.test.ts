@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { compileScript } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -66,7 +66,7 @@ test('scripts write Markdown into a text through openpencil, once its fonts are 
   await expect(
     compileScript(`openpencil.setTextMarkdown(figma.createText(), 'a \`b\`')`)(figma)
   ).rejects.toThrow('unloaded font "Roboto Mono Medium"')
-  await expect(compileScript(`openpencil.setTextMarkdown(figma.createFrame(), 'a')`)(figma)).rejects.toThrow(
-    'Markdown is written into a text layer, not FRAME'
-  )
+  await expect(
+    compileScript(`openpencil.setTextMarkdown(figma.createFrame(), 'a')`)(figma)
+  ).rejects.toThrow('Markdown is written into a text layer, not FRAME')
 })

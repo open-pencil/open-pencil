@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('edge cases', () => {
   test('an empty hugging frame keeps its size, padding or not, as Figma keeps it', () => {

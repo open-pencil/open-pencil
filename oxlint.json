@@ -30,7 +30,10 @@
     "dist",
     "desktop",
     "packages/mermaid/src/upstream",
-    "*.config.*"
+    "*.config.*",
+    "lint/",
+    "packages/feedback/worker-configuration.d.ts",
+    "packages/vue/example/"
   ],
   "rules": {
     "no-restricted-imports": [

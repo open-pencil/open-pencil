@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-
 import { SOLID_FILL } from '@open-pencil/test-support/scene'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

@@ -1,12 +1,12 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
 import { getCanvasKit } from '#core/canvaskit'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 const WIDTH = 240
 const HEIGHT = 160
@@ -101,7 +101,9 @@ function renderChunked(graph: SceneGraph, pageId: string): Uint8Array {
 function differentPixels(a: Uint8Array, b: Uint8Array): number {
   let different = 0
   for (let offset = 0; offset < a.length; offset += 4) {
-    const channels = [0, 1, 2, 3].map((channel) => Math.abs(a[offset + channel] - b[offset + channel]))
+    const channels = [0, 1, 2, 3].map((channel) =>
+      Math.abs(a[offset + channel] - b[offset + channel])
+    )
     if (Math.max(...channels) > 8) {
       different++
     }

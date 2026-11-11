@@ -37,6 +37,9 @@ function authAdapter() {
     async resolveSession() {
       return null
     },
+    async resolveAccountSession() {
+      return null
+    },
     async listAuthenticationMethods() {
       return []
     },

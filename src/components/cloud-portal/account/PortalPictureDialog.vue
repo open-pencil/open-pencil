@@ -22,6 +22,7 @@ import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import { focusStyles } from '@/theme/focus/styles'
 
 /** The side of the square the picture is placed in, in CSS pixels. */
 const FRAME = 240
@@ -138,7 +139,10 @@ async function save() {
       />
       <div
         v-show="!unreadable"
-        class="relative size-60 cursor-grab touch-none overflow-hidden rounded bg-canvas outline-none select-none focus-visible:ring-2 focus-visible:ring-accent/50 active:cursor-grabbing"
+        :class="[
+          'relative size-60 cursor-grab touch-none overflow-hidden rounded bg-canvas select-none active:cursor-grabbing',
+          focusStyles.ring
+        ]"
         tabindex="0"
         role="img"
         :aria-label="messages.pictureDescription"
@@ -178,7 +182,10 @@ async function save() {
           <SliderRange class="absolute h-full bg-accent" />
         </SliderTrack>
         <SliderThumb
-          class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
+          :class="[
+            'block size-3.5 rounded-full border border-accent bg-panel shadow',
+            focusStyles.ringStrong
+          ]"
         />
       </SliderRoot>
     </AppDialogBody>

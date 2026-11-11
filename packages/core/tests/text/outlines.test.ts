@@ -3,9 +3,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { fontManager } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
-import { repoPath } from '@open-pencil/test-support/paths'
 
 const editor = createEditor()
 
@@ -13,7 +13,9 @@ beforeAll(async () => {
   const data = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular', data)
   await fontManager.markLoaded('Inter', 'Bold', data)
-  const italic = await Bun.file(repoPath('packages/core/assets/InterVariable-Italic.ttf')).arrayBuffer()
+  const italic = await Bun.file(
+    repoPath('packages/core/assets/InterVariable-Italic.ttf')
+  ).arrayBuffer()
   await fontManager.markLoaded('Inter', 'Regular Italic', italic)
   await fontManager.markLoaded('Inter', 'Bold Italic', italic)
 })
@@ -55,7 +57,8 @@ describe('textNodeToOutlineLayout', () => {
   test('keeps a kerned line that fits on one line', () => {
     const kerned = { text: 'AVAVAVAV' }
     const width = oneLineWidth(kerned)
-    const unkerned = 'AVAVAVAV'.length * 0.5 * (oneLineWidth({ text: 'AA' }) + oneLineWidth({ text: 'VV' }))
+    const unkerned =
+      'AVAVAVAV'.length * 0.5 * (oneLineWidth({ text: 'AA' }) + oneLineWidth({ text: 'VV' }))
     expect(unkerned).toBeGreaterThan(width)
 
     expect(lineCount(text({ ...kerned, width, textAutoResize: 'HEIGHT' }))).toBe(1)
@@ -99,11 +102,19 @@ describe('textNodeToOutlineLayout', () => {
     const width = (regular + bold) / 2
 
     expect(
-      lineCount(text({ ...italic, fontWeight: 400, fontStyle: 'Italic', width, textAutoResize: 'HEIGHT' }))
+      lineCount(
+        text({ ...italic, fontWeight: 400, fontStyle: 'Italic', width, textAutoResize: 'HEIGHT' })
+      )
     ).toBe(1)
     expect(
       lineCount(
-        text({ ...italic, fontWeight: 700, fontStyle: 'Bold Italic', width, textAutoResize: 'HEIGHT' })
+        text({
+          ...italic,
+          fontWeight: 700,
+          fontStyle: 'Bold Italic',
+          width,
+          textAutoResize: 'HEIGHT'
+        })
       )
     ).toBe(2)
   })

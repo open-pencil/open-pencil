@@ -8,6 +8,7 @@ import * as documents from './migrations/004_documents'
 import * as sharing from './migrations/005_sharing'
 import * as operations from './migrations/006_operations'
 import * as trash from './migrations/007_trash'
+import * as terms from './migrations/008_terms'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -25,7 +26,8 @@ const migrations: Record<string, CloudMigration> = {
   '004_documents': documents,
   '005_sharing': sharing,
   '006_operations': operations,
-  '007_trash': trash
+  '007_trash': trash,
+  '008_terms': terms
 }
 
 /** Cloud's migrations, in order. */

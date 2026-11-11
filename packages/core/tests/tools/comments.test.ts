@@ -31,7 +31,11 @@ describe('comment tools', () => {
 
     expect(await list(figma)).toEqual([])
     const [resolved] = await list(figma, true)
-    expect(resolved).toMatchObject({ id: comment.id, resolved: true, replies: [{ author: 'Agent' }] })
+    expect(resolved).toMatchObject({
+      id: comment.id,
+      resolved: true,
+      replies: [{ author: 'Agent' }]
+    })
   })
 
   test('an unknown comment is reported, not created', async () => {

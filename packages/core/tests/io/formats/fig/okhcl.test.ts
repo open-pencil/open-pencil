@@ -1,15 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 
+import { solidFill } from '#core-tests/helpers/figma-api'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { colorDistance, getFillOkHCL, getStrokeOkHCL, okhclToRGBA, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
+import {
+  colorDistance,
+  getFillOkHCL,
+  getStrokeOkHCL,
+  okhclToRGBA,
+  rgbaToOkHCL
+} from '@open-pencil/scene-graph/color'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
-
-import { solidFill } from '#core-tests/helpers/figma-api'
 describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {
     const graph = new SceneGraph()

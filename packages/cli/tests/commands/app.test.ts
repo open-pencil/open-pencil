@@ -1,12 +1,19 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  setDefaultTimeout,
+  test
+} from 'bun:test'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
 setDefaultTimeout(60_000)
@@ -75,7 +82,8 @@ beforeEach(() => {
   responses.clear()
 })
 
-const cli = (args: string[]) => runCLI(args, { env: { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } })
+const cli = (args: string[]) =>
+  runCLI(args, { env: { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } })
 
 describe('documents CLI', () => {
   test('opens files by absolute path and reports the target document', async () => {
