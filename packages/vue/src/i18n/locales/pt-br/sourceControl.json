@@ -28,7 +28,7 @@
   "saveFirst": "Salve o documento em um arquivo e o git o verá.",
   "notVersioned": "Este arquivo está fora de qualquer repositório git.",
   "commitFile": "Commitar este arquivo",
-  "branches": "Ramos",
+  "branches": "Branches",
   "history": "Histórico do arquivo",
   "historyRefresh": "Atualizar o histórico",
   "historyEmpty": "Nenhum commit tocou este arquivo ainda.",

@@ -28,6 +28,6 @@
   "previewReload": "プレビューを再読み込み",
   "previewEmpty": "アプリケーションを起動するとここに表示されます。",
   "addFailed": "プロジェクトを追加できませんでした。",
-  "notRepository": "このフォルダーはリポジトリの中にありません。",
-  "unavailable": "バージョン管理ツールが見つかりません。"
+  "notRepository": "このフォルダーは Git リポジトリの中にありません。",
+  "unavailable": "Git がインストールされていないか、PATH にありません。"
 }

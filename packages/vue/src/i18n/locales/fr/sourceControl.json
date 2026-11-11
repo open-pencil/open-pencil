@@ -1,6 +1,6 @@
 {
   "title": "Gestion de versions",
-  "unavailable": "git n\u0027est pas installé ou absent du PATH.",
+  "unavailable": "git n'est pas installé ou absent du PATH.",
   "noUpstream": "Pas encore de branche distante",
   "aheadBehind": "{ahead} en avance, {behind} en retard",
   "changes": "Modifications : {count}",
@@ -13,7 +13,7 @@
   "backToFiles": "Tous les fichiers",
   "untrackedNote": "Nouveau fichier : Git ne le connaît pas encore.",
   "gitFailed": "Git a signalé un problème.",
-  "clean": "L\u0027arbre de travail est propre.",
+  "clean": "L'arbre de travail est propre.",
   "commitMessage": "Message de commit",
   "commitPlaceholder": "feat: décrivez la modification",
   "commit": "Valider toutes les modifications",

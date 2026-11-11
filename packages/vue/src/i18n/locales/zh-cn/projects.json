@@ -28,6 +28,6 @@
   "previewReload": "重新加载预览",
   "previewEmpty": "启动应用后即可在此查看。",
   "addFailed": "无法添加项目。",
-  "notRepository": "该文件夹不在仓库中。",
-  "unavailable": "找不到版本控制工具。"
+  "notRepository": "该文件夹不在 Git 仓库中。",
+  "unavailable": "未找到 Git，或 Git 不在 PATH 中。"
 }

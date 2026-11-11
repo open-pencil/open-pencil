@@ -1,6 +1,6 @@
 {
   "title": "ソース管理",
-  "unavailable": "バージョン管理ツールが見つかりません。",
+  "unavailable": "Git がインストールされていないか、PATH にありません。",
   "noUpstream": "上流ブランチがまだありません",
   "aheadBehind": "{ahead} 先行、{behind} 遅延",
   "changes": "変更: {count}",
@@ -12,7 +12,7 @@
   "create": "作成",
   "backToFiles": "すべてのファイル",
   "untrackedNote": "新しいファイルです。まだ管理されていません。",
-  "gitFailed": "問題が報告されました。",
+  "gitFailed": "Git が問題を報告しました。",
   "clean": "作業ツリーはクリーンです。",
   "commitMessage": "コミットメッセージ",
   "commitPlaceholder": "変更内容を簡単に説明する",

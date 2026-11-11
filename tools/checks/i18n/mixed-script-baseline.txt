@@ -178,6 +178,7 @@ ja:files.mermaidPasteFailed
 ja:files.noHTMLToPasteAsLayers
 ja:fonts.downloadFallbackPacksDescription
 ja:fonts.unsupportedFormat
+ja:livePages.exportVue
 ja:media.getPexelsAPIKey
 ja:media.getUnsplashAccessKey
 ja:media.pexelsAPIKey
@@ -214,11 +215,15 @@ ja:panels.yAxis
 ja:panels.shaderPreset
 ja:panels.invalidShaderPreset
 ja:panels.shaderNeedsWebGPU
+ja:projects.notRepository
+ja:projects.unavailable
 ja:recovery.sectionDescription
 ja:settings.baseURLHint
 ja:settings.invalidURL
 ja:settings.modelIDHint
 ja:settings.temporaryDisableSnappingHint
+ja:sourceControl.gitFailed
+ja:sourceControl.unavailable
 ja:storage.accessKeyID
 ja:storage.copyCors
 ja:storage.providerS3
@@ -410,6 +415,7 @@ zh-cn:files.mermaidPasteFailed
 zh-cn:files.noHTMLToPasteAsLayers
 zh-cn:fonts.downloadFallbackPacksDescription
 zh-cn:fonts.unsupportedFormat
+zh-cn:livePages.exportVue
 zh-cn:media.getPexelsAPIKey
 zh-cn:media.getUnsplashAccessKey
 zh-cn:media.pexelsAPIKey
@@ -442,10 +448,14 @@ zh-cn:panels.sizingFillFr
 zh-cn:panels.sizingFixedPx
 zh-cn:panels.xAxis
 zh-cn:panels.yAxis
+zh-cn:projects.notRepository
+zh-cn:projects.unavailable
 zh-cn:recovery.sectionDescription
 zh-cn:settings.baseURLHint
 zh-cn:settings.invalidURL
 zh-cn:settings.temporaryDisableSnappingHint
+zh-cn:sourceControl.gitFailed
+zh-cn:sourceControl.unavailable
 zh-cn:storage.accessKeyID
 zh-cn:storage.copyCors
 zh-cn:storage.providerS3
